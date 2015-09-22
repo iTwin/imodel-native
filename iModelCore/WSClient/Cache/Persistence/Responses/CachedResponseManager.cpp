@@ -117,8 +117,8 @@ CachedResponseInfo CachedResponseManager::ReadInfo(CachedResponseKeyCR key)
     statement->BindId(1, key.GetParent().GetECInstanceId());
     statement->BindText(2, key.GetName().c_str(), IECSqlBinder::MakeCopy::No);
 
-    ECSqlStepStatus status = statement->Step();
-    if (status != ECSqlStepStatus::HasRow)
+    DbResult status = statement->Step();
+    if (status != BE_SQLITE_ROW)
         {
         return CachedResponseInfo(key.GetParent(), key.GetHolder(), key.GetName(), m_cachedQueryInfoClass->GetId());
         }
@@ -162,8 +162,8 @@ ECInstanceKey CachedResponseManager::FindInfo(ECInstanceKeyCR parent, Utf8String
     statement->BindId(1, parent.GetECInstanceId());
     statement->BindText(2, queryName.c_str(), IECSqlBinder::MakeCopy::No);
 
-    ECSqlStepStatus status = statement->Step();
-    if (status == ECSqlStepStatus::Done)
+    DbResult status = statement->Step();
+    if (status == BE_SQLITE_DONE)
         {
         // Nothing to delete
         return ECInstanceKey();
@@ -216,7 +216,7 @@ BentleyStatus CachedResponseManager::DeleteResponses(Utf8StringCR name, DateTime
     statement->BindDateTime(2, accessedBeforeDateUtc);
 
     bset<ECInstanceKey> responsesToDelete;
-    while (ECSqlStepStatus::HasRow == statement->Step())
+    while (BE_SQLITE_ROW == statement->Step())
         {
         ECInstanceKey responseKey(m_cachedQueryInfoClass->GetId(), statement->GetValueId<ECInstanceId>(0));
         if (ECDbHelper::IsInstanceInMultiMap(responseKey, instancesToLeave))
@@ -469,8 +469,8 @@ bset<ObjectId>& objectIdsOut
 
     statement->BindId(1, cachedQueryInfoId);
 
-    ECSqlStepStatus status;
-    while (ECSqlStepStatus::HasRow == (status = statement->Step()))
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement->Step()))
         {
         ECClassCP resultClass = m_dbAdapter->GetECClass(statement->GetValueInt64(0));
         if (nullptr == resultClass)
@@ -488,7 +488,7 @@ bset<ObjectId>& objectIdsOut
         objectIdsOut.insert(objectId);
         }
 
-    if (ECSqlStepStatus::Done != status)
+    if (BE_SQLITE_DONE != status)
         {
         return ERROR;
         }
@@ -556,7 +556,7 @@ DateTime CachedResponseManager::ReadResponseCachedDate(ECInstanceKeyCR parent, U
     statement->BindId(1, parent.GetECInstanceId());
     statement->BindText(2, queryName.c_str(), IECSqlBinder::MakeCopy::No);
 
-    if (ECSqlStepStatus::HasRow != statement->Step())
+    if (BE_SQLITE_ROW != statement->Step())
         {
         return DateTime();
         }
@@ -614,8 +614,8 @@ const ECInstanceKeyMultiMap& fullyPersistedInstances
 
     JsonECSqlSelectAdapter adapter(statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
 
-    ECSqlStepStatus status;
-    while (ECSqlStepStatus::HasRow == (status = statement.Step()))
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement.Step()))
         {
         ECInstanceKey instanceKey(statement.GetValueInt64(0), statement.GetValueId<ECInstanceId>(1));
 
@@ -638,7 +638,7 @@ const ECInstanceKeyMultiMap& fullyPersistedInstances
             }
         }
 
-    if (ECSqlStepStatus::Done != status)
+    if (BE_SQLITE_DONE != status)
         {
         return ERROR;
         }

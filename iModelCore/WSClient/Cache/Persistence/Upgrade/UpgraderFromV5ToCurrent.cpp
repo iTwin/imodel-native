@@ -215,7 +215,7 @@ BentleyStatus UpgraderFromV5ToCurrent::CopyData(DataSourceCache& newCache)
         statement->BindId(1, oldRootKey.GetECInstanceId());
 
         bvector<ECInstanceKey> rootChildrenKeys;
-        while (ECSqlStepStatus::HasRow == statement->Step())
+        while (BE_SQLITE_ROW == statement->Step())
             {
             rootChildrenKeys.push_back({statement->GetValueInt64(0), statement->GetValueId<ECInstanceId>(1)});
             }
@@ -313,8 +313,8 @@ JsonValueCR oldParentInfo
     statement->BindId(2, oldParentKey.GetECInstanceId());
 
     bvector<ECInstanceKey> childrenKeys;
-    ECSqlStepStatus status;
-    while (ECSqlStepStatus::HasRow == (status = statement->Step()))
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement->Step()))
         {
         childrenKeys.push_back({statement->GetValueInt64(0), statement->GetValueId<ECInstanceId>(1)});
         }
@@ -590,8 +590,8 @@ JsonValueR instanceInfo
 
     statement->BindId(1, key.GetECInstanceId());
 
-    ECSqlStepStatus status = statement->Step();
-    if (ECSqlStepStatus::HasRow != status)
+    DbResult status = statement->Step();
+    if (BE_SQLITE_ROW != status)
         {
         return ERROR;
         }
@@ -649,8 +649,8 @@ JsonValueR fileInfo
 
     statement->BindId(1, key.GetECInstanceId());
 
-    ECSqlStepStatus status = statement->Step();
-    if (ECSqlStepStatus::Done == status)
+    DbResult status = statement->Step();
+    if (BE_SQLITE_DONE == status)
         {
         return SUCCESS;
         }
@@ -672,7 +672,7 @@ BentleyStatus UpgraderFromV5ToCurrent::ReadSchemaInfo(Utf8String& schemaName)
     ECSqlStatement statement;
 
     m_adapter.PrepareStatement(statement, "SELECT [DataSourceSchemaName] FROM ONLY [DSC].[Settings] LIMIT 1 ");
-    if (ECSqlStepStatus::HasRow != statement.Step())
+    if (BE_SQLITE_ROW != statement.Step())
         {
         return ERROR;
         }
@@ -690,7 +690,7 @@ BentleyStatus UpgraderFromV5ToCurrent::ReadRoots(JsonValueR roots)
     JsonECSqlSelectAdapter jsonAdapter(statement, ECValueFormat::RawNativeValues);
 
     m_adapter.PrepareStatement(statement, "SELECT * FROM ONLY [DSC].[Root]");
-    while (ECSqlStepStatus::HasRow == statement.Step())
+    while (BE_SQLITE_ROW == statement.Step())
         {
         if (!jsonAdapter.GetRowInstance(roots.append(Json::objectValue)))
             {

@@ -44,7 +44,7 @@ BentleyStatus ValueIncrementor::IncrementWithoutSaving(Utf8StringR valueOut)
         });
 
     Json::Value instance;
-    if (ECSqlStepStatus::HasRow == statement->Step())
+    if (BE_SQLITE_ROW == statement->Step())
         {
         JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
         if (!adapter.GetRowInstance(instance, m_propertyClassId))

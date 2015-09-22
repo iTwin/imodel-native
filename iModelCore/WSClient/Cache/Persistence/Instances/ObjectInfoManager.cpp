@@ -131,8 +131,8 @@ ObjectInfo ObjectInfoManager::ReadInfo(ECClassCR ecClass, Utf8StringCR remoteId)
 
     Json::Value infoJson;
 
-    ECSqlStepStatus status = statement->Step();
-    if (status == ECSqlStepStatus::HasRow)
+    DbResult status = statement->Step();
+    if (status == BE_SQLITE_ROW)
         {
         JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
         adapter.GetRowInstance(infoJson, m_infoClass->GetId());
@@ -172,8 +172,8 @@ ObjectInfo ObjectInfoManager::ReadInfo(ECInstanceKeyCR instanceKey)
     statement->BindInt64(1, objectClass->GetId());
     statement->BindInt64(2, instanceKey.GetECInstanceId().GetValue());
 
-    ECSqlStepStatus status = statement->Step();
-    if (status != ECSqlStepStatus::HasRow)
+    DbResult status = statement->Step();
+    if (status != BE_SQLITE_ROW)
         {
         return ObjectInfo();
         }
@@ -226,8 +226,8 @@ ECInstanceKey ObjectInfoManager::FindCachedInstance(ECClassCP ecClass, Utf8Strin
     statement->BindInt64(1, ecClass->GetId());
     statement->BindText(2, remoteId.c_str(), IECSqlBinder::MakeCopy::No);
 
-    ECSqlStepStatus status = statement->Step();
-    if (status != ECSqlStepStatus::HasRow)
+    DbResult status = statement->Step();
+    if (status != BE_SQLITE_ROW)
         {
         return ECInstanceKey();
         }
@@ -259,8 +259,8 @@ ObjectId ObjectInfoManager::FindCachedInstance(ECInstanceKeyCR instanceKey)
     statement->BindInt64(1, objectClass->GetId());
     statement->BindId(2, instanceKey.GetECInstanceId());
 
-    ECSqlStepStatus status = statement->Step();
-    if (status != ECSqlStepStatus::HasRow)
+    DbResult status = statement->Step();
+    if (status != BE_SQLITE_ROW)
         {
         return ObjectId();
         }
@@ -311,8 +311,8 @@ ECInstanceKey ObjectInfoManager::ReadInfoKey(ObjectIdCR objectId)
     statement->BindInt64(1, objectClass->GetId());
     statement->BindText(2, objectId.remoteId.c_str(), IECSqlBinder::MakeCopy::No);
 
-    ECSqlStepStatus status = statement->Step();
-    if (status != ECSqlStepStatus::HasRow)
+    DbResult status = statement->Step();
+    if (status != BE_SQLITE_ROW)
         {
         return ECInstanceKey();
         }

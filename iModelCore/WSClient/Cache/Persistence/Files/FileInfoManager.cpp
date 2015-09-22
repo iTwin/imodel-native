@@ -227,7 +227,7 @@ BentleyStatus FileInfoManager::DeleteFilesNotHeldByInstances(const ECInstanceKey
 
     JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
 
-    while (ECSqlStepStatus::HasRow == statement->Step())
+    while (BE_SQLITE_ROW == statement->Step())
         {
         Json::Value cachedFileInfoJson;
         Json::Value externalFileInfoJson;
@@ -360,8 +360,8 @@ Json::Value FileInfoManager::ReadExternalFileInfo(ECInstanceKeyCR instanceKey)
     statement->BindInt64(1, instanceKey.GetECClassId());
     statement->BindId(2, instanceKey.GetECInstanceId());
 
-    ECSqlStepStatus status = statement->Step();
-    if (status != ECSqlStepStatus::HasRow)
+    DbResult status = statement->Step();
+    if (status != BE_SQLITE_ROW)
         {
         return infoJson;
         }
@@ -396,8 +396,8 @@ Json::Value FileInfoManager::ReadCachedInfoJson(ECInstanceKeyCR instanceKey)
     statement->BindInt64(1, instanceKey.GetECClassId());
     statement->BindId(2, instanceKey.GetECInstanceId());
 
-    ECSqlStepStatus status = statement->Step();
-    if (status != ECSqlStepStatus::HasRow)
+    DbResult status = statement->Step();
+    if (status != BE_SQLITE_ROW)
         {
         return Json::nullValue;
         }

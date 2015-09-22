@@ -50,7 +50,7 @@ bool ChangeInfoManager::HasChanges()
             IChangeManager::ChangeStatus::NoChange
             );
         });
-    return statement->Step() == ECSqlStepStatus::HasRow;
+    return statement->Step() == BE_SQLITE_ROW;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -80,7 +80,7 @@ BentleyStatus ChangeInfoManager::GetObjectChanges(IChangeManager::Changes& chang
     {
     auto statement = GetPreparedStatementForGetChanges(m_objectInfoManager->GetInfoClass(), onlyReadyToSync);
     JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
-    while (statement->Step() == ECSqlStepStatus::HasRow)
+    while (statement->Step() == BE_SQLITE_ROW)
         {
         Json::Value infoJson;
         if (!adapter.GetRowInstance(infoJson, m_objectInfoManager->GetInfoClass()->GetId()))
@@ -104,7 +104,7 @@ BentleyStatus ChangeInfoManager::GetRelationshipChanges(IChangeManager::Changes&
     {
     auto statement = GetPreparedStatementForGetChanges(m_relationshipInfoManager->GetInfoClass(), onlyReadyToSync);
     JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
-    while (statement->Step() == ECSqlStepStatus::HasRow)
+    while (statement->Step() == BE_SQLITE_ROW)
         {
         Json::Value infoJson;
         if (!adapter.GetRowInstance(infoJson, m_relationshipInfoManager->GetInfoClass()->GetId()))
@@ -128,7 +128,7 @@ BentleyStatus ChangeInfoManager::GetFileChanges(IChangeManager::Changes& changes
     {
     auto statement = GetPreparedStatementForGetChanges(m_fileInfoManager->GetInfoClass(), onlyReadyToSync);
     JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
-    while (statement->Step() == ECSqlStepStatus::HasRow)
+    while (statement->Step() == BE_SQLITE_ROW)
         {
         Json::Value infoJson;
         if (!adapter.GetRowInstance(infoJson, m_fileInfoManager->GetInfoClass()->GetId()))
@@ -267,9 +267,9 @@ int ChangeInfoManager::ReadStatusProperty(ECInstanceKeyCR instanceKey, Utf8CP st
 
     statement->BindInt64(1, instanceKey.GetECClassId());
     statement->BindId(2, instanceKey.GetECInstanceId());
-    ECSqlStepStatus status = statement->Step();
+    DbResult status = statement->Step();
 
-    if (ECSqlStepStatus::HasRow != status)
+    if (BE_SQLITE_ROW != status)
         {
         return 0;
         }

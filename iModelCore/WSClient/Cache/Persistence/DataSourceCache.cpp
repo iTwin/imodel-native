@@ -760,12 +760,12 @@ CacheStatus DataSourceCache::ReadInstance(ObjectIdCR objectId, JsonValueR instan
 
     auto statement = GetReadInstanceStatement(*ecClass, objectId.remoteId.c_str());
 
-    ECSqlStepStatus status = statement->Step();
-    if (ECSqlStepStatus::Error == status)
+    DbResult status = statement->Step();
+    if (BE_SQLITE_ROW != status && BE_SQLITE_DONE != status)
         {
         return CacheStatus::Error;
         }
-    if (ECSqlStepStatus::HasRow != status)
+    if (BE_SQLITE_ROW != status)
         {
         return CacheStatus::DataNotCached;
         }
@@ -820,7 +820,7 @@ IECInstancePtr DataSourceCache::ReadInstance(ObjectIdCR objectId)
         }
 
     auto statement = GetReadInstanceStatement(*ecClass, objectId.remoteId.c_str());
-    if (ECSqlStepStatus::HasRow != statement->Step())
+    if (BE_SQLITE_ROW != statement->Step())
         {
         return nullptr;
         }
@@ -875,7 +875,7 @@ IECInstancePtr DataSourceCache::ReadInstance(ECInstanceKeyCR instanceKey)
         }
 
     auto statement = GetReadInstanceStatement(*ecClass, instanceKey.GetECInstanceId());
-    if (ECSqlStepStatus::HasRow != statement->Step())
+    if (BE_SQLITE_ROW != statement->Step())
         {
         return nullptr;
         }
@@ -1776,8 +1776,8 @@ Utf8String DataSourceCache::ReadInstanceLabel(ObjectIdCR objectId)
 
     statement->BindText(1, objectId.remoteId.c_str(), IECSqlBinder::MakeCopy::No);
 
-    ECSqlStepStatus status = statement->Step();
-    if (status != ECSqlStepStatus::HasRow)
+    DbResult status = statement->Step();
+    if (status != BE_SQLITE_ROW)
         {
         return "";
         }
@@ -1823,8 +1823,8 @@ BentleyStatus DataSourceCache::ReadFileProperties(ECInstanceKeyCR instanceKey, U
 
     statement->BindId(1, instanceKey.GetECInstanceId());
 
-    ECSqlStepStatus status = statement->Step();
-    if (ECSqlStepStatus::HasRow != status)
+    DbResult status = statement->Step();
+    if (BE_SQLITE_ROW != status)
         {
         return ERROR;
         }

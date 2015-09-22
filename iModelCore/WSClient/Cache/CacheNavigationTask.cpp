@@ -491,5 +491,5 @@ bool CacheNavigationTask::IsObjectFileBacked(CacheTransactionCR txn, ECInstanceK
 
     statement->BindId(1, instance.GetECInstanceId());
 
-    return ECSqlStepStatus::HasRow == statement->Step();
+    return BE_SQLITE_ROW == statement->Step();
     }

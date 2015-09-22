@@ -200,8 +200,8 @@ BentleyStatus HierarchyManager::DeleteInstance(ECInstanceKeyCR instance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus HierarchyManager::DeleteInstances(ECSqlStatement& ecInstanceKeyStatement)
     {
-    ECSqlStepStatus status;
-    while (ECSqlStepStatus::HasRow == (status = ecInstanceKeyStatement.Step()))
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = ecInstanceKeyStatement.Step()))
         {
         ECClassId ecClassId = ecInstanceKeyStatement.GetValueInt64(0);
         ECInstanceId ecInstanceId = ecInstanceKeyStatement.GetValueId<ECInstanceId>(1);
@@ -210,7 +210,7 @@ BentleyStatus HierarchyManager::DeleteInstances(ECSqlStatement& ecInstanceKeySta
             return ERROR;
             }
         }
-    if (ECSqlStepStatus::Done != status)
+    if (BE_SQLITE_DONE != status)
         {
         return ERROR;
         }
@@ -424,8 +424,8 @@ ECInstanceKeyMultiMap& keysOut
     statement->BindInt64(1, source.GetECClassId());
     statement->BindId(2, source.GetECInstanceId());
 
-    ECSqlStepStatus status;
-    while (ECSqlStepStatus::HasRow == (status = statement->Step()))
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement->Step()))
         {
         ECClassId ecClassId = statement->GetValueInt64(0);
         ECInstanceId ecId = statement->GetValueId<ECInstanceId>(1);
@@ -433,5 +433,5 @@ ECInstanceKeyMultiMap& keysOut
         keysOut.insert({ecClassId, ecId});
         }
 
-    return ECSqlStepStatus::Done == status ? SUCCESS : ERROR;
+    return BE_SQLITE_DONE == status ? SUCCESS : ERROR;
     }

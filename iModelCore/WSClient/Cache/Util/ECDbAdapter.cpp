@@ -427,8 +427,8 @@ BentleyStatus ECDbAdapter::ExtractJsonInstanceArrayFromStatement(ECSqlStatement&
 
     JsonECSqlSelectAdapter adapter(statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
 
-    ECSqlStepStatus status;
-    while (ECSqlStepStatus::HasRow == (status = statement.Step()))
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement.Step()))
         {
         if (cancellationToken && cancellationToken->IsCanceled())
             {
@@ -443,7 +443,7 @@ BentleyStatus ECDbAdapter::ExtractJsonInstanceArrayFromStatement(ECSqlStatement&
             }
         }
 
-    if (ECSqlStepStatus::Done != status)
+    if (BE_SQLITE_DONE != status)
         {
         return ERROR;
         }
@@ -458,7 +458,7 @@ BentleyStatus ECDbAdapter::ExtractJsonInstanceFromStatement(ECSqlStatement& stat
     {
     Utf8String className(ecClass->GetName());
 
-    if (ECSqlStepStatus::HasRow != statement.Step())
+    if (BE_SQLITE_ROW != statement.Step())
         {
         jsonInstanceOut = Json::Value::null;
         return ERROR;
@@ -484,8 +484,8 @@ bvector<ECInstanceId>& ecIdsOut,
 ICancellationTokenPtr cancellationToken
 )
     {
-    ECSqlStepStatus status;
-    while (ECSqlStepStatus::HasRow == (status = statement.Step()))
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement.Step()))
         {
         if (cancellationToken && cancellationToken->IsCanceled())
             {
@@ -508,8 +508,8 @@ ECInstanceKeyMultiMap& keysOut,
 ICancellationTokenPtr cancellationToken
 )
     {
-    ECSqlStepStatus status;
-    while (ECSqlStepStatus::HasRow == (status = statement.Step()))
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement.Step()))
         {
         if (cancellationToken && cancellationToken->IsCanceled())
             {
@@ -576,7 +576,7 @@ int ECDbAdapter::CountClassInstances(ECClassCP ecClass)
         }
 
     int count = 0;
-    while (ECSqlStepStatus::HasRow == statement.Step())
+    while (BE_SQLITE_ROW == statement.Step())
         {
         count++;
         }
@@ -607,7 +607,7 @@ ECInstanceId ECDbAdapter::FindInstance(ECClassCP ecClass, Utf8CP whereQuery)
         return ECInstanceId();
         }
 
-    if (ECSqlStepStatus::HasRow != statement.Step())
+    if (BE_SQLITE_ROW != statement.Step())
         {
         return ECInstanceId();
         }
@@ -636,7 +636,7 @@ bset<ECInstanceId> ECDbAdapter::FindInstances(ECClassCP ecClass, Utf8CP whereQue
         return ids;
         }
 
-    while (ECSqlStepStatus::HasRow == statement.Step())
+    while (BE_SQLITE_ROW == statement.Step())
         {
         ids.insert(statement.GetValueId<ECInstanceId>(0));
         }
@@ -772,7 +772,7 @@ ECInstanceKey ECDbAdapter::RelateInstances(ECRelationshipClassCP relClass, ECIns
     statement->BindInt64(3, target.GetECClassId());
     statement->BindId(4, target.GetECInstanceId());
 
-    if (ECSqlStepStatus::Done != statement->Step(relationshipKey))
+    if (BE_SQLITE_DONE != statement->Step(relationshipKey))
         {
         return ECInstanceKey(relClass->GetId(), ECInstanceId());
         }
@@ -812,7 +812,7 @@ ECInstanceKey ECDbAdapter::FindRelationship(ECRelationshipClassCP relClass, ECIn
     statement->BindInt64(3, target.GetECClassId());
     statement->BindId(4, target.GetECInstanceId());
 
-    if (ECSqlStepStatus::HasRow != statement->Step())
+    if (BE_SQLITE_ROW != statement->Step())
         {
         return ECInstanceKey(relClass->GetId(), ECInstanceId());
         }
@@ -1005,15 +1005,15 @@ BentleyStatus ECDbAdapter::GetRelatedTargetKeys(ECRelationshipClassCP relClass, 
     statement.BindInt64(1, source.GetECClassId());
     statement.BindId(2, source.GetECInstanceId());
 
-    ECSqlStepStatus status;
-    while (ECSqlStepStatus::HasRow == (status = statement.Step()))
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement.Step()))
         {
         ECClassId targetClassId = statement.GetValueId<ECClassId>(0);
         ECInstanceId targetInstanceId = statement.GetValueId<ECInstanceId>(1);
         keysOut.insert({targetClassId, targetInstanceId});
         }
 
-    if (ECSqlStepStatus::Done != status)
+    if (BE_SQLITE_DONE != status)
         {
         return ERROR;
         }
