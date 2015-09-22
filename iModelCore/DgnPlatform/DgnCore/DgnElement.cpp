@@ -1138,7 +1138,7 @@ DgnDbStatus ElementGroup::InsertMember(DgnElementCR member) const
     statement->BindId(3, member.GetElementClassId());
     statement->BindId(4, member.GetElementId());
 
-    if (ECSqlStepStatus::Done != statement->Step())
+    if (BE_SQLITE_DONE != statement->Step())
         return DgnDbStatus::BadRequest;
 
     _OnMemberInserted(member); // notify subclass that member was inserted
@@ -1429,8 +1429,8 @@ DgnDbStatus DgnElement::MultiAspect::_DeleteInstance(DgnElementCR el)
     // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindId(1, m_instanceId);
-    BeSQLite::EC::ECSqlStepStatus status = stmt->Step();
-    return (BeSQLite::EC::ECSqlStepStatus::Done == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    BeSQLite::DbResult status = stmt->Step();
+    return (BeSQLite::BE_SQLITE_DONE == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1442,7 +1442,7 @@ DgnDbStatus DgnElement::MultiAspect::_InsertInstance(DgnElementCR el)
     stmt->BindId(1, el.GetElementId());
 
     BeSQLite::EC::ECInstanceKey key;
-    if (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step(key))
+    if (BeSQLite::BE_SQLITE_DONE != stmt->Step(key))
         return DgnDbStatus::WriteError;
 
     m_instanceId = key.GetECInstanceId();
@@ -1632,8 +1632,8 @@ DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el)
     {
     BeSQLite::EC::CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s (ECInstanceId) VALUES(?)", GetFullEcSqlClassName().c_str()));
     stmt->BindId(1, GetAspectInstanceId(el));
-    BeSQLite::EC::ECSqlStepStatus status = stmt->Step();
-    return (BeSQLite::EC::ECSqlStepStatus::Done == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    DbResult status = stmt->Step();
+    return (BE_SQLITE_DONE == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1644,8 +1644,8 @@ DgnDbStatus DgnElement::UniqueAspect::_DeleteInstance(DgnElementCR el)
     // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindId(1, GetAspectInstanceId(el));
-    BeSQLite::EC::ECSqlStepStatus status = stmt->Step();
-    return (BeSQLite::EC::ECSqlStepStatus::Done == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    DbResult status = stmt->Step();
+    return (BE_SQLITE_DONE == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1655,8 +1655,8 @@ DgnDbStatus DgnElement::Item::_DeleteInstance(DgnElementCR el)
     {
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementItem) " WHERE ECInstanceId=?");
     stmt->BindId(1, GetAspectInstanceId(el));
-    BeSQLite::EC::ECSqlStepStatus status = stmt->Step();
-    return (BeSQLite::EC::ECSqlStepStatus::Done == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    DbResult status = stmt->Step();
+    return (BE_SQLITE_DONE == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1669,7 +1669,7 @@ BeSQLite::EC::ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(
 
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindId(1, el.GetElementId());
-    if (BeSQLite::EC::ECSqlStepStatus::HasRow != stmt->Step())
+    if (BE_SQLITE_ROW != stmt->Step())
         return BeSQLite::EC::ECInstanceKey();
 
     // And we know the ID. See if such an instance actually exists.
@@ -1718,7 +1718,7 @@ DgnDbStatus DgnElement::Item::LoadPropertiesIntoInstance(ECN::IECInstancePtr& in
     b.Select("*").From(*ecclass).Where("ECInstanceId=?");
     EC::CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(b.ToString().c_str());
     stmt->BindId(1, el.GetElementId());
-    if (ECSqlStepStatus::HasRow != stmt->Step())
+    if (BE_SQLITE_ROW != stmt->Step())
         return DgnDbStatus::ReadError;
 
     ECInstanceECSqlSelectAdapter reader(*stmt);     // *** NEEDS WORK: Use a cached ECInstanceECSqlSelectAdapter!!!!!
@@ -1946,7 +1946,7 @@ DgnDbStatus InstanceBackedItem::_LoadProperties(DgnElementCR el)
 
     EC::CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement("SELECT * FROM " DGN_TABLE(DGN_CLASSNAME_ElementItem) " WHERE ECInstanceId=?");
     stmt->BindId(1, eid);
-    if (ECSqlStepStatus::HasRow != stmt->Step())
+    if (BE_SQLITE_ROW != stmt->Step())
         return DgnDbStatus::ReadError;
 
     ECInstanceECSqlSelectAdapter reader(*stmt);

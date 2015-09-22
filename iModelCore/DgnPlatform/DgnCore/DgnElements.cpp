@@ -1181,8 +1181,9 @@ DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat
     if (DgnDbStatus::Success != (stat=element._BindInsertParams(*statement)))
         return nullptr;
 
-    if (ECSqlStepStatus::Error == statement->Step())
+    if (BE_SQLITE_ERROR == statement->Step())
         {
+        //WIP: ECSQL now returns DbResult from step, so constraint failure can be detected...
         // SQLite doesn't tell us which constraint failed - check if it's the Code.
         auto existingElemWithCode = QueryElementIdByCode(element.m_code);
         if (existingElemWithCode.IsValid())

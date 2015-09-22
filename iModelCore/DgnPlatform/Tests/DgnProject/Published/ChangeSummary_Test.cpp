@@ -768,8 +768,8 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
     ECSqlStatus ecSqlStatus = ecSqlStmt.Prepare(*m_testDb, deleteECSql.c_str());
     ASSERT_TRUE(ECSqlStatus::Success == ecSqlStatus);
     ecSqlStmt.BindId(1, instanceKey.GetECInstanceId());
-    ECSqlStepStatus stepStatus = ecSqlStmt.Step();
-    ASSERT_TRUE(ECSqlStepStatus::Done == stepStatus);
+    DbResult stepStatus = ecSqlStmt.Step();
+    ASSERT_TRUE(BE_SQLITE_DONE == stepStatus);
 
     GetChangeSummaryFromCurrentTransaction(changeSummary);
 
@@ -796,7 +796,7 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
     ASSERT_TRUE(ECSqlStatus::Success == ecSqlStatus);
     ECInstanceKey structInstanceKey;
     stepStatus = ecSqlStmt.Step (structInstanceKey);
-    ASSERT_TRUE(ECSqlStepStatus::Done == stepStatus);
+    ASSERT_TRUE(BE_SQLITE_DONE == stepStatus);
 
     GetChangeSummaryFromCurrentTransaction(changeSummary);
 
@@ -920,8 +920,8 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
     ECSqlStatus ecSqlStatus = ecSqlStmt.Prepare(*m_testDb, deleteECSql.c_str());
     ASSERT_TRUE(ECSqlStatus::Success == ecSqlStatus);
     ecSqlStmt.BindId(1, instanceKey.GetECInstanceId());
-    ECSqlStepStatus stepStatus = ecSqlStmt.Step();
-    ASSERT_TRUE(ECSqlStepStatus::Done == stepStatus);
+    DbResult stepStatus = ecSqlStmt.Step();
+    ASSERT_TRUE(BE_SQLITE_DONE == stepStatus);
 
     m_testDb->SaveChanges();
 
@@ -940,7 +940,7 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
     ASSERT_TRUE(ECSqlStatus::Success == ecSqlStatus);
     ECInstanceKey structInstanceKey;
     stepStatus = ecSqlStmt.Step(structInstanceKey);
-    ASSERT_TRUE(ECSqlStepStatus::Done == stepStatus);
+    ASSERT_TRUE(BE_SQLITE_DONE == stepStatus);
 
     m_testDb->SaveChanges();
 
@@ -986,32 +986,32 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     ECSqlStatement statement;
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.Employee (FirstName,LastName) VALUES('John','Doe')");
     ECInstanceKey employeeKey;
-    ECSqlStepStatus stepStatus = statement.Step(employeeKey);
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    DbResult stepStatus = statement.Step(employeeKey);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.Company (Name) VALUES('AcmeWorks')");
     ECInstanceKey companyKey1;
     stepStatus = statement.Step(companyKey1);
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.Company (Name) VALUES('CmeaWorks')");
     ECInstanceKey companyKey2;
     stepStatus = statement.Step(companyKey2);
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.Hardware (Make,Model) VALUES('Tesla', 'Model-S')");
     ECInstanceKey hardwareKey1;
     stepStatus = statement.Step(hardwareKey1);
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.Hardware (Make,Model) VALUES('Toyota', 'Prius')");
     ECInstanceKey hardwareKey2;
     stepStatus = statement.Step(hardwareKey2);
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     ChangeSummary changeSummary(*m_testDb);
     GetChangeSummaryFromCurrentTransaction(changeSummary);
@@ -1058,7 +1058,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
 
     ECInstanceKey employeeCompanyKey;
     stepStatus = statement.Step(employeeCompanyKey);
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.EmployeeHardware (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
@@ -1069,7 +1069,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
 
     ECInstanceKey employeeHardwareKey;
     stepStatus = statement.Step(employeeHardwareKey);
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     changeSummary.Free();
     GetChangeSummaryFromCurrentTransaction(changeSummary);
@@ -1102,13 +1102,13 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     statement.Prepare(*m_testDb, "DELETE FROM StartupCompany.EmployeeHardware WHERE EmployeeHardware.ECInstanceId=?");
     statement.BindId(1, employeeHardwareKey.GetECInstanceId());
     stepStatus = statement.Step();
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "DELETE FROM StartupCompany.EmployeeCompany WHERE EmployeeCompany.ECInstanceId=?");
     statement.BindId(1, employeeCompanyKey.GetECInstanceId());
     stepStatus = statement.Step();
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.EmployeeHardware (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
@@ -1119,7 +1119,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
 
     ECInstanceKey employeeHardwareKey2;
     stepStatus = statement.Step(employeeHardwareKey2);
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.EmployeeCompany (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
@@ -1130,7 +1130,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
 
     ECInstanceKey employeeCompanyKey2;
     stepStatus = statement.Step(employeeCompanyKey2);
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     changeSummary.Free();
     GetChangeSummaryFromCurrentTransaction(changeSummary);
@@ -1187,32 +1187,32 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
     ECSqlStatement statement;
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.Employee (FirstName,LastName) VALUES('John','Doe')");
     ECInstanceKey employeeKey;
-    ECSqlStepStatus stepStatus = statement.Step(employeeKey);
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    DbResult stepStatus = statement.Step(employeeKey);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.Company (Name) VALUES('AcmeWorks')");
     ECInstanceKey companyKey1;
     stepStatus = statement.Step(companyKey1);
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.Company (Name) VALUES('CmeaWorks')");
     ECInstanceKey companyKey2;
     stepStatus = statement.Step(companyKey2);
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.Hardware (Make,Model) VALUES('Tesla', 'Model-S')");
     ECInstanceKey hardwareKey1;
     stepStatus = statement.Step(hardwareKey1);
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.Hardware (Make,Model) VALUES('Toyota', 'Prius')");
     ECInstanceKey hardwareKey2;
     stepStatus = statement.Step(hardwareKey2);
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     m_testDb->SaveChanges();
 
@@ -1259,7 +1259,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
 
     ECInstanceKey employeeCompanyKey;
     stepStatus = statement.Step(employeeCompanyKey);
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.EmployeeHardware (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
@@ -1270,7 +1270,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
 
     ECInstanceKey employeeHardwareKey;
     stepStatus = statement.Step(employeeHardwareKey);
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     m_testDb->SaveChanges();
 
@@ -1321,13 +1321,13 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
     statement.Prepare(*m_testDb, "DELETE FROM StartupCompany.EmployeeHardware WHERE EmployeeHardware.ECInstanceId=?");
     statement.BindId(1, employeeHardwareKey.GetECInstanceId());
     stepStatus = statement.Step();
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "DELETE FROM StartupCompany.EmployeeCompany WHERE EmployeeCompany.ECInstanceId=?");
     statement.BindId(1, employeeCompanyKey.GetECInstanceId());
     stepStatus = statement.Step();
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.EmployeeHardware (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
@@ -1338,7 +1338,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
 
     ECInstanceKey employeeHardwareKey2;
     stepStatus = statement.Step(employeeHardwareKey2);
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.EmployeeCompany (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
@@ -1349,7 +1349,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
 
     ECInstanceKey employeeCompanyKey2;
     stepStatus = statement.Step(employeeCompanyKey2);
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     m_testDb->SaveChanges();
 
@@ -1510,33 +1510,33 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
     ECSqlStatement stmt;
     Utf8CP ecsql = "SELECT el.ECInstanceId FROM dgn.GeometricElement el WHERE IsChangedInstance(?, el.GetECClassId(), el.ECInstanceId)";
     ECSqlStatus status = stmt.Prepare(*m_testDb, ecsql);
-    ASSERT_TRUE(status == ECSqlStatus::Success);
+    ASSERT_TRUE(status.IsSuccess());
     
     stmt.BindInt64(1, (int64_t) &changeSummary);
 
     bset<DgnElementId> changedElements;
-    ECSqlStepStatus stepStatus;
-    while ((stepStatus = stmt.Step()) == ECSqlStepStatus::HasRow)
+    DbResult stepStatus;
+    while ((stepStatus = stmt.Step()) == BE_SQLITE_ROW)
         {
         changedElements.insert(stmt.GetValueId<DgnElementId>(0));
         }
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
     ASSERT_EQ(insertedElements, changedElements);
 
     // Query elements changed due to changes to related geometry using ECSQL
     stmt.Finalize();
     ecsql = "SELECT el.ECInstanceId FROM dgn.GeometricElement el JOIN dgn.ElementGeom elg USING dgn.ElementOwnsGeom WHERE IsChangedInstance(?, elg.GetECClassId(), elg.ECInstanceId)";
     status = stmt.Prepare(*m_testDb, ecsql);
-    ASSERT_TRUE(status == ECSqlStatus::Success);
+    ASSERT_TRUE(status.IsSuccess());
 
     stmt.BindInt64(1, (int64_t) &changeSummary);
 
     changedElements.empty();
-    while ((stepStatus = stmt.Step()) == ECSqlStepStatus::HasRow)
+    while ((stepStatus = stmt.Step()) == BE_SQLITE_ROW)
         {
         changedElements.insert(stmt.GetValueId<DgnElementId>(0));
         }
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
     ASSERT_EQ(insertedElements, changedElements);
     
     // Query changed elements directly using the API
@@ -1587,12 +1587,12 @@ TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
     ECSqlStatement stmt;
     Utf8CP ecsql = "SELECT COUNT(*) FROM dgn.Element el WHERE IsChangedInstance(?, el.GetECClassId(), el.ECInstanceId)";
     ECSqlStatus ecSqlStatus = stmt.Prepare(*m_testDb, ecsql);
-    ASSERT_TRUE(ecSqlStatus == ECSqlStatus::Success);
+    ASSERT_TRUE(ecSqlStatus.IsSuccess());
 
     stmt.BindInt64(1, (int64_t) &changeSummary);
 
-    ECSqlStepStatus ecSqlStepStatus = stmt.Step();
-    ASSERT_TRUE(ecSqlStepStatus == ECSqlStepStatus::HasRow);
+    DbResult ecSqlStepStatus = stmt.Step();
+    ASSERT_TRUE(ecSqlStepStatus == BE_SQLITE_ROW);
 
     int actualChangeCount = stmt.GetValueInt(0);
     int expectedChangeCount = nSessions * nTransactionsPerSession;

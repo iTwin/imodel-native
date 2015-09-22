@@ -177,7 +177,7 @@ BentleyStatus DgnGeomParts::InsertElementGeomUsesParts(DgnElementId elementId, D
     statementPtr->BindId(1, elementId);
     statementPtr->BindId(2, geomPartId);
 
-    if (ECSqlStepStatus::Done != statementPtr->Step())
+    if (BE_SQLITE_DONE != statementPtr->Step())
         return BentleyStatus::ERROR;
 
     return BentleyStatus::SUCCESS;
@@ -237,7 +237,7 @@ BentleyStatus DgnGeomParts::DeleteGeomPart(DgnGeomPartId geomPartId)
     if (ECSqlStatus::Success != statementPtr->BindId(1, geomPartId))
         return BentleyStatus::ERROR;
 
-    if (ECSqlStepStatus::Done != statementPtr->Step())
+    if (BE_SQLITE_DONE != statementPtr->Step())
         return BentleyStatus::ERROR;
 
     return BentleyStatus::SUCCESS;

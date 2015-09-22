@@ -1179,7 +1179,7 @@ void dgn_TxnTable::ElementDep::AddDependency(EC::ECInstanceId const& relid, Chan
         " WHERE (DEP.ECInstanceId=?) AND (element.ECInstanceId=DEP.SourceECInstanceId)");
     stmt->BindId(1, relid);
     auto stat = stmt->Step();
-    BeAssert(stat == ECSqlStepStatus::HasRow);
+    BeAssert(stat == BE_SQLITE_ROW);
     DgnModelId mid = stmt->GetValueId<DgnModelId>(0);
 
     m_stmt.BindId(1, relid);

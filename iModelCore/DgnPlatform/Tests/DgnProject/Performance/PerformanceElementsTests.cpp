@@ -101,7 +101,7 @@ DgnDbStatus PerformanceElement1::_UpdateInDb()
 
     statement->BindId(4, GetElementId());
 
-    if (ECSqlStepStatus::Done != statement->Step())
+    if (BE_SQLITE_DONE != statement->Step())
         return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
@@ -177,7 +177,7 @@ DgnDbStatus PerformanceElement2::_UpdateInDb()
 
     statement->BindId(4, GetElementId());
 
-    if (ECSqlStepStatus::Done != statement->Step())
+    if (BE_SQLITE_DONE != statement->Step())
         return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
@@ -253,7 +253,7 @@ DgnDbStatus PerformanceElement3::_UpdateInDb()
 
     statement->BindId(4, GetElementId());
 
-    if (ECSqlStepStatus::Done != statement->Step())
+    if (BE_SQLITE_DONE != statement->Step())
         return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
@@ -329,7 +329,7 @@ DgnDbStatus PerformanceElement4::_UpdateInDb()
 
     statement->BindId(4, GetElementId());
 
-    if (ECSqlStepStatus::Done != statement->Step())
+    if (BE_SQLITE_DONE != statement->Step())
         return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
@@ -407,7 +407,7 @@ DgnDbStatus PerformanceElement4b::_UpdateInDb()
 
     statement->BindId(4, GetElementId());
 
-    if (ECSqlStepStatus::Done != statement->Step())
+    if (BE_SQLITE_DONE != statement->Step())
         return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
