@@ -262,7 +262,7 @@ DbResult InsertStructArrayStepTask::_Execute(ECInstanceId const& instanceId)
             }
         }
 
-    return BE_SQLITE_ERROR;
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
