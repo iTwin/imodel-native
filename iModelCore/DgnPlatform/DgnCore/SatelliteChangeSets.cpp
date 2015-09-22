@@ -155,13 +155,16 @@ SatelliteChangeSets::~SatelliteChangeSets()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SatelliteChangeSets::ChangeSetInfo::ChangeSetInfo(Statement& stmt)
     {
-    if (BE_SQLITE_ROW != stmt.Step())
+    DbResult rc = stmt.Step();
+    if (BE_SQLITE_ROW != rc)
         {
         m_isValid = false;
+        m_hadSqliteError = (BE_SQLITE_DONE != rc);
         return;
         }
 
     m_isValid = true;
+    m_hadSqliteError = false;
 
     int col = 0;
     m_sequenceNumber = stmt.GetValueInt64(col++);    // SequenceNumber
@@ -448,7 +451,16 @@ BentleyStatus SatelliteChangeSets::ApplyChangeSets(uint32_t& nChangesApplied, Db
             {
             ChangeSetInfo info(stmt);
             if (!info.IsValid())
+                {
+                if (info.HadSqliteError())
+                    {
+                    BeAssert(false);
+                    LOG.errorv("ApplyChangeSets - changeset  %ls ApplyChanges failed -- changes file appears to be corrupt", csFileName.c_str());
+                    db.AbandonChanges();
+                    return BSIERROR;
+                    }
                 break;
+                }
 
             SyncInfoChangeSet changeSet(db, (ChangeSetType::Patch==info.m_type));
             csfile.ExtractChangeSetBySequenceNumber(changeSet, info.m_sequenceNumber);
@@ -659,11 +671,11 @@ BentleyStatus SatelliteChangeSets::AttachToDb(Db& targetProject, BeFileNameCR db
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeDbGuid SatelliteChangeSets::GetTargetDbGuid()
+BeSQLite::BeGuid SatelliteChangeSets::GetTargetDbGuid()
     {
     Utf8String projectGuidStr;
     QueryProperty(projectGuidStr, Property::DgnDbGuid());
-    BeDbGuid guid;
+    BeSQLite::BeGuid guid;
     guid.FromString(projectGuidStr.c_str());
     return guid;
     }

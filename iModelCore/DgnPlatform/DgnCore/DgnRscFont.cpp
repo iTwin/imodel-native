@@ -448,7 +448,7 @@ DgnGlyph::T_Id DgnRscFont::Ucs4CharToFontChar(uint32_t ucs4Char, CharCP codePage
         return (DgnGlyph::T_Id)ucs4Char;
 
     // Otherwise normal locale multi-byte.
-    if (SUCCESS != BeStringUtilities::TranscodeStringDirect(localeBuffer, codePageString, (ByteCP)&ucs4Char, sizeof(ucs4Char), "UCS-4"))
+    if (SUCCESS != BeStringUtilities::TranscodeStringDirect(localeBuffer, codePageString, (Byte const*)&ucs4Char, sizeof(ucs4Char), "UCS-4"))
         return 0;
 
     if (1 == localeBuffer.size())

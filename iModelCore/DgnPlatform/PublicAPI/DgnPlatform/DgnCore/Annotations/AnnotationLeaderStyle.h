@@ -7,6 +7,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <Bentley/RefCounted.h>
+#include "AnnotationsCommon.h"
 #include "AnnotationPropertyBag.h"
 
 DGNPLATFORM_TYPEDEFS(AnnotationLeaderStylePropertyBag);
@@ -48,13 +49,15 @@ enum class AnnotationLeaderTerminatorType
 //=======================================================================================
 enum class AnnotationLeaderStyleProperty
 {
-    LineColor = 1, //!< (integer) @note int64_t representation of ElementColor
-    LineType = 2, //!< (integer) @note Must exist in the AnnotationLeaderLineType enumeration
-    LineWeight = 3, //!< (integer) @note Must be a standard line weight
-    TerminatorColor = 4, //!< (integer) @note int64_t representation of ElementColor
-    TerminatorScaleFactor = 5, //!< (real) @note Generally describes the length of the side of the box encompassing the terminator, as a factor of the first character's text height
-    TerminatorType = 6, //!< (integer) @note Must exist in the AnnotationLeaderTerminatorType enumeration
-    TerminatorWeight = 7 //!< (integer) @note Must be a standard line weight
+    LineColorType = 1, //!< (integer) @note Must exist in the AnnotationColorType enumeration
+    LineColorValue = 2, //!< (integer) @note int64_t representation of ElementColor
+    LineType = 3, //!< (integer) @note Must exist in the AnnotationLeaderLineType enumeration
+    LineWeight = 4, //!< (integer) @note Must be a standard line weight
+    TerminatorColorType = 5, //!< (integer) @note Must exist in the AnnotationColorType enumeration
+    TerminatorColorValue = 6, //!< (integer) @note int64_t representation of ElementColor
+    TerminatorScaleFactor = 7, //!< (real) @note Generally describes the length of the side of the box encompassing the terminator, as a factor of the first character's text height
+    TerminatorType = 8, //!< (integer) @note Must exist in the AnnotationLeaderTerminatorType enumeration
+    TerminatorWeight = 9 //!< (integer) @note Must be a standard line weight
 };
 
 //=======================================================================================
@@ -125,14 +128,18 @@ public:
     Utf8StringCR GetDescription() const { return m_description; }
     void SetDescription(Utf8CP value) { m_description = value; }
 
-    DGNPLATFORM_EXPORT ElementColor GetLineColor() const;
-    DGNPLATFORM_EXPORT void SetLineColor(ElementColor);
+    DGNPLATFORM_EXPORT AnnotationColorType GetLineColorType() const;
+    DGNPLATFORM_EXPORT void SetLineColorType(AnnotationColorType);
+    DGNPLATFORM_EXPORT ColorDef GetLineColorValue() const;
+    DGNPLATFORM_EXPORT void SetLineColorValue(ColorDef);
     DGNPLATFORM_EXPORT AnnotationLeaderLineType GetLineType() const;
     DGNPLATFORM_EXPORT void SetLineType(AnnotationLeaderLineType);
     DGNPLATFORM_EXPORT uint32_t GetLineWeight() const;
     DGNPLATFORM_EXPORT void SetLineWeight(uint32_t);
-    DGNPLATFORM_EXPORT ElementColor GetTerminatorColor() const;
-    DGNPLATFORM_EXPORT void SetTerminatorColor(ElementColor);
+    DGNPLATFORM_EXPORT AnnotationColorType GetTerminatorColorType() const;
+    DGNPLATFORM_EXPORT void SetTerminatorColorType(AnnotationColorType);
+    DGNPLATFORM_EXPORT ColorDef GetTerminatorColorValue() const;
+    DGNPLATFORM_EXPORT void SetTerminatorColorValue(ColorDef);
     DGNPLATFORM_EXPORT double GetTerminatorScaleFactor() const;
     DGNPLATFORM_EXPORT void SetTerminatorScaleFactor(double);
     DGNPLATFORM_EXPORT AnnotationLeaderTerminatorType GetTerminatorType() const;

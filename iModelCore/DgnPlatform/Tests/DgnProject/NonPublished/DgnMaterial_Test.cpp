@@ -26,93 +26,6 @@ public:
         }
 };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnMaterialsTest, TrueColors)
-    {
-    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
-    DgnColors& colors = m_project->Colors();
-
-    DgnColors::Color color1(ColorDef(255, 254, 253), "TestName1", "TestBook1");
-    DgnTrueColorId colorId = colors.Insert(color1);
-    EXPECT_TRUE(colorId.IsValid());
-    EXPECT_TRUE(colorId == color1.GetId());
-
-    DgnColors::Color color2(ColorDef(2,3,33), "Color2");
-    DgnTrueColorId colorId2 = colors.Insert(color2);
-    EXPECT_TRUE(colorId2.IsValid());
-
-    DgnColors::Color color3(ColorDef(2,3,33), "Color3"); // it is legal to have two colors with the same value
-    DgnTrueColorId colorId3 = colors.Insert(color3); 
-    EXPECT_TRUE(colorId3.IsValid());
-
-    DgnTrueColorId dup3 = colors.Insert(color3); 
-    EXPECT_TRUE(!dup3.IsValid());
-
-    DgnColors::Color color4(ColorDef(4,3,33), "Color4");
-    DgnTrueColorId colorId4 = colors.Insert(color4); 
-    EXPECT_TRUE(colorId4.IsValid());
-
-    DgnColors::Color dupColor(ColorDef(5,54,3), "TestName1", "TestBook1");
-    DgnTrueColorId dupColorId = colors.Insert(dupColor);
-    EXPECT_TRUE(!dupColorId.IsValid());
-
-    EXPECT_TRUE(4 == colors.MakeIterator().QueryCount());
-
-    int i=0;
-    for (auto& it : colors.MakeIterator())
-        {
-        if (it.GetId() == color1.GetId())
-            {
-            ++i;
-            EXPECT_TRUE(it.GetColor() == color1.GetColor());
-            EXPECT_TRUE(it.GetName() == color1.GetName());
-            EXPECT_TRUE(it.GetBook() == color1.GetBook());
-            }
-        else if (it.GetId() == color2.GetId())
-            {
-            ++i;
-            EXPECT_TRUE(it.GetColor() == color2.GetColor());
-            EXPECT_TRUE(it.GetName() == color2.GetName());
-            EXPECT_TRUE(it.GetBook() == color2.GetBook());
-            }
-        else if (it.GetId() == color3.GetId())
-            {
-            ++i;
-            EXPECT_TRUE(it.GetColor() == color3.GetColor());
-            EXPECT_TRUE(it.GetName() == color3.GetName());
-            EXPECT_TRUE(it.GetBook() == color3.GetBook());
-            }
-        else if (it.GetId() == color4.GetId())
-            {
-            ++i;
-            EXPECT_TRUE(it.GetColor() == color4.GetColor());
-            EXPECT_TRUE(it.GetName() == color4.GetName());
-            EXPECT_TRUE(it.GetBook() == color4.GetBook());
-            }
-        else
-            EXPECT_TRUE(false); // too many entries in iterator
-        }
-
-    EXPECT_TRUE(4 == i);
-
-    EXPECT_TRUE(colorId == colors.FindMatchingColor(color1.GetColor()));
-
-    DgnColors::Color toFind = colors.QueryColor(colorId);
-    EXPECT_TRUE(toFind.IsValid());
-    EXPECT_TRUE(toFind.GetId() == color1.GetId());
-    EXPECT_TRUE(toFind.GetColor() == color1.GetColor());
-    EXPECT_TRUE(toFind.GetName() == color1.GetName());
-    EXPECT_TRUE(toFind.GetBook() == color1.GetBook());
-
-    toFind = colors.QueryColorByName("TestName1", "TestBook1");
-    EXPECT_TRUE(toFind.IsValid());
-    EXPECT_TRUE(toFind.GetId() == color1.GetId());
-    EXPECT_TRUE(toFind.GetColor() == color1.GetColor());
-    EXPECT_TRUE(toFind.GetName() == color1.GetName());
-    EXPECT_TRUE(toFind.GetBook() == color1.GetBook());
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/15
@@ -197,4 +110,69 @@ TEST_F(DgnMaterialsTest, Materials)
 
     auto idfound = materials.QueryMaterialId(material2.GetName(), material2.GetPalette());
     EXPECT_TRUE(idfound == materialId2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Umar.Hayat                   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnMaterialsTest, Materials_Update)
+    {
+    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
+    DgnMaterials& materials= m_project->Materials();
+
+    DgnMaterials::Material material1("Material1", "Palette1", "descr of mat 1");
+    DgnMaterialId materialId = materials.Insert(material1);
+    EXPECT_TRUE(materialId.IsValid());
+    EXPECT_TRUE(materialId == material1.GetId());
+
+    DgnMaterials::Material toFind = materials.Query(materialId);
+    EXPECT_TRUE(toFind.IsValid());
+    EXPECT_TRUE(toFind.GetId() == material1.GetId());
+    EXPECT_TRUE(toFind.GetValue() == material1.GetValue());
+    EXPECT_TRUE(toFind.GetName() == material1.GetName());
+    EXPECT_TRUE(toFind.GetPalette() == material1.GetPalette());
+    EXPECT_TRUE(toFind.GetParentId() == material1.GetParentId());
+
+    // Update description
+    material1.SetDescr("Updated descriptoin of mat 1");
+    EXPECT_TRUE(DgnDbStatus::Success == materials.Update(material1));
+    toFind = materials.Query(materialId);
+    EXPECT_TRUE(toFind.IsValid());
+    EXPECT_TRUE(toFind.GetId() == material1.GetId());
+    EXPECT_TRUE(toFind.GetValue() == material1.GetValue());
+    EXPECT_TRUE(toFind.GetName() == material1.GetName());
+    EXPECT_TRUE(toFind.GetPalette() == material1.GetPalette());
+    EXPECT_TRUE(toFind.GetParentId() == material1.GetParentId());
+
+    // update pallete name ( invalid case )
+    material1.SetPalette("Updated pallete name of mat 1");
+    EXPECT_TRUE(DgnDbStatus::Success == materials.Update(material1));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Umar.Hayat                   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnMaterialsTest, Materials_Delete)
+    {
+    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
+    DgnMaterials& materials= m_project->Materials();
+
+    DgnMaterials::Material material1("Material1", "Palette1", "descr of mat 1");
+    DgnMaterialId materialId = materials.Insert(material1);
+    EXPECT_TRUE(materialId.IsValid());
+    EXPECT_TRUE(materialId == material1.GetId());
+
+    DgnMaterials::Material toFind = materials.Query(materialId);
+    EXPECT_TRUE(toFind.IsValid());
+    EXPECT_TRUE(toFind.GetId() == material1.GetId());
+    EXPECT_TRUE(toFind.GetValue() == material1.GetValue());
+    EXPECT_TRUE(toFind.GetName() == material1.GetName());
+    EXPECT_TRUE(toFind.GetPalette() == material1.GetPalette());
+    EXPECT_TRUE(toFind.GetParentId() == material1.GetParentId());
+
+    // Delete Material
+    EXPECT_TRUE(BE_SQLITE_OK == materials.Delete(materialId));
+
+    auto idfound = materials.QueryMaterialId(material1.GetName(), material1.GetPalette());
+    EXPECT_TRUE(!idfound.IsValid());
     }

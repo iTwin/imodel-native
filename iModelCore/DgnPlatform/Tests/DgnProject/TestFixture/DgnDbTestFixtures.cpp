@@ -58,9 +58,9 @@ TestElementPtr TestElement::Create(DgnDbR db, Render::ElemDisplayParamsCR ep, Dg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_InsertSecondary()
+DgnDbStatus TestElement::_InsertInDb()
 {
-    DgnDbStatus stat = T_Super::_InsertSecondary();
+    DgnDbStatus stat = T_Super::_InsertInDb();
     if (DgnDbStatus::Success != stat)
         return stat;
 

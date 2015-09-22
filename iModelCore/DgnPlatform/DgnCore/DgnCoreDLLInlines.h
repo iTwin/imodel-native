@@ -248,7 +248,7 @@ DG_INLINE double PatternParams::GetSecondaryAngle() const {return angle2;}
 DG_INLINE double PatternParams::GetScale() const {return scale;}
 DG_INLINE double PatternParams::GetTolerance() const {return tolerance;}
 DG_INLINE WCharCP PatternParams::GetCellName() const {return cellName;}
-DG_INLINE DgnElementId PatternParams::GetCellId() const {return DgnElementId(cellId);}
+DG_INLINE DgnElementId PatternParams::GetCellId() const {return DgnElementId((uint64_t)cellId);}
 DG_INLINE int32_t PatternParams::GetMinLine() const {return minLine;}
 DG_INLINE int32_t PatternParams::GetMaxLine() const {return maxLine;}
 DG_INLINE ColorDef PatternParams::GetColor() const {return color;}

@@ -1019,7 +1019,7 @@ BentleyStatus DgnViewAssociationData::FromPropertiesJson(Json::Value const& val)
     T_Super::FromPropertiesJson(val);
     if (val.isMember("ViewId"))
         {
-        m_viewId = DgnViewId(val["ViewId"].asInt64());
+        m_viewId = DgnViewId(val["ViewId"].asUInt64());
         m_viewGeometry = val["ViewGeometry"];
         }
     return BSISUCCESS;

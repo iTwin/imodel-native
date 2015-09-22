@@ -37,7 +37,7 @@ BentleyStatus   LsRasterImageComponent::_GetRasterTexture (uint8_t const*& image
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   LsRasterImageComponent::_GetRasterTextureWidth (double& width) const 
+BentleyStatus   LsRasterImageComponent::_GetTextureWidth (double& width) const 
     {
     if (0 == (m_flags & FlagMask_TrueWidth))
         return ERROR;

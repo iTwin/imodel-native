@@ -61,7 +61,7 @@ public:
         //! @param[in] width    The width of the texture
         //! @param[in] height   The height of the texture
         //! @param[in] flags    Additional texture flags
-        TextureData(Format format, ByteCP data, size_t dataSize, uint32_t width, uint32_t height, Flags flags = Flags::None)
+        TextureData(Format format, Byte const* data, size_t dataSize, uint32_t width, uint32_t height, Flags flags = Flags::None)
             : m_data(data, data + dataSize), m_width(width), m_height(height), m_format(format), m_flags(flags)  {}
 
         Format GetFormat() const { return m_format; }//!< The format of the texture data
@@ -127,7 +127,7 @@ public:
             DGNPLATFORM_EXPORT uint32_t     GetWidth() const;       //!< The texture width
             DGNPLATFORM_EXPORT uint32_t     GetHeight() const;      //!< The texture height
             DGNPLATFORM_EXPORT size_t       GetDataSize() const;    //!< The number of bytes in the encoded texture data
-            DGNPLATFORM_EXPORT ByteCP       GetDataBytes() const;   //!< The encoded texture data
+            DGNPLATFORM_EXPORT Byte const*  GetDataBytes() const;   //!< The encoded texture data
 
             Entry const& operator*() const { return *this; }
         };

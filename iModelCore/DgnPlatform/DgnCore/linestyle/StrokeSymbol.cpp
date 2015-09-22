@@ -172,7 +172,7 @@ StatusInt LsSymbolReference::Output (ViewContextP context, LineStyleSymbCP modif
         }
 
     ClipPlaneSet clips (convexClip);
-    context->DrawSymbol (m_symbol.get (), &transform, &clips, !GetUseColor(), !GetUseWeight());
+    context->DrawSymbol (m_symbol.get (), &transform, &clips, !GetUseElementColor(), !GetUseElementWeight());
 
     return  SUCCESS;
     }

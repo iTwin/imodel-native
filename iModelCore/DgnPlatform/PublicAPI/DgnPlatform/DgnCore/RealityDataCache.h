@@ -19,9 +19,10 @@ DGNPLATFORM_REF_COUNTED_PTR(RealityDataWorkerThread)
 DGNPLATFORM_REF_COUNTED_PTR(IRealityDataBase)
 DGNPLATFORM_REF_COUNTED_PTR(RealityDataCache)
 
+DGNPLATFORM_REF_COUNTED_PTR(IRealityDataStorageResponseReceiver)
 DGNPLATFORM_REF_COUNTED_PTR(IRealityDataStorageBase)
-DGNPLATFORM_REF_COUNTED_PTR(InMemoryRealityDataStorage)
 DGNPLATFORM_REF_COUNTED_PTR(BeSQLiteRealityDataStorage)
+DGNPLATFORM_REF_COUNTED_PTR(InMemoryRealityDataStorage)
 
 DGNPLATFORM_REF_COUNTED_PTR(IRealityDataSourceResponseReceiver)
 DGNPLATFORM_REF_COUNTED_PTR(IRealityDataSourceBase)
@@ -34,6 +35,7 @@ struct IsIdlePredicate;
 struct AllThreadsIdlePredicate;
 struct FileRealityDataSourceRequest;
 struct HttpRealityDataSourceRequest;
+struct ThreadPoolQueueNotEmptyPredicate;
 //__PUBLISH_SECTION_START__
 
 #define DEFINE_MEMBER_TYPE_CHECKER(MemberType) \
@@ -69,20 +71,14 @@ struct RealityDataCacheOptions;
 struct IRealityDataBase : IRefCounted
     {
     friend struct RealityDataCache;
-
-    private:
-        bool m_initialized;
-        void SetInitialized() {m_initialized=true;}
-
+    
     protected:
-        IRealityDataBase() : m_initialized(false) {}
         virtual ~IRealityDataBase() {}
         virtual Utf8CP _GetId() const = 0;
         virtual bool _IsExpired() const = 0;
+        virtual BentleyStatus _InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const&) = 0;
 
     public:
-        bool IsInitialized() const {return m_initialized;}
-
         // properties
         DGNPLATFORM_EXPORT Utf8CP GetId() const;
         DGNPLATFORM_EXPORT bool IsExpired() const;
@@ -113,7 +109,7 @@ struct IRealityData : _StorageType::Data, _SourceType::Data
     struct RequestOptions : StorageType::SelectOptions, SourceType::RequestOptions
         {
         };
-
+    
     IRealityData() {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT}
 
     //! The virtual destructor which provides some compile-time assertions for the
@@ -130,6 +126,15 @@ struct IRealityData : _StorageType::Data, _SourceType::Data
 
 //__PUBLISH_SECTION_END__
 //=======================================================================================
+// @bsiclass                                        Grigas.Petraitis            04/2015
+//=======================================================================================
+enum class SchedulingMethod
+    {
+    FIFO,   // queue
+    LIFO    // stack
+    };
+
+//=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
 template<typename T> struct ThreadSafeQueue
@@ -141,23 +146,53 @@ template<typename T> struct ThreadSafeQueue
         ItemPtr prev;
         ItemPtr next;
         T       data;
-        Item(T const& d, Item* p, Item* n) : prev(p), next(n), data(d) {}
-        static ItemPtr Create(T const& d, Item* p, Item* n) {return new Item(d, p, n);}
+        Item(T d, Item* p, Item* n) : prev(p), next(n), data(d) {}
+        static ItemPtr Create(T d, Item* p, Item* n) {return new Item(d, p, n);}
         };
 
+    struct Iterator
+    {
+    friend struct ThreadSafeQueue<T>;
+    private:
+        Item* m_curr;
+        Iterator(Item* first) : m_curr(first) {}
+    public:
+        bool IsValid() const {return nullptr != m_curr;}
+        Iterator& operator++() {m_curr = m_curr->next.get(); return *this;}
+        T const& operator*() {return m_curr->data;}
+        bool operator!=(Iterator const& other) const {return m_curr != other.m_curr;}
+        bool operator==(Iterator const& other) const {return m_curr == other.m_curr;}
+    };
+
 private:
-    BeConditionVariable m_cv;
+    mutable BeConditionVariable m_cv;
     ItemPtr m_first;
     ItemPtr m_last;
+    unsigned m_count;
+    SchedulingMethod m_schedulingMethod;
 
+private:
+    bool PopBack(T* element);
+    bool PopFront(T* element);
+    bool Pop(T* element);
+    
 public:
-    BeConditionVariable& GetConditionVariable() {return m_cv;}
-
-public:
-    DGNPLATFORM_EXPORT void Push(T const& element);
+    ThreadSafeQueue(SchedulingMethod defaultSchedulingMethod = SchedulingMethod::FIFO) : m_count(0), m_schedulingMethod(defaultSchedulingMethod) {}
+    DGNPLATFORM_EXPORT void PushBack(T element);
+    DGNPLATFORM_EXPORT void PushFront(T element);
     DGNPLATFORM_EXPORT bool Pop(T& element);
-    DGNPLATFORM_EXPORT void Clear();
+    DGNPLATFORM_EXPORT bool PopBack(T& element);
+    DGNPLATFORM_EXPORT bool PopFront(T& element);
+    DGNPLATFORM_EXPORT bool Pop();
+    DGNPLATFORM_EXPORT bool PopBack();
+    DGNPLATFORM_EXPORT bool PopFront();
     DGNPLATFORM_EXPORT bool IsEmpty() const;
+    DGNPLATFORM_EXPORT unsigned Size() const;
+    BeConditionVariable& GetConditionVariable() const {return m_cv;}
+    DGNPLATFORM_EXPORT Iterator begin() const;
+    DGNPLATFORM_EXPORT Iterator end() const;
+    DGNPLATFORM_EXPORT void Erase(Iterator const& iterator);
+    DGNPLATFORM_EXPORT void Clear();
 };
 
 //=======================================================================================
@@ -202,6 +237,7 @@ protected:
 //=======================================================================================
 struct RealityDataWorkerThread : RealityDataThread
 {
+    friend struct RealityDataThreadPool;
     friend struct ::HasWorkOrTerminatesPredicate;
     friend struct ::IsIdlePredicate;
         
@@ -220,7 +256,7 @@ private:
     RealityDataWorkPtr          m_currentWork;
     uint64_t                    m_idleSince;
     uint64_t                    m_busySince;
-    IStateListener*             m_stateListener;
+    IStateListenerPtr           m_stateListener;
 
     void SetIsBusy(bool);
 
@@ -254,33 +290,56 @@ struct EXPORT_VTABLE_ATTRIBUTE RealityDataThreadPool : RefCounted<RealityDataWor
 private:
     int                         m_maxIdleThreads;
     int                         m_maxThreads;
+    bool                        m_isTerminating;
     mutable BeConditionVariable m_threadsCV;
     mutable BeMutex             m_workQueueCS;
     bmap<RealityDataWorkerThread*, bool> m_threads;
     ThreadSafeQueue<RealityDataWorkPtr> m_workQueue;
-
-private:
-    RealityDataThreadPool(int maxThreads, int maxIdleThreads) : m_maxThreads(maxThreads), m_maxIdleThreads(maxIdleThreads), m_threadsCV() {}
+    
+protected:
+    RealityDataThreadPool(int maxThreads, int maxIdleThreads, SchedulingMethod schedulingMethod) 
+        : m_workQueue(schedulingMethod), m_maxThreads(maxThreads), m_maxIdleThreads(maxIdleThreads), m_isTerminating(false)
+        {}
+    ThreadSafeQueue<RealityDataWorkPtr>& GetQueue() {return m_workQueue;}
+    DGNPLATFORM_EXPORT virtual void _OnThreadBusy(RealityDataWorkerThread& thread) override;
+    DGNPLATFORM_EXPORT virtual void _OnThreadIdle(RealityDataWorkerThread& thread) override;
+    DGNPLATFORM_EXPORT virtual bool _AssignWork(RealityDataWorkerThread& thread);
     RealityDataWorkerThreadPtr CreateThread();
     RealityDataWorkerThreadPtr GetIdleThread() const;
     bool ShouldCreateNewThread() const;
-
-protected:
-    DGNPLATFORM_EXPORT virtual void _OnThreadBusy(RealityDataWorkerThread& thread) override;
-    DGNPLATFORM_EXPORT virtual void _OnThreadIdle(RealityDataWorkerThread& thread) override;
+    bool IsTerminating() const {return m_isTerminating;}
 
 public:
     //! NOT PUBLISHED: needed for tests
     DGNPLATFORM_EXPORT void WaitUntilAllThreadsIdle() const;
 
 public:
-    static RealityDataThreadPoolPtr Create(int maxThreads, int maxIdleThreads) {return new RealityDataThreadPool(maxThreads, maxIdleThreads);}
+    static RealityDataThreadPoolPtr Create(int maxThreads, int maxIdleThreads, SchedulingMethod schedulingMethod) {return new RealityDataThreadPool(maxThreads, maxIdleThreads, schedulingMethod);}
     DGNPLATFORM_EXPORT virtual ~RealityDataThreadPool();
     DGNPLATFORM_EXPORT int  GetThreadsCount() const;
     DGNPLATFORM_EXPORT void QueueWork(RealityDataWork& work);
+    DGNPLATFORM_EXPORT void Terminate();
 };
 
 //__PUBLISH_SECTION_START__
+//======================================================================================
+//! The response of reality data requests.
+// @bsiclass                                        Grigas.Petraitis           03/2015
+//======================================================================================
+template<typename ResultType> struct RealityDataResponse : RefCountedBase
+{
+private:
+    ResultType          m_result;
+    Utf8String          m_id;
+    IRealityDataBase&   m_data;
+protected:
+    RealityDataResponse(ResultType result, Utf8CP id, IRealityDataBase& data) : m_result(result), m_id(id), m_data(data) {}
+public:
+    ResultType GetResult() const {return m_result;}
+    Utf8CP GetId() const {return m_id.c_str();}
+    IRealityDataBase& GetData() const {return m_data;}
+};
+
 //=======================================================================================
 //! The result of reality data storage operations.
 // @bsiclass                                        Grigas.Petraitis            10/2014
@@ -290,18 +349,18 @@ enum class RealityDataStorageResult
     Error,
     NotFound,
     Success,
+    Queued,
+    Pending,
     };
 
 //=======================================================================================
 //! Interface for a persist operation.
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
-struct IRealityDataStoragePersistHandler
+struct IRealityDataStoragePersistHandler : RefCountedBase
     {
     friend struct RealityDataCache;
     protected:
-        virtual ~IRealityDataStoragePersistHandler() {}
-
         //! Called to persist the reality data into reality data storage.
         virtual RealityDataStorageResult _Persist() const = 0;
 
@@ -315,9 +374,14 @@ struct IRealityDataStoragePersistHandler
 //! interface instead of this one.
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
-struct IRealityDataStorageBase : RefCountedBase
+struct EXPORT_VTABLE_ATTRIBUTE IRealityDataStorageBase : RefCountedBase
 {
     friend struct RealityDataCache;
+    
+    //===================================================================================
+    // @bsiclass                                        Grigas.Petraitis        03/2015
+    //===================================================================================
+    struct SelectOptions : virtual IRefCounted {};
 
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        03/2015
@@ -329,9 +393,20 @@ struct IRealityDataStorageBase : RefCountedBase
         };
     
 protected:
+    virtual DGNPLATFORM_EXPORT ~IRealityDataStorageBase();
+
     //! The unique id of this reality data storage. 
     //! @warning This id must match the id returned by the static StorageId() function.
-    virtual Utf8CP _GetStorageId() const = 0;
+    virtual Utf8String _GetStorageId() const = 0;
+
+    //! Called during the cache termination process. The storage is supposed to terminate all
+    //! its worker threads here.
+    virtual void _Terminate() {}
+    
+//__PUBLISH_SECTION_END__
+public:
+    DGNPLATFORM_EXPORT void Terminate();
+//__PUBLISH_SECTION_START__
 };
 
 //=======================================================================================
@@ -344,9 +419,11 @@ protected:
 //!   and has a constructor which takes a reference of the implementation instance as the 
 //!   first parameter and a const reference of the data as the second parameter.
 //! - Define a function which returns the ID of the storage implementation:
-//!   @code static Utf8CP StorageId() @endcode
-//! - Define a member function: @code RealityDataStorageResult Select(Data&, Utf8CP, SelectOptions const&)
+//!   @code static Utf8String StorageId() @endcode
+//! - Define a member function: @code RealityDataStorageResult Select(Data&, Utf8CP, SelectOptions const&, IRealityDataStorageResponseReceiver&)
 //!   @endcode
+//! - Call the `_OnResponseReceived` callback function of the response receiver
+//!   that is passed to the `Request` function.
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
 template<class Derived>
@@ -363,10 +440,32 @@ struct IRealityDataStorage : IRealityDataStorageBase
         static_assert(has_member_type_SelectOptions<Derived>::value, "IRealityDataStorage implementation must have an inner struct SelectOptions.");
         static_assert(has_member_type_PersistHandler<Derived>::value, "IRealityDataStorage implementation must have an inner struct PersistHandler.");
         static_assert(std::is_base_of<IRealityDataStoragePersistHandler, typename Derived::PersistHandler>::value, "PersistHandler must implement IRealityDataStoragePersistHandler.");
-        static_assert(has_member_StorageId<Derived>::value, "IRealityDataStorage implementation must have a static Utf8CP StorageId() function.");
-        static_assert(std::is_same<decltype(Derived::StorageId()), Utf8CP>::value, "The return type of StorageId() function must be Utf8CP.");
+        static_assert(has_member_StorageId<Derived>::value, "IRealityDataStorage implementation must have a static Utf8String StorageId() function.");
+        static_assert(std::is_same<decltype(Derived::StorageId()), Utf8String>::value, "The return type of StorageId() function must be Utf8String.");
         static_assert(has_member_Select<Derived>::value, "IRealityDataStorage implementation must have a static RealityDataStorageResult Select(Data&, Utf8CP, SelectOptions const&) function.");
         }
+    };
+
+//======================================================================================
+//! The response of reality data storage.
+// @bsiclass                                        Grigas.Petraitis           04/2015
+//======================================================================================
+struct RealityDataStorageResponse : RealityDataResponse<RealityDataStorageResult>
+{
+private:
+    RealityDataStorageResponse(RealityDataStorageResult result, Utf8CP id, IRealityDataBase& data) : RealityDataResponse(result, id, data) {}
+public:
+    static RefCountedPtr<RealityDataStorageResponse> Create(RealityDataStorageResult result, Utf8CP id, IRealityDataBase& data) {return new RealityDataStorageResponse(result, id, data);}
+};
+
+//======================================================================================
+//! Interface for a reality data storage response receiver.
+// @bsiclass                                        Grigas.Petraitis           04/2015
+//======================================================================================
+struct IRealityDataStorageResponseReceiver : virtual IRefCounted
+    {
+    //! Called to notify the receiver with a response.
+    virtual void _OnResponseReceived(RealityDataStorageResponse const&, IRealityDataStorageBase::SelectOptions const&, bool isAsync) = 0;
     };
 
 //=======================================================================================
@@ -380,9 +479,32 @@ enum class RealityDataSourceResult
     Error_NoConnection,
     Error_GatewayTimeout,
     Error_NotFound,
+    Error_AccessDenied,
+    
+    Cancelled,
+    Ignored,
     Pending,
     NotModified,
     Success,
+    Queued,
+    };
+
+//=======================================================================================
+//! Interface for a request operation.
+// @bsiclass                                        Grigas.Petraitis            04/2015
+//=======================================================================================
+struct IRealityDataSourceRequestHandler : RefCountedBase
+    {
+    friend struct RealityDataCache;
+    protected:
+        //! Called to request reality data from reality data source.
+        virtual RealityDataSourceResult _Request() const = 0;
+
+        //! Is the request already handled.
+        virtual bool _IsHandled() const = 0;
+
+        //! Return the data object.
+        virtual IRealityDataBase const* _GetData() const = 0;
     };
 
 //=======================================================================================
@@ -391,9 +513,15 @@ enum class RealityDataSourceResult
 //! interface instead of this one.
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
-struct IRealityDataSourceBase : RefCountedBase
+struct EXPORT_VTABLE_ATTRIBUTE IRealityDataSourceBase : RefCountedBase
 {   
     friend struct RealityDataCache;
+    friend struct CombinedRealityDataSourceBase;
+
+    //===================================================================================
+    // @bsiclass                                        Grigas.Petraitis        03/2015
+    //===================================================================================
+    struct RequestOptions : virtual IRefCounted {};
 
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        03/2015
@@ -405,9 +533,26 @@ struct IRealityDataSourceBase : RefCountedBase
         };
     
 protected:
+    DGNPLATFORM_EXPORT virtual ~IRealityDataSourceBase();
+
     //! The unique id of this reality data source. 
     //! @warning This id must match the id returned by the static SourceId() function.
-    virtual Utf8CP _GetSourceId() const = 0;
+    virtual Utf8String _GetSourceId() const = 0;
+
+    //! Called during the cache termination process. The source is supposed to terminate all
+    //! its worker threads here.
+    virtual void _Terminate() {}
+
+    //! The abstract function that might be called to request data. The imeplementations should simply
+    //! forward requests to their more specialized `Request` functions.
+    //! @note It is guaranteed that the arguments can be cast to their derived classes, provided by the implementation.
+    virtual RealityDataSourceResult _Request(Data&, bool& handled, Utf8CP, RequestOptions const&, IRealityDataSourceResponseReceiver&) = 0;
+
+//__PUBLISH_SECTION_END__
+public:
+    DGNPLATFORM_EXPORT void Terminate();
+    DGNPLATFORM_EXPORT RealityDataSourceResult Request(Data&, bool& handled, Utf8CP, RequestOptions const&, IRealityDataSourceResponseReceiver&);
+//__PUBLISH_SECTION_START__
 };
 
 //=======================================================================================
@@ -416,9 +561,10 @@ protected:
 //!
 //! All IRealityDataSource implementations have these requirements:
 //! - Define a nested `RequestOptions` structure.
+//! - Define a nested `RequestHandler` structure which implements @ref IRealityDataSourceRequestHandler;
 //! - Define a function which returns the ID of the source implementation:
-//!   @code static Utf8CP SourceId() @endcode
-//! - Define a member function: @code RealityDataSourceResult Request(Data&, Utf8CP, RequestOptions const&, IRealityDataResponseReceiver&)
+//!   @code static Utf8String SourceId() @endcode
+//! - Define a member function: @code RealityDataSourceResult Request(Data&, bool&, Utf8CP, RequestOptions const&, IRealityDataSourceResponseReceiver&)
 //!   @endcode
 //! - Call the `_OnResponseReceived` callback function of the response receiver
 //!   that is passed to the `Request` function.
@@ -435,8 +581,8 @@ struct IRealityDataSource : IRealityDataSourceBase
     virtual ~IRealityDataSource()
         {
         static_assert(has_member_type_RequestOptions<Derived>::value, "IRealityDataSource implementation must have an inner struct RequestOptions.");
-        static_assert(has_member_SourceId<Derived>::value, "IRealityDataSource implementation must have a static Utf8CP SourceId() function.");
-        static_assert(std::is_same<decltype(Derived::SourceId()), Utf8CP>::value, "The return type of SourceId() function must be Utf8CP.");
+        static_assert(has_member_SourceId<Derived>::value, "IRealityDataSource implementation must have a static Utf8String SourceId() function.");
+        static_assert(std::is_same<decltype(Derived::SourceId()), Utf8String>::value, "The return type of SourceId() function must be Utf8String.");
         static_assert(has_member_Request<Derived>::value, "IRealityDataSource implementation must have a static RealityDataSourceResult Request(Data&, Utf8CP, RequestOptions const&, IRealityDataSourceResponseReceiver&) function.");
         }
     };
@@ -445,28 +591,96 @@ struct IRealityDataSource : IRealityDataSourceBase
 //! The response of reality data source.
 // @bsiclass                                        Grigas.Petraitis           03/2015
 //======================================================================================
-struct RealityDataSourceResponse
+struct RealityDataSourceResponse : RealityDataResponse<RealityDataSourceResult>
 {
 private:
-    RealityDataSourceResult     m_result;
-    Utf8String                  m_id;
-    IRealityDataBase*           m_data;
+    RealityDataSourceResponse(RealityDataSourceResult result, Utf8CP id, IRealityDataBase& data) : RealityDataResponse(result, id, data) {}
 public:
-    RealityDataSourceResponse(RealityDataSourceResult result, Utf8CP id, IRealityDataBase* data = nullptr) : m_result(result), m_id(id), m_data(data) {}
-    RealityDataSourceResult GetResult() const {return m_result;}
-    Utf8CP GetId() const {return m_id.c_str();}
-    IRealityDataBase* GetData() const {return m_data;}
+    static RefCountedPtr<RealityDataSourceResponse> Create(RealityDataSourceResult result, Utf8CP id, IRealityDataBase& data) {return new RealityDataSourceResponse(result, id, data);}
 };
 
 //======================================================================================
 //! Interface for a reality data source response receiver.
 // @bsiclass                                        Grigas.Petraitis           03/2015
 //======================================================================================
-struct IRealityDataSourceResponseReceiver : RefCountedBase
+struct IRealityDataSourceResponseReceiver : virtual IRefCounted
     {
     //! Called to notify the receiver with a response.
-    virtual void _OnResponseReceived(RealityDataSourceResponse const&) = 0;
+    virtual void _OnResponseReceived(RealityDataSourceResponse const&, IRealityDataSourceBase::RequestOptions const&) = 0;
     };
+
+//=======================================================================================
+//! The base class for all combined reality data sources.
+//! @warning Combined reality data source implementations should derive from the 
+//! @ref CombinedRealityDataSource class instead of this one.
+// @bsiclass                                        Grigas.Petraitis            04/2015
+//=======================================================================================
+struct CombinedRealityDataSourceBase : IRealityDataSourceBase
+{
+    //===================================================================================
+    //! Interface for CombinedRealityDataSource data. All reality data using this kind of 
+    //! source must implement this interface.
+    // @bsiclass                                        Grigas.Petraitis        04/2015
+    //===================================================================================
+    struct Data : virtual IRealityDataSourceBase::Data
+        {
+        friend struct CombinedRealityDataSourceBase;
+        protected:
+            virtual IRealityDataSourceBase& _PickDataSource(Utf8CP id, bmap<Utf8String, IRealityDataSourceBasePtr> availableSources) = 0;
+        };
+
+private:
+    bmap<Utf8String, IRealityDataSourceBasePtr> m_sources;
+protected:
+    DGNPLATFORM_EXPORT virtual void _Terminate() override;
+    DGNPLATFORM_EXPORT static Utf8String GetIdFormat(int numSources);
+    DGNPLATFORM_EXPORT void RegisterSource(IRealityDataSourceBase&);
+public:
+    DGNPLATFORM_EXPORT RealityDataSourceResult Request(Data&, bool&, Utf8CP, RequestOptions const&, IRealityDataSourceResponseReceiver&);
+};
+
+//=======================================================================================
+//! Reality data source which takes multiple data sources as template parameters and 
+//! allows the data to choose which source it should be initialized from.
+// @bsiclass                                        Grigas.Petraitis            04/2015
+//=======================================================================================
+template<class... Sources>
+struct CombinedRealityDataSource : CombinedRealityDataSourceBase
+{
+    struct Data : CombinedRealityDataSourceBase::Data, Sources::Data... {};
+    struct RequestOptions : Sources::RequestOptions... {};
+
+private:
+    CombinedRealityDataSource() {}
+    template<class Source> void RegisterSources(Source* source) {RegisterSource(*source);}
+    template<class Source> void RegisterSources(Source* source, Sources*... sources)
+        {
+        if (nullptr != source)
+            {
+            RegisterSources(source);
+            RegisterSources(sources...);
+            }
+        }
+
+protected:
+    virtual Utf8String _GetSourceId() const override {return SourceId();}
+    virtual RealityDataSourceResult _Request(IRealityDataSourceBase::Data& data, bool& handled, Utf8CP id, IRealityDataSourceBase::RequestOptions const& options, IRealityDataSourceResponseReceiver& responseReceiver) override
+        {
+        return Request(dynamic_cast<CombinedRealityDataSourceBase::Data&>(data), handled, id, dynamic_cast<CombinedRealityDataSourceBase::RequestOptions const&>(options), responseReceiver);
+        }
+
+public:
+    //! The id of this storage.
+    static Utf8String SourceId() {return Utf8PrintfString(GetIdFormat(sizeof...(Sources)).c_str(), Sources::SourceId()...);}
+
+    //! Create a new instance of CombinedRealityDataSource.
+    static RefCountedPtr<CombinedRealityDataSource<Sources...>> Create(Sources&... sources)
+        {
+        CombinedRealityDataSource<Sources...>* source = new CombinedRealityDataSource<Sources...>();
+        source->RegisterSources(&sources...);
+        return source;
+        }
+};
 
 //=======================================================================================
 //! Options for @ref RealityDataCache::Get request function.
@@ -475,22 +689,48 @@ struct IRealityDataSourceResponseReceiver : RefCountedBase
 struct RealityDataCacheOptions : virtual IRefCounted
     {
     private:
-        bool m_returnExpired;
         bool m_requestFromSource;
+        bool m_useStorage;
+        bool m_removeFromArrivals;
+        bool m_saveInArrivals;
 
     public:
         //! Creates the options object.
-        //! @param[in] returnExpired        Should the cache return reality data even if it's expired.
         //! @param[in] requestFromSource    Should the cache request for fresh data if it's expired or doesn't exist.
-        RealityDataCacheOptions(bool returnExpired, bool requestFromSource) : m_returnExpired(returnExpired), m_requestFromSource(requestFromSource) {}
-        
-        //! Should the cache return reality data even if it's expired.
-        bool ReturnExpired() const {return m_returnExpired;}
-        void SetReturnExpired(bool value) {m_returnExpired = value;}
-        
+        //! @param[in] useStorage           Should reality data storage be used for the requested data.
+        //! @param[in] saveInArrivals       Should the data be put in "arrivals" queue for quick access after it was pulled from the source.
+        //! @param[in] removeFromArrivals   Should the data be removed from arrivals queue if taken from there.
+        RealityDataCacheOptions(bool requestFromSource, bool useStorage, bool saveInArrivals = true, bool removeFromArrivals = true) 
+            : m_requestFromSource(requestFromSource), m_useStorage(useStorage), m_saveInArrivals(saveInArrivals), m_removeFromArrivals(removeFromArrivals)
+            {}
+                
         //! Should the cache request for fresh data if it's expired or doesn't exist.
         bool RequestFromSource() const {return m_requestFromSource;}
         void SetRequestFromSource(bool value) {m_requestFromSource = value;}
+
+        //! Should reality data storage be used for the requested data.
+        bool UseStorage() const {return m_useStorage;}
+        void SetUseStorage(bool value) {m_useStorage = value;}
+        
+        //! Should the data be put in "arrivals" queue for quick access after it was pulled from the source.
+        bool SaveInArrivals() const {return m_saveInArrivals;}
+        void SetSaveInArrivals(bool value) {m_saveInArrivals = value;}
+
+        //! Should the data be persisted in storage after being retrieved from source.
+        bool RemoveFromArrivals() const {return m_removeFromArrivals;}
+        void SetRemoveFromArrivals(bool value) {m_removeFromArrivals = value;}
+    };
+
+//=======================================================================================
+//! The result of RealityDataCache::Get.
+// @bsiclass                                        Grigas.Petraitis            04/2015
+//=======================================================================================
+enum class RealityDataCacheResult
+    {
+    Error,
+    NotFound,
+    Success,
+    RequestQueued,
     };
 
 //=======================================================================================
@@ -500,39 +740,62 @@ struct RealityDataCacheOptions : virtual IRefCounted
 //! the internet.
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
-struct RealityDataCache : NonCopyableClass, IRealityDataSourceResponseReceiver
+struct RealityDataCache : NonCopyableClass, IRealityDataStorageResponseReceiver, IRealityDataSourceResponseReceiver
 {    
 //__PUBLISH_SECTION_END__
+DEFINE_BENTLEY_REF_COUNTED_MEMBERS
+
+    template<typename T> struct RefCountedPtrComparer
+        {
+        bool operator()(RefCountedPtr<T> const& lhs, RefCountedPtr<T> const& rhs) const {return lhs.get() < rhs.get();}
+        };
+
 private:
     bmap<Utf8String, IRealityDataStorageBasePtr> m_storages;
     bmap<Utf8String, IRealityDataSourceBasePtr>  m_sources;
-    bmap<Utf8String, bset<IRealityDataStoragePersistHandler const*>> m_persistHandlers;
+    ThreadSafeQueue<IRealityDataBasePtr> m_arrivals;
+    int m_arrivalsQueueSize;
+    bmap<Utf8String, bset<RefCountedPtr<IRealityDataStoragePersistHandler>, RefCountedPtrComparer<IRealityDataStoragePersistHandler>>> m_persistHandlers;
     BeMutex m_persistHandlersCS;
+    bmap<Utf8String, bset<RefCountedPtr<IRealityDataSourceRequestHandler>, RefCountedPtrComparer<IRealityDataSourceRequestHandler>>> m_requestHandlers;
+    BeMutex m_requestHandlersCS;
+    mutable bmap<void const*, RealityDataCacheResult> m_results;
+    mutable BeMutex m_resultsCS;
     
-    // note: this might be called from any thread!
-    virtual void _OnResponseReceived(RealityDataSourceResponse const& response) override;
+    RealityDataCache(int arrivalsQueueSize) : m_arrivalsQueueSize(arrivalsQueueSize) {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT}
+    ~RealityDataCache();
+
+    // note: these might be called from any thread!
+    virtual void _OnResponseReceived(RealityDataSourceResponse const& response, IRealityDataSourceBase::RequestOptions const&) override;
+    virtual void _OnResponseReceived(RealityDataStorageResponse const& response, IRealityDataStorageBase::SelectOptions const&, bool isAsync) override;
+
+    RealityDataCacheResult HandleStorageResponse(RealityDataStorageResponse const& response, RealityDataCacheOptions const&);
+    void AddToArrivals(IRealityDataBase& data);
+    RealityDataCacheResult ResolveResult(RealityDataStorageResult storageResult, RealityDataSourceResult sourceResult = RealityDataSourceResult::Error_NotFound) const;
+    RefCountedPtr<IRealityDataSourceRequestHandler> DequeueRequestHandler(Utf8CP id, IRealityDataBase const&);
+    RefCountedPtr<IRealityDataStoragePersistHandler> DequeuePersistHandler(Utf8CP id, IRealityDataBase const&);
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 private:
     DGNPLATFORM_EXPORT IRealityDataStorageBase* GetStorage(Utf8CP id) const;
     DGNPLATFORM_EXPORT IRealityDataSourceBase* GetSource(Utf8CP id) const;
-    template<typename StorageType> StorageType* GetStorage() const {return(StorageType*)GetStorage(StorageType::StorageId());}
-    template<typename SourceType> SourceType* GetSource() const {return(SourceType*)GetSource(SourceType::SourceId());}
+    template<typename StorageType> StorageType* GetStorage() const {return(StorageType*)GetStorage(StorageType::StorageId().c_str());}
+    template<typename SourceType> SourceType* GetSource() const {return(SourceType*)GetSource(SourceType::SourceId().c_str());}
 
-    DGNPLATFORM_EXPORT void QueuePersistHandler(Utf8CP id, IRealityDataStoragePersistHandler const&);
-    DGNPLATFORM_EXPORT IRealityDataStoragePersistHandler const* DequeuePersistHandler(Utf8CP id, IRealityDataBase const*, bool dealloc = false);
+    DGNPLATFORM_EXPORT void QueuePersistHandler(Utf8CP id, IRealityDataStoragePersistHandler&);
+    DGNPLATFORM_EXPORT void QueueRequestHandler(Utf8CP id, IRealityDataSourceRequestHandler&);
 
-    template<typename DataType> void RequestData(DataType& data, Utf8CP id, typename DataType::RequestOptions const& options)
-        {
-        QueuePersistHandler(id, *new typename DataType::StorageType::PersistHandler(*GetStorage<typename DataType::StorageType>(), data));
-        if (RealityDataSourceResult::Success != GetSource<typename DataType::SourceType>()->Request(data, id, options, *this))
-            DequeuePersistHandler(id, &data, true);
-        }
+    DGNPLATFORM_EXPORT BentleyStatus GetFromArrivals(IRealityDataBase& data, Utf8CP id, RealityDataCacheOptions const& options);
+    DGNPLATFORM_EXPORT RealityDataCacheResult GetResult(IRealityDataBase& data, Utf8CP id, RealityDataStorageResult storageResult);
+    DGNPLATFORM_EXPORT RealityDataCacheResult GetResult(Utf8CP id, RealityDataSourceResult sourceResult);
 
 public:
     //! Create a new reality data cache.
-    DGNPLATFORM_EXPORT static RealityDataCachePtr Create();
+    DGNPLATFORM_EXPORT static RealityDataCachePtr Create(int arrivalsQueueSize = 0);
+
+    //! Cleans up local caches
+    DGNPLATFORM_EXPORT void Cleanup();
 
     //! Register a storage in this cache.
     DGNPLATFORM_EXPORT void RegisterStorage(IRealityDataStorageBase& storage);
@@ -541,37 +804,27 @@ public:
     DGNPLATFORM_EXPORT void RegisterSource(IRealityDataSourceBase& source);
 
     //! Request reality data from this cache. The type of the reality data is provided as a template parameter.
+    //! @param[out] data       An reference object to receive the requested data.
     //! @param[in] id       The id of the requested data.
     //! @param[in] options  The request options.
-    template<typename DataType> RefCountedPtr<DataType> Get(Utf8CP id, typename DataType::RequestOptions const& options)
+    template<typename DataType> RealityDataCacheResult Get(RefCountedPtr<DataType>& data, Utf8CP id, typename DataType::RequestOptions const& options)
         {
-        RefCountedPtr<DataType> data = DataType::Create();
-        RealityDataStorageResult result = GetStorage<typename DataType::StorageType>()->Select(*data, id, options);
-        switch(result)
+        data = DataType::Create();
+        if (SUCCESS == GetFromArrivals(*data, id, options))
+            return RealityDataCacheResult::Success;
+
+        if (!options.UseStorage())
             {
-            case RealityDataStorageResult::Success:
-                {
-                data->SetInitialized();
-                if (data->IsExpired())
-                    {
-                    if (options.RequestFromSource())
-                        RequestData(*data, id, options);
-                    if (!options.ReturnExpired())
-                        return nullptr;
-                    }
-                return data;
-                }
-            case RealityDataStorageResult::NotFound:
-                {
-                if (options.RequestFromSource())
-                    RequestData(*data, id, options);
-                return nullptr;
-                }
-            case RealityDataStorageResult::Error:
-                BeAssert(false);
-                return nullptr;
+            if (!options.RequestFromSource())
+                return RealityDataCacheResult::NotFound;
+
+            bool handled;
+            return GetResult(id, GetSource<typename DataType::SourceType>()->Request(*data, handled, id, options, *this));
             }
-        return nullptr;
+        
+        QueueRequestHandler(id, *DataType::SourceType::RequestHandler::Create(*GetSource<typename DataType::SourceType>(), *data, id, options, *this));
+        QueuePersistHandler(id, *DataType::StorageType::PersistHandler::Create(*GetStorage<typename DataType::StorageType>(), *data));
+        return GetResult(*data, id, GetStorage<typename DataType::StorageType>()->Select(*data, id, options, *this));
         }
 };
 
@@ -584,11 +837,18 @@ struct BeSQLiteRealityDataStorage : IRealityDataStorage<BeSQLiteRealityDataStora
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        03/2015
     //===================================================================================
-    struct SelectOptions : virtual IRefCounted
-        {
-        protected:
-            virtual ~SelectOptions() {}
-        };
+    struct SelectOptions : IRealityDataStorage::SelectOptions
+    {
+    private:
+        bool m_forceSynchronous;
+
+    public:
+        SelectOptions() : m_forceSynchronous(false) {}
+
+        //! Force this request to be synchronous.
+        void SetForceSynchronousRequest(bool value) {m_forceSynchronous = value;}
+        bool ForceSynchronousRequest() const {return m_forceSynchronous;}
+    };
     
     //===================================================================================
     //! Interface for a class which prepares the database for storing specific type of data
@@ -611,6 +871,10 @@ struct BeSQLiteRealityDataStorage : IRealityDataStorage<BeSQLiteRealityDataStora
         //__PUBLISH_SECTION_START__
         friend struct BeSQLiteRealityDataStorage;
         protected:
+            //! Called to check if the database is prepared to store specific type of data 
+            //! (the type must be known to the implementation).
+            virtual bool _IsPrepared() const = 0;
+
             //! Called to prepare the database for storing specific type of data (the type 
             //! must be known to the implementation).
             virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const = 0;
@@ -631,15 +895,17 @@ struct BeSQLiteRealityDataStorage : IRealityDataStorage<BeSQLiteRealityDataStora
         {
         friend struct BeSQLiteRealityDataStorage;
         protected:
+            using IRealityDataStorage::Data::_InitFrom;
+
             //! Return @ref DatabasePrepareAndCleanupHandler which knows how to prepare and cleanup
             //! database for this data type.
             virtual DatabasePrepareAndCleanupHandlerPtr _GetDatabasePrepareAndCleanupHandler() const = 0;
 
             //! Initialize data from the database using key and select options.
-            virtual BentleyStatus _InitFrom(BeSQLite::Db& db, Utf8CP key, SelectOptions const& options) = 0;
+            virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, SelectOptions const& options) = 0;
 
             //! Persist this data in the database.
-            virtual BentleyStatus _Persist(BeSQLite::Db& db) const = 0;
+            virtual BentleyStatus _Persist(BeSQLite::Db& db, BeMutex& cs) const = 0;
         };
     
     //===================================================================================
@@ -652,52 +918,34 @@ struct BeSQLiteRealityDataStorage : IRealityDataStorage<BeSQLiteRealityDataStora
     private:
         BeSQLiteRealityDataStorage& m_storage;
         RefCountedPtr<Data const>   m_data;
+        PersistHandler(BeSQLiteRealityDataStorage& storage, Data const& data) : m_storage(storage), m_data(&data) {}        
     protected:
         DGNPLATFORM_EXPORT virtual RealityDataStorageResult _Persist() const override;
         DGNPLATFORM_EXPORT virtual IRealityDataBase const* _GetData() const override;
     public:
-        PersistHandler(BeSQLiteRealityDataStorage& storage, Data const& data) : m_storage(storage), m_data(&data) {}        
+        static RefCountedPtr<PersistHandler> Create(BeSQLiteRealityDataStorage& storage, Data const& data) {return new PersistHandler(storage, data);}
     };
 
     //__PUBLISH_SECTION_END__
     struct CleanAndSaveChangesWork;
     //===================================================================================
-    // @bsiclass                                        Grigas.Petraitis        11/2014
+    // @bsiclass                                        Grigas.Petraitis        04/2015
     //===================================================================================
-    struct WorkerThread : RealityDataWorkerThread
+    struct BeSQLiteStorageThreadPool : RealityDataThreadPool
     {
     friend struct CleanAndSaveChangesWork;
+    friend struct ::ThreadPoolQueueNotEmptyPredicate;
     private:
-        ThreadSafeQueue<RealityDataWorkPtr> m_workQueue;
-        BeSQLiteRealityDataStorage*         m_storage;
+        BeSQLiteRealityDataStoragePtr m_storage;
     protected:
-        WorkerThread(BeSQLiteRealityDataStorage& storage, IStateListener* listener) 
-            : RealityDataWorkerThread(listener, "BentleyBeSQLiteRealityDataStorageWorker"), m_storage(&storage) 
-            {}
-        virtual void _DoWork(RealityDataWork& work) override;
-        virtual void _OnIdle() override;
+        BeSQLiteStorageThreadPool(BeSQLiteRealityDataStorage& storage) : RealityDataThreadPool(4, 0, SchedulingMethod::LIFO), m_storage(&storage) {}
+        ThreadSafeQueue<RealityDataWorkPtr>& GetQueue() {return RealityDataThreadPool::GetQueue();}
+        virtual bool _AssignWork(RealityDataWorkerThread& thread) override;
     public:
-        static RefCountedPtr<WorkerThread> Create(BeSQLiteRealityDataStorage& storage, IStateListener* listener) {return new WorkerThread(storage, listener);}
+        static RefCountedPtr<BeSQLiteStorageThreadPool> Create(BeSQLiteRealityDataStorage& storage) {return new BeSQLiteStorageThreadPool(storage);}
+        void QueueIdleWork(RealityDataWork& work);
     };
-    typedef RefCountedPtr<WorkerThread> WorkerThreadPtr;
-        
-    //===================================================================================
-    // @bsiclass                                        Grigas.Petraitis        11/2014
-    //===================================================================================
-    struct WorkerThreadIdleTracker : RefCounted<RealityDataWorkerThread::IStateListener>
-    {
-    private:
-        BeSQLiteRealityDataStorage& m_storage;
-        WorkerThreadIdleTracker(BeSQLiteRealityDataStorage& storage) : m_storage(storage) {} 
-
-    protected:
-        virtual void _OnThreadIdle(RealityDataWorkerThread& thread) override;
-
-    public:
-        static RefCountedPtr<WorkerThreadIdleTracker> Create(BeSQLiteRealityDataStorage& storage) {return new WorkerThreadIdleTracker(storage);}
-    };
-    typedef RefCountedPtr<WorkerThreadIdleTracker> WorkerThreadIdleTrackerPtr;
-
+    
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        11/2014
     //===================================================================================
@@ -714,18 +962,23 @@ struct BeSQLiteRealityDataStorage : IRealityDataStorage<BeSQLiteRealityDataStora
     struct SelectDataWork : StorageWork
     {
     private:
-        Utf8CP  m_id;
-        Data&  m_data;
-        SelectOptions const& m_options;
-
+        Utf8String m_id;
+        RefCountedPtr<Data>  m_data;
+        RefCountedPtr<SelectOptions const> m_options;
+        IRealityDataStorageResponseReceiverPtr m_responseReceiver;
         bool                             m_hasResult;
         mutable RealityDataStorageResult m_result;
         mutable BeConditionVariable      m_resultCV;
     protected:
-        SelectDataWork(BeSQLiteRealityDataStorage& storage, Utf8CP id, Data& data, SelectOptions const& options) : StorageWork(storage), m_id(id), m_data(data), m_options(options), m_hasResult(false) {} 
+        SelectDataWork(BeSQLiteRealityDataStorage& storage, Utf8CP id, Data& data, SelectOptions const& options, IRealityDataStorageResponseReceiver& responseReceiver) 
+            : StorageWork(storage), m_id(id), m_data(&data), m_options(&options), m_hasResult(false), m_responseReceiver(&responseReceiver)
+            {} 
         virtual void _DoWork() override;
     public:
-        static RefCountedPtr<SelectDataWork> Create(BeSQLiteRealityDataStorage& storage, Utf8CP id, Data& data, SelectOptions const& options) {return new SelectDataWork(storage, id, data, options);}
+        static RefCountedPtr<SelectDataWork> Create(BeSQLiteRealityDataStorage& storage, Utf8CP id, Data& data, SelectOptions const& options, IRealityDataStorageResponseReceiver& responseReceiver)
+            {
+            return new SelectDataWork(storage, id, data, options, responseReceiver);
+            }
         RealityDataStorageResult GetResult() const;
     };
     
@@ -760,40 +1013,47 @@ struct BeSQLiteRealityDataStorage : IRealityDataStorage<BeSQLiteRealityDataStora
 private:
     bool                        m_initialized;
     bset<DatabasePrepareAndCleanupHandler const*, DatabasePrepareAndCleanupHandler::Comparer> m_cleanupHandlers;
-    BeFileName                  m_filename;
-    WorkerThreadPtr             m_worker;
-    WorkerThreadIdleTrackerPtr  m_idleTracker;
-    bool                        m_hasChanges;
+    Utf8String                  m_filename;
+    RefCountedPtr<BeSQLiteStorageThreadPool> m_threadPool;
+    BeAtomic<bool>              m_hasChanges;
+    BeMutex           m_saveChangesCS;
     BeSQLite::Db&               m_database;
+    BeMutex           m_databaseCS;
+    bset<Utf8String> m_activeRequests;
+    BeMutex m_activeRequestsCS;
     uint32_t m_idleTime; 
     uint64_t m_cacheSize;
 
 private:
     BeSQLiteRealityDataStorage(BeFileName const& filename, uint32_t idleTime, uint64_t cacheSize);
-    bool                     wt_Prepare(DatabasePrepareAndCleanupHandler const& prepareHandler);
+    void                     wt_Prepare(DatabasePrepareAndCleanupHandler const& prepareHandler);
     void                     wt_Cleanup();
     void                     wt_Persist(Data const& data);
-    RealityDataStorageResult wt_Select(Data& data, Utf8CP id, SelectOptions const& options);
+    RealityDataStorageResult wt_Select(Data& data, Utf8CP id, SelectOptions const& options, IRealityDataStorageResponseReceiver& responseReceiver);
     void                     wt_SaveChanges();
+
+public:
+    //! NOT PUBLISHED: needed for tests
+    RefCountedPtr<BeSQLiteStorageThreadPool> GetThreadPool() const {return m_threadPool;}
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 protected:
-    virtual Utf8CP _GetStorageId() const override {return StorageId();}
+    virtual Utf8String _GetStorageId() const override {return StorageId();}
+    DGNPLATFORM_EXPORT virtual void _Terminate() override;
 
 public:
     //! The id of this storage.
-    static Utf8CP StorageId() {return "BeSQLite";}
+    static Utf8String StorageId() {return "BeSQLite";}
 
     //! Creates a new BeSQLiteRealityDataStorage.
-    //! @param[in] filename     the file to create
+    //! @param[in] filename     File name.
     //! @param[in] idleTime     Time (in miliseconds) for the worker thread to wait before commiting changes to the database.
     //! @param[in] cacheSize    Sets max size (in bytes) which is allowed for RealityDataCache database.
     DGNPLATFORM_EXPORT static BeSQLiteRealityDataStoragePtr Create(BeFileName const& filename, uint32_t idleTime = 5000, uint64_t cacheSize = 0);
-    DGNPLATFORM_EXPORT ~BeSQLiteRealityDataStorage();
 
     //! Initialize data object with the data in the database.
-    DGNPLATFORM_EXPORT RealityDataStorageResult Select(Data& data, Utf8CP id, SelectOptions const& options);
+    DGNPLATFORM_EXPORT RealityDataStorageResult Select(Data& data, Utf8CP id, SelectOptions const& options, IRealityDataStorageResponseReceiver& responseReceiver);
 
     //! Persist the data object in the database.
     DGNPLATFORM_EXPORT RealityDataStorageResult Persist(Data const& data);
@@ -808,12 +1068,12 @@ struct InMemoryRealityDataStorage : IRealityDataStorage<InMemoryRealityDataStora
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        04/2015
     //===================================================================================
-    struct SelectOptions : virtual IRefCounted
+    struct SelectOptions : IRealityDataStorage::SelectOptions
     {
     private:
         bool m_removeAfterSelect;
     public:
-        virtual ~SelectOptions() {}
+        SelectOptions() : m_removeAfterSelect(false) {}
         bool GetRemoveAfterSelect() const {return m_removeAfterSelect;}
         void SetRemoveAfterSelect(bool value) {m_removeAfterSelect = value;}
     };
@@ -825,8 +1085,10 @@ struct InMemoryRealityDataStorage : IRealityDataStorage<InMemoryRealityDataStora
         {
         friend struct InMemoryRealityDataStorage;
         protected:
+            using IRealityDataStorage::Data::_InitFrom;
+
             //! Initialize data from the void pointer and select options.
-            virtual BentleyStatus _InitFrom(Utf8CP id, void const* data, SelectOptions const& options) = 0;
+            virtual BentleyStatus _InitFrom(Utf8CP id, Data const& data, SelectOptions const& options) = 0;
         };
     
     //===================================================================================
@@ -837,16 +1099,17 @@ struct InMemoryRealityDataStorage : IRealityDataStorage<InMemoryRealityDataStora
     private:
         InMemoryRealityDataStorage& m_storage;
         RefCountedPtr<Data const>   m_data;
+        PersistHandler(InMemoryRealityDataStorage& storage, Data const& data) : m_storage(storage), m_data(&data) {}    
     protected:
         DGNPLATFORM_EXPORT virtual RealityDataStorageResult _Persist() const override;
         DGNPLATFORM_EXPORT virtual IRealityDataBase const* _GetData() const override;
     public:
-        PersistHandler(InMemoryRealityDataStorage& storage, Data const& data) : m_storage(storage), m_data(&data) {}    
+        static RefCountedPtr<PersistHandler> Create(InMemoryRealityDataStorage& storage, Data const& data) {return new PersistHandler(storage, data);}
     };
 
 //__PUBLISH_SECTION_END__
 private:
-    bmap<Utf8String, void const*> m_map;
+    bmap<Utf8String, Data const*> m_map;
     BeMutex m_cs;
 
 private:
@@ -856,34 +1119,83 @@ private:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 protected:
-    virtual Utf8CP _GetStorageId() const override {return StorageId();}
+    virtual Utf8String _GetStorageId() const override {return StorageId();}
 
 public:
     //! The id of this storage.
-    static Utf8CP StorageId() {return "InMemory";}
+    static Utf8String StorageId() {return "InMemory";}
     
     //! Creates a new instance of InMemoryRealityDataStorage.
     DGNPLATFORM_EXPORT static InMemoryRealityDataStoragePtr Create();
-    DGNPLATFORM_EXPORT RealityDataStorageResult Select(Data& data, Utf8CP id, SelectOptions const& options);
+    DGNPLATFORM_EXPORT ~InMemoryRealityDataStorage();
+    DGNPLATFORM_EXPORT RealityDataStorageResult Select(Data& data, Utf8CP id, SelectOptions const& options, IRealityDataStorageResponseReceiver& responseReceiver);
 };
 
-//===================================================================================
+//=======================================================================================
+// @bsiclass                                        Grigas.Petraitis            05/2015
+//=======================================================================================
+struct IAsyncRequestCancellationToken
+{
+friend struct AsyncRealityDataSourceRequest;
+protected:
+    virtual ~IAsyncRequestCancellationToken() {}
+    virtual bool _ShouldCancel() const = 0;
+};
+
+//=======================================================================================
 //! A request interface for @ref AsyncRealityDataSource.
-// @bsiclass                                        Grigas.Petraitis        03/2015
-//===================================================================================
+// @bsiclass                                        Grigas.Petraitis            03/2015
+//=======================================================================================
 struct AsyncRealityDataSourceRequest : RefCountedBase
 {
+//__PUBLISH_SECTION_END__
+    struct SynchronousRequestPredicate;
+//__PUBLISH_SECTION_START__
+
+    //===================================================================================
+    // @bsiclass                                        Grigas.Petraitis        04/2015
+    //===================================================================================
+    struct RequestOptions : virtual IRealityDataSourceBase::RequestOptions
+    {
+    private:
+        bool m_retryNotFoundRequests;
+        bool m_forceSynchronous;
+    public:
+        RequestOptions() : m_retryNotFoundRequests(false), m_forceSynchronous(false) {}
+        //! If set, the source always tries to pull fresh data. Otherwise the subsequent 
+        //! requests are immediately rejected after getting the "not found" response.
+        void SetRetryNotFoundRequests(bool value) {m_retryNotFoundRequests = value;}
+        bool RetryNotFoundRequests() const {return m_retryNotFoundRequests;}
+        //! Force this request to be synchronous.
+        void SetForceSynchronousRequest(bool value) {m_forceSynchronous = value;}
+        bool ForceSynchronousRequest() const {return m_forceSynchronous;}
+    };
+
+private:
+    IAsyncRequestCancellationToken* m_cancellationToken;
+    mutable RefCountedPtr<RealityDataSourceResponse> m_response; // set only for sync requests
+
 protected:
+    AsyncRealityDataSourceRequest(IAsyncRequestCancellationToken* cancellationToken = nullptr) : m_cancellationToken(cancellationToken) {}
+
+    //! Returns true if the request was cancelled.
+    DGNPLATFORM_EXPORT bool ShouldCancelRequest() const;
+
     //! Return the if of reality data which is handled by this request.
     virtual Utf8CP _GetId() const = 0;
 
+    //! Return the request options
+    virtual RequestOptions const& _GetRequestOptions() const = 0;
+
     //! Handle the request (e.g. read file content and initialize reality data from it).
-    virtual RealityDataSourceResponse _Handle() const = 0;
+    virtual RefCountedPtr<RealityDataSourceResponse> _Handle() const = 0;
 
 //__PUBLISH_SECTION_END__
 public:
     Utf8CP GetId() const;
-    RealityDataSourceResponse Handle() const;
+    RequestOptions const& GetRequestOptions() const;
+    RefCountedPtr<RealityDataSourceResponse> Handle(BeMutex& cs) const;
+    void SetCancellationToken(IAsyncRequestCancellationToken& token) {m_cancellationToken = &token;}
 //__PUBLISH_SECTION_START__
 };
 
@@ -898,20 +1210,21 @@ struct AsyncRealityDataSource : IRealityDataSource<Derived>, NonCopyableClass
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        10/2014
     //===================================================================================
-    struct RequestHandler : RefCounted<RealityDataWork>
+    struct RequestHandler : RefCounted<RealityDataWork>, IAsyncRequestCancellationToken
     {
     private:
         RefCountedPtr<AsyncRealityDataSource> m_source;
         RefCountedPtr<AsyncRealityDataSourceRequest const> m_request;
-        IRealityDataSourceResponseReceiverPtr m_responseReceiver;
+        IRealityDataSourceResponseReceiver* m_responseReceiver;
         
         RequestHandler(AsyncRealityDataSource& source, AsyncRealityDataSourceRequest const& request, IRealityDataSourceResponseReceiver& responseReceiver)
             : m_source(&source), m_request(&request), m_responseReceiver(&responseReceiver)
             {}
-        void SendResponse(RealityDataSourceResponse const& response) {m_responseReceiver->_OnResponseReceived(response);}
+        void SendResponse(RealityDataSourceResponse const& response, IRealityDataSourceBase::RequestOptions const& options) {m_responseReceiver->_OnResponseReceived(response, options);}
 
     protected:
         virtual void _DoWork() override;
+        virtual bool _ShouldCancel() const override;
 
     public:
         static RefCountedPtr<RequestHandler> Create(AsyncRealityDataSource& source, AsyncRealityDataSourceRequest const& request, IRealityDataSourceResponseReceiver& responseReceiver) 
@@ -922,23 +1235,29 @@ struct AsyncRealityDataSource : IRealityDataSource<Derived>, NonCopyableClass
 
 private:
     RealityDataThreadPoolPtr m_threadPool;
-    BeMutex                  m_requestsCS;
+    BeMutex        m_requestsCS;
     bset<Utf8String>         m_activeRequests;
+    bset<Utf8String>         m_notFoundRequests;
     BeAtomic<uint64_t>       m_ignoreRequestsUntil;
+    BeConditionVariable      m_synchronizationCV;
+    bool                     m_terminateRequested;
 
 private:
     void SetIgnoreRequests(uint32_t ignoreTime);
     bool ShouldIgnoreRequests() const;
 
 protected:
-    AsyncRealityDataSource(int numThreads) : m_threadPool(RealityDataThreadPool::Create(numThreads, 0)), m_ignoreRequestsUntil(0) {}
+    DGNPLATFORM_EXPORT virtual void _Terminate() override;
+    AsyncRealityDataSource(int numThreads) 
+        : m_threadPool(RealityDataThreadPool::Create(numThreads, 0, SchedulingMethod::LIFO)), m_ignoreRequestsUntil(0), m_terminateRequested(false)
+        {}
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 protected:
     //! Queues a request for handling on the work thread. Derived classes should use this
     //! function to queue their requests to be handled asynchronously.
-    RealityDataSourceResult QueueRequest(AsyncRealityDataSourceRequest const& request, IRealityDataSourceResponseReceiver& responseReceiver);
+    RealityDataSourceResult QueueRequest(AsyncRealityDataSourceRequest& request, bool& handled, IRealityDataSourceResponseReceiver& responseReceiver);
 };
 
 //=======================================================================================
@@ -950,10 +1269,8 @@ struct FileRealityDataSource : AsyncRealityDataSource<FileRealityDataSource>
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        03/2015
     //===================================================================================
-    struct RequestOptions : virtual IRefCounted
+    struct RequestOptions : AsyncRealityDataSourceRequest::RequestOptions
         {
-        public:
-            virtual ~RequestOptions() {}
         };
     
     //===================================================================================
@@ -961,19 +1278,49 @@ struct FileRealityDataSource : AsyncRealityDataSource<FileRealityDataSource>
     //! source must implement this interface.
     // @bsiclass                                        Grigas.Petraitis        03/2015
     //===================================================================================
-    struct Data : IRealityDataSource::Data
+    struct Data : virtual IRealityDataSource::Data
         {
         //__PUBLISH_SECTION_END__
         friend struct ::FileRealityDataSourceRequest;
         //__PUBLISH_SECTION_START__
         friend struct FileRealityDataSource;
         protected:
+            using IRealityDataSource::Data::_InitFrom;
+
             //! Initializes this data with file path, content and request options.
             //! @param[in] filepath     The path of the file that the data was read from.
             //! @param[in] data         The file content.
             //! @param[in] options      The request options.
             virtual BentleyStatus _InitFrom(Utf8CP filepath, bvector<Byte> const& data, RequestOptions const& options) = 0;
         };
+
+    //===================================================================================
+    //! @ref IRealityDataSourceRequestHandler implementation which knows how to request
+    //! reality data from the @ref FileRealityDataSource.
+    // @bsiclass                                        Grigas.Petraitis        04/2015
+    //===================================================================================
+    struct RequestHandler : IRealityDataSourceRequestHandler
+    {
+    private:
+        mutable bool m_handled;
+        FileRealityDataSource&    m_source;
+        RefCountedPtr<Data> m_data;
+        Utf8String m_id;
+        RequestOptions const& m_options;
+        IRealityDataSourceResponseReceiver* m_responseReceiver;
+        RequestHandler(FileRealityDataSource& source, Data& data, Utf8CP id, RequestOptions const& options, IRealityDataSourceResponseReceiver& responseReceiver) 
+            : m_source(source), m_data(&data), m_id(id), m_options(options), m_responseReceiver(&responseReceiver), m_handled(false)
+            {}
+    protected:
+        virtual bool _IsHandled() const override {return m_handled;}
+        DGNPLATFORM_EXPORT virtual RealityDataSourceResult _Request() const override;
+        DGNPLATFORM_EXPORT virtual IRealityDataBase const* _GetData() const override;
+    public:
+        static RefCountedPtr<RequestHandler> Create(FileRealityDataSource& source, Data& data, Utf8CP id, RequestOptions const& options, IRealityDataSourceResponseReceiver& responseReceiver)
+            {
+            return new RequestHandler(source, data, id, options, responseReceiver);
+            }
+    };
 
 //__PUBLISH_SECTION_END__
 private:
@@ -982,21 +1329,22 @@ private:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 protected:
-    virtual Utf8CP _GetSourceId() const override {return SourceId();}
+    virtual Utf8String _GetSourceId() const override {return SourceId();}
+    virtual RealityDataSourceResult _Request(IRealityDataSourceBase::Data& data, bool& handled, Utf8CP id, IRealityDataSourceBase::RequestOptions const& options, IRealityDataSourceResponseReceiver& responseReceiver) override
+        {
+        return Request(dynamic_cast<Data&>(data), handled, id, dynamic_cast<RequestOptions const&>(options), responseReceiver);
+        }
+
 public:
     //! The id of this reality data source.
-    static Utf8CP SourceId() {return "File";}
+    static Utf8String SourceId() {return "File";}
 
     //! Create a new instance of FileRealityDataSource.
     //! @param[in] numThreads   Number of worker threads to use for reading files. Must be at least 1.
     DGNPLATFORM_EXPORT static RefCountedPtr<FileRealityDataSource> Create(int numThreads);
 
     //! Request the data to be initialized from the specified file.
-    //! @param[in] data             The reality data to initialize.
-    //! @param[in] filepath         The path of the file to initialize data from.
-    //! @param[in] options          The request options.
-    //! @param[in] responseReceiver The object that will receive the response of this request.
-    DGNPLATFORM_EXPORT RealityDataSourceResult Request(Data& data, Utf8CP filepath, RequestOptions const& options, IRealityDataSourceResponseReceiver& responseReceiver);
+    DGNPLATFORM_EXPORT RealityDataSourceResult Request(Data& data, bool& handled, Utf8CP filepath, RequestOptions const& options, IRealityDataSourceResponseReceiver& responseReceiver);
 };
 
 //=======================================================================================
@@ -1009,7 +1357,7 @@ struct HttpRealityDataSource : AsyncRealityDataSource<HttpRealityDataSource>
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        03/2015
     //===================================================================================
-    struct RequestOptions : virtual IRefCounted
+    struct RequestOptions : AsyncRealityDataSourceRequest::RequestOptions
         {
         protected:
             virtual ~RequestOptions() {}
@@ -1022,7 +1370,7 @@ struct HttpRealityDataSource : AsyncRealityDataSource<HttpRealityDataSource>
     //! and @ref SetEntityTag) when it initializes the data from the reality data storage.
     // @bsiclass                                        Grigas.Petraitis        03/2015
     //===================================================================================
-    struct Data : IRealityDataSource::Data
+    struct Data : virtual IRealityDataSource::Data
         {
         //__PUBLISH_SECTION_END__
         friend struct ::HttpRealityDataSourceRequest;
@@ -1033,6 +1381,7 @@ struct HttpRealityDataSource : AsyncRealityDataSource<HttpRealityDataSource>
             Utf8String  m_entityTag;
             void ParseExpirationDateAndETag(bmap<Utf8String, Utf8String> const& header);
         protected:
+            using IRealityDataSource::Data::_InitFrom;
             DGNPLATFORM_EXPORT void SetExpirationDate(DateTime const& date);
             DGNPLATFORM_EXPORT void SetEntityTag(Utf8CP eTag);
             virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, bvector<Byte> const& body, RequestOptions const& options) = 0;
@@ -1041,31 +1390,57 @@ struct HttpRealityDataSource : AsyncRealityDataSource<HttpRealityDataSource>
             DGNPLATFORM_EXPORT Utf8CP GetEntityTag() const;
         };
         
+    //===================================================================================
+    //! @ref IRealityDataSourceRequestHandler implementation which knows how to request
+    //! reality data from the @ref HttpRealityDataSource.
+    // @bsiclass                                        Grigas.Petraitis        04/2015
+    //===================================================================================
+    struct RequestHandler : IRealityDataSourceRequestHandler
+    {
+    private:
+        mutable bool m_handled;
+        HttpRealityDataSource&    m_source;
+        RefCountedPtr<Data> m_data;
+        Utf8String m_id;
+        RequestOptions const& m_options;
+        IRealityDataSourceResponseReceiver* m_responseReceiver;
+        RequestHandler(HttpRealityDataSource& source, Data& data, Utf8CP id, RequestOptions const& options, IRealityDataSourceResponseReceiver& responseReceiver) 
+            : m_source(source), m_data(&data), m_id(id), m_options(options), m_responseReceiver(&responseReceiver), m_handled(false)
+            {}  
+    protected:
+        virtual bool _IsHandled() const override {return m_handled;}
+        DGNPLATFORM_EXPORT virtual RealityDataSourceResult _Request() const override;
+        DGNPLATFORM_EXPORT virtual IRealityDataBase const* _GetData() const override;
+    public:
+        static RefCountedPtr<RequestHandler> Create(HttpRealityDataSource& source, Data& data, Utf8CP id, RequestOptions const& options, IRealityDataSourceResponseReceiver& responseReceiver)
+            {
+            return new RequestHandler(source, data, id, options, responseReceiver);
+            }   
+    };
+
 //__PUBLISH_SECTION_END__
-private:
-    bool m_initialized;
     
 private:
-    HttpRealityDataSource(int numThreads) : AsyncRealityDataSource(numThreads), m_initialized(false) {}
-    BentleyStatus Initialize();
+    HttpRealityDataSource(int numThreads) : AsyncRealityDataSource(numThreads) {}
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 protected:
-    virtual Utf8CP _GetSourceId() const override {return SourceId();}
+    virtual Utf8String _GetSourceId() const override {return SourceId();}
+    virtual RealityDataSourceResult _Request(IRealityDataSourceBase::Data& data, bool& handled, Utf8CP id, IRealityDataSourceBase::RequestOptions const& options, IRealityDataSourceResponseReceiver& responseReceiver) override
+        {
+        return Request(dynamic_cast<Data&>(data), handled, id, dynamic_cast<RequestOptions const&>(options), responseReceiver);
+        }
 
 public:
     //! The id of this reality data source.
-    static Utf8CP SourceId() {return "Http";}
+    static Utf8String SourceId() {return "Http";}
     
     //! Create a new instance of HttpRealityDataSource.
     DGNPLATFORM_EXPORT static HttpRealityDataSourcePtr Create(int numThreads);
     
     //! Request the data to be initialized from the content at the specified url
-    //! @param[in] data             The reality data to initialize.
-    //! @param[in] url              The URL to download content from.
-    //! @param[in] options          The request options.
-    //! @param[in] responseReceiver The object that will receive the response of this request.
-    DGNPLATFORM_EXPORT RealityDataSourceResult Request(Data& data, Utf8CP url, RequestOptions const& options, IRealityDataSourceResponseReceiver& responseReceiver);
+    DGNPLATFORM_EXPORT RealityDataSourceResult Request(Data& data, bool& handled, Utf8CP url, RequestOptions const& options, IRealityDataSourceResponseReceiver& responseReceiver);
 };
+
 END_BENTLEY_DGN_NAMESPACE

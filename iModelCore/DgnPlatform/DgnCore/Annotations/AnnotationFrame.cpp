@@ -134,7 +134,7 @@ BentleyStatus AnnotationFramePersistence::DecodeFromFlatBuf(AnnotationFrameR fra
         return ERROR;
 
     PRECONDITION(fbFrame.has_styleId(), ERROR);
-    frame.SetStyleId(DgnStyleId(fbFrame.styleId()), SetAnnotationFrameStyleOptions::Direct);
+    frame.SetStyleId(DgnStyleId((uint64_t)fbFrame.styleId()), SetAnnotationFrameStyleOptions::Direct);
 
     if (fbFrame.has_styleOverrides())
         AnnotationFrameStylePersistence::DecodeFromFlatBuf(frame.m_styleOverrides, *fbFrame.styleOverrides());

@@ -12,6 +12,7 @@
 #include <DgnPlatform/DgnCore/DgnScript.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeNumerical.h>
+#include <Logging/bentleylogging.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -699,4 +700,120 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClient)
     SimulateDeveloper();
     SimulateClient();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    06/2015
+//---------------------------------------------------------------------------------------
+static void insertBoxElement(DgnElementId& eid, PhysicalModelR physicalTestModel, DgnCategoryId testCategoryId)
+    {
+    BeAssert(testCategoryId.IsValid());
+
+    PhysicalElementPtr testElement = PhysicalElement::Create(physicalTestModel, testCategoryId);
+    testElement->SetLabel("ChangeSetTestElementLabel");
+
+    DPoint3d sizeOfBlock = DPoint3d::From(1, 1, 1);
+    DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(0, 0, 0), sizeOfBlock, true);
+    ISolidPrimitivePtr testGeomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
+    BeAssert(testGeomPtr.IsValid());
+
+    DPoint3d centerOfBlock = DPoint3d::From(0, 0, 0);
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(physicalTestModel, testCategoryId, centerOfBlock, YawPitchRollAngles());
+    builder->Append(*testGeomPtr);
+    BentleyStatus status = builder->SetGeomStreamAndPlacement(*testElement);
+    BeAssert(status == SUCCESS);
+
+    eid = physicalTestModel.GetDgnDb().Elements().Insert(*testElement)->GetElementId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* count to be used by all placement performance tests
++---------------+---------------+---------------+---------------+---------------+------*/
+static const int ninstances = 1000;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ComponentModelTest, Performance_PlaceInstances)
+    {
+    // For the purposes of this test, we'll put the Component and Client models in different DgnDbs
+    m_componentDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Component.idgndb");
+    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Performance_PlaceInstances.idgndb");
+    BeTest::GetHost().GetOutputRoot(m_componentSchemaFileName);
+    m_componentSchemaFileName.AppendToPath(TEST_JS_NAMESPACE_W L"0.0.ECSchema.xml");
+
+    // Create component models (in component db)
+    Developer_CreateCMs();
+
+    OpenClientDb(Db::OpenMode::ReadWrite);
+
+    // Import schema
+    GenerateCMSchema(); // Note: either the component developer or the client could generate the ECSchema.
+    ASSERT_EQ( DgnDbStatus::Success , ComponentModel::ImportSchema(*m_clientDb, m_componentSchemaFileName) );
+    m_clientDb->SaveChanges();
+
+    //  Create the target model in the client.
+    Client_CreateTargetModel("Instances");
+    PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, "Instances");
+
+    //  Import the CM
+    Client_ImportCM(TEST_WIDGET_COMPONENT_NAME);
+
+    //  Cache a solution
+    Json::Value wsln1(Json::objectValue);
+    wsln1["X"] = 10;
+    wsln1["Y"] = 11;
+    wsln1["Z"] = 12;
+    DgnElementId w1;
+    ComponentSolution::SolutionId solutionId;
+    Client_SolveAndCapture(solutionId, TEST_WIDGET_COMPONENT_NAME, wsln1, false);
+
+    //  Place instances of this solution
+    StopWatch timer("place components");
+    timer.Start();
+    for (int i=0; i<ninstances; ++i)
+        {
+        DPoint3d placementOrigin = DPoint3d::From(1,2,3);
+        YawPitchRollAngles placementAngles = YawPitchRollAngles::FromDegrees(4,5,6);
+
+        ComponentSolution solutions(*m_clientDb);
+        DgnElementPtr instanceDgnElement = solutions.CreateSolutionInstanceElement(*targetModel, solutionId, placementOrigin, placementAngles);
+    
+        ECN::IECInstancePtr props;
+        ASSERT_EQ( DgnDbStatus::Success , solutions.CreateSolutionInstanceItem(*instanceDgnElement, props, solutionId) );
+    
+        ASSERT_TRUE( instanceDgnElement->Insert().IsValid() );
+        }
+    timer.Stop();
+    NativeLogging::LoggingManager::GetLogger("Performance")->infov("place instances of %d solutions: %lf seconds (%lf instances / second)", ninstances, timer.GetElapsedSeconds(), ninstances/timer.GetElapsedSeconds());
+
+    m_clientDb->SaveChanges();
+    // 1,298,432 ComponentModelTest_Performance_PlaceInstances.idgndb
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ComponentModelTest, Performance_PlaceElements)
+    {
+    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Performance_PlaceElements.idgndb");
+    OpenClientDb(Db::OpenMode::ReadWrite);
+    Client_CreateTargetModel("Instances");
+    PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, "Instances");
+    DgnCategoryId someCat = m_clientDb->Categories().MakeIterator().begin().GetCategoryId();
+    StopWatch timer("place components");
+    timer.Start();
+    for (int i=0; i<ninstances; ++i)
+        {
+        DgnElementId eid;
+        insertBoxElement(eid, *targetModel, someCat);
+        insertBoxElement(eid, *targetModel, someCat);   // (place Widget component creates an instance of two boxes, so we place two boxes here, to make it comparable)
+        }
+    timer.Stop();
+    NativeLogging::LoggingManager::GetLogger("Performance")->infov("place %d plain physical elements: %lf seconds (%lf instances / second)", ninstances, timer.GetElapsedSeconds(), ninstances/timer.GetElapsedSeconds());
+    
+    m_clientDb->SaveChanges();
+
+    // 1,781,760 ComponentModelTest_Performance_PlaceElements.idgndb
+    }
+
 #endif //ndef BENTLEYCONFIG_NO_JAVASCRIPT

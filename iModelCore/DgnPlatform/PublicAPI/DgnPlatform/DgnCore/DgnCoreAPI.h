@@ -16,6 +16,7 @@
 #include "ClipPrimitive.h"
 #include "ClipVector.h"
 #include "ColorUtil.h"
+#include "DgnCustomAttributeHelper.h"
 #include "ElementHandler.h"
 #include "SolidKernel.h"
 #include "ElementGeometry.h"

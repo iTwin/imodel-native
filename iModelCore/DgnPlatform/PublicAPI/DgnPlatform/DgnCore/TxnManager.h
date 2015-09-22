@@ -197,6 +197,7 @@ struct TxnManager : BeSQLite::ChangeTracker
         SessionId GetSession() const {return SessionId(m_id.m_32[1]);}//!< Get the SessionId from this TxnId
         bool IsValid() const {return GetSession().IsValid();}
         bool operator==(TxnId const& rhs) const {return m_id.m_64==rhs.m_id.m_64;}
+        bool operator!=(TxnId const& rhs) const { return m_id.m_64 != rhs.m_id.m_64; }
         bool operator<(TxnId const& rhs) const  {return m_id.m_64<rhs.m_id.m_64;}
         bool operator<=(TxnId const& rhs) const {return m_id.m_64<=rhs.m_id.m_64;}
         bool operator>(TxnId const& rhs) const  {return m_id.m_64>rhs.m_id.m_64;}

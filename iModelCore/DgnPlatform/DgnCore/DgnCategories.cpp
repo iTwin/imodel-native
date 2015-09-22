@@ -378,14 +378,14 @@ void DgnCategories::SubCategory::Appearance::FromJson(Utf8StringCR jsonStr)
     m_color  = ColorDef(val[APPEARANCE_Color].asUInt());
     m_weight = val[APPEARANCE_Weight].asUInt();
     if (val.isMember(APPEARANCE_Style))
-        m_style  = DgnStyleId(val[APPEARANCE_Style].asInt64());
+        m_style  = DgnStyleId(val[APPEARANCE_Style].asUInt64());
     else
         m_style.Invalidate();
     m_displayPriority = val[APPEARANCE_Priority].asInt();
     m_transparency = val[APPEARANCE_Transparency].asDouble();
 
     if (val.isMember(APPEARANCE_Material))
-        m_material = DgnMaterialId(val[APPEARANCE_Material].asInt64());
+        m_material = DgnMaterialId(val[APPEARANCE_Material].asUInt64());
     else
         m_material.Invalidate();
     }
@@ -446,8 +446,8 @@ void DgnCategories::SubCategory::Override::FromJson(JsonValueCR val)
     if (val.isMember(APPEARANCE_Invisible))    SetInvisible(val[APPEARANCE_Invisible].asBool());
     if (val.isMember(APPEARANCE_Color))        SetColor(ColorDef(val[APPEARANCE_Color].asUInt()));
     if (val.isMember(APPEARANCE_Weight))       SetWeight(val[APPEARANCE_Weight].asUInt());
-    if (val.isMember(APPEARANCE_Style))        SetStyle(DgnStyleId(val[APPEARANCE_Style].asInt64()));
-    if (val.isMember(APPEARANCE_Material))     SetMaterial(DgnMaterialId(val[APPEARANCE_Material].asInt64()));
+    if (val.isMember(APPEARANCE_Style))        SetStyle(DgnStyleId(val[APPEARANCE_Style].asUInt64()));
+    if (val.isMember(APPEARANCE_Material))     SetMaterial(DgnMaterialId(val[APPEARANCE_Material].asUInt64()));
     if (val.isMember(APPEARANCE_Priority))     SetDisplayPriority(val[APPEARANCE_Priority].asInt());
     if (val.isMember(APPEARANCE_Transparency)) SetTransparency(val[APPEARANCE_Transparency].asDouble());
     }

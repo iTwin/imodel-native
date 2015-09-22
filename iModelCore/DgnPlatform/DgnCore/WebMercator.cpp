@@ -592,7 +592,7 @@ uintptr_t WebMercatorTileDisplayHelper::DefineTexture (bvector<Byte> const& rgbD
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     BeAssert (!imageInfo.isBGR);
-    int format      = imageInfo.hasAlpha? QV_BGRA_FORMAT: QV_BGR_FORMAT;
+    int format      = imageInfo.hasAlpha? QV_RGBA_FORMAT: QV_RGB_FORMAT;
     int sizeofPixel = imageInfo.hasAlpha? 4: 3;
     int pitch       = imageInfo.width * sizeofPixel;
 
@@ -1188,9 +1188,10 @@ IProgressiveDisplay::Completion WebMercatorDisplay::_Process (ViewContextR conte
         Utf8String url;
         ImageUtilities::RgbImageInfo expectedImageInfo;
         CreateUrl (url, expectedImageInfo, tileid);
-        auto realityData = T_HOST.GetRealityDataAdmin().GetCache().Get<TiledRaster>(url.c_str(), *TiledRaster::RequestOptions::Create(expectedImageInfo, true));
-        if (realityData.IsValid())
+        RefCountedPtr<TiledRaster> realityData;
+        if (RealityDataCacheResult::Success == T_HOST.GetRealityDataAdmin().GetCache().Get<TiledRaster>(realityData, url.c_str(), *TiledRaster::RequestOptions::Create(expectedImageInfo)))
             {
+            BeAssert(realityData.IsValid());
             //  The image is available from the cache. Great! Draw it.
             m_helper.DrawAndCacheTile (context, tileid, url, *realityData);
             }
@@ -1215,13 +1216,12 @@ IProgressiveDisplay::Completion WebMercatorDisplay::_Process (ViewContextR conte
         auto const& tileid = iMissing->second;
 
         // See if the image has arrived in the cache.
-        auto realityData = T_HOST.GetRealityDataAdmin().GetCache().Get<TiledRaster>(url.c_str(), *TiledRaster::RequestOptions::Create(true));
-
-        if (context.CheckStop())
-            return Completion::Aborted;
-
-        if (realityData.IsValid())
+        RefCountedPtr<TiledRaster> realityData;
+        if (RealityDataCacheResult::Success == T_HOST.GetRealityDataAdmin().GetCache().Get<TiledRaster>(realityData, url.c_str(), *TiledRaster::RequestOptions::Create()))
             {
+            if (context.CheckStop())
+                return Completion::Aborted;
+
             //  Yes, we now have the image. Draw it and remove it from the list of missing tiles.
             m_helper.DrawAndCacheTile (context, tileid, url, *realityData);
             iMissing = m_missingTilesPending.erase (iMissing); 
@@ -1365,17 +1365,14 @@ Utf8String StreetMapModelHandler::CreateGoogleMapsUrl (WebMercatorTilingSystem::
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String dgn_ModelHandler::StreetMap::CreateMapquestUrl (WebMercatorTilingSystem::TileId const& tileid, WebMercatorModel::Mercator const& props)
+Utf8String dgn_ModelHandler::StreetMap::CreateOsmUrl (WebMercatorTilingSystem::TileId const& tileid, WebMercatorModel::Mercator const& props)
     {
-    Utf8String url = "http://otile1.mqcdn.com/tiles/1.0.0/";
-    if (!props.m_mapType.empty() && props.m_mapType[0] == '0')
-        url += "map/";
-    else
-        url += "sat/";  // "Portions Courtesy NASA/JPL-Caltech and U.S. Depart. of Agriculture, Farm Service Agency"
+    Utf8String url;
 
-    // Filename(url) format is /zoom/x/y.png
-    // see http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
-    url += Utf8PrintfString ("%d/%d/%d.jpg",tileid.zoomLevel, tileid.column, tileid.row);
+    if (!props.m_mapType.empty() && props.m_mapType[0] == '0')  // "(c) OpenStreetMap contributors"
+        url = Utf8PrintfString ("http://a.tile.openstreetmap.org/%d/%d/%d.png",tileid.zoomLevel, tileid.column, tileid.row);
+    else // *** For now, use MapQuest for satellite images (just in developer builds) ***
+        url = Utf8PrintfString ("http://otile1.mqcdn.com/tiles/1.0.0/sat/%d/%d/%d.jpg",tileid.zoomLevel, tileid.column, tileid.row);  // "Portions Courtesy NASA/JPL-Caltech and U.S. Depart. of Agriculture, Farm Service Agency"
 
     // *** WIP_WEBMERCATOR m_features
 
@@ -1400,19 +1397,13 @@ BentleyStatus dgn_ModelHandler::StreetMap::_CreateUrl (Utf8StringR url, ImageUti
         return BSIERROR;
         }
 
-    if (props.m_mapService[0] == '0') // "(c) OpenStreetMap contributors"
+    if (props.m_mapService[0] == '0')
         {
-        #ifdef WIP_MAPQUEST_NO_LONGER_AVAILABLE
-            url = CreateMapquestUrl (tileid, props);
-        #else
-            #ifndef NDEBUG  // *** In a developer build, go ahead and use OSM
-                url = Utf8PrintfString ("http://tile.openstreetmap.org/%d/%d/%d.png", tileid.zoomLevel, tileid.column, tileid.row);
-            #endif
+        #ifndef NDEBUG  // *** In a developer build, go ahead and use OSM
+            url = CreateOsmUrl (tileid, props);
         #endif
         }
 #ifdef WIP_MAP_SERVICE
-    else if (OpenStreetMaps)
-        url = Utf8PrintfString ("http://tile.openstreetmap.org/%d/%d/%d.png", tileid.zoomLevel, tileid.column, tileid.row);
     else if (GoogleMaps)
         url = CreateGoogleMapsUrl (tileid);
     else if (BlackAndWhite)
@@ -1438,9 +1429,9 @@ static Utf8String getStreetMapServerDescription(dgn_ModelHandler::StreetMap::Map
     Utf8String descr;
     switch (mapService)
         {
-        case dgn_ModelHandler::StreetMap::MapService::MapQuest:
+        case dgn_ModelHandler::StreetMap::MapService::OpenStreetMaps:
             {
-            descr = ("MapQuest");   // *** WIP translate
+            descr = ("Open Street Maps");   // *** WIP translate
             if (dgn_ModelHandler::StreetMap::MapType::Map == mapType)
                 descr.append(" Map");   // *** WIP translate
             else
@@ -1592,14 +1583,21 @@ RefCountedPtr<TiledRaster> TiledRaster::Create() {return new TiledRaster();}
 //=======================================================================================
 struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandler
     {
+    static BeAtomic<bool> s_isPrepared;
+
+    virtual bool _IsPrepared() const override {return s_isPrepared;}
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                     Grigas.Petraitis           03/2015
     +---------------+---------------+---------------+---------------+---------------+--*/
     virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const override
         {
         if (db.TableExists(TABLE_NAME_TiledRaster))
+            {
+            s_isPrepared = true;
             return SUCCESS;
-    
+            }
+
         Utf8CP ddl = "Url CHAR PRIMARY KEY, \
                         Raster BLOB,          \
                         RasterSize INT,       \
@@ -1608,7 +1606,13 @@ struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
                         Created BIGINT,       \
                         Expires BIGINT,       \
                         ETag CHAR";
-        return BeSQLite::BE_SQLITE_OK == db.CreateTable(TABLE_NAME_TiledRaster, ddl) ? SUCCESS : ERROR;
+
+        if (BeSQLite::BE_SQLITE_OK == db.CreateTable(TABLE_NAME_TiledRaster, ddl))
+            {
+            s_isPrepared = true;
+            return SUCCESS;
+            }
+        return ERROR;
         }
     
     /*-----------------------------------------------------------------------------**//**
@@ -1646,6 +1650,7 @@ struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
         return SUCCESS;
         }
     };
+BeAtomic<bool> TiledRasterPrepareAndCleanupHandler::s_isPrepared;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
@@ -1656,6 +1661,20 @@ BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr TiledRaster::_Ge
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus TiledRaster::_InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const& options)
+    {
+    TiledRaster const& other = dynamic_cast<TiledRaster const&>(self);
+    m_url = other.m_url;
+    m_creationDate = other.m_creationDate;
+    m_contentType = other.m_contentType;
+    m_rasterInfo = other.m_rasterInfo;
+    m_data = other.m_data;
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, bvector<Byte> const& body, HttpRealityDataSource::RequestOptions const& requestOptions) 
@@ -1663,6 +1682,12 @@ BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
     BeAssert(nullptr != dynamic_cast<RequestOptions const*>(&requestOptions));
     RequestOptions const& options = static_cast<RequestOptions const&>(requestOptions);
     
+    if (nullptr == options.GetExpectedImageInfo())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
     m_url.AssignOrClear(url);
     m_creationDate = DateTime::GetCurrentTime();
 
@@ -1671,7 +1696,6 @@ BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
         return ERROR;
 
     m_contentType = contentTypeIter->second.c_str();
-    BeAssert(nullptr != options.GetExpectedImageInfo());
     m_rasterInfo = *options.GetExpectedImageInfo();
     m_data = body;
 
@@ -1681,9 +1705,10 @@ BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TiledRaster::_InitFrom(BeSQLite::Db& db, Utf8CP key, BeSQLiteRealityDataStorage::SelectOptions const& options)
+BentleyStatus TiledRaster::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, BeSQLiteRealityDataStorage::SelectOptions const& options)
     {
     HighPriorityOperationBlock highPriority;
+    BeMutexHolder lock(cs);
 
     CachedStatementPtr stmt;
     if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Raster, RasterSize, RasterInfo, Created, Expires, ETag, ContentType from " TABLE_NAME_TiledRaster " WHERE Url=?"))
@@ -1716,7 +1741,7 @@ BentleyStatus TiledRaster::_InitFrom(BeSQLite::Db& db, Utf8CP key, BeSQLiteReali
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TiledRaster::_Persist(BeSQLite::Db& db) const
+BentleyStatus TiledRaster::_Persist(BeSQLite::Db& db, BeMutex& cs) const
     {
     int bufferSize = (int) GetData().size();
 
@@ -1729,6 +1754,7 @@ BentleyStatus TiledRaster::_Persist(BeSQLite::Db& db) const
         return ERROR;
 
     HighPriorityOperationBlock highPriority;
+    BeMutexHolder lock(cs);
 
     CachedStatementPtr selectStatement;
     if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "SELECT Url from " TABLE_NAME_TiledRaster " WHERE Url=?"))

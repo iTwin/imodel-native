@@ -91,6 +91,7 @@ struct JsElementGeometryBuilder : RefCountedBaseWithCreate
     ~JsElementGeometryBuilder() {}
 
     void AppendBox(double x, double y, double z);
+    void AppendSphere(double radius);
     BentleyStatus SetGeomStreamAndPlacement (JsDgnElementP el) {return m_builder->SetGeomStreamAndPlacement(*el->m_el->ToGeometricElementP());}
 };
 typedef JsElementGeometryBuilder* JsElementGeometryBuilderP;

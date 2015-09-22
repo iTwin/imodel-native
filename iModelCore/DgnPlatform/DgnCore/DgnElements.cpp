@@ -1015,7 +1015,7 @@ DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_heapZone(0, false)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::Element::_OnReversedDelete(BeSQLite::Changes::Change const& change)
     {
-    DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::New).GetValueInt64());
+    DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::New).GetValueUInt64());
 
     // We need to load this element, since filled models need to register it 
     DgnElementCPtr el = m_txnMgr.GetDgnDb().Elements().GetElement(elementId);
@@ -1028,7 +1028,7 @@ void dgn_TxnTable::Element::_OnReversedDelete(BeSQLite::Changes::Change const& c
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::Element::_OnReversedAdd(BeSQLite::Changes::Change const& change)
     {
-    DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueInt64());
+    DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueUInt64());
 
     // see if we have this element in memory, if so call its _OnDelete method.
     DgnElementPtr el = (DgnElementP) m_txnMgr.GetDgnDb().Elements().FindElement(elementId);
@@ -1042,7 +1042,7 @@ void dgn_TxnTable::Element::_OnReversedAdd(BeSQLite::Changes::Change const& chan
 void dgn_TxnTable::Element::_OnReversedUpdate(BeSQLite::Changes::Change const& change) 
     {
     auto& elements = m_txnMgr.GetDgnDb().Elements();
-    DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueInt64());
+    DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueUInt64());
     DgnElementP el = (DgnElementP) elements.FindElement(elementId);
     if (el)
         {
@@ -1093,15 +1093,15 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersistent) const
     {
-    enum Column : int       {ClassId=0,ModelId=1,CategoryId=2,Label=3,Code=4,ParentId=5,CodeAuthorityId=6,};
-    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,CategoryId,Label,Code,ParentId,CodeAuthorityId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    enum Column : int       {ClassId=0,ModelId=1,CategoryId=2,Label=3,Code=4,ParentId=5,CodeAuthorityId=6,CodeNameSpace=7};
+    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,CategoryId,Label,Code,ParentId,CodeAuthorityId,CodeNameSpace FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
 
     DbResult result = stmt->Step();
     if (BE_SQLITE_ROW != result)
         return nullptr;
 
-    DgnElement::Code code(stmt->GetValueId<DgnAuthorityId>(Column::CodeAuthorityId), stmt->GetValueText(Column::Code));
+    DgnElement::Code code(stmt->GetValueId<DgnAuthorityId>(Column::CodeAuthorityId), stmt->GetValueText(Column::Code), stmt->GetValueText(Column::CodeNameSpace));
 
     return LoadElement(DgnElement::CreateParams(m_dgndb, stmt->GetValueId<DgnModelId>(Column::ModelId), 
                     stmt->GetValueId<DgnClassId>(Column::ClassId), 
@@ -1141,50 +1141,21 @@ DgnElementKey DgnElements::QueryElementKey(DgnElementId elementId) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnElements::IsElementIdUsed(DgnElementId id) const
+void DgnElements::InitNextId()
     {
-    CachedStatementPtr stmt = GetStatement("SELECT 1 FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
-    stmt->BindInt64(1, id.GetValueUnchecked());
-    return BE_SQLITE_ROW == stmt->Step();
+    if (!m_nextAvailableId.IsValid())
+        m_nextAvailableId = DgnElementId(m_dgndb, DGN_TABLE(DGN_CLASSNAME_Element), "Id");
     }
-
-/*---------------------------------------------------------------------------------**//**
- DgnElementIds are 64 bits, divided into two 32 bit parts {high:low}. The high 32 bits are reserved for the
- repositoryId of the creator and the low 32 bits hold the identifier of the element. This scheme is
- designed to allow multiple users on different computers to create new elements without
- generating conflicting ids, since the repositoryId is intended to be unqiue for every copy of the project.
- We are allowed to make DgnElementIds in the range of [{repositoryid:1},{repositoryid+1:0}). So, find the highest currently
- used id in that range and add 1. If none, use the first id. If the highest possible id is already in use, search for an
- available id randomly.
-* @bsimethod                                    Keith.Bentley                   06/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnElements::MakeNewElementId()
-    {
-    m_dgndb.GetNextRepositoryBasedId(m_highestElementId, DGN_TABLE(DGN_CLASSNAME_Element), "Id");
-
-    // see if the next id is the highest possible Id for our repositoryId. If not, use it. Otherwise try random ids until we find one that's
-    // not currently in use.
-    BeRepositoryBasedId lastId(m_dgndb.GetRepositoryId().GetNextRepositoryId(), 0);
-    if (m_highestElementId.GetValueUnchecked() < lastId.GetValueUnchecked()-100) // reserve a few ids for special meaning
-        return m_highestElementId;
-
-    // highest id already used, try looking for a random available id
-    DgnElementId val;
-    do
-        {
-        val.CreateRandom(m_dgndb.GetRepositoryId());
-        } while (IsElementIdUsed(val));
-
-    return val;
-    }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat)
     {
-    element.m_elementId = MakeNewElementId(); 
+    InitNextId();
+    m_nextAvailableId.UseNext(m_dgndb);
+
+    element.m_elementId = m_nextAvailableId; 
 
     if (DgnDbStatus::Success != (stat = element._OnInsert()))
         return nullptr;
@@ -1202,28 +1173,7 @@ DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat
         return nullptr;
         }
 
-    bvector<Utf8String> insertParams;
-    element._GetInsertParams(insertParams);
-    Utf8String ecSql = ECSqlInsertBuilder::BuildECSqlForClass(*elementClass, insertParams);
-    CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement(ecSql.c_str());
-    if (!statement.IsValid())
-        return nullptr;
-
-    if (DgnDbStatus::Success != (stat=element._BindInsertParams(*statement)))
-        return nullptr;
-
-    if (ECSqlStepStatus::Error == statement->Step())
-        {
-        // SQLite doesn't tell us which constraint failed - check if it's the Code.
-        auto existingElemWithCode = QueryElementIdByCode(element.m_code);
-        if (existingElemWithCode.IsValid())
-            stat = DgnDbStatus::DuplicateCode;
-        else
-            stat = DgnDbStatus::WriteError;
-        return nullptr;
-        }
-
-    if (DgnDbStatus::Success != (stat = element._InsertSecondary()))
+    if (DgnDbStatus::Success != (stat = element._InsertInDb()))
         return nullptr;
 
     DgnElementPtr newElement = element.CopyForEdit();
@@ -1372,6 +1322,10 @@ DgnDbStatus DgnElements::Delete(DgnElementCR element)
     if (&element.GetDgnDb() != &m_dgndb || !element.IsPersistent())
         return DgnDbStatus::WrongElement;
 
+    // Get the next available id now, before we perform any deletes, so if we delete and then undo the last element we don't reuse its id.
+    // Otherwise, we may mistake a new element as being a modification to a deleted element in a changeset.
+    InitNextId(); 
+
     DgnDbStatus stat = element._OnDelete();
     if (DgnDbStatus::Success != stat)
         return stat;
@@ -1406,24 +1360,25 @@ DgnModelId DgnElements::QueryModelId(DgnElementId elementId) const
 //---------------------------------------------------------------------------------------
 DgnElementId DgnElements::QueryElementIdByCode(DgnElement::Code const& code) const
     {
-    return QueryElementIdByCode(code.GetAuthority(), code.GetValue());
+    return QueryElementIdByCode(code.GetAuthority(), code.GetValue(), code.GetNameSpace());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnElements::QueryElementIdByCode(Utf8StringCR authority, Utf8StringCR value) const
+DgnElementId DgnElements::QueryElementIdByCode(Utf8CP authority, Utf8StringCR value, Utf8StringCR nameSpace) const
     {
-    return QueryElementIdByCode(GetDgnDb().Authorities().QueryAuthorityId(authority), value);
+    return QueryElementIdByCode(GetDgnDb().Authorities().QueryAuthorityId(authority), value, nameSpace);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnElements::QueryElementIdByCode(DgnAuthorityId authority, Utf8StringCR value) const
+DgnElementId DgnElements::QueryElementIdByCode(DgnAuthorityId authority, Utf8StringCR value, Utf8StringCR nameSpace) const
     {
-    CachedStatementPtr statement=GetStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Code=? AND CodeAuthorityId=? LIMIT 1"); // find first if code not unique
+    CachedStatementPtr statement=GetStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Code=? AND CodeAuthorityId=? AND CodeNameSpace=? LIMIT 1"); // find first if code not unique
     statement->BindText(1, value, Statement::MakeCopy::No);
     statement->BindId(2, authority);
+    statement->BindText(3, nameSpace, Statement::MakeCopy::No);
     return (BE_SQLITE_ROW != statement->Step()) ? DgnElementId() : statement->GetValueId<DgnElementId>(0);
     }

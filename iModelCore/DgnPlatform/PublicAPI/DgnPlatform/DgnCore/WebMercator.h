@@ -119,12 +119,12 @@ struct TiledRaster : IRealityData<TiledRaster, BeSQLiteRealityDataStorage, HttpR
     DEFINE_BENTLEY_REF_COUNTED_MEMBERS
     private:
         ImageUtilities::RgbImageInfo const* m_expectedImageInfo;
-        RequestOptions(bool allowExpired) : m_expectedImageInfo(nullptr), RealityDataCacheOptions(allowExpired, false) {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT}
-        RequestOptions(ImageUtilities::RgbImageInfo const& expectedImageInfo, bool allowExpired) : m_expectedImageInfo(new ImageUtilities::RgbImageInfo(expectedImageInfo)), RealityDataCacheOptions(allowExpired, true) {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT}
+        RequestOptions() : m_expectedImageInfo(nullptr), RealityDataCacheOptions(false, false) {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT}
+        RequestOptions(ImageUtilities::RgbImageInfo const& expectedImageInfo) : m_expectedImageInfo(new ImageUtilities::RgbImageInfo(expectedImageInfo)), RealityDataCacheOptions(true, true) {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT}
     public:
         ~RequestOptions() {DELETE_AND_CLEAR(m_expectedImageInfo);}
-        static RefCountedPtr<RequestOptions> Create(bool allowExpired = true) {return new RequestOptions(allowExpired);}
-        static RefCountedPtr<RequestOptions> Create(ImageUtilities::RgbImageInfo const& expectedImageInfo, bool allowExpired = true) {return new RequestOptions(expectedImageInfo, allowExpired);}
+        static RefCountedPtr<RequestOptions> Create() {return new RequestOptions();}
+        static RefCountedPtr<RequestOptions> Create(ImageUtilities::RgbImageInfo const& expectedImageInfo) {return new RequestOptions(expectedImageInfo);}
         ImageUtilities::RgbImageInfo const* GetExpectedImageInfo() const {return m_expectedImageInfo;}
     };
 
@@ -144,9 +144,10 @@ private:
 protected:
     virtual Utf8CP _GetId() const override;
     virtual bool _IsExpired() const override;
+    virtual BentleyStatus _InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const&) override;
     virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, bvector<Byte> const& body, HttpRealityDataSource::RequestOptions const& options) override;
-    virtual BentleyStatus _InitFrom(BeSQLite::Db& db, Utf8CP key, BeSQLiteRealityDataStorage::SelectOptions const& options) override;
-    virtual BentleyStatus _Persist(BeSQLite::Db& db) const override;
+    virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, BeSQLiteRealityDataStorage::SelectOptions const& options) override;
+    virtual BentleyStatus _Persist(BeSQLite::Db& db, BeMutex& cs) const override;
     virtual BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr _GetDatabasePrepareAndCleanupHandler() const override;
 
 public:
@@ -358,7 +359,7 @@ namespace dgn_ModelHandler
         //! Identifies a well known street map tile service
         enum class MapService
             {
-            MapQuest,               //!< MapQuest
+            OpenStreetMaps          //!< OpenStreetMaps
             };
 
         //! The kind of map to display
@@ -371,7 +372,7 @@ namespace dgn_ModelHandler
     protected:
         DGNPLATFORM_EXPORT virtual BentleyStatus _CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorModel::Mercator const&, WebMercatorTilingSystem::TileId const&) override;
 
-        DGNPLATFORM_EXPORT Utf8String CreateMapquestUrl (WebMercatorTilingSystem::TileId const&, WebMercatorModel::Mercator const&);
+        DGNPLATFORM_EXPORT Utf8String CreateOsmUrl (WebMercatorTilingSystem::TileId const&, WebMercatorModel::Mercator const&);
 
     public:
         //! Create a new street map model in the DgnDb.

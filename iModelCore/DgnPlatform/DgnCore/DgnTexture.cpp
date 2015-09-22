@@ -120,7 +120,7 @@ DgnTextures::Texture DgnTextures::Query(DgnTextureId id) const
 
         size_t dataSize = static_cast<size_t>(stmt->GetColumnBytes(2));
         BeAssert(dataSize > 0);
-        ByteCP data = static_cast<ByteCP>(stmt->GetValueBlob(2));
+        Byte const* data = static_cast<Byte const*>(stmt->GetValueBlob(2));
         tx.m_data.m_data.insert(tx.m_data.m_data.begin(), data, data + dataSize);
 
         tx.m_data.m_format = extractFormat(stmt->GetValueInt(3));
@@ -183,7 +183,7 @@ DgnTextureId DgnTextures::Iterator::Entry::GetId() const            { Verify(); 
 Utf8CP DgnTextures::Iterator::Entry::GetName() const                { Verify(); return m_sql->GetValueText(1); }
 Utf8CP DgnTextures::Iterator::Entry::GetDescr() const               { Verify(); return m_sql->GetValueText(2); }
 size_t DgnTextures::Iterator::Entry::GetDataSize() const            { Verify(); return static_cast<size_t> (m_sql->GetColumnBytes(3)); }
-ByteCP DgnTextures::Iterator::Entry::GetDataBytes() const           { Verify(); return static_cast<ByteCP> (m_sql->GetValueBlob(3)); }
+Byte const* DgnTextures::Iterator::Entry::GetDataBytes() const           { Verify(); return static_cast<Byte const*> (m_sql->GetValueBlob(3)); }
 DgnTextures::Format DgnTextures::Iterator::Entry::GetFormat() const { Verify(); return extractFormat(m_sql->GetValueInt(4)); }
 uint32_t DgnTextures::Iterator::Entry::GetWidth() const             { Verify(); return static_cast<uint32_t> (m_sql->GetValueInt(5)); }
 uint32_t DgnTextures::Iterator::Entry::GetHeight() const            { Verify(); return static_cast<uint32_t> (m_sql->GetValueInt(6)); }

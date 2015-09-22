@@ -74,13 +74,13 @@ struct DgnProjectAssociationData
     {
 private:
     Utf8String  m_relativeFileName; //! The relative path from the DgnDb to the DgnMarkupProject
-    BeGuid      m_guid;             //! The GUID of the DgnDb.
+    BeSQLite::BeGuid m_guid;             //! The GUID of the DgnDb.
     uint64_t    m_lastModifiedTime; //! The last-modification time of the DgnDb
 
 public:
     DGNPLATFORM_EXPORT DgnProjectAssociationData();             //!< Construct an empty object. See DgnMarkupProject::GetAssociation
     DGNPLATFORM_EXPORT Utf8String GetRelativeFileName() const;  //!< Get the relative path of the DgnDb that is associated with the DgnMarkupProject
-    DGNPLATFORM_EXPORT BeGuid GetGuid() const;                  //!< Get the GUID of the DgnDb that is associated with the DgnMarkupProject
+    DGNPLATFORM_EXPORT BeSQLite::BeGuid GetGuid() const;                  //!< Get the GUID of the DgnDb that is associated with the DgnMarkupProject
     DGNPLATFORM_EXPORT uint64_t GetLastModifiedTime() const;      //!< Get the last modified time of the DgnDb as of the time that it was associated with the DgnMarkupProject
 //__PUBLISH_SECTION_END__
     void FromDgnProject(DgnDbCR, DgnMarkupProject const&);
@@ -183,7 +183,6 @@ private:
 
 protected:
     DgnModelType _GetModelType() const override {return DgnModelType::Sheet;}
-    bool _Is3d() const override {return false;}
     void _ToPropertiesJson(Json::Value&) const override;
     void _FromPropertiesJson(Json::Value const&) override;
 
@@ -421,7 +420,6 @@ private:
 
 protected:
     virtual DgnModelType _GetModelType() const override {return DgnModelType::Physical;}
-    virtual bool _Is3d() const override {return true;}
 
     static PhysicalRedlineModelPtr Create(DgnMarkupProjectR markupProject, Utf8CP name, PhysicalModelCR subjectViewTargetModel);
 
@@ -451,7 +449,7 @@ public:
     //! @param[in] dgnProject   The DgnDb which is the target of this markup.
     //! @param[in] guid         The BeProjectGuid to store in the newly created DgnDb. If invalid (the default), a new BeProjectGuid is created.
     //! The new BeProjectGuid can be obtained via GetGuid.
-    CreateDgnMarkupProjectParams(DgnDbR dgnProject, BeDbGuid guid=BeDbGuid()) : CreateDgnDbParams(guid), m_dgnDb(dgnProject), m_overwriteExisting(false) {;}
+    CreateDgnMarkupProjectParams(DgnDbR dgnProject, BeSQLite::BeGuid guid=BeSQLite::BeGuid()) : CreateDgnDbParams(guid), m_dgnDb(dgnProject), m_overwriteExisting(false) {;}
 
     //! Get the subject DgnDb
     DgnDbR GetSubjectDgnProject() const {return m_dgnDb;}

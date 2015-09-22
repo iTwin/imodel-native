@@ -118,6 +118,17 @@ namespace BackDoor
         +-------+---------------+---------------+---------------+---------------+------*/
         double SumTetrahedralVolumes (BentleyApi::PolyfaceQueryP p, DPoint3dCR origin);
     };
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsinamespace
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    namespace RealityData
+    {
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                    Grigas.Petraitis                07/15
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void RunOnAnotherThread(std::function<void()> const&);
+    }; // RealityData
 }
 
 END_DGNDB_UNIT_TESTS_NAMESPACE

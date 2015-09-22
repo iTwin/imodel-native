@@ -88,6 +88,7 @@ DbResult DgnDb::_OnDbOpened()
         return rc;
 
     Txns(); // make sure txnmanager is allocated
+    Fonts().Update(); // ensure the font ID cache is loaded; if you wait for on-demand, it may need to query during an update, which we'd like to avoid
 
     m_units.Load();
     return Domains().OnDbOpened();
@@ -272,8 +273,16 @@ DgnTextAnnotationSeeds& DgnStyles::TextAnnotationSeeds() {if (NULL == m_textAnno
 DgnDbStatus DgnScriptLibrary::RegisterScript(Utf8CP tsProgramName, Utf8CP tsProgramText, DgnScriptType stype, bool updateExisting)
     {
     DbEmbeddedFileTable& files = GetDgnDb().EmbeddedFiles();
-    if (BE_SQLITE_OK != files.AddEntry(tsProgramName, (DgnScriptType::JavaScript == stype)? "js": "ts")
-     || BE_SQLITE_OK != files.Save(tsProgramText, strlen(tsProgramText)+1, tsProgramName, true))
+    DbResult res = files.AddEntry(tsProgramName, (DgnScriptType::JavaScript == stype)? "js": "ts");
+    if (BE_SQLITE_OK != res)
+        {
+        if (!BeSQLiteLib::IsConstraintDbResult(res) || !updateExisting)
+            {
+            return DgnDbStatus::SQLiteError;
+            }
+        }
+
+    if (BE_SQLITE_OK != files.Save(tsProgramText, strlen(tsProgramText)+1, tsProgramName, true))
         return DgnDbStatus::SQLiteError;
     
     return DgnDbStatus::Success;

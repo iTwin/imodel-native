@@ -507,7 +507,7 @@ void                LsStroke::SetIsRigid            SETSTROKEMODE (STROKE_Rigid)
 double              LsStroke::GetLength ()        const    {return m_length;}
 double              LsStroke::GetStartWidth ()    const    {return m_orgWidth;}
 double              LsStroke::GetEndWidth ()      const    {return m_endWidth;}
-LsStroke::CapMode   LsStroke::GetCapMode()        const    {return (CapMode)m_capMode;}
+LsCapMode           LsStroke::GetCapMode()        const    {return (LsCapMode)m_capMode;}
 LsStroke::WidthMode LsStroke::GetWidthMode ()     const    {return (WidthMode)(m_widthMode & 0x03);}
 
 size_t              LsStrokePatternComponent::GetNumberStrokes ()     const {return  m_nStrokes;}
@@ -521,8 +521,8 @@ bool                LsSymbolReference::GetNoPartial ()    const {return 0 != (m_
 bool                LsSymbolReference::GetClipPartial()   const {return 0 == (m_mod1 & LCPOINT_NOCLIP);}
 bool                LsSymbolReference::GetStretchable()   const {return 0 == (m_mod1 & LCPOINT_NOSCALE);}
 bool                LsSymbolReference::GetDgnDb()       const {return 0 != (m_mod1 & LCPOINT_PROJECT);}
-bool                LsSymbolReference::GetUseColor()      const {return 0 != (m_mod1 & LCPOINT_COLOR);}
-bool                LsSymbolReference::GetUseWeight()     const {return 0 != (m_mod1 & LCPOINT_WEIGHT);}
+bool                LsSymbolReference::GetUseElementColor()  const {return 0 != (m_mod1 & LCPOINT_COLOR);}
+bool                LsSymbolReference::GetUseElementWeight() const {return 0 != (m_mod1 & LCPOINT_WEIGHT);}
 double              LsSymbolReference::GetXOffset()         const {return m_offset.x;}
 double              LsSymbolReference::GetYOffset()         const {return m_offset.y;}
 double              LsSymbolReference::GetAngle()           const {return m_angle;}
@@ -599,7 +599,7 @@ void            LsSymbolReference::SetDgnDb(bool value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    john.gooding                    09/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsSymbolReference::SetUseColor(bool value)
+void            LsSymbolReference::SetUseElementColor(bool value)
     {
     uint32_t newValue = value ? LCPOINT_COLOR : 0;
     m_mod1 = (m_mod1 & ~LCPOINT_COLOR) | newValue;
@@ -608,7 +608,7 @@ void            LsSymbolReference::SetUseColor(bool value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    john.gooding                    09/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsSymbolReference::SetUseWeight(bool value)
+void            LsSymbolReference::SetUseElementWeight(bool value)
     {
     uint32_t newValue = value ? LCPOINT_WEIGHT : 0;
     m_mod1 = (m_mod1 & ~LCPOINT_WEIGHT) | newValue;

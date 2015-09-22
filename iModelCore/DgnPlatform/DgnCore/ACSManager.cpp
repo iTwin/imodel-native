@@ -489,7 +489,7 @@ DgnModelR    modelRef
             outPoint.x = radius * cos(theta);
             outPoint.y = radius * sin(theta);
 
-            if (modelRef.Is3d ())
+            if (modelRef.Is3d())
                 {
                 if (subStrings.size () < 3)
                     return ERROR;
@@ -617,7 +617,7 @@ DirectionFormatterR directionFormatter
             outString.append (L",");
             outString.append (directionString);
 
-            if (modelRef.Is3d ())
+            if (modelRef.Is3d())
                 {
                 WString elevationString = distanceFormatter.ToString (tPoint.z);
                 outString.append (L",");
