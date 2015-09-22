@@ -341,8 +341,7 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
         return BE_SQLITE_DONE;
         }
 
-    //error status already set by child calls
-    return BE_SQLITE_ERROR;
+    return stat;
     }
 
 

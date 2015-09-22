@@ -3072,16 +3072,16 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
             if (f == g)
                 oneFooHasOneGooResult.push_back(BE_SQLITE_DONE);
             else
-                oneFooHasOneGooResult.push_back(BE_SQLITE_CONSTRAINT_BASE);
+                oneFooHasOneGooResult.push_back(BE_SQLITE_CONSTRAINT_UNIQUE);
 
             //1:N is effected with AllowDuplicateRelationships
             if (f == 0)
                 oneFooHasManyGooResult.push_back(BE_SQLITE_DONE);
             else
-                oneFooHasManyGooResult.push_back(BE_SQLITE_CONSTRAINT_BASE);
+                oneFooHasManyGooResult.push_back(BE_SQLITE_CONSTRAINT_UNIQUE);
 
             manyFooHasManyGooResult.push_back(BE_SQLITE_DONE);
-            reinsertResultError.push_back(BE_SQLITE_CONSTRAINT_BASE);
+            reinsertResultError.push_back(BE_SQLITE_CONSTRAINT_UNIQUE);
             reinsertResultDone.push_back(BE_SQLITE_DONE);
             }
         }
