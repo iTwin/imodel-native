@@ -114,7 +114,7 @@
         <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/GeomLibsTestData" LibType="static"/>
 
         <ProductDirectory Name="http"                               Path="Assets/http"/>
-        <ProductDirectory Name="http"                               Path="Assets/http"/>
+        <ProductDirectory Name="http"                               Path="Assets/http" LibType="static"/>
 
         <ProductDirectory Name="MobileDgnJavaScript"                Path="Assets/js/"/>
         <ProductDirectory Name="MobileDgnJavaScript"                Path="Assets/js/" LibType="static"/>
