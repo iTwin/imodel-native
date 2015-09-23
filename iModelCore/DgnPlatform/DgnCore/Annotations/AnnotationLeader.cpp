@@ -171,7 +171,7 @@ BentleyStatus AnnotationLeaderPersistence::DecodeFromFlatBuf(AnnotationLeaderR l
         return ERROR;
 
     PRECONDITION(fbLeader.has_styleId(), ERROR);
-    leader.SetStyleId(DgnStyleId(fbLeader.styleId()), SetAnnotationLeaderStyleOptions::Direct);
+    leader.SetStyleId(DgnStyleId((uint64_t)fbLeader.styleId()), SetAnnotationLeaderStyleOptions::Direct);
     
     if (fbLeader.has_styleOverrides())
         AnnotationLeaderStylePersistence::DecodeFromFlatBuf(leader.m_styleOverrides, *fbLeader.styleOverrides());

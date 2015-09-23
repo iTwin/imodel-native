@@ -120,7 +120,7 @@ public:
     DGNPLATFORM_EXPORT static DgnAuthority::Code GenerateDefaultCode(DgnElementCR el);
 
     //! The built-in "local" code-generating authority
-    static DgnAuthorityId LocalId() {return DgnAuthorityId((int64_t)1LL);}
+    static DgnAuthorityId LocalId() {return DgnAuthorityId((uint64_t)1LL);}
 };
 
 //=======================================================================================

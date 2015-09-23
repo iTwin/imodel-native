@@ -20,7 +20,8 @@ static DgnStyleId ensureAnnotationTextStyle1(DgnDbR db)
         return existingStyle->GetId();
     
     AnnotationTextStyle style(db);
-    style.SetColor(ElementColor(ColorDef(0x00, 0xff, 0x00)));
+    style.SetColorType(AnnotationColorType::RGBA);
+    style.SetColorValue(ColorDef(0x00, 0xff, 0x00));
     style.SetFontId(db.Fonts().AcquireId(DgnFontManager::GetAnyLastResortFont()));
     style.SetHeight(1000.0);
     style.SetName(STYLE_NAME);
@@ -72,7 +73,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
         categoryId = category.GetCategoryId();
         ASSERT_TRUE(categoryId.IsValid());
 
-        DgnModelPtr model = new GraphicsModel2d(DgnModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_GraphicsModel2d)), "2D Model 1"));
+        DgnModelPtr model = new DgnModel2d(DgnModel2d::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model2d)), "2D Model 1"));
         ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
 
         modelId = model->GetModelId();

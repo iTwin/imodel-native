@@ -1017,7 +1017,7 @@ BentleyStatus DgnViewAssociationData::FromPropertiesJson(Json::Value const& val)
     T_Super::FromPropertiesJson(val);
     if (val.isMember("ViewId"))
         {
-        m_viewId = DgnViewId(val["ViewId"].asInt64());
+        m_viewId = DgnViewId(val["ViewId"].asUInt64());
         m_viewGeometry = val["ViewGeometry"];
         }
     return BSISUCCESS;
@@ -1139,36 +1139,36 @@ void DgnMarkupProject::CreateModelECProperties (DgnModelId modelId, Utf8CP model
     
     ECSqlStatement statement;
     ECSqlStatus stat = statement.Prepare (*this, ecsql.c_str ());
-    if (stat != ECSqlStatus::Success)
+    if (stat != ECSqlStatus::Success())
         {
         BeAssert (false);
         return;
         }
     
     stat = statement.BindInt64 (1, modelId.GetValue ());
-    if (stat != ECSqlStatus::Success)
+    if (stat != ECSqlStatus::Success())
         {
         BeAssert (false);
         return;
         }
         
     stat = statement.BindText (2, modelName, IECSqlBinder::MakeCopy::No);
-    if (stat != ECSqlStatus::Success)
+    if (stat != ECSqlStatus::Success())
         {
         BeAssert (false);
         return;
         }
         
     stat = statement.BindDateTime (3, DateTime::GetCurrentTimeUtc());
-    if (stat != ECSqlStatus::Success)
+    if (stat != ECSqlStatus::Success())
         {
         BeAssert (false);
         return;
         }
 
     ECInstanceKey newECInstanceKey;
-    ECSqlStepStatus stepStat = statement.Step (newECInstanceKey);
-    if (stepStat != ECSqlStepStatus::Done)
+    DbResult stepStat = statement.Step (newECInstanceKey);
+    if (stepStat != BE_SQLITE_DONE)
         {
         BeAssert (false);
         return;

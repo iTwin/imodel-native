@@ -445,7 +445,7 @@ bool QueryViewController::_IsInSet(int nVals, DbValue const* vals) const
     BeAssert(nVals == 2);   // we need ModelId and Category
 
     // check that both the model is on and the category is on.
-    return m_viewedModels.Contains(DgnModelId(vals[0].GetValueInt64())) && m_viewedCategories.Contains(DgnCategoryId(vals[1].GetValueInt64()));
+    return m_viewedModels.Contains(DgnModelId(vals[0].GetValueUInt64())) && m_viewedCategories.Contains(DgnCategoryId(vals[1].GetValueUInt64()));
     }
 
 /*---------------------------------------------------------------------------------**//**

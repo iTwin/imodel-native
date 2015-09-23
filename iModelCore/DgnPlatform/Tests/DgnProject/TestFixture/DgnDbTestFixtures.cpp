@@ -27,7 +27,7 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(TMTEST_SCHEMA_NAME, "
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Code elementCode)
 {
-    TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), nullptr, elementCode));
+    TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
 
     //  Add some hard-wired geometry
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*testElement);
@@ -43,7 +43,7 @@ TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId cate
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElementPtr TestElement::Create(DgnDbR db, ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, Code elementCode)
 {
-    TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), nullptr, elementCode));
+    TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
 
     //  Add some hard-wired geometry
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*testElement);
@@ -58,20 +58,79 @@ TestElementPtr TestElement::Create(DgnDbR db, ElemDisplayParamsCR ep, DgnModelId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_InsertSecondary()
+DgnDbStatus TestElement::_InsertInDb()
 {
-    DgnDbStatus stat = T_Super::_InsertSecondary();
+    DgnDbStatus stat = T_Super::_InsertInDb();
     if (DgnDbStatus::Success != stat)
         return stat;
 
     CachedECSqlStatementPtr insertStmt = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME "(ECInstanceId," TMTEST_TEST_ITEM_TestItemProperty ") VALUES(?,?)");
     insertStmt->BindId(1, GetElementId());
     insertStmt->BindText(2, m_testItemProperty.c_str(), IECSqlBinder::MakeCopy::No);
-    if (ECSqlStepStatus::Done != insertStmt->Step())
+    if (BE_SQLITE_DONE != insertStmt->Step())
         return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestElement::_LoadFromDb()
+    {
+    auto status = T_Super::_LoadFromDb();
+    if (DgnDbStatus::Success == status)
+        {
+        auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT " TMTEST_TEST_ELEMENT_TestElementProperty " FROM " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ELEMENT_CLASS_NAME " WHERE ECInstanceId=?");
+        stmt->BindId(1, GetElementId());
+        stmt->Step();
+        m_testElemProperty = stmt->GetValueText(0);
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestElement::_GetInsertParams(bvector<Utf8CP>& params)
+    {
+    T_Super::_GetInsertParams(params);
+    params.push_back(TMTEST_TEST_ELEMENT_TestElementProperty);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestElement::_BindInsertParams(ECSqlStatement& stmt)
+    {
+    auto status = T_Super::_BindInsertParams(stmt);
+    if (DgnDbStatus::Success == status)
+        stmt.BindText(stmt.GetParameterIndex(TMTEST_TEST_ELEMENT_TestElementProperty), m_testElemProperty.c_str(), IECSqlBinder::MakeCopy::No);
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestElement::_GetUpdateParams(bvector<Utf8CP>& params)
+    {
+    T_Super::_GetUpdateParams(params);
+    params.push_back(TMTEST_TEST_ELEMENT_TestElementProperty);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestElement::_BindUpdateParams(ECSqlStatement& stmt)
+    {
+    auto status = T_Super::_BindUpdateParams(stmt);
+    if (DgnDbStatus::Success == status)
+        stmt.BindText(stmt.GetParameterIndex(TMTEST_TEST_ELEMENT_TestElementProperty), m_testElemProperty.c_str(), IECSqlBinder::MakeCopy::No);
+
+    return status;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Majd.Uddin      06/15
@@ -92,7 +151,7 @@ DgnDbStatus TestElement::_UpdateInDb()
         return DgnDbStatus::SQLiteError;
     if (upStmt->BindText(1, ECN::ECValue(m_testItemProperty.c_str()).GetUtf8CP(), BeSQLite::EC::IECSqlBinder::MakeCopy::No) != ECSqlStatus::Success)
         return DgnDbStatus::SQLiteError;
-    if (upStmt->Step() != BeSQLite::EC::ECSqlStepStatus::Done)
+    if (upStmt->Step() != BE_SQLITE_DONE)
         return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
@@ -115,12 +174,26 @@ DgnDbStatus TestElement::_DeleteInDb() const
         return DgnDbStatus::SQLiteError;
     if (delStmt->BindId(1, GetElementId()) != ECSqlStatus::Success)
         return DgnDbStatus::SQLiteError;
-    if (delStmt->Step() != BeSQLite::EC::ECSqlStepStatus::Done)
+    if (delStmt->Step() != BE_SQLITE_DONE)
         return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
 
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestElement::_CopyFrom(DgnElementCR el)
+    {
+    T_Super::_CopyFrom(el);
+    auto testEl = dynamic_cast<TestElement const*>(&el);
+    if (nullptr != testEl)
+        {
+        m_testElemProperty = testEl->m_testElemProperty;
+        m_testItemProperty = testEl->m_testItemProperty;
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * Inserts TestElement
@@ -196,7 +269,7 @@ bool DgnDbTestFixture::SelectElementItem(DgnElementId id)
         return false;
     if (selStmt->BindId(1, id) != ECSqlStatus::Success)
         return false;
-    if (selStmt->Step() != BeSQLite::EC::ECSqlStepStatus::HasRow)
+    if (selStmt->Step() != BE_SQLITE_ROW)
         return false;
 
     return true;
@@ -207,16 +280,14 @@ bool DgnDbTestFixture::SelectElementItem(DgnElementId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElement2dPtr TestElement2d::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Code elementCode)
 {
-    DgnElementPtr testElement = TestElement2dHandler::GetHandler().Create(TestElement2d::CreateParams(db, mid, db.Domains().GetClassId(TestElement2dHandler::GetHandler()), categoryId, Placement2d(), nullptr, elementCode));
+    TestElement2dPtr testElement = new TestElement2d(TestElement2d::CreateParams(db, mid, db.Domains().GetClassId(TestElement2dHandler::GetHandler()), categoryId, Placement2d(), elementCode));
     if (!testElement.IsValid())
         return nullptr;
 
-    TestElement2d* geom = (TestElement2d*) testElement.get();
-
     //  Add some hard-wired geometry
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*geom);
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*testElement);
     EXPECT_TRUE(builder->Append(*GeomHelper::computeShape2d()));
-    return (SUCCESS != builder->SetGeomStreamAndPlacement(*geom)) ? nullptr : geom;
+    return (SUCCESS != builder->SetGeomStreamAndPlacement(*testElement)) ? nullptr : testElement;
 }
 
 /*---------------------------------------------------------------------------------**//**

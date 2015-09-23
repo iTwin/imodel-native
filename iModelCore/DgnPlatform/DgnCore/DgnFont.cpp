@@ -203,7 +203,7 @@ DgnFontPtr DgnFonts::DbFontMapDirect::QueryById(DgnFontId id) const
     if (BE_SQLITE_ROW != query.Step())
         return nullptr;
 
-    return DgnFontPersistence::Db::FromDb(m_dbFonts, id, (DgnFontType)query.GetValueInt(0), query.GetValueText(1), (ByteCP)query.GetValueBlob(2), (size_t)query.GetColumnBytes(2));
+    return DgnFontPersistence::Db::FromDb(m_dbFonts, id, (DgnFontType)query.GetValueInt(0), query.GetValueText(1), (Byte const*)query.GetValueBlob(2), (size_t)query.GetColumnBytes(2));
     }
 
 //---------------------------------------------------------------------------------------
@@ -221,7 +221,7 @@ DgnFontPtr DgnFonts::DbFontMapDirect::QueryByTypeAndName(DgnFontType type, Utf8C
     if (BE_SQLITE_ROW != query.Step())
         return nullptr;
 
-    return DgnFontPersistence::Db::FromDb(m_dbFonts, query.GetValueId<DgnFontId>(0), type, name, (ByteCP)query.GetValueBlob(1), (size_t)query.GetColumnBytes(1));
+    return DgnFontPersistence::Db::FromDb(m_dbFonts, query.GetValueId<DgnFontId>(0), type, name, (Byte const*)query.GetValueBlob(1), (size_t)query.GetColumnBytes(1));
     }
 
 //---------------------------------------------------------------------------------------
@@ -584,7 +584,7 @@ bool DgnFonts::DbFaceDataDirect::Exists(FaceKeyCR key)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     04/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus DgnFonts::DbFaceDataDirect::Insert(ByteCP data, size_t size, T_FaceMapCR keys)
+BentleyStatus DgnFonts::DbFaceDataDirect::Insert(Byte const* data, size_t size, T_FaceMapCR keys)
     {
     Statement idQuery;
     idQuery.Prepare(m_dbFonts.m_db, "SELECT MAX(Id) FROM " BEDB_TABLE_Property " WHERE Namespace='" EMBEDDED_FACE_DATA_PROP_NS "' AND Name='" EMBEDDED_FACE_DATA_PROP_NAME "'");
@@ -774,7 +774,7 @@ DgnFontId DgnFonts::AcquireId(DgnFontCR font)
 //---------------------------------------------------------------------------------------
 uint32_t const* DgnFont::Utf8ToUcs4(bvector<Byte>& ucs4CharsBuffer, size_t& numUcs4Chars, Utf8StringCR str)
     {
-    if (SUCCESS != BeStringUtilities::TranscodeStringDirect(ucs4CharsBuffer, "UCS-4", (ByteCP)str.c_str(), sizeof(Utf8Char) * (str.size() + 1), "UTF-8"))
+    if (SUCCESS != BeStringUtilities::TranscodeStringDirect(ucs4CharsBuffer, "UCS-4", (Byte const*)str.c_str(), sizeof(Utf8Char) * (str.size() + 1), "UTF-8"))
         return 0;
 
     // ICU for UCS-4 injects a BOM on the front which we don't want.
@@ -855,7 +855,7 @@ bool DgnFont::IsResolved() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
 //---------------------------------------------------------------------------------------
-DgnFontPtr DgnFontPersistence::Db::FromDb(DgnFonts& dbFonts, DgnFontId id, DgnFontType type, Utf8CP name, ByteCP metadata, size_t metadataSize)
+DgnFontPtr DgnFontPersistence::Db::FromDb(DgnFonts& dbFonts, DgnFontId id, DgnFontType type, Utf8CP name, Byte const* metadata, size_t metadataSize)
     {
     switch (type)
         {

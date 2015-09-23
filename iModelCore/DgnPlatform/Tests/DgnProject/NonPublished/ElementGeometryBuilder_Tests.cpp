@@ -22,7 +22,7 @@ struct ElementGeometryBuilderTests : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeometryBuilderTests, CreateElement3d)
 {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElemGeometryBuilder.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"ElementGeometryBuilderTests_CreateElement3d.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
 
@@ -60,7 +60,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElement3d)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeometryBuilderTests, CreateElement2d)
 {
-    SetupProject(L"2dMetricGeneral.idgndb", L"ElemGeometryBuilder.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"2dMetricGeneral.idgndb", L"ElementGeometryBuilderTests_CreateElement2d.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     DgnElementPtr el = TestElement2d::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
 

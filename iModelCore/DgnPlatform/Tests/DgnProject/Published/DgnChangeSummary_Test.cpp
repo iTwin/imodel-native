@@ -39,6 +39,7 @@ protected:
     DgnModelPtr m_testModel;
     DgnCategoryId m_testCategoryId;
     DgnElementId m_testElementId;
+    DgnAuthorityId m_authorityId;
 
     Utf8String GetLabel(int iFloor, int iQuadrant) const;
 
@@ -49,6 +50,9 @@ protected:
 
     void InsertModel();
     void InsertCategory();
+    void InsertAuthority();
+
+    DgnAuthority::Code CreateCode(Utf8StringCR value) { return m_testDb->Authorities().Get<NamespaceAuthority>(m_authorityId)->CreateCode(value); }
 
     void CreateSampleBuilding(WCharCP fileName);
     void InsertEmptyBuilding(WCharCP filename);
@@ -168,6 +172,16 @@ void DgnChangeSummaryTestFixture::InsertCategory()
     m_testCategoryId = category.GetCategoryId();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnChangeSummaryTestFixture::InsertAuthority()
+    {
+    auto auth = NamespaceAuthority::CreateNamespaceAuthority("DgnChangeSummaryTest", *m_testDb);
+    ASSERT_TRUE(DgnDbStatus::Success == auth->Insert());
+    m_authorityId = auth->GetAuthorityId();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    08/2015
 //---------------------------------------------------------------------------------------
@@ -238,6 +252,7 @@ void DgnChangeSummaryTestFixture::InsertEmptyBuilding(WCharCP filename)
     CreateDgnDb(filename);
     InsertModel();
     InsertCategory();
+    InsertAuthority();
     CreateDefaultView();
     UpdateDgnDbExtents();
     m_testDb->SaveChanges("Inserted empty building");
@@ -248,7 +263,7 @@ void DgnChangeSummaryTestFixture::InsertEmptyBuilding(WCharCP filename)
 //---------------------------------------------------------------------------------------
 DgnElementId DgnChangeSummaryTestFixture::QueryElementIdByLabel(Utf8CP label)
     {
-    CachedStatementPtr stmt = m_testDb->GetCachedStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Label=? LIMIT 1"); // find first if label not unique
+    CachedStatementPtr stmt = m_testDb->GetCachedStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Code=? LIMIT 1"); // find first if label not unique
     stmt->BindText(1, label, Statement::MakeCopy::No);
     return (BE_SQLITE_ROW != stmt->Step()) ? DgnElementId() : stmt->GetValueId<DgnElementId>(0);
     }
@@ -300,9 +315,7 @@ void DgnChangeSummaryTestFixture::InsertFloor(int iFloor)
 
             PhysicalModelR physicalModel = *(dynamic_cast<PhysicalModelP> (m_testModel.get()));
             PhysicalElementPtr physicalElementPtr = PhysicalElement::Create(physicalModel, m_testCategoryId);
-
-            Utf8String label = GetLabel(iFloor, iQuadrant);
-            physicalElementPtr->SetLabel(label.c_str());
+            physicalElementPtr->SetCode(CreateCode(GetLabel(iFloor, iQuadrant)));
             
             DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::FromZero(), blockSizeRange, true);
             ISolidPrimitivePtr geomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
@@ -458,11 +471,13 @@ void DgnChangeSummaryTestFixture::CompareSessions(DgnChangeSummaryTestFixture::C
     dgnChangeSummary.GetElementsWithItemUpdates(changedElements.m_businessUpdates);
     dgnChangeSummary.GetElementsWithGeometryUpdates(changedElements.m_geometryUpdates);
 
+    /*
     printf("-----------------------------------------\n");
     printf("Change summary between sessions (%d, %d]:\n", startSessionId, endSessionId);
     printf("-----------------------------------------\n");
     dgnChangeSummary.Dump();
     printf("\n\n\n");
+    */
 
     status = m_testDb->Txns().ReinstateTxn();
     ASSERT_TRUE(status == DgnDbStatus::Success);

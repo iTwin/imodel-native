@@ -52,7 +52,7 @@ DgnDbStatus TestItem::_GenerateElementGeometry(GeometricElementR el, GenerateRea
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
     {
-    TestElementPtr testElement = new TestElement(CreateParams(db, mid, QueryClassId(db), categoryId, Placement3d(), nullptr/*, DgnElement::Code(elementCode)*/));
+    TestElementPtr testElement = new TestElement(CreateParams(db, mid, QueryClassId(db), categoryId, Placement3d()));
     return testElement;
     }
 
@@ -61,7 +61,7 @@ TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId cate
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code const& elementCode)
     {
-    TestElementPtr testElement = new TestElement(CreateParams(db, mid, QueryClassId(db), categoryId, Placement3d(), nullptr, elementCode));
+    TestElementPtr testElement = new TestElement(CreateParams(db, mid, QueryClassId(db), categoryId, Placement3d(), elementCode));
     return testElement;
     }
 
@@ -129,7 +129,7 @@ static CurveVectorPtr computeShape2d(double len)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElement2dPtr TestElement2d::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Code elementCode, double length)
 {
-    DgnElementPtr testElement = TestElement2dHandler::GetHandler().Create(TestElement2d::CreateParams(db, mid, db.Domains().GetClassId(TestElement2dHandler::GetHandler()), categoryId, Placement2d(), nullptr, elementCode));
+    DgnElementPtr testElement = TestElement2dHandler::GetHandler().Create(TestElement2d::CreateParams(db, mid, db.Domains().GetClassId(TestElement2dHandler::GetHandler()), categoryId, Placement2d(), elementCode));
     if (!testElement.IsValid())
         return nullptr;
 
@@ -148,7 +148,7 @@ DgnDbStatus TestItem::_LoadProperties(DgnElementCR el)
     {
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT " DPTEST_TEST_ITEM_TestItemProperty "," DPTEST_TEST_ITEM_TestItemLength " FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindId(1, el.GetElementId());
-    if (BeSQLite::EC::ECSqlStepStatus::HasRow != stmt->Step())
+    if (BE_SQLITE_ROW != stmt->Step())
         return DgnDbStatus::ReadError;
     m_testItemProperty = stmt->GetValueText(0);
     m_length = stmt->GetValueDouble(1);
@@ -164,7 +164,7 @@ DgnDbStatus TestItem::_UpdateProperties(DgnElementCR el)
     stmt->BindText(1, m_testItemProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     stmt->BindDouble(2, m_length);
     stmt->BindId(3, el.GetElementId());
-    return (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step())? DgnDbStatus::WriteError: DgnDbStatus::Success;
+    return (BE_SQLITE_DONE != stmt->Step())? DgnDbStatus::WriteError: DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -174,7 +174,7 @@ DgnDbStatus TestUniqueAspect::_LoadProperties(DgnElementCR el)
     {
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT " DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty " FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindId(1, GetAspectInstanceId(el));
-    if (BeSQLite::EC::ECSqlStepStatus::HasRow != stmt->Step())
+    if (BE_SQLITE_ROW != stmt->Step())
         return DgnDbStatus::ReadError;
     m_testUniqueAspectProperty = stmt->GetValueText(0);
     return DgnDbStatus::Success;
@@ -188,7 +188,7 @@ DgnDbStatus TestUniqueAspect::_UpdateProperties(DgnElementCR el)
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("UPDATE %s SET " DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty "=? WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindText(1, m_testUniqueAspectProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     stmt->BindId(2, GetAspectInstanceId(el));
-    return (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step())? DgnDbStatus::WriteError: DgnDbStatus::Success;
+    return (BE_SQLITE_DONE != stmt->Step())? DgnDbStatus::WriteError: DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -198,7 +198,7 @@ DgnDbStatus TestMultiAspect::_LoadProperties(DgnElementCR el)
     {
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT " DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty " FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindId(1, GetAspectInstanceId());
-    if (BeSQLite::EC::ECSqlStepStatus::HasRow != stmt->Step())
+    if (BE_SQLITE_ROW != stmt->Step())
         return DgnDbStatus::ReadError;
     m_testMultiAspectProperty = stmt->GetValueText(0);
     return DgnDbStatus::Success;
@@ -212,7 +212,7 @@ DgnDbStatus TestMultiAspect::_UpdateProperties(DgnElementCR el)
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("UPDATE %s SET " DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty "=? WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindText(1, m_testMultiAspectProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     stmt->BindId(2, GetAspectInstanceId());
-    return (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step())? DgnDbStatus::WriteError: DgnDbStatus::Success;
+    return (BE_SQLITE_DONE != stmt->Step())? DgnDbStatus::WriteError: DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -234,7 +234,7 @@ void TestElementDrivesElementHandler::UpdateProperty1(DgnDbR db, EC::ECInstanceK
     ECSqlStatement stmt;
     stmt.Prepare(db, "UPDATE ONLY " DPTEST_SCHEMA_NAME "." DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME " SET Property1='changed'  WHERE(ECInstanceId=?)");
     stmt.BindId(1, key.GetECInstanceId());
-    ASSERT_EQ( stmt.Step(), ECSqlStepStatus::Done );
+    ASSERT_EQ( stmt.Step(), BE_SQLITE_DONE );
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -253,7 +253,7 @@ ECInstanceKey TestElementDrivesElementHandler::Insert(DgnDbR db, DgnElementId ro
     stmt->BindId(2, dependent);
 
     ECInstanceKey rkey;
-    if (ECSqlStepStatus::Done != stmt->Step(rkey))
+    if (BE_SQLITE_DONE != stmt->Step(rkey))
         return ECInstanceKey();
 
     return rkey;

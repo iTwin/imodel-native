@@ -88,6 +88,7 @@ enum class DgnDbStatus : int
     WrongElement,
     WrongHandler,
     WrongModel,
+    InvalidCategory,
     };
 
 //! Status Values for DgnViewport methods

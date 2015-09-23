@@ -28,7 +28,6 @@ HANDLER_DEFINE_MEMBERS(Component)
 HANDLER_DEFINE_MEMBERS(PhysicalRedline)
 HANDLER_DEFINE_MEMBERS(Sheet)
 HANDLER_DEFINE_MEMBERS(Redline)
-HANDLER_DEFINE_MEMBERS(Graphics2d)
 HANDLER_DEFINE_MEMBERS(PlanarPhysical)
 HANDLER_DEFINE_MEMBERS(SectionDrawing)
 HANDLER_DEFINE_MEMBERS(StreetMap)
@@ -36,6 +35,7 @@ HANDLER_DEFINE_MEMBERS(WebMercator)
 HANDLER_DEFINE_MEMBERS(PointCloud)
 HANDLER_DEFINE_MEMBERS(Raster)
 HANDLER_DEFINE_MEMBERS(Resource)
+HANDLER_DEFINE_MEMBERS(Model2d)
 };
 
 namespace dgn_ElementHandler
@@ -76,13 +76,12 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(ViewHandler::GetHandler());
     RegisterHandler(DgnElementDependencyHandler::GetHandler());
     RegisterHandler(dgn_AspectHandler::Aspect::GetHandler());
-    RegisterHandler(dgn_AspectHandler::TextAnnotationData::GetHandler());
 
     RegisterHandler(dgn_ModelHandler::Model::GetHandler());
     RegisterHandler(dgn_ModelHandler::Physical::GetHandler());
     RegisterHandler(dgn_ModelHandler::Component::GetHandler());
     RegisterHandler(dgn_ModelHandler::Sheet::GetHandler());
-    RegisterHandler(dgn_ModelHandler::Graphics2d::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Model2d::GetHandler());
     RegisterHandler(dgn_ModelHandler::PlanarPhysical::GetHandler());
     RegisterHandler(dgn_ModelHandler::SectionDrawing::GetHandler());
     RegisterHandler(dgn_ModelHandler::Redline::GetHandler());
@@ -98,6 +97,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::Drawing::GetHandler());
     RegisterHandler(dgn_ElementHandler::Group::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotation::GetHandler());
+    RegisterHandler(dgn_ElementHandler::PhysicalTextAnnotation::GetHandler());
 
     RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Local::GetHandler());
