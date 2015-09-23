@@ -33,14 +33,6 @@ namespace DirectionParser
         /*-------------------------------------------------------------------------**//**
         * @bsimethod                                            KevinNyman      11/09
         +-------+---------------+---------------+---------------+---------------+------*/
-        DgnModelType GetModelType (DgnModelCR model)
-            {
-            return model.GetModelType ();
-            }
-
-        /*-------------------------------------------------------------------------**//**
-        * @bsimethod                                            KevinNyman      11/09
-        +-------+---------------+---------------+---------------+---------------+------*/
         Dgn::DgnModelId GetModelId (DgnModelR model)
             {
             return model.GetModelId();
