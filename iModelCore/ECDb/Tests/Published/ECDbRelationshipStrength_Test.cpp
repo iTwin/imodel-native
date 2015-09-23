@@ -50,7 +50,7 @@ bool HasInstance (IECInstanceCR instance, ECDbR ecDb)
     auto stat = statement.Prepare (ecDb, builder.ToString ().c_str ());
     BeAssert (stat == ECSqlStatus::Success);
 
-    return statement.Step() == ECSqlStepStatus::HasRow;
+    return statement.Step() == BE_SQLITE_ROW;
     }
 
 //---------------------------------------------------------------------------------------

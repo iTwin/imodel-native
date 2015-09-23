@@ -25,7 +25,7 @@ ECSqlStatus ECSqlDeletePreparer::Prepare (ECSqlPrepareContext& ctx, DeleteStatem
  
     NativeSqlSnippets deleteNativeSqlSnippets;
     auto stat = GenerateNativeSqlSnippets (deleteNativeSqlSnippets, ctx, exp, *classNameExp);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return stat;
 
     if (classMap.GetClassMapType () == ClassMap::Type::RelationshipEndTable)
@@ -96,13 +96,13 @@ ClassNameExp const& classNameExp
 )
     {
     auto status = ECSqlExpPreparer::PrepareClassRefExp (deleteSqlSnippets.m_classNameNativeSqlSnippet, ctx, classNameExp);
-    if (status != ECSqlStatus::Success)
+    if (!status.IsSuccess())
         return status;
 
     if (auto whereClauseExp = exp.GetOptWhereClauseExp ())
         {
         status = ECSqlExpPreparer::PrepareWhereExp (deleteSqlSnippets.m_whereClauseNativeSqlSnippet, ctx, whereClauseExp);
-        if (status != ECSqlStatus::Success)
+        if (!status.IsSuccess())
             return status;
         }
     

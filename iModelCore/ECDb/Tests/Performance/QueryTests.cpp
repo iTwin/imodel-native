@@ -23,7 +23,7 @@ struct PerformanceQueryTests : PerformanceTestFixture
 
             ECInstanceECSqlSelectAdapter dataAdapter (ecStatement);
 
-            ECSqlStepStatus result;
+            DbResult result;
             Utf8String overallTimerName;
             overallTimerName.Sprintf("%s (overall time)", timerName.c_str());
             StopWatch overallTimer(overallTimerName.c_str(), false);
@@ -34,7 +34,7 @@ struct PerformanceQueryTests : PerformanceTestFixture
             double elapsedSeconds = 0;
             int counter = 0;
             overallTimer.Start();
-            while ((result = ecStatement.Step ()) == ECSqlStepStatus::HasRow)
+            while ((result = ecStatement.Step ()) == BE_SQLITE_ROW)
                 {
                 instanceTimer.Start();
                 IECInstancePtr instance = dataAdapter.GetInstance ();

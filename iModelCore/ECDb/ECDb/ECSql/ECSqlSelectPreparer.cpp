@@ -45,7 +45,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare (ECSqlPrepareContext& ctx, SingleSelect
 
     // Append selection.
     auto status = ECSqlExpPreparer::PrepareSelectClauseExp (ctx, exp.GetSelection ());
-    if (status != ECSqlStatus::Success)
+    if (!status.IsSuccess())
         return status;
 
     ExtractPropertyRefs (ctx, &exp);
@@ -53,7 +53,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare (ECSqlPrepareContext& ctx, SingleSelect
     sqlGenerator.AppendSpace ();
     // Append FROM
     status = ECSqlExpPreparer::PrepareFromExp (ctx, exp.GetFrom ());
-    if (status != ECSqlStatus::Success)
+    if (!status.IsSuccess())
         return status;
 
     // Append WHERE
@@ -61,7 +61,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare (ECSqlPrepareContext& ctx, SingleSelect
         {
         sqlGenerator.AppendSpace ();
         status = ECSqlExpPreparer::PrepareWhereExp(sqlGenerator, ctx, e);
-        if (status != ECSqlStatus::Success)
+        if (!status.IsSuccess())
             return status;
         }
     // Append GROUP BY
@@ -69,7 +69,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare (ECSqlPrepareContext& ctx, SingleSelect
         {
         sqlGenerator.AppendSpace ();
         status = ECSqlExpPreparer::PrepareGroupByExp (ctx, e);
-        if (status != ECSqlStatus::Success)
+        if (!status.IsSuccess())
             return status;
         }
 
@@ -78,7 +78,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare (ECSqlPrepareContext& ctx, SingleSelect
         {
         sqlGenerator.AppendSpace ();
         status = ECSqlExpPreparer::PrepareHavingExp (ctx, e);
-        if (status != ECSqlStatus::Success)
+        if (!status.IsSuccess())
             return status;
         }
 
@@ -87,7 +87,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare (ECSqlPrepareContext& ctx, SingleSelect
         {
         sqlGenerator.AppendSpace();
         status = ECSqlExpPreparer::PrepareOrderByExp(ctx, e);
-        if (status != ECSqlStatus::Success)
+        if (!status.IsSuccess())
             return status;
         }
 
@@ -96,7 +96,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare (ECSqlPrepareContext& ctx, SingleSelect
         {
         sqlGenerator.AppendSpace ();
         status = ECSqlExpPreparer::PrepareLimitOffsetExp (ctx, e);
-        if (status != ECSqlStatus::Success)
+        if (!status.IsSuccess())
             return status;
         }
 
@@ -127,7 +127,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SelectStateme
             ctx.GetSqlBuilderR ().Append (" UNION "); break;
         default:
             BeAssert (false && "Error");
-            return ECSqlStatus::ProgrammerError;    
+            return ECSqlStatus::Error;    
         }
 
     if (exp.IsAll ())
@@ -139,7 +139,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SelectStateme
     if (rhs->GetChildrenCount () != lhs->GetChildrenCount ())
         {
         ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Number of properties in all the select clauses of UNION/EXCEPT/INTERSECT must be same in number and type");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     for (size_t i = 0; i < rhs->GetChildrenCount (); i++)
@@ -150,7 +150,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SelectStateme
         if (!rhsP->GetExpression ()->GetTypeInfo ().Equals (lhsP->GetExpression ()->GetTypeInfo ()))
             {
             ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type of expression %s in UNION/EXCEPT/INTERSECT is not same as respective expression %s", lhsP->ToECSql().c_str(), rhs->ToECSql().c_str());
-            return ECSqlStatus::UserError;
+            return ECSqlStatus::Error;
             }
         }
     ctx.PopScope ();

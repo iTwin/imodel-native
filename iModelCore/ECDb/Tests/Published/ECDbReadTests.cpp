@@ -44,7 +44,7 @@ TEST(ECDbInstances, ReadECInstances)
         LOG.debugv ("Executing %s...", ecSql.GetUtf8CP());
         
         ecStatement.BindId (1, importedInstanceId);
-        ASSERT_TRUE (ECSqlStepStatus::HasRow == ecStatement.Step());
+        ASSERT_TRUE (BE_SQLITE_ROW == ecStatement.Step());
 
         ECInstanceECSqlSelectAdapter adapter (ecStatement);
         IECInstancePtr readInstance = adapter.GetInstance();
@@ -76,7 +76,7 @@ size_t CountInstancesOfClass (ECDbR db, ECClassCR ecClass, bool isPolymorphic)
         return 0;
 
     size_t count = 0;
-    while (statement.Step() == ECSqlStepStatus::HasRow)
+    while (statement.Step() == BE_SQLITE_ROW)
         count++;
     return count;
     }
@@ -207,11 +207,11 @@ TEST(ECDbInstances, OrderBy)
     selectBuilder.From(*employeeClass).Select("FirstName, LastName").OrderBy("LastName, FirstName"); 
     ECSqlStatement statement;
     auto stat = statement.Prepare (db, selectBuilder.ToString ().c_str ());
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
     
     // Just log for a manual check
     Utf8CP firstName, lastName;
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (statement.Step () == BE_SQLITE_ROW)
         {
         firstName = statement.GetValueText (0);
         lastName = statement.GetValueText (1);
@@ -221,12 +221,12 @@ TEST(ECDbInstances, OrderBy)
     // Validate the first few entries
     statement.Reset();
     auto stepStat = statement.Step();
-    ASSERT_EQ ((int) ECSqlStepStatus::HasRow, (int) stepStat);
+    ASSERT_EQ ((int) BE_SQLITE_ROW, (int) stepStat);
     lastName = statement.GetValueText (1);
     ASSERT_TRUE (0 == ::strcmp (lastName, "Bohr"));
 
     stepStat = statement.Step();
-    ASSERT_EQ ((int) ECSqlStepStatus::HasRow, (int) stepStat);
+    ASSERT_EQ ((int) BE_SQLITE_ROW, (int) stepStat);
     lastName = statement.GetValueText (1);
     ASSERT_TRUE (0 == ::strcmp (lastName, "Da Vinci"));
     }
@@ -260,7 +260,7 @@ TEST(ECDbInstances, LimitOffset)
     ECSqlStatement statement;
     auto stat = statement.Prepare (db, selectBuilder.ToString ().c_str ());
 
-    ASSERT_EQ((int) ECSqlStatus::Success, (int) stat) << "Preparation of ECSQL " << selectBuilder.ToString() << " failed";
+    ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of ECSQL " << selectBuilder.ToString() << " failed";
     int pageSizeIndex = statement.GetParameterIndex ("pageSize");
     ASSERT_TRUE (pageSizeIndex >= 0);
     int pageNumberIndex = statement.GetParameterIndex ("pageNumber");
@@ -274,7 +274,7 @@ TEST(ECDbInstances, LimitOffset)
 
     // Verify the first result
     auto stepStat = statement.Step();
-    ASSERT_TRUE (stepStat == ECSqlStepStatus::HasRow);
+    ASSERT_TRUE (stepStat == BE_SQLITE_ROW);
     int actualValue = statement.GetValueInt (0);
     int expectedValue = pageSize * (pageNumber - 1);
     ASSERT_EQ (actualValue, expectedValue);
@@ -338,7 +338,7 @@ TEST(ECDbInstances, WriteCalculatedECProperty)
     ASSERT_TRUE(ECSqlStatus::Success == prepareStatus);
     bvector<IECInstancePtr> instances;
     ECInstanceECSqlSelectAdapter adapter(ecStatement);
-    while (ECSqlStepStatus::HasRow == ecStatement.Step())
+    while (BE_SQLITE_ROW == ecStatement.Step())
     {
         IECInstancePtr newInstance = adapter.GetInstance();
         ASSERT_TRUE(ECDbTestUtility::CompareECInstances(*newInstance, *instance));

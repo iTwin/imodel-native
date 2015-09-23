@@ -79,7 +79,7 @@ BentleyStatus CreateRangeTreeTestProject(Utf8StringR ecdbPath)
     //first entry
     stmt.BindText(1, "SQLite headquarters", IECSqlBinder::MakeCopy::Yes);
     ECInstanceKey newKey;
-    if (ECSqlStepStatus::Done != stmt.Step(newKey))
+    if (BE_SQLITE_DONE != stmt.Step(newKey))
         return ERROR;
 
     if (SUCCESS != AddRowToRtree(ecdb, newKey.GetECInstanceId(), DRange2d::From(-80.7749, 35.3776, -80.7747, 35.3778)))
@@ -90,7 +90,7 @@ BentleyStatus CreateRangeTreeTestProject(Utf8StringR ecdbPath)
 
     //second entry
     stmt.BindText(1, "NC 12th Congressional District in 2010", IECSqlBinder::MakeCopy::Yes);
-    if (ECSqlStepStatus::Done != stmt.Step(newKey))
+    if (BE_SQLITE_DONE != stmt.Step(newKey))
         return ERROR;
 
     if (SUCCESS != AddRowToRtree(ecdb, newKey.GetECInstanceId(), DRange2d::From(-81.0, 35.0, -79.6, 36.2)))
@@ -117,10 +117,10 @@ TEST(ECSqlRangeTreeTests, SimpleQuery)
         "rt.MinX>=-81.08 AND rt.MaxX <=-80.58 AND rt.MinY>=35.00 AND rt.MaxY<=35.44";
 
     ECSqlStatement stmt;
-    ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, ecsql));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql));
 
     int rowCount = 0;
-    while (stmt.Step() == ECSqlStepStatus::HasRow)
+    while (stmt.Step() == BE_SQLITE_ROW)
         {
         rowCount++;
         ASSERT_STREQ("SQLite headquarters", stmt.GetValueText(0)) << "ECSQL " << ecsql << " is expected to only return SQLite headquarters entry";
@@ -190,10 +190,10 @@ TEST(ECSqlRangeTreeTests, MatchQuery)
         "rt.ECInstanceId MATCH BBOX2D(-81.08,35.00,-80.58,35.44)";
 
     ECSqlStatement stmt;
-    ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, ecsql));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql));
 
     int rowCount = 0;
-    while (stmt.Step() == ECSqlStepStatus::HasRow)
+    while (stmt.Step() == BE_SQLITE_ROW)
         {
         rowCount++;
         ASSERT_STREQ("SQLite headquarters", stmt.GetValueText(0));
@@ -222,7 +222,7 @@ TEST(ECSqlRangeTreeTests, MatchQueryWithParameters)
         "rt.ECInstanceId MATCH BBOX2D(?,?,?,?)";
 
     ECSqlStatement stmt;
-    ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, ecsql));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql));
 
     stmt.BindDouble(1, -81.08);
     stmt.BindDouble(2, 35.00);
@@ -230,7 +230,7 @@ TEST(ECSqlRangeTreeTests, MatchQueryWithParameters)
     stmt.BindDouble(4, 35.44);
 
     int rowCount = 0;
-    while (stmt.Step() == ECSqlStepStatus::HasRow)
+    while (stmt.Step() == BE_SQLITE_ROW)
         {
         rowCount++;
         ASSERT_STREQ("SQLite headquarters", stmt.GetValueText(0));

@@ -15,10 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle   06/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatement::ECSqlStatement ()
-    : m_pimpl (new ECSqlStatement::Impl ())
-    {
-    }
+ECSqlStatement::ECSqlStatement () : m_pimpl (new ECSqlStatement::Impl ()) {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      06/2013
@@ -221,7 +218,7 @@ ECSqlStatus ECSqlStatement::ClearBindings ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      06/2013
 //---------------------------------------------------------------------------------------
-ECSqlStepStatus ECSqlStatement::Step ()
+DbResult ECSqlStatement::Step ()
     {
     return m_pimpl->Step ();
     }
@@ -229,7 +226,7 @@ ECSqlStepStatus ECSqlStatement::Step ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      06/2013
 //---------------------------------------------------------------------------------------
-ECSqlStepStatus ECSqlStatement::Step (ECInstanceKey& ecInstanceKey) const
+DbResult ECSqlStatement::Step (ECInstanceKey& ecInstanceKey) const
     {
     return m_pimpl->Step (ecInstanceKey);
     }

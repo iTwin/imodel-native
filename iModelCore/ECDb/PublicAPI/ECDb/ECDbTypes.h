@@ -51,23 +51,6 @@ ECDB_TYPEDEFS(ECDb);
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
-//! The status codes returned by ECSqlStatement
-//! @ingroup ECDbGroup
-// @bsienum                                                      Krischan.Eberle   07/2013
-//+===============+===============+===============+===============+===============+======
-enum class ECSqlStatus
-    {
-    Success = SUCCESS, //!< Success
-    UserError, //!< Unspecified user error
-
-    IndexOutOfBounds, //!< Index out of bounds in a call to the binding API or the get value API
-    ConstraintViolation, //!< Executing an ECSQL failed because of a constraint violation in SQLite.
-    InvalidECSql, //!< An invalid ECSQL (e.g. because of a syntax or semantic error in the ECSQL text) was passed to ECSqlStatement::Prepare.
-    NotYetSupported, //!< Results from a call to a method / operation which is not yet supported / implemented.
-    ProgrammerError //!< Indicates an internal error / bug in the ECSqlStatement API.
-    };
-
-//=======================================================================================
 //! Options for how to specify the ECSchema when calling ECDbSchemaManager::GetECClass
 //! @ingroup ECDbGroup
 // @bsiclass                                                Muhammad.zaighum      10/2014

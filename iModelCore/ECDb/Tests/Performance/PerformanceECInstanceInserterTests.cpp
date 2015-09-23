@@ -237,7 +237,7 @@ private:
                 continue;
             }
 
-            auto ecsqlStat = ECSqlStatus::ProgrammerError;
+            ECSqlStatus ecsqlStat;
             switch (v.GetPrimitiveType())
             {
             case PRIMITIVETYPE_Binary:
@@ -289,24 +289,22 @@ private:
                 break;
 
             default:
+                ecsqlStat = ECSqlStatus::Error;
                 break;
             }
-            if (ecsqlStat != ECSqlStatus::Success)
+            if (!ecsqlStat.IsSuccess())
                 return false;
         }
 
         ECInstanceKey instanceKey;
         auto stepStat = stmt.Step(instanceKey);
-        if (stepStat != ECSqlStepStatus::Done)
+        if (stepStat != BE_SQLITE_DONE)
             return false;
 
         return true;
     }
 
-    void Cleanup()
-    {
-        m_cache.clear();
-    }
+    void Cleanup() { m_cache.clear(); }
 
     static IECSqlBinder::MakeCopy DetermineMakeCopy(ECN::ECValueCR ecValue)
     {
@@ -317,15 +315,9 @@ private:
     }
 
 public:
-    ECSqlTestInserter()
-        : TestInserter("ECSQL INSERT")
-    {
-    }
+    ECSqlTestInserter() : TestInserter("ECSQL INSERT") {}
 
-    virtual ~ECSqlTestInserter()
-    {
-        Cleanup();
-    }
+    virtual ~ECSqlTestInserter() { Cleanup(); }
 
 
     bool DoPrepare(ECDbR ecdb, std::vector<ECN::ECClassCP> const& testClasses)
@@ -377,10 +369,7 @@ public:
         return Insert(stmt, testInstance);
     }
 
-    void DoFinalize()
-    {
-        Cleanup();
-    }
+    void DoFinalize() { Cleanup(); }
 };
 
 

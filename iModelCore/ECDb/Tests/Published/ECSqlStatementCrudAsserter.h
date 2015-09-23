@@ -54,7 +54,7 @@ private:
 
     void AssertColumnInfo (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& ecsqlValue, ECN::ECTypeDescriptor const* parentDataType) const;
 
-    ECSqlStepStatus Step (ECSqlStatement& statement, bool disableBeAsserts) const;
+    DbResult Step (ECSqlStatement& statement, bool disableBeAsserts) const;
 
     static std::function<bool (ECN::ECTypeDescriptor const&)> CreateIsExpectedToSucceedDelegateForAssertCurrentRow (ECN::ECTypeDescriptor const* parentDataType, ECN::ECTypeDescriptor const& dataType);
     static GetValueCallList CreateGetValueCallList (IECSqlValue const& ecsqlValue);
@@ -77,8 +77,8 @@ private:
 
     void AssertStep (ECSqlTestItem const& testItem, ECSqlStatement& statement, AffectedRowsECSqlExpectedResult const& expectedResult) const;
 
-    ECSqlStepStatus Step (ECInstanceKey& generatedECInstanceKey, ECSqlStatement& statement, bool disableBeAsserts) const;
-    ECSqlStepStatus Step (ECSqlStatement& statement, bool disableBeAsserts) const;
+    DbResult Step (ECInstanceKey& generatedECInstanceKey, ECSqlStatement& statement, bool disableBeAsserts) const;
+    DbResult Step (ECSqlStatement& statement, bool disableBeAsserts) const;
 
 public:
     explicit ECSqlNonSelectStatementCrudAsserter (ECDbTestProject& testProject) : ECSqlStatementCrudAsserter(testProject) {}

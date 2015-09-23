@@ -80,8 +80,8 @@ JsonECSqlSelectAdapter::FormatOptions formatOptions
     if (SUCCESS != PrepareECSql (statement, emptyPath, ecInstanceId, false/*selectInstanceKeyOnly*/, false/*isPolymorphic*/))
         return ERROR;
 
-    ECSqlStepStatus stepStatus = statement->Step ();
-    POSTCONDITION (stepStatus == ECSqlStepStatus::HasRow && "Instance not found", ERROR);
+    DbResult stepStatus = statement->Step ();
+    POSTCONDITION (stepStatus == BE_SQLITE_ROW && "Instance not found", ERROR);
 
     JsonECSqlSelectAdapter jsonAdapter (*statement, formatOptions);
     if (!jsonAdapter.GetRowInstance (jsonValue, m_ecClass->GetId ()))
@@ -130,7 +130,7 @@ bool isPolymorphic
         return ERROR;
 
     ECSqlStatus bindStatus = statement->BindId (1, ecInstanceId);
-    POSTCONDITION (bindStatus == ECSqlStatus::Success, ERROR);
+    POSTCONDITION (bindStatus.IsSuccess(), ERROR);
     return SUCCESS;
     }
 
@@ -145,8 +145,7 @@ BentleyStatus JsonReader::Impl::GetRelatedInstanceKeys (ECInstanceKeyMultiMap& i
     if (SUCCESS != PrepareECSql (statement, pathFromRelatedClass, ecInstanceId, true /* selectInstanceKeyOnly*/,false/*isPolymorphic*/))
         return ERROR;
 
-    ECSqlStepStatus stepStatus;
-    while ((stepStatus = statement->Step ()) == ECSqlStepStatus::HasRow)
+    while (BE_SQLITE_ROW == statement->Step ())
         {
         ECInstanceKey instanceKey (statement->GetValueInt64 (0), statement->GetValueId<ECInstanceId> (1));
         if (!instanceKey.IsValid ())
@@ -268,8 +267,7 @@ Utf8StringCR pathFromRelatedClassStr
 
     int currentInstanceIndex = (int) allInstances.size ();
 
-    ECSqlStepStatus stepStatus;
-    while ((stepStatus = statement.Step ()) == ECSqlStepStatus::HasRow)
+    while (BE_SQLITE_ROW == statement.Step ())
         {
         if (currentInstanceIndex == 0)
             {

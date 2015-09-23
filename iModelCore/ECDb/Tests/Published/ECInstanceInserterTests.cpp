@@ -43,10 +43,10 @@ void ECInstanceInserterTests::InsertInstances(Utf8CP className, Utf8CP schemaNam
     Utf8String ecSql;
     ecSql.Sprintf("SELECT count(*) FROM ONLY [%s].[%s]", schemaName, className);
     countStatement.Prepare(db, ecSql.c_str());
-    ECSqlStepStatus result;
+    DbResult result;
 
     int total = 0;
-    while ((result = countStatement.Step()) == ECSqlStepStatus::HasRow)
+    while ((result = countStatement.Step()) == BE_SQLITE_ROW)
         total = countStatement.GetValueInt(0);
     ASSERT_EQ(numberOfInstances, total);
 
@@ -56,7 +56,7 @@ void ECInstanceInserterTests::InsertInstances(Utf8CP className, Utf8CP schemaNam
     int i = 0;
     bool areEqual;
     ECInstanceECSqlSelectAdapter dataAdapter (queryStatement);
-    while ((result = queryStatement.Step()) == ECSqlStepStatus::HasRow)
+    while ((result = queryStatement.Step()) == BE_SQLITE_ROW)
         {
         IECInstancePtr expected = instances[i];
         IECInstancePtr actual = dataAdapter.GetInstance ();
@@ -86,15 +86,15 @@ void ECInstanceInserterTests::InsertRelationshipInstances(Utf8CP relationshipCla
     for (int sourceIndex = 0; sourceIndex < numberOfSourceInstances; sourceIndex++)
         {
         IECInstancePtr sourceInstance = ECDbTestProject::CreateArbitraryECInstance (*sourceClass, ECDbTestProject::PopulatePrimitiveValueWithRandomValues);
-        ASSERT_EQ((int) ECSqlStatus::Success, (int)sourceInserter.Insert(*sourceInstance));
+        ASSERT_EQ(SUCCESS, sourceInserter.Insert(*sourceInstance));
         for (int targetIndex = 0; targetIndex < numberOfTargetInstancesPerSource; targetIndex++)
             {
             IECInstancePtr targetInstance = ECDbTestProject::CreateArbitraryECInstance (*targetClass, ECDbTestProject::PopulatePrimitiveValueWithRandomValues);
             ECInstanceKey relationshipId;
-            ASSERT_EQ((int) ECSqlStatus::Success, (int)targetInserter.Insert(*targetInstance));
+            ASSERT_EQ(SUCCESS, targetInserter.Insert(*targetInstance));
 
             IECRelationshipInstancePtr relationshipInstance = CreateRelationship(*relationshipClass, *sourceInstance, *targetInstance);
-            ASSERT_EQ((int) ECSqlStatus::Success, (int)relationshipInserter.Insert(relationshipId, *relationshipInstance));
+            ASSERT_EQ(SUCCESS, relationshipInserter.Insert(relationshipId, *relationshipInstance));
             }
         }
 
@@ -174,11 +174,11 @@ TEST_F (ECInstanceInserterTests, InsertSingleRuleInstance)
 
     Utf8CP ecsql = "SELECT GetECClassId() as ECClassId, * FROM ECRules.RuleSet";
     ECSqlStatement queryStatement;
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) queryStatement.Prepare(db, ecsql));
+    ASSERT_EQ(ECSqlStatus::Success, queryStatement.Prepare(db, ecsql));
     ECInstanceECSqlSelectAdapter dataAdapter (queryStatement);
-    ECSqlStepStatus result;
+    DbResult result;
     db.SaveChanges ();
-    while ((result = queryStatement.Step()) == ECSqlStepStatus::HasRow)
+    while ((result = queryStatement.Step()) == BE_SQLITE_ROW)
         {
         IECInstancePtr actual = dataAdapter.GetInstance ();
         actual->SetInstanceId (nullptr);
@@ -204,10 +204,10 @@ TEST_F (ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
     auto assertInsert = [&ecdb] (IECInstanceCR testInstance, ECInstanceId expectedId)
         {
         ECSqlStatement stmt;
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stmt.Prepare (ecdb, "SELECT I, GetECClassId() FROM ecsql.P WHERE ECInstanceId = ?"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT I, GetECClassId() FROM ecsql.P WHERE ECInstanceId = ?"));
         stmt.BindId (1, expectedId);
 
-        ASSERT_EQ ((int) ECSqlStepStatus::HasRow, (int) stmt.Step ());
+        ASSERT_EQ (BE_SQLITE_ROW, stmt.Step ());
 
         IECSqlValue const& colVal = stmt.GetValue (0);
 
@@ -218,7 +218,7 @@ TEST_F (ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
             ASSERT_EQ (v.GetInteger (), colVal.GetInt ());
 
         ASSERT_EQ ((int64_t) testInstance.GetClass ().GetId (), stmt.GetValueInt64 (1));
-        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stmt.Step ()) << "Only one instance for given instance id is expected to be returned";
+        ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ()) << "Only one instance for given instance id is expected to be returned";
         };
 
 
@@ -286,7 +286,7 @@ TEST_F (ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
 void ExecuteECSqlCommand (ECSqlStatement& stmt, ECDbR db, Utf8CP ecsql)
     {
     ASSERT_EQ (stmt.Prepare (db, ecsql), ECSqlStatus::Success);
-    ASSERT_EQ (stmt.Step (), ECSqlStepStatus::Done);
+    ASSERT_EQ (stmt.Step (), BE_SQLITE_DONE);
     stmt.Finalize ();
     }
 
@@ -296,11 +296,11 @@ void ExecuteECSqlCommand (ECSqlStatement& stmt, ECDbR db, Utf8CP ecsql)
 void AssertCurrentTimeStamp (ECDbR ecdb, ECInstanceId const& id, bool expectedIsNull, Utf8CP assertMessage)
     {
     ECSqlStatement stmt;
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stmt.Prepare (ecdb, "SELECT LastMod FROM ecsql.ClassWithLastModProp WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT LastMod FROM ecsql.ClassWithLastModProp WHERE ECInstanceId=?"));
     stmt.BindId (1, id);
 
     int rowCount = 0;
-    while (stmt.Step () == ECSqlStepStatus::HasRow)
+    while (stmt.Step () == BE_SQLITE_ROW)
         {
         rowCount++;
         ASSERT_EQ (expectedIsNull, stmt.IsValueNull (0)) << assertMessage;
@@ -379,7 +379,7 @@ TEST_F (ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
 void ExecuteECSql (ECSqlStatement& stmt, ECInstanceKey& key, ECDbR ecdb, Utf8CP ecsql)
     {
     ASSERT_EQ (stmt.Prepare (ecdb, ecsql), ECSqlStatus::Success);
-    ASSERT_EQ (stmt.Step (key), ECSqlStepStatus::Done);
+    ASSERT_EQ (stmt.Step (key), BE_SQLITE_DONE);
     stmt.Finalize ();
     }
 
@@ -434,7 +434,7 @@ TEST_F (ECInstanceInserterTests, GroupByClauseWithAndWithOutFunctions)
     int count = 0;
     Utf8String expectedAvgValues = "21250.022250.023250.0";
     Utf8String actualAvgValues;
-    while (stmt.Step () != ECSqlStepStatus::Done)
+    while (stmt.Step () != BE_SQLITE_DONE)
         {
         actualAvgValues.append (stmt.GetValueText (1));
         actualAvgValues.append (stmt.GetValueText (0));
@@ -447,7 +447,7 @@ TEST_F (ECInstanceInserterTests, GroupByClauseWithAndWithOutFunctions)
     count = 0;
     actualAvgValues = "";
     ASSERT_EQ (stmt.Prepare (db, "SELECT AVG(Price), count(*) FROM rc.ClassA GROUP BY GetECClassId()"), ECSqlStatus::Success);
-    while (stmt.Step () != ECSqlStepStatus::Done)
+    while (stmt.Step () != BE_SQLITE_DONE)
         {
         actualAvgValues.append (stmt.GetValueText (1));
         actualAvgValues.append (stmt.GetValueText (0));
@@ -594,13 +594,13 @@ TEST_F (ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClass
     stmt.BindInt64 (2, key1.GetECClassId ());
     stmt.BindId (3, key3.GetECInstanceId ());
     stmt.BindInt64 (4, key3.GetECClassId ());
-    ASSERT_EQ (stmt.Step (), ECSqlStepStatus::Done);
+    ASSERT_EQ (stmt.Step (), BE_SQLITE_DONE);
     stmt.Finalize ();
     //Instance insertion query without specifing Souce/TargetClassId's should be successful for a 1:N, end tabler relationship
     ASSERT_EQ (stmt.Prepare (db, "INSERT INTO rc.RelationshipClassA (SourceECInstanceId, TargetECInstanceId) VALUES (?, ?)"), ECSqlStatus::Success);
     stmt.BindId (1, key1.GetECInstanceId ());
     stmt.BindId (2, key4.GetECInstanceId ());
-    ASSERT_EQ (stmt.Step (), ECSqlStepStatus::Done);
+    ASSERT_EQ (stmt.Step (), BE_SQLITE_DONE);
     stmt.Finalize ();
 
     ASSERT_EQ (stmt.Prepare (db, "INSERT INTO rc.RelationshipClassB (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"), ECSqlStatus::Success);
@@ -608,13 +608,13 @@ TEST_F (ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClass
     stmt.BindInt64 (2, key1.GetECClassId ());
     stmt.BindId (3, key3.GetECInstanceId ());
     stmt.BindInt64 (4, key3.GetECClassId ());
-    ASSERT_EQ (stmt.Step (), ECSqlStepStatus::Done);
+    ASSERT_EQ (stmt.Step (), BE_SQLITE_DONE);
     stmt.Finalize ();
     //Instance insertion query without specifing Souce/TargetClassId's should be successful for a 1:1, end tabler relationship
     ASSERT_EQ (stmt.Prepare (db, "INSERT INTO rc.RelationshipClassB (SourceECInstanceId, TargetECInstanceId) VALUES (?, ?)"), ECSqlStatus::Success);
     stmt.BindId (1, key2.GetECInstanceId ());
     stmt.BindId (2, key4.GetECInstanceId ());
-    ASSERT_EQ (stmt.Step (), ECSqlStepStatus::Done);
+    ASSERT_EQ (stmt.Step (), BE_SQLITE_DONE);
     stmt.Finalize ();
 
     ASSERT_EQ (stmt.Prepare (db, "INSERT INTO rc.RelationshipClassC (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"), ECSqlStatus::Success);
@@ -622,7 +622,7 @@ TEST_F (ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClass
     stmt.BindInt64 (2, key1.GetECClassId ());
     stmt.BindId (3, key3.GetECInstanceId ());
     stmt.BindInt64 (4, key3.GetECClassId ());
-    ASSERT_EQ (stmt.Step (), ECSqlStepStatus::Done);
+    ASSERT_EQ (stmt.Step (), BE_SQLITE_DONE);
     stmt.Finalize ();
     //Instance insertion query without specifing Souce/TargetClassId's shouldn't work for a link table relationship if constraint isn't a single table or isn't polymorphic Constraint
     ASSERT_EQ (stmt.Prepare (db, "INSERT INTO rc.RelationshipClassC (SourceECInstanceId, TargetECInstanceId) VALUES (?, ?)"), ECSqlStatus::Success);
@@ -632,7 +632,7 @@ TEST_F (ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClass
     ASSERT_EQ (stmt.Prepare (db, "INSERT INTO rc.RelationshipClassD (SourceECInstanceId, TargetECInstanceId) VALUES (?, ?)"), ECSqlStatus::Success);
     stmt.BindId (1, key4.GetECInstanceId ());
     stmt.BindId (2, key5.GetECInstanceId ());
-    ASSERT_EQ (stmt.Step (), ECSqlStepStatus::Done);
+    ASSERT_EQ (stmt.Step (), BE_SQLITE_DONE);
     stmt.Finalize ();
     }
 

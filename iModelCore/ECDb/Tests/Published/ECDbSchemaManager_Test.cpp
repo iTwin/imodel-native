@@ -1865,12 +1865,12 @@ TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
         ECInstanceKey newKey;
         ECSqlStatement insStmt;
         ASSERT_EQ(ECSqlStatus::Success, insStmt.Prepare(ecdb, "INSERT INTO c.Activity (Code, Name) VALUES ('ConstructionActivity-1', 'Do something')"));
-        ASSERT_EQ(ECSqlStepStatus::Done, insStmt.Step(newKey));
+        ASSERT_EQ(BE_SQLITE_DONE, insStmt.Step(newKey));
 
         ECSqlStatement updStmt;
         ASSERT_EQ(ECSqlStatus::Success, updStmt.Prepare(ecdb, "UPDATE p.Activity SET PlanId=100, OutlineIndex=100 WHERE ECInstanceId=?"));
         updStmt.BindId(1, newKey.GetECInstanceId());
-        ASSERT_EQ(ECSqlStepStatus::Done, updStmt.Step());
+        ASSERT_EQ(BE_SQLITE_DONE, updStmt.Step());
 
         activityKey = newKey;
         };
@@ -1887,12 +1887,12 @@ TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT PlanId, OutlineIndex FROM p.Activity WHERE ECInstanceId=?"));
         stmt.BindId(1, activityKey.GetECInstanceId());
-        ASSERT_EQ(ECSqlStepStatus::HasRow, stmt.Step());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
         ASSERT_FALSE(stmt.IsValueNull(0)) << "This should start to fail if ECDb still caching horizontal paratition even after import a second schema";
         ASSERT_FALSE(stmt.IsValueNull(1)) << "This should start to fail if ECDb still caching horizontal paratition even after import a second schema";
 
-        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step());
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
 
         //Import two ECSchemas separately with clearing the cache before the second import
@@ -1907,14 +1907,14 @@ TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT PlanId, OutlineIndex FROM p.Activity WHERE ECInstanceId=?"));
         stmt.BindId(1, activityKey.GetECInstanceId());
-        ASSERT_EQ(ECSqlStepStatus::HasRow, stmt.Step());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
         ASSERT_TRUE(!stmt.IsValueNull(0));
         ASSERT_EQ(100ULL, stmt.GetValueInt64(0));
         ASSERT_TRUE(!stmt.IsValueNull(1));
         ASSERT_EQ(100, stmt.GetValueInt(1));
 
-        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step());
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
     }
 

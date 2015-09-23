@@ -11,6 +11,80 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  09/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(ECSqlStatus, Misc)
+    {
+    ECSqlStatus empty;
+    ASSERT_EQ(ECSqlStatus::Status::Success, empty.Get());
+    ASSERT_EQ(ECSqlStatus::Status::Success, empty) << "implicit cast operator";
+    ASSERT_FALSE(empty.IsSQLiteError());
+    ASSERT_EQ(BE_SQLITE_OK, empty.GetSQLiteError());
+    ASSERT_TRUE(ECSqlStatus::Success == empty);
+    ASSERT_FALSE(ECSqlStatus::Success != empty);
+
+    ECSqlStatus invalidECSql = ECSqlStatus::InvalidECSql;
+    ASSERT_EQ(ECSqlStatus::Status::InvalidECSql, invalidECSql.Get());
+    ASSERT_EQ(ECSqlStatus::Status::InvalidECSql, invalidECSql) << "implicit cast operator";
+    ASSERT_FALSE(invalidECSql.IsSQLiteError());
+    ASSERT_EQ(BE_SQLITE_OK, invalidECSql.GetSQLiteError());
+    ASSERT_TRUE(ECSqlStatus::InvalidECSql == invalidECSql);
+    ASSERT_FALSE(ECSqlStatus::InvalidECSql != invalidECSql);
+
+    ECSqlStatus error = ECSqlStatus::Error;
+    ASSERT_EQ(ECSqlStatus::Status::Error, error.Get());
+    ASSERT_EQ(ECSqlStatus::Status::Error, error) << "implicit cast operator";
+    ASSERT_FALSE(error.IsSQLiteError());
+    ASSERT_EQ(BE_SQLITE_OK, error.GetSQLiteError());
+    ASSERT_TRUE(ECSqlStatus::Error == error);
+    ASSERT_FALSE(ECSqlStatus::Error != error);
+
+    ECSqlStatus sqliteError(BE_SQLITE_CONSTRAINT_CHECK);
+    ASSERT_EQ(ECSqlStatus::Status::SQLiteError, sqliteError.Get());
+    ASSERT_EQ(ECSqlStatus::Status::SQLiteError, sqliteError) << "implicit cast operator";
+    ASSERT_TRUE(sqliteError.IsSQLiteError());
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_CHECK, sqliteError.GetSQLiteError());
+
+    ASSERT_TRUE(ECSqlStatus(BE_SQLITE_CONSTRAINT_CHECK) == sqliteError);
+    ASSERT_FALSE(ECSqlStatus(BE_SQLITE_CONSTRAINT_CHECK) != sqliteError);
+
+    ECSqlStatus sqliteError2(BE_SQLITE_BUSY);
+    ASSERT_EQ(ECSqlStatus::Status::SQLiteError, sqliteError2.Get());
+    ASSERT_EQ(ECSqlStatus::Status::SQLiteError, sqliteError2) << "implicit cast operator";
+    ASSERT_TRUE(sqliteError2.IsSQLiteError());
+    ASSERT_EQ(BE_SQLITE_BUSY, sqliteError2.GetSQLiteError());
+    ASSERT_TRUE(ECSqlStatus(BE_SQLITE_BUSY) == sqliteError2);
+    ASSERT_FALSE(ECSqlStatus(BE_SQLITE_BUSY) != sqliteError2);
+
+    ASSERT_FALSE(sqliteError == sqliteError2);
+    ASSERT_TRUE(sqliteError != sqliteError2);
+    ASSERT_FALSE(sqliteError2 == sqliteError);
+    ASSERT_TRUE(sqliteError2 != sqliteError);
+
+    ASSERT_FALSE(empty == invalidECSql);
+    ASSERT_TRUE(empty != invalidECSql);
+
+    ASSERT_FALSE(empty == error);
+    ASSERT_TRUE(empty != error);
+
+    ASSERT_FALSE(empty == sqliteError);
+    ASSERT_TRUE(empty != sqliteError);
+
+    ASSERT_FALSE(empty == sqliteError2);
+    ASSERT_TRUE(empty != sqliteError2);
+
+    ASSERT_FALSE(invalidECSql == error);
+    ASSERT_TRUE(invalidECSql != error);
+
+    ASSERT_FALSE(invalidECSql == sqliteError);
+    ASSERT_TRUE(invalidECSql != sqliteError);
+
+    ASSERT_FALSE(invalidECSql == sqliteError2);
+    ASSERT_TRUE(invalidECSql != sqliteError2);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                             Muhammad Hassan                         06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -303,7 +377,7 @@ TEST_F (ECSqlSelectTests, UnionTests)
     int rowCount;
     ECSqlStatement stmt;
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM (SELECT ContactName, Address, City, PostalCode, Country FROM ECST.Supplier UNION ALL SELECT ContactName, Address, City, PostalCode, Country FROM ECST.Customer)"));
-    ASSERT_EQ (stmt.Step (), ECSqlStepStatus::HasRow);
+    ASSERT_EQ (stmt.Step (), BE_SQLITE_ROW);
     int count = stmt.GetValueInt (0);
     EXPECT_EQ (6, count);
     stmt.Finalize ();
@@ -313,7 +387,7 @@ TEST_F (ECSqlSelectTests, UnionTests)
     rowCount = 0;
     Utf8CP expectedContactNames = "Brathion-SPIELMANN-Lannistor-Brathion-Adm-Snow-";
     Utf8String actualContactNames;
-    while (stmt.Step () != ECSqlStepStatus::Done)
+    while (stmt.Step () != BE_SQLITE_DONE)
         {
         actualContactNames.append (stmt.GetValueText (0));
         actualContactNames.append ("-");
@@ -328,7 +402,7 @@ TEST_F (ECSqlSelectTests, UnionTests)
     rowCount = 0;
     Utf8CP expectedCityNames = "AUSTIN-CA-MD-NC-SAN JOSE-";
     Utf8String actualCityNames;
-    while (stmt.Step () != ECSqlStepStatus::Done)
+    while (stmt.Step () != BE_SQLITE_DONE)
         {
         actualCityNames.append (stmt.GetValueText (0));
         actualCityNames.append ("-");
@@ -343,7 +417,7 @@ TEST_F (ECSqlSelectTests, UnionTests)
     rowCount = 0;
     expectedCityNames = "AUSTIN-CA-MD-NC-SAN JOSE-SAN JOSE-";
     actualCityNames.clear();
-    while (stmt.Step () != ECSqlStepStatus::Done)
+    while (stmt.Step () != BE_SQLITE_DONE)
         {
         actualCityNames.append (stmt.GetValueText (0));
         actualCityNames.append ("-");
@@ -358,7 +432,7 @@ TEST_F (ECSqlSelectTests, UnionTests)
     ASSERT_EQ (0, ecdb.AddFunction (func));
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "Select POW(ECInstanceId, 2), GetECClassId() ECClassId, ECInstanceId From ECST.Supplier UNION ALL Select POW(ECInstanceId, 2), GetECClassId() ECClassId, ECInstanceId From ECST.Customer ORDER BY ECInstanceId"));
     rowCount = 0;
-    while (stmt.Step () != ECSqlStepStatus::Done)
+    while (stmt.Step () != BE_SQLITE_DONE)
         {
         int base = stmt.GetValueInt (2);
         ASSERT_EQ (std::pow (base, 2), stmt.GetValueInt (0));
@@ -369,20 +443,20 @@ TEST_F (ECSqlSelectTests, UnionTests)
 
     //use aggregate function in Union Query
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT Count(*), AVG(PostalCode) FROM (SELECT PostalCode FROM ECST.Supplier UNION ALL SELECT PostalCode FROM ECST.Customer)"));
-    ASSERT_EQ (stmt.Step (), ECSqlStepStatus::HasRow);
+    ASSERT_EQ (stmt.Step (), BE_SQLITE_ROW);
     ASSERT_EQ (6, stmt.GetValueInt (0));
     ASSERT_EQ (56258, stmt.GetValueInt (1));
     stmt.Finalize ();
 
     //Use GROUP BY clause in Union Query
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ECClassId, COUNT(*) FROM (SELECT GetECClassId() ECClassId, ECInstanceId FROM ECST.Supplier UNION ALL SELECT GetECClassId() ECClassId, ECInstanceId FROM ECST.Customer) GROUP BY ECClassId ORDER BY ECClassId"));
-    ASSERT_TRUE (stmt.Step () == ECSqlStepStatus::HasRow);
+    ASSERT_TRUE (stmt.Step () == BE_SQLITE_ROW);
     //ASSERT_EQ (128, stmt.GetValueInt (0));
     ASSERT_EQ (3, stmt.GetValueInt (1));
-    ASSERT_TRUE (stmt.Step () == ECSqlStepStatus::HasRow);
+    ASSERT_TRUE (stmt.Step () == BE_SQLITE_ROW);
     //ASSERT_EQ (134, stmt.GetValueInt (0));
     ASSERT_EQ (3, stmt.GetValueInt (1));
-    ASSERT_TRUE (stmt.Step () == ECSqlStepStatus::Done);
+    ASSERT_TRUE (stmt.Step () == BE_SQLITE_DONE);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -399,7 +473,7 @@ TEST_F (ECSqlSelectTests, ExceptTests)
     int rowCount = 0;
     Utf8String expectedContactNames = "Lannistor-Snow-";
     Utf8String actualContactNames;
-    while (stmt.Step () != ECSqlStepStatus::Done)
+    while (stmt.Step () != BE_SQLITE_DONE)
         {
         actualContactNames.append (stmt.GetValueText (0));
         actualContactNames.append ("-");
@@ -424,7 +498,7 @@ TEST_F (ECSqlSelectTests, IntersectTests)
     int rowCount = 0;
     Utf8String expectedContactNames = "Brathion";
     Utf8String actualContactNames;
-    while (stmt.Step () != ECSqlStepStatus::Done)
+    while (stmt.Step () != BE_SQLITE_DONE)
         {
         actualContactNames.append (stmt.GetValueText (0));
         rowCount++;
@@ -446,26 +520,26 @@ TEST_F (ECSqlSelectTests, NestedSelectStatementsTests)
 
     ECSqlStatement stmt;
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ProductName, Price FROM ECST.Products WHERE Price > (SELECT AVG(Price) From ECST.Products) AND Price < 500"));
-    ASSERT_EQ (stmt.Step (), ECSqlStepStatus::HasRow);
+    ASSERT_EQ (stmt.Step (), BE_SQLITE_ROW);
 
     ECSqlStatementCache cache (1);
     CachedECSqlStatementPtr cashedStmt = cache.GetPreparedStatement (ecdb, ecSqlSelect);
     ASSERT_TRUE (cashedStmt != nullptr);
     ASSERT_TRUE (cashedStmt->IsPrepared ());
     ASSERT_EQ (ECSqlStatus::Success, cashedStmt->BindDouble (1, stmt.GetValueDouble (1))) << "Binding Double value failed";
-    ASSERT_TRUE (cashedStmt->Step () == ECSqlStepStatus::HasRow);
+    ASSERT_TRUE (cashedStmt->Step () == BE_SQLITE_ROW);
     ASSERT_EQ ((Utf8String)stmt.GetValueText (0), (Utf8String)cashedStmt->GetValueText (0));
     stmt.Finalize ();
 
     //Using GetECClassId in Nested Select statement
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ECClassId, COUNT(*) FROM (SELECT GetECClassId() ECClassId, ECInstanceId FROM ECST.Supplier UNION ALL SELECT GetECClassId() ECClassId, ECInstanceId FROM ECST.Customer) GROUP BY ECClassId ORDER BY ECClassId"));
-    ASSERT_TRUE (stmt.Step () == ECSqlStepStatus::HasRow);
+    ASSERT_TRUE (stmt.Step () == BE_SQLITE_ROW);
     ASSERT_EQ (129, stmt.GetValueInt (0));
     ASSERT_EQ (3, stmt.GetValueInt (1));
-    ASSERT_TRUE (stmt.Step () == ECSqlStepStatus::HasRow);
+    ASSERT_TRUE (stmt.Step () == BE_SQLITE_ROW);
     ASSERT_EQ (135, stmt.GetValueInt (0));
     ASSERT_EQ (3, stmt.GetValueInt (1));
-    ASSERT_TRUE (stmt.Step () == ECSqlStepStatus::Done);
+    ASSERT_TRUE (stmt.Step () == BE_SQLITE_DONE);
     stmt.Finalize ();
     }
 
@@ -481,16 +555,16 @@ TEST_F (ECSqlSelectTests, TestPredicateFunctionsInNestedSelectStatement)
 
     //Using Predicate function in nexted select statement
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT AVG(Price) FROM ECST.Products WHERE Price IN (SELECT Price FROM ECST.Products WHERE Price < (SELECT AVG(Price) FROM ECST.Products WHERE ProductAvailable))"));
-    ASSERT_TRUE (stmt.Step () == ECSqlStepStatus::HasRow);
+    ASSERT_TRUE (stmt.Step () == BE_SQLITE_ROW);
     ASSERT_EQ (223, (int)stmt.GetValueDouble (0));
-    ASSERT_TRUE (stmt.Step () == ECSqlStepStatus::Done);
+    ASSERT_TRUE (stmt.Step () == BE_SQLITE_DONE);
     stmt.Finalize ();
 
     //Using NOT operator with predicate function in Nested Select statement
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT AVG(Price) FROM ECST.Products WHERE Price IN (SELECT Price FROM ECST.Products WHERE Price > (SELECT AVG(Price) FROM ECST.Products WHERE NOT ProductAvailable))"));
-    ASSERT_TRUE (stmt.Step () == ECSqlStepStatus::HasRow);
+    ASSERT_TRUE (stmt.Step () == BE_SQLITE_ROW);
     ASSERT_EQ (619, (int)stmt.GetValueDouble (0));
-    ASSERT_TRUE (stmt.Step () == ECSqlStepStatus::Done);
+    ASSERT_TRUE (stmt.Step () == BE_SQLITE_DONE);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -512,7 +586,7 @@ TEST_F (ECSqlSelectTests, GroupByClauseTests)
     actualProductsNames;
     ExpectedSumOfAvgPrices = 1895.67;
     actualSumOfAvgPrices = 0;
-    while (stmt.Step () != ECSqlStepStatus::Done)
+    while (stmt.Step () != BE_SQLITE_DONE)
         {
         actualProductsNames.append (stmt.GetValueText (0));
         actualProductsNames.append ("-");
@@ -528,7 +602,7 @@ TEST_F (ECSqlSelectTests, GroupByClauseTests)
     actualProductsNames = "";
     ExpectedSumOfAvgPrices = 1556.62;
     actualSumOfAvgPrices = 0;
-    while (stmt.Step () != ECSqlStepStatus::Done)
+    while (stmt.Step () != BE_SQLITE_DONE)
         {
         actualProductsNames.append (stmt.GetValueText (0));
         actualProductsNames.append ("-");
@@ -544,7 +618,7 @@ TEST_F (ECSqlSelectTests, GroupByClauseTests)
     actualProductsNames = "";
     ExpectedSumOfAvgPrices = 666.84;
     actualSumOfAvgPrices = 0;
-    while (stmt.Step () != ECSqlStepStatus::Done)
+    while (stmt.Step () != BE_SQLITE_DONE)
         {
         actualProductsNames.append (stmt.GetValueText (0));
         actualProductsNames.append ("-");
@@ -556,11 +630,11 @@ TEST_F (ECSqlSelectTests, GroupByClauseTests)
 
     //GROUP BY Clause with more then one parameters
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ProductName, AVG(Price), COUNT(ProductName) FROM ECST.Products GROUP BY ProductName, Price HAVING COUNT(ProductName)>1"));
-    ASSERT_EQ (stmt.Step (), ECSqlStepStatus::HasRow);
+    ASSERT_EQ (stmt.Step (), BE_SQLITE_ROW);
     ASSERT_EQ ("Pen", (Utf8String)stmt.GetValueText (0));
     ASSERT_EQ (539, (int)stmt.GetValueDouble (1));
     ASSERT_EQ (3, stmt.GetValueInt (2));
-    ASSERT_FALSE (stmt.Step () != ECSqlStepStatus::Done);
+    ASSERT_FALSE (stmt.Step () != BE_SQLITE_DONE);
     stmt.Finalize ();
     }
 
@@ -887,7 +961,7 @@ TEST_F (ECSqlTestFixture, PolymorphicDelete_PolymorphicSharedTable)
     //Delete all Instances of the base class, all the structArrays and relationships should also be deleted.
     ECSqlStatement stmt;
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "DELETE FROM nsat.ClassA"));
-    ASSERT_EQ (ECSqlStepStatus::Done, stmt.Step ());
+    ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ());
 
     ASSERT_FALSE (ecdb.TableExists ("nsat_DerivedA"));
     ASSERT_FALSE (ecdb.TableExists ("nsat_DoubleDerivedA"));
@@ -926,7 +1000,7 @@ TEST_F (ECSqlTestFixture, PolymorphicDeleteTest)
     //Delete all Instances of the base class, all the structArrays and relationships should also be deleted.
     ECSqlStatement stmt;
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "DELETE FROM nsat.ClassA"));
-    ASSERT_EQ (ECSqlStepStatus::Done, stmt.Step ());
+    ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ());
 
     bvector<Utf8String> tableNames;
     tableNames.push_back ("nsat_ClassA");
@@ -990,11 +1064,11 @@ TEST_F (ECSqlTestFixture, PolymorphicUpdateWithSharedTable)
     //Updates the instances of ClassA
     ECSqlStatement stmt;
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "UPDATE nsat.ClassA SET T='UpdatedValue', I=2"));
-    ASSERT_EQ (ECSqlStepStatus::Done, stmt.Step ());
+    ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ());
     stmt.Finalize ();
 
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT I,T FROM nsat.ClassA"));
-    while (stmt.Step () != ECSqlStepStatus::Done)
+    while (stmt.Step () != BE_SQLITE_DONE)
         {
         EXPECT_EQ (2, stmt.GetValueInt (0)) << "The values don't match.";
         EXPECT_EQ ("UpdatedValue", (Utf8String)stmt.GetValueText (1)) << "The values don't match.";
@@ -1016,11 +1090,11 @@ TEST_F (ECSqlTestFixture, PolymorphicUpdateWithSharedTable)
 //    //Updates the instances of ClassA all the Derived Classes Properties values should also be changed. 
 //    ECSqlStatement stmt;
 //    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "UPDATE nsat.ClassA SET T='UpdatedValue', I=2"));
-//    ASSERT_EQ (ECSqlStepStatus::Done, stmt.Step ());
+//    ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ());
 //    stmt.Finalize ();
 //
 //    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT I,T FROM nsat.ClassA"));
-//    while (stmt.Step () != ECSqlStepStatus::Done)
+//    while (stmt.Step () != BE_SQLITE_DONE)
 //        {
 //        EXPECT_EQ (2, stmt.GetValueInt (0)) << "The values don't match.";
 //        EXPECT_EQ ("UpdatedValue", (Utf8String)stmt.GetValueText (1)) << "The values don't match.";
@@ -1049,7 +1123,7 @@ TEST_F (ECSqlSelectTests, SelectQueriesOnDbGeneratedDuringBuild)
 
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT * FROM appdw.Equipment"));
 
-    while (stmt.Step () != ECSqlStepStatus::Done)
+    while (stmt.Step () != BE_SQLITE_DONE)
         {
         int ColCount = stmt.GetColumnCount ();
         ASSERT_EQ (21, ColCount);
@@ -1097,7 +1171,7 @@ TEST_F (ECSqlSelectTests, SelectQueriesOnDbGeneratedDuringBuild)
 
     stmt.Finalize ();
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM appdw.Equipment WHERE INSUL_THK= '2'"));
-    ASSERT_EQ (stmt.Step (), ECSqlStepStatus::HasRow);
+    ASSERT_EQ (stmt.Step (), BE_SQLITE_ROW);
     ASSERT_EQ (6, stmt.GetValueInt (0));
     }
 /*---------------------------------------------------------------------------------**//**
@@ -1112,16 +1186,16 @@ TEST_F (ECSqlSelectTests, DeleteWithNestedSelectStatments)
     ECSqlStatement stmt;
 
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM ECST.Products"));
-    ASSERT_TRUE (ECSqlStepStatus::HasRow == stmt.Step ());
+    ASSERT_TRUE (BE_SQLITE_ROW == stmt.Step ());
     ASSERT_EQ (9, stmt.GetValueInt (0));
     stmt.Finalize ();
 
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "DELETE FROM ECST.Products WHERE ProductName IN(SELECT ProductName FROM ECST.Products GROUP BY ProductName HAVING COUNT(ProductName)>2 AND ProductName IN(SELECT ProductName FROM ECST.Products WHERE Price >500))"));
-    ASSERT_TRUE (ECSqlStepStatus::Done == stmt.Step ());
+    ASSERT_TRUE (BE_SQLITE_DONE == stmt.Step ());
     stmt.Finalize ();
 
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM ECST.Products"));
-    ASSERT_TRUE (ECSqlStepStatus::HasRow == stmt.Step ());
+    ASSERT_TRUE (BE_SQLITE_ROW == stmt.Step ());
     ASSERT_EQ (6, stmt.GetValueInt (0));
     stmt.Finalize ();
     }
@@ -1139,11 +1213,11 @@ TEST_F (ECSqlSelectTests, UpdateWithNestedSelectStatments)
     ECSqlStatement stmt;
 
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "UPDATE ECST.Products SET ProductName='Laptop' WHERE ProductName IN(SELECT ProductName FROM ECST.Products GROUP BY ProductName HAVING COUNT(ProductName)>2 AND ProductName IN(SELECT ProductName FROM ECST.Products WHERE Price >500))"));
-    ASSERT_TRUE (ECSqlStepStatus::Done == stmt.Step ());
+    ASSERT_TRUE (BE_SQLITE_DONE == stmt.Step ());
     stmt.Finalize ();
 
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM ECST.Products WHERE ProductName='Laptop'"));
-    ASSERT_TRUE (ECSqlStepStatus::HasRow == stmt.Step ());
+    ASSERT_TRUE (BE_SQLITE_ROW == stmt.Step ());
     ASSERT_EQ (3, stmt.GetValueInt (0));
     stmt.Finalize ();
     }
@@ -1174,7 +1248,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_InsertStructArray)
     auto prepareStatus = stmt.Prepare (ecdb, "SELECT * FROM ONLY nsat.ClassP ORDER BY ECInstanceId");
     ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
     ECInstanceECSqlSelectAdapter classPReader (stmt);
-    while (stmt.Step () == ECSqlStepStatus::HasRow)
+    while (stmt.Step () == BE_SQLITE_ROW)
         {
         auto inst = classPReader.GetInstance ();
         out.push_back (inst);
@@ -1252,7 +1326,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_DeleteStructArray)
     auto prepareStatus = stmt.Prepare (ecdb, "SELECT * FROM ONLY nsat.ClassP ORDER BY ECInstanceId");
     ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
     ECInstanceECSqlSelectAdapter classPReader (stmt);
-    ASSERT_FALSE (stmt.Step () == ECSqlStepStatus::HasRow);
+    ASSERT_FALSE (stmt.Step () == BE_SQLITE_ROW);
 
     //Verify Nested StructArray values have also been deleted.
     bvector<Utf8String> selectStatements;
@@ -1288,7 +1362,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Prepare)
         {
         ECSqlStatement statement;
         auto stat = statement.Prepare (ecdb, "SELECT I, PStruct_Array FROM ecsql.PSA");
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+        ASSERT_EQ(ECSqlStatus::Success, stat);
 
         ECDbIssueListener issueListener(ecdb);
         statement.GetValueInt (0);
@@ -1315,9 +1389,9 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_ECInstanceIdColumnInfo)
     auto ecsql = "SELECT c1.ECInstanceId, c2.ECInstanceId FROM ecsql.PSA c1, ecsql.P c2 LIMIT 1";
     ECSqlStatement statement;
     auto stat = statement.Prepare (ecdb, ecsql);
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation of '" << ecsql << "' failed";
+    ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of '" << ecsql << "' failed";
 
-    ASSERT_EQ ((int) ECSqlStepStatus::HasRow, (int) statement.Step ());
+    ASSERT_EQ (BE_SQLITE_ROW, statement.Step ());
     auto const& value1 = statement.GetValue (0);
     auto const& columnInfo1 = value1.GetColumnInfo ();
 
@@ -1348,7 +1422,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_StructArrayInsert)
     auto ecsql = "INSERT INTO ecsql.PSA (L,PStruct_Array) VALUES(?, ?)";
     ECSqlStatement statement;
     auto stat = statement.Prepare (ecdb, ecsql);
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation of '" << ecsql << "' failed";
+    ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of '" << ecsql << "' failed";
     
     statement.BindInt64 (1, 1000);
     //add three array elements
@@ -1362,19 +1436,19 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_StructArrayInsert)
         auto& structBinder = arrayBinder.AddArrayElement ().BindStruct ();
         ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "AddArrayElement failed";
         auto stat = structBinder.GetMember ("d").BindDouble (i * PI);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember ("i").BindInt (i * 2);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember ("l").BindInt64 (i * 3);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember ("p2d").BindPoint2D (DPoint2d::From (i, i + 1));
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember ("p3d").BindPoint3D (DPoint3d::From (i, i + 1, i + 2));
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         }
 
     auto stepStatus = statement.Step ();
-    ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed";
+    ASSERT_EQ (BE_SQLITE_DONE, stepStatus) << "Step for '" << ecsql << "' failed";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1388,7 +1462,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_StructArrayUpdate)
     auto ecsql = "UPDATE  ONLY ecsql.PSA SET L = ?,  PStruct_Array = ? WHERE I = ?";
     ECSqlStatement statement;
     auto stat = statement.Prepare (ecdb, ecsql);
-    ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed";
+    ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of '" << ecsql << "' failed";
     statement.BindInt (3, 123);
     statement.BindInt64 (1, 1000);
 
@@ -1403,19 +1477,19 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_StructArrayUpdate)
         auto& structBinder = arrayBinder.AddArrayElement ().BindStruct ();
         ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "AddArrayElement failed";
         auto stat = structBinder.GetMember ("d").BindDouble (i * PI);
-        ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember ("i").BindInt (i * 2);
-        ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember ("l").BindInt64 (i * 3);
-        ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember ("p2d").BindPoint2D (DPoint2d::From (i, i + 1));
-        ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember ("p3d").BindPoint3D (DPoint3d::From (i, i + 1, i + 2));
-        ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         }
 
     auto stepStatus = statement.Step ();
-    ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed";
+    ASSERT_EQ (BE_SQLITE_DONE, stepStatus) << "Step for '" << ecsql << "' failed";
     }
 
 void setProductsValues (StandaloneECInstancePtr instance, int ProductId, Utf8CP ProductName, double price)
@@ -1492,16 +1566,16 @@ TEST_F (ECSqlTestFixture, DeleteWithNestedSelectStatments)
     ECSqlStatement stmt;
 
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM ts.Products"));
-    ASSERT_TRUE (ECSqlStepStatus::HasRow == stmt.Step ());
+    ASSERT_TRUE (BE_SQLITE_ROW == stmt.Step ());
     ASSERT_EQ (9, stmt.GetValueInt (0));
     stmt.Finalize ();
 
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "DELETE FROM ONLY ts.Products WHERE ProductName IN (SELECT ProductName FROM ts.Products GROUP BY ProductName HAVING COUNT(ProductName)>2 AND ProductName IN (SELECT ProductName FROM ts.Products WHERE Price >500))"));
-    ASSERT_TRUE (ECSqlStepStatus::Done == stmt.Step ());
+    ASSERT_TRUE (BE_SQLITE_DONE == stmt.Step ());
     stmt.Finalize ();
 
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM ts.Products"));
-    ASSERT_TRUE (ECSqlStepStatus::HasRow == stmt.Step ());
+    ASSERT_TRUE (BE_SQLITE_ROW == stmt.Step ());
     ASSERT_EQ (6, stmt.GetValueInt (0));
     stmt.Finalize ();
     }
@@ -1516,12 +1590,12 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_StructArrayDelete)
     auto ecsql = "DELETE FROM  ONLY ecsql.PSA WHERE I = ?";
     ECSqlStatement statement;
     auto stat = statement.Prepare (ecdb, ecsql);
-    ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed";
+    ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of '" << ecsql << "' failed";
 
     statement.BindInt (1, 123);
 
     auto stepStatus = statement.Step ();
-    ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed";
+    ASSERT_EQ (BE_SQLITE_DONE, stepStatus) << "Step for '" << ecsql << "' failed";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1539,26 +1613,26 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_BindECInstanceId)
         {
         ECSqlStatement statement;
         auto stat = statement.Prepare (ecdb, "INSERT INTO ecsql.P (ECInstanceId) VALUES(NULL)");
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
-        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step (pKey));
+        ASSERT_EQ(ECSqlStatus::Success, stat);
+        ASSERT_EQ (BE_SQLITE_DONE, statement.Step (pKey));
         
         statement.Finalize ();
         stat = statement.Prepare (ecdb, "INSERT INTO ecsql.PSA (ECInstanceId) VALUES(NULL)");
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
-        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step (psaKey));
+        ASSERT_EQ(ECSqlStatus::Success, stat);
+        ASSERT_EQ (BE_SQLITE_DONE, statement.Step (psaKey));
         ecdb.SaveChanges ();
         }
 
         {
         ECSqlStatement statement;
         auto stat = statement.Prepare (ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)");
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+        ASSERT_EQ(ECSqlStatus::Success, stat);
 
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindId (1, psaKey.GetECInstanceId ()));
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindId (2, pKey.GetECInstanceId ()));
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindId (1, psaKey.GetECInstanceId ()));
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindId (2, pKey.GetECInstanceId ()));
 
         ECInstanceKey key;
-        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step (key));
+        ASSERT_EQ (BE_SQLITE_DONE, statement.Step (key));
 
         ASSERT_EQ (pKey.GetECInstanceId ().GetValue (), key.GetECInstanceId ().GetValue ());
         ecdb.AbandonChanges ();
@@ -1569,20 +1643,20 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_BindECInstanceId)
         auto stat = statement.Prepare (ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)");
         ASSERT_EQ (ECSqlStatus::Success, stat);
 
-        ASSERT_EQ(ECSqlStatus::UserError, statement.BindInt(1, (int) psaKey.GetECInstanceId().GetValue())) << "Ids cannot be cast to int without potentially losing information. So BindInt cannot be used for ids";
-        ASSERT_EQ(ECSqlStatus::UserError, statement.BindInt(2, (int) pKey.GetECInstanceId().GetValue())) << "Ids cannot be cast to int without potentially losing information. So BindInt cannot be used for ids";
+        ASSERT_EQ(ECSqlStatus::Error, statement.BindInt(1, (int) psaKey.GetECInstanceId().GetValue())) << "Ids cannot be cast to int without potentially losing information. So BindInt cannot be used for ids";
+        ASSERT_EQ(ECSqlStatus::Error, statement.BindInt(2, (int) pKey.GetECInstanceId().GetValue())) << "Ids cannot be cast to int without potentially losing information. So BindInt cannot be used for ids";
         }
 
         {
         ECSqlStatement statement;
         auto stat = statement.Prepare (ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)");
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+        ASSERT_EQ(ECSqlStatus::Success, stat);
 
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindInt64 (1, psaKey.GetECInstanceId ().GetValue ()));
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindInt64 (2, pKey.GetECInstanceId ().GetValue ()));
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindInt64 (1, psaKey.GetECInstanceId ().GetValue ()));
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindInt64 (2, pKey.GetECInstanceId ().GetValue ()));
 
         ECInstanceKey key;
-        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step (key));
+        ASSERT_EQ (BE_SQLITE_DONE,  statement.Step (key));
 
         ASSERT_EQ (pKey.GetECInstanceId ().GetValue (), key.GetECInstanceId ().GetValue ());
         ecdb.AbandonChanges ();
@@ -1591,18 +1665,18 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_BindECInstanceId)
         {
         ECSqlStatement statement;
         auto stat = statement.Prepare (ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)");
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+        ASSERT_EQ(ECSqlStatus::Success, stat);
 
         Utf8Char idStr[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
         ECInstanceIdHelper::ToString (idStr, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, psaKey.GetECInstanceId ());
         Utf8String psaIdStr (idStr);
         ECInstanceIdHelper::ToString (idStr, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, pKey.GetECInstanceId ());
         Utf8String pIdStr (idStr);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindText (1, psaIdStr.c_str (), IECSqlBinder::MakeCopy::No));
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindText (2, pIdStr.c_str (), IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindText (1, psaIdStr.c_str (), IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindText (2, pIdStr.c_str (), IECSqlBinder::MakeCopy::No));
 
         ECInstanceKey key;
-        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step (key));
+        ASSERT_EQ (BE_SQLITE_DONE, statement.Step (key));
 
         ASSERT_EQ (pKey.GetECInstanceId ().GetValue (), key.GetECInstanceId ().GetValue ());
         ecdb.AbandonChanges ();
@@ -1620,44 +1694,44 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_BindSourceAndTargetECInstanceId)
 
     ECSqlStatement statement;
     auto stat = statement.Prepare (ecdb, "INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)");
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
 
         {
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindId (1, ECInstanceId (111LL)));
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindId (2, ECInstanceId (222LL)));
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindId (1, ECInstanceId (111LL)));
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindId (2, ECInstanceId (222LL)));
 
         ECInstanceKey key;
-        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step (key));
+        ASSERT_EQ (BE_SQLITE_DONE, statement.Step (key));
         }
 
         {
         statement.Reset();
         statement.ClearBindings();
 
-        ASSERT_EQ(ECSqlStatus::UserError, statement.BindInt(1, 1111)) << "Ids cannot be cast to int without potentially losing information. So BindInt is not supported for ids";
-        ASSERT_EQ(ECSqlStatus::UserError, statement.BindInt(2, 2222)) << "Ids cannot be cast to int without potentially losing information. So BindInt is not supported for ids";
+        ASSERT_EQ(ECSqlStatus::Error, statement.BindInt(1, 1111)) << "Ids cannot be cast to int without potentially losing information. So BindInt is not supported for ids";
+        ASSERT_EQ(ECSqlStatus::Error, statement.BindInt(2, 2222)) << "Ids cannot be cast to int without potentially losing information. So BindInt is not supported for ids";
         }
 
         {
         statement.Reset ();
         statement.ClearBindings ();
 
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindInt64 (1, 11111LL));
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindInt64 (2, 22222LL));
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindInt64 (1, 11111LL));
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindInt64 (2, 22222LL));
 
         ECInstanceKey key;
-        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step (key));
+        ASSERT_EQ (BE_SQLITE_DONE, statement.Step (key));
         }
 
         {
         statement.Reset ();
         statement.ClearBindings ();
 
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindText (1, "111111", IECSqlBinder::MakeCopy::No));
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindText (2, "222222", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindText (1, "111111", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindText (2, "222222", IECSqlBinder::MakeCopy::No));
 
         ECInstanceKey key;
-        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step (key));
+        ASSERT_EQ (BE_SQLITE_DONE, statement.Step (key));
         }
     }
 
@@ -1677,7 +1751,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_BindPrimitiveArray)
         {
         ECSqlStatement statement;
         auto stat = statement.Prepare (ecdb, "INSERT INTO ecsql.PA (I_Array,S_Array) VALUES(:ia,:sa)");
-        ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat);
+        ASSERT_EQ(ECSqlStatus::Success, stat);
 
         auto& arrayBinderI = statement.BindArray (1, (int) expectedIntArray.size ());
         for (int arrayElement : expectedIntArray)
@@ -1693,18 +1767,16 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_BindPrimitiveArray)
             elementBinder.BindText (arrayElement.c_str (), IECSqlBinder::MakeCopy::No);
             }
 
-        auto stepStat = statement.Step (ecInstanceKey);
-        ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)stepStat);
+        ASSERT_EQ(BE_SQLITE_DONE, statement.Step (ecInstanceKey));
         }
 
             {
             ECSqlStatement statement;
             auto stat = statement.Prepare (ecdb, "SELECT I_Array, S_Array FROM ONLY ecsql.PA WHERE ECInstanceId = ?");
-            ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat);
+            ASSERT_EQ(ECSqlStatus::Success, stat);
             statement.BindId (1, ecInstanceKey.GetECInstanceId ());
 
-            auto stepStat = statement.Step ();
-            ASSERT_EQ ((int)ECSqlStepStatus::HasRow, (int)stepStat);
+            ASSERT_EQ(BE_SQLITE_ROW, statement.Step ());
 
             IECSqlArrayValue const& intArray = statement.GetValueArray (0);
             size_t expectedIndex = 0;
@@ -1741,7 +1813,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_BindDateTimeArray_Insert)
 
     ECSqlStatement statement;
     auto stat = statement.Prepare (ecdb, "INSERT INTO ecsql.PA (Dt_Array, DtUtc_Array) VALUES(:dt,:dtutc)");
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
 
     std::vector<DateTime> testDates = { DateTime (DateTime::Kind::Utc, 2014, 07, 07, 12, 0),
         DateTime (DateTime::Kind::Unspecified, 2014, 07, 07, 12, 0),
@@ -1757,8 +1829,8 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_BindDateTimeArray_Insert)
         auto& elementBinder = arrayBinderDt.AddArrayElement();
         ASSERT_FALSE(issueListener.GetIssue().IsIssue());
 
-        auto expectedStat = testDate.GetInfo().GetKind() == DateTime::Kind::Local ? ECSqlStatus::UserError : ECSqlStatus::Success;
-        ASSERT_EQ((int) expectedStat, (int) elementBinder.BindDateTime(testDate));
+        ECSqlStatus expectedStat = testDate.GetInfo().GetKind() == DateTime::Kind::Local ? ECSqlStatus::Error : ECSqlStatus::Success;
+        ASSERT_EQ(expectedStat, elementBinder.BindDateTime(testDate));
         issueListener.Reset();
         }
     
@@ -1771,13 +1843,12 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_BindDateTimeArray_Insert)
         auto& elementBinder = arrayBinderDtUtc.AddArrayElement();
         ASSERT_FALSE(issueListener.GetIssue().IsIssue());
 
-        auto expectedStat = testDate.GetInfo().GetKind() == DateTime::Kind::Utc ? ECSqlStatus::Success : ECSqlStatus::UserError;
-        ASSERT_EQ((int) expectedStat, (int) elementBinder.BindDateTime(testDate));
+        ECSqlStatus expectedStat = testDate.GetInfo().GetKind() == DateTime::Kind::Utc ? ECSqlStatus::Success : ECSqlStatus::Error;
+        ASSERT_EQ(expectedStat, elementBinder.BindDateTime(testDate));
         issueListener.Reset();
         }
 
-    auto stepStat = statement.Step ();
-    ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stepStat);
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step ());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1791,7 +1862,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_BindPrimArrayWithOutOfBoundsLength)
 
     ECSqlStatement statement;
     auto stat = statement.Prepare(ecdb, "INSERT INTO ecsql.ABounded (Prim_Array_Bounded) VALUES(?)");
-    ASSERT_EQ((int) ECSqlStatus::Success, (int) stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
 
     auto bindArrayValues = [&statement] (int count)
         {
@@ -1816,11 +1887,11 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_BindPrimArrayWithOutOfBoundsLength)
         {
         const int testArrayCount = testArrayCountItem.first;
         const bool expectedToSucceed = testArrayCountItem.second;
-        const ECSqlStepStatus stepStat = bindArrayValues(testArrayCount);
+        const DbResult stepStat = bindArrayValues(testArrayCount);
         if (expectedToSucceed)
-            ASSERT_EQ(ECSqlStepStatus::Done, stepStat) << "Binding array of length " << testArrayCount << " is expected to succceed for array parameter with minOccurs=5 and maxOccurs=10";
+            ASSERT_EQ(BE_SQLITE_DONE, stepStat) << "Binding array of length " << testArrayCount << " is expected to succceed for array parameter with minOccurs=5 and maxOccurs=10";
         else
-            ASSERT_EQ(ECSqlStepStatus::Error, stepStat) << "Binding array of length " << testArrayCount << " is expected to fail for array parameter with minOccurs=5 and maxOccurs=10";
+            ASSERT_EQ(BE_SQLITE_ERROR, stepStat) << "Binding array of length " << testArrayCount << " is expected to fail for array parameter with minOccurs=5 and maxOccurs=10";
         }
     }
 
@@ -1835,7 +1906,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_BindStructArrayWithOutOfBoundsLength)
 
     ECSqlStatement statement;
     ECSqlStatus stat = statement.Prepare(ecdb, "INSERT INTO ecsql.ABounded (PStruct_Array_Bounded) VALUES(?)");
-    ASSERT_EQ((int) ECSqlStatus::Success, (int) stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
 
     auto bindArrayValues = [&statement] (int count)
         {
@@ -1860,11 +1931,11 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_BindStructArrayWithOutOfBoundsLength)
         {
         const int testArrayCount = testArrayCountItem.first;
         const bool expectedToSucceed = testArrayCountItem.second;
-        const ECSqlStepStatus stepStat = bindArrayValues(testArrayCount);
+        const DbResult stepStat = bindArrayValues(testArrayCount);
         if (expectedToSucceed)
-            ASSERT_EQ(ECSqlStepStatus::Done, stepStat) << "Binding array of length " << testArrayCount << " is expected to succceed for array parameter with minOccurs=5 and maxOccurs=10.";
+            ASSERT_EQ(BE_SQLITE_DONE, stepStat) << "Binding array of length " << testArrayCount << " is expected to succceed for array parameter with minOccurs=5 and maxOccurs=10.";
         else
-            ASSERT_EQ(ECSqlStepStatus::Error, stepStat) << "Binding array of length " << testArrayCount << " is expected to fail for array parameter with minOccurs=5 and maxOccurs=10";
+            ASSERT_EQ(BE_SQLITE_ERROR, stepStat) << "Binding array of length " << testArrayCount << " is expected to fail for array parameter with minOccurs=5 and maxOccurs=10";
         }
     }
 
@@ -1885,7 +1956,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_InsertWithStructBinding)
 
         ECSqlStatement statement;
         auto stat = statement.Prepare (ecdb, insertECSql);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation of ECSQL '" << insertECSql << "' failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of ECSQL '" << insertECSql << "' failed";
 
         ECDbIssueListener issueListener(ecdb);
         auto& binder = statement.GetBinder (structParameterIndex);
@@ -1898,16 +1969,14 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_InsertWithStructBinding)
             return; 
 
         ECInstanceKey ecInstanceKey;
-        auto stepStat = statement.Step (ecInstanceKey);
-        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stepStat);
+        ASSERT_EQ(BE_SQLITE_DONE, statement.Step (ecInstanceKey));
 
         statement.Finalize ();
         stat = statement.Prepare (ecdb, verifySelectECSql);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation of verification ECSQL '" << verifySelectECSql << "' failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of verification ECSQL '" << verifySelectECSql << "' failed";
         statement.BindId (1, ecInstanceKey.GetECInstanceId ());
 
-        stepStat = statement.Step ();
-        ASSERT_EQ ((int) ECSqlStepStatus::HasRow, (int) stepStat);
+        ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
 
         issueListener.Reset();
         IECSqlValue const& structValue = statement.GetValue (structValueIndex);
@@ -2024,7 +2093,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_UpdateWithStructBinding)
 
         ECSqlStatement statement;
         auto stat = statement.Prepare (ecdb, insertECSql);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation of ECSQL '" << insertECSql << "' failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of ECSQL '" << insertECSql << "' failed";
 
         ECDbIssueListener issueListener(ecdb);
         IECSqlBinder& structBinder = statement.GetBinder (structParameterIndex);
@@ -2034,7 +2103,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_UpdateWithStructBinding)
         BindFromJson (bindStatus, statement, structValue, structBinder);
 
         auto stepStat = statement.Step (ecInstanceKey);
-        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stepStat) << "Execution of ECSQL '" << insertECSql << "' failed";
+        ASSERT_EQ ((int) BE_SQLITE_DONE, (int) stepStat) << "Execution of ECSQL '" << insertECSql << "' failed";
         };
 
       auto testFunction = [this, &ecdb] (Utf8CP updateECSql, int structParameterIndex, Utf8CP structValueJson, int ecInstanceIdParameterIndex, ECInstanceKey ecInstanceKey, Utf8CP verifySelectECSql, int structValueIndex)
@@ -2045,10 +2114,10 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_UpdateWithStructBinding)
 
         ECSqlStatement statement;
         auto stat = statement.Prepare (ecdb, updateECSql);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation of ECSQL '" << updateECSql << "' failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of ECSQL '" << updateECSql << "' failed";
 
         stat = statement.BindId (ecInstanceIdParameterIndex, ecInstanceKey.GetECInstanceId ());
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Binding ECInstanceId to ECSQL '" << updateECSql << "' failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Binding ECInstanceId to ECSQL '" << updateECSql << "' failed";
 
         ECDbIssueListener issueListener(ecdb);
         auto& binder = statement.GetBinder (structParameterIndex);
@@ -2058,7 +2127,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_UpdateWithStructBinding)
         BindFromJson (bindStatus, statement, expectedStructValue, binder);
         auto stepStat = statement.Step ();
 
-        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stepStat);
+        ASSERT_EQ ((int) BE_SQLITE_DONE, (int) stepStat);
 
         statement.Finalize ();
         stat = statement.Prepare (ecdb, verifySelectECSql);
@@ -2066,7 +2135,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_UpdateWithStructBinding)
         statement.BindId (1, ecInstanceKey.GetECInstanceId ());
 
         stepStat = statement.Step ();
-        ASSERT_EQ ((int) ECSqlStepStatus::HasRow, (int) stepStat);
+        ASSERT_EQ ((int) BE_SQLITE_ROW, (int) stepStat);
 
         issueListener.Reset();
         IECSqlValue const& structValue = statement.GetValue (structValueIndex);
@@ -2208,15 +2277,15 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ParameterInSelectClause)
         BeRepositoryBasedId expectedId(BeRepositoryId(3), 444);
         ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, expectedId));
 
-        ASSERT_EQ(ECSqlStepStatus::HasRow, statement.Step());
+        ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
         ASSERT_EQ(expectedId.GetValue(), statement.GetValueId<ECInstanceId>(0).GetValueUnchecked());
-        ASSERT_EQ(ECSqlStepStatus::Done, statement.Step());
+        ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
 
         statement.Reset();
         statement.ClearBindings();
-        ASSERT_EQ(ECSqlStepStatus::HasRow, statement.Step());
+        ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
         ASSERT_TRUE(statement.IsValueNull(0));
-        ASSERT_EQ(ECSqlStepStatus::Done, statement.Step());
+        ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
         }
 
         {
@@ -2226,15 +2295,15 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ParameterInSelectClause)
         BeRepositoryBasedId expectedId(BeRepositoryId(3), 444);
         ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, expectedId));
 
-        ASSERT_EQ(ECSqlStepStatus::HasRow, statement.Step());
+        ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
         ASSERT_EQ((-1)*expectedId.GetValue(), statement.GetValueId<ECInstanceId>(0).GetValueUnchecked());
-        ASSERT_EQ(ECSqlStepStatus::Done, statement.Step());
+        ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
 
         statement.Reset();
         statement.ClearBindings();
-        ASSERT_EQ(ECSqlStepStatus::HasRow, statement.Step());
+        ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
         ASSERT_TRUE(statement.IsValueNull(0));
-        ASSERT_EQ(ECSqlStepStatus::Done, statement.Step());
+        ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
         }
 
         {
@@ -2244,15 +2313,15 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ParameterInSelectClause)
         int64_t expectedId = -123456LL;
         ASSERT_EQ(ECSqlStatus::Success, statement.BindInt64(1, expectedId));
 
-        ASSERT_EQ(ECSqlStepStatus::HasRow, statement.Step());
+        ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
         ASSERT_EQ((-1)*expectedId, statement.GetValueInt64(0));
-        ASSERT_EQ(ECSqlStepStatus::Done, statement.Step());
+        ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
 
         statement.Reset();
         statement.ClearBindings();
-        ASSERT_EQ(ECSqlStepStatus::HasRow, statement.Step());
+        ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
         ASSERT_TRUE(statement.IsValueNull(0));
-        ASSERT_EQ(ECSqlStepStatus::Done, statement.Step());
+        ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
         }
     }
 
@@ -2263,12 +2332,12 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_GetParameterIndex)
     {
     const auto perClassRowCount = 10;
     // Create and populate a sample project
-    auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::Readonly), perClassRowCount);
+    auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), perClassRowCount);
 
         {
         ECSqlStatement statement;
         auto stat = statement.Prepare (ecdb, "SELECT I, S FROM ecsql.PSA WHERE I = :i AND S = :s AND L = :i * 1000000 + 456789");
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+        ASSERT_EQ(ECSqlStatus::Success, stat);
 
         int actualParamIndex = statement.GetParameterIndex ("i");
         EXPECT_EQ (1, actualParamIndex);
@@ -2281,14 +2350,13 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_GetParameterIndex)
         actualParamIndex = statement.GetParameterIndex ("garbage");
         EXPECT_EQ (-1, actualParamIndex);
 
-        auto stepStat = statement.Step ();
-        EXPECT_EQ ((int) ECSqlStepStatus::HasRow, (int) stepStat);
-        }
+        ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+       }
 
         {
         ECSqlStatement statement;
         auto stat = statement.Prepare (ecdb, "SELECT I, S FROM ecsql.PSA WHERE I = ? AND S = :s AND L = :l");
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+        ASSERT_EQ(ECSqlStatus::Success, stat);
 
         statement.BindInt (1, 123);
 
@@ -2300,14 +2368,13 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_GetParameterIndex)
         EXPECT_EQ (3, actualParamIndex);
         statement.BindInt64 (actualParamIndex, 123456789);
 
-        auto stepStat = statement.Step ();
-        EXPECT_EQ ((int) ECSqlStepStatus::HasRow, (int) stepStat);
+        ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
         }
 
         {
         ECSqlStatement statement;
         auto stat = statement.Prepare (ecdb, "SELECT I, S FROM ecsql.PSA WHERE I = ? AND S = :s AND L = ?");
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+        ASSERT_EQ(ECSqlStatus::Success, stat);
 
         statement.BindInt (1, 123);
 
@@ -2317,9 +2384,36 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_GetParameterIndex)
 
         statement.BindInt64 (3, 123456789);
 
-        auto stepStat = statement.Step ();
-        EXPECT_EQ ((int) ECSqlStepStatus::HasRow, (int) stepStat);
+        ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
         }
+
+        {
+        ECSqlStatement statement;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, statement.Prepare(ecdb, "SELECT I, S FROM ecsql.PSA WHERE I = :value")) << "VALUE is a reserved word in the ECSQL grammar, so cannot be used without escaping, even in parameter names";
+        }
+
+        {
+        ECSqlStatement statement;
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ecsql.PSA (L,S,I) VALUES (?,?,:[value])"));
+
+        int actualParamIndex = statement.GetParameterIndex("value");
+        ASSERT_EQ(3, actualParamIndex);
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(actualParamIndex, 300471));
+
+        ECInstanceKey newKey;
+        ASSERT_EQ (BE_SQLITE_DONE, statement.Step(newKey));
+
+        statement.Finalize();
+
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ECInstanceId FROM ecsql.PSA WHERE ECInstanceId = :[id]"));
+        actualParamIndex = statement.GetParameterIndex("id");
+        ASSERT_EQ(1, actualParamIndex);
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindId(actualParamIndex, newKey.GetECInstanceId()));
+
+        ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+        ASSERT_EQ(newKey.GetECInstanceId().GetValue(), statement.GetValueId<ECInstanceId>(0).GetValue());
+        }
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -2412,11 +2506,9 @@ TEST_F (ECSqlTestFixture, ColumnInfoForPrimitiveArrays)
     auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::Readonly), perClassRowCount);
 
     ECSqlStatement stmt;
-    auto stat = stmt.Prepare (ecdb, "SELECT c.Dt_Array FROM ecsql.PSA c LIMIT 1");
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT c.Dt_Array FROM ecsql.PSA c LIMIT 1"));
 
-    auto stepStat = stmt.Step ();
-    ASSERT_EQ (static_cast<int> (ECSqlStepStatus::HasRow), static_cast<int> (stepStat));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step ());
 
     //Top level column
     ECDbIssueListener issueListener(ecdb);
@@ -2462,11 +2554,9 @@ TEST_F (ECSqlTestFixture, ColumnInfoForStructs)
     auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::Readonly), perClassRowCount);
 
     ECSqlStatement stmt;
-    auto stat = stmt.Prepare (ecdb, "SELECT SAStructProp FROM ecsql.SA LIMIT 1");
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT SAStructProp FROM ecsql.SA LIMIT 1"));
 
-    auto stepStat = stmt.Step ();
-    ASSERT_EQ (static_cast<int> (ECSqlStepStatus::HasRow), static_cast<int> (stepStat));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     ECDbIssueListener issueListener(ecdb);
     //Top level column
@@ -2541,11 +2631,9 @@ TEST_F (ECSqlTestFixture, ColumnInfoForStructArrays)
     auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::Readonly), perClassRowCount);
 
     ECSqlStatement stmt;
-    auto stat = stmt.Prepare (ecdb, "SELECT SAStructProp FROM ecsql.SA LIMIT 1");
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT SAStructProp FROM ecsql.SA LIMIT 1"));
 
-    auto stepStat = stmt.Step ();
-    ASSERT_EQ (static_cast<int> (ECSqlStepStatus::HasRow), static_cast<int> (stepStat));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     ECDbIssueListener issueListener(ecdb);
     //Top level column
@@ -2632,32 +2720,29 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Step)
 
         {
         ECSqlStatement statement;
-        auto stat = statement.Prepare (ecdb, "SELECT * FROM ecsql.P");
-        ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat);
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT * FROM ecsql.P"));
 
-        auto stepStat = statement.Step ();
-        ASSERT_EQ ((int)ECSqlStepStatus::HasRow, (int)stepStat) << "Step() on ECSQL SELECT statement is expected to be allowed.";
+        ASSERT_EQ(BE_SQLITE_ROW, statement.Step()) << "Step() on ECSQL SELECT statement is expected to be allowed.";
         }
 
         {
         ECSqlStatement statement;
         ECInstanceKey ecInstanceKey;
         auto stepStat = statement.Step (ecInstanceKey);
-        ASSERT_EQ ((int)ECSqlStepStatus::Error, (int)stepStat) << "Step(ECInstanceKey&) on ECSQL SELECT statement is expected to not be allowed.";
+        ASSERT_EQ (BE_SQLITE_ERROR, stepStat) << "Step(ECInstanceKey&) on ECSQL SELECT statement is expected to not be allowed.";
         }
 
         {
         ECSqlStatement statement;
-        auto stat = statement.Prepare (ecdb, "INSERT INTO ecsql.P (I, L) VALUES (100, 10203)");
-        ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat);
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ecsql.P (I, L) VALUES (100, 10203)"));
 
         auto stepStat = statement.Step ();
-        ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)stepStat) << "Step() on ECSQL INSERT statement is expected to be allowed.";
+        ASSERT_EQ (BE_SQLITE_DONE, stepStat) << "Step() on ECSQL INSERT statement is expected to be allowed.";
 
         statement.Reset ();
         ECInstanceKey ecInstanceKey;
         stepStat = statement.Step (ecInstanceKey);
-        ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)stepStat) << "Step(ECInstanceKey&) on ECSQL INSERT statement is expected to be allowed.";
+        ASSERT_EQ (BE_SQLITE_DONE, stepStat) << "Step(ECInstanceKey&) on ECSQL INSERT statement is expected to be allowed.";
         }
     }
 
@@ -2676,65 +2761,65 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_MultipleInsertsWithoutReprepare)
     int firstIntVal = 1;
     Utf8CP firstStringVal = "First insert";
     ECSqlStatus stat = statement.BindInt (1, firstIntVal);
-    ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
     stat = statement.BindText (2, firstStringVal, IECSqlBinder::MakeCopy::No);
-    ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
 
     ECInstanceKey firstECInstanceKey;
     auto stepStat = statement.Step (firstECInstanceKey);
-    ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)stepStat);
+    ASSERT_EQ (BE_SQLITE_DONE, stepStat);
 
     stat = statement.Reset ();
-    ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
     stat = statement.ClearBindings ();
-    ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
 
     //second insert with same statement
 
     int secondIntVal = 2;
     Utf8CP secondStringVal = "Second insert";
     stat = statement.BindInt (1, secondIntVal);
-    ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
     stat = statement.BindText (2, secondStringVal, IECSqlBinder::MakeCopy::No);
-    ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
 
     ECInstanceKey secondECInstanceKey;
     stepStat = statement.Step (secondECInstanceKey);
-    ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)stepStat);
+    ASSERT_EQ (BE_SQLITE_DONE, stepStat);
 
     //check the inserts
     ASSERT_GT (secondECInstanceKey.GetECInstanceId ().GetValue (), firstECInstanceKey.GetECInstanceId ().GetValue ());
 
     statement.Finalize ();
     stat = statement.Prepare (ecdb, "SELECT ECInstanceId, I, S FROM ecsql.PSA WHERE ECInstanceId = ?");
-    ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
     
     //check first insert
     stat = statement.BindId (1, firstECInstanceKey.GetECInstanceId ());
-    ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
 
     stepStat = statement.Step ();
-    ASSERT_EQ ((int)ECSqlStepStatus::HasRow, (int)stepStat);
+    ASSERT_EQ (BE_SQLITE_ROW, stepStat);
     ASSERT_EQ (firstECInstanceKey.GetECInstanceId ().GetValue (), statement.GetValueId<ECInstanceId> (0).GetValue ());
     ASSERT_EQ (firstIntVal, statement.GetValueInt (1));
     ASSERT_STREQ (firstStringVal, statement.GetValueText (2));
-    ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)statement.Step ());
+    ASSERT_EQ (BE_SQLITE_DONE, statement.Step ());
 
     //check second insert
     stat = statement.Reset ();
-    ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
     stat = statement.ClearBindings ();
-    ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
 
     stat = statement.BindId (1, secondECInstanceKey.GetECInstanceId ());
-    ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
 
     stepStat = statement.Step ();
-    ASSERT_EQ ((int)ECSqlStepStatus::HasRow, (int)stepStat);
+    ASSERT_EQ (BE_SQLITE_ROW, stepStat);
     ASSERT_EQ (secondECInstanceKey.GetECInstanceId ().GetValue (), statement.GetValueId<ECInstanceId> (0).GetValue ());
     ASSERT_EQ (secondIntVal, statement.GetValueInt (1));
     ASSERT_STREQ (secondStringVal, statement.GetValueText (2));
-    ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)statement.Step ());
+    ASSERT_EQ (BE_SQLITE_DONE, statement.Step ());
     }
 
 //---------------------------------------------------------------------------------------
@@ -2749,17 +2834,17 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Reset)
         {
         ECSqlStatement stmt;
         auto stat = stmt.Prepare (ecdb, "SELECT * FROM ecsql.P LIMIT 2");
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation for a valid ECSQL failed.";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation for a valid ECSQL failed.";
         int expectedRowCount = 0;
-        while (stmt.Step () == ECSqlStepStatus::HasRow)
+        while (stmt.Step () == BE_SQLITE_ROW)
             {
             expectedRowCount++;
             }
 
         stat = stmt.Reset ();
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "After ECSqlStatement::Reset";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "After ECSqlStatement::Reset";
         int actualRowCount = 0;
-        while (stmt.Step () == ECSqlStepStatus::HasRow)
+        while (stmt.Step () == BE_SQLITE_ROW)
             {
             actualRowCount++;
             }
@@ -2778,14 +2863,12 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Finalize)
 
         {
         ECSqlStatement stmt;
-        auto stat = stmt.Prepare (ecdb, "SELECT * FROM blablabla");
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::InvalidECSql), static_cast<int> (stat)) << "Preparation for an invalid ECSQL succeeded unexpectedly.";
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare (ecdb, "SELECT * FROM blablabla")) << "Preparation for an invalid ECSQL succeeded unexpectedly.";
 
         stmt.Finalize ();
-        stat = stmt.Prepare (ecdb, "SELECT * FROM ecsql.P");
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat)) << "Preparation for a valid ECSQL failed.";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT * FROM ecsql.P")) << "Preparation for a valid ECSQL failed.";
         int actualRowCount = 0;
-        while (stmt.Step () == ECSqlStepStatus::HasRow)
+        while (stmt.Step () == BE_SQLITE_ROW)
             {
             actualRowCount++;
             }
@@ -2795,11 +2878,10 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Finalize)
 
         {
         ECSqlStatement stmt;
-        auto stat = stmt.Prepare (ecdb, "SELECT * FROM ecsql.P");
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat)) << "Preparation for a valid ECSQL failed.";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT * FROM ecsql.P")) << "Preparation for a valid ECSQL failed.";
 
         int actualRowCount = 0;
-        while (stmt.Step () == ECSqlStepStatus::HasRow)
+        while (stmt.Step () == BE_SQLITE_ROW)
             {
             actualRowCount++;
             }
@@ -2807,10 +2889,9 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Finalize)
 
         //now finalize and do the exact same stuff. In particular this tests that the cursor is reset so that we get all results
         stmt.Finalize ();
-        stat = stmt.Prepare (ecdb, "SELECT * FROM ecsql.P");
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat)) << "Preparation for a valid ECSQL failed.";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT * FROM ecsql.P")) << "Preparation for a valid ECSQL failed.";
         actualRowCount = 0;
-        while (stmt.Step () == ECSqlStepStatus::HasRow)
+        while (stmt.Step () == BE_SQLITE_ROW)
             {
             actualRowCount++;
             }
@@ -2841,7 +2922,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_IssueListener)
         issueListener.Reset();
         BeTest::SetFailOnAssert (false);
         stat = stmt.BindPoint2D (1, DPoint2d::From (1.0, 1.0));
-        ASSERT_EQ(ECSqlStatus::UserError, stat) << "Cannot bind points to int parameter";
+        ASSERT_EQ(ECSqlStatus::Error, stat) << "Cannot bind points to int parameter";
         ASSERT_TRUE(issueListener.GetIssue().IsIssue()) << "Cannot bind points to int parameter";
         BeTest::SetFailOnAssert (true);
 
@@ -2854,10 +2935,10 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_IssueListener)
         BeTest::SetFailOnAssert (false);
         stat = stmt.BindDouble (2, 3.14);
         BeTest::SetFailOnAssert (true);
-        ASSERT_EQ (ECSqlStatus::IndexOutOfBounds, stat) << "Index out of bounds error expected.";
+        ASSERT_EQ (ECSqlStatus::Error, stat) << "Index out of bounds error expected.";
         ASSERT_TRUE(issueListener.GetIssue().IsIssue()) << "Index out of bounds error expected.";
 
-        while (stmt.Step () == ECSqlStepStatus::HasRow)
+        while (stmt.Step () == BE_SQLITE_ROW)
             {
             ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "After successful call to Step";
 
@@ -2913,8 +2994,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_IssueListener)
         ECDbIssueListener issueListener(ecdb);
 
         ECSqlStatement stmt;
-        auto stat = stmt.Prepare (ecdb, "SELECT * FROM blablabla");
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::InvalidECSql), static_cast<int> (stat)) << "Preparation for an invalid ECSQL succeeded unexpectedly.";
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare (ecdb, "SELECT * FROM blablabla")) << "Preparation for an invalid ECSQL succeeded unexpectedly.";
         
         ECDbIssue lastIssue = issueListener.GetIssue();
         ASSERT_TRUE(lastIssue.IsIssue()) << "After preparing invalid ECSQL.";
@@ -2925,11 +3005,10 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_IssueListener)
         ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "After successful call to Finalize";
 
         //now reprepare with valid ECSQL
-        stat = stmt.Prepare (ecdb, "SELECT * FROM ecsql.P");
-        ASSERT_EQ (ECSqlStatus::Success, stat) << "Preparation for a valid ECSQL failed.";
+        ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT * FROM ecsql.P")) << "Preparation for a valid ECSQL failed.";
         ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "After successful call to Prepare";
 
-        while (stmt.Step () == ECSqlStepStatus::HasRow)
+        while (stmt.Step () == BE_SQLITE_ROW)
             {
             ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "After successful call to Step";
             }
@@ -2947,14 +3026,14 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_IssueListener)
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, id));
 
         ECInstanceKey newKey;
-        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step(newKey)) << "Step failed unexpectedly";
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << "Step failed unexpectedly";
         ASSERT_EQ(id.GetValue(), newKey.GetECInstanceId().GetValue());
         stmt.Reset();
         stmt.ClearBindings();
 
         //reuse same id again to provoke constraint violation
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, id));
-        ASSERT_EQ(ECSqlStepStatus::Error, stmt.Step(newKey)) << "Step succeeded unexpectedly although it should not because a row with the same ECInstanceId already exists.";
+        ASSERT_EQ(BE_SQLITE_CONSTRAINT_PRIMARYKEY, stmt.Step(newKey)) << "Step succeeded unexpectedly although it should not because a row with the same ECInstanceId already exists.";
         ASSERT_TRUE(issueListener.GetIssue().IsIssue()) << "After insert of row with same ECInstanceId";
         }
     }
@@ -2991,9 +3070,9 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Geometry)
         auto ecsql = "INSERT INTO ecsql.PASpatial (Geometry, B, Geometry_Array) VALUES(?, True, ?)";
 
         ECSqlStatement statement;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) statement.Prepare(ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed";
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed";
 
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindGeometry (1, *expectedGeomSingle));
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindGeometry (1, *expectedGeomSingle));
 
         IECSqlArrayBinder& arrayBinder = statement.BindArray (2, 3);
         for (auto& geom : expectedGeoms)
@@ -3001,19 +3080,19 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Geometry)
             ECDbIssueListener issueListener(ecdb);
             auto& arrayElementBinder = arrayBinder.AddArrayElement ();
             ASSERT_FALSE (issueListener.GetIssue().IsIssue()) << "IECSqlArrayBinder::AddArrayElement is expected to succeed";
-            ASSERT_EQ ((int) ECSqlStatus::Success, (int) arrayElementBinder.BindGeometry (*geom));
+            ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder.BindGeometry (*geom));
             }
 
-        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step ());
+        ASSERT_EQ ((int) BE_SQLITE_DONE, (int) statement.Step ());
         }
 
         {
         auto ecsql = "INSERT INTO ecsql.SSpatial (PASpatialProp.Geometry, PASpatialProp.Geometry_Array) VALUES(?,?)";
 
         ECSqlStatement statement;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) statement.Prepare(ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed";
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed";
         
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindGeometry (1, *expectedGeomSingle));
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindGeometry (1, *expectedGeomSingle));
 
         ECDbIssueListener issueListener(ecdb);
         IECSqlArrayBinder& arrayBinder = statement.BindArray (2, 3);
@@ -3026,7 +3105,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Geometry)
             ASSERT_EQ (ECSqlStatus::Success, arrayElementBinder.BindGeometry (*geom));
             }
 
-        ASSERT_EQ (ECSqlStepStatus::Done, statement.Step ());
+        ASSERT_EQ (BE_SQLITE_DONE, statement.Step ());
         }
 
         {
@@ -3052,7 +3131,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Geometry)
             ASSERT_EQ (ECSqlStatus::Success, arrayElementBinder.BindGeometry (*geom));
             }
 
-        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step ());
+        ASSERT_EQ ((int) BE_SQLITE_DONE, (int) statement.Step ());
         }
 
     ecdb.SaveChanges ();
@@ -3062,7 +3141,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Geometry)
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT B, Geometry_Array, Geometry FROM ecsql.PASpatial")) << "Preparation failed";
     int rowCount = 0;
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (statement.Step () == BE_SQLITE_ROW)
         {
         rowCount++;
 
@@ -3087,9 +3166,9 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Geometry)
     ASSERT_EQ (1, rowCount);
 
     statement.Finalize ();
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.Prepare (ecdb, "SELECT PASpatialProp.Geometry_Array, PASpatialProp.Geometry FROM ecsql.SSpatial")) << "Preparation failed";
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT PASpatialProp.Geometry_Array, PASpatialProp.Geometry FROM ecsql.SSpatial")) << "Preparation failed";
     rowCount = 0;
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (statement.Step () == BE_SQLITE_ROW)
         {
         rowCount++;
 
@@ -3112,9 +3191,9 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Geometry)
     ASSERT_EQ (2, rowCount);
 
     statement.Finalize ();
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.Prepare (ecdb, "SELECT PASpatialProp FROM ecsql.SSpatial")) << "Preparation failed";
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT PASpatialProp FROM ecsql.SSpatial")) << "Preparation failed";
     rowCount = 0;
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (statement.Step () == BE_SQLITE_ROW)
         {
         rowCount++;
 
@@ -3166,7 +3245,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_GetGeometryWithInvalidBlobFormat)
     ECSqlStatement ecsqlStmt;
     ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(ecdb, "SELECT Geometry FROM ecsql.PASpatial"));
     int rowCount = 0;
-    while (ecsqlStmt.Step() == ECSqlStepStatus::HasRow)
+    while (ecsqlStmt.Step() == BE_SQLITE_ROW)
         {
         rowCount++;
         ASSERT_FALSE(ecsqlStmt.IsValueNull(0)) << "Geometry column is not expected to be null.";
@@ -3198,7 +3277,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingStructArrayInsert)
     ASSERT_FALSE(lastIssue.IsIssue()) << "AddArrayElement failed: " << lastIssue.GetMessage();
     IECSqlStructBinder& pStructBinder = saStructBinder.GetMember("PStructProp").BindStruct();
     stat = pStructBinder.GetMember("i").BindInt(99);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+    ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
 
     //add three array elements
     const int count = 3;
@@ -3219,12 +3298,12 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingStructArrayInsert)
         ASSERT_EQ(ECSqlStatus::Success, structBinder.GetMember("p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2)));
         }
 
-    ASSERT_EQ(ECSqlStepStatus::Done, statement.Step()) << "Step for '" << ecsql << "' failed";
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step()) << "Step for '" << ecsql << "' failed";
     statement.Finalize();
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT SAStructProp.PStruct_Array FROM ecsql.SA"));
-    while (stmt.Step() == ECSqlStepStatus::HasRow)
+    while (stmt.Step() == BE_SQLITE_ROW)
         {
         auto &pStructArray = stmt.GetValue(0).GetArray();
         ASSERT_EQ(3, pStructArray.GetArrayLength());
@@ -3255,25 +3334,25 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_StructArrayInsertWithParametersLongAndAr
         auto& structBinder = arrayBinder.AddArrayElement().BindStruct();
         ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "AddArrayElement failed";
         auto stat = structBinder.GetMember("d").BindDouble(i * PI);
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember("i").BindInt(i * 2);
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember("l").BindInt64(i * 3);
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember("p2d").BindPoint2D(DPoint2d::From(i, i + 1));
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember("p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         }
 
     auto stepStatus = statement.Step();
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed";
+    ASSERT_EQ((int)BE_SQLITE_DONE, (int)stepStatus) << "Step for '" << ecsql << "' failed";
     statement.Finalize();
     ECSqlStatement stmt;
     auto prepareStatus = stmt.Prepare(ecdb, "SELECT * FROM ecsql.PSA");
     ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
     ECInstanceECSqlSelectAdapter classPReader(stmt);
-    while (stmt.Step() == ECSqlStepStatus::HasRow)
+    while (stmt.Step() == BE_SQLITE_ROW)
         {
         auto inst = classPReader.GetInstance();
         ECValue v;
@@ -3294,18 +3373,18 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_InsertWithMixParametersIntAndInt)
     auto ecsql = "INSERT INTO ecsql.Sub1 (I,Sub1I) VALUES(123, ?)";
     ECSqlStatement statement;
     auto stat = statement.Prepare(ecdb, ecsql);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed";
+    ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of '" << ecsql << "' failed";
 
     statement.BindInt(1, 333);
 
     auto stepStatus = statement.Step();
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed";
+    ASSERT_EQ((int)BE_SQLITE_DONE, (int)stepStatus) << "Step for '" << ecsql << "' failed";
     statement.Finalize();
     ECSqlStatement stmt;
     auto prepareStatus = stmt.Prepare(ecdb, "SELECT * FROM ecsql.PSA");
     ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
     ECInstanceECSqlSelectAdapter classPReader(stmt);
-    while (stmt.Step() == ECSqlStepStatus::HasRow)
+    while (stmt.Step() == BE_SQLITE_ROW)
         {
         auto inst = classPReader.GetInstance();
         ECValue v;
@@ -3327,19 +3406,19 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_InsertWithMixParameters)
     auto ecsql = "INSERT INTO ecsql.P (B,D,I,L,S) VALUES(1, ?,?,123,?)";
     ECSqlStatement statement;
     auto stat = statement.Prepare(ecdb, ecsql);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed";
+    ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of '" << ecsql << "' failed";
 
     statement.BindDouble(1, 2.22);
     statement.BindInt(2, 123);
     statement.BindText(3, "Test Test",IECSqlBinder::MakeCopy::Yes);
     auto stepStatus = statement.Step();
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed";
+    ASSERT_EQ((int)BE_SQLITE_DONE, (int)stepStatus) << "Step for '" << ecsql << "' failed";
     statement.Finalize();
     ECSqlStatement stmt;
     auto prepareStatus = stmt.Prepare(ecdb, "SELECT * FROM ecsql.PSA");
     ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
     ECInstanceECSqlSelectAdapter classPReader(stmt);
-    while (stmt.Step() == ECSqlStepStatus::HasRow)
+    while (stmt.Step() == BE_SQLITE_ROW)
         {
         auto inst = classPReader.GetInstance();
         ECValue v;
@@ -3367,7 +3446,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingStructArrayInsertWi
     auto ecsql = "INSERT INTO ecsql.SA (SAStructProp.PStruct_Array) VALUES(?)";
     ECSqlStatement statement;
     ECSqlStatus stat = statement.Prepare(ecdb, ecsql);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed";
+    ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of '" << ecsql << "' failed";
 
     //add three array elements
     const int count = 3;
@@ -3376,24 +3455,24 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingStructArrayInsertWi
         {
         auto& structBinder = arrayBinder.AddArrayElement().BindStruct();
         stat = structBinder.GetMember("d").BindDouble(i * PI);
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember("i").BindInt(i * 2);
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember("l").BindInt64(i * 3);
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember("p2d").BindPoint2D(DPoint2d::From(i, i + 1));
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember("p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         }
 
     auto stepStatus = statement.Step();
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed";
+    ASSERT_EQ((int)BE_SQLITE_DONE, (int)stepStatus) << "Step for '" << ecsql << "' failed";
     statement.Finalize();
     ECSqlStatement stmt;
     auto prepareStatus = stmt.Prepare(ecdb, "SELECT SAStructProp.PStruct_Array FROM ecsql.SA");
     ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
-    while (stmt.Step() == ECSqlStepStatus::HasRow)
+    while (stmt.Step() == BE_SQLITE_ROW)
         {
         auto &pStructArray = stmt.GetValue(0).GetArray();
         ASSERT_EQ(3, pStructArray.GetArrayLength());
@@ -3425,15 +3504,15 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_StructUpdateWithDotoperator)
 
     ECSqlStatement statement;
     auto stat = statement.Prepare(ecdb, ecsql);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed";
+    ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of '" << ecsql << "' failed";
     auto stepStatus = statement.Step();
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed";
+    ASSERT_EQ((int)BE_SQLITE_DONE, (int)stepStatus) << "Step for '" << ecsql << "' failed";
     statement.Finalize();
         {
         auto prepareStatus = statement.Prepare(ecdb, "SELECT * FROM ecsql.SAStruct");
         ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
         ECInstanceECSqlSelectAdapter classPReader(statement);
-        while (statement.Step() == ECSqlStepStatus::HasRow)
+        while (statement.Step() == BE_SQLITE_ROW)
             {
             auto inst = classPReader.GetInstance();
             ECValue v;
@@ -3444,15 +3523,15 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_StructUpdateWithDotoperator)
     statement.Finalize();
     ecsql = "UPDATE  ONLY ecsql.SAStruct SET PStructProp.i = 3 ";
     stat = statement.Prepare(ecdb, ecsql);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed";
+    ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of '" << ecsql << "' failed";
     stepStatus = statement.Step();
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed";
+    ASSERT_EQ((int)BE_SQLITE_DONE, (int)stepStatus) << "Step for '" << ecsql << "' failed";
     statement.Finalize();
 
     auto prepareStatus = statement.Prepare(ecdb, "SELECT * FROM ecsql.SAStruct");
     ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
     ECInstanceECSqlSelectAdapter classPReader(statement);
-    while (statement.Step() == ECSqlStepStatus::HasRow)
+    while (statement.Step() == BE_SQLITE_ROW)
         {
         auto inst = classPReader.GetInstance();
         ECValue v;
@@ -3464,7 +3543,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_StructUpdateWithDotoperator)
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                             Muhammad Hassan                         05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingSructArrayUpdateWithDotoperator)
+TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingStructArrayUpdateWithDotoperator)
     {
     const auto perClassRowCount = 0;
     // Create and populate a sample project
@@ -3472,7 +3551,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingSructArrayUpdateWit
     auto ecsql = "INSERT INTO ecsql.SA (SAStructProp.PStruct_Array) VALUES(?)";
     ECSqlStatement insertStatement;
     auto stat = insertStatement.Prepare(ecdb, ecsql);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed";
+    ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of '" << ecsql << "' failed";
 
     //add three array elements
     int count = 3;
@@ -3481,23 +3560,23 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingSructArrayUpdateWit
         {
         auto& structBinder = arrayBinder.AddArrayElement().BindStruct();
         stat = structBinder.GetMember("d").BindDouble(i * PI);
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember("i").BindInt(i * 2);
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember("l").BindInt64(i * 3);
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember("p2d").BindPoint2D(DPoint2d::From(i, i + 1));
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember("p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         }
 
     auto stepStatus = insertStatement.Step();
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed";
+    ASSERT_EQ(BE_SQLITE_DONE, stepStatus) << "Step for '" << ecsql << "' failed";
     ECSqlStatement selectStatement;
     auto prepareStatus = selectStatement.Prepare(ecdb, "SELECT SAStructProp.PStruct_Array FROM ecsql.SA");
     ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
-    while (selectStatement.Step() == ECSqlStepStatus::HasRow)
+    while (selectStatement.Step() == BE_SQLITE_ROW)
         {
         auto &pStructArray = selectStatement.GetValue(0).GetArray();
         ASSERT_EQ(count, pStructArray.GetArrayLength());
@@ -3513,24 +3592,24 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingSructArrayUpdateWit
         {
         auto& structBinder = updateArrayBinder.AddArrayElement().BindStruct();
         stat = structBinder.GetMember("d").BindDouble(-count );
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember("i").BindInt(-count );
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember("l").BindInt64(-count );
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember("p2d").BindPoint2D(DPoint2d::From(i, i + 1));
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         stat = structBinder.GetMember("p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed";
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Bind to struct member failed";
         }
 
     stepStatus = updateStatement.Step();
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed";
+    ASSERT_EQ(BE_SQLITE_DONE, stepStatus) << "Step for '" << ecsql << "' failed";
    
     ECSqlStatement statement;
     prepareStatus = statement.Prepare(ecdb, "SELECT SAStructProp.PStruct_Array FROM ecsql.SA");
     ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
-    while (statement.Step() == ECSqlStepStatus::HasRow)
+    while (statement.Step() == BE_SQLITE_ROW)
         {
         auto &pStructArray = statement.GetValue(0).GetArray();
         ASSERT_EQ(count, pStructArray.GetArrayLength());

@@ -47,8 +47,8 @@ public:
     int GetParameterIndex (Utf8CP parameterName) const;
     ECSqlStatus ClearBindings ();
 
-    ECSqlStepStatus Step ();
-    ECSqlStepStatus Step (ECInstanceKey& ecInstanceKey);
+    DbResult Step ();
+    DbResult Step (ECInstanceKey& ecInstanceKey);
     ECSqlStatus Reset ();
 
     int GetColumnCount () const;

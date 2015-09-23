@@ -42,7 +42,7 @@ ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Init()
     if (!enabler)
         {
         BeAssert(false && "ECEnabler for primitive array ECDb_System class is nullptr.");
-        return ReportError(ECSqlStatus::ProgrammerError, "ECEnabler for primitive array ECDb_System class is nullptr.");
+        return ReportError(ECSqlStatus::Error, "ECEnabler for primitive array ECDb_System class is nullptr.");
         }
 
     bool isEmptyArray = arrayBlob == nullptr;
@@ -51,7 +51,7 @@ ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Init()
         if (!ECDBuffer::IsCompatibleVersion(nullptr, arrayBlob))
             {
             BeAssert(false && "BLOB is from a future version that thinks it is not compatible with us");
-            return ReportError(ECSqlStatus::ProgrammerError, "BLOB is from a future version that thinks it is not compatible with us");
+            return ReportError(ECSqlStatus::Error, "BLOB is from a future version that thinks it is not compatible with us");
             }
 
         //Initialize ECInstance from blob
@@ -59,7 +59,7 @@ ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Init()
         if (!m_arrayValueECInstance.IsValid())
             {
             BeAssert(false && "Shared ECInstance created from array BLOB is nullptr.");
-            return ReportError(ECSqlStatus::ProgrammerError, "Shared ECInstance created from array BLOB is nullptr.");
+            return ReportError(ECSqlStatus::Error, "Shared ECInstance created from array BLOB is nullptr.");
             }
         }
     else
@@ -73,7 +73,7 @@ ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Init()
     if (m_arrayValueECInstance->GetValue(arrayMetaInfo, 1) != ECObjectsStatus::ECOBJECTS_STATUS_Success)
         {
         BeAssert(false && "Could not retrieve array information from array ECInstance.");
-        return ReportError(ECSqlStatus::ProgrammerError, "Could not retrieve array information from array ECInstance.");
+        return ReportError(ECSqlStatus::Error, "Could not retrieve array information from array ECInstance.");
         }
 
     m_arrayInfo = arrayMetaInfo.GetArrayInfo();
@@ -83,7 +83,7 @@ ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Init()
         BeAssert(property != nullptr && "ColumnInfo::GetProperty can return null. Please double-check");
         DateTimeInfo dateTimeInfo;
         if (StandardCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, *property) != ECOBJECTS_STATUS_Success)
-            return ReportError(ECSqlStatus::UserError, "Retrieving DateTimeInfo custom attribute from corresponding ECProperty failed.");
+            return ReportError(ECSqlStatus::Error, "Retrieving DateTimeInfo custom attribute from corresponding ECProperty failed.");
 
         m_datetimeMetadata = dateTimeInfo.GetInfo(true);
         }
@@ -171,7 +171,7 @@ int PrimitiveArrayMappedToSingleColumnECSqlField::_GetArrayLength () const
 //---------------------------------------------------------------------------------------
 IECSqlPrimitiveValue const& PrimitiveArrayMappedToSingleColumnECSqlField::_GetPrimitive () const
     {
-    ReportError (ECSqlStatus::UserError, "GetPrimitive cannot be called for array value. Call GetArray instead.");
+    ReportError (ECSqlStatus::Error, "GetPrimitive cannot be called for array value. Call GetArray instead.");
     return NoopECSqlValue::GetSingleton ().GetPrimitive ();
     }
 
@@ -180,7 +180,7 @@ IECSqlPrimitiveValue const& PrimitiveArrayMappedToSingleColumnECSqlField::_GetPr
 //---------------------------------------------------------------------------------------
 IECSqlStructValue const& PrimitiveArrayMappedToSingleColumnECSqlField::_GetStruct () const
     {
-    ReportError (ECSqlStatus::UserError, "GetStruct cannot be called for array value. Call GetArray instead.");
+    ReportError (ECSqlStatus::Error, "GetStruct cannot be called for array value. Call GetArray instead.");
     return NoopECSqlValue::GetSingleton ().GetStruct ();
     }
 
