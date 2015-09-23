@@ -76,16 +76,20 @@ DgnDbStatus TestElement::_InsertInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_LoadFromDb()
+void TestElement::_GetSelectParams(bvector<Utf8CP>& params)
     {
-    auto status = T_Super::_LoadFromDb();
+    T_Super::_GetSelectParams(params);
+    params.push_back(TMTEST_TEST_ELEMENT_TestElementProperty);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestElement::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
+    {
+    auto status = T_Super::_ExtractSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
-        {
-        auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT " TMTEST_TEST_ELEMENT_TestElementProperty " FROM " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ELEMENT_CLASS_NAME " WHERE ECInstanceId=?");
-        stmt->BindId(1, GetElementId());
-        stmt->Step();
-        m_testElemProperty = stmt->GetValueText(0);
-        }
+        m_testElemProperty = stmt.GetValueText(params.GetParameterIndex(TMTEST_TEST_ELEMENT_TestElementProperty));
 
     return status;
     }
