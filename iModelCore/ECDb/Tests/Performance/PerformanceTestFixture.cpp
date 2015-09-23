@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTestFixture.h"
-#include "TestSchemaHelper.h"
 #include "DbLogHelper.h"
 const int performanceTestRunCount = 5;
 USING_NAMESPACE_BENTLEY_EC

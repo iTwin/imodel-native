@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitTests/NonPublished/ECDb/ECDbTestProject.h>
-#include "TestSchemaHelper.h"
 #include "PerformanceTestFixture.h"
 
 using namespace BentleyApi::ECN;
