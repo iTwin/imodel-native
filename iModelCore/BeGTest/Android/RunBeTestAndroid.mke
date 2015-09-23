@@ -1,0 +1,82 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Android/RunBeTestAndroid.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+#
+# Executes an Android JUnit test project
+#
+# Inputs:
+%ifndef TEST_NAME
+    %error Define TEST_NAME as the name of the test. The .exe will use this name. Various output directories will also be based on it, so it must be unique among tests.
+%endif
+%include mdl.mki
+
+baseDir             = $(_MakeFilePath)
+o                   = $(OutputRootDir)build/$(TEST_NAME)/
+
+adbCmd              = ${ANDROID_SDK_ROOT}/platform-tools/adb
+
+always:
+    !~@mkdir $(o)Scripts
+
+always:
+    $(adbCmd) devices > NUL
+    $(adbCmd) devices > $(o)devices
+
+%if $[@readfile $(o)devices]=="List of devices attached  "
+    %warn No Android device attached. Cannot run unit tests.
+    %return
+%endif
+
+$(o)Scripts/runOneTest$(scriptExt) : $(baseDir)runOneTest$(scriptExt)
+    $(LinkFirstDepToFirstTarget)
+
+
+$(o)Scripts/runTests$(scriptExt): $(_makefilespec)
+    >$@
+        $(adbCmd) shell am instrument -w com.bentley.unittest\/com.bentley.unittest.BeInstrumentationTestRunner
+        <
+    ~time
+    %if defined (__unix)
+        chmod +x $@
+    %endif
+
+$(o)installed_apk : $(o)Scripts/installApk$(scriptExt)
+    $(msg)
+    >$@
+        Only install if we know that the apks have changed.
+    <
+    ~time
+    $(o)Scripts/installApk$(scriptExt)
+
+%if !defined (RUN_BETEST_ANDROID_ONLY_IF_APK_CHANGES)
+always:
+    -$(deleteCmd) $(o)ran_tests
+%endif
+
+$(o)ran_tests : $(o)Scripts/runTests$(scriptExt)
+    $(msg)
+    >$@
+        Only run test if we know that the apks have changed.
+    <
+    ~time
+    $(o)Scripts/runTests$(scriptExt)
+
+
+%message To re-install the APK file:
+%message      $(o)Scripts/installApk$(scriptExt)
+%message To re-run tests:
+%message      $(o)Scripts/runTests$(scriptExt)
+%message To run a single unit test:
+%message      $(o)Scripts/runOneTest$(scriptExt)
+%message To rebuild after changing a unit test:
+%message      bb -sMobileDgnSdkAndroid re 'whichtests' MakeJUnitTestProject BuildApk -x androidarm7a
+%message where 'whichtests' could be one or more of the following: BentleyUnitTests, GeomLibsUnitTests, BeSQLiteUnitTests, DgnDbUnitTests, DgnProjectUnitTests, MobileDgnUnitTests
+%message To rebuild after changing a library:
+%message      bb -sMobileDgnSdkAndroid re 'whichlibrary' MobileDgnLibrary-Android BuildApk -x androidarm7a
+%message where 'whichlibrary' is the part the rebuilds the library that you changed, e.g., BeSQLite, Bentley, ECObjects, DgnHandlers, DgnView.
+%message To see progress and logging messages, run the following command in a separate shell: 
+%message        $(adbCmd) logcat TestRunner:* *:E

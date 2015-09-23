@@ -1,0 +1,42 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion "21.1.2"
+    defaultConfig {
+        applicationId "com.bentley.test"
+        testApplicationId "com.bentley.unittest"
+        testInstrumentationRunner "com.bentley.unittest.BeInstrumentationTestRunner"
+        project.archivesBaseName = "Test"
+        minSdkVersion 14
+        targetSdkVersion 19
+        versionCode 1
+        versionName "1.0"
+    }
+
+     sourceSets {
+        main {
+            jniLibs.srcDir file('libs/')
+        }
+    }
+
+    lintOptions {
+        // Disable error for hardcoded debug mode in AndroidManifest
+        disable 'HardcodedDebugMode'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+
+        debug {
+            debuggable true
+            jniDebuggable true
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+}

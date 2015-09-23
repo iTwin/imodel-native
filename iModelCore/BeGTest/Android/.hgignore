@@ -1,0 +1,5 @@
+project/.gradle
+project/.idea
+project/local.properties
+project/project.iml
+project/app/app.iml

@@ -7,16 +7,16 @@
 #--------------------------------------------------------------------------------------
 %include mdl.mki
 
-%ifndef BEGTEST_EXE
-    %error Define BEGTEST_EXE to identify the test runner executable that should be run
+%ifndef GTEST_EXE
+    %error Define GTEST_EXE to identify the test runner executable that should be run
 %endif
 
-%ifndef BEGTEST_OUTPUT_DIR
-    %error Define BEGTEST_OUTPUT_DIR to the directory where logs, etc. should go
+%ifndef GTEST_OUTPUT_DIR
+    %error Define GTEST_OUTPUT_DIR to the directory where logs, etc. should go
 %endif
 
 BentleyTestDir=$(SrcRoot)util/gtest/BentleyTest/
-runDir=$[@realpath ${BEGTEST_OUTPUT_DIR}]/run/
+runDir=$[@realpath ${GTEST_OUTPUT_DIR}]/run/
 LogDir=$(runDir)/logs/
 LogFile=$(LogDir)BeGTeststdout.log
 
@@ -25,7 +25,7 @@ LogFile=$(LogDir)BeGTeststdout.log
 %message .
 
 %if !defined (BEGTEST_LOGGING_CONFIG)
-    BEGTEST_LOGGING_CONFIG=$[@realpath $[@dir $(BEGTEST_EXE)]logging.config.xml]
+    BEGTEST_LOGGING_CONFIG=$[@realpath $[@dir $(GTEST_EXE)]logging.config.xml]
     %message BEGTEST_LOGGING_CONFIG not set, using default: $(BEGTEST_LOGGING_CONFIG)
 
 always:
@@ -66,12 +66,12 @@ always:
 %endif
 
 always:
-    !~@mkdir ${BEGTEST_OUTPUT_DIR}
+    !~@mkdir ${GTEST_OUTPUT_DIR}
     !~@mkdir ${runDir}
     !~@mkdir ${runDir}/Output
     !~@mkdir ${runDir}/Temp
     !~@mkdir ${LogDir}
-    $(RunPrefix) $(_MakeFilePath)RunTests.py --exename="$(BEGTEST_EXE)" --gtest_output="xml:$(LogDir)TestResults.xml" --truncate_output --output_dir=$(BEGTEST_OUTPUT_DIR) --log_file=$(LogFile)
+    $(RunPrefix) $(_MakeFilePath)RunTests.py --exename="$(GTEST_EXE)" --gtest_output="xml:$(LogDir)TestResults.xml" --truncate_output --output_dir=$(GTEST_OUTPUT_DIR) --log_file=$(LogFile)
     %if !defined (NO_BREAK)
        $(BentleyTestDir)PrintLogAndReturnResult.py $(LogFile)
     %else

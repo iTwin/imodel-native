@@ -1,0 +1,13 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Android/prewire.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+PolicyFile=$(InternalSystemPolicy)
+
+%include mdl.mki
+
+always:
+    CreateSymLinks.py -d"$(BuildContext)/PublicAPI/BeTestAndroid=$(baseDir)"

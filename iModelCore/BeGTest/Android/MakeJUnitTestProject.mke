@@ -1,0 +1,230 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Android/MakeJUnitTestProject.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+#
+# Builds an Android JUnit test project to run a specified collection of tests
+#
+# Inputs:
+%ifndef TEST_NAME
+    %error Define TEST_NAME as the name of the test. The .exe will use this name. Various output directories will also be based on it, so it must be unique among tests.
+%endif
+
+%ifndef TEST_COLLECTION_PRODUCT_DIR
+    %error TEST_COLLECTION_PRODUCT_DIR must point to the product that contains the unit tests and their supporting libraries and assets
+%endif
+
+# Optional. BEGTEST_FRAMEWORK_SQLANG - Full filepath of .db3 file to return as the "framework" sqlang file
+
+GCC_DEFAULT_VISIBILITY=default
+%include mdl.mki
+%include $(SrcBsiCommon)sharedmki/BeTestSelectHarness.mki
+
+%if $(TARGET_PLATFORM)!="Android"
+    %error This makefile should be used only when TARGET_PLATFORM is Android
+%endif
+%ifndef BENTLEY_ANDROID_AndroidABI
+    %error BENTLEY_ANDROID_AndroidABI must be defined. I thought it was defined by gccmdl.mki
+%endif
+%ifndef BENTLEY_ANDROID_Libgnustl_shared
+    %error BENTLEY_ANDROID_Libgnustl_shared must be defined. I thought it was defined by gcclink.mki
+%endif
+%ifndef BENTLEY_ANDROID_Libgnustl_shared_fullpath
+    %error BENTLEY_ANDROID_Libgnustl_shared_fullpath must be defined. I thought it was defined by gcclink.mki
+%endif
+
+baseDir             = $(_MakeFilePath)
+outputDir           = $(OutputRootDir)build/$(TEST_NAME)/
+libsDir             = $(outputDir)project/app/libs/
+mainDir             = $(outputDir)project/app/src/main/
+androidTestDir      = $(outputDir)project/app/src/androidTest/
+
+collectionProduct = $(OutputRootDir)../Product/${TEST_COLLECTION_PRODUCT_DIR}/
+unitTestsDir = $(collectionProduct)Objects/
+inputSoDir = $(collectionProduct)Assemblies/
+
+## SHARED_LIBRARIES=libMobileDgn libWebServicesClient libWebServicesCache
+%ifdef SHARED_LIBRARIES
+    shared_libraries_full_path = $[@addprefix $(inputSoDir), $(SHARED_LIBRARIES)]
+%endif
+
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    always:
+        $(rmdirRecursiveCmd) $(outputDir)
+
+    %return 
+%else
+    always:
+        ~mkdir $(outputDir)
+        !~@putenv PYTHONPATH=$(PYTHONPATH)$(bsicommon_ospathsep)$(SrcBsiCommon)PublicSDK
+%endif
+
+%ifdef USE_STATIC_LIBRARIES
+# ***TRICKY: We copy in order to eliminate dups
+always:
+    ~mkdir $(outputDir)/libs
+    CopyWithSymlinks.py     $(collectionProduct)Libs $(outputDir)libs
+    CopyWithSymlinks.py     $(BuildContext)SubParts/Libs $(outputDir)libs
+
+static_libraries_full_path = $[@realpath $[@wildcard $(outputDir)libs/*$(stlibext)]]
+%endif
+
+
+#/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_
+#           project - contains both the application under test it's unit tests
+#/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_
+#--------------------------------------------------------------------------------------
+# Bootstrap by copying the parts of the project directory.
+#           we use build.gradle as a proxy
+#--------------------------------------------------------------------------------------
+$(outputDir)project/build.gradle : $(baseDir)project/build.gradle
+    $(msg)
+    CopyWithSymlinks.py     $(baseDir)project                     $(outputDir)project
+
+#/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_
+#           project/app/src/main - contains the (fake) application under test
+#/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_
+$(mainDir)assets : $(collectionProduct)Assets
+    $(msg)
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+# Generate the assets' manifest
+# WARNING: This manifest name is hard-wired in BeTestAndroidproject\app\src\main\java\com\bentley\testTestActivity.java
+_assets = $[@wildcard $(mainDir)assets/*.*]
+%if $(_assets) != " "
+    $(mainDir)assets/BeTestAndroid.manifest : $(_assets)
+        $(baseDir)CreateAssetsManifest.py $@ $(mainDir)assets
+%else
+    always:
+        >$(mainDir)assets/BeTestAndroid.manifest
+        This project has no assets.
+        <
+%endif
+
+#/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_
+#           project/app/src/androidTest - contains the (generated) unit tests
+#/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_
+
+
+#--------------------------------------------------------------------------------------
+# Populate $(unitTestsDir) with .java wrappers that look 
+# like JUnit test classes to JUnit. 
+# Also generate the jni .c files that call our C++ unit tests.
+#
+# GenerateJUnitTestFileList.py searches the UnitTests directory to find the unit tests that we want to run.
+# Make this depend on the <UT>UnitTests.list.h files - these change when a unit test is added or removed
+#--------------------------------------------------------------------------------------
+$(outputDir)JUnitTestFiles.mki : $[@wildcard $(unitTestsDir)*UnitTests.list.h] $(baseDir)GenJUnitTestCaseS.java.c $(baseDir)GenJUnitTestCase.jni.cpp $(_MakeFileSpec)
+    $(msg)
+    !@$(baseDir)GenerateJUnitTestFileList.py $(unitTestsDir) $(baseDir)GenJUnitTestCaseS.java.c $(baseDir)GenJUnitTestCase.jni.cpp > $(outputDir)JUnitTestFiles.mki
+    ~time 
+
+%iffile $(outputDir)JUnitTestFiles.mki
+    %include $(outputDir)JUnitTestFiles.mki
+%endif
+
+always:
+    !-$(deleteCmd) $(outputDir)JUnitTestFiles.mki
+
+#--------------------------------------------------------------------------------------
+# obj/local/$(BENTLEY_ANDROID_AndroidABI)/libAndroidTestJni.so
+#       The shared object containing the JNI wappers and the pre-built native-code unit test code.
+#       It links with the supporting libraries.
+#--------------------------------------------------------------------------------------
+# Build libAndroidTestJni.so. This is the library that implements the jni methods and is put into the APK file.
+always:
+    ~mkdir $(outputDir)project/obj/local/$(BENTLEY_ANDROID_AndroidABI)
+    ~mkdir $(libsDir)/$(BENTLEY_ANDROID_AndroidABI)
+
+    
+%ifndef BEGTEST_FRAMEWORK_SQLANG
+    BEGTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3
+%endif
+
+always:
+    > $(outputDir)BEGTEST_FRAMEWORK_SQLANG_DEF.h
+\#define BEGTEST_FRAMEWORK_SQLANG L"$(BEGTEST_FRAMEWORK_SQLANG)"
+    <
+
+cIncs + -I$(outputDir)
+
+$(outputDir)betest_static_initialize$(oext) : $(baseDir)betest_static_initialize.cpp
+
+DLM_NAME           = AndroidTestJni
+DLM_DEST           = $(outputDir)project/obj/local/$(BENTLEY_ANDROID_AndroidABI)/
+DLM_OBJECT_DEST    = $(outputDir)
+DLM_NOINITFUNC     = 1
+DLM_NOMSBUILTINS   = 1
+DLM_NOENTRY        = 1
+DLM_NO_DLS         = 1
+DLM_NO_DEF         = 1
+DLM_NO_BENTLEY_LIB = 1
+DLM_OBJECT_FILES   = $(outputDir)betest_static_initialize$(oext)
+DLM_OBJECT_FILES   + $[@wildcard $(outputDir)*JniTest$(oext)]
+DLM_OBJECT_FILES   + $[@wildcard $(unitTestsDir)/*$(oext)]
+%ifdef static_libraries_full_path
+    DLM_OBJECT_FILES   + $(static_libraries_full_path)
+%endif
+%ifdef shared_libraries_full_path
+    LINKER_LIBRARIES   = $(shared_libraries_full_path)
+%endif
+# Note: gcclink automatically links with $(BENTLEY_ANDROID_ANDROID_LIBSTL_STATIC)
+
+%include dlmlink.mki
+
+#--------------------------------------------------------------------------------------
+# Copy supporting libraries
+#--------------------------------------------------------------------------------------
+always:
+    @$(_MakeFilePath)CopyAllTo.py $(LINKER_LIBRARIES) $(outputDir)project/obj/local/$(BENTLEY_ANDROID_AndroidABI)
+
+$(outputDir)project/obj/local/$(BENTLEY_ANDROID_AndroidABI)/$(BENTLEY_ANDROID_Libgnustl_shared) : $(BENTLEY_ANDROID_Libgnustl_shared_fullpath)
+    $(copyCmd) "$<" $@
+
+#--------------------------------------------------------------------------------------
+# libs/$(BENTLEY_ANDROID_AndroidABI)
+#--------------------------------------------------------------------------------------
+
+$(libsDir)$(BENTLEY_ANDROID_AndroidABI)/$(shlibprefix)AndroidTestJni$(shlibext) : $(outputDir)project/obj/local/$(BENTLEY_ANDROID_AndroidABI)/$(shlibprefix)AndroidTestJni$(shlibext)
+    $(msg)
+    $(copyCmd) $< $@
+    ~time
+
+$(libsDir)$(BENTLEY_ANDROID_AndroidABI)/$(BENTLEY_ANDROID_Libgnustl_shared) : $(outputDir)project/obj/local/$(BENTLEY_ANDROID_AndroidABI)/$(BENTLEY_ANDROID_Libgnustl_shared)
+    $(msg)
+    $(copyCmd) $< $@
+    ~time
+
+always:
+    @$(_MakeFilePath)CopyAllTo.py   $(LINKER_LIBRARIES) $(libsDir)$(BENTLEY_ANDROID_AndroidABI)
+
+always:
+    -$(BENTLEY_ANDROID_TOOLCHAIN_strip) $(StripCmdOptions) $[@wildcard $(libsDir)$(BENTLEY_ANDROID_AndroidABI)/*$(shlibext)]
+
+#--------------------------------------------------------------------------------------
+# Generate some files needed for debugging (see ndk-gdb)
+#--------------------------------------------------------------------------------------
+$(libsDir)$(BENTLEY_ANDROID_AndroidABI)/gdbserver : $(BENTLEY_ANDROID_Gdbserver)
+    $(msg)
+    $(copyCmd) $< $@
+    ~time
+
+$(libsDir)$(BENTLEY_ANDROID_AndroidABI)/gdb.setup : $(libsDir)$(BENTLEY_ANDROID_AndroidABI)/$(shlibprefix)AndroidTestJni$(shlibext)
+    $(msg)
+    > $@
+        set solib-search-path .\/project\/obj\/local\/$(BENTLEY_ANDROID_AndroidABI)
+        directory $[@subst \, \/, $(BENTLEY_ANDROID_GdbUsrInclude)] jni
+    <
+    ~time
+
+#--------------------------------------------------------------------------------------
+# Delivery
+#--------------------------------------------------------------------------------------
+$(BuildContext)Delivery/AndroidJUnit/$(TEST_NAME)/project : $(outputDir)project
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+always:
+    $(_bmake) $(baseDir)BuildApk.mke -dTEST_NAME=$(TEST_NAME)

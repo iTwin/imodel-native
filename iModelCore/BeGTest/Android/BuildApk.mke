@@ -1,0 +1,73 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Android/BuildApk.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+#
+# Builds an APK that rolls up a Android JUnit test project
+#
+# Inputs:
+%ifndef TEST_NAME
+    %error Define TEST_NAME as the name of the test. The .exe will use this name. Various output directories will also be based on it, so it must be unique among tests.
+%endif
+%include mdl.mki
+
+%if $(TARGET_PLATFORM)!="Android"
+    %error This makefile should be used only when TARGET_PLATFORM is Android
+%endif
+
+baseDir             = $(_MakeFilePath)
+outputDir           = $(OutputRootDir)build/$(TEST_NAME)/
+mainDir             = $(outputDir)project/app/src/main/
+androidTestDir      = $(outputDir)project/app/src/androidTest/
+testApk             = $(outputDir)project/app/build/outputs/apk/Test-debug.apk
+testRunner          = $(outputDir)project/app/build/outputs/apk/Test-debug-androidTest-unaligned.apk
+
+adbCmd              = ${ANDROID_SDK_ROOT}/platform-tools/adb
+
+
+always:
+    !~@mkdir $(outputDir)Scripts
+
+# --------------------------------------------------------
+# Prepare for building with gradle
+# --------------------------------------------------------
+sdkroot = $[@subst / \\\\ $(ANDROID_SDK_ROOT)]
+ndkroot = $[@subst / \\\\ $(ANDROID_NDK_ROOT)]
+
+always:
+    >$(outputDir)project/local.properties
+    sdk.dir=$(sdkroot)
+    ndk.dir=$(ndkroot)
+    <
+
+_gradleCmd = ${GRADLE_HOME}/bin/gradle build assembleAndroidTest
+_gradleOptions = --project-dir ${outputDir}/project/
+
+# --------------------------------------------------------
+# Build the .class files and the .APK files
+# --------------------------------------------------------
+$(testApk) : $(_makefilespec) $[@wildcard $(mainDir)java/com/bentley/test/*.java] $[@wildcard $(androidTestDir)java/com/bentley/unittest/*.java]
+    $(msg)
+    !-$(deleteCmd) $@
+    $(_gradleCmd) $(_gradleOptions)
+    ~time
+
+
+$(outputDir)Scripts/installApk$(scriptExt) : $(testApk) $(_makefilespec)
+    $(msg)
+    >$@
+        $(adbCmd) -d install -r $(testApk)
+        $(adbCmd) -d install -r $(testRunner)
+        <
+    %if defined (__unix)
+    chmod +x $@
+    %endif
+    ~time
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+%message To install tests, execute the following command:  
+%message     $(outputDir)Scripts/installApk$(scriptExt)
+%endif

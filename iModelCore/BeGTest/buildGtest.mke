@@ -6,17 +6,23 @@
 #
 #--------------------------------------------------------------------------------------
 #
-# Builds a test runner based on gtest
+# Builds a gtest program to run a specified collection of tests
 #
+# Inputs:
+%ifndef TEST_NAME
+    %error Define TEST_NAME as the name of the test. The .exe will use this name. Various output directories will also be based on it, so it must be unique among tests.
+%endif
+
+%ifndef TEST_COLLECTION_PRODUCT_DIR
+    %error Define TEST_COLLECTION_PRODUCT_DIR as the name of the test collection product
+%endif
+
+# Optional. BEGTEST_FRAMEWORK_SQLANG - Full filepath of .db3 file to return as the "framework" sqlang file
 
 # the gtest compilands themselves contain warnings
 NO_DEFAULT_CLANG_WARNINGS=1
 
 %include mdl.mki
-
-%ifndef BEGTEST_NAME
-    %error Must define BEGTEST_NAME as the name of the .exe to create
-%endif
 
 BE_TEST_TESTHARNESS=GUnitTests
 USE_GTEST=1
@@ -25,29 +31,20 @@ nameToDefine=USE_GTEST=1
 %include cdefapnd.mki
 
 baseDir      = $(_MakeFilePath)
-progName     = $(BEGTEST_NAME)
+progName     = $(TEST_NAME)
 progNameExe  = $(progName)$(exeext)
-o            = $(OutputRootDir)build/BeGTest/
-runDir       = $(OutputRootDir)build/BeGTest/run/
+o            = $(OutputRootDir)build/$(TEST_NAME)/
 
-materialProduct = $(OutputRootDir)Product/${BEGTEST_TEST_PRODUCT_DIR}/
+collectionProduct = $(OutputRootDir)Product/${TEST_COLLECTION_PRODUCT_DIR}/
 
 %ifdef BMAKE_DELETE_ALL_TARGETS    
 always:
     $(rmdirRecursiveCmd) $(o)
-    $(rmdirRecursiveCmd) $(runDir)
-    $(rmdirRecursiveCmd) $(runDir)logs
-    $(rmdirRecursiveCmd) $(runDir)Output
-    $(rmdirRecursiveCmd) $(runDir)Temp
 %return
 %endif
 
 always:
     !~@mkdir $(o)
-    !~@mkdir $(runDir)
-    !~@mkdir $(runDir)logs
-    !~@mkdir $(runDir)Output
-    !~@mkdir $(runDir)Temp
     !~@putenv PYTHONPATH=$(PYTHONPATH)$(bsicommon_ospathsep)$(SrcBsiCommon)PublicSDK
 
 %ifndef BEGTEST_FRAMEWORK_SQLANG
@@ -77,10 +74,10 @@ $(o)BeGTestExe$(oext)   : $(baseDir)BeGTestExe.cpp $(BuildContext)PublicAPI/Bent
 # -----------------------------------------------------
 
 #   Link the unit tests themselves
-LOCAL_GUNITTEST_OBJS + $(o)BeGTestExe$(oext) $[@wildcard $(materialProduct)Objects/*$(oext)] $[@wildcard $(materialProduct)Libs/*$(stlibext)]
+LOCAL_GUNITTEST_OBJS + $(o)BeGTestExe$(oext) $[@wildcard $(collectionProduct)Objects/*$(oext)] $[@wildcard $(collectionProduct)Libs/*$(stlibext)]
 
 #   Satisfy the link requirements of the unit tests
-GUNITTEST_LIBS       + $[@wildcard $(materialProduct)Libs/*$(libext)]
+GUNITTEST_LIBS       + $[@wildcard $(collectionProduct)Libs/*$(libext)]
 
 #   Satisfy the link requirements of begtest itself
 GUNITTEST_LIBS       + $[@wildcard $(BuildContext)SubParts/Libs/*$(libext)]
@@ -111,8 +108,8 @@ always:
 # Link files into the Delivery directory with the names and locations that BeGTestExe.cpp expects.
 # ---------------------------------------------------------------------------------------------------
 always:
-    python $(SrcBsiCommon)build/CreateSymLinks.py -f "$(BuildContext)Delivery/BuildGtest/Assemblies/$(progNameExe)=$(o)$(progNameExe)"
-    python $(SrcBsiCommon)build/CreateSymLinks.py -m "$(BuildContext)Delivery/BuildGtest/Assemblies=$(materialProduct)Assemblies/*$(shlibext)"
-    python $(SrcBsiCommon)build/CreateSymLinks.py -m "$(BuildContext)Delivery/BuildGtest/Assemblies=$(BuildContext)SubParts/Assemblies/*$(shlibext)"
-    python $(SrcBsiCommon)build/CreateSymLinks.py -f "$(BuildContext)Delivery/BuildGtest/Assemblies/logging.config.xml=$(baseDir)logging.config.xml"
-    python $(SrcBsiCommon)build/CreateSymLinks.py -d "$(BuildContext)Delivery/BuildGtest/DgnPlatformAssetsDirectory=$(materialProduct)Assets"
+    python $(SrcBsiCommon)build/CreateSymLinks.py -f "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies/$(progNameExe)=$(o)$(progNameExe)"
+    python $(SrcBsiCommon)build/CreateSymLinks.py -m "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(collectionProduct)Assemblies/*$(shlibext)"
+    python $(SrcBsiCommon)build/CreateSymLinks.py -m "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(BuildContext)SubParts/Assemblies/*$(shlibext)"
+    python $(SrcBsiCommon)build/CreateSymLinks.py -f "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies/logging.config.xml=$(baseDir)logging.config.xml"
+    python $(SrcBsiCommon)build/CreateSymLinks.py -d "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/DgnPlatformAssetsDirectory=$(collectionProduct)Assets"
