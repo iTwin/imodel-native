@@ -149,6 +149,8 @@
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="TestFixtureForUnitTests" />
         <SubPart PartName="PerformanceTestingHelpers" PartFile="BeSQLite" Repository="BeSQLite"/>
+        <!-- Performance tests use DgnDbTestDgnManager, which is implemented in BackDoor -->
+        <SubPart PartName="BackdoorForUnitTests"/>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
         </Bindings>
@@ -461,31 +463,64 @@
     <!-- DgnPlatform Performance Tests -->
     <!-- ********************************************************************************************** -->
 
-    <Product Name="DgnPlatformPerformanceTests">
+    <!-- Define the collection of performance tests. -->
+    <Part Name="TestCollection-Performance">
         <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
-        <!-- I am reusing the MobileDgnTestsProduct directory for convenience. 
-            It puts our DLLs and other files into the standard begtest directory layout. 
-            Using this product directory list doesn't obligate me to include or run the MobileDgn tests. -->
-        <Directories DirectoryListName="MobileDgnTestsProduct" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="UnitTests-Performance"        Repository="BeSQLite" PartFile="BeSQLite"/>
         <SubPart PartName="UnitTests-Performance"        Repository="ECDb" PartFile="ECDb"/>
         <SubPart PartName="UnitTests-Performance"        Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <!-- Pull in the dgnplatform's db3 file to serve as the "framework" sqlang for testing purposes -->
         <SubPart PartName="DgnPlatformSqlang"            Repository="DgnPlatform" PartFile="DgnPlatform"/>
+    </Part>
+
+    <!-- Define dynamic and static versions of the test collection -->
+    <Part Name="TestCollection-Performance-Dynamic" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubPart PartName="TestCollection-Performance"/>
+    </Part>
+
+    <Part Name="TestCollection-Performance-Static" ExcludePlatforms="x86,x64,Linux*,MacOS*">
+        <SubPart PartName="TestCollection-Performance" LibType="static" />
+    </Part>
+
+    <Product Name="DgnPlatform-TestCollection-Performance">
+        <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="TestCollection-Performance-Dynamic"/>
+        <SubPart PartName="TestCollection-Performance-Static" />
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Product Name="DgnPlatformPerformanceTests-GtestRunner">
-        <Directories DirectoryListName="Gtest-GtestRunner" Repository="BeGTest" PartFile="BeGTest"/>
-        <SubPart PartName="DgnPlatformPerformanceTests-GtestRunnerExe"/>
+    <!--                *************** -->
+    <!--                **** gtest **** -->
+    <!--                *************** -->
+    <Product Name="GTest-DgnPlatform-TestCollection-Performance">
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="Gtest-TestCollection-Performance"/>
     </Product>
 
-    <Part Name="DgnPlatformPerformanceTests-GtestRunnerExe" BentleyBuildMakeFile="$(buildcontext)/SubParts/Gtest-Tools/buildGtest.mke" BentleyBuildMakeOptions="-dBEGTEST_NAME=DgnPlatformPerformanceTests -dBEGTEST_TEST_PRODUCT_DIR=DgnPlatformPerformanceTests -dBEGTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3">
-        <SubProduct ProductName="DgnPlatformPerformanceTests"/>
+    <Part Name="Gtest-TestCollection-Performance" BentleyBuildMakeFile="$(buildcontext)/SubParts/Gtest-Tools/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatform-TestCollection-Performance -dTEST_COLLECTION_PRODUCT=DgnPlatform-TestCollection-Performance -dBEGTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3">
+        <SubProduct ProductName="DgnPlatform-TestCollection-Performance"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/BuildGtest/Assemblies/*</Files>
-            <Directory ProductDirectoryName="Gtest-DgnPlatformAssetsDirectory" SourceName="Delivery/BuildGtest/DgnPlatformAssetsDirectory" />
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/DgnPlatform-TestCollection-Performance/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-DgnPlatformAssetsDirectory" SourceName="Delivery/Gtest/DgnPlatform-TestCollection-Performance/DgnPlatformAssetsDirectory" />
         </Bindings>
     </Part>
+
+    <!--                ********************** -->
+    <!--                **** AndroidJUnit **** -->
+    <!--                ********************** -->
+    <Part Name="AndroidJUnit-TestCollection-Performance" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatformPerformancTest -dTEST_COLLECTION_PRODUCT=DgnPlatform-TestCollection-Performance -dUSE_STATIC_LIBRARIES=1">
+        <SubProduct ProductName="DgnPlatform-TestCollection-Performance"/>
+        <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/AndroidJUnit/DgnPlatformTest/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="AndroidJUnit-DgnPlatform-TestCollection-Performance" >
+        <SubPart PartName="AndroidJUnit-TestCollection-Performance" LibType="static"/>
+        <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
 
 </BuildContext>
