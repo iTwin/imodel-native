@@ -28,4 +28,5 @@
 // Include from PublicApi
 //-----------------------------------------------------------------------------------------
 #include "ThreeMxSchemaCommon.h"
+#include "ThreeMxDomain.h"
 

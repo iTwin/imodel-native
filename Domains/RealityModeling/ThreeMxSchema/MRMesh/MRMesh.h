@@ -70,7 +70,7 @@ struct MRMeshTexture : RefCountedBase
     bvector <Byte>              m_data;
     bvector <Byte>              m_compressedData;
     Point2d                     m_size;
- // MaterialPtr                 m_material;
+    RenderMaterialPtr           m_material;
 
                                 MRMeshTexture (Byte const* pData, size_t dataSize);
                                 ~MRMeshTexture ();
@@ -102,9 +102,10 @@ struct MRMeshContext
     MRMeshContext (TransformCR transform, ViewContextR viewContext, double fixedResolution);
 
     TransformCR         GetTransform () const       { return m_transform; }
-    bool                GetLoadSynchronous () const    { return m_loadSynchronous; }
+    bool                GetLoadSynchronous () const { return m_loadSynchronous; }
     bool                UseFixedResolution ()const  { return m_useFixedResolution; }
     double              GetFixedResolution () const { return m_fixedResolution; }
+    QvCache*            GetQvCache() const          { BeAssert (false); return NULL; }
 
 };  // MRMeshContext
 
@@ -239,12 +240,12 @@ struct  MRMeshCacheManager
 +===============+===============+===============+===============+===============+======*/
 struct  MRMeshUtil
 {
-    static void                 DisplayNodeFailureWarning (WCharCP fileName);
+    static void                 DisplayNodeFailureWarning (WCharCP fileName) { BeAssert(false); };
     static BeFileName           ConstructNodeName (std::string const& childName, BeFileNameCP parentName);
     static BentleyStatus        ReadSceneFile (S3SceneInfo& sceneInfo, WCharCP fileName);
     static void                 GetMemoryStatistics (size_t& memoryLoad, size_t& total, size_t& available);
     static double               CalculateResolutionRatio ();
-    static BentleyStatus        ExtractGeoCoordinatesFromScene (TransformR transform, DgnModelR dgnModel, S3SceneInfo const& sceneInfo);
+
 
 };  // MRMeshUtil
 

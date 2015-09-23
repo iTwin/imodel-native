@@ -86,14 +86,21 @@ $(o)ThreeMxReader$(oext)        : $(threeMxReaderSrc)ThreeMxReader.cpp ${threeMx
 #----------------------------------------------------------------------
 $(o)MRMeshCache.obj             : $(mrMeshSrc)MrMeshCache.cpp ${threeMxSchemaDepends} 
 
+$(o)MRMeshNode.obj              : $(mrMeshSrc)MrMeshNode.cpp ${threeMxSchemaDepends} 
 
-$(o)MRMeshNode.obj             : $(mrMeshSrc)MrMeshNode.cpp ${threeMxSchemaDepends} 
+$(o)MRMeshGeometry.obj          : $(mrMeshSrc)MRMeshGeometry.cpp ${threeMxSchemaDepends} 
+
+$(o)MRMeshTexture.obj           : $(mrMeshSrc)MRMeshTexture.cpp ${threeMxSchemaDepends} 
+
+$(o)MRMeshUtil.obj              : $(mrMeshSrc)MRMeshUtil.cpp ${threeMxSchemaDepends} 
 
 
 #----------------------------------------------------------------------
 #   Schema
 #----------------------------------------------------------------------
 $(o)ThreeMxHandler$(oext)       : $(threeMxSchemaSrc)ThreeMxHandler.cpp             ${threeMxSchemaDepends} 
+
+$(o)ThreeMxDomain$(oext)       : $(threeMxSchemaSrc)ThreeMxDomain.cpp             ${threeMxSchemaDepends} 
 
 
 %include MultiCppCompileGo.mki

@@ -5,41 +5,24 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <PointCloudSchemaInternal.h>
+#include "ThreeMxSchemaInternal.h"
 
-USING_NAMESPACE_BENTLEY_POINTCLOUDSCHEMA
+USING_NAMESPACE_BENTLEY_THREEMX_SCHEMA
 
-DOMAIN_DEFINE_MEMBERS(PointCloudDomain)
+DOMAIN_DEFINE_MEMBERS(ThreeMxDomain)
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                                   Eric.Paquet         05/2015
+// @bsimethod                                                   Ray.Bentley       09/2015
 //-----------------------------------------------------------------------------------------
-PointCloudDomain::PointCloudDomain() : DgnDomain(BENTLEY_POINTCLOUD_SCHEMA_NAME, "Bentley Point Cloud Domain", 1) 
+ThreeMxDomain::ThreeMxDomain() : DgnDomain(BENTLEY_THREEMX_SCHEMA_NAME, "Bentley 3MX Domain", 1) 
     {
-    RegisterHandler(PointCloudModelHandler::GetHandler());
-
-    // Initialize Pointools API, among others.
-    InitializeApi();
+    RegisterHandler(ThreeMxModelHandler::GetHandler());
     }
  
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                                   Eric.Paquet         05/2015
+// @bsimethod                                                   Ray.Bentley       09/2015
 //-----------------------------------------------------------------------------------------
-void PointCloudDomain::_OnSchemaImported(DgnDbR db) const
+void ThreeMxDomain::_OnSchemaImported(DgnDbR db) const
     {
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                   Eric.Paquet         05/2015
-//-----------------------------------------------------------------------------------------
-void PointCloudDomain::InitializeApi()
-    {
-    static bool s_initialized = false;
-    if(!s_initialized)
-        {
-        BePointCloud::BePointCloudApi::Initialize();
-        PointCloudSchema::ModelViewportManager::Get().Register();
-
-        s_initialized = true;
-        }
-    }

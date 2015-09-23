@@ -5,14 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#ifdef OPTION_SS3_BUILD
-#include "MstnIncludes.h"
-#else
-#include    <DgnView\DgnViewLib.h>
-#endif
-#include    "MrMesh.h"
-
-
+#include "..\ThreeMxSchemaInternal.h"
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
@@ -22,8 +15,6 @@ void floatToDouble (double* pDouble, float const* pFloat, int n)
     for (double* pEnd = pDouble + n; pDouble < pEnd; )
         *pDouble++ = *pFloat++;
     }
-
-
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
@@ -35,7 +26,7 @@ MRMeshGeometry::MRMeshGeometry (int nbVertices,float* positions,float* normals,i
     BlockedVectorIntR       pointIndex = m_polyface->PointIndex();
 
     pointIndex.resize (3* nbTriangles);
-    for (Int32 *pIndex = indices, *pEnd = pIndex + 3 * nbTriangles, *pOut = &pointIndex.front(); pIndex < pEnd; )
+    for (int32_t *pIndex = indices, *pEnd = pIndex + 3 * nbTriangles, *pOut = &pointIndex.front(); pIndex < pEnd; )
         *pOut++ = 1 + *pIndex++;
 
     if (NULL != positions)
@@ -73,10 +64,9 @@ size_t      MRMeshGeometry::GetMemorySize() const
                   m_polyface->GetNormalCount ()          * sizeof (DVec3d) +
                   m_polyface->GetParamCount ()           * sizeof (DPoint2d) +
                   m_polyface->GetFaceCount()             * sizeof (FacetFaceData) +
-                  m_polyface->PointIndex ().size ()      * sizeof (Int32) +
-                  m_polyface->NormalIndex ().size ()     * sizeof (Int32) +
-                  m_polyface->ParamIndex ().size ()      * sizeof (Int32) +
-                  m_polyface->GetFaceIndexCount ()       * sizeof (Int32);
+                  m_polyface->PointIndex ().size ()      * sizeof (int32_t) +
+                  m_polyface->NormalIndex ().size ()     * sizeof (int32_t) +                           m_polyface->ParamIndex ().size ()      * sizeof (int32_t) +
+                  m_polyface->GetFaceIndexCount ()       * sizeof (int32_t);
 
     if (NULL != m_qvElem)
         {
@@ -95,17 +85,14 @@ void MRMeshGeometry::Draw (ViewContextR viewContext, MRMeshNodeR node, MRMeshCon
     MRMeshTextureP  texture;
 
     ICachedDrawP    cachedDraw = viewContext.GetICachedDraw();
-    if (NULL != (texture = node.GetTexture (m_textureId)) &&
-        NULL != viewContext.GetCurrentModel())
+    if (NULL != (texture = node.GetTexture (m_textureId)))
         {
         texture->Initialize (node, host, viewContext);
         texture->Activate (viewContext);
         }
 
     if (NULL == cachedDraw || 
-        NULL != viewContext.GetDisplayStyleHandler() ||                 // TFS#  222568 - No caching if thematic.
-        !viewContext.GetIViewDraw ().IsOutputQuickVision () || 
-        !host.GetElement().IsValid())
+        !viewContext.GetIViewDraw ().IsOutputQuickVision ())
         {
         viewContext.GetIDrawGeom().DrawPolyface (*m_polyface);
         return;
@@ -113,20 +100,12 @@ void MRMeshGeometry::Draw (ViewContextR viewContext, MRMeshNodeR node, MRMeshCon
 
     if (NULL == m_qvElem)
         {
-        cachedDraw->BeginCacheElement (true, viewContext.GetQVCache (host.GetElement ().GetElementRef ()), NULL);
-#ifdef OPTION_SS3_BUILD
-        m_polyface->Draw (*cachedDraw);
-#else
+        cachedDraw->BeginCacheElement (host.GetQvCache());
         cachedDraw->DrawPolyface (*m_polyface);
-#endif
         m_qvElem = cachedDraw->EndCacheElement ();
         }
 
-#ifdef OPTION_SS3_BUILD
-    viewContext.GetIViewDraw ()->DrawQvElem3d (m_qvElem, 0);
-#else
-    viewContext.GetIViewDraw().DrawQvElem3d (m_qvElem);
-#endif
+    viewContext.GetIViewDraw().DrawQvElem (m_qvElem);
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -147,17 +126,12 @@ void MRMeshGeometry::DrawCut (ViewContextR viewContext, DPlane3dCR plane)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MRMeshGeometry::ReleaseQVisionCache ()
     {
-#ifdef OPTION_SS3_BUILD
-    if (NULL != m_qvElem)
-        QvOutput::DeleteQvElem (m_qvElem);
-#else
     // shutting down
     if (nullptr == DgnPlatformLib::QueryHost())
         return;
 
     if (NULL != m_qvElem)
         T_HOST.GetGraphicsAdmin()._DeleteQvElem (m_qvElem);
-#endif
     m_qvElem = NULL;
     }
 

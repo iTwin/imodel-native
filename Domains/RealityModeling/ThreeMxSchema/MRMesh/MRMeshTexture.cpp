@@ -5,75 +5,37 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#ifdef OPTION_SS3_BUILD
-#include  "MstnIncludes.h"
-#include    <FreeImage.h>
-#include <QvOutput.h>
-#define QV_NO_MSTN_TYPES
-#include    <QVision.h>
-#else
-#include    <DgnView\DgnViewLib.h>
-#include    <DgnView\QvOutput.h>
-#include    <FreeImage/FreeImage.h>
+#include "..\ThreeMxSchemaInternal.h"
 
-#define QV_NO_MSTN_TYPES
-#include    <QuickVision\QVision.h>
-#include <imagelib\imagelibapi.h>
-#endif
-
-#include    "MrMesh.h"
 
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
-USING_NAMESPACE_BENTLEY_MSTNPLATFORM
+USING_NAMESPACE_BENTLEY_THREEMX_SCHEMA
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      11/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt readRGBFromJPEGData (bvector<byte>& rgb, Point2dR size, byte const* jpegData, size_t jpegDataSize)
+StatusInt readRGBFromJPEGData (bvector<Byte>& rgb, Point2dR size, Byte const* jpegData, size_t jpegDataSize)
     {
-    FIMEMORY*       memory = FreeImage_OpenMemory (const_cast <byte*> (jpegData), (DWORD) jpegDataSize);
-    FIBITMAP*       bitmap;
-    StatusInt       status = ERROR;
+    ImageUtilities::RgbImageInfo        outInfo, inInfo;
 
-    if (NULL != (bitmap = FreeImage_LoadFromMemory (FIF_JPEG, memory, JPEG_ACCURATE)))
-        {
-        size.x = FreeImage_GetWidth (bitmap);
-        size.y = FreeImage_GetHeight (bitmap);
+    memset (&inInfo, 0, sizeof (inInfo));       // Not reall used.
 
-        byte const*     inP = FreeImage_GetBits(bitmap);
-        size_t          bufferSize = 4 * size.x * size.y;
+    if (SUCCESS != ImageUtilities::ReadImageFromJpgBuffer (rgb, outInfo, jpegData, jpegDataSize, inInfo))
+        return ERROR;
 
-        rgb.resize (bufferSize);
-        for (byte* outP = &rgb.front(), *endP = outP + bufferSize; outP < endP; outP += 4, inP += 3)
-            {
-            outP[0] = inP[2];
-            outP[1] = inP[1];
-            outP[2] = inP[0];
-            outP[3] = 0xff;
-            }
-                                                                              
-#ifndef OPTION_SS3_BUILD
-        mdlImage_mirror (&rgb.front (), &size, IMAGEFORMAT_RGBA, false);  
-#endif
+    size.x = outInfo.width;
+    size.y = outInfo.height;
 
-        FreeImage_Unload (bitmap);
-        status = SUCCESS;
-        }
-
-    FreeImage_CloseMemory (memory);
-    return status;
+    return SUCCESS;
     }
 
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-MRMeshTexture::MRMeshTexture (byte const* pData, size_t dataSize)
-#ifdef OPTION_SS3_BUILD
-: m_material (NULL)
-#endif
+MRMeshTexture::MRMeshTexture (Byte const* pData, size_t dataSize)
     {
     // This constructor is run in the "reality data" threads.   We'll decompress the data here and then free it
     // after initial use so that we dont have to do it in the main thread..
@@ -88,19 +50,17 @@ MRMeshTexture::MRMeshTexture (byte const* pData, size_t dataSize)
 //=======================================================================================
 // @bsiclass                                                    Ray.Bentley     05/2015
 //=======================================================================================
-struct MRMeshTextureImage : EmbeddedMaterialLayerImage
+struct MRMeshTextureImage 
 {
 protected:
     Point2d             m_size;
-    bvector<byte>       m_compressedData;
-    bvector<byte>       m_data;
+    bvector<Byte>       m_compressedData;
+    bvector<Byte>       m_data;
     
-    virtual Point2d _GetSize() const override           { return m_size; };
-
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-MRMeshTextureImage (Point2dCR size, bvector<byte>& data, bvector<byte>& compressedData) : m_size (size)
+MRMeshTextureImage (Point2dCR size, bvector<Byte>& data, bvector<Byte>& compressedData) : m_size (size)
     { 
     // store both the compressed and uncompressed -- the uncompressed will be used for the initial
     // display and then freed (to optimize performance and memory usage).
@@ -108,10 +68,11 @@ MRMeshTextureImage (Point2dCR size, bvector<byte>& data, bvector<byte>& compress
     m_compressedData.swap (compressedData);
     }
 
+#ifdef WIP
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _GetData (byte* data) const override
+virtual BentleyStatus _GetData (Byte* data) const override
     {
     if (!m_data.empty())
         {
@@ -119,21 +80,24 @@ virtual BentleyStatus _GetData (byte* data) const override
         // copying the uncompressed data, free it to reduce memory size.
         memcpy (data, &m_data.front(), m_data.size());
 
-        (const_cast <bvector<byte>*> (&m_data))->clear();
+        (const_cast <bvector<Byte>*> (&m_data))->clear();
 
         return SUCCESS;
         }
 
     Point2d         size;
-    bvector<byte>   tempData;
+    bvector<Byte>   tempData;
     readRGBFromJPEGData (tempData, size, &m_compressedData.front(), m_compressedData.size());
 
     memcpy (data, &tempData.front(), tempData.size());
 
     return SUCCESS;
     }
+#endif
+
+
 public:
-    static EmbeddedMaterialLayerImagePtr Create (Point2dCR size, bvector<byte>& data, bvector<byte>& compressedData) { return new MRMeshTextureImage (size, data, compressedData); }
+    static EmbeddedMaterialLayerImagePtr Create (Point2dCR size, bvector<Byte>& data, bvector<Byte>& compressedData) { return new MRMeshTextureImage (size, data, compressedData); }
 
 };  // MRMeshTextureImage
 
@@ -143,27 +107,9 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    MRMeshTexture::Initialize (MRMeshNodeCR node, MRMeshContextCR host, ViewContextR viewContext)
     {
-
-#ifdef OPTION_SS3_BUILD
-    if (m_material != 0)
-#else
+#ifdef WIP
     if (m_material.IsValid())
-#endif
         return;
-
-#ifdef OPTION_SS3_BUILD
-    m_material->flags.color = 1;
-    MaterialMap  *map = mdlMaterial_createMap (m_material, MAPTYPE_Pattern, 0);
-
-    mdlMaterial_setMapOn (m_material, MAPTYPE_Pattern, TRUE);
-
-    WaitForQvThread ();
-    qv_defineTexture ((QvTextureID)m_material, NULL, m_size.x, m_size.y, false, 0 /* QV_RGBA_FORMAT */, &data.front ());
-    qv_defineTextureMapping ((QvRendMatID)m_material, (QvTextureID)m_material, 1.0, NULL, QV_MAP_PARAMETRIC, QV_SURFACE_MAPPING, NULL, NULL, NULL, NULL, NULL);
-    BSIMaterialProperties   *bsiMatP = BSIMaterialProperties::FromMaterial (m_material);
-    bsiMatP->flags.sentToQv = TRUE;
-
-#else
     m_material = Material::Create (viewContext.GetCurrentModel()->GetDgnFileP()->GetDictionaryModel());            // use dictionary model rather than the modelRef directly - else the textures are cleared when the modelRef is closed (TFS# 217354).
     m_material->GetSettingsR().InitDefaults();
     m_material->GetSettingsR().SetHasBaseColor (true);
@@ -193,12 +139,9 @@ void    MRMeshTexture::Initialize (MRMeshNodeCR node, MRMeshContextCR host, View
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    MRMeshTexture::Activate (ViewContextR viewContext)
     {
+#ifdef WIP
     ElemMatSymbP elemMatSymb = viewContext.GetElemMatSymb();
 
-#ifdef OPTION_SS3_BUILD
-    elemMatSymb->SetRendMatID ((QvRendMatID)m_material);
-    viewContext.GetIDrawGeom ()->ActivateMatSymb (elemMatSymb, 0);
-#else
     elemMatSymb->SetMaterial (m_material.get());
     viewContext.GetIDrawGeom().ActivateMatSymb (elemMatSymb);
 #endif
@@ -210,11 +153,7 @@ void    MRMeshTexture::Activate (ViewContextR viewContext)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool    MRMeshTexture::IsInitialized() const
     {
-#ifdef OPTION_SS3_BUILD
-    return  0 != m_material;
-#else
-    return m_material.IsValid();
-#endif
+    return false;       // WIP
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -224,8 +163,10 @@ size_t      MRMeshTexture::GetMemorySize() const
     {
     size_t      size = m_data.size();
 
+#ifdef WIP
     if (m_material.IsValid())
         size += m_size.x * m_size.y * 8;     // Approximate memory for QVision and embedded material.
+#endif
 
     return size;
     }
@@ -233,7 +174,7 @@ size_t      MRMeshTexture::GetMemorySize() const
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-MRMeshTexturePtr MRMeshTexture::Create (byte const* pData, size_t dataSize)
+MRMeshTexturePtr MRMeshTexture::Create (Byte const* pData, size_t dataSize)
     {
     return new MRMeshTexture (pData, dataSize);
     }
@@ -245,11 +186,7 @@ MRMeshTexture::~MRMeshTexture ()    { ReleaseQVisionCache(); }
 
 void MRMeshTexture::ReleaseQVisionCache ()
     {
-#ifdef OPTION_SS3_BUILD
-    if (NULL != m_material)
-        mdlMaterial_free (m_material);
-#else
-
+#ifdef WIP
     if (m_material.IsValid())
         {
         MaterialManager::GetManagerR().ClearQvTexture (m_material->GetName().c_str(), m_material.get());

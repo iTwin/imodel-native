@@ -19,9 +19,7 @@ BEGIN_BENTLEY_THREEMX_SCHEMA_NAMESPACE
 //=======================================================================================
 struct ThreeMxDomain : Dgn::DgnDomain
 {
-    DOMAIN_DECLARE_MEMBERS(ThreeMxDomain, THREEMXSCHEMA_EXPORT)
-
-    static  void        InitializeApi();
+    DOMAIN_DECLARE_MEMBERS(ThreeMxDomain, THREEMX_SCHEMA_EXPORT)
 
 protected:
     virtual void _OnSchemaImported(Dgn::DgnDbR) const override;

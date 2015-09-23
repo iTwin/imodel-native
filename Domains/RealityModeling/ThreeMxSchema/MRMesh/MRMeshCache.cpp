@@ -451,7 +451,6 @@ RealityDataCacheResult RequestData(MRMeshNode* node, BeFileNameCR path, bool syn
     {
     RealityDataCacheResult result;
 
-#ifdef WIP_URL_SUPPORT
     if (path.IsUrl())
         {
         MRMeshHttpDataPtr meshData;
@@ -460,7 +459,6 @@ RealityDataCacheResult RequestData(MRMeshNode* node, BeFileNameCR path, bool syn
             CloneNodeFromMRMeshData(*node, *meshData);
         }
     else
-#endif
         {
         MRMeshFileDataPtr meshData;
         result = m_cache->Get (meshData, path.GetNameUtf8().c_str(), *MRMeshFileData::RequestOptions::Create(synchronous));
