@@ -561,9 +561,27 @@ protected:
 
     DGNPLATFORM_EXPORT virtual ~DgnElement();
 
-    //! Called to load properties of a DgnElement from the DgnDb. Override to load subclass properties.
-    //! @note If you override this method, you @em must call T_Super::_LoadFromDb, forwarding its status.
-    virtual DgnDbStatus _LoadFromDb() {return DgnDbStatus::Success;}
+    //! Called to get a list of the parameters/properties that need to be selected when loading an element from the table.
+    //! @param[in]      selectParams The list to which to add your subclass's parameters
+    //! @note If you override this method, you @em must call T_Super::_GetSelectParams in order to get the superclasses' properties.
+    //! This call will be followed by a call to _ExtractSelectParams.
+    //! The parameter names are stored as Utf8CP, so they are required to be static strings.
+    DGNPLATFORM_EXPORT virtual void _GetSelectParams(bvector<Utf8CP>& selectParams);
+
+    //! Invoked after _GetSelectParams() when loading an element from the table, to allow subclasses to extract their property values
+    //! from the SELECT statement. The parameters are those which were specified in _GetSelectParams().
+    //! @param[in]      statement    The SELECT statement which selected the data from the table
+    //! @param[in]      selectParams The properties selected by the SELECT statement. Use this to obtain an index into the statement.
+    //! @return DgnDbStatus::Success if the data was loaded successfully, or else an error status.
+    //! @note If you override this method, you @em must first call T_Super::_ExtractSelectParams, forwarding its status.
+    //! You should then extract your subclass properties from the supplied ECSqlStatement, using
+    //! selectParams.GetParameterIndex() to look up the index of each parameter within the statement.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, BeSQLite::EC::ECSqlSelectParameters const& selectParams);
+
+    //! Override this method if your element needs to load additional data from the database when it is loaded (for example,
+    //! look up related data in another table).
+    //! @note If you override this method, you @em must call T_Super::_LoadFromDb() first, forwarding its status
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _LoadFromDb();
 
     //! Called when an element is about to be inserted into the DgnDb.
     //! @return DgnDbStatus::Success to allow the insert, otherwise it will fail with the returned status.
@@ -1112,6 +1130,8 @@ protected:
     //! Override to validate the category.
     //! @return DgnDbStatus::Success if the categoryId was changed, error status otherwise.
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId; return DgnDbStatus::Success;}
+    DGNPLATFORM_EXPORT virtual void _GetSelectParams(bvector<Utf8CP>& selectParams) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, BeSQLite::EC::ECSqlSelectParameters const& selectParams) override;
     DGNPLATFORM_EXPORT virtual void _GetInsertParams(bvector<Utf8CP>& insertParams) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
@@ -1131,11 +1151,6 @@ protected:
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() +(sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
     virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
 
-//__PUBLISH_SECTION_END__
-public:
-    // NB: This only exists until _LoadFromDb() is fixed up...we need to set the category directly when reading from db, without validating through _SetCategoryId().
-    void SetCategoryIdInternal(DgnCategoryId id) { m_categoryId = id; }
-//__PUBLISH_SECTION_START__
 public:
     DGNPLATFORM_EXPORT QvCache* GetMyQvCache() const;
     DGNPLATFORM_EXPORT QvElem* GetQvElem(uint32_t index) const;
@@ -1415,7 +1430,7 @@ private:
     void DropFromPool(DgnElementCR) const;
     void SendOnLoadedEvent(DgnElementR elRef) const;
     void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
-    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, DgnCategoryId categoryId, bool makePersistent) const;
+    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
     void InitNextId();
     DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);
