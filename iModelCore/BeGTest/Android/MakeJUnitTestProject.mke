@@ -44,11 +44,10 @@ androidTestDir      = $(outputDir)project/app/src/androidTest/
 
 collectionProduct = $(OutputRootDir)../Product/${TEST_COLLECTION_PRODUCT}/
 unitTestsDir = $(collectionProduct)Objects/
-inputSoDir = $(collectionProduct)Assemblies/
+inputSoDir = $(collectionProduct)Libs/
 
-## SHARED_LIBRARIES=libMobileDgn libWebServicesClient libWebServicesCache
 %ifdef SHARED_LIBRARIES
-    shared_libraries_full_path = $[@addprefix $(inputSoDir), $(SHARED_LIBRARIES)]
+    shared_libraries_full_path = $[@realpath $[@addsuffix $(shlibext) $[@addprefix $(inputSoDir)$(shlibprefix), $(SHARED_LIBRARIES)]]]
 %endif
 
 %if defined (BMAKE_DELETE_ALL_TARGETS)
@@ -121,6 +120,9 @@ $(outputDir)JUnitTestFiles.mki : $[@wildcard $(unitTestsDir)*UnitTests.list.h] $
     $(msg)
     !@$(baseDir)GenerateJUnitTestFileList.py $(unitTestsDir) $(baseDir)GenJUnitTestCaseS.java.c $(baseDir)GenJUnitTestCase.jni.cpp > $(outputDir)JUnitTestFiles.mki
     ~time 
+
+# Allow the .c files to @include <BeTestHost.h>
+cIncs + -I$(baseDir)
 
 %iffile $(outputDir)JUnitTestFiles.mki
     %include $(outputDir)JUnitTestFiles.mki

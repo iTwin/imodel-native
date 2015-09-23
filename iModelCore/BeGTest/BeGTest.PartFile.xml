@@ -180,9 +180,6 @@
     <Part Name="AndroidJUnitTest-Tools" BentleyBuildMakeFile="prewire.mke" OnlyPlatforms="Android*">
         <SubPart PartName="Base" LibType="Static"/>
         <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
-        <Bindings>
-            <PublicAPI Domain="BeTestAndroid" />
-        </Bindings>
     </Part>
 
     <!-- *********************************************************************************************** -->
