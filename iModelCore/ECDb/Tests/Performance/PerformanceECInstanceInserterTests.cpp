@@ -12,7 +12,6 @@
 #include <BeSQLite/BeSQLite.h>
 #include <UnitTests/NonPublished/ECDb/ECDbTestProject.h>
 #include <UnitTests/BackDoor/ECDb/Backdoor.h>
-#include "PerformanceTestFixture.h"
 #include "PerformanceTests.h"
 
 USING_NAMESPACE_BENTLEY_EC

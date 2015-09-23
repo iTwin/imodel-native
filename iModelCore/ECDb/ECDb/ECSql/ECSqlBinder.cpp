@@ -44,18 +44,7 @@ void ECSqlBinder::SetSqliteIndex (int ecsqlParameterComponentIndex, size_t sqlit
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlBinder::OnBeforeStep ()
     {
-    if (m_hasToCallOnBeforeStep)
-        return _OnBeforeStep ();
-
-    return ECSqlStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      03/2014
-//---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlBinder::_OnBeforeStep ()
-    {
-    return ECSqlStatus::Success;
+    return _OnBeforeStep ();
     }
 
 //---------------------------------------------------------------------------------------
@@ -63,8 +52,7 @@ ECSqlStatus ECSqlBinder::_OnBeforeStep ()
 //---------------------------------------------------------------------------------------
 void ECSqlBinder::OnClearBindings ()
     {
-    if (m_hasToCallOnClearBindings)
-        _OnClearBindings ();
+    _OnClearBindings ();
     }
 
 //---------------------------------------------------------------------------------------
@@ -200,6 +188,12 @@ ECSqlBinder* ECSqlParameterMap::AddBinder (ECSqlStatementBase& ecsqlStatement, P
     auto binderP = binder.get (); //cache raw pointer as return value as the unique_ptr will be moved into the list
     m_binders.push_back (std::move (binder));
 
+    if (binderP->HasToCallOnBeforeStep())
+        m_bindersToCallOnStep.push_back(binderP);
+
+    if (binderP->HasToCallOnClearBindings())
+        m_bindersToCallOnClearBindings.push_back(binderP);
+
     BeAssert (static_cast<int> (m_binders.size ()) == parameterExp.GetParameterIndex ()); //Parameter indices are 1-based
 
     //insert name to index mapping. 
@@ -220,7 +214,15 @@ ECSqlBinder* ECSqlParameterMap::AddInternalBinder (size_t& index, ECSqlStatement
 
     auto binderP = binder.get (); //cache raw pointer as return value as the unique_ptr will be moved into the list
     m_internalSqlParameterBinders.push_back (std::move (binder));
+    
+    if (binderP->HasToCallOnBeforeStep())
+        m_bindersToCallOnStep.push_back(binderP);
+
+    if (binderP->HasToCallOnClearBindings())
+        m_bindersToCallOnClearBindings.push_back(binderP);
+
     index = m_internalSqlParameterBinders.size () - 1;
+
     return binderP;
     }
 
@@ -229,9 +231,9 @@ ECSqlBinder* ECSqlParameterMap::AddInternalBinder (size_t& index, ECSqlStatement
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlParameterMap::OnBeforeStep ()
     {
-    for (auto& binder : m_binders)
+    for (ECSqlBinder* binder : m_bindersToCallOnStep)
         {
-        auto stat = binder->OnBeforeStep ();
+        ECSqlStatus stat = binder->OnBeforeStep ();
         if (!stat.IsSuccess())
             return stat;
         }
@@ -244,7 +246,7 @@ ECSqlStatus ECSqlParameterMap::OnBeforeStep ()
 //---------------------------------------------------------------------------------------
 void ECSqlParameterMap::OnClearBindings ()
     {
-    for (auto& binder : m_binders)
+    for (ECSqlBinder* binder : m_bindersToCallOnClearBindings)
         {
         binder->OnClearBindings ();
         }

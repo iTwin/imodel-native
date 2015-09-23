@@ -299,7 +299,6 @@ ECSqlColumnInfo&& structFieldColumnInfo
     if (childPropertyMaps.IsEmpty ())
         return ECSqlStatus::Success;
 
-
     auto newStructField = unique_ptr<StructMappedToColumnsECSqlField>(new StructMappedToColumnsECSqlField(ctx.GetECSqlStatementR (), move(structFieldColumnInfo)));
 
     ECSqlStatus status = ECSqlStatus::Success;
