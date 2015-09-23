@@ -5,6 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+//__BENTLEY_INTERNAL_ONLY__
 #include <Bentley/BeTest.h>
 #include <Bentley/BeAssert.h>
 #include <Bentley/BeFileName.h>
