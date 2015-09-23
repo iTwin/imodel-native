@@ -247,7 +247,7 @@ class GtestStdoutResultParser ():
         areFailingTests = len (self.m_listOfFailingTests) > 0
         if areFailingTests:
             result += starSep 
-            result += "***** {0} Tests had Failing Tests \n".format (TestGroupNameMap[testType])
+            result += "***** Detected Failing Tests \n."
             result += starSep
             result += seperator
 
@@ -259,13 +259,13 @@ class GtestStdoutResultParser ():
         areCrashingTests = len (self.m_listOfHaltingTests) > 0
         if areCrashingTests:
             result += starSep
-            result += "***** {0} Tests had a Crashing Test \n".format (TestGroupNameMap[testType])
+            result += "***** Detected Crashing Test \n"
             result += starSep
             result += seperator
 
         if not areCrashingTests and not areFailingTests:
             result += starSep
-            result += "**** All {0} Tests Passed\n".format (TestGroupNameMap[testType])
+            result += "**** All Tests Passed\n"
             result += starSep
             result += seperator
 
@@ -280,10 +280,10 @@ class GtestStdoutResultParser ():
         result += "    " + str (self.GetFailCount ()) + " failed\n"
         if len (self.m_listOfHaltingTests) > 0:
             result += "1 crashed\n"
-            result += self.PrintCommandLineToRun (len(self.m_listOfHaltingTests), [self.m_listOfHaltingTests[0][0]], TestCommandName[testType], True)
+            result += self.PrintCommandLineToRun (len(self.m_listOfHaltingTests), [self.m_listOfHaltingTests[0][0]], "", True)
 
         if self.GetFailCount () > 0:
-            result += self.PrintCommandLineToRun (len(self.m_listOfFailingTestNames), self.m_listOfFailingTestNames, TestCommandName[testType], False)
+            result += self.PrintCommandLineToRun (len(self.m_listOfFailingTestNames), self.m_listOfFailingTestNames, "", False)
 
         result += "\n\nSee " + testResultsFilename + " logging output"
 
