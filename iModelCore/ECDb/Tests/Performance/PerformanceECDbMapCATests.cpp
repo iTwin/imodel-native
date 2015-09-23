@@ -454,7 +454,7 @@ void PerformanceECDbMapCATestFixture::GenerateSqlCRUDTestStatements (ECSchemaR e
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
     {
-    m_instancesPerClass = 1000000;
+    m_instancesPerClass = 100000;
     m_propertiesPerClass = 150;
     ECDbTestProject test;
     ECDbR ecdb = test.Create ("ECSqlStatementPerformanceTest.ecdb");
@@ -501,7 +501,6 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
     GenerateSqlCRUDTestStatements (*testSchema, *baseClass, insertSql, selectSql, updateSql, deleteSql);
 
     //Insert Instance using Sql Query.
-    const int propertyCount = (int)baseClass->GetPropertyCount (true);
     BeSQLite::Statement stmt;
     StopWatch timer (true);
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, insertSql.c_str()))
@@ -510,6 +509,7 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
         return;
         }
 
+    int propertyCount = (int) baseClass->GetPropertyCount(true);
     for (size_t i = 0; i < m_instancesPerClass; i++)
         {
         if (BE_SQLITE_OK != stmt.BindInt64 (1, (int64_t)(i+1)))
@@ -543,6 +543,8 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
         FAIL();
         return;
         }
+
+    propertyCount = (int) baseClass->GetPropertyCount(true);
     for (size_t i = 0; i < m_instancesPerClass; i++)
         {
         for (int parameterIndex = 1; parameterIndex <= propertyCount; parameterIndex++)
