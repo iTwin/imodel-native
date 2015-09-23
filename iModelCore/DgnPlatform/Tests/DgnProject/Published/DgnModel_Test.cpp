@@ -53,22 +53,16 @@ public:
     DgnModelId      tmId;
     WString         tmName;
     WString         tmDescription;
-    bool            tmIs3d;
-    DgnModelType    tmModelType;
 
-    void SetTestModelProperties(WString Name, WString Desc, bool is3D, DgnModelType modType)
+    void SetTestModelProperties(WString Name, WString Desc)
     {
         tmName = Name;
         tmDescription = Desc;
-        tmIs3d = is3D;
-        tmModelType = modType;
     };
     void IsEqual(TestModelProperties Model)
     {
         EXPECT_STREQ(tmName.c_str(), Model.tmName.c_str()) << "Names don't match";
         EXPECT_STREQ(tmDescription.c_str(), Model.tmDescription.c_str()) << "Descriptions don't match";
-        EXPECT_TRUE(tmIs3d == Model.tmIs3d) << "3dness doesn't match";
-        EXPECT_TRUE(tmModelType == Model.tmModelType) << "Model Types don't match";
     };
 };
 
@@ -135,7 +129,7 @@ TEST_F(DgnModelTests, GetRange)
     m_dgndb = tdm.GetDgnProjectP();
     LoadModel("RangeTest");
 
-    AxisAlignedBox3d range = m_model->QueryModelRange();
+    AxisAlignedBox3d range = m_model->ToGeometricModel()->QueryModelRange();
     EXPECT_TRUE(range.IsValid());
     DPoint3d low; low.Init(-1.4011580427821895, 0.11538461538461531, -0.00050000000000000001);
     DPoint3d high; high.Init(-0.59795039550813156, 0.60280769230769227, 0.00050000000000000001);
@@ -153,7 +147,7 @@ TEST_F(DgnModelTests, GetRangeOfEmptyModel)
     m_dgndb = tdm.GetDgnProjectP();
     LoadModel("Default");
 
-    AxisAlignedBox3d thirdRange = m_model->QueryModelRange();
+    AxisAlignedBox3d thirdRange = m_model->ToGeometricModel()->QueryModelRange();
     EXPECT_FALSE(thirdRange.IsValid());
     }
 
@@ -163,13 +157,11 @@ TEST_F(DgnModelTests, GetRangeOfEmptyModel)
 static int countSheets(DgnDbR db)
     {
     int count = 0;
-    for (auto const& sheet : db.Models().MakeIterator("Type=1"))
+    auto sheetClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel));
+    for (auto const& sheet : db.Models().MakeIterator())
         {
-        DgnModelType mtype = sheet.GetModelType();
-        if (mtype != DgnModelType::Sheet)
-            return -1;
-
-        ++count;
+        if (sheetClassId == sheet.GetClassId())
+            ++count;
         }
     return count;
     }
@@ -321,8 +313,8 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
 
     //Set up testmodel properties as we know what the models in this file contain
     TestModelProperties models[3], testModel;
-    models[0].SetTestModelProperties(L"Default", L"Master Model", false, DgnModelType::Drawing);
-    models[1].SetTestModelProperties(L"Model2d", L"", false, DgnModelType::Drawing);
+    models[0].SetTestModelProperties(L"Default", L"Master Model");
+    models[1].SetTestModelProperties(L"Model2d", L"");
 
     //Iterate through the model and verify it's contents. TODO: Add more checks
     int i = 0;
@@ -331,7 +323,7 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
         ASSERT_TRUE(entry.GetModelId().IsValid()) << "Model Id is not Valid";
         WString entryNameW(entry.GetName(), true);               // string conversion
         WString entryDescriptionW(entry.GetDescription(), true); // string conversion
-        testModel.SetTestModelProperties(entryNameW.c_str(), entryDescriptionW.c_str(), entry.Is3d(), entry.GetModelType());
+        testModel.SetTestModelProperties(entryNameW.c_str(), entryDescriptionW.c_str());
         testModel.IsEqual(models[i]);
         i++;
     }
@@ -460,9 +452,8 @@ TEST_F(DgnModelTests, ImportGroups)
         // Put a group into moddel1
         ElementGroupCPtr group;
             {
-            DgnCategoryId gcatid = db->Categories().QueryHighestId();
             DgnClassId gclassid = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ElementGroup));
-            DgnElementCPtr groupEl = ElementGroup::Create(ElementGroup::CreateParams(*db, model1->GetModelId(), gclassid, gcatid))->Insert();
+            DgnElementCPtr groupEl = ElementGroup::Create(ElementGroup::CreateParams(*db, model1->GetModelId(), gclassid))->Insert();
             group = dynamic_cast<ElementGroupCP>(groupEl.get());
             ASSERT_TRUE( group.IsValid() );
             }
@@ -472,7 +463,7 @@ TEST_F(DgnModelTests, ImportGroups)
             {
             DgnClassId mclassid = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
             DgnCategoryId mcatid = db->Categories().QueryHighestId();
-            auto member = PhysicalElement::Create(PhysicalElement::CreateParams(*db, model1->GetModelId(), mclassid, mcatid, Placement3d(), "member"))->Insert();
+            auto member = PhysicalElement::Create(PhysicalElement::CreateParams(*db, model1->GetModelId(), mclassid, mcatid, Placement3d()))->Insert();
             //auto member = PhysicalElement::Create(*model1, mcatid)->Insert();
             ASSERT_TRUE( member.IsValid() );
             ASSERT_EQ( DgnDbStatus::Success , group->InsertMember(*member) );
@@ -570,7 +561,7 @@ TEST_F(DgnModelTests, ImportElementsWithAuthorities)
         ASSERT_TRUE( el.IsValid() );
         DgnAuthorityId said = el->GetCode().GetAuthority();
         ASSERT_TRUE( said == sourceAuthorityId );
-        auto sourceAuthority = db->Authorities().LoadAuthority(sourceAuthorityId);
+        auto sourceAuthority = db->Authorities().GetAuthority(sourceAuthorityId);
         ASSERT_STREQ( sourceAuthority->GetName().c_str(), "TestAuthority" );
         }
 
@@ -594,7 +585,7 @@ TEST_F(DgnModelTests, ImportElementsWithAuthorities)
         DgnAuthorityId daid = el->GetCode().GetAuthority();
         ASSERT_TRUE( daid.IsValid() );
         ASSERT_NE( daid , sourceAuthorityId ) << "Authority ID should have been remapped";
-        auto destAuthority = db2->Authorities().LoadAuthority(daid);
+        auto destAuthority = db2->Authorities().GetAuthority(daid);
         ASSERT_STREQ( destAuthority->GetName().c_str(), "TestAuthority" );
         db2->SaveChanges();
         }
@@ -780,8 +771,6 @@ TEST_F (DgnModelTests, ModelsIterator)
             EXPECT_EQ (M1->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());
             EXPECT_STREQ ("Model1", entry.GetName ());
             EXPECT_STREQ ("Test Model 1", entry.GetDescription ());
-            EXPECT_EQ (DgnModelType::Physical, entry.GetModelType ());
-            EXPECT_EQ (DgnModels::Model::CoordinateSpace::World, entry.GetCoordinateSpace ());
             EXPECT_EQ (true, entry.InGuiList ());
             }
         else if (entry.GetModelId () == m2id)
@@ -789,8 +778,6 @@ TEST_F (DgnModelTests, ModelsIterator)
             EXPECT_EQ (M2->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());
             EXPECT_STREQ ("Model2", entry.GetName ());
             EXPECT_STREQ ("Test Model 2", entry.GetDescription ());
-            EXPECT_EQ (DgnModelType::Physical, entry.GetModelType ());
-            EXPECT_EQ (DgnModels::Model::CoordinateSpace::World, entry.GetCoordinateSpace ());
             EXPECT_EQ (true, entry.InGuiList ());
             }
         else if (entry.GetModelId () == m3id)
@@ -798,8 +785,6 @@ TEST_F (DgnModelTests, ModelsIterator)
             EXPECT_EQ (M3->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());;
             EXPECT_STREQ ("Model3", entry.GetName ());
             EXPECT_STREQ ("Test Model 3", entry.GetDescription ());
-            EXPECT_EQ (DgnModelType::Physical, entry.GetModelType ());
-            EXPECT_EQ (DgnModels::Model::CoordinateSpace::World, entry.GetCoordinateSpace ());
             EXPECT_EQ (true, entry.InGuiList ());
             }
         i++;

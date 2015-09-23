@@ -30,7 +30,6 @@
 #define DGN_CLASSNAME_ElementItem           "ElementItem"
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
-#define DGN_CLASSNAME_GraphicsModel2d       "GraphicsModel2d"
 #define DGN_CLASSNAME_Light                 "Light"
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
@@ -42,6 +41,7 @@
 #define DGN_CLASSNAME_PhysicalModel         "PhysicalModel"
 #define DGN_CLASSNAME_PhysicalView          "PhysicalView"
 #define DGN_CLASSNAME_PlanarPhysicalModel   "PlanarPhysicalModel"
+#define DGN_CLASSNAME_ResourceModel         "ResourceModel"
 #define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
 #define DGN_CLASSNAME_SheetModel            "SheetModel"
 #define DGN_CLASSNAME_Style                 "Style"
@@ -675,7 +675,7 @@ private:
 
     T_DgnModelMap   m_models;
     QvCache*        m_qvCache;
-    bmap<DgnModelId,bpair<uint64_t,DgnModelType>> m_modelDependencyIndexAndType;
+    bmap<DgnModelId,uint64_t> m_modelDependencyIndices;
 
     void ClearLoaded();
     DgnModelPtr LoadDgnModel(DgnModelId modelId);
@@ -691,12 +691,6 @@ public:
     //! An object that holds a row from the DgnModel table.
     struct Model
     {
-        enum class CoordinateSpace
-        {
-            Local   = 0,    // the model has a local coordinate system
-            World   = 1,    // the model is in the physical (world) coordinate system.
-        };
-
         friend struct DgnModels;
 
     private:
@@ -704,22 +698,16 @@ public:
         DgnClassId   m_classId;
         Utf8String   m_name;
         Utf8String   m_description;
-        DgnModelType m_modelType;
-        CoordinateSpace  m_space;
         bool         m_inGuiList;
 
     public:
         Model()
             {
-            m_modelType = DgnModelType::Physical;
-            m_space = CoordinateSpace::Local;
             m_inGuiList = true;
             };
 
-        Model(Utf8CP name, DgnModelType modelType, CoordinateSpace space, DgnClassId classid, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_name(name)
+        Model(Utf8CP name, DgnClassId classid, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_name(name)
             {
-            m_modelType = modelType;
-            m_space = space;
             m_inGuiList = true;
             }
 
@@ -730,18 +718,14 @@ public:
         void SetInGuiList(bool val)   {m_inGuiList = val;}
         void SetId(DgnModelId id) {m_id = id;}
         void SetClassId(DgnClassId classId) {m_classId = classId;}
-        void SetModelType(DgnClassId classId, DgnModelType val) {m_classId = classId; m_modelType = val;}
-        void SetCoordinateSpace(CoordinateSpace val) {m_space = val;}
+        void SetModelType(DgnClassId classId) {m_classId = classId;}
 
         DgnModelId GetId() const {return m_id;}
         Utf8CP GetNameCP() const {return m_name.c_str();}
         Utf8String GetName() const {return m_name;}
         Utf8CP GetDescription() const {return m_description.c_str();}
-        DgnModelType GetModelType() const {return m_modelType;}
         DgnClassId GetClassId() const {return m_classId;}
-        CoordinateSpace GetCoordinateSpace() const {return m_space;}
         bool InGuiList() const {return m_inGuiList;}
-        bool Is3d() const {return m_modelType==DgnModelType::Physical;}
 
     }; // Model
 
@@ -762,12 +746,9 @@ public:
             DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
             DGNPLATFORM_EXPORT Utf8CP GetName() const;
             DGNPLATFORM_EXPORT Utf8CP GetDescription() const;
-            DGNPLATFORM_EXPORT DgnModelType GetModelType() const;
             DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
-            DGNPLATFORM_EXPORT Model::CoordinateSpace GetCoordinateSpace() const;
             DGNPLATFORM_EXPORT bool InGuiList() const;
 
-            bool Is3d() const {return GetModelType()==DgnModelType::Physical;}
             Entry const& operator*() const {return *this;}
         };
 
@@ -809,12 +790,11 @@ public:
     //! @return The model's ModelId. Check dgnModelId.IsValid() to see if the DgnModelId was found.
     DGNPLATFORM_EXPORT DgnModelId QueryModelId(Utf8CP name) const;
 
-    //! Query for the dependency index and type of the specified model
+    //! Query for the dependency index of the specified model
     //! @param[out] dependencyIndex  The model's DependencyIndex property value
-    //! @param[out] modelType   The model's type
     //! @param[in] modelId      The model's ID
     //! @return non-zero if the model does not exist
-    DGNPLATFORM_EXPORT BentleyStatus QueryModelDependencyIndexAndType(uint64_t& dependencyIndex, DgnModelType& modelType, DgnModelId modelId);
+    DGNPLATFORM_EXPORT BentleyStatus QueryModelDependencyIndex(uint64_t& dependencyIndex, DgnModelId modelId);
 
     //! Make an iterator over the models in this DgnDb.
     Iterator MakeIterator(Utf8CP where=nullptr, ModelIterate itType=ModelIterate::All) const {return Iterator(m_dgndb, where, itType);}
@@ -1089,7 +1069,7 @@ struct DgnFonts : NonCopyableClass
         DGNPLATFORM_EXPORT BentleyStatus QueryById(bvector<Byte>&, DataId);
         DGNPLATFORM_EXPORT BentleyStatus QueryByFace(bvector<Byte>&, FaceSubId&, FaceKeyCR);
         DGNPLATFORM_EXPORT bool Exists(FaceKeyCR);
-        DGNPLATFORM_EXPORT BentleyStatus Insert(ByteCP, size_t dataSize, T_FaceMapCR);
+        DGNPLATFORM_EXPORT BentleyStatus Insert(Byte const*, size_t dataSize, T_FaceMapCR);
         DGNPLATFORM_EXPORT BentleyStatus Delete(FaceKeyCR);
         Iterator MakeIterator() const { return Iterator(m_dbFonts); }
     };
@@ -1102,20 +1082,18 @@ private:
     bool m_isFontMapLoaded;
     T_FontMap m_fontMap;
 
-    void Update();
-
 public:
     DgnFonts(BeSQLite::DbR db, Utf8CP tableName) : m_dbFontMap(*this), m_dbFaceData(*this), m_db(db), m_tableName(tableName), m_isFontMapLoaded(false) {}
 
     DbFontMapDirect& DbFontMap() { return m_dbFontMap; }
     DbFaceDataDirect& DbFaceData() { return m_dbFaceData; }
     void Invalidate() { m_isFontMapLoaded = false; m_fontMap.clear(); }
+    void Update();
     DGNPLATFORM_EXPORT DgnFontCP FindFontById(DgnFontId) const;
     DGNPLATFORM_EXPORT DgnFontCP FindFontByTypeAndName(DgnFontType, Utf8CP) const;
     DGNPLATFORM_EXPORT DgnFontId FindId(DgnFontCR) const;
     DGNPLATFORM_EXPORT DgnFontId AcquireId(DgnFontCR);
 };
-
 
 //=======================================================================================
 //! A DgnElement within a DgnDb can be identified by a "code" which is unique among all
@@ -1131,26 +1109,40 @@ private:
     friend struct DgnDb;
     explicit DgnAuthorities(DgnDbR db) : DgnDbTable(db) {}
 
+    typedef bvector<DgnAuthorityPtr> LoadedAuthorities;
+
+    LoadedAuthorities   m_loadedAuthorities;
+    BeSQLite::BeDbMutex m_mutex;
+
+    DgnAuthorityPtr LoadAuthority(DgnAuthorityId authorityId, DgnDbStatus* status = nullptr);
 public:
     //! Look up the ID of the authority with the specified name.
-    DGNPLATFORM_EXPORT DgnAuthorityId QueryAuthorityId(Utf8StringCR name) const;
+    DGNPLATFORM_EXPORT DgnAuthorityId QueryAuthorityId(Utf8CP name) const;
 
-    //! Load an authority by ID
+    //! Look up an authority by ID. The authority will be loaded from the database if necessary.
     //! @param[in] authorityId The ID of the authority to load
-    //! @param[out] status     Optional return status of the operation
     //! @returns The DgnAuthority with the specified ID, or nullptr if the authority could not be loaded
-    DGNPLATFORM_EXPORT DgnAuthorityPtr LoadAuthority(DgnAuthorityId authorityId, DgnDbStatus* status = nullptr);
+    DGNPLATFORM_EXPORT DgnAuthorityCPtr GetAuthority(DgnAuthorityId authorityId);
 
+    //! Look up an authority by name. The authority will be loaded from the database if necessary.
+    //! @param[in] name The name of the authority to load
+    //! @returns The DgnAuthority with the specified name, or nullptr if the authority could not be loaded
+    DGNPLATFORM_EXPORT DgnAuthorityCPtr GetAuthority(Utf8CP name);
+
+    //! Look up an authority of a particular type by ID. The authority will be loaded from the database if necessary.
+    //! @param[in] authorityId The ID of the authority to load
+    //! @returns The DgnAuthority with the specified ID, or nullptr if the authority could not be loaded or is not of the desired type.
+    template<typename T> RefCountedCPtr<T> Get(DgnAuthorityId authorityId) { return dynamic_cast<T const*>(GetAuthority(authorityId).get()); }
+
+    //! Look up an authority of a particular type by name. The authority will be loaded from the database if necessary.
+    //! @param[in] name The name of the authority to load
+    //! @returns The DgnAuthority with the specified name, or nullptr if the authority could not be loaded or is not of the desired type.
+    template<typename T> RefCountedCPtr<T> Get(Utf8CP name) { return dynamic_cast<T const*>(GetAuthority(name).get()); }
     //! Add a new Authority to the table.
     //! @param[in]  authority The new entry to add.
     //! @return The result of the insert operation.
     //! @remarks If successful, this method will assign a valid DgnAuthorityId to the supplied authority
     DGNPLATFORM_EXPORT DgnDbStatus Insert(DgnAuthorityR authority);
-
-    //! Update an existing authority in the DgnDb
-    //! @param[in]  authority   The modified authority
-    //! @return The result of the update operation
-    DGNPLATFORM_EXPORT DgnDbStatus Update(DgnAuthorityR authority);
 };
 
 //=======================================================================================

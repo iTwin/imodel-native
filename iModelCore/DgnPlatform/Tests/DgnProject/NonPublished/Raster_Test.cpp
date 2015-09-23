@@ -12,7 +12,7 @@
 //#include <DgnPlatform/DgnHandlers/RasterHandlers.h>
 #include <Logging/bentleylogging.h>
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
-USING_NAMESPACE_EC
+USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE 
 USING_NAMESPACE_BENTLEY_LOGGING
 
@@ -21,7 +21,7 @@ USING_NAMESPACE_BENTLEY_LOGGING
 #if defined (DGNPLATFORM_HAVE_DGN_IMPORTER)
 
 /*---------------------------------------------------------------------------------**//**
-* Test fixture for testing DgnColors
+* Test fixture for testing DgnRaster
 * @bsimethod                                    Algirdas.Mikoliunas            03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DgnRasterTest : public ::testing::Test

@@ -20,7 +20,8 @@ static DgnStyleId ensureAnnotationTextStyle1(DgnDbR db)
         return existingStyle->GetId();
     
     AnnotationTextStyle style(db);
-    style.SetColor(ElementColor(ColorDef(0x00, 0xff, 0x00)));
+    style.SetColorType(AnnotationColorType::RGBA);
+    style.SetColorValue(ColorDef(0x00, 0xff, 0x00));
     style.SetFontId(db.Fonts().AcquireId(DgnFontManager::GetAnyLastResortFont()));
     style.SetHeight(1000.0);
     style.SetName(STYLE_NAME);
@@ -44,10 +45,10 @@ TEST(TextAnnotationElementTest, BasicCrud)
     BeTest::GetHost().GetOutputRoot(dbPath);
     dbPath.AppendToPath(L"TextAnnotationElementTest-BasicCrud.idgndb"); // use .idgndb so that sample navigator easily opens it, even though .dgndb would be more appropriate
 
-    DgnCategoryId physicalCategory1Id;
-    DgnModelId physicalModel1Id;
-    DgnStyleId annotationTextStyle1Id;
-    DgnElementId annotationElement1Id;
+    DgnCategoryId categoryId;
+    DgnModelId modelId;
+    DgnStyleId textStyleId;
+    DgnElementId element1Id;
     static Utf8CP ANNOTATION_TEXT_1 = "Hello world.";
     static Utf8CP ANNOTATION_TEXT_2 = "Lorem ipsum dolar sit amet.";
 
@@ -65,50 +66,51 @@ TEST(TextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(BE_SQLITE_OK == createStatus);
         ASSERT_TRUE(db.IsValid());
         
-        DgnCategories::Category physicalCategory1("Physical Category 1", DgnCategories::Scope::Physical);
-        DgnCategories::SubCategory::Appearance physicalCategory1Appearance;
-        ASSERT_TRUE(BE_SQLITE_OK == db->Categories().Insert(physicalCategory1, physicalCategory1Appearance));
+        DgnCategories::Category category("Annotation Category 1", DgnCategories::Scope::Annotation);
+        DgnCategories::SubCategory::Appearance categoryAppearance;
+        ASSERT_TRUE(BE_SQLITE_OK == db->Categories().Insert(category, categoryAppearance));
 
-        physicalCategory1Id = physicalCategory1.GetCategoryId();
-        ASSERT_TRUE(physicalCategory1Id.IsValid());
+        categoryId = category.GetCategoryId();
+        ASSERT_TRUE(categoryId.IsValid());
 
-        DgnModelPtr physicalModel1 = new PhysicalModel(DgnModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel)), "Physical Model 1"));
-        ASSERT_TRUE(DgnDbStatus::Success == physicalModel1->Insert());
+        DgnModelPtr model = new DgnModel2d(DgnModel2d::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model2d)), "2D Model 1"));
+        ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
 
-        physicalModel1Id = physicalModel1->GetModelId();
-        ASSERT_TRUE(physicalModel1Id.IsValid());
+        modelId = model->GetModelId();
+        ASSERT_TRUE(modelId.IsValid());
 
-        annotationTextStyle1Id = ensureAnnotationTextStyle1(*db);
+        textStyleId = ensureAnnotationTextStyle1(*db);
         
         TextAnnotation annotation(*db);
-        annotation.SetText(AnnotationTextBlock::Create(*db, annotationTextStyle1Id, ANNOTATION_TEXT_1).get());
+        annotation.SetText(AnnotationTextBlock::Create(*db, textStyleId, ANNOTATION_TEXT_1).get());
 
-        PhysicalTextAnnotationElementPtr annotationElement1 = PhysicalTextAnnotationElement::Create(PhysicalTextAnnotationElement::CreateParams(*db, physicalModel1Id, PhysicalTextAnnotationElement::QueryClassId(*db), physicalCategory1Id), annotation);
-        PhysicalTextAnnotationElementCPtr insertedAnnotationElement1 = annotationElement1->Insert();
+        TextAnnotationElementPtr annotationElement1 = new TextAnnotationElement(TextAnnotationElement::CreateParams(*db, modelId, TextAnnotationElement::QueryDgnClassId(*db), categoryId));
+        annotationElement1->SetAnnotation(&annotation);
+        TextAnnotationElementCPtr insertedAnnotationElement1 = annotationElement1->Insert();
         ASSERT_TRUE(insertedAnnotationElement1.IsValid());
         
-        annotationElement1Id = insertedAnnotationElement1->GetElementId();
-        ASSERT_TRUE(annotationElement1Id.IsValid());
+        element1Id = insertedAnnotationElement1->GetElementId();
+        ASSERT_TRUE(element1Id.IsValid());
 
         // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
         //.............................................................................................
         DgnViews::View view;
-        view.SetDgnViewType(DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalView)), DgnViewType::Physical);
+        view.SetDgnViewType(DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "DrawingView")), DgnViewType::Drawing);
         view.SetDgnViewSource(DgnViewSource::Generated);
         view.SetName("TextAnnotationElementTest-BasicCrud");
-        view.SetBaseModelId(physicalModel1Id);
+        view.SetBaseModelId(modelId);
 
         EXPECT_TRUE(BE_SQLITE_OK == db->Views().Insert(view));
         EXPECT_TRUE(view.GetId().IsValid());
 
         ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
         
-        PhysicalViewController viewController(*db, view.GetId());
+        DrawingViewController viewController(*db, view.GetId());
         viewController.SetStandardViewRotation(StandardView::Top);
-        viewController.LookAtVolume(insertedAnnotationElement1->GetPlacement().GetElementBox()/*, nullptr, &viewMargin*/);
+        viewController.LookAtVolume(insertedAnnotationElement1->CalculateRange3d(), nullptr, &viewMargin);
         viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::Wireframe);
-        viewController.ChangeCategoryDisplay(physicalCategory1Id, true);
-        viewController.ChangeModelDisplay(physicalModel1Id, true);
+        viewController.ChangeCategoryDisplay(categoryId, true);
+        viewController.ChangeModelDisplay(modelId, true);
 
         EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
         db->SaveSettings();
@@ -122,7 +124,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(BE_SQLITE_OK == openStatus);
         ASSERT_TRUE(db.IsValid());
         
-        PhysicalTextAnnotationElementCPtr annotationElementC = PhysicalTextAnnotationElement::Get(*db, annotationElement1Id);
+        TextAnnotationElementCPtr annotationElementC = TextAnnotationElement::Get(*db, element1Id);
         ASSERT_TRUE(annotationElementC.IsValid());
 
         // Spot check some properties; rely on other TextAnnotation tests to more fully test serialization, which should be relatively pass/fail on the element itself.
@@ -133,7 +135,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
 
         AnnotationTextBlockCP existingText = existingAnnotation->GetTextCP();
         ASSERT_TRUE(nullptr != existingText);
-        EXPECT_TRUE(annotationTextStyle1Id == existingText->GetStyleId());
+        EXPECT_TRUE(textStyleId == existingText->GetStyleId());
         
         AnnotationParagraphCollectionCR existingParagraphs = existingText->GetParagraphs();
         ASSERT_TRUE(1 == existingParagraphs.size());
@@ -146,14 +148,14 @@ TEST(TextAnnotationElementTest, BasicCrud)
         
         // Update with different text.
         TextAnnotation annotation(*db);
-        annotation.SetText(AnnotationTextBlock::Create(*db, annotationTextStyle1Id, ANNOTATION_TEXT_2).get());
+        annotation.SetText(AnnotationTextBlock::Create(*db, textStyleId, ANNOTATION_TEXT_2).get());
 
-        PhysicalTextAnnotationElementPtr annotationElement = PhysicalTextAnnotationElement::GetForEdit(*db, annotationElement1Id);
+        TextAnnotationElementPtr annotationElement = TextAnnotationElement::GetForEdit(*db, element1Id);
         ASSERT_TRUE(annotationElement.IsValid());
 
-        EXPECT_TRUE(SUCCESS == annotationElement->SetAnnotation(annotation));
+        annotationElement->SetAnnotation(&annotation);
         
-        PhysicalTextAnnotationElementCPtr updatedAnnotationElement = annotationElement->Update();
+        TextAnnotationElementCPtr updatedAnnotationElement = annotationElement->Update();
         ASSERT_TRUE(updatedAnnotationElement.IsValid());
         EXPECT_TRUE(updatedAnnotationElement->GetElementId().IsValid());
         }
@@ -166,7 +168,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(BE_SQLITE_OK == openStatus);
         ASSERT_TRUE(db.IsValid());
 
-        PhysicalTextAnnotationElementCPtr annotationElementC = PhysicalTextAnnotationElement::Get(*db, annotationElement1Id);
+        TextAnnotationElementCPtr annotationElementC = TextAnnotationElement::Get(*db, element1Id);
         ASSERT_TRUE(annotationElementC.IsValid());
 
         // Spot check some properties; rely on other TextAnnotation tests to more fully test serialization, which should be relatively pass/fail on the element itself.
@@ -177,7 +179,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
 
         AnnotationTextBlockCP existingText = existingAnnotation->GetTextCP();
         ASSERT_TRUE(nullptr != existingText);
-        EXPECT_TRUE(annotationTextStyle1Id == existingText->GetStyleId());
+        EXPECT_TRUE(textStyleId == existingText->GetStyleId());
 
         AnnotationParagraphCollectionCR existingParagraphs = existingText->GetParagraphs();
         ASSERT_TRUE(1 == existingParagraphs.size());

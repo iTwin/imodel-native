@@ -587,7 +587,7 @@ BentleyStatus WebMercatorTileDisplayHelper::GetCachedTexture (uintptr_t& cachedT
 uintptr_t WebMercatorTileDisplayHelper::DefineTexture (bvector<Byte> const& rgbData, ImageUtilities::RgbImageInfo const& imageInfo)
     {
     BeAssert (!imageInfo.isBGR);
-    int format      = imageInfo.hasAlpha? QV_BGRA_FORMAT: QV_BGR_FORMAT;
+    int format      = imageInfo.hasAlpha? QV_RGBA_FORMAT: QV_RGB_FORMAT;
     int sizeofPixel = imageInfo.hasAlpha? 4: 3;
     int pitch       = imageInfo.width * sizeofPixel;
 
@@ -1181,9 +1181,10 @@ IProgressiveDisplay::Completion WebMercatorDisplay::_Process (ViewContextR conte
         Utf8String url;
         ImageUtilities::RgbImageInfo expectedImageInfo;
         CreateUrl (url, expectedImageInfo, tileid);
-        auto realityData = T_HOST.GetRealityDataAdmin().GetCache().Get<TiledRaster>(url.c_str(), *TiledRaster::RequestOptions::Create(expectedImageInfo, true));
-        if (realityData.IsValid())
+        RefCountedPtr<TiledRaster> realityData;
+        if (RealityDataCacheResult::Success == T_HOST.GetRealityDataAdmin().GetCache().Get<TiledRaster>(realityData, url.c_str(), *TiledRaster::RequestOptions::Create(expectedImageInfo)))
             {
+            BeAssert(realityData.IsValid());
             //  The image is available from the cache. Great! Draw it.
             m_helper.DrawAndCacheTile (context, tileid, url, *realityData);
             }
@@ -1208,13 +1209,12 @@ IProgressiveDisplay::Completion WebMercatorDisplay::_Process (ViewContextR conte
         auto const& tileid = iMissing->second;
 
         // See if the image has arrived in the cache.
-        auto realityData = T_HOST.GetRealityDataAdmin().GetCache().Get<TiledRaster>(url.c_str(), *TiledRaster::RequestOptions::Create(true));
-
-        if (context.CheckStop())
-            return Completion::Aborted;
-
-        if (realityData.IsValid())
+        RefCountedPtr<TiledRaster> realityData;
+        if (RealityDataCacheResult::Success == T_HOST.GetRealityDataAdmin().GetCache().Get<TiledRaster>(realityData, url.c_str(), *TiledRaster::RequestOptions::Create()))
             {
+            if (context.CheckStop())
+                return Completion::Aborted;
+
             //  Yes, we now have the image. Draw it and remove it from the list of missing tiles.
             m_helper.DrawAndCacheTile (context, tileid, url, *realityData);
             iMissing = m_missingTilesPending.erase (iMissing); 
@@ -1576,14 +1576,21 @@ RefCountedPtr<TiledRaster> TiledRaster::Create() {return new TiledRaster();}
 //=======================================================================================
 struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandler
     {
+    static BeAtomic<bool> s_isPrepared;
+
+    virtual bool _IsPrepared() const override {return s_isPrepared;}
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                     Grigas.Petraitis           03/2015
     +---------------+---------------+---------------+---------------+---------------+--*/
     virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const override
         {
         if (db.TableExists(TABLE_NAME_TiledRaster))
+            {
+            s_isPrepared = true;
             return SUCCESS;
-    
+            }
+
         Utf8CP ddl = "Url CHAR PRIMARY KEY, \
                         Raster BLOB,          \
                         RasterSize INT,       \
@@ -1592,7 +1599,13 @@ struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
                         Created BIGINT,       \
                         Expires BIGINT,       \
                         ETag CHAR";
-        return BeSQLite::BE_SQLITE_OK == db.CreateTable(TABLE_NAME_TiledRaster, ddl) ? SUCCESS : ERROR;
+
+        if (BeSQLite::BE_SQLITE_OK == db.CreateTable(TABLE_NAME_TiledRaster, ddl))
+            {
+            s_isPrepared = true;
+            return SUCCESS;
+            }
+        return ERROR;
         }
     
     /*-----------------------------------------------------------------------------**//**
@@ -1630,6 +1643,7 @@ struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
         return SUCCESS;
         }
     };
+BeAtomic<bool> TiledRasterPrepareAndCleanupHandler::s_isPrepared;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
@@ -1640,6 +1654,20 @@ BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr TiledRaster::_Ge
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus TiledRaster::_InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const& options)
+    {
+    TiledRaster const& other = dynamic_cast<TiledRaster const&>(self);
+    m_url = other.m_url;
+    m_creationDate = other.m_creationDate;
+    m_contentType = other.m_contentType;
+    m_rasterInfo = other.m_rasterInfo;
+    m_data = other.m_data;
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, bvector<Byte> const& body, HttpRealityDataSource::RequestOptions const& requestOptions) 
@@ -1647,6 +1675,12 @@ BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
     BeAssert(nullptr != dynamic_cast<RequestOptions const*>(&requestOptions));
     RequestOptions const& options = static_cast<RequestOptions const&>(requestOptions);
     
+    if (nullptr == options.GetExpectedImageInfo())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
     m_url.AssignOrClear(url);
     m_creationDate = DateTime::GetCurrentTime();
 
@@ -1655,7 +1689,6 @@ BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
         return ERROR;
 
     m_contentType = contentTypeIter->second.c_str();
-    BeAssert(nullptr != options.GetExpectedImageInfo());
     m_rasterInfo = *options.GetExpectedImageInfo();
     m_data = body;
 
@@ -1665,9 +1698,10 @@ BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TiledRaster::_InitFrom(BeSQLite::Db& db, Utf8CP key, BeSQLiteRealityDataStorage::SelectOptions const& options)
+BentleyStatus TiledRaster::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, BeSQLiteRealityDataStorage::SelectOptions const& options)
     {
     HighPriorityOperationBlock highPriority;
+    BeMutexHolder lock(cs);
 
     CachedStatementPtr stmt;
     if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Raster, RasterSize, RasterInfo, Created, Expires, ETag, ContentType from " TABLE_NAME_TiledRaster " WHERE Url=?"))
@@ -1700,7 +1734,7 @@ BentleyStatus TiledRaster::_InitFrom(BeSQLite::Db& db, Utf8CP key, BeSQLiteReali
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TiledRaster::_Persist(BeSQLite::Db& db) const
+BentleyStatus TiledRaster::_Persist(BeSQLite::Db& db, BeMutex& cs) const
     {
     int bufferSize = (int) GetData().size();
 
@@ -1713,6 +1747,7 @@ BentleyStatus TiledRaster::_Persist(BeSQLite::Db& db) const
         return ERROR;
 
     HighPriorityOperationBlock highPriority;
+    BeMutexHolder lock(cs);
 
     CachedStatementPtr selectStatement;
     if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "SELECT Url from " TABLE_NAME_TiledRaster " WHERE Url=?"))

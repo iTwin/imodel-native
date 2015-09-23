@@ -7,6 +7,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <Bentley/RefCounted.h>
+#include "AnnotationsCommon.h"
 #include "AnnotationPropertyBag.h"
 
 DGNPLATFORM_TYPEDEFS(AnnotationTextStylePropertyBag);
@@ -36,20 +37,21 @@ enum class AnnotationStackedFractionType
 //=======================================================================================
 enum class AnnotationTextStyleProperty
 {
-    Color = 1, //!< (integer, per-run) @note int64_t representation of ElementColor
-    FontId = 2, //!< (integer, per-run) @note Must be a valid font ID in the project
-    Height = 3, //!< (real, per-document) @note In project UORs
-    LineSpacingFactor = 4, //!< (real, per-document) @note Factor of height
-    IsBold = 5, //!< (integer, per-run) @note 0 or 1 boolean
-    IsItalic = 6, //!< (integer, per-run) @note 0 or 1 boolean
-    IsUnderlined = 7, //!< (integer, per-run) @note 0 or 1 boolean
-    StackedFractionScale = 8, //!< (real, per-run) @note Factor of height
-    StackedFractionType = 9, //!< (integer, per-run) @note Must exist in the AnnotationStackedFractionType enumeration
-    SubScriptOffsetFactor = 10, //!< (real, per-run) @note Factor of height
-    SubScriptScale = 11, //!< (real, per-run) @note Factor of height
-    SuperScriptOffsetFactor = 12, //!< (real, per-run) @note Factor of height
-    SuperScriptScale = 13, //!< (real, per-run) @note Factor of height
-    WidthFactor = 14 //!< (real, per-document) @note Factor of height
+    ColorType = 1, //!< (integer, per-run) @note Must exist in the AnnotationColorType enumeration
+    ColorValue = 2, //!< (integer, per-run) @note int64_t representation of ElementColor
+    FontId = 3, //!< (integer, per-run) @note Must be a valid font ID in the project
+    Height = 4, //!< (real, per-document) @note In project UORs
+    LineSpacingFactor = 5, //!< (real, per-document) @note Factor of height
+    IsBold = 6, //!< (integer, per-run) @note 0 or 1 boolean
+    IsItalic = 7, //!< (integer, per-run) @note 0 or 1 boolean
+    IsUnderlined = 8, //!< (integer, per-run) @note 0 or 1 boolean
+    StackedFractionScale = 9, //!< (real, per-run) @note Factor of height
+    StackedFractionType = 10, //!< (integer, per-run) @note Must exist in the AnnotationStackedFractionType enumeration
+    SubScriptOffsetFactor = 11, //!< (real, per-run) @note Factor of height
+    SubScriptScale = 12, //!< (real, per-run) @note Factor of height
+    SuperScriptOffsetFactor = 13, //!< (real, per-run) @note Factor of height
+    SuperScriptScale = 14, //!< (real, per-run) @note Factor of height
+    WidthFactor = 15 //!< (real, per-document) @note Factor of height
 
 //__PUBLISH_SECTION_END__
     // *********************************************************************************************
@@ -128,8 +130,10 @@ public:
     Utf8StringCR GetDescription() const { return m_description; }
     void SetDescription(Utf8CP value) { m_description = value; }
 
-    DGNPLATFORM_EXPORT ElementColor GetColor() const;
-    DGNPLATFORM_EXPORT void SetColor(ElementColor);
+    DGNPLATFORM_EXPORT AnnotationColorType GetColorType() const;
+    DGNPLATFORM_EXPORT void SetColorType(AnnotationColorType);
+    DGNPLATFORM_EXPORT ColorDef GetColorValue() const;
+    DGNPLATFORM_EXPORT void SetColorValue(ColorDef);
     DGNPLATFORM_EXPORT DgnFontId GetFontId() const;
     DGNPLATFORM_EXPORT void SetFontId(DgnFontId);
     DGNPLATFORM_EXPORT double GetHeight() const;

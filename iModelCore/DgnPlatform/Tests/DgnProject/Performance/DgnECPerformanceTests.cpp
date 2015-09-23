@@ -11,7 +11,7 @@
 #include <ECObjects/ECObjectsAPI.h>
 #include <ECDb/ECDbApi.h>
 
-USING_NAMESPACE_EC
+USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
@@ -40,7 +40,7 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement (DgnElementPtr& out, Dgn
     if (!categoryId.IsValid())
         return ERROR;
 
-    DgnElementPtr element = elementHandler->Create(DgnElement::CreateParams(model.GetDgnDb(), model.GetModelId(), elementClassId, categoryId));
+    DgnElementPtr element = elementHandler->Create(DgnElement::CreateParams(model.GetDgnDb(), model.GetModelId(), elementClassId));
 
     if (!element.IsValid())
         return ERROR;
@@ -49,6 +49,8 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement (DgnElementPtr& out, Dgn
 
     if (nullptr == geomElement)
         return ERROR;
+
+    geomElement->SetCategoryId(categoryId);
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*geomElement);
 
@@ -195,7 +197,7 @@ Utf8String testName
     // WIP_ECSQL - this should all be replaced by the ECSqlInstanceAdapter when it is ready
 
     stopwatch.Start();
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (statement.Step () == BE_SQLITE_ROW)
         {
         IECInstancePtr current = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
@@ -273,7 +275,7 @@ Utf8String testName
     statement2.Prepare (*tdm.GetDgnProjectP(), query.c_str());
 
     countWatch.Start();
-    while (statement2.Step() == ECSqlStepStatus::HasRow)
+    while (statement2.Step() == BE_SQLITE_ROW)
         {
         count = statement2.GetValueInt(0);
         }

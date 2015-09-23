@@ -13,17 +13,11 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-//! Identifies the type or purpose of a model
-//! @private
-enum class DgnModelType : uint16_t
+//! Identifies the coordinate space of a geometric model
+enum class CoordinateSpace
     {
-    Physical        = 0,   //!< a physical model.
-    Sheet           = 1,   //!< a sheet model.
-    Drawing         = 3,   //!< a 2d drawing model.
-    Component       = 4,   //!< a 3d component model.
-    Query           = 5,   //!< a query model
-    NonGeometric    = 6,   //!< a model containing non-geometric elements
-    Illegal         = 999, //!< @private
+    Local   = 0,    // the model has a local coordinate system
+    World   = 1,    // the model is in the physical (world) coordinate system.
     };
 
 //=======================================================================================

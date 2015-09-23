@@ -70,11 +70,6 @@ namespace BackDoor
     namespace DgnModel
     {
         /*-------------------------------------------------------------------------**//**
-        * @bsimethod                                            KevinNyman      11/09
-        +-------+---------------+---------------+---------------+---------------+------*/
-        DgnModelType GetModelType (DgnModelCR model);
-
-        /*-------------------------------------------------------------------------**//**
         * @bsimethod                                            KevinNyman      08/10
         +-------+---------------+---------------+---------------+---------------+------*/
         void SetReadOnly (Dgn::DgnModel& model, bool isReadOnly);
@@ -118,6 +113,17 @@ namespace BackDoor
         +-------+---------------+---------------+---------------+---------------+------*/
         double SumTetrahedralVolumes (BentleyApi::PolyfaceQueryP p, DPoint3dCR origin);
     };
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsinamespace
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    namespace RealityData
+    {
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                    Grigas.Petraitis                07/15
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void RunOnAnotherThread(std::function<void()> const&);
+    }; // RealityData
 }
 
 END_DGNDB_UNIT_TESTS_NAMESPACE

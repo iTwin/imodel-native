@@ -210,14 +210,10 @@ DPoint3d TextString::ComputeJustificationOrigin(HorizontalJustification hjust, V
 void TextString::SetOriginFromJustificationOrigin(DPoint3dCR jorigin, HorizontalJustification hjust, VerticalJustification vjust)
     {
     DPoint3d offsetFromJustification = DPoint3d::From(ComputeOffsetToJustification(hjust, vjust));
-    offsetFromJustification.Negate();
-
-    RotMatrix invertedOrientation = m_orientation;
-    m_orientation.Invert();
-    invertedOrientation.Multiply(offsetFromJustification);
+    m_orientation.Multiply(offsetFromJustification);
     
     m_origin = jorigin;
-    m_origin.Add(offsetFromJustification);
+    m_origin.Subtract(offsetFromJustification);
     }
 
 //---------------------------------------------------------------------------------------
@@ -537,7 +533,7 @@ BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, FB::Tex
     FB::TextStringStyle const& fbStyle = *fbText.style();
     TextStringStyle& style = text.m_style;
 
-    DgnFontCP dbFont = db.Fonts().FindFontById(DgnFontId((int64_t)fbStyle.fontId()));
+    DgnFontCP dbFont = db.Fonts().FindFontById(DgnFontId((uint64_t)fbStyle.fontId()));
     style.SetFont(T_HOST.GetFontAdmin().ResolveFont(dbFont));
     if (fbStyle.has_isBold()) style.SetIsBold(0 != fbStyle.isBold());
     if (fbStyle.has_isItalic()) style.SetIsItalic(0 != fbStyle.isItalic());
@@ -583,7 +579,7 @@ BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, FB::Tex
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, ByteCP buffer, size_t numBytes, DgnDbCR db)
+BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, Byte const* buffer, size_t numBytes, DgnDbCR db)
     {
     FB::TextString const* fbText = GetRoot<FB::TextString>(buffer);
     return DecodeFromFlatBuf(text, *fbText, db);

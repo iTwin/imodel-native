@@ -10,13 +10,15 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+struct GeometricModel;
+
 //========================================================================================
 //! Specifies the solver to invoke when changes to a model or its contents are validated.
 //! @see DgnScript::ExecuteModelSolver for information on script type model solvers.
 //=======================================================================================
 struct ModelSolverDef
     {
-    friend struct DgnModel;
+    friend struct GeometricModel;
     friend struct CreateParams;
 
     //========================================================================================
@@ -72,10 +74,10 @@ struct ModelSolverDef
         bvector<Parameter> m_parameters;
         public:
         ParameterSet() {;}
-        explicit ParameterSet(Json::Value const&);
+        DGNPLATFORM_EXPORT explicit ParameterSet(Json::Value const&);
         explicit ParameterSet(bvector<Parameter> const& p) : m_parameters(p) {;}
 
-        Json::Value ToJson() const;
+        DGNPLATFORM_EXPORT Json::Value ToJson() const;
 
         //! Get a parameter by name
         DGNPLATFORM_EXPORT Parameter const* GetParameter(Utf8StringCR pname) const;
@@ -112,7 +114,7 @@ struct ModelSolverDef
     void FromJson(Utf8CP);
     Utf8String ToJson() const;
 
-    void Solve(DgnModelR);
+    void Solve(GeometricModel&);
 
     DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
 

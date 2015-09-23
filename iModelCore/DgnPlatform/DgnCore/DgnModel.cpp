@@ -24,7 +24,7 @@ DgnModelId DgnModels::QueryModelId(Utf8CP name) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
     {
-    Statement stmt(m_dgndb, "SELECT Name,Descr,Type,ECClassId,Space,Visibility FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "SELECT Name,Descr,ECClassId,Visibility FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
@@ -35,10 +35,8 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
         out->m_id = id;
         out->m_name.AssignOrClear(stmt.GetValueText(0));
         out->m_description.AssignOrClear(stmt.GetValueText(1));
-        out->m_modelType =(DgnModelType) stmt.GetValueInt(2);
-        out->m_classId = DgnClassId(stmt.GetValueInt64(3));
-        out->m_space =(Model::CoordinateSpace) stmt.GetValueInt(4);
-        out->m_inGuiList = TO_BOOL(stmt.GetValueInt(5));
+        out->m_classId = DgnClassId(stmt.GetValueInt64(2));
+        out->m_inGuiList = TO_BOOL(stmt.GetValueInt(3));
         }
 
     return SUCCESS;
@@ -95,25 +93,23 @@ void DgnModels::ClearLoaded()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.Wilson                      03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnModels::QueryModelDependencyIndexAndType(uint64_t& didx, DgnModelType& mtype, DgnModelId mid)
+BentleyStatus DgnModels::QueryModelDependencyIndex(uint64_t& didx, DgnModelId mid)
     {
-    auto i = m_modelDependencyIndexAndType.find(mid);
-    if (i != m_modelDependencyIndexAndType.end())
+    auto i = m_modelDependencyIndices.find(mid);
+    if (i != m_modelDependencyIndices.end())
         {
-        didx = i->second.first;
-        mtype = i->second.second;
+        didx = i->second;
         return BSISUCCESS;
         }
 
     CachedStatementPtr selectDependencyIndex;
-    GetDgnDb().GetCachedStatement(selectDependencyIndex, "SELECT DependencyIndex,Type FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
+    GetDgnDb().GetCachedStatement(selectDependencyIndex, "SELECT DependencyIndex FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     selectDependencyIndex->BindId(1, mid);
     if (selectDependencyIndex->Step() != BE_SQLITE_ROW)
         return BSIERROR;
 
     didx = selectDependencyIndex->GetValueInt64(0);
-    mtype =(DgnModelType)selectDependencyIndex->GetValueInt(1);
-    m_modelDependencyIndexAndType[mid] = make_bpair(didx, mtype);
+    m_modelDependencyIndices[mid] = didx;
     return BSISUCCESS;
     }
 
@@ -144,7 +140,7 @@ DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sqlString = "SELECT Id,Name,Descr,Type,Space,Visibility,ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Model);
+        Utf8String sqlString = "SELECT Id,Name,Descr,Visibility,ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Model);
         bool hasWhere = false;
         if (ModelIterate::Gui == m_itType)
             {
@@ -168,10 +164,8 @@ DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
 DgnModelId   DgnModels::Iterator::Entry::GetModelId() const {Verify(); return m_sql->GetValueId<DgnModelId>(0);}
 Utf8CP       DgnModels::Iterator::Entry::GetName() const {Verify(); return m_sql->GetValueText(1);}
 Utf8CP       DgnModels::Iterator::Entry::GetDescription() const {Verify(); return m_sql->GetValueText(2);}
-DgnModelType DgnModels::Iterator::Entry::GetModelType() const {Verify(); return (DgnModelType) m_sql->GetValueInt(3);}
-DgnModels::Model::CoordinateSpace DgnModels::Iterator::Entry::GetCoordinateSpace() const {Verify(); return (Model::CoordinateSpace) m_sql->GetValueInt(4);}
-bool         DgnModels::Iterator::Entry::InGuiList() const {Verify(); return (0 != m_sql->GetValueInt(5));}
-DgnClassId   DgnModels::Iterator::Entry::GetClassId() const {Verify(); return DgnClassId(m_sql->GetValueInt64(6));}
+bool         DgnModels::Iterator::Entry::InGuiList() const {Verify(); return (0 != m_sql->GetValueInt(3));}
+DgnClassId   DgnModels::Iterator::Entry::GetClassId() const {Verify(); return DgnClassId(m_sql->GetValueInt64(4));}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/00
@@ -185,9 +179,8 @@ void DgnModel::ReleaseAllElements()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_modelId(params.m_id), m_classId(params.m_classId), m_name(params.m_name), m_properties(params.m_props), m_solver(params.m_solver)
+DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_modelId(params.m_id), m_classId(params.m_classId), m_name(params.m_name), m_properties(params.m_props)
     {
-    m_rangeIndex = nullptr;
     m_persistent = false;
     m_filled     = false;
     }
@@ -239,12 +232,19 @@ template<class T> void DgnModel::CallAppData(T const& caller) const
 struct EmptiedCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& handler, DgnModelCR model) const {return handler._OnEmptied(model);}};
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    10/00
+* @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::EmptyModel()
+void GeometricModel::_EmptyModel()
     {
     ClearRangeIndex();
+    T_Super::_EmptyModel();
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    KeithBentley    10/00
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_EmptyModel()
+    {
     if (!m_filled)
         return;
 
@@ -268,7 +268,7 @@ DgnModel::~DgnModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnValidate()
+void GeometricModel::_OnValidate()
     {
     m_solver.Solve(*this);
     }
@@ -307,7 +307,31 @@ DgnDbStatus DgnModel2d::_OnInsertElement(DgnElementR element)
         return status;
 
     // if it is a geometric element, it must be a 2d element.
-    return element.Is3d() ? DgnDbStatus::Mismatch2d3d : DgnDbStatus::Success;
+    return element.IsGeometricElement() && element.Is3d() ? DgnDbStatus::Mismatch2d3d : DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel3d::_OnInsertElement(DgnElementR element)
+    {
+    auto status = T_Super::_OnInsertElement(element);
+    if (DgnDbStatus::Success == status && element.IsGeometricElement() && !element.Is3d())
+        status = DgnDbStatus::Mismatch2d3d;
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ResourceModel::_OnInsertElement(DgnElementR el)
+    {
+    auto status = T_Super::_OnInsertElement(el);
+    if (DgnDbStatus::Success == status && nullptr != el.ToGeometricElement())
+        status = DgnDbStatus::WrongModel;
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -315,6 +339,15 @@ DgnDbStatus DgnModel2d::_OnInsertElement(DgnElementR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::ReadProperties()
     {
+    _ReadProperties();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricModel::_ReadProperties()
+    {
+    // NB: Intentionally not invoking superclass implementation to avoid redundant sql
     Statement stmt(m_dgndb, "SELECT Props,Solver FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, m_modelId);
 
@@ -336,6 +369,31 @@ void DgnModel::ReadProperties()
 
     if (!stmt.IsColumnNull(1))
         m_solver.FromJson(stmt.GetValueText(1));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_ReadProperties()
+    {
+    Statement stmt(m_dgndb, "SELECT Props FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
+    stmt.BindId(1, m_modelId);
+
+    DbResult  result = stmt.Step();
+    if (BE_SQLITE_ROW != result)
+        {
+        BeAssert(false);
+        return;
+        }
+
+    Json::Value  propsJson(Json::objectValue);
+    if (!Json::Reader::Parse(stmt.GetValueText(0), propsJson))
+        {
+        BeAssert(false);
+        return;
+        }
+
+    _FromPropertiesJson(propsJson);
     }
 
 struct UpdatedCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& handler, DgnModelCR model) const {return handler._OnUpdated(model);}};
@@ -363,7 +421,7 @@ DgnDbStatus DgnModel::_OnUpdate()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/12
+* @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::Update()
     {
@@ -371,6 +429,20 @@ DgnDbStatus DgnModel::Update()
     if (stat != DgnDbStatus::Success)
         return stat;
 
+    stat = _Update();
+
+    if (DgnDbStatus::Success == stat)
+        _OnUpdated();
+
+    return stat;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricModel::_Update()
+    {
+    // NB: Intentionally not invoking superclass implementation to avoid redundant sql
     Json::Value propJson(Json::objectValue);
     _ToPropertiesJson(propJson);
     Utf8String val = Json::FastWriter::ToString(propJson);
@@ -383,19 +455,30 @@ DgnDbStatus DgnModel::Update()
         stmt.BindNull(2);
     stmt.BindId(3, m_modelId);
 
-    auto rc=stmt.Step();
-    if (rc!= BE_SQLITE_DONE)
-        return DgnDbStatus::WriteError;
+    return stmt.Step() == BE_SQLITE_DONE ? DgnDbStatus::Success : DgnDbStatus::WriteError;
+    }
 
-    _OnUpdated();
-    return DgnDbStatus::Success;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::_Update()
+    {
+    Json::Value propJson(Json::objectValue);
+    _ToPropertiesJson(propJson);
+    Utf8String val = Json::FastWriter::ToString(propJson);
+
+    Statement stmt(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Model) " SET Props=? WHERE Id=?");
+    stmt.BindText(1, val, Statement::MakeCopy::No);
+    stmt.BindId(2, m_modelId);
+
+    return stmt.Step() == BE_SQLITE_DONE ? DgnDbStatus::Success : DgnDbStatus::WriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * Allocate and initialize a range tree for this model.
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::AllocateRangeIndex() const
+void GeometricModel::AllocateRangeIndex() const
     {
     if (nullptr == m_rangeIndex)
         {
@@ -407,7 +490,7 @@ void DgnModel::AllocateRangeIndex() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::ClearRangeIndex()
+void GeometricModel::ClearRangeIndex()
     {
     DELETE_AND_CLEAR(m_rangeIndex);
     }
@@ -415,12 +498,12 @@ void DgnModel::ClearRangeIndex()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::AddToRangeIndex(DgnElementCR element)
+void GeometricModel::AddToRangeIndex(DgnElementCR element)
     {
     if (nullptr == m_rangeIndex)
         return;
 
-    GeometricElementCP geom = element._ToGeometricElement();
+    GeometricElementCP geom = element.ToGeometricElement();
     if (nullptr != m_rangeIndex && nullptr != geom && geom->HasGeometry())
         m_rangeIndex->AddGeomElement(*geom);
     }
@@ -428,12 +511,12 @@ void DgnModel::AddToRangeIndex(DgnElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::RemoveFromRangeIndex(DgnElementCR element)
+void GeometricModel::RemoveFromRangeIndex(DgnElementCR element)
     {
     if (nullptr==m_rangeIndex)
         return;
 
-    GeometricElementCP geom = element._ToGeometricElement();
+    GeometricElementCP geom = element.ToGeometricElement();
     if (nullptr != geom && geom->HasGeometry())
         m_rangeIndex->RemoveElement(DgnRangeTree::Entry(geom->CalculateRange3d(), *geom));
     }
@@ -441,12 +524,12 @@ void DgnModel::RemoveFromRangeIndex(DgnElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR original)
+void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR original)
     {
     if (nullptr==m_rangeIndex)
         return;
 
-    GeometricElementCP origGeom = original._ToGeometricElement();
+    GeometricElementCP origGeom = original.ToGeometricElement();
     if (nullptr == origGeom)
         return;
 
@@ -467,11 +550,18 @@ void DgnModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR original)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::RegisterElement(DgnElementCR element)
+void DgnModel::_RegisterElement(DgnElementCR element)
     {
     if (m_filled)
         m_elements.Add(element);
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricModel::_RegisterElement(DgnElementCR element)
+    {
+    T_Super::_RegisterElement(element);
     AddToRangeIndex(element);
     }
 
@@ -518,9 +608,17 @@ DgnDbStatus DgnModel::_OnDeleteElement(DgnElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnDeletedElement(DgnElementCR element)
+void GeometricModel::_OnDeletedElement(DgnElementCR element)
     {
     RemoveFromRangeIndex(element);
+    T_Super::_OnDeletedElement(element);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_OnDeletedElement(DgnElementCR element)
+    {
     if (m_filled)
         m_elements.erase(element.GetElementId());
     }
@@ -528,9 +626,17 @@ void DgnModel::_OnDeletedElement(DgnElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnReversedAddElement(DgnElementCR element)
+void GeometricModel::_OnReversedAddElement(DgnElementCR element)
     {
     RemoveFromRangeIndex(element);
+    T_Super::_OnReversedAddElement(element);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_OnReversedAddElement(DgnElementCR element)
+    {
     if (m_filled)
         m_elements.erase(element.GetElementId());
     }
@@ -546,7 +652,7 @@ DgnDbStatus DgnModel::_OnUpdateElement(DgnElementCR modified, DgnElementCR origi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnUpdatedElement(DgnElementCR modified, DgnElementCR original)
+void GeometricModel::_OnUpdatedElement(DgnElementCR modified, DgnElementCR original)
     {
     UpdateRangeIndex(modified, original);
     }
@@ -554,7 +660,7 @@ void DgnModel::_OnUpdatedElement(DgnElementCR modified, DgnElementCR original)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnReversedUpdateElement(DgnElementCR modified, DgnElementCR original)
+void GeometricModel::_OnReversedUpdateElement(DgnElementCR modified, DgnElementCR original)
     {
     UpdateRangeIndex(modified, original);
     }
@@ -562,7 +668,7 @@ void DgnModel::_OnReversedUpdateElement(DgnElementCR modified, DgnElementCR orig
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnRangeTreeP DgnModel::GetRangeIndexP(bool create) const
+DgnRangeTreeP GeometricModel::_GetRangeIndexP(bool create) const
     {
     if (nullptr == m_rangeIndex && create)
         AllocateRangeIndex();
@@ -704,19 +810,21 @@ DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
     if (models.QueryModelId(m_name.c_str()).IsValid()) // can't allow two models with the same name
         return DgnDbStatus::DuplicateName;
 
-    DbResult rc = m_dgndb.GetNextRepositoryBasedId(m_modelId, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
-    BeAssert(rc == BE_SQLITE_OK);
+    m_modelId = DgnModelId(m_dgndb, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
 
-    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Name,Descr,Type,ECClassId,Space,Visibility) VALUES(?,?,?,?,?,?,?)");
+    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Name,Descr,ECClassId,Visibility,Space) VALUES(?,?,?,?,?,?)");
     stmt.BindId(1, m_modelId);
     stmt.BindText(2, m_name.c_str(), Statement::MakeCopy::No);
     stmt.BindText(3, description, Statement::MakeCopy::No);
-    stmt.BindInt(4, (int)_GetModelType());
-    stmt.BindId(5, GetClassId());
-    stmt.BindInt(6,(int) _GetCoordinateSpace());
-    stmt.BindInt(7, inGuiList ? 1 : 0);
+    stmt.BindId(4, GetClassId());
+    stmt.BindInt(5, inGuiList ? 1 : 0);
+    auto geomModel = ToGeometricModel();
+    if (nullptr != geomModel)
+        stmt.BindInt(6, (int)geomModel->GetCoordinateSpace());
+    else
+        stmt.BindNull(6);
 
-    rc = stmt.Step();
+    auto rc = stmt.Step();
     if (BE_SQLITE_DONE != rc)
         {
         BeAssert(false);
@@ -739,8 +847,17 @@ void DgnModel::_InitFrom(DgnModelCR other)
     Json::Value props;
     other._ToPropertiesJson(props);
     _FromPropertiesJson(props);
+    }
 
-    m_solver = other.m_solver;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricModel::_InitFrom(DgnModelCR other)
+    {
+    T_Super::_InitFrom(other);
+    auto geom = other.ToGeometricModel();
+    if (nullptr != geom)
+        m_solver = geom->m_solver;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -765,7 +882,7 @@ DgnModelPtr DgnModels::LoadDgnModel(DgnModelId modelId)
     if (nullptr == handler)
         return nullptr;
 
-    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetName().c_str(), DgnModel::Properties(), ModelSolverDef(), modelId);
+    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetName().c_str(), DgnModel::Properties(), modelId);
     DgnModelPtr dgnModel = handler->Create(params);
     if (!dgnModel.IsValid())
         return nullptr;
@@ -851,7 +968,7 @@ QvCache* DgnModels::GetQvCache(bool createIfNecessary)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d DgnModel::_GetGlobalOrigin() const
+DPoint3d GeometricModel::_GetGlobalOrigin() const
     {
     return GetDgnDb().Units().GetGlobalOrigin();
     }
@@ -881,11 +998,12 @@ void DgnModel::_FillModel()
     if (IsFilled())
         return;
 
-    enum Column : int {Id=0,ClassId=1,CategoryId=2,Label=3,Code=4,ParentId=5,CodeAuthorityId=6};
-    Statement stmt(m_dgndb, "SELECT Id,ECClassId,CategoryId,Label,Code,ParentId,CodeAuthorityId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+    // NB: CategoryId belongs to GeometricElement, but we are selecting it here to avoid a redundant SELECT statement on the same row
+    enum Column : int {Id=0,ClassId=1,Code=2,ParentId=3,CodeAuthorityId=4,CodeNameSpace=5,CategoryId=6};
+    Statement stmt(m_dgndb, "SELECT Id,ECClassId,Code,ParentId,CodeAuthorityId,CodeNameSpace FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
     stmt.BindId(1, m_modelId);
 
-    SetFilled();
+    _SetFilled();
 
     auto& elements = m_dgndb.Elements();
     BeDbMutexHolder _v(elements.m_mutex);
@@ -902,11 +1020,11 @@ void DgnModel::_FillModel()
 
         elements.LoadElement(DgnElement::CreateParams(m_dgndb, m_modelId,
             stmt.GetValueId<DgnClassId>(Column::ClassId), 
-            stmt.GetValueId<DgnCategoryId>(Column::CategoryId), 
-            stmt.GetValueText(Column::Label), 
-            DgnElement::Code(stmt.GetValueId<DgnAuthorityId>(Column::CodeAuthorityId), stmt.GetValueText(Column::Code)), 
+            DgnElement::Code(stmt.GetValueId<DgnAuthorityId>(Column::CodeAuthorityId), stmt.GetValueText(Column::Code), stmt.GetValueText(Column::CodeNameSpace)), 
             id,
-            stmt.GetValueId<DgnElementId>(Column::ParentId)), true);
+            stmt.GetValueId<DgnElementId>(Column::ParentId)),
+            stmt.GetValueId<DgnCategoryId>(Column::CategoryId),
+            true);
         }
 
     CallAppData(FilledCaller());
@@ -949,7 +1067,7 @@ ModelHandlerP dgn_ModelHandler::Model::FindHandler(DgnDb const& db, DgnClassId h
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d DgnModel::_QueryModelRange() const
+AxisAlignedBox3d GeometricModel::_QueryModelRange() const
     {
     Statement stmt(m_dgndb, "SELECT DGN_bbox_union(DGN_placement_aabb(g.Placement)) FROM " 
                            DGN_TABLE(DGN_CLASSNAME_Element)     " AS e," 
@@ -1193,7 +1311,12 @@ DgnElementPtr ComponentSolution::CreateSolutionInstanceElement(DgnModelR destina
     DgnClassId cmClassId = DgnClassId(GetDgnDb().Schemas().GetECClassId(schemaname.c_str(), classname.c_str()));
     DgnCategoryId cmCategoryId = GetDgnDb().Categories().QueryCategoryId(cm->GetElementCategoryName().c_str());
     
-    if (destinationModel.Is3d())
+    auto geomDestModel = destinationModel.ToGeometricModel();
+    BeAssert (nullptr != geomDestModel);
+    if (nullptr == geomDestModel)
+        return nullptr;
+
+    if (geomDestModel->Is3d())
         return PhysicalElement::Create(PhysicalElement::CreateParams(GetDgnDb(), destinationModel.GetModelId(), cmClassId, cmCategoryId, 
                                             Placement3d(origin, angles, ElementAlignedBox3d())));
 
@@ -1323,7 +1446,7 @@ void DgnModel::CreateParams::RelocateToDestinationDb(DgnImportContext& importer)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModel::CreateParams DgnModel::GetCreateParamsForImport(DgnImportContext& importer) const
     {
-    CreateParams parms(importer.GetDestinationDb(), GetClassId(), GetModelName(), GetProperties(), GetSolver());
+    CreateParams parms(importer.GetDestinationDb(), GetClassId(), GetModelName(), GetProperties());
     if (importer.IsBetweenDbs())
         {
         // Caller probably wants to preserve these when copying between Dbs. We *never* preserve them when copying within a Db.
@@ -1370,9 +1493,20 @@ DgnModelPtr DgnModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& impor
 
     model->_InitFrom(*this);
 
-    model->m_solver.RelocateToDestinationDb(importer);
-
     return model;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelPtr GeometricModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const
+    {
+    auto clone = T_Super::_CloneForImport(stat, importer);
+    auto geom = clone.IsValid() ? clone->ToGeometricModelP() : nullptr;
+    if (nullptr != geom)
+        geom->m_solver.RelocateToDestinationDb(importer);
+
+    return clone;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1657,9 +1791,25 @@ bool ComponentModel::IsValid() const
         return false;
     if (m_itemECBaseClassName.empty())
         return false;
-    if (!m_solver.IsValid())
+    if (!GetSolver().IsValid())
         return false;
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::_OnDelete()
+    {
+    //  *** TRICKY: We don't/can't have a trigger do this, because the solutions table references this model by name
+    Statement delSolutions;
+
+    delSolutions.Prepare(GetDgnDb(), "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " WHERE ComponentModelName=?");
+    delSolutions.BindText(1, GetModelName(), Statement::MakeCopy::No);
+    delSolutions.Step();
+
+    // *** NEEDS WORK: I should kill off all of the GeomParts referenced by the geomstreams in the rows of ComponentSolution 
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1745,7 +1895,7 @@ DgnDbStatus ComponentModel::GenerateECClass(ECN::ECSchemaR schema)
     Utf8String paramsList;  
     Utf8CP paramsListSep = "";
 
-    for (auto const& parm: m_solver.GetParameters())
+    for (auto const& parm: GetSolver().GetParameters())
         {
         Utf8String parmname = parm.GetName();
         ECN::ECValue parmvalue = parm.GetValue();
@@ -1795,10 +1945,8 @@ DgnDbStatus ComponentModel::AddAllToECSchema(ECN::ECSchemaR schema, DgnDbR db)
     {
     for (auto const& cm : db.Models().MakeIterator())
         {
-        if (cm.GetModelType() != DgnModelType::Component)
-            continue;
         ComponentModelPtr componentModel = db.Models().Get<ComponentModel>(cm.GetModelId());
-        if (DgnDbStatus::Success != componentModel->GenerateECClass(schema))
+        if (componentModel.IsValid() && DgnDbStatus::Success != componentModel->GenerateECClass(schema))
             return DgnDbStatus::WriteError;
         }
     return DgnDbStatus::Success;
@@ -1868,7 +2016,7 @@ void ComponentModel::_FromPropertiesJson(Json::Value const& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ComponentModel::Solve(ModelSolverDef::ParameterSet const& newParameters)
     {
-    m_solver.GetParametersR().SetValues(newParameters);
+    GetSolver().GetParametersR().SetValues(newParameters);
 
     auto status = Update();
     if (DgnDbStatus::Success != status)

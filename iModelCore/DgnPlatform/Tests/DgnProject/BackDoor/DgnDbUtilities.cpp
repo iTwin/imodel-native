@@ -11,7 +11,7 @@
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
-USING_NAMESPACE_EC
+USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
@@ -22,17 +22,17 @@ BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
 ECSqlStatus DgnDbUtilities::InsertRelationship (ECInstanceKey& rkey, ECSqlStatement& statement, ECDbR db, Utf8CP relationshipName, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey)
     {
     if (!relationshipName || !*relationshipName)
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
 
     if (!sourceKey.IsValid() || !targetKey.IsValid())
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
 
     if (!statement.IsPrepared())
         {
         Utf8PrintfString sql ("INSERT INTO %s (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES (?,?,?,?)", relationshipName);
 
         ECSqlStatus status = statement.Prepare (db, sql.c_str());
-        if (ECSqlStatus::Success != status)
+        if (!status.IsSuccess())
             return status;
         }
     else
@@ -46,8 +46,8 @@ ECSqlStatus DgnDbUtilities::InsertRelationship (ECInstanceKey& rkey, ECSqlStatem
     statement.BindInt64 (3, targetKey.GetECClassId());
     statement.BindId    (4, targetKey.GetECInstanceId());
 
-    if (ECSqlStepStatus::Done != statement.Step(rkey))
-        return ECSqlStatus::UserError;
+    if (BE_SQLITE_DONE != statement.Step(rkey))
+        return ECSqlStatus::Error;
 
     return ECSqlStatus::Success;
     }
@@ -63,7 +63,7 @@ ECInstanceKey DgnDbUtilities::QueryRelationshipSourceFromTarget (ECDbR db, Utf8C
 
     ECSqlStatement statement;
     ECSqlStatus status = statement.Prepare (db, sql.c_str());
-    if (ECSqlStatus::Success != status)
+    if (!status.IsSuccess())
         return ECInstanceKey();
 
     if (ECSqlStatus::Success != statement.BindInt64 (1, targetKey.GetECClassId()))
@@ -72,7 +72,7 @@ ECInstanceKey DgnDbUtilities::QueryRelationshipSourceFromTarget (ECDbR db, Utf8C
     if (ECSqlStatus::Success != statement.BindId (2, targetKey.GetECInstanceId()))
         return ECInstanceKey();
 
-    if (ECSqlStepStatus::HasRow != statement.Step())
+    if (BE_SQLITE_ROW != statement.Step())
         return ECInstanceKey();
 
     return ECInstanceKey (statement.GetValueInt64 (0), statement.GetValueId<ECInstanceId> (1));

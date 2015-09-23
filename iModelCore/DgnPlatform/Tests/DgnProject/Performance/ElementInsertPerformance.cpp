@@ -100,15 +100,15 @@ TEST_F(PerformanceElementItem, CRUD)
 }
 
 //static
-const DgnCategoryId PerformanceElementTestFixture::s_catId = DgnCategoryId((int64_t)123);
-const DgnAuthorityId PerformanceElementTestFixture::s_codeAuthorityId = DgnAuthorityId((int64_t) 1);
+const DgnCategoryId PerformanceElementTestFixture::s_catId = DgnCategoryId((uint64_t)123);
+const DgnAuthorityId PerformanceElementTestFixture::s_codeAuthorityId = DgnAuthorityId((uint64_t) 1);
 Utf8CP const PerformanceElementTestFixture::s_textVal = "bla bla";
 const double PerformanceElementTestFixture::s_doubleVal = -3.1415;
 Utf8CP const PerformanceElementTestFixture::s_testSchemaXml =
     "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
     "  <ECSchemaReference name = 'dgn' version = '02.00' prefix = 'dgn' />"
     "  <ECClass typeName='Element1' >"
-    "    <BaseClass>dgn:GeometricElement</BaseClass>"
+    "    <BaseClass>dgn:PhysicalElement</BaseClass>"
     "    <ECProperty propertyName='Prop1_1' typeName='string' />"
     "    <ECProperty propertyName='Prop1_2' typeName='long' />"
     "    <ECProperty propertyName='Prop1_3' typeName='double' />"
@@ -211,12 +211,12 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,CodeAuthorityId,Code,"
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,CodeAuthorityId,Code,CodeNameSpace,"
                                                                              "Prop1_1,Prop1_2,Prop1_3,"
                                                                              "Prop2_1,Prop2_2,Prop2_3,"
                                                                              "Prop3_1,Prop3_2,Prop3_3,"
                                                                              "Prop4_1,Prop4_2,Prop4_3) "
-                                                                             "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                                                                             "VALUES (?,?,?,?,'',?,?,?,?,?,?,?,?,?,?,?,?)");
         ASSERT_TRUE(insertStmt != nullptr);
         CachedECSqlStatement& stmt = *insertStmt;
 
@@ -242,7 +242,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
         stmt.BindInt64(15, s_int64Val);
         stmt.BindDouble(16, s_doubleVal);
 
-        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step());
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
         stmt.Reset();
         stmt.ClearBindings();
@@ -271,7 +271,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,CodeAuthorityId,Code) VALUES (?,?,?,?)");
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,CodeAuthorityId,Code,CodeNameSpace) VALUES (?,?,?,?,'')");
         ASSERT_TRUE(insertStmt != nullptr);
 
         std::vector<CachedECSqlStatementPtr> updateStmts;
@@ -298,7 +298,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
         insertStmt->BindText(4, code.c_str(), IECSqlBinder::MakeCopy::No);
 
         ECInstanceKey newKey;
-        ASSERT_EQ(ECSqlStepStatus::Done, insertStmt->Step(newKey));
+        ASSERT_EQ(BE_SQLITE_DONE, insertStmt->Step(newKey));
         insertStmt->Reset();
         insertStmt->ClearBindings();
 
@@ -308,7 +308,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
             updateStmt->BindInt64(2, s_int64Val);
             updateStmt->BindDouble(3, s_doubleVal);
             updateStmt->BindId(4, newKey.GetECInstanceId());
-            ASSERT_EQ(ECSqlStepStatus::Done, updateStmt->Step());
+            ASSERT_EQ(BE_SQLITE_DONE, updateStmt->Step());
             updateStmt->Reset();
             updateStmt->ClearBindings();
             }
@@ -335,12 +335,12 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,CodeAuthorityId,Code,"
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,CodeAuthorityId,Code,CodeNameSpace,"
                                                                              "Prop1_1,Prop1_2,Prop1_3,"
                                                                              "Prop2_1,Prop2_2,Prop2_3,"
                                                                              "Prop3_1,Prop3_2,Prop3_3,"
                                                                              "Prop4_1,Prop4_2,Prop4_3) "
-                                                                             "VALUES (:modelid,:catid,:authorityid,:code,"
+                                                                             "VALUES (:modelid,:catid,:authorityid,:code,'',"
                                                                              ":p11,:p12,:p13,"
                                                                              ":p21,:p22,:p23,"
                                                                              ":p31,:p32,:p33,"
@@ -371,7 +371,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
         stmt.BindInt64(stmt.GetParameterIndex("p42"), s_int64Val);
         stmt.BindDouble(stmt.GetParameterIndex("p43"), s_doubleVal);
 
-        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step());
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
         stmt.Reset();
         stmt.ClearBindings();

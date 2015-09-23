@@ -545,7 +545,7 @@ public:
 
             virtual bool _WantInvertBlackBackground() {return false;}
 
-            virtual bool _GetModelBackgroundOverride(ColorDef& rgbColor, DgnModelType modelType) {return false;}
+            virtual bool _GetModelBackgroundOverride(ColorDef& rgbColor) {return false;}
 
             //! If true, the UI icons that this library loads will be processed to darken their edges to attempt to increase visibility.
             virtual bool _ShouldEnhanceIconEdges() {return false;}

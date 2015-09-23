@@ -37,7 +37,7 @@ public:
     static BentleyStatus EncodeAsFlatBuf(flatbuffers::Offset<FB::TextString>&, flatbuffers::FlatBufferBuilder&, TextStringCR, DgnDbR, FlatBufEncodeOptions);
     static BentleyStatus EncodeAsFlatBuf(bvector<Byte>&, TextStringCR, DgnDbR, FlatBufEncodeOptions);
     static BentleyStatus DecodeFromFlatBuf(TextStringR, FB::TextString const&, DgnDbCR);
-    static BentleyStatus DecodeFromFlatBuf(TextStringR, ByteCP, size_t numBytes, DgnDbCR);
+    static BentleyStatus DecodeFromFlatBuf(TextStringR, Byte const*, size_t numBytes, DgnDbCR);
 };
 
 //! @endGroup

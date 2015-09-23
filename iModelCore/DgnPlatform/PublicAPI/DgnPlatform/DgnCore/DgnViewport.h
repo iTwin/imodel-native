@@ -162,7 +162,7 @@ struct ProgressiveViewFilter : RefCounted<IProgressiveDisplay>, RtreeViewFilter
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnDbRTree3dViewFilter : RtreeViewFilter
     {
-    typedef bmultimap<double, int64_t> T_OcclusionScoreMap;
+    typedef bmultimap<double, uint64_t> T_OcclusionScoreMap;
 
     struct SecondaryFilter
         {
@@ -180,7 +180,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDbRTree3dViewFilter : RtreeViewFilter
     bool                    m_eliminatedByLOD;
     uint32_t                m_hitLimit;
     uint32_t                m_occlusionMapCount;
-    int64_t                 m_lastId;
+    uint64_t                m_lastId;
     T_OcclusionScoreMap     m_occlusionScoreMap;
     double                  m_occlusionMapMinimum;
     double                  m_lastScore;
@@ -190,7 +190,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDbRTree3dViewFilter : RtreeViewFilter
 
     virtual int _TestRange(QueryInfo const&) override;
     virtual void _StepRange(BeSQLite::DbFunction::Context&, int nArgs, BeSQLite::DbValue* args) override {RangeAccept(args[0].GetValueInt64());}
-    void RangeAccept(int64_t elementId) ;
+    void RangeAccept(uint64_t elementId) ;
     double MaxOcclusionScore();
 
 public:

@@ -14,6 +14,8 @@
 #include <Bentley/ValueFormat.h>
 #include <DgnPlatform/DgnProperties.h>
 
+DGNPLATFORM_TYPEDEFS (GeometricModel)
+DGNPLATFORM_TYPEDEFS (ResourceModel)
 DGNPLATFORM_TYPEDEFS (DgnModel2d)
 DGNPLATFORM_TYPEDEFS (DgnModel3d)
 DGNPLATFORM_TYPEDEFS (DgnRangeTree)
@@ -21,7 +23,6 @@ DGNPLATFORM_TYPEDEFS (ICheckStop)
 DGNPLATFORM_TYPEDEFS (PlanarPhysicalModel)
 DGNPLATFORM_TYPEDEFS (SheetModel)
 DGNPLATFORM_REF_COUNTED_PTR(SheetModel)
-
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
@@ -213,35 +214,22 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         DgnClassId  m_classId;
         Utf8String  m_name;
         Properties  m_props;
-        ModelSolverDef m_solver;
         //! Parameters to create a new instance of a DgnModel.
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] classId The DgnClassId for the new DgnModel.
         //! @param[in] name The name for the DgnModel
         //! @param[in] props The properties for the new DgnModel.
-        //! @param[in] solver The definition of the solver to be used by this model when validating changes to its content.
         //! @param[in] id Internal only, must be DgnModelId() to create a new DgnModel.
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, Properties props=Properties(), ModelSolverDef solver=ModelSolverDef(), DgnModelId id=DgnModelId()) :
-            m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name), m_props(props), m_solver(solver) {}
-
-        //! Get the model solver
-        ModelSolverDef const& GetSolver() const {return m_solver;}
-        //! Set the model solver
-        void SetSolver(ModelSolverDef const& s) {m_solver=s;}
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, Properties props=Properties(), DgnModelId id=DgnModelId()) :
+            m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name), m_props(props) {}
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
     };
 
 private:
     template<class T> void CallAppData(T const& caller) const;
-    void RegisterElement(DgnElementCR);
-    void SetFilled() {m_filled=true; AllocateRangeIndex();}
-    void AllocateRangeIndex() const;
-    void ClearRangeIndex();
+    void RegisterElement(DgnElementCR el) {_RegisterElement(el);}
     void ReleaseAllElements();
-    void AddToRangeIndex(DgnElementCR);
-    void RemoveFromRangeIndex(DgnElementCR);
-    void UpdateRangeIndex(DgnElementCR modified, DgnElementCR original);
 
 protected:
     DgnDbR          m_dgndb;
@@ -249,27 +237,20 @@ protected:
     DgnClassId      m_classId;
     Utf8String      m_name;
     Properties      m_properties;
-    ModelSolverDef     m_solver;
     DgnElementMap   m_elements;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
-    mutable DgnRangeTreeP m_rangeIndex;
     mutable bool    m_persistent;   // true if this DgnModel is in the DgnModels "loaded models" list.
     bool            m_filled;       // true if the FillModel was called on this DgnModel.
 
     explicit DGNPLATFORM_EXPORT DgnModel(CreateParams const&);
     DGNPLATFORM_EXPORT virtual ~DgnModel();
 
+    virtual void _SetFilled() {m_filled=true;}
+    virtual void DGNPLATFORM_EXPORT _RegisterElement(DgnElementCR element);
+
     DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other);            //!< @private
-    virtual DgnModelType _GetModelType() const = 0; //!< @private
-    virtual DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const = 0; //!< @private
-    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const;//!< @private
-    virtual bool _Is3d() const = 0;//!< @private
     DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const;//!< @private
     DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&);//!< @private
-
-    //! Get the Global Origin for this DgnMode.
-    //! The global origin is on offset that is added to all coordinate values stored in this model.
-    DGNPLATFORM_EXPORT virtual DPoint3d _GetGlobalOrigin() const;//!< @private
 
     /** @name Events associated with DgnElements of a DgnModel */
     /** @{ */
@@ -318,14 +299,14 @@ protected:
     //! @param[in] original The element in its pre-changed state.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    DGNPLATFORM_EXPORT virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original);
+    virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) { }
 
     //! Called after an DgnElement that was previously updated has been reversed by undo.
     //! @param[in] original The element in its original state. This is the state before the original change (the current state)
     //! @param[in] modified The element in its post-changed (now reversed) state.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    DGNPLATFORM_EXPORT virtual void _OnReversedUpdateElement(DgnElementCR original, DgnElementCR modified);
+    virtual void _OnReversedUpdateElement(DgnElementCR original, DgnElementCR modified) { }
 
     //! Called after a DgnElement in this DgnModel has been deleted from the DgnDb
     //! @param[in] element The element that was just deleted.
@@ -343,6 +324,11 @@ protected:
 
     //! Load all of the DgnElements of this DgnModel into memory.
     DGNPLATFORM_EXPORT virtual void _FillModel();
+
+    //! Load this model's data from the database. If overridden, @em must first call the T_Super implementation, forwarding its status.
+    DGNPLATFORM_EXPORT virtual void _ReadProperties();
+    //! Update this model's data in the database. If overridden, @em must first call the T_Super implementation, forwarding its status.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _Update();
 
     /** @name Events for a DgnModel */
     /** @{ */
@@ -371,6 +357,8 @@ protected:
 
     /** @name Dynamic cast shortcuts for a DgnModel */
     /** @{ */
+    virtual GeometricModelCP _ToGeometricModel() const {return nullptr;}
+    virtual ResourceModelCP _ToResourceModel() const {return nullptr;}
     virtual DgnModel2dCP _ToDgnModel2d() const {return nullptr;}
     virtual DgnModel3dCP _ToDgnModel3d() const {return nullptr;}
     virtual PhysicalModelCP _ToPhysicalModel() const {return nullptr;}
@@ -378,19 +366,6 @@ protected:
     virtual SheetModelCP _ToSheetModel() const {return nullptr;}
     /** @} */
 
-    //! Add non-element graphics for this DgnModel to the scene.
-    //! Normally, the scene is generated by QueryViewController from the elements in a model.
-    //! A subclass can override this method to add non-element-based graphics to the scene. Or, a subclass
-    //! can override this method to do add graphics that QueryViewController would normally exclude.
-    //! <h2>Coordinate Systems</h2>
-    //! A DgnDb defines a single physical coordinate system. 
-    //! A DgnDb is associated with a single Geographic Coordinate System (GCS). See DgnUnits::GetDgnGCS.
-    //! Graphics in the scene must be defined in the DgnDb's coordinate system.
-    //! The implementation must transform external data into the coordinate system of the DgnDb as necessary before adding graphics to the scene.
-    //! <h2>Displaying external data using progressive display</h2>
-    //! An implementation of _AddGraphicsToScene is required to be very fast. If some external data is not immediately available, then the implementation should
-    //! a) make arrangements to obtain the data in the background and b) schedule itself for callbacks during progressive display in order to display the data when it becomes available.
-    virtual void _AddGraphicsToScene(ViewContextR) {}
     void ReadProperties();
 
     //! The sublcass should import elements from the source model into this model. 
@@ -432,21 +407,21 @@ protected:
     //! @return CreateParams initialized with the model's current data, remapped to the destination DgnDb.
     DGNPLATFORM_EXPORT CreateParams GetCreateParamsForImport(DgnImportContext& importer) const;
 
+    DGNPLATFORM_EXPORT virtual void _EmptyModel();
+    virtual DgnRangeTree* _GetRangeIndexP(bool create) const {return nullptr;}
+    virtual void _OnValidate() { }
 public:
-    void AddGraphicsToScene(ViewContextR context) {_AddGraphicsToScene(context);}
     DGNPLATFORM_EXPORT ModelHandlerR GetModelHandler() const;
+    DgnRangeTree* GetRangeIndexP(bool create) const {return _GetRangeIndexP(create);}
 
-    DGNPLATFORM_EXPORT DgnRangeTree* GetRangeIndexP(bool create) const; //!< @private
+    //! Returns true if this is a 3d model.
+    bool Is3d() const {return nullptr != ToDgnModel3d();}
+
     DGNPLATFORM_EXPORT DgnElementCP FindElementById(DgnElementId id); //!< @private
-
-    //! Get the Global Origin for this DgnModel.
-    //! The global origin is an offset that is added to all coordinate values of this DgnModel when reporting them to the user.
-    //! @note all PhysicalModels have the same coordinate system and the same global origin.
-    DPoint3d GetGlobalOrigin() const {return _GetGlobalOrigin();}
 
     //! Empty the contents of this DgnModel. This will release any references to DgnElements held by this DgnModel, decrementing
     //! their reference count and potentially freeing them.
-    DGNPLATFORM_EXPORT void EmptyModel();
+    DGNPLATFORM_EXPORT void EmptyModel() {_EmptyModel();}
 
     //! Load all elements of this DgnModel.
     //! After this call, all of the DgnElements of this model are loaded and are held in memory by this DgnModel.
@@ -463,12 +438,6 @@ public:
     //! A newly created model before it is inserted, or a model after calling Delete, is not persistent.
     bool IsPersistent() const {return m_persistent;}
 
-    //! Determine whether this is a 3d DgnModel
-    bool Is3d() const {return _Is3d();}
-
-    //! Get the AxisAlignedBox3d of the contents of this DgnModel.
-    AxisAlignedBox3d QueryModelRange() const {return _QueryModelRange();}
-
     //! Get a writable reference to the Properties for this DgnModel.
     Properties& GetPropertiesR() {return m_properties;}
 
@@ -478,9 +447,6 @@ public:
     //! Get the name of this DgnModel
     Utf8CP GetModelName() const {return m_name.c_str();}
 
-    //! Get the type of this DgnModel
-    DgnModelType GetModelType() const {return _GetModelType();}
-
     //! Get the DgnClassId of this DgnModel
     DgnClassId GetClassId() const {return m_classId;}
 
@@ -489,16 +455,27 @@ public:
 
     //! @name Dynamic casting to DgnModel subclasses
     //@{
+    GeometricModelCP ToGeometricModel() const {return _ToGeometricModel();} //!< more efficient substitute for dynamic_cast<GeometricModelCP>(model)
+    ResourceModelCP ToResourceModel() const {return _ToResourceModel();} //!< more efficient substitute for dynamic_cast<ResourceModelCP>(model)
     DgnModel2dCP ToDgnModel2d() const {return _ToDgnModel2d();} //!< more efficient substitute for dynamic_cast<DgnModel2dCP>(model)
     DgnModel3dCP ToDgnModel3d() const {return _ToDgnModel3d();} //!< more efficient substitute for dynamic_cast<DgnModel3dCP>(model)
     PhysicalModelCP ToPhysicalModel() const {return _ToPhysicalModel();} //!< more efficient substitute for dynamic_cast<PhysicalModelCP>(model)
     PlanarPhysicalModelCP ToPlanarPhysicalModel() const {return _ToPlanarPhysicalModel();} //!< more efficient substitute for dynamic_cast<PlanarPhysicalModelCP>(model)
     SheetModelCP ToSheetModel() const {return _ToSheetModel();} //!< more efficient substitute for dynamic_cast<SheetModelCP>(model)
+    GeometricModelP ToGeometricModelP() {return const_cast<GeometricModelP>(_ToGeometricModel());} //!< more efficient substitute for dynamic_cast<GeometricModelP>(model)
+    ResourceModelP ToResourceModelP() {return const_cast<ResourceModelP>(_ToResourceModel());} //!< more efficient substitute for dynamic_cast<ResourceModelP>(model)
     DgnModel2dP ToDgnModel2dP() {return const_cast<DgnModel2dP>(_ToDgnModel2d());} //!< more efficient substitute for dynamic_cast<DgnModel2dP>(model)
     DgnModel3dP ToDgnModel3dP() {return const_cast<DgnModel3dP>(_ToDgnModel3d());} //!< more efficient substitute for dynamic_cast<DgnModel3dP>(model)
     PhysicalModelP ToPhysicalModelP() {return const_cast<PhysicalModelP>(_ToPhysicalModel());} //!< more efficient substitute for dynamic_cast<PhysicalModelP>(model)
     PlanarPhysicalModelP ToPlanarPhysicalModelP() {return const_cast<PlanarPhysicalModelP>(_ToPlanarPhysicalModel());} //!< more efficient substitute for dynamic_cast<PlanarPhysicalModelP>(model)
     SheetModelP ToSheetModelP() {return const_cast<SheetModelP>(_ToSheetModel());}//!< more efficient substitute for dynamic_cast<SheetModelP>(model)
+
+    bool IsGeometricModel() const { return nullptr != ToGeometricModel(); }
+    bool IsPhysicalModel() const { return nullptr != ToPhysicalModel(); }
+    bool Is2dModel() const { return nullptr != ToDgnModel2d(); }
+    bool Is3dModel() const { return nullptr != ToDgnModel3d(); }
+    bool IsResourceModel() const { return nullptr != ToResourceModel(); }
+    bool IsSheetModel() const { return nullptr != ToSheetModel(); }
     //@}
 
     //! Get the DgnDb of this DgnModel.
@@ -533,24 +510,6 @@ public:
     //! Search for AppData on this model by AppData::Key.
     //! @return the AppData with \a key, or nullptr.
     DGNPLATFORM_EXPORT AppData* FindAppData(AppData::Key const& key) const;
-    /** @} */
-
-    /** @name ModelSolverDef The Model Solver */
-    /** @{ */
-    //! Get the solver that is used to validate this model.
-    ModelSolverDef const& GetSolver() const {return m_solver;}
-
-    //! This method is called when it is time to validate changes that have been made to the model's content during the transaction.
-    //! This method is called by the transaction manager after all element-level changes have been validated and all root models have been solved.
-    //! This method is called only if elements in this model were added, deleted, or modified or if this model object itself was added or modified.
-    //! This method allows a subclass to apply validation logic that requires a view of the entire model and possibly of root models.
-    //! This method may add, delete, or modify elements in this model.
-    //! To indication a validation error, call TxnManager::ReportError. If the error is marked as fatal, then the transaction will be rolled back.
-    //! @note This method must make changes of any kind to any other model. Dependent models will be validated later.
-    DGNPLATFORM_EXPORT virtual void _OnValidate();
-    
-    virtual void _GetSolverOptions(Json::Value&) {;}
-    
     /** @} */
 
     //! Make a copy of this DgnModel with the same DgnClassId and Properties.
@@ -621,6 +580,126 @@ public:
     template<typename T>
     static RefCountedPtr<T> Import(DgnDbStatus* stat, T const& sourceModel, DgnImportContext& importer) {return dynamic_cast<T*>(ImportModel(stat, sourceModel, importer).get());}
 
+    //! This method is called when it is time to validate changes that have been made to the model's content during the transaction.
+    //! This method is called by the transaction manager after all element-level changes have been validated and all root models have been solved.
+    //! This method is called only if elements in this model were added, deleted, or modified or if this model object itself was added or modified.
+    //! This method allows a subclass to apply validation logic that requires a view of the entire model and possibly of root models.
+    //! This method may add, delete, or modify elements in this model.
+    //! To indication a validation error, call TxnManager::ReportError. If the error is marked as fatal, then the transaction will be rolled back.
+    //! @note This method must make changes of any kind to any other model. Dependent models will be validated later.
+    void OnValidate() { _OnValidate(); }
+};
+
+//=======================================================================================
+//! A DgnModel that holds geometric DgnElements.
+//! @ingroup DgnModelGroup
+// @bsiclass                                                    Keith.Bentley   03/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GeometricModel : DgnModel
+{
+    DEFINE_T_SUPER(DgnModel);
+
+    struct CreateParams : T_Super::CreateParams
+    {
+        DEFINE_T_SUPER(GeometricModel::T_Super::CreateParams);
+
+        ModelSolverDef m_solver;
+
+        //! Parameters to create a new instance of a DgnModel.
+        //! @param[in] dgndb The DgnDb for the new DgnModel
+        //! @param[in] classId The DgnClassId for the new DgnModel.
+        //! @param[in] name The name for the DgnModel
+        //! @param[in] props The properties for the new DgnModel.
+        //! @param[in] solver The definition of the solver to be used by this model when validating changes to its content.
+        //! @param[in] id Internal only, must be DgnModelId() to create a new DgnModel.
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, Properties props=Properties(), ModelSolverDef solver=ModelSolverDef(), DgnModelId id=DgnModelId())
+            : T_Super(dgndb, classId, name, props, id), m_solver(solver) { }
+
+        //! @private
+        //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
+        CreateParams(DgnModel::CreateParams const& params) : T_Super(params) { }
+
+        //! Get the model solver
+        ModelSolverDef const& GetSolver() const {return m_solver;}
+        //! Set the model solver
+        void SetSolver(ModelSolverDef const& s) {m_solver=s;}
+    };
+
+private:
+    mutable DgnRangeTreeP m_rangeIndex;
+    ModelSolverDef m_solver;
+
+    DGNPLATFORM_EXPORT void AllocateRangeIndex() const;
+    void AddToRangeIndex(DgnElementCR);
+    void RemoveFromRangeIndex(DgnElementCR);
+    void UpdateRangeIndex(DgnElementCR modified, DgnElementCR original);
+
+protected:
+    void SetSolver(ModelSolverDef const& solver) { m_solver = solver; }
+
+    void ClearRangeIndex();
+
+    virtual void _SetFilled() override {T_Super::_SetFilled(); AllocateRangeIndex();}
+
+    //! Get the Global Origin for this DgnMode.
+    //! The global origin is on offset that is added to all coordinate values stored in this model.
+    DGNPLATFORM_EXPORT virtual DPoint3d _GetGlobalOrigin() const;//!< @private
+
+    //! Get the coordinate space in which the model's geometry is defined.
+    virtual CoordinateSpace _GetCoordinateSpace() const = 0;
+
+    //! Add non-element graphics for this DgnModel to the scene.
+    //! Normally, the scene is generated by QueryViewController from the elements in a model.
+    //! A subclass can override this method to add non-element-based graphics to the scene. Or, a subclass
+    //! can override this method to do add graphics that QueryViewController would normally exclude.
+    //! <h2>Coordinate Systems</h2>
+    //! A DgnDb defines a single physical coordinate system. 
+    //! A DgnDb is associated with a single Geographic Coordinate System (GCS). See DgnUnits::GetDgnGCS.
+    //! Graphics in the scene must be defined in the DgnDb's coordinate system.
+    //! The implementation must transform external data into the coordinate system of the DgnDb as necessary before adding graphics to the scene.
+    //! <h2>Displaying external data using progressive display</h2>
+    //! An implementation of _AddGraphicsToScene is required to be very fast. If some external data is not immediately available, then the implementation should
+    //! a) make arrangements to obtain the data in the background and b) schedule itself for callbacks during progressive display in order to display the data when it becomes available.
+    virtual void _AddGraphicsToScene(ViewContextR) {}
+
+    DGNPLATFORM_EXPORT virtual DgnRangeTree* _GetRangeIndexP(bool create) const override;
+    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const;//!< @private
+    DGNPLATFORM_EXPORT virtual void _EmptyModel() override;
+    DGNPLATFORM_EXPORT virtual void _RegisterElement(DgnElementCR element) override;
+    DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementCR element) override;
+    DGNPLATFORM_EXPORT virtual void _OnReversedAddElement(DgnElementCR element) override;
+    DGNPLATFORM_EXPORT virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) override;
+    DGNPLATFORM_EXPORT virtual void _OnReversedUpdateElement(DgnElementCR modified, DgnElementCR original) override;
+
+    DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other);            //!< @private
+    DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const override;
+    DGNPLATFORM_EXPORT virtual void _ReadProperties();
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _Update();
+    virtual void _GetSolverOptions(Json::Value&) {;}
+    DGNPLATFORM_EXPORT virtual void _OnValidate() override;
+
+    virtual GeometricModelCP _ToGeometricModel() const override {return this;}
+    
+    explicit GeometricModel(CreateParams const& params) : T_Super(params), m_rangeIndex(nullptr), m_solver(params.m_solver) { }
+public:
+    void AddGraphicsToScene(ViewContextR context) {_AddGraphicsToScene(context);}
+
+    //! Get the AxisAlignedBox3d of the contents of this DgnModel.
+    AxisAlignedBox3d QueryModelRange() const {return _QueryModelRange();}
+
+    //! Get the Global Origin for this DgnModel.
+    //! The global origin is an offset that is added to all coordinate values of this DgnModel when reporting them to the user.
+    //! @note all PhysicalModels have the same coordinate system and the same global origin.
+    DPoint3d GetGlobalOrigin() const {return _GetGlobalOrigin();}
+
+    //! Get the coordinate space in which the model's geometry is defined.
+    CoordinateSpace GetCoordinateSpace() const {return _GetCoordinateSpace();}
+
+    //! Get the solver that is used to validate this model.
+    ModelSolverDef const& GetSolver() const {return m_solver;}
+    ModelSolverDef& GetSolver() {return m_solver;}
+
+    void GetSolverOptions(Json::Value& options) { _GetSolverOptions(options); }
 };
 
 //=======================================================================================
@@ -628,13 +707,13 @@ public:
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   03/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnModel3d : DgnModel
+struct EXPORT_VTABLE_ATTRIBUTE DgnModel3d : GeometricModel
 {
-    DEFINE_T_SUPER(DgnModel)
+    DEFINE_T_SUPER(GeometricModel)
 
 protected:
-    virtual bool _Is3d() const override {return true;}
     virtual DgnModel3dCP _ToDgnModel3d() const override {return this;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
 
 public:
     explicit DgnModel3d(CreateParams const& params) : T_Super(params) {}
@@ -645,19 +724,19 @@ public:
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnModel2d : DgnModel
+struct EXPORT_VTABLE_ATTRIBUTE DgnModel2d : GeometricModel
     {
-    DEFINE_T_SUPER(DgnModel)
+    DEFINE_T_SUPER(GeometricModel)
 
 protected:
     DPoint2d m_globalOrigin;    //!< Global Origin - all coordinates are offset by this value.
 
-    bool _Is3d() const override {return false;}
     DGNPLATFORM_EXPORT void _ToPropertiesJson(Json::Value&) const override;
     DGNPLATFORM_EXPORT void _FromPropertiesJson(Json::Value const&) override;
     DPoint3d _GetGlobalOrigin() const override {return DPoint3d::From(m_globalOrigin);}
     DgnModel2dCP _ToDgnModel2d() const override {return this;}
 
+    CoordinateSpace _GetCoordinateSpace() const override {return CoordinateSpace::Local;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element);
 
 public:
@@ -668,7 +747,7 @@ public:
 
 //=======================================================================================
 //! A DgnModel3d that occupies physical space in the DgnDb. All PhysicalModels in a DgnDb have the same coordinate
-//! space (DgnModels::Model::CoordinateSpace::World), aka "Physical Space".
+//! space (CoordinateSpace::World), aka "Physical Space".
 //! DgnElements from PhysicalModels are indexed in the persistent range tree of the DgnDb (the DGN_VTABLE_RTree3d).
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
@@ -677,14 +756,27 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalModel : DgnModel3d
 {
     DEFINE_T_SUPER(DgnModel3d)
 protected:
-    DgnModelType _GetModelType() const override {return DgnModelType::Physical;}
     PhysicalModelCP _ToPhysicalModel() const override {return this;}
-    DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const override {return DgnModels::Model::CoordinateSpace::World;}
+    CoordinateSpace _GetCoordinateSpace() const override {return CoordinateSpace::World;}
 
 public:
     explicit PhysicalModel(CreateParams const& params) : T_Super(params) {}
 };
 
+//=======================================================================================
+//! A model which holds non-geometric resources such as styles and materials.
+//! @ingroup DgnModelGroup
+// @bsiclass                                                    Paul.Connelly   09/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ResourceModel : DgnModel
+{
+    DEFINE_T_SUPER(DgnModel);
+protected:
+    ResourceModelCP _ToResourceModel() const override {return this;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+public:
+    explicit ResourceModel(CreateParams const& params) : T_Super(params) { }
+};
 
 //=======================================================================================
 //! Captures the results of "solving" a ComponentModel.
@@ -929,12 +1021,12 @@ private:
     Utf8String m_elementECClassName;
     Utf8String m_elementCategoryName;
 
-    DgnModelType _GetModelType() const override {return DgnModelType::Component;}
     DPoint3d _GetGlobalOrigin() const override {return DPoint3d::FromZero();}
-    DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const override {return DgnModels::Model::CoordinateSpace::Local;}
+    CoordinateSpace _GetCoordinateSpace() const override {return CoordinateSpace::Local;}
     DGNPLATFORM_EXPORT void _ToPropertiesJson(Json::Value&) const override;//!< @private
     DGNPLATFORM_EXPORT void _FromPropertiesJson(Json::Value const&) override;//!< @private
     DGNPLATFORM_EXPORT void _GetSolverOptions(Json::Value&) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() override;
 
 public:
     /**
@@ -956,7 +1048,7 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus GenerateECClass(ECN::ECSchemaR);
 
     //! @private
-    void Developer_RedefineSolver(ModelSolverDef const& s) {m_solver=s;}
+    void Developer_RedefineSolver(ModelSolverDef const& s) {SetSolver(s);}
 
     /**
     * Utility function to generate ECClasses for all ComponentModels in \a db and add them to \a schema.
@@ -1028,7 +1120,7 @@ public:
     //! Compute the code that would be used by a row in the ComponentSolution table to refer to the current solution of this model.
     //! @return a generated name for the current solution
     //! @see ComponentModel::GetSolver::GetParametersValues
-    ComponentSolution::SolutionId ComputeSolutionId() {return ComputeSolutionId(m_solver.GetParameters());}
+    ComponentSolution::SolutionId ComputeSolutionId() {return ComputeSolutionId(GetSolver().GetParameters());}
     
     DGNPLATFORM_EXPORT ComponentSolution::SolutionId ComputeSolutionId(ModelSolverDef::ParameterSet const& params);
 
@@ -1040,24 +1132,6 @@ public:
     //! @return non-zero error status if the ECSchema could not be imported; DgnDbStatus::DuplicateName if an ECSchema by the same name already exists.
     //! @see GenerateECClass
     DGNPLATFORM_EXPORT static DgnDbStatus ImportSchema(DgnDbR targetDb, BeFileNameCR schemaFile);
-};
-
-//=======================================================================================
-//! A GraphicsModel2d is a DgnModel2d that does not have any relationship to physical space.
-//! @ingroup DgnModelGroup
-// @bsiclass                                                    Sam.Wilson  05/15
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GraphicsModel2d : DgnModel2d
-{
-    DEFINE_T_SUPER(DgnModel2d)
-
-protected:
-    bool _Is3d() const override {return false;}
-    DgnModelType _GetModelType() const override {return DgnModelType::Drawing;}
-    DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const override {return DgnModels::Model::CoordinateSpace::Local;}
-
-public:
-    explicit GraphicsModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params, origin) {}
 };
 
 //=======================================================================================
@@ -1074,8 +1148,6 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysicalModel : DgnModel2d
     DEFINE_T_SUPER(DgnModel2d)
 
 protected:
-    DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const override {return DgnModels::Model::CoordinateSpace::World;}
-    DgnModelType _GetModelType() const override {return DgnModelType::Drawing;}
     PlanarPhysicalModelCP _ToPlanarPhysicalModel() const override {return this;}
 public:
     explicit PlanarPhysicalModel(CreateParams const& params) : T_Super(params) {}
@@ -1108,19 +1180,19 @@ public:
 };
 
 //=======================================================================================
-//! A sheet model is a GraphicsModel2d that has the following characteristics:
+//! A sheet model is a DgnModel2d that has the following characteristics:
 //!     - Has fixed extents (is not infinite), specified in meters.
 //!     - Can contain @b views of other models, like pictures pasted on a photo album.
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SheetModel : GraphicsModel2d
+struct EXPORT_VTABLE_ATTRIBUTE SheetModel : DgnModel2d
 {
-    DEFINE_T_SUPER(GraphicsModel2d)
+    DEFINE_T_SUPER(DgnModel2d)
 
-    struct CreateParams : GraphicsModel2d::CreateParams
+    struct CreateParams : DgnModel2d::CreateParams
     {
-        DEFINE_T_SUPER(GraphicsModel2d::CreateParams);
+        DEFINE_T_SUPER(DgnModel2d::CreateParams);
         DPoint2d m_size;
 
         //! Parameters for creating a new SheetModel.
@@ -1139,9 +1211,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SheetModel : GraphicsModel2d
 protected:
     DPoint2d m_size;
 
-    DgnModelType _GetModelType() const override {return DgnModelType::Sheet;}
     SheetModelCP _ToSheetModel() const override {return this;}
-    DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const override {return DgnModels::Model::CoordinateSpace::Local;}
 
     DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const override;
     DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&) override;
@@ -1200,12 +1270,6 @@ namespace dgn_ModelHandler
         MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_ComponentModel, ComponentModel, Component, Model, DGNPLATFORM_EXPORT)
     };
 
-    //! The ModelHandler for GraphicsModel2d
-    struct EXPORT_VTABLE_ATTRIBUTE Graphics2d : Model
-    {
-        MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_GraphicsModel2d, GraphicsModel2d, Graphics2d, Model, DGNPLATFORM_EXPORT)
-    };
-
     //! The ModelHandler for PlanarPhysicalModel
     struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysical : Model
     {
@@ -1223,6 +1287,19 @@ namespace dgn_ModelHandler
     {
         MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetModel, SheetModel, Sheet, Model, DGNPLATFORM_EXPORT)
     };
+
+    //! The ModelHandler for ResourceModel
+    struct EXPORT_VTABLE_ATTRIBUTE Resource : Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ResourceModel, ResourceModel, Resource, Model, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ModelHandler for Model2d
+    struct EXPORT_VTABLE_ATTRIBUTE Model2d : Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Model2d, DgnModel2d, Model2d, Model, DGNPLATFORM_EXPORT)
+    };
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
+
