@@ -26,8 +26,6 @@ DgnModelId ThreeMxModel::CreateThreeMxModel(DgnDbR db, BeFileNameCR fileName)
     if (SUCCESS != BaseSceneNode::Read3MX (fileName, sceneInfo, err))
         return DgnModelId();
 
-
-
     Utf8String modelName(fileName.GetFileNameWithoutExtension().c_str());
     
     // Create model in DgnDb
