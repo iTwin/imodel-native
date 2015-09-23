@@ -24,7 +24,6 @@
     <ClCompile Include="NonPublished\ECDb\ECInstanceIdSequence_Tests.cpp" />
     <ClCompile Include="NonPublished\ECDb\ECSqlStatementCache_Test.cpp" />
     <ClCompile Include="NonPublished\ECDb\FSRTests.cpp" />
-    <ClCompile Include="Performance\DbLogHelper.cpp" />
     <ClCompile Include="Performance\DevSummitPerformanceTests.cpp" />
     <ClCompile Include="Performance\PerformanceBisDesignStudies_Test.cpp" />
     <ClCompile Include="Performance\PerformanceBisDesignTestFixture.cpp" />
@@ -33,7 +32,6 @@
     <ClCompile Include="Performance\PerformanceJsonComparison.cpp" />
     <ClCompile Include="Performance\PerformanceJsonInserterTests.cpp" />
     <ClCompile Include="Performance\PerformanceSchemaImportTests.cpp" />
-    <ClCompile Include="Performance\PerformanceTestFixture.cpp" />
     <ClCompile Include="Performance\QueryTests.cpp" />
     <ClCompile Include="Published\ECDbFileInfoTests.cpp" />
     <ClCompile Include="Published\ECDbMapCA_Tests.cpp" />
@@ -76,11 +74,9 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\Backdoor.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTests.h" />
     <ClInclude Include="NonPublished\PublicApi\NonPublished\ECDb\ECDbTestProject.h" />
-    <ClInclude Include="Performance\DbLogHelper.h" />
     <ClInclude Include="Performance\PerformanceBisDesignTestFixture.h" />
     <ClInclude Include="Performance\PerformanceECDbMapCATests.h" />
     <ClInclude Include="Performance\PerformanceTests.h" />
-    <ClInclude Include="Performance\PerformanceTestFixture.h" />
     <ClInclude Include="Performance\ProfileBreak.h" />
     <ClInclude Include="Published\ECDbPublishedTests.h" />
     <ClCompile Include="Published\ECDbDateTime_Test.cpp" />
