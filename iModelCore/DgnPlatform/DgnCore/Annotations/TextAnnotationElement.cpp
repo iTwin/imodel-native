@@ -15,11 +15,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 namespace dgn_ElementHandler
 {
 HANDLER_DEFINE_MEMBERS(TextAnnotation);
-}
-
-namespace dgn_AspectHandler
-{
-HANDLER_DEFINE_MEMBERS(TextAnnotationData);
+HANDLER_DEFINE_MEMBERS(PhysicalTextAnnotation);
 }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -101,7 +97,7 @@ void TextAnnotationGraphicsProcessor::_OutputGraphics(ViewContextR context)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2015
 //---------------------------------------------------------------------------------------
-DgnDbStatus TextAnnotationDataAspect::_UpdateProperties(DgnElementCR el)
+DgnDbStatus TextAnnotationItem::_UpdateProperties(DgnElementCR el)
     {
     // T_Super::_UpdateProperties is pure; it is a link error to call super, so don't.
     
@@ -112,7 +108,7 @@ DgnDbStatus TextAnnotationDataAspect::_UpdateProperties(DgnElementCR el)
             return DgnDbStatus::WriteError;
         }
 
-    CachedECSqlStatementPtr update = el.GetDgnDb().GetPreparedECSqlStatement("UPDATE " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationDataAspect) " SET TextAnnotation=? WHERE ECInstanceId=?");
+    CachedECSqlStatementPtr update = el.GetDgnDb().GetPreparedECSqlStatement("UPDATE " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationItem) " SET TextAnnotation=? WHERE ECInstanceId=?");
     if (!update.IsValid())
         return DgnDbStatus::WriteError;
 
@@ -123,7 +119,7 @@ DgnDbStatus TextAnnotationDataAspect::_UpdateProperties(DgnElementCR el)
 
     update->BindId(2, el.GetElementId());
 
-    if (ECSqlStepStatus::Done != update->Step())
+    if (BE_SQLITE_DONE != update->Step())
         return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
@@ -132,17 +128,17 @@ DgnDbStatus TextAnnotationDataAspect::_UpdateProperties(DgnElementCR el)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2015
 //---------------------------------------------------------------------------------------
-DgnDbStatus TextAnnotationDataAspect::_LoadProperties(DgnElementCR el)
+DgnDbStatus TextAnnotationItem::_LoadProperties(DgnElementCR el)
     {
     // T_Super::_LoadProperties is pure; it is a link error to call super, so don't.
     
-    CachedECSqlStatementPtr select = el.GetDgnDb().GetPreparedECSqlStatement("SELECT TextAnnotation FROM " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationDataAspect) " WHERE ECInstanceId=?");
+    CachedECSqlStatementPtr select = el.GetDgnDb().GetPreparedECSqlStatement("SELECT TextAnnotation FROM " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationItem) " WHERE ECInstanceId=?");
     if (!select.IsValid())
         return DgnDbStatus::ReadError;
 
     select->BindId(1, el.GetElementId());
 
-    if ((ECSqlStepStatus::HasRow != select->Step()) || select->IsValueNull(0))
+    if ((BE_SQLITE_ROW != select->Step()) || select->IsValueNull(0))
         {
         m_annotation = nullptr;
         return DgnDbStatus::Success;
@@ -168,40 +164,47 @@ DgnDbStatus TextAnnotationDataAspect::_LoadProperties(DgnElementCR el)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2015
 //---------------------------------------------------------------------------------------
-void TextAnnotationDataAspect::_AppendGeometry(ElementGeometryBuilderR builder, TextAnnotationElementR el) const
+DgnDbStatus TextAnnotationItem::_GenerateElementGeometry(GeometricElementR el, GenerateReason reason)
     {
     if (!m_annotation.IsValid())
-        return;
+        return DgnDbStatus::Success;
+
+    ElementGeometryBuilderPtr builder;
+    DgnElement3dCP elem3d = el.ToElement3d();
+    if (nullptr != elem3d)
+        builder = ElementGeometryBuilder::Create(*el.GetModel(), el.GetCategoryId(), elem3d->GetPlacement().GetOrigin(), elem3d->GetPlacement().GetAngles());
+    else
+        {
+        DgnElement2dCP elem2d = el.ToElement2d();
+        BeAssert(nullptr != elem2d);
+        builder = ElementGeometryBuilder::Create(*el.GetModel(), el.GetCategoryId(), elem2d->GetPlacement().GetOrigin(), elem2d->GetPlacement().GetAngle());
+        }
     
-    TextAnnotationGraphicsProcessor annotationGraphics(*m_annotation, el.GetCategoryId(), builder);
+    TextAnnotationGraphicsProcessor annotationGraphics(*m_annotation, el.GetCategoryId(), *builder);
     ElementGraphicsOutput::Process(annotationGraphics, el.GetDgnDb());
+
+    builder->SetGeomStreamAndPlacement(el);
+    
+    return DgnDbStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2015
 //---------------------------------------------------------------------------------------
-TextAnnotationDataAspectR TextAnnotationElement::GetDataAspectR()
+static TextAnnotationItemR getItemR(DgnElementR el)
     {
-    TextAnnotationDataAspectP aspect = TextAnnotationDataAspect::GetP(*this);
-    if (nullptr == aspect)
+    TextAnnotationItemP item = TextAnnotationItem::GetP(el);
+    if (nullptr == item)
         {
-        aspect = new TextAnnotationDataAspect();
-        TextAnnotationDataAspect::SetAspect(*this, *aspect);
+        item = new TextAnnotationItem();
+        TextAnnotationItem::SetItem(el, *item);
         }
 
-    return *aspect;
+    return *item;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2015
 //---------------------------------------------------------------------------------------
-void TextAnnotationElement::_UpdateGeomStream()
-    {
-    TextAnnotationDataAspectCP dataAspect = GetDataAspectCP();
-    if (nullptr == dataAspect)
-        return;
-    
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*GetModel(), m_categoryId, m_placement.GetOrigin(), m_placement.GetAngle());
-    dataAspect->_AppendGeometry(*builder, *this);
-    builder->SetGeomStreamAndPlacement(*this);
-    }
+TextAnnotationItemR TextAnnotationElement::GetItemR() { return getItemR(*this); }
+TextAnnotationItemR PhysicalTextAnnotationElement::GetItemR() { return getItemR(*this); }

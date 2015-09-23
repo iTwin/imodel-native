@@ -215,7 +215,8 @@ ScanCriteria::Result ScanCriteria::CheckElement(DgnElementCR element, bool doRan
     {
     if (m_type.testCategory)
         {
-        if (!m_categories->Contains(element.GetCategoryId()))
+        auto geomEl = element.ToGeometricElement();
+        if (nullptr == geomEl || !m_categories->Contains(geomEl->GetCategoryId()))
             return  ScanCriteria::Result::Fail;
         }
 

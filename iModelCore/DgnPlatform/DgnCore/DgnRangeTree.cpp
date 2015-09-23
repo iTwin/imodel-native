@@ -2184,7 +2184,7 @@ bool RtreeViewFilter::SkewTest(RTree3dValCP pt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDbRTree3dViewFilter::RangeAccept(int64_t elementId)
+void DgnDbRTree3dViewFilter::RangeAccept(uint64_t elementId)
     {
     BeAssert(m_lastId == elementId);
     
@@ -2385,7 +2385,7 @@ void ProgressiveViewFilter::_StepRange(DbFunction::Context&, int nArgs, DbValue*
 
     ++m_nLastPass;
 
-    DgnElementId elementId(args->GetValueInt64());
+    DgnElementId elementId(args->GetValueUInt64());
     if (nullptr != m_exclude && m_exclude->find(elementId) != m_exclude->end())
         return;
 

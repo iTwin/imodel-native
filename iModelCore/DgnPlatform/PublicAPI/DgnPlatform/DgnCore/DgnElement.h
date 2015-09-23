@@ -24,9 +24,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 namespace dgn_ElementHandler {struct Element; struct Physical; struct Drawing; struct Group;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
-struct MultiAspectMux;
-
-typedef RefCountedPtr<ElementGeometry> ElementGeometryPtr;
+DEFINE_REF_COUNTED_PTR(ElementGeometry)
 
 //=======================================================================================
 //! Holds ID remapping tables
@@ -43,24 +41,18 @@ protected:
     bmap<DgnClassId, DgnClassId> m_classId;
     bmap<DgnAuthorityId, DgnAuthorityId> m_authorityId;
 
-    template<typename T>
-    T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
+    template<typename T> T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
 
 public:
     DgnRemapTables& Get(DgnDbR);
-
     DgnAuthorityId Find(DgnAuthorityId sourceId) const {return Find<DgnAuthorityId>(m_authorityId, sourceId);}
     DgnAuthorityId Add(DgnAuthorityId sourceId, DgnAuthorityId targetId) {return m_authorityId[sourceId] = targetId;}
-
     DgnModelId Find(DgnModelId sourceId) const {return Find<DgnModelId>(m_modelId, sourceId);}
     DgnModelId Add(DgnModelId sourceId, DgnModelId targetId) {return m_modelId[sourceId] = targetId;}
-
     DgnElementId Find(DgnElementId sourceId) const {return Find<DgnElementId>(m_elementId, sourceId);}
     DgnElementId Add(DgnElementId sourceId, DgnElementId targetId) {return m_elementId[sourceId] = targetId;}
-
     DgnGeomPartId Find(DgnGeomPartId sourceId) const {return Find<DgnGeomPartId>(m_geomPartId, sourceId);}
     DgnGeomPartId Add(DgnGeomPartId sourceId, DgnGeomPartId targetId) {return m_geomPartId[sourceId] = targetId;}
-
     DgnCategoryId Find(DgnCategoryId sourceId) const {return Find<DgnCategoryId>(m_categoryId, sourceId);}
     DgnCategoryId Add(DgnCategoryId sourceId, DgnCategoryId targetId) {return m_categoryId[sourceId] = targetId;}
 
@@ -100,21 +92,21 @@ public:
     //! Make sure that a DgnAuthority has been imported
     DGNPLATFORM_EXPORT DgnAuthorityId RemapAuthorityId(DgnAuthorityId sourceId);
     //! Register a copy of a DgnAuthority
-    DGNPLATFORM_EXPORT DgnAuthorityId AddAuthorityId(DgnAuthorityId sourceId, DgnAuthorityId targetId) {return m_remap.Add(sourceId, targetId);}
+    DgnAuthorityId AddAuthorityId(DgnAuthorityId sourceId, DgnAuthorityId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Look up a copy of a model
-    DGNPLATFORM_EXPORT DgnModelId FindModelId(DgnModelId sourceId) const {return m_remap.Find(sourceId);}
+    DgnModelId FindModelId(DgnModelId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a model
-    DGNPLATFORM_EXPORT DgnModelId AddModelId(DgnModelId sourceId, DgnModelId targetId) {return m_remap.Add(sourceId, targetId);}
+    DgnModelId AddModelId(DgnModelId sourceId, DgnModelId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Look up a copy of an element
-    DGNPLATFORM_EXPORT DgnElementId FindElementId(DgnElementId sourceId) const {return m_remap.Find(sourceId);}
+    DgnElementId FindElementId(DgnElementId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of an element
-    DGNPLATFORM_EXPORT DgnElementId AddElementId(DgnElementId sourceId, DgnElementId targetId) {return m_remap.Add(sourceId, targetId);}
+    DgnElementId AddElementId(DgnElementId sourceId, DgnElementId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a GeomPart has been imported
     DGNPLATFORM_EXPORT DgnGeomPartId RemapGeomPartId(DgnGeomPartId sourceId);
     //! Make sure that a Category has been imported
     DGNPLATFORM_EXPORT DgnCategoryId RemapCategory(DgnCategoryId sourceId);
     //! Look up a copy of an subcategory
-    DGNPLATFORM_EXPORT DgnSubCategoryId FindSubCategory(DgnSubCategoryId sourceId) const {return m_remap.Find(sourceId);}
+    DgnSubCategoryId FindSubCategory(DgnSubCategoryId sourceId) const {return m_remap.Find(sourceId);}
     //! Make sure that a SubCategory has been imported
     DGNPLATFORM_EXPORT DgnSubCategoryId RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId sourceId);
     //! Make sure that an ECClass has been imported
@@ -187,21 +179,14 @@ public:
         DgnDbR          m_dgndb;
         DgnModelId      m_modelId;
         DgnClassId      m_classId;
-        DgnCategoryId   m_categoryId;
         Code            m_code;
-        Utf8CP          m_label;
         DgnElementId    m_id;
         DgnElementId    m_parentId;
 
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(),
-                     DgnElementId parent=DgnElementId()) : CreateParams(db, modelId, classId, DgnCategoryId(), label, code, id, parent) { }
-
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(),
-                     DgnElementId parent=DgnElementId()) :
-                     m_dgndb(db), m_modelId(modelId), m_classId(classId), m_categoryId(category), m_label(label), m_code(code), m_id(id), m_parentId(parent) {}
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId())
+            : m_dgndb(db), m_modelId(modelId), m_classId(classId), m_code(code), m_id(id), m_parentId(parent) {}
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
-        void SetLabel(Utf8CP label) {m_label = label;}  //!< Set the label for DgnElements created with this CreateParams
         void SetCode(Code code) {m_code = code;}      //!< Set the code for DgnElements created with this CreateParams
         void SetParentId(DgnElementId parent) {m_parentId=parent;} //!< Set the ParentId for DgnElements created with this CreateParams
     };
@@ -307,7 +292,7 @@ public:
     public:
         //! Prepare to delete this aspect.
         //! @note The aspect will not actually be deleted in the Db until you call DgnElements::Update on the aspect's host element.
-        DGNPLATFORM_EXPORT void Delete() {m_changeType = ChangeType::Delete;}
+        void Delete() {m_changeType = ChangeType::Delete;}
 
         //! Get the ID of the ECClass for this aspect
         DGNPLATFORM_EXPORT DgnClassId GetECClassId(DgnDbR) const;
@@ -319,7 +304,7 @@ public:
         DGNPLATFORM_EXPORT virtual RefCountedPtr<DgnElement::Aspect> _CloneForImport(DgnElementCR sourceEl, DgnImportContext& importer) const;
 
         //! The subclass should override this method if it holds any IDs that must be remapped when it is copied (perhaps between DgnDbs)
-        DGNPLATFORM_EXPORT virtual DgnDbStatus _RemapIds(DgnElementCR el, DgnImportContext& context) {return DgnDbStatus::Success;}
+        virtual DgnDbStatus _RemapIds(DgnElementCR el, DgnImportContext& context) {return DgnDbStatus::Success;}
     };
 
     //! Represents an ElementAspect subclass for the case where the host Element can have multiple instances of the subclass.
@@ -419,9 +404,9 @@ public:
     };
 
     //! Represents a dgn.ElementItem.
-    //! dgn.ElementItem is-a dgn.ElementUniqueAspect. A dgn.Element can have 0 or 1 dgn.ElementItems, and the dgn.ElementItem always has the ID as the host dgn.Element.
+    //! dgn.ElementItem is-a dgn.ElementUniqueAspect. A dgn.Element can have 0 or 1 dgn.ElementItems, and the dgn.ElementItem always has the Id of its host dgn.Element.
     //! Note that the item's actual class can vary, as long as it is a subclass of dgn.ElementItem.
-    //! ElementItems instances are always stored in the dgn.ElementItem table (TablePerHierarchy).
+    //! ElementItems instances are always stored in the dgn.ElementItem table.
     //! <p>
     //! A dgn.ElementItem is normally used to capture the definition of the host element's geometry.
     //! The ElementItem is also expected to supply the algorithm for generating the host element's geometry from its definition.
@@ -451,18 +436,16 @@ public:
             };
 
     private:
-        static Key s_key;
-        static Key& GetKey() {return s_key;}
-
+        static Key& GetKey();
         static Item* Find(DgnElementCR);
         static Item* Load(DgnElementCR);
 
         DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el) override final; // *** WIP_ECSQL Polymorphic delete
         DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override final;
-        DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(DgnElementR el) override final {return CallGenerateElementGeometry(el, GenerateReason::Insert);}
-        DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementR el, DgnElementCR original) override final {return CallGenerateElementGeometry(el, GenerateReason::Update);}
+        DgnDbStatus _OnInsert(DgnElementR el) override final {return CallGenerateGeometry(el, GenerateReason::Insert);}
+        DgnDbStatus _OnUpdate(DgnElementR el, DgnElementCR original) override final {return CallGenerateGeometry(el, GenerateReason::Update);}
         static void SetItem0(DgnElementCR el, Item& item);
-        DgnDbStatus CallGenerateElementGeometry(DgnElementR, GenerateReason);
+        DGNPLATFORM_EXPORT DgnDbStatus CallGenerateGeometry(DgnElementR, GenerateReason);
 
     protected:
         //! The subclass must implement this method to generate geometry and store it on \a el.
@@ -542,7 +525,8 @@ public:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
 private:
-    void GetParamList(bvector<Utf8String>& paramList, bool isForUpdate = false);
+    void GetParamList(bvector<Utf8CP>& paramList, bool isForUpdate);
+    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement, bool isForUpdate);
     template<class T> void CallAppData(T const& caller) const;
 
 protected:
@@ -563,9 +547,7 @@ protected:
     DgnElementId    m_parentId;
     DgnModelId      m_modelId;
     DgnClassId      m_classId;
-    DgnCategoryId   m_categoryId;
     Code            m_code;
-    Utf8String      m_label;
     mutable Flags   m_flags;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
@@ -575,7 +557,7 @@ protected:
     void SetPersistent(bool val) const {m_flags.m_persistent = val;} //!< @private
     
     //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
-    void    CopyForCloneFrom(DgnElementCR src);
+    void CopyForCloneFrom(DgnElementCR src);
 
     DGNPLATFORM_EXPORT virtual ~DgnElement();
 
@@ -588,10 +570,10 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnInsert, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert();
 
-    //! Called to get a list of parameters/properties that need to be inserted when inserting a new element in the table.
+    //! Called to get a list of parameters/properties that need to be added when inserting a new element in the table.
     //! @note If you override this method, you must call T_Super::_GetInsertParams in order to get the superclasses' properties.
     //! This call will be followed by a call to _BindInsertParams which will actually bind the parameter values to the statement.
-    DGNPLATFORM_EXPORT virtual void _GetInsertParams(bvector<Utf8String>& insertParams);
+    DGNPLATFORM_EXPORT virtual void _GetInsertParams(bvector<Utf8CP>& insertParams);
 
     //! Called to bind the element's property values to the ECSqlStatement when inserting
     //! a new element.  The parameters to bind were the ones that were added in the call
@@ -601,11 +583,10 @@ protected:
     //! Then you @em must call T_Super::_BindInsertParams, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement);
 
-    //! Called after a DgnElement was inserted into the database.  Override this
-    //! only if your derived class needs to insert into a secondary table that is dependent
-    //! on a foreign key from the initial insert.
-    //! @note If you override this method, you @em must call T_Super::_InsertSecondary() first.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertSecondary();
+    //! Override this method if your element needs to do additional Inserts into the database (for example,
+    //! insert a relationship between the element and something else).
+    //! @note If you override this method, you @em must call T_Super::_InsertInDb() first.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb();
 
     //! Called after a DgnElement was successfully inserted into the database.
     //! @note If you override this method, you @em must call T_Super::_OnInserted.
@@ -622,10 +603,24 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnUpdate, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR original);
 
+    //! Called to get a list of parameters/properties that need to be added when updating an element in the table.
+    //! @note If you override this method, you must call T_Super::_GetUpdateParams in order to get the superclasses' properties.
+    //! This call will be followed by a call to _BindUpdateParams which will actually bind the parameter values to the statement.
+    DGNPLATFORM_EXPORT virtual void _GetUpdateParams(bvector<Utf8CP>& updateParams);
+
+    //! Called to bind the element's property values to the ECSqlStatement when updating
+    //! an existing element.  The parameters to bind were the ones that were added in the call
+    //! to _GetUpdateParams.  
+    //! @note If you override this method, you should bind your subclass properties
+    //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
+    //! Then you @em must call T_Super::_BindUpdateParams, forwarding its status.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
+
     //! Called to update a DgnElement in the DgnDb with new values. Override to update subclass properties.
     //! @note This method is called from DgnElements::Update, on the persistent element, after its values have been
-    //! copied from the modified version. If the update fails, the original data will be copied back into this DgnElement.
-    //! @note If you override this method, you @em must call T_Super::_UpdateInDb, forwarding its status.
+    //! copied from the modified version. If the update fails, the original data will be copied back into this DgnElement.  Only
+    //! override this method if your element needs to do additional work when updating the element, such as updating
+    //! a relationship.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb();
 
     //! Called after a DgnElement was successfully updated. The element will be in its post-updated state.
@@ -739,19 +734,13 @@ protected:
     //! Get the display label (for use in the GUI) for this DgnElement.
     //! The default implementation returns the label if set or the code if the label is not set.
     //! Override to generate the display label in a different way.
-    virtual Utf8String _GetDisplayLabel() const {return !m_label.empty() ? GetLabel() : GetCode().GetValue();}
+    virtual Utf8String _GetDisplayLabel() const {return GetCode().GetValue();}
 
     //! Change the parent (owner) of this DgnElement.
     //! The default implementation sets the parent without doing any checking.
     //! @return DgnDbStatus::Success if the parentId was changed, error status otherwise.
     //! Override to validate the parent/child relationship and return a value other than DgnDbStatus::Success to reject proposed new parent.
     virtual DgnDbStatus _SetParentId(DgnElementId parentId) {m_parentId = parentId; return DgnDbStatus::Success;}
-
-    //! Change the category of this DgnElement.
-    //! The default implementation sets the category without doing any checking.
-    //! Override to validate the category.
-    //! @return DgnDbStatus::Success if the categoryId was changed, error status otherwise.
-    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId; return DgnDbStatus::Success;}
 
     //! Change the code of this DgnElement.
     //! The default implementation sets the code without doing any checking.
@@ -934,16 +923,6 @@ public:
     //! @note This call can fail if a DgnElement subclass overrides _SetParentId and rejects the parent.
     DgnDbStatus SetParentId(DgnElementId parentId) {return _SetParentId(parentId);}
 
-    //! Get the category of this DgnElement.
-    //! @see SetCategoryId
-    DgnCategoryId GetCategoryId() const {return m_categoryId;}
-
-    //! Set the category of this DgnElement.
-    //! @see GetCategoryId, _SetCategoryId
-    //! @return DgnDbStatus::Success if the category was set
-    //! @note This call can fail if a subclass overrides _SetCategoryId and rejects the category.
-    DgnDbStatus SetCategoryId(DgnCategoryId categoryId) {return _SetCategoryId(categoryId);}
-
     //! Get the code (business key) of this DgnElement.
     Code GetCode() const {return m_code;}
 
@@ -952,12 +931,6 @@ public:
     //! @return DgnDbStatus::Success if the code was set
     //! @note This call can fail if a subclass overrides _SetCode and rejects the code.
     DgnDbStatus SetCode(Code const& code) {return _SetCode(code);}
-
-    //! Get the optional label (user-friendly name) of this DgnElement.
-    Utf8CP GetLabel() const {return m_label.c_str();}
-
-    //! Set the label (user-friendly name) of this DgnElement.
-    void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);}
 
     //! Query the database for the last modified time of this DgnElement.
     DGNPLATFORM_EXPORT DateTime QueryTimeStamp() const;
@@ -1123,26 +1096,46 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
     {
         DEFINE_T_SUPER(GeometricElement::T_Super::CreateParams);
 
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(),
-                     DgnElementId parent=DgnElementId()) : T_Super(db, modelId, classId, category, label, code, id, parent) {} 
+        DgnCategoryId m_categoryId;
 
-        CreateParams(T_Super const& params) : T_Super(params) { }
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId())
+            : T_Super(db, modelId, classId, code, id, parent), m_categoryId(category) { }
+
+        CreateParams(T_Super const& params, DgnCategoryId category = DgnCategoryId()) : T_Super(params), m_categoryId(category) { }
     };
 protected:
     GeomStream m_geom;
+    DgnCategoryId   m_categoryId;
+
+    //! Change the category of this DgnElement.
+    //! The default implementation sets the category without doing any checking.
+    //! Override to validate the category.
+    //! @return DgnDbStatus::Success if the categoryId was changed, error status otherwise.
+    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId; return DgnDbStatus::Success;}
+    DGNPLATFORM_EXPORT virtual void _GetInsertParams(bvector<Utf8CP>& insertParams) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT virtual void _GetUpdateParams(bvector<Utf8CP>& updateParams) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR original) override;
 
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
-    DGNPLATFORM_EXPORT DgnDbStatus _InsertSecondary() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     virtual DgnDbStatus _BindPlacement(BeSQLite::Statement&) = 0;
     GeometricElementCP _ToGeometricElement() const override {return this;}
     DgnDbStatus WriteGeomStream(BeSQLite::Statement&, DgnDbR);
-    explicit GeometricElement(CreateParams const& params) : T_Super(params) {}
+    explicit GeometricElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId) {}
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() +(sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
     virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
 
+//__PUBLISH_SECTION_END__
+public:
+    // NB: This only exists until _LoadFromDb() is fixed up...we need to set the category directly when reading from db, without validating through _SetCategoryId().
+    void SetCategoryIdInternal(DgnCategoryId id) { m_categoryId = id; }
+//__PUBLISH_SECTION_START__
 public:
     DGNPLATFORM_EXPORT QvCache* GetMyQvCache() const;
     DGNPLATFORM_EXPORT QvElem* GetQvElem(uint32_t index) const;
@@ -1161,6 +1154,16 @@ public:
 
     //! Get a writable reference to the GeomStream for this GeometricElement.
     GeomStreamR GetGeomStreamR() {return m_geom;}
+
+    //! Get the category of this DgnElement.
+    //! @see SetCategoryId
+    DgnCategoryId GetCategoryId() const {return m_categoryId;}
+
+    //! Set the category of this DgnElement.
+    //! @see GetCategoryId, _SetCategoryId
+    //! @return DgnDbStatus::Success if the category was set
+    //! @note This call can fail if a subclass overrides _SetCategoryId and rejects the category.
+    DgnDbStatus SetCategoryId(DgnCategoryId categoryId) {return _SetCategoryId(categoryId);}
 };
 
 //=======================================================================================
@@ -1177,10 +1180,10 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : GeometricElement
     DEFINE_T_SUPER(DgnElement3d::T_Super::CreateParams);
 
     Placement3dCR m_placement;
-    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-        T_Super(db, modelId, classId, category, label, code, id, parent), m_placement(placement) {}
+    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+        T_Super(db, modelId, classId, category, code, id, parent), m_placement(placement) {}
 
-    explicit CreateParams(DgnElement::CreateParams const& params, Placement3dCR placement=Placement3d()) : T_Super(params), m_placement(placement){}
+    explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId(), Placement3dCR placement=Placement3d()) : T_Super(params, category), m_placement(placement){}
     };
 
 protected:
@@ -1242,10 +1245,10 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : GeometricElement
 
     Placement2dCR m_placement;
 
-    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-        T_Super(db, modelId, classId, category, label, code, id, parent), m_placement(placement) {}
+    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+        T_Super(db, modelId, classId, category, code, id, parent), m_placement(placement) {}
 
-    explicit CreateParams(DgnElement::CreateParams const& params, Placement2dCR placement=Placement2d()) : T_Super(params), m_placement(placement){}
+    explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId(), Placement2dCR placement=Placement2d()) : T_Super(params, category), m_placement(placement){}
     };
 
 protected:
@@ -1322,7 +1325,7 @@ public:
     //! Create a new instance of a DgnElement using the specified CreateParams.
     //! @note This is a static method that only creates instances of the ElementGroup class. To create instances of subclasses,
     //! use a static method on the subclass.
-    static ElementGroupPtr Create(CreateParams const& params) { return new ElementGroup(params); }
+    static ElementGroupPtr Create(CreateParams const& params) {return new ElementGroup(params);}
 
     //! Query the DgnClassId for the dgn.ElementGroup class in the specified DgnDb.
     //! @note This is a static method that always returns the DgnClassId of the dgn.ElementGroup class - it does @b not return the class of a specific instance.
@@ -1345,7 +1348,7 @@ public:
 
     //! Query for the set of members of this ElementGroup
     //! @see QueryFromMember
-    DgnElementIdSet QueryMembers() const { return _QueryMembers(); }
+    DgnElementIdSet QueryMembers() const {return _QueryMembers();}
 
     //! Query an ElementGroup from a member element.
     //! @param[in] db the DgnDb to query
@@ -1412,9 +1415,9 @@ private:
     void DropFromPool(DgnElementCR) const;
     void SendOnLoadedEvent(DgnElementR elRef) const;
     void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
-    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;
+    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, DgnCategoryId categoryId, bool makePersistent) const;
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
-    DgnElementId GetNextId();
+    void InitNextId();
     DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);
     DgnDbStatus PerformDelete(DgnElementCR);
     explicit DgnElements(DgnDbR db);
@@ -1532,7 +1535,7 @@ struct InstanceBackedItem : DgnElement::Item
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(DgnElementCR) override;
     DGNPLATFORM_EXPORT DgnDbStatus _GenerateElementGeometry(GeometricElementR el, GenerateReason) override;
 
-    InstanceBackedItem() {;}
+    InstanceBackedItem() {}
 
     void SetInstanceId(BeSQLite::EC::ECInstanceId eid);
 };

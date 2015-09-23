@@ -99,15 +99,14 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
-        <ECProperty propertyName="Type" typeName="int" />
         <ECProperty propertyName="Props" typeName="string" />
-        <ECProperty propertyName="Solver" typeName="string" />
         <ECProperty propertyName="Visibility" typeName="int" />
-        <ECProperty propertyName="DependencyIndex" typeName="int" />
     </ECClass>
     <ECClass typeName="GeometricModel" isDomainClass="True">
         <BaseClass>Model</BaseClass>
         <ECProperty propertyName="Space" typeName="int" />
+        <ECProperty propertyName="Solver" typeName="string" />
+        <ECProperty propertyName="DependencyIndex" typeName="int" />
     </ECClass>
     <ECClass typeName="Model3d" isDomainClass="True">
         <BaseClass>GeometricModel</BaseClass>
@@ -119,9 +118,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>Model3d</BaseClass>
     </ECClass>
     <ECClass typeName="PlanarPhysicalModel" isDomainClass="True">
-        <BaseClass>Model2d</BaseClass>
-    </ECClass>
-    <ECClass typeName="GraphicsModel2d" isDomainClass="True">
         <BaseClass>Model2d</BaseClass>
     </ECClass>
     <ECClass typeName="SectionDrawingModel" isDomainClass="True">
@@ -423,14 +419,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="CategoryId" typeName="long">
-            <!-- Foreign key relationship: ElementIsInCategory.CategoryId -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>True</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
         <ECProperty propertyName="ParentId" typeName="long">
             <!-- Foreign key relationship: ElementOwnsChildElements.ParentId -->
             <ECCustomAttributes>
@@ -468,15 +456,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="Label" typeName="string">
-            <!-- An optional "friendly" way of referring to this Element. This is typically a string that the user typed in. -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>True</IsNullable>
-                    <Collation>NoCase</Collation>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
         <ECProperty propertyName="LastMod" typeName="dateTime">
             <ECCustomAttributes>
                 <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
@@ -488,6 +467,14 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
 
     <ECClass typeName="GeometricElement" isDomainClass="False">
         <BaseClass>Element</BaseClass>
+        <ECProperty propertyName="CategoryId" typeName="long">
+            <!-- Foreign key relationship: ElementIsInCategory.CategoryId -->
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>True</IsNullable><!-- Because Element uses shared table. Non-null categories enforced in code for geometric elements -->
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
     </ECClass>
 
     <ECClass typeName="Element3d" isDomainClass="False">
@@ -669,14 +656,17 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECProperty>
     </ECClass>
 
+    <ECClass typeName="TextAnnotationItem" isDomainClass="True">
+        <BaseClass>ElementItem</BaseClass>
+        <ECProperty propertyName="TextAnnotation" typeName="binary"/>
+    </ECClass>
     <ECClass typeName="TextAnnotationElement" isDomainClass="True">
         <BaseClass>DrawingElement</BaseClass>
     </ECClass>
-    <ECClass typeName="TextAnnotationDataAspect" isDomainClass="True">
-        <BaseClass>ElementUniqueAspect</BaseClass>
-        <ECProperty propertyName="TextAnnotation" typeName="binary"/>
+    <ECClass typeName="PhysicalTextAnnotationElement" isDomainClass="True">
+        <BaseClass>PhysicalElement</BaseClass>
     </ECClass>
-
+    
     <ECClass typeName="Material" isDomainClass="True" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
@@ -938,7 +928,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
 
     <ECRelationshipClass typeName="ElementIsInCategory" isDomainClass="True" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,N)"  roleLabel="has N elements" polymorphic="True">
-            <Class class="Element">
+            <Class class="GeometricElement">
                 <Key>
                     <Property name="CategoryId" />
                 </Key>

@@ -39,10 +39,10 @@ TEST(BasicAnnotationLeaderStyleTest, PropertyBagTypes)
     {
     AnnotationLeaderStylePropertyBagPtr data = AnnotationLeaderStylePropertyBag::Create();
 
-    data->SetIntegerProperty(AnnotationLeaderStyleProperty::LineColor, 2);
+    data->SetIntegerProperty(AnnotationLeaderStyleProperty::LineColorValue, 2);
     data->SetIntegerProperty(AnnotationLeaderStyleProperty::LineType, (int64_t)AnnotationLeaderLineType::Straight);
     data->SetIntegerProperty(AnnotationLeaderStyleProperty::LineWeight, 2);
-    data->SetIntegerProperty(AnnotationLeaderStyleProperty::TerminatorColor, 1);
+    data->SetIntegerProperty(AnnotationLeaderStyleProperty::TerminatorColorValue, 1);
     data->SetRealProperty(AnnotationLeaderStyleProperty::TerminatorScaleFactor, 2.0);
     data->SetIntegerProperty(AnnotationLeaderStyleProperty::TerminatorType, (int64_t)AnnotationLeaderTerminatorType::OpenArrow);
     data->SetIntegerProperty(AnnotationLeaderStyleProperty::TerminatorWeight, 1);
@@ -51,8 +51,8 @@ TEST(BasicAnnotationLeaderStyleTest, PropertyBagTypes)
 #define DECLARE_AND_SET_DATA_1(STYLE_PTR)\
     Utf8String name = "MyStyle";                                                                STYLE_PTR->SetName(name.c_str());\
     Utf8String description = "MyDescription";                                                   STYLE_PTR->SetDescription(description.c_str());\
-    ElementColor lineColor(ColorDef(0xff, 0x00, 0x00));                                         STYLE_PTR->SetLineColor(lineColor);\
-    ElementColor terminatorColor(ColorDef(0xff, 0xff, 0x00));                                   STYLE_PTR->SetTerminatorColor(terminatorColor);\
+    ColorDef lineColor(0xff, 0x00, 0x00);                                                       STYLE_PTR->SetLineColorValue(lineColor);\
+    ColorDef terminatorColor(0xff, 0xff, 0x00);                                                 STYLE_PTR->SetTerminatorColorValue(terminatorColor);\
     AnnotationLeaderLineType lineType = AnnotationLeaderLineType::Curved;                       STYLE_PTR->SetLineType(lineType);\
     uint32_t lineWeight=3;                                                                      STYLE_PTR->SetLineWeight(lineWeight); \
     double terminatorScaleFactor = 2.1;                                                         STYLE_PTR->SetTerminatorScaleFactor(terminatorScaleFactor);\
@@ -62,8 +62,8 @@ TEST(BasicAnnotationLeaderStyleTest, PropertyBagTypes)
 #define VERIFY_DATA_1(STYLE_PTR)\
     EXPECT_TRUE(name.Equals(STYLE_PTR->GetName()));\
     EXPECT_TRUE(description.Equals(STYLE_PTR->GetDescription()));\
-    EXPECT_TRUE(lineColor == STYLE_PTR->GetLineColor());\
-    EXPECT_TRUE(terminatorColor == STYLE_PTR->GetTerminatorColor());\
+    EXPECT_TRUE(lineColor == STYLE_PTR->GetLineColorValue());\
+    EXPECT_TRUE(terminatorColor == STYLE_PTR->GetTerminatorColorValue());\
     EXPECT_TRUE(lineType == STYLE_PTR->GetLineType());\
     EXPECT_TRUE(lineWeight == STYLE_PTR->GetLineWeight());\
     EXPECT_TRUE(terminatorScaleFactor == STYLE_PTR->GetTerminatorScaleFactor());\
@@ -91,10 +91,10 @@ TEST_F(AnnotationLeaderStyleTest, DefaultsAndAccessors)
     // Defaults
     EXPECT_TRUE(style->GetName().empty());
     EXPECT_TRUE(style->GetDescription().empty());
-    EXPECT_TRUE(style->GetLineColor().IsByCategory());
+    EXPECT_TRUE(0 == style->GetLineColorValue().GetValue());
     EXPECT_TRUE(AnnotationLeaderLineType::None == style->GetLineType());
     EXPECT_TRUE(0 == style->GetLineWeight());
-    EXPECT_TRUE(style->GetTerminatorColor().IsByCategory());
+    EXPECT_TRUE(0 == style->GetTerminatorColorValue().GetValue());
     EXPECT_TRUE(1.0 == style->GetTerminatorScaleFactor());
     EXPECT_TRUE(AnnotationLeaderTerminatorType::None == style->GetTerminatorType());
     EXPECT_TRUE(0 == style->GetTerminatorWeight());
@@ -179,9 +179,9 @@ TEST_F(AnnotationLeaderStyleTest, TableReadWrite)
     ASSERT_TRUE(mutatedStyle.IsValid());
 
     name = "DifferentName"; mutatedStyle->SetName(name.c_str());
-    lineColor = ElementColor(ColorDef(0x00, 0xff, 0x00)); mutatedStyle->SetLineColor(lineColor);
+    lineColor = ColorDef(0x00, 0xff, 0x00); mutatedStyle->SetLineColorValue(lineColor);
     lineWeight = 5; mutatedStyle->SetLineWeight(lineWeight);
-    terminatorColor = ElementColor(ColorDef(0xff, 0xff, 0x00)); mutatedStyle->SetTerminatorColor(terminatorColor);
+    terminatorColor = ColorDef(0xff, 0xff, 0x00); mutatedStyle->SetTerminatorColorValue(terminatorColor);
 
     ASSERT_TRUE(SUCCESS == project.Styles().AnnotationLeaderStyles().Update(*mutatedStyle));
 
