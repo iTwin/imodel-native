@@ -6,12 +6,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../NonPublished/PublicApi/NonPublished/ECDb/ECDbTestProject.h"
-#include"PerformanceTestFixture.h"
+#include "PerformanceTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-struct PerformanceTestsSchemaImport : public ::testing::Test
+struct PerformanceTestsSchemaImport : public PerformanceTestFixtureBase
     {
     static ECN::ECSchemaPtr CreateTestSchema (size_t noOfClass, size_t propertiesPerClass, bool customAttributeOnSchema, bool customAttributesOnClasses, bool customAttributesOnProperties, size_t NumberOfCustomAttributes);
     static void SetStruct1Val (StandaloneECInstancePtr instance, int intVal, Utf8CP stringVal, bool boolVal);

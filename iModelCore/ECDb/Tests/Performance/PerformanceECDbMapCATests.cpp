@@ -14,6 +14,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceECDbMapCATestFixture::ReadInstances(ECDbR ecdb)
     {
+    m_selectTime = -1.0;
     int instanceId = 1;
     //printf("Start profiling and press key tp continue..."); getchar();
     StopWatch timer(true);
@@ -22,18 +23,21 @@ void PerformanceECDbMapCATestFixture::ReadInstances(ECDbR ecdb)
         Utf8CP selectSql = kvPair.second.m_selectECSql.c_str();
 
         ECSqlStatement stmt;
-        auto stat = stmt.Prepare (ecdb, selectSql);
-        LOG.infov ("Generated Select Sql:  %s \n Actual Select ECSql:  %s", stmt.GetNativeSql (), selectSql);
-        ASSERT_EQ (ECSqlStatus::Success, stat) << "preparation failed for " << selectSql;
+        ECSqlStatus stat = stmt.Prepare(ecdb, selectSql);
+        if (!stat.IsSuccess())
+            return;
+
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
-            ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt64 (1, (int64_t)(instanceId++)));
-            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "step failed for " << selectSql;
-            stmt.Reset ();
-            stmt.ClearBindings ();
+            if (!stmt.BindInt64(1, (int64_t) (instanceId++)).IsSuccess())
+                return;
+
+            stmt.Step();
+            stmt.Reset();
+            stmt.ClearBindings();
             }
         }
-    timer.Stop ();
+    timer.Stop();
     //printf("Stop profiling and press key to continue..."); getchar();
     m_selectTime = timer.GetElapsedSeconds();
     LOG.infov("ECSQL SELECT %d instances each from %d classes took %.4f s.", m_instancesPerClass, m_sqlTestItems.size(), m_selectTime);
@@ -44,26 +48,32 @@ void PerformanceECDbMapCATestFixture::ReadInstances(ECDbR ecdb)
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceECDbMapCATestFixture::DeleteInstances(ECDbR ecdb)
     {
+    m_deleteTime = -1.0;
     int instanceId = 1;
     //printf("Start profiling and press key tp continue..."); getchar();
-    StopWatch timer (true);
+    StopWatch timer(true);
     for (auto const& kvPair : m_sqlTestItems)
         {
         Utf8CP deleteSql = kvPair.second.m_deleteECSql.c_str();
 
         ECSqlStatement stmt;
-        ECSqlStatus stat = stmt.Prepare (ecdb, deleteSql);
-        LOG.infov ("Generated Delect Sql:  %s \n Actual Delete ECSql:  %s", stmt.GetNativeSql (), deleteSql);
-        ASSERT_EQ (ECSqlStatus::Success, stat) << "Preparation Failed for " << deleteSql;
+        ECSqlStatus stat = stmt.Prepare(ecdb, deleteSql);
+        if (!stat.IsSuccess())
+            return;
+
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
-            ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt64 (1, (int64_t)(instanceId++)));
-            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "step failed for " << deleteSql;
-            stmt.Reset ();
-            stmt.ClearBindings ();
+            if (!stmt.BindInt64(1, (int64_t) (instanceId++)).IsSuccess())
+                return;
+
+            if (BE_SQLITE_DONE != stmt.Step())
+                return;
+
+            stmt.Reset();
+            stmt.ClearBindings();
             }
         }
-    timer.Stop ();
+    timer.Stop();
     //printf("Stop profiling and press key to continue..."); getchar();
     m_deleteTime = timer.GetElapsedSeconds();
     LOG.infov("ECSQL DELETE %d instances each from %d classes took %.4f s.", m_instancesPerClass, m_sqlTestItems.size(), m_deleteTime);
@@ -74,27 +84,34 @@ void PerformanceECDbMapCATestFixture::DeleteInstances(ECDbR ecdb)
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceECDbMapCATestFixture::UpdateInstances(ECDbR ecdb)
     {
+    m_updateTime = -1.0;
     int instanceId = 1;
-    StopWatch timer (true);
+    StopWatch timer(true);
     for (auto const& kvPair : m_sqlTestItems)
         {
         ECClassCP testClass = kvPair.first;
         Utf8CP updateSql = kvPair.second.m_updateECSql.c_str();
-        const int propertyCount = (int)testClass->GetPropertyCount (true);
+        const int propertyCount = (int) testClass->GetPropertyCount(true);
 
         ECSqlStatement stmt;
         ECSqlStatus stat = stmt.Prepare(ecdb, updateSql);
-        LOG.infov ("Generated Update Sql:  %s \n Actual Update ECSql:  %s", stmt.GetNativeSql (), updateSql);
-        ASSERT_EQ(ECSqlStatus::Success, stat) << "preparation failed for " << updateSql;
+        if (!stat.IsSuccess())
+            return;
+
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
             for (int parameterIndex = 1; parameterIndex <= propertyCount; parameterIndex++)
                 {
-                ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(parameterIndex, ("UpdatedValue"), IECSqlBinder::MakeCopy::No));
+                if (!stmt.BindText(parameterIndex, ("UpdatedValue"), IECSqlBinder::MakeCopy::No).IsSuccess())
+                    return;
                 }
 
-            ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt64 (propertyCount + 1, (int64_t)(instanceId++)));
-            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "step failed for " << updateSql;
+            if (!stmt.BindInt64(propertyCount + 1, (int64_t) (instanceId++)).IsSuccess())
+                return;
+
+            if (BE_SQLITE_DONE != stmt.Step())
+                return;
+
             stmt.Reset ();
             stmt.ClearBindings ();
             }
@@ -109,6 +126,7 @@ void PerformanceECDbMapCATestFixture::UpdateInstances(ECDbR ecdb)
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceECDbMapCATestFixture::InsertInstances(ECDbR ecdb)
     {
+    m_insertTime = -1.0;
     int instanceId = 1;
     StopWatch timer (true);
     for (auto const& kvPair : m_sqlTestItems)
@@ -118,19 +136,24 @@ void PerformanceECDbMapCATestFixture::InsertInstances(ECDbR ecdb)
         const int propertyCount = (int)testClass->GetPropertyCount (true);
 
         ECSqlStatement stmt;
-        auto stat = stmt.Prepare (ecdb, insertSql);
-        LOG.infov ("Generated Insert Sql:  %s \n Actual Insert ECSql:  %s", stmt.GetNativeSql (), insertSql);
-        ASSERT_EQ (ECSqlStatus::Success, stat) << "Preparation failed for " << insertSql;
+        ECSqlStatus stat = stmt.Prepare (ecdb, insertSql);
+        if (!stat.IsSuccess())
+            return;
+
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
-            ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, (int64_t) (instanceId++)));
+            if (!stmt.BindInt64(1, (int64_t) (instanceId++)).IsSuccess())
+                return;
 
             for (int parameterIndex = 2; parameterIndex <= (propertyCount+1); parameterIndex++)
                 {
-                ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(parameterIndex, "Init Value", IECSqlBinder::MakeCopy::No));
+                if (!stmt.BindText(parameterIndex, "Init Value", IECSqlBinder::MakeCopy::No).IsSuccess())
+                    return;
                 }
 
-            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Step failed for " << insertSql;
+            if (BE_SQLITE_DONE != stmt.Step())
+                return;
+
             stmt.Reset ();
             stmt.ClearBindings ();
             }
@@ -159,8 +182,7 @@ void PerformanceECDbMapCATestFixture::GenerateECSqlCRUDTestStatements(ECSchemaR 
         insertSql.append(className).append(" (ECInstanceId");
         Utf8String insertValuesSql(") VALUES (?");
 
-        selectSql = Utf8String("SELECT * FROM ONLY ");
-        selectSql.append(className).append(" WHERE ECInstanceId=?");
+        selectSql = Utf8String("SELECT ECInstanceId");
 
         updateSql = Utf8String("UPDATE ONLY ");
         updateSql.append(className).append(" SET ");
@@ -174,6 +196,7 @@ void PerformanceECDbMapCATestFixture::GenerateECSqlCRUDTestStatements(ECSchemaR 
             if (!isFirstItem)
                 updateSql.append(",");
 
+            selectSql.append(",").append(prop->GetName());
             insertSql.append(",").append(prop->GetName());
             insertValuesSql.append(",").append("?");
 
@@ -183,6 +206,7 @@ void PerformanceECDbMapCATestFixture::GenerateECSqlCRUDTestStatements(ECSchemaR 
             isFirstItem = false;
             }
 
+        selectSql.append(" FROM ONLY ").append(className).append(" WHERE ECInstanceId=?");
         insertSql.append(insertValuesSql).append(")");
         updateSql.append("WHERE ECInstanceId=?");
         }
@@ -273,9 +297,13 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformance_SharedTable_SharedColum
 
     GenerateECSqlCRUDTestStatements (*testSchema);
     InsertInstances (ecdb);
+    ASSERT_GE(m_insertTime, 0.0) << "ECSQL Insert test failed";
     ReadInstances (ecdb);
+    ASSERT_GE(m_selectTime, 0.0) << "ECSQL SELECT test failed";
     UpdateInstances (ecdb);
+    ASSERT_GE(m_updateTime, 0.0) << "ECSQL UPDATE test failed";
     DeleteInstances (ecdb);
+    ASSERT_GE(m_deleteTime, 0.0) << "ECSQL DELETE test failed";
 
     LOGTODB(TEST_DETAILS, m_insertTime, "Insert time");
     LOGTODB(TEST_DETAILS, m_selectTime, "Select time");
@@ -426,7 +454,7 @@ void PerformanceECDbMapCATestFixture::GenerateSqlCRUDTestStatements (ECSchemaR e
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
     {
-    m_instancesPerClass = 1000000;
+    m_instancesPerClass = 100000;
     m_propertiesPerClass = 150;
     ECDbTestProject test;
     ECDbR ecdb = test.Create ("ECSqlStatementPerformanceTest.ecdb");
@@ -447,17 +475,22 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
     ASSERT_EQ(BE_SQLITE_OK, ecdb.SaveChanges());
 
     GenerateECSqlCRUDTestStatements (*testSchema);
-    InsertInstances (ecdb);
-    UpdateInstances(ecdb);
+
+    InsertInstances(ecdb);
+    ASSERT_GE(m_insertTime, 0.0) << "ECSQL Insert test failed";
     ReadInstances(ecdb);
-    DeleteInstances (ecdb);
+    ASSERT_GE(m_selectTime, 0.0) << "ECSQL SELECT test failed";
+    UpdateInstances(ecdb);
+    ASSERT_GE(m_updateTime, 0.0) << "ECSQL UPDATE test failed";
+    DeleteInstances(ecdb);
+    ASSERT_GE(m_deleteTime, 0.0) << "ECSQL DELETE test failed";
+
+    LOGTODB(TEST_DETAILS, m_insertTime, "ECSQL Insert time");
+    LOGTODB(TEST_DETAILS, m_selectTime, "ECSQL Select time");
+    LOGTODB(TEST_DETAILS, m_updateTime, "ECSQL Update time");
+    LOGTODB(TEST_DETAILS, m_deleteTime, "ECSQL Delete time");
 
     ASSERT_EQ(BE_SQLITE_OK, ecdb.AbandonChanges());
-
-    LOGTODB(TEST_DETAILS, m_insertTime, "ECSql Insert time");
-    LOGTODB(TEST_DETAILS, m_selectTime, "ECSql Select time");
-    LOGTODB(TEST_DETAILS, m_updateTime, "ECSql Update time");
-    LOGTODB(TEST_DETAILS, m_deleteTime, "ECSql Delete time");
 
     //CRUD Performance using Sql statements.
     m_insertTime = m_updateTime = m_selectTime = m_deleteTime = 0.0;
@@ -468,21 +501,33 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
     GenerateSqlCRUDTestStatements (*testSchema, *baseClass, insertSql, selectSql, updateSql, deleteSql);
 
     //Insert Instance using Sql Query.
-    const int propertyCount = (int)baseClass->GetPropertyCount (true);
     BeSQLite::Statement stmt;
     StopWatch timer (true);
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, insertSql.c_str ())) << "Statement Prepare failed for " << insertSql.c_str ();
-    LOG.infov ("Insert Sql Statement:  %s", insertSql.c_str ());
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, insertSql.c_str()))
+        {
+        FAIL();
+        return;
+        }
+
+    int propertyCount = (int) baseClass->GetPropertyCount(true);
     for (size_t i = 0; i < m_instancesPerClass; i++)
         {
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindInt64 (1, (int64_t)(i+1)));
+        if (BE_SQLITE_OK != stmt.BindInt64 (1, (int64_t)(i+1)))
+            {
+            FAIL();
+            return;
+            }
 
         for (int parameterIndex = 1; parameterIndex <= propertyCount; parameterIndex++)
             {
-            ASSERT_EQ (BE_SQLITE_OK, stmt.BindText (parameterIndex, "Init Value", BeSQLite::Statement::MakeCopy::No));
+            if (BE_SQLITE_OK != stmt.BindText(parameterIndex, "Init Value", BeSQLite::Statement::MakeCopy::No))
+                {
+                FAIL();
+                return;
+                }
             }
 
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Step failed for " << insertSql.c_str();
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         stmt.Reset ();
         stmt.ClearBindings ();
         }
@@ -493,8 +538,13 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
 
     //Update Instance using Sql Query.
     timer.Start ();
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, updateSql.c_str ())) << "Statement Prepare failed for " << updateSql.c_str ();
-    LOG.infov ("Update Sql Statement:  %s", updateSql.c_str ());
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, updateSql.c_str()))
+        {
+        FAIL();
+        return;
+        }
+
+    propertyCount = (int) baseClass->GetPropertyCount(true);
     for (size_t i = 0; i < m_instancesPerClass; i++)
         {
         for (int parameterIndex = 1; parameterIndex <= propertyCount; parameterIndex++)
@@ -503,7 +553,7 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
             }
 
         ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindInt64 (propertyCount + 1, (int64_t)(i + 1)));
-        ASSERT_EQ (DbResult::BE_SQLITE_DONE, stmt.Step ()) << "step failed for " << updateSql.c_str ();
+        ASSERT_EQ (DbResult::BE_SQLITE_DONE, stmt.Step ());
         ASSERT_EQ(1, ecdb.GetModifiedRowCount());
         stmt.Reset ();
         stmt.ClearBindings ();
@@ -511,16 +561,14 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
     timer.Stop ();
     stmt.Finalize ();
     m_updateTime = timer.GetElapsedSeconds ();
-    LOG.infov("Scenario - UPDATE - 1 class [%d properties each] , %d instances per class took %.4f s.", m_propertiesPerClass, m_instancesPerClass, m_updateTime);
 
     //Read Instance using Sql Query.
     timer.Start ();
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, selectSql.c_str ())) << "Statement Prepare failed for " << selectSql.c_str ();
-    LOG.infov ("Select Sql Statement:  %s", selectSql.c_str ());
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, selectSql.c_str ()));
     for (size_t i = 0; i < m_instancesPerClass; i++)
         {
         ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindInt64 (1, (int64_t)(i + 1)));
-        ASSERT_EQ (DbResult::BE_SQLITE_ROW, stmt.Step ()) << "step failed for " << selectSql.c_str ();
+        ASSERT_EQ (DbResult::BE_SQLITE_ROW, stmt.Step ());
         stmt.Reset ();
         stmt.ClearBindings ();
         }
@@ -531,12 +579,11 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
 
     //Delete Instance using Sql Query.
     timer.Start ();
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, deleteSql.c_str ())) << "Statement Prepare failed for " << deleteSql.c_str ();
-    LOG.infov ("Delete Sql Statement:  %s", deleteSql.c_str ());
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, deleteSql.c_str ()));
     for (size_t i = 0; i < m_instancesPerClass; i++)
         {
         ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindInt64 (1, (int64_t)(i + 1)));
-        ASSERT_EQ (DbResult::BE_SQLITE_DONE, stmt.Step ()) << "step failed for " << deleteSql.c_str ();
+        ASSERT_EQ (DbResult::BE_SQLITE_DONE, stmt.Step ());
         stmt.Reset ();
         stmt.ClearBindings ();
         }

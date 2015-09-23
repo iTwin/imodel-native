@@ -6,20 +6,17 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../NonPublished/PublicApi/NonPublished/ECDb/ECDbTestProject.h"
-#include "TestSchemaHelper.h"
-#include "PerformanceTestFixture.h"
+#include "PerformanceTests.h"
 
 using namespace BentleyApi::ECN;
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
-struct PerformanceDevSummitTests : PerformanceTestFixture 
+struct PerformanceDevSummitTests : PerformanceTestFixtureBase 
     {
     private:
         ECDbTestProject m_testProject;
 
     public:
-        virtual void InitializeTestDb () override {}
-
         void ExecuteInstanceCountQuery()
             {
             BeFileName dbName("d:\\temp\\data\\SDM_Composite.i.idgndb");
@@ -64,12 +61,10 @@ struct PerformanceDevSummitTests : PerformanceTestFixture
                 }
             countTimer.Stop ();
             ASSERT_EQ(260555, total);
-            bmap<Utf8String, double> results;
-            results[countName] = countTimer.GetElapsedSeconds();
-            LogResultsToFile(results);
+            LOGTODB(TEST_DETAILS, countTimer.GetElapsedSeconds(), countName);
             }
 
-        void ExecuteQuery(bool selectProperties, bool useWhereClause, bool useOrderBy, int expectedNumResults, bmap<Utf8String, double>& results)
+        void ExecuteQuery(bool selectProperties, bool useWhereClause, bool useOrderBy, int expectedNumResults)
             {
             Utf8String ecSql;
             Utf8String ecSelect("");
@@ -110,25 +105,23 @@ struct PerformanceDevSummitTests : PerformanceTestFixture
             overallTimer.Stop();
             ASSERT_EQ(expectedNumResults, counter);
 
-            results[overallTimerName] = overallTimer.GetElapsedSeconds();
+            LOGTODB(TEST_DETAILS, overallTimer.GetElapsedSeconds(), overallTimerName);
             }
 
-        void DoSingleTest(bool selectProperties, bool useWhereClause, bool useOrderBy, int expectedNumResults, bmap<Utf8String, double>& results)
+        void DoSingleTest(bool selectProperties, bool useWhereClause, bool useOrderBy, int expectedNumResults)
             {
             BeFileName dbName("d:\\temp\\data\\PUG_STR_AllRefs_AP.i.idgndb");
             auto stat = m_testProject.Open(dbName.GetNameUtf8().c_str());
             EXPECT_EQ (BE_SQLITE_OK, stat);
-            ExecuteQuery(selectProperties, useWhereClause, useOrderBy, expectedNumResults, results);
+            ExecuteQuery(selectProperties, useWhereClause, useOrderBy, expectedNumResults);
             m_testProject.GetECDb().CloseDb();
             }
         void ExecuteQueries()
             {
-            bmap<Utf8String, double> results;
-            DoSingleTest(false, false, false, 43162, results);
-            DoSingleTest(true, false, false, 43162, results);
-            DoSingleTest(true, true, false, 4170, results);
-            DoSingleTest(true, true, true, 4170, results);
-            LogResultsToFile(results);
+            DoSingleTest(false, false, false, 43162);
+            DoSingleTest(true, false, false, 43162);
+            DoSingleTest(true, true, false, 4170);
+            DoSingleTest(true, true, true, 4170);
             }
 };
 

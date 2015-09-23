@@ -406,5 +406,34 @@ ECDbCP ECSqlStatement::GetECDb () const
     return m_pimpl->GetECDb ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSqlSelectParameters::Add(Utf8CP name)
+    {
+    BeAssert(!Utf8String::IsNullOrEmpty(name));
+    BeAssert(-1 == GetParameterIndex(name) && "Duplicate parameter name");
+    if (!Utf8String::IsNullOrEmpty(name))
+        m_parameters.push_back(name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+int ECSqlSelectParameters::GetParameterIndex(Utf8CP name) const
+    {
+    BeAssert(!Utf8String::IsNullOrEmpty(name));
+    if (!Utf8String::IsNullOrEmpty(name))
+        {
+        auto found = std::find(m_parameters.begin(), m_parameters.end(), name);
+        if (m_parameters.end() == found)
+            found = std::find_if(m_parameters.begin(), m_parameters.end(), [&name](Utf8CP const& arg) { return 0 == ::strcmp(name, arg); });
+
+        if (m_parameters.end() != found)
+            return static_cast<int>(found - m_parameters.begin());
+        }
+
+    return -1;
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

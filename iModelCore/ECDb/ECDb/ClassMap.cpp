@@ -922,6 +922,12 @@ BentleyStatus MappedTable::FinishTableDefinition()
                     ecClassIdColumn = m_table.CreateColumn(ECDB_COL_ECClassId, ECDbSqlColumn::Type::Long, insertPosition, ECDbKnownColumns::ECClassId, PersistenceType::Persisted);
                     if (ecClassIdColumn == nullptr)
                         return ERROR;
+
+                    //whenever we create a class id column, we index it to speed up the frequent class id look ups
+                    Utf8String indexName("ix_");
+                    indexName.append(m_table.GetName()).append("_ecclassid");
+                    ECDbSqlIndex* index = m_table.CreateIndex(indexName.c_str(), false, ECClass::UNSET_ECCLASSID);
+                    index->Add(ecClassIdColumn->GetName().c_str());
                     }
 
                 m_generatedClassIdColumn = true;

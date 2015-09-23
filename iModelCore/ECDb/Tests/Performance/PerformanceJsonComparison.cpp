@@ -7,7 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "../NonPublished/PublicApi/NonPublished/ECDb/ECDbTestProject.h"
 #include <rapidjson/BeRapidJson.h>
-#include"PerformanceTestFixture.h"
+#include "PerformanceTests.h"
+
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 void ReadJsonInputFromFile (Json::Value& jsonInput, BeFileName& jsonFilePath);

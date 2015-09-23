@@ -336,8 +336,17 @@ void IssueReporter::ReportSqliteIssue(ECDbIssueSeverity sev, DbResult sqliteStat
     {
     if (BE_SQLITE_OK != sqliteStat && IsSeverityEnabled(sev))
         {
-        Report(sev, "%s %s: %s", Utf8String::IsNullOrEmpty(messageHeader) ? "SQLite error" : messageHeader,
-               ECDb::InterpretDbResult(sqliteStat), m_ecdb.GetLastError());
+        if (messageHeader == nullptr)
+            messageHeader = "SQLite error:";
+
+        Utf8CP dbResultStr = ECDb::InterpretDbResult(sqliteStat);
+
+        Utf8CP lastSqliteErrorMsg = m_ecdb.GetLastError();
+        //ECDb sometimes returns DbResult errors on its own. In that case there is no SQLite error to output
+        if (lastSqliteErrorMsg == nullptr)
+            Report(sev, "%s %s", messageHeader, dbResultStr);
+        else
+            Report(sev, "%s %s: %s", messageHeader, dbResultStr, lastSqliteErrorMsg);
         }
     }
 
