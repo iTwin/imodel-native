@@ -1137,10 +1137,15 @@ protected:
     virtual DgnDbStatus _BindPlacement(BeSQLite::Statement&) = 0;
     GeometricElementCP _ToGeometricElement() const override {return this;}
     DgnDbStatus WriteGeomStream(BeSQLite::Statement&, DgnDbR);
-    explicit GeometricElement(CreateParams const& params) : T_Super(params) {}
+    explicit GeometricElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId) {}
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() +(sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
     virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
 
+//__PUBLISH_SECTION_END__
+public:
+    // NB: This only exists until _LoadFromDb() is fixed up...we need to set the category directly when reading from db, without validating through _SetCategoryId().
+    void SetCategoryIdInternal(DgnCategoryId id) { m_categoryId = id; }
+//__PUBLISH_SECTION_START__
 public:
     DGNPLATFORM_EXPORT QvCache* GetMyQvCache() const;
     DGNPLATFORM_EXPORT QvElem* GetQvElem(uint32_t index) const;
@@ -1188,7 +1193,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : GeometricElement
     CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
         T_Super(db, modelId, classId, category, code, id, parent), m_placement(placement) {}
 
-    explicit CreateParams(DgnElement::CreateParams const& params, Placement3dCR placement=Placement3d()) : T_Super(params), m_placement(placement){}
+    explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId(), Placement3dCR placement=Placement3d()) : T_Super(params, category), m_placement(placement){}
     };
 
 protected:
@@ -1253,7 +1258,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : GeometricElement
     CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
         T_Super(db, modelId, classId, category, code, id, parent), m_placement(placement) {}
 
-    explicit CreateParams(DgnElement::CreateParams const& params, Placement2dCR placement=Placement2d()) : T_Super(params), m_placement(placement){}
+    explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId(), Placement2dCR placement=Placement2d()) : T_Super(params, category), m_placement(placement){}
     };
 
 protected:

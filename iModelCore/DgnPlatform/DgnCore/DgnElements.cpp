@@ -1076,7 +1076,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
     // NB: Handling here to avoid a second SELECT statement on the same row in GeometricElement::_LoadFromDb()
     auto geomElem = categoryId.IsValid() ? el->ToGeometricElementP() : nullptr;
     if (nullptr != geomElem)
-        geomElem->SetCategoryId(categoryId);
+        geomElem->SetCategoryIdInternal(categoryId);
 
     if (DgnDbStatus::Success != el->_LoadFromDb())
         return nullptr;

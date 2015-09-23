@@ -65,8 +65,11 @@ protected:
     virtual DgnDbStatus _DeleteInDb() const override;
 
     virtual DgnDbStatus _LoadFromDb() override;
-    virtual void _GetInsertParams(bvector<Utf8String>& params) override;
+    virtual void _GetInsertParams(bvector<Utf8CP>& params) override;
     virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
+    virtual void _GetUpdateParams(bvector<Utf8CP>& params) override;
+    virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
+    virtual void _CopyFrom(DgnElementCR el) override;
 
 public:
     TestElement(CreateParams const& params) : T_Super(params) {}
