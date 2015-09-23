@@ -70,6 +70,8 @@ protected:
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetParentId(DgnElementId parentId) override;
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId) override final { return DgnDbStatus::WrongElement; }
+
+    virtual uint32_t _GetMemSize() const override { return static_cast<uint32_t>(sizeof(*this) + m_data.m_value.length() + m_data.m_descr.length()); }
 public:
     explicit DgnMaterial(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }
 
@@ -87,8 +89,8 @@ public:
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
     static ECN::ECClassCP QueryECClass(DgnDbR db) { return db.Schemas().GetECClass(QueryECClassId(db)); }
 
-    DgnMaterialCPtr Insert() { return GetDgnDb().Elements().Insert<DgnMaterial>(*this); }
-    DgnMaterialCPtr Update() { return GetDgnDb().Elements().Update<DgnMaterial>(*this); }
+    DgnMaterialCPtr Insert(DgnDbStatus* status = nullptr) { return GetDgnDb().Elements().Insert<DgnMaterial>(*this, status); }
+    DgnMaterialCPtr Update(DgnDbStatus* status = nullptr) { return GetDgnDb().Elements().Update<DgnMaterial>(*this, status); }
 };
 
 namespace dgn_ElementHandler

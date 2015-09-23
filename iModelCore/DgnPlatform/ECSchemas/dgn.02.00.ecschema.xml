@@ -685,7 +685,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="MaterialElement" isDomainClass="True">
         <BaseClass>Element</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
-        <ECProperty propertyName="Value" displayLabel="" typeName="string" />
+        <ECProperty propertyName="Data" displayLabel="" typeName="string" />
     </ECClass>
 
     <ECClass typeName="Material" isDomainClass="True" >

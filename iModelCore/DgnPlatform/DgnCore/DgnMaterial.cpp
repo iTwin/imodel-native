@@ -211,7 +211,7 @@ DgnDbStatus DgnMaterial::_LoadFromDb()
     if (DgnDbStatus::Success != status)
         return status;
 
-    Utf8CP ecSql = "SELECT Descr, Value FROM " DGN_SCHEMA(DGN_CLASSNAME_MaterialElement) " WHERE ECInstanceId=?";
+    Utf8CP ecSql = "SELECT Descr, Data FROM " DGN_SCHEMA(DGN_CLASSNAME_MaterialElement) " WHERE ECInstanceId=?";
     CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement(ecSql);
     if(!stmt.IsValid())
         return DgnDbStatus::ReadError;
@@ -231,7 +231,7 @@ void DgnMaterial::_GetInsertParams(bvector<Utf8String>& insertParams)
     {
     T_Super::_GetInsertParams(insertParams);
     insertParams.push_back("Descr");
-    insertParams.push_back("Value");
+    insertParams.push_back("Data");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -240,7 +240,7 @@ void DgnMaterial::_GetInsertParams(bvector<Utf8String>& insertParams)
 DgnDbStatus DgnMaterial::_BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) 
     {
     if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex("Descr"), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No)
-        || ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex("Value"), m_data.m_value.c_str(), IECSqlBinder::MakeCopy::No))
+        || ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex("Data"), m_data.m_value.c_str(), IECSqlBinder::MakeCopy::No))
         return DgnDbStatus::BadArg;
     else
         return T_Super::_BindInsertParams(stmt);
@@ -255,7 +255,7 @@ DgnDbStatus DgnMaterial::_UpdateInDb()
     if (DgnDbStatus::Success != status)
         return status;
 
-    Utf8CP ecsql = "UPDATE ONLY " DGN_SCHEMA(DGN_CLASSNAME_MaterialElement) " SET [Descr]=?,[Value]=? WHERE ECInstanceId=?";
+    Utf8CP ecsql = "UPDATE ONLY " DGN_SCHEMA(DGN_CLASSNAME_MaterialElement) " SET [Descr]=?,[Data]=? WHERE ECInstanceId=?";
     CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement(ecsql);
     if (!stmt.IsValid())
         return DgnDbStatus::WriteError;
