@@ -92,8 +92,8 @@ DbResult TxnManager::SaveCurrentChange(ChangeSet& changeset, Utf8CP operation)
 
     m_snappyTo.Init();
     ChangesBlobHeader header(changeset.GetSize());
-    m_snappyTo.Write((ByteCP) &header, sizeof(header));
-    m_snappyTo.Write((ByteCP) changeset.GetData(), changeset.GetSize());
+    m_snappyTo.Write((Byte const*) &header, sizeof(header));
+    m_snappyTo.Write((Byte const*) changeset.GetData(), changeset.GetSize());
 
     uint32_t zipSize = m_snappyTo.GetCompressedSize();
     if (0 < zipSize)
@@ -170,8 +170,11 @@ TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20)
     TxnId last = stmt.GetValueInt64(0); // this is where we left off last session
     m_curr = TxnId(SessionId(last.GetSession().GetValue()+1), 0); // increment the session id, reset to index to 0.
 
+    if (m_dgndb.IsReadonly())
+        return;
+
     // whenever we open a Briefcase for write access, enable tracking
-    if (!m_dgndb.IsReadonly() && m_dgndb.IsBriefcase())
+    if (m_dgndb.IsBriefcase())
         EnableTracking(true);
     }
 
@@ -977,7 +980,7 @@ void dgn_TxnTable::Model::AddChange(Changes::Change const& change, ChangeType ch
             return;
         }
 
-    DgnModelId modelId = DgnModelId(change.GetValue(0, stage).GetValueInt64());
+    DgnModelId modelId = DgnModelId(change.GetValue(0, stage).GetValueUInt64());
     BeAssert(modelId.IsValid());
     
     enum Column : int {ModelId=1,ChangeType=2};
@@ -1132,7 +1135,7 @@ void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType 
             return;
         }
 
-    DgnElementId elementId = DgnElementId(change.GetValue(0, stage).GetValueInt64());
+    DgnElementId elementId = DgnElementId(change.GetValue(0, stage).GetValueUInt64());
     DgnModelId modelId;
 
     if (ChangeType::Update == changeType)
@@ -1141,7 +1144,7 @@ void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType 
         modelId = m_txnMgr.GetDgnDb().Elements().QueryModelId(elementId);
         }
     else
-        modelId = DgnModelId(change.GetValue(2, stage).GetValueInt64());   // assumes DgnModelId is column 2
+        modelId = DgnModelId(change.GetValue(2, stage).GetValueUInt64());   // assumes DgnModelId is column 2
 
     AddElement(elementId, modelId, changeType);
     }
@@ -1173,7 +1176,7 @@ void dgn_TxnTable::ElementDep::AddDependency(EC::ECInstanceId const& relid, Chan
         " WHERE (DEP.ECInstanceId=?) AND (element.ECInstanceId=DEP.SourceECInstanceId)");
     stmt->BindId(1, relid);
     auto stat = stmt->Step();
-    BeAssert(stat == ECSqlStepStatus::HasRow);
+    BeAssert(stat == BE_SQLITE_ROW);
     DgnModelId mid = stmt->GetValueId<DgnModelId>(0);
 
     m_stmt.BindId(1, relid);

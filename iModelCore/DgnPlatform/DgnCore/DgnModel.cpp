@@ -755,8 +755,7 @@ DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
     if (models.QueryModelId(m_name.c_str()).IsValid()) // can't allow two models with the same name
         return DgnDbStatus::DuplicateName;
 
-    DbResult rc = m_dgndb.GetNextRepositoryBasedId(m_modelId, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
-    BeAssert(rc == BE_SQLITE_OK);
+    m_modelId = DgnModelId(m_dgndb, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
 
     Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Name,Descr,Type,ECClassId,Visibility,Space) VALUES(?,?,?,?,?,?,?)");
     stmt.BindId(1, m_modelId);
@@ -771,7 +770,7 @@ DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
     else
         stmt.BindNull(7);
 
-    rc = stmt.Step();
+    auto rc = stmt.Step();
     if (BE_SQLITE_DONE != rc)
         {
         BeAssert(false);

@@ -458,11 +458,13 @@ void DgnChangeSummaryTestFixture::CompareSessions(DgnChangeSummaryTestFixture::C
     dgnChangeSummary.GetElementsWithItemUpdates(changedElements.m_businessUpdates);
     dgnChangeSummary.GetElementsWithGeometryUpdates(changedElements.m_geometryUpdates);
 
+    /*
     printf("-----------------------------------------\n");
     printf("Change summary between sessions (%d, %d]:\n", startSessionId, endSessionId);
     printf("-----------------------------------------\n");
     dgnChangeSummary.Dump();
     printf("\n\n\n");
+    */
 
     status = m_testDb->Txns().ReinstateTxn();
     ASSERT_TRUE(status == DgnDbStatus::Success);

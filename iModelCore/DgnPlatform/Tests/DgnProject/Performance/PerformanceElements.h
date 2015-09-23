@@ -39,6 +39,9 @@ struct PerformanceElement1 : Dgn::PhysicalElement
     DGNELEMENT_DECLARE_MEMBERS(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, Dgn::PhysicalElement);
 
     private:
+        void GetParams(bvector<Utf8CP>& params);
+        DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
+
         Utf8String m_prop1_1;
         int64_t m_prop1_2;
         double m_prop1_3;
@@ -46,9 +49,10 @@ struct PerformanceElement1 : Dgn::PhysicalElement
     protected:
         PerformanceElement1(CreateParams const& params, Utf8CP prop1_1 = NULL, int64_t prop1_2 = 10000000LL, double prop1_3 = -3.1415) : T_Super(params), m_prop1_1(prop1_1), m_prop1_2(prop1_2), m_prop1_3(prop1_3) {}
 
-        virtual void _GetInsertParams(bvector<Utf8String>& insertParams) override;
+        virtual void _GetInsertParams(bvector<Utf8CP>& insertParams) override;
         virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
-        virtual Dgn::DgnDbStatus _UpdateInDb() override;
+        virtual void _GetUpdateParams(bvector<Utf8CP>& updateParams) override;
+        virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
 
     public:
         static PerformanceElement1Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category);
@@ -68,6 +72,9 @@ struct PerformanceElement2 : PerformanceElement1
     DGNELEMENT_DECLARE_MEMBERS(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, PerformanceElement1);
  
     private:
+        void GetParams(bvector<Utf8CP>& params);
+        DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
+
         Utf8String m_prop2_1;
         int64_t m_prop2_2;
         double m_prop2_3;
@@ -77,9 +84,10 @@ struct PerformanceElement2 : PerformanceElement1
             Utf8CP prop1_1 = NULL, int64_t prop1_2 = 10000000LL, double prop1_3 = -3.1415,
             Utf8CP prop2_1 = NULL, int64_t prop2_2 = 20000000LL, double prop2_3 = 2.71828) : T_Super(params, prop1_1, prop1_2, prop1_3), m_prop2_1(prop2_1), m_prop2_2(prop2_2), m_prop2_3(prop2_3) {}
 
-        virtual void _GetInsertParams(bvector<Utf8String>& insertParams) override;
+        virtual void _GetInsertParams(bvector<Utf8CP>& insertParams) override;
         virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
-        virtual Dgn::DgnDbStatus _UpdateInDb() override;
+        virtual void _GetUpdateParams(bvector<Utf8CP>& updateParams) override;
+        virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
 
     public:
         static PerformanceElement2Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category);
@@ -98,6 +106,9 @@ struct PerformanceElement3 : PerformanceElement2
     DGNELEMENT_DECLARE_MEMBERS(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, PerformanceElement2);
 
     private:
+        void GetParams(bvector<Utf8CP>& params);
+        DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
+
         Utf8String m_prop3_1;
         int64_t m_prop3_2;
         double m_prop3_3;
@@ -108,9 +119,10 @@ struct PerformanceElement3 : PerformanceElement2
             Utf8CP prop2_1 = NULL, int64_t prop2_2 = 20000000LL, double prop2_3 = 2.71828,
             Utf8CP prop3_1 = NULL, int64_t prop3_2 = 30000000LL, double prop3_3 = 1.414121) : T_Super(params, prop1_1, prop1_2, prop1_3, prop2_1, prop2_2, prop2_3), m_prop3_1(prop3_1), m_prop3_2(prop3_2), m_prop3_3(prop3_3) {}
 
-        virtual void _GetInsertParams(bvector<Utf8String>& insertParams) override;
+        virtual void _GetInsertParams(bvector<Utf8CP>& insertParams) override;
         virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
-        virtual Dgn::DgnDbStatus _UpdateInDb() override;
+        virtual void _GetUpdateParams(bvector<Utf8CP>& updateParams) override;
+        virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
 
     public:
         static PerformanceElement3Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category);
@@ -130,6 +142,9 @@ struct PerformanceElement4 : PerformanceElement3
     DGNELEMENT_DECLARE_MEMBERS(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, PerformanceElement3);
 
     private:
+        void GetParams(bvector<Utf8CP>& params);
+        DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
+
         Utf8String m_prop4_1;
         int64_t m_prop4_2;
         double m_prop4_3;
@@ -142,9 +157,10 @@ struct PerformanceElement4 : PerformanceElement3
             Utf8CP prop4_1 = NULL, int64_t prop4_2 = 40000000LL, double prop4_3 = 1.61803398874) : T_Super(params, prop1_1, prop1_2, prop1_3, prop2_1, prop2_2, prop2_3, prop3_1, prop3_2, prop3_3), 
             m_prop4_1(prop4_1), m_prop4_2(prop4_2), m_prop4_3(prop4_3) {}
 
-        virtual void _GetInsertParams(bvector<Utf8String>& insertParams) override;
+        virtual void _GetInsertParams(bvector<Utf8CP>& insertParams) override;
         virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
-        virtual Dgn::DgnDbStatus _UpdateInDb() override;
+        virtual void _GetUpdateParams(bvector<Utf8CP>& updateParams) override;
+        virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
 
     public:
         static PerformanceElement4Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category);
@@ -163,6 +179,9 @@ struct PerformanceElement4b : PerformanceElement3
     DGNELEMENT_DECLARE_MEMBERS(ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, PerformanceElement3);
 
     private:
+        void GetParams(bvector<Utf8CP>& params);
+        DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
+
         Utf8String m_prop4b_1;
         int64_t m_prop4b_2;
         double m_prop4b_3;
@@ -177,9 +196,10 @@ struct PerformanceElement4b : PerformanceElement3
             T_Super(params, prop1_1, prop1_2, prop1_3, prop2_1, prop2_2, prop2_3, prop3_1, prop3_2, prop3_3), 
             m_prop4b_1(prop4b_1), m_prop4b_2(prop4b_2), m_prop4b_3(prop4b_3), m_prop4b_4(prop4b_4) {}
 
-        virtual void _GetInsertParams(bvector<Utf8String>& insertParams) override;
+        virtual void _GetInsertParams(bvector<Utf8CP>& insertParams) override;
         virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
-        virtual Dgn::DgnDbStatus _UpdateInDb() override;
+        virtual void _GetUpdateParams(bvector<Utf8CP>& updateParams) override;
+        virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
 
     public:
         static PerformanceElement4bPtr Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category);

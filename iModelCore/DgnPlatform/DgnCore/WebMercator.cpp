@@ -587,7 +587,7 @@ BentleyStatus WebMercatorTileDisplayHelper::GetCachedTexture (uintptr_t& cachedT
 uintptr_t WebMercatorTileDisplayHelper::DefineTexture (bvector<Byte> const& rgbData, ImageUtilities::RgbImageInfo const& imageInfo)
     {
     BeAssert (!imageInfo.isBGR);
-    int format      = imageInfo.hasAlpha? QV_BGRA_FORMAT: QV_BGR_FORMAT;
+    int format      = imageInfo.hasAlpha? QV_RGBA_FORMAT: QV_RGB_FORMAT;
     int sizeofPixel = imageInfo.hasAlpha? 4: 3;
     int pitch       = imageInfo.width * sizeofPixel;
 

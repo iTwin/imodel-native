@@ -15,20 +15,21 @@ namespace BentleyG06.Dgn.FB;
 enum AnnotationTextStyleProperty : int {
                                     //  TYPE    TARGET      NOTES
                                     //  ----    ------      -----
-    Color = 1,                      //  integer run         int64_t representation of ElementColor
-    FontId = 2,                     //  integer run         Must be a valid font ID in the project
-    Height = 3,                     //  real    document    In project UORs
-    LineSpacingFactor = 4,          //  real    document    Factor of height
-    IsBold = 5,                     //  integer run         0 or 1 boolean
-    IsItalic = 6,                   //  integer run         0 or 1 boolean
-    IsUnderlined = 7,               //  integer run         0 or 1 boolean
-    StackedFractionScale = 8,       //  real    run         Factor of height
-    StackedFractionType = 9,        //  integer run         Must exist in the AnnotationStackedFractionType enumeration
-    SubScriptOffsetFactor = 10,     //  real    run         Factor of height
-    SubScriptScale = 11,            //  real    run         Factor of height
-    SuperScriptOffsetFactor = 12,   //  real    run         Factor of height
-    SuperScriptScale = 13,          //  real    run         Factor of height
-    WidthFactor = 14                //  real    document    Factor of height
+    ColorType = 1,                  //  integer run         Must exist in AnnotationColorType enumeration
+    ColorValue = 2,                 //  integer run         int64_t representation of ElementColor
+    FontId = 3,                     //  integer run         Must be a valid font ID in the project
+    Height = 4,                     //  real    document    In project UORs
+    LineSpacingFactor = 5,          //  real    document    Factor of height
+    IsBold = 6,                     //  integer run         0 or 1 boolean
+    IsItalic = 7,                   //  integer run         0 or 1 boolean
+    IsUnderlined = 8,               //  integer run         0 or 1 boolean
+    StackedFractionScale = 9,       //  real    run         Factor of height
+    StackedFractionType = 10,       //  integer run         Must exist in the AnnotationStackedFractionType enumeration
+    SubScriptOffsetFactor = 11,     //  real    run         Factor of height
+    SubScriptScale = 12,            //  real    run         Factor of height
+    SuperScriptOffsetFactor = 13,   //  real    run         Factor of height
+    SuperScriptScale = 14,          //  real    run         Factor of height
+    WidthFactor = 15                //  real    document    Factor of height
 
 } // AnnotationTextStyleProperty
 
@@ -158,16 +159,18 @@ enum AnnotationFrameStyleProperty : int {
                                     //  ----    -----
     CloudBulgeFactor = 1,           //  real    Factor of effective diameter
     CloudDiameterFactor = 2,        //  real    Factor of text height
-    FillColor = 3,                  //  integer int64_t representation of ElementColor
-    FillTransparency = 4,           //  real    [0.0..1.0]
-    HorizontalPadding = 5,          //  real    Factor of the first character's text height
-    IsFillEnabled = 6,              //  integer 0 or 1 boolean
-    IsStrokeCloud = 7,              //  integer 0 or 1 boolean
-    IsStrokeEnabled = 8,            //  integer 0 or 1 boolean
-    StrokeColor = 9,                //  integer int64_t representation of ElementColor
-    StrokeWeight = 10,              //  integer Must be a standard line weight
-    Type = 11,                      //  integer Must exist in the AnnotationFrameType enumeration
-    VerticalPadding = 12            //  real    Factor of the first character's text height
+    FillColorType = 3,              //  integer Must exist in AnnotationColorType enumeration
+    FillColorValue = 4,             //  integer int64_t representation of ElementColor
+    FillTransparency = 5,           //  real    [0.0..1.0]
+    HorizontalPadding = 6,          //  real    Factor of the first character's text height
+    IsFillEnabled = 7,              //  integer 0 or 1 boolean
+    IsStrokeCloud = 8,              //  integer 0 or 1 boolean
+    IsStrokeEnabled = 9,            //  integer 0 or 1 boolean
+    StrokeColorType = 10,           //  integer Must exist in AnnotationColorType enumeration
+    StrokeColorValue = 11,          //  integer int64_t representation of ElementColor
+    StrokeWeight = 12,              //  integer Must be a standard line weight
+    Type = 13,                      //  integer Must exist in the AnnotationFrameType enumeration
+    VerticalPadding = 14            //  real    Factor of the first character's text height
 
 } // AnnotationFrameStyleProperty
 
@@ -219,13 +222,15 @@ table AnnotationFrame {
 enum AnnotationLeaderStyleProperty : int {
                                         //  TYPE    NOTES
                                         //  ----    -----
-    LineColor = 1,                      //  integer int64_t representation of ElementColor
-    LineType = 2,                       //  integer Must exist in the AnnotationLeaderLineType enumeration
-    LineWeight = 3,                     //  integer Must be a standard line weight
-    TerminatorColor = 4,                //  integer int64_t representation of ElementColor
-    TerminatorScaleFactor = 5,          //  real    Generally describes the length of the side of the box encompassing the terminator, as a factor of the first character's text height
-    TerminatorType = 6,                 //  integer Must exist in the AnnotationLeaderTerminatorType enumeration
-    TerminatorWeight = 7                //  integer Must be a standard line weight
+    LineColorType = 1,                  //  integer Must exist in AnnotationColorType enumeration
+    LineColorValue = 2,                 //  integer int64_t representation of ElementColor
+    LineType = 3,                       //  integer Must exist in the AnnotationLeaderLineType enumeration
+    LineWeight = 4,                     //  integer Must be a standard line weight
+    TerminatorColorType = 5,            //  integer Must exist in AnnotationColorType enumeration
+    TerminatorColorValue = 6,           //  integer int64_t representation of ElementColor
+    TerminatorScaleFactor = 7,          //  real    Generally describes the length of the side of the box encompassing the terminator, as a factor of the first character's text height
+    TerminatorType = 8,                 //  integer Must exist in the AnnotationLeaderTerminatorType enumeration
+    TerminatorWeight = 9                //  integer Must be a standard line weight
 
 } // AnnotationLeaderStyleProperty
 

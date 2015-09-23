@@ -55,7 +55,7 @@ TEST(BasicTextAnnotationSeedTest, PropertyBagTypes)
     EXPECT_TRUE(leaderStyle->GetId() == STYLE_PTR->GetLeaderStyleId());\
     EXPECT_TRUE(textStyle->GetId() == STYLE_PTR->GetTextStyleId());
 
-#define INVALIDSTYLEID DgnStyleId((int64_t)-1)
+#define INVALIDSTYLEID DgnStyleId((uint64_t)-1)
 
 //---------------------------------------------------------------------------------------
 // Creates a style and tests accessors.

@@ -1078,7 +1078,7 @@ struct DgnFonts : NonCopyableClass
         DGNPLATFORM_EXPORT BentleyStatus QueryById(bvector<Byte>&, DataId);
         DGNPLATFORM_EXPORT BentleyStatus QueryByFace(bvector<Byte>&, FaceSubId&, FaceKeyCR);
         DGNPLATFORM_EXPORT bool Exists(FaceKeyCR);
-        DGNPLATFORM_EXPORT BentleyStatus Insert(ByteCP, size_t dataSize, T_FaceMapCR);
+        DGNPLATFORM_EXPORT BentleyStatus Insert(Byte const*, size_t dataSize, T_FaceMapCR);
         DGNPLATFORM_EXPORT BentleyStatus Delete(FaceKeyCR);
         Iterator MakeIterator() const { return Iterator(m_dbFonts); }
     };
@@ -1091,20 +1091,18 @@ private:
     bool m_isFontMapLoaded;
     T_FontMap m_fontMap;
 
-    void Update();
-
 public:
     DgnFonts(BeSQLite::DbR db, Utf8CP tableName) : m_dbFontMap(*this), m_dbFaceData(*this), m_db(db), m_tableName(tableName), m_isFontMapLoaded(false) {}
 
     DbFontMapDirect& DbFontMap() { return m_dbFontMap; }
     DbFaceDataDirect& DbFaceData() { return m_dbFaceData; }
     void Invalidate() { m_isFontMapLoaded = false; m_fontMap.clear(); }
+    void Update();
     DGNPLATFORM_EXPORT DgnFontCP FindFontById(DgnFontId) const;
     DGNPLATFORM_EXPORT DgnFontCP FindFontByTypeAndName(DgnFontType, Utf8CP) const;
     DGNPLATFORM_EXPORT DgnFontId FindId(DgnFontCR) const;
     DGNPLATFORM_EXPORT DgnFontId AcquireId(DgnFontCR);
 };
-
 
 //=======================================================================================
 //! A DgnElement within a DgnDb can be identified by a "code" which is unique among all

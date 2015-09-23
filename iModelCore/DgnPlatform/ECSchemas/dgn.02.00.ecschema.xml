@@ -142,23 +142,18 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="ResourceModel" isDomainClass="True">
         <BaseClass>Model</BaseClass>
     </ECClass>
-
     <ECClass typeName="WebMercatorModel" isDomainClass="True" >
         <BaseClass>PhysicalModel</BaseClass>
     </ECClass>
-
     <ECClass typeName="StreetMapModel" isDomainClass="True" >
         <BaseClass>WebMercatorModel</BaseClass>
     </ECClass>
-
     <ECClass typeName="PointCloudBaseModel" isDomainClass="True" >
         <BaseClass>PhysicalModel</BaseClass>
     </ECClass>
-
     <ECClass typeName="RasterBaseModel" isDomainClass="True" >
         <BaseClass>PhysicalModel</BaseClass>
     </ECClass>
-
     <ECClass typeName="Category" isDomainClass="True" >
         <ECCustomAttributes>
              <ClassMap xmlns="ECDbMap.01.00">
@@ -515,9 +510,9 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="ElementAspect" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
         <!-- An ElementAspect is related to an Element with a relationship of strength="embedding" (ElementAspect is deleted if the Element is deleted) -->
         <!-- Semantically, an ElementAspect can be considered part of the Element -->
-		<ECCustomAttributes>
+        <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
-				<ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
+                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
     </ECClass>
@@ -674,14 +669,17 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECProperty>
     </ECClass>
 
+    <ECClass typeName="TextAnnotationItem" isDomainClass="True">
+        <BaseClass>ElementItem</BaseClass>
+        <ECProperty propertyName="TextAnnotation" typeName="binary"/>
+    </ECClass>
     <ECClass typeName="TextAnnotationElement" isDomainClass="True">
         <BaseClass>DrawingElement</BaseClass>
     </ECClass>
-    <ECClass typeName="TextAnnotationDataAspect" isDomainClass="True">
-        <BaseClass>ElementUniqueAspect</BaseClass>
-        <ECProperty propertyName="TextAnnotation" typeName="binary"/>
+    <ECClass typeName="PhysicalTextAnnotationElement" isDomainClass="True">
+        <BaseClass>PhysicalElement</BaseClass>
     </ECClass>
-
+    
     <ECClass typeName="MaterialElement" isDomainClass="True">
         <BaseClass>Element</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
