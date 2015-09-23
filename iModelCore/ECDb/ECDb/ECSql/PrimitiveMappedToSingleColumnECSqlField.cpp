@@ -18,26 +18,22 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                    Krischan.Eberle                    06/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 PrimitiveMappedToSingleColumnECSqlField::PrimitiveMappedToSingleColumnECSqlField (ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, int columnIndex)
-    : ECSqlField (ecsqlStatement, move (ecsqlColumnInfo)), m_sqliteColumnIndex (columnIndex)
-    {}
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus PrimitiveMappedToSingleColumnECSqlField::_Init ()
+    : ECSqlField (ecsqlStatement, move (ecsqlColumnInfo), false, false), m_sqliteColumnIndex (columnIndex)
     {
-    if (m_ecsqlColumnInfo.GetDataType ().GetPrimitiveType () == PRIMITIVETYPE_DateTime)
+    if (m_ecsqlColumnInfo.GetDataType().GetPrimitiveType() == PRIMITIVETYPE_DateTime)
         {
         auto property = m_ecsqlColumnInfo.GetProperty();
-        BeAssert (property != nullptr && "ColumnInfo::GetProperty can return null. Please double-check");
+        BeAssert(property != nullptr && "ColumnInfo::GetProperty can return null. Please double-check");
         DateTimeInfo dateTimeInfo;
-        if (StandardCustomAttributeHelper::GetDateTimeInfo (dateTimeInfo, *property) != ECOBJECTS_STATUS_Success)
-            return ReportError (ECSqlStatus::Error, "Could not read DateTimeInfo custom attribute from the corresponding ECProperty.");
+        if (StandardCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, *property) != ECOBJECTS_STATUS_Success)
+            {
+            ReportError(ECSqlStatus::Error, "Could not read DateTimeInfo custom attribute from the corresponding ECProperty.");
+            BeAssert(false && "Could not read DateTimeInfo custom attribute from the corresponding ECProperty.");
+            return;
+            }
 
-        m_datetimeMetadata = dateTimeInfo.GetInfo (true);
+        m_datetimeMetadata = dateTimeInfo.GetInfo(true);
         }
-
-    return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------

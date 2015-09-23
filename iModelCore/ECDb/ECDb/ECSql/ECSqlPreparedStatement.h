@@ -86,6 +86,8 @@ struct ECSqlSelectPreparedStatement : public ECSqlPreparedStatement
 private:
     DynamicSelectClauseECClass m_dynamicSelectClauseECClass;
     ECSqlField::Collection m_fields;
+    std::vector<ECSqlField*> m_fieldsRequiringInit;
+    std::vector<ECSqlField*> m_fieldsRequiringReset;
 
     virtual ECSqlStatus _Reset () override;
 

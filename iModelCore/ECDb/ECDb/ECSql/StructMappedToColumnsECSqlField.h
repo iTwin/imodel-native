@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/StructMappedToColumnsECSqlField.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -31,6 +31,8 @@ private:
 public:
     StructMappedToColumnsECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo);
 
+    //Before calling this, the child field must be complete. You must not add child fields to the child fields afterwards
+    //Otherwise the flags m_needsInit and m_needsReset might become wrong
     void AppendField (std::unique_ptr<ECSqlField> field);
 
     virtual Collection const& GetChildren () const override;

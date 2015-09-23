@@ -14,9 +14,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                                Affan.Khan      10/2013
 //---------------------------------------------------------------------------------------
 StructArrayMappedToSecondaryTableECSqlField::StructArrayMappedToSecondaryTableECSqlField (ECSqlPrepareContext& parentPrepareContext, ArrayECPropertyCR arrayProperty, ECSqlColumnInfo&& parentColumnInfo)
-: ECSqlField (parentPrepareContext.GetECSqlStatementR (), std::move (parentColumnInfo)), m_reader (*this, parentPrepareContext, arrayProperty)
-    {
-    }
+: ECSqlField (parentPrepareContext.GetECSqlStatementR (), std::move (parentColumnInfo), true, true), m_reader (*this, parentPrepareContext, arrayProperty)
+    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      10/2013
