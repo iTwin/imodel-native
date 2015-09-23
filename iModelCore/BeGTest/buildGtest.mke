@@ -13,8 +13,8 @@
     %error Define TEST_NAME as the name of the test. The .exe will use this name. Various output directories will also be based on it, so it must be unique among tests.
 %endif
 
-%ifndef TEST_COLLECTION_PRODUCT_DIR
-    %error Define TEST_COLLECTION_PRODUCT_DIR as the name of the test collection product
+%ifndef TEST_COLLECTION_PRODUCT
+    %error Define TEST_COLLECTION_PRODUCT as the name of the test collection product
 %endif
 
 # Optional. BEGTEST_FRAMEWORK_SQLANG - Full filepath of .db3 file to return as the "framework" sqlang file
@@ -35,7 +35,7 @@ progName     = $(TEST_NAME)
 progNameExe  = $(progName)$(exeext)
 o            = $(OutputRootDir)build/$(TEST_NAME)/
 
-collectionProduct = $(OutputRootDir)Product/${TEST_COLLECTION_PRODUCT_DIR}/
+collectionProduct = $(OutputRootDir)Product/${TEST_COLLECTION_PRODUCT}/
 
 %ifdef BMAKE_DELETE_ALL_TARGETS    
 always:
