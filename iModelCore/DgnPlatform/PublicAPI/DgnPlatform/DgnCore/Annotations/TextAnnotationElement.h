@@ -55,8 +55,19 @@ public:
     void SetAnnotation(TextAnnotationCP value) { m_annotation = value ? value->Clone() : nullptr; }
 };
 
+namespace dgn_AspectHandler
+{
+    //=======================================================================================
+    // @bsiclass                                                    Jeff.Marker     09/2015
+    //=======================================================================================
+    struct TextAnnotationItemHandler : Aspect
+    {
+        DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotationItem, TextAnnotationItemHandler, Aspect, DGNPLATFORM_EXPORT)
+        RefCountedPtr<DgnElement::Aspect> _CreateInstance() override { return new TextAnnotationItem(); }
+    };
+}
+
 //=======================================================================================
-//! Implementation of TextAnnotationElement element.
 // @bsiclass                                                    Jeff.Marker     09/2015
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE TextAnnotationElement : DrawingElement
@@ -89,17 +100,15 @@ public:
 namespace dgn_ElementHandler
 {
     //=======================================================================================
-    //! The handler for TextAnnotationElement.
     // @bsiclass                                                    Jeff.Marker     09/2015
     //=======================================================================================
-    struct TextAnnotation : Drawing
+    struct TextAnnotationHandler : Drawing
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotationElement, TextAnnotationElement, TextAnnotation, Drawing, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotationElement, TextAnnotationElement, TextAnnotationHandler, Drawing, DGNPLATFORM_EXPORT);
     };
 }
 
 //=======================================================================================
-//! Implementation of TextAnnotationElement element.
 // @bsiclass                                                    Jeff.Marker     09/2015
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PhysicalTextAnnotationElement : PhysicalElement
@@ -132,12 +141,11 @@ public:
 namespace dgn_ElementHandler
 {
     //=======================================================================================
-    //! The handler for PhysicalTextAnnotationElement.
     // @bsiclass                                                    Jeff.Marker     09/2015
     //=======================================================================================
-    struct PhysicalTextAnnotation : Physical
+    struct PhysicalTextAnnotationHandler : Physical
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalTextAnnotationElement, PhysicalTextAnnotationElement, PhysicalTextAnnotation, Physical, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalTextAnnotationElement, PhysicalTextAnnotationElement, PhysicalTextAnnotationHandler, Physical, DGNPLATFORM_EXPORT);
     };
 }
 
