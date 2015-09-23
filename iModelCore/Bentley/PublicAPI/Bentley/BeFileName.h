@@ -369,6 +369,12 @@ public:
     //! Test if a filename is an absolute path.
     BENTLEYDLL_EXPORT bool IsAbsolutePath() const;
 
+    //! Test if a filename is an URL.
+    BENTLEYDLL_EXPORT bool IsUrl() const;
+
+    //! Test if a filename is an URL.
+    BENTLEYDLL_EXPORT static bool IsUrl(WCharCP filename);
+
     //! Get the name from this BeFileName.
     WCharCP GetName() const {return c_str();}
 
