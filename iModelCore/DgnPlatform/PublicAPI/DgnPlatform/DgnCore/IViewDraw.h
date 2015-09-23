@@ -15,6 +15,7 @@
 #include "../DgnPlatform.h"
 #include "DgnDb.h"
 #include "DgnModel.h"
+#include "RenderMaterial.h"
 
 //__PUBLISH_SECTION_END__
 DGNPLATFORM_TYPEDEFS (QvBaseMatSym)
@@ -423,7 +424,7 @@ private:
     double              m_fillTransparency;             //!< fill transparency, 1.0 == completely transparent.
     double              m_netFillTransparency;          //!< net transparency for fill/category.
     DgnGeometryClass    m_geometryClass;                //!< geometry class
-    DgnMaterialId       m_material;                     //!< render material
+    DgnMaterialId       m_material;                     //!< render material ID.
     LineStyleInfoPtr    m_styleInfo;                    //!< line style id plus modifiers.
     GradientSymbPtr     m_gradient;                     //!< gradient fill settings.
     PatternParamsPtr    m_pattern;                      //!< area pattern settings.
@@ -509,7 +510,7 @@ public:
     double GetFillTransparency() const {return m_fillTransparency;}
 
     //! Get render material.
-    DgnMaterialId GetMaterial() const {BeAssert(m_appearanceOverrides.m_material || m_resolved); return m_material;}
+    DgnMaterialId GetMaterial() const {BeAssert(m_appearanceOverrides.m_material || m_resolved); return m_material; }
 
     //! Get element display priority (2d only).
     int32_t GetDisplayPriority() const {return m_elmPriority;}
@@ -663,7 +664,7 @@ private:
     bool                m_isFilled;
     bool                m_isBlankingRegion;
     uintptr_t           m_extSymbID;
-    DgnMaterialId       m_material;
+    RenderMaterialPtr   m_material;
     uint32_t            m_rasterWidth;
     uint32_t            m_rasterPat;
     LineStyleSymb       m_lStyleSymb;
@@ -733,7 +734,7 @@ public:
     GradientSymbCP GetGradientSymb() const {return m_gradient.get();}
 
     //! Get the render material.
-    DgnMaterialId GetMaterial() const {return m_material;}
+    RenderMaterialCP GetMaterial() const {return m_material.get();}
 
     //! Get the area pattern params.
     PatternParamsCP GetPatternParams() const {return m_patternParams.get();}
@@ -778,7 +779,7 @@ public:
     LineStyleSymbR GetLineStyleSymbR () {return m_lStyleSymb;}
 
     //! Set the render material.
-    DGNPLATFORM_EXPORT void SetMaterial(DgnMaterialId);
+    DGNPLATFORM_EXPORT void SetMaterial(RenderMaterialP material) { m_material = material; }
 
     //! Set area patterning parameters.
     void SetPatternParams(PatternParamsP patternParams) {m_patternParams = patternParams;}
@@ -837,7 +838,7 @@ public:
     uint32_t GetWidth() const {return m_matSymb.GetWidth();}
     uint32_t GetRasterPattern() const {return m_matSymb.GetRasterPattern();}
     int32_t GetRasterPatternIndex() const {return m_matSymb.GetRasterPatternIndex();}
-    DgnMaterialId GetMaterial() const {return m_matSymb.GetMaterial();}
+    RenderMaterialCP GetMaterial() const {return m_matSymb.GetMaterial();}
     PatternParamsCP GetPatternParams() const {return m_matSymb.GetPatternParams();}
 
     DGNPLATFORM_EXPORT void Clear();
@@ -849,7 +850,7 @@ public:
     void SetWidth(uint32_t width) {m_matSymb.SetWidth(width); m_flags |= MATSYMB_OVERRIDE_RastWidth;}
     void SetRasterPattern(uint32_t rasterPat) {m_matSymb.SetRasterPattern(rasterPat); m_flags |= MATSYMB_OVERRIDE_Style; m_matSymb.GetLineStyleSymbR().SetLineStyle(NULL);}
     void SetIndexedRasterPattern(int32_t index, uint32_t rasterPat) {m_matSymb.SetIndexedRasterPattern(index, rasterPat); m_flags |= MATSYMB_OVERRIDE_Style; m_matSymb.GetLineStyleSymbR().SetLineStyle(NULL);}
-    void SetMaterial(DgnMaterialId material) {m_matSymb.SetMaterial(material); m_flags |= MATSYMB_OVERRIDE_RenderMaterial;}
+    void SetMaterial(RenderMaterialP material) {m_matSymb.SetMaterial(material); m_flags |= MATSYMB_OVERRIDE_RenderMaterial;}
     void SetPatternParams(PatternParamsP patternParams) {m_matSymb.SetPatternParams(patternParams);}
     void SetProxy(bool edge, bool hidden) {m_flags |= (MATSYMB_OVERRIDE_IsProxy | (edge ? MATSYMB_OVERRIDE_IsProxyEdge : 0) | (hidden ? MATSYMB_OVERRIDE_IsProxyHidden: 0)); }
     bool GetProxy(bool& edge, bool& hidden) {edge = 0 != (m_flags & MATSYMB_OVERRIDE_IsProxyEdge); hidden = 0 != (m_flags & MATSYMB_OVERRIDE_IsProxyHidden); return 0 != (m_flags & MATSYMB_OVERRIDE_IsProxy); }

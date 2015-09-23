@@ -136,6 +136,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         double         m_roundoffUnit;                 //!< unit lock roundoff val
         double         m_roundoffRatio;                //!< Unit roundoff ratio y to x (if 0 use Grid Ratio)
         double         m_formatterBaseDir;             //!< Base Direction used for Direction To/From String
+        double         m_azimuthAngle;                 //!< Azimuth angle.  CCW from y axis.
 
     public:
         Properties()
@@ -168,6 +169,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         void SetDirectionMode(DirectionMode value) {m_formatterFlags.m_directionMode = (uint32_t)value; }
         void SetDirectionClockwise(bool value) { m_formatterFlags.m_directionClockwise = value; }
         void SetDirectionBaseDir(double value) { m_formatterBaseDir = value; }
+        void SetAzimuthAngle (double azimuthAngle) { m_azimuthAngle = azimuthAngle; }
         DgnUnitFormat GetLinearUnitMode() const {return (DgnUnitFormat) m_formatterFlags.m_linearUnitMode; }
         PrecisionFormat GetLinearPrecision() const {return DoubleFormatter::ToPrecisionEnum((PrecisionType) m_formatterFlags.m_linearPrecType, m_formatterFlags.m_linearPrecision); }
         AngleMode GetAngularMode() const {return (AngleMode) m_formatterFlags.m_angularMode; }
@@ -179,6 +181,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         double GetRoundoffUnit() const {return m_roundoffUnit;}
         double GetRoundoffRatio() const {return m_roundoffRatio;}
         FormatterFlags GetFormatterFlags() const    {return m_formatterFlags;}
+        double GetAzimuthAngle() const { return m_azimuthAngle; }
 
         //! Get the master units for this DgnModel.
         //! Master units are the major display units for coordinates in a DgnModel (e.g. "Meters", or "Feet").

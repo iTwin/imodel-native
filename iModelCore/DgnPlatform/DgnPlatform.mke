@@ -316,6 +316,9 @@ $(o)ModelSolverDef$(oext) : $(DgnCoreDir)ModelSolverDef.cpp $(DgnCoreAPISrc)Mode
 
 $(o)RenderMaterial$(oext) : $(DgnCoreDir)RenderMaterial.cpp $(DgnCoreAPISrc)RenderMaterial.h ${MultiCompileDepends}
 
+$(o)SolarUtility$(oext) : $(DgnCoreDir)SolarUtility.cpp $(DgnCoreAPISrc)SolarUtility.h ${MultiCompileDepends}
+
+
 #----------------------------------------------------------------------
 #   DgnGeoCoord
 #----------------------------------------------------------------------
