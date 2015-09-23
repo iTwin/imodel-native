@@ -35,11 +35,11 @@ private:
     static Collection s_emptyChildCollection;
 
 protected:
-    bool m_needsInit;
-    bool m_needsReset;
+    bool m_requiresInit;
+    bool m_requiresReset;
 
     ECSqlField (ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, bool needsInit, bool needsReset)
-        : m_ecsqlStatement(ecsqlStatement), m_ecsqlColumnInfo(std::move(ecsqlColumnInfo)), m_needsInit(needsInit), m_needsReset(needsReset)
+        : m_ecsqlStatement(ecsqlStatement), m_ecsqlColumnInfo(std::move(ecsqlColumnInfo)), m_requiresInit(needsInit), m_requiresReset(needsReset)
         {}
 
     ECSqlStatus ReportError (ECSqlStatus status, Utf8CP errorMessage) const;
@@ -51,9 +51,9 @@ public:
 
     virtual Collection const& GetChildren () const {return s_emptyChildCollection;}
 
-    bool RequiresInit() const { return m_needsInit; }
+    bool RequiresInit() const { return m_requiresInit; }
     ECSqlStatus Init ();
-    bool RequiresReset() const { return m_needsReset; }
+    bool RequiresReset() const { return m_requiresReset; }
     ECSqlStatus Reset ();
     };
 

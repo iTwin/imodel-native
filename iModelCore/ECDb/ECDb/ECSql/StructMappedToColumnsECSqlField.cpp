@@ -96,10 +96,10 @@ void StructMappedToColumnsECSqlField::AppendField (std::unique_ptr<ECSqlField> f
     PRECONDITION (field != nullptr, );
     
     if (field->RequiresInit())
-        m_needsInit = true;
+        m_requiresInit = true;
 
     if (field->RequiresReset())
-        m_needsReset = true;
+        m_requiresReset = true;
 
     m_structFields.push_back (move (field));
 
