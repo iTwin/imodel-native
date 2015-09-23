@@ -486,7 +486,7 @@ DgnDbStatus DgnElement::_InsertInDb()
             values.append(",");
             }
         ecSql.append("[").append(param).append("]");
-        values.append(":").append(param);
+        values.append(":[").append(param).append("]");
         }
     ecSql.append(")VALUES(").append(values).append(")");
 
@@ -565,7 +565,7 @@ DgnDbStatus DgnElement::_UpdateInDb()
         {
         if (propCount++ != 0)
             ecSql.append(",");
-        ecSql.append("[").append(param).append("]=:").append(param);
+        ecSql.append("[").append(param).append("]=:[").append(param).append("]");
         }
     ecSql.append(" WHERE ECInstanceId=?");
 
@@ -579,6 +579,78 @@ DgnDbStatus DgnElement::_UpdateInDb()
         return stat;
 
     return BE_SQLITE_DONE != statement->Step() ? DgnDbStatus::WriteError : DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::_GetSelectParams(bvector<Utf8CP>&)
+    {
+    // all params loaded when bootstrapping in DgnElements::LoadElement()...
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_ExtractSelectParams(ECSqlStatement&, ECSqlSelectParameters const&)
+    {
+    // all params loaded when bootstrapping in DgnElements::LoadElement()...
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_GetSelectParams(bvector<Utf8CP>& params)
+    {
+    T_Super::_GetSelectParams(params);
+    params.push_back(DGN_GEOMETRICELEMENT_PROPNAME_CATEGORYID);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
+    {
+    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    if (DgnDbStatus::Success == status)
+        m_categoryId = stmt.GetValueId<DgnCategoryId>(params.GetParameterIndex(DGN_GEOMETRICELEMENT_PROPNAME_CATEGORYID));
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_LoadFromDb()
+    {
+    ECClassCP elementClass = GetElementClass();
+    if (nullptr == elementClass)
+        {
+        BeAssert(false);
+        return DgnDbStatus::BadElement;
+        }
+
+    ECSqlSelectParameters params;
+    _GetSelectParams(params.GetParameters());
+    if (params.GetParameters().empty())
+        return DgnDbStatus::Success;
+
+    Utf8String ecSql("SELECT [");
+    ecSql.append(BeStringUtilities::Join(params.GetParameters(), "],["));
+    ecSql.append("] FROM [");
+    ecSql.append(elementClass->GetSchema().GetName()).append("].[").append(elementClass->GetName());
+    ecSql.append("] WHERE ECInstanceId=?");
+
+    CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement(ecSql.c_str());
+    if (!stmt.IsValid())
+        return DgnDbStatus::ReadError;
+
+    stmt->BindId(1, m_elementId);
+    if (BE_SQLITE_ROW != stmt->Step())
+        return DgnDbStatus::ReadError;
+
+    return _ExtractSelectParams(*stmt, params);
     }
 
 /*---------------------------------------------------------------------------------**//**

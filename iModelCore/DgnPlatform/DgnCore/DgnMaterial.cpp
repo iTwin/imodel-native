@@ -205,33 +205,37 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnMaterial::_LoadFromDb() 
+void DgnMaterial::_GetInsertParams(bvector<Utf8CP>& insertParams)
     {
-    auto status = T_Super::_LoadFromDb();
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    Utf8CP ecSql = "SELECT Descr, Data FROM " DGN_SCHEMA(DGN_CLASSNAME_MaterialElement) " WHERE ECInstanceId=?";
-    CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement(ecSql);
-    if(!stmt.IsValid())
-        return DgnDbStatus::ReadError;
-
-    stmt->BindId(1, GetElementId());
-    if (ECSqlStepStatus::HasRow != stmt->Step())
-        return DgnDbStatus::ReadError;
-
-    m_data.Init(stmt->GetValueText(0), stmt->GetValueText(1));
-    return DgnDbStatus::Success;
+    T_Super::_GetInsertParams(insertParams);
+    GetParams(insertParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnMaterial::_GetInsertParams(bvector<Utf8String>& insertParams) 
+void DgnMaterial::_GetUpdateParams(bvector<Utf8CP>& updateParams)
     {
-    T_Super::_GetInsertParams(insertParams);
-    insertParams.push_back("Descr");
-    insertParams.push_back("Data");
+    T_Super::_GetUpdateParams(updateParams);
+    GetParams(updateParams);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnMaterial::_GetSelectParams(bvector<Utf8CP>& params)
+    {
+    T_Super::_GetSelectParams(params);
+    GetParams(params);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnMaterial::GetParams(bvector<Utf8CP>& params)
+    {
+    params.push_back("Descr");
+    params.push_back("Data");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -239,32 +243,47 @@ void DgnMaterial::_GetInsertParams(bvector<Utf8String>& insertParams)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnMaterial::_BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) 
     {
-    if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex("Descr"), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No)
-        || ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex("Data"), m_data.m_value.c_str(), IECSqlBinder::MakeCopy::No))
-        return DgnDbStatus::BadArg;
-    else
-        return T_Super::_BindInsertParams(stmt);
+    auto status = T_Super::_BindInsertParams(stmt);
+    if (DgnDbStatus::Success == status)
+        status = BindParams(stmt);
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnMaterial::_UpdateInDb() 
+DgnDbStatus DgnMaterial::_BindUpdateParams(ECSqlStatement& stmt)
     {
-    auto status = T_Super::_UpdateInDb();
-    if (DgnDbStatus::Success != status)
-        return status;
+    auto status = T_Super::_BindUpdateParams(stmt);
+    if (DgnDbStatus::Success == status)
+        status = BindParams(stmt);
 
-    Utf8CP ecsql = "UPDATE ONLY " DGN_SCHEMA(DGN_CLASSNAME_MaterialElement) " SET [Descr]=?,[Data]=? WHERE ECInstanceId=?";
-    CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement(ecsql);
-    if (!stmt.IsValid())
-        return DgnDbStatus::WriteError;
+    return status;
+    }
 
-    stmt->BindText(1, m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No);
-    stmt->BindText(2, m_data.m_value.c_str(), IECSqlBinder::MakeCopy::No);
-    stmt->BindId(3, GetElementId());
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnMaterial::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
+    {
+    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    if (DgnDbStatus::Success == status)
+        m_data.Init(stmt.GetValueText(params.GetParameterIndex("Descr")), stmt.GetValueText(params.GetParameterIndex("Data")));
+    
+    return status;
+    }
 
-    return ECSqlStepStatus::Done == stmt->Step() ? DgnDbStatus::Success : DgnDbStatus::WriteError;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnMaterial::BindParams(ECSqlStatement& stmt)
+    {
+    if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex("Descr"), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No)
+        || ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex("Data"), m_data.m_value.c_str(), IECSqlBinder::MakeCopy::No))
+        return DgnDbStatus::BadArg;
+    else
+        return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -292,7 +311,7 @@ DgnDbStatus DgnMaterial::_SetParentId(DgnElementId parentId)
             return DgnDbStatus::InvalidParent;
 
         stmt->BindId(1, parentId);
-        if (ECSqlStepStatus::HasRow != stmt->Step() || 1 != stmt->GetValueInt(0))
+        if (BE_SQLITE_ROW != stmt->Step() || 1 != stmt->GetValueInt(0))
             return DgnDbStatus::InvalidParent;
         }
 
@@ -325,7 +344,7 @@ static DgnAuthority::Code makeMaterialCode(Utf8StringCR palette, Utf8StringCR ma
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnMaterial::CreateParams::CreateParams(DgnDbR db, DgnModelId modelId, Utf8StringCR paletteName, Utf8StringCR materialName, Utf8StringCR value, DgnElementId parentMaterialId, Utf8StringCR descr)
-    : DgnMaterial::CreateParams(db, modelId, DgnMaterial::QueryDgnClassId(db), makeMaterialCode(paletteName, materialName, db), nullptr, DgnElementId(), parentMaterialId, value, descr)
+    : DgnMaterial::CreateParams(db, modelId, DgnMaterial::QueryDgnClassId(db), makeMaterialCode(paletteName, materialName, db), DgnElementId(), parentMaterialId, value, descr)
     {
     //
     }

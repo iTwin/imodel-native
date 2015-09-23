@@ -48,9 +48,9 @@ public:
 
         explicit CreateParams(DgnElement::CreateParams const& params, Utf8StringCR value="", Utf8StringCR descr="") : T_Super(params), m_data(value, descr) { }
 
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code code, Utf8CP label = nullptr, DgnElementId id = DgnElementId(),
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code code, DgnElementId id = DgnElementId(),
                      DgnElementId parent = DgnElementId(), Utf8StringCR value="", Utf8StringCR descr="")
-            : T_Super(db, modelId, classId, DgnCategoryId(), label, code, id, parent), m_data(value, descr) { }
+            : T_Super(db, modelId, classId, code, id, parent), m_data(value, descr) { }
 
         DGNPLATFORM_EXPORT CreateParams(DgnDbR db, DgnModelId modelId, Utf8StringCR paletteName, Utf8StringCR materialName, Utf8StringCR value,
                     DgnElementId parentMaterialId=DgnElementId(), Utf8StringCR descr="");
@@ -62,14 +62,17 @@ public:
 private:
     Data    m_data;
 
+    static void GetParams(bvector<Utf8CP>& params);
+    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _LoadFromDb() override;
-    DGNPLATFORM_EXPORT virtual void _GetInsertParams(bvector<Utf8String>& insertParams) override;
+    DGNPLATFORM_EXPORT virtual void _GetSelectParams(bvector<Utf8CP>& selectParams) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, BeSQLite::EC::ECSqlSelectParameters const& selectParams) override;
+    DGNPLATFORM_EXPORT virtual void _GetInsertParams(bvector<Utf8CP>& insertParams) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb() override;
+    DGNPLATFORM_EXPORT virtual void _GetUpdateParams(bvector<Utf8CP>& updateParams) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetParentId(DgnElementId parentId) override;
-    virtual DgnDbStatus _SetCategoryId(DgnCategoryId) override final { return DgnDbStatus::WrongElement; }
 
     virtual uint32_t _GetMemSize() const override { return static_cast<uint32_t>(sizeof(*this) + m_data.m_value.length() + m_data.m_descr.length()); }
 public:
