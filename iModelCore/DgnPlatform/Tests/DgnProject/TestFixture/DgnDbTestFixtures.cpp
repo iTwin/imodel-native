@@ -27,7 +27,7 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(TMTEST_SCHEMA_NAME, "
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Code elementCode)
 {
-    TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), nullptr, elementCode));
+    TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
 
     //  Add some hard-wired geometry
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*testElement);
@@ -43,7 +43,7 @@ TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId cate
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElementPtr TestElement::Create(DgnDbR db, ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, Code elementCode)
 {
-    TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), nullptr, elementCode));
+    TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
 
     //  Add some hard-wired geometry
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*testElement);
@@ -72,6 +72,69 @@ DgnDbStatus TestElement::_InsertInDb()
 
     return DgnDbStatus::Success;
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestElement::_GetSelectParams(bvector<Utf8CP>& params)
+    {
+    T_Super::_GetSelectParams(params);
+    params.push_back(TMTEST_TEST_ELEMENT_TestElementProperty);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestElement::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
+    {
+    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    if (DgnDbStatus::Success == status)
+        m_testElemProperty = stmt.GetValueText(params.GetParameterIndex(TMTEST_TEST_ELEMENT_TestElementProperty));
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestElement::_GetInsertParams(bvector<Utf8CP>& params)
+    {
+    T_Super::_GetInsertParams(params);
+    params.push_back(TMTEST_TEST_ELEMENT_TestElementProperty);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestElement::_BindInsertParams(ECSqlStatement& stmt)
+    {
+    auto status = T_Super::_BindInsertParams(stmt);
+    if (DgnDbStatus::Success == status)
+        stmt.BindText(stmt.GetParameterIndex(TMTEST_TEST_ELEMENT_TestElementProperty), m_testElemProperty.c_str(), IECSqlBinder::MakeCopy::No);
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestElement::_GetUpdateParams(bvector<Utf8CP>& params)
+    {
+    T_Super::_GetUpdateParams(params);
+    params.push_back(TMTEST_TEST_ELEMENT_TestElementProperty);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestElement::_BindUpdateParams(ECSqlStatement& stmt)
+    {
+    auto status = T_Super::_BindUpdateParams(stmt);
+    if (DgnDbStatus::Success == status)
+        stmt.BindText(stmt.GetParameterIndex(TMTEST_TEST_ELEMENT_TestElementProperty), m_testElemProperty.c_str(), IECSqlBinder::MakeCopy::No);
+
+    return status;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Majd.Uddin      06/15
@@ -121,6 +184,20 @@ DgnDbStatus TestElement::_DeleteInDb() const
     return DgnDbStatus::Success;
 
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestElement::_CopyFrom(DgnElementCR el)
+    {
+    T_Super::_CopyFrom(el);
+    auto testEl = dynamic_cast<TestElement const*>(&el);
+    if (nullptr != testEl)
+        {
+        m_testElemProperty = testEl->m_testElemProperty;
+        m_testItemProperty = testEl->m_testItemProperty;
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * Inserts TestElement
@@ -207,16 +284,14 @@ bool DgnDbTestFixture::SelectElementItem(DgnElementId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElement2dPtr TestElement2d::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Code elementCode)
 {
-    DgnElementPtr testElement = TestElement2dHandler::GetHandler().Create(TestElement2d::CreateParams(db, mid, db.Domains().GetClassId(TestElement2dHandler::GetHandler()), categoryId, Placement2d(), nullptr, elementCode));
+    TestElement2dPtr testElement = new TestElement2d(TestElement2d::CreateParams(db, mid, db.Domains().GetClassId(TestElement2dHandler::GetHandler()), categoryId, Placement2d(), elementCode));
     if (!testElement.IsValid())
         return nullptr;
 
-    TestElement2d* geom = (TestElement2d*) testElement.get();
-
     //  Add some hard-wired geometry
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*geom);
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*testElement);
     EXPECT_TRUE(builder->Append(*GeomHelper::computeShape2d()));
-    return (SUCCESS != builder->SetGeomStreamAndPlacement(*geom)) ? nullptr : geom;
+    return (SUCCESS != builder->SetGeomStreamAndPlacement(*testElement)) ? nullptr : testElement;
 }
 
 /*---------------------------------------------------------------------------------**//**

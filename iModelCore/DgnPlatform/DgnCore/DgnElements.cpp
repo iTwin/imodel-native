@@ -982,7 +982,7 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId),
-             m_categoryId(params.m_categoryId), m_label(params.m_label), m_code(params.m_code), m_parentId(params.m_parentId)
+             m_code(params.m_code), m_parentId(params.m_parentId)
     {
     ++GetDgnDb().Elements().m_tree->m_totals.m_extant;
     }
@@ -1093,8 +1093,8 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersistent) const
     {
-    enum Column : int       {ClassId=0,ModelId=1,CategoryId=2,Label=3,Code=4,ParentId=5,CodeAuthorityId=6,CodeNameSpace=7};
-    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,CategoryId,Label,Code,ParentId,CodeAuthorityId,CodeNameSpace FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    enum Column : int       {ClassId=0,ModelId=1,Code=2,ParentId=3,CodeAuthorityId=4,CodeNameSpace=5};
+    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,Code,ParentId,CodeAuthorityId,CodeNameSpace FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
 
     DbResult result = stmt->Step();
@@ -1105,8 +1105,6 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersist
 
     return LoadElement(DgnElement::CreateParams(m_dgndb, stmt->GetValueId<DgnModelId>(Column::ModelId), 
                     stmt->GetValueId<DgnClassId>(Column::ClassId), 
-                    stmt->GetValueId<DgnCategoryId>(Column::CategoryId), 
-                    stmt->GetValueText(Column::Label), 
                     code,
                     elementId, 
                     stmt->GetValueId<DgnElementId>(Column::ParentId)),
