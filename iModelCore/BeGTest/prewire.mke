@@ -13,7 +13,6 @@ srcDir = $(_MakeFilePath)
 
 always:
     @CreateSymLinks.py  -d"$(BuildContext)PublicAPI/BeGTest=$(srcDir)PublicAPI/BeGTest"
-    @CreateSymLinks.py  -d"$(BuildContext)PublicAPI/BeTestAndroid=$(srcDir)Android"
     @CreateSymLinks.py  -f"$(BuildContext)Delivery/buildGtest.mke=$(srcDir)buildGtest.mke"
     @CreateSymLinks.py  -f"$(BuildContext)Delivery/RunGtest.mke=$(srcDir)RunGtest.mke"
     @CreateSymLinks.py  -f"$(BuildContext)Delivery/RunTests.py=$(srcDir)RunTests.py"

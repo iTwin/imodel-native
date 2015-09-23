@@ -13,7 +13,7 @@ change "MYPACKAGE" and "__REPO__" below to match the actual JUnit test package a
 #include <jni.h>
 #include <android/log.h>
 #include <Bentley/BeTest.h>
-#include <BeTestAndroid/BeTestHost.h>
+#include "BeTestHost.h"
 
 extern "C" int begtest_initialize ();
 extern "C" void begtest_uninitialize ();
