@@ -62,7 +62,7 @@ namespace dgn_AspectHandler
     //=======================================================================================
     struct TextAnnotationItemHandler : Aspect
     {
-        DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotationItem, TextAnnotationItemHandler, Aspect, DGNPLATFORM_EXPORT)
+        DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotationItem, TextAnnotationItemHandler, Aspect, DGNPLATFORM_EXPORT);
         RefCountedPtr<DgnElement::Aspect> _CreateInstance() override { return new TextAnnotationItem(); }
     };
 }
