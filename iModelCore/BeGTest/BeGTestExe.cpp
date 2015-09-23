@@ -29,29 +29,6 @@ static BentleyStatus getFileNameFromEnv (BeFileName& fn, CharCP envname)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson
-+---------------+---------------+---------------+---------------+---------------+------*/
-static WCharCP getPlatform (BeFileName const& progPathIn)
-    {
-    BeFileName progPath(progPathIn);
-    progPath.ToLower();
-    if (progPath.find (L"winx86") != WString::npos)
-        return L"Winx86";
-    if (progPath.find (L"winx64") != WString::npos)
-        return L"Winx64";
-    if (progPath.find (L"linuxx86") != WString::npos)
-        return L"LinuxX86";
-    if (progPath.find (L"linuxx64") != WString::npos)
-        return L"LinuxX64";
-    if (progPath.find (L"macosx64") != WString::npos)
-        return L"MacOSX64";
-
-    printf ("%s\n", Utf8String(progPath).c_str());    
-    BeAssert (false);
-    return L"??";
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * This class knows how data files are linked into the Product/BeGTest directory structure.
 * @bsimethod                                    Sam.Wilson                      10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -72,14 +49,7 @@ struct BeGTestHost : RefCounted<BeTest::Host>
 
     void GetRunRoot (BeFileName& path)
         {
-        if (getFileNameFromEnv (path, "OutRoot") != BSISUCCESS)
-            {
-            BeAssert(false);
-            return;
-            }
-        path.AppendToPath (getPlatform(m_programPath));
-        path.AppendToPath (L"build");
-        path.AppendToPath (L"BeGTest");
+        path = m_programPath;
         path.AppendToPath (L"run");
         }
 

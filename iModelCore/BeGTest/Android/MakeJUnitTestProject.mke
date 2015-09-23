@@ -13,11 +13,11 @@
     %error Define TEST_NAME as the name of the test. The .exe will use this name. Various output directories will also be based on it, so it must be unique among tests.
 %endif
 
-%ifndef TEST_COLLECTION_PRODUCT_DIR
-    %error TEST_COLLECTION_PRODUCT_DIR must point to the product that contains the unit tests and their supporting libraries and assets
+%ifndef TEST_COLLECTION_PRODUCT
+    %error Define TEST_COLLECTION_PRODUCT as the name of the test collection product
 %endif
 
-# Optional. BEGTEST_FRAMEWORK_SQLANG - Full filepath of .db3 file to return as the "framework" sqlang file
+# Optional. TEST_FRAMEWORK_SQLANG - Full filepath of .db3 file to return as the "framework" sqlang file
 
 GCC_DEFAULT_VISIBILITY=default
 %include mdl.mki
@@ -42,7 +42,7 @@ libsDir             = $(outputDir)project/app/libs/
 mainDir             = $(outputDir)project/app/src/main/
 androidTestDir      = $(outputDir)project/app/src/androidTest/
 
-collectionProduct = $(OutputRootDir)../Product/${TEST_COLLECTION_PRODUCT_DIR}/
+collectionProduct = $(OutputRootDir)../Product/${TEST_COLLECTION_PRODUCT}/
 unitTestsDir = $(collectionProduct)Objects/
 inputSoDir = $(collectionProduct)Assemblies/
 
@@ -140,13 +140,13 @@ always:
     ~mkdir $(libsDir)/$(BENTLEY_ANDROID_AndroidABI)
 
     
-%ifndef BEGTEST_FRAMEWORK_SQLANG
-    BEGTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3
+%ifndef TEST_FRAMEWORK_SQLANG
+    TEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3
 %endif
 
 always:
-    > $(outputDir)BEGTEST_FRAMEWORK_SQLANG_DEF.h
-\#define BEGTEST_FRAMEWORK_SQLANG L"$(BEGTEST_FRAMEWORK_SQLANG)"
+    > $(outputDir)TEST_FRAMEWORK_SQLANG_DEF.h
+\#define TEST_FRAMEWORK_SQLANG L"$(TEST_FRAMEWORK_SQLANG)"
     <
 
 cIncs + -I$(outputDir)
