@@ -19,8 +19,35 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
 PrimitiveArrayMappedToSingleColumnECSqlField::PrimitiveArrayMappedToSingleColumnECSqlField (ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, int sqliteColumnIndex, ECClassCR primitiveArraySystemClass)
-: ECSqlField (ecsqlStatement, move (ecsqlColumnInfo)), m_primitiveArraySystemClass (primitiveArraySystemClass), m_sqliteColumnIndex (sqliteColumnIndex), m_arrayElement(*ecsqlStatement.GetECDb())
+: ECSqlField (ecsqlStatement, move (ecsqlColumnInfo), true, true), m_primitiveArraySystemClass (primitiveArraySystemClass), m_sqliteColumnIndex (sqliteColumnIndex), m_arrayElement(*ecsqlStatement.GetECDb())
     {
+    //for empty arrays we cache some information so that we don't have to compute it for each step
+    m_emptyArrayValueECInstance = m_primitiveArraySystemClass.GetDefaultStandaloneEnabler()->CreateInstance();
+    ECValue arrayMetaInfo;
+    if (m_emptyArrayValueECInstance->GetValue(arrayMetaInfo, 1) != ECObjectsStatus::ECOBJECTS_STATUS_Success)
+        {
+        ReportError(ECSqlStatus::Error, "Could not retrieve array information from array ECInstance.");
+        BeAssert(false && "Could not retrieve array information from array ECInstance.");
+        return;
+        }
+
+    m_emptyArrayInfo = arrayMetaInfo.GetArrayInfo();
+
+    if (m_ecsqlColumnInfo.GetDataType().GetPrimitiveType() == PRIMITIVETYPE_DateTime)
+        {
+        auto property = m_ecsqlColumnInfo.GetProperty();
+        BeAssert(property != nullptr && "ColumnInfo::GetProperty can return null. Please double-check");
+        DateTimeInfo dateTimeInfo;
+        if (StandardCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, *property) != ECOBJECTS_STATUS_Success)
+            {
+            ReportError(ECSqlStatus::Error, "Retrieving DateTimeInfo custom attribute from corresponding ECProperty failed.");
+            BeAssert(false && "Retrieving DateTimeInfo custom attribute from corresponding ECProperty failed.");
+            return;
+            }
+
+        m_datetimeMetadata = dateTimeInfo.GetInfo(true);
+        }
+
     m_arrayElement.Init (m_ecsqlColumnInfo);
     Reset ();
     }
@@ -33,19 +60,9 @@ ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Init()
     Reset();
 
     Byte* arrayBlob = (Byte*) GetSqliteStatement().GetValueBlob(m_sqliteColumnIndex);
-    int arrayBlobSize = GetSqliteStatement().GetColumnBytes(m_sqliteColumnIndex);
+    const int arrayBlobSize = GetSqliteStatement().GetColumnBytes(m_sqliteColumnIndex);
 
-    m_arrayValueECInstance = nullptr;
-    m_arrayInfo = ArrayInfo();
-    m_datetimeMetadata = DateTime::Info();
-    auto enabler = m_primitiveArraySystemClass.GetDefaultStandaloneEnabler();
-    if (!enabler)
-        {
-        BeAssert(false && "ECEnabler for primitive array ECDb_System class is nullptr.");
-        return ReportError(ECSqlStatus::Error, "ECEnabler for primitive array ECDb_System class is nullptr.");
-        }
-
-    bool isEmptyArray = arrayBlob == nullptr;
+    const bool isEmptyArray = arrayBlob == nullptr;
     if (!isEmptyArray)
         {
         if (!ECDBuffer::IsCompatibleVersion(nullptr, arrayBlob))
@@ -55,37 +72,28 @@ ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Init()
             }
 
         //Initialize ECInstance from blob
-        m_arrayValueECInstance = enabler->CreateSharedInstance(arrayBlob, arrayBlobSize);
+        m_arrayValueECInstance = m_primitiveArraySystemClass.GetDefaultStandaloneEnabler()->CreateSharedInstance(arrayBlob, arrayBlobSize);
         if (!m_arrayValueECInstance.IsValid())
             {
             BeAssert(false && "Shared ECInstance created from array BLOB is nullptr.");
             return ReportError(ECSqlStatus::Error, "Shared ECInstance created from array BLOB is nullptr.");
             }
+
+        //Get array information 
+        ECValue arrayMetaInfo;
+        if (m_arrayValueECInstance->GetValue(arrayMetaInfo, 1) != ECObjectsStatus::ECOBJECTS_STATUS_Success)
+            {
+            BeAssert(false && "Could not retrieve array information from array ECInstance.");
+            return ReportError(ECSqlStatus::Error, "Could not retrieve array information from array ECInstance.");
+            }
+
+        m_arrayInfo = arrayMetaInfo.GetArrayInfo();
         }
     else
         {
-        //array is empty. Create an em
-        m_arrayValueECInstance = enabler->CreateInstance();
-        }
-
-    //Get array information 
-    ECValue arrayMetaInfo;
-    if (m_arrayValueECInstance->GetValue(arrayMetaInfo, 1) != ECObjectsStatus::ECOBJECTS_STATUS_Success)
-        {
-        BeAssert(false && "Could not retrieve array information from array ECInstance.");
-        return ReportError(ECSqlStatus::Error, "Could not retrieve array information from array ECInstance.");
-        }
-
-    m_arrayInfo = arrayMetaInfo.GetArrayInfo();
-    if (m_arrayInfo.GetElementPrimitiveType() == PRIMITIVETYPE_DateTime)
-        {
-        auto property = m_ecsqlColumnInfo.GetProperty();
-        BeAssert(property != nullptr && "ColumnInfo::GetProperty can return null. Please double-check");
-        DateTimeInfo dateTimeInfo;
-        if (StandardCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, *property) != ECOBJECTS_STATUS_Success)
-            return ReportError(ECSqlStatus::Error, "Retrieving DateTimeInfo custom attribute from corresponding ECProperty failed.");
-
-        m_datetimeMetadata = dateTimeInfo.GetInfo(true);
+        //array is empty.
+        m_arrayValueECInstance = m_emptyArrayValueECInstance;
+        m_arrayInfo = m_emptyArrayInfo;
         }
 
     return ECSqlStatus::Success;

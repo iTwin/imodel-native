@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "UnitTests/NonPublished/ECDb/ECDbTestProject.h"
-#include "PerformanceTestFixture.h"
+#include "PerformanceTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -14,7 +14,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiClass                                       Muhammad Hassan                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct PerformanceECDbMapCATestFixture : public PerformanceTestFixture
+struct PerformanceECDbMapCATestFixture : public PerformanceTestFixtureBase
     {
     public:
         size_t m_classNamePostFix = 1;
@@ -33,7 +33,6 @@ struct PerformanceECDbMapCATestFixture : public PerformanceTestFixture
             Utf8String m_deleteECSql;
             };
         bmap<ECN::ECClassCP, ECSqlTestItem> m_sqlTestItems;
-        virtual void InitializeTestDb () override {}
         void CreateClassHierarchy (ECSchemaR testSchema, size_t LevelCount, ECClassR baseClass);
         void CreatePrimitiveProperties (ECClassR ecClass);
         void GenerateECSqlCRUDTestStatements (ECSchemaR ecSchema);

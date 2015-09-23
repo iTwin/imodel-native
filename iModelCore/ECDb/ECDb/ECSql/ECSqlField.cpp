@@ -21,14 +21,6 @@ ECSqlField::Collection ECSqlField::s_emptyChildCollection;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-ECSqlField::ECSqlField (ECSqlStatementBase& owner, ECSqlColumnInfo&& ecsqlColumnInfo) 
-    : m_ecsqlStatement (owner), m_ecsqlColumnInfo (move (ecsqlColumnInfo))
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      09/2013
-//---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlField::Init () 
     {
     auto stat = _Init ();
@@ -42,14 +34,6 @@ ECSqlStatus ECSqlField::Init ()
             return stat;
         }
 
-    return ECSqlStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      10/2013
-//---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlField::_Init () 
-    {
     return ECSqlStatus::Success;
     }
 
@@ -77,14 +61,6 @@ ECSqlStatus ECSqlField::Reset ()
             return stat;
         }
 
-    return ECSqlStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      10/2013
-//---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlField::_Reset () 
-    {
     return ECSqlStatus::Success;
     }
 

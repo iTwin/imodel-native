@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 PointMappedToColumnsECSqlField::PointMappedToColumnsECSqlField (ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex) 
-    : ECSqlField (ecsqlStatement, move (ecsqlColumnInfo)), m_xColumnIndex (xColumnIndex), m_yColumnIndex (yColumnIndex), m_zColumnIndex (zColumnIndex)
+    : ECSqlField (ecsqlStatement, move (ecsqlColumnInfo), false, false), m_xColumnIndex (xColumnIndex), m_yColumnIndex (yColumnIndex), m_zColumnIndex (zColumnIndex)
     {}
 
 //-----------------------------------------------------------------------------------------

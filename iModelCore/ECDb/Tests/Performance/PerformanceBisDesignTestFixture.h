@@ -11,7 +11,6 @@
 #include <BeSQLite/BeSQLite.h>
 
 #include "PerformanceTests.h"
-#include "PerformanceTestFixture.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
