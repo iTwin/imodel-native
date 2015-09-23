@@ -210,7 +210,7 @@ BentleyStatus   JsonRenderMaterialMap::_GetData (DgnTextures::TextureData& data,
     if (textureIdValue.isNull())     
         return ERROR;                 // No external file support for now.
 
-    DgnTextureId            textureId = (DgnTextureId) textureIdValue.asInt64();
+    DgnTextureId            textureId = (DgnTextureId) textureIdValue.asUInt64();
     DgnTextures::Texture    texture = dgnDb.Textures().Query (textureId);
 
     if (!texture.IsValid())
@@ -233,7 +233,7 @@ uintptr_t  JsonRenderMaterialMap::_GetQvTextureId (DgnDbR dgnDb, bool createIfNo
     if (textureIdValue.isNull())     
         return ERROR;                 // No external file support for now.
 
-    DgnTextureId    textureId = (DgnTextureId) textureIdValue.asInt64();
+    DgnTextureId    textureId = (DgnTextureId) textureIdValue.asUInt64();
     uintptr_t       qvTextureId;
 
     if (0 == (qvTextureId = dgnDb.Textures().GetQvTextureId (textureId)) && createIfNotFound)
