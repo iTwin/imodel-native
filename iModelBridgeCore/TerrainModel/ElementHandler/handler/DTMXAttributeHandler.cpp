@@ -1508,9 +1508,6 @@ StatusInt DTMXAttributeHandler::ScheduleDtmData (EditElementHandleR elemHandle, 
     if (nullptr == allocator)
         m_allocator = Create (elemHandle, bcDTM, true);
 
-    AutoRestore<bool>  const savePoint (&m_allocator->m_inScheduleReplace);
-    m_allocator->m_inScheduleReplace = true;
-
     // If this is a DTMElement then we can't do a copy.
     m_allocator->StartModify (false);
 
@@ -1683,7 +1680,12 @@ StatusInt DTMXAttributeHandler::ScheduleDtmData (EditElementHandleR elemHandle, 
 
     if (allocator != nullptr)
         m_allocator->m_inCreate = true;
-    m_allocator->EndModify ();
+
+        {
+        AutoRestore<bool>  const savePoint (&m_allocator->m_inScheduleReplace);
+        m_allocator->m_inScheduleReplace = true;
+        m_allocator->EndModify ();
+        }
     if (allocator != nullptr)
         m_allocator->m_inCreate = false;
 
