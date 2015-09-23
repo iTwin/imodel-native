@@ -90,7 +90,7 @@ void ObstacleElement::SetSomeProperty(DgnDbR db, Utf8CP value)
     updateStmt.BindText(1, value, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     updateStmt.BindId(2, GetElementId());
     updateStmt.Step();
-    ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::Done , updateStmt.Step() );
+    ASSERT_EQ(BE_SQLITE_DONE , updateStmt.Step() );
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -103,13 +103,13 @@ void ObstacleElement::SetTestItem(DgnDbR db, Utf8CP value)
     insertStmt.Prepare(db, "INSERT INTO " DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_TEST_ITEM_CLASS_NAME " (TestItemProperty,ECInstanceId) VALUES(?,?)");
     insertStmt.BindText(1, value, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     insertStmt.BindId(2, GetElementId());
-    if (insertStmt.Step() != BeSQLite::EC::ECSqlStepStatus::Done)
+    if (insertStmt.Step() != BE_SQLITE_DONE)
         {
         ECSqlStatement updateStmt;
         updateStmt.Prepare(db, "UPDATE " DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_TEST_ITEM_CLASS_NAME " SET TestItemProperty=? WHERE ECInstanceId=?");
         updateStmt.BindText(1, value, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         updateStmt.BindId(2, GetElementId());
-        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::Done , updateStmt.Step() );
+        ASSERT_EQ(BE_SQLITE_DONE , updateStmt.Step() );
         }
     }
 

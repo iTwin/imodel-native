@@ -24,9 +24,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 namespace dgn_ElementHandler {struct Element; struct Physical; struct Drawing; struct Group;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
-struct MultiAspectMux;
-
-typedef RefCountedPtr<ElementGeometry> ElementGeometryPtr;
+DEFINE_REF_COUNTED_PTR(ElementGeometry)
 
 //=======================================================================================
 //! Holds ID remapping tables
@@ -43,24 +41,18 @@ protected:
     bmap<DgnClassId, DgnClassId> m_classId;
     bmap<DgnAuthorityId, DgnAuthorityId> m_authorityId;
 
-    template<typename T>
-    T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
+    template<typename T> T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
 
 public:
     DgnRemapTables& Get(DgnDbR);
-
     DgnAuthorityId Find(DgnAuthorityId sourceId) const {return Find<DgnAuthorityId>(m_authorityId, sourceId);}
     DgnAuthorityId Add(DgnAuthorityId sourceId, DgnAuthorityId targetId) {return m_authorityId[sourceId] = targetId;}
-
     DgnModelId Find(DgnModelId sourceId) const {return Find<DgnModelId>(m_modelId, sourceId);}
     DgnModelId Add(DgnModelId sourceId, DgnModelId targetId) {return m_modelId[sourceId] = targetId;}
-
     DgnElementId Find(DgnElementId sourceId) const {return Find<DgnElementId>(m_elementId, sourceId);}
     DgnElementId Add(DgnElementId sourceId, DgnElementId targetId) {return m_elementId[sourceId] = targetId;}
-
     DgnGeomPartId Find(DgnGeomPartId sourceId) const {return Find<DgnGeomPartId>(m_geomPartId, sourceId);}
     DgnGeomPartId Add(DgnGeomPartId sourceId, DgnGeomPartId targetId) {return m_geomPartId[sourceId] = targetId;}
-
     DgnCategoryId Find(DgnCategoryId sourceId) const {return Find<DgnCategoryId>(m_categoryId, sourceId);}
     DgnCategoryId Add(DgnCategoryId sourceId, DgnCategoryId targetId) {return m_categoryId[sourceId] = targetId;}
 
@@ -100,21 +92,21 @@ public:
     //! Make sure that a DgnAuthority has been imported
     DGNPLATFORM_EXPORT DgnAuthorityId RemapAuthorityId(DgnAuthorityId sourceId);
     //! Register a copy of a DgnAuthority
-    DGNPLATFORM_EXPORT DgnAuthorityId AddAuthorityId(DgnAuthorityId sourceId, DgnAuthorityId targetId) {return m_remap.Add(sourceId, targetId);}
+    DgnAuthorityId AddAuthorityId(DgnAuthorityId sourceId, DgnAuthorityId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Look up a copy of a model
-    DGNPLATFORM_EXPORT DgnModelId FindModelId(DgnModelId sourceId) const {return m_remap.Find(sourceId);}
+    DgnModelId FindModelId(DgnModelId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a model
-    DGNPLATFORM_EXPORT DgnModelId AddModelId(DgnModelId sourceId, DgnModelId targetId) {return m_remap.Add(sourceId, targetId);}
+    DgnModelId AddModelId(DgnModelId sourceId, DgnModelId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Look up a copy of an element
-    DGNPLATFORM_EXPORT DgnElementId FindElementId(DgnElementId sourceId) const {return m_remap.Find(sourceId);}
+    DgnElementId FindElementId(DgnElementId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of an element
-    DGNPLATFORM_EXPORT DgnElementId AddElementId(DgnElementId sourceId, DgnElementId targetId) {return m_remap.Add(sourceId, targetId);}
+    DgnElementId AddElementId(DgnElementId sourceId, DgnElementId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a GeomPart has been imported
     DGNPLATFORM_EXPORT DgnGeomPartId RemapGeomPartId(DgnGeomPartId sourceId);
     //! Make sure that a Category has been imported
     DGNPLATFORM_EXPORT DgnCategoryId RemapCategory(DgnCategoryId sourceId);
     //! Look up a copy of an subcategory
-    DGNPLATFORM_EXPORT DgnSubCategoryId FindSubCategory(DgnSubCategoryId sourceId) const {return m_remap.Find(sourceId);}
+    DgnSubCategoryId FindSubCategory(DgnSubCategoryId sourceId) const {return m_remap.Find(sourceId);}
     //! Make sure that a SubCategory has been imported
     DGNPLATFORM_EXPORT DgnSubCategoryId RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId sourceId);
     //! Make sure that an ECClass has been imported
@@ -300,7 +292,7 @@ public:
     public:
         //! Prepare to delete this aspect.
         //! @note The aspect will not actually be deleted in the Db until you call DgnElements::Update on the aspect's host element.
-        DGNPLATFORM_EXPORT void Delete() {m_changeType = ChangeType::Delete;}
+        void Delete() {m_changeType = ChangeType::Delete;}
 
         //! Get the ID of the ECClass for this aspect
         DGNPLATFORM_EXPORT DgnClassId GetECClassId(DgnDbR) const;
@@ -312,7 +304,7 @@ public:
         DGNPLATFORM_EXPORT virtual RefCountedPtr<DgnElement::Aspect> _CloneForImport(DgnElementCR sourceEl, DgnImportContext& importer) const;
 
         //! The subclass should override this method if it holds any IDs that must be remapped when it is copied (perhaps between DgnDbs)
-        DGNPLATFORM_EXPORT virtual DgnDbStatus _RemapIds(DgnElementCR el, DgnImportContext& context) {return DgnDbStatus::Success;}
+        virtual DgnDbStatus _RemapIds(DgnElementCR el, DgnImportContext& context) {return DgnDbStatus::Success;}
     };
 
     //! Represents an ElementAspect subclass for the case where the host Element can have multiple instances of the subclass.
@@ -412,9 +404,9 @@ public:
     };
 
     //! Represents a dgn.ElementItem.
-    //! dgn.ElementItem is-a dgn.ElementUniqueAspect. A dgn.Element can have 0 or 1 dgn.ElementItems, and the dgn.ElementItem always has the ID as the host dgn.Element.
+    //! dgn.ElementItem is-a dgn.ElementUniqueAspect. A dgn.Element can have 0 or 1 dgn.ElementItems, and the dgn.ElementItem always has the Id of its host dgn.Element.
     //! Note that the item's actual class can vary, as long as it is a subclass of dgn.ElementItem.
-    //! ElementItems instances are always stored in the dgn.ElementItem table (TablePerHierarchy).
+    //! ElementItems instances are always stored in the dgn.ElementItem table.
     //! <p>
     //! A dgn.ElementItem is normally used to capture the definition of the host element's geometry.
     //! The ElementItem is also expected to supply the algorithm for generating the host element's geometry from its definition.
@@ -444,18 +436,16 @@ public:
             };
 
     private:
-        static Key s_key;
-        static Key& GetKey() {return s_key;}
-
+        static Key& GetKey();
         static Item* Find(DgnElementCR);
         static Item* Load(DgnElementCR);
 
         DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el) override final; // *** WIP_ECSQL Polymorphic delete
         DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override final;
-        DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(DgnElementR el) override final {return CallGenerateElementGeometry(el, GenerateReason::Insert);}
-        DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementR el, DgnElementCR original) override final {return CallGenerateElementGeometry(el, GenerateReason::Update);}
+        DgnDbStatus _OnInsert(DgnElementR el) override final {return CallGenerateGeometry(el, GenerateReason::Insert);}
+        DgnDbStatus _OnUpdate(DgnElementR el, DgnElementCR original) override final {return CallGenerateGeometry(el, GenerateReason::Update);}
         static void SetItem0(DgnElementCR el, Item& item);
-        DgnDbStatus CallGenerateElementGeometry(DgnElementR, GenerateReason);
+        DGNPLATFORM_EXPORT DgnDbStatus CallGenerateGeometry(DgnElementR, GenerateReason);
 
     protected:
         //! The subclass must implement this method to generate geometry and store it on \a el.
@@ -535,8 +525,8 @@ public:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
 private:
-    void GetParamList(bvector<Utf8CP>& paramList, bool isForUpdate = false);
-    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement, bool isForUpdate = false);
+    void GetParamList(bvector<Utf8CP>& paramList, bool isForUpdate);
+    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement, bool isForUpdate);
     template<class T> void CallAppData(T const& caller) const;
 
 protected:
@@ -567,7 +557,7 @@ protected:
     void SetPersistent(bool val) const {m_flags.m_persistent = val;} //!< @private
     
     //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
-    void    CopyForCloneFrom(DgnElementCR src);
+    void CopyForCloneFrom(DgnElementCR src);
 
     DGNPLATFORM_EXPORT virtual ~DgnElement();
 
@@ -1335,7 +1325,7 @@ public:
     //! Create a new instance of a DgnElement using the specified CreateParams.
     //! @note This is a static method that only creates instances of the ElementGroup class. To create instances of subclasses,
     //! use a static method on the subclass.
-    static ElementGroupPtr Create(CreateParams const& params) { return new ElementGroup(params); }
+    static ElementGroupPtr Create(CreateParams const& params) {return new ElementGroup(params);}
 
     //! Query the DgnClassId for the dgn.ElementGroup class in the specified DgnDb.
     //! @note This is a static method that always returns the DgnClassId of the dgn.ElementGroup class - it does @b not return the class of a specific instance.
@@ -1358,7 +1348,7 @@ public:
 
     //! Query for the set of members of this ElementGroup
     //! @see QueryFromMember
-    DgnElementIdSet QueryMembers() const { return _QueryMembers(); }
+    DgnElementIdSet QueryMembers() const {return _QueryMembers();}
 
     //! Query an ElementGroup from a member element.
     //! @param[in] db the DgnDb to query
@@ -1545,7 +1535,7 @@ struct InstanceBackedItem : DgnElement::Item
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(DgnElementCR) override;
     DGNPLATFORM_EXPORT DgnDbStatus _GenerateElementGeometry(GeometricElementR el, GenerateReason) override;
 
-    InstanceBackedItem() {;}
+    InstanceBackedItem() {}
 
     void SetInstanceId(BeSQLite::EC::ECInstanceId eid);
 };

@@ -197,7 +197,7 @@ Utf8String testName
     // WIP_ECSQL - this should all be replaced by the ECSqlInstanceAdapter when it is ready
 
     stopwatch.Start();
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (statement.Step () == BE_SQLITE_ROW)
         {
         IECInstancePtr current = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
@@ -275,7 +275,7 @@ Utf8String testName
     statement2.Prepare (*tdm.GetDgnProjectP(), query.c_str());
 
     countWatch.Start();
-    while (statement2.Step() == ECSqlStepStatus::HasRow)
+    while (statement2.Step() == BE_SQLITE_ROW)
         {
         count = statement2.GetValueInt(0);
         }

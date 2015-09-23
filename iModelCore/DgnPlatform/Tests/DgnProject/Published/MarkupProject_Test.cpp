@@ -99,7 +99,7 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
         ECSqlStatement selectStmt;
         selectStmt.Prepare (*mproject, selectSql.ToString ().c_str ());
         selectStmt.BindId (1, rdlModel->GetECInstanceId());
-        ASSERT_TRUE (selectStmt.Step() == ECSqlStepStatus::HasRow);
+        ASSERT_TRUE (selectStmt.Step() == BE_SQLITE_ROW);
         ASSERT_STREQ( selectStmt.GetValueText(0), "foo" );
         }
 
@@ -111,7 +111,7 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
         ECSqlStatement updateStmt;
         updateStmt.Prepare (*mproject, updateSql.ToString ().c_str ());
         updateStmt.BindId (1, rdlModel->GetECInstanceId());
-        ASSERT_TRUE (updateStmt.Step() == ECSqlStepStatus::Done);
+        ASSERT_TRUE (updateStmt.Step() == BE_SQLITE_DONE);
         mproject->SaveChanges();
         }
 
@@ -122,7 +122,7 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
         ECSqlStatement selectStmt;
         selectStmt.Prepare (*mproject, selectSql.ToString ().c_str ());
         selectStmt.BindId (1, rdlModel->GetECInstanceId());
-        ASSERT_TRUE (selectStmt.Step() == ECSqlStepStatus::HasRow);
+        ASSERT_TRUE (selectStmt.Step() == BE_SQLITE_ROW);
         ASSERT_STREQ( selectStmt.GetValueText(0), "Some Description" );
         }
 #endif

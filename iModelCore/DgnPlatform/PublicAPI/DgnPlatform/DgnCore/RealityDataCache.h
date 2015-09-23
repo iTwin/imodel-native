@@ -381,7 +381,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IRealityDataStorageBase : RefCountedBase
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        03/2015
     //===================================================================================
-    struct SelectOptions : virtual IRefCounted {};
+    struct EXPORT_VTABLE_ATTRIBUTE SelectOptions : virtual IRefCounted {};
 
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        03/2015
@@ -521,7 +521,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IRealityDataSourceBase : RefCountedBase
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        03/2015
     //===================================================================================
-    struct RequestOptions : virtual IRefCounted {};
+    struct EXPORT_VTABLE_ATTRIBUTE RequestOptions : virtual IRefCounted {};
 
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        03/2015
@@ -686,7 +686,7 @@ public:
 //! Options for @ref RealityDataCache::Get request function.
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
-struct RealityDataCacheOptions : virtual IRefCounted
+struct EXPORT_VTABLE_ATTRIBUTE RealityDataCacheOptions : IRealityDataSourceBase::RequestOptions, IRealityDataStorageBase::SelectOptions
     {
     private:
         bool m_requestFromSource;
