@@ -117,9 +117,12 @@ virtual bool _OnNewHit (HitDetailCR path) {return false;}
 //! @return true if event was handled and modify dynamics should not be started.
 virtual bool _OnClick (DgnButtonEventCR ev) {return false;}
 
-//! Called on right-click while over a control, one use of this event would be to
+//! Called on right-click when not manipulating a control. One use of this event would be to
 //! present the user with a menu of editing options.
-//! @return true is manipulator wants to do something and handled the right-click event.
+//! @return true if manipulator wants to do something and handled the right-click event.
+//! @note It is up to the manipulator to check whether a control is selected or under the cursor by
+//!       calling HaveSelectedControls. A manipulator *could* also check if the current auto-locate HitDetail 
+//!       is for the geometry that the manipulator was created for when not over a control.
 virtual bool _OnRightClick (DgnButtonEventCR ev) {return false;}
 
 //! Called when user double clicks on the manipulator's element. (ex. edit text)

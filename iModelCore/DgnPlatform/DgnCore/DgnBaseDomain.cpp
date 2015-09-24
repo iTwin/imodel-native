@@ -77,6 +77,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(ViewHandler::GetHandler());
     RegisterHandler(DgnElementDependencyHandler::GetHandler());
     RegisterHandler(dgn_AspectHandler::Aspect::GetHandler());
+    RegisterHandler(dgn_AspectHandler::TextAnnotationItemHandler::GetHandler());
 
     RegisterHandler(dgn_ModelHandler::Model::GetHandler());
     RegisterHandler(dgn_ModelHandler::Physical::GetHandler());
@@ -97,8 +98,8 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::Physical::GetHandler());
     RegisterHandler(dgn_ElementHandler::Drawing::GetHandler());
     RegisterHandler(dgn_ElementHandler::Group::GetHandler());
-    RegisterHandler(dgn_ElementHandler::TextAnnotation::GetHandler());
-    RegisterHandler(dgn_ElementHandler::PhysicalTextAnnotation::GetHandler());
+    RegisterHandler(dgn_ElementHandler::TextAnnotationHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::PhysicalTextAnnotationHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::Material::GetHandler());
 
     RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());

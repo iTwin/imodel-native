@@ -28,7 +28,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnMaterial : DgnElement
 {
-    DEFINE_T_SUPER(DgnElement);
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_MaterialElement, DgnElement);
 public:
     struct Data

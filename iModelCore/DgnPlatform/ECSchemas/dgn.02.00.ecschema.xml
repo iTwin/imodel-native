@@ -222,7 +222,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECRelationshipClass typeName="CategoryOwnsSubCategories" isDomainClass="True" strength="embedding" strengthDirection="forward">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <CreateConstraint>True</CreateConstraint>
                 <OnDeleteAction>Cascade</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
@@ -564,7 +563,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECRelationshipClass typeName="ElementOwnsItem" isDomainClass="True" strength="embedding" strengthDirection="forward">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <CreateConstraint>True</CreateConstraint>
                 <OnDeleteAction>Cascade</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
@@ -596,7 +594,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECRelationshipClass typeName="ElementOwnsGeom" isDomainClass="True" strength="embedding" strengthDirection="forward">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <CreateConstraint>True</CreateConstraint>
                 <OnDeleteAction>Cascade</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
@@ -826,7 +823,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECRelationshipClass typeName="ModelContainsElements" description="Associates elements with a model" isDomainClass="True" strength="embedding">
         <ECCustomAttributes>
            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <CreateConstraint>True</CreateConstraint>
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
@@ -977,7 +973,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" isDomainClass="True" strengthDirection="forward" strength="referencing">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <CreateConstraint>True</CreateConstraint>
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
