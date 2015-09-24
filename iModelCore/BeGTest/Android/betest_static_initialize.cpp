@@ -163,7 +163,9 @@ jclass
     {
     BeFileName frameworkSqlang;
     BeTest::GetHost().GetFrameworkSqlangFiles(frameworkSqlang);
-    BeSQLite::L10N::Initialize (BeSQLite::L10N::SqlangFiles(frameworkSqlang));
+    // Some tests do not have language file. Skip L10N initialization because L10N assert will block the test.
+    if(frameworkSqlang.DoesPathExist())
+        BeSQLite::L10N::Initialize(frameworkSqlang);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -60,12 +60,11 @@ INIT_METHOD
     BentleyApi::NativeLogging::LoggingConfig::SetOption (CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_FATAL);
     BentleyApi::NativeLogging::LoggingConfig::ActivateProvider (BentleyApi::NativeLogging::CONSOLE_LOGGING_PROVIDER); // send messages to syslog
     
-    BeFileName sqlangDb;
-    BeTest::GetHost ().GetDgnPlatformAssetsDirectory (sqlangDb);
-    sqlangDb.AppendToPath (L"sqlang");
-    sqlangDb.AppendToPath (L"platform");
-    sqlangDb.AppendToPath (L"MobileDgn_en.sqlang.db3");
-    BeSQLite::L10N::Initialize (BeSQLite::L10N::SqlangFiles (sqlangDb));
+    BeFileName frameworkSqlang;
+    BeTest::GetHost().GetFrameworkSqlangFiles(frameworkSqlang);
+    // Some tests do not have language file. Skip L10N initialization because L10N assert will block the test.
+    if(frameworkSqlang.DoesPathExist())
+        BeSQLite::L10N::Initialize(frameworkSqlang);
 }
 
 #define UNINIT_METHOD   + (void) begtest_uninitialize {
