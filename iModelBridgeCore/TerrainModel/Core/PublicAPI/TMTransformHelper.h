@@ -859,7 +859,7 @@ struct TMTransformHelper : RefCountedBase
         bool GetTransformationFromDTM (TransformR transformation) const
             {
             transformation = m_transform;
-            return m_isIdentity;
+            return m_IsIdentity;
             }
         bool GetTransformationToDTM (TransformR transformation) const
             {

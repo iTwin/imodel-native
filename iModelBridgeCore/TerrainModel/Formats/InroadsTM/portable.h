@@ -410,3 +410,5 @@ inline double mdlVec_distance (DPoint3d* v1, DPoint3d* v2)
     {
     return v1->Distance (*v2);
     }
+
+typedef BENTLEY_NAMESPACE_NAME::BeSQLite::BeGuid BeGuid;

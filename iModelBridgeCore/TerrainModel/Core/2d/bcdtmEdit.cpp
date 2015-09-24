@@ -10683,7 +10683,7 @@ int bcdtmEdit_deletePolygonalFeatureDtmObject
 
 {
  int  ret=DTM_SUCCESS,dbg=0 ;
- long feat,feature,numIslands=0,*islandListP=NULL,numVoids=0,*voidListP=NULL ;
+ long feat,feature = 0,numIslands=0,*islandListP=NULL,numVoids=0,*voidListP=NULL ;
  BC_DTM_FEATURE  *dtmFeatureP ;
 
 // Write Entry Message

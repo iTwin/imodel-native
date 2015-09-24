@@ -17,6 +17,7 @@
 typedef bool BOOL;
 #endif
 
+typedef BENTLEY_NAMESPACE_NAME::BeSQLite::BeGuid BeGuid;
 #include "civguids.h"
 
 #pragma comment (lib, "rpcrt4.lib")

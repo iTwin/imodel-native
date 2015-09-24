@@ -206,7 +206,7 @@ BENTLEYDTM_EXPORT                      int bcdtmData_moveZUsingTagDtmObject (BC_
 BENTLEYDTM_EXPORT                      int bcdtmData_removeExternalMaxSideTrianglesDtmObject (BC_DTM_OBJ *dtmP, double maxSide);
 BENTLEYDTM_EXPORT                      int bcdtmData_removeExternalSliverTrianglesDtmObject (BC_DTM_OBJ *dtmP);
 BENTLEYDTM_EXPORT                      int bcdtmData_replaceDtmFeaturePointsDtmObject (BC_DTM_OBJ *dtmP, DTMFeatureId featureId, DPoint3d *featurePtsP, long numFeaturePts);
-BENTLEYDTM_EXPORT                      int bcdtmData_replaceDtmFeaturePointsMultipleDtmObject (BC_DTM_OBJ *dtmP, DTMFeatureId featureId, const Bentley::TerrainModel::DtmVectorString& features);
+BENTLEYDTM_EXPORT                      int bcdtmData_replaceDtmFeaturePointsMultipleDtmObject(BC_DTM_OBJ *dtmP, DTMFeatureId featureId, const BENTLEY_NAMESPACE_NAME::TerrainModel::DtmVectorString& features);
 BENTLEYDTM_Public                      int bcdtmData_resolveDataStateIslandsVoidsAndHolesDtmObject (BC_DTM_OBJ *dtmP);
 BENTLEYDTM_Public                      int bcdtmData_resolveIntersectingPolygonalDtmFeatureTypeDtmObject (BC_DTM_OBJ *dtmP, DTMFeatureType dtmFeatureType);
 BENTLEYDTM_Public                      int bcdtmData_resolveTinStateIslandsVoidsAndHolesDtmObject (BC_DTM_OBJ *dtmP, BC_DTM_OBJ **resolvedDtmPP);

@@ -4497,15 +4497,15 @@ bool BcDTM::_GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, D
     DPoint4d pt4;
     DPoint4d endPt4;
 
-    invW2vMap.qrInverseOf (&w2vMap);
-    w2vMap.multiplyAndRenormalize (&pt, &testPoint, 1);
+    invW2vMap.QrInverseOf (w2vMap);
+    w2vMap.MultiplyAndRenormalize (&pt, &testPoint, 1);
     pt.z -= 100;
-    invW2vMap.multiplyAndRenormalize (&endPt, &pt, 1);
-    pt4.init (&testPoint, 0);
-    w2vMap.multiply (&pt4, &pt4, 1);
+    invW2vMap.MultiplyAndRenormalize (&endPt, &pt, 1);
+    pt4.Init (testPoint, 0);
+    w2vMap.Multiply (&pt4, &pt4, 1);
     pt4.z -= 100;
-    invW2vMap.multiply (&endPt4, &pt4, 1);
-    endPt.init (endPt4.x, endPt4.y, endPt4.z);
+    invW2vMap.Multiply (&endPt4, &pt4, 1);
+    endPt.Init (endPt4.x, endPt4.y, endPt4.z);
 
     if (helper)
         {
@@ -4525,7 +4525,8 @@ bool BcDTM::_GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, D
         endPt.x -= startPt.x;
         endPt.y -= startPt.y;
         endPt.z -= startPt.z;
-        if (!range.intersectRay (NULL, NULL, &sP, &eP, &startPt, &endPt))
+        double p1, p2; // Not Used
+        if (!range.IntersectRay (p1, p2, sP, eP, startPt, endPt))
             return false;
 
         // Non Top View

@@ -2286,7 +2286,7 @@ int bcdtmData_replaceDtmFeaturePointsMultipleDtmObject
     (
     BC_DTM_OBJ     *dtmP,
     DTMFeatureId featureId,
-    const Bentley::TerrainModel::DtmVectorString& features
+    const BENTLEY_NAMESPACE_NAME::TerrainModel::DtmVectorString& features
     )
     /*
     ** Replace DTM Feature Points
