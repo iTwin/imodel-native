@@ -601,27 +601,6 @@ DgnDbStatus DgnElement::_ExtractSelectParams(ECSqlStatement&, ECSqlSelectParamet
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::_GetSelectParams(bvector<Utf8CP>& params)
-    {
-    T_Super::_GetSelectParams(params);
-    params.push_back(DGN_GEOMETRICELEMENT_PROPNAME_CATEGORYID);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
-    {
-    auto status = T_Super::_ExtractSelectParams(stmt, params);
-    if (DgnDbStatus::Success == status)
-        m_categoryId = stmt.GetValueId<DgnCategoryId>(params.GetParameterIndex(DGN_GEOMETRICELEMENT_PROPNAME_CATEGORYID));
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_LoadFromDb()
     {
     ECClassCP elementClass = GetElementClass();
