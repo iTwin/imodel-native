@@ -23,6 +23,8 @@ DGNPLATFORM_TYPEDEFS (ICheckStop)
 DGNPLATFORM_TYPEDEFS (PlanarPhysicalModel)
 DGNPLATFORM_TYPEDEFS (SheetModel)
 DGNPLATFORM_REF_COUNTED_PTR(SheetModel)
+DGNPLATFORM_REF_COUNTED_PTR(ResourceModel)
+
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
@@ -776,6 +778,8 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
 public:
     explicit ResourceModel(CreateParams const& params) : T_Super(params) { }
+
+    static ResourceModelPtr Create(CreateParams const& params) { return new ResourceModel(params); }
 };
 
 //=======================================================================================

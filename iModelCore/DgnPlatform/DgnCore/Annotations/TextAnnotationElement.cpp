@@ -14,8 +14,13 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 namespace dgn_ElementHandler
 {
-HANDLER_DEFINE_MEMBERS(TextAnnotation);
-HANDLER_DEFINE_MEMBERS(PhysicalTextAnnotation);
+    HANDLER_DEFINE_MEMBERS(TextAnnotationHandler);
+    HANDLER_DEFINE_MEMBERS(PhysicalTextAnnotationHandler);
+}
+
+namespace dgn_AspectHandler
+{
+    HANDLER_DEFINE_MEMBERS(TextAnnotationItemHandler);
 }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
