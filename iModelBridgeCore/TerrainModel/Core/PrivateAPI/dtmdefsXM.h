@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PrivateAPI/dtmdefsXM.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -298,10 +298,5 @@ struct SLOPETAB { double Low,High,Slope  ; } ;
 /*====================================================================*/
 
 // From dtmevars.h
-#ifdef __BENTLEYDTM_BUILD__
-extern DTM_GUID     *tmpGuidP ; 
-#else
-IMPORT_ATTRIBUTE DTM_GUID     *tmpGuidP ;
-#endif
 #endif
 

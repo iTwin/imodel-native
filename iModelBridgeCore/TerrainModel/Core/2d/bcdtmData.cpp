@@ -3186,11 +3186,9 @@ BENTLEYDTM_Public int bcdtmData_getHullsForIntersectingPolyonalFeaturesDtmObject
     ** Triangulate 
     */
     if( dbg ) bcdtmWrite_message(0,0,0,"Creating Break Tin ** Number Of Breaks = %8ld",dtmP->numFeatures) ;
-    DTM_NORMALISE_OPTION = FALSE ;    // To Inhibit Normalisation Of Coordinates - function 
     dtmP->ppTol = 0.0 ;
     dtmP->plTol = 0.0 ;  
-    if( bcdtmObject_createTinDtmObject(dtmP,1,0.0)) goto errexit ;
-    DTM_NORMALISE_OPTION = TRUE ;
+    if( bcdtmObject_createTinDtmObject(dtmP,1,0.0, false)) goto errexit ;
     /*
     ** Log Number Of Intersected Features
     */
@@ -3445,7 +3443,7 @@ BENTLEYDTM_Public int bcdtmData_getHullsForIntersectingPolyonalFeaturesDtmObject
         ** Clean Up
         */
 cleanup :
-        DTM_NORMALISE_OPTION = TRUE ;
+        //DTM_NORMALISE_OPTION = TRUE ;
         if( p3dPtsP   != NULL ) free(p3dPtsP) ;
         if( dtmP      != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
         /*

@@ -1253,7 +1253,7 @@ BENTLEYDTM_EXPORT                      int bcdtmObject_createDtmObject (BC_DTM_O
 BENTLEYDTM_EXPORT                      int bcdtmObject_createDtmObjectForDtmElement (BC_DTM_OBJ **dtmPP, BC_DTM_OBJ *dtmHeaderP);
 BENTLEYDTM_EXPORT                      int bcdtmObject_createFromMemoryBlockDtmObject (BC_DTM_OBJ **dtmPP, char *memoryBlockP, unsigned long memoryBlockSize);
 BENTLEYDTM_EXPORT                      int bcdtmObject_createLatticeObject (DTM_LAT_OBJ **Lattice); 
-BENTLEYDTM_Public                      int bcdtmObject_createTinDtmObject (BC_DTM_OBJ *dtmP, long edgeOption, double maxSide); 
+BENTLEYDTM_Public                      int bcdtmObject_createTinDtmObject (BC_DTM_OBJ *dtmP, long edgeOption, double maxSide, bool normaliseOption = true, bool duplicateOption = true); 
 BENTLEYDTM_Public                      int bcdtmObject_createTinDtmObjectOverload (BC_DTM_OBJ *dtmP, long edgeOption, double maxSide, bool normaliseOption, bool mergeOption);
 BENTLEYDTM_EXPORT                      int bcdtmObject_decReferenceCountDtmObject (BC_DTM_OBJ *dtmP);
 BENTLEYDTM_EXPORT                      int bcdtmObject_deleteAllLatticeObjects (void); 
@@ -1280,10 +1280,10 @@ BENTLEYDTM_Public                      int bcdtmObject_moveOrCopyPointsArray (BC
 BENTLEYDTM_Private                     int bcdtmObject_multiThreadSortDtmObject (BC_DTM_OBJ *dtmP);
 BENTLEYDTM_Public                      int bcdtmObject_overrideTriangulateDtmObject (int (*overrideP) (BC_DTM_OBJ *dtmP));
 BENTLEYDTM_EXPORT                      int bcdtmObject_placeVoidsAroundNullValuesDtmObject (BC_DTM_OBJ *dtmP, double nullValue);
-BENTLEYDTM_Public                      int bcdtmObject_processForTriangulationDtmObject (BC_DTM_OBJ *dtmP); 
+BENTLEYDTM_Public                      int bcdtmObject_processForTriangulationDtmObject (BC_DTM_OBJ *dtmP, bool normaliseOption = true, bool duplicateOption = true); 
 BENTLEYDTM_Public                      int bcdtmObject_processForTriangulationDtmObjectOverload (BC_DTM_OBJ *dtmP, bool normaliseOption, bool duplicateOption);
 BENTLEYDTM_Private                     int bcdtmObject_removeDuplicatePointOffsetsDtmObject (BC_DTM_OBJ *dtmP); 
-BENTLEYDTM_Public                      int bcdtmObject_removeDuplicatesDtmObject (BC_DTM_OBJ *dtmP, long *numDuplicatesP); 
+BENTLEYDTM_Public                      int bcdtmObject_removeDuplicatesDtmObject (BC_DTM_OBJ *dtmP, long *numDuplicatesP, bool duplicateOption = false); 
 BENTLEYDTM_Public                      int bcdtmObject_removeDuplicatesDtmObjectOverload (BC_DTM_OBJ *dtmP, long *numDuplicatesP, bool duplicateOption);
 BENTLEYDTM_EXPORT                      int bcdtmObject_reportActiveDtmObjects (long reportOption, long *numActiveObjectsP, unsigned long *totMemoryUsageP);
 BENTLEYDTM_EXPORT                      int bcdtmObject_reportEntityUsageAllDtmObjects (unsigned long *numFeaturesP, unsigned long *memFeaturesP, unsigned long *numPointsP, unsigned long *memPointsP); 
@@ -1309,7 +1309,7 @@ BENTLEYDTM_EXPORT                      int bcdtmObject_testForInMemoryDtmObject 
 BENTLEYDTM_EXPORT                      int bcdtmObject_testForValidDtmObject (BC_DTM_OBJ *dtmP); 
 BENTLEYDTM_Public                      int bcdtmObject_testForValidLatticeObject (DTM_LAT_OBJ *Lattice); 
 BENTLEYDTM_EXPORT                      int bcdtmObject_triangulateDemDtmObject (BC_DTM_OBJ *dtmP, long numRows, long numColumns, double nullValue);
-BENTLEYDTM_EXPORT                      int bcdtmObject_triangulateDtmObject (BC_DTM_OBJ *dtmP);
+BENTLEYDTM_EXPORT                      int bcdtmObject_triangulateDtmObject (BC_DTM_OBJ *dtmP, bool normaliseOption = true, bool duplicateOption = true);
 BENTLEYDTM_Private                     int bcdtmObject_triangulateGridDtmObject (BC_DTM_OBJ *dtmP, long numRows, long numColumns, double nullValue);
 BENTLEYDTM_EXPORT                      int bcdtmObject_triangulateLatticeObject (DTM_LAT_OBJ *latticeP, BC_DTM_OBJ **dtmPP);
 BENTLEYDTM_EXPORT                      int bcdtmObject_updateDtmObjectForDtmElement (BC_DTM_OBJ *dtmP,  void *headerP, void *featureArraysP, void *pointArraysP, void *nodeArraysP, void *fListArraysP, void *cListArraysP);

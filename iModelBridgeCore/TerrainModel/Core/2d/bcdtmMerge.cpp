@@ -2001,10 +2001,8 @@ BENTLEYDTM_Public int bcdtmMerge_insertImpliedVoidDtmObject(BC_DTM_OBJ *dtmP,lon
 ** Triangulate tempDtmP Object
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Triangulating Temporary Dtm Object") ;
- DTM_NORMALISE_OPTION = FALSE ;              // To Inhibit Normalisation Of Coordinates - function 
  tempDtmP->ppTol = tempDtmP->plTol = 0.0 ;  
- if( bcdtmObject_createTinDtmObject(tempDtmP,1,0.0)) goto errexit ;
- DTM_NORMALISE_OPTION = TRUE ;
+ if( bcdtmObject_createTinDtmObject(tempDtmP,1,0.0, false)) goto errexit ;
 /*
 ** Remove None Feature Hull Lines
 */
@@ -2061,7 +2059,6 @@ BENTLEYDTM_Public int bcdtmMerge_insertImpliedVoidDtmObject(BC_DTM_OBJ *dtmP,lon
 ** Clean Up
 */
  cleanup :
- DTM_NORMALISE_OPTION = TRUE ;
  if( pointsP  != NULL ) free(pointsP) ;
  if( tempDtmP != NULL ) bcdtmObject_destroyDtmObject(&tempDtmP)  ;  
 /*

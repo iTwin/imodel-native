@@ -10,7 +10,7 @@
 #include "bcdtminlines.h"
 
 //#pragma optimize( "p", on )
-long numPrecisionError=0,numSnapFix=0 ; // These are only used in Debug code.
+thread_local long numPrecisionError = 0, numSnapFix = 0; // These are only used in Debug code.
 
 /*-------------------------------------------------------------------+
 |                                                                    |
