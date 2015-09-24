@@ -132,6 +132,7 @@ protected:
     virtual void _GetDgnPlatformAssetsDirectory (BeFileName& path) = 0;
     virtual void _GetOutputRoot (BeFileName& path) = 0;
     virtual void _GetTempDir (BeFileName& path) = 0;
+    virtual void _GetFrameworkSqlangFiles(BeFileName& path) = 0;
 
 public:
     //! Call a function in the native test harness
@@ -150,6 +151,9 @@ public:
     //! @Note: Do not plan to store much in the temp directory. Files are deleted automatically when this directory gets too large. This directory is deleted entirely when the test finishes.
     //! @Note: Use GetOutputRoot for large files or files that should stick around for a long time.
     BENTLEYDLL_EXPORT void GetTempDir (BeFileName& path);
+
+    //! Get the full filename of the "framework" db3 file
+    BENTLEYDLL_EXPORT void GetFrameworkSqlangFiles(BeFileName& path);
     };
 
 //! Get the test harness host
