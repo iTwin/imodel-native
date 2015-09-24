@@ -27,7 +27,7 @@ void ECClass::SetErrorHandling (bool doAssert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClass::ECClass (ECSchemaCR schema)
     :
-    m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true), m_ecClassId(0)
+    m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true), m_isFinal(false), m_ecClassId(0)
     {
     //
     };
@@ -242,6 +242,37 @@ ECObjectsStatus ECClass::SetIsDomainClass (WCharCP isDomainClass)
     if (ECOBJECTS_STATUS_Success != status)
         LOG.warningv  (L"Failed to parse the isDomainClass string '%ls' for ECClass '%ls'.  Expected values are True or False", isDomainClass, this->GetName().c_str());
         
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECClass::GetIsFinal() const
+    {
+    return m_isFinal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::SetIsFinal(bool isFinal)
+    {
+    m_isFinal = isFinal;
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::SetIsFinal(WCharCP isFinal)
+    {
+    PRECONDITION(NULL != isFinal, ECOBJECTS_STATUS_PreconditionViolated);
+
+    ECObjectsStatus status = ECXml::ParseBooleanString(m_isFinal, isFinal);
+    if (ECOBJECTS_STATUS_Success != status)
+        LOG.warningv(L"Failed to parse the isFinal string '%ls' for ECClass '%ls'.  Expected values are True or False", isFinal, this->GetName().c_str());
+
     return status;
     }
 
@@ -958,6 +989,11 @@ ECObjectsStatus ECClass::AddBaseClass (ECClassCR baseClass)
             return ECOBJECTS_STATUS_SchemaNotFound;
         }
 
+    if (baseClass.GetIsFinal())
+        {
+        return ECOBJECTS_STATUS_BaseClassUnacceptable;
+        }
+
     if (this == &baseClass || ClassesAreEqualByName(this, &baseClass) || baseClass.TraverseBaseClasses(&CheckBaseClassCycles, true, this))
         return ECOBJECTS_STATUS_BaseClassUnacceptable;
         
@@ -1220,6 +1256,9 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
     else if (this->GetIsCustomAttributeClass())
         this->SetIsDomainClass (false);
 
+	if (BEXML_Success == classNode.GetAttributeStringValue(value, IS_FINAL_ATTRIBUTE))
+		setterStatus = this->SetIsFinal(value.c_str());
+
     return SCHEMA_READ_STATUS_Success;
     }
 
@@ -1347,7 +1386,12 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlNodeP& classNode, BeXmlNodeR parentNo
 
     classNode->AddAttributeBooleanValue (IS_STRUCT_ATTRIBUTE, this->GetIsStruct());
     classNode->AddAttributeBooleanValue (IS_DOMAINCLASS_ATTRIBUTE, this->GetIsDomainClass());
-    classNode->AddAttributeBooleanValue (IS_CUSTOMATTRIBUTE_ATTRIBUTE, this->GetIsCustomAttributeClass());
+	
+    // Only serialize in case it's set to true to reduce clutter
+    if (this->GetIsFinal())
+        classNode->AddAttributeBooleanValue (IS_FINAL_ATTRIBUTE, this->GetIsFinal());
+    
+	classNode->AddAttributeBooleanValue (IS_CUSTOMATTRIBUTE_ATTRIBUTE, this->GetIsCustomAttributeClass());
     
     for (const ECClassP& baseClass: m_baseClasses)
         classNode->AddElementStringValue (EC_BASE_CLASS_ELEMENT, (ECClass::GetQualifiedClassName(GetSchema(), *baseClass)).c_str() );

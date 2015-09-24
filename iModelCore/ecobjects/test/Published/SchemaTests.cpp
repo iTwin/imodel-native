@@ -732,6 +732,40 @@ TEST_F(SchemaDeserializationTest, ExpectDomainClassToBeSetProperly)
     };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectIsFinalToBeSetProperly)
+    {
+    // Test that isFinal attribute is serialized/deserialized
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema,
+        L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        L"<ECSchema schemaName=\"Widgets\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
+        L"    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isFinal=\"True\" isCustomAttributeClass=\"True\">"
+        L"       <ECProperty propertyName=\"Name\" typeName=\"string\" displayLabel=\"Project Name\" />"
+        L"    </ECClass>"
+        L"</ECSchema>", *schemaContext);
+
+    EXPECT_EQ(SCHEMA_READ_STATUS_Success, status);
+
+    ECClassP pClass = schema->GetClassP(L"ecProject");
+    EXPECT_TRUE(pClass->GetIsFinal());
+
+    WString ecSchemaXmlString;
+    SchemaWriteStatus status3 = schema->WriteToXmlString(ecSchemaXmlString);
+    EXPECT_EQ(SCHEMA_WRITE_STATUS_Success, status3);
+	
+    ECSchemaPtr testSchema;
+    status = ECSchema::ReadFromXmlString(testSchema, ecSchemaXmlString.c_str(), *schemaContext);
+    EXPECT_EQ(SCHEMA_READ_STATUS_Success, status);
+    ECClassP testClass = testSchema->GetClassP(L"ecProject");
+    EXPECT_TRUE(testClass->GetIsFinal());
+    };
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInXml)

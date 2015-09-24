@@ -2,7 +2,7 @@
 |
 |     $Source: src/ecxml.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -31,6 +31,7 @@
 #define     BASECLASS_ATTRIBUTE                 "baseClass"
 #define     TYPE_NAME_ATTRIBUTE                 "typeName"
 #define     IS_DOMAINCLASS_ATTRIBUTE            "isDomainClass"
+#define     IS_FINAL_ATTRIBUTE                  "isFinal"
 #define     IS_STRUCT_ATTRIBUTE                 "isStruct"
 #define     IS_CUSTOMATTRIBUTE_ATTRIBUTE        "isCustomAttributeClass"
 #define     MIN_OCCURS_ATTRIBUTE                "minOccurs"

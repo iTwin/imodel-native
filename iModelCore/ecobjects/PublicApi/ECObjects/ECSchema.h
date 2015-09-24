@@ -941,6 +941,7 @@ private:
     bool                            m_isStruct;
     bool                            m_isCustomAttributeClass;
     bool                            m_isDomainClass;
+    bool                            m_isFinal;
     ECSchemaCR                      m_schema;
     ECBaseClassesList               m_baseClasses;
     mutable ECDerivedClassesList    m_derivedClasses;
@@ -1089,11 +1090,19 @@ public:
     //! Gets whether this class can be used as a domain object
     ECOBJECTS_EXPORT bool               GetIsDomainClass() const;
 
+    //! Sets the bool value of whether this class is final and can't be subclassed
+    //! @param[in] isFinal String representation of true/false
+    //! @return    Success if the string is parsed into a bool
+    ECOBJECTS_EXPORT ECObjectsStatus    SetIsFinal(WCharCP isFinal);
+    //! Sets the bool value of whether this class is final and can't be subclassed
+    ECOBJECTS_EXPORT ECObjectsStatus    SetIsFinal(bool value);
+    //! Gets whether this class is final and can't be subclassed
+    ECOBJECTS_EXPORT bool               GetIsFinal() const;
 
     //! Adds a base class
     //! You cannot add a base class if it creates a cycle. For example, if A is a base class
     //! of B, and B is a base class of C, you cannot make C a base class of A. Attempting to do
-    //! so will return an error.
+    //! so will return an error. You also can't add a base class to final classes
     //! @param[in] baseClass The class to derive from
     ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass);
 
