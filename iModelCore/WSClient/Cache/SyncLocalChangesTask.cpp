@@ -622,6 +622,9 @@ void SyncLocalChangesTask::RemoveCacheSpecificProperties(JsonValueR propertiesJs
     for (Utf8StringCR member : propertiesJson.getMemberNames())
         {
         // Remove cache-specific properties
+
+        // TODO: Remove "type_string" check when implemented sending only changed properties to WSG
+        // "type_string" is not cache specific, it probably came as a workaround from PW_WSG 1.1 schema as it is readonly but not marked so
         if (member[0] == '$' || member == "type_string")
             {
             propertiesJson.removeMember(member);
