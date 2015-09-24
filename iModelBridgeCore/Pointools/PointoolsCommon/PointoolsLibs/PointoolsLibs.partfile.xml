@@ -259,16 +259,13 @@
   ********************************************************************************************************
 -->
 
-  <Part Name="PointoolsLibsVortex_2_VS2005" BMakeFile="PointoolsLibsVortex_VS2005.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
-
+  <Part Name="PointoolsLibsVortex_2_VS2005">
     <SubPart PartName="PointoolsLibsCommon_VS2005"/>
-
     <!-- SubPart PartName="FreeGlut_VS2005" Repository="PointoolsLibs"/ -->
-    <SubPart PartName="GLUI_VS2005" Repository="PointoolsLibs"/>
-    <SubPart PartName="FastDelegate_VS2005" Repository="PointoolsLibs"/>
-    <SubPart PartName="Loki_VS2005" Repository="PointoolsLibs"/>
-    <SubPart PartName="SCZ_Compress_VS2005" Repository="PointoolsLibs"/>
-    
+    <!-- SubPart PartName="GLUI_VS2005" Repository="PointoolsLibs" / -->
+    <SubPart PartName="FastDelegate" PartFile="FastDelegate" Repository="libsrc-FastDelegate"/>
+    <SubPart PartName="Loki" PartFile="Loki" Repository="libsrc-loki"/>
+    <SubPart PartName="SCZ_Compress_VS2008" PartFile="scz_compress" Repository="libsrc-scz_compress"/>    
   </Part>
   
   <Part Name="FreeGlut_VS2005" BMakeFile="PointoolsLibsVortex/FreeGlut/FreeGlut.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
@@ -297,15 +294,16 @@
       <SubPart PartName="BeLibxml2" PartFile="BeLibxml2" Repository="libsrc-libxml2" LibType="static"/>
       <SubPart PartName="PublicAPI" PartFile="BeIconv" Repository="Libsrc-Iconv"/>
       <SubPart PartName="Loki" PartFile="Loki" Repository="libsrc-loki"/>
-      <SubPart PartName="libLAS_VS2005" PartFile="liblas" Repository="libsrc-libLAS" />
       <SubPart PartName="libE57" PartFile="libE57" Repository="libsrc-libE57"/>
-      <SubPart PartName="Format_Leica_PTZ_6_0_0_VS2005" Repository="PointoolsLibs"/>
-      <SubPart PartName="Format_TopconCodec_VS2005" Repository="PointoolsLibs"/>
-      <SubPart PartName="Format_ZF_8_5_0_VS2005" Repository="PointoolsLibs"/>
+      <SubPart PartName="Format_Leica_PTZ_6_0_0_VS2012" Repository="Bin-Leica_PTZ_6_0_0" PartFile="Leica_PTZ_6_0_0"/>
+      <SubPart PartName="Format_TopconCodec_VS2012" Repository="Bin-TopconCodec" PartFile="TopconCodec"/>
+      <SubPart PartName="Format_ZF_8_5_0_VS2012_x86" Repository="Bin-ZF_8_5_0_VS2012_x86" PartFile="ZF_8_5_0"/>
+      <SubPart PartName="Format_ZF_8_5_0_VS2012_x64" Repository="Bin-ZF_8_5_0_VS2012_x64" PartFile="ZF_8_5_0"/> 
       <SubPart PartName="Format_Riegl_RivLib_1_3_2_VS2005" Repository="PointoolsLibs"/>
       <SubPart PartName="Format_Riegl_RiscanLib_3_5_VS2005" Repository="PointoolsLibs"/>
-      <SubPart PartName="Format_Faro_5_2_0_VS2005" Repository="PointoolsLibs"/>
-
+      <SubPart PartName="Format_Faro_5_4_3_10_VS2012_x86" Repository="Bin-Faro_5.4.3.10_VS2012" PartFile="Format_Faro_5_4_3_10"/>
+      <SubPart PartName="Format_Faro_5_4_3_10_VS2012_x64" Repository="Bin-Faro_5.4.3.10_VS2012" PartFile="Format_Faro_5_4_3_10"/>
+	  
   </Part>
   
   <Part Name="PointoolsLibsIO_2_32_PODWriter_VS2005" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
@@ -380,6 +378,9 @@
 
   <Part Name="Format_Riegl_RivLib_1_3_2_VS2005" OnlyPlatforms="x86" BMakeFile="PointoolsLibsIO\Formats\Riegl\Format_Riegl_RivLib_1_3_2.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
     <Bindings>
+      <Libs>
+        Delivery\scanifc-mt.lib
+      </Libs>
       <Assemblies ProductDirectoryName="PointoolsAssemblies">
         Delivery\scanifc-mt.dll
       </Assemblies>
