@@ -1328,11 +1328,10 @@ void BeStringUtilities::Split(Utf8CP str, Utf8CP delimiters, Utf8CP escapeChars,
         }
     }
 
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/14
+* @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String BeStringUtilities::Join (bvector<Utf8String> const& strings, Utf8CP delim)
+template<typename T> static Utf8String joinStrings(bvector<T> const& strings, Utf8CP delim)
     {
     Utf8String out;
     if (0 < strings.size())
@@ -1349,6 +1348,22 @@ Utf8String BeStringUtilities::Join (bvector<Utf8String> const& strings, Utf8CP d
         }
 
     return out;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String BeStringUtilities::Join (bvector<Utf8String> const& strings, Utf8CP delim)
+    {
+    return joinStrings(strings, delim);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String BeStringUtilities::Join(bvector<Utf8CP> const& strings, Utf8CP delim)
+    {
+    return joinStrings(strings, delim);
     }
 
 /*---------------------------------------------------------------------------------**//**
