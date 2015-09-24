@@ -85,7 +85,7 @@ void TestElement::_GetSelectParams(bvector<Utf8CP>& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
+DgnDbStatus TestElement::_ExtractSelectParams(ECSqlStatement& stmt, SelectParams const& params)
     {
     auto status = T_Super::_ExtractSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)

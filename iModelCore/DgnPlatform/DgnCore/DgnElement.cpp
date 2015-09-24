@@ -592,7 +592,7 @@ void DgnElement::_GetSelectParams(bvector<Utf8CP>&)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_ExtractSelectParams(ECSqlStatement&, ECSqlSelectParameters const&)
+DgnDbStatus DgnElement::_ExtractSelectParams(ECSqlStatement&, SelectParams const&)
     {
     // all params loaded when bootstrapping in DgnElements::LoadElement()...
     return DgnDbStatus::Success;
@@ -610,7 +610,7 @@ DgnDbStatus DgnElement::_LoadFromDb()
         return DgnDbStatus::BadElement;
         }
 
-    ECSqlSelectParameters params;
+    SelectParams params;
     _GetSelectParams(params.GetParameters());
     if (params.GetParameters().empty())
         return DgnDbStatus::Success;
@@ -2201,3 +2201,34 @@ DgnDbStatus InstanceBackedItem::_UpdateProperties(DgnElementCR el)
     ECInstanceUpdater& updater = CachedECInstanceUpdaters::GetECInstanceUpdater(el.GetDgnDb(), m_instance->GetClass());
     return (BSISUCCESS != updater.Update(*m_instance)) ? DgnDbStatus::WriteError : DgnDbStatus::Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::SelectParams::Add(Utf8CP name)
+    {
+    BeAssert(!Utf8String::IsNullOrEmpty(name));
+    BeAssert(-1 == GetParameterIndex(name) && "Duplicate parameter name");
+    if (!Utf8String::IsNullOrEmpty(name))
+        m_parameters.push_back(name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+int DgnElement::SelectParams::GetParameterIndex(Utf8CP name) const
+    {
+    BeAssert(!Utf8String::IsNullOrEmpty(name));
+    if (!Utf8String::IsNullOrEmpty(name))
+        {
+        auto found = std::find(m_parameters.begin(), m_parameters.end(), name);
+        if (m_parameters.end() == found)
+            found = std::find_if(m_parameters.begin(), m_parameters.end(), [&name](Utf8CP const& arg) { return 0 == ::strcmp(name, arg); });
+
+        if (m_parameters.end() != found)
+            return static_cast<int>(found - m_parameters.begin());
+        }
+
+    return -1;
+    }
+

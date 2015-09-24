@@ -265,7 +265,7 @@ DgnDbStatus DgnMaterial::_BindUpdateParams(ECSqlStatement& stmt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnMaterial::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
+DgnDbStatus DgnMaterial::_ExtractSelectParams(ECSqlStatement& stmt, SelectParams const& params)
     {
     auto status = T_Super::_ExtractSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)

@@ -191,6 +191,24 @@ public:
         void SetParentId(DgnElementId parent) {m_parentId=parent;} //!< Set the ParentId for DgnElements created with this CreateParams
     };
 
+    //! Maps indices in the results of the SELECT statement used by _ExtractSelectParams() to property names.
+    struct SelectParams
+    {
+    private:
+        bvector<Utf8CP> m_parameters;
+    public:
+        //! Adds a parameter name to the list. Note that the name is stored as Utf8CP.
+        //! @param[in]      parameterName The name of the parameter.
+        DGNPLATFORM_EXPORT void Add(Utf8CP parameterName);
+        //! Returns the index of the parameter with the specified name
+        //! @param[in]      parameterName The name of the parameter to look up
+        //! @return The index of the parameter within the list, or -1 if no such parameter exists
+        DGNPLATFORM_EXPORT int GetParameterIndex(Utf8CP parameterName) const;
+    //__PUBLISH_SECTION_END__
+        bvector<Utf8CP>& GetParameters() { return m_parameters; }
+    //__PUBLISH_SECTION_START__
+    };
+
     //! The Hilite state of a DgnElement. If an element is "hilited", its appearance is changed to call attention to it.
     enum class Hilited : uint8_t
     {
@@ -576,7 +594,7 @@ protected:
     //! @note If you override this method, you @em must first call T_Super::_ExtractSelectParams, forwarding its status.
     //! You should then extract your subclass properties from the supplied ECSqlStatement, using
     //! selectParams.GetParameterIndex() to look up the index of each parameter within the statement.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, BeSQLite::EC::ECSqlSelectParameters const& selectParams);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, SelectParams const& selectParams);
 
     //! Override this method if your element needs to load additional data from the database when it is loaded (for example,
     //! look up related data in another table).
