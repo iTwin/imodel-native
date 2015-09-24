@@ -154,7 +154,7 @@ public:
     RelationshipMapInfo(ECN::ECRelationshipClassCR relationshipClass, ECDbMapCR ecdbMap)
         : ClassMapInfo(relationshipClass, ecdbMap), m_sourceColumnsMappingIsNull(true), m_targetColumnsMappingIsNull(true), 
         m_allowDuplicateRelationships(false), m_createForeignKeyConstraint(false), m_onDeleteAction(ECDbSqlForeignKeyConstraint::ActionType::NotSpecified),
-        m_onUpdateAction(ECDbSqlForeignKeyConstraint::ActionType::NotSpecified), m_createIndexOnForeignKey(false), m_customMapType(CustomMapType::None)
+        m_onUpdateAction(ECDbSqlForeignKeyConstraint::ActionType::NotSpecified), m_createIndexOnForeignKey(true), m_customMapType(CustomMapType::None)
         {}
 
     virtual ~RelationshipMapInfo() {}

@@ -960,7 +960,7 @@ TEST(ECDbMap, ForeignKeyMapWithoutKeyProperty)
 
         bool actualForeignKey = false;
         ASSERT_EQ(SUCCESS, TryGetHasForeignKey(actualForeignKey, ecdb, childTableName));
-        ASSERT_EQ(false, actualForeignKey);
+        ASSERT_EQ(true, actualForeignKey);
         }
 
         {
@@ -1005,7 +1005,7 @@ TEST(ECDbMap, ForeignKeyMapWithoutKeyProperty)
 
         bool actualForeignKey = false;
         ASSERT_EQ(SUCCESS, TryGetHasForeignKey(actualForeignKey, ecdb, childTableName));
-        ASSERT_EQ(false, actualForeignKey);
+        ASSERT_EQ(true, actualForeignKey);
         }
 
         {
@@ -1087,7 +1087,7 @@ TEST(ECDbMap, ForeignKeyMapWithoutKeyProperty)
 
         bool actualForeignKey = false;
         ASSERT_EQ(SUCCESS, TryGetHasForeignKey(actualForeignKey, ecdb, childTableName));
-        ASSERT_EQ(false, actualForeignKey);
+        ASSERT_EQ(true, actualForeignKey);
         }
 
         {

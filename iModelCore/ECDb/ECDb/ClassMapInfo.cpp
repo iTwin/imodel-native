@@ -626,6 +626,11 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
         m_onDeleteAction = onDeleteAction;
         m_onUpdateAction = ECDbSqlForeignKeyConstraint::ToActionType(onUpdateActionStr.c_str());
 
+        //default ForeignKeyRelationshipMap.CreateIndex is true in case CA or the CreateIndex prop is not set
+        m_createIndexOnForeignKey = true;
+        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetCreateIndex(m_createIndexOnForeignKey))
+            return ERROR;
+
         return SUCCESS;
         }
     

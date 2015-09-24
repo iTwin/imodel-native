@@ -1181,9 +1181,9 @@ TEST_F(SchemaImportTestFixture, ForeignKeyMapCreateIndex)
     AssertSchemaImport(ecdb, asserted, testItem, "foreignkeymapcreateindex.ecdb");
     ASSERT_FALSE(asserted);
 
-    AssertIndex(ecdb, "ix_ts_Child_fk_ts_RelCreateIndexTrue_target", false, "ts_Child", {"ParentId"});
+    AssertIndex(ecdb, "ix_ts_Child_fk_ts_RelCreateIndexTrue_target", false, "ts_Child", {"ParentId"}, "[ParentId] IS NOT NULL");
+    AssertIndex(ecdb, "ix_ts_Child_fk_ts_RelCreateIndexDefaultValue_target", false, "ts_Child", {"ParentId"}, "[ParentId] IS NOT NULL");
     AssertIndexExists(ecdb, "ix_ts_Child_fk_ts_RelCreateIndexFalse_target", false);
-    AssertIndexExists(ecdb, "ix_ts_Child_fk_ts_RelCreateIndexDefaultValue_target", false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2864,7 +2864,7 @@ private:
     ResolvedMapStrategy GetMapStrategy(ECDbR ecdb, ECClassId ClassId) const;
 
 protected:
-    void ExecuteRelationshipInsertionIntegrityTest(ECDbR ecdb, bool allowDuplicateRelationships, bool schemaImportExpectedToSucceed) const;
+    void ExecuteRelationshipInsertionIntegrityTest(ECDbR ecdb, bool allowDuplicateRelationships, bool allowForeignKeyConstraint, bool schemaImportExpectedToSucceed) const;
 
     };
 
@@ -2875,7 +2875,7 @@ TEST_F(ReferentialIntegrityTestFixture, ForeignKeyRelationshipMap_EnforceReferen
     {
     ECDbTestProject test;
     ECDbR ecdb = test.Create ("ForeignKeyRelationshipMap_EnforceReferentialIntegrity.ecdb");
-    ExecuteRelationshipInsertionIntegrityTest (ecdb, false, true);
+    ExecuteRelationshipInsertionIntegrityTest (ecdb, false, true, true);
     //when AllowDuplicate is turned of, OneFooHasManyGoo will also be mapped as endtable therefore ReferentialIntegrityCheck will be performed for it, so there will be two rows in the ForeignKey table
     ASSERT_FALSE (ecdb.TableExists ("ts_OneFooHasOneGoo"));
     ASSERT_FALSE (ecdb.TableExists ("ts_OneFooHasManyGoo"));
@@ -2900,7 +2900,7 @@ TEST_F(ReferentialIntegrityTestFixture, ForeignKeyConstraint_EnforceReferentialI
     {
     ECDbTestProject test;
     ECDbR ecdb = test.Create ("ForeignKeyConstraint_EnforceReferentialIntegrityCheck_AllowDuplicateRelation.ecdb");
-    ExecuteRelationshipInsertionIntegrityTest (ecdb, true, true);
+    ExecuteRelationshipInsertionIntegrityTest (ecdb, true, true, true);
     //when AllowDuplicate is turned on, OneFooHasManyGoo will also be mapped as endtable therefore there will be only one row in the ForeignKey table
     ASSERT_FALSE (ecdb.TableExists ("ts_OneFooHasOneGoo"));
     ASSERT_FALSE (ecdb.TableExists ("ts_OneFooHasManyGoo"));
@@ -2926,7 +2926,7 @@ TEST_F(ReferentialIntegrityTestFixture, RelationshipTest_DoNotAllowDuplicateRela
     {
     ECDbTestProject test;
     ECDbR ecdb = test.Create ("RelationshipCardinalityTest.ecdb");
-    ExecuteRelationshipInsertionIntegrityTest (ecdb, false, true);
+    ExecuteRelationshipInsertionIntegrityTest (ecdb, false, false, true);
     ASSERT_TRUE (ecdb.TableExists ("ts_Foo"));
     ASSERT_TRUE (ecdb.TableExists ("ts_Goo"));
     ASSERT_FALSE (ecdb.TableExists ("ts_OneFooHasOneGoo"));
@@ -2941,7 +2941,7 @@ TEST_F(ReferentialIntegrityTestFixture, RelationshipTest_AllowDuplicateRelations
     {
     ECDbTestProject test;
     ECDbR ecdb = test.Create ("RelationshipCardinalityTest_AllowDuplicateRelationships.ecdb");
-    ExecuteRelationshipInsertionIntegrityTest (ecdb, true, true);
+    ExecuteRelationshipInsertionIntegrityTest (ecdb, true, false, true);
     ASSERT_TRUE (ecdb.TableExists ("ts_Foo"));
     ASSERT_TRUE (ecdb.TableExists ("ts_Goo"));
     ASSERT_FALSE (ecdb.TableExists ("ts_OneFooHasOneGoo"));
@@ -3020,7 +3020,7 @@ ReferentialIntegrityTestFixture::ResolvedMapStrategy ReferentialIntegrityTestFix
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                         02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(ECDbR ecdb, bool allowDuplicateRelationships, bool schemaImportExpectedToSucceed) const
+void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(ECDbR ecdb, bool allowDuplicateRelationships, bool allowForeignKeyConstraint, bool schemaImportExpectedToSucceed) const
     {
     ECSchemaPtr testSchema;
     ECClassP foo = nullptr, goo = nullptr;
@@ -3085,6 +3085,16 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
         ASSERT_TRUE(caInst != nullptr);
         ASSERT_TRUE(caInst->SetValue("AllowDuplicateRelationships", ECValue(true)) == ECOBJECTS_STATUS_Success);
         ASSERT_TRUE(manyFooHasManyGoo->SetCustomAttribute(*caInst) == ECOBJECTS_STATUS_Success);
+        }
+    
+    if (allowForeignKeyConstraint)
+        {
+        auto fkMapClass = ecdbmapSchema->GetClassCP("ForeignKeyRelationshipMap");
+        ASSERT_TRUE(fkMapClass != nullptr);
+        auto caInst = fkMapClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        ASSERT_TRUE(caInst != nullptr);
+        ASSERT_TRUE(oneFooHasOneGoo->SetCustomAttribute(*caInst) == ECOBJECTS_STATUS_Success);
+        ASSERT_TRUE(oneFooHasManyGoo->SetCustomAttribute(*caInst) == ECOBJECTS_STATUS_Success);
         }
     
     if (schemaImportExpectedToSucceed)
