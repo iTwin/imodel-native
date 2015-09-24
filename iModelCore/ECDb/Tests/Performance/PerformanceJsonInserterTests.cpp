@@ -6,7 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitTests/NonPublished/ECDb/ECDbTestProject.h>
-#include"PerformanceTestFixture.h"
+#include "PerformanceTests.h"
+
 using namespace BentleyApi::ECN;
 
 BEGIN_ECDBUNITTESTS_NAMESPACE

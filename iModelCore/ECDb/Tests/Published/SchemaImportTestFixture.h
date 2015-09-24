@@ -35,6 +35,7 @@ protected:
     void AssertSchemaImport(ECDbR, bool& asserted, TestItem const&, Utf8CP ecdbFileName) const;
     void AssertSchemaImport(bool& asserted, ECDbCR, TestItem const&) const;
 
+    void AssertIndexExists(ECDbCR, Utf8CP indexName, bool expectedToExist);
     void AssertIndex(ECDbCR, Utf8CP indexName, bool isUnique, Utf8CP tableName, std::vector<Utf8CP> const& columns, Utf8CP whereClause = nullptr);
     void AssertIndex(ECDbCR, Utf8CP indexName, bool isUnique, Utf8CP tableName, std::vector<Utf8CP> const& columns, std::vector<ECN::ECClassId> const& classIdFilter, bool negateClassIdFilter = false);
     void AssertIndex(ECDbCR, Utf8CP indexName, bool isUnique, Utf8CP tableName, std::vector<Utf8CP> const& columns, Utf8CP whereExpWithoutClassIdFilter, std::vector<ECN::ECClassId> const& classIdFilter, bool negateClassIdFilter = false);

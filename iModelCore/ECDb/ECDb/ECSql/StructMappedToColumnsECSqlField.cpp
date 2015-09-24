@@ -15,9 +15,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
 StructMappedToColumnsECSqlField::StructMappedToColumnsECSqlField (ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo)
-    : ECSqlField (ecsqlStatement, std::move (ecsqlColumnInfo))
-    {
-    }
+    : ECSqlField (ecsqlStatement, std::move (ecsqlColumnInfo), false, false)
+    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
@@ -95,7 +94,15 @@ ECSqlField::Collection const& StructMappedToColumnsECSqlField::GetChildren () co
 void StructMappedToColumnsECSqlField::AppendField (std::unique_ptr<ECSqlField> field)
     {
     PRECONDITION (field != nullptr, );
+    
+    if (field->RequiresInit())
+        m_requiresInit = true;
+
+    if (field->RequiresReset())
+        m_requiresReset = true;
+
     m_structFields.push_back (move (field));
+
     }
 
 //---------------------------------------------------------------------------------------

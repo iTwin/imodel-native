@@ -679,12 +679,7 @@ ECDbMapAnalyser::Relationship::Relationship (RelationshipClassMapCR classMap, St
     :Class (classMap, storage, parent), m_from (*this, EndType::From), m_to (*this, EndType::To), m_onDeleteAction (ECDbSqlForeignKeyConstraint::ActionType::NotSpecified), m_onUpdateAction (ECDbSqlForeignKeyConstraint::ActionType::NotSpecified)
     {
     ECDbForeignKeyRelationshipMap foreignKeyRelMap;
-    ECDbMapCustomAttributeHelper::TryGetForeignKeyRelationshipMap (foreignKeyRelMap, GetRelationshipClassMap ().GetRelationshipClass ());
-    bool createConstraint = false;
-    if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetCreateConstraint (createConstraint))
-        return;
-
-    if (createConstraint)
+    if (ECDbMapCustomAttributeHelper::TryGetForeignKeyRelationshipMap (foreignKeyRelMap, GetRelationshipClassMap ().GetRelationshipClass ()))
         {
         Utf8String onDeleteActionStr;
         if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetOnDeleteAction (onDeleteActionStr))

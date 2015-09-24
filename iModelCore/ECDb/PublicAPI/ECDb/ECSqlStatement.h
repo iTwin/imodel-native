@@ -192,21 +192,21 @@ public:
     //! @}
 
     //! Perform a single step on this statement
-    //! @remarks For select statements, BentleyApi::BeSQLite::DbResult::ROW indicates that data (a row) is returned which is ready to be 
-    //!          processed by the caller, and BentleyApi::BeSQLite::DbResult::DONE is returned after a
-    //!          successful execution of the step. For non-select statements (Insert, Update, Delete) BentleyApi::BeSQLite::DbResult::DONE is always 
+    //! @remarks For select statements, BentleyApi::BeSQLite::DbResult::BE_SQLITE_ROW indicates that data (a row) is returned which is ready to be 
+    //!          processed by the caller, and BentleyApi::BeSQLite::DbResult::BE_SQLITE_DONE is returned after a
+    //!          successful execution of the step. For non-select statements (Insert, Update, Delete) BentleyApi::BeSQLite::DbResult::BE_SQLITE_DONE is always 
     //!          returned in case of success and error codes in case of error.
-    //!          When BentleyApi::BeSQLite::DbResult::DONE was returned, Step should not be called again.
-    //! @return BentleyApi::BeSQLite::DbResult::ROW if Step returned data which is ready to be processed by the caller. 
-    //!         BentleyApi::BeSQLite::DbResult::DONE if the reader has finished executing successfully.
+    //!          When BentleyApi::BeSQLite::DbResult::BE_SQLITE_DONE was returned, Step should not be called again.
+    //! @return BentleyApi::BeSQLite::DbResult::BE_SQLITE_ROW if Step returned data which is ready to be processed by the caller. 
+    //!         BentleyApi::BeSQLite::DbResult::BE_SQLITE_DONE if the reader has finished executing successfully.
     //!         Error codes in case of errors.
     ECDB_EXPORT DbResult Step();
 
     //! Perform a single step on this (previously prepared) @b insert statement
     //! @remarks This overload is intended for insert statements only as it returns the ECInstanceKey of the inserted row.
     //! @param[out] ecInstanceKey The ECInstanceKey of the inserted row.
-    //! @return BentleyApi::BeSQLite::DbResult::ROW if Step returned data which is ready to be processed by the caller. 
-    //!         BentleyApi::BeSQLite::DbResult::DONE if the reader has finished executing successfully.
+    //! @return BentleyApi::BeSQLite::DbResultBE_SQLITE_ROWROW if Step returned data which is ready to be processed by the caller. 
+    //!         BentleyApi::BeSQLite::DbResult::BE_SQLITE_DONE if the reader has finished executing successfully.
     //!         Error codes in case of errors.
     ECDB_EXPORT DbResult Step(ECInstanceKey& ecInstanceKey) const;
 
@@ -497,5 +497,26 @@ public:
     };
 
 #endif
+
+//=======================================================================================
+//! Holds a list of property names for use with a SELECT ECSqlStatement.
+// @bsiclass                                                 Paul.Connelly      09/2015
+//+===============+===============+===============+===============+===============+======
+struct ECSqlSelectParameters
+{
+private:
+    bvector<Utf8CP> m_parameters;
+public:
+    //! Adds a parameter name to the list. Note that the name is stored as Utf8CP.
+    //! @param[in]      parameterName The name of the parameter.
+    ECDB_EXPORT void Add(Utf8CP parameterName);
+    //! Returns the index of the parameter with the specified name
+    //! @param[in]      parameterName The name of the parameter to look up
+    //! @return The index of the parameter within the list, or -1 if no such parameter exists
+    ECDB_EXPORT int GetParameterIndex(Utf8CP parameterName) const;
+//__PUBLISH_SECTION_END__
+    bvector<Utf8CP>& GetParameters() { return m_parameters; }
+//__PUBLISH_SECTION_START__
+};
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
