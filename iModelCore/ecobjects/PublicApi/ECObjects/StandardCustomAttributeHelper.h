@@ -454,6 +454,25 @@ public:
     //! @return ECOBJECTSTATUS_Success if End was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
     ECOBJECTS_EXPORT ECObjectsStatus TryGetEnd(ECRelationshipEnd& foreignKeyEnd) const;
 
+    //! Tries to get the value of the OnDeleteAction property from the ForeignKeyRelationshipMap.
+    //! @param[out] onDeleteAction OnDelete action.  @p onDeleteAction remains unchanged, if the OnDeleteAction property 
+    //! wasn't set in the ForeignKeyRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if OnDeleteAction was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetOnDeleteAction(Utf8StringR onDeleteAction) const;
+
+    //! Tries to get the value of the OnUpdateAction property from the ForeignKeyRelationshipMap.
+    //! @param[out] onUpdateAction Onpdate action. @p onDeleteAction remains unchanged, if the OnUpdateAction property 
+    //! wasn't set in the ForeignKeyRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if OnUpdateAction was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetOnUpdateAction(Utf8StringR onUpdateAction) const;
+
+    //! Tries to get the value of the CreateIndex property from the ForeignKeyRelationshipMap.
+    //! @param[out] createIndexFlag true, if an index should be created on the foreign key column(s)
+    //!             false if no index should be created.
+    //!             @p createIndexFlag remains unchanged, if the CreateIndex property wasn't set in the ForeignKeyRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if CreateIndex was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetCreateIndex(bool& createIndexFlag) const;
+
     //! Tries to get the value of the ForeignKeyColumn property from the ForeignKeyRelationshipMap.
     //! @param[out] foreignKeyColumnName Name of column to which ForeignKeyColumn is mapped to. 
     //! It remains unchanged, if the ForeignKeyColumn property wasn't set in the ForeignKeyRelationshipMap.
@@ -465,27 +484,6 @@ public:
     //! It remains unchanged, if the ForeignKeyClassId property wasn't set in the ForeignKeyRelationshipMap.
     //! @return ECOBJECTSTATUS_Success if ForeignKeyClassId was set or unset in the ForeignKeyRelationshipMap, error codes otherwise
     ECOBJECTS_EXPORT ECObjectsStatus TryGetForeignKeyClassIdColumn(Utf8StringR foreignKeyClassIdColumnName) const;
-
-    //! Tries to get the value of the CreateConstraint property from the ForeignKeyRelationshipMap.
-    //! @param[out] createConstraintFlag true, if a foreign key constraint should be created (and referential integrity be enforced)
-    //!             false if no foreign key constraint should be created (and referential integrity should not be enforced).
-    //!             @p createConstraintFlag remains unchanged, if the CreateConstraint property wasn't set in the ForeignKeyRelationshipMap.
-    //! @return ECOBJECTSTATUS_Success if CreateConstraint was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetCreateConstraint(bool& createConstraintFlag) const;
-
-    //! Tries to get the value of the OnDeleteAction property from the ForeignKeyRelationshipMap.
-    //! @remarks The property is only applicable if CreateConstraint was set to true.
-    //! @param[out] onDeleteAction OnDelete action.  @p onDeleteAction remains unchanged, if the OnDeleteAction property 
-    //! wasn't set in the ForeignKeyRelationshipMap.
-    //! @return ECOBJECTSTATUS_Success if OnDeleteAction was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetOnDeleteAction(Utf8StringR onDeleteAction) const;
-
-    //! Tries to get the value of the OnUpdateAction property from the ForeignKeyRelationshipMap.
-    //! @remarks The property is only applicable if CreateConstraint was set to true.
-    //! @param[out] onUpdateAction Onpdate action. @p onDeleteAction remains unchanged, if the OnUpdateAction property 
-    //! wasn't set in the ForeignKeyRelationshipMap.
-    //! @return ECOBJECTSTATUS_Success if OnUpdateAction was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetOnUpdateAction(Utf8StringR onUpdateAction) const;
     };
 	
 /** @endGroup */

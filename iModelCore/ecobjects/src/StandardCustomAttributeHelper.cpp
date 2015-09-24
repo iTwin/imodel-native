@@ -839,12 +839,12 @@ ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetForeignKeyClassIdColumn(Utf
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetCreateConstraint(bool& createConstraintFlag) const
+ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetCreateIndex(bool& createIndexFlag) const
     {
     if (m_ca == nullptr)
         return ECOBJECTS_STATUS_Error;
 
-    return CustomAttributeReader::TryGetBooleanValue(createConstraintFlag, *m_ca, "CreateConstraint");
+    return CustomAttributeReader::TryGetBooleanValue(createIndexFlag, *m_ca, "CreateIndex");
     }
 
 
