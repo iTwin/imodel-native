@@ -9,6 +9,54 @@
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     09/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus TextAnnotationDraw::DrawToElementGeometry::_ProcessTextString(TextStringCR text)
+    {
+    if (m_transform.IsIdentity())
+        {
+        m_builder.Append(text);
+        }
+    else
+        {
+        TextString transformedText(text);
+        transformedText.ApplyTransform(m_transform);
+        m_builder.Append(transformedText);
+        }
+
+    return SUCCESS; // SUCCESS means handled
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     09/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus TextAnnotationDraw::DrawToElementGeometry::_ProcessCurveVector(CurveVectorCR curves, bool isFilled)
+    {
+    if (m_transform.IsIdentity())
+        {
+        m_builder.Append(curves);
+        }
+    else
+        {
+        CurveVector transformedCurves(curves);
+        transformedCurves.TransformInPlace(m_transform);
+        m_builder.Append(transformedCurves);
+        }
+
+    return SUCCESS; // SUCCESS means handled
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     09/2015
+//---------------------------------------------------------------------------------------
+void TextAnnotationDraw::DrawToElementGeometry::_OutputGraphics(ViewContextR context)
+    {
+    context.GetCurrentDisplayParams().SetCategoryId(m_categoryId);
+
+    m_annotationDraw.Draw(context);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
 TextAnnotationDraw::TextAnnotationDraw(TextAnnotationCR annotation) :
@@ -93,4 +141,15 @@ BentleyStatus TextAnnotationDraw::Draw(ViewContextR context) const
         }
 
     return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     05/2014
+//---------------------------------------------------------------------------------------
+BentleyStatus TextAnnotationDraw::Draw(ElementGeometryBuilderR builder, DgnDbR db, DgnCategoryId categoryId) const
+    {
+    TextAnnotationDraw::DrawToElementGeometry annotationDrawToGeometry(*this, builder, categoryId);
+    ElementGraphicsOutput::Process(annotationDrawToGeometry, db);
+
+    return SUCCESS;
     }
