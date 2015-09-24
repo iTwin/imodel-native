@@ -132,6 +132,7 @@
 
   <Part Name="PointoolsLibsIO_VS2012" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
     <SubPart PartName="PointoolsLibsCommon_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="Xerces_3_1_2_XercesLib_VS2012" PartFile="Xerces-c-3_1_2" Repository="Libsrc-xerces-c-3.1.2"/>	
     <SubPart PartName="BeLibxml2_VS2012" PartFile="BeLibxml2" Repository="libsrc-libxml2" LibType="static"/>
     <SubPart PartName="PublicAPI" PartFile="BeIconv" Repository="Libsrc-Iconv"/>
     <SubPart PartName="Loki" PartFile="Loki" Repository="libsrc-loki"/>
