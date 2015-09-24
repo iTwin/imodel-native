@@ -125,6 +125,8 @@
         <ProductDirectory Name="StdThemes"                          Path="Assets/std-themes"/>
         <ProductDirectory Name="StdThemes"                          Path="Assets/std-themes" LibType="static"/>
 
+        <ProductDirectory Name="CordovaJavaScript" Deliver="false"/>
+        <ProductDirectory Name="CordovaJavaScript" Deliver="false" LibType="static"/>
         <ProductDirectory Name="MobileDgnSdkIncludeDirectory" Deliver="false"/>
         <ProductDirectory Name="MobileDgnSdkIncludeDirectory" Deliver="false" LibType="static"/>
         <ProductDirectory Name="DgnViewDecorators" Deliver="false"/>
