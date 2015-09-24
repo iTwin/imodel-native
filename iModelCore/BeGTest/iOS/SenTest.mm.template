@@ -33,6 +33,7 @@ INIT_METHOD
     NSArray*  documentPaths  = NSSearchPathForDirectoriesInDomains (NSDocumentDirectory, NSUserDomainMask, YES);
     NSString* documentDir    = [[documentPaths objectAtIndex:0] stringByAppendingPathComponent:@"BeTestDocuments"];
     
+    #ifdef COMMENT_OUT // *** No. We have some tests that have no documents
     // When running the tests on a simulator for the first time, XCode is not able to deploy the application data package
     // (you get a warning about that). Application data package contains test documents so the tests that depend on them fail.
     // If the app data package is deployed successfully, it always has the documents.manifest file. Here we check if it exists
@@ -41,6 +42,7 @@ INIT_METHOD
     BeFileName documentsManifest (WString ([[documentPaths objectAtIndex:0] cStringUsingEncoding:NSUTF8StringEncoding], BentleyCharEncoding::Utf8).c_str ());
     documentsManifest.AppendToPath (L"documents.manifest");
     BeAssert (documentsManifest.DoesPathExist ());
+    #endif
         
     NSString* bundleDir      = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"MobileDgnAssets.bundle"];
     NSString* tempDir        = NSTemporaryDirectory ();
