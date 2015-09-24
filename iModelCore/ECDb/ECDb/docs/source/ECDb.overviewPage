@@ -405,15 +405,14 @@
     - <b>End</b>: (optional) Possible values: Target (default) or Source. If specified it indicates which end of the
     ECRelationship will carry the foreign key constraint. Usually this is the target end as the usual metaphor for a foreign key relationship
     is a parent child relationship where parent is source and child is target.
+    - <b>OnDeleteAction</b>: Possible values: NoAction (default) or Cascade (deletes child rows when parent row is deleted).
+    - <b>OnUpdateAction</b>: Possible values: NoAction (default) or Cascade (updates child foreign key when parent primary key is updated).
+    - <b>CreateIndex</b>: If true, an index will be created on the foreign key column(s). If false (default), no index will be created.
     - <b>ForeignKeyColumn</b>: (optional) Defines the foreign key column. This should only be set if no Key property is defined on the
     respective constraint class, because in that case the mapping of the Key property is considered. If this property is not set and
     no Key property was specified, %ECDb generates a column with a default name.
     - <b>ForeignKeyClassIdColumn</b>: (optional) Defines the foreign key's ECClassId column. If this property is not set, %ECDb generates a column with a default name.
     In many cases a class id column is not needed at all. %ECDb will ignore this property in that case.
-    - <b>CreateConstraint</b>: If true, a foreign key constraint is created (i.e. referential integrity is enforced). If false (default), no
-    foreign key constraint is created (i.e. no referential integrity is enforced).
-    - <b>OnDeleteAction</b>: Possible values: NoAction (default) or Cascade (deletes child rows when parent row is deleted). @b CreateConstraint must be set to true.
-    - <b>OnUpdateAction</b>: Possible values: NoAction (default) or Cascade (updates child foreign key when parent primary key is updated). @b CreateConstraint must be set to true.
 
     Description of the @b LinkTableRelationshipMap properties:
     - <b>SourceECInstanceIdColumn</b>: (optional) Defines the column to which the ECInstanceId of the source constraint is mapped to.

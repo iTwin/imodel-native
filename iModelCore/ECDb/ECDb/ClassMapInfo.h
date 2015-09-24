@@ -140,8 +140,10 @@ private:
     bool m_targetColumnsMappingIsNull;
     RelationshipEndColumns m_targetColumnsMapping;
     bool m_allowDuplicateRelationships;
+    bool m_createForeignKeyConstraint;
     ECDbSqlForeignKeyConstraint::ActionType m_onDeleteAction;
     ECDbSqlForeignKeyConstraint::ActionType m_onUpdateAction;
+    bool m_createIndexOnForeignKey;
     CustomMapType m_customMapType;
 
     virtual BentleyStatus _InitializeFromSchema() override;
@@ -151,8 +153,8 @@ private:
 public:
     RelationshipMapInfo(ECN::ECRelationshipClassCR relationshipClass, ECDbMapCR ecdbMap)
         : ClassMapInfo(relationshipClass, ecdbMap), m_sourceColumnsMappingIsNull(true), m_targetColumnsMappingIsNull(true), 
-        m_allowDuplicateRelationships(false), m_onDeleteAction(ECDbSqlForeignKeyConstraint::ActionType::NotSpecified), 
-        m_onUpdateAction(ECDbSqlForeignKeyConstraint::ActionType::NotSpecified), m_customMapType(CustomMapType::None)
+        m_allowDuplicateRelationships(false), m_createForeignKeyConstraint(false), m_onDeleteAction(ECDbSqlForeignKeyConstraint::ActionType::NotSpecified),
+        m_onUpdateAction(ECDbSqlForeignKeyConstraint::ActionType::NotSpecified), m_createIndexOnForeignKey(false), m_customMapType(CustomMapType::None)
         {}
 
     virtual ~RelationshipMapInfo() {}
@@ -161,9 +163,12 @@ public:
     RelationshipEndColumns const& GetSourceColumnsMapping() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnTarget && m_resolvedStrategy.GetStrategy() != ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable); return m_sourceColumnsMapping; }
     RelationshipEndColumns const& GetTargetColumnsMapping() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnSource && m_resolvedStrategy.GetStrategy() != ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable); return m_targetColumnsMapping; }
     bool AllowDuplicateRelationships() const { BeAssert((m_customMapType == CustomMapType::LinkTable || m_customMapType == CustomMapType::None) && !m_resolvedStrategy.IsForeignKeyMapping()); return m_allowDuplicateRelationships; }
-    bool IsCreateForeignKeyConstraint() const { BeAssert(m_customMapType != CustomMapType::LinkTable && m_resolvedStrategy.IsForeignKeyMapping()); return m_onDeleteAction != ECDbSqlForeignKeyConstraint::ActionType::NotSpecified || m_onUpdateAction != ECDbSqlForeignKeyConstraint::ActionType::NotSpecified; }
-    ECDbSqlForeignKeyConstraint::ActionType GetOnDeleteAction() const { BeAssert(IsCreateForeignKeyConstraint()); return m_onDeleteAction; }
-    ECDbSqlForeignKeyConstraint::ActionType GetOnUpdateAction() const { BeAssert(IsCreateForeignKeyConstraint()); return m_onUpdateAction; }
+
+    bool CreateForeignKeyConstraint() const { BeAssert(m_customMapType != CustomMapType::LinkTable && m_resolvedStrategy.IsForeignKeyMapping()); return m_createForeignKeyConstraint;}
+    ECDbSqlForeignKeyConstraint::ActionType GetOnDeleteAction() const { BeAssert(CreateForeignKeyConstraint()); return m_onDeleteAction; }
+    ECDbSqlForeignKeyConstraint::ActionType GetOnUpdateAction() const { BeAssert(CreateForeignKeyConstraint()); return m_onUpdateAction; }
+
+    bool CreateIndexOnForeignKey() const { BeAssert(m_customMapType != CustomMapType::LinkTable && m_resolvedStrategy.IsForeignKeyMapping()); return m_createIndexOnForeignKey; }
     };
 
 

@@ -558,6 +558,9 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
 
     if (hasForeignKeyRelMap)
         {
+        //always create a FK constraint, if the ForeignKeyRelationshipMap CA exists
+        m_createForeignKeyConstraint = true;
+
         ECRelationshipEnd foreignKeyEnd = ECRelationshipEnd_Target;
         if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetEnd(foreignKeyEnd))
             return ERROR;
@@ -604,31 +607,24 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
 
         *foreignKeyColumnsMapping = RelationshipEndColumns(foreignKeyColName.c_str(), foreignKeyClassIdColName.c_str());
 
-        bool createConstraint = false;
-        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetCreateConstraint(createConstraint))
+        Utf8String onDeleteActionStr;
+        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetOnDeleteAction(onDeleteActionStr))
             return ERROR;
 
-        if (createConstraint)
+        Utf8String onUpdateActionStr;
+        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetOnUpdateAction(onUpdateActionStr))
+            return ERROR;
+
+        const ECDbSqlForeignKeyConstraint::ActionType onDeleteAction = ECDbSqlForeignKeyConstraint::ToActionType(onDeleteActionStr.c_str());
+        if (onDeleteAction == ECDbSqlForeignKeyConstraint::ActionType::Cascade && relClass->GetStrength() != StrengthType::STRENGTHTYPE_Embedding)
             {
-            Utf8String onDeleteActionStr;
-            if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetOnDeleteAction(onDeleteActionStr))
-                return ERROR;
-
-            Utf8String onUpdateActionStr;
-            if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetOnUpdateAction(onUpdateActionStr))
-                return ERROR;
-
-            const ECDbSqlForeignKeyConstraint::ActionType onDeleteAction = ECDbSqlForeignKeyConstraint::ToActionType(onDeleteActionStr.c_str());
-            if (onDeleteAction == ECDbSqlForeignKeyConstraint::ActionType::Cascade && relClass->GetStrength() != StrengthType::STRENGTHTYPE_Embedding)
-                {
-                LOG.errorv("ForeignKeyRelationshipMap custom attribute on ECRelationshipClass '%s' can only define a CASCADE DELETE constraint if the relationship strength is 'Embedding'.",
-                           GetECClass().GetFullName());
-                return ERROR;
-                }
-
-            m_onDeleteAction = onDeleteAction;
-            m_onUpdateAction = ECDbSqlForeignKeyConstraint::ToActionType(onUpdateActionStr.c_str());
+            LOG.errorv("ForeignKeyRelationshipMap custom attribute on ECRelationshipClass '%s' can only define a CASCADE DELETE constraint if the relationship strength is 'Embedding'.",
+                       GetECClass().GetFullName());
+            return ERROR;
             }
+
+        m_onDeleteAction = onDeleteAction;
+        m_onUpdateAction = ECDbSqlForeignKeyConstraint::ToActionType(onUpdateActionStr.c_str());
 
         return SUCCESS;
         }

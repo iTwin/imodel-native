@@ -355,7 +355,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfo const& cl
         return stat;
 
     //! Add referential integrity if user requested it.
-    if (relationshipClassMapInfo.IsCreateForeignKeyConstraint () && relationshipClass.GetStrength() != StrengthType::STRENGTHTYPE_Holding)
+    if (relationshipClassMapInfo.CreateForeignKeyConstraint() && relationshipClass.GetStrength() != StrengthType::STRENGTHTYPE_Holding)
         {
         auto const& otherEndConstraint = thisEnd != ECRelationshipEnd_Source ? sourceConstraint : targetConstraint;
         auto const& otherEndConstraintMap = thisEnd != ECRelationshipEnd_Source ? m_sourceConstraintMap : m_targetConstraintMap;
@@ -637,6 +637,9 @@ void RelationshipClassEndTableMap::AddIndices (ClassMapInfo const& mapInfo)
     {
     BeAssert(dynamic_cast<RelationshipMapInfo const*> (&mapInfo) != nullptr);
     RelationshipMapInfo const& info = static_cast<RelationshipMapInfo const&> (mapInfo);
+    if (!info.CreateIndexOnForeignKey())
+        return;
+
     switch (info.GetCardinality())
         {
             case RelationshipMapInfo::Cardinality::OneToOne:
