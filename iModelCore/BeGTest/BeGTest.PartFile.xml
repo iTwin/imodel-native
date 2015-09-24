@@ -177,7 +177,7 @@
     </ProductDirectoryList>
 
     <!-- *********************************************************************************************** -->
-    <!-- This part should be used by any part that wants to build and/or run a gtest EXE -->
+    <!-- This part should be used by any part that wants to build a JUnit test project -->
     <!-- *********************************************************************************************** -->
     <Part Name="AndroidJUnitTest-Tools" BentleyBuildMakeFile="prewire.mke" OnlyPlatforms="Android*">
         <SubPart PartName="Base" LibType="Static"/>
@@ -196,6 +196,27 @@
         <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
         <ProductDirectory Name="BentleyNativeAssemblies" Deliver="false" LibType="static"/>
     </ProductDirectoryList>
+
+<!-- *********************************************************************************************** -->
+<!-- This part should be used by any part that wants to build and/or run an XCTest project -->
+<!-- *********************************************************************************************** -->
+<Part Name="iOSXCTest-Tools" BentleyBuildMakeFile="prewire.mke" OnlyPlatforms="iOS*">
+    <SubPart PartName="Base" LibType="Static"/>
+    <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
+</Part>
+
+<!-- *********************************************************************************************** -->
+<!-- ProductDirectory used by all Android JUnit products -->
+<!-- *********************************************************************************************** -->
+<ProductDirectoryList ListName="iOSXCTestProduct">
+    <ProductDirectory Name="iOSXCTestProject" Path="project" LibType="static"/>
+    
+    <ProductDirectory Name="Libs" Deliver="false" LibType="static"/>
+    <ProductDirectory Name="PublicAPI" Deliver="false" LibType="static"/>
+    <ProductDirectory Name="VendorAPI" Deliver="false" LibType="static"/>
+    <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+    <ProductDirectory Name="BentleyNativeAssemblies" Deliver="false" LibType="static"/>
+</ProductDirectoryList>
 
 
 </BuildContext>
