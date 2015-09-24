@@ -5,24 +5,10 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#ifdef OPTION_SS3_BUILD
-#include "MstnIncludes.h"
-#include    <ostime.fdf>
-#else
-#include    <DgnView\DgnViewLib.h>
-#include    <DgnPlatform\Tools\ostime.fdf>
-#include    <windows.h>
-#include    <MsjInternal\Tools\mstime.h>
-#include    <RmgrTools\Tools\mdlResource.h>
-#endif
-
-#include    "MrMesh.h"
-#include    "MrMeshIds.r.h"
+#include "..\ThreeMxSchemaInternal.h"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
-USING_NAMESPACE_BENTLEY_MSTNPLATFORM
 
-extern RscFileHandle        g_rfHandle;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2015
@@ -30,13 +16,13 @@ extern RscFileHandle        g_rfHandle;
 BentleyStatus   MRMeshScene::Initialize (S3SceneInfo const& sceneInfo, WCharCP fileName)
     {
     m_fileName  = BeFileName (fileName);
-    m_sceneName = WString (sceneInfo.sceneName.c_str());
-    m_srs       = WString (sceneInfo.SRS.c_str());
+    m_sceneName = WString (sceneInfo.sceneName.c_str(), false);
+    m_srs       = WString (sceneInfo.SRS.c_str(), false);
 
     if (3 == sceneInfo.SRSOrigin.size ())
-        m_srsOrigin.initFromArray (&sceneInfo.SRSOrigin.front ());
+        m_srsOrigin.InitFromArray (&sceneInfo.SRSOrigin.front ());
     else
-        m_srsOrigin.zero ();
+        m_srsOrigin.Zero ();
 
     BeFileName   scenePath (BeFileName::DevAndDir, m_fileName.c_str());
     for (bvector<std::string>::const_iterator child = sceneInfo.meshChildren.begin (); child != sceneInfo.meshChildren.end (); child++)

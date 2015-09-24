@@ -92,6 +92,8 @@ $(o)MRMeshGeometry.obj          : $(mrMeshSrc)MRMeshGeometry.cpp ${threeMxSchema
 
 $(o)MRMeshTexture.obj           : $(mrMeshSrc)MRMeshTexture.cpp ${threeMxSchemaDepends} 
 
+$(o)MRMeshScene.obj             : $(mrMeshSrc)MRMeshScene.cpp ${threeMxSchemaDepends} 
+
 $(o)MRMeshUtil.obj              : $(mrMeshSrc)MRMeshUtil.cpp ${threeMxSchemaDepends} 
 
 

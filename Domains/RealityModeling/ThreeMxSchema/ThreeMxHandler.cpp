@@ -22,8 +22,10 @@ DgnModelId ThreeMxModel::CreateThreeMxModel(DgnDbR db, BeFileNameCR fileName)
 
     S3SceneInfo     sceneInfo;
     std::string     err;
+    MRMeshScene     scene;
 
-    if (SUCCESS != BaseSceneNode::Read3MX (fileName, sceneInfo, err))
+    if (SUCCESS != BaseSceneNode::Read3MX (fileName, sceneInfo, err) ||
+        SUCCESS != scene.Initialize (sceneInfo, fileName))
         return DgnModelId();
 
     Utf8String modelName(fileName.GetFileNameWithoutExtension().c_str());
@@ -49,6 +51,8 @@ AxisAlignedBox3d ThreeMxModel::_QueryModelRange() const
 void ThreeMxModel::_AddGraphicsToScene (ViewContextR context)
     {
 #ifdef WIP
+    MRMeshContext       meshContext (
+
     if (GetThreeMxScenePtr() != nullptr)
         {
         RefCountedPtr<ThreeMxProgressiveDisplay> display = new ThreeMxProgressiveDisplay(*this);

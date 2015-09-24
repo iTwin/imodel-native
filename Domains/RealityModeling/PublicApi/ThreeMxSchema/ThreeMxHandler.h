@@ -8,9 +8,11 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
+THREEMXSCHEMA_TYPEDEFS(MRMeshScene)
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 BEGIN_BENTLEY_THREEMX_SCHEMA_NAMESPACE
+
 
 
 //=======================================================================================
@@ -21,15 +23,13 @@ struct EXPORT_VTABLE_ATTRIBUTE ThreeMxModel : PhysicalModel
     DEFINE_T_SUPER(PhysicalModel)
 
 private:
-//  ThreeMxScenePtr    m_threeMxScenePtr;
-
-    DRange3d                            GetSceneRange();
-
+    MRMeshSceneP      m_scene;
+    DRange3d            GetSceneRange();
 
     ~ThreeMxModel() { }
 
 public:
-    ThreeMxModel(CreateParams const& params) : T_Super (params) { }
+    ThreeMxModel(CreateParams const& params) : T_Super (params), m_scene (NULL) { }
 
      virtual void _AddGraphicsToScene(ViewContextR) override;
     THREEMX_SCHEMA_EXPORT virtual void _ToPropertiesJson(Json::Value&) const override;

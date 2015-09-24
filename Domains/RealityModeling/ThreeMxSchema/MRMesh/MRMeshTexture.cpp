@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "..\ThreeMxSchemaInternal.h"
 
-
-
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_THREEMX_SCHEMA
 
@@ -93,11 +91,11 @@ virtual BentleyStatus _GetData (Byte* data) const override
 
     return SUCCESS;
     }
-#endif
 
 
 public:
     static EmbeddedMaterialLayerImagePtr Create (Point2dCR size, bvector<Byte>& data, bvector<Byte>& compressedData) { return new MRMeshTextureImage (size, data, compressedData); }
+#endif
 
 };  // MRMeshTextureImage
 
