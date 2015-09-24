@@ -42,55 +42,55 @@ TEST(TextAnnotationElementTest, BasicCrud)
     ScopedDgnHost host;
 
     BeFileName dbPath;
-    BeTest::GetHost().GetOutputRoot(dbPath);
-    dbPath.AppendToPath(L"TextAnnotationElementTest-BasicCrud.idgndb"); // use .idgndb so that sample navigator easily opens it, even though .dgndb would be more appropriate
+    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"2dMetricGeneral.idgndb", L"TextAnnotationElementTest-BasicCrud.dgndb", __FILE__));
 
-    DgnCategoryId categoryId;
+    //BeFileName dbPath;
+    //BeTest::GetHost().GetOutputRoot(dbPath);
+    //dbPath.AppendToPath(L"TextAnnotationElementTest-BasicCrud.idgndb"); // use .idgndb so that sample navigator easily opens it, even though .dgndb would be more appropriate
+
     DgnModelId modelId;
     DgnStyleId textStyleId;
-    DgnElementId element1Id;
+    DgnElementId insertedElementId;
     static Utf8CP ANNOTATION_TEXT_1 = "Hello world.";
     static Utf8CP ANNOTATION_TEXT_2 = "Lorem ipsum dolar sit amet.";
 
     // Write the element to the database.
     //.............................................................................................
         {
-        CreateDgnDbParams dbCreateParams;
-        dbCreateParams.SetOverwriteExisting(true);
-        dbCreateParams.SetProjectName("TextAnnotationElementTest-BasicCrud");
-        dbCreateParams.SetProjectDescription("Created by unit test TextAnnotationElementTest.BasicCrud");
-        dbCreateParams.SetStartDefaultTxn(DefaultTxn::Exclusive);
-
-        DbResult createStatus;
-        DgnDbPtr db = DgnDb::CreateDgnDb(&createStatus, dbPath, dbCreateParams);
-        ASSERT_TRUE(BE_SQLITE_OK == createStatus);
+        DbResult openStatus;
+        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+        ASSERT_TRUE(BE_SQLITE_OK == openStatus);
         ASSERT_TRUE(db.IsValid());
         
-        DgnCategories::Category category("Annotation Category 1", DgnCategories::Scope::Annotation);
+        DgnCategories::Category category("Annotation Category", DgnCategories::Scope::Annotation);
         DgnCategories::SubCategory::Appearance categoryAppearance;
         ASSERT_TRUE(BE_SQLITE_OK == db->Categories().Insert(category, categoryAppearance));
 
-        categoryId = category.GetCategoryId();
+        DgnCategoryId categoryId = category.GetCategoryId();
         ASSERT_TRUE(categoryId.IsValid());
 
-        DgnModelPtr model = new DgnModel2d(DgnModel2d::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model2d)), "2D Model 1"));
+        DgnModelPtr model = new DgnModel2d(DgnModel2d::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model2d)), "2D Model"));
         ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
 
         modelId = model->GetModelId();
         ASSERT_TRUE(modelId.IsValid());
 
         textStyleId = ensureAnnotationTextStyle1(*db);
-        
+        ASSERT_TRUE(textStyleId.IsValid());
+
         TextAnnotation annotation(*db);
         annotation.SetText(AnnotationTextBlock::Create(*db, textStyleId, ANNOTATION_TEXT_1).get());
+        ASSERT_TRUE(nullptr != annotation.GetTextCP());
 
-        TextAnnotationElementPtr annotationElement1 = new TextAnnotationElement(TextAnnotationElement::CreateParams(*db, modelId, TextAnnotationElement::QueryDgnClassId(*db), categoryId));
-        annotationElement1->SetAnnotation(&annotation);
-        TextAnnotationElementCPtr insertedAnnotationElement1 = annotationElement1->Insert();
-        ASSERT_TRUE(insertedAnnotationElement1.IsValid());
+        TextAnnotationElementPtr annotationElement = new TextAnnotationElement(TextAnnotationElement::CreateParams(*db, modelId, TextAnnotationElement::QueryDgnClassId(*db), categoryId));
+        annotationElement->SetAnnotation(&annotation);
+        ASSERT_TRUE(nullptr != annotationElement->GetAnnotation());
+
+        TextAnnotationElementCPtr insertedAnnotationElement = annotationElement->Insert();
+        ASSERT_TRUE(insertedAnnotationElement.IsValid());
         
-        element1Id = insertedAnnotationElement1->GetElementId();
-        ASSERT_TRUE(element1Id.IsValid());
+        insertedElementId = insertedAnnotationElement->GetElementId();
+        ASSERT_TRUE(insertedElementId.IsValid());
 
         // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
         //.............................................................................................
@@ -107,7 +107,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
         
         DrawingViewController viewController(*db, view.GetId());
         viewController.SetStandardViewRotation(StandardView::Top);
-        viewController.LookAtVolume(insertedAnnotationElement1->CalculateRange3d(), nullptr, &viewMargin);
+        viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
         viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::Wireframe);
         viewController.ChangeCategoryDisplay(categoryId, true);
         viewController.ChangeModelDisplay(modelId, true);
@@ -124,7 +124,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(BE_SQLITE_OK == openStatus);
         ASSERT_TRUE(db.IsValid());
         
-        TextAnnotationElementCPtr annotationElementC = TextAnnotationElement::Get(*db, element1Id);
+        TextAnnotationElementCPtr annotationElementC = TextAnnotationElement::Get(*db, insertedElementId);
         ASSERT_TRUE(annotationElementC.IsValid());
 
         // Spot check some properties; rely on other TextAnnotation tests to more fully test serialization, which should be relatively pass/fail on the element itself.
@@ -150,7 +150,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
         TextAnnotation annotation(*db);
         annotation.SetText(AnnotationTextBlock::Create(*db, textStyleId, ANNOTATION_TEXT_2).get());
 
-        TextAnnotationElementPtr annotationElement = TextAnnotationElement::GetForEdit(*db, element1Id);
+        TextAnnotationElementPtr annotationElement = TextAnnotationElement::GetForEdit(*db, insertedElementId);
         ASSERT_TRUE(annotationElement.IsValid());
 
         annotationElement->SetAnnotation(&annotation);
@@ -168,7 +168,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(BE_SQLITE_OK == openStatus);
         ASSERT_TRUE(db.IsValid());
 
-        TextAnnotationElementCPtr annotationElementC = TextAnnotationElement::Get(*db, element1Id);
+        TextAnnotationElementCPtr annotationElementC = TextAnnotationElement::Get(*db, insertedElementId);
         ASSERT_TRUE(annotationElementC.IsValid());
 
         // Spot check some properties; rely on other TextAnnotation tests to more fully test serialization, which should be relatively pass/fail on the element itself.
