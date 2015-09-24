@@ -9,6 +9,7 @@
 #include <GeomSerialization/GeomLibsFlatBufferApi.h>
 #include <DgnPlatformInternal/DgnCore/ElementGraphics.fb.h>
 #include <DgnPlatformInternal/DgnCore/TextStringPersistence.h>
+#include "DgnPlatform/DgnCore/Annotations/TextAnnotationDraw.h"
 
 using namespace flatbuffers;
 
@@ -3662,6 +3663,17 @@ bool ElementGeometryBuilder::Append(TextStringCR text)
         }
 
     return AppendWorld(*ElementGeometry::Create(text));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ElementGeometryBuilder::Append(TextAnnotationCR text)
+    {
+    TextAnnotationDraw annotationDraw(text);
+    annotationDraw.Draw(*this, m_dgnDb, m_elParams.GetCategoryId());
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**

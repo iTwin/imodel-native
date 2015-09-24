@@ -14,12 +14,50 @@
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
-// @bsiclass                                             
+// @bsiclass                                            Ray.Bentley     09/2015
 //=======================================================================================
-struct RenderMaterial
+struct RenderMaterial : RefCountedBase
+{
+    virtual     RenderMaterialPtr       _Clone () const = 0;
+    virtual     double                  _GetDouble (char const* key, BentleyStatus* status = NULL) const = 0;
+    virtual     bool                    _GetBool (char const* key, BentleyStatus* status = NULL) const = 0;
+    virtual     RgbFactor               _GetColor (char const* key, BentleyStatus* status = NULL) const = 0;
+    virtual     RenderMaterialMapPtr    _GetMap (char const* key) const = 0;
+    virtual     uintptr_t               _GetQvMaterialId (DgnDbR dgnDb, bool createIfNotFound) const = 0;
+
+
+};
+
+
+//=======================================================================================
+// @bsiclass                                            Ray.Bentley     09/2015
+//=======================================================================================
+struct JsonRenderMaterial : RenderMaterial
+{
+protected:
+    Json::Value     m_value;
+    DgnMaterialId   m_materialId;
+
+    JsonRenderMaterial (Json::Value const& value, DgnMaterialId materialId) : m_value (value), m_materialId (materialId) { }
+
+public:
+DGNPLATFORM_EXPORT    static RenderMaterialPtr            Create (DgnDbCR dgnDb, DgnMaterialId materialId);
+
+DGNPLATFORM_EXPORT    virtual     RenderMaterialPtr       _Clone () const override { return new JsonRenderMaterial (*this); }
+DGNPLATFORM_EXPORT    virtual     double                  _GetDouble (char const* key, BentleyStatus* status = NULL) const override;
+DGNPLATFORM_EXPORT    virtual     bool                    _GetBool (char const* key, BentleyStatus* status = NULL) const override;
+DGNPLATFORM_EXPORT    virtual     RgbFactor               _GetColor (char const* key, BentleyStatus* status = NULL) const override;
+DGNPLATFORM_EXPORT    virtual     RenderMaterialMapPtr    _GetMap (char const* key) const override;
+DGNPLATFORM_EXPORT    virtual     uintptr_t               _GetQvMaterialId (DgnDbR dgnDb, bool createIfNotFound) const override;
+};
+
+//=======================================================================================
+// @bsiclass                                            Ray.Bentley     09/2015
+//=======================================================================================
+struct RenderMaterialMap : RefCountedBase
 {
 
-    enum class MapType
+    enum class Type
         {
         None                    = 0,
         Pattern                 = 1,
@@ -54,7 +92,7 @@ struct RenderMaterial
         Geometry                = 30,
         };
 
-    enum class MapMode : int
+    enum class Mode : int
         {
         None                    = -1,
         Parametric              = 0,
@@ -69,7 +107,7 @@ struct RenderMaterial
         FrontProject            = 8,
         };
 
-    enum class MapUnits
+    enum class Units
         {
         Relative               = 0,
         Meters                 = 3,
@@ -79,13 +117,58 @@ struct RenderMaterial
         };
 
 
-    DGNPLATFORM_EXPORT static double    GetMapUnitScale (MapUnits mapUnits);
+    virtual Mode                _GetMode () const        { return Mode::Parametric; }
+    virtual Units               _GetUnits () const       { return Units::Relative; }
+    virtual DPoint2d            _GetScale (BentleyStatus* status = NULL) const = 0;
+    virtual DPoint2d            _GetOffset (BentleyStatus* status = NULL) const = 0;
+    virtual BentleyStatus       _GetData (DgnTextures::TextureData& data, bvector<Byte>& image, DgnDbR dgnDb) const = 0;
+    virtual double              _GetDouble (char const* key, BentleyStatus* status = NULL) const = 0;
+    virtual bool                _GetBool (char const* key, BentleyStatus* status = NULL) const = 0;
+    virtual uintptr_t           _GetQvTextureId (DgnDbR dgnDb, bool createIfNotFound) const = 0;
+
+
+};  // RenderMaterialMap.
+
+
+//=======================================================================================
+// @bsiclass                                             
+//=======================================================================================
+struct JsonRenderMaterialMap : RenderMaterialMap
+{
+protected:
+    Json::Value     m_value;
+
+    JsonRenderMaterialMap (Json::Value const& value) : m_value (value) { }
+
+public:
+
+    static RenderMaterialMapPtr  Create (Json::Value const& value) { return new JsonRenderMaterialMap (value); }
+
+
+DGNPLATFORM_EXPORT    virtual Mode                _GetMode () const override;
+DGNPLATFORM_EXPORT    virtual Units               _GetUnits () const override;
+DGNPLATFORM_EXPORT    virtual DPoint2d            _GetScale (BentleyStatus* status = NULL) const override;
+DGNPLATFORM_EXPORT    virtual DPoint2d            _GetOffset (BentleyStatus* status = NULL) const override;
+DGNPLATFORM_EXPORT    virtual BentleyStatus       _GetData (DgnTextures::TextureData& data, bvector<Byte>& image, DgnDbR dgnDb) const override;
+DGNPLATFORM_EXPORT    virtual double              _GetDouble (char const* key, BentleyStatus* status = NULL) const override;
+DGNPLATFORM_EXPORT    virtual bool                _GetBool (char const* key, BentleyStatus* status = NULL) const override;
+DGNPLATFORM_EXPORT    virtual uintptr_t           _GetQvTextureId (DgnDbR dgnDb, bool createIfNotFound) const override;
+
+
+};
+
+
+
+//=======================================================================================
+// @bsiclass                                             
+//=======================================================================================
+struct RenderMaterialUtil
+{
+    DGNPLATFORM_EXPORT static double    GetMapUnitScale (RenderMaterialMap::Units mapUnits);
     DGNPLATFORM_EXPORT static void      SetColor (Json::Value& renderMaterial, char const* keyword, RgbFactorCR color);
     DGNPLATFORM_EXPORT static void      SetPoint (Json::Value& renderMaterial, char const* keyword, DPoint3dCR point);
+};
 
-
-
-};  // RenderMaterial.
 
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

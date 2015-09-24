@@ -43,6 +43,7 @@ public:
 
     DGNVIEW_EXPORT BentleyStatus Draw(DgnViewportR, DgnDrawMode, DrawPurpose, DgnCategoryId) const;
     DGNPLATFORM_EXPORT BentleyStatus Draw(ViewContextR) const;
+    DGNPLATFORM_EXPORT BentleyStatus Draw(ElementGeometryBuilderR, DgnDbR, DgnCategoryId) const;
 };
 
 //! @endGroup
