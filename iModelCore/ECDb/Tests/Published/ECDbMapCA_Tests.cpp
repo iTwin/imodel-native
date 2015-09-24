@@ -576,7 +576,6 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
                 "    <ECRelationshipClass typeName='Rel' isDomainClass='True' strength='embedding'>"
                 "        <ECCustomAttributes>"
                 "            <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
-                "               <CreateConstraint>True</CreateConstraint>"
                 "               <OnDeleteAction>Cascade</OnDeleteAction>"
                 "            </ForeignKeyRelationshipMap>"
                 "        </ECCustomAttributes>"
@@ -601,7 +600,6 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
                 "    <ECRelationshipClass typeName='Rel' isDomainClass='True' strength='referencing'>"
                 "        <ECCustomAttributes>"
                 "            <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
-                "               <CreateConstraint>True</CreateConstraint>"
                 "               <OnDeleteAction>Cascade</OnDeleteAction>"
                 "            </ForeignKeyRelationshipMap>"
                 "        </ECCustomAttributes>"
@@ -626,7 +624,6 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
                 "    <ECRelationshipClass typeName='Rel' isDomainClass='True' strength='holding'>"
                 "        <ECCustomAttributes>"
                 "            <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
-                "               <CreateConstraint>True</CreateConstraint>"
                 "               <OnDeleteAction>Cascade</OnDeleteAction>"
                 "            </ForeignKeyRelationshipMap>"
                 "        </ECCustomAttributes>"
@@ -1111,6 +1108,82 @@ TEST_F(SchemaImportTestFixture, AbstractClassWithPolymorphicAndNonPolymorphicSha
     ASSERT_EQ(s3.Step(), BE_SQLITE_DONE);
     ASSERT_EQ(s5.Prepare(db, "INSERT INTO tac.SharedTable1 (P2) VALUES('Hello')"), ECSqlStatus::Success);
     ASSERT_EQ(s5.Step(), BE_SQLITE_DONE);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  09/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaImportTestFixture, ForeignKeyMapCreateIndex)
+    {
+    TestItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+        "  <ECClass typeName='Parent' >"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECClass>"
+        "  <ECClass typeName='Child' >"
+        "    <ECProperty propertyName='ParentId' typeName='long' />"
+        "    <ECProperty propertyName='ChildName' typeName='string' />"
+        "  </ECClass>"
+        "  <ECRelationshipClass typeName='RelCreateIndexTrue' isDomainClass='True' strength='referencing'>"
+        "    <ECCustomAttributes>"
+        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00' >"
+        "           <CreateIndex>True</CreateIndex>"
+        "        </ForeignKeyRelationshipMap>"
+        "    </ECCustomAttributes>"
+        "    <Source cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class = 'Parent' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Child' >"
+        "           <Key>"
+        "              <Property name='ParentId'/>"
+        "           </Key>"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "  <ECRelationshipClass typeName='RelCreateIndexFalse' isDomainClass='True' strength='referencing'>"
+        "    <ECCustomAttributes>"
+        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00' >"
+        "           <CreateIndex>False</CreateIndex>"
+        "        </ForeignKeyRelationshipMap>"
+        "    </ECCustomAttributes>"
+        "    <Source cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class = 'Parent' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Child' >"
+        "           <Key>"
+        "              <Property name='ParentId'/>"
+        "           </Key>"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "  <ECRelationshipClass typeName='RelCreateIndexDefaultValue' isDomainClass='True' strength='referencing'>"
+        "    <ECCustomAttributes>"
+        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00' />"
+        "    </ECCustomAttributes>"
+        "    <Source cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class = 'Parent' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Child' >"
+        "           <Key>"
+        "              <Property name='ParentId'/>"
+        "           </Key>"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>", true, "");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testItem, "foreignkeymapcreateindex.ecdb");
+    ASSERT_FALSE(asserted);
+
+    AssertIndex(ecdb, "ix_ts_Child_fk_ts_RelCreateIndexTrue_target", false, "ts_Child", {"ParentId"}, "[ParentId] IS NOT NULL");
+    AssertIndex(ecdb, "ix_ts_Child_fk_ts_RelCreateIndexDefaultValue_target", false, "ts_Child", {"ParentId"}, "[ParentId] IS NOT NULL");
+    AssertIndexExists(ecdb, "ix_ts_Child_fk_ts_RelCreateIndexFalse_target", false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3013,19 +3086,17 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
         ASSERT_TRUE(caInst->SetValue("AllowDuplicateRelationships", ECValue(true)) == ECOBJECTS_STATUS_Success);
         ASSERT_TRUE(manyFooHasManyGoo->SetCustomAttribute(*caInst) == ECOBJECTS_STATUS_Success);
         }
-
+    
     if (allowForeignKeyConstraint)
         {
         auto fkMapClass = ecdbmapSchema->GetClassCP("ForeignKeyRelationshipMap");
         ASSERT_TRUE(fkMapClass != nullptr);
         auto caInst = fkMapClass->GetDefaultStandaloneEnabler()->CreateInstance();
         ASSERT_TRUE(caInst != nullptr);
-        const Utf8CP enforceReferentialIntegrityProperty = "CreateConstraint";
-        ASSERT_TRUE(caInst->SetValue(enforceReferentialIntegrityProperty, ECValue(true)) == ECOBJECTS_STATUS_Success);
         ASSERT_TRUE(oneFooHasOneGoo->SetCustomAttribute(*caInst) == ECOBJECTS_STATUS_Success);
         ASSERT_TRUE(oneFooHasManyGoo->SetCustomAttribute(*caInst) == ECOBJECTS_STATUS_Success);
         }
-
+    
     if (schemaImportExpectedToSucceed)
         ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache()));
     else
