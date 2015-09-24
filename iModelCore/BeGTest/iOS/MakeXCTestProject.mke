@@ -1,0 +1,134 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: MakeSenTestProject.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%ifndef TEST_NAME
+    %error Must define TEST_NAME as the name of the .exe to create
+%endif
+
+%ifndef TEST_COLLECTION_PRODUCT
+    %error TEST_COLLECTION_PRODUCT must point to the product that contains the unit tests and their supporting libraries and assets
+%endif
+
+# Optional. TEST_FRAMEWORK_SQLANG - Full filepath of .db3 file to return as the "framework" sqlang file
+
+%include mdl.mki
+
+%if $(TARGET_PLATFORM)!="iOS"
+    %error This makefile should be used only when TARGET_PLATFORM is iOS
+%endif
+
+baseDir             = $(_MakeFilePath)
+o                   = $(OutputRootDir)build/$(TEST_NAME)/
+tmp                 = $(o)tmp/
+XCodeProject        = $(o)XCodeProject/
+
+collectionProduct = $(OutputRootDir)../Product/${TEST_COLLECTION_PRODUCT}/
+
+unitTestsDir = $(collectionProduct)Objects/
+
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    always:
+        rm -rf $(o)
+
+    %return 
+%else
+    always:
+        ~mkdir $(o)
+        ~mkdir $(tmp)
+        !~@putenv PYTHONPATH=$(PYTHONPATH)$(bsicommon_ospathsep)$(SrcBsiCommon)PublicSDK
+%endif
+
+#--------------------------------------------------------------------------------------
+# Initialize the workspace with stuff that never changes
+#--------------------------------------------------------------------------------------
+always:
+    CopyWithSymlinks.py $(baseDir)XCodeProject/BeTestiOS $(XCodeProject)
+
+#--------------------------------------------------------------------------------------
+# Generate SenTest wrappers
+#
+#   GenerateSenTestSource.py finds the unit tests that are linked into this buildcontext and generates an Objective-C SenTesting wrapper for calling them.
+#   Make this depend on the *UnitTests.list.h files - these change when a unit test is added or removed
+#--------------------------------------------------------------------------------------
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(tmp)GenerateSenTestSource.mki : $[@wildcard $(unitTestsDir)*UnitTests.list.h] $(baseDir)SenTest.mm.template
+        $(msg)
+        !@$(baseDir)GenerateSenTestSource.py $(unitTestsDir) $(baseDir)SenTest.mm.template XCodeProject > $(tmp)GenerateSenTestSource.mki
+        ~time
+%endif
+
+%iffile $(tmp)GenerateSenTestSource.mki
+     always:
+        @cat $(baseDir)SenTest.mm.template.prepend > $(XCodeProject)BeTestiOSTests/UnitTests.mm
+    
+    %include $(tmp)GenerateSenTestSource.mki
+%endif
+
+always:
+    !-$(deleteCmd) $(tmp)GenerateSenTestSource.mki
+
+#--------------------------------------------------------------------------------------
+# Place header files so that they can be used to compile the unit test wrappers.
+#--------------------------------------------------------------------------------------
+$(XCodeProject)PublicAPI : $(BuildContext)PublicApi
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(XCodeProject)VendorAPI : $(BuildContext)VendorApi
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+#--------------------------------------------------------------------------------------
+# Deliver required assets
+#--------------------------------------------------------------------------------------
+$(tmp)assets : $(collectionProduct)Assets
+    $(LinkFirstDepToFirstTargetAsDirectory)
+    
+# Need to move BeTestDocuments to AppData package (need hard copied to copy them to device)
+$(XCodeProject)BeTestiOSAppData.xcappdata : $(baseDir)BeTestiOSAppData.xcappdata
+    cp -r $(baseDir)BeTestiOSAppData.xcappdata $(XCodeProject)BeTestiOSAppData.xcappdata
+    ~time
+
+_documentsManifest = $(XCodeProject)BeTestiOSAppData.xcappdata/AppData/Documents/documents.manifest
+%iffile $(tmp)assets/BeTestDocuments
+    always:
+        rm -rf $(XCodeProject)BeTestiOSAppData.xcappdata/AppData/Documents
+        !~mkdir $(XCodeProject)BeTestiOSAppData.xcappdata/AppData/Documents
+        cp -r  $(tmp)assets/BeTestDocuments $(XCodeProject)BeTestiOSAppData.xcappdata/AppData/Documents
+        $(SrcRoot)bsicommon/build/CreateAssetsManifest.py $(_documentsManifest) $(XCodeProject)BeTestiOSAppData.xcappdata/AppData/Documents
+%else
+    always:
+        !~mkdir $(XCodeProject)BeTestiOSAppData.xcappdata/AppData/Documents
+        >$(_documentsManifest)
+        <
+%endif
+
+# Symlink other assets to the bundle
+always:
+    $(SrcRoot)bsicommon/build/CopyWithSymlinks.py   $(tmp)assets    $(XCodeProject)MobileDgnAssets.bundle
+
+#--------------------------------------------------------------------------------------
+# Deliver required libraries
+#--------------------------------------------------------------------------------------
+LIB_NAME = $(TEST_NAME)-Tests
+LIB_DEST = $(o)
+LIB_TMP_DIR = $(tmp)
+LIB_NO_CONTEXT_LINK = 1
+LIB_OBJS = $[@wildcard $(unitTestsDir)*$(oext)] $[@wildcard $(BuildContext)SubParts/Libs/*$(stlibext)] $[@wildcard $(collectionProduct)Libs/*$(stlibext)]
+%include creatlib.mki
+
+# NB: XCodeProject looks for 'libBeGTestStatic.a' so don't change the name!
+BeGTestStaticLib = $(stlibprefix)BeGTestStatic$(stlibext)
+
+$(XCodeProject)Libs/$(stlibprefix)BeGTestStatic$(stlibext) : $(o)$(stlibprefix)$(LIB_NAME)$(stlibext)
+    $(LinkFirstDepToFirstTarget)
+
+
+#--------------------------------------------------------------------------------------
+# Delivery
+#--------------------------------------------------------------------------------------
+$(BuildContext)Delivery/iOSXCTest/$(TEST_NAME)/Project : $(XCodeProject)
+    $(LinkFirstDepToFirstTargetAsDirectory)
+	

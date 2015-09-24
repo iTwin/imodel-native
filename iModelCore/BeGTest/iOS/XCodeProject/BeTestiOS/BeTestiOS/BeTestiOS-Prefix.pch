@@ -1,0 +1,16 @@
+//
+// Prefix header for all source files of the 'BeTestiOS' target in the 'BeTestiOS' project
+//
+
+#import <Availability.h>
+
+#ifndef __IPHONE_4_0
+#warning "This project uses features only available in iOS SDK 4.0 and later."
+#endif
+
+#ifdef __OBJC__
+    #import <Foundation/Foundation.h>
+    #import <UIKit/UIKit.h>
+    #import <GLKit/GLKit.h>
+    #import <QuartzCore/QuartzCore.h>
+#endif

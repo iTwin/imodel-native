@@ -1,0 +1,98 @@
+#define DECLARATION_BEGIN   @interface __FIXTURE__ : XCTestCase {}
+DECLARATION_BEGIN
+
+#define INIT_DECLARATION    + (void) begtest_initialize;
+#define UNINIT_DECLARATION  + (void) begtest_uninitialize;
+INIT_DECLARATION
+UNINIT_DECLARATION
+
+#define DECLARATION_END     @end
+DECLARATION_END
+
+#define BE_TEST_RUNNER_JNI_WRAPPER(JTS,JTC)
+#define BE_TEST_SETUP_JNI_WRAPPER(JTC)
+#define BE_TEST_TEARDOWN_JNI_WRAPPER(JTC)
+
+// Declare the test case setup and teardown functions
+#undef  BE_TEST_SETUP
+#define BE_TEST_SETUP(TC)     extern "C" void setUpTestCase_##TC ();
+#undef  BE_TEST_TEARDOWN
+#define BE_TEST_TEARDOWN(TC)  extern "C" void tearDownTestCase_##TC ();
+
+// Declare the test case runner functions
+#undef  BE_TEST_RUNNER
+#define BE_TEST_RUNNER(TC,TN) extern "C" int run_TEST_##TC##_##TN ();
+// Note: The makefile will set include path to point to the UnitTests.list.h that should be used
+#include <UnitTests.list.h>
+
+#define IMPLEMENTATION_BEGIN @implementation __FIXTURE__
+IMPLEMENTATION_BEGIN
+
+#define INIT_METHOD     + (void) begtest_initialize {
+INIT_METHOD
+    NSArray*  documentPaths  = NSSearchPathForDirectoriesInDomains (NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString* documentDir    = [[documentPaths objectAtIndex:0] stringByAppendingPathComponent:@"BeTestDocuments"];
+    
+    // When running the tests on a simulator for the first time, XCode is not able to deploy the application data package
+    // (you get a warning about that). Application data package contains test documents so the tests that depend on them fail.
+    // If the app data package is deployed successfully, it always has the documents.manifest file. Here we check if it exists
+    // and fail immediately if it doesn't. So if the tests fail on this assert (and you're running them for the first time
+    // on a simulator), simply try to rerun them. 
+    BeFileName documentsManifest (WString ([[documentPaths objectAtIndex:0] cStringUsingEncoding:NSUTF8StringEncoding], BentleyCharEncoding::Utf8).c_str ());
+    documentsManifest.AppendToPath (L"documents.manifest");
+    BeAssert (documentsManifest.DoesPathExist ());
+        
+    NSString* bundleDir      = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"MobileDgnAssets.bundle"];
+    NSString* tempDir        = NSTemporaryDirectory ();
+    NSArray*  appSupportUrls = [[NSFileManager defaultManager] URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask];
+    NSString* appBundleId    = [[NSBundle mainBundle] bundleIdentifier];
+    NSURL*    appSupportUrl  = [[appSupportUrls objectAtIndex:0] URLByAppendingPathComponent:appBundleId];
+    NSString* appSupportDir  = [appSupportUrl path];
+    [[NSFileManager defaultManager] createDirectoryAtURL:appSupportUrl withIntermediateDirectories:YES attributes:nil error:nil];
+
+    BeTest::Initialize (*BeTestHost::Create([documentDir    cStringUsingEncoding:NSUTF8StringEncoding],
+                                            [bundleDir      cStringUsingEncoding:NSUTF8StringEncoding],
+                                            [tempDir        cStringUsingEncoding:NSUTF8StringEncoding],
+                                            [appSupportDir  cStringUsingEncoding:NSUTF8StringEncoding]));
+
+    BentleyApi::NativeLogging::LoggingConfig::SetOption (CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_FATAL);
+    BentleyApi::NativeLogging::LoggingConfig::ActivateProvider (BentleyApi::NativeLogging::CONSOLE_LOGGING_PROVIDER); // send messages to syslog
+    
+    BeFileName sqlangDb;
+    BeTest::GetHost ().GetDgnPlatformAssetsDirectory (sqlangDb);
+    sqlangDb.AppendToPath (L"sqlang");
+    sqlangDb.AppendToPath (L"platform");
+    sqlangDb.AppendToPath (L"MobileDgn_en.sqlang.db3");
+    BeSQLite::L10N::Initialize (BeSQLite::L10N::SqlangFiles (sqlangDb));
+}
+
+#define UNINIT_METHOD   + (void) begtest_uninitialize {
+UNINIT_METHOD
+    BeSQLite::L10N::Shutdown();
+    BentleyApi::NativeLogging::LoggingConfig::DeactivateProvider ();
+    BeTest::Uninitialize ();
+}
+
+#define SETUP_METHOD    - (void)setUp { [super setUp]; [__FIXTURE__ begtest_initialize]; }
+SETUP_METHOD
+
+#define TEARDOWN_METHOD - (void)tearDown { [super tearDown]; [__FIXTURE__ begtest_uninitialize]; }
+TEARDOWN_METHOD
+
+// Define Objective-C setup and teardown functions that are detected by the UnitTest framework 
+#undef  BE_TEST_SETUP
+#define BE_TEST_SETUP(TC)       + (void)setUp { [__FIXTURE__ begtest_initialize]; setUpTestCase_##TC (); }   
+#undef  BE_TEST_TEARDOWN
+#define BE_TEST_TEARDOWN(TC)    + (void)tearDown { tearDownTestCase_##TC (); [__FIXTURE__ begtest_uninitialize]; }
+
+// Define Objective-C functions that are detected by the UnitTest framework and that call the test runner functions
+#undef  BE_TEST_RUNNER
+#define BE_TEST_RUNNER(TC,TN)   - (void) test##TN { \
+                                    ((BeTestHost&) BeTest::GetHost ()).m_currentTestCase = self; \
+                                    XCTAssertTrue (0 == run_TEST_##TC##_##TN(), @""); \
+                                    }
+// Note: The makefile will set include path to point to the UnitTests.list.h that should be used
+#include <UnitTests.list.h>
+
+#define IMPLEMENTATION_END @end
+IMPLEMENTATION_END
