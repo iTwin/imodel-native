@@ -205,78 +205,77 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(ChangeGroupPtr changeGroup
         m_ds->GetClient()->SendCreateObjectRequest(creationJson, filePath, guard->GetProgressCallback(), guard)
             ->Then(m_ds->GetCacheAccessThread(), [=] (WSCreateObjectResult& objectsResult)
             {
-            if (objectsResult.IsSuccess())
-                {
-                auto txn = m_ds->StartCacheTransaction();
-
-                m_totalBytesUploaded += currentFileSize;
-
-                std::map<ECInstanceKey, Utf8String> changedRemoteIds = ReadChangedRemoteIds(*changeGroup, objectsResult.GetValue());
-                if (SUCCESS != txn.GetCache().GetChangeManager().CommitCreationChanges(changedRemoteIds))
-                    {
-                    SetError(CachingDataSource::Status::InternalCacheError);
-                    return;
-                    }
-
-                changeGroup->SetSynced(true);
-
-                if (changeGroup->GetObjectChange().GetChangeStatus() == IChangeManager::ChangeStatus::Created)
-                    {
-                    ObjectId newObjectId = txn.GetCache().FindInstance(changeGroup->GetObjectChange().GetInstanceKey());
-                    if (m_ds->GetServerInfo(txn).GetVersion() < BeVersion(2, 0))
-                        {
-                        m_ds->CacheObject(newObjectId, GetCancellationToken())
-                            ->Then(m_ds->GetCacheAccessThread(), [=] (CachingDataSource::Result result)
-                            {
-                            if (!result.IsSuccess())
-                                {
-                                SetError(result.GetError());
-                                return;
-                                }
-                            });
-                        }
-                    else
-                        {
-                        // TFS#198198: Workaround for WSG 2.2 eBECPlugin Document import where created instance is of derived class
-                        ECClassCP newInstanceClass = txn.GetCache().GetAdapter().GetECClass(newObjectId);
-                        WSQuery query(*newInstanceClass, true);
-                        query.SetFilter("$id+eq+'" + newObjectId.remoteId + "'");
-
-                        m_ds->GetClient()->SendQueryRequest(query, nullptr, GetCancellationToken())
-                            ->Then(m_ds->GetCacheAccessThread(), [=] (WSObjectsResult result)
-                            {
-                            if (!result.IsSuccess())
-                                {
-                                SetError(result.GetError());
-                                return;
-                                }
-
-                            auto txn = m_ds->StartCacheTransaction();
-
-                            bmap<ECInstanceKey, ECInstanceKey> changedKeys;
-                            if (SUCCESS != txn.GetCache().GetChangeManager().UpdateCreatedInstance(newObjectId, result.GetValue(), changedKeys))
-                                {
-                                SetError(CachingDataSource::Status::InternalCacheError);
-                                return;
-                                }
-
-                            for (auto& pair : changedKeys)
-                                {
-                                SetUpdatedInstanceKeyInChangeGroups(pair.first, pair.second);
-                                }
-
-                            txn.Commit();
-                            });
-                        }
-                    }
-
-                txn.Commit();
-                }
-            else
+            if (!objectsResult.IsSuccess())
                 {
                 m_totalBytesToUpload -= currentFileSize;
                 HandleCreationError(objectsResult.GetError(), changeGroup, objectLabel);
+                return;
                 }
+
+            m_totalBytesUploaded += currentFileSize;
+
+            auto txn = m_ds->StartCacheTransaction();
+
+            std::map<ECInstanceKey, Utf8String> changedRemoteIds = ReadChangedRemoteIds(*changeGroup, objectsResult.GetValue());
+            if (SUCCESS != txn.GetCache().GetChangeManager().CommitCreationChanges(changedRemoteIds))
+                {
+                SetError(CachingDataSource::Status::InternalCacheError);
+                return;
+                }
+
+            changeGroup->SetSynced(true);
+
+            if (changeGroup->GetObjectChange().GetChangeStatus() == IChangeManager::ChangeStatus::Created)
+                {
+                ObjectId newObjectId = txn.GetCache().FindInstance(changeGroup->GetObjectChange().GetInstanceKey());
+                if (m_ds->GetServerInfo(txn).GetVersion() < BeVersion(2, 0))
+                    {
+                    m_ds->CacheObject(newObjectId, GetCancellationToken())
+                        ->Then(m_ds->GetCacheAccessThread(), [=] (CachingDataSource::Result result)
+                        {
+                        if (!result.IsSuccess())
+                            {
+                            SetError(result.GetError());
+                            return;
+                            }
+                        });
+                    }
+                else
+                    {
+                    // TFS#198198: Workaround for WSG 2.2 eBECPlugin Document import where created instance is of derived class
+                    ECClassCP newInstanceClass = txn.GetCache().GetAdapter().GetECClass(newObjectId);
+                    WSQuery query(*newInstanceClass, true);
+                    query.SetFilter("$id+eq+'" + newObjectId.remoteId + "'");
+
+                    m_ds->GetClient()->SendQueryRequest(query, nullptr, GetCancellationToken())
+                        ->Then(m_ds->GetCacheAccessThread(), [=] (WSObjectsResult result)
+                        {
+                        if (!result.IsSuccess())
+                            {
+                            SetError(result.GetError());
+                            return;
+                            }
+
+                        auto txn = m_ds->StartCacheTransaction();
+
+                        bmap<ECInstanceKey, ECInstanceKey> changedKeys;
+                        if (SUCCESS != txn.GetCache().GetChangeManager().UpdateCreatedInstance(newObjectId, result.GetValue(), changedKeys))
+                            {
+                            SetError(CachingDataSource::Status::InternalCacheError);
+                            return;
+                            }
+
+                        for (auto& pair : changedKeys)
+                            {
+                            SetUpdatedInstanceKeyInChangeGroups(pair.first, pair.second);
+                            }
+
+                        txn.Commit();
+                        });
+                    }
+                }
+
+            txn.Commit();
             });
         });
     }
@@ -324,20 +323,19 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectModification(ChangeGroupPtr c
         m_ds->GetClient()->SendUpdateObjectRequest(objectId, propertiesJson, eTag, guard->GetProgressCallback(), guard)
             ->Then(m_ds->GetCacheAccessThread(), [=] (WSUpdateObjectResult& result)
             {
-            if (result.IsSuccess())
-                {
-                auto txn = m_ds->StartCacheTransaction();
-                if (SUCCESS != txn.GetCache().GetChangeManager().CommitObjectChanges(instanceKey))
-                    {
-                    SetError(CachingDataSource::Status::InternalCacheError);
-                    return;
-                    }
-                txn.Commit();
-                }
-            else if (!IsTaskCanceled())
+            if (!result.IsSuccess())
                 {
                 SetError(result.GetError());
+                return;
                 }
+
+            auto txn = m_ds->StartCacheTransaction();
+            if (SUCCESS != txn.GetCache().GetChangeManager().CommitObjectChanges(instanceKey))
+                {
+                SetError(CachingDataSource::Status::InternalCacheError);
+                return;
+                }
+            txn.Commit();
             });
         });
     }
@@ -364,22 +362,21 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncFileModification(ChangeGroupPtr cha
         m_ds->GetClient()->SendUpdateFileRequest(objectId, filePath, guard->GetProgressCallback(), guard)
             ->Then(m_ds->GetCacheAccessThread(), [=] (WSUpdateFileResult& result)
             {
-            if (result.IsSuccess())
-                {
-                auto txn = m_ds->StartCacheTransaction();
-                m_totalBytesUploaded += currentFileSize;
-                if (SUCCESS != txn.GetCache().GetChangeManager().CommitFileChanges(instanceKey))
-                    {
-                    SetError(CachingDataSource::Status::InternalCacheError);
-                    return;
-                    }
-                txn.Commit();
-                }
-            else if (!IsTaskCanceled())
+            if (!result.IsSuccess())
                 {
                 m_totalBytesToUpload -= currentFileSize;
                 SetError(result.GetError());
+                return;
                 }
+
+            auto txn = m_ds->StartCacheTransaction();
+            m_totalBytesUploaded += currentFileSize;
+            if (SUCCESS != txn.GetCache().GetChangeManager().CommitFileChanges(instanceKey))
+                {
+                SetError(CachingDataSource::Status::InternalCacheError);
+                return;
+                }
+            txn.Commit();
             });
         });
     }
@@ -421,20 +418,19 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectDeletion(ChangeGroupPtr chang
         m_ds->GetClient()->SendDeleteObjectRequest(objectId, guard)
             ->Then(m_ds->GetCacheAccessThread(), [=] (WSUpdateFileResult& result)
             {
-            if (result.IsSuccess())
-                {
-                auto txn = m_ds->StartCacheTransaction();
-                if (SUCCESS != txn.GetCache().GetChangeManager().CommitObjectChanges(instanceKey))
-                    {
-                    SetError(CachingDataSource::Status::InternalCacheError);
-                    return;
-                    }
-                txn.Commit();
-                }
-            else if (!IsTaskCanceled())
+            if (!result.IsSuccess())
                 {
                 SetError(result.GetError());
+                return;
                 }
+
+            auto txn = m_ds->StartCacheTransaction();
+            if (SUCCESS != txn.GetCache().GetChangeManager().CommitObjectChanges(instanceKey))
+                {
+                SetError(CachingDataSource::Status::InternalCacheError);
+                return;
+                }
+            txn.Commit();
             });
         });
     }
@@ -551,17 +547,17 @@ Utf8String SyncLocalChangesTask::GetChangeStateStr(IChangeManager::ChangeStatus 
     {
     switch (changeStatus)
         {
-            case IChangeManager::ChangeStatus::NoChange:
-                return "existing";
-            case IChangeManager::ChangeStatus::Created:
-                return "new";
-            case IChangeManager::ChangeStatus::Modified:
-                return "modified";
-            case IChangeManager::ChangeStatus::Deleted:
-                return "deleted";
-            default:
-                BeAssert(false);
-                break;
+        case IChangeManager::ChangeStatus::NoChange:
+            return "existing";
+        case IChangeManager::ChangeStatus::Created:
+            return "new";
+        case IChangeManager::ChangeStatus::Modified:
+            return "modified";
+        case IChangeManager::ChangeStatus::Deleted:
+            return "deleted";
+        default:
+            BeAssert(false);
+            break;
         }
     return nullptr;
     }
