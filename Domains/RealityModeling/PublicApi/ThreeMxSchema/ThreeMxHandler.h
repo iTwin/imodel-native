@@ -8,7 +8,6 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
-THREEMXSCHEMA_TYPEDEFS(MRMeshScene)
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 BEGIN_BENTLEY_THREEMX_SCHEMA_NAMESPACE
@@ -18,12 +17,24 @@ BEGIN_BENTLEY_THREEMX_SCHEMA_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Ray.Bentley     09/2015
 //=======================================================================================
+struct ThreeMxScene : RefCountedBase
+{
+
+    virtual void _Draw (ViewContextR viewContext, struct MRMeshContext const& meshContext) = 0;
+
+};  // ThreeMxScene
+
+typedef RefCountedPtr <struct ThreeMxScene>      ThreeMxScenePtr;
+
+//=======================================================================================
+// @bsiclass                                                    Ray.Bentley     09/2015
+//=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ThreeMxModel : PhysicalModel
 {
     DEFINE_T_SUPER(PhysicalModel)
 
 private:
-    MRMeshSceneP      m_scene;
+    ThreeMxScenePtr     m_scene;
     DRange3d            GetSceneRange();
 
     ~ThreeMxModel() { }
@@ -31,13 +42,14 @@ private:
 public:
     ThreeMxModel(CreateParams const& params) : T_Super (params), m_scene (NULL) { }
 
-     virtual void _AddGraphicsToScene(ViewContextR) override;
+    THREEMX_SCHEMA_EXPORT virtual void _AddGraphicsToScene(ViewContextR) override;
     THREEMX_SCHEMA_EXPORT virtual void _ToPropertiesJson(Json::Value&) const override;
     THREEMX_SCHEMA_EXPORT virtual void _FromPropertiesJson(Json::Value const&) override;
     THREEMX_SCHEMA_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const override;
-//  THREEMX_SCHEMA_EXPORT ThreeMxScenePtr GetThreeMxScenePtr ();
+    THREEMX_SCHEMA_EXPORT static DgnModelId  CreateThreeMxModel (DgnDbR dgnDb, Utf8StringCR fileId);
 
-    THREEMX_SCHEMA_EXPORT static DgnModelId  CreateThreeMxModel (DgnDbR dgnDb, BeFileNameCR fileName);
+    ThreeMxScenePtr  GetScene ();
+    void             SetScene (ThreeMxScenePtr& scene)    { m_scene = scene; }
 
     struct Properties
         {
@@ -54,7 +66,7 @@ protected:
     friend struct ThreeMxProgressiveDisplay;
 
 
-};
+};  // ThreeMxScene;
 
 
 //=======================================================================================

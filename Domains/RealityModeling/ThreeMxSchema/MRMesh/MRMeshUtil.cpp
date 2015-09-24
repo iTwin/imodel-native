@@ -64,3 +64,26 @@ double MRMeshUtil::CalculateResolutionRatio ()
     return (100.0 - (double) s_memoryThresholdPercent) / (100.0 - (double) statex.dwMemoryLoad);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+MRMeshContext::MRMeshContext (TransformCR transform, ViewContextR viewContext, double fixedResolution) 
+    : m_transform (transform), m_useFixedResolution (false), m_fixedResolution (0.0), m_nodeCount (0), m_pointCount (0)    
+    {
+#ifdef NEEDS_WORK
+    m_loadSynchronous    = FILTER_LOD_Off == viewContext.GetFilterLODFlag() ||          // If the LOD filter is off we assume that this is an application that is interested in full detail (and isn't going to wait for nodes to load.(DrawPurpose::CaptureGeometry == viewContext.GetDrawPurpose() || DrawPurpose::ModelFacet == viewContext.GetDrawPurpose())
+                           s_dropInProcess || 
+                           DrawPurpose::ModelFacet == viewContext.GetDrawPurpose();          
+    
+    if (m_loadSynchronous)
+        {
+        if (DrawPurpose::Update != viewContext.GetDrawPurpose())       // For capture image the LOD filter is off - but we still want view dependent resolution.
+            {
+            m_useFixedResolution = true;
+            m_fixedResolution    = (0.0 == fixedResolution ? MRMeshElementHandler::ComputeDefaultExportResolution (element) : fixedResolution) / transform.ColumnXMagnitude();
+            }
+        }
+    m_lastPumpTicks = mdlSystem_getTicks();
+#endif
+    }
+

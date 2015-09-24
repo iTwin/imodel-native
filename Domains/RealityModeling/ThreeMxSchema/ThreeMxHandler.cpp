@@ -15,27 +15,61 @@ HANDLER_DEFINE_MEMBERS(ThreeMxModelHandler)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-DgnModelId ThreeMxModel::CreateThreeMxModel(DgnDbR db, BeFileNameCR fileName)
+static ThreeMxScenePtr     readScene (BeFileNameR fileName, DgnDbR db, Utf8StringCR fileId)
+    {
+    // Find resolved file name for the point cloud
+    BentleyStatus status = T_HOST.GetPointCloudAdmin()._ResolveFileName(fileName, fileId, db);
+    if (status != SUCCESS)
+        return nullptr;
+
+    S3SceneInfo     sceneInfo;
+    std::string     err;
+    ThreeMxScenePtr scene;
+
+    if (SUCCESS != BaseSceneNode::Read3MX (fileName, sceneInfo, err) ||
+        ! (scene = MRMeshScene::Create (sceneInfo, fileName)).IsValid())
+        return nullptr;
+
+    return scene;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                      Ray.Bentley     09/2015
+//----------------------------------------------------------------------------------------
+DgnModelId ThreeMxModel::CreateThreeMxModel(DgnDbR db, Utf8StringCR fileId)
     {
     DgnClassId classId (db.Schemas().GetECClassId(BENTLEY_THREEMX_SCHEMA_NAME, "ThreeMxModel"));
     BeAssert(classId.IsValid());
 
-    S3SceneInfo     sceneInfo;
-    std::string     err;
-    MRMeshScene     scene;
-
-    if (SUCCESS != BaseSceneNode::Read3MX (fileName, sceneInfo, err) ||
-        SUCCESS != scene.Initialize (sceneInfo, fileName))
+    BeFileName      fileName;
+    
+    ThreeMxScenePtr scene = readScene (fileName, db, fileId);
+    if (! scene.IsValid())
         return DgnModelId();
-
-    Utf8String modelName(fileName.GetFileNameWithoutExtension().c_str());
     
     // Create model in DgnDb
+    Utf8String modelName(fileName.GetFileNameWithoutExtension().c_str());
     ThreeMxModelPtr model = new ThreeMxModel (DgnModel::CreateParams(db, classId, modelName.c_str()));
+
+    model->SetScene (scene);
     model->Insert();
     return model->GetModelId();
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                      Ray.Bentley     09/2015
+//----------------------------------------------------------------------------------------
+ThreeMxScenePtr  ThreeMxModel::GetScene ()
+    {
+    if (!m_scene.IsValid())
+        {
+        BeFileName      fileName;
+
+        m_scene = readScene (fileName, GetDgnDb(), m_properties.m_fileId);
+        }
+
+    return m_scene;
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
@@ -48,17 +82,19 @@ AxisAlignedBox3d ThreeMxModel::_QueryModelRange() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-void ThreeMxModel::_AddGraphicsToScene (ViewContextR context)
+void ThreeMxModel::_AddGraphicsToScene (ViewContextR viewContext)
     {
-#ifdef WIP
-    MRMeshContext       meshContext (
+    ThreeMxScenePtr  scene = GetScene();
 
-    if (GetThreeMxScenePtr() != nullptr)
+    if (!scene.IsValid())
         {
-        RefCountedPtr<ThreeMxProgressiveDisplay> display = new ThreeMxProgressiveDisplay(*this);
-        display->DrawView(context);
+        BeAssert (false);
+        return;
         }
-#endif
+
+    MRMeshContext       meshContext (Transform::FromIdentity(), viewContext, 0.0);
+
+    scene->_Draw (viewContext, meshContext);
     }
 
 //----------------------------------------------------------------------------------------

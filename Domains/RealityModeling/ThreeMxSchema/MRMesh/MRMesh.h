@@ -25,6 +25,7 @@ BEGIN_BENTLEY_THREEMX_SCHEMA_NAMESPACE
 typedef RefCountedPtr <struct MRMeshNode>       MRMeshNodePtr;
 typedef RefCountedPtr <struct MRMeshGeometry>   MRMeshGeometryPtr;
 typedef RefCountedPtr <struct MRMeshTexture>    MRMeshTexturePtr;
+typedef RefCountedPtr <struct MRMeshScene>      MRMeshScenePtr;
 
 
 enum MRMeshMinorXAttributeId
@@ -113,19 +114,24 @@ struct MRMeshContext
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     04/2015
 +===============+===============+===============+===============+===============+======*/
-struct MRMeshScene
+struct MRMeshScene : ThreeMxScene
 {
+protected:
     WString                         m_sceneName;
     WString                         m_srs;
     WString                         m_fileName;
     DPoint3d                        m_srsOrigin;
     bvector <MRMeshNodePtr>         m_children;
 
-    MRMeshScene ()  { m_srsOrigin.Zero(); }
+    MRMeshScene (S3SceneInfo const& sceneInfo, WCharCP fileName);
 
-    BentleyStatus   Initialize (S3SceneInfo const& sceneInfo, WCharCP fileName);
+public:
+
+    static ThreeMxScenePtr  Create (S3SceneInfo const& sceneInfo, WCharCP fileName);
+
+    virtual void    _Draw (ViewContextR viewContext, MRMeshContextCR MeshContext) override;
+
     void            DrawBoundingSpheres (ViewContextR viewContext);
-    void            Draw (ViewContextR viewContext, MRMeshContextCR MeshContext);
     void            DrawMeshes (IDrawGeomP drawGeom, TransformCR transform);
 
     size_t          GetTextureMemorySize () const;

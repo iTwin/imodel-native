@@ -13,29 +13,39 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   MRMeshScene::Initialize (S3SceneInfo const& sceneInfo, WCharCP fileName)
+MRMeshScene::MRMeshScene (S3SceneInfo const& sceneInfo, WCharCP fileName)
     {
     m_fileName  = BeFileName (fileName);
     m_sceneName = WString (sceneInfo.sceneName.c_str(), false);
     m_srs       = WString (sceneInfo.SRS.c_str(), false);
 
-    if (3 == sceneInfo.SRSOrigin.size ())
+   if (3 == sceneInfo.SRSOrigin.size ())
         m_srsOrigin.InitFromArray (&sceneInfo.SRSOrigin.front ());
     else
         m_srsOrigin.Zero ();
 
-    BeFileName   scenePath (BeFileName::DevAndDir, m_fileName.c_str());
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ThreeMxScenePtr   MRMeshScene::Create (S3SceneInfo const& sceneInfo, WCharCP fileName)
+    {
+    MRMeshScene*    scene = new MRMeshScene (sceneInfo, fileName);
+ 
+    BeFileName   scenePath (BeFileName::DevAndDir, fileName);
     for (bvector<std::string>::const_iterator child = sceneInfo.meshChildren.begin (); child != sceneInfo.meshChildren.end (); child++)
         {
         MRMeshNodePtr       childNode = MRMeshNode::Create ();
 
-        if (SUCCESS == MRMeshCacheManager::GetManager().SynchronousRead (*childNode, MRMeshUtil::ConstructNodeName (*child, &scenePath)))
-            {
-            childNode->LoadUntilDisplayable ();
-            m_children.push_back (childNode);
-            }
+        if (SUCCESS != MRMeshCacheManager::GetManager().SynchronousRead (*childNode, MRMeshUtil::ConstructNodeName (*child, &scenePath)))
+            return nullptr;
+
+        childNode->LoadUntilDisplayable ();
+        scene->m_children.push_back (childNode);
         }
-    return SUCCESS;
+    return scene;
     }
 
 
@@ -67,7 +77,7 @@ void        MRMeshScene::DrawBoundingSpheres (ViewContextR viewContext)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    MRMeshScene::Draw (ViewContextR viewContext, MRMeshContextCR MeshContext)
+void    MRMeshScene::_Draw (ViewContextR viewContext, MRMeshContextCR MeshContext)
     {
     for (bvector<MRMeshNodePtr>::iterator child = m_children.begin (); child != m_children.end (); child++)
         {
