@@ -25,80 +25,6 @@ namespace dgn_AspectHandler
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
-namespace
-{
-//=======================================================================================
-// We want to re-use TextAnnotationDraw, which requires a context, so use an IElementGraphicsProcessor to listen to context events and emit to an ElementGeometryBuilder.
-// Note that this is tightly coupled with TextAnnotationDraw (and AnnotationFrameDraw, AnnotationLeaderDraw, and AnnotationTextBlockDraw), which uses a subset of draw commands.
-// @bsiclass                                                    Jeff.Marker     09/2015
-//=======================================================================================
-struct TextAnnotationGraphicsProcessor : IElementGraphicsProcessor
-    {
-    TextAnnotationCR m_annotation;
-    DgnCategoryId m_categoryId;
-    ElementGeometryBuilderR m_builder;
-    Transform m_transform;
-
-    TextAnnotationGraphicsProcessor(TextAnnotationCR annotation, DgnCategoryId categoryId, ElementGeometryBuilderR builder) :
-        m_annotation(annotation), m_categoryId(categoryId), m_builder(builder), m_transform(Transform::FromIdentity()) {}
-
-    virtual void _AnnounceTransform(TransformCP transform) override { if (nullptr != transform) { m_transform = *transform; } else { m_transform.InitIdentity(); } }
-    virtual void _AnnounceElemDisplayParams(ElemDisplayParamsCR params) override { m_builder.Append(params); }
-    virtual BentleyStatus _ProcessTextString(TextStringCR) override;
-    virtual BentleyStatus _ProcessCurveVector(CurveVectorCR, bool isFilled) override;
-    virtual void _OutputGraphics(ViewContextR) override;
-    };
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     09/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus TextAnnotationGraphicsProcessor::_ProcessTextString(TextStringCR text)
-    {
-    if (m_transform.IsIdentity())
-        {
-        m_builder.Append(text);
-        }
-    else
-        {
-        TextString transformedText(text);
-        transformedText.ApplyTransform(m_transform);
-        m_builder.Append(transformedText);
-        }
-
-    return SUCCESS; // SUCCESS means handled
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     09/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus TextAnnotationGraphicsProcessor::_ProcessCurveVector(CurveVectorCR curves, bool isFilled)
-    {
-    if (m_transform.IsIdentity())
-        {
-        m_builder.Append(curves);
-        }
-    else
-        {
-        CurveVector transformedCurves(curves);
-        transformedCurves.TransformInPlace(m_transform);
-        m_builder.Append(transformedCurves);
-        }
-
-    return SUCCESS; // SUCCESS means handled
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     09/2015
-//---------------------------------------------------------------------------------------
-void TextAnnotationGraphicsProcessor::_OutputGraphics(ViewContextR context)
-    {
-    context.GetCurrentDisplayParams().SetCategoryId(m_categoryId);
-
-    TextAnnotationDraw annotationDraw(m_annotation);
-    annotationDraw.Draw(context);
-    }
-}
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2015
 //---------------------------------------------------------------------------------------
@@ -177,7 +103,9 @@ DgnDbStatus TextAnnotationItem::_GenerateElementGeometry(GeometricElementR el, G
     ElementGeometryBuilderPtr builder;
     DgnElement3dCP elem3d = el.ToElement3d();
     if (nullptr != elem3d)
+        {
         builder = ElementGeometryBuilder::Create(*el.GetModel(), el.GetCategoryId(), elem3d->GetPlacement().GetOrigin(), elem3d->GetPlacement().GetAngles());
+        }
     else
         {
         DgnElement2dCP elem2d = el.ToElement2d();
@@ -185,9 +113,9 @@ DgnDbStatus TextAnnotationItem::_GenerateElementGeometry(GeometricElementR el, G
         builder = ElementGeometryBuilder::Create(*el.GetModel(), el.GetCategoryId(), elem2d->GetPlacement().GetOrigin(), elem2d->GetPlacement().GetAngle());
         }
     
-    TextAnnotationGraphicsProcessor annotationGraphics(*m_annotation, el.GetCategoryId(), *builder);
-    ElementGraphicsOutput::Process(annotationGraphics, el.GetDgnDb());
-
+    TextAnnotationDraw annotationDraw(*m_annotation);
+    annotationDraw.Draw(*builder, el.GetDgnDb(), el.GetCategoryId());
+    
     builder->SetGeomStreamAndPlacement(el);
     
     return DgnDbStatus::Success;
