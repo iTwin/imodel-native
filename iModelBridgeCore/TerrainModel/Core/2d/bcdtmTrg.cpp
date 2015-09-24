@@ -1657,14 +1657,14 @@ BENTLEYDTM_Private int bcdtmObject_markTinFeaturesThatAreRollBackFeaturesPreMerg
 
 
 
-static int (*bcdtmObject_overrideTriangulateP) (BC_DTM_OBJ *dtmP) = nullptr;
+static int (*bcdtmObject_overrideTriangulateP) (BC_DTM_OBJ *dtmP, bool normaliseOption , bool duplicateOption ) = nullptr;
 
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmObject_overrideTriangulateDtmObject (int (*overrideP) (BC_DTM_OBJ *dtmP))
+BENTLEYDTM_Public int bcdtmObject_overrideTriangulateDtmObject (int (*overrideP) (BC_DTM_OBJ *dtmP, bool normaliseOption , bool duplicateOption ))
     {
     bcdtmObject_overrideTriangulateP = overrideP;
     return DTM_SUCCESS;
@@ -1674,7 +1674,7 @@ BENTLEYDTM_Public int bcdtmObject_overrideTriangulateDtmObject (int (*overrideP)
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_EXPORT int bcdtmObject_triangulateDtmObject(BC_DTM_OBJ *dtmP)
+BENTLEYDTM_EXPORT int bcdtmObject_triangulateDtmObject (BC_DTM_OBJ *dtmP, bool normaliseOption, bool duplicateOption)
 /*
 ** This Function Triangulates A Dtm Object
 */
@@ -1689,7 +1689,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateDtmObject(BC_DTM_OBJ *dtmP)
 ** Write Entry Message
 */
  if (bcdtmObject_overrideTriangulateP)
-     return bcdtmObject_overrideTriangulateP (dtmP);
+     return bcdtmObject_overrideTriangulateP (dtmP, normaliseOption, duplicateOption);
 // if( bcdtmObject_testCleanUpDtmObject(dtmP)) dbg=DTM_TRACE_VALUE(1) ;
  if( dbg )
    {
@@ -1759,7 +1759,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateDtmObject(BC_DTM_OBJ *dtmP)
 ** Create Tin
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Creating Tin") ;
- if( bcdtmObject_createTinDtmObject(dtmP,edgeOption,maxSide)) goto errexit ;
+ if (bcdtmObject_createTinDtmObject (dtmP, edgeOption, maxSide, normaliseOption , duplicateOption)) goto errexit;
 /*
 ** Append Roll Back Features To DTM
 */
@@ -1878,7 +1878,9 @@ BENTLEYDTM_Public int bcdtmObject_createTinDtmObject
 (
  BC_DTM_OBJ *dtmP,
  long        edgeOption,
- double      maxSide
+ double      maxSide,
+ bool normaliseOption,
+ bool duplicateOption
 )
 /*
 ** This Function Triangulates A Dtm Object
@@ -1903,7 +1905,7 @@ BENTLEYDTM_Public int bcdtmObject_createTinDtmObject
 ** Procees DTM Object For Triangulation
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Processing DTM For Tin Creation") ;
- if( bcdtmObject_processForTriangulationDtmObject(dtmP)) goto errexit ;
+ if( bcdtmObject_processForTriangulationDtmObject(dtmP, normaliseOption, duplicateOption)) goto errexit ;
 
 /*
 ** Log DTM Object
@@ -2037,7 +2039,9 @@ BENTLEYDTM_Public int bcdtmObject_createTinDtmObject
 +-------------------------------------------------------------------*/
 BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObject
 (
- BC_DTM_OBJ *dtmP)
+ BC_DTM_OBJ *dtmP,
+ bool       normaliseOption,
+ bool       duplicateOption)
 /*
 ** This Function Prepares A Dtm Object For Triangulation
 */
@@ -2156,7 +2160,7 @@ BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObject
 /*
 ** Normalise Dtm Points
 */
- if( DTM_NORMALISE_OPTION == TRUE )
+ if (normaliseOption)
    {
     startTime = bcdtmClock() ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Normalising Dtm Points") ;
@@ -2276,7 +2280,7 @@ BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObject
 */
  startTime = bcdtmClock() ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Removing Duplicates DTM Object") ;
- if( bcdtmObject_removeDuplicatesDtmObject(dtmP,&numDuplicates)) goto errexit ;
+ if( bcdtmObject_removeDuplicatesDtmObject(dtmP,&numDuplicates, duplicateOption)) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Duplicates Removed = %8ld",numDuplicates) ;
  if( tdbg ) bcdtmWrite_message(0,0,0,"** Time To Remove Duplicate Points = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ;
 /*
@@ -3552,7 +3556,7 @@ BENTLEYDTM_Public int bcdtmObject_divConqMergeSortDtmObject(BC_DTM_OBJ *dtmP,lon
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmObject_removeDuplicatesDtmObject(BC_DTM_OBJ *dtmP,long *numDuplicatesP)
+BENTLEYDTM_Public int bcdtmObject_removeDuplicatesDtmObject(BC_DTM_OBJ *dtmP,long *numDuplicatesP, bool duplicateOption)
 /*
 ** This Function Removes Duplicate Points From The Dtm Object
 */
@@ -3663,8 +3667,8 @@ BENTLEYDTM_Public int bcdtmObject_removeDuplicatesDtmObject(BC_DTM_OBJ *dtmP,lon
                   {
                    removeFlag = FALSE ;
                    dp = bcdtmMath_distance(p1P->x,p1P->y,p2P->x,p2P->y) ;
-                   if      ( DTM_DUPLICATE_OPTION == FALSE && dp == 0.0         ) removeFlag = TRUE ;
-                   else if ( DTM_DUPLICATE_OPTION == TRUE  && dp <  dtmP->ppTol ) removeFlag = TRUE ;
+                   if (!duplicateOption && dp == 0.0) removeFlag = TRUE;
+                   else if (duplicateOption  && dp <  dtmP->ppTol) removeFlag = TRUE;
                    if( removeFlag == TRUE )
                      {
                       *sP2 = ofs1;
@@ -5003,6 +5007,7 @@ BENTLEYDTM_Public int bcdtmObject_createTinDtmObjectOverload
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
 }
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -5649,6 +5654,7 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Duplicates = %8ld",*numDuplicatesP
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
 }
+
 #ifdef OLDFUNCTIONS
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -6208,12 +6214,8 @@ BENTLEYDTM_Private int bcdtmObject_checkAndFixTopologyStmTrianglesDtmObject
             if (bcdtmList_copyTptrListToPointArrayDtmObject (dtmP, hullStartPoints[n], &hullPtsP, &numHullPts)) goto errexit;
             if (bcdtmObject_storeDtmFeatureInDtmObject (voidP, DTMFeatureType::Breakline, voidP->nullUserTag, 1, &voidP->nullFeatureId, hullPtsP, numHullPts)) goto errexit;
             }
-        DTM_DUPLICATE_OPTION = FALSE;
-        DTM_NORMALISE_OPTION = FALSE;
         voidP->ppTol = voidP->plTol = 0.0;
-        bcdtmObject_triangulateDtmObject (voidP);
-        DTM_DUPLICATE_OPTION = TRUE;
-        DTM_NORMALISE_OPTION = TRUE;
+        bcdtmObject_triangulateDtmObject (voidP, false, false);
         if (bcdtmList_removeNoneFeatureHullLinesDtmObject (voidP)) goto errexit;
         if (dbg == 1) bcdtmWrite_toFileDtmObject (voidP, L"void.tin");
 
@@ -6332,8 +6334,6 @@ resume:
     // Clean Up
 
 cleanup:
-    DTM_DUPLICATE_OPTION = TRUE;
-    DTM_NORMALISE_OPTION = TRUE;
     if (voidP != nullptr) bcdtmObject_destroyDtmObject (&voidP);
     if (tempDtmP != nullptr) bcdtmObject_destroyDtmObject (&tempDtmP);
 
@@ -6924,12 +6924,8 @@ BENTLEYDTM_Public int bcdtmObject_findAndFixMissingStmTrianglesDtmObject
 
         // Triangulate Poly Hulls
 
-        DTM_DUPLICATE_OPTION = FALSE;
-        DTM_NORMALISE_OPTION = FALSE;
         voidP->ppTol = voidP->plTol = 0.0;
-        if (bcdtmObject_triangulateDtmObject (voidP)) goto errexit;
-        DTM_DUPLICATE_OPTION = TRUE;
-        DTM_NORMALISE_OPTION = TRUE;
+        if (bcdtmObject_triangulateDtmObject (voidP), false, false) goto errexit;
         if (bcdtmList_removeNoneFeatureHullLinesDtmObject (voidP)) goto errexit;
         if (dbg == 2) bcdtmWrite_toFileDtmObject (voidP, L"void.tin");
 
@@ -7192,8 +7188,6 @@ BENTLEYDTM_Public int bcdtmObject_findAndFixMissingStmTrianglesDtmObject
     // Clean Up
 
 cleanup:
-    DTM_DUPLICATE_OPTION = TRUE;
-    DTM_NORMALISE_OPTION = TRUE;
     if (polyPtsP != nullptr) free (polyPtsP);
     if (voidP != nullptr) bcdtmObject_destroyDtmObject (&voidP);
 
@@ -7698,14 +7692,12 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
         }
 
     // Triangulate DTM
-    DTM_NORMALISE_OPTION = FALSE;
-    DTM_DUPLICATE_OPTION = FALSE;
     dtmP->edgeOption = 3;
     double prevMaxSide = dtmP->maxSide;
     dtmP->maxSide = dtmP->ppTol;
     dtmP->ppTol = 0;
     dtmP->plTol = 0;
-    bcdtmObject_triangulateDtmObject (dtmP);
+    bcdtmObject_triangulateDtmObject (dtmP, false, false);
     dtmP->maxSide = prevMaxSide;
 
     if (dbg)
@@ -7751,8 +7743,6 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
     if( bcdtmObject_resizeMemoryDtmObject(dtmP) ) goto errexit ;
 
     cleanup:
-    DTM_NORMALISE_OPTION = TRUE;
-    DTM_DUPLICATE_OPTION = TRUE;
     if (trgPtsP != nullptr) free (trgPtsP);
 
     // Return

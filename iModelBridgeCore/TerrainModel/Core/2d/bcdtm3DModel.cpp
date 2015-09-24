@@ -226,12 +226,8 @@ BENTLEYDTM_Public int bcdtm3DModel_intersectDesignTinHullsDtm(BC_DTM_OBJLIST *De
 ** Triangulate Dtm Object
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Triangulating Dtm Object") ;
- DTM_NORMALISE_OPTION  = FALSE ;             // To Inhibit Normalisation Of Coordinates - function 
- DTM_DUPLICATE_OPTION = FALSE ;             // To Inhibit Removal Of None Identical Points
  dtmP->ppTol = dtmP->plTol = 0.0 ;  
- if( bcdtmObject_createTinDtmObject(dtmP,1,0.0)) goto errexit ;
- DTM_NORMALISE_OPTION  = TRUE ;
- DTM_DUPLICATE_OPTION = TRUE ;
+ if( bcdtmObject_createTinDtmObject(dtmP,1,0.0, false, false)) goto errexit ;
 /*
 ** Remove None Feature Hull Lines
 */

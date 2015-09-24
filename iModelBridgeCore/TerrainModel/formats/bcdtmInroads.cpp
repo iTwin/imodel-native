@@ -2,7 +2,7 @@
 |
 |     $Source: formats/bcdtmInroads.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <string.h>
@@ -391,13 +391,9 @@ DTMStatusInt bcdtmFormatInroads_insertRectangleAroundTinDtmObject
     ** Triangulate DTM
     */
     if( dbg )  bcdtmWrite_message(0,0,0,"Triangulating Temp Dtm Object ** tempDtmP->numPoints = %8ld",tempDtmP->numPoints) ; //
-    DTM_NORMALISE_OPTION  = FALSE ;             // To Inhibit Normalisation Of Coordinates  
-    DTM_DUPLICATE_OPTION = FALSE ;             // To Inhibit Removal Of None Identical Points
     dtmP->ppTol = 0.0 ;
     dtmP->plTol = 0.0 ;  
-    if( bcdtmObject_createTinDtmObject(tempDtmP,1,0.0)) goto errexit ;
-    DTM_NORMALISE_OPTION  = TRUE ;
-    DTM_DUPLICATE_OPTION = TRUE ;
+    if( bcdtmObject_createTinDtmObject(tempDtmP,1,0.0, false, false)) goto errexit ;
     if( dbg )  bcdtmWrite_message(0,0,0,"Triangulating Temp Dtm Object Completed ** tempDtmP->numPoints = %8ld",tempDtmP->numPoints) ; 
     /*
     ** Check Triangulation
@@ -2257,13 +2253,9 @@ BENTLEYDTMFORMATS_EXPORT DTMStatusInt bcdtmFormatInroads_getPaddingTrianglesForE
 ** Triangulate DTM
 */
  if( dbg )  bcdtmWrite_message(0,0,0,"Triangulating Dtm Object ** dtmP->numPoints = %8ld",dtmP->numPoints) ; 
- DTM_NORMALISE_OPTION = FALSE ;             // To Inhibit Normalisation Of Coordinates  
- DTM_DUPLICATE_OPTION = FALSE ;             // To Inhibit Merging Of Points Closer Than The Point To Point Tolerance
  dtmP->ppTol = 0.0 ;
  dtmP->plTol = 0.0 ;  
- if( bcdtmObject_createTinDtmObject(dtmP,1,0.0)) goto errexit ;
- DTM_NORMALISE_OPTION = TRUE ;
- DTM_DUPLICATE_OPTION = TRUE ;
+ if( bcdtmObject_createTinDtmObject(dtmP,1,0.0, false, false)) goto errexit ;
  if( dbg )  bcdtmWrite_message(0,0,0,"Triangulating Dtm Object Completed ** dtmP->numPoints = %8ld",dtmP->numPoints) ; 
 /*
 ** Check Triangulation

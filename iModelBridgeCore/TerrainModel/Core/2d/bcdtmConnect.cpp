@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmConnect.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -975,14 +975,11 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectDtmObject
 /*
 ** Triangulate Dtm Object
 */
- DTM_NORMALISE_OPTION = FALSE ;
- if( bcdtmObject_createTinDtmObject(*dtmPP,1,0.0)) goto errexit ;
- DTM_NORMALISE_OPTION = TRUE ;
+ if( bcdtmObject_createTinDtmObject(*dtmPP,1,0.0, false)) goto errexit ;
 /*
 ** Cleanup
 */
  cleanup :
- DTM_NORMALISE_OPTION = TRUE ;
  bcdtmList_nullTptrValuesDtmObject(*dtmPP) ;
  bcdtmList_nullSptrValuesDtmObject(*dtmPP) ;
 /*

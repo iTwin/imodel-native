@@ -298,10 +298,5 @@ struct SLOPETAB { double Low,High,Slope  ; } ;
 /*====================================================================*/
 
 // From dtmevars.h
-#ifdef __BENTLEYDTM_BUILD__
-extern DTM_GUID     *tmpGuidP ; 
-#else
-IMPORT_ATTRIBUTE DTM_GUID     *tmpGuidP ;
-#endif
 #endif
 

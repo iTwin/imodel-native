@@ -4109,12 +4109,8 @@ BENTLEYDTM_Public int bcdtmClip_fillTptrPolygonWithTrianglesDtmObject(BC_DTM_OBJ
 ** Triangulate tempDtmP Object
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Triangulating Temporary Dtm Object") ;
- DTM_NORMALISE_OPTION  = FALSE ;             // To Inhibit Normalisation Of Coordinates - function 
- DTM_DUPLICATE_OPTION = FALSE ;             // To Inhibit Removal Of None Identical Points
  tempDtmP->ppTol = tempDtmP->plTol = 0.0 ;  
- if( bcdtmObject_createTinDtmObject(tempDtmP,1,0.0)) goto errexit ;
- DTM_NORMALISE_OPTION  = TRUE ;
- DTM_DUPLICATE_OPTION = TRUE ;
+ if( bcdtmObject_createTinDtmObject(tempDtmP,1,0.0, false, false)) goto errexit ;
 /*
 ** Check For Triangulation Errors
 */
@@ -4209,8 +4205,6 @@ BENTLEYDTM_Public int bcdtmClip_fillTptrPolygonWithTrianglesDtmObject(BC_DTM_OBJ
 ** Clean Up
 */
  cleanup :
- DTM_NORMALISE_OPTION  = TRUE ;
- DTM_DUPLICATE_OPTION = TRUE ;
  if( pointsP  != NULL ) free(pointsP) ;
  if( tempDtmP != NULL ) bcdtmObject_destroyDtmObject(&tempDtmP)  ;  
 /*

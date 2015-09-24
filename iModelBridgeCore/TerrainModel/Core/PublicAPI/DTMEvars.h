@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/DTMEvars.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -41,8 +41,6 @@ extern long    DTM_LAST_DAT_FILE_NUM_DEC_PTS ;
 |   BC_DTM Global Object Variables                                   |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_EXPORT extern long DTM_NORMALISE_OPTION            ;    //  Normalise Points Prior To Triangulation
-BENTLEYDTM_EXPORT extern long DTM_DUPLICATE_OPTION            ;    //  Duplicate Point Removal Option
 extern BC_DTM_BTREE  *glbDtmObjBtreeP       ;    //  Global Btree For BC_DTM_OBJ Occurrences
 BENTLEYDTM_EXPORT extern long DTM_NUM_PROCESSORS              ;    //  Number Of Machine Processors
 BENTLEYDTM_EXPORT extern long DTM_GEOPAK_ACTIVE               ;    //  Set to 1 If Geopak Active
@@ -81,8 +79,6 @@ extern long    DTM_LAST_DAT_FILE_NUM_DEC_PTS ;
 |   BC_DTM Global Object Variables                                   |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_EXPORT extern long DTM_NORMALISE_OPTION          ;     //  Normalise Points Prior To Triangulation
-BENTLEYDTM_EXPORT extern long DTM_DUPLICATE_OPTION          ;     //  Duplicate Point Removal Option
 extern BC_DTM_BTREE  *glbDtmObjBtreeP                       ;     //  Global Btree For BC_DTM_OBJ Occurrences
 BENTLEYDTM_EXPORT extern long DTM_NUM_PROCESSORS            ;     //  Number Of Machine Processors
 BENTLEYDTM_EXPORT extern long DTM_GEOPAK_ACTIVE             ;     //  Set to 1 If Geopak Active

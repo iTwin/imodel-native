@@ -2311,7 +2311,7 @@ BENTLEYDTM_Public int bcdtmList_getPointerAndOffsetToNextDtmFeatureTypeOccurrenc
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long feature ;
- static long lastFeature=-1 ;
+ thread_local static long lastFeature=-1 ;
  BC_DTM_FEATURE *dtmFeatureP ;
 /*
 ** Write Entry Message

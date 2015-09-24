@@ -8,6 +8,10 @@
  #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
 #include "bcdtminlines.h" 
+#include <mutex>
+
+std::mutex s_dtmMutex;
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -28,15 +32,18 @@ BENTLEYDTM_EXPORT int bcdtmObject_createVer200DtmObject(BC_DTM_OBJ_VER_200 **dtm
 /*
 ** Create B Tree For BC DTM Dtm Objects Exists. If It Doesn't Exist Then Create It
 */
- if( glbDtmObjBtreeP == NULL ) if( bcdtmBtree_createBtree(&glbDtmObjBtreeP,BC_DTM_MAX_OBJS)) goto errexit ;
-/*
-** Check Number Of Entries
-*/
- if( glbDtmObjBtreeP->activeNodes >= BC_DTM_MAX_OBJS )
-   {
-    bcdtmWrite_message(1,0,0,"Maximum BC Dtm Dtm Objects Exceeded") ;
-    goto errexit ;
-   }
+        {
+        std::lock_guard<std::mutex> lock (s_dtmMutex);
+        if (glbDtmObjBtreeP == NULL) if (bcdtmBtree_createBtree (&glbDtmObjBtreeP, BC_DTM_MAX_OBJS)) goto errexit;
+        /*
+        ** Check Number Of Entries
+        */
+        if (glbDtmObjBtreeP->activeNodes >= BC_DTM_MAX_OBJS)
+            {
+            bcdtmWrite_message (1, 0, 0, "Maximum BC Dtm Dtm Objects Exceeded");
+            goto errexit;
+            }
+            }
 /*
 ** Create Dtm Object
 */ 
@@ -129,11 +136,14 @@ BENTLEYDTM_EXPORT int bcdtmObject_createVer200DtmObject(BC_DTM_OBJ_VER_200 **dtm
  (*dtmPP)->nodesPP              = NULL ;
  (*dtmPP)->cListPP              = NULL ;
  (*dtmPP)->fListPP              = NULL ;
- (*dtmPP)->DTMAllocationClass   = NULL;
-/*
-** Add Dtm Object To B Tree
-*/
- if( bcdtmBtree_addNode(glbDtmObjBtreeP,(BC_DTM_OBJ *)*dtmPP)) goto errexit ;
+ (*dtmPP)->DTMAllocationClass = NULL;
+ /*
+ ** Add Dtm Object To B Tree
+ */
+     {
+     std::lock_guard<std::mutex> lock (s_dtmMutex);
+     if (bcdtmBtree_addNode (glbDtmObjBtreeP, (BC_DTM_OBJ *)*dtmPP)) goto errexit;
+     }
 /*
 ** Clean Up
 */
@@ -226,15 +236,18 @@ BENTLEYDTM_EXPORT int bcdtmObject_createDtmObject(BC_DTM_OBJ **dtmPP )
 /*
 ** Create B Tree For BC DTM Dtm Objects Exists. If It Doesn't Exist Then Create It
 */
- if( glbDtmObjBtreeP == NULL ) if( bcdtmBtree_createBtree(&glbDtmObjBtreeP,BC_DTM_MAX_OBJS)) goto errexit ;
-/*
-** Check Number Of Entries
-*/
- if( glbDtmObjBtreeP->activeNodes >= BC_DTM_MAX_OBJS )
-   {
-    bcdtmWrite_message(1,0,0,"Maximum BC Dtm Dtm Objects Exceeded") ;
-    goto errexit ;
-   }
+    {
+            std::lock_guard<std::mutex> lock (s_dtmMutex);
+            if (glbDtmObjBtreeP == NULL) if (bcdtmBtree_createBtree (&glbDtmObjBtreeP, BC_DTM_MAX_OBJS)) goto errexit;
+            /*
+            ** Check Number Of Entries
+            */
+            if (glbDtmObjBtreeP->activeNodes >= BC_DTM_MAX_OBJS)
+                {
+                bcdtmWrite_message (1, 0, 0, "Maximum BC Dtm Dtm Objects Exceeded");
+                goto errexit;
+                }
+            }
 /*
 ** Create Dtm Object
 */ 
@@ -320,11 +333,14 @@ BENTLEYDTM_EXPORT int bcdtmObject_createDtmObject(BC_DTM_OBJ **dtmPP )
  (*dtmPP)->fListPP              = NULL ;
  (*dtmPP)->DTMAllocationClass   = NULL ;
  (*dtmPP)->extended = NULL ; 
-  bcdtmObject_updateLastModifiedTime (*dtmPP) ;
-/*
-** Add Dtm Object To B Tree
-*/
- if( bcdtmBtree_addNode(glbDtmObjBtreeP,*dtmPP)) goto errexit ;
+ bcdtmObject_updateLastModifiedTime (*dtmPP);
+ /*
+ ** Add Dtm Object To B Tree
+ */
+     {
+     std::lock_guard<std::mutex> lock (s_dtmMutex);
+     if (bcdtmBtree_addNode (glbDtmObjBtreeP, *dtmPP)) goto errexit;
+     }
 /*
 ** Clean Up
 */
@@ -887,15 +903,18 @@ BENTLEYDTM_EXPORT int bcdtmObject_testForInMemoryDtmObject(BC_DTM_OBJ *dtmP)
 /*
 ** Check For None Null Object
 */
- if( dtmP == NULL ) goto errexit ;
-/*
+ if (dtmP == NULL) goto errexit;
+     {
+     std::lock_guard<std::mutex> lock (s_dtmMutex);
+     /*
 **  Check B Tree Exits
 */
- if( glbDtmObjBtreeP == NULL ) goto errexit ;
-/*
-**  Find Entry For Dtm Object In Btree
-*/
- if( bcdtmBtree_findNode(glbDtmObjBtreeP,dtmP,&node,&priorNode,&nodeFound,&nodeLevel) ) goto errexit ;
+     if (glbDtmObjBtreeP == NULL) goto errexit;
+     /*
+     **  Find Entry For Dtm Object In Btree
+     */
+     if (bcdtmBtree_findNode (glbDtmObjBtreeP, dtmP, &node, &priorNode, &nodeFound, &nodeLevel)) goto errexit;
+     }
 /*
 **  Check Node Found
 */
@@ -947,15 +966,18 @@ BENTLEYDTM_EXPORT int bcdtmObject_testForValidDtmObject(BC_DTM_OBJ *dtmP)
 /*
 ** Check For DTM Object Or DTM Element
 */
- if( dtmP->dtmObjType != BC_DTM_OBJ_TYPE && dtmP->dtmObjType != BC_DTM_ELM_TYPE ) goto errexit ;
-/*
-**  Check B Tree Exits
-*/
- if( glbDtmObjBtreeP == NULL ) goto errexit ;
-/*
-**  Find Entry For Dtm Object In Btree
-*/
- if( bcdtmBtree_findNode(glbDtmObjBtreeP,dtmP,&node,&priorNode,&nodeFound,&nodeLevel) ) goto errexit ;
+ if (dtmP->dtmObjType != BC_DTM_OBJ_TYPE && dtmP->dtmObjType != BC_DTM_ELM_TYPE) goto errexit;
+ /*
+ **  Check B Tree Exits
+ */
+     {
+     std::lock_guard<std::mutex> lock (s_dtmMutex);
+     if (glbDtmObjBtreeP == NULL) goto errexit;
+     /*
+     **  Find Entry For Dtm Object In Btree
+     */
+     if (bcdtmBtree_findNode (glbDtmObjBtreeP, dtmP, &node, &priorNode, &nodeFound, &nodeLevel)) goto errexit;
+     }
 /*
 **  Check Node Found
 */
@@ -1365,24 +1387,26 @@ BENTLEYDTM_EXPORT int bcdtmObject_destroyDtmObject(BC_DTM_OBJ **dtmPP)
 ** Check For Valid Dtm Object
 */
  if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Checking For Valid Dtm Object") ;
- if( bcdtmObject_testForValidDtmObject(*dtmPP)) goto errexit ;
-/*
-** Check If Current DTM Object Is The Same Object
-*/
-/*
- if( *dtmPP == DTM_CDTM ) 
-   {
-    if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Dtm Object Is Current Dtm Object") ;
-    currentDtmObj = TRUE ;   
-   } 
-*/   
-/*
-** Find Entry For Dtm Object In Btree
-*/
- if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Finding Btree Entry For Dtm Object") ;
- if( bcdtmBtree_findNode(glbDtmObjBtreeP,*dtmPP,&node,&priorNode,&nodeFound,&nodeLevel) ) goto errexit ;
- if( dbg == 2 ) bcdtmWrite_message(0,0,0,"nodeFound = %2ld node = %6ld",nodeFound,node) ;
-
+ if (bcdtmObject_testForValidDtmObject (*dtmPP)) goto errexit;
+ /*
+ ** Check If Current DTM Object Is The Same Object
+ */
+ /*
+  if( *dtmPP == DTM_CDTM )
+  {
+  if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Dtm Object Is Current Dtm Object") ;
+  currentDtmObj = TRUE ;
+  }
+  */
+ /*
+ ** Find Entry For Dtm Object In Btree
+ */
+     {
+     std::lock_guard<std::mutex> lock (s_dtmMutex);
+     if (dbg == 2) bcdtmWrite_message (0, 0, 0, "Finding Btree Entry For Dtm Object");
+     if (bcdtmBtree_findNode (glbDtmObjBtreeP, *dtmPP, &node, &priorNode, &nodeFound, &nodeLevel)) goto errexit;
+     if (dbg == 2) bcdtmWrite_message (0, 0, 0, "nodeFound = %2ld node = %6ld", nodeFound, node);
+     }
 /*
 ** Tell bcMemory that we are being freed
 */
@@ -1478,8 +1502,11 @@ BENTLEYDTM_EXPORT int bcdtmObject_destroyDtmObject(BC_DTM_OBJ **dtmPP)
 /*
 ** Remove Entry For Dtm Object In Btree
 */
- if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Removing Node For Dtm Object From Btree") ;
- if( bcdtmBtree_removeNode(glbDtmObjBtreeP,node) ) goto errexit ;
+ if (dbg == 2) bcdtmWrite_message (0, 0, 0, "Removing Node For Dtm Object From Btree");
+     {
+     std::lock_guard<std::mutex> lock (s_dtmMutex);
+     if (bcdtmBtree_removeNode (glbDtmObjBtreeP, node)) goto errexit;
+     }
 /*
 ** Clean Up
 */

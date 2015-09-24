@@ -255,10 +255,9 @@ BENTLEYDTM_Public int bcdtmCleanUp_resolveMultipleIntersectingPolygonalDtmObject
         do
             {
             changed = false;
-            DTM_NORMALISE_OPTION = FALSE ;    // To Inhibit Normalisation Of Coordinates - function 
             polyDtmP->ppTol = 0.0 ;
             polyDtmP->plTol = 0.0 ;  
-            if( bcdtmObject_createTinDtmObject(polyDtmP,1,0.0)) goto errexit ;
+            if( bcdtmObject_createTinDtmObject(polyDtmP,1,0.0, false)) goto errexit ;
 
 //            bcdtmList_nullTptrValuesDtmObject (polyDtmP);
 

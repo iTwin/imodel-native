@@ -174,6 +174,7 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonAndTinHullDtmObject
 **     Intersect Polygon And Tin Hull
 */ 
        if( bcdtmPolygon_intersectPolygons(hullPtsP,numHullPts,polyPtsP,numPolyPts,intersectFlagP,polyPP,ppTol,plTol)) goto errexit ;
+       *intersectFlagP = 0;
        if( *intersectFlagP == 0 ) 
          { 
           bcdtmWrite_message(1,0,0,"Polygon Does Not Intersect Tin Hull") ;
@@ -453,11 +454,9 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygons
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Triangulating Dtm Object") ;
  startTime = bcdtmClock() ;
- DTM_NORMALISE_OPTION = FALSE ;                       // To Inhibit Normalisation Of Coordinates - function 
  dtmP->ppTol = ppTol / 100.0 ;
  dtmP->plTol = plTol / 100.0 ;  
- if( bcdtmObject_createTinDtmObject(dtmP,1,0.0)) goto errexit ;
- DTM_NORMALISE_OPTION = TRUE ;
+ if( bcdtmObject_createTinDtmObject(dtmP,1,0.0, false)) goto errexit ;
  if( tdbg ) bcdtmWrite_message(0,0,0,"**** Time Time = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ;
 /*
 ** Check If PRGN Is Set To Zero
@@ -574,7 +573,6 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygons
 ** Clean Up
 */
  cleanup :
- DTM_NORMALISE_OPTION = TRUE ;
  if( dtmP     != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ; 
  if( polyPtsP != NULL ) { free(polyPtsP) ; polyPtsP = NULL ; }
 /*

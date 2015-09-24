@@ -822,13 +822,9 @@ BENTLEYDTM_Public int bcdtmSite_resolveVoidsDtmObject(BC_DTM_OBJ *voidsP)
 ** Triangulate 
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Creating Voids Tin") ;
- DTM_NORMALISE_OPTION  = FALSE ;             // To Inhibit Normalisation Of Coordinates - function 
- DTM_DUPLICATE_OPTION = FALSE ;             // To Inhibit Removal Of None Identical Points
  dtmP->ppTol = 0.0 ;
  dtmP->plTol = 0.0 ;  
- if( bcdtmObject_createTinDtmObject(dtmP,1,0.0)) goto errexit ;
- DTM_NORMALISE_OPTION  = TRUE ;
- DTM_DUPLICATE_OPTION = TRUE ;
+ if( bcdtmObject_createTinDtmObject(dtmP,1,0.0, false, false)) goto errexit ;
 /*
 ** Remove None Feature Hull Lines
 */
@@ -1062,8 +1058,6 @@ BENTLEYDTM_Public int bcdtmSite_resolveVoidsDtmObject(BC_DTM_OBJ *voidsP)
 ** Clean Up
 */
  cleanup :
- DTM_NORMALISE_OPTION = TRUE ;
- DTM_DUPLICATE_OPTION = TRUE ;
  if( p3dPtsP   != NULL ) free(p3dPtsP) ;
  if( voidLineP != NULL ) free(voidLineP) ;
  if( dtmP      != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
@@ -1135,13 +1129,9 @@ BENTLEYDTM_Public int bcdtmSite_resolveIslandsDtmObject(BC_DTM_OBJ *islandP )
 ** Triangulate 
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Creating Islands Tin") ;
- DTM_NORMALISE_OPTION  = FALSE ;             // To Inhibit Normalisation Of Coordinates - function 
- DTM_DUPLICATE_OPTION = FALSE ;             // To Inhibit Removal Of None Identical Points
  dtmP->ppTol = 0.0 ;
  dtmP->plTol = 0.0 ;  
- if( bcdtmObject_createTinDtmObject(dtmP,1,0.0)) goto errexit ;
- DTM_NORMALISE_OPTION = TRUE ;
- DTM_DUPLICATE_OPTION = TRUE ;
+ if( bcdtmObject_createTinDtmObject(dtmP,1,0.0, false, false)) goto errexit ;
 /*
 ** Remove None Feature Hull Lines
 */
@@ -1336,8 +1326,6 @@ BENTLEYDTM_Public int bcdtmSite_resolveIslandsDtmObject(BC_DTM_OBJ *islandP )
 ** Clean Up
 */
  cleanup :
- DTM_NORMALISE_OPTION = TRUE ;
- DTM_DUPLICATE_OPTION = TRUE ;
  if( p3dPtsP     != NULL ) free(p3dPtsP) ;
  if( islandLineP != NULL ) free(islandLineP) ;
  if( dtmP        != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
