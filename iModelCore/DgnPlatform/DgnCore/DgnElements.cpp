@@ -1057,7 +1057,7 @@ void dgn_TxnTable::Element::_OnReversedUpdate(BeSQLite::Changes::Change const& c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const
+DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, DgnCategoryId categoryId, bool makePersistent) const
     {
     ElementHandlerP elHandler = dgn_ElementHandler::Element::FindHandler(m_dgndb, params.m_classId);
     if (nullptr == elHandler)
@@ -1072,6 +1072,11 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
         BeAssert(false);
         return nullptr;
         }
+
+    // We do this here to avoid having to do another (ECSql) SELECT statement solely to retrieve the CategoryId from the row we just selected...
+    auto geomEl = categoryId.IsValid() ? el->ToGeometricElementP() : nullptr;
+    if (nullptr != geomEl)
+        geomEl->InitializeCategoryIdInternal(categoryId);
 
     if (DgnDbStatus::Success != el->_LoadFromDb())
         return nullptr;
@@ -1093,8 +1098,8 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersistent) const
     {
-    enum Column : int       {ClassId=0,ModelId=1,Code=2,ParentId=3,CodeAuthorityId=4,CodeNameSpace=5};
-    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,Code,ParentId,CodeAuthorityId,CodeNameSpace FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    enum Column : int       {ClassId=0,ModelId=1,Code=2,ParentId=3,CodeAuthorityId=4,CodeNameSpace=5,CategoryId=6};
+    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,Code,ParentId,CodeAuthorityId,CodeNameSpace,CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
 
     DbResult result = stmt->Step();
@@ -1108,6 +1113,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersist
                     code,
                     elementId, 
                     stmt->GetValueId<DgnElementId>(Column::ParentId)),
+                    stmt->GetValueId<DgnCategoryId>(Column::CategoryId),
                     makePersistent);
     }
 

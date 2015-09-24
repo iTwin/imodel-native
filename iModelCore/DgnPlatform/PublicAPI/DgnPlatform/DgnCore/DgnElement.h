@@ -1130,8 +1130,6 @@ protected:
     //! Override to validate the category.
     //! @return DgnDbStatus::Success if the categoryId was changed, error status otherwise.
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId; return DgnDbStatus::Success;}
-    DGNPLATFORM_EXPORT virtual void _GetSelectParams(bvector<Utf8CP>& selectParams) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, BeSQLite::EC::ECSqlSelectParameters const& selectParams) override;
     DGNPLATFORM_EXPORT virtual void _GetInsertParams(bvector<Utf8CP>& insertParams) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
@@ -1151,6 +1149,12 @@ protected:
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() +(sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
     virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
 
+//__PUBLISH_SECTION_END__
+public:
+    // This exists solely to allow us to load a geometric element using a single SELECT statement from DgnElements::LoadElement() rather than executing
+    // a second SELECT just to retrieve the category ID.
+    void InitializeCategoryIdInternal(DgnCategoryId categoryId) { BeAssert(!m_categoryId.IsValid()); m_categoryId = categoryId; }
+//__PUBLISH_SECTION_START__
 public:
     DGNPLATFORM_EXPORT QvCache* GetMyQvCache() const;
     DGNPLATFORM_EXPORT QvElem* GetQvElem(uint32_t index) const;
@@ -1430,7 +1434,7 @@ private:
     void DropFromPool(DgnElementCR) const;
     void SendOnLoadedEvent(DgnElementR elRef) const;
     void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
-    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;
+    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, DgnCategoryId categoryId, bool makePersistent) const;
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
     void InitNextId();
     DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);
