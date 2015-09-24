@@ -31,7 +31,7 @@ private:
     bool m_hasToCallOnClearBindings;
 
     virtual void _SetSqliteIndex (int ecsqlParameterComponentIndex, size_t sqliteIndex) = 0;
-    virtual ECSqlStatus _OnBeforeStep ();
+    virtual ECSqlStatus _OnBeforeStep () { return ECSqlStatus::Success; }
     virtual void _OnClearBindings () {}
 
 protected:
@@ -56,6 +56,9 @@ protected:
 public:
     virtual ~ECSqlBinder () {}
 
+    bool HasToCallOnBeforeStep() const { return m_hasToCallOnBeforeStep; }
+    bool HasToCallOnClearBindings() const { return m_hasToCallOnClearBindings; }
+
     int GetMappedSqlParameterCount () const;
     void SetSqliteIndex (size_t sqliteIndex);
     void SetSqliteIndex (int ecsqlParameterComponentIndex, size_t sqliteIndex);
@@ -77,6 +80,9 @@ private:
     std::vector<std::unique_ptr<ECSqlBinder>> m_binders;
     std::vector<std::unique_ptr<ECSqlBinder>> m_internalSqlParameterBinders;
     bmap<Utf8String, int> m_nameToIndexMapping;
+
+    std::vector<ECSqlBinder*> m_bindersToCallOnClearBindings;
+    std::vector<ECSqlBinder*> m_bindersToCallOnStep;
 
     bool Contains (int& ecsqlParameterIndex, Utf8CP ecsqlParameterName) const;
 

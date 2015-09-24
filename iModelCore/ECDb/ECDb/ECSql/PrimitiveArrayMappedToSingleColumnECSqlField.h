@@ -63,6 +63,9 @@ private:
     ECN::ArrayInfo m_arrayInfo;
     DateTime::Info m_datetimeMetadata;
 
+    ECN::IECInstancePtr m_emptyArrayValueECInstance;
+    ECN::ArrayInfo m_emptyArrayInfo;
+
     mutable int m_currentArrayIndex;
     mutable ArrayElementValue m_arrayElement;
 

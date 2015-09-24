@@ -244,7 +244,7 @@ IECSqlValue const& ECSqlSelectPreparedStatement::GetValue(int columnIndex) const
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlSelectPreparedStatement::ResetFields() const
     {
-    for (std::unique_ptr<ECSqlField> const& field : m_fields)
+    for (ECSqlField* field : m_fieldsRequiringReset)
         {
         ECSqlStatus stat = field->Reset();
         if (!stat.IsSuccess())
@@ -259,7 +259,7 @@ ECSqlStatus ECSqlSelectPreparedStatement::ResetFields() const
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlSelectPreparedStatement::InitFields() const
     {
-    for (std::unique_ptr<ECSqlField> const& field : m_fields)
+    for (ECSqlField* field : m_fieldsRequiringInit)
         {
         ECSqlStatus stat = field->Init();
         if (!stat.IsSuccess())
@@ -277,11 +277,14 @@ void ECSqlSelectPreparedStatement::AddField(std::unique_ptr<ECSqlField> field)
     BeAssert(field != nullptr);
     if (field != nullptr)
         {
+        if (field->RequiresInit())
+            m_fieldsRequiringInit.push_back(field.get());
+
+        if (field->RequiresReset())
+            m_fieldsRequiringReset.push_back(field.get());
+
         m_fields.push_back(std::move(field));
-        }
-    else
-        {
-        BeAssert(false && "Field is null");
+
         }
     }
 
