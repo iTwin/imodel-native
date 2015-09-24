@@ -35,7 +35,7 @@
 
 int aecDTM_addFeature        /* <= TRUE if error                   */
 (
-  BeGuid *guidP,                          /*<=  guid of created feature         */
+  BeSQLite::BeGuid *guidP,                          /*<=  guid of created feature         */
   struct CIVdtmsrf *srfP,               /* => surface to add feature to       */
   long opt,                             /* => DTM_C_APPEND, etc.              */
   wchar_t *name,                        /* => name of feature                 */

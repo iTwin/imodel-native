@@ -72,11 +72,11 @@ int aecFeature_loadFromDTMExteriorBoundary // <= Non-zero status code if error o
 
 //---------------------------------------------------------------------------
 // DESC: Searches the specified surface (active if srfP is NULL) for a
-//       feature whose BeGuid matches that of the feature object.  If found,
+//       feature whose BeSQLite::BeGuid matches that of the feature object.  If found,
 //       the surface feature will be overwritten with the contents of the
 //       feature object.  If not found, the contents of the feature object
 //       will be written to the surface as a new feature.  The feature will
-//       be assigned a newly generated BeGuid and a name unique to the
+//       be assigned a newly generated BeSQLite::BeGuid and a name unique to the
 //       specified surface.
 //       The opt argument can be used to provide additional
 //       information which determine how duplicate feature names are handled if

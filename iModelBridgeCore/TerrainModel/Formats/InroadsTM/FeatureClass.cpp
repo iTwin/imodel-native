@@ -23,7 +23,7 @@ CFeature::CFeature()
 {
     m_ftrP = NULL;
     m_srfP = NULL;
-    memset ( &m_guid, 0, sizeof ( BeGuid ) );
+    memset ( &m_guid, 0, sizeof ( BeSQLite::BeGuid ) );
     m_nType = DTM_C_DTMREGFTR;
     wcscpy ( m_sName, L"" );
     wcscpy ( m_sDesc, L"" );
@@ -106,7 +106,7 @@ void CFeature::FreeStyles ( )
 // DESC: When a feature is loaded from the DTM into a feature object.  Points
 //       and styles are not loaded unless needed because of memory allocation
 //       overhead.  This function searches the DTM for the feature with a
-//       BeGuid matching the feature object.  If found, it allocates memory for
+//       BeSQLite::BeGuid matching the feature object.  If found, it allocates memory for
 //       and loads a feature's styles from the DTM into feature object's
 //       style list.
 // HIST: Original - twlangha - 01/13/99
@@ -171,7 +171,7 @@ void CFeature::FreePayItems ( )
 // DESC: When a feature is loaded from the DTM into a feature object.  Points
 //       and pay items are not loaded unless needed because of memory allocation
 //       overhead.  This function searches the DTM for the feature with a
-//       BeGuid matching the feature object.  If found, it allocates memory for
+//       BeSQLite::BeGuid matching the feature object.  If found, it allocates memory for
 //       and loads a feature's pay items from the DTM into feature object's
 //       pay items list.
 // HIST: Original - twl - 10/11/2003
@@ -253,7 +253,7 @@ int CFeature::Clear ( )     // <=  Non-zero status code if error occurred.
     
     m_ftrP = NULL;
     m_srfP = NULL;
-    memset ( &m_guid, 0, sizeof ( BeGuid ) );
+    memset ( &m_guid, 0, sizeof ( BeSQLite::BeGuid ) );
     m_nType = DTM_C_DTMREGFTR;
     wcscpy ( m_sName, L"" );
     wcscpy ( m_sDesc, L"" );

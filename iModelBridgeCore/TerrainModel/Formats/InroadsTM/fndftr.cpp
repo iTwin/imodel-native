@@ -17,18 +17,18 @@
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_findFeatureByGUID
- DESC: Given a feature BeGuid, this function returns a pointer to the
+ DESC: Given a feature BeSQLite::BeGuid, this function returns a pointer to the
        corresponding feature.
  HIST: Original - twl 10-Oct-1998
  MISC:
- KEYW: DTM FIND FEATURE BeGuid
+ KEYW: DTM FIND FEATURE BeSQLite::BeGuid
 -----------------------------------------------------------------------------%*/
 
 int aecDTM_findFeatureByGUID /* <= TRUE if error                   */
 (
     struct CIVdtmftr **ftrPP,             /* <= found feature                   */
     struct CIVdtmsrf *srfP,               /* => DTM surface (or NULL)           */
-    BeGuid *guidP                           /* => surface guid pointer            */
+    BeSQLite::BeGuid *guidP                           /* => surface guid pointer            */
 )
 {
     CIVdtmsrf *srf;

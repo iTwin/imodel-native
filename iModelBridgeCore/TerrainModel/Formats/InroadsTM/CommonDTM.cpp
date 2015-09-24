@@ -57,7 +57,7 @@ CIVdtmsrf::CIVdtmsrf()
     tinstk = NULL;                         /* tin stack                           */
     ptrIndexTableP = NULL;                 /* used to keep ptr/index table alive  */
     indexPtrTableP = NULL;                 /* used to keep index/ptr table alive  */
-    ftrGUIDMapP = NULL;                    /* hash table of feature BeGuid's        */
+    ftrGUIDMapP = NULL;                    /* hash table of feature BeSQLite::BeGuid's        */
     ftrNameMapP = NULL;                    /* hash table of feature Names         */
     corGuidMapP = NULL;                    /* corridors mapped by guid            */
     corNameMapP = NULL;                    /* corridors mapped by name            */

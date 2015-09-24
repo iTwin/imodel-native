@@ -7595,7 +7595,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_addVoidsToInternalDtmObject (BC_DTM_OBJ* dtmP)
         }
 cleanup:
     return ret;
-errexit:
+errexit:   
     if (ret == DTM_SUCCESS) ret = DTM_ERROR;
     goto cleanup;
     }

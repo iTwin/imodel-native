@@ -26,13 +26,13 @@ static int aecDTM_deleteAllFeaturesProc(void *,struct CIVdtmsrf *,int,struct CIV
  DESC: Searches for the DTM feature with a given guid and deletes it.
  HIST: Original - twl 1-Jan-1999
  MISC:
- KEYW: DTM FEATURE DELETE BY BeGuid
+ KEYW: DTM FEATURE DELETE BY BeSQLite::BeGuid
 -----------------------------------------------------------------------------%*/
 
 int aecDTM_deleteFeatureByGUID /* <= TRUE if error                   */
 (
     struct CIVdtmsrf *srfP,         /* => surface with feature (or NULL)          */
-    BeGuid *guidP                     /* => guid of feature to delete               */
+    BeSQLite::BeGuid *guidP                     /* => guid of feature to delete               */
 )
 {
     CIVdtmsrf *srf;

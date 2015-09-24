@@ -61,18 +61,18 @@ int aecDTM_findSurfaceByName /* <= TRUE if error                   */
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_findSurfaceByGUID
- DESC: Given a surface BeGuid, this function returns a pointer to the
+ DESC: Given a surface BeSQLite::BeGuid, this function returns a pointer to the
        corresponding surface.
  HIST: Original - twl 29-Oct-1998
  MISC:
- KEYW: DTM FIND SURFACE BY BeGuid
+ KEYW: DTM FIND SURFACE BY BeSQLite::BeGuid
 -----------------------------------------------------------------------------%*/
 
 int aecDTM_findSurfaceByGUID /* <= TRUE if error                   */
 (
   struct CIVdtmsrf **srfPP,             /* <= found surface                   */
   struct CIVdtmprj *prjP,               /* => DTM project (or NULL)           */
-  BeGuid *srfGUIDp                        /* => surface BeGuid                    */
+  BeSQLite::BeGuid *srfGUIDp                        /* => surface BeSQLite::BeGuid                    */
 )
 {
   int sts = DTM_M_NOSRFF;

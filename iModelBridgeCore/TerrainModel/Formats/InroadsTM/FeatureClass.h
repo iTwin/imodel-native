@@ -141,7 +141,7 @@ public:
     ~CFeature();
 
     // Methods for loading and saving features.
-    int     LoadFromDTMByGuid ( BeGuid *guidP, struct CIVdtmsrf *srfP = NULL );
+    int     LoadFromDTMByGuid ( BeSQLite::BeGuid *guidP, struct CIVdtmsrf *srfP = NULL );
     int     LoadFromDTMExteriorBoundary ( struct CIVdtmsrf *srfP = NULL );
     int     SaveToDTM ( struct CIVdtmsrf *srfP = NULL, long opt = 0, BOOL bReTin = TRUE );
     int     SaveToDTM ( long opt, BOOL bReTin = TRUE );
@@ -240,7 +240,7 @@ public: // IPlanLinearEntity implementation
     void ReversePointDisconFlags ( BOOL bFeatureToDTM );
 
     // Member variables to hold feature properties.
-    BeGuid              m_guid;
+    BeSQLite::BeGuid              m_guid;
     long              m_nType;
     wchar_t           m_sName[DTM_C_NAMSIZ];
     wchar_t           m_sDesc[DTM_C_NAMSIZ];
@@ -265,7 +265,7 @@ public: // IPlanLinearEntity implementation
     long              m_nPayItemsAlc;
 
     // Located guids and points lists.
-    BeGuid             *m_locateGuidsP;
+    BeSQLite::BeGuid             *m_locateGuidsP;
     long              m_nNumLocateGuids;
     long              m_nLocateGuidsAlc;
     BOOL              m_bLocateClosed;

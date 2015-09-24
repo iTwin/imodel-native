@@ -45,7 +45,7 @@ int aecDTM_hashFindFeatureByGUID
 (
   CIVdtmftr **ftrPP,
   struct CIVdtmsrf *srfP,
-  BeGuid *guidP
+  BeSQLite::BeGuid *guidP
 );
 
 int aecDTM_hashFindFeatureByName

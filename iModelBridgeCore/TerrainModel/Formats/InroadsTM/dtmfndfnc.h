@@ -46,7 +46,7 @@ int aecDTM_findSurfaceByGUID /* <= NULL if error                   */
 (
   struct CIVdtmsrf **srfPP,             /* <= found surface                   */
   struct CIVdtmprj *prjP,               /* => DTM project (or NULL)           */
-  BeGuid *srfGUIDp                        /* => surface BeGuid                    */
+  BeSQLite::BeGuid *srfGUIDp                        /* => surface BeSQLite::BeGuid                    */
 );
 
 int aecDTM_findPointFile /* <= TRUE if error                       */
@@ -137,7 +137,7 @@ int aecDTM_findFeatureByGUID /* <= TRUE if error                   */
 (
   struct CIVdtmftr **ftrPP,             /* <= found feature                   */
   struct CIVdtmsrf *srfP,               /* => DTM surface (or NULL)           */
-  BeGuid *guidP                           /* => surface guid pointer            */
+  BeSQLite::BeGuid *guidP                           /* => surface guid pointer            */
 );
 
 int aecDTM_findFeatureByName /* <= TRUE if error                   */

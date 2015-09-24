@@ -40,7 +40,7 @@ int aecDTM_getComponentMemberParentsPtrs
     struct CIVdtmcmp ***cmpPtrs,            /* <= FREE! - components          */
     int *numCmpPtrs,                        /* <= number of components        */
     struct CIVdtmsrf *srfP,                 /*  => DTM surface (or NULL)      */
-    BeGuid *cmpMemGuidP                       /*  => guid of component member   */
+    BeSQLite::BeGuid *cmpMemGuidP                       /*  => guid of component member   */
 );
 
 void aecDTM_setComponentMemberDeletedFlag

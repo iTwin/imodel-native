@@ -63,7 +63,7 @@ int aecDTM_addPointsCheck   /*  <= TRUE if error                   */
 
 int aecDTM_addFeature /* <= TRUE if error                  */
 (
-  BeGuid *guidP,                          /*<=  guid of created feature         */
+  BeSQLite::BeGuid *guidP,                          /*<=  guid of created feature         */
   struct CIVdtmsrf *srfP,               /* => surface to add feature to       */
   long opt,                             /* => DTM_C_APPEND, etc.              */
   wchar_t *name,                        /* => name of feature                 */
@@ -186,7 +186,7 @@ int aecDTM_getPointNeighbors /* <= TRUE if error                   */
 int aecDTM_deleteFeatureByGUID /* <= TRUE if error                 */
 (
   struct CIVdtmsrf *srfP,              /*  => surface with feature (or NULL)  */
-  BeGuid *guidP                          /*  => guid of feature to delete       */
+  BeSQLite::BeGuid *guidP                          /*  => guid of feature to delete       */
 );
 
 int aecDTM_deleteFeature /* <= TRUE if error                         */

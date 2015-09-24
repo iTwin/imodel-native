@@ -146,7 +146,7 @@ int aecDTM_getComponentMemberParentsPtrs
     struct CIVdtmcmp ***cmpPtrs,            /* <= FREE! - components          */
     int *numCmpPtrs,                        /* <= number of components        */
     struct CIVdtmsrf *srfP,                 /*  => DTM surface (or NULL)      */
-    BeGuid *cmpMemGuidP                       /*  => guid of component member   */
+    BeSQLite::BeGuid *cmpMemGuidP                       /*  => guid of component member   */
 )
 {
     CPtrArray *ptrArrayP = NULL;
@@ -262,7 +262,7 @@ int aecDTM_sendAllComponentMembers     /* <= TRUE if error                    */
  DESC: Indexes component members by guid
  HIST: Original - twl 26-Apr-2002
  MISC:
- KEYW: DTM INDEX COMPONENT MEMBERS BY BeGuid
+ KEYW: DTM INDEX COMPONENT MEMBERS BY BeSQLite::BeGuid
 -----------------------------------------------------------------------%*/
 
 int aecDTM_indexComponentMembersByGuid
@@ -318,7 +318,7 @@ int aecDTM_indexComponentMembersByParent
  DESC: Destorys the guid index;
  HIST: Original - twl 26-Apr-2002
  MISC:
- KEYW: DTM DESTROY INDEX COMPONENT MEMBERS BeGuid
+ KEYW: DTM DESTROY INDEX COMPONENT MEMBERS BeSQLite::BeGuid
 -----------------------------------------------------------------------%*/
 
 int aecDTM_destroyComponentMembersGuidIndex
@@ -388,7 +388,7 @@ int aecDTM_destroyComponentMembersParentIndex
  DESC: Inserts a shape into the shape guid index.
  HIST: Original - twl 26-Apr-2002
  MISC:
- KEYW: DTM INSERT INDEX COMPONENT MEMBER BY BeGuid
+ KEYW: DTM INSERT INDEX COMPONENT MEMBER BY BeSQLite::BeGuid
 -----------------------------------------------------------------------%*/
 
 static int aecDTM_insertComponentMemberIntoGuidIndex
@@ -438,7 +438,7 @@ static int aecDTM_insertComponentMemberIntoParentIndex
  DESC: Removes a component member from the guid index.
  HIST: Original - twl 26-Apr-2002
  MISC:
- KEYW: DTM REMOVE INDEX COMPONENT MEMBER BY BeGuid
+ KEYW: DTM REMOVE INDEX COMPONENT MEMBER BY BeSQLite::BeGuid
 -----------------------------------------------------------------------%*/
 
 static int aecDTM_removeComponentMemberFromGuidIndex

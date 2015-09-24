@@ -220,10 +220,10 @@ static int aecDTM_saveOpen
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_saveGUID
- DESC: Saves the surface BeGuid to the .DTM file.
+ DESC: Saves the surface BeSQLite::BeGuid to the .DTM file.
  HIST: Original - twl 23-Oct-1998
  MISC: static
- KEYW: DTM SAVE BeGuid
+ KEYW: DTM SAVE BeSQLite::BeGuid
 -----------------------------------------------------------------------------%*/
 
 static int aecDTM_saveGUID

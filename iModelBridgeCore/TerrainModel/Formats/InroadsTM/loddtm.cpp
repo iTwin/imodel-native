@@ -286,10 +286,10 @@ struct CIVdtmsrf **srfPP
 
 /*%-----------------------------------------------------------------------------
 FUNC: aecDTM_loadGUID
-DESC: Loads the surface BeGuid from the .DTM file.
+DESC: Loads the surface BeSQLite::BeGuid from the .DTM file.
 HIST: Original - twl 22-Oct-1998
 MISC: static
-KEYW: DTM LOAD BeGuid
+KEYW: DTM LOAD BeSQLite::BeGuid
 -----------------------------------------------------------------------------%*/
 
 static int aecDTM_loadGUID
@@ -308,7 +308,7 @@ struct CIVdtmsrf *srf,
         }
     else
         {
-        BeGuid guid;
+        BeSQLite::BeGuid guid;
 
         if ( fread ( &guid, sizeof(srf->guid), 1, handleP ) != 1 )
             sts = DTM_M_RDFILF;

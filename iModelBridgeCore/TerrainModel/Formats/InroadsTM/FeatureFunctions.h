@@ -33,7 +33,7 @@ struct FeatureListItem
     wchar_t style[DTM_C_NAMSIZ];
     wchar_t desc[DTM_C_NAMSIZ];
     struct CIVdtmsrf *srfP;
-    BeGuid  guid;
+    BeSQLite::BeGuid  guid;
     BOOL bStyleExists;
     BOOL bPassFilter;
 };

@@ -365,7 +365,7 @@ int aecDTM_getFeatureInfo
 (
     CIVdtmftr    *ftrP,                   /*  => feature                      */
     CIVdtmsrf    *srfP,                   /*  => surface containing feature   */
-    BeGuid         *guidP,                  /* <=  feature's BeGuid (or NULL)     */
+    BeSQLite::BeGuid         *guidP,                  /* <=  feature's BeSQLite::BeGuid (or NULL)     */
     long         *typeP,                  /* <=  feature type (or NULL)       */
     wchar_t      nameP[DTM_C_NAMSIZ],     /* <=  feature name (or NULL)       */
     wchar_t      descP[DTM_C_NAMSIZ],     /* <=  feature description (or NULL)*/
@@ -589,7 +589,7 @@ int aecDTM_setFeatureInfo
     CIVdtmftr    *ftrP,                   /* <=> feature                      */
     CIVdtmsrf    *srfP,                   /*  => surface containing feature   */
     long         opt,                     /*  => operational information or 0 */
-    BeGuid         *guidP,                  /*  => feature's BeGuid (or NULL)     */
+    BeSQLite::BeGuid         *guidP,                  /*  => feature's BeSQLite::BeGuid (or NULL)     */
     long         *typeP,                  /*  => feature type (or NULL)       */
     wchar_t      nameP[DTM_C_NAMSIZ],     /*  => feature name (or NULL)       */
     wchar_t      descP[DTM_C_NAMSIZ],     /*  => feature description (or NULL)*/
@@ -612,8 +612,8 @@ int aecDTM_setFeatureInfo
 
     if ( typeP && *typeP != type )
     {
-        BeGuid guid;
-        BeGuid newGuid;
+        BeSQLite::BeGuid guid;
+        BeSQLite::BeGuid newGuid;
         wchar_t name[DTM_C_NAMSIZ];
         wchar_t desc[DTM_C_NAMSIZ];
         wchar_t parent[DTM_C_NAMSIZ];

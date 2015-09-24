@@ -23,7 +23,7 @@ static int aecDTM_hashAllFeaturesProc(void *, struct CIVdtmsrf *, int, struct CI
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_hashFeatureCreate
- DESC: Creates BeGuid and name hash tables for surface features.
+ DESC: Creates BeSQLite::BeGuid and name hash tables for surface features.
  HIST: Original - twl 11-Dec-1998
  MISC:
  KEYW: DTM CREATE FEATURE HASH TABLE
@@ -51,7 +51,7 @@ int aecDTM_hashFeatureCreate
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_hashAllFeatures
- DESC: Creates empty BeGuid and name hash tables for surface features and inserts
+ DESC: Creates empty BeSQLite::BeGuid and name hash tables for surface features and inserts
        surface features into the tables.
  HIST: Original - twl 11-Dec-1998
  MISC:
@@ -98,7 +98,7 @@ static int aecDTM_hashAllFeaturesProc
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_hashInsertFeature
- DESC: Hashes a single feature and inserts it in the BeGuid and name tables.
+ DESC: Hashes a single feature and inserts it in the BeSQLite::BeGuid and name tables.
  HIST: Original - twl 11-Dec-1998
  MISC:
  KEYW: DTM INSERT FEATURE HASH TABLE
@@ -124,7 +124,7 @@ int aecDTM_hashInsertFeature
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_hashDeleteFeature
- DESC: Hashes a single feature and deletes it from the BeGuid and name tables.
+ DESC: Hashes a single feature and deletes it from the BeSQLite::BeGuid and name tables.
  HIST: Original - twl 8-Jan-1999
  MISC:
  KEYW: DTM DELETE FEATURE HASH TABLE
@@ -150,17 +150,17 @@ int aecDTM_hashDeleteFeature
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_hashFindFeatureByGUID
- DESC: Finds a feature via the BeGuid hash table.
+ DESC: Finds a feature via the BeSQLite::BeGuid hash table.
  HIST: Original - twl 11-Dec-1998
  MISC:
- KEYW: DTM FIND FEATURE BeGuid HASH TABLE
+ KEYW: DTM FIND FEATURE BeSQLite::BeGuid HASH TABLE
 -----------------------------------------------------------------------------%*/
 
 int aecDTM_hashFindFeatureByGUID
 (
   CIVdtmftr **ftrPP,
   struct CIVdtmsrf *srfP,
-  BeGuid *guidP
+  BeSQLite::BeGuid *guidP
 )
 {
   int sts = SUCCESS;
@@ -210,7 +210,7 @@ int aecDTM_hashFindFeatureByName
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_hashFeatureDestroy
- DESC: Removes all entries and destroys memory allocated in a surfaces BeGuid
+ DESC: Removes all entries and destroys memory allocated in a surfaces BeSQLite::BeGuid
        and name feature hash tables.
  HIST: Original - twl 11-Dec-1998
  MISC:
@@ -239,7 +239,7 @@ void aecDTM_hashFeatureDestroy
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_hashFeatureGUID
- DESC: Hashes a BeGuid.
+ DESC: Hashes a BeSQLite::BeGuid.
  HIST: Original - twl 11-Dec-1998
  MISC: static
  KEYW: DTM FEATURE HASH TABLE
