@@ -5,8 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <UnitTests/BackDoor/ECDb/ECDbTests.h>
-
+#include "PublicAPI/BackDoor/ECDb/ECDbTests.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 

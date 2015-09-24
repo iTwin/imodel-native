@@ -542,42 +542,6 @@ ECSqlInsertBuilderR ECSqlInsertBuilder::AddValue (Utf8CP targetProperty, Utf8CP 
     return *this;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-Utf8String ECSqlInsertBuilder::BuildECSqlForClass(ECN::ECClassCR targetClass)
-    {
-    bvector<Utf8String> insertParams;
-    for (ECPropertyCP ecProperty : targetClass.GetProperties (true))
-        {
-        insertParams.push_back(ecProperty->GetName());
-        }
-    return BuildECSqlForClass(targetClass, insertParams);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-Utf8String ECSqlInsertBuilder::BuildECSqlForClass(ECN::ECClassCR targetClass, bvector<Utf8String>& insertParams)
-    {
-    Utf8PrintfString ecSql("INSERT INTO [%s].[%s] (", targetClass.GetSchema().GetName().c_str(), targetClass.GetName().c_str());
-    Utf8String values;
-    int propCount = 0;
-    for (Utf8String propertyName : insertParams)
-        {
-        if (propCount != 0)
-            {
-            ecSql.append(", ");
-            values.append(", ");
-            }
-        ecSql.append("[").append(propertyName.c_str()).append("]");
-        values.append(":").append(propertyName.c_str());
-        propCount++;
-        }
-    ecSql.append(") VALUES (").append(values).append(")");
-    return ecSql;
-    }
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 01/2013
 //+---------------+---------------+---------------+---------------+---------------+------
