@@ -8,7 +8,7 @@
 #pragma once
 #include <Bentley/BeTest.h>
 #include <Bentley/BeTimeUtilities.h>
-#include <UnitTests/BackDoor/ECDb/ECDbTests.h>
+#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTests.h"
 #include <PerformanceTestingHelper/PerformanceTestingHelpers.h>
 
 
