@@ -879,6 +879,7 @@ void DgnElements::Destroy()
     m_tree->Destroy();
     m_heapZone.EmptyAll();
     m_stmts.Empty();
+    m_handlerStmts.Empty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1386,3 +1387,99 @@ DgnElementId DgnElements::QueryElementIdByCode(DgnAuthorityId authority, Utf8Str
     statement->BindText(3, nameSpace, Statement::MakeCopy::No);
     return (BE_SQLITE_ROW != statement->Step()) ? DgnElementId() : statement->GetValueId<DgnElementId>(0);
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElements::HandlerStatementCache::Entry* DgnElements::HandlerStatementCache::FindEntry(ElementHandlerR handler) const
+    {
+    auto found = std::find_if(m_entries.begin(), m_entries.end(), [&handler](Entry& arg) { return &handler == arg.m_handler; });
+    return m_entries.end() != found ? found : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElements::HandlerStatementCache::Empty()
+    {
+    m_entries.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElements::ElementSelectStatement DgnElements::HandlerStatementCache::GetPreparedSelectStatement(DgnElementR el) const
+    {
+    BeDbMutexHolder _v_(m_mutex);
+
+    CachedECSqlStatementPtr stmt;
+
+    ElementHandlerR handler = el.GetElementHandler();
+    Entry* entry = FindEntry(handler);
+
+    if (nullptr != entry)
+        {
+        if (entry->m_selectStatement.IsNull() || entry->m_selectStatement->GetRefCount() <= 1)
+            {
+            stmt = entry->m_selectStatement;
+            }
+        else
+            {
+            BeAssert(!entry->m_selectECSql.empty());
+            if (!entry->m_selectECSql.empty())
+                {
+                stmt = new CachedECSqlStatement();
+                if (ECSqlStatus::Success != stmt->Prepare(el.GetDgnDb(), entry->m_selectECSql.c_str()))
+                    {
+                    BeAssert(false);
+                    stmt = nullptr;
+                    }
+                }
+            }
+        }
+    else
+        {
+        m_entries.push_back(Entry(&handler));
+        entry = &m_entries.back();
+
+        el.GetSelectParams(entry->m_selectParams.GetParameters());
+        if (!entry->m_selectParams.GetParameters().empty())
+            {
+            ECClassCP elementClass = el.GetElementClass();
+            BeAssert(nullptr != elementClass);
+            if (nullptr != elementClass)
+                {
+                Utf8String ecSql("SELECT [");
+                ecSql.append(BeStringUtilities::Join(entry->m_selectParams.GetParameters(), "],["));
+                ecSql.append("] FROM [");
+                ecSql.append(elementClass->GetSchema().GetName()).append("].[").append(elementClass->GetName());
+                ecSql.append("] WHERE ECInstanceId=?");
+
+                entry->m_selectECSql = ecSql;
+                entry->m_selectStatement = new CachedECSqlStatement();
+
+                if (ECSqlStatus::Success != entry->m_selectStatement->Prepare(el.GetDgnDb(), ecSql.c_str()))
+                    {
+                    BeAssert(false);
+                    entry->m_selectStatement = nullptr;
+                    }
+                }
+            }
+
+        stmt = entry->m_selectStatement;
+        }
+
+    if (stmt.IsValid())
+        stmt->BindId(1, el.GetElementId());
+
+    BeAssert(nullptr != entry);
+    return ElementSelectStatement(stmt.get(), entry->m_selectParams);
+    }
+            
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElements::ElementSelectStatement DgnElements::GetPreparedSelectStatement(DgnElementR el) const
+    {
+    return m_handlerStmts.GetPreparedSelectStatement(el);
+    }
+

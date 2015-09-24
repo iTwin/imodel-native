@@ -958,6 +958,8 @@ public:
     //! @see GetLabel, GetCode, _GetDisplayLabel
     Utf8String GetDisplayLabel() const {return _GetDisplayLabel();}
 
+    void GetSelectParams(bvector<Utf8CP>& selectParams) { return _GetSelectParams(selectParams); }
+
     //! Query the DgnDb for the children of this DgnElement.
     //! @return DgnElementIdSet containing the DgnElementIds of all child elements of this DgnElement. Will be empty if no children.
     DGNPLATFORM_EXPORT DgnElementIdSet QueryChildren() const;
@@ -1418,6 +1420,38 @@ struct DgnElements : DgnDbTable
     };
 
 private:
+    struct ElementSelectStatement
+    {
+        BeSQLite::EC::CachedECSqlStatementPtr m_statement;
+        BeSQLite::EC::ECSqlSelectParameters const& m_parameters;
+
+        ElementSelectStatement(BeSQLite::EC::CachedECSqlStatement* stmt, BeSQLite::EC::ECSqlSelectParameters const& params) : m_statement(stmt), m_parameters(params) { }
+    };
+
+    struct HandlerStatementCache
+    {
+    private:
+        struct Entry
+        {
+            ElementHandlerP m_handler;
+            BeSQLite::EC::CachedECSqlStatementPtr m_selectStatement;
+            BeSQLite::EC::ECSqlSelectParameters m_selectParams;
+            Utf8String m_selectECSql;
+
+            explicit Entry(ElementHandlerP handler=nullptr) : m_handler(handler) { }
+        };
+
+        typedef bvector<Entry> Entries;
+
+        mutable Entries m_entries;
+        mutable BeSQLite::BeDbMutex m_mutex;
+
+        Entry* FindEntry(ElementHandlerR handler) const;
+    public:
+        ElementSelectStatement GetPreparedSelectStatement(DgnElementR el) const;
+        void Empty();
+    };
+
     DgnElementId  m_nextAvailableId;
     struct ElemIdTree* m_tree;
     HeapZone m_heapZone;
@@ -1426,6 +1460,7 @@ private:
     BeSQLite::SnappyToBlob m_snappyTo;
     DgnElementIdSet m_selectionSet;
     mutable BeSQLite::BeDbMutex m_mutex;
+    HandlerStatementCache m_handlerStmts;
 
     void OnReclaimed(DgnElementCR);
     void OnUnreferenced(DgnElementCR);
@@ -1445,6 +1480,7 @@ private:
     DGNPLATFORM_EXPORT DgnElementCPtr InsertElement(DgnElementR element, DgnDbStatus* stat);
     DGNPLATFORM_EXPORT DgnElementCPtr UpdateElement(DgnElementR element, DgnDbStatus* stat);
 
+    ElementSelectStatement GetPreparedSelectStatement(DgnElementR el) const;
 public:
     BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}
