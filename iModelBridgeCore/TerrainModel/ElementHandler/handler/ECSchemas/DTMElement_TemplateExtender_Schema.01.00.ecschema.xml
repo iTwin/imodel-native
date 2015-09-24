@@ -2,14 +2,6 @@
 <ECSchema schemaName="DTMElement_TemplateExtender_Schema" nameSpacePrefix="bcsct" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
     <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
     <ECSchemaReference name="Bentley_Common_Classes" version="01.01" prefix="bcc" />
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="besc" />
-
-    <ECCustomAttributes>
-        <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.10">
-            <Hidden>True</Hidden>
-        </DisplayOptions>
-    </ECCustomAttributes>
-
     <ECClass typeName="CriteriaStruct" isStruct="True" isDomainClass="True">
         <ECProperty propertyName="Criteria" typeName="string" />
     </ECClass>
@@ -231,14 +223,6 @@
                     <Priority>299200</Priority>
                 </PropertyPriority>
                 <RequiresReload xmlns="EditorCustomAttributes.01.00" />
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="ContourMajor_TextLevel" typeName="string" displayLabel="Text Level">
-            <ECCustomAttributes>
-                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
-                    <Name>ElementParams_TMLevelStruct</Name>
-                </ExtendType>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="ContourMajor_TextStyles" typeName="string" displayLabel="TextStyle">
@@ -497,14 +481,6 @@
                     <Priority>299200</Priority>
                 </PropertyPriority>
                 <RequiresReload xmlns="EditorCustomAttributes.01.00" />
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="ContourMinor_TextLevel" typeName="string" displayLabel="Text Level">
-            <ECCustomAttributes>
-                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
-                    <Name>ElementParams_TMLevelStruct</Name>
-                </ExtendType>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="ContourMinor_TextStyles" typeName="string" displayLabel="TextStyle">

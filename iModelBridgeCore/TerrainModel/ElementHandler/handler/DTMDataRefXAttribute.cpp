@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
 #include <Bentley/BeTimeUtilities.h>
-#include <TerrainModel/Core/DTMIterators.h>
 #include "time.h"
 
 #define FILETIME_1_1_1970  116444736000000000LL           // Win32 file time of midnight 1/1/70
@@ -243,8 +242,7 @@ StatusInt DTMDataRefXAttribute::ReplaceDTM (BcDTMR bcDTM, bool disposeDTM)
         return SUCCESS;
 
     EditElementHandle element (this->GetElement(), false);
-    StatusInt status = DTMXAttributeHandler::ScheduleDtmData (element, bcDTM, disposeDTM, m_allocator);
-    return status;
+    return DTMXAttributeHandler::ScheduleDtmData (element, bcDTM, disposeDTM, m_allocator);
     }
 
 //=======================================================================================
@@ -252,8 +250,8 @@ StatusInt DTMDataRefXAttribute::ReplaceDTM (BcDTMR bcDTM, bool disposeDTM)
 //=======================================================================================
 double DTMDataRefXAttribute::_GetLastModified()
    {
-   Int64 time;
-   GetDTMStorage (Bentley::TerrainModel::Element::GetRange)->GetBcDTM()->GetLastModifiedTime(time);
+   int64_t time;
+   GetDTMStorage (BENTLEY_NAMESPACE_NAME::TerrainModel::Element::GetRange)->GetBcDTM()->GetLastModifiedTime(time);
 
    time -= FILETIME_1_1_1970;   // re-base
    time /= UMILLIS_TO_FTI;      // 100-nanosecond interval -> millisecond
@@ -265,7 +263,7 @@ double DTMDataRefXAttribute::_GetLastModified()
 //=======================================================================================
 void DTMDataRefXAttribute::ProcessAddedElementWithReference (EditElementHandleR element)
     {
-    ElementHandle::XAttributeIter xAttrHandle(element, TMReferenceXAttributeHandler::GetXAttributeHandlerId (), TMReferenceXAttributeHandler::GetXAttributeId());
+    ElementHandle::XAttributeIter xAttrHandle(element, DTMReferenceXAttributeHandler::GetXAttributeHandlerId (), DTMReferenceXAttributeHandler::GetXAttributeId());
 
     // Get the Reference data if there is one.
     void* data(xAttrHandle.IsValid() ? (void*)xAttrHandle.PeekData() : nullptr);
@@ -297,7 +295,7 @@ void DTMDataRefXAttribute::ProcessAddedElementWithReference (EditElementHandleR 
                     {
                     ref->UndeleteElement();
                     ElementHandle element (ref, NULL);
-                    TMReferenceXAttributeHandler::AddReferenceCount (element);
+                    DTMReferenceXAttributeHandler::AddReferenceCount (element);
                     }
                 else
                     {
@@ -309,7 +307,7 @@ void DTMDataRefXAttribute::ProcessAddedElementWithReference (EditElementHandleR 
                     Transform trsf;
                     EditElementHandle dtmDataEl;
 
-                    ElementHandle::XAttributeIter xAttrRefCount (originalDataEl, TMReferenceXAttributeHandler::GetRefCountXAttributeHandlerId (), TMReferenceXAttributeHandler::GetRefCountXAttributeId());
+                    ElementHandle::XAttributeIter xAttrRefCount (originalDataEl, DTMReferenceXAttributeHandler::GetRefCountXAttributeHandlerId (), DTMReferenceXAttributeHandler::GetRefCountXAttributeId());
 
                     if (xAttrRefCount.IsValid())
                         {
@@ -324,7 +322,7 @@ void DTMDataRefXAttribute::ProcessAddedElementWithReference (EditElementHandleR 
                                 xAttrdataHandle.GetHandlerId() != XAttributeHandlerId (ElementHandlerXAttribute::XATTRIBUTEHANDLERID,0))
                                 {
                                 const void* data = xAttrdataHandle.PeekData ();
-                                UInt32 size = xAttrdataHandle.GetSize ();
+                                uint32_t size = xAttrdataHandle.GetSize ();
 
                                 ITxnManager::GetCurrentTxn().AddXAttribute (dtmDataEl.GetElementRef(), xAttrdataHandle.GetHandlerId(), xAttrdataHandle.GetId(), data, size);
                                 }
@@ -334,12 +332,12 @@ void DTMDataRefXAttribute::ProcessAddedElementWithReference (EditElementHandleR 
                         if (xAttrHandle.GetElementXAttributeIter())
                             {
                             ElementRefP elRef;
-                            TMReferenceXAttributeHandler::SetIgnoreXAttributeHandlerDelete (elRef = element.GetElementRef () == nullptr ? element.GetElementDescrCP()->h.elementRef : element.GetElementRef());
-                            XAttributeHandle xAttribHandle (elRef, TMReferenceXAttributeHandler::GetXAttributeHandlerId (), TMReferenceXAttributeHandler::GetXAttributeId());
+                            DTMReferenceXAttributeHandler::SetIgnoreXAttributeHandlerDelete (elRef = element.GetElementRef () == nullptr ? element.GetElementDescrCP()->h.elementRef : element.GetElementRef());
+                            XAttributeHandle xAttribHandle (elRef, DTMReferenceXAttributeHandler::GetXAttributeHandlerId (), DTMReferenceXAttributeHandler::GetXAttributeId());
                             ITxnManager::GetCurrentTxn().DeleteXAttribute (xAttribHandle);
-                            TMReferenceXAttributeHandler::SetIgnoreXAttributeHandlerDelete (nullptr);
+                            DTMReferenceXAttributeHandler::SetIgnoreXAttributeHandlerDelete (nullptr);
                             }
-                        TMReferenceXAttributeHandler::SetDTMDataReference (element, dtmDataEl);
+                        DTMReferenceXAttributeHandler::SetDTMDataReference (element, dtmDataEl);
                         }
                     }
                 }
@@ -375,9 +373,31 @@ struct DTMQvCacheTileDetails : public DTMQvCacheDetailsRange
 struct DTMQvCacheDetailsRangeTiling : public DTMQvCacheDetailsRange, public DTMQvCacheTilingDetails
     {
 private:
+    static const int s_tilePointSize = 25000;
+    int m_numTilesX;
+    int m_numTilesY;
     DRange3d m_fullRange;
     bvector<RefCountedPtr<DTMQvCacheTileDetails>> m_tiles;
 
+    public: DTMQvCacheDetailsRangeTiling (DRange3d range, DRange3d fullRange, int64_t numberOfPoints) : DTMQvCacheDetailsRange (range)
+        {
+        m_fullRange = fullRange;
+        if (numberOfPoints > s_tilePointSize)
+            {
+            BeAssert(numberOfPoints <= INT_MAX);
+            double numOfTiles = (int)numberOfPoints / s_tilePointSize;
+            int iNumOfTiles = (int)(sqrt(numOfTiles) + 0.5);
+
+            m_numTilesX = iNumOfTiles;
+            m_numTilesY = iNumOfTiles;
+            }
+        else
+            {
+            m_numTilesX = 1;
+            m_numTilesY = 1;
+            range = fullRange;
+            }
+        }
     public: DTMQvCacheDetailsRangeTiling (DRange3d range, DRange3d fullRange, bvector<RefCountedPtr<DTMQvCacheTileDetails>> const & tiles) : DTMQvCacheDetailsRange (range)
         {
         m_fullRange = fullRange;
@@ -399,16 +419,49 @@ private:
 
     public: virtual size_t GetNumberOfTiles()
         {
+        if (m_tiles.size() == 0) CalcTiles();
         return m_tiles.size();
         }
     public: virtual DTMQvCacheDetails* GetTileDetail(unsigned int index)
         {
+        if (m_tiles.size() == 0) CalcTiles();
         return m_tiles[index].get();
         }
     public: virtual void GetTileFence(unsigned index, DPoint3d& lowPt, DPoint3d& highPt)
         {
+        if (m_tiles.size() == 0) CalcTiles();
         lowPt = m_tiles[index]->range.low;
         highPt = m_tiles[index]->range.high;
+        }
+    private: void CalcTiles()
+        {
+        double gapX = m_fullRange.high.x - m_fullRange.low.x;
+        double gapY = m_fullRange.high.y - m_fullRange.low.y;
+
+        gapX /= m_numTilesX;
+        gapY /= m_numTilesY;
+        double x = m_fullRange.low.x;
+        DRange3d tileRange;
+        tileRange.low.z = 0;
+        tileRange.high.z = 0;
+        for (int dx = 0; dx < m_numTilesX; dx++)
+            {
+            tileRange.low.x = x;
+            tileRange.high.x = x + gapX;
+            if (!(tileRange.low.x > range.high.x || tileRange.high.x < range.low.x))
+                {
+                double y = m_fullRange.low.y;
+                for (int dy = 0; dy < m_numTilesY; dy++)
+                    {
+                    tileRange.low.y = y;
+                    tileRange.high.y = y + gapY;
+                    if (!(tileRange.low.y > range.high.y || tileRange.high.y < range.low.y))
+                        m_tiles.push_back(new DTMQvCacheTileDetails((dx * 0x1000) + dy, tileRange, tileRange));
+                    y += gapY;
+                    }
+                }
+            x += gapX;
+            }
         }
     private: void CalcTiles (bvector<RefCountedPtr<DTMQvCacheTileDetails>> const & tiles)
         {
@@ -431,7 +484,7 @@ DTMQvCacheDetails* DTMDataRefXAttribute::_GetDTMDetails(ElementHandleCR element,
     DRange3d drange;
     DRange3d retRange;
 
-    Bentley::TerrainModel::IDTM* dtm = GetDTMStorage (Bentley::TerrainModel::Element::GetRange);
+    BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* dtm = GetDTMStorage (BENTLEY_NAMESPACE_NAME::TerrainModel::Element::GetRange);
 
     if (dtm)
         {
@@ -457,7 +510,7 @@ DTMQvCacheDetails* DTMDataRefXAttribute::_GetDTMDetails(ElementHandleCR element,
 //=======================================================================================
 bool DTMDataRefXAttribute::_GetExtents (DRange3dR range)
     {
-    IDTM* dtm = GetDTMStorage (Bentley::TerrainModel::Element::GetRange);
+    IDTM* dtm = GetDTMStorage (BENTLEY_NAMESPACE_NAME::TerrainModel::Element::GetRange);
 
     if (dtm->GetRange (range) != DTM_SUCCESS)
         return false;
@@ -514,7 +567,7 @@ int addToRange (DTMFeatureType dtmFeatureType,long numTriangles,long numMeshPts,
 
 bvector<RefCountedPtr<DTMQvCacheTileDetails>> const& DTMDataRefXAttribute::GetTiles (BcDTMP dtm) const
     {
-    Int64 lastModified;
+    int64_t lastModified;
     dtm-> GetLastModifiedTime (lastModified);
 
     if (m_tileLastModified != lastModified)
@@ -525,7 +578,7 @@ bvector<RefCountedPtr<DTMQvCacheTileDetails>> const& DTMDataRefXAttribute::GetTi
         static const int s_tilePointSize = 25000;
         int m_numTilesX;
         int m_numTilesY;
-        Int64 numberOfPoints = dtm->GetPointCount ();
+        int64_t numberOfPoints = dtm->GetPointCount ();
 
         dtm->GetRange (fullRange);
         if (numberOfPoints > s_tilePointSize)
@@ -570,13 +623,8 @@ bvector<RefCountedPtr<DTMQvCacheTileDetails>> const& DTMDataRefXAttribute::GetTi
                     fencePts[3].x = tileRange.low.x; fencePts[3].y = tileRange.high.y;
                     fencePts[4] = fencePts[0];
 
-                    DTMFenceParams fence (DTMFenceType::Block, DTMFenceOption::Overlap, (DPoint3d*)fencePts, 5);
-                    DTMMeshEnumeratorPtr en = DTMMeshEnumerator::Create (*dtm);
-                    en->SetFence (fence);
-                    en->SetMaxTriangles (126000 / 3);
-                    en->SetTilingMode (true);
-                    expandedTileRange = en->GetRange ();
-                    m_tiles.push_back (new DTMQvCacheTileDetails ((dx * 0x10000) + dy, tileRange, expandedTileRange));
+                    if (bcdtmRange_triangleShadeMeshForQVCacheFromDtmObject ((BC_DTM_OBJ*)dtm->GetTinHandle(), true, DTMFenceType::Block, DTMFenceOption::Overlap, fencePts, 5, expandedTileRange) == DTM_SUCCESS)
+                        m_tiles.push_back (new DTMQvCacheTileDetails ((dx * 0x10000) + dy, tileRange, expandedTileRange));
                     y += gapY;
                     }
                 x += gapX;

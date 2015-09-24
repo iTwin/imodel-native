@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 
 #pragma once
@@ -13,5 +13,5 @@
 typedef struct                         /* dtm DPoint3d + flag structure       */
 {
     DPoint3d cor;                      /* point coordinates                   */
-    byte flg;                       /* bit field flags                     */
+    unsigned char flg;                       /* bit field flags                     */
 } DTMDPoint;

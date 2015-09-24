@@ -69,17 +69,7 @@ bool DTMElementSubDisplayHandler::SetSymbology (DTMElementSubHandler::SymbologyP
     if (NULL == scanCrit)
         return true;
 
-    return TestLevelIsVisible (elParams->GetLevel (), drawingInfo, context);
-    }
-
-//=======================================================================================
-// @bsimethod                                                   Daryl.Holmwood 1/15
-//=======================================================================================
-bool DTMElementSubDisplayHandler::TestLevelIsVisible (LevelId level, DTMDrawingInfo& drawingInfo, ViewContextR context)
-    {
-    MSElementCR elm = *drawingInfo.GetOriginalElement ().GetElementCP ();
-    DgnModelRefP    model = drawingInfo.GetSymbologyElement ().GetModelRef ();
-    int     elemLevel = ((level != LEVEL_BYCELL) ? level : elm.ehdr.level);
+    int     elemLevel = elParams->GetLevel ();
     ViewportP vp = context.GetViewport();
     ViewInfoCP viewInfo = vp ? vp->GetViewInfoCP() : NULL;
     bool isDisplayed = false;
@@ -91,7 +81,7 @@ bool DTMElementSubDisplayHandler::TestLevelIsVisible (LevelId level, DTMDrawingI
 //=======================================================================================
 // @bsimethod                                                   Steve.Jones 11/10
 //=======================================================================================
-void DTMElementSubDisplayHandler::SetSymbology(DTMElementSubHandler::SymbologyParams& params, DTMDrawingInfo& drawingInfo, ViewContextR context, UInt32 color, int style, UInt32 weight)
+void DTMElementSubDisplayHandler::SetSymbology(DTMElementSubHandler::SymbologyParams& params, DTMDrawingInfo& drawingInfo, ViewContextR context, uint32_t color, int style, uint32_t weight)
     {
     EditElementHandle eeh (drawingInfo.GetSymbologyElement(), true);
 
@@ -128,13 +118,9 @@ static void dummy () {;}
 
 struct DTMElementSubHandlerExtension : public DTMElementSubHandler::IDTMElementSubHandlerExtension
     {
-    virtual bool _AddDTMTextStyle (EditElementHandle& elem, UInt32 textStyleId, UInt32 key) override
+    virtual bool _AddDTMTextStyle (EditElementHandle& elem, uint32_t textStyleId, uint32_t key) override
         {
         return AddDTMTextStyle (elem, textStyleId, key);
-        }
-    virtual void Bentley::DgnPlatform::DTMElementSubHandler::IDTMElementSubHandlerExtension::DeleteCacheElem (Bentley::ElementHandleR element) override
-        {
-        DTMDisplayCacheManager::DeleteCacheElem (element);
         }
     };
 

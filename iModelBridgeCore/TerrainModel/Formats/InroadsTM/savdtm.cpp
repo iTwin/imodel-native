@@ -186,11 +186,11 @@ static int aecDTM_saveOpen
   FILE **handlePP
 )
 {
-  byte buf[3]; // Do not convert to unicode.
+  unsigned char buf[3]; // Do not convert to unicode.
   int sts = SUCCESS;
 
   aecFile_checkExtension ( fil, aecParams_getFileExtension(DTMEXT) );
-  _mbsncpy ( buf, (byte *)DTM_C_DTMCOD, 3 ); // Do not convert to unicode.
+  _mbsncpy ( buf, (unsigned char *)DTM_C_DTMCOD, 3 ); // Do not convert to unicode.
 
   if ( ( *handlePP = _wfopen ( fil, L"w+b" ) ) == (FILE *)0 )                     /* DO_NOT_TRANSLATE */
   {
@@ -220,10 +220,10 @@ static int aecDTM_saveOpen
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_saveGUID
- DESC: Saves the surface GUID to the .DTM file.
+ DESC: Saves the surface BeGuid to the .DTM file.
  HIST: Original - twl 23-Oct-1998
  MISC: static
- KEYW: DTM SAVE GUID
+ KEYW: DTM SAVE BeGuid
 -----------------------------------------------------------------------------%*/
 
 static int aecDTM_saveGUID

@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* ftruti.c                                            twl    27-Oct-1998     */
@@ -43,7 +43,7 @@ static int  aecDTM_assignFeatureStylesProc(void *, struct CIVdtmsrf *unused, int
 static int  aecDTM_getFeaturePoints(struct CIVdtmftr *, CIVdtmpnt **, long *);
 static int  aecDTM_getFeatureStyles(struct CIVdtmftr *, CIVdtmstynam **, long *);
 static int  aecDTM_getFeaturePayItems(struct CIVdtmftr *, CIVdtmpaynam **, long *);
-static int  aecDTM_setFeaturePoints(long, struct CIVdtmftr *, struct CIVdtmsrf *, CIVdtmpnt *, long, double*, byte *);
+static int  aecDTM_setFeaturePoints(long, struct CIVdtmftr *, struct CIVdtmsrf *, CIVdtmpnt *, long, double*, unsigned char *);
 static int  aecDTM_setFeatureStyles(struct CIVdtmftr *, struct CIVdtmsrf *, CIVdtmstynam *, long );
 static int  aecDTM_transferFeaturePoints(long, struct CIVdtmfil *, struct CIVdtmpnt *, CIVdtmpnt *, long, int);
 static int  aecDTM_preProcessMatchPnts(MatchInfo **, long, struct CIVdtmsrf *, struct CIVdtmftr *, struct CIVdtmpnt *, long, int);
@@ -365,7 +365,7 @@ int aecDTM_getFeatureInfo
 (
     CIVdtmftr    *ftrP,                   /*  => feature                      */
     CIVdtmsrf    *srfP,                   /*  => surface containing feature   */
-    GUID         *guidP,                  /* <=  feature's GUID (or NULL)     */
+    BeGuid         *guidP,                  /* <=  feature's BeGuid (or NULL)     */
     long         *typeP,                  /* <=  feature type (or NULL)       */
     wchar_t      nameP[DTM_C_NAMSIZ],     /* <=  feature name (or NULL)       */
     wchar_t      descP[DTM_C_NAMSIZ],     /* <=  feature description (or NULL)*/
@@ -377,7 +377,7 @@ int aecDTM_getFeatureInfo
     long         *numStylesP,             /* <=  number of styles (or NULL)   */
     CIVdtmpaynam **payItemsPP,            /* <=  feature's pay items (or NULL)*/
     long         *numPayItemsP,           /* <=  number of pay items (or NULL)*/
-    byte      *flagP                   /* <=  feature's flag (or NULL)     */
+    unsigned char      *flagP                   /* <=  feature's flag (or NULL)     */
 )
 {
     int sts = SUCCESS;
@@ -589,7 +589,7 @@ int aecDTM_setFeatureInfo
     CIVdtmftr    *ftrP,                   /* <=> feature                      */
     CIVdtmsrf    *srfP,                   /*  => surface containing feature   */
     long         opt,                     /*  => operational information or 0 */
-    GUID         *guidP,                  /*  => feature's GUID (or NULL)     */
+    BeGuid         *guidP,                  /*  => feature's BeGuid (or NULL)     */
     long         *typeP,                  /*  => feature type (or NULL)       */
     wchar_t      nameP[DTM_C_NAMSIZ],     /*  => feature name (or NULL)       */
     wchar_t      descP[DTM_C_NAMSIZ],     /*  => feature description (or NULL)*/
@@ -601,7 +601,7 @@ int aecDTM_setFeatureInfo
     long         numStyles,               /*  => number of styles (or NULL)   */
     CIVdtmpaynam *payItemsP,              /*  => pay items (or NULL)          */
     long         numPayItems,             /*  => # of pay items               */
-    byte      *flagP,                  /*  => feature's flag (or NULL)     */
+    unsigned char      *flagP,                  /*  => feature's flag (or NULL)     */
     BOOL                                  /*  => retriangulate (usually TRUE) */
 )
 {
@@ -612,8 +612,8 @@ int aecDTM_setFeatureInfo
 
     if ( typeP && *typeP != type )
     {
-        GUID guid;
-        GUID newGuid;
+        BeGuid guid;
+        BeGuid newGuid;
         wchar_t name[DTM_C_NAMSIZ];
         wchar_t desc[DTM_C_NAMSIZ];
         wchar_t parent[DTM_C_NAMSIZ];
@@ -624,7 +624,7 @@ int aecDTM_setFeatureInfo
         long nStyles;
         CIVdtmpaynam *payItems = NULL;
         long nPayItems;
-        byte flag;
+        unsigned char flag;
 
         if ( ( sts = aecDTM_getFeatureInfo ( ftrP, srfP, 
                                       &guid, NULL, name, desc, parent, &pnts, &nPnts, &density,
@@ -763,7 +763,7 @@ static int aecDTM_setFeaturePoints
     CIVdtmpnt *inputPntsP,      //  => Points to be assigned.
     long numInputPnts,          //  => Number of points.
     double *pntDensityP,        //  => Point density factor.
-    byte *flagP              //  => Feature flag settings.
+    unsigned char *flagP              //  => Feature flag settings.
 )
 {
     MatchInfo *matchListP = NULL;
@@ -880,7 +880,7 @@ static int aecDTM_setFeaturePoints
                     aecDTM_setFeatureFlag ( ftrP, srfP, flagP );
                 else
                 {
-                    byte tmpFlag;
+                    unsigned char tmpFlag;
                     tmpFlag = ftrP->flg;
                     aecDTM_setFeatureFlag ( ftrP, srfP, &tmpFlag );
                 }
@@ -1337,10 +1337,10 @@ void aecDTM_setFeatureFlag
 (
     struct CIVdtmftr *ftrP,
     struct CIVdtmsrf *srfP,
-    byte *flagP
+    unsigned char *flagP
 )
 {
-    byte tmpFlag;
+    unsigned char tmpFlag;
     int i;
 
     if ( ( ftrP->flg & DTM_C_FTRTIN ) != ( *flagP & DTM_C_FTRTIN ) )

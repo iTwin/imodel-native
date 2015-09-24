@@ -6,7 +6,7 @@
 //:>       $Date: 2010/11/29 13:15:52 $
 //:>     $Author: Daryl.Holmwood $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -42,8 +42,8 @@ template<class DATATYPE> DATATYPE MrDTMRelevanceDistribution<DATATYPE>::GetRelev
         }
     else
         {
-        UInt64 nbValuesForGivenPercentile = static_cast<UInt64>(m_nbRelevanceValues * pi_percentage / 100);
-        UInt64 nbValuesTaken = 0;            
+        uint64_t nbValuesForGivenPercentile = static_cast<uint64_t>(m_nbRelevanceValues * pi_percentage / 100);
+        uint64_t nbValuesTaken = 0;            
 
         for (ULong32 binInd = 0; (binInd < m_nbBins); binInd++)
             {                
@@ -79,7 +79,7 @@ template<class DATATYPE> double MrDTMRelevanceDistribution<DATATYPE>::GetRelevan
 
     double   binIndDecimal = fabs((pi_relevanceValue - m_minRelevance) / m_step);
     ULong32   binIndForRelevance = static_cast<ULong32>(floor(binIndDecimal));
-    UInt64  nbValuesTaken = 0;     
+    uint64_t  nbValuesTaken = 0;     
 
     assert(binIndDecimal <= m_nbBins);
     
@@ -95,7 +95,7 @@ template<class DATATYPE> double MrDTMRelevanceDistribution<DATATYPE>::GetRelevan
     if (binIndFraction > 0)
         {
         //We are assuming that bin distribution is uniform.
-        nbValuesTaken += static_cast<UInt64>(m_pBins[binInd] * binIndFraction);
+        nbValuesTaken += static_cast<uint64_t>(m_pBins[binInd] * binIndFraction);
         }
 
     percentile = (double)nbValuesTaken / m_nbRelevanceValues;

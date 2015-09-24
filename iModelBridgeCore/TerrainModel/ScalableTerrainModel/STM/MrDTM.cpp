@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:15 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
   
@@ -856,7 +856,7 @@ template <class POINT> void MrDTM<POINT>::CreateSpatialIndexFromExtents(list<HVE
 
         DPoint3d     TileHullPts[2];        
 
-        UInt32 TileNumber = 0;
+        uint32_t TileNumber = 0;
           
         while (BreaklineIter != BreaklineIterEnd) 
             {                            
@@ -890,7 +890,7 @@ template <class POINT> void MrDTM<POINT>::AddBreaklineSet(list<HFCPtr<HVEDTMLine
         list<HFCPtr<HVEDTMLinearFeature> >::iterator BreaklineIter    = breaklineList.begin();
         list<HFCPtr<HVEDTMLinearFeature> >::iterator BreaklineIterEnd = breaklineList.end();
 
-        UInt32 TileNumber = 0;
+        uint32_t TileNumber = 0;
 
         while (BreaklineIter != BreaklineIterEnd) 
             {
@@ -903,7 +903,7 @@ template <class POINT> void MrDTM<POINT>::AddBreaklineSet(list<HFCPtr<HVEDTMLine
                 linePts[indexPoints].z = (*BreaklineIter)->GetPoint(indexPoints).GetZ();
                 }
 
-            status = bcdtmObject_storeDtmFeatureInDtmObject(po_pBcDtmObj, (DTMFeatureType)(*BreaklineIter)->GetFeatureType() /*DTMFeatureType::Breakline*/, TileNumber, 1, &po_pBcDtmObj->nullFeatureId, linePts, (UInt32)(*BreaklineIter)->GetSize());
+            status = bcdtmObject_storeDtmFeatureInDtmObject(po_pBcDtmObj, (DTMFeatureType)(*BreaklineIter)->GetFeatureType() /*DTMFeatureType::Breakline*/, TileNumber, 1, &po_pBcDtmObj->nullFeatureId, linePts, (uint32_t)(*BreaklineIter)->GetSize());
             BreaklineIter++;
             TileNumber++;
             }         

@@ -6,7 +6,7 @@
 //:>       $Date: 2010/12/15 18:23:19 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -18,7 +18,7 @@
 #include "HGF3DFilterCoord.h"
 
 
-#include <ImagePP/all/h/HGFPointIndex.h>
+#include "HGFPointIndex.h"
 #include "MrDTMRelevanceDistribution.h"
 
 
@@ -310,7 +310,7 @@ template<class POINT, class EXTENT> class MrDTMQuadTreeBCLIBProgressiveGlobalFil
                             
 
                             MrDTMQuadTreeBCLIBProgressiveGlobalFilter(RelevanceEvaluationMethod pi_relevanceEvaluationMethod, 
-                                                                      UInt8                     pi_localImportance, 
+                                                                      uint8_t                     pi_localImportance, 
                                                                       bool                      pi_filterBoundaryPoints, 
                                                                       int                       pi_resolutionLevelToFilter = -1) 
                             {

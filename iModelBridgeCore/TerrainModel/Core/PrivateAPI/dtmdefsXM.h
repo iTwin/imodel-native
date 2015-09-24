@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PrivateAPI/dtmdefsXM.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -276,7 +276,7 @@ struct DTM_SCAN_CONTEXT
 
 struct TINOBJLIST { void *Tin  ; long TinIndex ; } ;
 struct DATAOBJLIST { DATAOBJ *Data ; long ListFlag ; } ;
-typedef   Int64        DTM_TAG_VAR ;
+typedef   int64_t        DTM_TAG_VAR ;
 
 struct GpkDtmPointFeatureList{ long dtmFeature; DTMFeatureType dtmFeatureType; long priorPoint,nextPoint ; DTM_TAG_VAR userTag ; } ;
 

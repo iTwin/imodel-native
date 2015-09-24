@@ -63,7 +63,7 @@ private:
     BcDTMR m_dtmElement;
     DP const &m_dp;
     DTMDrawingInfo& m_drawingInfo;
-    const UInt32 m_textStyleId;
+    const uint32_t m_textStyleId;
     ViewContextP m_context;
 
     static int StrokeCBAsPoints (DTMFeatureType featureType, DTMUserTag eltId, DTMFeatureId id, DPoint3dP tPoint, size_t nPoint, void* userArg)
@@ -96,7 +96,7 @@ private:
         RotMatrix rotMatrix;
         rotMatrixX.initFromAxisAndRotationAngle (2, tPoint[1].y);
         rotMatrixY.initFromAxisAndRotationAngle (1, atan2(tPoint[1].z, 1));
-        rotMatrix.productOf (&rotMatrixX, &rotMatrixY);
+        rotMatrix.InitProduct (&rotMatrixX, &rotMatrixY);
 
         //stroker->m_drawingInfo.FullStorageToUors (centroid);
         stroker->m_pointDrawer->DrawPoint (centroid, &rotMatrix);
@@ -111,7 +111,7 @@ private:
     BcDTMR              DTMDataRefXAttribute,
     DP const            &displayParams,
     DTMDrawingInfo      &drawingInfo,
-    UInt32 textStyleId
+    uint32_t textStyleId
     ) : m_drawingInfo (drawingInfo), m_dp (displayParams), m_dtmElement (DTMDataRefXAttribute), m_textStyleId (textStyleId)
         {}
 
@@ -205,7 +205,7 @@ bool DTMElementFlowArrowsDisplayHandler::_Draw (ElementHandleCR el, const Elemen
     if (!SetSymbology (params, drawingInfo, context))
         return false;
 
-    Bentley::TerrainModel::DTMPtr dtmPtr (DTMDataRef->GetDTMStorage(DrawFeatures, context));
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr (DTMDataRef->GetDTMStorage(DrawFeatures, context));
     BcDTMP dtm = NULL;
 
     if (dtmPtr != 0)
@@ -335,6 +335,43 @@ WCharCP                           delimiterStr
 
     string.append (delim + elevationString + delim + slopeString + delim + aspectString);
     }
+
+//=======================================================================================
+// @bsimethod                                                   Daryl.Holmwood 09/11
+//=======================================================================================
+void DTMElementFlowArrowsDisplayHandler::_EditProperties (EditElementHandleR element, ElementHandle::XAttributeIter xAttr, DTMSubElementId const &sid, PropertyContextR context)
+    {
+    T_Super::_EditProperties (element, xAttr, sid, context);
+
+    DTMElementFlowArrowsHandler::DisplayParams displayParams (element, sid);
+    PropsCallbackFlags propsFlag = displayParams.GetVisible() ?  PROPSCALLBACK_FLAGS_NoFlagsSet : PROPSCALLBACK_FLAGS_UndisplayedID;
+    bool changed = false;
+    if (0 != (ELEMENT_PROPERTY_TextStyle & context.GetElementPropertiesMask ()))
+        {
+        uint32_t textStyleId = (uint32_t)displayParams.GetTextStyleID ();
+        EachTextStyleArg arg (textStyleId, propsFlag, context);
+        changed |= context.DoTextStyleCallback (&textStyleId, arg);
+        displayParams.SetTextStyleID (textStyleId);
+        }
+
+    if (changed)
+        displayParams.SetElement (element, sid);
+
+    // If purpose is just a simple id remap we don't need to regenerate note...
+    if ((EditPropertyPurpose::Change == context.GetIEditPropertiesP ()->_GetEditPropertiesPurpose () || !context.GetElementChanged ()) && displayParams.GetTextStyleID() != 0)
+        {
+        // If properties being edited don't affect layout we don't beed to regenerate note...
+        if (0 != ((ELEMENT_PROPERTY_Font | ELEMENT_PROPERTY_TextStyle | ELEMENT_PROPERTY_DimStyle | ELEMENT_PROPERTY_ElementTemplate) & context.GetElementPropertiesMask ()))
+            {
+            if (AddDTMTextStyle (element, displayParams.GetTextStyleID(), sid.GetId()))
+                {
+                element.GetElementDescrP ()->h.isValid = false;
+                context.SetElementChanged ();
+                }
+            }
+        }
+    }
+
 
 SUBDISPLAYHANDLER_DEFINE_MEMBERS (DTMElementFlowArrowsDisplayHandler);
 

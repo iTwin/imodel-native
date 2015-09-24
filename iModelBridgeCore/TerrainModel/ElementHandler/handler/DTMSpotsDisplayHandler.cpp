@@ -44,7 +44,7 @@ bool DTMElementSpotsDisplayHandler::_Draw (ElementHandleCR el, const ElementHand
             if (!SetSymbology (params, drawingInfo, context))
                 return false;
             
-            Bentley::TerrainModel::DTMPtr dtmPtr (DTMDataRef->GetDTMStorage (DrawFeatures, context));
+            BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr (DTMDataRef->GetDTMStorage (DrawFeatures, context));
             BcDTMP dtm = 0;
 
             if (dtmPtr.IsValid ())
@@ -66,6 +66,41 @@ bool DTMElementSpotsDisplayHandler::_Draw (ElementHandleCR el, const ElementHand
         }
     return true;
     }
+
+//=======================================================================================
+// @bsimethod                                                   Daryl.Holmwood 09/11
+//=======================================================================================
+void DTMElementSpotsDisplayHandler::_EditProperties (EditElementHandleR element, ElementHandle::XAttributeIter xAttr, DTMSubElementId const &sid, PropertyContextR context)
+    {
+    T_Super::_EditProperties (element, xAttr, sid, context);
+    DTMElementSpotsHandler::DisplayParams displayParams (element, sid);
+    PropsCallbackFlags propsFlag = displayParams.GetVisible() ?  PROPSCALLBACK_FLAGS_NoFlagsSet : PROPSCALLBACK_FLAGS_UndisplayedID;
+    bool changed = false;
+    if (0 != (ELEMENT_PROPERTY_TextStyle & context.GetElementPropertiesMask ()))
+        {
+        uint32_t textStyleId = (uint32_t)displayParams.GetTextStyleID ();
+        EachTextStyleArg arg (textStyleId, propsFlag, context);
+        changed |= context.DoTextStyleCallback ((uint32_t*)&textStyleId, arg);
+        }
+
+    if (changed)
+        displayParams.SetElement (element, sid);
+
+    // If purpose is just a simple id remap we don't need to regenerate note...
+    if ((EditPropertyPurpose::Change == context.GetIEditPropertiesP ()->_GetEditPropertiesPurpose () || !context.GetElementChanged ()) && displayParams.GetTextStyleID() != 0)
+        {
+        // If properties being edited don't affect layout we don't beed to regenerate note...
+        if (0 != ((ELEMENT_PROPERTY_Font | ELEMENT_PROPERTY_TextStyle | ELEMENT_PROPERTY_DimStyle | ELEMENT_PROPERTY_ElementTemplate) & context.GetElementPropertiesMask ()))
+            {
+            if (AddDTMTextStyle (element, displayParams.GetTextStyleID(), sid.GetId()))
+                {
+                element.GetElementDescrP ()->h.isValid = false;
+                context.SetElementChanged ();
+                }
+            }
+        }
+    }
+
 
 SUBDISPLAYHANDLER_DEFINE_MEMBERS (DTMElementSpotsDisplayHandler);
 

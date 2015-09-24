@@ -6,7 +6,7 @@
 |       $Date: 2011/10/26 17:55:17 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,7 +14,7 @@
 #include "../Import/Sink.h"
 #include <ScalableTerrainModel/GeoCoords/Reprojection.h>
 #include <ScalableTerrainModel/GeoCoords/GCS.h>
-#include <ImagePP/all/h/HGFPointIndex.h>
+#include "HGFPointIndex.h"
 #include <ScalableTerrainModel/Memory/PacketAccess.h>
 #include "MrDTM.h"
 #include "Plugins/MrDTMIDTMFileTraits.h"

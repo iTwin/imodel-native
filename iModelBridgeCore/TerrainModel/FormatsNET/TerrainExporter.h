@@ -2,7 +2,7 @@
 |
 |     $Source: FormatsNET/TerrainExporter.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -14,13 +14,13 @@ public ref class NamedTerrain
     {
     public: System::String^ Name;
     public: System::String^ Description;
-    public: Bentley::TerrainModelNET::DTM^ Terrain;
+    public: BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM^ Terrain;
 
-    public: NamedTerrain (Bentley::TerrainModelNET::DTM^ terrain, System::String^ name)
+    public: NamedTerrain (BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM^ terrain, System::String^ name)
         : Terrain (terrain), Name (name), Description (nullptr)
         {
         }
-    public: NamedTerrain (Bentley::TerrainModelNET::DTM^ terrain, System::String^ name, System::String^ description)
+    public: NamedTerrain (BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM^ terrain, System::String^ name, System::String^ description)
         : Terrain (terrain), Name (name), Description (description)
         {
         }
@@ -36,7 +36,7 @@ public interface class IFeatureInfoCallback
 struct _TerrainExporter_Unmanaged
     {
     TerrainExporterPtr m_exporter;
-    Bentley::TerrainModel::TerrainExporter::IFeatureInfoCallback* m_unmanagedCallback;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::TerrainExporter::IFeatureInfoCallback* m_unmanagedCallback;
     _TerrainExporter_Unmanaged ()
         {
         m_unmanagedCallback = nullptr;
@@ -67,10 +67,10 @@ public ref class TerrainExporter abstract
         {
         System::String^ get ();
         }
-    public: property Bentley::TerrainModelNET::Formats::FileUnit FileUnit
+    public: property BENTLEY_NAMESPACE_NAME::TerrainModelNET::Formats::FileUnit FileUnit
         {
-        Bentley::TerrainModelNET::Formats::FileUnit get ();
-        void set (Bentley::TerrainModelNET::Formats::FileUnit value);
+        BENTLEY_NAMESPACE_NAME::TerrainModelNET::Formats::FileUnit get ();
+        void set (BENTLEY_NAMESPACE_NAME::TerrainModelNET::Formats::FileUnit value);
         }
             
     public: property IFeatureInfoCallback^ Callback

@@ -12,7 +12,7 @@
 #include <TerrainModel\Core\partitionarray.h>
 #include <algorithm>
 #include <list>
-
+#include <mutex>
 
 
 
@@ -1866,6 +1866,12 @@ BENTLEYDTM_Private int bcdtmTin_getPointerAndOffsetToNextDtmFeatureTypeOccurrenc
     if( dtmFeatureP->dtmFeatureType == dtmFeatureType && dtmFeatureP->dtmFeatureState != DTMFeatureState::TinError && dtmFeatureP->dtmFeatureState != DTMFeatureState::Deleted  && dtmFeatureP->dtmFeatureState != DTMFeatureState::Rollback)
       {
        *dtmFeaturePP   = dtmFeatureP ;
+
+       if (((*(dtmFeaturePP))->dtmFeaturePts).pointsPI < 1000)
+        {
+        *dtmFeaturePP   = dtmFeatureP ;
+        }
+
        *dtmFeatureNumP = feature ;
        lastFeature     = feature ;
       }
@@ -2325,15 +2331,20 @@ BENTLEYDTM_Public int bcdtmTin_getSwapTriangleDtmObject(BC_DTM_OBJ *dtmP,long st
 |                                                            |
 |                                                            |
 +-----------------------------------------------------------*/
+std::mutex s_safeInsert;
+
 BENTLEYDTM_Private int bcdtmTin_insertDtmFeatureTypeIntoDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureType dtmFeatureType)
 /*
 ** This Function Inserts Dtm Features Into A Dtm Object
 */
 {
+    std::lock_guard<std::mutex> lck (s_safeInsert);
+
+    
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long    pnt,closeFlag,firstPnt,startPnt,nextPnt,insertError,dtmFeatureNum,flPtr,numPriorPts;
  long    *tempOffsetP=NULL,drapeOption,insertOption,internalPoint,validateResult ;
- long    numFeatures = 0, numFeaturesError = 0, numFeaturesInserted = 0, numHullPts, numDrapeVoidPts, featureNum;
+ long    numFeatures = 0, numFeaturesError = 0, numFeaturesInserted = 0, numHullPts = 0, numDrapeVoidPts = 0, featureNum = 0;
  DTMFeatureType insFeatureType;
  char    dtmFeatureTypeName[100] ;
  DPoint3d     *hullPtsP=NULL,*featPtsP=NULL,*drapeVoidPtsP=NULL ;
@@ -3233,7 +3244,7 @@ BENTLEYDTM_Public int bcdtmTin_compactFeatureTableDtmObject(BC_DTM_OBJ *dtmP)
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- long   ofs1,ofs2,ftable,flist,delCount,dtmFeature ;
+ long   ofs1,ofs2,ftable,flist,delCount = 0,dtmFeature ;
  char   dtmFeatureTypeName[50] ;
  LongArray::iterator ofsP;
  // BC_DTM_FEATURE   *ftableP ;
@@ -4149,7 +4160,7 @@ BENTLEYDTM_Public int bcdtmTin_removeExternalMaxSideTrianglesDtmObject(BC_DTM_OB
 BENTLEYDTM_Public int bcdtmTin_clipTinToBoundaryPolygonDtmObject(BC_DTM_OBJ *dtmP)
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0);
- long   loop,pnt,pnt1,firstPnt,startPnt,nextPnt,insertError,dtmFeature ;
+ long   loop,pnt,pnt1,firstPnt = 0,startPnt,nextPnt,insertError,dtmFeature ;
  long   lineNum,knotPoint=0,knotDetected=FALSE,cleanTptrList=TRUE ;
  long   *offsetP ;
  BC_DTM_FEATURE *dtmFeatureP ;
@@ -4980,7 +4991,7 @@ BENTLEYDTM_Private int bcdtmTin_insertBoundaryLinesDtmObject(BC_DTM_OBJ *dtmP,BC
 */
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long  error,sp,np,numFeatures,dtmFeature ;
+ long  error = 0,sp,np,numFeatures,dtmFeature ;
  long  cp1,cp2,point,firstPoint,lastPoint,firstNewPoint ;
  BC_DTM_FEATURE *dtmFeatureP ;
  DTM_TIN_POINT  *p1P,*p2P ;

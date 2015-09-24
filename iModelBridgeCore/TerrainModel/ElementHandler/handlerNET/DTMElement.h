@@ -99,7 +99,7 @@ public ref class StringLocalizer
 public ref class DTMSubElement
     {
     protected private:
-        Bentley::TerrainModel::Element::DTMSubElementId* m_id;
+        BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMSubElementId* m_id;
         DTMElement^ m_dtmElement;
         DTMElementSubHandler::SymbologyParams* m_params;
 
@@ -107,7 +107,7 @@ public ref class DTMSubElement
         //=======================================================================================
         // @bsimethod                                                   Daryl.Holmwood 07/08
         //=======================================================================================
-        DTMSubElement(const Bentley::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement);
+        DTMSubElement(const BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement);
 
     public:
         //=======================================================================================
@@ -136,7 +136,7 @@ public ref class DTMSubElement
     ////////=======================================================================================
  //////   // @bsimethod                                                   Daryl.Holmwood 07/10
  //////   //=======================================================================================
- //////   public: Bentley::TerrainModel::Element::DTMSubElementId GetSubElementId()
+ //////   public: BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMSubElementId GetSubElementId()
  //////       {
  //////       return *m_id;
  //////       }
@@ -201,21 +201,21 @@ public ref class DTMSubElement
 public ref class DTMFeatureElement : public DTMSubElement
     {
     internal:
-        Bentley::TerrainModel::Element::DTMElementFeaturesHandler::FeatureTypes FeatureType; // ToDo Vancouver make managed
+        BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementFeaturesHandler::FeatureTypes FeatureType; // ToDo Vancouver make managed
 
         //=======================================================================================
         // @bsimethod                                                   Steve.Jones 10/10
         //=======================================================================================
-        DTMFeatureElement (const Bentley::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMSubElement (xAttrId, dtmElement)
+        DTMFeatureElement (const BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMSubElement (xAttrId, dtmElement)
             {
             }
     internal:
         //=======================================================================================
         // @bsimethod                                                   Daryl.Holmwood 07/10
         //=======================================================================================
-        property Bentley::TerrainModel::Element::DTMElementFeaturesHandler::FeatureTypes GetFeatureType
+        property BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementFeaturesHandler::FeatureTypes GetFeatureType
             {
-            Bentley::TerrainModel::Element::DTMElementFeaturesHandler::FeatureTypes get(); 
+            BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementFeaturesHandler::FeatureTypes get(); 
             }
 
     };
@@ -230,7 +230,7 @@ public ref class DTMSubElementTextStyle : public DTMSubElement
         //=======================================================================================
         // @bsimethod                                                   Daryl.Holmwood 07/08
         //=======================================================================================
-        DTMSubElementTextStyle(const Bentley::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMSubElement (xAttrId, dtmElement)
+        DTMSubElementTextStyle(const BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMSubElement (xAttrId, dtmElement)
             {
             }
 
@@ -254,9 +254,10 @@ public ref class DTMContourElement : public DTMSubElementTextStyle
         //=======================================================================================
         // @bsimethod                                                   Daryl.Holmwood 07/08
         //=======================================================================================
-        DTMContourElement (const Bentley::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement);
-    private:
-        DGNET::LevelId m_additionalLevelId;
+        DTMContourElement(const BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMSubElementTextStyle (xAttrId, dtmElement)
+            {
+            }
+
     public:
         enum class ContourTextPosition : short
             {
@@ -339,15 +340,6 @@ public ref class DTMContourElement : public DTMSubElementTextStyle
             {
             ContourDrawTextOption get();
             void set (ContourDrawTextOption value);
-            }
-
-        //=======================================================================================
-        // @bsimethod                                                   Daryl.Holmwood 07/08
-        //=======================================================================================
-        property DGNET::LevelId TextLevelId
-            {
-            DGNET::LevelId get ();
-            void set (DGNET::LevelId value);
             }
 
         //=======================================================================================
@@ -439,11 +431,6 @@ public ref class DTMContourElement : public DTMSubElementTextStyle
             System::UInt32 get();
             void set (System::UInt32 value);
             }
-
-        //=======================================================================================
-        // @bsimethod                                                   Daryl.Holmwood 07/10
-        //=======================================================================================
-        virtual void Commit (DTMElement^ element) override;
     };
 
 //=======================================================================================
@@ -455,7 +442,7 @@ public ref class DTMMaterialElement : public DTMSubElement
         //=======================================================================================
         // @bsimethod                                                   Daryl.Holmwood 07/08
         //=======================================================================================
-        DTMMaterialElement (const Bentley::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMSubElement(xAttrId, dtmElement)
+        DTMMaterialElement (const BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMSubElement(xAttrId, dtmElement)
             {
             }
     public:
@@ -480,7 +467,7 @@ public ref class DTMRegionElement : public DTMMaterialElement
         //=======================================================================================
         // @bsimethod                                                   Daryl.Holmwood 07/08
         //=======================================================================================
-        DTMRegionElement (const Bentley::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMMaterialElement(xAttrId, dtmElement)
+        DTMRegionElement (const BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMMaterialElement(xAttrId, dtmElement)
             {
             }
     public:
@@ -503,7 +490,7 @@ public ref class DTMTrianglesElement : public DTMMaterialElement
         //=======================================================================================
         // @bsimethod                                                   Daryl.Holmwood 07/08
         //=======================================================================================
-        DTMTrianglesElement (const Bentley::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMMaterialElement (xAttrId, dtmElement)
+        DTMTrianglesElement (const BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMMaterialElement (xAttrId, dtmElement)
             {
             }
     };
@@ -517,7 +504,7 @@ public ref class DTMRasterDrapingElement : public DTMSubElement
         //=======================================================================================
         // @bsimethod                                                   Daryl.Holmwood 07/08
         //=======================================================================================
-        DTMRasterDrapingElement(const Bentley::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMSubElement (xAttrId, dtmElement)
+        DTMRasterDrapingElement(const BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMSubElement (xAttrId, dtmElement)
             {
             }
     };
@@ -531,7 +518,7 @@ public ref class DTMPointElement : public DTMSubElementTextStyle
         //=======================================================================================
         // @bsimethod                                                   Steve.Jones 07/10
         //=======================================================================================
-        DTMPointElement (const Bentley::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMSubElementTextStyle (xAttrId, dtmElement)
+        DTMPointElement (const BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMSubElementTextStyle (xAttrId, dtmElement)
             {
             }
     public:
@@ -619,7 +606,7 @@ public ref class DTMFlowArrowElement : public DTMPointElement
         //=======================================================================================
         // @bsimethod                                                   Steve.Jones 07/10
         //=======================================================================================
-        DTMFlowArrowElement (const Bentley::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMPointElement (xAttrId, dtmElement)
+        DTMFlowArrowElement (const BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMPointElement (xAttrId, dtmElement)
             {
             }
     };
@@ -633,7 +620,7 @@ public ref class DTMLowPointElement : public DTMPointElement
         //=======================================================================================
         // @bsimethod                                                   Steve.Jones 07/10
         //=======================================================================================
-        DTMLowPointElement (const Bentley::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMPointElement (xAttrId, dtmElement)
+        DTMLowPointElement (const BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMPointElement (xAttrId, dtmElement)
             {
             }
     public:
@@ -656,7 +643,7 @@ public ref class DTMHighPointElement : public DTMPointElement
         //=======================================================================================
         // @bsimethod                                                   Steve.Jones 07/10
         //=======================================================================================
-        DTMHighPointElement (const Bentley::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMPointElement (xAttrId, dtmElement)
+        DTMHighPointElement (const BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMPointElement (xAttrId, dtmElement)
             {
             }
     public:
@@ -672,7 +659,7 @@ public ref class DTMCatchmentAreaElement : public DTMSubElement
         //=======================================================================================
         // @bsimethod                                                   Steve.Jones 07/10
         //=======================================================================================
-        DTMCatchmentAreaElement (const Bentley::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMSubElement (xAttrId, dtmElement)
+        DTMCatchmentAreaElement (const BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMSubElement (xAttrId, dtmElement)
             {
             }
     public:
@@ -695,7 +682,7 @@ public ref class DTMPondElement : public DTMSubElement
         //=======================================================================================
         // @bsimethod                                                   Steve.Jones 03/11
         //=======================================================================================
-        DTMPondElement (const Bentley::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMSubElement (xAttrId, dtmElement)
+        DTMPondElement (const BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMSubElement (xAttrId, dtmElement)
             {
             }
     };
@@ -710,7 +697,7 @@ public ref class DTMSpotElement : public DTMPointElement
         //=======================================================================================
         // @bsimethod                                                   Daryl.Holmwood 07/08
         //=======================================================================================
-        DTMSpotElement (const Bentley::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMPointElement (xAttrId, dtmElement)
+        DTMSpotElement (const BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMPointElement (xAttrId, dtmElement)
             {
             }
     public:
@@ -735,7 +722,7 @@ public ref class DTMFeatureSpotElement : public DTMPointElement
         //=======================================================================================
         // @bsimethod                                                   Daryl.Holmwood 07/08
         //=======================================================================================
-        DTMFeatureSpotElement (const Bentley::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMPointElement (xAttrId, dtmElement)
+        DTMFeatureSpotElement (const BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMSubElementId& xAttrId, DTMElement^ dtmElement) : DTMPointElement (xAttrId, dtmElement)
             {
             }
     public:
@@ -780,7 +767,7 @@ internal:
         }
 
     internal: 
-        DTMFeatureElement^ GetFeatureElement (Bentley::TerrainModel::Element::DTMElementFeaturesHandler::FeatureTypes type);
+        DTMFeatureElement^ GetFeatureElement (BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementFeaturesHandler::FeatureTypes type);
 
     public: 
 

@@ -30,10 +30,13 @@ struct DTMTxnMonitor : RefCounted<IDTMTxnMonitor>, DgnFileAppData
         static RefCountedPtr<DTMTxnMonitor> s_instance;
         bvector<DTMXAttributeHandler*> m_openedDTMS;
         bvector<DTMXAttributeHandler*> m_modifiedDTMS;
-        bvector<ElementRefP> m_tmPersistElements;
+        ElementRefP m_TMPersitElement;
+        bool m_inTMPersit;
 
         DTMTxnMonitor()
             {
+            m_inTMPersit = false;
+            m_TMPersitElement = nullptr;
             ITxnManager::GetManager ().AddTxnMonitor (*this);
             }
 
@@ -54,21 +57,34 @@ struct DTMTxnMonitor : RefCounted<IDTMTxnMonitor>, DgnFileAppData
                 if ((*iter)->GetElemHandle ().GetElementRef () == elemRef)
                     (*iter)->UndoRedo ();
             }
+
         virtual void _OnXAttributeUndoRedo (XAttributeHandleCR xAttr,  ChangeTrackAction action, bool isUndo, ChangeTrackSource source, ChangeTrackInfo const* info) override
             {
             if (xAttr.GetHandlerId() == XAttributeHandlerId (TMElementMajorId, XATTRIBUTES_SUBID_DTM_HEADER))
                 {
-                ElementRefP elemRef = xAttr.GetElementRef ();
-                if (std::find (m_tmPersistElements.begin (), m_tmPersistElements.end (), elemRef) == m_tmPersistElements.end())
-                    m_tmPersistElements.push_back (elemRef);
+                BeAssert (m_TMPersitElement == nullptr);
+                m_TMPersitElement = xAttr.GetElementRef ();
                 }
             }
 
-        virtual void _OnUndoRedoFinished (bool isUndo) override
+        virtual void _OnReverse ()
             {
-            for (auto elmRef : m_tmPersistElements)
-                ReloadData (elmRef);
-            m_tmPersistElements.clear ();
+            _OnReinstate ();
+            }
+
+        virtual void _OnReinstate ()
+            {
+            if (m_inTMPersit)
+                {
+                BeAssert (m_TMPersitElement);
+                ReloadData (m_TMPersitElement);
+                m_TMPersitElement = nullptr;
+                m_inTMPersit = false;
+                }
+            else
+                {
+                m_inTMPersit = true;
+                }
             }
 
         virtual void _OnTxnValidate () override
@@ -208,9 +224,9 @@ void DTMXAttributeHandler::WriteHeader (const byte* data, int size)
         {
         XAttributeHandle xAttr (m_handle.GetElementRef(), XAttributeHandlerId (TMElementMajorId, XATTRIBUTES_SUBID_DTM_HEADER), 0);
         if (xAttr.IsValid())
-            ITxnManager::GetCurrentTxn().ReplaceXAttributeData (xAttr, dtmobj, (UInt32)size);
+            ITxnManager::GetCurrentTxn().ReplaceXAttributeData (xAttr, dtmobj, (uint32_t)size);
         else
-            ITxnManager::GetCurrentTxn().AddXAttribute (m_handle.GetElementRef (), XAttributeHandlerId (TMElementMajorId, XATTRIBUTES_SUBID_DTM_HEADER), 0, dtmobj, (UInt32)size);
+            ITxnManager::GetCurrentTxn().AddXAttribute (m_handle.GetElementRef (), XAttributeHandlerId (TMElementMajorId, XATTRIBUTES_SUBID_DTM_HEADER), 0, dtmobj, (uint32_t)size);
         }
     else
         m_handle.ScheduleWriteXAttribute (XAttributeHandlerId (TMElementMajorId, XATTRIBUTES_SUBID_DTM_HEADER), 0, size, dtmobj);
@@ -218,9 +234,9 @@ void DTMXAttributeHandler::WriteHeader (const byte* data, int size)
     }
 
 #ifdef DEBUG
-UInt32 GetCheckSum (void* mem, size_t size)
+uint32_t GetCheckSum (void* mem, size_t size)
     {
-    UInt32 checkSum = 0;
+    uint32_t checkSum = 0;
     unsigned char* memChar = (unsigned char*)mem;
 
     for (size_t p = size; p < size; size++, memChar++)
@@ -228,7 +244,7 @@ UInt32 GetCheckSum (void* mem, size_t size)
         checkSum += *memChar;
         int shift = size % 4;
 
-        checkSum ^= ((UInt32)*memChar) << (8 * shift);
+        checkSum ^= ((uint32_t)*memChar) << (8 * shift);
         }
     return checkSum;
     }
@@ -251,7 +267,7 @@ void DTMXAttributeHandler::StoreSnapShot ()
 #ifdef COMPLETE_TEMPORARY_CHECK
     for (DTMPartition type = DTMPartition::None; type < (DTMPartition)NUMPARTITIONTYPES; type = (DTMPartition)(1 + (int)type))
         {
-        UInt32 xAttrId = GetXAttrId(type);
+        uint32_t xAttrId = GetXAttrId(type);
         XAttributeHandlerId handlerId (TMElementMajorId, xAttrId);
 
         ElementHandle::XAttributeIter xAttrIter (m_handle, handlerId);
@@ -428,7 +444,7 @@ bool DTMXAttributeHandler::CheckTemporary (bool goingToModify)
 #ifdef COMPLETE_TEMPORARY_CHECK
     for (int type = 0; type < NUMPARTITIONTYPES; type++)
         {
-        UInt32 xAttrId = GetXAttrId(type);
+        uint32_t xAttrId = GetXAttrId(type);
         XAttributeHandlerId handlerId (TMElementMajorId, xAttrId);
 
         ElementHandle::XAttributeIter xAttrIter (m_handle, handlerId);
@@ -570,7 +586,7 @@ void DTMXAttributeHandler::EndModify ()
 
         if (!m_isTemporary)
             {
-            if (m_handle.GetElementRef() && !m_inScheduleReplace)
+            if (m_handle.GetElementRef())
                 m_noSchedule = true;
 
             // Cheat for undo/redo we write the header twice, so that the header XAttribute is modified
@@ -613,7 +629,7 @@ void DTMXAttributeHandler::DeleteXAttributes()
         XAttributeHandlerId id = iter.GetHandlerId();
         if (id.GetMajorId() == TMElementMajorId)
             {
-            UInt32 attrId = iter.GetId();
+            uint32_t attrId = iter.GetId();
             if (!iter.ToNext())
                 break;  //ToDo LookAt
             if (id.GetMinorId() == XATTRIBUTES_SUBID_DTM_HEADER)
@@ -636,7 +652,7 @@ void DTMXAttributeHandler::DeleteXAttributes()
         XAttributeHandlerId id = iter.GetHandlerId();
         if (id.GetMajorId() == TMElementMajorId)
             {
-            UInt32 attrId = iter.GetId();
+            uint32_t attrId = iter.GetId();
             if (!iter.ToNext())
                 break;  //ToDo LookAt
             switch(id.GetMinorId())
@@ -1357,12 +1373,12 @@ void DTMXAttributeHandler::dh_allocXAttr (memoryMapT::iterator& iter, DTMPartiti
             {
             XAttributeHandle xAttr (m_handle.GetElementRef(), XAttributeHandlerId (TMElementMajorId, xAttrId), index);
             BeAssert (xAttr.IsValid());
-            ITxnManager::GetCurrentTxn().ReplaceXAttributeData (xAttr, dataP, (UInt32)dataSize);
+            ITxnManager::GetCurrentTxn().ReplaceXAttributeData (xAttr, dataP, (uint32_t)dataSize);
             iter->second.mem = const_cast<void*>(xAttr.PeekData());
             }
         else
             {
-            ITxnManager::GetCurrentTxn().AddXAttribute (m_handle.GetElementRef (), XAttributeHandlerId (TMElementMajorId, xAttrId), index, dataP, (UInt32)dataSize);
+            ITxnManager::GetCurrentTxn().AddXAttribute (m_handle.GetElementRef (), XAttributeHandlerId (TMElementMajorId, xAttrId), index, dataP, (uint32_t)dataSize);
             XAttributeHandle xAttr (m_handle.GetElementRef(), XAttributeHandlerId (TMElementMajorId, xAttrId), index);
             BeAssert (xAttr.IsValid());
             iter->second.mem = const_cast<void*>(xAttr.PeekData());
@@ -1422,7 +1438,7 @@ DTMXAttributeHandler* DTMXAttributeHandler::LoadDTM (ElementHandleCR element)
     {
     // Get the handles to the XAttribute
     BC_DTM_OBJ* headerData = nullptr;
-    UInt32 headerSize  = 0;
+    uint32_t headerSize  = 0;
 
     // Look at the XAttribute for a valid Header.
     // Get the DTM iter
@@ -1680,12 +1696,7 @@ StatusInt DTMXAttributeHandler::ScheduleDtmData (EditElementHandleR elemHandle, 
 
     if (allocator != nullptr)
         m_allocator->m_inCreate = true;
-
-        {
-        AutoRestore<bool>  const savePoint (&m_allocator->m_inScheduleReplace);
-        m_allocator->m_inScheduleReplace = true;
-        m_allocator->EndModify ();
-        }
+    m_allocator->EndModify ();
     if (allocator != nullptr)
         m_allocator->m_inCreate = false;
 

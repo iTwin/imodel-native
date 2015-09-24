@@ -6,7 +6,7 @@
 #       $Date: 2012/11/15 20:19:18 $
 #     $Author: Daryl.Holmwood $
 #
-#   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -114,7 +114,8 @@ DLM_NO_DEF              = 1
 DLM_NO_DLS              = 1
 DLM_NOENTRY             = 1
 
-InroadsLib = $(o)/inroadstm/$(libprefix)inroadstm$(libext)
+#InroadsLib = $(o)/inroadstm/$(libprefix)inroadstm$(libext)
+InroadsLib = $(BuildContext)Delivery/$(libprefix)inroadstm$(libext)
 #InroadsLib = $(BuildContext)SubParts/StaticLibs/$(libprefix)inroadstm$(libext)
 #InroadsLib = $(ContextSubpartsLibs)$(libprefix)InroadsTM$(libext)
 
@@ -124,11 +125,11 @@ LINKER_LIBRARIES  = \
     $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
     $(ContextSubpartsLibs)$(libprefix)BeLibxml2$(libext) \
     $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
+    $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
     $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext)
 
 LINKER_LIBRARIES_DELAYLOADED  = \
-                                $(ContextSubpartsLibs)$(libprefix)IppGraLibs$(libext) \
-                                $(ContextSubpartsLibs)$(libprefix)IppUtlLibs$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)Imagepp$(libext)
 
 DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
 DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/

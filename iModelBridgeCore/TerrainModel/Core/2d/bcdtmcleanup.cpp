@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmcleanup.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel\Core\bcDTMBaseDef.h>
@@ -175,7 +175,7 @@ BENTLEYDTM_Public int bcdtmCleanUp_resolveMultipleIntersectingPolygonalDtmObject
     BC_DTM_FEATURE *dtmFeatureP ;
     char     dtmFeatureTypeName[50];
     int numVoids;
-    long sp, np, hp, ss;
+    long sp, np = 0, hp, ss;
     long numStartFeatures;
     bool isLookingForVoids = true;
     /*
@@ -319,7 +319,7 @@ BENTLEYDTM_Public int bcdtmCleanUp_resolveMultipleIntersectingPolygonalDtmObject
 
                             {
                             int tp = sp;
-                            int np;
+                            int np = 0;
                             points.push_back( *pointAddrP(polyDtmP, sp));
                             while ( nodeAddrP(polyDtmP,tp)->tPtr != polyDtmP->nullPnt && nodeAddrP(polyDtmP,tp)->tPtr >= 0 )
                                 {
@@ -1052,7 +1052,7 @@ int bcdtmCleanUp_resolveVoidAndIslandsDtmObject (BC_DTM_OBJ *dtmP)
 
     DTMFeatureId dtmFeatureId ;
     BC_DTM_FEATURE *dtmFeature2P=NULL ;
-    int dtmFeature2;
+    int dtmFeature2 = 0;
     bvector<long> voidFeatureIndexes;
     int numVoids, numIslands;
 
@@ -1111,7 +1111,7 @@ int bcdtmCleanUp_resolveVoidAndIslandsDtmObject (BC_DTM_OBJ *dtmP)
                     }
                 if( dtmFeatureP->dtmFeatureType == DTMFeatureType::Void || dtmFeatureP->dtmFeatureType == DTMFeatureType::BreakVoid || dtmFeatureP->dtmFeatureType == DTMFeatureType::DrapeVoid) ++numVoids ;
                 else if( dtmFeatureP->dtmFeatureType == DTMFeatureType::Island ) ++numIslands ;
-                Int64 featureId = dtmFeature;
+                int64_t featureId = dtmFeature;
                 if( bcdtmObject_storeDtmFeatureInDtmObject(bndyDtmP,dtmFeatureP->dtmFeatureType, featureId, 2, &featureId, featurePtsP, numFeaturePts))
                     goto errexit ;
                 voidFeatureIndexes.push_back (dtmFeature);

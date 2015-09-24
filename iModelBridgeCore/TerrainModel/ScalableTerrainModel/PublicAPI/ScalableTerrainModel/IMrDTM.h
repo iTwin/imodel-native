@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -34,7 +34,7 @@ struct Count;
 * Interface implemented by MRDTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct IMrDTM abstract:  Bentley::TerrainModel::IDTM
+struct IMrDTM abstract:  BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM
     {
     private:
         

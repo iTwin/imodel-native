@@ -2,7 +2,7 @@
 |
 |     $Source: FormatsNET/Lidar.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -14,29 +14,29 @@ public ref class LidarImporter : TerrainImporter
     {
     public: enum class Classification
         {
-        Created = Bentley::TerrainModel::LidarImporter::Classification::Created,
-        UnClassified = Bentley::TerrainModel::LidarImporter::Classification::UnClassified,
-        Ground = Bentley::TerrainModel::LidarImporter::Classification::Ground,
-        LowVegetation = Bentley::TerrainModel::LidarImporter::Classification::LowVegetation,
-        MediumVegetation = Bentley::TerrainModel::LidarImporter::Classification::MediumVegetation,
-        HighVegetation = Bentley::TerrainModel::LidarImporter::Classification::HighVegetation,
-        Building = Bentley::TerrainModel::LidarImporter::Classification::Building,
-        LowPoint = Bentley::TerrainModel::LidarImporter::Classification::LowPoint,
-        Water = Bentley::TerrainModel::LidarImporter::Classification::Water,
-        Rail = Bentley::TerrainModel::LidarImporter::Classification::Rail,
-        RoadSurface = Bentley::TerrainModel::LidarImporter::Classification::RoadSurface,
-        WireGuard = Bentley::TerrainModel::LidarImporter::Classification::WireGuard,
-        WireConductor = Bentley::TerrainModel::LidarImporter::Classification::WireConductor,
-        TransmissionTower = Bentley::TerrainModel::LidarImporter::Classification::TransmissionTower,
-        WireStructureConnector = Bentley::TerrainModel::LidarImporter::Classification::WireStructureConnector,
-        BridgeDeck = Bentley::TerrainModel::LidarImporter::Classification::BridgeDeck,
-        HighNoise = Bentley::TerrainModel::LidarImporter::Classification::HighNoise,
+        Created = BENTLEY_NAMESPACE_NAME::TerrainModel::LidarImporter::Classification::Created,
+        UnClassified = BENTLEY_NAMESPACE_NAME::TerrainModel::LidarImporter::Classification::UnClassified,
+        Ground = BENTLEY_NAMESPACE_NAME::TerrainModel::LidarImporter::Classification::Ground,
+        LowVegetation = BENTLEY_NAMESPACE_NAME::TerrainModel::LidarImporter::Classification::LowVegetation,
+        MediumVegetation = BENTLEY_NAMESPACE_NAME::TerrainModel::LidarImporter::Classification::MediumVegetation,
+        HighVegetation = BENTLEY_NAMESPACE_NAME::TerrainModel::LidarImporter::Classification::HighVegetation,
+        Building = BENTLEY_NAMESPACE_NAME::TerrainModel::LidarImporter::Classification::Building,
+        LowPoint = BENTLEY_NAMESPACE_NAME::TerrainModel::LidarImporter::Classification::LowPoint,
+        Water = BENTLEY_NAMESPACE_NAME::TerrainModel::LidarImporter::Classification::Water,
+        Rail = BENTLEY_NAMESPACE_NAME::TerrainModel::LidarImporter::Classification::Rail,
+        RoadSurface = BENTLEY_NAMESPACE_NAME::TerrainModel::LidarImporter::Classification::RoadSurface,
+        WireGuard = BENTLEY_NAMESPACE_NAME::TerrainModel::LidarImporter::Classification::WireGuard,
+        WireConductor = BENTLEY_NAMESPACE_NAME::TerrainModel::LidarImporter::Classification::WireConductor,
+        TransmissionTower = BENTLEY_NAMESPACE_NAME::TerrainModel::LidarImporter::Classification::TransmissionTower,
+        WireStructureConnector = BENTLEY_NAMESPACE_NAME::TerrainModel::LidarImporter::Classification::WireStructureConnector,
+        BridgeDeck = BENTLEY_NAMESPACE_NAME::TerrainModel::LidarImporter::Classification::BridgeDeck,
+        HighNoise = BENTLEY_NAMESPACE_NAME::TerrainModel::LidarImporter::Classification::HighNoise,
         };
 
     ref class ClassificationInfo
         {
         public: property LidarImporter::Classification Classification;
-        public: property UInt64 Count;
+        public: property uint64_t Count;
         };
 
     private: LidarImporterP m_importer;
@@ -45,7 +45,7 @@ public ref class LidarImporter : TerrainImporter
     internal: LidarImporter (LidarImporterP importer);
 
     public: array<ClassificationInfo^>^ GetClassificationInfo ();
-    public: Bentley::TerrainModelNET::DTM^ ImportTerrain (array<Classification>^ filter);
+    public: BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM^ ImportTerrain (array<Classification>^ filter);
     };
 
 END_BENTLEY_TERRAINMODELNET_FORMATS_NAMESPACE

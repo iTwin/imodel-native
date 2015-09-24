@@ -26,8 +26,8 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL_ELEMENT
 void startAnnotateSpotsCommand (CommandNumber cmdNumber, int cmdName);
 extern void UpdateToolsettings (ElementHandleCR dtm);
 extern DMatrix4d GetMatrixWorldToView (int view);
-extern void StartSequence (UInt64 cmdNum);
-extern void EndSequence (UInt64 cmdNum);
+extern void StartSequence (uint64_t cmdNum);
+extern void EndSequence (uint64_t cmdNum);
 extern bool PrepText (TextBlockPtr& rtb, ElementHandleCR elHandle, DgnButtonEventCR ev);
 extern void LoadDependable (void);
 extern TextElementJustification ComputeDynamicJustification (DPoint3dP point1P, DPoint3dP point2P, RotMatrixP viewMatrixP);
@@ -81,7 +81,7 @@ struct AnnotateSpotsElemTool : Annotate::SequencedTool, Annotate::DTMHolder
         TextElementJustification    m_horAttachmentSide;
         int                         m_numLeaders;
         DPoint3d                    m_leaderEndTangent;
-        UInt32                      m_iGGNum;
+        uint32_t                      m_iGGNum;
         ElementId                   m_cellElementID;
 
         EditElementHandle           m_existingElemHandle, m_textElemHandle;
@@ -411,7 +411,7 @@ struct AnnotateSpotsElemTool : Annotate::SequencedTool, Annotate::DTMHolder
                 mdlAccuSnap_enableSnap ( _WantAccuSnap ());
                 mdlAccuSnap_enableLocate ( false );
 
-                UInt32      promptId = 0L;
+                uint32_t      promptId = 0L;
 
                 if ( !m_dtm.IsValid() )
                     promptId = PROMPT_IdentifyDTM;
@@ -482,9 +482,7 @@ struct AnnotateSpotsElemTool : Annotate::SequencedTool, Annotate::DTMHolder
 
                 if ( m_nPoints > 1 && IsManualPlacement () )
                     {
-                    m_evIsSelfSnap = false;
                     NoteDimCompleteNote (ev);
-
                     SetupPlacementMethod ();
                     m_textElemHandle.Invalidate ();
                     return false;
@@ -563,11 +561,9 @@ struct AnnotateSpotsElemTool : Annotate::SequencedTool, Annotate::DTMHolder
                 // Is note complete?
                 if (m_nPoints > 1)
                     {
+                    m_evIsSelfSnap = false;
                     if (!IsManualPlacement () || ev.IsControlKey ())
-                        {
-                        m_evIsSelfSnap = false;
                         NoteDimCompleteNote (ev);
-                        }
                     else
                         _SetupAndPromptForNextAction ();
                     }
@@ -923,27 +919,11 @@ StatusInt       AnnotateSpotsElemTool::CreateNote
                 {
                 DPoint3d globalOrigin;
 
-                if (ev != NULL)
-                    {
-                    mdlModelRef_getGlobalOrigin (m_dtm.GetModelRef (), &globalOrigin);
-
-                    double elevation = m_elevationPoint.z - globalOrigin.z;
-
-                    // If the terrain model is an attachment, convert the snapped point to the attached reference model units.
-                    if (m_dtm.GetModelRef ()->IsDgnAttachment ())
-                        {
-                        DPoint3d    refModelPoint = *(ev->GetPoint ());
-                        CRefUnitsConverter converter (m_dtm.GetModelRef (), true);
-                        converter.FullRootUorsToRefMeters (refModelPoint);
-
-                        elevation = (refModelPoint.z - globalOrigin.z);
-                        }
-
-                    ConvertToTextBlock (m_pTextBlock, elevation, ev ? ev->GetViewport () : m_ev.GetViewport (), m_dtm.GetModelRef ());
-                    BeAssert (m_pTextBlock.IsValid ());
-                    if (m_pTextBlock.IsValid ())
-                        m_pTextBlock->SetForceTextNodeFlag (true);
-                    }
+                mdlModelRef_getGlobalOrigin (m_dtm.GetModelRef(), &globalOrigin);
+                ConvertToTextBlock (m_pTextBlock, m_elevationPoint.z - globalOrigin.z, ev ? ev->GetViewport() : m_ev.GetViewport(), m_dtm.GetModelRef());
+                BeAssert (m_pTextBlock.IsValid());
+                if (m_pTextBlock.IsValid())
+                    m_pTextBlock->SetForceTextNodeFlag (true);
                 }
             else
                 { PrepText (m_pTextBlock, m_dtm, ev ? *ev : m_ev); }
@@ -971,7 +951,7 @@ StatusInt       AnnotateSpotsElemTool::CreateNote
             bool levelOverride;
             dimStyle->GetBooleanProp (levelOverride, DIMSTYLE_PROP_Placement_OverrideLevel_BOOLINT);
 
-            UInt32          level   = tcb->activeLevel;
+            uint32_t          level   = tcb->activeLevel;
             if (levelOverride)
                 dimStyle->GetLevelProp (level, DIMSTYLE_PROP_Placement_Level_LEVEL);
             EditElementHandle textNode;

@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMDataRefCachingManager.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -124,7 +124,7 @@ bmap <DTMDisplayCache*, DTMDisplayCache*> DTMDisplayCacheManager::s_displayCache
 //=======================================================================================
 // @bsimethod                                                    Daryl.Holmwood  04/10
 //=======================================================================================
-ModelElementViewDescription GetModelElementViewDescription (UInt32 id, int view, int tileIndex)
+ModelElementViewDescription GetModelElementViewDescription (uint32_t id, int view, int tileIndex)
     {
     return ModelElementViewDescription (id, view, tileIndex);
     }
@@ -132,7 +132,7 @@ ModelElementViewDescription GetModelElementViewDescription (UInt32 id, int view,
 //=======================================================================================
 // @bsimethod                                                    Daryl.Holmwood  04/10
 //=======================================================================================
-TiledModelElementFilterDescription GetTiledModelElementFilterDescription (UInt32 id, DSHandlerKeyStoragePtr filter, int tileIndex)
+TiledModelElementFilterDescription GetTiledModelElementFilterDescription (uint32_t id, DSHandlerKeyStoragePtr filter, int tileIndex)
     {
     return TiledModelElementFilterDescription (id, filter, tileIndex);
     }
@@ -202,7 +202,7 @@ void DTMDisplayCache::RemoveAll ()
 //=======================================================================================
 // @bsimethod                                                    Daryl.Holmwood  04/10
 //=======================================================================================
-DTMDataRefQvCache* DTMDisplayCache::GetCacheElem (UInt32 id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details)
+DTMDataRefQvCache* DTMDisplayCache::GetCacheElem (uint32_t id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details)
     {
     if (!context.GetViewport())
         return nullptr;
@@ -264,7 +264,7 @@ DTMDataRefQvCache* DTMDisplayCache::GetCacheElem (UInt32 id, ViewContextR contex
 //=======================================================================================
 // @bsimethod                                                    Daryl.Holmwood  04/10
 //=======================================================================================
-DTMDataRefQvCache* DTMDisplayCache::CreateCacheElemAndDraw (ElementHandleCR element, UInt32 id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details, IDTMStrokeForCache& stroker)
+DTMDataRefQvCache* DTMDisplayCache::CreateCacheElemAndDraw (ElementHandleCR element, uint32_t id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details, IDTMStrokeForCache& stroker)
     {
     if (!context.GetViewport())
         return nullptr;
@@ -465,7 +465,7 @@ void DTMDisplayCache::DeleteCacheElem()
 //=======================================================================================
 // @bsimethod                                                    Daryl.Holmwood  04/10
 //=======================================================================================
-void DTMDisplayCache::DeleteCacheElem (UInt32 id)
+void DTMDisplayCache::DeleteCacheElem (uint32_t id)
     {
     ModelElementViewDescription desc = GetModelElementViewDescription(id, -1, -1);
     bmap<ModelElementViewDescription, DTMDataRefQvCache*>::iterator it = m_elementToQvCache.begin();
@@ -520,7 +520,7 @@ void DTMDisplayCache::DeleteCacheForView (int view)
 //=======================================================================================
 // @bsimethod                                                    Daryl.Holmwood  04/10
 //=======================================================================================
-DTMDataRefQvCache* DTMDisplayCache::GetTiledCacheElem (UInt32 id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details)
+DTMDataRefQvCache* DTMDisplayCache::GetTiledCacheElem (uint32_t id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details)
     {
     if (!context.GetViewport())
         return nullptr;
@@ -550,7 +550,7 @@ DTMDataRefQvCache* DTMDisplayCache::GetTiledCacheElem (UInt32 id, ViewContextR c
 //=======================================================================================
 // @bsimethod                                                    Daryl.Holmwood  04/10
 //=======================================================================================
-DTMDataRefQvCache* DTMDisplayCache::CreateTiledCacheElem (ElementHandleCR element, UInt32 id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details, IDTMStrokeForCache& stroker)
+DTMDataRefQvCache* DTMDisplayCache::CreateTiledCacheElem (ElementHandleCR element, uint32_t id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details, IDTMStrokeForCache& stroker)
     {
     if (!context.GetViewport())
         return nullptr;
@@ -722,7 +722,7 @@ QvCacheP DTMDisplayCacheManager::GetQvCache()
 //=======================================================================================
 // @bsimethod                                                    Daryl.Holmwood  04/10
 //=======================================================================================
-DTMDataRefQvCache* DTMDisplayCacheManager::GetCacheElem (ElementHandleCR element, UInt32 id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details)
+DTMDataRefQvCache* DTMDisplayCacheManager::GetCacheElem (ElementHandleCR element, uint32_t id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details)
     {
     if (!context.GetIViewDraw().IsOutputQuickVision() || !element.IsPersistent ())
         return nullptr;
@@ -737,7 +737,7 @@ DTMDataRefQvCache* DTMDisplayCacheManager::GetCacheElem (ElementHandleCR element
 //=======================================================================================
 // @bsimethod                                                    Daryl.Holmwood  04/10
 //=======================================================================================
-DTMDataRefQvCache* DTMDisplayCacheManager::CreateCacheElemAndDraw (ElementHandleCR element, UInt32 id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details, IDTMStrokeForCache& stroker)
+DTMDataRefQvCache* DTMDisplayCacheManager::CreateCacheElemAndDraw (ElementHandleCR element, uint32_t id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details, IDTMStrokeForCache& stroker)
     {
     if (!context.GetIViewDraw().IsOutputQuickVision() || !element.IsPersistent ())
         return nullptr;
@@ -769,7 +769,7 @@ void DTMDisplayCacheManager::DeleteCacheElem (ElementHandleCR element)
 //=======================================================================================
 // @bsimethod                                                    Daryl.Holmwood  04/10
 //=======================================================================================
-void DTMDisplayCacheManager::DeleteCacheElem (ElementHandleCR element, UInt32 id)
+void DTMDisplayCacheManager::DeleteCacheElem (ElementHandleCR element, uint32_t id)
     {
     DTMDisplayCache* cache = DTMDisplayCache::GetAppData (element);
     if (cache)

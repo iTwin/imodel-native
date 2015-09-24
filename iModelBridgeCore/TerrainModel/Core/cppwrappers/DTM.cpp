@@ -2,7 +2,7 @@
 |
 |     $Source: Core/cppwrappers/DTM.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TerrainModel/Core/IDTM.h"
@@ -13,7 +13,7 @@ BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sylvain.Pucci   08/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int64 IDTM::GetPointCount ()
+int64_t IDTM::GetPointCount ()
     {
     return _GetPointCount();
     }
@@ -21,7 +21,7 @@ Int64 IDTM::GetPointCount ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt IDTM::GetBoundary (Bentley::TerrainModel::DTMPointArray& ret)
+DTMStatusInt IDTM::GetBoundary (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray& ret)
     {
     return _GetBoundary (ret);
     }
@@ -61,7 +61,7 @@ IDTMContouring* IDTM::GetDTMContouring ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Daryl.Holmwood   01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt IDTM::GetTransformDTM (Bentley::TerrainModel::DTMPtr& transformedDTM, TransformCR transformation)
+DTMStatusInt IDTM::GetTransformDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& transformedDTM, TransformCR transformation)
     {
     return _GetTransformDTM (transformedDTM, transformation);
     }
@@ -142,7 +142,7 @@ DTMStatusInt IDTM::GetRange (DRange3dR range)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BcDTMP Bentley::TerrainModel::IDTM::GetBcDTM()
+BcDTMP BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM::GetBcDTM()
     {
     return _GetBcDTM();
     }

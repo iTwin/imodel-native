@@ -6,7 +6,7 @@
 |       $Date: 2012/11/29 17:30:37 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/     
   
@@ -423,7 +423,7 @@ IMrDTMQueryAllLinearsQueryParamsPtr IMrDTMQueryAllLinearsQueryParams::CreatePara
 /*----------------------------------------------------------------------------+
 |IMrDTMQuery::Query
 +----------------------------------------------------------------------------*/
-int IMrDTMQuery::Query(Bentley::TerrainModel::DTMPtr&            dtmPtr,
+int IMrDTMQuery::Query(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&            dtmPtr,
                        const DPoint3d*                  pQueryShapePts,
                        int                              nbQueryShapePts,
                        const IMrDTMQueryParametersPtr&  mrDTMQueryParamsPtr) const
@@ -584,7 +584,7 @@ int MrDTMQuery::AddLinears(const DTMPtr&                      dtmPtr,
         linearIter    = linearList.begin();
         linearIterEnd = linearList.end();
 
-        UInt32       tileNumber = 0;
+        uint32_t       tileNumber = 0;
         HAutoPtr<DPoint3d> linePts;
         size_t        linePtsMaxSize = 0;
 
@@ -689,7 +689,7 @@ int MrDTMQuery::_RemoveAllClip()
     }
     
 // Provide default implementation of the Query method
-int MrDTMQuery::_Query(Bentley::TerrainModel::DTMPtr&   dtmPtr, 
+int MrDTMQuery::_Query(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&   dtmPtr, 
 					   const DPoint3d*                  pClipShapePts, 
 					   int                              nbClipShapePts, 
 					   const IMrDTMQueryParametersPtr&  mrDTMQueryParamsPtr) const 
@@ -725,7 +725,7 @@ MrDTMFullResolutionLinearQuery::~MrDTMFullResolutionLinearQuery()
 /*----------------------------------------------------------------------------+
 |MrDTMFullResolutionLinearQuery::Query
 +----------------------------------------------------------------------------*/
-int MrDTMFullResolutionLinearQuery::_Query(Bentley::TerrainModel::DTMPtr&            dtmPtr,
+int MrDTMFullResolutionLinearQuery::_Query(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&            dtmPtr,
                                            const DPoint3d*                  pQueryShapePts,
                                            int                              nbQueryShapePts,
                                            const IMrDTMQueryParametersPtr&  mrDTMQueryParamsPtr) const
@@ -918,7 +918,7 @@ int MrDTMFullResolutionLinearQuery::_Query(Bentley::TerrainModel::DTMPtr&       
                 featureListIter++;
                 }
 
-            status = GetLinearsForPresentationModeCallback()(dtmPtr, (DTMLinearFeature*)tempFeatureList.get(), (UInt32)featureList.size(), queryParams->GetMaximumNumberOfPointsForLinear());
+            status = GetLinearsForPresentationModeCallback()(dtmPtr, (DTMLinearFeature*)tempFeatureList.get(), (uint32_t)featureList.size(), queryParams->GetMaximumNumberOfPointsForLinear());
             }
         }
 
@@ -1006,7 +1006,7 @@ int IBcDTMReprojectionFunction(DPoint3d* pts, size_t numPoints, void* userP)
 | geographic coordinate system to the effective DTM element geographic coordinate
 | system.
 +----------------------------------------------------------------------------*/
-int MrDTMReprojectionQuery::_Query(Bentley::TerrainModel::DTMPtr&            dtmPtr,
+int MrDTMReprojectionQuery::_Query(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&            dtmPtr,
                                    const DPoint3d*                  pQueryShapePts,
                                    int                              nbQueryShapePts,
                                    const IMrDTMQueryParametersPtr&  mrDTMQueryParamsPtr) const

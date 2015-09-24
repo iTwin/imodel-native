@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 
 //-----------------------------------------------------------------------------
@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include <Bentley\stg\guid.h>
+//#include <Bentley\stg\guid.h>
 #include "portable.h"
 #include "dtmcon.h"
 #include "txtsiz.h"

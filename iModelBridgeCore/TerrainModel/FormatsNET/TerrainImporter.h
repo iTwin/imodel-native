@@ -2,7 +2,7 @@
 |
 |     $Source: FormatsNET/TerrainImporter.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -36,14 +36,14 @@ public ref class TerrainInfo
 
 public ref class ImportedTerrain : TerrainInfo
     {
-    Bentley::TerrainModelNET::DTM^ m_dtm;
-    internal: ImportedTerrain (Bentley::TerrainModelNET::DTM^ dtm, System::String^ name, System::String^ description, bool hasDefinition) : TerrainInfo (name, description, hasDefinition), m_dtm (dtm)
+    BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM^ m_dtm;
+    internal: ImportedTerrain (BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM^ dtm, System::String^ name, System::String^ description, bool hasDefinition) : TerrainInfo (name, description, hasDefinition), m_dtm (dtm)
                   {
                   }
 
-    public: property Bentley::TerrainModelNET::DTM^ Terrain
+    public: property BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM^ Terrain
         {
-        Bentley::TerrainModelNET::DTM^ get() { return m_dtm; }
+        BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM^ get() { return m_dtm; }
         }
     };
 
@@ -51,13 +51,13 @@ public interface class IImporterCallback
     {
     virtual bool StartTerrain (System::String^ name, System::String^ description) abstract;
     virtual void AddFeature (DTMFeatureId id, System::String^ DTMAttribute, System::String^ featureDefinitionName, System::String^ featureName, System::String^ description, DTMFeatureType featureType, array<Bentley::GeometryNET::DPoint3d>^ points) abstract;
-    virtual bool EndTerrain (System::String^ name, Bentley::TerrainModelNET::DTM^ dtm) abstract;
+    virtual bool EndTerrain (System::String^ name, BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM^ dtm) abstract;
     };
 
 struct _TerrainImporter_Unmanaged
     {
-    Bentley::TerrainModel::TerrainImporterPtr m_importer;
-    Bentley::TerrainModel::TerrainImporter::ICallback* m_unmanagedCallback;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::TerrainImporterPtr m_importer;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::TerrainImporter::ICallback* m_unmanagedCallback;
     _TerrainImporter_Unmanaged ()
         {
         m_unmanagedCallback = nullptr;
@@ -72,22 +72,22 @@ struct _TerrainImporter_Unmanaged
 /* units */
 public enum class FileUnit
     {
-    Unknown = Bentley::TerrainModel::FileUnit::Unknown,
+    Unknown = BENTLEY_NAMESPACE_NAME::TerrainModel::FileUnit::Unknown,
 
     // Metric units
-    Millimeter = Bentley::TerrainModel::FileUnit::Millimeter,
-    Centimeter = Bentley::TerrainModel::FileUnit::Centimeter,
-    Meter = Bentley::TerrainModel::FileUnit::Meter,
-    Kilometer = Bentley::TerrainModel::FileUnit::Kilometer,
+    Millimeter = BENTLEY_NAMESPACE_NAME::TerrainModel::FileUnit::Millimeter,
+    Centimeter = BENTLEY_NAMESPACE_NAME::TerrainModel::FileUnit::Centimeter,
+    Meter = BENTLEY_NAMESPACE_NAME::TerrainModel::FileUnit::Meter,
+    Kilometer = BENTLEY_NAMESPACE_NAME::TerrainModel::FileUnit::Kilometer,
 
     // Imperial units
-    Inch = Bentley::TerrainModel::FileUnit::Inch,
-    Foot = Bentley::TerrainModel::FileUnit::Foot,
-    USSurveyFoot = Bentley::TerrainModel::FileUnit::USSurveyFoot,
-    Mile = Bentley::TerrainModel::FileUnit::Mile,
+    Inch = BENTLEY_NAMESPACE_NAME::TerrainModel::FileUnit::Inch,
+    Foot = BENTLEY_NAMESPACE_NAME::TerrainModel::FileUnit::Foot,
+    USSurveyFoot = BENTLEY_NAMESPACE_NAME::TerrainModel::FileUnit::USSurveyFoot,
+    Mile = BENTLEY_NAMESPACE_NAME::TerrainModel::FileUnit::Mile,
 
     // Others
-    Custom = Bentley::TerrainModel::FileUnit::Custom
+    Custom = BENTLEY_NAMESPACE_NAME::TerrainModel::FileUnit::Custom
     };
 
 public ref class TerrainImporter abstract
@@ -105,9 +105,9 @@ public ref class TerrainImporter abstract
         {
         System::String^ get ();
         }
-    public: property Bentley::TerrainModelNET::Formats::FileUnit FileUnit
+    public: property BENTLEY_NAMESPACE_NAME::TerrainModelNET::Formats::FileUnit FileUnit
         {
-        Bentley::TerrainModelNET::Formats::FileUnit get ();
+        BENTLEY_NAMESPACE_NAME::TerrainModelNET::Formats::FileUnit get ();
         }
 
     public: property Bentley::GeoCoordinatesNET::BaseGCS^ GCS

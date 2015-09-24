@@ -2,7 +2,7 @@
 |
 |     $Source: FormatsNET/TerrainImporter.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -14,7 +14,7 @@
 
 BEGIN_BENTLEY_TERRAINMODELNET_FORMATS_NAMESPACE
 
-struct UnmanagedCallback : Bentley::TerrainModel::TerrainImporter::ICallback
+struct UnmanagedCallback : BENTLEY_NAMESPACE_NAME::TerrainModel::TerrainImporter::ICallback
     {
     private: gcroot<IImporterCallback^> m_callback;
 
@@ -36,11 +36,11 @@ struct UnmanagedCallback : Bentley::TerrainModel::TerrainImporter::ICallback
                 array<Bentley::GeometryNET::DPoint3d>^ managedPoints = gcnew array<Bentley::GeometryNET::DPoint3d>((int)numPoints);
                 pin_ptr<Bentley::GeometryNET::DPoint3d> managedPointsPinned = &managedPoints[0];
                 memcpy ((void*)managedPointsPinned, points, sizeof (::DPoint3d) * numPoints);
-                m_callback->AddFeature (Bentley::TerrainModelNET::DTMFeatureId::FromId(id), gcnew System::String (DTMAttribute), gcnew System::String (featureDefinitionName), gcnew System::String (featureName), gcnew System::String (description), (Bentley::TerrainModelNET::DTMFeatureType)featureType, managedPoints);
+                m_callback->AddFeature (BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTMFeatureId::FromId(id), gcnew System::String (DTMAttribute), gcnew System::String (featureDefinitionName), gcnew System::String (featureName), gcnew System::String (description), (BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTMFeatureType)featureType, managedPoints);
                 }
     public: virtual bool EndTerrain (WCharCP name, BcDTMP dtm)
                 {
-                Bentley::TerrainModelNET::DTM^ managedDTM = dtm ? Bentley::TerrainModelNET::DTM::FromHandle ((System::IntPtr)dtm) : nullptr;
+                BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM^ managedDTM = dtm ? BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM::FromHandle ((System::IntPtr)dtm) : nullptr;
                 return m_callback->EndTerrain (gcnew System::String (name), managedDTM);
                 }
     };
@@ -72,18 +72,18 @@ System::String^ TerrainImporter::FileUnitString::get()
     return gcnew System::String (m_unmanaged->m_importer->GetFileUnitString ());
     }
 
-Bentley::TerrainModelNET::Formats::FileUnit TerrainImporter::FileUnit::get ()
+BENTLEY_NAMESPACE_NAME::TerrainModelNET::Formats::FileUnit TerrainImporter::FileUnit::get ()
     {
-    return (Bentley::TerrainModelNET::Formats::FileUnit)m_unmanaged->m_importer->GetFileUnit ();
+    return (BENTLEY_NAMESPACE_NAME::TerrainModelNET::Formats::FileUnit)m_unmanaged->m_importer->GetFileUnit ();
     }
 
 System::Collections::Generic::IEnumerable<TerrainInfo^>^ TerrainImporter::Terrains::get ()
     {
-    const Bentley::TerrainModel::TerrainInfoList& list = m_unmanaged->m_importer->GetTerrains ();
+    const BENTLEY_NAMESPACE_NAME::TerrainModel::TerrainInfoList& list = m_unmanaged->m_importer->GetTerrains ();
 
     System::Collections::Generic::List<TerrainInfo^>^ retList = gcnew System::Collections::Generic::List<TerrainInfo^>();
 
-    for (Bentley::TerrainModel::TerrainInfoList::const_iterator iter = list.begin (); iter != list.end (); iter++)
+    for (BENTLEY_NAMESPACE_NAME::TerrainModel::TerrainInfoList::const_iterator iter = list.begin (); iter != list.end (); iter++)
         {
         System::String^ description = iter->GetDescription ().GetWCharCP() ? gcnew System::String (iter->GetDescription ().GetWCharCP ()) : nullptr;
         retList->Add (gcnew TerrainInfo (gcnew System::String (iter->GetName().GetWCharCP()), description, iter->HasDefinition()));
@@ -118,22 +118,22 @@ ImportedTerrain^ TerrainImporter::ImportTerrain (System::String^ name)
     {
     pin_ptr<const wchar_t> p = PtrToStringChars (name);
 
-    Bentley::TerrainModel::ImportedTerrain surface = m_unmanaged->m_importer->ImportTerrain (p);
+    BENTLEY_NAMESPACE_NAME::TerrainModel::ImportedTerrain surface = m_unmanaged->m_importer->ImportTerrain (p);
 
-    Bentley::TerrainModelNET::DTM^ dtm = surface.GetTerrain() ? Bentley::TerrainModelNET::DTM::FromHandle ((System::IntPtr)surface.GetTerrain()) : nullptr;
+    BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM^ dtm = surface.GetTerrain() ? BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM::FromHandle ((System::IntPtr)surface.GetTerrain()) : nullptr;
     System::String^ description = surface.GetDescription ().GetWCharCP () ? gcnew System::String (surface.GetDescription ().GetWCharCP ()) : nullptr;
     return gcnew ImportedTerrain (dtm, gcnew System::String (surface.GetName ().GetWCharCP ()), description, surface.HasDefinition ());
     }
 
 System::Collections::Generic::IEnumerable<ImportedTerrain^>^ TerrainImporter::ImportTerrains ()
     {
-    Bentley::TerrainModel::ImportedTerrainList list = m_unmanaged->m_importer->ImportTerrains ();
+    BENTLEY_NAMESPACE_NAME::TerrainModel::ImportedTerrainList list = m_unmanaged->m_importer->ImportTerrains ();
 
     System::Collections::Generic::List<ImportedTerrain^>^ retList = gcnew System::Collections::Generic::List<ImportedTerrain^>();
 
-    for (Bentley::TerrainModel::ImportedTerrainList::const_iterator iter = list.begin(); iter != list.end(); iter++)
+    for (BENTLEY_NAMESPACE_NAME::TerrainModel::ImportedTerrainList::const_iterator iter = list.begin(); iter != list.end(); iter++)
         {
-        Bentley::TerrainModelNET::DTM^ dtm = iter->GetTerrain() ? Bentley::TerrainModelNET::DTM::FromHandle ((System::IntPtr)iter->GetTerrain()) : nullptr;
+        BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM^ dtm = iter->GetTerrain() ? BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM::FromHandle ((System::IntPtr)iter->GetTerrain()) : nullptr;
         System::String^ description = iter->GetDescription ().GetWCharCP () ? gcnew System::String (iter->GetDescription ().GetWCharCP ()) : nullptr;
         retList->Add (gcnew ImportedTerrain (dtm, gcnew System::String (iter->GetName ().GetWCharCP ()), description, iter->HasDefinition ()));
         }
@@ -150,13 +150,13 @@ System::Collections::Generic::IEnumerable<ImportedTerrain^>^ TerrainImporter::Im
 
         importList.push_back (WString(p));
         }
-    Bentley::TerrainModel::ImportedTerrainList list = m_unmanaged->m_importer->ImportTerrains (importList);
+    BENTLEY_NAMESPACE_NAME::TerrainModel::ImportedTerrainList list = m_unmanaged->m_importer->ImportTerrains (importList);
 
     System::Collections::Generic::List<ImportedTerrain^>^ retList = gcnew System::Collections::Generic::List<ImportedTerrain^>();
 
-    for (Bentley::TerrainModel::ImportedTerrainList::const_iterator iter = list.begin(); iter != list.end(); iter++)
+    for (BENTLEY_NAMESPACE_NAME::TerrainModel::ImportedTerrainList::const_iterator iter = list.begin(); iter != list.end(); iter++)
         {
-        Bentley::TerrainModelNET::DTM^ dtm = iter->GetTerrain() ? Bentley::TerrainModelNET::DTM::FromHandle ((System::IntPtr)iter->GetTerrain()) : nullptr;
+        BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM^ dtm = iter->GetTerrain() ? BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM::FromHandle ((System::IntPtr)iter->GetTerrain()) : nullptr;
         System::String^ description = iter->GetDescription ().GetWCharCP () ? gcnew System::String (iter->GetDescription ().GetWCharCP ()) : nullptr;
         retList->Add (gcnew ImportedTerrain (dtm, gcnew System::String (iter->GetName ().GetWCharCP ()), description, iter->HasDefinition ()));
         }
@@ -174,7 +174,7 @@ Bentley::GeoCoordinatesNET::BaseGCS^ TerrainImporter::GCS::get ()
 
 ref class UnknownImporter : TerrainImporter
     {
-    public: UnknownImporter (Bentley::TerrainModel::TerrainImporter* importer) : TerrainImporter (importer)
+    public: UnknownImporter (BENTLEY_NAMESPACE_NAME::TerrainModel::TerrainImporter* importer) : TerrainImporter (importer)
                 {
                 }
     };
@@ -182,7 +182,7 @@ ref class UnknownImporter : TerrainImporter
 TerrainImporter^ TerrainImporter::CreateImporter (System::String^ filename)
     {
     pin_ptr<const wchar_t> p = PtrToStringChars (filename);
-    TerrainImporterPtr importer = Bentley::TerrainModel::TerrainImporter::CreateImporter (p);
+    TerrainImporterPtr importer = BENTLEY_NAMESPACE_NAME::TerrainModel::TerrainImporter::CreateImporter (p);
     // ToDo work out what importer it is and create an instance of that.
     if (importer.IsValid ())
         {

@@ -2,7 +2,7 @@
 |
 |     $Source: TerrainModelNET/DTMFeatureEnumerator.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -34,19 +34,19 @@ public value class DTMUserTagRange
 
 struct DTMFeatureEnumeratorImpl
     {
-    Bentley::TerrainModel::DTMFeatureEnumerator&          m_collection;
-    Bentley::TerrainModel::DTMFeatureEnumerator::iterator m_current;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFeatureEnumerator&          m_collection;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFeatureEnumerator::iterator m_current;
 
-    DTMFeatureEnumeratorImpl (Bentley::TerrainModel::DTMFeatureEnumerator& collection) : m_collection (collection), m_current (m_collection.begin ()) {}
+    DTMFeatureEnumeratorImpl (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFeatureEnumerator& collection) : m_collection (collection), m_current (m_collection.begin ()) {}
     };
 public ref class DTMFeatureEnumerator : System::Collections::Generic::IEnumerable <DTMFeatureInfo^>
     {
     ref class Enumerator : System::Collections::Generic::IEnumerator<DTMFeatureInfo^>
         {
         DTMFeatureEnumeratorImpl* m_impl;
-        Bentley::TerrainModel::DTMFeatureEnumerator& m_native;
+        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFeatureEnumerator& m_native;
         internal:
-            Enumerator (Bentley::TerrainModel::DTMFeatureEnumerator& native) : m_native (native)
+            Enumerator (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFeatureEnumerator& native) : m_native (native)
                 {
                 m_native.AddRef ();
                 m_impl = nullptr;
@@ -68,7 +68,7 @@ public ref class DTMFeatureEnumerator : System::Collections::Generic::IEnumerabl
                     m_impl = new DTMFeatureEnumeratorImpl (m_native);
                     return m_impl->m_current != m_impl->m_collection.end ();
                     }
-                Bentley::TerrainModel::DTMFeatureEnumerator::iterator endIterator = m_impl->m_collection.end ();
+                BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFeatureEnumerator::iterator endIterator = m_impl->m_collection.end ();
                 if (!(m_impl->m_current != endIterator))
                     return false;
 
@@ -96,7 +96,7 @@ public ref class DTMFeatureEnumerator : System::Collections::Generic::IEnumerabl
 
     private:
         DTM^ m_dtm;
-        Bentley::TerrainModel::DTMFeatureEnumerator* m_native;
+        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFeatureEnumerator* m_native;
 
     public:
         DTMFeatureEnumerator (DTM^ dtm);

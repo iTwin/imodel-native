@@ -654,7 +654,7 @@ BENTLEYDTM_Private int bcdtmFilter_filterRandomSpotTilesDtmObject
 )
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long n,m,loop,point,node1,node2,numPtsFiltered ; 
+ long n,m,loop,point,node1,node2,numPtsFiltered = 0; 
  long fndType,tinPnt1,tinPnt2,tinPnt3,numReinserted ;
  DPoint3d  randomSpot ;
  double z ;
@@ -2640,7 +2640,7 @@ BENTLEYDTM_Private int bcdtmFilter_filterSinglePointGroupSpotTilesDtmObject
 )
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long n,m,loop,point,node1,node2,numPtsFiltered ; 
+ long n,m,loop,point,node1,node2,numPtsFiltered = 0; 
  long fndType,tinPnt1,tinPnt2,tinPnt3,numReinserted ;
  DPoint3d  randomSpot ;
  double z ;
@@ -5702,7 +5702,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
 )
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- long point,saveLastPoint,numPointDiffs,numPoints=0,memPoints=0,numRemovePoints,numPointsRemove ; 
+ long point,saveLastPoint,numPointDiffs,numPoints=0,memPoints=0,numRemovePoints,numPointsRemove = 0; 
  long pnt,firstPoint,lastPoint,maxTilePts,dtmFeature,startTime,lastTile,lastKeep ;
  long tile,numTiles,*tnumP,*tileNumberP=NULL,removeMethod=2 ;
  double dZ,xMin,yMin,zMin,xMax,yMax,zMax ;
@@ -6076,8 +6076,8 @@ BENTLEYDTM_EXPORT int bcdtmFilter_quadTree
 **  The Base ( leaf nodes ) Of The Index are not filtered. This could be done.  
 */   
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long  n,level,point,dtmFeature,firstPoint,lastPoint,parentTile,numChildPoints,memChildPoints ; 
- long  numLevelPoints,numFilteredPoints,numPointsRemove,lastParentTile,internalTile ; 
+ long  n,level,point,dtmFeature,firstPoint,lastPoint,parentTile = 0,numChildPoints,memChildPoints ; 
+ long  numLevelPoints,numFilteredPoints,numPointsRemove,lastParentTile,internalTile = 0; 
  double filterToleranceUsed=0.0 ;
  DPoint3d   *p3dP,*childPointsP=NULL ;
  DTM_QUAD_TREE_TILE *tileP ;

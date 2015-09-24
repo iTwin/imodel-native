@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 #pragma once
 
@@ -13,11 +13,11 @@
 // Function Prototypes
 //---------------------------------------------------------------------------
 
-HRESULT aecGuid_generate   ( GUID *newGuid );
-int     aecGuid_compare    ( const GUID *g1, const GUID *g2 );    // designed for use with qsort
-BOOL    aecGuid_equal      ( const GUID *g1, const GUID *g2 );
-HRESULT aecGuid_fromString ( GUID *guid, LPCWSTR str );
-HRESULT aecGuid_toString   ( LPWSTR str, const GUID *guid );
-HRESULT aecGuid_clear      ( GUID *g );
-HRESULT aecGuid_copy       ( GUID *g1, const GUID *g2 );
-BOOL    aecGuid_isClear    ( const GUID *g );
+HRESULT aecGuid_generate   ( BeGuid *newGuid );
+int     aecGuid_compare    ( const BeGuid *g1, const BeGuid *g2 );    // designed for use with qsort
+BOOL    aecGuid_equal      ( const BeGuid *g1, const BeGuid *g2 );
+HRESULT aecGuid_fromString ( BeGuid *guid, LPCWSTR str );
+HRESULT aecGuid_toString   ( LPWSTR str, const BeGuid *guid );
+HRESULT aecGuid_clear      ( BeGuid *g );
+HRESULT aecGuid_copy       ( BeGuid *g1, const BeGuid *g2 );
+BOOL    aecGuid_isClear    ( const BeGuid *g );

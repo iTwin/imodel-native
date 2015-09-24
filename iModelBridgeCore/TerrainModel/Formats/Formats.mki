@@ -2,7 +2,7 @@
 #
 #     $Source: Formats/Formats.mki $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 #
@@ -17,6 +17,9 @@ MultiCompileIntermediatePdbFile=$(terrainModelFormatsObj)$(CCompPDBName).pdb
 IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
 
 ProductIncludes + -I${publishInc}
+
+dirToSearch     = $(BuildContextPublicApiDir)
+%include cincapnd.mki
 
 dirToSearch     = $(baseDir)PublicAPI
 %include cincapnd.mki

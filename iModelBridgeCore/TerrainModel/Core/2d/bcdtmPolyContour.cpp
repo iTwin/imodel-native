@@ -508,7 +508,7 @@ BENTLEYDTM_Private int bcdtmPolyContour_scanForContourDtmObject
 {
  int        ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_TRACE_VALUE(0) ;
  long       p0,p1,p2,numLines,nz,numZeroPts,dtmFeature ;
- double     Zx,Zy,Zz,LineZ,DeveZ,ProdZ,Pd[15],StartAngle ;
+ double     Zx,Zy,Zz,LineZ,DeveZ,ProdZ,Pd[15],StartAngle = 0.0;
  BC_DTM_FEATURE *dtmFeatureP ;
  DTM_SMOOTH_CONTOUR_INDEX      *indexP,*startLineP,*lastLineP,*scanLineP ; 
  DTM_SMOOTH_CONTOUR_ZERO_POINT *zptsP,*zeroPtsP=nullptr ;
@@ -876,8 +876,8 @@ BENTLEYDTM_Private int bcdtmPolyContour_traceContourDtmObject
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_TRACE_VALUE(0) ;
- long   i,startFlag=1,tinTrace,exitSide,closeFlag,direction ;
- double Sx,Sy,Sz,Zx,Zy,Zz,chkZ,contourZero,contourStartDirection ;
+ long   i,startFlag=1,tinTrace,exitSide,closeFlag = 0,direction ;
+ double Sx = 0.0,Sy = 0.0,Sz,Zx = 0.0,Zy = 0.0,Zz = 0.0,chkZ,contourZero,contourStartDirection = 0.0;
  double d0,d1,d2,hMin,slMax ;
  double eps,rMin,rMax,rMax2,posError,maxStep,firstStep ;
 /*
@@ -1116,7 +1116,7 @@ BENTLEYDTM_Private int bcdtmPolyContour_traceContourOverTriangleDtmObject
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0);
  long   n,side,numPointsInQue,triangleTrace,loop,process,totalTrgPoints,zeroFound,zeroNotFound,retryCount ;
- double scos,ssin,radMax,contourStep,contourDirection,F1,F2,F3,F12,F13 ;
+ double scos,ssin,radMax,contourStep,contourDirection,F1 = 0.0,F2 = 0.0,F3 = 0.0,F12 = 0.0,F13 = 0.0;
  double dx12,dy12,qx1,qy1,qx2,qy2,qx3,qy3 ;
  double contourStep12,contourStep23,contourStepDx,contourStepDy ;
  double contourStep13,Pl0,Pl1,Pl2,stepLength ;
@@ -2280,8 +2280,8 @@ BENTLEYDTM_Private int bcdtmPolyContour_getNextTraceTriangleForContourDtmObject
 )
 {
  int       ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_TRACE_VALUE(0) ;
- long      Na,Nc,Cz,Nz,Np0,Np1,Np2,Sp0,Sp1,Sp2,Direction,Offset ;
- double    Dp,Dz,X1,Y1,Z1,X2,Y2,Z2,chkZ ;
+ long      Na,Nc,Cz = 0,Nz,Np0 = 0,Np1 = 0,Np2 = 0,Sp0,Sp1,Sp2,Direction,Offset ;
+ double    Dp,Dz = 0.0,X1,Y1,Z1,X2 = 0.0,Y2 = 0.0,Z2 = 0.0,chkZ ;
  DTM_SMOOTH_CONTOUR_INDEX *Cline,*Zline ;
 /*
 ** Write Status Message
@@ -2593,7 +2593,7 @@ BENTLEYDTM_Private int bcdtmPolyContour_getContourStartDirectionDtmObject
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_TRACE_VALUE(0) ;
  long   direction,process ;
- double angside,angnorm,F1,F2,F3,F12,F23,X1,Y1,X2,Y2,X3,Y3,Z3 ;
+ double angside,angnorm,F1,F2,F3,F12,F23,X1,Y1,X2,Y2,X3 = 0.0,Y3 = 0.0,Z3 = 0.0;
 /*
 ** Write Status Message ** Development Only
 */
@@ -3643,8 +3643,8 @@ int bcdtmPolyContour_calculatePolynomialMinimaAndMaximaForTriangleSidesDtmObject
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_TRACE_VALUE(0) ;
- long   p0,p1,p2,j0,j1,j2,clc,Nt,In[3] ;
- long   Nzr,Offset,numLines ;
+ long   p0,p1,p2,j0,j1 = 0,j2 = 0,clc,Nt,In[3] ;
+ long   Nzr,Offset = 0,numLines ;
  double Pd[15],Tzr[6][3],Vzr[6][3],Zmax[3],Zmin[3] ; 
  double Xp,Yp,ProdZ,DeveZ,ZeroZ,LineZ ;
 /*
@@ -3810,7 +3810,7 @@ int bcdtmPolyContour_calculateSideEndPointsAndMinimaMaxima(long Side,double Tzr1
 ** The  Polynomial Maxima And Minina For A Triangle Side
 */
 {
- long   dbg=DTM_TRACE_VALUE(0),j,k,p1,p2,Ni,Nii ;
+ long   dbg=DTM_TRACE_VALUE(0),j,k,p1 = 0,p2 = 0,Ni,Nii ;
  double Ta,Tb,F1,F2,Tzr2[6]   ;
 /*
 ** Write Status Message
@@ -4152,7 +4152,7 @@ int bcdtmPolyContour_calculatePartialDerivativesDtmObjectOld(BC_DTM_OBJ *dtmP,do
 +----------------------------------------------------------------------*/
 int bcdtmPolyContour_calculatePolynomialCoefficientsForPointTriangleDtmObject(BC_DTM_OBJ *dtmP,long P0,long P1,long P2,double *partDerivP)
 {
- long   cdbg=DTM_TRACE_VALUE(0),j0,j1,j2 ;
+ long   cdbg=DTM_TRACE_VALUE(0),j0,j1 = 0,j2 = 0;
  double Pd[15],Xp,Yp,DeveZ,ProdZ ;
 /*
 ** Set Coordinates Of Triangle Vertices For Polynomial Calculations
@@ -4217,7 +4217,7 @@ int bcdtmPolyContour_calculatePolynomialCoefficientsForPointTriangleDtmObject(BC
 +-------------------------------------------------------------------*/
 int bcdtmPolyContour_calculatePolynomialCoefficientsForTriangle(double *PDV)
 {
- long    dbg=DTM_TRACE_VALUE(0),i,j,k,p1,p2 ;
+ long    dbg=DTM_TRACE_VALUE(0),i,j,k,p1 = 0,p2 = 0;
  double  ad,bc,dlt,ab,adbc,cd,dxdy1,dxdy2,dxdy3,h1,h2,h3,e1,g1,g2,g3 ;
  double  Pd[5][3] ;
 /*

@@ -1,7 +1,7 @@
 
 /*-------------------------------------------------------------------------------------+
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -57,7 +57,7 @@ CIVdtmsrf::CIVdtmsrf()
     tinstk = NULL;                         /* tin stack                           */
     ptrIndexTableP = NULL;                 /* used to keep ptr/index table alive  */
     indexPtrTableP = NULL;                 /* used to keep index/ptr table alive  */
-    ftrGUIDMapP = NULL;                    /* hash table of feature GUID's        */
+    ftrGUIDMapP = NULL;                    /* hash table of feature BeGuid's        */
     ftrNameMapP = NULL;                    /* hash table of feature Names         */
     corGuidMapP = NULL;                    /* corridors mapped by guid            */
     corNameMapP = NULL;                    /* corridors mapped by name            */

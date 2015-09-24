@@ -270,7 +270,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
 {
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long    p1,p2,p3,np1,np2,np3,fndType,processDrape ;
- long    drapeType,lineNum,onLine ;
+ long    drapeType = 0,lineNum,onLine ;
  long    memDrapePts=0,memDrapePtsInc=100 ;
  double  nd,dz,xi,yi,zi,xls,yls,zls,xle,yle  ;
  DPoint3d     *p3dP ;
@@ -1127,7 +1127,7 @@ BENTLEYDTM_Private int bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long voidFlag = 0, numDrapeFeatures = 0, dtmFeature, breakPoint = 0;
- DTMDrapedLineCode newDrapeType;
+ DTMDrapedLineCode newDrapeType = DTMDrapedLineCode::External;
  DTM_TIN_POINT_FEATURES *drapeFeaturesP=NULL,*dfP ;
 /*
 ** Write Entry Message
@@ -3348,9 +3348,9 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectContourDtmObject
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   pnt1,pnt2,pnt3,fndType,conType,voidFlag,surfaceType,offset,numDrapePts,contourPointFound=FALSE;
- double dx,dy,dz,dl,zMin,zMax,minContourPointDistance  ;
+ double dx,dy,dz,dl,zMin,zMax,minContourPointDistance = 0.0;
  double contourLow,contourHigh,startAngle,drapeAngle=0.0,drapeAngleInc=0.0 ;
- DPoint3d    surfacePoint,contourPoint,closestContourPoint,drapeLine[2] ;
+ DPoint3d    surfacePoint, contourPoint, closestContourPoint{0,0,0}, drapeLine[2];
  DTM_DRAPE_POINT *drapeP,*drapePtsP=NULL ;
  DTM_POINT_ARRAY contourPoints ;
 /*

@@ -6,7 +6,7 @@
 |       $Date: 2013/03/27 15:53:36 $
 |     $Author: Jean-Francois.Cote $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -92,18 +92,18 @@ template<class EXTENT> bool GetVisibleExtent(EXTENT&        po_rVisibleExtent,
     return isVisible;  
     }
 
-BENTLEYSTM_EXPORT int CreateBcDTM(Bentley::TerrainModel::DTMPtr& dtmPtr);
+BENTLEYSTM_EXPORT int CreateBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr);
 
-BENTLEYSTM_EXPORT int SetClipsToDTM (Bentley::TerrainModel::DTMPtr& dtmPtr,
+BENTLEYSTM_EXPORT int SetClipsToDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr,
                                const DRange3d&                      dtmRange,
                                const IMrDTMClipContainerPtr&        clips);
 
-BENTLEYSTM_EXPORT int SetClipsToDTM (Bentley::TerrainModel::DTMPtr& dtmPtr,
+BENTLEYSTM_EXPORT int SetClipsToDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr,
                                const DRange3d&                      dtmRange,
                                const vector<DPoint3d>&              regionPoints,
                                const IMrDTMClipContainerPtr&        clips);
 
-BENTLEYSTM_EXPORT int TriangulateDTM(Bentley::TerrainModel::DTMPtr&                     dtmPtr, 
+BENTLEYSTM_EXPORT int TriangulateDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&                     dtmPtr, 
                                const Bentley::MrDTM::IMrDTMQueryParametersPtr& mrDTMQueryParamsPtr);
 
 /*---------------------------------------------------------------------------------**//**
@@ -132,7 +132,7 @@ BENTLEYSTM_EXPORT bool SetTriangulationTerminationCallback(checkTriangulationSto
 
 class DTMLinearFeature;
 
-typedef int (*addLinearsForPresentationModeFP)(const Bentley::TerrainModel::DTMPtr&  dtmPtr,                                                 
+typedef int (*addLinearsForPresentationModeFP)(const BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&  dtmPtr,                                                 
                                                DTMLinearFeature*            linearList,
                                                unsigned int                 nbLinearListElems,                                               
                                                size_t                       maxNumberOfPoints);

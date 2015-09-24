@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 
 //---------------------------------------------------------------------------
@@ -72,11 +72,11 @@ int aecFeature_loadFromDTMExteriorBoundary // <= Non-zero status code if error o
 
 //---------------------------------------------------------------------------
 // DESC: Searches the specified surface (active if srfP is NULL) for a
-//       feature whose GUID matches that of the feature object.  If found,
+//       feature whose BeGuid matches that of the feature object.  If found,
 //       the surface feature will be overwritten with the contents of the
 //       feature object.  If not found, the contents of the feature object
 //       will be written to the surface as a new feature.  The feature will
-//       be assigned a newly generated GUID and a name unique to the
+//       be assigned a newly generated BeGuid and a name unique to the
 //       specified surface.
 //       The opt argument can be used to provide additional
 //       information which determine how duplicate feature names are handled if
@@ -118,7 +118,7 @@ int aecFeature_addPoints    // <=  Non-zero status code if error occurred.
     FeatureHandle ftrHndl,  //  => Handle to feature object.
     CFeaturePnt *ftrPntsP,  //  => feature points to add to feature (or NULL).
     DPoint3d *pntsP,        //  => 3D points to add to feature (or NULL).
-    byte *flgsP,         //  => point properties (or NULL).
+    unsigned char *flgsP,         //  => point properties (or NULL).
     long numPnts            //  => Number of points to add.
 )
 {
@@ -161,7 +161,7 @@ int aecFeature_getPoints     // <=  Non-zero status code if error occurred.
     FeatureHandle ftrHndl,   //  => Handle to feature object.
     CFeaturePnt **ftrPntsPP, // <=  Feature's 3D coordinates and flags. CALLER MUST FREE.
     DPoint3d **pntsPP,       // <=  Feature's 3D coordinates. CALLER MUST FREE.
-    byte **pntFlgsPP,     // <=  Feature's point properties.  CALLER MUST FREE
+    unsigned char **pntFlgsPP,     // <=  Feature's point properties.  CALLER MUST FREE
     long *numPntsP           // <=  Number of points returned.
 )
 {
@@ -206,7 +206,7 @@ int aecFeature_dpnt3dsToFtrpnts
 (
     CFeaturePnt **ftrPntsPP,
     DPoint3d *dpnt3dsP,
-    byte *pntflgsP,
+    unsigned char *pntflgsP,
     long numPnts
 )
 {
@@ -239,7 +239,7 @@ int aecFeature_dpnt3dsToFtrpnts
 int aecFeature_ftrpntsToDpnt3ds
 (
     DPoint3d **dpnt3dsPP,
-    byte **pntflgsPP,
+    unsigned char **pntflgsPP,
     CFeaturePnt *ftrPntsP,
     long numPnts
 )
@@ -252,7 +252,7 @@ int aecFeature_ftrpntsToDpnt3ds
             sts = AEC_E_MEMALF;
 
     if ( sts == SUCCESS && pntflgsPP )
-        if ( ( *pntflgsPP = ( byte * ) calloc ( numPnts, sizeof ( byte ) ) ) == NULL )
+        if ( ( *pntflgsPP = ( unsigned char * ) calloc ( numPnts, sizeof ( unsigned char ) ) ) == NULL )
             sts = AEC_E_MEMALF;
 
     if ( sts == SUCCESS )
@@ -263,7 +263,7 @@ int aecFeature_ftrpntsToDpnt3ds
                 memcpy ( &(*dpnt3dsPP)[i], &ftrPntsP[i].cor, sizeof ( DPoint3d ) );
 
             if ( pntflgsPP )
-                memcpy ( &(*pntflgsPP)[i], &ftrPntsP[i].flg, sizeof ( byte ) );
+                memcpy ( &(*pntflgsPP)[i], &ftrPntsP[i].flg, sizeof ( unsigned char ) );
         }
     }
 

@@ -6,7 +6,7 @@
 |       $Date: 2012/08/16 16:17:17 $
 |     $Author: Daryl.Holmwood $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*
@@ -443,7 +443,7 @@ ErrorStatus MXModelFile::Open(WCharCP filename, bool readonly, bool create)
         return eCantOpenFile;
 
     _filename = filename;
-    _modelFileNumber = addModelFile(this);
+    _modelFileNumber = (short)addModelFile(this);
 #ifdef FREESPACEMAPPER
     if(!_readonly && !_noFreeSpaceMapper)
         _freeSpaceMapper = new ModelFileFreeSpace;
@@ -997,7 +997,7 @@ ModelTable::ModelTable(MXModelFile* modelFile)
                     }
 #endif
                 }
-            mr->setModelFilePos(ModelFilePos(recordNumber, i + 1));
+            mr->setModelFilePos(ModelFilePos(recordNumber, (short)i + 1));
             mr->close();
             }
 
@@ -1150,7 +1150,7 @@ ErrorStatus ModelTable::addModel(const char* const inModelName, ModelTableRecord
                 mr->setModelTable(this);
                 mr->setModelFile(_modelFile);
                 mr->ModelObject::erase(1);
-                mr->setModelFilePos(ModelFilePos(newRecordNumber, j + 1));
+                mr->setModelFilePos(ModelFilePos(newRecordNumber, (short)j + 1));
                 mr->close();
                 }
             _modelFile->writeRecord(&mt, newRecordNumber);
@@ -1194,7 +1194,7 @@ ErrorStatus ModelTable::addModel(const char* const inModelName, ModelTableRecord
 
     _models[i] = mr;
     //    mr->set(/*mt.models[recordEntry].*/modelName, ModelFilePos(0/*mt.models[recordEntry].stringTablePos*/, 0), 0); //mt.models[recordEntry].date);
-    mr->setModelFilePos(ModelFilePos(recordNumber, recordEntry + 1));
+    mr->setModelFilePos(ModelFilePos(recordNumber, (short)recordEntry + 1));
     strcpy(mr->_modelName, modelName);
     if(modelType)
         {
@@ -1575,7 +1575,7 @@ ErrorStatus ModelTableRecord::setModelType(const char* const modelType)
 int ModelTableRecord::getCurrentDate(void)
     {
     struct tm lt;
-    Bentley::BeTimeUtilities::ConvertUnixMillisToTm (lt, Bentley::BeTimeUtilities::GetCurrentTimeAsUnixMillis ());
+    BeTimeUtilities::ConvertUnixMillisToTm (lt, BeTimeUtilities::GetCurrentTimeAsUnixMillis ());
 
     if(lt.tm_mon == 12)
         {
@@ -1671,7 +1671,7 @@ void StringTable::DoLoad(bool reallyLoad)
                     mr->setModelTableRecord(_modelTableRecord);
                     mr->setStringTable(this);
                     mr->set(mt.strings[i], reallyLoad);
-                    mr->setModelFilePos(ModelFilePos(recordNumber, i));
+                    mr->setModelFilePos(ModelFilePos(recordNumber, (short)i));
                     if(reallyLoad)
                         {
                         StringTableRecord** mrP;
@@ -2001,7 +2001,7 @@ void StringTable::UpdateFile()
         if(!stringsPtr->isErased() || stringsPtr->_numPoints == 0)
             {
             stringsPtr->_pos.setRecordNumber(recNum);
-            stringsPtr->_pos.setRecordPos(recordEntry);
+            stringsPtr->_pos.setRecordPos((short)recordEntry);
             }
         else
             {
@@ -2460,7 +2460,7 @@ int StringTableRecord::recordSize(void) const
     {
     int numDoubles = 0;
     int type = _type / 100;
-    int temp;
+    int temp = 0;
     int i;
 
     for(i = 0; i < _type % 100; i++)
@@ -2733,7 +2733,7 @@ ErrorStatus MXTriangleString::loadData(void)
 ErrorStatus MXTriangleString::loadData(ElementTriangleString* data)
     {
     int i;
-    int j;
+    int j = 0;
     ModelFileRecord record;
     ElementTriangleStringRecord& rec = (ElementTriangleStringRecord&)record;
 
@@ -2759,7 +2759,7 @@ ErrorStatus MXTriangleString::loadData(ArrayClass<ElementTriangleString>& data)
     data.setLogicalLength(_numPoints);
 
     int i;
-    int j;
+    int j = 0;
     ModelFileRecord record;
     ElementTriangleStringRecord& rec = (ElementTriangleStringRecord&)record;
 
@@ -3862,7 +3862,7 @@ void MXTriangleString::flushRecords(bool updateFile)
 int MXTriangleString::loadTriangle(int recordNumber)
     {
     int i;
-    int oldestRec;
+    int oldestRec = 0;
     int oldestTime = CurTime;
     for(i = 0; i < _numberRecords; i++)
         {
@@ -5122,7 +5122,7 @@ void MXStringDimData::Init(const int type, const int numPoints)
 void MXStringDimData::InitArray(const int type, const int numPoints)
     {
 //    int numDoubles = 0;
-    int temp;
+    int temp = 0;
     int i;
     int pos = 0;
     int ttype = type / 100;
@@ -5916,7 +5916,7 @@ class ModelFileMapper
     {
     private:
         int modelFileNum;
-        Bentley::bmap<short, ModelFileMap*> _modelMapper;
+        bmap<short, ModelFileMap*> _modelMapper;
     public:
 
         ModelFileMapper()
@@ -5925,7 +5925,7 @@ class ModelFileMapper
             }
         ~ModelFileMapper()
             {
-            Bentley::bmap<short, ModelFileMap*>::iterator it = _modelMapper.begin();
+            bmap<short, ModelFileMap*>::iterator it = _modelMapper.begin();
             while(it != _modelMapper.end())
                 {
                 (*it).second->_modelFile->ReleaseModelFileNumber();
@@ -5934,7 +5934,7 @@ class ModelFileMapper
             }
         ModelFileMap* getModelFile(short modelFileNumber)
             {
-            Bentley::bmap<short, ModelFileMap*>::const_iterator it = _modelMapper.find(modelFileNumber);
+            bmap<short, ModelFileMap*>::const_iterator it = _modelMapper.find(modelFileNumber);
 
             if(it != _modelMapper.end())
                 return (*it).second;
@@ -5945,9 +5945,9 @@ class ModelFileMapper
             {
             ModelFileMap* mfm = new ModelFileMap;
             mfm->_modelFile = modelFile;
-            while(_modelMapper[modelFileNum])
+            while(_modelMapper[(short)modelFileNum])
                 modelFileNum++;
-            _modelMapper[modelFileNum] = mfm; //.insert(modelFileNum, mfm);
+            _modelMapper[(short)modelFileNum] = mfm; //.insert(modelFileNum, mfm);
             return modelFileNum++;
             }
         void removeModelFile(short modelFileNumber)
@@ -5979,12 +5979,12 @@ int addModelFile(MXModelFile* modelFile)
 
 void removeModelFile(int number)
     {
-    mapper.removeModelFile(number);
+    mapper.removeModelFile((short)number);
     }
 
 int addObject(int number, ModelObject* object)
     {
-    ModelFileMap* mfm = mapper.getModelFile(number);
+    ModelFileMap* mfm = mapper.getModelFile((short)number);
     if(mfm)
         return mfm->addObject(object);
     return 0;
@@ -5992,7 +5992,7 @@ int addObject(int number, ModelObject* object)
 
 void removeObject(int number, int objectNumber)
     {
-    ModelFileMap* mfm = mapper.getModelFile(number);
+    ModelFileMap* mfm = mapper.getModelFile((short)number);
     if(mfm)
         mfm->removeObject(objectNumber);
     }

@@ -6,7 +6,7 @@
 |       $Date: 2011/11/07 14:26:49 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableTerrainModelPCH.h>
@@ -420,11 +420,11 @@ TransfoModel Combine   (const TransfoModel&     lhs,
 +---------------+---------------+---------------+---------------+---------------+------*/
 TransfoMatrix& TransfoMatrix::operator*= (const TransfoMatrix& rhs)
     {
-    DTransform3d lhsGeom(ToTransform3d(*this));
-    const DTransform3d rhsGeom(ToTransform3d(rhs));
+    Transform lhsGeom(ToTransform3d(*this));
+    const Transform rhsGeom(ToTransform3d(rhs));
 
 
-    bsiDTransform3d_multiplyTransformTransform(&lhsGeom, &lhsGeom, &rhsGeom);
+    bsiTransform_multiplyTransformTransform(&lhsGeom, &lhsGeom, &rhsGeom);
 
     *this = FromTransform3d(lhsGeom);
     return *this;
@@ -436,8 +436,8 @@ TransfoMatrix& TransfoMatrix::operator*= (const TransfoMatrix& rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TransfoMatrix::Status TransfoMatrix::Inverse ()
     {
-    DTransform3d transform(ToTransform3d(*this));
-    if (!bsiDTransform3d_invert(&transform, &transform))
+    Transform transform(ToTransform3d(*this));
+    if (!bsiTransform_invert(&transform, &transform))
         return S_ERROR;
 
     *this = FromTransform3d(transform);
@@ -472,11 +472,11 @@ bool operator==    (const TransfoMatrix&    lhs,
 TransfoMatrix   operator*  (const TransfoMatrix&    lhs,
                             const TransfoMatrix&    rhs)
     {
-    DTransform3d lhsGeom(ToTransform3d(lhs));
-    const DTransform3d rhsGeom(ToTransform3d(rhs));
+    Transform lhsGeom(ToTransform3d(lhs));
+    const Transform rhsGeom(ToTransform3d(rhs));
 
 
-    bsiDTransform3d_multiplyTransformTransform(&lhsGeom, &lhsGeom, &rhsGeom);
+    bsiTransform_multiplyTransformTransform(&lhsGeom, &lhsGeom, &rhsGeom);
 
     return FromTransform3d(lhsGeom);
     }
@@ -487,8 +487,8 @@ TransfoMatrix   operator*  (const TransfoMatrix&    lhs,
 +---------------+---------------+---------------+---------------+---------------+------*/
 GEOCOORDS_DLLE TransfoMatrix InverseOf (const TransfoMatrix&    matrix)
     {
-    DTransform3d transform(ToTransform3d(matrix));
-    if (!bsiDTransform3d_invert(&transform, &transform))
+    Transform transform(ToTransform3d(matrix));
+    if (!bsiTransform_invert(&transform, &transform))
         throw CustomException(L"Could not invert matrix");
 
     return FromTransform3d(transform);
@@ -501,8 +501,8 @@ GEOCOORDS_DLLE TransfoMatrix InverseOf (const TransfoMatrix&    matrix)
 GEOCOORDS_DLLE TransfoMatrix InverseOf (const TransfoMatrix&    matrix,
                                         TransfoMatrix::Status&  status)
     {
-    DTransform3d transform(ToTransform3d(matrix));
-    status = bsiDTransform3d_invert(&transform, &transform) ? TransfoMatrix::S_SUCCESS : TransfoMatrix::S_ERROR;
+    Transform transform(ToTransform3d(matrix));
+    status = bsiTransform_invert(&transform, &transform) ? TransfoMatrix::S_SUCCESS : TransfoMatrix::S_ERROR;
 
     return FromTransform3d(transform);
     }

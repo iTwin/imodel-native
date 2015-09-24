@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmuti.h                                            aec    08-Feb-1994     */
@@ -54,8 +54,8 @@ typedef struct CIVthndtm
 
     long norg;                         /* returned                            */
     long nthn;                         /* returned                            */
-    byte tru;                          /* internal only                       */
-    byte retin;                        /* internal only                       */
+    unsigned char tru;                          /* internal only                       */
+    unsigned char retin;                        /* internal only                       */
 
     void *ftrHndlHashP;                /* Feature handle hash table           */
     void *ppFli;                       /* Feature list items ( or NULL )      */
@@ -90,7 +90,7 @@ typedef struct CIVgrddtm
 
     long nsrc;                         /* returned                            */
     long ntrg;                         /* returned                            */
-    byte tru;                       /* internal only                       */
+    unsigned char tru;                       /* internal only                       */
     void *gridDataP;                   /* internal only                       */
 
     void *ftrHndlHashP;                /* Feature handle hash table           */

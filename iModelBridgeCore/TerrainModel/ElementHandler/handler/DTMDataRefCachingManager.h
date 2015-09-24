@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMDataRefCachingManager.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,14 +26,14 @@ struct DTMQvCacheDetails;
 struct ModelElementViewDescription
     {
     int m_view;
-    UInt32 m_xattrId;
+    uint32_t m_xattrId;
     int m_tileIndex;
 
     ModelElementViewDescription ()  // Needed for bmap
         {
         }
 
-    ModelElementViewDescription (UInt32 xAttrId, int view, int tileIndex) 
+    ModelElementViewDescription (uint32_t xAttrId, int view, int tileIndex) 
         {
         m_xattrId = xAttrId;
         m_view = view;
@@ -76,13 +76,13 @@ DTMELEMENT_EXPORT DSHandlerKeyStoragePtr GetCommonHandlerKey (Bentley::DgnPlatfo
 struct TiledModelElementFilterDescription
     {
     DSHandlerKeyStoragePtr m_filter;
-    UInt32 m_xattrId;
+    uint32_t m_xattrId;
     int m_tileIndex;
 
     TiledModelElementFilterDescription()    // Needed for bmap
         {
         }
-    TiledModelElementFilterDescription (UInt32 xAttrId, DSHandlerKeyStoragePtr filter, int tileIndex)
+    TiledModelElementFilterDescription (uint32_t xAttrId, DSHandlerKeyStoragePtr filter, int tileIndex)
         {
         m_xattrId = xAttrId;
         m_filter = filter;
@@ -299,15 +299,15 @@ public:
         return false;
         }
 
-    DTMDataRefQvCache* GetCacheElem (UInt32 id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details);
-    DTMDataRefQvCache* CreateCacheElemAndDraw (ElementHandleCR element, UInt32 id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details, IDTMStrokeForCache& stroker);
+    DTMDataRefQvCache* GetCacheElem (uint32_t id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details);
+    DTMDataRefQvCache* CreateCacheElemAndDraw (ElementHandleCR element, uint32_t id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details, IDTMStrokeForCache& stroker);
 
-    void DeleteCacheElem (UInt32 id = 0xffffffff);
+    void DeleteCacheElem (uint32_t id = 0xffffffff);
     void DeleteCacheElem ();
     void DeleteCacheForView (int view);
 
-    private: DTMDataRefQvCache* GetTiledCacheElem (UInt32 id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details);
-    private: DTMDataRefQvCache* CreateTiledCacheElem (ElementHandleCR element, UInt32 id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details, IDTMStrokeForCache& stroker);
+    private: DTMDataRefQvCache* GetTiledCacheElem (uint32_t id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details);
+    private: DTMDataRefQvCache* CreateTiledCacheElem (ElementHandleCR element, uint32_t id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details, IDTMStrokeForCache& stroker);
     private: void DeleteDTMDataRefQvCache (DTMDataRefQvCache* qvCache, bool delayTileDelete = false);
     private: void DeleteDelayTiles();    
     };
@@ -324,10 +324,10 @@ public:
     static void Initialize();
     static void Uninitialize();
 
-    DTMELEMENT_EXPORT static DTMDataRefQvCache* GetCacheElem (ElementHandleCR element, UInt32 id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details);
-    DTMELEMENT_EXPORT static DTMDataRefQvCache* CreateCacheElemAndDraw (ElementHandleCR element, UInt32 id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details, IDTMStrokeForCache& stroke);
+    DTMELEMENT_EXPORT static DTMDataRefQvCache* GetCacheElem (ElementHandleCR element, uint32_t id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details);
+    DTMELEMENT_EXPORT static DTMDataRefQvCache* CreateCacheElemAndDraw (ElementHandleCR element, uint32_t id, ViewContextR context, DTMQvCacheType type, DSHandlerKeyStoragePtr filter, DTMQvCacheDetails* details, IDTMStrokeForCache& stroke);
     static void DeleteCacheElem (ElementHandleCR element);
-    static void DeleteCacheElem (ElementHandleCR element, UInt32 id);
+    static void DeleteCacheElem (ElementHandleCR element, uint32_t id);
     static void DeleteCacheForView (int view);
     };
 

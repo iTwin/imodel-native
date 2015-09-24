@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* hshftr.h                                          aec    11-Dec-1998       */
@@ -45,7 +45,7 @@ int aecDTM_hashFindFeatureByGUID
 (
   CIVdtmftr **ftrPP,
   struct CIVdtmsrf *srfP,
-  GUID *guidP
+  BeGuid *guidP
 );
 
 int aecDTM_hashFindFeatureByName

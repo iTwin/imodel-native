@@ -6878,7 +6878,7 @@ BENTLEYDTM_Public int bcdtmEdit_triangulateVoidDtmObject
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long           sp,spnt,n,np,lp,pp,ps,pn,pl,pnt,point,numPoints,clc ;
- DPoint3d            *pointsP=NULL,intPoint ;
+ DPoint3d               *pointsP = NULL, intPoint{ 0, 0, 0 };
  DTM_TIN_POINT  *pntP ;
  BC_DTM_OBJ     *tempDtmP=NULL ;
 /*
@@ -9660,7 +9660,7 @@ BENTLEYDTM_Private int bcdtmEdit_extractVoidAndIslandPolygonsFromDeletedTriangle
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long    sp,np,p1,p2,p3,clc,numStartFeatures,numIslands,numVoids ;
  long    feature,numVoidPts ;
- DTMFeatureType dtmFeatureType;
+ DTMFeatureType dtmFeatureType = DTMFeatureType::None;
  DPoint3d     *voidPtsP=NULL ;
 /*
 ** Write Entry Message

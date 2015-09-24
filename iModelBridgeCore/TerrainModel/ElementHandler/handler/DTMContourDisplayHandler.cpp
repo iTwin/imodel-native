@@ -48,10 +48,9 @@ private:
     WString m_buffer;
     double m_elevation;
     DTMElementContoursHandler::DisplayParams &m_dp;
-    LevelIdXAttributeParams& m_textLevelParams;
     mutable TextDrawer::TextItems m_labels;
     DgnModelRefP const m_contextModelRef;
-    const UInt32 m_id;
+    const uint32_t m_id;
     DPoint3d m_ptGO;
     bool m_isDepressionSymbologyDifferent;
 
@@ -64,12 +63,11 @@ public:
     (
     IDTMP DTMElement,
     DTMElementContoursHandler::DisplayParams& dp,
-    LevelIdXAttributeParams& textLevelParams,
     DTMDrawingInfo& drawingInfo,
     ElementHandleCR elementHandle,
     DgnModelRefP contextModelRef,
-    UInt32 id
-    ) : m_drawingInfo (drawingInfo), m_elementHandle (elementHandle), m_dp (dp), m_textLevelParams (textLevelParams), m_elevation (DBL_MAX), \
+    uint32_t id
+    ) : m_drawingInfo(drawingInfo), m_elementHandle(elementHandle), m_dp (dp), m_elevation (DBL_MAX), \
         m_inDepressionSymbology (false), m_contextModelRef (contextModelRef), m_id(id), m_textDrawer (nullptr)
         {
         m_dtmElement = DTMElement;
@@ -88,9 +86,6 @@ public:
             m_dp.GetDepressionSymbology().style = dp.GetSymbology().style;
         if (m_dp.GetDepressionSymbology().weight == WEIGHT_BYCELL)
             m_dp.GetDepressionSymbology().weight = dp.GetSymbology().weight;
-
-        if (m_textLevelParams.GetLevelId () == LEVEL_BYCELL)
-            m_textLevelParams.SetLevelId (m_dp.GetLevelId());
 
         if (!m_dp.GetIsMajor())
             {
@@ -139,36 +134,6 @@ public:
                 }
             }
         }
-
-    void ApplyTextLevel (bool on) const
-        {
-        if (!on)
-            {
-            if (m_inDepressionSymbology)
-                {
-                DTMElementSubDisplayHandler::SetSymbology (m_dp, m_drawingInfo, *m_viewContext, m_dp.GetDepressionSymbology ());
-                }
-            else
-                {
-                DTMElementSubDisplayHandler::SetSymbology (m_dp, m_drawingInfo, *m_viewContext);
-                }
-            }
-        else
-            {
-            LevelId tempLevel = m_dp.GetLevelId();
-            m_dp.SetLevelId (m_textLevelParams.GetLevelId ());
-            if (m_inDepressionSymbology)
-                {
-                DTMElementSubDisplayHandler::SetSymbology (m_dp, m_drawingInfo, *m_viewContext, m_dp.GetDepressionSymbology ());
-                }
-            else
-                {
-                DTMElementSubDisplayHandler::SetSymbology (m_dp, m_drawingInfo, *m_viewContext);
-                }
-            m_dp.SetLevelId (tempLevel);
-            }
-        }
-
 
      virtual ~DTMStrokeForCacheContours()
         {
@@ -357,11 +322,7 @@ protected:
 void DTMStrokeForCacheContours::DrawLabels (void) const
     {
     if (m_textDrawer)
-        {
-        ApplyTextLevel (true);
         m_textDrawer->DrawMultipleUsingCache (m_buffer, m_labels, false);
-        ApplyTextLevel (false);
-        }
     m_labels.clear ();
     }
 
@@ -448,14 +409,14 @@ private: int LabelDepressionsOnly (DPoint3dP tPoint, bool isDepression, int nPoi
         }
 
     /// <author>Piotr.Slowinski</author>                            <date>6/2011</date>
-public: static int LoadFuncBcDTM (DTMFeatureType featureType, DTMUserTag userTag, Int64 eltId, /*DTMFeatureId id,*/ DPoint3dP tPoint, size_t nPoint, void *userArgP)
+public: static int LoadFuncBcDTM (DTMFeatureType featureType, DTMUserTag userTag, int64_t eltId, /*DTMFeatureId id,*/ DPoint3dP tPoint, size_t nPoint, void *userArgP)
         {
         ContourLabellingLoaderGuard *contourLabellingLoaderGuard = reinterpret_cast<ContourLabellingLoaderGuard*>(userArgP);
         return (*contourLabellingLoaderGuard) (tPoint, eltId, nPoint);
         }
 
     /// <author>Piotr.Slowinski</author>                            <date>6/2011</date>
-public: int operator()(DPoint3dP tPoint, Int64 userTag, size_t nPoint)
+public: int operator()(DPoint3dP tPoint, int64_t userTag, size_t nPoint)
         {
         if (m_stroker.m_viewContext->CheckStop ())
             return ERROR;
@@ -584,10 +545,6 @@ void DTMStrokeForCacheContours::_StrokeForCache (ElementHandleCR el, ViewContext
 
     m_viewContext = &context;
 
-    // If the level is off turn off text drawing.
-    if (!DTMElementSubDisplayHandler::TestLevelIsVisible (m_textLevelParams.GetLevelId (), m_drawingInfo, context))
-        m_dp.SetDrawTextOption (DTMElementContoursHandler::DRTXT_None);
-
     if (drawPurpose != DrawPurpose::CaptureGeometry)
         {
         m_textDrawer = new TextDrawer (m_drawingInfo, context, m_id);
@@ -688,13 +645,11 @@ void DTMStrokeForCacheContours::_StrokeForCache (ElementHandleCR el, ViewContext
             context.ViewToLocal (pts, pts, _countof(pts));
             m_drawingInfo.RootToStorage (pts);
             DTMContourParams contourParams (contourInterval, m_registrationElevation, false, 0, 0, nullptr, 0, smoothing, smoothingFactor, m_dp.GetSplineDensification (), 0 /* smooth Length, true, */ , highLowOption != 0, maxSlopeOption, maxSlopeValue);
-            contourParams.realInterval = m_minorInterval;
             dtm->BrowseContours (contourParams, DTMFenceParams(m_drawingInfo.GetFence().fenceType, DTMFenceOption::Overlap, (DPoint3d*)pts, 5), &ContourLabellingLoaderGuard, &ContourLabellingLoaderGuard::LoadFuncBcDTM);
             }
         else
             {
             DTMContourParams contourParams (contourInterval, m_registrationElevation, true, 0, 0, nullptr, 0, smoothing, smoothingFactor, m_dp.GetSplineDensification (), 0 /* smooth Length, true, */, highLowOption != 0, maxSlopeOption, maxSlopeValue);
-            contourParams.realInterval = m_minorInterval;
             dtm->BrowseContours (contourParams, DTMFenceParams (m_drawingInfo.GetFence ().fenceType, DTMFenceOption::Overlap, (DPoint3d*)m_drawingInfo.GetFence ().points, m_drawingInfo.GetFence ().numPoints), &ContourLabellingLoaderGuard, &ContourLabellingLoaderGuard::LoadFuncBcDTM);
             }
         DrawLabels ();
@@ -804,7 +759,7 @@ bool DTMElementContoursDisplayHandler::_Draw (ElementHandleCR el, const ElementH
             // Create a DTM element from the XAttributes (this is is a very lightweight operation that
             // just assigns the dtm internal arrays to their addresses inside the XAttributes).
             RefCountedPtr<DTMDataRef> DTMDataRef = drawingInfo.GetDTMDataRef (); 
-            Bentley::TerrainModel::DTMPtr dtmPtr (DTMDataRef->GetDTMStorage (DrawFeatures, context));
+            BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr (DTMDataRef->GetDTMStorage (DrawFeatures, context));
             BcDTMP dtm = dtmPtr != 0 ? dtm = dtmPtr->GetBcDTM() : 0;
 
             if (!dtm || dtm->GetDTMState() != DTMState::Tin)
@@ -820,9 +775,8 @@ bool DTMElementContoursDisplayHandler::_Draw (ElementHandleCR el, const ElementH
             if (!SetSymbology (displayParams, drawingInfo, context))
                 return false;
 
-            DgnModelRefP contextModelRef = context.GetViewport() ? context.GetViewport()->GetRootModel() : GetModelRef(el);
-            LevelIdXAttributeParams levelParams (drawingInfo.GetSymbologyElement (), xAttr.GetId ());
-            DTMStrokeForCacheContours contoursStroker (dtmPtr.get (), displayParams, levelParams, drawingInfo, el, contextModelRef, xAttr.GetId ());
+            DgnModelRefP contextModelRef = context.GetViewport() ? context.GetViewport()->GetRootModel() : GetModelRef(el);;
+            DTMStrokeForCacheContours contoursStroker (dtmPtr.get(), displayParams, drawingInfo, el, contextModelRef, xAttr.GetId());
 
             if (DrawPurpose::Pick == drawPurpose)
                 {
@@ -855,7 +809,7 @@ WCharCP                           delimiterStr
 )
     {
 //ToDo #define MODEL_TYPE_SENSITIVE_TOOLTIP //This is probably wrong 
-    UInt32 const DESIRED_LENGTH_IS_IGNORED = 0;
+    uint32_t const DESIRED_LENGTH_IS_IGNORED = 0;
     DPoint3d pt, globalOrigin;
     WString wElevString;
 #ifdef MODEL_TYPE_SENSITIVE_TOOLTIP
@@ -897,6 +851,42 @@ WCharCP                           delimiterStr
     WString elevationString = TerrainModelElementResources::GetString (MSG_TERRAINMODEL_Elevation);
     elevationString.ReplaceAll (L"{1}", wElevString.GetWCharCP());
     string.append (delimiterStr + elevationString);
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Daryl.Holmwood 09/11
+//=======================================================================================
+void DTMElementContoursDisplayHandler::_EditProperties (EditElementHandleR element, ElementHandle::XAttributeIter xAttr, DTMSubElementId const &sid, PropertyContextR context)
+    {
+    T_Super::_EditProperties (element, xAttr, sid, context);
+
+    DTMElementContoursHandler::DisplayParams displayParams (element, sid);
+    PropsCallbackFlags propsFlag = displayParams.GetVisible() ?  PROPSCALLBACK_FLAGS_NoFlagsSet : PROPSCALLBACK_FLAGS_UndisplayedID;
+    bool changed = false;
+    if (0 != (ELEMENT_PROPERTY_TextStyle & context.GetElementPropertiesMask ()))
+        {
+        uint32_t textStyle = displayParams.GetTextStyleID ();
+        EachTextStyleArg arg (textStyle, propsFlag, context);
+        changed |= context.DoTextStyleCallback (&textStyle, arg);
+        displayParams.SetTextStyleID (textStyle);
+        }
+
+    if (changed)
+        displayParams.SetElement (element, sid);
+
+    // If purpose is just a simple id remap we don't need to regenerate note...
+    if ((EditPropertyPurpose::Change == context.GetIEditPropertiesP ()->_GetEditPropertiesPurpose () || !context.GetElementChanged ()) && displayParams.GetTextStyleID() != 0)
+        {
+        // If properties being edited don't affect layout we don't beed to regenerate note...
+        if (0 != ((ELEMENT_PROPERTY_Font | ELEMENT_PROPERTY_TextStyle | ELEMENT_PROPERTY_DimStyle | ELEMENT_PROPERTY_ElementTemplate) & context.GetElementPropertiesMask ()))
+            {
+            if (AddDTMTextStyle (element, displayParams.GetTextStyleID(), sid.GetId()))
+                {
+                element.GetElementDescrP ()->h.isValid = false;
+                context.SetElementChanged ();
+                }
+            }
+        }
     }
 
 SUBDISPLAYHANDLER_DEFINE_MEMBERS (DTMElementContoursDisplayHandler);

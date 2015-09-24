@@ -2,7 +2,7 @@
 |
 |     $Source: TerrainModelNET/DTMFeatureEnumerator.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -89,7 +89,7 @@ ref class DTMFeatureInfoDirect : DTMFeatureInfo
 
 DTMFeatureEnumerator::DTMFeatureEnumerator (DTM^ dtm) : m_dtm (dtm)
     {
-    DTMFeatureEnumeratorPtr native = Bentley::TerrainModel::DTMFeatureEnumerator::Create (*m_dtm->Handle);
+    DTMFeatureEnumeratorPtr native = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFeatureEnumerator::Create (*m_dtm->Handle);
     m_native = native.get ();
     m_native->AddRef ();
     }

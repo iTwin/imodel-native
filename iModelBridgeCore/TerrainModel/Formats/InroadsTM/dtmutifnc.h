@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmutifnc.h                                       aec    08-Feb-1994       */
@@ -124,14 +124,14 @@ void aecDTM_setFeatureFlag
 (
     struct CIVdtmftr *ftrP,
     struct CIVdtmsrf *srfP,
-    byte *flagP
+    unsigned char *flagP
 );
 
 int aecDTM_getFeatureInfo
 (
     CIVdtmftr *ftrP,                      /*  => feature                      */
     CIVdtmsrf *srfP,                      /*  => surface containing feature   */
-    GUID      *guidP,                     /* <=  feature's GUID (or NULL)     */
+    BeGuid      *guidP,                     /* <=  feature's BeGuid (or NULL)     */
     long      *typeP,                     /* <=  feature type (or NULL)       */
     wchar_t      nameP[DTM_C_NAMSIZ],     /* <=  feature name (or NULL)       */
     wchar_t      descP[DTM_C_NAMSIZ],     /* <=  feature description (or NULL)*/
@@ -143,7 +143,7 @@ int aecDTM_getFeatureInfo
     long      *numStylesP,                /* <=  number of styles (or NULL)   */
     CIVdtmpaynam **payItemsPP,            /* <=  feature's pay items (or NULL)*/
     long         *numPayItemsP,           /* <=  number of pay items (or NULL)*/
-    byte   *flagP                      /* <=  feature's flag (or NULL)     */
+    unsigned char   *flagP                      /* <=  feature's flag (or NULL)     */
 );
 
 int aecDTM_setFeatureInfo
@@ -151,7 +151,7 @@ int aecDTM_setFeatureInfo
     CIVdtmftr    *ftrP,                   /* <=> feature                      */
     CIVdtmsrf    *srfP,                   /*  => surface containing feature   */
     long         opt,                     /*  => operational information      */
-    GUID         *guidP,                  /*  => feature's GUID (or NULL)     */
+    BeGuid         *guidP,                  /*  => feature's BeGuid (or NULL)     */
     long         *typeP,                  /*  => feature type (or NULL)       */
     wchar_t         nameP[DTM_C_NAMSIZ],  /*  => feature name (or NULL)       */
     wchar_t         descP[DTM_C_NAMSIZ],  /*  => feature description (or NULL)*/
@@ -163,7 +163,7 @@ int aecDTM_setFeatureInfo
     long         numStyles,               /*  => number of styles (or NULL)   */
     CIVdtmpaynam *payItemsP,              /*  => pay items (or NULL)          */
     long         numPayItems,             /*  => # of pay items               */
-    byte      *flagP,                  /*  => feature's flag (or NULL)     */
+    unsigned char      *flagP,                  /*  => feature's flag (or NULL)     */
     BOOL         bReTin                   /*  => retriangulate (usually TRUE) */
 );
 

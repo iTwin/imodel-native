@@ -17,7 +17,7 @@ void CacheDataBlock::AllocateMemory ()
 
 void CacheDataBlock::CloseBlockForWrites ()
     {
-    UInt32 closedSize = m_nextAvailable;
+    uint32_t closedSize = m_nextAvailable;
     makeMultipleOf (closedSize, s_pageSize);
 
     if (closedSize >= m_numBytes)
@@ -33,7 +33,7 @@ void CacheDataBlock::CloseBlockForWrites ()
         }
     }
 
-StatusInt CacheDataBlock::AllocElemMemory (DgnElemDataRef& elem, UInt32 sizeBytes)
+StatusInt CacheDataBlock::AllocElemMemory (DgnElemDataRef& elem, uint32_t sizeBytes)
     {
     makeMultipleOf (sizeBytes, 8); // ensure multiple of 8 bytes
 
@@ -86,7 +86,7 @@ StatusInt XAttributeSet::Delete (XAttrNode& node, DgnModel& dgnModel)
     return  SUCCESS;
     }
 
-StatusInt XAttributeRef::Modify (void const* data, UInt32 start, UInt32 length)
+StatusInt XAttributeRef::Modify (void const* data, uint32_t start, uint32_t length)
     {
     if ((start + length) > GetSize())
         return  ERROR;
@@ -95,7 +95,7 @@ StatusInt XAttributeRef::Modify (void const* data, UInt32 start, UInt32 length)
     return  SUCCESS;
     }
 
-StatusInt XAttributeRef::Replace (DgnModelP cache, void const* data, UInt32 newSize)
+StatusInt XAttributeRef::Replace (DgnModelP cache, void const* data, uint32_t newSize)
     {
     if (0 == newSize)
         newSize = GetSize ();
@@ -113,7 +113,7 @@ StatusInt XAttributeRef::Replace (DgnModelP cache, void const* data, UInt32 newS
 
 struct Txn : ITxn
     {
-    void a(ChangeTrackAction action, ElementRefP elRef, XAttributeHandlerId handlerId, UInt32 xAttrId, size_t dataSize, DgnElemDataRef addr)
+    void a(ChangeTrackAction action, ElementRefP elRef, XAttributeHandlerId handlerId, uint32_t xAttrId, size_t dataSize, DgnElemDataRef addr)
         {
         _SaveXAttrInUndo (action, elRef, handlerId, xAttrId, dataSize, addr);
         }
@@ -126,7 +126,7 @@ void testMemory (XAttributeHandle* Xhandle, DgnModelR model)
     // Delete XAttribute.
     Xhandle->m_set->Delete (Xhandle->m_node, model);
     DgnElemDataRef   addr;
-    UInt32 datasize;
+    uint32_t datasize;
     XAttrIO::GetInfo (*Xhandle, addr, datasize);     // get the address of the data for this xAttr
 
     Txn* k = (Txn*)&ITxnManager::GetCurrentTxn();

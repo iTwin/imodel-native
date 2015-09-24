@@ -21,7 +21,6 @@
 #include <TerrainModel/Core/bcDTMClass.h>
 
 TERRAINMODEL_TYPEDEFS (LandXMLImporter)
-ADD_BENTLEY_TYPEDEFS (Bentley::TerrainModel, LandXMLImporter);
 
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
@@ -67,14 +66,14 @@ struct LandXMLImporter : TerrainImporter
         int m_currentPointList;
         typedef bvector <PointArray> PointArrayList;
         PointArrayList m_segments;
-        Bentley::TerrainModel::BcDTMPtr m_dtm;
+        BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr m_dtm;
         double m_2delevation;
-        mutable bmap <WString, Bentley::TerrainModel::BcDTMPtr> m_namedDtms;
+        mutable bmap <WString, BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr> m_namedDtms;
         bmap <WString, DPoint3d>* m_pntRefs;
         bool m_secondPass;  // Second pass for pntRef resolution.
         mutable bool m_importAllDTMS;
         bool m_isMXProject;
-        mutable Bentley::GeoCoordinates::BaseGCSPtr m_gcs;
+        mutable BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr m_gcs;
 
     private: LandXMLImporter (WCharCP filename);
 
@@ -119,7 +118,7 @@ struct LandXMLImporter : TerrainImporter
     protected: virtual ImportedTerrain _ImportTerrain (WCharCP name) const override;
     protected: virtual ImportedTerrainList _ImportTerrains () const override;
     protected: virtual ImportedTerrainList _ImportTerrains (bvector <WString>& names) const override;
-    protected: virtual Bentley::GeoCoordinates::BaseGCSPtr _GetGCS () const override { return m_gcs; }
+    protected: virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr _GetGCS () const override { return m_gcs; }
     /*__PUBLISH_SECTION_START__*/
 
     public: BENTLEYDTMFORMATS_EXPORT static bool IsFileSupported (WCharCP filename);

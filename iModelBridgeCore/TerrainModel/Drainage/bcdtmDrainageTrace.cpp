@@ -2,7 +2,7 @@
 |
 |     $Source: Drainage/bcdtmDrainageTrace.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcdtmDrainage.h"
@@ -5502,7 +5502,7 @@ int bcdtmDrainage_checkTraceToSumpLineDtmObject
     int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
     long   pnt1,pnt2,pnt3,fndType,nextPnt1,nextPnt2,nextPnt3,priorPnt,nextPnt,iteration=0,onLine ;
     long   process,lastPoint,exitPoint,priorPoint,nextPoint,isFalseLow,previousExit,hullFlag ;
-    double x,y,nd,firstX,firstY,firstZ,startX,startY,startZ,nextX,nextY,nextZ,lastX,lastY,lastZ;
+    double x,y,nd,firstX,firstY,firstZ,startX,startY,startZ,nextX,nextY,nextZ,lastX = 0.0,lastY = 0.0,lastZ;
     double lastAngle=-99.99,saveLastAngle,descentAngle,ascentAngle,slope ;
 
     bool trgFound,voidTriangle ;
@@ -5877,7 +5877,7 @@ int bcdtmDrainage_checkTraceToDrainPointDtmObject
     int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
     long   pnt1,pnt2,pnt3,nextPnt1,nextPnt2,nextPnt3,priorPnt,nextPnt,iteration=0 ;
     long   process,lastPoint,exitPoint,priorPoint,nextPoint,isFalseLow,previousExit,hullFlag ;
-    double firstX,firstY,firstZ,startX,startY,startZ,nextX,nextY,nextZ,lastX,lastY,lastZ;
+    double firstX,firstY,firstZ,startX,startY,startZ,nextX,nextY,nextZ,lastX = 0.0,lastY = 0.0,lastZ;
     double lastAngle=-99.99,saveLastAngle,descentAngle,ascentAngle,slope ;
 
     bool trgFound,voidTriangle ;

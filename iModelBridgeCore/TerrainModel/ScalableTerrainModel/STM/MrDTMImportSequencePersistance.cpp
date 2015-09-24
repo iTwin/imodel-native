@@ -6,7 +6,7 @@
 |       $Date: 2012/02/16 22:19:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableTerrainModelPCH.h>
@@ -91,7 +91,7 @@ class CmdVisitor : public IImportSequenceVisitor
 
     bool                            OutputLayer                (UInt                                        layer)
         {
-        const UInt32 layerField = layer;
+        const uint32_t layerField = layer;
         return WriteValue(m_stream, layerField);
         }
 
@@ -268,7 +268,7 @@ protected:
 
     UInt                        LoadLayer                  (BinaryIStream&      stream) const
         {
-        UInt32 layerField = INVALID_LAYER;
+        uint32_t layerField = INVALID_LAYER;
         ReadValue(stream, layerField);
         return layerField;
         }
@@ -597,7 +597,7 @@ ImportCommandBase* CmdFactory::Create (BinaryIStream& stream) const
 bool ImportSequenceSerializer::Serialize   (const ImportSequence&   sequence,
                                             BinaryOStream&          stream) const
     {
-    const UInt32 commandCountField = (UInt32)sequence.GetCount();
+    const uint32_t commandCountField = (uint32_t)sequence.GetCount();
 
     if (0 == commandCountField)
         return true;// Generate empty packet so that it improves load performances
@@ -625,13 +625,13 @@ bool ImportSequenceSerializer::Deserialize (BinaryIStream&      stream,
         return false;
         }
 
-    UInt32 commandCountField = 0;
+    uint32_t commandCountField = 0;
     if (!ReadValue(stream, commandCountField))
         return false;
 
     static const CmdFactory COMMAND_FACTORY;
 
-    for (UInt32 i = 0; i < commandCountField; ++i)
+    for (uint32_t i = 0; i < commandCountField; ++i)
         {
         RefCountedPtr<ImportCommandBase> commandP(COMMAND_FACTORY.Create(stream));
 

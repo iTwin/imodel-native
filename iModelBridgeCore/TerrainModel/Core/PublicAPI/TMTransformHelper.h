@@ -158,7 +158,7 @@ struct TMTransformHelper : RefCountedBase
                     {
                     if (m_ownValues) delete m_params;
                     }
-                operator ::DTMFenceParamsCR () const
+                operator TerrainModel::DTMFenceParamsCR () const
                     {
                     return *m_params;
                     }
@@ -227,7 +227,7 @@ struct TMTransformHelper : RefCountedBase
         // From DTM convert functions
         double convertDistanceFromDTM (const double& value)
             {
-            if (!m_isIdentity)
+            if (!m_IsIdentity)
                 {
                 return value * m_scale;
                 }
@@ -235,7 +235,7 @@ struct TMTransformHelper : RefCountedBase
             }
         double convertElevationFromDTM (const double& value)
             {
-            if (!m_isIdentity)
+            if (!m_IsIdentity)
                 {
                 return (value * m_scale) + m_elevationOffset;
                 }
@@ -243,38 +243,38 @@ struct TMTransformHelper : RefCountedBase
             }
         void convertPointFromDTM (double& x, double& y)
             {
-            if (!m_isIdentity)
+            if (!m_IsIdentity)
                 {
                 DPoint3d pt = {x, y, 0};
-                m_transform.multiply (&pt);
+                m_transform.Multiply (pt);
                 x = pt.x;
                 y = pt.y;
                 }
             }
         void convertPointFromDTM (DPoint3d& pt)
             {
-            if (!m_isIdentity)
+            if (!m_IsIdentity)
                 {
-                m_transform.multiply (&pt);
+                m_transform.Multiply (pt);
                 }
             }
         void convertPointsFromDTM (bvector<DPoint3d> pts)
             {
-            m_transform.multiply (pts.data(), (int)pts.size());
+            m_transform.Multiply (pts.data(), (int)pts.size());
             }
 
         void convertPointsFromDTM (DPoint3d* pts, int numPts)
             {
-            if (!m_isIdentity && pts)
-                m_transform.multiply (pts, numPts);
+            if (!m_IsIdentity && pts)
+                m_transform.Multiply (pts, numPts);
             }
 
         DPoint3dCopy copyPointsFromDTM (DPoint3dCP pts, int numPts)
             {
-            if (!m_isIdentity && pts)
+            if (!m_IsIdentity && pts)
                 {
                 DPoint3d* newPts = new DPoint3d[numPts];
-                m_transform.multiply (newPts, pts, numPts);
+                m_transform.Multiply (newPts, pts, numPts);
                 return DPoint3dCopy (newPts, true);
                 }
             return DPoint3dCopy (pts, false);
@@ -295,7 +295,7 @@ struct TMTransformHelper : RefCountedBase
             }
         double convertAspectFromDTM (const double& value)
             {
-            if (m_isIdentity)
+            if (m_IsIdentity)
                 return value;
 
             double newValue = value - m_aspectFix;
@@ -309,7 +309,7 @@ struct TMTransformHelper : RefCountedBase
             }
         void convertAreasFromDTM (double* values, int num)
             {
-            if (!m_isIdentity && values)
+            if (!m_IsIdentity && values)
                 {
                 for (int i = 0; i < num; i++, values++)
                     {
@@ -323,7 +323,7 @@ struct TMTransformHelper : RefCountedBase
             }
         void copyVOLRANGETABFromDTM (VOLRANGETABCopy& volRange, VOLRANGETAB* dest, int numValues)
             {
-            if (!m_isIdentity && dest)
+            if (!m_IsIdentity && dest)
                 {
                 VOLRANGETAB* values = volRange;
                 for (int i = 0; i < numValues; i++)
@@ -333,7 +333,7 @@ struct TMTransformHelper : RefCountedBase
                     }
                 }
             }
-        Bentley::TerrainModel::DTMPointArray convertDTMPointArrayFromDTM (Bentley::TerrainModel::DTMPointArray& in)
+        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray convertDTMPointArrayFromDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray& in)
             {
             int numPts = (int)in.size();
             DPoint3dP pts = in.data();
@@ -342,14 +342,14 @@ struct TMTransformHelper : RefCountedBase
                 convertPointsFromDTM (pts, numPts);
             return in;
             }
-        Bentley::TerrainModel::DTMDrainageFeaturePtr convertDTMDrainageFeaturePtrFromDTM (Bentley::TerrainModel::DTMDrainageFeaturePtr& in)
+        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrainageFeaturePtr convertDTMDrainageFeaturePtrFromDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrainageFeaturePtr& in)
             {
             if (in.IsNull ())
                 return in;
 
             for (int i = 0; i < in->GetNumParts(); i++)
                 {
-                Bentley::TerrainModel::DTMPointArray pts;
+                BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray pts;
 
                 if (in->GetPoints (pts, i) == DTM_SUCCESS)
                     convertDTMPointArrayFromDTM (pts);
@@ -436,14 +436,14 @@ struct TMTransformHelper : RefCountedBase
         // To DTM convert functions
         DTMFenceParamsCopy convertDTMFenceParamsToDTM (const DTMFenceParams& fence)
             {
-            if (!m_isIdentity && fence.numPoints)
+            if (!m_IsIdentity && fence.numPoints)
                 {
                 DPoint3d* newPts = new DPoint3d[fence.numPoints];
-                m_transformInv.multiply (newPts, fence.points, fence.numPoints);
+                m_transformInv.Multiply (newPts, fence.points, fence.numPoints);
                 DTMFenceParamsP newParams = new DTMFenceParams (fence.fenceType, fence.fenceOption, newPts, fence.numPoints);
                 return DTMFenceParamsCopy (newParams, newParams->points, false);
                 }
-//            Bentley::TerrainModel::DTMFenceParams ()
+//            BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams ()
             return DTMFenceParamsCopy (&fence, fence.points, false);
             }
         double convertSlopeToDTM (const double& value)
@@ -452,7 +452,7 @@ struct TMTransformHelper : RefCountedBase
             }
         double convertAspectToDTM (const double& value)
             {
-            if (m_isIdentity)
+            if (m_IsIdentity)
                 return value;
             double newValue = value + m_aspectFix;
             if (newValue > 360)
@@ -461,7 +461,7 @@ struct TMTransformHelper : RefCountedBase
             }
         double convertDistanceToDTM (const double& value)
             {
-            if (!m_isIdentity)
+            if (!m_IsIdentity)
                 {
                 return value / m_scale;
                 }
@@ -469,7 +469,7 @@ struct TMTransformHelper : RefCountedBase
             }
         double convertElevationToDTM (const double& value)
             {
-            if (!m_isIdentity)
+            if (!m_IsIdentity)
                 {
                 return (value - m_elevationOffset) / m_scale ;
                 }
@@ -477,7 +477,7 @@ struct TMTransformHelper : RefCountedBase
             }
         DoubleCopy copyElevationTableToDTM (const double* dists, int numDists)
             {
-            if (!m_isIdentity && dists)
+            if (!m_IsIdentity && dists)
                 {
                 double* newDists = new double[numDists];
 
@@ -489,7 +489,7 @@ struct TMTransformHelper : RefCountedBase
             }
         DoubleCopy copyDistanceTableToDTM (const double* dists, int numDists)
             {
-            if (!m_isIdentity && dists)
+            if (!m_IsIdentity && dists)
                 {
                 double* newDists = new double[numDists];
 
@@ -501,7 +501,7 @@ struct TMTransformHelper : RefCountedBase
             }
         VOLRANGETABCopy copyVOLRANGETABToDTM (VOLRANGETAB* values, int numValues)
             {
-            if (!m_isIdentity && values)
+            if (!m_IsIdentity && values)
                 {
                 VOLRANGETAB* newValues = new VOLRANGETAB[numValues];
 
@@ -524,7 +524,7 @@ struct TMTransformHelper : RefCountedBase
 
         DRange1dCopy copyBcDTMElevationRangeToDTM (DRange1d* values, int numValues)
             {
-            if (!m_isIdentity && values)
+            if (!m_IsIdentity && values)
                 {
                 DRange1d* newValues = new DRange1d[numValues];
 
@@ -539,7 +539,7 @@ struct TMTransformHelper : RefCountedBase
             }
         DRange1dCopy copyBcDTMAspectRangeToDTM (DRange1d* values, int numValues)
             {
-            if (!m_isIdentity)
+            if (!m_IsIdentity)
                 {
                 DRange1d* newValues = new DRange1d[numValues];
 
@@ -554,20 +554,20 @@ struct TMTransformHelper : RefCountedBase
             }
         void convertPointToDTM (double& x, double& y)
             {
-            if (!m_isIdentity)
+            if (!m_IsIdentity)
                 {
                 DPoint3d pt = { x, y, 0 };
-                m_transformInv.multiply (&pt);
+                m_transformInv.Multiply (pt);
                 x = pt.x;
                 y = pt.y;
                 }
             }
         void convertPointToDTM (double& x, double& y, double & z)
             {
-            if (!m_isIdentity)
+            if (!m_IsIdentity)
                 {
                 DPoint3d pt = { x, y, z };
-                m_transformInv.multiply (&pt);
+                m_transformInv.Multiply (pt);
                 x = pt.x;
                 y = pt.y;
                 z = pt.z;
@@ -575,31 +575,31 @@ struct TMTransformHelper : RefCountedBase
             }
         void convertPointToDTM (DPoint3d& pt)
             {
-            if (!m_isIdentity)
+            if (!m_IsIdentity)
                 {
-                m_transformInv.multiply (&pt);
+                m_transformInv.Multiply (pt);
                 }
             }
         void convertPointsToDTM (DPoint3d* pts, int numPts)
             {
-            if (!m_isIdentity && pts)
+            if (!m_IsIdentity && pts)
                 {
-                m_transformInv.multiply (pts, numPts);
+                m_transformInv.Multiply (pts, numPts);
                 }
             }
         void convertPointsToDTM (DtmString& string)
             {
-            if (!m_isIdentity && !string.empty())
+            if (!m_IsIdentity && !string.empty())
                 {
-                m_transformInv.multiply (string.data(), (int)string.size());
+                m_transformInv.Multiply (string.data(), (int)string.size());
                 }
             }
         DPoint3dCopy copyPointsToDTM (DPoint3dCP pts, int numPts)
             {
-            if (!m_isIdentity && pts)
+            if (!m_IsIdentity && pts)
                 {
                 DPoint3d* newPts = new DPoint3d[numPts];
-                m_transformInv.multiply (newPts, pts, numPts);
+                m_transformInv.Multiply (newPts, pts, numPts);
                 return DPoint3dCopy (newPts, true);
                 }
             return DPoint3dCopy (pts, false);
@@ -623,7 +623,7 @@ struct TMTransformHelper : RefCountedBase
 
         BcDTMPtr getDTMToExport (BcDTMP bcdtm)
             {
-            if (m_isIdentity)
+            if (m_IsIdentity)
                 return bcdtm;
             BcDTMPtr newDtm = bcdtm->Clone();
 
@@ -636,8 +636,8 @@ struct TMTransformHelper : RefCountedBase
             if (dtm.GetTransformHelper ())
                 dtm.GetTransformHelper ()->GetTransformationFromDTM (trsf);
             else
-                trsf.initIdentity ();
-            if (m_transform.isEqual (&trsf))
+                trsf.InitIdentity ();
+            if (m_transform.IsEqual (trsf))
                 {
                 return &dtm;
                 }
@@ -647,8 +647,8 @@ struct TMTransformHelper : RefCountedBase
 
             Transform convertTrsf;
             Transform transformInv;
-            transformInv.inverseOf (&m_transform);
-            convertTrsf.productOf (&trsf, &transformInv);
+            transformInv.InverseOf (m_transform);
+            convertTrsf.InitProduct (trsf, transformInv);
 
             newDtm->Transform (convertTrsf);
             return newDtm;
@@ -662,15 +662,15 @@ struct TMTransformHelper : RefCountedBase
             if (dtm.GetTransformHelper())
                 dtm.GetTransformHelper ()->GetTransformationFromDTM (trsf);
             else
-                trsf.initIdentity();
-            if (trsf.isIdentity())
+                trsf.InitIdentity();
+            if (trsf.IsIdentity())
                 return &dtm;
 
             // Need to get the transform between dtm and source and then clone and transform dtm.
             BcDTMPtr newDtm = dtm.Clone();
 
             Transform transformInv;
-            transformInv.inverseOf (&trsf);
+            transformInv.InverseOf (trsf);
 
             newDtm->Transform (transformInv);
             return newDtm;
@@ -804,9 +804,9 @@ struct TMTransformHelper : RefCountedBase
             }
 #endif
     private:
-        bool m_isIdentity;
-        Bentley::Transform m_transform;
-        Bentley::Transform m_transformInv;
+        bool m_IsIdentity;
+        BENTLEY_NAMESPACE_NAME::Transform m_transform;
+        BENTLEY_NAMESPACE_NAME::Transform m_transformInv;
         double m_scale;
         double m_elevationOffset;
         double m_aspectFix;
@@ -814,9 +814,9 @@ struct TMTransformHelper : RefCountedBase
     public:
         TMTransformHelper ()
             {
-            m_transform.initIdentity();
+            m_transform.InitIdentity();
             m_transformInv = m_transform;
-            m_isIdentity = true;
+            m_IsIdentity = true;
 
             m_aspectFix = 0;
             m_scale = 1;
@@ -826,13 +826,13 @@ struct TMTransformHelper : RefCountedBase
         TMTransformHelper (TransformCR transform)
             {
             m_transform = transform;
-            m_transformInv.inverseOf (&m_transform);
-            m_isIdentity = m_transform.isIdentity() != 0;
+            m_transformInv.InverseOf (m_transform);
+            m_IsIdentity = m_transform.IsIdentity() != 0;
             m_elevationOffset = m_transform.form3d[2][3];
 
             DPoint3d fixedPoint;
-            DPoint3d directionVector;
-            if(!transform.isUniformScaleAndRotateAroundLine (&fixedPoint, &directionVector, &m_aspectFix, &m_scale))
+            DVec3d directionVector;
+            if(!transform.IsUniformScaleAndRotateAroundLine (fixedPoint, directionVector, m_aspectFix, m_scale))
                 {
                 m_aspectFix = 0;
                 m_scale = 1;
@@ -864,11 +864,11 @@ struct TMTransformHelper : RefCountedBase
         bool GetTransformationToDTM (TransformR transformation) const
             {
             transformation = m_transformInv;
-            return m_isIdentity;
+            return m_IsIdentity;
             }
         bool IsIdentity ()
             {
-            return m_isIdentity;
+            return m_IsIdentity;
             }
     };
 

@@ -487,7 +487,7 @@ struct DtmContourNodeTable { long node,nodePt,dtmFeature,isReversed,connectNode,
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-struct ArcPts { Int64 Fl;long Fc ; double x,y,z,Angle ; } ;
+struct ArcPts { int64_t Fl;long Fc ; double x,y,z,Angle ; } ;
 /*__PUBLISH_SECTION_START__*/
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -836,7 +836,7 @@ enum class DTMFeatureState : long
 #ifdef _M_IX86
 typedef long  DTMMemPnt ;
 #else
-typedef Int64 DTMMemPnt ;
+typedef int64_t DTMMemPnt ;
 #endif
 /*__PUBLISH_SECTION_END__*/
 struct BC_DTM_FEATURE_VER100
@@ -867,7 +867,7 @@ struct BC_DTM_FEATURE
     DTMMemPnt  pointsPI  ; // For dtmFeatureState = <2,5>  Pointer To DPoint3d Array Of Points
     DTMMemPnt  offsetPI  ; // For dtmFeatureState = <3>    Pointer To Array Of Point Offsets
     long firstPoint ; // For dtmFeatureState = <1,4>  Offset To First Point Of Feature
-    Int64 _64bitPad ; // Padding for 32 bit. To match 64 bit.
+    int64_t _64bitPad ; // Padding for 32 bit. To match 64 bit.
    } dtmFeaturePts;    // Reference To Feature Points - Dependent On Feature State
 } ;
 enum class DTMAccessMode
@@ -1003,7 +1003,7 @@ struct BC_DTM_OBJ
  DTMTime32       creationTime,modifiedTime,userTime ;
  double          ppTol,plTol,mppTol,maxSide ;
  double          xMin,yMin,zMin,xMax,yMax,zMax,xRange,yRange,zRange ;
- Int64           lastModifiedTime;
+ int64_t           lastModifiedTime;
  unsigned char   futureUse [12280];
  // The Following Are Not Saved As Part Of The Header
  long            refCount ;
@@ -1195,7 +1195,7 @@ struct BC_DTM_FEATURE_HEADER
  double xMax ;
  double yMax ;
  double zMax ;
- Int64  featureFileOffset ;
+ int64_t  featureFileOffset ;
 } ;
 struct BC_DTM_FEATURE_RECORD
 {
@@ -1226,7 +1226,7 @@ struct DTM_MULTI_THREAD_QUAD_TREE_TILE
 } ;
 struct DTM_FEATURE_INDEX
 {
-  Int64  index ;
+  int64_t  index ;
   long     dtmFeature ;
 } ;
 
@@ -1255,7 +1255,7 @@ struct DTM_ROLLBACK_DATA
 struct DTMPondAppData : BcDTMAppData
     {
     const static Key AppDataID;
-    Int64 m_dtmCreationTime;
+    int64_t m_dtmCreationTime;
     BC_DTM_OBJ* pondDtmP;    // Triangulated DTM With the Ponds Stored As Break Lines
     int         hasPonds;
     protected:

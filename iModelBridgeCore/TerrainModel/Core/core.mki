@@ -2,7 +2,7 @@
 #
 #     $Source: Core/core.mki $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 #
@@ -18,6 +18,9 @@ IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
 
 ProductIncludes + -I${publishInc}
 
+dirToSearch     = $(BuildContextPublicApiDir)
+%include cincapnd.mki
+
 dirToSearch     = $(TerrainModelCoreDir)CPPWrappers
 %include cincapnd.mki
 
@@ -31,6 +34,9 @@ dirToSearch     = $(TerrainModelAPISrc)
 %include cincapnd.mki
 
 dirToSearch     = $(TerrainModelCoreAPISrc)
+%include cincapnd.mki
+
+dirToSearch     = $(TerrainModelCoreDir)
 %include cincapnd.mki
 
 %ifdef DTM_CORE_DEBUG

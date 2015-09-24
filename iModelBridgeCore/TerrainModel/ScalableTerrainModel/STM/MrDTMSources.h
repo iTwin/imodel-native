@@ -6,7 +6,7 @@
 |       $Date: 2011/10/31 15:45:08 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -121,17 +121,17 @@ struct IDTMDgnModelSource::Impl : public IDTMLocalFileSource::Impl
 private:
     friend struct                       IDTMDgnModelSource;
 
-    UInt32                              m_modelID;
+    uint32_t                              m_modelID;
     WString                             m_modelName;
     WString                             m_rootToRefPersistentPath;
 
 protected:
     explicit                            Impl                           (DTMSourceDataType               sourceDataType, 
                                                                         const IMoniker*                 monikerP,                                                  
-                                                                        UInt32                          modelID, 
+                                                                        uint32_t                          modelID, 
                                                                         const WChar*                  modelName);
 
-    UInt32                              GetModelID                     () const { return m_modelID; }
+    uint32_t                              GetModelID                     () const { return m_modelID; }
     const WString&                 GetModelName                   () const { return m_modelName; }
 
 public:
@@ -158,7 +158,7 @@ private:
 protected:
     explicit                            Impl                           (DTMSourceDataType               sourceDataType, 
                                                                         const IMoniker*                 monikerP,                                                  
-                                                                        UInt32                          modelID, 
+                                                                        uint32_t                          modelID, 
                                                                         const WChar*                  modelName,
                                                                         const WChar*                     rootToRefPersistentPath,
                                                                         const WChar*                  referenceName,
@@ -188,18 +188,18 @@ private:
     friend struct                       IDTMDgnLevelSource;
     friend struct                       IDTMDgnLevelSourceCreator;
 
-    UInt32                              m_levelID;
+    uint32_t                              m_levelID;
     WString                        m_levelName;
 
 protected:
     explicit                            Impl                           (DTMSourceDataType               sourceDataType, 
                                                                         const IMoniker*                 monikerP,                                                       
-                                                                        UInt32                          modelID, 
+                                                                        uint32_t                          modelID, 
                                                                         const WChar*                  modelName,
-                                                                        UInt32                          levelID,
+                                                                        uint32_t                          levelID,
                                                                         const WChar*                  levelName);
 
-    UInt32                              GetLevelID                     () const { return m_levelID; }
+    uint32_t                              GetLevelID                     () const { return m_levelID; }
     const WString&                 GetLevelName                   () const { return m_levelName; }
 
 public:
@@ -222,21 +222,21 @@ private:
     friend struct                       IDTMDgnReferenceLevelSourceCreatorV0;
     friend struct                       IDTMDgnReferenceLevelSourceCreator;
 
-    UInt32                              m_levelID;
+    uint32_t                              m_levelID;
     WString                        m_levelName;
 
 protected:
     explicit                            Impl                           (DTMSourceDataType               sourceDataType, 
                                                                         const IMoniker*                 monikerP,                                                       
-                                                                        UInt32                          modelID, 
+                                                                        uint32_t                          modelID, 
                                                                         const WChar*                  modelName,
                                                                         const WChar*                     rootToRefPersistentPath,
                                                                         const WChar*                  referenceName,
                                                                         const WChar*                  referenceModelName,
-                                                                        UInt32                          levelID,
+                                                                        uint32_t                          levelID,
                                                                         const WChar*                  levelName);
 
-    UInt32                              GetLevelID                     () const { return m_levelID; }
+    uint32_t                              GetLevelID                     () const { return m_levelID; }
     const WString&                 GetLevelName                   () const { return m_levelName; }
 
 public:

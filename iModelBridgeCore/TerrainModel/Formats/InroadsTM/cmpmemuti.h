@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* cmpmemuti.h                                           aec    26-Apr-2002   */
@@ -40,7 +40,7 @@ int aecDTM_getComponentMemberParentsPtrs
     struct CIVdtmcmp ***cmpPtrs,            /* <= FREE! - components          */
     int *numCmpPtrs,                        /* <= number of components        */
     struct CIVdtmsrf *srfP,                 /*  => DTM surface (or NULL)      */
-    GUID *cmpMemGuidP                       /*  => guid of component member   */
+    BeGuid *cmpMemGuidP                       /*  => guid of component member   */
 );
 
 void aecDTM_setComponentMemberDeletedFlag

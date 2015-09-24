@@ -2,7 +2,7 @@
 |
 |     $Source: TerrainModelNET/DTMFeature.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -344,7 +344,7 @@ public value struct DTMFeatureId
         //=======================================================================================
         static DTMFeatureId FromString (System::String^ string)
             {
-            Int64 id = Int64::Parse (string);
+            int64_t id = Int64::Parse (string);
             return DTMFeatureId (id);
             }
 
@@ -356,7 +356,7 @@ public value struct DTMFeatureId
         //=======================================================================================
         static DTMFeatureId FromStorage (array<Byte>^ bytes)
             {
-            Int64 fromStorage = 0;
+            int64_t fromStorage = 0;
             return DTMFeatureId (fromStorage);
             }
 

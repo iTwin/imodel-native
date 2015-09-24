@@ -2,7 +2,7 @@
 |
 |     $Source: formats/bcdtmLidar.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TerrainModel/Formats/Formats.h"
@@ -24,23 +24,23 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 struct BCCIVIL_LASPublicHeaderBlock
     {
-    byte FileSignature[4];
+    unsigned char FileSignature[4];
     unsigned short FileSourceID;
     unsigned short Reserved;
     unsigned long ProjectIDGUIDdata1;
     unsigned short ProjectIDGUIDdata2;
     unsigned short ProjectIDGUIDdata3;
-    byte ProjectIDGUIDdata4[8];
-    byte VersionMajor;
-    byte VersionMinor;
-    byte SystemIdentifier[32];
-    byte GeneratingSoftware[32];
+    unsigned char ProjectIDGUIDdata4[8];
+    unsigned char VersionMajor;
+    unsigned char VersionMinor;
+    unsigned char SystemIdentifier[32];
+    unsigned char GeneratingSoftware[32];
     unsigned short FileCreationDayOfYear;
     unsigned short FileCreationYear;
     unsigned short HeaderSize;
     unsigned long OffsetToPointData;
     unsigned long NumberOfVariableLengthRecords;
-    byte PointDataFormatID;
+    unsigned char PointDataFormatID;
     unsigned short PointDataRecordLength;
     unsigned long LegacyNumberOfPointRecords;
     unsigned long LegacyNumberOfPointsByReturn[5];
@@ -56,11 +56,11 @@ struct BCCIVIL_LASPublicHeaderBlock
     double MinY;
     double MaxZ;
     double MinZ;
-    UInt64 StartOfWaveFormData;
-    UInt64 StartOfFirstExtendedVariableLenRec;
-    UInt32 NumOfExtendedVariableLenRec;
-    UInt64 NumberOfPointRecords;
-    UInt64 NumberOfPointsByReturn[15];
+    uint64_t StartOfWaveFormData;
+    uint64_t StartOfFirstExtendedVariableLenRec;
+    uint32_t NumOfExtendedVariableLenRec;
+    uint64_t NumberOfPointRecords;
+    uint64_t NumberOfPointsByReturn[15];
     };
 
 enum class ClassificationOld
@@ -83,14 +83,14 @@ struct LASClassificationOld
     {
 #if ! defined (BITFIELDS_REVERSED)
     ClassificationOld ClassificationValue : 5;
-    byte Synthetic           : 1;
-    byte Keypoint            : 1;
+    unsigned char Synthetic           : 1;
+    unsigned char Keypoint            : 1;
     bool Withheld            : 1;
 #else
-    byte Withheld            : 1;
-    byte Keypoint            : 1;
-    byte Synthetic           : 1;
-    byte ClassificationValue : 5;
+    unsigned char Withheld            : 1;
+    unsigned char Keypoint            : 1;
+    unsigned char Synthetic           : 1;
+    unsigned char ClassificationValue : 5;
 #endif
 
     };
@@ -98,12 +98,12 @@ struct LASClassificationOld
 struct LASClassificationFlags
     {
     bool Withheld : 1;
-    byte Keypoint : 1;
-    byte Synthetic : 1;
-    byte Overrlap : 1;
-    byte ScannerChannel : 2;
-    byte ScannerDirection : 1;
-    byte EdgeOfFlight : 1;
+    unsigned char Keypoint : 1;
+    unsigned char Synthetic : 1;
+    unsigned char Overrlap : 1;
+    unsigned char ScannerChannel : 2;
+    unsigned char ScannerDirection : 1;
+    unsigned char EdgeOfFlight : 1;
     };
 
 struct BCCIVIL_LASPointDataRecord
@@ -116,27 +116,27 @@ struct BCCIVIL_LASPointDataRecord
         {
         struct
             {
-            byte misc;
+            unsigned char misc;
             LASClassificationOld Classification;
-            byte ScanAngleRank;
-            byte UserData;
+            unsigned char ScanAngleRank;
+            unsigned char UserData;
             unsigned short PointSourceID;
             } Format0;
         struct
             {
-            byte misc;
+            unsigned char misc;
             LASClassificationOld Classification;
-            byte ScanAngleRank;
-            byte UserData;
+            unsigned char ScanAngleRank;
+            unsigned char UserData;
             unsigned short PointSourceID;
             double GPSTime;
             } Format1;
         struct
             {
-            byte misc;
+            unsigned char misc;
             LASClassificationOld Classification;
-            byte ScanAngleRank;
-            byte UserData;
+            unsigned char ScanAngleRank;
+            unsigned char UserData;
             unsigned short PointSourceID;
             unsigned short Red;
             unsigned short Green;
@@ -144,10 +144,10 @@ struct BCCIVIL_LASPointDataRecord
             } Format2;
         struct
             {
-            byte misc;
+            unsigned char misc;
             LASClassificationOld Classification;
-            byte ScanAngleRank;
-            byte UserData;
+            unsigned char ScanAngleRank;
+            unsigned char UserData;
             unsigned short PointSourceID;
             double GPSTime;
             unsigned short Red;
@@ -156,15 +156,15 @@ struct BCCIVIL_LASPointDataRecord
             } Format3;
         struct
             {
-            byte misc;
+            unsigned char misc;
             LASClassificationOld Classification;
-            byte ScanAngleRank;
-            byte UserData;
+            unsigned char ScanAngleRank;
+            unsigned char UserData;
             unsigned short PointSourceID;
             double GPSTime;
             unsigned char WavePacketDescriptorIndex;
-            UInt64 BytOffsetToWaveformData;
-            UInt32 WaveFormPackedSize;
+            uint64_t BytOffsetToWaveformData;
+            uint32_t WaveFormPackedSize;
             float ReturnPointWaveFormLocation;
             float Xt;
             float Yt;
@@ -172,18 +172,18 @@ struct BCCIVIL_LASPointDataRecord
             } Format4;
         struct
             {
-            byte misc;
+            unsigned char misc;
             LASClassificationOld Classification;
-            byte ScanAngleRank;
-            byte UserData;
+            unsigned char ScanAngleRank;
+            unsigned char UserData;
             unsigned short PointSourceID;
             double GPSTime;
             unsigned short Red;
             unsigned short Green;
             unsigned short Blue;
             unsigned char WavePacketDescriptorIndex;
-            UInt64 BytOffsetToWaveformData;
-            UInt32 WaveFormPackedSize;
+            uint64_t BytOffsetToWaveformData;
+            uint32_t WaveFormPackedSize;
             float ReturnPointWaveFormLocation;
             float Xt;
             float Yt;
@@ -191,20 +191,20 @@ struct BCCIVIL_LASPointDataRecord
             } Format5;
         struct
             {
-            byte misc;
+            unsigned char misc;
             LASClassificationFlags ClassificationFlags;
             LidarImporter::Classification Classification;
-            byte UserData;
+            unsigned char UserData;
             short ScanAngle;
             unsigned short PointSourceID;
             double GPSTime;
             } Format6;
         struct
             {
-            byte misc;
+            unsigned char misc;
             LASClassificationFlags ClassificationFlags;
             LidarImporter::Classification Classification;
-            byte UserData;
+            unsigned char UserData;
             short ScanAngle;
             unsigned short PointSourceID;
             double GPSTime;
@@ -214,10 +214,10 @@ struct BCCIVIL_LASPointDataRecord
             } Format7;
         struct
             {
-            byte misc;
+            unsigned char misc;
             LASClassificationFlags ClassificationFlags;
             LidarImporter::Classification Classification;
-            byte UserData;
+            unsigned char UserData;
             short ScanAngle;
             unsigned short PointSourceID;
             double GPSTime;
@@ -228,16 +228,16 @@ struct BCCIVIL_LASPointDataRecord
             } Format8;
         struct
             {
-            byte misc;
+            unsigned char misc;
             LASClassificationFlags ClassificationFlags;
             LidarImporter::Classification Classification;
-            byte UserData;
+            unsigned char UserData;
             short ScanAngle;
             unsigned short PointSourceID;
             double GPSTime;
             unsigned char WavePacketDescriptorIndex;
-            UInt64 BytOffsetToWaveformData;
-            UInt32 WaveFormPackedSize;
+            uint64_t BytOffsetToWaveformData;
+            uint32_t WaveFormPackedSize;
             float ReturnPointWaveFormLocation;
             float Xt;
             float Yt;
@@ -245,10 +245,10 @@ struct BCCIVIL_LASPointDataRecord
             } Format9;
         struct
             {
-            byte misc;
+            unsigned char misc;
             LASClassificationFlags ClassificationFlags;
             LidarImporter::Classification Classification;
-            byte UserData;
+            unsigned char UserData;
             short ScanAngle;
             unsigned short PointSourceID;
             double GPSTime;
@@ -257,8 +257,8 @@ struct BCCIVIL_LASPointDataRecord
             unsigned short Blue;
             unsigned short NIR;
             unsigned char WavePacketDescriptorIndex;
-            UInt64 BytOffsetToWaveformData;
-            UInt32 WaveFormPackedSize;
+            uint64_t BytOffsetToWaveformData;
+            uint32_t WaveFormPackedSize;
             float ReturnPointWaveFormLocation;
             float Xt;
             float Yt;
@@ -272,8 +272,8 @@ struct BCCIVIL_LASPointDataRecord
 
 static StatusInt Read (BeFile& file, void* buffer, size_t size)
     {
-    UInt32 bytesRead = 0;
-    if (file.Read (buffer, &bytesRead, (UInt32)size) != BeFileStatus::Success || bytesRead != size)
+    uint32_t bytesRead = 0;
+    if (file.Read (buffer, &bytesRead, (uint32_t)size) != BeFileStatus::Success || bytesRead != size)
         return DTM_ERROR;
     return DTM_SUCCESS;
     }
@@ -307,10 +307,10 @@ DTMStatusInt bcdtmFormatLidar_readHeader (BeFile& lasFile, BCCIVIL_LASPublicHead
 
 struct LasVLRHeader
     {
-    UInt16 Reserved;
+    uint16_t Reserved;
     char UserID[16];
-    UInt16 RecordID;
-    UInt16 RecordLengthAfterHeader;
+    uint16_t RecordID;
+    uint16_t RecordLengthAfterHeader;
     char Description[32];
     };
 
@@ -398,12 +398,12 @@ struct GeoTiffKeysList : IGeoTiffKeysList
         return false;
         }
 
-    virtual void            AddKey (unsigned short pi_KeyID, unsigned long pi_value) {}
+    virtual void            AddKey (unsigned short pi_KeyID, uint32_t pi_value) {}
     virtual void            AddKey (unsigned short pi_KeyID, double pi_value) {}
     virtual void            AddKey (unsigned short pi_KeyID, const std::string& pi_value) {}
     };
 
-DTMStatusInt bcdtmFormatLidar_getCoordinateSystem (BeFile& lasFile, BCCIVIL_LASPublicHeaderBlock& pPHB, Bentley::GeoCoordinates::BaseGCSPtr& gcs)
+DTMStatusInt bcdtmFormatLidar_getCoordinateSystem (BeFile& lasFile, BCCIVIL_LASPublicHeaderBlock& pPHB, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr& gcs)
     {
     LasVLR* vlrs = new LasVLR[pPHB.NumberOfVariableLengthRecords];
 
@@ -451,21 +451,21 @@ DTMStatusInt bcdtmFormatLidar_getCoordinateSystem (BeFile& lasFile, BCCIVIL_LASP
 
     if (wktMathTransformIndex != -1)
         {
-        gcs = Bentley::GeoCoordinates::BaseGCS::CreateGCS ();
+        gcs = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS ();
         WString msg;
         StatusInt warning;
         // Not sure what is in here.
         WString wtk(vlrs[wktMathTransformIndex].data, true);
-        if (gcs->InitFromWellKnownText (&warning, &msg, Bentley::GeoCoordinates::BaseGCS::WktFlavor::wktFlavorUnknown, wtk.GetWCharCP ()) != SUCCESS)
+        if (gcs->InitFromWellKnownText (&warning, &msg, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor::wktFlavorUnknown, wtk.GetWCharCP ()) != SUCCESS)
             {
             WString wtk2 (vlrs[wktCoordinateSystemIndex].data, true);
-            if (gcs->InitFromWellKnownText (&warning, &msg, Bentley::GeoCoordinates::BaseGCS::WktFlavor::wktFlavorUnknown, wtk.GetWCharCP ()) != SUCCESS)
+            if (gcs->InitFromWellKnownText (&warning, &msg, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor::wktFlavorUnknown, wtk.GetWCharCP ()) != SUCCESS)
                 gcs = nullptr;
             }
         }
     else if (geoKeyRecordIndex != -1)
         {
-        gcs = Bentley::GeoCoordinates::BaseGCS::CreateGCS ();
+        gcs = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS ();
         GeoTiffKeysList geoTiffKeys (vlrs[geoKeyRecordIndex].data, geoDoubleParamsTagIndex != -1 ? vlrs[geoDoubleParamsTagIndex].data : nullptr, geoAsciiParamsTagIndex != -1 ? vlrs[geoAsciiParamsTagIndex].data : nullptr);
         WString msg;
         StatusInt warning;
@@ -494,7 +494,7 @@ BENTLEYDTMFORMATS_EXPORT DTMStatusInt bcdtmFormatLidar_importLasFileFeaturesDtmO
     BC_DTM_OBJ *dtmP,                  // Pointer To DTM Object
     WCharCP lasFileNameP,             // LAS File Name
     const bvector<LidarImporter::Classification>* importFeatures,
-    UInt64& totalNumLidarPoints,     // Number Of Lidar Points Imported For Each Feature
+    uint64_t& totalNumLidarPoints,     // Number Of Lidar Points Imported For Each Feature
     bvector<long>* numLidarPoints              // Number Of Lidar Points Imported For Each Feature
     )
     {
@@ -506,7 +506,7 @@ BENTLEYDTMFORMATS_EXPORT DTMStatusInt bcdtmFormatLidar_importLasFileFeaturesDtmO
     DTMFeatureId featureId=DTM_NULL_FEATURE_ID  ;
     BCCIVIL_LASPublicHeaderBlock pPHB;
     BCCIVIL_LASPointDataRecord format;
-    UInt64 ind;
+    uint64_t ind;
     int numToRead;
     bool extractFeature [LAS_NUM_FEATURES];
     long numberPointsInClassification [LAS_NUM_FEATURES];
@@ -548,7 +548,7 @@ BENTLEYDTMFORMATS_EXPORT DTMStatusInt bcdtmFormatLidar_importLasFileFeaturesDtmO
     /*
     ** Open The Files
     */
-    if (lasFile.Open (lasFileNameP, BeFileAccess::Read, BeFileSharing::None) != BeFileStatus::Success)
+    if (lasFile.Open (lasFileNameP, BeFileAccess::Read) != BeFileStatus::Success)
         {
         bcdtmWrite_message(1,0,0,"Cannot Open LAS File %s",lasFileNameP) ;
         goto errexit ;
@@ -664,7 +664,7 @@ BENTLEYDTMFORMATS_EXPORT DTMStatusInt bcdtmFormatLidar_getLasFileFeatureTypes (W
     /*
     ** Open The Files
     */
-    if (lasFile.Open (lasFileNameP, BeFileAccess::Read, BeFileSharing::None) != BeFileStatus::Success)
+    if (lasFile.Open (lasFileNameP, BeFileAccess::Read) != BeFileStatus::Success)
         {
         bcdtmWrite_message (1, 0, 0, "Cannot Open LAS File %s", lasFileNameP);
         goto errexit;
@@ -742,7 +742,7 @@ errexit :
     |                                                                    |
     |                                                                    |
     +-------------------------------------------------------------------*/
-    BENTLEYDTMFORMATS_EXPORT DTMStatusInt bcdtmFormatLidar_getGCS (WCharCP lasFileNameP, Bentley::GeoCoordinates::BaseGCSPtr& gcs)
+    BENTLEYDTMFORMATS_EXPORT DTMStatusInt bcdtmFormatLidar_getGCS (WCharCP lasFileNameP, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr& gcs)
         {
         DTMStatusInt ret = DTM_SUCCESS;
         int dbg = 0;
@@ -760,7 +760,7 @@ errexit :
         /*
         ** Open The Files
         */
-        if (lasFile.Open (lasFileNameP, BeFileAccess::Read, BeFileSharing::None) != BeFileStatus::Success)
+        if (lasFile.Open (lasFileNameP, BeFileAccess::Read) != BeFileStatus::Success)
             {
             bcdtmWrite_message (1, 0, 0, "Cannot Open LAS File %s", lasFileNameP);
             goto errexit;

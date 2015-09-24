@@ -6,7 +6,7 @@
 |       $Date: 2012/06/27 14:06:54 $
 |     $Author: Chantal.Poulin $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -58,7 +58,7 @@ HFCPtr<HVE2DShape> ReprojectShapeDomainLimited (Bentley::GeoCoordinates::BaseGCS
                                                 const DPoint3d*   pi_pSourcePt,
                                                 size_t  pi_SourcePtQty);
 
-int SetClipToDTM (Bentley::TerrainModel::DTMPtr& dtmPtr,
+int SetClipToDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr,
                   const DRange3d&                spatialIndexRange,
                   const HVE2DShape&              shape);
 

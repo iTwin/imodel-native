@@ -6,7 +6,7 @@
 |       $Date: 2011/09/01 14:07:07 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -22,7 +22,7 @@
 
 #include <ScalableTerrainModel/Import/DataTypeDescription.h>
 
-#include <ImagePP/all/h/IDTMFileDirectories/PointTypes.h>
+#include <STMInternal/Storage/IDTMFileDirectories/PointTypes.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @description  Native MS 3D point class.

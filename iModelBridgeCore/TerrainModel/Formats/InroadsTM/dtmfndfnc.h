@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmfndfnc.h                                         aec    07-Feb-1994     */
@@ -46,7 +46,7 @@ int aecDTM_findSurfaceByGUID /* <= NULL if error                   */
 (
   struct CIVdtmsrf **srfPP,             /* <= found surface                   */
   struct CIVdtmprj *prjP,               /* => DTM project (or NULL)           */
-  GUID *srfGUIDp                        /* => surface GUID                    */
+  BeGuid *srfGUIDp                        /* => surface BeGuid                    */
 );
 
 int aecDTM_findPointFile /* <= TRUE if error                       */
@@ -137,7 +137,7 @@ int aecDTM_findFeatureByGUID /* <= TRUE if error                   */
 (
   struct CIVdtmftr **ftrPP,             /* <= found feature                   */
   struct CIVdtmsrf *srfP,               /* => DTM surface (or NULL)           */
-  GUID *guidP                           /* => surface guid pointer            */
+  BeGuid *guidP                           /* => surface guid pointer            */
 );
 
 int aecDTM_findFeatureByName /* <= TRUE if error                   */

@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/PublicAPI/mx.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -31,7 +31,6 @@ BENTLEYDTMFORMATS_EXPORT  int bcdtmExport_MXTriangulationFromDtmObject(BC_DTM_OB
 BENTLEYDTMFORMATS_EXPORT  int bcdtmImport_MXTriangulationToDtmObject(BC_DTM_OBJ* dtmP, void* triPtrP, void* pointsPtrP);
 
 TERRAINMODEL_TYPEDEFS (MXFilImporter)
-ADD_BENTLEY_TYPEDEFS (Bentley::TerrainModel, MXFilImporter);
 
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
@@ -50,7 +49,7 @@ struct MXFilImporter : TerrainImporter
 
     private: MXFilImporter (WCharCP filename);
 
-    private: void DoImport (bmap <WString, Bentley::TerrainModel::BcDTMPtr>& nameDtms, bool importAll) const;
+    private: void DoImport (bmap <WString, BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr>& nameDtms, bool importAll) const;
     private: BcDTMPtr ImportStringModel (ModelTableRecord* modelTableRecord) const;
     private: BcDTMPtr ImportTriangulation (StringTableRecord* stringTableRecord, WCharCP name) const;
 

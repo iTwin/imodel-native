@@ -2,7 +2,7 @@
 |
 |     $Source: FormatsNET/Lidar.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -14,7 +14,7 @@ BEGIN_BENTLEY_TERRAINMODELNET_FORMATS_NAMESPACE
 LidarImporter^ LidarImporter::Create (System::String^ filename)
     {
     pin_ptr<const wchar_t> p = PtrToStringChars (filename);
-    LidarImporterPtr importer = Bentley::TerrainModel::LidarImporter::Create (p);
+    LidarImporterPtr importer = BENTLEY_NAMESPACE_NAME::TerrainModel::LidarImporter::Create (p);
 
     if (importer.IsValid ())
         return gcnew LidarImporter (importer.get());
@@ -28,7 +28,7 @@ LidarImporter::LidarImporter (LidarImporterP importer) : TerrainImporter (import
 
 array<LidarImporter::ClassificationInfo^>^ LidarImporter::GetClassificationInfo ()
     {
-    bvector<Bentley::TerrainModel::LidarImporter::ClassificationInfo> info;
+    bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::LidarImporter::ClassificationInfo> info;
     info = m_importer->GetClassificationInfo ();
     array<ClassificationInfo^>^ mInfo = gcnew array<ClassificationInfo^> ((int)info.size ());
 
@@ -42,15 +42,15 @@ array<LidarImporter::ClassificationInfo^>^ LidarImporter::GetClassificationInfo 
     return mInfo;
     }
 
-Bentley::TerrainModelNET::DTM^ LidarImporter::ImportTerrain (array<Classification>^ filter)
+BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM^ LidarImporter::ImportTerrain (array<Classification>^ filter)
     {
-    bvector<Bentley::TerrainModel::LidarImporter::Classification> uFilter;
+    bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::LidarImporter::Classification> uFilter;
 
     for each (Classification classification in filter)
         {
-        uFilter.push_back ((Bentley::TerrainModel::LidarImporter::Classification)classification);
+        uFilter.push_back ((BENTLEY_NAMESPACE_NAME::TerrainModel::LidarImporter::Classification)classification);
         }
     BcDTMPtr dtm = m_importer->ImportTerrain (uFilter);
-    return dtm.IsValid() ? Bentley::TerrainModelNET::DTM::FromHandle ((System::IntPtr)dtm.get()) : nullptr;
+    return dtm.IsValid() ? BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM::FromHandle ((System::IntPtr)dtm.get()) : nullptr;
     }
 END_BENTLEY_TERRAINMODELNET_FORMATS_NAMESPACE

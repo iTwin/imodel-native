@@ -6,7 +6,7 @@
 |       $Date: 2012/02/16 22:19:31 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableTerrainModelPCH.h>
@@ -188,7 +188,7 @@ bool                                OutputType                 (BinaryOStream&  
     assert(0 < orgGroup.GetTypeSize());
     //assert(orgGroup.IsComplete());
 
-    const UInt32 orgCountField = static_cast<UInt32>(orgGroup.GetSize());
+    const uint32_t orgCountField = static_cast<uint32_t>(orgGroup.GetSize());
     if (!WriteValue(stream, orgCountField))
         return false;
 
@@ -196,7 +196,7 @@ bool                                OutputType                 (BinaryOStream&  
          orgIt != orgsEnd;
          ++orgIt)
         {
-        const UInt32 dimensionCountField = static_cast<UInt32>(orgIt->GetSize());
+        const uint32_t dimensionCountField = static_cast<uint32_t>(orgIt->GetSize());
         if (!WriteValue(stream, dimensionCountField))
             return false;
 
@@ -240,7 +240,7 @@ bool                                OutputGCS                  (BinaryOStream&  
 bool                                OutputLayer                (BinaryOStream&                              stream,
                                                                 UInt                                        layer)
     {
-    const UInt32 layerField = layer;
+    const uint32_t layerField = layer;
     return WriteValue(stream, layerField);
     }
 
@@ -272,7 +272,7 @@ private:
                                                                             BinaryOStream&                      stream) const override
         {
         const GCS& gcs = component.GetGCS();
-        UInt32 flagsField(0);
+        uint32_t flagsField(0);
             
         SetBitsTo(flagsField, 0x1, component.IsPrependedToExistingLocalTransform());
         SetBitsTo(flagsField, 0x2, component.IsExistingPreservedIfGeoreferenced());
@@ -462,7 +462,7 @@ bool                                GenericSerialize           (const SerializeC
         bool operator () (const SerializeCommand& command) { return !command.Run(m_stream); }
         };
 
-    const UInt32 componentCountField = (UInt32)serializeCommands.size();
+    const uint32_t componentCountField = (uint32_t)serializeCommands.size();
 
     return WriteValue(stream, componentCountField) &&
            (serializeCommands.end() == find_if(serializeCommands.begin(), serializeCommands.end(), RunCommand(stream))) && 
@@ -557,7 +557,7 @@ protected:
 
     static UInt                 LoadLayer                  (BinaryIStream&      stream)
         {
-        UInt32 layerField = INVALID_LAYER;
+        uint32_t layerField = INVALID_LAYER;
         ReadValue(stream, layerField);
         return layerField;
         }
@@ -690,7 +690,7 @@ const struct GCSExtendedConfigCreatorV2 : public ComponentCreator
         if (!ReadStringW(stream, gcsWKT))
             return 0;
         
-        UInt32 flagsField;
+        uint32_t flagsField;
         if (!ReadValue(stream, flagsField))
             return 0;
                            
@@ -749,21 +749,21 @@ const struct TypeConfigCreator : ComponentCreator
             return 0;
 
         // Load type
-        UInt32 orgCountField = 0;
+        uint32_t orgCountField = 0;
         if (!ReadValue(stream, orgCountField) || 0 == orgCountField)
             return 0;
 
         DimensionOrgGroup orgGroup(orgCountField);
 
-        for (UInt32 orgIdx = 0; orgIdx < orgCountField; ++orgIdx)
+        for (uint32_t orgIdx = 0; orgIdx < orgCountField; ++orgIdx)
             {
-            UInt32 dimensionCountField = 0;
+            uint32_t dimensionCountField = 0;
             if (!ReadValue(stream, dimensionCountField) || 0 == dimensionCountField)
                 return 0;
 
             DimensionOrg org(dimensionCountField);
 
-            for (UInt32 dimIdx = 0; dimIdx < dimensionCountField; ++dimIdx)
+            for (uint32_t dimIdx = 0; dimIdx < dimensionCountField; ++dimIdx)
                 {
                 const UInt dimensionTypeField = stream.get();
                 const UInt dimensionRoleField = stream.get();
@@ -872,13 +872,13 @@ template <typename ConfigT>
 bool                                GenericDeserialize         (BinaryIStream&                  stream,
                                                                 ConfigT&                        config)
     {
-    UInt32 componentCountField = 0;
+    uint32_t componentCountField = 0;
     if (!ReadValue(stream, componentCountField))
         return false;
 
     static const ComponentFactory COMPONENT_FACTORY;
     
-    for (UInt32 i = 0; i < componentCountField; ++i)
+    for (uint32_t i = 0; i < componentCountField; ++i)
         {
         bool isNewerSerializationID;
 

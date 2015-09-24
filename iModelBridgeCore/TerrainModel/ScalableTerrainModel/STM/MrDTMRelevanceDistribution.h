@@ -6,7 +6,7 @@
 //:>       $Date: 2010/08/19 13:45:40 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -26,8 +26,8 @@ template<class DATATYPE = double> class MrDTMRelevanceDistribution
                                    DataType_T pi_minRelevance, 
                                    DataType_T pi_maxRelevance) 
             {  
-            m_pBins        = new UInt64[pi_nbBins];
-            memset(m_pBins.get(), 0, sizeof(UInt64) * pi_nbBins);
+            m_pBins        = new uint64_t[pi_nbBins];
+            memset(m_pBins.get(), 0, sizeof(uint64_t) * pi_nbBins);
 
             m_nbRelevanceValues = 0;
             m_nbBins            = pi_nbBins;
@@ -65,9 +65,9 @@ template<class DATATYPE = double> class MrDTMRelevanceDistribution
                                         
     private:      
 
-        HArrayAutoPtr<UInt64> m_pBins;
+        HArrayAutoPtr<uint64_t> m_pBins;
         ULong32               m_nbBins;
         DataType_T            m_minRelevance;        
         DataType_T            m_step;
-        UInt64                m_nbRelevanceValues;
+        uint64_t                m_nbRelevanceValues;
     };

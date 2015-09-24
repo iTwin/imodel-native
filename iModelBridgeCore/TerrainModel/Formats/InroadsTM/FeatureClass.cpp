@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 
 //---------------------------------------------------------------------------
@@ -23,7 +23,7 @@ CFeature::CFeature()
 {
     m_ftrP = NULL;
     m_srfP = NULL;
-    memset ( &m_guid, 0, sizeof ( GUID ) );
+    memset ( &m_guid, 0, sizeof ( BeGuid ) );
     m_nType = DTM_C_DTMREGFTR;
     wcscpy ( m_sName, L"" );
     wcscpy ( m_sDesc, L"" );
@@ -39,7 +39,7 @@ CFeature::CFeature()
     m_payItemsP = NULL;
     m_nNumPayItems = 0;
     m_nPayItemsAlc = 0;
-    memset ( &m_flag, 0, sizeof ( byte ) );
+    memset ( &m_flag, 0, sizeof ( unsigned char ) );
     m_locateGuidsP = NULL;
     m_nNumLocateGuids = 0;
     m_nLocateGuidsAlc = 0;
@@ -106,7 +106,7 @@ void CFeature::FreeStyles ( )
 // DESC: When a feature is loaded from the DTM into a feature object.  Points
 //       and styles are not loaded unless needed because of memory allocation
 //       overhead.  This function searches the DTM for the feature with a
-//       GUID matching the feature object.  If found, it allocates memory for
+//       BeGuid matching the feature object.  If found, it allocates memory for
 //       and loads a feature's styles from the DTM into feature object's
 //       style list.
 // HIST: Original - twlangha - 01/13/99
@@ -171,7 +171,7 @@ void CFeature::FreePayItems ( )
 // DESC: When a feature is loaded from the DTM into a feature object.  Points
 //       and pay items are not loaded unless needed because of memory allocation
 //       overhead.  This function searches the DTM for the feature with a
-//       GUID matching the feature object.  If found, it allocates memory for
+//       BeGuid matching the feature object.  If found, it allocates memory for
 //       and loads a feature's pay items from the DTM into feature object's
 //       pay items list.
 // HIST: Original - twl - 10/11/2003
@@ -253,7 +253,7 @@ int CFeature::Clear ( )     // <=  Non-zero status code if error occurred.
     
     m_ftrP = NULL;
     m_srfP = NULL;
-    memset ( &m_guid, 0, sizeof ( GUID ) );
+    memset ( &m_guid, 0, sizeof ( BeGuid ) );
     m_nType = DTM_C_DTMREGFTR;
     wcscpy ( m_sName, L"" );
     wcscpy ( m_sDesc, L"" );
@@ -269,7 +269,7 @@ int CFeature::Clear ( )     // <=  Non-zero status code if error occurred.
     m_payItemsP = NULL;
     m_nNumPayItems = 0;
     m_nPayItemsAlc = 0;
-    memset ( &m_flag, 0, sizeof ( byte ) );
+    memset ( &m_flag, 0, sizeof ( unsigned char ) );
     m_pStyleInfo = NULL;
     return ( sts );
 }

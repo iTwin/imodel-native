@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmttn.h                                            aec    08-Feb-1994     */
@@ -414,12 +414,12 @@ struct TXrange
 
 struct TXsymbology
 {
-   byte clr_index;
-   byte red;
-   byte green;
-   byte blue;
-   byte weight;
-   byte style;
+   unsigned char clr_index;
+   unsigned char red;
+   unsigned char green;
+   unsigned char blue;
+   unsigned char weight;
+   unsigned char style;
 };
 
 #if !defined (mdl)
@@ -427,25 +427,25 @@ struct TXsymbology
 struct TXxyz      /*   XYZ record  */
 {
 #ifndef BITFIELDS_REVERSED
-  byte pd :1;
-  byte rsrv :1; 
-  byte type :6;  /* file type */
-  byte weight;
-  byte weight_flag :1;
-  byte processed :1;
-  byte dummy :6;
-  byte r1 :7;
-  byte deleted :1;    /*   point is deletd */
+  unsigned char pd :1;
+  unsigned char rsrv :1; 
+  unsigned char type :6;  /* file type */
+  unsigned char weight;
+  unsigned char weight_flag :1;
+  unsigned char processed :1;
+  unsigned char dummy :6;
+  unsigned char r1 :7;
+  unsigned char deleted :1;    /*   point is deletd */
 #else
-  byte deleted :1;    /*   point is deletd */
-  byte r1 :7;
-  byte dummy :6;
-  byte processed :1;
-  byte weight_flag :1;
-  byte weight;
-  byte type :6;  /* file type */
-  byte rsrv :1; 
-  byte pd :1;
+  unsigned char deleted :1;    /*   point is deletd */
+  unsigned char r1 :7;
+  unsigned char dummy :6;
+  unsigned char processed :1;
+  unsigned char weight_flag :1;
+  unsigned char weight;
+  unsigned char type :6;  /* file type */
+  unsigned char rsrv :1; 
+  unsigned char pd :1;
 #endif
   long  x;             /*   X  coordinate   */
   long  y;             /*   Y  coordinate   */
@@ -462,29 +462,29 @@ struct TXtin   /*  TIN record  */
   TXTP n23;   /*  adjacent triangle to edge p2-p3 */
   TXTP n31;   /*  adjacent triangle to edge p3-p1 */
 #ifndef BITFIELDS_REVERSED
-  byte b12 :1;        /*  p1-p2 is part of a break line */
-  byte b23 :1;        /*  p2-p3 is part of a break line */
-  byte b31 :1;        /*  p3-p1 is part of a break line */
-  byte deleted :1;    /*  triangle is deleted  */
-  byte user_bit  :1;  /*  This bit can be used as another processed bit*/
-  byte removed :1;    /*  triangle is removed from network */
-  byte processed :1;  /*  triangle is processed for current
+  unsigned char b12 :1;        /*  p1-p2 is part of a break line */
+  unsigned char b23 :1;        /*  p2-p3 is part of a break line */
+  unsigned char b31 :1;        /*  p3-p1 is part of a break line */
+  unsigned char deleted :1;    /*  triangle is deleted  */
+  unsigned char user_bit  :1;  /*  This bit can be used as another processed bit*/
+  unsigned char removed :1;    /*  triangle is removed from network */
+  unsigned char processed :1;  /*  triangle is processed for current
                                 process  */
-  byte planar :1;     /*  the terrain is planer in this area */
-                               /*  no byte alignment needed here because
+  unsigned char planar :1;     /*  the terrain is planer in this area */
+                               /*  no unsigned char alignment needed here because
                                    of how data was written  (wbw 2/93) */
 #else
-  byte planar :1;     /*  the terrain is planer in this area */
-                               /*  no byte alignment needed here because
+  unsigned char planar :1;     /*  the terrain is planer in this area */
+                               /*  no unsigned char alignment needed here because
                                    of how data was written  (wbw 2/93) */
-  byte processed :1;  /*  triangle is processed for current
+  unsigned char processed :1;  /*  triangle is processed for current
                                 process  */
-  byte removed :1;    /*  triangle is removed from network */
-  byte user_bit  :1;  /*  This bit can be used as another processed bit*/
-  byte deleted :1;    /*  triangle is deleted  */
-  byte b31 :1;        /*  p3-p1 is part of a break line */
-  byte b23 :1;        /*  p2-p3 is part of a break line */
-  byte b12 :1;        /*  p1-p2 is part of a break line */
+  unsigned char removed :1;    /*  triangle is removed from network */
+  unsigned char user_bit  :1;  /*  This bit can be used as another processed bit*/
+  unsigned char deleted :1;    /*  triangle is deleted  */
+  unsigned char b31 :1;        /*  p3-p1 is part of a break line */
+  unsigned char b23 :1;        /*  p2-p3 is part of a break line */
+  unsigned char b12 :1;        /*  p1-p2 is part of a break line */
 #endif	
 } ;
 
@@ -521,7 +521,7 @@ struct TXfeature
   struct TXfeature *next;
   TXFP file;
   struct TXsymbology symb;
-  wchar_t pad1[2];/* for byte alignment (wbw 2/93) */
+  wchar_t pad1[2];/* for unsigned char alignment (wbw 2/93) */
   void *app_ptr;  /* a pointer to whatever software developer wants */
 #ifndef BITFIELDS_REVERSED
   unsigned long exclude :1;  /*  if set, exclude this feature
@@ -530,9 +530,9 @@ struct TXfeature
                               /*  even if the feature is linear/areal */
   unsigned long exercised :1;  /*  if set, the feature has not been modified */
                   /*  since last exercise */
-  unsigned long pad2:29;        /* for byte alignment (wbw 2/93) */
+  unsigned long pad2:29;        /* for unsigned char alignment (wbw 2/93) */
 #else
-  unsigned long pad2:29;        /* for byte alignment (wbw 2/93) */
+  unsigned long pad2:29;        /* for unsigned char alignment (wbw 2/93) */
 
   unsigned long exercised :1;  /*  if set, the feature has not been modified */
                   /*  since last exercise */
@@ -558,9 +558,9 @@ struct TXfile     /*  output file descriptor  */
   unsigned long exercised :1;    /*  TRUE if the file has been exercised     */
   unsigned long exclude :1;      /*  if set, exclude this file from triangulation */
   unsigned long triangulate :1;  /* TRUE for immediate triangulation */
-  unsigned long pad:29;          /* for byte alignment (wbw 2/93) */
+  unsigned long pad:29;          /* for unsigned char alignment (wbw 2/93) */
 #else
-  unsigned long pad:29;          /* for byte alignment (wbw 2/93) */
+  unsigned long pad:29;          /* for unsigned char alignment (wbw 2/93) */
   unsigned long triangulate :1;  /* TRUE for immediate triangulation */
   unsigned long exclude :1;      /*  if set, exclude this file from triangulation */
   unsigned long exercised :1;    /*  TRUE if the file has been exercised     */
@@ -596,7 +596,7 @@ struct TXinterpol
 
 typedef struct
 {
-  byte  magic[3]; // Do not convert to unicode.
+  unsigned char  magic[3]; // Do not convert to unicode.
   wchar_t  version;
 } hdr_magic;  
 
@@ -652,10 +652,10 @@ typedef struct ttn_file_header_struct    /* structure name  (wbw 2/93) */
 {
   hdr_magic         magic;
   wchar_t           date[26];
-  wchar_t           pad1[2];    /* for byte alignment  (wbw 2/93) */
+  wchar_t           pad1[2];    /* for unsigned char alignment  (wbw 2/93) */
   struct TXrange    range;
   hdr_flags         flags;
-  wchar_t           pad2[4];    /* for byte alignment  (wbw 2/93) */
+  wchar_t           pad2[4];    /* for unsigned char alignment  (wbw 2/93) */
   TXmatrix          matrix;
   long              no_points;
   long              no_records;
@@ -667,7 +667,7 @@ typedef struct ttn_file_header_struct    /* structure name  (wbw 2/93) */
   wchar_t           unit[UNIT_SIZE_TriM+1];
   hdr_projection    proj;
   wchar_t           attribute_name[ATTR_NAME_SIZE_TriM+1];
-  wchar_t           pad3[2];    /* for byte alignment  (wbw 2/93) */
+  wchar_t           pad3[2];    /* for unsigned char alignment  (wbw 2/93) */
   double            rmse;
 } ttn_file_header;
 
@@ -854,15 +854,15 @@ struct TXOfile     /*  output file descriptor  */
   long  no_deleted;  /*  number of deleted records */
   TXHP data;  /*  pointer to first data header  */
 #ifndef BITFIELDS_REVERSED
-  byte fence_exists :1;  /* =1 if user has defined a fence */
-  byte connect :1;       /* TRUE if the points should be connected  */
-  byte exercised :1;     /* TRUE if the file has been exercised     */
-  byte triangulate :1;   /* TRUE for immediate triangulation */
+  unsigned char fence_exists :1;  /* =1 if user has defined a fence */
+  unsigned char connect :1;       /* TRUE if the points should be connected  */
+  unsigned char exercised :1;     /* TRUE if the file has been exercised     */
+  unsigned char triangulate :1;   /* TRUE for immediate triangulation */
 #else
-  byte triangulate :1;   /* TRUE for immediate triangulation */
-  byte exercised :1;     /* TRUE if the file has been exercised     */
-  byte connect :1;       /* TRUE if the points should be connected  */
-  byte fence_exists :1;  /* =1 if user has defined a fence */
+  unsigned char triangulate :1;   /* TRUE for immediate triangulation */
+  unsigned char exercised :1;     /* TRUE if the file has been exercised     */
+  unsigned char connect :1;       /* TRUE if the points should be connected  */
+  unsigned char fence_exists :1;  /* =1 if user has defined a fence */
 #endif	
 };
 
@@ -883,7 +883,7 @@ struct elev_tbl_rec
 
 struct elev_tbl_hdr
 {
-  unsigned tbl_size;        /* bytes allocated for elev. table */
+  unsigned tbl_size;        /* unsigned chars allocated for elev. table */
   long nor;            /* no of record in elevation table */
   long minz,maxz;            /* range of z values in table      */
   long interval;            /* contour interval after mult.    */

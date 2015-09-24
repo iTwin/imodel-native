@@ -1432,7 +1432,7 @@ int bcdtmDrainage_determineLowPointPondsDtmObject
 ** Scan Tin For Internal Low Points
 */
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- long   p1,p2,clc,node,exitPoint,priorPoint,nextPoint,expandStart ;
+ long   p1 = 0,p2,clc,node,exitPoint,priorPoint,nextPoint,expandStart ;
  DTM_TIN_NODE *nodeP ;
  DTM_POLYGON_OBJ *polygonP=NULL ;
  bool  lowPoint=true ;
@@ -1603,7 +1603,7 @@ int bcdtmDrainage_determinePondAboutLowPointDtmObject
  if( dbg )
    {
     bcdtmWrite_message(0,0,0,"priorPoint = %8ld exitPoint = %8ld nextPoint = %8ld",*priorPointP,*exitPointP,*nextPointP) ;
-    if( *exitPointP != NULL )
+    if( *exitPointP != 0 )
       {
        bcdtmWrite_message(0,0,0,"ExitPoint = %8ld ** %12.5lf %12.5lf %10.4lf",*exitPointP,pointAddrP(dtmP,*exitPointP)->x,pointAddrP(dtmP,*exitPointP)->y,pointAddrP(dtmP,*exitPointP)->z) ;
       }
@@ -2056,7 +2056,7 @@ int bcdtmDrainage_determineZeroSlopeSumpLinePondsDtmObject
  long   voidLine,numZeroLines,numSumpLines=0,maxSumpLines=0 ;
  long   startTime=bcdtmClock()  ;
  long   numZeroSlopeSumpLines=0,memZeroSlopeSumpLines=0,memZeroSlopeSumpLinesInc=1000 ;
- double elevation1,elevation2 ;
+ double elevation1 = 0.0,elevation2 ;
  DTM_TIN_NODE      *dP ;
  DTM_TIN_POINT     *pnt1P,*pnt2P ;
  DTM_POLYGON_OBJ   *polygonP=NULL ;
@@ -2534,7 +2534,7 @@ if( dbg )
       {
       if (*numSumpLinesP == memSumpLines)
           {
-          memSumpLines *= 1.5;
+          memSumpLines *= 15; memSumpLines /= 10;
           *sumpLinesPP = ( DTM_SUMP_LINES *)realloc (*sumpLinesPP, memSumpLines*sizeof(DTM_SUMP_LINES));
           }
        (*sumpLinesPP+*numSumpLinesP)->sP1 =  spt1P->point1 ;
@@ -2574,8 +2574,8 @@ if( dbg )
             {
              if (*numSumpLinesP == memSumpLines)
                  {
-                 memSumpLines *= 1.5;
-                 long stackPtrIndex = stackPtrP - *sumpLinesPP;
+                 memSumpLines *= 15; memSumpLines /= 10;
+                 __int64 stackPtrIndex = stackPtrP - *sumpLinesPP;
                  *sumpLinesPP = ( DTM_SUMP_LINES *)realloc (*sumpLinesPP, memSumpLines*sizeof(DTM_SUMP_LINES));
                  stackPtrP = *sumpLinesPP + stackPtrIndex;
                  }
@@ -5155,7 +5155,7 @@ int bcdtmDrainage_expandPondToExitPointDtmObject
 )
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(1),tdbg=DTM_TIME_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- int    ap,cp,p1,p2,edgeType,edgePnt1,edgePnt2,numPondPts,numZeroEdges ;
+ int    ap,cp,p1,p2,edgeType,edgePnt1 = 0,edgePnt2 = 0,numPondPts,numZeroEdges ;
  long   sPnt,nPnt,pPnt,lowPoint,exitPointFound,extStartPoint,extEndPoint ;
  long   saveStartPoint,hullPoint,startTime,numFeaturePts ;
  double area,lowPointZ,lastArea=0.0 ;
@@ -5676,7 +5676,7 @@ int bcdtmDrainage_expandPondOverSlopeTrianglesDtmObject
  int    edgePnt1, edgePnt2, zeroEdgeType, zeroStartPoint;
  DTMDirection expandDirection;
  long   numFeaturePts,startPoint,newStartPoint,startTime=bcdtmClock() ;
- double area,beforeArea,afterArea ;
+ double area,beforeArea = 0.0,afterArea ;
  bool   iterate=true ;
  DTMDirection direction ;
  DPoint3d    *featurePtsP=NULL ;
@@ -6011,7 +6011,7 @@ double            lowPointZ                   // ==> Low Point Z
 )
     {
     int    ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE (0), tdbg = DTM_TIME_VALUE (0), cdbg = DTM_CHECK_VALUE (0);
-    int    numConnectedPoints, numLowPointElevation, newStartPoint, numZeroEdges;
+    int    numConnectedPoints, numLowPointElevation, newStartPoint = 0, numZeroEdges;
     DTMDirection direction;
     long   sp, np, cp, clc, startPnt, firstPnt, lastPnt, stopPnt, numMarked, totalMarked;
     long   p1, p2, p3, numFeaturePts, startTime = bcdtmClock ();
@@ -6334,7 +6334,7 @@ int bcdtmDrainage_expandPondToOuterEdgeOfZeroSlopeTrianglesDtmObject
     )
     {
     int    ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE (0), tdbg = DTM_TIME_VALUE (0), cdbg = DTM_CHECK_VALUE (0);
-    int    numConnectedPoints, numLowPointElevation, numZeroEdges, newStartPoint;
+    int    numConnectedPoints, numLowPointElevation, numZeroEdges, newStartPoint = 0;
     DTMDirection direction;
     long   sp, np, cp, clc, startPnt, firstPnt, lastPnt, stopPnt, numMarked, totalMarked;
     long   p1, p2, p3, numFeaturePts, startTime = bcdtmClock ();
@@ -6588,7 +6588,7 @@ int bcdtmDrainage_placeSptrPolygonAtPointAroundZeroSlopeTrianglesDtmObject
 {
  int          ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  int          sp,np,cp,lcp,clc ;
- long         pnt,hullLine,edgePnt1,edgePnt2,antPnt,clkPnt ;
+ long         pnt = 0,hullLine,edgePnt1,edgePnt2,antPnt = 0,clkPnt = 0;
  DTMDirection direction ;
  double       elevation,area ;
  bool         zeroEdge=false ;
@@ -7360,7 +7360,7 @@ int bcdtmDrainage_expandPondOverZeroSlopeTrianglesFromZeroEdgeDtmObject
  DTMDirection expandDirection;
  long   numFeaturePts,startPoint,newStartPoint ;
  DTMDirection  direction ;
- double area,beforeArea,afterArea ;
+ double area,beforeArea = 0.0,afterArea ;
  DPoint3d    *featurePtsP=NULL ;
  BC_DTM_OBJ     *dataP=NULL ;
 
@@ -8076,7 +8076,7 @@ int bcdtmDrainage_polygoniseZeroSlopeTrianglesDtmObject
     if( dbg ) bcdtmWrite_message(0,0,0,"**** Checking Elevation Values Of Zero Slope Polygons") ;
     for( zsp = zeroSlopePolygons.begin() ; zsp < zeroSlopePolygons.end() ; ++zsp )
       {
-       double elevation ;
+       double elevation = 0.0;
        for( int n = 0 ; n < zsp->pointList.numPoints ; ++n )
          {
           if( n == 0 ) elevation = pointAddrP(dtmP,zsp->pointList.pointsP[n])->z ;

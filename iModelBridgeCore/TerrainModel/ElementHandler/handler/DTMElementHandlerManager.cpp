@@ -9,6 +9,7 @@
 #include <DgnPlatform\ElementUtil.h>
 #include <DgnPlatform\TerrainModel\TMElementHandler.h>
 #include <DgnPlatform\TerrainModel\TMElementSubHandler.h>
+#include <TerrainModel\ElementHandler\DTMSymbologyOverrideManager.h>
 #include "MrDTMDataRef.h"
 
 #include <TerrainModel\ElementHandler\IMultiResolutionGridMaterialManager.h>
@@ -28,13 +29,10 @@ void Initializations ();
 //=======================================================================================
 int DTMElementHandlerManager::s_mrDTMactivationRefCount = 0;
 DTMElementHandlerManager::IDTMElementPowerPlatformExtension* DTMElementHandlerManager::s_DTMElementPowerPlatformExtension = nullptr;
-DTMElementHandlerManager::IDTMIsFriendModelExtension* DTMElementHandlerManager::s_DTMIsFriendModel = nullptr;
 
 IMultiResolutionGridManagerCreatorPtr DTMElementHandlerManager::s_multiResolutionGridManagerCreator = 0;
 IRasterTextureSourceManager*          DTMElementHandlerManager::s_rasterTextureSourceManagerP = 0;
-bool                                  DTMElementHandlerManager::s_isDrawForAnimation = false;
-bool                                  DTMElementHandlerManager::s_isInitializedDgnPlatform = false;
-bool                                  DTMElementHandlerManager::s_isInitializedDgnDisplay = false;
+bool                                  DTMElementHandlerManager::s_isDrawForAnimation = false; 
 
 
 
@@ -57,14 +55,14 @@ class DTMDisplayParamsXAttributeHandler : public XAttributeHandler, public IXAtt
     //=======================================================================================
     // @bsimethod                                                   Daryl.Holmwood 04/10
     //=======================================================================================
-    public: void DeleteCache (ElementRefP elemRef, UInt32 id)
+    public: void DeleteCache (ElementRefP elemRef, uint32_t id)
         {
         ElementHandle dataEl (elemRef, nullptr);
 
         if (!dataEl.GetElementCP()->hdr.ehdr.isGraphics)
             {
             ElementHandle originalEl;
-            TMSymbologyOverrideManager::GetReferencedElement (dataEl, originalEl);
+            DTMSymbologyOverrideManager::GetReferencedElement (dataEl, originalEl);
 
             RedrawElement (originalEl);
             dataEl = originalEl;
@@ -102,16 +100,22 @@ class DTMDisplayParamsXAttributeHandler : public XAttributeHandler, public IXAtt
     //=======================================================================================
     // @bsimethod                                                   Daryl.Holmwood 04/10
     //=======================================================================================
-    public: virtual void _OnPreModifyData (XAttributeHandleCR xAttr, void const* newData, UInt32  start, UInt32 length, TransactionType type) override
+    public: virtual void _OnPreModifyData (XAttributeHandleCR xAttr, void const* newData, uint32_t  start, uint32_t length, TransactionType type) override
         {
         DeleteCache (xAttr.GetElementRef(), xAttr.GetId());
         }
 
-    public: virtual void _OnPreReplaceData (XAttributeHandleCR xAttr, void const* newData, UInt32 newSize, TransactionType type) override
+    public: virtual void _OnPreReplaceData (XAttributeHandleCR xAttr, void const* newData, uint32_t newSize, TransactionType type) override
         {
         DeleteCache (xAttr.GetElementRef(), xAttr.GetId());
         }
     };
+
+static DTMSymbologyOverrideManager s_dtmOverrideSymbologyXAttributeHandler;
+static DTMOverrideSymbologyManager& s_dtmOSDisplayeHandler = ELEMENTHANDLER_INSTANCE (DTMOverrideSymbologyManager);
+static DTMReferenceXAttributeHandler s_dtmReferenceHandlerInfoXAttributeHandler;
+
+ELEMENTHANDLER_DEFINE_MEMBERS (DTMOverrideSymbologyManager);
 
 static DTMHeaderXAttributeHandler s_dtmHeaderHandlerInfoXAttributeHandler;
 static DTMHeaderXAttributeHandler s_dtmHeaderHandlerInfoXAttributeHandler2;
@@ -126,7 +130,18 @@ int registerElementHandlers ()
     {   
     LogInfo(L"registering ElementHandlers.");
 
+    ElementHandlerManager::RegisterHandler (ElementHandlerId (TMElementMajorId, ELEMENTHANDLER_DTMOVERRIDESYMBOLOGY), ELEMENTHANDLER_INSTANCE (DTMOverrideSymbologyManager));
+
+    XAttributeHandlerManager::RegisterHandler (DTMSymbologyOverrideManager::GetDisplayRefXAttributeHandlerId(), &s_dtmOverrideSymbologyXAttributeHandler);
+    XAttributeHandlerManager::RegisterPointerContainerHandler (DTMSymbologyOverrideManager::GetDisplayRefXAttributeHandlerId(), &s_dtmOverrideSymbologyXAttributeHandler);
+    
+    XAttributeHandlerManager::RegisterHandler (DTMSymbologyOverrideManager::GetDisplayInfoXAttributeHandlerId(), &s_dtmOverrideSymbologyXAttributeHandler);
+    XAttributeHandlerManager::RegisterPointerContainerHandler (DTMSymbologyOverrideManager::GetDisplayInfoXAttributeHandlerId(), &s_dtmOverrideSymbologyXAttributeHandler);
+
     // Register XAttributes Handlers.
+    XAttributeHandlerManager::RegisterHandler (DTMReferenceXAttributeHandler::GetXAttributeHandlerId(), &s_dtmReferenceHandlerInfoXAttributeHandler);
+    XAttributeHandlerManager::RegisterPointerContainerHandler (DTMReferenceXAttributeHandler::GetXAttributeHandlerId(), &s_dtmReferenceHandlerInfoXAttributeHandler);
+
     XAttributeHandlerManager::RegisterHandler(DTMDisplayParamsXAttributeHandler::GetXAttributeHandlerId(), &s_dtmDisplayParamsXAttributeHandler);
     XAttributeHandlerManager::RegisterHandler(DTMHeaderXAttributeHandler::GetXAttributeHandlerId(), &s_dtmHeaderHandlerInfoXAttributeHandler);
 
@@ -136,58 +151,30 @@ int registerElementHandlers ()
     }
 
 //=======================================================================================
-// @bsimethod                                                   Daryl.Holmwood 08/15
-//=======================================================================================
-void DTMElementHandlerManager::SetIsFriendModelExtension (DTMElementHandlerManager::IDTMIsFriendModelExtension* value)
-    {
-    s_DTMIsFriendModel = value;
-    }
-
-//=======================================================================================
-// @bsimethod                                                   Daryl.Holmwood 08/15
-//=======================================================================================
-void DTMElementHandlerManager::SetPowerPlatformExtension (DTMElementHandlerManager::IDTMElementPowerPlatformExtension* DTMElementPowerPlatformExtension)
-    {
-    s_DTMElementPowerPlatformExtension = DTMElementPowerPlatformExtension;
-    }
-
-//=======================================================================================
-// @bsimethod                                                   Daryl.Holmwood 08/15
-//=======================================================================================
-void DTMElementHandlerManager::InitializeDgnPlatform ()
-    {
-    if (!s_isInitializedDgnPlatform)
-        {
-        s_isInitializedDgnPlatform = true;
-        DTMRegisterDisplayHandlers ();
-        Initializations ();
-        registerElementHandlers ();
-
-        // Initialize the XAttributes handler
-        DTMBinaryData::Initialize ();
-        MrDTMXAttributeHandler::GetInstance ()->RegisterHandlers ();
-        }
-    }
-
-//=======================================================================================
 // @bsimethod                                                   Daryl.Holmwood 04/10
 //=======================================================================================
-void DTMElementHandlerManager::InitializeDgnDisplay ()
+void DTMElementHandlerManager::Initialize (DTMElementHandlerManager::IDTMElementPowerPlatformExtension* DTMElementPowerPlatformExtension)
     {
-    if (!s_isInitializedDgnDisplay)
-        {
-        s_isInitializedDgnDisplay = true;
-        // Register the handlers
+    // Register the handlers
+    DTMRegisterDisplayHandlers();
+    Initializations ();
+    s_DTMElementPowerPlatformExtension = DTMElementPowerPlatformExtension;
+    registerElementHandlers ();
 
-        InitializeDgnPlatform ();
-        DTMDisplayCacheManager::Initialize ();
+    // Initialize the XAttributes handler
+    DTMBinaryData::Initialize();
 
+    DTMDisplayCacheManager::Initialize();
+    
+
+    MrDTMXAttributeHandler::GetInstance()->RegisterHandlers();  
+        
 #ifdef ToDoDoWeNeed
-        SystemCallback::SetFileSaveAsFunction (onSystemFunc_FileSave);
-        SystemCallback::SetFileSaveFunction (onSystemFunc_FileSave);
-        SystemCallback::SetCompressDgnFileFunction (onCompressFile);
+    SystemCallback::SetFileSaveAsFunction (onSystemFunc_FileSave);
+    SystemCallback::SetFileSaveFunction (onSystemFunc_FileSave);
+    SystemCallback::SetCompressDgnFileFunction (onCompressFile);
 #endif
-        }
+
     }
 
 //=======================================================================================
@@ -200,7 +187,7 @@ bool DTMElementHandlerManager::IsDTMElement(ElementHandleCR element)
 
     ElementHandle original;
 
-    if (TMSymbologyOverrideManager::GetReferencedElement (element, original))
+    if (DTMSymbologyOverrideManager::GetReferencedElement (element, original))
         return IsDTMElement (original);
     return false;
     }
@@ -262,7 +249,7 @@ StatusInt DTMElementHandlerManager::GetDTMDataRef(RefCountedPtr<DTMDataRef>& out
         //    return SUCCESS;
         }
 
-    if (TMSymbologyOverrideManager::GetReferencedElement (element, dataElement))
+    if (DTMSymbologyOverrideManager::GetReferencedElement (element, dataElement))
         return GetDTMDataRef (outRef, dataElement);
     return ERROR;
     }
@@ -279,11 +266,11 @@ bool DTMElementHandlerManager::FindDTMData(ElementHandleCR element, ElementHandl
     //    return true;
     //    }
 
-    if (TMReferenceXAttributeHandler::GetDTMDataReference(element, dataEl))
+    if (DTMReferenceXAttributeHandler::GetDTMDataReference(element, dataEl))
         {
         if (dataEl.GetElementRef() == element.GetElementRef())
             return true;
-        while (TMReferenceXAttributeHandler::GetDTMDataReference(dataEl, dataEl))
+        while (DTMReferenceXAttributeHandler::GetDTMDataReference(dataEl, dataEl))
             {
             }
         return true;
@@ -336,7 +323,7 @@ StatusInt DTMElementHandlerManager::ScheduleFromDtm (EditElementHandleR editHand
     Transform dtmTransform;
 
     if (!dtm.GetTransformation (dtmTransform))
-        trsf.productOf (&storageTransformation, &dtmTransform);
+        trsf.InitProduct (&storageTransformation, &dtmTransform);
     else
         trsf = storageTransformation;
 
@@ -528,9 +515,9 @@ void DTMElementHandlerManager::CheckAndCreateElementDescr107 (EditElementHandleR
 //        //mdlModelRef_getGlobalOrigin (editHandle.GetModelRef (), &destPtGO);
 //        DTMElementHandlerManager::CheckAndCreateElementDescr(editHandle, DTMElementHandler::GetElemHandlerId(), trsf);
 //        if (dtmDataHandle.GetDgnModel() == dtmHandle.GetDgnModel())
-//            TMReferenceXAttributeHandler::SetDTMDataReference(editHandle, dtmDataHandle);
+//            DTMReferenceXAttributeHandler::SetDTMDataReference(editHandle, dtmDataHandle);
 //        else
-//            TMReferenceXAttributeHandler::SetDTMDataReference (editHandle, dtmHandle);
+//            DTMReferenceXAttributeHandler::SetDTMDataReference (editHandle, dtmHandle);
 //
 //        DTMElementHandlerManager::CreateDefaultDisplayElements (editHandle);
 //
@@ -725,7 +712,7 @@ StatusInt DTMElementHandlerManager::GetName (ElementHandleCR element, WStringR n
     if (!iterator.IsValid())
         return ERROR;
 
-    UInt32   length = iterator.GetSize() / sizeof(wchar_t);
+    uint32_t   length = iterator.GetSize() / sizeof(wchar_t);
     WCharCP  data = (WCharCP) iterator.PeekData(); 
     name.assign (data, length);
     return SUCCESS;
@@ -757,7 +744,7 @@ void DTMElementHandlerManager::SetThematicDisplayStyleIndex (EditElementHandleR 
     if (!eh.GetElementCP()->hdr.ehdr.isGraphics)
         {
         ElementHandle originalEl;
-        TMSymbologyOverrideManager::GetReferencedElement (eh, originalEl);
+        DTMSymbologyOverrideManager::GetReferencedElement (eh, originalEl);
 
         RedrawElement (originalEl);
         }
@@ -786,7 +773,7 @@ StatusInt DTMElementHandlerManager::GetThematicDisplayStyleIndex (ElementHandleC
 //=======================================================================================
 bool DTMElementHandlerManager::GetElementForSymbology (ElementHandleCR element, ElementHandleR symbologyElem, DgnModelRefP destinationModel)
     {
-    return TMSymbologyOverrideManager::GetElementForSymbology (element, symbologyElem, destinationModel);
+    return DTMSymbologyOverrideManager::GetElementForSymbology (element, symbologyElem, destinationModel);
     }
 
 /// <author>Piotr.Slowinski</author>                            <date>7/2011</date>

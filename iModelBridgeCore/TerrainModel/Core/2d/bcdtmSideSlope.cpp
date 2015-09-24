@@ -9744,7 +9744,7 @@ int bcdtmSideSlope_detectAndFixBreaksInSlopeToes(BC_DTM_OBJ *tinP)
  int    ret=DTM_SUCCESS,dbg=0 ;
  long   sp,np,featureNum,clist,numBreaks,spNum,npNum,dtmFeature ;
  bool first;
- double dd,dmin ;
+ double dd,dmin = 0.0;
  BC_DTM_FEATURE  *fP ;
  DTM_TIN_NODE    *dP ;
 /*

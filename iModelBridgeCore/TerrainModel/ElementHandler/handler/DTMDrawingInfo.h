@@ -22,8 +22,8 @@ private:
     DMatrix4d m_rootToCurrLocalTrans;
     DMatrix4d m_currLocalToRootTrans;
     DTMFenceParams m_fence;
+    DPoint3d* m_fencePts;
     bool m_isVisibile;
-    bvector<DPoint3d> m_fencePts;
 
     bvector<bvector<DPoint3d>> m_majorContourCache;
     bvector<bvector<DPoint3d>> m_majorContourDepressionCache;
@@ -32,8 +32,9 @@ public:
     DTMDrawingInfo ()
         {
         m_hasMajorContourCache = false;
-        m_rootToCurrLocalTrans.initIdentity();
-        m_currLocalToRootTrans.initIdentity();
+        m_fencePts = nullptr;
+        m_rootToCurrLocalTrans.InitIdentity();
+        m_currLocalToRootTrans.InitIdentity();
         m_isVisibile = true;
         }
 
@@ -41,6 +42,7 @@ public:
         {
         m_DTMDataRef = DTMDataRef;
         m_hasMajorContourCache = false;
+        m_fencePts = nullptr;
         m_isVisibile = true;
         m_originalEl = originalEl;
         m_symbologyEl = symbologyEl;
@@ -93,14 +95,22 @@ public:
 
     void SetFence (const DTMFenceParams& fence)
         {
+        if (m_fencePts)
+            delete [] m_fencePts;
+
         m_fence.numPoints = fence.numPoints;
         m_fence.fenceType = fence.fenceType;
         m_fence.fenceOption = fence.fenceOption;
 
-        m_fencePts.resize (fence.numPoints);
-        m_fence.points = m_fencePts.data ();
         if (fence.points)
-            memcpy (m_fencePts.data(), fence.points, sizeof (DPoint3d) * fence.numPoints);
+            {
+            m_fence.points = m_fencePts = new DPoint3d[fence.numPoints];
+            memcpy (m_fencePts, fence.points, sizeof (DPoint3d) * fence.numPoints);
+            }
+        else
+            {
+            m_fence.points = m_fencePts = nullptr;
+            }
         }
 
     const DTMFenceParams& GetFence () const

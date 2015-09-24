@@ -2,7 +2,7 @@
 |
 |     $Source: TerrainModelNET/Caching.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -123,7 +123,7 @@ DTMStatusInt DTMFeatureCache::BrowseContours(double interval, double reg, double
                                           int smoothDensity, const DTMFenceParams& fence, double* contourValues, int numContourValues, long maxSlopeOption,
                                           double maxSlopeValue, bool highLowOption)
     {
-    return m_dtm->BrowseContours (Bentley::TerrainModel::DTMContourParams (interval, reg, loadRange, zMin, zMax, contourValues, numContourValues, smoothOption, smoothFactor, smoothDensity, 0, highLowOption, maxSlopeOption, maxSlopeValue),
+    return m_dtm->BrowseContours (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMContourParams (interval, reg, loadRange, zMin, zMax, contourValues, numContourValues, smoothOption, smoothFactor, smoothDensity, 0, highLowOption, maxSlopeOption, maxSlopeValue),
                                   fence, this, AddFeatureToCache);
     }
 

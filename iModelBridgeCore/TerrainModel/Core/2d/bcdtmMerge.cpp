@@ -215,7 +215,7 @@ BENTLEYDTM_EXPORT int bcdtmMerge_dtmObjects
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0),tdbg=DTM_TIME_VALUE(0),fifodbg=DTM_TRACE_VALUE(0) ;
  long startPnt,numDtm2HullPts=0 ; 
- long mstart,start=0 ;
+ long mstart = 0,start=0 ;
  DPoint3d  *tin2hullPtsPP=NULL ;
  static long  mrgSeqNum=1 ;
  wchar_t *cP,mergeFile[FILENAME_MAX + 1]  ;
@@ -1451,7 +1451,7 @@ BENTLEYDTM_Public int bcdtmMerge_insertMergeDtmObject(BC_DTM_OBJ *dtm1P,BC_DTM_O
 */
 {
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- long    ofs,newPnt,clc,pp,p1,p2,p3,p4,np1,np2,np3,saveIncPoints,numListPts ;
+ long    ofs,newPnt = 0,clc,pp,p1,p2,p3,p4,np1,np2,np3,saveIncPoints,numListPts ;
  DPoint3d     *p3dP,*listPtsP=NULL ;
  DTM_TIN_NODE   *nodeP ;
  DTM_TIN_POINT  *pointP ;

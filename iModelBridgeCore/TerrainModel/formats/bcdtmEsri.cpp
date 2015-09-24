@@ -2,7 +2,7 @@
 |
 |     $Source: formats/bcdtmEsri.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TerrainModel/Formats/Formats.h"
@@ -79,9 +79,8 @@ BENTLEYDTM_Private int bcdtmFormatEsri_finaliseEsriFileStructureDtmObject(EsriFi
 
 int fc_zero = 0 ;
 
-typedef unsigned char    byte ;
 typedef unsigned short   UInt16 ;
-typedef unsigned int     UInt32 ;
+typedef unsigned int     uint32_t ;
 
 typedef struct _Dvector3D
 {
@@ -150,65 +149,65 @@ typedef enum _SHAPEFILE_TYPE_Types
 
 typedef struct _DBASEHeader
 {
-       byte                                            version;      // version number
-       byte                                            year;         // year of last update since 1900
-       byte                                            month;        // month of last update
-       byte                                            day;          // day of last update
-       UInt32                                          nRecords;     // number of records
+       unsigned char                                            version;      // version number
+       unsigned char                                            year;         // year of last update since 1900
+       unsigned char                                            month;        // month of last update
+       unsigned char                                            day;          // day of last update
+       uint32_t                                          nRecords;     // number of records
        UInt16                                          hLength;      // length of header structure
        UInt16                                          rLength;      // length of each record
        UInt16                                          reserved1;    // reserved
-       byte                                            incomplete;   // incomplete transaction
-       byte                                            encryption;   // encryption flag
-       UInt32                                          fRecord;      // free record thread
-       UInt32                                          multiuser1;   // reserved for multi-user
-       UInt32                                          multiuser2;   // reserved for multi-user
-       byte                                            mdx;          // mdx flag
-       byte                                            language;     // language
+       unsigned char                                            incomplete;   // incomplete transaction
+       unsigned char                                            encryption;   // encryption flag
+       uint32_t                                          fRecord;      // free record thread
+       uint32_t                                          multiuser1;   // reserved for multi-user
+       uint32_t                                          multiuser2;   // reserved for multi-user
+       unsigned char                                            mdx;          // mdx flag
+       unsigned char                                            language;     // language
        UInt16                                          reserved2;    // reserved
-} DBASEHeader;                                                       // 32 byte fixed length header
+} DBASEHeader;                                                       // 32 unsigned char fixed length header
 
 typedef struct _DBASERecordHeader
 {
        char                                            name[11];     // field name terminated by 00h
        char                                            type;         // field type (ASCII)
-       UInt32                                          data;         // field data address (in memory dBase III+)
-       byte                                            length;       // field length
-       byte                                            decimal;      // decimal count
-       byte                                            multiuser1;   // reserved for multi-user dBase
-       byte                                            multiuser2;   // reserved for multi-user dBase
-       byte                                            workarea;     // work area ID
-       byte                                            multiuser3;   // reserved for multi-user dBase
-       byte                                            multiuser4;   // reserved for multi-user dBase
-       byte                                            flag;         // flag for SET FIELDS
-       byte                                            reserved1;    // reserved
-       byte                                            reserved2;    // reserved
-       byte                                            reserved3;    // reserved
-       byte                                            reserved4;    // reserved
-       byte                                            reserved5;    // reserved
-       byte                                            reserved6;    // reserved
-       byte                                            reserved7;    // reserved
-       byte                                            indexed;      // index field flag, 00 = no key (ignored), 01 = key exists in MDX 
-} DBASERecordHeader;                                                 // 32 byte fixed length header
+       uint32_t                                          data;         // field data address (in memory dBase III+)
+       unsigned char                                            length;       // field length
+       unsigned char                                            decimal;      // decimal count
+       unsigned char                                            multiuser1;   // reserved for multi-user dBase
+       unsigned char                                            multiuser2;   // reserved for multi-user dBase
+       unsigned char                                            workarea;     // work area ID
+       unsigned char                                            multiuser3;   // reserved for multi-user dBase
+       unsigned char                                            multiuser4;   // reserved for multi-user dBase
+       unsigned char                                            flag;         // flag for SET FIELDS
+       unsigned char                                            reserved1;    // reserved
+       unsigned char                                            reserved2;    // reserved
+       unsigned char                                            reserved3;    // reserved
+       unsigned char                                            reserved4;    // reserved
+       unsigned char                                            reserved5;    // reserved
+       unsigned char                                            reserved6;    // reserved
+       unsigned char                                            reserved7;    // reserved
+       unsigned char                                            indexed;      // index field flag, 00 = no key (ignored), 01 = key exists in MDX 
+} DBASERecordHeader;                                                 // 32 unsigned char fixed length header
 
 typedef struct _DBASEHeaderEx
 {
-       DBASEHeader                                     hdr;          // 32 byte fixed length header
-       UInt32                                          nRecords;     // number of records in pRecords
-       DBASERecordHeader                               *pRecords;    // array of 32 byte fixed length record headers
-} DBASEHeaderEx;                                                     // 32 byte fixed length header + array of nRecord * 32 byte fixed length record headers
+       DBASEHeader                                     hdr;          // 32 unsigned char fixed length header
+       uint32_t                                          nRecords;     // number of records in pRecords
+       DBASERecordHeader                               *pRecords;    // array of 32 unsigned char fixed length record headers
+} DBASEHeaderEx;                                                     // 32 unsigned char fixed length header + array of nRecord * 32 unsigned char fixed length record headers
 
 typedef struct _ESRIHeader
 {
-       UInt32                                          code;         // big endian file code (always 9994)
-       UInt32                                          unused1;      // unused
-       UInt32                                          unused2;      // unused
-       UInt32                                          unused3;      // unused
-       UInt32                                          unused4;      // unused
-       UInt32                                          unused5;      // unused
-       UInt32                                          length;       // big endian file length in 16 bit words
-       UInt32                                          version;      // big endian version number (always 1000)
-       UInt32                                          type;         // shapefile type (point = 1, polyline = 3, polygon = 5)
+       uint32_t                                          code;         // big endian file code (always 9994)
+       uint32_t                                          unused1;      // unused
+       uint32_t                                          unused2;      // unused
+       uint32_t                                          unused3;      // unused
+       uint32_t                                          unused4;      // unused
+       uint32_t                                          unused5;      // unused
+       uint32_t                                          length;       // big endian file length in 16 bit words
+       uint32_t                                          version;      // big endian version number (always 1000)
+       uint32_t                                          type;         // shapefile type (point = 1, polyline = 3, polygon = 5)
        double                                          Xmin;         // bounding box Xmin
        double                                          Ymin;         // bounding box Ymin
        double                                          Xmax;         // bounding box Xmax
@@ -217,30 +216,30 @@ typedef struct _ESRIHeader
        double                                          Zmax;         // bounding box Zmax
        double                                          Mmin;         // bounding box Mmin
        double                                          Mmax;         // bounding box Mmax
-} ESRIHeader;                                                        // 100 byte fixed length header
+} ESRIHeader;                                                        // 100 unsigned char fixed length header
 
 typedef struct _ESRIIndexRecord
 {
-       UInt32                                          offset;       // big endian offset to start of record in 16 bit words
-       UInt32                                          length;       // big endian length of record in 16 bit words
-} ESRIIndexRecord;                                                   // 8 byte fixed length record
+       uint32_t                                          offset;       // big endian offset to start of record in 16 bit words
+       uint32_t                                          length;       // big endian length of record in 16 bit words
+} ESRIIndexRecord;                                                   // 8 unsigned char fixed length record
 
 typedef struct _ESRIRecordHeader
 {
-       UInt32                                          id;           // big endian record number
-       UInt32                                          length;       // big endian content length in 16 bit words
-} ESRIRecordHeader;                                                  // 8 byte fixed length record header
+       uint32_t                                          id;           // big endian record number
+       uint32_t                                          length;       // big endian content length in 16 bit words
+} ESRIRecordHeader;                                                  // 8 unsigned char fixed length record header
 
 typedef struct _ESRIPoint
 {
-       UInt32                                          type;         // shape type (always 1)
+       uint32_t                                          type;         // shape type (always 1)
        double                                          x;            // coordinates x
        double                                          y;            // coordinates y
 } ESRIPoint;
 
 typedef struct _ESRIPointZ
 {
-       UInt32                                          type;         // shape type (always 11)
+       uint32_t                                          type;         // shape type (always 11)
        double                                          x;            // coordinates x
        double                                          y;            // coordinates y
        double                                          z;            // coordinates z
@@ -249,27 +248,27 @@ typedef struct _ESRIPointZ
 
 typedef struct _ESRIPolyLine
 {
-       UInt32                                          type;         // shape type (always 3)
+       uint32_t                                          type;         // shape type (always 3)
        double                                          Xmin;         // bounding box Xmin
        double                                          Ymin;         // bounding box Ymin
        double                                          Xmax;         // bounding box Xmax
        double                                          Ymax;         // bounding box Ymax
-       UInt32                                          nParts;       // number of component parts (will usually be 1)
-       UInt32                                          nPoints;      // total number of points in all component parts
-       UInt32                                          *pParts;      // array of part offsets (will usually be 0)
+       uint32_t                                          nParts;       // number of component parts (will usually be 1)
+       uint32_t                                          nPoints;      // total number of points in all component parts
+       uint32_t                                          *pParts;      // array of part offsets (will usually be 0)
        DPoint2d                                        *pPoints;     // array of points (x,y)
 } ESRIPolyLine;
 
 typedef struct _ESRIPolyLineZ
 {
-       UInt32                                          type;         // shape type (always 13)
+       uint32_t                                          type;         // shape type (always 13)
        double                                          Xmin;         // bounding box Xmin
        double                                          Ymin;         // bounding box Ymin
        double                                          Xmax;         // bounding box Xmax
        double                                          Ymax;         // bounding box Ymax
-       UInt32                                          nParts;       // number of component parts (will usually be 1)
-       UInt32                                          nPoints;      // total number of points in all component parts
-       UInt32                                          *pParts;      // array of part offsets (will usually be 0)
+       uint32_t                                          nParts;       // number of component parts (will usually be 1)
+       uint32_t                                          nPoints;      // total number of points in all component parts
+       uint32_t                                          *pParts;      // array of part offsets (will usually be 0)
        DPoint2d                                        *pPoints;     // array of points (x,y)
        double                                          Zmin;         // bounding box Zmin
        double                                          Zmax;         // bounding box Zmax
@@ -278,27 +277,27 @@ typedef struct _ESRIPolyLineZ
 
 typedef struct _ESRIPolygon
 {
-       UInt32                                          type;         // shape type (always 3)
+       uint32_t                                          type;         // shape type (always 3)
        double                                          Xmin;         // bounding box Xmin
        double                                          Ymin;         // bounding box Ymin
        double                                          Xmax;         // bounding box Xmax
        double                                          Ymax;         // bounding box Ymax
-       UInt32                                          nParts;       // number of component parts (will always be 1)
-       UInt32                                          nPoints;      // total number of points in all component parts
-       UInt32                                          *pParts;      // array of part offsets
+       uint32_t                                          nParts;       // number of component parts (will always be 1)
+       uint32_t                                          nPoints;      // total number of points in all component parts
+       uint32_t                                          *pParts;      // array of part offsets
        DPoint2d                                        *pPoints;     // array of points (x,y)
 } ESRIPolygon;
 
 typedef struct _ESRIPolygonZ
 {
-       UInt32                                          type;         // shape type (always 13)
+       uint32_t                                          type;         // shape type (always 13)
        double                                          Xmin;         // bounding box Xmin
        double                                          Ymin;         // bounding box Ymin
        double                                          Xmax;         // bounding box Xmax
        double                                          Ymax;         // bounding box Ymax
-       UInt32                                          nParts;       // number of component parts (will always be 1)
-       UInt32                                          nPoints;      // total number of points in all component parts
-       UInt32                                          *pParts;      // array of part offsets
+       uint32_t                                          nParts;       // number of component parts (will always be 1)
+       uint32_t                                          nPoints;      // total number of points in all component parts
+       uint32_t                                          *pParts;      // array of part offsets
        DPoint2d                                        *pPoints;     // array of points (x,y)
        double                                          Zmin;         // bounding box Zmin
        double                                          Zmax;         // bounding box Zmax
@@ -307,29 +306,29 @@ typedef struct _ESRIPolygonZ
 
 typedef struct _ESRIMultiPointZ
 {
-       UInt32                                          type;         // shape type (always 18)
+       uint32_t                                          type;         // shape type (always 18)
        double                                          Xmin;         // bounding box Xmin
        double                                          Ymin;         // bounding box Ymin
        double                                          Xmax;         // bounding box Xmax
        double                                          Ymax;         // bounding box Ymax
-       UInt32                                          nPoints;      // total number of points in all component parts
+       uint32_t                                          nPoints;      // total number of points in all component parts
        DPoint2d                                        *pPoints;     // array of points (x,y)
        double                                          Zmin;         // bounding box Zmin
        double                                          Zmax;         // bounding box Zmax
        double                                          *pPointsZ;    // array of points (z only)
 } ESRIMultiPointZ;
 
-BENTLEYDTM_Private int bcdtmFormatEsri_writeFileHeader( int fh, UInt32 shapeType, DVector3d *pRange, UInt16 mask ) ;
+BENTLEYDTM_Private int bcdtmFormatEsri_writeFileHeader( int fh, uint32_t shapeType, DVector3d *pRange, UInt16 mask ) ;
 BENTLEYDTM_Private int bcdtmFormatEsri_writeDBaseHeader( int fh ) ;
 BENTLEYDTM_Private int bcdtmFormatEsri_appendDBaseRecord(int dbf, char *pRecord ) ;
-BENTLEYDTM_Private int bcdtmFormatEsri_appendIndex(int shx, UInt32 offset, UInt32 length ) ;
-//NOTNEEDED BENTLEYDTM_Private int bcdtmFormatEsri_appendPoint( int shp, int shx, int dbf, UInt32 record, DPoint3d *pPoint, char *pRecord ) ;
-//NOTNEEDED BENTLEYDTM_Private int bcdtmFormatEsri_appendPointZ( int shp, int shx, int dbf, UInt32 record, DPoint3d *pPoint, char *pRecord) ;
-//NOTNEEDED BENTLEYDTM_Private int bcdtmFormatEsri_appendPolyLine( int shp, int shx, int dbf, UInt32 record, DVector3d *pRange, UInt32 nParts, UInt32 nPoints, UInt32 *pParts, DPoint3d *pPoints, char *pRecord ) ;
-BENTLEYDTM_Private int bcdtmFormatEsri_appendPolyLineZ( int shp, int shx, int dbf, UInt32 record, DVector3d *pRange, UInt32 nParts, UInt32 nPoints, UInt32 *pParts, DPoint3d *pPoints, char *pRecord ) ;
-//NOTNEEDED BENTLEYDTM_Private int bcdtmFormatEsri_appendPolygon( int shp, int shx, int dbf, UInt32 record, DVector3d *pRange, UInt32 nParts, UInt32 nPoints, UInt32 *pParts, DPoint3d *pPoints, char *pRecord ) ;
-//NOTNEEDED BENTLEYDTM_Private int bcdtmFormatEsri_appendPolygonZ( int shp, int shx, int dbf, UInt32 record, DVector3d *pRange, UInt32  nParts, UInt32  nPoints, UInt32  *pParts, DPoint3d *pPoints, char *pRecord ) ;
-BENTLEYDTM_Private int bcdtmFormatEsri_appendMultiPointZ( int shp,int shx,int dbf, UInt32 record, DVector3d *pRange, UInt32 nPoints, DPoint3d *pPoints, char *pRecord ) ;
+BENTLEYDTM_Private int bcdtmFormatEsri_appendIndex(int shx, uint32_t offset, uint32_t length ) ;
+//NOTNEEDED BENTLEYDTM_Private int bcdtmFormatEsri_appendPoint( int shp, int shx, int dbf, uint32_t record, DPoint3d *pPoint, char *pRecord ) ;
+//NOTNEEDED BENTLEYDTM_Private int bcdtmFormatEsri_appendPointZ( int shp, int shx, int dbf, uint32_t record, DPoint3d *pPoint, char *pRecord) ;
+//NOTNEEDED BENTLEYDTM_Private int bcdtmFormatEsri_appendPolyLine( int shp, int shx, int dbf, uint32_t record, DVector3d *pRange, uint32_t nParts, uint32_t nPoints, uint32_t *pParts, DPoint3d *pPoints, char *pRecord ) ;
+BENTLEYDTM_Private int bcdtmFormatEsri_appendPolyLineZ( int shp, int shx, int dbf, uint32_t record, DVector3d *pRange, uint32_t nParts, uint32_t nPoints, uint32_t *pParts, DPoint3d *pPoints, char *pRecord ) ;
+//NOTNEEDED BENTLEYDTM_Private int bcdtmFormatEsri_appendPolygon( int shp, int shx, int dbf, uint32_t record, DVector3d *pRange, uint32_t nParts, uint32_t nPoints, uint32_t *pParts, DPoint3d *pPoints, char *pRecord ) ;
+//NOTNEEDED BENTLEYDTM_Private int bcdtmFormatEsri_appendPolygonZ( int shp, int shx, int dbf, uint32_t record, DVector3d *pRange, uint32_t  nParts, uint32_t  nPoints, uint32_t  *pParts, DPoint3d *pPoints, char *pRecord ) ;
+BENTLEYDTM_Private int bcdtmFormatEsri_appendMultiPointZ( int shp,int shx,int dbf, uint32_t record, DVector3d *pRange, uint32_t nPoints, DPoint3d *pPoints, char *pRecord ) ;
 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -339,7 +338,7 @@ BENTLEYDTM_Private int bcdtmFormatEsri_appendMultiPointZ( int shp,int shx,int db
 BENTLEYDTM_Private void dtmCnv_swapByteArray
 (
 char *bytes, /* <> Byte array to swap */
-int   nWrds  /* => number of words (shorts) in byte array */
+int   nWrds  /* => number of words (shorts) in unsigned char array */
 )
 {
 /*Description:
@@ -872,7 +871,7 @@ BENTLEYDTM_Private int bcdtmFormatEsri_closeEsriShapeFiles(EsriFileInfo *esriFil
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmFormatEsri_openEsriShapeFilesForExport(EsriFileInfo *esriFileInfoP,wchar_t *dtmTypeP,UInt32 shapeType) 
+BENTLEYDTM_Private int bcdtmFormatEsri_openEsriShapeFilesForExport(EsriFileInfo *esriFileInfoP,wchar_t *dtmTypeP,uint32_t shapeType) 
 {
  int ret=DTM_SUCCESS,dbg=0 ;
  wchar_t fileName[256] ;
@@ -1149,7 +1148,7 @@ BENTLEYDTM_Private int  bcdtmFormatEsri_callBackFunction(DTMFeatureType dtmFeatu
  DVector3d boundingCube ;
  DPoint3d  *p3dP ;
  long numParts=1;
- UInt32 parts[10] ;
+ uint32_t parts[10] ;
 /*
 ** Write Entry Message
 */
@@ -1259,7 +1258,7 @@ BENTLEYDTM_Private int  bcdtmFormatEsri_callBackFunction(DTMFeatureType dtmFeatu
     case DTMFeatureType::GroupSpots :
       sprintf(dbRecord,"Point") ;
       if( dbg ) bcdtmWrite_message(0,0,0,"Appending MultiPointZ") ;
-      bytesWritten = bcdtmFormatEsri_appendMultiPointZ( esriFileInfoP->shp,esriFileInfoP->shx,esriFileInfoP->dbf,esriFileInfoP->recordNumber,&boundingCube,(UInt32)numFeaturePts,( DPoint3d *) featurePtsP,dbRecord) ;
+      bytesWritten = bcdtmFormatEsri_appendMultiPointZ( esriFileInfoP->shp,esriFileInfoP->shx,esriFileInfoP->dbf,esriFileInfoP->recordNumber,&boundingCube,(uint32_t)numFeaturePts,( DPoint3d *) featurePtsP,dbRecord) ;
       if( bytesWritten == -1 )
         {
          bcdtmWrite_message(1,0,0,"Error Appending ESRI MultiPointZ Record") ;
@@ -1271,7 +1270,7 @@ BENTLEYDTM_Private int  bcdtmFormatEsri_callBackFunction(DTMFeatureType dtmFeatu
       if( dbg ) bcdtmWrite_message(0,0,0,"Appending PolyLineZ") ; 
       numParts=1 ;
       parts[0] = 0 ;
-      bytesWritten = bcdtmFormatEsri_appendPolyLineZ( esriFileInfoP->shp, esriFileInfoP->shx, esriFileInfoP->dbf, esriFileInfoP->recordNumber,&boundingCube,numParts,(UInt32)numFeaturePts,parts,( DPoint3d *) featurePtsP,dbRecord) ;
+      bytesWritten = bcdtmFormatEsri_appendPolyLineZ( esriFileInfoP->shp, esriFileInfoP->shx, esriFileInfoP->dbf, esriFileInfoP->recordNumber,&boundingCube,numParts,(uint32_t)numFeaturePts,parts,( DPoint3d *) featurePtsP,dbRecord) ;
       if( bytesWritten == -1 )
         {
          bcdtmWrite_message(1,0,0,"Error Appending ESRI PolyLineZ Record") ;
@@ -1283,7 +1282,7 @@ BENTLEYDTM_Private int  bcdtmFormatEsri_callBackFunction(DTMFeatureType dtmFeatu
     case DTMFeatureType::GraphicBreak :
       numParts=1 ;
       parts[0] = 0 ;
-      bytesWritten = bcdtmFormatEsri_appendPolyLineZ( esriFileInfoP->shp, esriFileInfoP->shx, esriFileInfoP->dbf, esriFileInfoP->recordNumber,&boundingCube,numParts,(UInt32)numFeaturePts,parts,( DPoint3d *) featurePtsP,dbRecord) ;
+      bytesWritten = bcdtmFormatEsri_appendPolyLineZ( esriFileInfoP->shp, esriFileInfoP->shx, esriFileInfoP->dbf, esriFileInfoP->recordNumber,&boundingCube,numParts,(uint32_t)numFeaturePts,parts,( DPoint3d *) featurePtsP,dbRecord) ;
       if( bytesWritten == -1 )
         {
          bcdtmWrite_message(1,0,0,"Error Appending ESRI PolyLineZ Record") ;
@@ -1294,7 +1293,7 @@ BENTLEYDTM_Private int  bcdtmFormatEsri_callBackFunction(DTMFeatureType dtmFeatu
     case DTMFeatureType::ContourLine :
       numParts=1 ;
       parts[0] = 0 ;
-      bytesWritten = bcdtmFormatEsri_appendPolyLineZ( esriFileInfoP->shp, esriFileInfoP->shx, esriFileInfoP->dbf, esriFileInfoP->recordNumber,&boundingCube,numParts,(UInt32)numFeaturePts,parts,( DPoint3d *) featurePtsP,dbRecord) ;
+      bytesWritten = bcdtmFormatEsri_appendPolyLineZ( esriFileInfoP->shp, esriFileInfoP->shx, esriFileInfoP->dbf, esriFileInfoP->recordNumber,&boundingCube,numParts,(uint32_t)numFeaturePts,parts,( DPoint3d *) featurePtsP,dbRecord) ;
       if( bytesWritten == -1 )
         {
          bcdtmWrite_message(1,0,0,"Error Appending ESRI PolyLineZ Record") ;
@@ -1306,7 +1305,7 @@ BENTLEYDTM_Private int  bcdtmFormatEsri_callBackFunction(DTMFeatureType dtmFeatu
     case DTMFeatureType::BreakVoid :
       numParts=1 ;
       parts[0] = 0 ;
-      bytesWritten = bcdtmFormatEsri_appendPolyLineZ( esriFileInfoP->shp, esriFileInfoP->shx, esriFileInfoP->dbf, esriFileInfoP->recordNumber,&boundingCube,numParts,(UInt32)numFeaturePts,parts,( DPoint3d *) featurePtsP,dbRecord) ;
+      bytesWritten = bcdtmFormatEsri_appendPolyLineZ( esriFileInfoP->shp, esriFileInfoP->shx, esriFileInfoP->dbf, esriFileInfoP->recordNumber,&boundingCube,numParts,(uint32_t)numFeaturePts,parts,( DPoint3d *) featurePtsP,dbRecord) ;
       if( bytesWritten == -1 )
         {
          bcdtmWrite_message(1,0,0,"Error Appending ESRI PolyLineZ Record") ;
@@ -1317,7 +1316,7 @@ BENTLEYDTM_Private int  bcdtmFormatEsri_callBackFunction(DTMFeatureType dtmFeatu
     case DTMFeatureType::Island :
       numParts=1 ;
       parts[0] = 0 ;
-      bytesWritten = bcdtmFormatEsri_appendPolyLineZ( esriFileInfoP->shp, esriFileInfoP->shx, esriFileInfoP->dbf, esriFileInfoP->recordNumber,&boundingCube,numParts,(UInt32)numFeaturePts,parts,( DPoint3d *) featurePtsP,dbRecord) ;
+      bytesWritten = bcdtmFormatEsri_appendPolyLineZ( esriFileInfoP->shp, esriFileInfoP->shx, esriFileInfoP->dbf, esriFileInfoP->recordNumber,&boundingCube,numParts,(uint32_t)numFeaturePts,parts,( DPoint3d *) featurePtsP,dbRecord) ;
       if( bytesWritten == -1 )
         {
          bcdtmWrite_message(1,0,0,"Error Appending ESRI PolyLineZ Record") ;
@@ -1675,15 +1674,15 @@ contents :                        Miscellaneous Functions
 description :              Appends an index record to an open shx file
 return :                          int;number of bytes written to the file or -1 if an error is encountered
 param :                                  int;shx;IN;file descriptor for open file
-param :                                  UInt32;offset;IN;the number of 16-bit words to the record in the main file
-param :                                  UInt32;length;IN;the length of the record in the main file in 16-bit words
+param :                                  uint32_t;offset;IN;the number of 16-bit words to the record in the main file
+param :                                  uint32_t;length;IN;the length of the record in the main file in 16-bit words
 
 -----------------------------------------------------------------------------*/
 BENTLEYDTM_Private int        bcdtmFormatEsri_appendIndex
 (
  int                              shx,
- UInt32                           offset,
- UInt32                           length
+ uint32_t                           offset,
+ uint32_t                           length
  )
 {
        int                               byteswritten = 0;
@@ -1714,7 +1713,7 @@ return :                          int;number of bytes written to the file or -1 
 param :                                  int;shp;IN;file descriptor for open shp file
 param :                                  int;shx;IN;file descriptor for open shx file
 param :                                  int;dbf;IN;file descriptor for open dbf file
-param :                                  UInt32;record;IN;pointer to the record to be written
+param :                                  uint32_t;record;IN;pointer to the record to be written
 param :                                  DPoint3d*;pPoint;IN;pointer to the point to be appended
 param :                                  char*;pRecord;IN;pointer to the record to be written
 
@@ -1724,7 +1723,7 @@ BENTLEYDTM_Private int        bcdtmFormatEsri_appendPoint
  int                              shp,
  int                              shx,
  int                              dbf,
- UInt32                                  record,
+ uint32_t                                  record,
  DPoint3d                         *pPoint,
  char                             *pRecord
  )
@@ -1772,7 +1771,7 @@ return :                          int;number of bytes written to the file or -1 
 param :                                  int;shp;IN;file descriptor for open shp file
 param :                                  int;shx;IN;file descriptor for open shx file
 param :                                  int;dbf;IN;file descriptor for open dbf file
-param :                                  UInt32;record;IN;pointer to the record to be written
+param :                                  uint32_t;record;IN;pointer to the record to be written
 param :                                  DPoint3d*;pPoint;IN;pointer to the point to be appended
 param :                                  char*;pRecord;IN;pointer to the record to be written
 
@@ -1782,7 +1781,7 @@ BENTLEYDTM_Private int        bcdtmFormatEsri_appendPointZ
  int                              shp,
  int                              shx,
  int                              dbf,
- UInt32                           record,
+ uint32_t                           record,
  DPoint3d                         *pPoint,
  char                             *pRecord
  )
@@ -1834,9 +1833,9 @@ return :                          int;number of bytes written to the file or -1 
 param :                                  int;shp;IN;file descriptor for open shp file
 param :                                  int;shx;IN;file descriptor for open shx file
 param :                                  int;dbf;IN;file descriptor for open dbf file
-param :                                  UInt32;record;IN;pointer to the record to be written
+param :                                  uint32_t;record;IN;pointer to the record to be written
 param :                                  DVector3d*;pRange;IN;pointer to the element range
-param :                                  UInt32;nPoints;IN;number of points in record
+param :                                  uint32_t;nPoints;IN;number of points in record
 param :                                  DPoint3d*;pPoints;IN;pointer to the points to be appended
 param :                                  char*;pRecord;IN;pointer to the record to be written
 
@@ -1846,11 +1845,11 @@ BENTLEYDTM_Private int        bcdtmFormatEsri_appendPolyLine
  int                              shp,
  int                              shx,
  int                              dbf,
- UInt32                           record,
+ uint32_t                           record,
  DVector3d                        *pRange,
- UInt32                           nParts,
- UInt32                           nPoints,
- UInt32                           *pParts,
+ uint32_t                           nParts,
+ uint32_t                           nPoints,
+ uint32_t                           *pParts,
  DPoint3d                         *pPoints,
  char                             *pRecord
  )
@@ -1881,7 +1880,7 @@ BENTLEYDTM_Private int        bcdtmFormatEsri_appendPolyLine
        if ((line.pPoints = (DPoint2d *) calloc (line.nPoints, sizeof (DPoint2d))) != NULL)
        {
               long                       pos;
-              UInt32                     i;
+              uint32_t                     i;
 
               // loop through all points
               for (i = 0; i < line.nPoints; i++)
@@ -1929,9 +1928,9 @@ return :                          int;number of bytes written to the file or -1 
 param :                           int;shp;IN;file descriptor for open shp file
 param :                           int;shx;IN;file descriptor for open shx file
 param :                           int;dbf;IN;file descriptor for open dbf file
-param :                           UInt32;record;IN;pointer to the record to be written
+param :                           uint32_t;record;IN;pointer to the record to be written
 param :                           DVector3d*;pRange;IN;pointer to the element range
-param :                           UInt32;nPoints;IN;number of points in record
+param :                           uint32_t;nPoints;IN;number of points in record
 param :                           DPoint3d*;pPoints;IN;pointer to the points to be appended
 param :                           char*;pRecord;IN;pointer to the record to be written
 
@@ -1941,11 +1940,11 @@ BENTLEYDTM_Private int        bcdtmFormatEsri_appendPolyLineZ
  int                              shp,
  int                              shx,
  int                              dbf,
- UInt32                           record,
+ uint32_t                           record,
  DVector3d                        *pRange,
- UInt32                           nParts,
- UInt32                           nPoints,
- UInt32                           *pParts,
+ uint32_t                           nParts,
+ uint32_t                           nPoints,
+ uint32_t                           *pParts,
  DPoint3d                         *pPoints,
  char                             *pRecord
  )
@@ -1981,7 +1980,7 @@ BENTLEYDTM_Private int        bcdtmFormatEsri_appendPolyLineZ
               if ((line.pPointsZ = (double *) calloc (line.nPoints, sizeof (double))) != NULL)
               {
                      long                       pos;
-                     UInt32                     i;
+                     uint32_t                     i;
 
                      // loop through all points
                      for (i = 0; i < line.nPoints; i++)
@@ -2038,11 +2037,11 @@ return :                           int;number of bytes written to the file or -1
 param :                                  int;shp;IN;file descriptor for open shp file
 param :                                  int;shx;IN;file descriptor for open shx file
 param :                                  int;dbf;IN;file descriptor for open dbf file
-param :                                   UInt32;record;IN;pointer to the record to be written
+param :                                   uint32_t;record;IN;pointer to the record to be written
 param :                                  DVector3d*;pRange;IN;pointer to the element range
-param :                                  UInt32;nParts;IN;number of parts in record
-param :                                  UInt32;nPoints;IN;number of points in record
-param :                                  UInt32*;pParts;IN;pointer to the parts indexes to be appended
+param :                                  uint32_t;nParts;IN;number of parts in record
+param :                                  uint32_t;nPoints;IN;number of points in record
+param :                                  uint32_t*;pParts;IN;pointer to the parts indexes to be appended
 param :                                  DPoint3d*;pPoints;IN;pointer to the points to be appended
 param :                                  char*;pRecord;IN;pointer to the record to be written
 
@@ -2052,11 +2051,11 @@ BENTLEYDTM_Private int        bcdtmFormatEsri_appendPolygon
  int                              shp,
  int                              shx,
  int                              dbf,
- UInt32                           record,
+ uint32_t                           record,
  DVector3d                        *pRange,
- UInt32                           nParts,
- UInt32                           nPoints,
- UInt32                           *pParts,
+ uint32_t                           nParts,
+ uint32_t                           nPoints,
+ uint32_t                           *pParts,
  DPoint3d                         *pPoints,
  char                             *pRecord
  )
@@ -2086,7 +2085,7 @@ BENTLEYDTM_Private int        bcdtmFormatEsri_appendPolygon
        if ((polygon.pPoints = (DPoint2d *) calloc (polygon.nPoints, sizeof (DPoint2d))) != NULL)
        {
               long                       pos;
-              UInt32                     i;
+              uint32_t                     i;
 
               // loop through all points
               for (i = 0; i < polygon.nPoints; i++)
@@ -2134,11 +2133,11 @@ return :                          int;number of bytes written to the file or -1 
 param :                                  int;shp;IN;file descriptor for open shp file
 param :                                  int;shx;IN;file descriptor for open shx file
 param :                                  int;dbf;IN;file descriptor for open dbf file
-param :                                  UInt32;record;IN;pointer to the record to be written
+param :                                  uint32_t;record;IN;pointer to the record to be written
 param :                                  DVector3d*;pRange;IN;pointer to the element range
-param :                                  UInt32;nParts;IN;number of parts in record
-param :                                  UInt32;nPoints;IN;number of points in record
-param :                                  UInt32*;pParts;IN;pointer to the parts indexes to be appended
+param :                                  uint32_t;nParts;IN;number of parts in record
+param :                                  uint32_t;nPoints;IN;number of points in record
+param :                                  uint32_t*;pParts;IN;pointer to the parts indexes to be appended
 param :                                  DPoint3d*;pPoints;IN;pointer to the points to be appended
 param :                                  char*;pRecord;IN;pointer to the record to be written
 
@@ -2148,11 +2147,11 @@ BENTLEYDTM_Private int        bcdtmFormatEsri_appendPolygonZ
  int                              shp,
  int                              shx,
  int                              dbf,
- UInt32                           record,
+ uint32_t                           record,
  DVector3d                        *pRange,
- UInt32                           nParts,
- UInt32                           nPoints,
- UInt32                           *pParts,
+ uint32_t                           nParts,
+ uint32_t                           nPoints,
+ uint32_t                           *pParts,
  DPoint3d                         *pPoints,
  char                             *pRecord
  )
@@ -2188,7 +2187,7 @@ BENTLEYDTM_Private int        bcdtmFormatEsri_appendPolygonZ
               if ((polygon.pPointsZ = (double *) calloc (polygon.nPoints, sizeof (double))) != NULL)
               {
                      long                       pos;
-                     UInt32                     i;
+                     uint32_t                     i;
 
                      // loop through all points
                      for (i = 0; i < polygon.nPoints; i++)
@@ -2245,11 +2244,11 @@ return :                          int;number of bytes written to the file or -1 
 param :                                  int;shp;IN;file descriptor for open shp file
 param :                                  int;shx;IN;file descriptor for open shx file
 param :                                  int;dbf;IN;file descriptor for open dbf file
-param :                                  UInt32;record;IN;pointer to the record to be written
+param :                                  uint32_t;record;IN;pointer to the record to be written
 param :                                  DVector3d*;pRange;IN;pointer to the element range
-param :                                  UInt32;nParts;IN;number of parts in record
-param :                                  UInt32;nPoints;IN;number of points in record
-param :                                  UInt32*;pParts;IN;pointer to the parts indexes to be appended
+param :                                  uint32_t;nParts;IN;number of parts in record
+param :                                  uint32_t;nPoints;IN;number of points in record
+param :                                  uint32_t*;pParts;IN;pointer to the parts indexes to be appended
 param :                                  DPoint3d*;pPoints;IN;pointer to the points to be appended
 param :                                  char*;pRecord;IN;pointer to the record to be written
 
@@ -2259,9 +2258,9 @@ BENTLEYDTM_Private int        bcdtmFormatEsri_appendMultiPointZ
  int                              shp,
  int                              shx,
  int                              dbf,
- UInt32                           record,
+ uint32_t                           record,
  DVector3d                        *pRange,
- UInt32                           nPoints,
+ uint32_t                           nPoints,
  DPoint3d                         *pPoints,
  char                             *pRecord
  )
@@ -2295,7 +2294,7 @@ BENTLEYDTM_Private int        bcdtmFormatEsri_appendMultiPointZ
               if (( multiPoint.pPointsZ = (double *) calloc (multiPoint.nPoints, sizeof (double))) != NULL)
               {
                      long                       pos;
-                     UInt32                     i;
+                     uint32_t                     i;
 
                      // loop through all points
                      for (i = 0; i < multiPoint.nPoints; i++)
@@ -2354,7 +2353,7 @@ BENTLEYDTM_Private int        bcdtmFormatEsri_writeDBaseHeader
 {
        int                               i;
        int                               byteswritten = 0;
-       byte                        fields[NUM_DBF_FIELDS][32] =
+       unsigned char                        fields[NUM_DBF_FIELDS][32] =
        {
               {'E','N','T','I','T','y',0,0,0,0,0,'C',0,0,0,0,0x20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},             // element type
               {'L','A','y','E','R',0,0,0,0,0,0,'C',0,0,0,0,0x20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},               // level name
@@ -2378,9 +2377,9 @@ BENTLEYDTM_Private int        bcdtmFormatEsri_writeDBaseHeader
        DBASEHeader                header =
        {                                               // Position          Field                Value                Type          Byte Order
               0x03,                                    // Byte 0            Version                    3                           Byte          Little
-              (byte)today.tm_year,                           // Byte 1            Year                 Year - 1900          Byte          Little
-              (byte)today.tm_mon + 1,                        // Byte 2            Month                1 to 12                     Byte          Little
-              (byte)today.tm_mday,                           // Byte 3            Day                        1 to 31                   Byte          Little
+              (unsigned char)today.tm_year,                           // Byte 1            Year                 Year - 1900          Byte          Little
+              (unsigned char)today.tm_mon + 1,                        // Byte 2            Month                1 to 12                     Byte          Little
+              (unsigned char)today.tm_mday,                           // Byte 3            Day                        1 to 31                   Byte          Little
               0,                                       // Byte 4            Number Records       nRecords             Integer              Little
               hLength,                                 // Byte 8            Header Length hLength                     Short         Little
               rLength,                                 // Byte 10           Record Length rLength                     Short         Little
@@ -2419,7 +2418,7 @@ BENTLEYDTM_Private int        bcdtmFormatEsri_writeDBaseTextHeader
 {
        int                               i;
        int                               byteswritten = 0;
-       byte                       fields[NUM_DBF_TEXT_FIELDS][32] =
+       unsigned char                       fields[NUM_DBF_TEXT_FIELDS][32] =
        {
               {'E','N','T','I','T','y',0,0,0,0,0,'C',0,0,0,0,0x20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},                    // element type
               {'L','A','y','E','R',0,0,0,0,0,0,'C',0,0,0,0,0x20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},               // level name
@@ -2447,9 +2446,9 @@ BENTLEYDTM_Private int        bcdtmFormatEsri_writeDBaseTextHeader
        DBASEHeader                header =
        {                                                      // Position          Field                Value                Type          Byte Order
               0x03,                                    // Byte 0            Version                    3                           Byte          Little
-              (byte)today.tm_year,                           // Byte 1            Year                 Year - 1900          Byte          Little
+              (unsigned char)today.tm_year,                           // Byte 1            Year                 Year - 1900          Byte          Little
               today.tm_mon + 1,                 // Byte 2            Month                1 to 12                     Byte          Little
-              (byte)today.tm_mday,                           // Byte 3            Day                        1 to 31                   Byte          Little
+              (unsigned char)today.tm_mday,                           // Byte 3            Day                        1 to 31                   Byte          Little
               0,                                              // Byte 4            Number Records       nRecords             Integer              Little
               hLength,                                 // Byte 8            Header Length hLength                     Short         Little
               rLength,                                 // Byte 10           Record Length rLength                     Short         Little
@@ -2478,7 +2477,7 @@ contents :                        Miscellaneous Functions
 description :                     Writes the file header information for a newly created shp file
 return :                          int;number of bytes written to the file or -1 if an error is encountered
 param :                                  int;fh;IN;file descriptor for open file
-param :                                  UInt32;shapeType;IN;shape file type
+param :                                  uint32_t;shapeType;IN;shape file type
 param :                                  DVector3d*;pRange;IN;range of elements in file
 param :                                  UInt16;mask;IN;bitmask used to selectively write portions of the header
 
@@ -2486,7 +2485,7 @@ param :                                  UInt16;mask;IN;bitmask used to selectiv
 BENTLEYDTM_Private int        bcdtmFormatEsri_writeFileHeader
 (
  int                              fh,
- UInt32                           shapeType,
+ uint32_t                           shapeType,
  DVector3d                        *pRange,
  UInt16                           mask
  )

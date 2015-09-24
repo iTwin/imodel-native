@@ -479,7 +479,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinMeshFromDtmObject
 )
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
- long  p1,p2,p3,lp1=0,lp2=0,lp3=0,*faceP,clPtr,numTriangles=0,voidTriangle,numTrianglesMarked=0 ;
+ long  p1,p2,p3 = 0,lp1=0,lp2=0,lp3=0,*faceP,clPtr,numTriangles=0,voidTriangle,numTrianglesMarked=0 ;
  long  node, startPnt, lastPnt, nextPnt = 0, loadTriangle, firstTriangle;
  DTMFenceOption triangleExtent;
  DPoint3d   *p3dP,trgPts[4] ; 

@@ -10,7 +10,7 @@
 
 BEGIN_BENTLEY_TERRAINMODEL_ELEMENT_NAMESPACE
 
-bool AddDTMTextStyle (EditElementHandle& elem, UInt32 textStyleId, UInt32 key)
+bool AddDTMTextStyle (EditElementHandle& elem, uint32_t textStyleId, uint32_t key)
     {
     DgnTextStylePtr textStyle;
 
@@ -43,12 +43,12 @@ bool AddDTMTextStyle (EditElementHandle& elem, UInt32 textStyleId, UInt32 key)
     return true;
     }
 
-int GetDTMTextParamId (ElementHandleCR elem, UInt32 key)
+int GetDTMTextParamId (ElementHandleCR elem, uint32_t key)
     {
     DgnTextStylePtr textStyle = DgnTextStyle::ExtractFromElement (elem, key);
     
     if (!textStyle.IsNull())
-        return (int) textStyle->GetID();    // ToDo Vancouver - ElementId (UInt64) to (int) - possible loss of data
+        return (int) textStyle->GetID();    // ToDo Vancouver - ElementId (uint64_t) to (int) - possible loss of data
     return 0;
     }
 
@@ -59,7 +59,7 @@ TextParamWideR  textParamWide,
 double&         fontSizeX,
 double&         fontSizeY,
 DgnModelRefP    model,
-UInt32          key
+uint32_t          key
 )
     {
     DgnTextStylePtr textStyle = DgnTextStyle::ExtractFromElement (elem, key);
@@ -72,7 +72,7 @@ UInt32          key
             DgnModelRefP model2 = model;
             
             if (model2 == nullptr)
-                model2 = Bentley::TerrainModel::Element::GetModelRef (elem);
+                model2 = BENTLEY_NAMESPACE_NAME::TerrainModel::Element::GetModelRef (elem);
             if (model2 == nullptr)
                model2 = GetActivatedModel (elem, nullptr); //TODO Is this needed? 
             file = model2->GetDgnFileP();
@@ -164,11 +164,6 @@ virtual StatusInt _GetRange (DRange3dR range) const override
 virtual void    _Draw (ViewContextR context) override
     {
     context.DrawTextString (*m_text);
-
-    if (!context.GetIViewDraw ().IsOutputQuickVision ())
-        {
-        m_text = TextString::Create (m_text->GetString (), &m_text->GetOrigin (), &m_text->GetRotMatrix (), m_text->GetProperties ());
-        }
     }
 
 }; // TextSymbol
@@ -188,7 +183,7 @@ TextDrawer::TextDrawer (const DTMDrawingInfo& drawingInfo, ViewContextR context,
     m_fontSize.y = drawingInfo.ScaleUorsToStorage (m_fontSizeUOR.y);
     }
 
-void TextDrawer::FixBG (bool bgFlag, UInt32 bgColor)
+void TextDrawer::FixBG (bool bgFlag, uint32_t bgColor)
     {
     // Fix the BG, no need to restore it.
     m_textParamWide.flags.bgColor = bgFlag ? 1 : 0;

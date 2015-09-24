@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* fndftr.c					   twl	    28-Oct-1998                           */
@@ -17,18 +17,18 @@
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_findFeatureByGUID
- DESC: Given a feature GUID, this function returns a pointer to the
+ DESC: Given a feature BeGuid, this function returns a pointer to the
        corresponding feature.
  HIST: Original - twl 10-Oct-1998
  MISC:
- KEYW: DTM FIND FEATURE GUID
+ KEYW: DTM FIND FEATURE BeGuid
 -----------------------------------------------------------------------------%*/
 
 int aecDTM_findFeatureByGUID /* <= TRUE if error                   */
 (
     struct CIVdtmftr **ftrPP,             /* <= found feature                   */
     struct CIVdtmsrf *srfP,               /* => DTM surface (or NULL)           */
-    GUID *guidP                           /* => surface guid pointer            */
+    BeGuid *guidP                           /* => surface guid pointer            */
 )
 {
     CIVdtmsrf *srf;

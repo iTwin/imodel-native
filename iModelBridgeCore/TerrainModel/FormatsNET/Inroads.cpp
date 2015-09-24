@@ -2,7 +2,7 @@
 |
 |     $Source: FormatsNET/Inroads.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -14,7 +14,7 @@ BEGIN_BENTLEY_TERRAINMODELNET_FORMATS_NAMESPACE
 InroadsImporter^ InroadsImporter::Create (System::String^ filename)
     {
     pin_ptr<const wchar_t> p = PtrToStringChars (filename);
-    InroadsImporterPtr importer = Bentley::TerrainModel::InroadsImporter::Create (p);
+    InroadsImporterPtr importer = BENTLEY_NAMESPACE_NAME::TerrainModel::InroadsImporter::Create (p);
 
     if (importer.IsValid ())
         return gcnew InroadsImporter (importer.get());

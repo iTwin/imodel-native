@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/PublicAPI/InroadsImporter.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -18,7 +18,6 @@
 #include <TerrainModel/Core/bcDTMClass.h>
 
 TERRAINMODEL_TYPEDEFS (InroadsImporter)
-ADD_BENTLEY_TYPEDEFS (Bentley::TerrainModel, InroadsImporter);
 
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 

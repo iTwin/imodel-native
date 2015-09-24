@@ -6,7 +6,7 @@
 |       $Date: 2011/11/07 14:26:47 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -140,21 +140,26 @@ inline const TransfoMatrix&             FromBSI                        (const Tr
     }
 
 
-inline DTransform3d                     ToTransform3d                  (const TransfoMatrix&            m)
+inline Transform                     ToTransform3d                  (const TransfoMatrix&            m)
     {
-    DTransform3d transform;
-    bsiDTransform3d_initFromRowValues(&transform, m[0][0], m[0][1], m[0][2],  m[0][3],
+    Transform transform;
+    bsiTransform_initFromRowValues(&transform, m[0][0], m[0][1], m[0][2],  m[0][3],
                                                   m[1][0], m[1][1], m[1][2],  m[1][3],
                                                   m[2][0], m[2][1], m[2][2],  m[2][3]);
 
     return transform;
     }
 
-inline TransfoMatrix                    FromTransform3d                (const DTransform3d&             m)
+inline TransfoMatrix                    FromTransform3d                (const Transform&             m)
     {
-    return TransfoMatrix(m.matrix.column[0].x, m.matrix.column[1].x, m.matrix.column[2].x, m.translation.x,
-                         m.matrix.column[0].y, m.matrix.column[1].y, m.matrix.column[2].y, m.translation.y,
-                         m.matrix.column[0].z, m.matrix.column[1].z, m.matrix.column[2].z, m.translation.z);
+    RotMatrix mat;
+    m.GetMatrix(mat);
+    DVec3d col1, col2, col3,trans; 
+    mat.GetColumns(col1, col2, col3);
+    m.GetTranslation(trans);
+    return TransfoMatrix(col1.x, col2.x, col3.x, trans.x,
+                         col1.y, col2.y, col3.y, trans.y,
+                         col1.z, col2.z, col3.z, trans.z);
     }
 }
 

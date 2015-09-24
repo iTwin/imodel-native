@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* trisrf.c                                            tmi        10-Apr-1990 */
@@ -93,7 +93,7 @@ int aecDTM_triangulate        /* <= TRUE if error                  */
   struct CIVdtmsrf *srfP,                /* => surface to triangulate         */
   int options,                           /* => options                        */
   double *maxTriangleLengthP,            /* => max. tri length (or NULL)      */
-  byte *extDataChecksP,                  /* => TRUE, FALSE (or NULL)          */
+  unsigned char *extDataChecksP,                  /* => TRUE, FALSE (or NULL)          */
   double *ftrFilterToleranceP,           /* => feature filter tol. (or NULL)  */
   struct CIVdistri *distriP,             /* => triangle display pars (or NULL)*/
   boolean useAltMoveMethod // = FALSE     /* => user alternate move to 0,0,0 method */
@@ -122,7 +122,7 @@ int aecDTM_triangulate        /* <= TRUE if error                  */
   if( sts == SUCCESS )
     sts = aecDTM_crossingCheckExterior( srfP );
 
-  if( sts == SUCCESS && ((extDataChecksP == (byte *)0 ) ? srfP->par.extDatChk : *extDataChecksP) )
+  if( sts == SUCCESS && ((extDataChecksP == (unsigned char *)0 ) ? srfP->par.extDatChk : *extDataChecksP) )
     sts = aecDTM_crossingCheck ( srfP, DTM_C_NOTINS, NULL, NULL, NULL );
 
   if( sts == SUCCESS )
@@ -138,7 +138,7 @@ int aecDTM_triangulate        /* <= TRUE if error                  */
             {
               aecDTM_delaunayTriangleInitRecursionDepthCheck();
               aecStatus_initialize(TRUE);
-              sts = aecDTM_triangulateProcess ( srfP, opt, ((extDataChecksP == (byte *)0 ) ? srfP->par.extDatChk : *extDataChecksP) );
+              sts = aecDTM_triangulateProcess ( srfP, opt, ((extDataChecksP == (unsigned char *)0 ) ? srfP->par.extDatChk : *extDataChecksP) );
               aecStatus_close();
 
               if ( sts == SUCCESS ) sts = aecDTM_markBoundaryTriangles ( srfP );
@@ -151,7 +151,7 @@ int aecDTM_triangulate        /* <= TRUE if error                  */
       }
   }
 
-  if ( sts == SUCCESS && ((extDataChecksP == (byte *)0 ) ? srfP->par.extDatChk : *extDataChecksP) )
+  if ( sts == SUCCESS && ((extDataChecksP == (unsigned char *)0 ) ? srfP->par.extDatChk : *extDataChecksP) )
      sts = aecDTM_alignTriangleDiagonals ( srfP );
 
   // Removing duplicate points during the triangulation process may result in

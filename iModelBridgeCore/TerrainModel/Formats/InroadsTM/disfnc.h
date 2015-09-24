@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* disfnc.h                                            aec    31-Dec-1992     */
@@ -43,7 +43,7 @@
 typedef struct CADlinpar
 {
   unsigned long opt;                    /* internal use only                  */
-  unsigned long opt1;                   /* for byte alignment                 */
+  unsigned long opt1;                   /* for unsigned char alignment                 */
   UINT lvl;                           /* level                              */
   UINT clr;                           /* color                              */
   UINT wgt;                           /* weight                             */

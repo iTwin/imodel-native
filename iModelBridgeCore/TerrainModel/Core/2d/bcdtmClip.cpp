@@ -2413,7 +2413,7 @@ BENTLEYDTM_Public int bcdtmClip_modifyIslandHullsForExternalVoidsDtmObject(BC_DT
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   sp,np,pp,ssp,lp,islandFeature,voidFeature,feature ;
  DTMDirection direction;
- long   islandStartPnt,islandPnt,voidPnt ;
+ long   islandStartPnt = 0,islandPnt,voidPnt ;
  double area ;
  DTMUserTag    userTag ;
  DTMFeatureId  userFeatureId ;
@@ -4382,7 +4382,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
 )
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
- long   num, numClipPts, numDrapePts, numPtsOnDrape;
+ long   num, numClipPts, numDrapePts = 0, numPtsOnDrape;
  DTMFenceOption featureExtent;
  long   memPointArrays=0,memPointArraysInc=10 ;
  double xMin,yMin,xMax,yMax ;

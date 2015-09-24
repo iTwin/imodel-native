@@ -6,7 +6,7 @@
 |       $Date: 2012/02/08 18:22:46 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -97,7 +97,7 @@ struct IMrDTMProgressiveDataBlockManagerCreator : RefCounted <IRefCounted>
         virtual int _CreateDataBlockManagerBasedOnMaterial(IMrDTMProgressiveDataBlockManagerPtr&   dataBlockManagerP,
                                                            BcDTMP 
                                                            dtm, 
-                                                           Bentley::TerrainModel::Element::IMultiResolutionGridMaterialManagerPtr& multiResolutionGridMatPtr,
+                                                           BENTLEY_NAMESPACE_NAME::TerrainModel::Element::IMultiResolutionGridMaterialManagerPtr& multiResolutionGridMatPtr,
                                                            Bentley::MrDTM::IMrDTMPtr&                              mrDTMPtr,
                                                            DRange3d&                                               dtmRange,
                                                            Transform&                                              storageToUors,                                                           
@@ -118,7 +118,7 @@ struct IMrDTMProgressiveDataBlockManagerCreator : RefCounted <IRefCounted>
                        
         DTMELEMENT_EXPORT int CreateDataBlockManagerBasedOnMaterial(IMrDTMProgressiveDataBlockManagerPtr&                          dataBlockManagerP,
                                                                     BcDTMP                                                        dtm, 
-                                                                    Bentley::TerrainModel::Element::IMultiResolutionGridMaterialManagerPtr& multiResolutionGridMatPtr,                                                                                                                                          
+                                                                    BENTLEY_NAMESPACE_NAME::TerrainModel::Element::IMultiResolutionGridMaterialManagerPtr& multiResolutionGridMatPtr,                                                                                                                                          
                                                                     Bentley::MrDTM::IMrDTMPtr&                                     mrDTMPtr,
                                                                     DRange3d&                                                      dtmRange,
                                                                     Transform&                                                     storageToUors,

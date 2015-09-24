@@ -18,7 +18,7 @@ struct BrowseFeaturesUserArg
 //=======================================================================================
 // @bsimethod                                                   Daryl.Holmwood 07/08
 //=======================================================================================
-int browseFeatures (DTMFeatureType featureType, Int64  eltId, DTMFeatureId id, DPoint3d *tPoint, size_t nPoint, void *userArgP)
+int browseFeatures (DTMFeatureType featureType, int64_t  eltId, DTMFeatureId id, DPoint3d *tPoint, size_t nPoint, void *userArgP)
     {
     BrowseFeaturesUserArg* args = (BrowseFeaturesUserArg*)userArgP;
     ViewContextP viewContext = args->viewContext;
@@ -148,7 +148,7 @@ bool DTMElementFeaturesDisplayHandler::_Draw (ElementHandleCR el, const ElementH
     if (!SetSymbology(params, drawingInfo, context))
         return false;
 
-    Bentley::TerrainModel::DTMPtr dtmPtr(DTMDataRef->GetDTMStorage(DrawFeatures, context));
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr(DTMDataRef->GetDTMStorage(DrawFeatures, context));
     BcDTMP dtm = dtmPtr != 0 ? dtmPtr->GetBcDTM () : NULL;
 
     if (!dtm)

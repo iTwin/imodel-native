@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMDataRef.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -129,7 +129,7 @@ StatusInt DTMDataRef::GetDTMReference(RefCountedPtr<IDTM>& outDtm, TransformCR c
         DTMPtr oldDtm;
 
         DTMElementHandlerManager::GetStorageToUORMatrix (storageToUOR, GetGraphicalElement());
-        transformation.productOf (&currTrans, &storageToUOR);
+        transformation.InitProduct (&currTrans, &storageToUOR);
         oldDtm = outDtm;
         oldDtm->GetTransformDTM (outDtm, transformation);
         }

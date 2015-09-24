@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* intsct.c                                            dgc    01-Feb-1994     */
@@ -26,8 +26,8 @@
 typedef struct
 {
   double y;
-  ULong  end:   1;
-  ULong  iSeg: 31;
+  unsigned long  end:   1;
+  unsigned long  iSeg: 31;
 } YStrip;
 
 typedef struct

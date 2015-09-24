@@ -6,7 +6,7 @@
 |       $Date: 2012/02/23 01:54:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -594,7 +594,7 @@ const WChar* IDTMDgnModelSource::GetPath (StatusInt& status) const
     return m_impl.GetPath(status).c_str();
     }
 
-UInt32 IDTMDgnModelSource::GetModelID () const
+uint32_t IDTMDgnModelSource::GetModelID () const
     {
     return m_impl.GetModelID();
     }
@@ -616,7 +616,7 @@ void IDTMDgnModelSource::UpdateModelName (const WChar* name) const
 +----------------------------------------------------------------------------*/                
 IDTMDgnModelSource::Impl::Impl (DTMSourceDataType               sourceDataType, 
                                 const IMoniker*                 monikerP,                                                  
-                                UInt32                          modelID, 
+                                uint32_t                          modelID, 
                                 const WChar*                  modelName)
     :   IDTMLocalFileSource::Impl(sourceDataType, monikerP),
         m_modelID(modelID),
@@ -685,7 +685,7 @@ void IDTMDgnReferenceSource::UpdateReferenceModelName (const WChar* name) const
 
 IDTMDgnReferenceSource::Impl::Impl (DTMSourceDataType               sourceDataType, 
                                     const IMoniker*                 monikerP,                                                  
-                                    UInt32                          modelID, 
+                                    uint32_t                          modelID, 
                                     const WChar*                  modelName,
                                     const WChar*                     rootToRefPersistentPath,
                                     const WChar*                  referenceName,
@@ -708,9 +708,9 @@ IDTMDgnReferenceSource::Impl::~Impl()
 
 IDTMDgnLevelSourcePtr IDTMDgnLevelSource::Create   (DTMSourceDataType           sourceDataType, 
                                                     const ILocalFileMonikerPtr& dgnFileMonikerPtr,
-                                                    UInt32                      modelID, 
+                                                    uint32_t                      modelID, 
                                                     const WChar*              modelName,
-                                                    UInt32                      levelID,
+                                                    uint32_t                      levelID,
                                                     const WChar*              levelName)
     {
     return new IDTMDgnLevelSource(new Impl(sourceDataType, 
@@ -736,7 +736,7 @@ IDTMDgnLevelSource::~IDTMDgnLevelSource ()
     }
 
 
-UInt32 IDTMDgnLevelSource::GetLevelID () const
+uint32_t IDTMDgnLevelSource::GetLevelID () const
     {
     return m_impl.GetLevelID();
     }
@@ -767,9 +767,9 @@ IDTMSource* IDTMDgnLevelSource::_Clone () const
 +----------------------------------------------------------------------------*/                
 IDTMDgnLevelSource::Impl::Impl         (DTMSourceDataType               sourceDataType, 
                                         const IMoniker*                 monikerP,                                                       
-                                        UInt32                          modelID, 
+                                        uint32_t                          modelID, 
                                         const WChar*                  modelName,
-                                        UInt32                          levelID,
+                                        uint32_t                          levelID,
                                         const WChar*                  levelName)
     :   IDTMDgnModelSource::Impl(sourceDataType, monikerP, modelID, modelName),
         m_levelID(levelID),
@@ -787,12 +787,12 @@ IDTMDgnLevelSource::Impl::~Impl()
 
 IDTMDgnReferenceLevelSourcePtr IDTMDgnReferenceLevelSource::Create (DTMSourceDataType           sourceDataType, 
                                                                     const ILocalFileMonikerPtr& rootDgnFileMonikerPtr,
-                                                                    UInt32                      rootModelID, 
+                                                                    uint32_t                      rootModelID, 
                                                                     const WChar*              rootModelName,
                                                                     const WChar*                 rootToRefPersistentPath,
                                                                     const WChar*              referenceName,
                                                                     const WChar*              referenceModelName,
-                                                                    UInt32                      referenceLevelID,
+                                                                    uint32_t                      referenceLevelID,
                                                                     const WChar*              referenceLevelName)
     {
     assert(0 != rootToRefPersistentPath);
@@ -823,7 +823,7 @@ IDTMDgnReferenceLevelSource::~IDTMDgnReferenceLevelSource ()
     }
 
 
-UInt32 IDTMDgnReferenceLevelSource::GetLevelID () const
+uint32_t IDTMDgnReferenceLevelSource::GetLevelID () const
     {
     return m_impl.GetLevelID();
     }
@@ -855,12 +855,12 @@ IDTMSource* IDTMDgnReferenceLevelSource::_Clone () const
 +----------------------------------------------------------------------------*/                
 IDTMDgnReferenceLevelSource::Impl::Impl(DTMSourceDataType               sourceDataType, 
                                         const IMoniker*                 monikerP,                                                       
-                                        UInt32                          modelID, 
+                                        uint32_t                          modelID, 
                                         const WChar*                  modelName,
                                         const WChar*                     rootToRefPersistentPath,
                                         const WChar*                  referenceName,
                                         const WChar*                  referenceModelName,
-                                        UInt32                          levelID,
+                                        uint32_t                          levelID,
                                         const WChar*                  levelName)
     :   IDTMDgnReferenceSource::Impl(sourceDataType, monikerP, modelID, modelName, rootToRefPersistentPath, referenceName, referenceModelName),
         m_levelID(levelID),

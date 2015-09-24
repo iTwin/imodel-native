@@ -12,7 +12,7 @@
 #include <TerrainModel/Core/bcdtmclass.h>
 #include <TerrainModel/ElementHandler/DTMElementHandlerManager.h>
 #include <TerrainModel/ElementHandler/TMElementDisplayHandler.h>
-#include <DgnPlatform/TerrainModel/TMSymbologyOverrideManager.h>
+#include <TerrainModel/ElementHandler/DTMSymbologyOverrideManager.h>
 #include <DgnPlatform\TerrainModel\TMElementHandler.h>
 #include <RmgrTools/Tools/RscFileManager.h>
 #include "handlerAppDefs.h"
@@ -58,7 +58,7 @@ namespace   BDPN = Bentley::DgnPlatformNET;
 namespace   BDPNDT = Bentley::DgnPlatformNET::XDataTree;
 namespace   ECXDT = Bentley::MstnPlatformNET::XDataTree;
 using namespace Bentley::MstnPlatformNET::XDataTree;
-using namespace Bentley::TerrainModelNET::Element;
+using namespace BENTLEY_NAMESPACE_NAME::TerrainModelNET::Element;
 
 #include<vcclr.h>   // for PtrToStringChars()
 
@@ -88,7 +88,7 @@ ref class SelectionListener : IEventHookHandler, IAUICommandManagerExtension, IA
     private: static SelectionListener^ s_instance;
     private: ECClassCP m_subDisplayClass;
     private: ECClassCP m_dtmElementClass;
-    private: UInt32 m_displayParam;
+    private: uint32_t m_displayParam;
     private: bool m_hasHighlight;
     private: ElementHandleP m_element;
     private: System::String^ m_overrideSymbologyCommand;
@@ -138,7 +138,7 @@ ref class SelectionListener : IEventHookHandler, IAUICommandManagerExtension, IA
 
                     bool highlight = false;
                     ElementHandle element;
-                    UInt32 displayParam = 0;
+                    uint32_t displayParam = 0;
 
                     if (multiSelectEvent)
                         {
@@ -159,7 +159,7 @@ ref class SelectionListener : IEventHookHandler, IAUICommandManagerExtension, IA
                                         if (dgnInstance.IsValid() && (instance = dgnInstance->GetAsElementInstance()).IsValid())
                                             {
                                             if (!m_subDisplayClass)
-                                                m_subDisplayClass = Bentley::TerrainModel::Element::GetPresentationSchema()->GetClassCP (L"DTMSubElementDisplay");
+                                                m_subDisplayClass = BENTLEY_NAMESPACE_NAME::TerrainModel::Element::GetPresentationSchema()->GetClassCP (L"DTMSubElementDisplay");
                                             if (instance->GetClass().Is (m_subDisplayClass))
                                                 {
                                                 element = instance->GetElementHandle();
@@ -217,16 +217,16 @@ ref class SelectionListener : IEventHookHandler, IAUICommandManagerExtension, IA
                     return nullptr;
 
                 if (!m_dtmElementClass)
-                    m_dtmElementClass = Bentley::TerrainModel::Element::GetPresentationSchema()->GetClassCP (L"DTMElement");
+                    m_dtmElementClass = BENTLEY_NAMESPACE_NAME::TerrainModel::Element::GetPresentationSchema()->GetClassCP (L"DTMElement");
                 if (instance->GetClass().Is (m_dtmElementClass))
                     {
                     ElementHandle element = instance->GetElementHandle();
 
-                    if (TMSymbologyOverrideManager::CanHaveSymbologyOverride (element))
+                    if (DTMSymbologyOverrideManager::CanHaveSymbologyOverride (element))
                         {
                         bool hasOverride = false;
                         ElementHandle elementHandle2;
-                        if (TMSymbologyOverrideManager::GetElementForSymbology (element, elementHandle2, mdlModelRef_getActive ()))
+                        if (DTMSymbologyOverrideManager::GetElementForSymbology (element, elementHandle2, mdlModelRef_getActive ()))
                             hasOverride = elementHandle2.GetModelRef() == mdlModelRef_getActive();
 
                         AUICommandItemList^ list = gcnew AUICommandItemList ("", "");
@@ -250,14 +250,14 @@ ref class SelectionListener : IEventHookHandler, IAUICommandManagerExtension, IA
 
     private: void ProcessAdd (ElementHandleCR orgEh, DgnModelRefP destModelRef)
                  {
-                 if (SUCCESS == TMSymbologyOverrideManager::CreateSymbologyOverride (orgEh, destModelRef))
+                 if (SUCCESS == DTMSymbologyOverrideManager::CreateSymbologyOverride (orgEh, destModelRef))
                      {
                      }
                  }
 
     private: static void ProcessDel (ElementHandleCR orgEH, DgnModelRefP destModelRef)
                  {
-                 TMSymbologyOverrideManager::DeleteSymbologyOverride (orgEH, destModelRef);
+                 DTMSymbologyOverrideManager::DeleteSymbologyOverride (orgEH, destModelRef);
                  }
 
     private: static void DispPre (ElementHandleCR eh)
@@ -274,10 +274,10 @@ ref class SelectionListener : IEventHookHandler, IAUICommandManagerExtension, IA
                     ElementHandle elementHandle ((ElementRefP)((System::IntPtr)parameters ["ElementRefP"]).ToPointer(), (DgnModelRefP)((System::IntPtr)parameters ["ModelRefP"]).ToPointer());
                     DgnModelRefP activeModel = (DgnModelRefP)((System::IntPtr)parameters ["ActiveModel"]).ToPointer();
 
-                    if (TMSymbologyOverrideManager::CanHaveSymbologyOverride (elementHandle))
+                    if (DTMSymbologyOverrideManager::CanHaveSymbologyOverride (elementHandle))
                         {
                         ElementHandle elementHandle2;
-                        if (TMSymbologyOverrideManager::GetElementForSymbology (elementHandle, elementHandle2, activeModel))
+                        if (DTMSymbologyOverrideManager::GetElementForSymbology (elementHandle, elementHandle2, activeModel))
                             {
                             if (elementHandle2.GetModelRef() == activeModel)
                                 ProcessDel (elementHandle, activeModel);
@@ -305,12 +305,12 @@ ref class SelectionListener : IEventHookHandler, IAUICommandManagerExtension, IA
                         else
                             newState = HILITED_None;
 
-                        Bentley::TerrainModel::Element::DTMElementDisplayHandler::SetHighlight (elemRef, id, newState);
+                        BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementDisplayHandler::SetHighlight (elemRef, id, newState);
                         }
 
-                    void HiliteOrDehilite (ElementHandle element, UInt32 displayParamId, bool hiliteIn)
+                    void HiliteOrDehilite (ElementHandle element, uint32_t displayParamId, bool hiliteIn)
                         {
-                        //        TMSymbologyOverrideManager::GetReferencedElement (m_subElement->GetElement()->GetElemHandle(), elem);
+                        //        DTMSymbologyOverrideManager::GetReferencedElement (m_subElement->GetElement()->GetElemHandle(), elem);
 
                         SetPathHiliteState (element, hiliteIn ? DRAW_MODE_Hilite : DRAW_MODE_Normal, displayParamId);
                         DisplayPathCP    displayPath = mdlDisplayPath_new (element.GetElementRef(), element.GetModelRef());
@@ -494,7 +494,7 @@ ref class TMDgnElementColorStructTypeConverter : Bentley::MstnPlatformNET::Templ
 
 }}
 
-using namespace Bentley::TerrainModelNET;
+using namespace BENTLEY_NAMESPACE_NAME::TerrainModelNET;
 
 static void dummy ()
     {
@@ -523,7 +523,7 @@ void registerSelectionListener ()
     Bentley::ECObjects::Instance::IECInstance^ extendedType = Bentley::ECObjects::UI::ECPropertyPane::CreateExtendedType ("TMElementTemplate");
     Bentley::ECObjects::UI::ECPropertyPane::SetExtendedTypeWinFormUIEditor (extendedType, DTMElementTemplateEditor::typeid);
 
-    extendedType = Bentley::ECObjects::UI::ECPropertyPane::CreateExtendedType ("TMColor");
+    extendedType = Bentley::ECObjects::UI::ECPropertyPane::CreateExtendedType ("TMElementColor");
     Bentley::ECObjects::UI::ECPropertyPane::SetExtendedTypeWinFormUIEditor (extendedType, DgnECColorEditor::typeid);
     Bentley::ECObjects::UI::ECPropertyPane::SetExtendedTypeTypeConverter (extendedType, TMDgnElementColorStructTypeConverter::typeid);
 

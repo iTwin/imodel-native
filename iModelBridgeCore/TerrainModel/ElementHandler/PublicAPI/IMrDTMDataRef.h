@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/PublicAPI/IMrDTMDataRef.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -86,7 +86,7 @@ class IMrDTMDataRef : public DTMDataRef
 
     protected : 
 
-        virtual int _GetOverviewDTM(Bentley::TerrainModel::DTMPtr& overviewDTMPtr) = 0;
+        virtual int _GetOverviewDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& overviewDTMPtr) = 0;
 
 
     
@@ -205,7 +205,7 @@ class IMrDTMDataRef : public DTMDataRef
     
         virtual bool           _IsUpToDate() = 0;       
 
-        virtual Int64          _GetPointCountForResolution(int resolutionIndex) = 0;     
+        virtual int64_t          _GetPointCountForResolution(int resolutionIndex) = 0;     
 
         virtual DgnGCSP        _GetDestinationGCS() = 0;
 
@@ -221,7 +221,7 @@ class IMrDTMDataRef : public DTMDataRef
 
     DTMELEMENT_EXPORT static void SetPlotterInterface(IPlotterInfo* plotterInterface);   
 
-    DTMELEMENT_EXPORT int         GetOverviewDTM(Bentley::TerrainModel::DTMPtr& overviewDTMPtr);   
+    DTMELEMENT_EXPORT int         GetOverviewDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& overviewDTMPtr);   
 
 
     DTMELEMENT_EXPORT int         GetProgressiveDataBlockManager(IMrDTMProgressiveDataBlockManagerPtr& progressiveDataBlockManagerPtr,
@@ -343,7 +343,7 @@ class IMrDTMDataRef : public DTMDataRef
 
     DTMELEMENT_EXPORT bool           IsUpToDate();       
 
-    DTMELEMENT_EXPORT Int64          GetPointCountForResolution(int resolutionIndex);                                
+    DTMELEMENT_EXPORT int64_t          GetPointCountForResolution(int resolutionIndex);                                
 
     DTMELEMENT_EXPORT DgnGCSP        GetDestinationGCS();
 

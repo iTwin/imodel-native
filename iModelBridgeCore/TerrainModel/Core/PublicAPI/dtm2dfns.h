@@ -189,7 +189,7 @@ BENTLEYDTM_EXPORT                      int bcdtmData_deleteAllOccurrencesOfDtmFe
 BENTLEYDTM_EXPORT                      int bcdtmData_deleteAllRollBackFeaturesDtmObject (BC_DTM_OBJ *dtmP);
 BENTLEYDTM_EXPORT                      int bcdtmData_deleteAllTinErrorFeaturesDtmObject (BC_DTM_OBJ *dtmP);
 BENTLEYDTM_Private                     int bcdtmData_featureIdCompareFunction (const DTMFeatureId *id1P, const DTMFeatureId *id2P);
-BENTLEYDTM_Private                     int bcdtmData_findFirstFeatureIndexOccurrence (Int64 feature, DTM_FEATURE_INDEX *dtmFeatureIndexP, long numDtmFeatureIndex, long *offsetP);
+BENTLEYDTM_Private                     int bcdtmData_findFirstFeatureIndexOccurrence (int64_t feature, DTM_FEATURE_INDEX *dtmFeatureIndexP, long numDtmFeatureIndex, long *offsetP);
 BENTLEYDTM_EXPORT                      int bcdtmData_getAssociatedDtmFeatureTypeAndCodes (long featureCode, DTMFeatureType *dtmFeatureTypeP, long *startCodeP, long *nextCodeP); 
 BENTLEYDTM_Public                      int bcdtmData_getDtmFeatureStateNameFromDtmFeatureState (DTMFeatureState dtmFeatureState, char *dtmFeatureStateName);
 BENTLEYDTM_Public                      int bcdtmData_getDtmFeatureTypeFromDtmFeatureTypeName (char *dtmFeatureTypeName, DTMFeatureType* dtmFeatureTypeP); 
@@ -1007,12 +1007,12 @@ BENTLEYDTM_Public                      int bcdtmLoad_checkForDepressionContourDt
 BENTLEYDTM_Public                      int bcdtmLoad_checkIfPointInCache (double x, double y, double z);
 BENTLEYDTM_Public                      int bcdtmLoad_clearCache (void);
 BENTLEYDTM_Public                      int bcdtmLoad_clearLineDtmObject (BC_DTM_OBJ *dtmP, long pnt1, long pnt2, unsigned char *maskLineP);
-BENTLEYDTM_Public                      int bcdtmLoad_contourFeature (BC_DTM_OBJ *dtmP, DTMContourParamsCR contourParams, DTMFenceParamsCR fenceParams, DTMPondAppData* pondExtendedAppData, BC_DTM_OBJ *clipDtmP, long contourDirection, DTMFeatureCallback loadFunctionP, void *userP); 
+BENTLEYDTM_Public                      int bcdtmLoad_contourFeature(BC_DTM_OBJ *dtmP, TerrainModel::DTMContourParamsCR contourParams, TerrainModel::DTMFenceParamsCR fenceParams, DTMPondAppData* pondExtendedAppData, BC_DTM_OBJ *clipDtmP, long contourDirection, DTMFeatureCallback loadFunctionP, void *userP);
 BENTLEYDTM_EXPORT                      int bcdtmLoad_contourForPointDtmObject (BC_DTM_OBJ *dtmP, double x, double y, double contourInterval, DTMContourSmoothing smoothOption, double smoothFactor, long smoothDensity, DTMFeatureCallback loadFunctionP, long useFence, DTMFenceOption fenceOption, DTMFenceType fenceType, DPoint3d *fencePtsP, long numFencePts, void *userP);
 BENTLEYDTM_EXPORT                      int bcdtmLoad_contoursCreateDepressionDtmObject (BC_DTM_OBJ* dtmP, DTMFeatureCallback loadFunctionP, void *userP);
 BENTLEYDTM_EXPORT                      int bcdtmLoad_contoursFromDtmFile (WCharCP dtmFile, double conInt, double conReg, long loadRange, double conMin, double conMax, long loadValues, double *conValuesP, long numConValues, DTMContourSmoothing smoothOption, double smoothFactor, long smoothDensity, DTMFeatureCallback loadFunctionP, long useFence, DTMFenceOption fenceOption, DTMFenceType fenceType, DPoint3d *fencePtsP, long numFencePts, void *userP); 
 BENTLEYDTM_EXPORT                      int bcdtmLoad_contoursFromDtmObject (BC_DTM_OBJ *dtmP, double conInt, double conReg, long loadRange, double conMin, double conMax, long loadValues, double *conValuesP, long numConValues, DTMContourSmoothing smoothOption, double smoothFactor, long smoothDensity, double smoothLength, long useFence, DTMFenceOption fenceOption, DTMFenceType fenceType, DPoint3d *fencePtsP, long numFencePts, long depressionOption, long maxSlopeOption, double maxSlopeValue, DTMFeatureCallback loadFunctionP, void *userP); 
-BENTLEYDTM_EXPORT                      int bcdtmLoad_contoursFromDtmObject (BC_DTM_OBJ *dtmP, DTMContourParamsCR contourParams, DTMFenceParamsCR fenceParams, DTMFeatureCallback loadFunctionP, void* userP);
+BENTLEYDTM_EXPORT                      int bcdtmLoad_contoursFromDtmObject(BC_DTM_OBJ *dtmP, TerrainModel::DTMContourParamsCR contourParams, TerrainModel::DTMFenceParamsCR fenceParams, DTMFeatureCallback loadFunctionP, void* userP);
 BENTLEYDTM_EXPORT                      int bcdtmLoad_contoursFromLatticeFile (WCharCP latticeFile, double conInt, double conReg, long loadRange, double conMin, double conMax, long loadValues, double *conValuesP, long numConValues, DTMContourSmoothing smoothOption, double smoothFactor, long smoothDensity, DTMFeatureCallback loadFunctionP, long useFence, DTMFenceOption fenceOption, DPoint3d *fencePtsP, long numFencePts, void *userP); 
 BENTLEYDTM_EXPORT                      int bcdtmLoad_contoursFromLatticeObject (DTM_LAT_OBJ *latticeP, double conInt, double conReg, long loadRange, double conMin, double conMax, long loadValues, double *conValuesP, long numConValues, DTMContourSmoothing smoothOption, double smoothFactor, long smoothDensity, DTMFeatureCallback loadFunctionP, long useFence, DTMFenceOption fenceOption, DPoint3d *fencePtsP, long numFencePts, void *userP); 
 BENTLEYDTM_Public                      int bcdtmLoad_copyCachePointsToPointArray (DPoint3d **pointsPP, long *numPointsP);
@@ -1037,9 +1037,9 @@ BENTLEYDTM_Private                     int bcdtmLoad_markIntersectingTinLinePoin
 BENTLEYDTM_Public                      int bcdtmLoad_markTinPointsExternalToFenceDtmObject (BC_DTM_OBJ *dtmP, BC_DTM_OBJ *fenceDtmP, long pointMark, long *leftMostPointP, long *numMarkedP);
 BENTLEYDTM_Private                     int bcdtmLoad_markTriangleEdgesThatSpanTheFenceDtmObject (BC_DTM_OBJ *dtmP, BC_DTM_OBJ *clipDtmP, long *minPointP, long *maxPointP, long *numMarkedP);
 BENTLEYDTM_Public                      int bcdtmLoad_overrideCreateDepressionDtmObject (int (*overrideP) (BC_DTM_OBJ *dtmP, BC_DTM_OBJ*& depressionDtmP, DTMFeatureCallback loadFunctionP));
-BENTLEYDTM_Private                     int bcdtmLoad_plotContourAtPointDtmObject (BC_DTM_OBJ *dtmP, DTMContourParamsCR contourParams, DTMFenceParamsCR fenceParams, DTMPondAppData* pondExtendedAppData, BC_DTM_OBJ* clipDtmP, double x, double y, double z, long pointType, long trgPnt1, long trgPnt2, long trgPnt3, DTMFeatureCallback loadFunctionP, void *userP);
-BENTLEYDTM_Private                     int bcdtmLoad_plotContourDtmObject (BC_DTM_OBJ *dtmP, DTMContourParamsCR contourParams, DTMFenceParamsCR fenceParams, DTMPondAppData* pondExtendedAppData, BC_DTM_OBJ* clipDtmP, double ContourValue, unsigned char *tinLineP, long voidsInDtm, DtmContourIndexArrayR contourIndexP, long numContourIndex, long *contourStartLineP, DTMFeatureCallback loadFunctionP, void *userP);
-BENTLEYDTM_Private                     int bcdtmLoad_plotContourLatticeObject (DTM_LAT_OBJ *latticeP, DTMContourParamsCR contourParams, DTMFenceParamsCR fenceParams, DTMPondAppData* pondExtendedAppData, BC_DTM_OBJ* clipDtmP, unsigned char *markLatP, float contourValue, DTMFeatureCallback loadFunctionP, void *userP);
+BENTLEYDTM_Private                     int bcdtmLoad_plotContourAtPointDtmObject(BC_DTM_OBJ *dtmP, TerrainModel::DTMContourParamsCR contourParams, TerrainModel::DTMFenceParamsCR fenceParams, DTMPondAppData* pondExtendedAppData, BC_DTM_OBJ* clipDtmP, double x, double y, double z, long pointType, long trgPnt1, long trgPnt2, long trgPnt3, DTMFeatureCallback loadFunctionP, void *userP);
+BENTLEYDTM_Private                     int bcdtmLoad_plotContourDtmObject(BC_DTM_OBJ *dtmP, TerrainModel::DTMContourParamsCR contourParams, TerrainModel::DTMFenceParamsCR fenceParams, DTMPondAppData* pondExtendedAppData, BC_DTM_OBJ* clipDtmP, double ContourValue, unsigned char *tinLineP, long voidsInDtm, DtmContourIndexArrayR contourIndexP, long numContourIndex, long *contourStartLineP, DTMFeatureCallback loadFunctionP, void *userP);
+BENTLEYDTM_Private                     int bcdtmLoad_plotContourLatticeObject(DTM_LAT_OBJ *latticeP, TerrainModel::DTMContourParamsCR contourParams, TerrainModel::DTMFenceParamsCR fenceParams, DTMPondAppData* pondExtendedAppData, BC_DTM_OBJ* clipDtmP, unsigned char *markLatP, float contourValue, DTMFeatureCallback loadFunctionP, void *userP);
 BENTLEYDTM_Private                     int bcdtmLoad_pullSmoothPointsBack (BC_DTM_OBJ *dtmP, double conInt, double *xKnotP, double *yKnotP, long *knotWghtP, long numKnots, long pointDensity, double contourValue, DPoint3d *conPtsP, long numConPts); 
 BENTLEYDTM_Private                     int bcdtmLoad_pullSmoothPointsBackAtKnots (double x[], double y[], long weightP[], long numSplinePts, long smoothDensity, double contourValue, DPoint3d *conPtsP, long numConPts); 
 BENTLEYDTM_Private                     int bcdtmLoad_pullSmoothPointsBackOnToBreakLines (double x[], double y[], long conWght[], long numPts, long pointDensity, DPoint3d *conPtsP, long numConPts); 
@@ -1058,12 +1058,12 @@ BENTLEYDTM_Public                      int bcdtmLoad_testLineDtmObject (BC_DTM_O
 BENTLEYDTM_EXPORT                      int bcdtmLoad_tinEdgesFromDtmObject (BC_DTM_OBJ *dtmP, long useFence, DPoint3d *fencePtsP, long numFencePts, long *numEdgesP, long **edgesPP, DTM_TIN_POINT ***dtmPtsPPP);
 BENTLEYDTM_EXPORT                      int bcdtmLoad_tinMeshFromDtmObject (BC_DTM_OBJ *dtmP, long firstCall, long maxMeshSize, long useFence, DTMFenceType fenceType, DTMFenceOption fenceOption, DPoint3d *fencePtsP, long numFencePts, DPoint3d  **meshPtsPP, long *numMeshPtsP, long **meshFacesPP, long *numMeshFacesP);
 BENTLEYDTM_EXPORT                      int bcdtmLoad_tinTrianglesFromDtmObject (BC_DTM_OBJ *dtmP, long useFence, DTMFenceType fenceType, DPoint3d *fencePtsP, long numFencePts, long *numTrianglesP, long **trianglesPP, DTM_TIN_POINT ***dtmPtsPPP);
-BENTLEYDTM_Private                     int bcdtmLoad_traceContourDtmObject (BC_DTM_OBJ *dtmP, DTMContourParamsCR contourParams, DTMFenceParamsCR fenceParams, DTMPondAppData* pondExtendedAppData, BC_DTM_OBJ* clipDTMP, double contourValue, long p1, long p2, DTMDirection direction, unsigned char *tinLineP, DTMFeatureCallback loadFunctionP, void *userP);
-BENTLEYDTM_Private                     int bcdtmLoad_traceContourFromTriangleEdgeDtmObject (BC_DTM_OBJ *dtmP, DTMContourParamsCR contourParams, DTMFenceParamsCR fenceParams, DTMPondAppData* pondExtendedAppData, BC_DTM_OBJ* clipDtmP, double contourValue, long trgPnt1, long trgPnt2, DTMFeatureCallback loadFunctionP, void *userP);
-BENTLEYDTM_Private                     int bcdtmLoad_traceContourLatticeObject (DTM_LAT_OBJ *latticeP, DTMContourParamsCR contourParams, DTMFenceParamsCR fenceParams, DTMPondAppData* pondExtendedAppData, BC_DTM_OBJ* clipDtmP, unsigned char *markLatP, float contourValue, long i1, long j1, long i2, long j2, DTMFeatureCallback loadFunctionP, void *userP);
-BENTLEYDTM_Private                     int bcdtmLoad_traceZeroSlopeContourDtmObject (BC_DTM_OBJ *dtmP, DTMContourParamsCR contourParams, DTMFenceParamsCR fenceParams, DTMPondAppData* pondExtendedAppData, BC_DTM_OBJ* clipDtmP, long p1, long p2, DTMDirection direction, long contourDirection, double contourValue, unsigned char *tinLineP, DTMFeatureCallback loadFunctionP, void *userP);
+BENTLEYDTM_Private                     int bcdtmLoad_traceContourDtmObject(BC_DTM_OBJ *dtmP, TerrainModel::DTMContourParamsCR contourParams, TerrainModel::DTMFenceParamsCR fenceParams, DTMPondAppData* pondExtendedAppData, BC_DTM_OBJ* clipDTMP, double contourValue, long p1, long p2, DTMDirection direction, unsigned char *tinLineP, DTMFeatureCallback loadFunctionP, void *userP);
+BENTLEYDTM_Private                     int bcdtmLoad_traceContourFromTriangleEdgeDtmObject(BC_DTM_OBJ *dtmP, TerrainModel::DTMContourParamsCR contourParams, TerrainModel::DTMFenceParamsCR fenceParams, DTMPondAppData* pondExtendedAppData, BC_DTM_OBJ* clipDtmP, double contourValue, long trgPnt1, long trgPnt2, DTMFeatureCallback loadFunctionP, void *userP);
+BENTLEYDTM_Private                     int bcdtmLoad_traceContourLatticeObject (DTM_LAT_OBJ *latticeP, TerrainModel::DTMContourParamsCR contourParams, TerrainModel::DTMFenceParamsCR fenceParams, DTMPondAppData* pondExtendedAppData, BC_DTM_OBJ* clipDtmP, unsigned char *markLatP, float contourValue, long i1, long j1, long i2, long j2, DTMFeatureCallback loadFunctionP, void *userP);
+BENTLEYDTM_Private                     int bcdtmLoad_traceZeroSlopeContourDtmObject (BC_DTM_OBJ *dtmP, TerrainModel::DTMContourParamsCR contourParams, TerrainModel::DTMFenceParamsCR fenceParams, DTMPondAppData* pondExtendedAppData, BC_DTM_OBJ* clipDtmP, long p1, long p2, DTMDirection direction, long contourDirection, double contourValue, unsigned char *tinLineP, DTMFeatureCallback loadFunctionP, void *userP);
 BENTLEYDTM_EXPORT                      int bcdtmLoad_trianglesFromRegionDtmObject (BC_DTM_OBJ *dtmP, DTMFeatureId featureId, DTMFeatureCallback loadFunctionP, void* userP);
-BENTLEYDTM_EXPORT                      int bcdtmLoad_triangleShadeMeshForRegionDtmObject (BC_DTM_OBJ *dtmP, long maxTriangles, long vectorOption, double zAxisFactor, long regionOption, long indexOption, Int64 indexValue, DTMTriangleShadeMeshCallback loadFunctionP, void* userP);
+BENTLEYDTM_EXPORT                      int bcdtmLoad_triangleShadeMeshForRegionDtmObject (BC_DTM_OBJ *dtmP, long maxTriangles, long vectorOption, double zAxisFactor, long regionOption, long indexOption, int64_t indexValue, DTMTriangleShadeMeshCallback loadFunctionP, void* userP);
 BENTLEYDTM_Public                      int bcdtmLoad_truncateRadialAtTinHullDtmObject (BC_DTM_OBJ *dtmP, double Sx, double Sy, double Ex, double Ey, double *Hx, double *Hy, double *Hz);
 BENTLEYDTM_Private                     int bcdtmLoad_vertexSmoothContour (DPoint3d **conPtsPP, long *numConPtsP, long **weightPP);
 
@@ -1395,10 +1395,10 @@ BENTLEYDTM_EXPORT                      int bcdtmRead_xyzFileToDtmObject (BC_DTM_
 BENTLEYDTM_EXPORT                      int bcdtmRead_xyzFileToPointArray (WCharCP xyzFileNameP, DPoint3d **ptsPP, long *numPtsP); 
 
 ///////// bcdtmReadStream/////////
-BENTLEYDTM_Public                      int bcdtmReadStream_atFilePositionDtmObject (BC_DTM_OBJ **dtmPP, Bentley::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition);
-BENTLEYDTM_Public                      int bcdtmReadStream_dtmObject (BC_DTM_OBJ *dtmP, Bentley::TerrainModel::IBcDtmStream* dtmStreamP);
-BENTLEYDTM_Public                      int bcdtmReadStream_version100DtmObject (BC_DTM_OBJ *dtmP, Bentley::TerrainModel::IBcDtmStream* dtmStreamP);
-BENTLEYDTM_Public                      int bcdtmReadStream_version200DtmObject (BC_DTM_OBJ *dtmP, Bentley::TerrainModel::IBcDtmStream* dtmStreamP);
+BENTLEYDTM_Public                      int bcdtmReadStream_atFilePositionDtmObject (BC_DTM_OBJ **dtmPP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition);
+BENTLEYDTM_Public                      int bcdtmReadStream_dtmObject (BC_DTM_OBJ *dtmP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP);
+BENTLEYDTM_Public                      int bcdtmReadStream_version100DtmObject (BC_DTM_OBJ *dtmP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP);
+BENTLEYDTM_Public                      int bcdtmReadStream_version200DtmObject (BC_DTM_OBJ *dtmP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP);
 
 ///////// bcdtmReport/////////
 BENTLEYDTM_Private                     int bcdtmReport_buildFeatureIntersectionTableDtmObject (BC_DTM_OBJ *dtmP, DTMFeatureType *featureListP, long  numFeatureList, DTM_STRING_INTERSECT_TABLE **intTablePP, long *numIntTableP);
@@ -1488,12 +1488,12 @@ BENTLEYDTM_EXPORT                      int bcdtmStockPile_createStringStockPileD
 BENTLEYDTM_Private                     int bcdtmStockPile_createStringStockPileToGroundSurfaceDtmObject (BC_DTM_OBJ *dtmP, DPoint3d *headCoordinatesP, long numHeadCoordinates, double stockPileSlope, BC_DTM_OBJ **stockPileDtmPP, double *volumeP);
 
 ///////// bcdtmStream/////////
-BENTLEYDTM_EXPORT                      int bcdtmStream_createFromFILE (FILE* fP, Bentley::TerrainModel::IBcDtmStream** dtmStreamPP);
-BENTLEYDTM_EXPORT                      int bcdtmStream_destroy (Bentley::TerrainModel::IBcDtmStream** dtmStreamPP);
-BENTLEYDTM_EXPORT                   size_t bcdtmStream_fread (void* dest, size_t elementSize, size_t count, Bentley::TerrainModel::IBcDtmStream* stream);
-BENTLEYDTM_EXPORT                      int bcdtmStream_fseek (Bentley::TerrainModel::IBcDtmStream* stream, long offset, int origin);
-BENTLEYDTM_EXPORT                      int bcdtmStream_ftell (Bentley::TerrainModel::IBcDtmStream* stream);
-BENTLEYDTM_EXPORT                   size_t bcdtmStream_fwrite (void* source, size_t elementSize, size_t count, Bentley::TerrainModel::IBcDtmStream* stream);
+BENTLEYDTM_EXPORT                      int bcdtmStream_createFromFILE (FILE* fP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream** dtmStreamPP);
+BENTLEYDTM_EXPORT                      int bcdtmStream_destroy (BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream** dtmStreamPP);
+BENTLEYDTM_EXPORT                   size_t bcdtmStream_fread (void* dest, size_t elementSize, size_t count, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* stream);
+BENTLEYDTM_EXPORT                      int bcdtmStream_fseek (BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* stream, long offset, int origin);
+BENTLEYDTM_EXPORT                      int bcdtmStream_ftell (BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* stream);
+BENTLEYDTM_EXPORT                   size_t bcdtmStream_fwrite (void* source, size_t elementSize, size_t count, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* stream);
 
 ///////// bcdtmString/////////
 BENTLEYDTM_Private                     int bcdtmString_addActiveStringLine (DTM_STRING_INTERSECT_TABLE **activeIntTableP, long *numActiveIntTable, long *memActiveIntTable, DTM_STRING_INTERSECT_TABLE *intP); 
@@ -1762,10 +1762,10 @@ BENTLEYDTM_Private                     int bcdtmWrite_xyzBinaryFileToDtmFeatureF
 BENTLEYDTM_EXPORT                      int bcdtmWrite_xyzFileToDtmFeatureFile (WCharCP xyzFileNameP, WCharCP dtmFileNameP);
 
 ///////// bcdtmWriteStream/////////
-BENTLEYDTM_EXPORT                      int bcdtmWriteStream_atFilePositionDtmObject (BC_DTM_OBJ *dtmP, Bentley::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition); 
-BENTLEYDTM_EXPORT                      int bcdtmWriteStream_atFilePositionGeopakObjectDtmObject (BC_DTM_OBJ *dtmP, Bentley::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition);
-BENTLEYDTM_Private                     int bcdtmWriteStream_writeAtFilePositionGeopakDatObjectDtmObject (BC_DTM_OBJ *dtmP, Bentley::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition);
-BENTLEYDTM_Public                      int bcdtmWriteStream_writeAtFilePositionGeopakTinObjectDtmObject (BC_DTM_OBJ *dtmP, Bentley::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition);
+BENTLEYDTM_EXPORT                      int bcdtmWriteStream_atFilePositionDtmObject (BC_DTM_OBJ *dtmP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition); 
+BENTLEYDTM_EXPORT                      int bcdtmWriteStream_atFilePositionGeopakObjectDtmObject (BC_DTM_OBJ *dtmP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition);
+BENTLEYDTM_Private                     int bcdtmWriteStream_writeAtFilePositionGeopakDatObjectDtmObject (BC_DTM_OBJ *dtmP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition);
+BENTLEYDTM_Public                      int bcdtmWriteStream_writeAtFilePositionGeopakTinObjectDtmObject (BC_DTM_OBJ *dtmP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* dtmStreamP, long filePosition);
 
 ///////// dtmSideSlope/////////
 //BENTLEYDTM_Private                     int dtmSideSlope_addActiveStringLine (DTM_STR_INT_TAB **ActIntTable, long *ActIntTableNe, long *ActIntTableMe, DTM_STR_INT_TAB *Pint); 

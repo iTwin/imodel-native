@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* pntadd.c                                                tmi    17-Oct-1990 */
@@ -41,7 +41,7 @@ int aecDTM_pointAdd            /* <= TRUE if error                 */
 )
 {
   static struct CIVdtmpnt pnt;
-  static byte add = 0;
+  static unsigned char add = 0;
   static int writeState = 0;
   static int cleaned = TRUE;
   int sts = SUCCESS;

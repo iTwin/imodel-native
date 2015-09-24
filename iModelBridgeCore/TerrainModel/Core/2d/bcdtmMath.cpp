@@ -1584,7 +1584,7 @@ BENTLEYDTM_EXPORT int bcdtmMath_transformDtmObject
  long   n,point,dtmFeature,priorTinState=FALSE,cubeSet=FALSE ;
  double x,y,z,dx,dy,scaleFactor=1.0 ;
  DPoint3d    *p3dP,*ptsP,scalePts[2] ;
- double xMin,yMin,xMax,yMax,zMin,zMax ;
+ double xMin = 0.0,yMin = 0.0,xMax = 0.0,yMax = 0.0,zMin = 0.0,zMax = 0.0;
  DTM_TIN_POINT *pointP ;
  BC_DTM_FEATURE *dtmFeatureP ;
 /*

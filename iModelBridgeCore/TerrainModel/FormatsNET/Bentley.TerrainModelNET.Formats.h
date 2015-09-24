@@ -2,7 +2,7 @@
 |
 |     $Source: FormatsNET/Bentley.TerrainModelNET.Formats.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,8 +56,8 @@ namespace BGEO = Bentley::GeometryNET;
 #define bcMem_calloc calloc
 template<class c> void bcMem_freeAndClear (c **a) { if (a != 0 && *a != 0) { free (*a); *a = 0; } }
 
-#pragma make_public(::Bentley::TerrainModel::TerrainImporter)
-#pragma make_public(::Bentley::TerrainModel::TerrainExporter)
+#pragma make_public(::BENTLEY_NAMESPACE_NAME::TerrainModel::TerrainImporter)
+#pragma make_public(::BENTLEY_NAMESPACE_NAME::TerrainModel::TerrainExporter)
 
 #include "TerrainImporter.h"
 #include "TerrainExporter.h"

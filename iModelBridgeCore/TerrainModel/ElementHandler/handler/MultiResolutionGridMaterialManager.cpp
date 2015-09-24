@@ -6,7 +6,7 @@
 |       $Date: 2011/11/15 17:54:58 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------+
@@ -65,8 +65,8 @@ const DRange3d& ICachedMaterial::GetTextureRange()
     return _GetTextureRange();
     }
     
-void ICachedMaterial::GetTextureSizeInPixels(UInt32& textureWidthInPixels, 
-                                             UInt32& textureHeightInPixels)
+void ICachedMaterial::GetTextureSizeInPixels(uint32_t& textureWidthInPixels, 
+                                             uint32_t& textureHeightInPixels)
     {
     _GetTextureSizeInPixels(textureWidthInPixels, textureHeightInPixels);   
     }

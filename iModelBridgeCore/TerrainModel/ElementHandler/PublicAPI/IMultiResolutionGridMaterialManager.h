@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/PublicAPI/IMultiResolutionGridMaterialManager.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,15 +37,15 @@ private:
 
 protected:
     UInt   m_layer;
-    UInt64 m_row;
-    UInt64 m_column;    
+    uint64_t m_row;
+    uint64_t m_column;    
 
 public:
 
     static MRImageTileId invalid_tile_id;
 
     MRImageTileId () : m_layer(0), m_row(0), m_column(0) {}
-    MRImageTileId (UInt layer, UInt64 row, UInt64 col) : m_layer(layer), m_row(row), m_column(col) { }
+    MRImageTileId (UInt layer, uint64_t row, uint64_t col) : m_layer(layer), m_row(row), m_column(col) { }
     ~MRImageTileId() {}
 
     bool operator == (MRImageTileId const & object) const { return m_layer == object.m_layer && m_row == object.m_row && m_column == object.m_column; }
@@ -77,11 +77,11 @@ public:
         return false;
         }
 
-    UInt64  GetRow () const       { return m_row; }
-    UInt64  GetColumn () const       { return m_column; }
+    uint64_t  GetRow () const       { return m_row; }
+    uint64_t  GetColumn () const       { return m_column; }
     UInt    GetLayer () const       { return m_layer; }
-    void    SetRow (UInt64 row)   { m_row = row; }
-    void    SetColumn (UInt64 col)   { m_column = col; }
+    void    SetRow (uint64_t row)   { m_row = row; }
+    void    SetColumn (uint64_t col)   { m_column = col; }
     void    SetLayer (UInt layer)   { m_layer = layer; }
 
     void    IncRow ()             { ++m_row; }
@@ -144,8 +144,8 @@ struct ICachedMaterial : RefCounted <IRefCounted>
 
         virtual const DRange3d&                          _GetTextureRange() const = 0;
 
-        virtual void                                     _GetTextureSizeInPixels(UInt32& textureWidthInPixels, 
-                                                                                 UInt32& textureHeightInPixels) const = 0;
+        virtual void                                     _GetTextureSizeInPixels(uint32_t& textureWidthInPixels, 
+                                                                                 uint32_t& textureHeightInPixels) const = 0;
 
         virtual SourceID                                 _GetTextureSourceID() const = 0;        
 
@@ -165,8 +165,8 @@ struct ICachedMaterial : RefCounted <IRefCounted>
 
         DTMELEMENT_EXPORT const DRange3d&                       GetTextureRange();
 
-        DTMELEMENT_EXPORT void                                  GetTextureSizeInPixels(UInt32& textureWidthInPixels, 
-                                                                                       UInt32& textureHeightInPixels);
+        DTMELEMENT_EXPORT void                                  GetTextureSizeInPixels(uint32_t& textureWidthInPixels, 
+                                                                                       uint32_t& textureHeightInPixels);
 
         DTMELEMENT_EXPORT SourceID                              GetTextureSourceID();   
     };

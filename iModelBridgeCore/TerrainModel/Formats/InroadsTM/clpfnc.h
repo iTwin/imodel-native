@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 #pragma once
 
@@ -12,9 +12,9 @@ struct AECclip
     DPoint3d p, nrm;
     struct AECclip *nxt, *nst;
     short nestLevel;                     /* 1: odd nest level, 0: even          */
-    byte prvPar;                      /* previous parallel state             */
-    byte noPar;                       /* no parallel sides allowed           */
-    byte pad[2];                      /* pad structure to 8-byte boundary    */
+    unsigned char prvPar;                      /* previous parallel state             */
+    unsigned char noPar;                       /* no parallel sides allowed           */
+    unsigned char pad[2];                      /* pad structure to 8-unsigned char boundary    */
     };
 
 /*----------------------------------------------------------------------------*/

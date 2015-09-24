@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/MrDTMDataRef.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__PUBLISH_SECTION_START__*/
@@ -111,7 +111,7 @@ class MrDTMViewData
     double                               m_latestFenceDeltaX;
     double                               m_latestFenceDeltaY;
     double                               m_latestFenceDeltaZ;    
-    Bentley::TerrainModel::DTMPtr                 m_dtmPtr;    
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr                 m_dtmPtr;    
 
     IMrDTMProgressiveDataBlockManagerPtr m_dataBlockManagerPtr;
 
@@ -179,7 +179,7 @@ private:
     //Interface pointers to the MrDTM.
     IMrDTMPtr             m_mrDTM;
     IMrDTMPtr             m_MrDTMlowestResolutionPointView;
-    Bentley::TerrainModel::DTMPtr  m_overviewDTMPtr;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr  m_overviewDTMPtr;
     
     MrDTMViewData*       m_viewData[NUMBER_OF_PP_VIEWS];     
     DgnDocumentPtr        m_mrdtmDocumentPtr;    
@@ -315,7 +315,7 @@ private:
 
 protected: 
 
-        virtual int _GetOverviewDTM(Bentley::TerrainModel::DTMPtr& overviewDTMPtr) override;
+        virtual int _GetOverviewDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& overviewDTMPtr) override;
 
 
     
@@ -433,7 +433,7 @@ protected:
     
         virtual bool           _IsUpToDate() override;       
 
-        virtual Int64          _GetPointCountForResolution(int resolutionIndex) override;    
+        virtual int64_t          _GetPointCountForResolution(int resolutionIndex) override;    
 
 
           //MS : Get GetDestinationGCS and GetTargetGCS are quite similar. 

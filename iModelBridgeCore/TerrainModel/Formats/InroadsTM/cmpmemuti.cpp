@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* cmpmemuti.cpp                                twl    24-Apr-2002            */
@@ -146,7 +146,7 @@ int aecDTM_getComponentMemberParentsPtrs
     struct CIVdtmcmp ***cmpPtrs,            /* <= FREE! - components          */
     int *numCmpPtrs,                        /* <= number of components        */
     struct CIVdtmsrf *srfP,                 /*  => DTM surface (or NULL)      */
-    GUID *cmpMemGuidP                       /*  => guid of component member   */
+    BeGuid *cmpMemGuidP                       /*  => guid of component member   */
 )
 {
     CPtrArray *ptrArrayP = NULL;
@@ -262,7 +262,7 @@ int aecDTM_sendAllComponentMembers     /* <= TRUE if error                    */
  DESC: Indexes component members by guid
  HIST: Original - twl 26-Apr-2002
  MISC:
- KEYW: DTM INDEX COMPONENT MEMBERS BY GUID
+ KEYW: DTM INDEX COMPONENT MEMBERS BY BeGuid
 -----------------------------------------------------------------------%*/
 
 int aecDTM_indexComponentMembersByGuid
@@ -318,7 +318,7 @@ int aecDTM_indexComponentMembersByParent
  DESC: Destorys the guid index;
  HIST: Original - twl 26-Apr-2002
  MISC:
- KEYW: DTM DESTROY INDEX COMPONENT MEMBERS GUID
+ KEYW: DTM DESTROY INDEX COMPONENT MEMBERS BeGuid
 -----------------------------------------------------------------------%*/
 
 int aecDTM_destroyComponentMembersGuidIndex
@@ -388,7 +388,7 @@ int aecDTM_destroyComponentMembersParentIndex
  DESC: Inserts a shape into the shape guid index.
  HIST: Original - twl 26-Apr-2002
  MISC:
- KEYW: DTM INSERT INDEX COMPONENT MEMBER BY GUID
+ KEYW: DTM INSERT INDEX COMPONENT MEMBER BY BeGuid
 -----------------------------------------------------------------------%*/
 
 static int aecDTM_insertComponentMemberIntoGuidIndex
@@ -438,7 +438,7 @@ static int aecDTM_insertComponentMemberIntoParentIndex
  DESC: Removes a component member from the guid index.
  HIST: Original - twl 26-Apr-2002
  MISC:
- KEYW: DTM REMOVE INDEX COMPONENT MEMBER BY GUID
+ KEYW: DTM REMOVE INDEX COMPONENT MEMBER BY BeGuid
 -----------------------------------------------------------------------%*/
 
 static int aecDTM_removeComponentMemberFromGuidIndex

@@ -6,7 +6,7 @@
 |       $Date: 2013/03/27 15:53:21 $
 |     $Author: Jean-Francois.Cote $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -623,7 +623,7 @@ int CreateBcDTM(DTMPtr& dtmPtr)
 | SetClipsToDTM
   Utility function that adds to the given DTM the clips.
 +----------------------------------------------------------------------------*/ 
-int SetClipsToDTM (Bentley::TerrainModel::DTMPtr&  dtmPtr,
+int SetClipsToDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&  dtmPtr,
                    const DRange3d&                 dtmRange,
                    const IMrDTMClipContainerPtr&   clips)
     {
@@ -641,7 +641,7 @@ int SetClipsToDTM (Bentley::TerrainModel::DTMPtr&  dtmPtr,
 | SetClipsToDTM
   Utility function that adds to the given DTM the clips.
 +----------------------------------------------------------------------------*/ 
-int SetClipsToDTM (Bentley::TerrainModel::DTMPtr&  dtmPtr,
+int SetClipsToDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&  dtmPtr,
                    const DRange3d&                 dtmRange,
                    const vector<DPoint3d>&         regionPoints,
                    const IMrDTMClipContainerPtr&   clips)
@@ -679,7 +679,7 @@ int SetClipsToDTM (Bentley::TerrainModel::DTMPtr&  dtmPtr,
 | Utility function that triggers the triangulation of a DTM.
 | Some triangulation parameters are obtained from ????
 +----------------------------------------------------------------------------*/
-int TriangulateDTM(Bentley::TerrainModel::DTMPtr&                     dtmPtr,
+int TriangulateDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&                     dtmPtr,
                    const Bentley::MrDTM::IMrDTMQueryParametersPtr& mrDTMQueryParamsPtr)
     {                         
     assert((dtmPtr != 0) && (dtmPtr->GetBcDTM() != 0) && (dtmPtr->GetBcDTM()->GetTinHandle()));
