@@ -498,4 +498,25 @@ public:
 
 #endif
 
+//=======================================================================================
+//! Holds a list of property names for use with a SELECT ECSqlStatement.
+// @bsiclass                                                 Paul.Connelly      09/2015
+//+===============+===============+===============+===============+===============+======
+struct ECSqlSelectParameters
+{
+private:
+    bvector<Utf8CP> m_parameters;
+public:
+    //! Adds a parameter name to the list. Note that the name is stored as Utf8CP.
+    //! @param[in]      parameterName The name of the parameter.
+    ECDB_EXPORT void Add(Utf8CP parameterName);
+    //! Returns the index of the parameter with the specified name
+    //! @param[in]      parameterName The name of the parameter to look up
+    //! @return The index of the parameter within the list, or -1 if no such parameter exists
+    ECDB_EXPORT int GetParameterIndex(Utf8CP parameterName) const;
+//__PUBLISH_SECTION_END__
+    bvector<Utf8CP>& GetParameters() { return m_parameters; }
+//__PUBLISH_SECTION_START__
+};
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
