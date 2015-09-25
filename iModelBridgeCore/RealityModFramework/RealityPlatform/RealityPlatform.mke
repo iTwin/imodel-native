@@ -70,6 +70,8 @@ $(o)WMSSource$(oext) : $(baseDir)WMSSource.cpp $(PublicApiDir)WMSSource.h ${Mult
 
 $(o)UsgsSource$(oext) : $(baseDir)UsgsSource.cpp $(PublicApiDir)UsgsSource.h ${MultiCompileDepends}
 
+$(o)RealityDataDownload$(oext) : $(baseDir)RealityDataDownload.cpp $(PublicApiDir)RealityDataDownload.h ${MultiCompileDepends}
+
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
 # After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
