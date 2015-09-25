@@ -350,7 +350,7 @@ TerrainGroupNet::~TerrainGroupNet() {}
 RealityDataSourceNet^ RealityDataSourceNet::Create(System::String^ uri, 
                                                    System::String^ type, 
                                                    System::String^ copyright,
-                                                   double size)
+                                                   uint64_t size)
     {
     return gcnew RealityDataSourceNet(uri, type, copyright, size);
     }
@@ -361,7 +361,7 @@ RealityDataSourceNet^ RealityDataSourceNet::Create(System::String^ uri,
 RealityDataSourceNet::RealityDataSourceNet(System::String^ uri,
                                            System::String^ type,
                                            System::String^ copyright,
-                                           double size)
+                                           uint64_t size)
     : m_uri(uri),
       m_type(type),
       m_copyright(copyright),
@@ -378,7 +378,7 @@ RealityDataSourceNet::~RealityDataSourceNet() {}
 //-------------------------------------------------------------------------------------
 WmsSourceNet::WmsSourceNet(System::String^ uri,
                            System::String^ copyright,
-                           double size,
+                           uint64_t size,
                            double bboxMinX,
                            double bboxMinY,
                            double bboxMaxX,
@@ -466,7 +466,7 @@ WmsSourceNet::~WmsSourceNet() {}
 //-------------------------------------------------------------------------------------
 WmsSourceNet^ WmsSourceNet::Create(System::String^ uri,
                                    System::String^ copyright,
-                                   double size,
+                                   uint64_t size,
                                    double bboxMinX,
                                    double bboxMinY,
                                    double bboxMaxX,
@@ -506,7 +506,7 @@ WmsSourceNet^ WmsSourceNet::Create(System::String^ uri,
 //-------------------------------------------------------------------------------------
 UsgsSourceNet::UsgsSourceNet(System::String^ uri,
                              System::String^ copyright,
-                             double size,
+                             uint64_t size,
                              System::String^ dataType, 
                              System::String^ dataLocation, 
                              List<System::String^>^ sisterFiles, 
@@ -570,7 +570,7 @@ UsgsSourceNet::~UsgsSourceNet() {}
 //-------------------------------------------------------------------------------------
 UsgsSourceNet^ UsgsSourceNet::Create(System::String^ uri,
                                      System::String^ copyright,
-                                     double size,
+                                     uint64_t size,
                                      System::String^ dataType, 
                                      System::String^ dataLocation, 
                                      List<System::String^>^ sisterFiles, 

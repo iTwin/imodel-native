@@ -457,8 +457,8 @@ RealityDataSourceR RealityData::GetSourceR() {return *m_pSource;}
 RealityDataSourceCR RealityData::GetSource() const {return *m_pSource;}
 Utf8StringCR RealityData::GetCopyright() const { return m_copyright; }
 void RealityData::SetCopyright(Utf8CP dataCopyright) { m_copyright = dataCopyright; }
-double RealityData::GetFilesize() const { return m_size; }
-void RealityData::SetFilesize(double size) { m_size = size; }
+uint64_t RealityData::GetFilesize() const { return m_size; }
+void RealityData::SetFilesize(uint64_t size) { m_size = size; }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
@@ -486,7 +486,7 @@ RealityPackageStatus RealityData::_Read(BeXmlNodeR dataNode)
         if (pChildElement->IsName(PACKAGE_ELEMENT_Copyright))
             pChildElement->GetContent(m_copyright);
         else if (pChildElement->IsName(PACKAGE_ELEMENT_Filesize))
-            pChildElement->GetContentDoubleValue(m_size);
+            pChildElement->GetContentUInt64Value(m_size);
         else
             {
             m_pSource = RealityDataSourceSerializer::Get().Load(status, *pChildElement);
@@ -519,7 +519,7 @@ RealityPackageStatus RealityData::_Write(BeXmlNodeR dataNode) const
     // Optional data size.
     if (0 != m_size)
         {
-        BeXmlNodeP pFilesizeNode = dataNode.AddElementDoubleValue(PACKAGE_ELEMENT_Filesize, m_size);
+        BeXmlNodeP pFilesizeNode = dataNode.AddElementUInt64Value(PACKAGE_ELEMENT_Filesize, m_size);
         if (NULL == pFilesizeNode)
             return RealityPackageStatus::UnknownError;
         }

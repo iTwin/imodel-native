@@ -185,8 +185,8 @@ public:
     REALITYPACKAGE_EXPORT void SetCopyright(Utf8CP dataCopyright);
 
     //! Optional data size in kilobytes. Should appear in the package only if known. Default to 0.
-    REALITYPACKAGE_EXPORT double GetFilesize() const;
-    REALITYPACKAGE_EXPORT void SetFilesize(double size);
+    REALITYPACKAGE_EXPORT uint64_t GetFilesize() const;
+    REALITYPACKAGE_EXPORT void SetFilesize(uint64_t size);
     
 protected:
     explicit RealityData(){}; // for persistence.
@@ -200,7 +200,7 @@ protected:
 private:
     RealityDataSourcePtr m_pSource;
     Utf8String m_copyright;
-    double m_size;
+    uint64_t m_size;
 };
 
 //=======================================================================================

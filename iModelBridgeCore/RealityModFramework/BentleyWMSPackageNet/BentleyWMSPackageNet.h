@@ -137,7 +137,7 @@ namespace RealityDataPackageWrapper
             static RealityDataSourceNet^ Create(System::String^ uri,
                                                 System::String^ type,
                                                 System::String^ copyright,
-                                                double size);             
+                                                uint64_t size);             
 
             //! Get the source uri. It could be a full URL or a path relative to the package file.
             System::String^ GetUri() { return m_uri; }
@@ -149,13 +149,13 @@ namespace RealityDataPackageWrapper
             System::String^ GetCopyright() { return m_copyright; }
 
             //! Get the data size in kilobytes. 
-            double  GetFilesize() { return m_size; }
+            uint64_t GetFilesize() { return m_size; }
 
         protected:
             RealityDataSourceNet(System::String^ uri, 
                                  System::String^ type,
                                  System::String^ copyright,
-                                 double size);
+                                 uint64_t size);
 
             ~RealityDataSourceNet();
 
@@ -163,7 +163,7 @@ namespace RealityDataPackageWrapper
             System::String^ m_uri;
             System::String^ m_type;
             System::String^ m_copyright;  
-            double m_size;
+            uint64_t m_size;
         };
 
     //=====================================================================================
@@ -175,7 +175,7 @@ namespace RealityDataPackageWrapper
             //! Create WMS data source.
             static WmsSourceNet^ Create(System::String^ uri,
                                         System::String^ copyright,     
-                                        double size,                   
+                                        uint64_t size,
                                         double bboxMinX,
                                         double bboxMinY,
                                         double bboxMaxX,
@@ -197,7 +197,7 @@ namespace RealityDataPackageWrapper
         private:
             WmsSourceNet(System::String^ uri,
                          System::String^ copyright,
-                         double size,
+                         uint64_t size,
                          double bboxMinX,
                          double bboxMinY,
                          double bboxMaxX,
@@ -227,7 +227,7 @@ namespace RealityDataPackageWrapper
             //! Create USGS data source.
             static UsgsSourceNet^ Create(System::String^ uri,
                                          System::String^ copyright,         
-                                         double size,                       
+                                         uint64_t size,
                                          System::String^ dataType,
                                          System::String^ dataLocation,      
                                          List<System::String^>^ sisterFiles,
@@ -239,7 +239,7 @@ namespace RealityDataPackageWrapper
         private:
             UsgsSourceNet(System::String^ uri,
                           System::String^ copyright,
-                          double size,
+                          uint64_t size,
                           System::String^ dataType,
                           System::String^ dataLocation,      
                           List<System::String^>^ sisterFiles,
