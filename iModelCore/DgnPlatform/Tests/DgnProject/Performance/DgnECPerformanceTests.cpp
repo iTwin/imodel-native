@@ -40,7 +40,7 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement (DgnElementPtr& out, Dgn
     if (!categoryId.IsValid())
         return ERROR;
 
-    DgnElementPtr element = elementHandler->Create(DgnElement::CreateParams(model.GetDgnDb(), model.GetModelId(), elementClassId, categoryId));
+    DgnElementPtr element = elementHandler->Create(DgnElement::CreateParams(model.GetDgnDb(), model.GetModelId(), elementClassId));
 
     if (!element.IsValid())
         return ERROR;
@@ -49,6 +49,8 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement (DgnElementPtr& out, Dgn
 
     if (nullptr == geomElement)
         return ERROR;
+
+    geomElement->SetCategoryId(categoryId);
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*geomElement);
 

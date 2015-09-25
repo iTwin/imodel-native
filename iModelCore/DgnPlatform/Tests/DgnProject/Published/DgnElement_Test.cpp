@@ -122,11 +122,11 @@ TEST_F (DgnElementTests, UpdateElement)
 
     //Creating a copy of element to edit.
     DgnElementPtr e1Copy = e1->CopyForEdit();
-    e1Copy->SetLabel("Updated Test Element");
+    dynamic_cast<TestElement*>(e1Copy.get())->SetTestElementProperty("Updated Test Element");
 
     DgnElementCPtr updatedElement = e1Copy->Update();
 
-    EXPECT_STREQ("Updated Test Element", updatedElement->GetLabel());
+    EXPECT_STREQ("Updated Test Element", dynamic_cast<TestElement const*>(updatedElement.get())->GetTestElementProperty().c_str());
     }
 
 

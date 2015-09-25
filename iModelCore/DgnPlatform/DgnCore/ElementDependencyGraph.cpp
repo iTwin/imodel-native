@@ -394,10 +394,9 @@ BentleyStatus DgnElementDependencyGraph::CheckDirection(Edge const& edge)
     {
     auto& models = GetDgnDb().Models();
     uint64_t sidx, tidx;
-    DgnModelType stype, ttype;
-    models.QueryModelDependencyIndexAndType(sidx, stype, GetDgnDb().Elements().QueryModelId(edge.m_ein));
-    models.QueryModelDependencyIndexAndType(tidx, ttype, GetDgnDb().Elements().QueryModelId(edge.m_eout));
-    if (sidx > tidx || stype > ttype)
+    models.QueryModelDependencyIndex(sidx, GetDgnDb().Elements().QueryModelId(edge.m_ein));
+    models.QueryModelDependencyIndex(tidx, GetDgnDb().Elements().QueryModelId(edge.m_eout));
+    if (sidx > tidx)
         ReportValidationError(*new DirectionValidationError(FmtEdge(edge).c_str()), &edge);
     return BSISUCCESS;
     }
@@ -1023,7 +1022,7 @@ void DgnElementDependencyGraph::InvokeAffectedDependencyHandlers()
         "Id IN (SELECT ModelId FROM " TEMP_TABLE(TXN_TABLE_Elements) ") OR "
         "Id IN (SELECT ModelId FROM " TEMP_TABLE(TXN_TABLE_Depend) ") OR " 
         "Id IN (SELECT ModelId FROM " TEMP_TABLE(TXN_TABLE_Models) ") "
-        " ORDER BY Type,DependencyIndex");
+        " ORDER BY DependencyIndex");
 
     while (modelsInOrder->Step() == BE_SQLITE_ROW)
         {
@@ -1036,10 +1035,10 @@ void DgnElementDependencyGraph::InvokeAffectedDependencyHandlers()
         if (m_txnMgr.HasFatalErrors())
             break;
 
-        DgnModelPtr model = GetDgnDb().Models().GetModel(mid);
+        DgnModelPtr model = GetDgnDb().Models().Get<GeometricModel>(mid);
         if (model.IsValid())
             {
-            model->_OnValidate();
+            model->OnValidate();
 
             if (m_txnMgr.HasFatalErrors())
                 break;

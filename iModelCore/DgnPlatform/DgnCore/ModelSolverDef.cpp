@@ -52,7 +52,7 @@ ModelSolverDef::ParameterSet& ModelSolverDef::GetParametersR() {return m_paramet
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ModelSolverDef::Solve(DgnModelR model)
+void ModelSolverDef::Solve(GeometricModelR model)
     {
     if (Type::Script == m_type)
         {
@@ -60,7 +60,7 @@ void ModelSolverDef::Solve(DgnModelR model)
         Json::Value parmsJson(Json::objectValue);
         GetParameters().ConvertValuesToJson(parmsJson);
         Json::Value optionsJson(Json::objectValue);
-        model._GetSolverOptions(optionsJson);
+        model.GetSolverOptions(optionsJson);
         DgnDbStatus xstatus = DgnScript::ExecuteModelSolver(retval, model, m_name.c_str(), parmsJson, optionsJson);
         if (xstatus != DgnDbStatus::Success || 0 != retval)
             {
