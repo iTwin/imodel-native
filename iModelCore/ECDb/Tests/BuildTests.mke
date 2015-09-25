@@ -1,0 +1,37 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: Tests/BuildTests.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+NO_DEFAULT_CLANG_WARNINGS=1
+
+%include mdl.mki
+
+%ifndef TestDir
+    %error must define TestDir
+%endif
+
+baseDir = $(_MakeFilePath)
+
+# Compile and Link the unit tests
+BEGTEST_NAME  = $(TestDir)ECDb
+BEGTEST_INPUT = $(baseDir)$(TestDir)/
+BEGTEST_OUTPUT=$(OutputRootDir)build/ECDb/UnitTests/
+BEGTEST_IGNORE= $(baseDir)ignore_list.txt
+o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
+
+%ifdef UsePublishedApi
+    BEGTEST_API = $(BuildContext)SubParts/PublishedApi/ECDb/
+%endif
+
+%include $(SrcBsiCommon)sharedmki/DetectAndCompileUnitTests.mki
+
+%ifdef IsBackDoor
+    BEGTEST_BACKDOOR =% $(o)UnitTests.list.h
+%endif
+
+# Deliver 
+$(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}
+    $(LinkFirstDepToFirstTargetAsDirectory)

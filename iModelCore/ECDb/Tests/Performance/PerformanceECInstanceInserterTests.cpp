@@ -10,8 +10,8 @@
 #include <ECObjects/ECObjectsAPI.h>
 #include <ECDb/ECDbApi.h>
 #include <BeSQLite/BeSQLite.h>
-#include <UnitTests/NonPublished/ECDb/ECDbTestProject.h>
-#include <UnitTests/BackDoor/ECDb/Backdoor.h>
+#include "../NonPublished/PublicApi/NonPublished/ECDb/ECDbTestProject.h"
+#include "../BackDoor/PublicApi/BackDoor/ECDb/Backdoor.h"
 #include "PerformanceTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
