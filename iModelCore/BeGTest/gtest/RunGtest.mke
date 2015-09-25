@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: gtest/RunGtest.mke $
+#     $Source: RunGtest.mke $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -53,8 +53,16 @@ always:
     !~@mkdir ${runDir}/Output
     !~@mkdir ${runDir}/Temp
     !~@mkdir ${LogDir}
+
+%ifdef GTEST_SHOW_PROGRESS
+always:
+    $(RUN_PREFIX) $[@realpath $(GTEST_EXE)] --gtest_output="xml:$(LogDir)TestResults.xml"
+%else
+always:
     $(RUN_PREFIX) $[@realpath $(GTEST_EXE)] --gtest_output="xml:$(LogDir)TestResults.xml" > $(LogDir)TestResults.txt
 
-%message .
-%message See $(LogDir)TestResults.txt for logging output, interleaved with test output. 
-%message .
+    %message .
+    %message See $(LogDir)TestResults.txt for logging output, interleaved with test output. 
+    %message .
+%endif
+

@@ -84,6 +84,8 @@
         <ProductDirectory Name="BentleyLibs"                        Path="Libs" LibType="static"/>
         <ProductDirectory Name="BeStaticLibDir"                     Path="Libs"/>
         <ProductDirectory Name="BeStaticLibDir"                     Path="Libs" LibType="static"/>
+        <ProductDirectory Name="BeJsonCppStaticLibDir"              Path="Libs"/>
+        <ProductDirectory Name="BeJsonCppStaticLibDir"              Path="Libs" LibType="static"/>
         <ProductDirectory Name="UnitTests-Objects"                  Path="Objects"/>
         <ProductDirectory Name="UnitTests-Objects"                  Path="Objects" LibType="static"/>
         <ProductDirectory Name="UnitTests-Assets"                   Path="Assets"/>
