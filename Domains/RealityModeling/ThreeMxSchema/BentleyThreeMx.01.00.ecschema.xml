@@ -6,7 +6,7 @@
     <ECSchemaReference name="dgn" version="02.00" prefix="dgn" />
 
     <ECClass typeName="ThreeMxModel" isDomainClass="True" >
-      <BaseClass>dgn:ThreeMxBaseModel</BaseClass>
+      <BaseClass>dgn:PhysicalModel</BaseClass>
     </ECClass>
 
 </ECSchema>
