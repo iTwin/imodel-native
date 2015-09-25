@@ -41,10 +41,10 @@ always:
     %return
 %endif
 
-fixedExePath = $[@realpath $(GTEST_EXE)]
-
 %ifdef __unix
-    RUN_PREFIX = export LD_LIBRARY_PATH=$[@dir $(fixedExePath)] ;
+    # TRICKY: if GTEST_EXE points to a product directory (which it normally will), we must set LD_LIBRARY_PATH to point to it, as that is where the .dylibs are.
+    #           If we were to use the value of apply realpath to GTEST_EXE we would get the linked directory, e.g., the build directory. That would be useless as a library path.
+    RUN_PREFIX = export LD_LIBRARY_PATH=$[@dir $(GTEST_EXE)] ;
 %endif
 
 always:
@@ -53,7 +53,7 @@ always:
     !~@mkdir ${runDir}/Output
     !~@mkdir ${runDir}/Temp
     !~@mkdir ${LogDir}
-    $(RUN_PREFIX) $(fixedExePath) --gtest_output="xml:$(LogDir)TestResults.xml" > $(LogDir)TestResults.txt
+    $(RUN_PREFIX) $[@realpath $(GTEST_EXE)] --gtest_output="xml:$(LogDir)TestResults.xml" > $(LogDir)TestResults.txt
 
 %message .
 %message See $(LogDir)TestResults.txt for logging output, interleaved with test output. 
