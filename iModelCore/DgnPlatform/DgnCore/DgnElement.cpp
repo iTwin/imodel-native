@@ -1208,6 +1208,19 @@ ElementHandlerR DgnElement::GetElementHandler() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Brien.Bastings  09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDomain::Handler* DgnElement::GetItemOrElementHandler() const
+    {
+    DgnClassId classId = DgnElement::Item::QueryExistingItemClass(*this);
+
+    if (classId.IsValid())
+        return dgn_AspectHandler::Aspect::FindHandler(GetDgnDb(), classId);
+
+    return &GetElementHandler();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr DgnElement::CopyForEdit() const
