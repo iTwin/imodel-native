@@ -186,7 +186,7 @@ class BeGTestListener : public ::testing::EmptyTestEventListener
             if (0 == s_testCount)
                 s_testCount = ::testing::UnitTest::GetInstance()->test_to_run_count();
         
-            fprintf(stderr, "%d/%d\r", (int)s_testsRun, (int)s_testCount);  // *** NEEDS WORK - when running under bmake, we must use \n to make output appear
+            fprintf(stderr, "%d/%d\n", (int)s_testsRun, (int)s_testCount);  // *** NEEDS WORK - when running under bmake, we must use \n to make output appear
             fflush(stderr);
             }
         }
