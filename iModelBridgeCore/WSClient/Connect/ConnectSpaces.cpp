@@ -22,8 +22,8 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 #define MESSAGE_STRING_FIELD(x) messageObj[(x)].asCString()
 #define HTTP_DEFAULT_TIMEOUT 10
 
-ClientInfoPtr s_clientInfo;
-IHttpHandlerPtr s_customHandler;
+static ClientInfoPtr s_clientInfo;
+static IHttpHandlerPtr s_customHandler;
 static std::shared_ptr<WorkerThreadPool> s_threadPool;
 
 std::map<Utf8String, ConnectSpaces::StatusAction> ConnectSpaces::sm_actionMap;
