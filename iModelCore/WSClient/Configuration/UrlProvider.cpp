@@ -38,6 +38,14 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectEula(
     &s_urlRegistry
     );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectProjectUrl(
+    "Mobile.ConnectProjectUrl",
+    "https://dev-webportal-eus.cloudapp.net/project/index?projectId=",
+    "https://qa-webportal-eus.cloudapp.net/project/index?projectId=",
+    "https://connect.bentley.com/project/index?projectId=",
+    &s_urlRegistry
+    );
+
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgGlobal(
     "Mobile.ConnectWsgGlobal",
     "https://dev-wsg20-eus.cloudapp.net",
@@ -143,7 +151,7 @@ Utf8String UrlProvider::GetUrl(Utf8CP urlName, const Utf8String* defaultUrls)
         return url;
         }
 
-    url = GetBuddiUrl(urlName);
+    //url = GetBuddiUrl(urlName);
     if (!url.empty())
         {
         s_localState->SaveValue(LOCAL_STATE_NAMESPACE, urlName, url);
