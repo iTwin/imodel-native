@@ -180,13 +180,17 @@ public:
     REALITYPACKAGE_EXPORT RealityDataSourceR GetSourceR();
     REALITYPACKAGE_EXPORT RealityDataSourceCR GetSource() const;
 
+    //! Optional data copyright. Should appear in the package only if known.
     REALITYPACKAGE_EXPORT Utf8StringCR GetCopyright() const;
     REALITYPACKAGE_EXPORT void SetCopyright(Utf8CP dataCopyright);
+
+    //! Optional data size in kilobytes. Should appear in the package only if known. Default to 0.
+    REALITYPACKAGE_EXPORT double GetFilesize() const;
+    REALITYPACKAGE_EXPORT void SetFilesize(double size);
     
 protected:
     explicit RealityData(){}; // for persistence.
     RealityData(RealityDataSourceR dataSource);
-    RealityData(RealityDataSourceR dataSource, Utf8CP dataCopyright);
     virtual ~RealityData();
 
     // read/write from a dataNode.
@@ -196,6 +200,7 @@ protected:
 private:
     RealityDataSourcePtr m_pSource;
     Utf8String m_copyright;
+    double m_size;
 };
 
 //=======================================================================================

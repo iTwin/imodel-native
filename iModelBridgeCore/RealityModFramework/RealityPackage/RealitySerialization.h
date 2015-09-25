@@ -67,6 +67,7 @@
 #define PACKAGE_ELEMENT_Source              "Source"
 #define PACKAGE_SOURCE_ATTRIBUTE_Uri        "uri"
 #define PACKAGE_SOURCE_ATTRIBUTE_Type       "type"
+#define PACKAGE_ELEMENT_Filesize            "Filesize"
 
 #define PACKAGE_ELEMENT_WmsSource           "WmsSource"
 #define WMS_SOURCE_TYPE                     L"wms"
