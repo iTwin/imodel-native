@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECObjects/ECObjectsAPI.h>
-#include <UnitTests/BackDoor/DgnProject/BackDoor.h>
+#include "../BackDoor/PublicAPI/BackDoor/DgnProject/BackDoor.h"
 
 BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
 

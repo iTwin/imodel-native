@@ -70,9 +70,6 @@
     <ClCompile Include="NonPublished\ValidatePublishing_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
-    <ClCompile Include="Published\DgnGraphics_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ImageUtilities_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -189,6 +186,15 @@
     </ClCompile>
     <ClCompile Include="NonPublished\DgnFonts_Test.cpp">
       <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ChangeSummary_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DgnChangeSummary_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DgnScriptContext_Test.cpp">
+      <Filter>Published</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

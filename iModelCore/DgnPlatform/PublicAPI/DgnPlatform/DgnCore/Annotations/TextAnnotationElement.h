@@ -88,7 +88,8 @@ public:
     static TextAnnotationElementPtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<TextAnnotationElement>(id); }
 
     explicit TextAnnotationElement(CreateParams const& params) : T_Super(params) {}
-    
+    static TextAnnotationElementPtr Create(CreateParams const& params) { return new TextAnnotationElement(params); }
+
     TextAnnotationCP GetAnnotation() const { TextAnnotationItemCP item = GetItemCP(); return item ? item->GetAnnotation() : nullptr; }
     void SetAnnotation(TextAnnotationCP value) { GetItemR().SetAnnotation(value); }
     
@@ -125,10 +126,11 @@ public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalTextAnnotationElement); }
     static ECN::ECClassCP QueryECClass(DgnDbR db) { return db.Schemas().GetECClass(QueryECClassId(db)); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
-    static TextAnnotationElementCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<TextAnnotationElement>(id); }
-    static TextAnnotationElementPtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<TextAnnotationElement>(id); }
+    static PhysicalTextAnnotationElementCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<PhysicalTextAnnotationElement>(id); }
+    static PhysicalTextAnnotationElementPtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<PhysicalTextAnnotationElement>(id); }
 
     explicit PhysicalTextAnnotationElement(CreateParams const& params) : T_Super(params) {}
+    static PhysicalTextAnnotationElementPtr Create(CreateParams const& params) { return new PhysicalTextAnnotationElement(params); }
     
     TextAnnotationCP GetAnnotation() const { TextAnnotationItemCP item = GetItemCP(); return item ? item->GetAnnotation() : nullptr; }
     void SetAnnotation(TextAnnotationCP value) { GetItemR().SetAnnotation(value); }

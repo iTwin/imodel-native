@@ -11,12 +11,12 @@
 #include <ECDb/ECDbApi.h>
 #include <BeSQLite/BeSQLite.h>
 #include <DgnPlatform/DgnPlatformApi.h>
-#include <DgnPlatform/DgnHandlers/ScopedDgnHost.h>
-#include <UnitTests/BackDoor/DgnProject/BackDoor.h>
+#include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
+#include "../BackDoor/PublicAPI/BackDoor/DgnProject/BackDoor.h"
 #include <Bentley/BeTimeUtilities.h>
 #include <Logging/bentleylogging.h>
 #include "../TestFixture/DgnDbTestFixtures.h"
-#include <PerformanceTestingHelper/PerformanceTestingHelpers.h>
+#include <UnitTests/BackDoor/PerformanceTestingHelper/PerformanceTestingHelpers.h>
 
 #define PERFORMANCELOG (*NativeLogging::LoggingManager::GetLogger (L"Performance"))
 typedef bpair<Utf8String, double> T_TimerResultPair;

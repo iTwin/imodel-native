@@ -64,12 +64,14 @@
     <ClCompile Include="Published\AnnotationTextBlock_Test.cpp" />
     <ClCompile Include="Published\AnnotationTextStyle_Test.cpp" />
     <ClCompile Include="Published\BackwardsCompatibility_Tests.cpp" />
+    <ClCompile Include="Published\ChangeSummary_Test.cpp" />
     <ClCompile Include="Published\ComponentModelTest.cpp" />
+    <ClCompile Include="Published\DgnChangeSummary_Test.cpp" />
     <ClCompile Include="Published\DgnECNavigator_Test.cpp" />
     <ClCompile Include="Published\DgnElement_Test.cpp" />
-    <ClCompile Include="Published\DgnGraphics_Test.cpp" />
     <ClCompile Include="Published\DgnLink_Test.cpp" />
     <ClCompile Include="Published\DgnModel_Test.cpp" />
+    <ClCompile Include="Published\DgnScriptContext_Test.cpp" />
     <ClCompile Include="Published\ImageUtilities_Test.cpp" />
     <ClCompile Include="Published\MarkupProject_Test.cpp" />
     <ClCompile Include="Published\NamedVolume_Test.cpp" />
