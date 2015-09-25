@@ -61,6 +61,15 @@
         </Bindings>
     </Part>
 
+    <Part Name="DownloadEngineExample" BentleyBuildMakeFile="RealityPlatform\Example\DownloadEngineExample.mke">
+        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="RealityPlatform"/>
+        <Bindings>
+            <Files ProductDirectoryName="RealityAssemblies">Delivery/DownloadEngineExample.exe</Files>
+        </Bindings>
+    </Part>    
+    
     <Part Name="RealityPackageUnitTests" BentleyBuildMakeFile="${SrcBsiCommon}/sharedmki/BuildUnitTests.mke" 
           BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)RealityModFramework/Tests/RealityPackage/ -dBEGTEST_NAME=RealityPackage -dBEGTEST_DEPENDENCIES=$(SrcRoot)RealityModFramework/Tests/dependencies.mki">
         <SubPart PartName="google_gtest_lib"    PartFile="gtest"        Repository="util-gtest" />
@@ -86,7 +95,7 @@
         <SubPart PartName="CrawlerLibUnitTests"/>
         <SubPart PartName="CrawlerLibExample"/>
         <!--<SubPart PartName="RealityCrawler"/>-->
-        <SubPart PartName="BeGTestCommon"       PartFile="BeGTest"      Repository="BeGTest" />
+        <!--<SubPart PartName="BeGTestCommon"       PartFile="BeGTest"      Repository="BeGTest" />-->
     </Part>
 	
     <Part Name="RealityDb" BentleyBuildMakeFile="RealityDb\RealityDb.mke">
