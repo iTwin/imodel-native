@@ -881,6 +881,11 @@ public:
     //! Get the ElementHandler for this DgnElement.
     DGNPLATFORM_EXPORT ElementHandlerR GetElementHandler() const;
 
+    //! Get the DgnElement::Item handler for this DgnElement or the ElementHandler if the DgnElement does not have a DgnElement::Item.
+    //! @return DgnDomain::Handler or nullptr if DgnElement specifies a DgnElement::Item who's handler can't be found.
+    //! @remarks Used to find extensions like IEditManipulatorExtension that should coordinate with the item handler whenever it exists.
+    DGNPLATFORM_EXPORT DgnDomain::Handler* GetItemOrElementHandler() const;
+
     //! @name AppData Management
     //! @{
     //! Get the HeapZone for the DgnDb of this element.

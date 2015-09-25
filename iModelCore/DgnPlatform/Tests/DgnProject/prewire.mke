@@ -10,17 +10,22 @@ PolicyFile = $(SrcRoot)DgnPlatform/privmki/AssertDgnPlatformPolicy.mki
 
 baseDir = $(_makeFilePath)
 
-always:
-    @CreateSymLinks.py -d"$(BuildContext)Delivery/UnitTests/assets/DgnProject/ECSchemas=$(baseDir)ECSchemas"
+$(BuildContext)Delivery/UnitTests/ECSchemas : $(baseDir)ECSchemas
+    $(LinkFirstDepToFirstTargetAsDirectory)
 
+$(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/UnitTests/ScopedDgnHost.h : $(DgnHandlersAPISrc)UnitTests/ScopedDgnHost.h
+    $(LinkFirstDepToFirstTarget)
 
 #   -------------------------------------------------------------------------------------------
 #   Compile .ts files to .js files, ready to be executed by script tests
 #   -------------------------------------------------------------------------------------------
-ScriptOutDir = $(OutputRootDir)build/UnitTests/DgnPlatform/Script/
+ScriptOutDir = $(OutputRootDir)build/DgnPlatform/UnitTests/Script/
 
 always:
-    !~@mkdir $(ScriptOutDir)
+    !~@mkdir ${ScriptOutDir}
 
 %ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 
@@ -39,5 +44,5 @@ $(dgnScriptGen)GeomJsApi.js : $(tsSourceFiles)
 
 %endif
 
-$(BuildContext)Delivery/UnitTests/assets/DgnProject/Script : $(ScriptOutDir)
+$(BuildContext)Delivery/UnitTests/Script : $(ScriptOutDir)
     $(LinkFirstDepToFirstTargetAsDirectory)

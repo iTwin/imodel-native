@@ -40,7 +40,8 @@ struct ImageUtilities
 
     //! Extract an RGB[A] image from a file in the PNG format.
     //! @param[out] imageData   Image data read from PNG file.
-    //! @param[out] info        The image dimensions, etc.
+    //! @param[out] info        The image dimensions, etc.                                                                                                             x
+
     //! @param[in]  pngFile     The PNG file to read. Must be open and positioned at the start of the PNG data.
     //! @return non-zero if the image could not be read.
     //! @remarks The image data written to \a imageData is always in top-down row order. It is in RGB format if \a hasAlpha is \a false, else RGBA. It is always 8-bit color.

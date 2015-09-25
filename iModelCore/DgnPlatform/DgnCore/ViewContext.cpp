@@ -1865,8 +1865,7 @@ void ElemMatSymb::Init()
     m_rasterPat         = 0;
     m_patternParams     = nullptr;
     m_gradient          = nullptr;
-
-    m_material.Invalidate();
+    m_material          = nullptr;
     m_lStyleSymb.Clear();
     }
 
@@ -1966,7 +1965,7 @@ void ElemMatSymb::FromResolvedElemDisplayParams(ElemDisplayParamsCR elParams, Vi
         m_isBlankingRegion = (FillDisplay::Blanking == elParams.GetFillDisplay());
         }
 
-    m_material = elParams.GetMaterial();
+    m_material = JsonRenderMaterial::Create (context.GetDgnDb(), elParams.GetMaterial());
 
     if (0.0 != netElemTransparency)
         {
@@ -2045,29 +2044,6 @@ bool ElemMatSymb::operator==(ElemMatSymbCR rhs) const
 #endif
 
     return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemMatSymb::SetMaterial(DgnMaterialId material)
-    {
-    m_material = material;
-
-#ifdef DGNPLATFORM_WIP_MATERIAL
-    // Shouldn't need "seedContext" to create geometry map...from DgnGeomPart/GeomStream...not element...
-    if (nullptr != material &&
-        nullptr != seedContext &&
-        material->NeedsQvGeometryTexture())
-        {
-        bool                useCellColors;
-        EditElementHandle   eh;
-
-        if (seedContext->GetIViewDraw().IsOutputQuickVision() &&
-            SUCCESS == material->GetGeometryMapDefinition(eh, useCellColors))
-            seedContext->GetIViewDraw().DefineQVGeometryMap(*material, eh, nullptr, useCellColors, *seedContext);
-        }
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

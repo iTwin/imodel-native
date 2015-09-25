@@ -11,7 +11,6 @@
 #include <ECDb/ECSqlBuilder.h>
 #include <DgnPlatform/DgnCore/WebMercator.h>
 #include <DgnPlatform/DgnCore/DgnElementDependency.h>
-#include <UnitTests/BackDoor/DgnProject/DgnPlatformTestDomain.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
