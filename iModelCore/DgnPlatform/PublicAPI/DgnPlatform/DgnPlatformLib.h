@@ -10,7 +10,7 @@
 
 #include <Bentley/WString.h>
 #include "DgnPlatform.h"
-#include "DgnCore/IViewOutput.h"
+#include "DgnCore/Render.h"
 #include "DgnCore/ColorUtil.h"
 #include "DgnCore/NotificationManager.h"
 #include "DgnCore/TxnManager.h"

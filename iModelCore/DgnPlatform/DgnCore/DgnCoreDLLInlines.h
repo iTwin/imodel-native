@@ -53,18 +53,12 @@ DG_INLINE size_t IViewClipObject::GetPrimaryCutPlaneCount() const {return _GetPr
 DG_INLINE StatusInt IViewClipObject::ApplyTransform(TransformCR t) {return _ApplyTransform(t);}
 DG_INLINE void IViewClipObject::Draw(ViewContextR c) {return _Draw(c);}
 
-DG_INLINE bool DgnViewport::Is3dView() const {return m_is3dView;}
-DG_INLINE bool DgnViewport::IsActive() const {return NULL != m_output;}
-DG_INLINE bool DgnViewport::IsCameraOn() const {return m_isCameraOn;}
 DG_INLINE CameraInfo const& DgnViewport::GetCamera() const {return m_camera;}
 DG_INLINE void DgnViewport::SetMinimumLOD(double minLOD) {m_minLOD = minLOD;}
 DG_INLINE RotMatrixCR DgnViewport::GetRotMatrix() const {return m_rotMatrix;}
 DG_INLINE DMap4dCP DgnViewport::GetWorldToViewMap() const {return &m_rootToView;}
 DG_INLINE DMap4dCP DgnViewport::GetWorldToNpcMap() const {return &m_rootToNpc;}
 DG_INLINE bool DgnViewport::IsGridOn() const {return _IsGridOn();}
-DG_INLINE bool DgnViewport::IsSheetView() const {return _IsSheetView();}
-DG_INLINE ViewControllerCR DgnViewport::GetViewController() const {return *m_viewController;}
-DG_INLINE ViewControllerR DgnViewport::GetViewControllerR() const {return *m_viewController;}
 DG_INLINE void DgnViewport::Destroy() {_Destroy();}
 DG_INLINE ColorDef DgnViewport::GetBackgroundColor() const {return m_backgroundColor;}
 DG_INLINE void DgnViewport::GetViewCorners(DPoint3dR low, DPoint3dR high) const {_GetViewCorners(low,high);}
@@ -151,10 +145,8 @@ DG_INLINE void ViewContext::SetIgnoreScaleForDimensions(bool ignore) {m_ignoreSc
 DG_INLINE void ViewContext::SetIgnoreScaleForMultilines(bool ignore) {m_ignoreScaleForMultilines = ignore;}
 DG_INLINE void ViewContext::SetApplyRotationToDimView(bool rotateDimView) {m_applyRotationToDimView = rotateDimView;}
 DG_INLINE size_t ViewContext::GetTransClipDepth() {return m_transformClipStack.GetSize(); }
-DG_INLINE size_t ViewContext::GetRefTransClipDepth() {return m_refTransClipDepth;}
 DG_INLINE RangeResult ViewContext::GetCurrParentRangeResult() {return m_parentRangeResult; }
 DG_INLINE void ViewContext::SetCurrParentRangeResult(RangeResult val) {m_parentRangeResult = val;}
-DG_INLINE DgnViewportP ViewContext::GetViewport() const {return m_viewport;}
 DG_INLINE double ViewContext::GetArcTolerance() const {return m_arcTolerance;}
 DG_INLINE double ViewContext::GetMinLOD() const {return m_minLOD;}
 DG_INLINE void ViewContext::SetMinLOD(double lod) { m_minLOD = lod; }

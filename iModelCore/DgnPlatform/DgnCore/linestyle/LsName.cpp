@@ -26,7 +26,7 @@ struct LineStyleRangeCollector : IElementGraphicsProcessor
 {
 private:
 
-IStrokeForCache&    m_stroker;
+GraphicStroker&    m_stroker;
 DRange3d            m_range;
 ViewContextP        m_context;
 Transform           m_currentTransform;
@@ -36,7 +36,7 @@ protected:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-explicit LineStyleRangeCollector(IStrokeForCache& stroker) : m_stroker(stroker) 
+explicit LineStyleRangeCollector(GraphicStroker& stroker) : m_stroker(stroker) 
     {
     m_range.Init();
     m_currentTransform.InitIdentity();
@@ -68,7 +68,7 @@ virtual BentleyStatus _ProcessCurveVector(CurveVectorCR curves, bool isFilled) o
 //---------------------------------------------------------------------------------------
 virtual void _OutputGraphics(ViewContextR context) override
     {
-    m_stroker._StrokeForCache(context);
+    m_stroker._Stroke(context);
     }
 
 //---------------------------------------------------------------------------------------
@@ -84,7 +84,7 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-static void Process(DRange3dR range, IStrokeForCache& stroker)
+static void Process(DRange3dR range, GraphicStroker& stroker)
     {
     LineStyleRangeCollector  processor(stroker);
 
@@ -204,7 +204,7 @@ Utf8String         LsDefinition::GetStyleName () const
 //
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-/* static */  void CreateGeometryMapMaterial(ViewContextR context, IStrokeForCache& stroker, intptr_t textureId)
+/* static */  void CreateGeometryMapMaterial(ViewContextR context, GraphicStroker& stroker, intptr_t textureId)
     {
     context.GetIViewDraw ().DefineQVGeometryMap (textureId, stroker, nullptr, false, context, false);
     return;
@@ -214,13 +214,12 @@ Utf8String         LsDefinition::GetStyleName () const
 //! Used to generate a texture based on a line style.
 // @bsiclass                                                    John.Gooding    08/2015
 //=======================================================================================
-struct ComponentToTextureStroker : IStrokeForCache
+struct ComponentToTextureStroker : GraphicStroker
 {
 private:
     ViewContextR        m_viewContext;
     LsComponentPtr      m_component;
     LineStyleSymbR      m_lineStyleSymb;
-    //LsDefinitionR       m_lsDef;
     DPoint3d            m_points[2];
     double              m_multiplier;
     double              m_length;
@@ -253,7 +252,7 @@ ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-void _StrokeForCache(ViewContextR context) override
+void _Stroke(ViewContextR context) override
     {
     if (!m_haveRange)
         {
@@ -282,7 +281,7 @@ void _StrokeForCache(ViewContextR context) override
     }
 
     DgnDbR _GetDgnDb() const override {return m_viewContext.GetDgnDb();}
-    Graphic* _GetGraphic(DgnViewportCR vp) const override {return nullptr;}
+    Graphic* _FindGraphic(DgnViewportCR vp) const override {return nullptr;}
     void _SaveGraphic(DgnViewportCR vp, GraphicR graphic) const override {}
 
 };

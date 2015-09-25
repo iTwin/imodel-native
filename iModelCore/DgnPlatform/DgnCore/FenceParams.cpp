@@ -782,7 +782,7 @@ virtual void    _DrawAreaPattern(ClipStencil& boundary) override
     if (FenceClipMode::None == fp->GetClipMode()) // Need to draw patterns for interior overlap check when clipping...
         {
         // Attempt to short circuit fence accept using boundary...only check symbol geometry for interior overlap...
-        boundary.GetStroker()._StrokeForCache(*this);
+        boundary.GetStroker()._Stroke(*this);
 
         // Element never rejected by pattern...so if boundary is acceptable we can skip drawing the pattern...
         if (_CheckStop() || m_output.GetCurrentAccept())
@@ -806,7 +806,7 @@ virtual void    _DrawAreaPattern(ClipStencil& boundary) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual QvElem* _DrawCached(IStrokeForCache& stroker) override
+virtual QvElem* _DrawCached(GraphicStroker& stroker) override
     {
     bool    testStroke = stroker._WantLocateByStroker();
 

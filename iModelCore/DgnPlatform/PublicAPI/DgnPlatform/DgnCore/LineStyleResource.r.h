@@ -84,22 +84,6 @@ Multiline modifiers
 |                                                                       |
 +======================================================================*/
 BEGIN_BENTLEY_DGN_NAMESPACE
-struct LineStyleParamsResource
-    {
-    uint32_t    modifiers;      /* see STYLEMOD_... above              */
-    uint32_t    reserved;
-    double      scale;          /* Applied to all length values        */
-    double      dashScale;      /* Applied to adjustable dash strokes  */
-    double      gapScale;       /* Applied to adjustable gap strokes   */
-    double      startWidth;     /* Taper start width                   */
-    double      endWidth;       /* Taper end width                     */
-    double      distPhase;      /* Phase shift by distance             */
-    double      fractPhase;     /* Phase shift by fraction             */
-    uint32_t    lineMask;       /* Multiline line mask                 */
-    uint32_t    mlineFlags;     /* Multiline flags                     */
-    DPoint3d    normal;
-    RotMatrix   rMatrix;
-    };
 
 END_BENTLEY_DGN_NAMESPACE
 

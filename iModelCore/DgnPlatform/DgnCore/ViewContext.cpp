@@ -60,7 +60,6 @@ ViewContext::ViewContext()
 
     m_drawingClipElements       = false;
     m_ignoreViewRange           = false;
-    m_displayStyleStackMark     = 0;
     m_edgeMaskState             = EdgeMaskState_None;
     m_hiliteState               = DgnElement::Hilited::None;
     m_isCameraOn                = false;
@@ -149,15 +148,7 @@ StatusInt ViewContext::_InitContextForView()
 
     _PushFrustumClip();
 
-    // Note - Don't set CurrentDisplayStyle here (by calling RefreshCurrentDisplayStyle).
-    // as it the root display style is only ever sent (and therefore stored in the
-    // viewOutput) in DrawContext::_InitContextForView. Nor can we clear it here
-    // (It is set to nullptr in the constructor). as that would overwrite the value when
-    // it is correctly set in DrawContext. TR# 329406 - The display style wth
-    // a proxy handler would be used if CVE proxy was last thing displayed.
-    m_displayStyleStackMark = 0;
-
-    SetDgnDb(GetViewport()->GetViewController().GetDgnDb());
+    SetDgnDb(m_viewport->GetViewController().GetDgnDb());
 
     return SUCCESS;
     }
@@ -1094,12 +1085,6 @@ bool ViewContext::VisitAllViewElements(bool includeTransients, BSIRectCP updateR
 
     m_transformClipStack.PopAll(*this);    // This will cause pushed clip elements to display correctly (outside their clip).
 
-#ifdef WIP_VANCOUVER_MERGE // material
-    m_materialAssignmentCache.clear();
-
-    if (!WasAborted() && _WantDgnAttachmentBoundaryDisplay())
-        AddAbortTest(drawAttachmentBoundaries(*this, _GetViewRoot(), includeList, includeRefs));
-#endif
     return  WasAborted();
     }
 
@@ -1140,10 +1125,10 @@ StatusInt ViewContext::VisitHit(HitDetailCR hit)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* create a QvElem using an IStrokeForCache stroker.
+* create a QvElem using an GraphicStroker stroker.
 * @bsimethod                                                    Keith.Bentley   06/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicPtr ViewContext::CreateGraphic(IStrokeForCache& stroker, CachedDrawP cachedDraw)
+GraphicPtr ViewContext::CreateGraphic(GraphicStroker& stroker, CachedDrawP cachedDraw)
     {
     BeAssert(!m_creatingCacheElem || nullptr != cachedDraw);
 
@@ -1159,7 +1144,7 @@ GraphicPtr ViewContext::CreateGraphic(IStrokeForCache& stroker, CachedDrawP cach
     AutoRestore<Byte> savefilter(&m_filterLOD, FILTER_LOD_Off);
     AutoRestore<bool> saveCreatingCache(&m_creatingCacheElem, true);
 
-    stroker._StrokeForCache(*this);
+    stroker._Stroke(*this);
     GraphicPtr result = cachedDraw->EndGraphic();
 
     if (!WasAborted() ||  !result.IsValid())
@@ -1171,11 +1156,11 @@ GraphicPtr ViewContext::CreateGraphic(IStrokeForCache& stroker, CachedDrawP cach
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicPtr ViewContext::GetGraphic(IStrokeForCache& stroker)
+GraphicPtr ViewContext::GetGraphic(GraphicStroker& stroker)
     {
     if (m_creatingCacheElem)
         {
-        stroker._StrokeForCache(*this);
+        stroker._Stroke(*this);
         return nullptr;
         }
 
@@ -1183,7 +1168,7 @@ GraphicPtr ViewContext::GetGraphic(IStrokeForCache& stroker)
 
     GraphicPtr  graphic;
     if (useCachedDisplay)
-        graphic = stroker._GetGraphic(*GetViewport());
+        graphic = stroker._FindGraphic(*GetViewport());
 
     if (!graphic.IsValid())
         {
@@ -1204,7 +1189,7 @@ GraphicPtr ViewContext::GetGraphic(IStrokeForCache& stroker)
 * method on the displayable and draws (and potentially saves) the resultant QvElem.
 * @bsimethod                                                    KeithBentley    07/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicPtr ViewContext::_DrawCached(IStrokeForCache& stroker)
+GraphicPtr ViewContext::_DrawCached(GraphicStroker& stroker)
     {
     GraphicPtr qvElem = GetGraphic(stroker);
 
@@ -1553,7 +1538,6 @@ inline void ViewContext::ContextMark::SetNow()
     {
     m_transClipMark                 = m_context->GetTransClipDepth();
     m_parentRangeResult             = m_context->GetCurrParentRangeResult();
-    m_displayStyleStackMark         = m_context->m_displayStyleStackMark;
     m_pushedRange                   = false;
 
     m_ignoreScaleForDimensions      = m_context->GetIgnoreScaleForDimensions();

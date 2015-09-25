@@ -56,8 +56,7 @@ DgnViewport::DgnViewport()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::DestroyViewport()
     {
-    RELEASE_AND_CLEAR (m_output);
-
+    m_output = nullptr;
     m_progressiveDisplay.clear();
     m_viewController = nullptr;
     m_qvDCAssigned = false;
@@ -70,7 +69,7 @@ void DgnViewport::DestroyViewport()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::InitViewSettings(bool useBgTexture)
     {
-    BeAssert(m_output);
+    BeAssert(m_output.IsValid());
 
     m_output->SetViewAttributes(GetViewFlags(), m_backgroundColor, useBgTexture, _WantAntiAliasLines(), _WantAntiAliasText());
     m_qvParamsSet = true;
@@ -387,10 +386,10 @@ StatusInt DgnViewport::_ConnectToOutput()
     if (m_qvDCAssigned)
         return SUCCESS;
 
-    if (nullptr == m_output)
+    if (!m_output.IsValid())
         return ERROR;
 
-    StatusInt status = m_output->AssignDC (_GetDcForView());
+    StatusInt status = m_output->AssignRenderDevice (_GetRenderDevice());
 
     if (SUCCESS == status)
         m_qvDCAssigned = true;
@@ -442,7 +441,7 @@ void DgnViewport::_SetFrustumFromRootCorners(DPoint3dCP rootBox, double compress
             frustum[0].z = frustum[1].z = frustum[2].z = -displayPriority;
         }
 
-    if (m_output)
+    if (m_output.IsValid())
         m_output->DefineFrustum(*frustum, compressionFraction, !use3d);
     }
 
@@ -569,7 +568,7 @@ ViewportStatus DgnViewport::_SetupFromViewController()
     if (SUCCESS != _ConnectToOutput())
         return ViewportStatus::InvalidViewport;
 
-    BeAssert(nullptr == m_output || !m_output->IsDrawActive());
+    BeAssert(!m_output.IsValid() || !m_output->IsDrawActive());
 
     double compressionFraction;
     if (SUCCESS != RootToNpcFromViewDef(m_rootToNpc, &compressionFraction, IsCameraOn() ? &m_camera : nullptr, m_viewOrg, m_viewDelta, m_rotMatrix))
@@ -927,9 +926,9 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus DgnViewport::_Activate(QvPaintOptions const& opts)
+ViewportStatus DgnViewport::_Activate(PaintOptions const& opts)
     {
-    if (nullptr == m_output || !m_qvParamsSet)
+    if (!m_output.IsValid() || !m_qvParamsSet)
         return  ViewportStatus::ViewNotInitialized;
 
     m_output->AccumulateDirtyRegion(opts.WantAccumulateDirty());

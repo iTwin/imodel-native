@@ -1253,14 +1253,14 @@ void            PickContext::_OutputElement(GeometricElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    03/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicPtr PickContext::_DrawCached(IStrokeForCache& stroker)
+GraphicPtr PickContext::_DrawCached(GraphicStroker& stroker)
     {
     bool    testStroke = stroker._WantLocateByStroker();
 
     m_output.InitStrokeForCache();
 
     if (testStroke)
-        stroker._StrokeForCache(*this);
+        stroker._Stroke(*this);
 
     if (CheckStop())
         return nullptr;

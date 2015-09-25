@@ -27,7 +27,7 @@
 #include "IAuxCoordSys.h"
 #include "IPickGeom.h"
 #include "TxnManager.h"
-#include "IViewOutput.h"
+#include "Render.h"
 #include "IViewTransients.h"
 #include "LineStyle.h"
 #include "DgnElementDependency.h"
@@ -44,12 +44,12 @@
 #include "Annotations/TextAnnotation.h"
 #include "DgnFont.h"
 #include "RenderMaterial.h"
+#include "DgnViewport.h"
 
 //__PUBLISH_SECTION_END__
 #include "SnapContext.h"
 #include "LineStyleApi.h"
 #include "NullContext.h"
-#include "QvViewport.h"
 #include "Sprites.h"
 
 //__PUBLISH_SECTION_START__

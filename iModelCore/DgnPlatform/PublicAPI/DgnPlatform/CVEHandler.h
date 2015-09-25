@@ -402,7 +402,7 @@ virtual void _CreateCveElements (DgnModelR, TransformCR unitsTransform, ICreateC
 //    DGNPLATFORM_EXPORT virtual StatusInt     _ConnectToOutput () override  {return SUCCESS;}
 //    DGNPLATFORM_EXPORT virtual int           _GetIndexedLineWidth (int index) const override   { return index; }
 //    DGNPLATFORM_EXPORT virtual UInt32        _GetIndexedLinePattern (int index) const override { return index; }
-//    DGNPLATFORM_EXPORT virtual DgnDisplayCoreTypes::WindowP _GetWindowHandle () const override { return NULL; }
+//    DGNPLATFORM_EXPORT virtual DgnDisplayCoreTypes::WindowP _GetRenderWindow () const override { return NULL; }
 //
 //public:
 //    DGNPLATFORM_EXPORT StatusInt             Init (DgnModelP rootDgnModel, VisibleEdgeCacheP proxyCache);

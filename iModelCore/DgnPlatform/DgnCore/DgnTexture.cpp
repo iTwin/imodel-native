@@ -192,24 +192,6 @@ DgnTextures::Flags DgnTextures::Iterator::Entry::GetFlags() const   { Verify(); 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t DgnTextures::AddQvTextureId(DgnTextureId TextureId) const 
-    { 
-    static uintptr_t s_nextQvTextureId;
-    return (m_qvTextureIds[TextureId] = ++s_nextQvTextureId); 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t DgnTextures::GetQvTextureId(DgnTextureId TextureId) const
-    {
-    auto const& found = m_qvTextureIds.find(TextureId);
-    return (found == m_qvTextureIds.end()) ? 0 : found->second; 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnTextures::Texture::GetImage(bvector<Byte>& image) const
     {
     TextureData const&              textureData = GetData();

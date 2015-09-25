@@ -34,7 +34,6 @@ dgnJsApiDir = $(dgnScriptDir)DgnJsApi/
 geomJsApiDir = $(dgnScriptDir)GeomJsApi/
 
 contextDepends  =   $(DgnCoreAPISrc)ViewContext.h \
-                    $(DgnCoreAPISrc)IViewOutput.h \
                     $(DgnCoreAPISrc)Render.h   \
                     $(DgnCoreAPISrc)DgnViewport.h
 
@@ -200,8 +199,6 @@ $(coreObjs)HandlerTypeInfo$(oext): $(DgnCoreDir)HandlerTypeInfo.cpp $(contextDep
 $(coreObjs)ViewContext$(oext): $(DgnCoreDir)ViewContext.cpp $(contextDepends) $(HandlerDepends) $(DgnCoreAPISrc)DgnModel.h $(DgnCoreAPISrc)ScanCriteria.h $(DgnCoreDir)UpdateLogging.h ${MultiCompileDepends}
 
 $(coreObjs)SymbolContext$(oext): $(DgnCoreDir)SymbolContext.cpp   $(contextDepends) $(HandlerDepends) $(DgnCoreAPISrc)DgnModel.h  $(LevelApiDepends) ${MultiCompileDepends}
-
-$(coreObjs)NullContext$(oext): $(DgnCoreDir)NullContext.cpp   $(contextDepends) $(DgnCoreAPISrc)NullContext.h ${MultiCompileDepends}
 
 $(coreObjs)RangeContext$(oext): $(DgnCoreDir)RangeContext.cpp $(DgnCoreAPISrc)NullContext.h $(DgnCoreAPISrc)SimplifyViewDrawGeom.h $(HandlerDepends) ${MultiCompileDepends}
 

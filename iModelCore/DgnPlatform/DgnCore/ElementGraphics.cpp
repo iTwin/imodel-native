@@ -1553,7 +1553,7 @@ static const double TOLERANCE_ChainMiterCosLimit = .707;
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  02/12
 +===============+===============+===============+===============+===============+======*/
-struct CurveVectorStroker : IStrokeForCache
+struct CurveVectorStroker : GraphicStroker
 {
 CurveVectorCR   m_curves;
 

@@ -24,8 +24,8 @@ struct SimplifyViewDrawGeom : Render::ViewDraw
 protected:
     ViewContextP        m_context;
     ViewFlags           m_viewFlags;
-    Render::ElemMatSymb         m_currentMatSymb;
-    Render::OvrMatSymb          m_overrideMatSymb;
+    Render::ElemMatSymb m_currentMatSymb;
+    Render::OvrMatSymb  m_overrideMatSymb;
     IFacetOptionsPtr    m_defaultFacetOptions;
     DVec3d              m_textAxes[2];
     bool                m_inPatternDraw;
@@ -189,7 +189,7 @@ public:
     StatusInt                       ProcessGeometryMap(PolyfaceQueryCR facets);
     StatusInt                       ProcessTextureOutlines(PolyfaceQueryCR facets);
     StatusInt                       ProcessFacetTextureOutlines(IPolyfaceConstructionR, DPoint3dCP points, DPoint2dCP params, bool const* edgeHidden, size_t nPoints, bvector<DPoint3d>&, bvector<int32_t>&);
-DGNPLATFORM_EXPORT void         StrokeGeometryMap(CurveVectorCR curves);
+    DGNPLATFORM_EXPORT void         StrokeGeometryMap(CurveVectorCR curves);
 #endif
 
 private:

@@ -11,16 +11,13 @@
 
 #define  MAX_DWG_HATCH_LINE_DASHES      20
 
-#if !defined(__midl) // For a MIDL compile, all we care about are the values of the #define constants.
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
  @addtogroup AreaPattern
- Support for MicroStation's Area Patterning capabilities.
  @bsiclass
 +===============+===============+===============+===============+===============+======*/
-//! DWG Style Hatch Definition.
 struct DwgHatchDefLine
 {
 double          angle;
@@ -300,7 +297,6 @@ PATTERN_FLAGS_Default           = (0),          //!< Use active setting by defau
 
 //__PUBLISH_SECTION_START__
 
-#endif // !defined(__midl)
 
 END_BENTLEY_DGN_NAMESPACE
 

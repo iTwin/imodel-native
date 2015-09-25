@@ -2696,19 +2696,14 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
     GeomStreamEntryIdHelper::SetActive(context, false);
     }
 
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  04/2015
-+===============+===============+===============+===============+===============+======*/
-struct DrawGeomStream : StrokeElementForCache
-{
-    explicit DrawGeomStream(GeometricElementCR element, DgnViewportCR vp) : StrokeElementForCache(element) {}
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElementStroker::_Stroke(ViewContextR context) 
+    {
     // Yuck...dig out display priority, needed up front to create QvElem2d...NEEDSWORK: Allow display priority sub-category?
-    virtual void _StrokeForCache(ViewContextR context) override
-        {
-        ElementGeomIO::Collection(m_element.GetGeomStream().GetData(), m_element.GetGeomStream().GetSize()).Draw(context, m_element.GetCategoryId(), context.GetViewFlags());
-        }
-}; // DrawGeomStream
+    ElementGeomIO::Collection(m_element.GetGeomStream().GetData(), m_element.GetGeomStream().GetSize()).Draw(context, m_element.GetCategoryId(), context.GetViewFlags());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
@@ -2716,8 +2711,8 @@ struct DrawGeomStream : StrokeElementForCache
 void GeometricElement::_Draw(ViewContextR context) const
     {
     // NEEDSWORK: Want separate QvElems per-subCategory...
-    Transform      placementTrans = (Is3d() ? ToElement3d()->GetPlacement().GetTransform() : ToElement2d()->GetPlacement().GetTransform());
-    DrawGeomStream stroker(*this, *context.GetViewport());
+    Transform placementTrans = (Is3d() ? ToElement3d()->GetPlacement().GetTransform() : ToElement2d()->GetPlacement().GetTransform());
+    GeometricElementStroker stroker(*this);
 
     context.PushTransform(placementTrans);
     context.DrawCached(stroker);

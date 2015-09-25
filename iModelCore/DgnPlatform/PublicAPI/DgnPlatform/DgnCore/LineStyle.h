@@ -9,7 +9,8 @@
 //__PUBLISH_SECTION_START__
 /** @cond BENTLEY_SDK_Internal */
 
-#include "Render.h"  // For LineStyleParams
+#include "Render.h" 
+#include "LineStyleResource.r.h"
 #include "../DgnHost.h"
 //__PUBLISH_SECTION_END__
 #include "ViewContext.h"  // For ILineStyleComponent

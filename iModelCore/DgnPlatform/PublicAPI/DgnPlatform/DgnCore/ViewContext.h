@@ -259,16 +259,16 @@ public:
     struct  ClipStencil
         {
     private:
-        Render::IStrokeForCache&    m_stroker;
+        Render::GraphicStroker&    m_stroker;
         Render::GraphicPtr         m_tmpQvElem;
         CurveVectorPtr      m_curveVector;
 
     public:
         DGNPLATFORM_EXPORT Render::GraphicPtr GetQvElem(ViewContextR);
         DGNPLATFORM_EXPORT CurveVectorPtr GetCurveVector();
-        Render::IStrokeForCache& GetStroker() {return m_stroker;}
+        Render::GraphicStroker& GetStroker() {return m_stroker;}
 
-        DGNPLATFORM_EXPORT explicit ClipStencil(Render::IStrokeForCache& stroker);
+        DGNPLATFORM_EXPORT explicit ClipStencil(Render::GraphicStroker& stroker);
         DGNPLATFORM_EXPORT ~ClipStencil();
         };
 
@@ -303,7 +303,6 @@ protected:
     bool                    m_useCachedGraphics;
     bool                    m_ignoreViewRange;
     Byte                    m_filterLOD;
-    size_t                  m_refTransClipDepth;
     DrawPurpose             m_purpose;
     DRange3d                m_npcSubRange;
     DMap4d                  m_worldToNpc;
@@ -329,13 +328,11 @@ protected:
     DPoint3dCP              m_endTangent;         // linestyle end tangent.
     uint32_t                m_rasterPlane;        // Current displayed raster plane
     bool                    m_drawingClipElements;
-    uint32_t                m_displayStyleStackMark;
     EdgeMaskState           m_edgeMaskState;
     DgnElement::Hilited     m_hiliteState;
     RasterDisplayParams     m_rasterDisplayParams;
     IElemTopologyPtr        m_currElemTopo;
     GeomStreamEntryId       m_currGeomStreamEntryId;
-
     bool                    m_scanRangeValid;
     double                  m_levelOfDetail;
 
@@ -357,7 +354,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve3d(MSBsplineCurveCR);
     DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth);
     DGNPLATFORM_EXPORT virtual void _DrawTextString(TextStringCR);
-    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _DrawCached(Render::IStrokeForCache&);
+    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _DrawCached(Render::GraphicStroker&);
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(GeometricElementCR);
     DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron();
@@ -365,7 +362,6 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _VisitDgnModel(DgnModelP);
     DGNPLATFORM_EXPORT virtual void _PushTransform(TransformCR trans);
     DGNPLATFORM_EXPORT virtual void _PushClip(ClipVectorCR clip);
-    virtual QvExtSymbID _BuildExtSymbID (uint32_t rasterWidth, int styleIndex) const { BeAssert(false); return 0; }
     DGNPLATFORM_EXPORT virtual void _PushViewIndependentOrigin(DPoint3dCP origin);
     DGNPLATFORM_EXPORT virtual void _PopTransformClip();
     DGNPLATFORM_EXPORT virtual bool _FilterRangeIntersection(GeometricElementCR);
@@ -449,8 +445,8 @@ public:
     DGNPLATFORM_EXPORT void SetArcTolerance(double tol);
     DGNPLATFORM_EXPORT void SetLinestyleTangents(DPoint3dCP start, DPoint3dCP end);
 
-    DGNPLATFORM_EXPORT Render::GraphicPtr CreateGraphic(Render::IStrokeForCache&, Render::CachedDrawP cachedDrawP = nullptr);
-    DGNPLATFORM_EXPORT Render::GraphicPtr GetGraphic(Render::IStrokeForCache& stroker);
+    DGNPLATFORM_EXPORT Render::GraphicPtr CreateGraphic(Render::GraphicStroker&, Render::CachedDrawP cachedDrawP = nullptr);
+    DGNPLATFORM_EXPORT Render::GraphicPtr GetGraphic(Render::GraphicStroker& stroker);
 
     DGNPLATFORM_EXPORT void DeleteSymbol(Render::IDisplaySymbol*);
 
@@ -667,7 +663,7 @@ public:
     //! Get the DgnViewport to which this ViewContext is attached. ViewContext's do not always have to be attached to an
     //! DgnViewport, so therefore callers must always test the result of this call for NULL.
     //! @return the DgnViewport. NULL if not attached to a DgnViewport.
-    DGNPLATFORM_EXPORT DgnViewportP GetViewport() const;
+    DgnViewportP GetViewport() const {return m_viewport;}
 
     DGNPLATFORM_EXPORT bool Is3dView() const;
     DGNPLATFORM_EXPORT bool IsCameraOn() const;
@@ -871,7 +867,7 @@ public:
     //! @param[in] stroker An object to use to create cache representation (if necessary).
     //! @note A single displayable may have many saved cached representations. Draw methods can decide which cached representation is appropriate.
     //! in the current context, and can even draw more than one of the cached representations by having the stroker return different cache indices.
-    Render::GraphicPtr DrawCached(Render::IStrokeForCache& stroker) {return _DrawCached(stroker);}
+    Render::GraphicPtr DrawCached(Render::GraphicStroker& stroker) {return _DrawCached(stroker);}
 
     DGNPLATFORM_EXPORT bool CheckStop();
 }; // ViewContext

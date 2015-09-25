@@ -171,7 +171,6 @@ public:
     //! @param[in]      name The name of the desired texture
     //! @return The ID of the texture with the specified name, or an invalid ID if no such texture exists.
     DGNPLATFORM_EXPORT DgnTextureId QueryTextureId(Utf8StringCR name) const;
-
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

@@ -12,7 +12,6 @@
 #include "ISprite.h"
 #include "ElementGeometry.h"
 #include "Render.h"
-#include "IViewOutput.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 

@@ -8,9 +8,9 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include "LineStyleResource.r.h"
-#include "AreaPattern.h"
 #include "DgnModel.h"
+#include "ImageUtilities.h"
+#include "AreaPattern.h"
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
@@ -37,10 +37,14 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ViewDraw)
 
+DEFINE_REF_COUNTED_PTR(CachedDraw)
+DEFINE_REF_COUNTED_PTR(GradientSymb)
 DEFINE_REF_COUNTED_PTR(Graphic)
 DEFINE_REF_COUNTED_PTR(LineStyleInfo)
 DEFINE_REF_COUNTED_PTR(Material)
 DEFINE_REF_COUNTED_PTR(MultiResImage)
+DEFINE_REF_COUNTED_PTR(Output)
+DEFINE_REF_COUNTED_PTR(PlotInfo)
 DEFINE_REF_COUNTED_PTR(Renderer)
 DEFINE_REF_COUNTED_PTR(Scene)
 DEFINE_REF_COUNTED_PTR(Target)
@@ -61,7 +65,7 @@ struct RenderManager
 //! Supplies implementation of rendering operations for a type of a DgnViewport.
 // @bsiclass                                                    Keith.Bentley   09/15
 //=======================================================================================
-struct Renderer
+struct Renderer : NonCopyableClass
 {
     //! Save cache entry for symbol (if host has chosen to have a symbol cache).
     virtual void _SaveGraphicForSymbol(IDisplaySymbol* symbol, Graphic* graphic) {}
@@ -135,7 +139,7 @@ struct Renderer
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   07/15
 //=======================================================================================
-struct Task : IRefCounted
+struct Task : IRefCounted, NonCopyableClass
 {
     virtual Target& _GetTarget() = 0;
     virtual void _Render() = 0;
@@ -145,42 +149,42 @@ struct Task : IRefCounted
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   08/15
 //=======================================================================================
-struct Graphic : IRefCounted
+struct Graphic : IRefCounted, NonCopyableClass
 {
 };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   09/15
 //=======================================================================================
-struct Material : IRefCounted
+struct Material : IRefCounted, NonCopyableClass
 {
 };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   09/15
 //=======================================================================================
-struct Texture : IRefCounted
+struct Texture : IRefCounted, NonCopyableClass
 {
 };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   08/15
 //=======================================================================================
-struct MultiResImage : IRefCounted
+struct MultiResImage : IRefCounted, NonCopyableClass
 {
 };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   07/15
 //=======================================================================================
-struct Target : IRefCounted
+struct Target : IRefCounted, NonCopyableClass
 {
 };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   07/15
 //=======================================================================================
-struct Scene : IRefCounted
+struct Scene : NonCopyableClass
 {
 };
 
@@ -188,8 +192,22 @@ struct Scene : IRefCounted
 //! Line style parameters
 //! @private
 //=======================================================================================
-struct LineStyleParams : LineStyleParamsResource
+struct LineStyleParams
 {
+    uint32_t    modifiers;      /* see STYLEMOD_... above              */
+    uint32_t    reserved;
+    double      scale;          /* Applied to all length values        */
+    double      dashScale;      /* Applied to adjustable dash strokes  */
+    double      gapScale;       /* Applied to adjustable gap strokes   */
+    double      startWidth;     /* Taper start width                   */
+    double      endWidth;       /* Taper end width                     */
+    double      distPhase;      /* Phase shift by distance             */
+    double      fractPhase;     /* Phase shift by fraction             */
+    uint32_t    lineMask;       /* Multiline line mask                 */
+    uint32_t    mlineFlags;     /* Multiline flags                     */
+    DPoint3d    normal;
+    RotMatrix   rMatrix;
+
     void Init()
         {
         memset(this, 0, sizeof(LineStyleParams));
@@ -201,7 +219,6 @@ struct LineStyleParams : LineStyleParamsResource
     DGNPLATFORM_EXPORT bool operator==(LineStyleParamsCR rhs) const;
     DGNPLATFORM_EXPORT void SetScale(double scale);
 };
-
 
 //=======================================================================================
 //! Line style id and parameters
@@ -240,12 +257,6 @@ struct IDisplaySymbol
     virtual ~IDisplaySymbol() {}
     virtual void _Draw(ViewContextR context) = 0;
     virtual StatusInt _GetRange(DRange3dR range) const = 0;
-};
-
-enum class DrawExpense
-{
-    Medium   = 1, //!<  Average for a element type that may be cached
-    High     = 2, //!<  Cache it unless at risk of exhausting virtual address
 };
 
 enum class FillDisplay //!< Whether a closed region should be drawn for wireframe display with its internal area filled or not.
@@ -300,8 +311,6 @@ enum class RasterFormat
     BGRS  = 7,    // 4 band with alpha stencil (0 or 255 only)
 };
 
-typedef RefCountedPtr<GradientSymb> GradientSymbPtr;
-
 //=======================================================================================
 //! Parameters defining a gradient
 //=======================================================================================
@@ -347,98 +356,6 @@ public:
     DGNPLATFORM_EXPORT void SetKeys(uint16_t nKeys, ColorDef const* colors, double const* values);
 };
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-typedef RefCountedPtr<struct QVAliasMaterialId> QVAliasMaterialIdPtr;
-
-//=======================================================================================
-//! If one of the uv mapping modes, Directional Drape, Cubic, Spherical or Cylindrical is to
-//! be used for mapping a material to a non persistent element for draw purposes an application maintained Id
-//! is required for the qv material. Typically if there is a one to one mapping between
-//! material and element then the MaterialCP pointer can be used here.
-//=======================================================================================
-struct QVAliasMaterialId : RefCountedBase
-{
-//__PUBLISH_SECTION_END__
-private:
-uintptr_t       m_qvAliasMaterialId;
-
-QVAliasMaterialId();
-explicit QVAliasMaterialId(uintptr_t qvAliasMaterialId);
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
-public:
-
-//! Destructor. This will delete the qv material
-DGNPLATFORM_EXPORT virtual ~QVAliasMaterialId();
-
-//! Get the id for the generated Qv Material
-DGNPLATFORM_EXPORT uintptr_t GetId() const;
-
-//! Create an instance of this object
-//! @param[in] qvAliasMaterialId            Id for generated Qv material
-DGNPLATFORM_EXPORT static QVAliasMaterialIdPtr Create(uintptr_t qvAliasMaterialId);
-};
-#endif
-
-#if defined (NEEDS_WORK_MATERIALS)
-typedef RefCountedPtr<struct MaterialUVDetail> MaterialUVDetailPtr;
-
-//=======================================================================================
-//! Materials which use uv mapping modes Directional Drape, Cubic, Spherical and Cylindrical
-//! require additional element based information for their definition.
-//=======================================================================================
-struct MaterialUVDetail : RefCountedBase
-{
-//__PUBLISH_SECTION_END__
-private:
-
-DPoint3d                m_origin;
-RotMatrix               m_rMatrix;
-DPoint3d                m_size;
-QVAliasMaterialIdPtr    m_appQvId;
-
-MaterialUVDetail();
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
-public:
-
-//! Copy the contents of the argument object into this object
-//! @param[in] rhs          Object to copy
-DGNPLATFORM_EXPORT void Copy(MaterialUVDetailCR rhs);
-
-//! Compare the contents of this object with the method argument for equality
-//! @param[in] rhs          Object to compare
-DGNPLATFORM_EXPORT bool Equals(MaterialUVDetailCR rhs);
-
-//! Get the origin of the UV mapping.
-DGNPLATFORM_EXPORT DPoint3dCR GetOrigin() const;
-//! Set the origin on the UV mapping.
-DGNPLATFORM_EXPORT void SetOrigin(DPoint3dCR origin);
-
-//! Get the orientation of the UV mapping.
-DGNPLATFORM_EXPORT RotMatrixCR GetRMatrix() const;
-//! Set the orientation of the UV mapping.
-DGNPLATFORM_EXPORT void SetRMatrix(RotMatrixCR rMatrix);
-
-//! Get the size of the UV mapping.
-DGNPLATFORM_EXPORT DPoint3dCR GetSize() const;
-//! Set the size of the UV mapping.
-DGNPLATFORM_EXPORT void SetSize(DPoint3dCR size);
-
-//! Get the QV Material Id for the UV mapping to use.
-DGNPLATFORM_EXPORT QVAliasMaterialIdCP GetQVAliasMaterialId() const;
-//! Set the QV Material Id for the UV mapping to use.
-DGNPLATFORM_EXPORT void SetQVAliasMaterialId(QVAliasMaterialIdP qvId);
-
-//! Create an instance of this class
-DGNPLATFORM_EXPORT static MaterialUVDetailPtr Create();
-};
-#endif
-
-typedef RefCountedPtr<struct PlotInfo> PlotInfoPtr;
-
 //=======================================================================================
 //! Plot specific resymbolization
 //=======================================================================================
@@ -446,69 +363,66 @@ struct PlotInfo : RefCountedBase
 {
 protected:
 
-bool                m_hasLineCap:1;                 //!< if true, use #m_lineCap to determine line cap type.
-bool                m_hasLineJoin:1;                //!< if true, use #m_lineJoin to determine line join type.
-bool                m_hasScreening:1;               //!< if true, output should be screened by value in #m_screening
-bool                m_hasLineWeightMM:1;            //!< if true, line weight is specified in millimeters by #m_widthMM
+    bool                m_hasLineCap:1;                 //!< if true, use #m_lineCap to determine line cap type.
+    bool                m_hasLineJoin:1;                //!< if true, use #m_lineJoin to determine line join type.
+    bool                m_hasScreening:1;               //!< if true, output should be screened by value in #m_screening
+    bool                m_hasLineWeightMM:1;            //!< if true, line weight is specified in millimeters by #m_widthMM
 
-LineCap             m_lineCap;                      //!< line cap type when m_hasLineCap is set.
-LineJoin            m_lineJoin;                     //!< line join type when m_hasLineJoin is set.
-double              m_screening;                    //!< screening value when m_hasScreening is set.
-double              m_widthMM;                      //!< line width in mm when m_hasLineWeightMM is set.
+    LineCap             m_lineCap;                      //!< line cap type when m_hasLineCap is set.
+    LineJoin            m_lineJoin;                     //!< line join type when m_hasLineJoin is set.
+    double              m_screening;                    //!< screening value when m_hasScreening is set.
+    double              m_widthMM;                      //!< line width in mm when m_hasLineWeightMM is set.
 
-PlotInfo() {m_hasLineCap = m_hasLineJoin = m_hasScreening = m_hasLineWeightMM = false; m_lineCap = LineCap::None; m_lineJoin = LineJoin::None; m_screening = 0.0; m_widthMM = 0.0;}
-
+    PlotInfo() {m_hasLineCap = m_hasLineJoin = m_hasScreening = m_hasLineWeightMM = false; m_lineCap = LineCap::None; m_lineJoin = LineJoin::None; m_screening = 0.0; m_widthMM = 0.0;}
 public:
+    static PlotInfoPtr Create() {return new PlotInfo();}
 
-static PlotInfoPtr Create() {return new PlotInfo();}
+    void CopyFrom(PlotInfoCR other)
+        {
+        m_hasLineCap        = other.m_hasLineCap;
+        m_hasLineJoin       = other.m_hasLineJoin;
+        m_hasScreening      = other.m_hasScreening;
+        m_hasLineWeightMM   = other.m_hasLineWeightMM;
 
-void CopyFrom(PlotInfoCR other)
-    {
-    m_hasLineCap        = other.m_hasLineCap;
-    m_hasLineJoin       = other.m_hasLineJoin;
-    m_hasScreening      = other.m_hasScreening;
-    m_hasLineWeightMM   = other.m_hasLineWeightMM;
+        m_lineCap           = other.m_lineCap;
+        m_lineJoin          = other.m_lineJoin;
+        m_screening         = other.m_screening;
+        m_widthMM           = other.m_widthMM;
+        }
 
-    m_lineCap           = other.m_lineCap;
-    m_lineJoin          = other.m_lineJoin;
-    m_screening         = other.m_screening;
-    m_widthMM           = other.m_widthMM;
-    }
+    bool operator==(PlotInfoCR rhs) const
+        {
+        if (this == &rhs)
+            return true;
 
-bool operator==(PlotInfoCR rhs) const
-    {
-    if (this == &rhs)
+        if (rhs.m_hasLineCap      != m_hasLineCap   ||
+            rhs.m_hasLineJoin     != m_hasLineJoin  ||
+            rhs.m_hasScreening    != m_hasScreening ||
+            rhs.m_hasLineWeightMM != m_hasLineWeightMM)
+            return false;
+
+        if (rhs.m_lineCap   != m_lineCap   ||
+            rhs.m_lineJoin  != m_lineJoin  ||
+            rhs.m_screening != m_screening ||
+            rhs.m_widthMM   != m_widthMM )
+            return false;
+
         return true;
+        }
 
-    if (rhs.m_hasLineCap      != m_hasLineCap   ||
-        rhs.m_hasLineJoin     != m_hasLineJoin  ||
-        rhs.m_hasScreening    != m_hasScreening ||
-        rhs.m_hasLineWeightMM != m_hasLineWeightMM)
-        return false;
-
-    if (rhs.m_lineCap   != m_lineCap   ||
-        rhs.m_lineJoin  != m_lineJoin  ||
-        rhs.m_screening != m_screening ||
-        rhs.m_widthMM   != m_widthMM )
-        return false;
-
-    return true;
-    }
-
-DGNPLATFORM_EXPORT bool     IsScreeningSet() const;
-DGNPLATFORM_EXPORT double   GetScreening() const;
-DGNPLATFORM_EXPORT void     SetScreening(double screening, bool set = true);
-DGNPLATFORM_EXPORT bool     IsLineJoinSet() const;
-DGNPLATFORM_EXPORT LineJoin GetLineJoin() const;
-DGNPLATFORM_EXPORT void     SetLineJoin(LineJoin join, bool set = true);
-DGNPLATFORM_EXPORT bool     IsLineCapSet() const;
-DGNPLATFORM_EXPORT LineCap  GetLineCap() const;
-DGNPLATFORM_EXPORT void     SetLineCap(LineCap cap, bool set = true);
-DGNPLATFORM_EXPORT bool     IsLineWeightMMSet() const;
-DGNPLATFORM_EXPORT double   GetLineWeightMM () const;
-DGNPLATFORM_EXPORT void     SetLineWeightMM (double weight, bool set = true);
-
-}; // PlotInfoPtr
+    DGNPLATFORM_EXPORT bool     IsScreeningSet() const;
+    DGNPLATFORM_EXPORT double   GetScreening() const;
+    DGNPLATFORM_EXPORT void     SetScreening(double screening, bool set = true);
+    DGNPLATFORM_EXPORT bool     IsLineJoinSet() const;
+    DGNPLATFORM_EXPORT LineJoin GetLineJoin() const;
+    DGNPLATFORM_EXPORT void     SetLineJoin(LineJoin join, bool set = true);
+    DGNPLATFORM_EXPORT bool     IsLineCapSet() const;
+    DGNPLATFORM_EXPORT LineCap  GetLineCap() const;
+    DGNPLATFORM_EXPORT void     SetLineCap(LineCap cap, bool set = true);
+    DGNPLATFORM_EXPORT bool     IsLineWeightMMSet() const;
+    DGNPLATFORM_EXPORT double   GetLineWeightMM () const;
+    DGNPLATFORM_EXPORT void     SetLineWeightMM (double weight, bool set = true);
+};
 
 //=======================================================================================
 //! This structure holds all of the information about an element specifying the "displayable parameters" of the element.
@@ -697,8 +611,8 @@ public:
     DGNPLATFORM_EXPORT int FromNaturalElemDisplayParams(ElemDisplayParamsR, ViewContextR context, DPoint3dCP, DPoint3dCP);
     DGNPLATFORM_EXPORT int FromResolvedStyle(LineStyleInfoCP styleInfo, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent);
 
-    void               Clear () {m_lStyle = NULL; m_options.orgWidth = m_options.endWidth = false; m_textureHandle = 0; }
-    void               Init(ILineStyleCP);
+    void Clear() {m_lStyle = NULL; m_options.orgWidth = m_options.endWidth = false; m_textureHandle = 0; }
+    void Init(ILineStyleCP);
 
 public:
     DGNPLATFORM_EXPORT ILineStyleCP  GetILineStyle() const;
@@ -1004,17 +918,13 @@ struct IPointCloudDrawParams
 //! This interface defines the method used by ViewContext::DrawCached.
 // @bsiclass
 //=======================================================================================
-struct IStrokeForCache
+struct GraphicStroker
 {
     //! Stroke this object to create a cached representation. This method is the callback for ViewContext::DrawCached and can be used
     //! to create a cached presentation for geometry that is expensive to create. The cached presentation created when this is called
     //! will then be used for subsequent draws.
     //! @param[in] context context to use to create the cached representation.
-    virtual void _StrokeForCache(ViewContextR context) = 0;
-
-    //! Return DrawExpense::High only if the representation is very expensive to reproduce, otherwise leave as DrawExpense::Medium.  This will cause
-    //! the cached geometry to be preserved in low memory conditions.
-    virtual DrawExpense _GetDrawExpense() const {return DrawExpense::Medium;}
+    virtual void _Stroke(ViewContextR context) = 0;
 
     //! Return true if _StrokeForCache should be called for locate. The geometry output by the stroker will be used to generate the curve/edge hits
     //! required for snapping as well as for locating the interiors of filled/rendered geometry.
@@ -1025,8 +935,8 @@ struct IStrokeForCache
     //! @note A valid range is required only if _GetSizeDependentGeometryPossible returns true.
     virtual DRange3d _GetRange() const {return DRange3d::NullRange();}
 
-    //! Return Graphic created by a prior call to _StrokeForCache. When nullptr is returned, _StrokeForCache will be called to create a new Graphic.
-    virtual Graphic* _GetGraphic(DgnViewportCR) const = 0;
+    //! Return Graphic created by a prior call to _StrokeForCache. When nullptr is returned, _Stroke will be called to create a new Graphic.
+    virtual Graphic* _FindGraphic(DgnViewportCR) const = 0;
 
     //! Save the Graphic created by calling _StrokeForCache for use in subsequent draws.
     virtual void _SaveGraphic(DgnViewportCR vp, GraphicR graphic) const = 0;
@@ -1035,36 +945,37 @@ struct IStrokeForCache
 };
 
 //=======================================================================================
-//! IStrokeForCache sub-class specific to GeometricElement.
+//! GraphicStroker for GeometricElements.
 // @bsiclass
 //=======================================================================================
-struct StrokeElementForCache : IStrokeForCache
+struct GeometricElementStroker : GraphicStroker
 {
 protected:
     GeometricElementCR  m_element;
 
 public:
-    explicit StrokeElementForCache(GeometricElementCR element) : m_element(element) {}
+    explicit GeometricElementStroker(GeometricElementCR element) : m_element(element) {}
 
-    Graphic* _GetGraphic(DgnViewportCR vp) const override {return m_element.Graphics().Find(vp);}
+    DGNPLATFORM_EXPORT void _Stroke(ViewContextR context) override;
+    Graphic* _FindGraphic(DgnViewportCR vp) const override {return m_element.Graphics().Find(vp);}
     void _SaveGraphic(DgnViewportCR vp, GraphicR graphic) const override {m_element.Graphics().Save(vp, graphic);}
-    virtual DRange3d _GetRange() const override {return m_element.CalculateRange3d();}
-    virtual DgnDbR _GetDgnDb() const override {return m_element.GetDgnDb();}
+    DRange3d _GetRange() const override {return m_element.CalculateRange3d();}
+    DgnDbR _GetDgnDb() const override {return m_element.GetDgnDb();}
 };
 
 //=======================================================================================
-//! IStrokeForCache sub-class specific to tools/transient cached graphics.
+//! GraphicStroker sub-class specific to tools/transient cached graphics.
 // @bsiclass
 //=======================================================================================
-struct TransientCachedGraphics : IStrokeForCache
+struct TransientStroker : GraphicStroker
 {
 protected:
     DgnDbR m_dgnDb;
     mutable Render::GraphicSet m_graphics;
 
 public:
-    explicit TransientCachedGraphics(DgnDbR dgnDb) : m_dgnDb(dgnDb) {}
-    Graphic* _GetGraphic(DgnViewportCR vp) const override {return m_graphics.Find(vp);}
+    explicit TransientStroker(DgnDbR dgnDb) : m_dgnDb(dgnDb) {}
+    Graphic* _FindGraphic(DgnViewportCR vp) const override {return m_graphics.Find(vp);}
     void _SaveGraphic(DgnViewportCR vp, GraphicR graphic) const override {m_graphics.Save(vp, graphic);}
     virtual DgnDbR _GetDgnDb() const override {return m_dgnDb;}
 };
@@ -1267,7 +1178,6 @@ public:
     //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
     void DrawTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range) {_DrawTriStrip2d(numPoints, points, usageFlags, zDepth, range);}
 
-
     RangeResult PushBoundingRange3d(DPoint3dCP range) {return _PushBoundingRange3d(range);}
     RangeResult PushBoundingRange2d(DPoint2dCP range, double zDepth) {return _PushBoundingRange2d(range, zDepth);}
     void PopBoundingRange() {_PopBoundingRange();}
@@ -1282,7 +1192,7 @@ public:
     // Helper Methods to draw simple SolidPrimitives.
     void DrawTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) { DrawSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}
     void DrawBox(DVec3dCR primary, DVec3dCR secondary, DPoint3dCR basePoint, DPoint3dCR topPoint, double baseWidth, double baseLength, double topWidth, double topLength, bool capped) {DrawSolidPrimitive(*ISolidPrimitive::CreateDgnBox(DgnBoxDetail::InitFromCenters(basePoint, topPoint, primary, secondary, baseWidth, baseLength, topWidth, topLength, capped))); }
-}; // GeomDraw
+};
 
 //=======================================================================================
 //! DgnCore implements this interface to provide the display system for Viewports.
@@ -1304,7 +1214,7 @@ protected:
     virtual void _ClearZ () = 0;
 
     virtual uintptr_t _DefineQVTexture(WCharCP textureName, DgnDbP) {return 0;}
-    virtual void _DefineQVGeometryMap(uintptr_t textureId, IStrokeForCache&, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern) {}
+    virtual void _DefineQVGeometryMap(uintptr_t textureId, GraphicStroker&, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern) {}
 
     virtual bool _IsOutputQuickVision() const = 0;
     virtual bool _ApplyMonochromeOverrides(ViewFlagsCR) const = 0;
@@ -1376,7 +1286,7 @@ public:
 
     void ClearZ() {_ClearZ();}
     uintptr_t DefineQVTexture(WCharCP textureName, DgnDbP dgnFile) {return _DefineQVTexture(textureName, dgnFile);}
-    void DefineQVGeometryMap(uintptr_t textureId, IStrokeForCache& stroker, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern = false){_DefineQVGeometryMap(textureId, stroker, spacing, useCellColors, seedContext, forAreaPattern);}
+    void DefineQVGeometryMap(uintptr_t textureId, GraphicStroker& stroker, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern = false){_DefineQVGeometryMap(textureId, stroker, spacing, useCellColors, seedContext, forAreaPattern);}
     bool IsOutputQuickVision() const {return _IsOutputQuickVision();}
     bool ApplyMonochromeOverrides(ViewFlagsCR) const;
 };
@@ -1400,11 +1310,214 @@ public:
     //! Push a transform.
     //! @param[in]  trans Transform to push.
     //! @see #PopTransform
-    void PushTransform(TransformCR trans){_PushTransClip(&trans);}
+    void PushTransform(TransformCR trans) {_PushTransClip(&trans);}
 
     //! Pop the most recently pushed transform.
     //! @see #PushTransform
-    void PopTransform(){_PopTransClip();}
+    void PopTransform() {_PopTransClip();}
+};
+
+//=======================================================================================
+//! Selects the output buffer for IViewDraw methods.
+// @bsiclass
+//=======================================================================================
+enum class DgnDrawBuffer
+{
+    None         = 0,                    //!< Do not draw to any buffer.
+    Screen       = 1,                    //!< The visible buffer.
+    Dynamic      = 2,                    //!< Offscreen, usually implemented in hardware as the "back buffer" of a double-buffered context
+    BackingStore = 4,                    //!< Non-drawable offscreen buffer. Holds a copy of the most recent scene.
+    Drawing      = 8,                    //!< The offscreen drawable buffer.
+};
+
+/*=================================================================================**//**
+* Draw modes for displaying information in viewports.
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+enum class DgnDrawMode
+{
+    Normal    = 0,
+    Erase     = 1,
+    Hilite    = 2,
+    TempDraw  = 3,
+    Flash     = 11,
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   04/14
+//=======================================================================================
+struct PaintOptions
+{
+private:
+    DgnDrawBuffer m_buffer;
+    DgnDrawMode   m_drawMode;
+    BSIRectCP     m_subRect;
+    bool          m_eraseBefore;
+    bool          m_synchDrawingFromBs;
+    bool          m_synchToScreen;
+    bool          m_drawDecorations;
+    bool          m_accumulateDirty;
+    bool          m_showTransparent;
+    bool          m_progressiveDisplay;
+    mutable bool  m_lockVp;
+
+public:
+    PaintOptions(DgnDrawBuffer buffer=DgnDrawBuffer::None, BSIRectCP subRect=NULL) : m_buffer(buffer), m_subRect(subRect)
+        {
+        m_drawMode = DgnDrawMode::Normal;
+        m_eraseBefore = true;
+        m_synchDrawingFromBs = true;
+        m_accumulateDirty = true;
+        m_drawDecorations = false;
+        m_synchToScreen = false;
+        m_showTransparent = true;
+        m_progressiveDisplay = false;
+        m_lockVp = false;
+        }
+    DgnDrawBuffer GetDrawBuffer() const{return m_buffer;}
+    DgnDrawMode GetDrawMode() const {return m_drawMode;}
+    BSIRectCP GetSubRect() const {return m_subRect;}
+    bool WantEraseBefore() const {return m_eraseBefore;}
+    bool WantSynchFromBackingStore() const {return m_synchDrawingFromBs;}
+    bool WantAccumulateDirty() const {return m_accumulateDirty;}
+    bool WantLockVp() const {return m_lockVp;}
+    bool WantSynchToScreen() const {return m_synchToScreen;}
+    bool WantDrawDecorations() const {return m_drawDecorations;}
+    bool WantShowTransparent() const {return m_showTransparent;}
+    bool IsProgressiveDisplay() const {return m_progressiveDisplay;}
+    void SetDrawBuffer(DgnDrawBuffer buffer) {m_buffer = buffer;}
+    void SetDrawMode(DgnDrawMode mode) {m_drawMode = mode;}
+    void SetSubRect(BSIRectCP rect) {m_subRect = rect;}
+    void SetEraseBefore(bool val) {m_eraseBefore = val;}
+    void SetSynchFromBackingStore(bool val) {m_synchDrawingFromBs = val;}
+    void SetAccumulateDirty(bool val) {m_accumulateDirty = val;}
+    void SetLockVp(bool val) const {m_lockVp = val;}
+    void SetSynchToScreen(bool val) {m_synchToScreen = val;}
+    void SetDrawDecorations(bool val) {m_drawDecorations = val;}
+    void SetShowTransparent(bool val) {m_showTransparent = val;}
+    void SetProgressiveDisplay(bool val) {m_progressiveDisplay = val;}
+    bool IsHiliteMode() const {return (m_drawMode == DgnDrawMode::Hilite);}
+    bool IsEraseMode() const {return (m_drawMode == DgnDrawMode::Erase);}
+};
+
+enum class AntiAliasPref {Detect = 0, On = 1, Off = 2};
+
+enum class DrawExportFlags
+{
+    UseDefault          = 0,
+    ClipToFrustum       = 1,
+    LinesAsPolys        = 2,
+    DeferTransparent    = 4,
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   09/15
+//=======================================================================================
+struct SystemContext {};
+struct RenderDevice {};
+struct RenderWindow {};
+struct RenderCursor {};
+struct CursorSource {};
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct Output : IRefCounted, ViewDraw
+{
+    friend struct HealContext;
+    friend struct IndexedViewport;
+    typedef ImageUtilities::RgbImageInfo CapturedImageInfo;
+
+protected:
+    virtual void      _SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText) = 0;
+    virtual RenderDevice* _GetRenderDevice() const = 0;
+    virtual StatusInt _AssignRenderDevice(RenderDevice*) = 0;
+    virtual void      _AddLights(bool threeDview, RotMatrixCP rotMatrixP, DgnModelP model) = 0;
+    virtual void      _AdjustBrightness(bool useFixedAdaptation, double brightness) = 0;
+    virtual uint64_t  _GetLightStamp() = 0;
+    virtual void      _DefineFrustum(DPoint3dCR frustPts, double fraction, bool is2d) = 0;
+    virtual void      _SetDrawBuffer(DgnDrawBuffer drawBuffer, BSIRectCP subRect) = 0;
+    virtual DgnDrawBuffer _GetDrawBuffer() const = 0;
+    virtual void      _SetEraseMode(bool newMode) = 0;
+    virtual StatusInt _SynchDrawingFromBackingStore() = 0;
+    virtual void      _SynchDrawingFromBackingStoreAsynch() = 0;
+    virtual StatusInt _SynchScreenFromDrawing() = 0;
+    virtual void      _SynchScreenFromDrawingAsynch() = 0;
+    virtual bool      _IsScreenDirty(BSIRect*) = 0;
+    virtual void      _ShowProgress() = 0;
+    virtual bool      _IsBackingStoreValid() const = 0;
+    virtual void      _SetBackingStoreValid(bool) = 0;
+    virtual bool      _IsAccelerated() const = 0;
+    virtual void      _ScreenDirtied(BSIRect const* rect) = 0;
+    virtual bool      _EnableZTesting(bool yesNo) = 0;
+    virtual bool      _EnableZWriting(bool yesNo) = 0;
+    virtual StatusInt _BeginDraw(bool eraseBefore) = 0;
+    virtual void      _EndDraw(PaintOptions const&) = 0;
+    virtual bool      _IsDrawActive() = 0;
+    virtual void      _ShowTransparent() = 0;
+    virtual void      _AccumulateDirtyRegion(bool val) = 0;
+    virtual void      _ClearHealRegion() = 0;
+    virtual void      _SetNeedsHeal(BSIRect const* dirty) = 0;
+    virtual void      _HealComplete(bool aborted) = 0;
+    virtual bool      _CheckNeedsHeal(BSIRect* rect) = 0;
+    virtual void      _BeginDecorating(BSIRect const* rect) = 0;
+    virtual void      _BeginOverlayMode() = 0;
+    virtual Scene*    _GetScene() = 0; // May return NULL
+    virtual void      _SetFlashMode(bool newMode) = 0;
+    virtual BentleyStatus _FillImageCaptureBuffer(bvector<unsigned char>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) = 0;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    virtual int       _GetVisibleTiles(MRImage* mri, size_t bufSize, int* lrc) = 0;
+#endif
+
+public:
+    void SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText) {_SetViewAttributes(viewFlags, bgColor, usebgTexture, aaLines, aaText);}
+    RenderDevice* GetRenderDevice() const {return _GetRenderDevice();}
+    StatusInt AssignRenderDevice(RenderDevice* device) {return _AssignRenderDevice(device);}
+    void AddLights(bool threeDview, RotMatrixCP rotMatrixP, DgnModelP model = NULL) {_AddLights(threeDview, rotMatrixP, model);}
+    void AdjustBrightness(bool useFixedAdaptation, double brightness){_AdjustBrightness(useFixedAdaptation, brightness);}
+    uint64_t GetLightStamp() {return _GetLightStamp();}
+    void DefineFrustum(DPoint3dCR frustPts, double fraction, bool is2d) {_DefineFrustum(frustPts, fraction, is2d);}
+    void SetDrawBuffer(DgnDrawBuffer drawBuffer, BSIRect const* subRect) {_SetDrawBuffer(drawBuffer, subRect);}
+    DgnDrawBuffer GetDrawBuffer() const {return _GetDrawBuffer();}
+    void HealComplete(bool aborted) {_HealComplete(aborted);}
+    void SetEraseMode(bool newMode) {_SetEraseMode(newMode);}
+    StatusInt SynchDrawingFromBackingStore() {return _SynchDrawingFromBackingStore();}
+    void SynchDrawingFromBackingStoreAsynch() {_SynchDrawingFromBackingStoreAsynch();}
+    StatusInt SynchScreenFromDrawing() {return _SynchScreenFromDrawing();}
+    void SynchScreenFromDrawingAsynch() {_SynchScreenFromDrawingAsynch();}
+    bool IsScreenDirty(BSIRect* rect) {return _IsScreenDirty(rect);}
+    void ShowProgress() {_ShowProgress();}
+    bool IsBackingStoreValid() const {return _IsBackingStoreValid();}
+    bool IsAccelerated() const {return _IsAccelerated();}
+    void ScreenDirtied(BSIRect const* rect) {_ScreenDirtied(rect);}
+    StatusInt BeginDraw(bool eraseBefore) {return _BeginDraw(eraseBefore);}
+    void EndDraw(PaintOptions const& op){_EndDraw(op);}
+    bool IsDrawActive() {return _IsDrawActive();}
+    void ShowTransparent() {_ShowTransparent();}
+    void AccumulateDirtyRegion(bool val) {_AccumulateDirtyRegion(val);}
+    void ClearHealRegion() {_ClearHealRegion();}
+    void SetNeedsHeal(BSIRectCP dirty) {_SetNeedsHeal(dirty);}
+    void BeginDecorating(BSIRectCP rect) {_BeginDecorating(rect);}
+    void BeginOverlayMode() {_BeginOverlayMode();}
+    void SetFlashMode(bool newMode) {_SetFlashMode(newMode);}
+    BentleyStatus FillImageCaptureBuffer(bvector<unsigned char>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) {return _FillImageCaptureBuffer(buffer, info, screenBufferRange, outputImageSize, topDown);}
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    int GetVisibleTiles(MRImage* mri, size_t bufSize, int* lrc) {return _GetVisibleTiles(mri, bufSize, lrc);}
+#endif
+
+    //! Push a transform and/or a clip plane set
+    //! @param[in]          trans           Transform to push. May be NULL.
+    //! @param[in]          clipPlaneSet    Clip planes to push. May be NULL.
+    //! @see #PopTransClip
+    void PushTransClip(TransformCP trans, ClipPlaneSetCP clipPlaneSet = NULL) {_PushTransClip(trans, clipPlaneSet);}
+
+    //! Pop the most recently pushed transform and clipping.
+    //! @see #PushTransClip
+    void PopTransClip() {_PopTransClip();}
+
+    bool EnableZTesting(bool yesNo) {return _EnableZTesting(yesNo);}
+    bool EnableZWriting(bool yesNo) {return _EnableZWriting(yesNo);}
+    bool CheckNeedsHeal(BSIRectP rect){return _CheckNeedsHeal(rect);}
 };
 
 END_BENTLEY_RENDER_NAMESPACE

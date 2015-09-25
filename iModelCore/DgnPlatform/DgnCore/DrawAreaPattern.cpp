@@ -314,7 +314,7 @@ struct PatternBoundaryCollector : IElementGraphicsProcessor
 {
 private:
 
-IStrokeForCache&    m_stroker;
+GraphicStroker&    m_stroker;
 CurveVectorPtr      m_boundary;
 ViewContextP        m_context;
 Transform           m_currentTransform;
@@ -324,7 +324,7 @@ protected:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-explicit PatternBoundaryCollector(IStrokeForCache& stroker) : m_stroker(stroker) {}
+explicit PatternBoundaryCollector(GraphicStroker& stroker) : m_stroker(stroker) {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/13
@@ -333,6 +333,7 @@ virtual bool _ProcessAsFacets(bool isPolyface) const override {return false;}
 virtual bool _ProcessAsBody(bool isCurved) const override {return false;}
 virtual void _AnnounceContext(ViewContextR context) override {m_context = &context;}
 virtual void _AnnounceTransform(TransformCP trans) override {if (trans) m_currentTransform = *trans; else m_currentTransform.InitIdentity();}
+virtual void _OutputGraphics(ViewContextR context) override {m_stroker._Stroke(context);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/13
@@ -354,14 +355,6 @@ virtual BentleyStatus _ProcessCurveVector(CurveVectorCR curves, bool isFilled) o
     return SUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _OutputGraphics(ViewContextR context) override
-    {
-    m_stroker._StrokeForCache(context);
-    }
-
 public:
 
 /*---------------------------------------------------------------------------------**//**
@@ -372,7 +365,7 @@ CurveVectorPtr GetBoundary() {return m_boundary;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static CurveVectorPtr Process(IStrokeForCache& stroker)
+static CurveVectorPtr Process(GraphicStroker& stroker)
     {
     PatternBoundaryCollector  processor(stroker);
 
@@ -390,7 +383,7 @@ static CurveVectorPtr Process(IStrokeForCache& stroker)
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-ViewContext::ClipStencil::ClipStencil(IStrokeForCache& stroker) : m_stroker(stroker) {m_tmpQvElem = nullptr;}
+ViewContext::ClipStencil::ClipStencil(GraphicStroker& stroker) : m_stroker(stroker) {m_tmpQvElem = nullptr;}
 ViewContext::ClipStencil::~ClipStencil() {if (m_tmpQvElem) T_HOST.GetGraphicsAdmin()._DeleteQvElem(m_tmpQvElem);}
 #endif
 
@@ -1631,7 +1624,7 @@ void ViewContext::_DrawAreaPattern(ClipStencil& boundary)
 
     // Can greatly speed up fit calculation by just drawing boundary...
     if (DrawPurpose::FitView == GetDrawPurpose())
-        return boundary.GetStroker()._StrokeForCache(*this);
+        return boundary.GetStroker()._Stroke(*this);
 
     IPickGeom*  pickGeom = GetIPickGeom();
     GeomDetailP detail = pickGeom ? &pickGeom->_GetGeomDetail() : NULL;

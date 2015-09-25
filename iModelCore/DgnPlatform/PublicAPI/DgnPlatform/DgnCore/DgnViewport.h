@@ -9,17 +9,12 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnDb.h"
-#include "IViewOutput.h"
+#include "render.h"
 #include "ColorUtil.h"
 #include "ViewController.h"
 #include <BeSQLite/RTreeMatch.h>
 
-#if defined (DOCUMENTATION_GENERATOR)
-    // WIP: hack to get docs to come out right
-    namespace BentleyApi{ namespace Dgn{
-#else
-    BEGIN_BENTLEY_DGN_NAMESPACE
-#endif
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 /**  @addtogroup DgnViewGroup
 
@@ -431,7 +426,7 @@ protected:
     CameraInfo      m_camera;
     ViewFlags       m_rootViewFlags;            // view flags for root model
     ColorDef        m_backgroundColor;
-    Render::OutputP m_output;
+    Render::OutputPtr m_output;
     DMap4d          m_rootToView;
     DMap4d          m_rootToNpc;
     double          m_minLOD;                   // default level of detail filter size
@@ -452,8 +447,8 @@ protected:
     virtual void _SetNeedsHeal() {m_needsRefresh = true;}
     virtual void _SetNeedsRefresh() {m_needsRefresh = true;}
     virtual Render::CachedDrawP _GetICachedDraw() = 0;
-    virtual Render::ViewDrawP _GetIViewDraw() {return m_output;}
-    virtual Render::OutputP _GetIViewOutput() {return m_output;}
+    virtual Render::ViewDrawP _GetIViewDraw() {return m_output.get();}
+    virtual Render::OutputP _GetIViewOutput() {return m_output.get();}
     virtual Render::AntiAliasPref _WantAntiAliasLines() const {return Render::AntiAliasPref::Detect;}
     virtual Render::AntiAliasPref _WantAntiAliasText() const {return Render::AntiAliasPref::Detect;}
     virtual void _AdjustFencePts(RotMatrixCR viewRot, DPoint3dCR oldOrg, DPoint3dCR newOrg) const {}
@@ -470,10 +465,10 @@ protected:
     DGNPLATFORM_EXPORT virtual uint32_t _GetIndexedLinePattern(int index) const;
     DGNPLATFORM_EXPORT virtual void _GetViewCorners(DPoint3dR low, DPoint3dR high) const;
     DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromViewController();
-    DGNPLATFORM_EXPORT virtual ViewportStatus _Activate(Render::QvPaintOptions const&);
+    DGNPLATFORM_EXPORT virtual ViewportStatus _Activate(Render::PaintOptions const&);
     DGNPLATFORM_EXPORT virtual void _SetFrustumFromRootCorners(DPoint3dCP rootBox, double compressionFraction);
     DGNPLATFORM_EXPORT virtual void _SynchWithViewController(bool saveInUndo);
-    virtual DgnDisplayCoreTypes::DeviceContextP _GetDcForView() const = 0;
+    virtual Render::RenderDevice* _GetRenderDevice() const = 0;
     virtual uintptr_t _GetBackDropTextureId() {return 0;}
     DGNPLATFORM_EXPORT virtual ColorDef _GetWindowBgColor() const;
     virtual BentleyStatus _RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) = 0;
@@ -769,13 +764,13 @@ public:
     //! Determine whether this DgnViewport is currently active. Viewports become "active" after they have
     //! been initialized and connected to an output device.
     //! @return true if the DgnViewport is active.
-    DGNPLATFORM_EXPORT bool IsActive() const;
+    bool IsActive() const {return m_output.IsValid();}
 
     //! Determine whether this DgnViewport currently has a camera enabled. In this context, the "camera" is on
     //! if the WorldToView transform contains a perspective transformation.
     //! @remarks Applicable only to physical views.
     //! @return true if the camera is on.
-    DGNPLATFORM_EXPORT bool IsCameraOn() const;
+    bool IsCameraOn() const {return m_isCameraOn;}
 
     //! Determine whether the Grid display is currently enabled in this DgnViewport.
     //! @return true if the grid display is on.
@@ -783,12 +778,8 @@ public:
 
     //! Determine whether this viewport is a 3D view.
     //! @remarks Will be true only for a physical view.
-    DGNPLATFORM_EXPORT bool Is3dView() const;
+    bool Is3dView() const {return m_is3dView;}
 
-    //__PUBLISH_SECTION_END__
-    //! Determine whether the root model of this viewport is a Sheet model.
-    DGNPLATFORM_EXPORT bool IsSheetView() const;
-    //__PUBLISH_SECTION_START__
     Render::ViewDrawP GetIViewDraw() {return _GetIViewDraw();}
     Render::OutputP GetIViewOutput() {return _GetIViewOutput();}
 
@@ -796,11 +787,11 @@ public:
     Render::CachedDrawP GetICachedDraw() {return _GetICachedDraw();}
     /** @endcond */
 
-    //! Get a pointer to the ViewController associated with this DgnViewport.
-    DGNPLATFORM_EXPORT ViewControllerCR GetViewController() const;
+    //! Get the ViewController associated with this DgnViewport.
+    ViewControllerCR GetViewController() const {return *m_viewController;}
 
-    //! Get a pointer to the ViewController associated with this DgnViewport.
-    DGNPLATFORM_EXPORT ViewControllerR GetViewControllerR() const;
+    //! Get the ViewController associated with this DgnViewport.
+    ViewControllerR GetViewControllerR() const {return *m_viewController;}
 
     //! If this view is a physical view, get the physical view controller.
     PhysicalViewControllerCP GetPhysicalViewControllerCP() const {return GetViewController()._ToPhysicalView();}
@@ -894,9 +885,9 @@ public:
 struct NonVisibleViewport : DgnViewport
 {
 protected:
-    virtual DgnDisplayCoreTypes::DeviceContextP _GetDcForView() const override { return NULL; }
+    virtual Render::RenderDevice* _GetRenderDevice() const override {return nullptr;}
     virtual void _AllocateOutput() override {}
-    virtual Render::CachedDrawP _GetICachedDraw() override { return NULL; }
+    virtual Render::CachedDrawP _GetICachedDraw() override {return nullptr;}
     virtual void _SetICachedDraw(Render::CachedDrawP cachedOutput) override {}
     virtual ColorDef _GetWindowBgColor() const override {return ColorDef::Black();}
     virtual StatusInt _ConnectToOutput() override { return SUCCESS; }
@@ -919,8 +910,4 @@ public:
 
 /** @endGroup */
 
-#if defined (DOCUMENTATION_GENERATOR)
-    }}
-#else
-    END_BENTLEY_DGN_NAMESPACE
-#endif
+END_BENTLEY_DGN_NAMESPACE

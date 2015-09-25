@@ -78,13 +78,13 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 struct NullContext : ViewContext
 {
-DEFINE_T_SUPER(ViewContext)
+    DEFINE_T_SUPER(ViewContext)
 
 protected:
     bool    m_setupScan;
 
-    DGNPLATFORM_EXPORT virtual void _AllocateScanCriteria() override;
-    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _DrawCached(Render::IStrokeForCache&) override;
+    void _AllocateScanCriteria() override {if (m_setupScan) T_Super::_AllocateScanCriteria();}
+    virtual Render::GraphicPtr _DrawCached(Render::GraphicStroker& stroker) override {stroker._Stroke(*this); return nullptr;}
 
     virtual void _DrawSymbol(Render::IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight) override {}
     virtual bool _FilterRangeIntersection(GeometricElementCR element) override {if (m_setupScan) return T_Super::_FilterRangeIntersection(element); return false;}

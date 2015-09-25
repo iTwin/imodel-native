@@ -123,7 +123,7 @@ private:
     virtual void _DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3dCP range) override;
     virtual void _DrawStyledBSplineCurve3d(MSBsplineCurveCR) override;
     virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth) override;
-    virtual Render::GraphicPtr _DrawCached(Render::IStrokeForCache&) override;
+    virtual Render::GraphicPtr _DrawCached(Render::GraphicStroker&) override;
     virtual IPickGeomP _GetIPickGeom() override {return &m_output;}
 
     void InitNpcSubRect(DPoint3dCR pickPointWorld, double pickAperture, DgnViewportR viewport);
