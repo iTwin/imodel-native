@@ -47,6 +47,9 @@ always:
     !~@mkdir ${runDir}/Output
     !~@mkdir ${runDir}/Temp
     !~@mkdir ${LogDir}
+    %ifdef _unix
+        export LD_LIBRARY_PATH=$[@dir $(GTEST_EXE)]
+    %endif
     $(GTEST_EXE) --gtest_output="xml:$(LogDir)TestResults.xml" > $(LogDir)TestResults.txt
 
 %message .
