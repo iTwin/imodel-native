@@ -46,11 +46,12 @@ public:
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaPersistence::InsertECSchema(ECDbCR db, DbECSchemaInfo const& info)
+DbResult ECDbSchemaPersistence::InsertECSchema(ECDbCR db, DbECSchemaInfo const& info)
     {
-    BeSQLite::CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "INSERT INTO ec_Schema (Id, Name, DisplayLabel, Description, NamespacePrefix, VersionMajor, VersionMinor) VALUES(?, ?, ?, ?, ?, ?, ?)"))
-        return ERROR;
+    CachedStatementPtr stmt = nullptr;
+    DbResult stat = db.GetCachedStatement(stmt, "INSERT INTO ec_Schema(Id,Name,DisplayLabel,Description,NamespacePrefix,VersionMajor,VersionMinor) VALUES(?,?,?,?,?,?,?)");
+    if (BE_SQLITE_OK != stat)
+        return stat;
 
     if (info.ColsInsert & DbECSchemaInfo::COL_Id) stmt->BindInt64(1, info.m_ecSchemaId);
     if (info.ColsInsert & DbECSchemaInfo::COL_Name) stmt->BindText(2, info.m_name, Statement::MakeCopy::No);
@@ -60,7 +61,11 @@ BentleyStatus ECDbSchemaPersistence::InsertECSchema(ECDbCR db, DbECSchemaInfo co
     if (info.ColsInsert & DbECSchemaInfo::COL_VersionMajor) stmt->BindInt(6, info.m_versionMajor);
     if (info.ColsInsert & DbECSchemaInfo::COL_VersionMinor) stmt->BindInt(7, info.m_versionMinor);
 
-    return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
+    stat = stmt->Step();
+    if (BE_SQLITE_DONE != stat)
+        return stat;
+
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------------

@@ -751,7 +751,7 @@ bool SchemaNamespacePrefixRule::_ValidateSchemas(bvector<ECSchemaP> const& schem
     {
     bool valid = true;
     Utf8StringCR prefix = schema.GetNamespacePrefix().c_str();
-    if (!prefix.empty() && !ECNameValidation::IsValidName(prefix.c_str()))
+    if (prefix.empty() || !ECNameValidation::IsValidName(prefix.c_str()))
         {
         m_error->AddInvalidPrefix(schema);
         valid = false;
@@ -791,7 +791,7 @@ Utf8String SchemaNamespacePrefixRule::Error::_ToString() const
             error.append("; ");
 
         Utf8String descr;
-        descr.Sprintf("'%': Prefix '%s' is not a valid EC name", schema->GetFullSchemaName().c_str(), schema->GetNamespacePrefix().c_str());
+        descr.Sprintf("'%': Prefix '%s' is empty or not a valid EC name", schema->GetFullSchemaName().c_str(), schema->GetNamespacePrefix().c_str());
         error.append(descr);
         isFirstItem = false;
         }

@@ -305,13 +305,7 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
 BentleyStatus ECDbSchemaManager::ImportECSchema (ECSchemaCR ecSchema, bool addToReaderCache) const
     {
     if (SUCCESS != m_ecImporter->Import (ecSchema))
-        {
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                                            "Failed to import ECSchema '%s'. Please see log for details.",
-                                            Utf8String (ecSchema.GetFullSchemaName ()).c_str ());
-
         return ERROR;
-        }
 
     if (addToReaderCache)
         m_ecReader->AddECSchemaToCache (ecSchema);
@@ -347,7 +341,7 @@ BentleyStatus ECDbSchemaManager::UpdateECSchema (ECDiffPtr& diff, ECSchemaCR ecS
         {
         Utf8String reason;
         reason.Sprintf ("Namespace prefixes differ: New prefix: %s - existing prefix : %s.",
-            Utf8String (ecSchema.GetNamespacePrefix ()).c_str (), Utf8String (existingSchema->GetNamespacePrefix ()).c_str ());
+            ecSchema.GetNamespacePrefix ().c_str (), existingSchema->GetNamespacePrefix ().c_str ());
 
         ReportUpdateError (ecSchema, *existingSchema, reason.c_str ());
         return ERROR;

@@ -321,7 +321,7 @@ struct ECDbSchemaPersistence
         typedef ECSchemaKeyList*          ECSchemaKeyListP;
 
         //Insert new item
-        static  BentleyStatus InsertECSchema(ECDbCR, DbECSchemaInfo const&);
+        static  DbResult InsertECSchema(ECDbCR, DbECSchemaInfo const&);
         static  BentleyStatus InsertECClass(ECDbCR, DbECClassInfo const&);
         static  BentleyStatus InsertBaseClass(ECDbCR, DbBaseClassInfo const&);
         static  BentleyStatus InsertECProperty(ECDbCR, DbECPropertyInfo const&);

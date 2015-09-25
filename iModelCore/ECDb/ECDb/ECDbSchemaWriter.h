@@ -19,11 +19,10 @@ struct ECDbSchemaWriter : RefCountedBase
 private:
     ECDbR m_ecdb;
     BeMutex m_mutex;
-private:
+
     explicit ECDbSchemaWriter(ECDbR ecdb) : m_ecdb(ecdb) {}
 
-    bool EnsureNamespacePrefixIsUnique(ECSchemaCR);
-    BentleyStatus CreateECSchemaEntry(ECSchemaCR, ECSchemaId);
+    DbResult CreateECSchemaEntry(ECSchemaCR, ECSchemaId);
     BentleyStatus CreateECClassEntry(ECClassCR, ECClassId);
     BentleyStatus CreateBaseClassEntry(ECClassId ecClassId, ECClassCR baseClass, int index);
     BentleyStatus CreateECPropertyEntry(ECPropertyCR ecProperty, ECPropertyId ecPropertyId, ECClassId ecClassId, int32_t index);

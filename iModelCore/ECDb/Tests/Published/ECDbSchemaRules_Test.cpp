@@ -101,6 +101,7 @@ TEST_F(SchemaImportTestFixture, ECDbSchemaRules_SchemaNamespacePrefix)
     {
     ECDbTestProject::Initialize();
 
+    {
     TestItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='123' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                       "  <ECClass typeName='TestClass' >"
                       "    <ECProperty propertyName='TestProperty' typeName='string' />"
@@ -108,6 +109,27 @@ TEST_F(SchemaImportTestFixture, ECDbSchemaRules_SchemaNamespacePrefix)
                       "</ECSchema>",
                       false, "Namespace prefix has to be an ECName.");
     AssertSchemaImport(testItem, "ecdbschemarules.ecdb");
+    }
+
+    {
+    TestItem testItem("<ECSchema schemaName='TestSchema' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                      "  <ECClass typeName='TestClass' >"
+                      "    <ECProperty propertyName='TestProperty' typeName='string' />"
+                      "  </ECClass>"
+                      "</ECSchema>",
+                      false, "Namespace prefix must not be unset.");
+    AssertSchemaImport(testItem, "ecdbschemarules.ecdb");
+    }
+
+    {
+    TestItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                      "  <ECClass typeName='TestClass' >"
+                      "    <ECProperty propertyName='TestProperty' typeName='string' />"
+                      "  </ECClass>"
+                      "</ECSchema>",
+                      false, "Namespace prefix must not be empty.");
+    AssertSchemaImport(testItem, "ecdbschemarules.ecdb");
+    }
 
     {
     TestItem testItem({"<ECSchema schemaName='Schema1' nameSpacePrefix='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -120,7 +142,7 @@ TEST_F(SchemaImportTestFixture, ECDbSchemaRules_SchemaNamespacePrefix)
                         "    <ECProperty propertyName='TestProperty' typeName='string' />"
                         "  </ECClass>"
                         "</ECSchema>"}, 
-                       true, nullptr /*"Two schemas with same namespace prefix is not supported."*/);
+                       false, "Two schemas with same namespace prefix is not supported.");
 
     ECDb ecdb;
     bool asserted = false;
@@ -141,7 +163,7 @@ TEST_F(SchemaImportTestFixture, ECDbSchemaRules_SchemaNamespacePrefix)
                                   "    <ECProperty propertyName='TestProperty' typeName='string' />"
                                   "  </ECClass>"
                                   "</ECSchema>",
-                                  true, nullptr /*"Two schemas with same namespace prefix is not supported."*/);
+                                  false, "Two schemas with same namespace prefix is not supported.");
 
     ECDb ecdb;
     bool asserted = false;
