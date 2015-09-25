@@ -86,7 +86,7 @@
         <SubPart PartName="CrawlerLibUnitTests"/>
         <SubPart PartName="CrawlerLibExample"/>
         <!--<SubPart PartName="RealityCrawler"/>-->
-        <SubPart PartName="BeGTestCommon"       PartFile="BeGTest"      Repository="BeGTest" />
+        <!--<SubPart PartName="BeGTestCommon"       PartFile="BeGTest"      Repository="BeGTest" />-->
     </Part>
 	
     <Part Name="RealityDb" BentleyBuildMakeFile="RealityDb\RealityDb.mke">
