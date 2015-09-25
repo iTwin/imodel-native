@@ -25,7 +25,6 @@ baseDir             = $(_MakeFilePath)
 o                   = $(OutputRootDir)build/BeTestWinRT/
 tmp                 = $(o)tmp/
 projectDir          = $(o)Project/
-unitTestsDir        = $(OutputRootDir)build/UnitTests/
 
 collectionProduct = $(OutputRootDir)../Product/${TEST_COLLECTION_PRODUCT}/
 collectionAssetsDir = $(collectionProduct)Assets/
@@ -45,6 +44,16 @@ collectionTestObjectsDir = $(collectionProduct)Objects/
         !~@putenv PYTHONPATH=$(PYTHONPATH)$(bsicommon_ospathsep)$(SrcBsiCommon)PublicSDK
 %endif
 
+%ifndef TEST_FRAMEWORK_SQLANG
+    TEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3
+%endif
+
+always:
+    !~@mkdir $(projectDir)gensrc
+    > $(projectDir)gensrc/TEST_FRAMEWORK_SQLANG_DEF.h
+\#define TEST_FRAMEWORK_SQLANG L"$(TEST_FRAMEWORK_SQLANG)"
+    <
+
 #--------------------------------------------------------------------------------------
 # Copy the entire project structure (physical directories + symlinked files)
 # The VS project file will be modified (and we don't want to check that in) so make a hard copy for it
@@ -58,24 +67,46 @@ always:
     $(copyCmd) $(baseDir)VisualStudioProject/BeTestTest1/BeTestTest1.sln $(projectDir)BeTestTest1.sln
     
 #--------------------------------------------------------------------------------------
-# Deliver unit test source files
+# CppUnit wrappers
+#
+#   GenerateCppUnitSource.py finds the unit tests that are linked into a known directory.
+#   For each, it generates a .cpp file that defines OCUnit test case methods that call the run_TEST_... functions that invoke the unit tests.
+#   Make this depend on the *UnitTests.list.h files - these change when a unit test is added or removed
 #--------------------------------------------------------------------------------------
-%include GenerateCppUnitSource.mki
+$(tmp)GenerateCppUnitSource.mki : $[@wildcard $(collectionTestObjectsDir)*UnitTests.list.h] $(baseDir)CppUnit.cpp.template $(_MakeFileSpec)
+    $(msg)
+    !@$(baseDir)GenerateCppUnitSource.py $(collectionTestObjectsDir) $(baseDir)CppUnit.cpp.template > $@
+    ~time
+
+%iffile $(tmp)GenerateCppUnitSource.mki
+    %include $(tmp)GenerateCppUnitSource.mki
+
+always:
+    !-$(deleteCmd) $(tmp)GenerateCppUnitSource.mki
+%endif
 
 always:
     !~@mkdir $(tmp)
 
 #--------------------------------------------------------------------------------------
+# Update the .vcxproj file to reference all generated source files as compilables
+#--------------------------------------------------------------------------------------
+gensrc = $(o)Project/source/
+
+always:
+    >$(tmp)sourceFiles.list
+    $[@wildcard $(gensrc)*.cpp]
+    <
+    $(baseDir)AddSourceFileReferencesToVSProject.py $(projectDir)BeTestTest1.vcxproj $(tmp)sourceFiles.list
+
+#--------------------------------------------------------------------------------------
 # Update the .vcxproj file to reference all assets and put them to project dir
 #--------------------------------------------------------------------------------------
-$(tmp)deliverables.list : $(_assets)
-    $(msg)
-    >$@
+always:
+    >$(tmp)deliverables.list
     $[@subst $(collectionAssetsDir) "" $[@wildcard $(collectionAssetsDir)*]]
     $[@subst $(collectionAssembliesDir) "" $[@wildcard $(collectionAssembliesDir)*]]
     <
-
-always:
     $(baseDir)AddAssetReferencesToVSProject.py $(projectDir)BeTestTest1.vcxproj $(tmp)deliverables.list
     CopyWithSymlinks.py $(collectionAssetsDir) $(projectDir)
     CopyWithSymlinks.py $(collectionAssembliesDir) $(projectDir)
@@ -87,18 +118,17 @@ unitTestObjs = $[@wildcard $(collectionTestObjectsDir)*$(oext)]
 
 DLM_NAME            = UnitTests
 DLM_DEST            = $(projectDir)
+DLM_EXPORT_DEST     = $(projectDir)
 DLM_EXTENSION       = $(shlibext)
 DLM_OBJECT_FILES    = $(unitTestObjs)
 DLM_EXPORT_OBJS     = $(unitTestObjs)
 DLM_OBJECT_DEST     = $(o)
-DLM_EXPORT_DEST     = $(o)
 DLM_SYMB_DEST       = $(o)
 DLM_MAP_DEST        = $(o)
 DLM_NO_SIGN         = 1
 DLM_NO_DEF          = 1
 DLM_NO_DLS          = 1
 DLM_NOENTRY         = 0
-DLM_CONTEXT_LOCATION = $(BuildContext)Delivery/
 LINKER_LIBRARIES   =   $[@wildcard $(collectionLibsDir)*$(libext)]
 
 %include dlmlink.mki
@@ -132,5 +162,5 @@ $(projectDir)VendorApi : $(BuildContext)VendorApi
 #--------------------------------------------------------------------------------------
 # Delivery
 #--------------------------------------------------------------------------------------
-$(BuildContext)Delivery/Project : $(o)Project
+$(BuildContext)Delivery/WinRTCppUnitTest/$(TEST_NAME)/Project : $(o)Project
     $(LinkFirstDepToFirstTargetAsDirectory)

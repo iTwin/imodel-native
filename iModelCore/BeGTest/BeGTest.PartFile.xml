@@ -206,7 +206,7 @@
     <!-- ProductDirectory used by all Android JUnit products -->
     <!-- *********************************************************************************************** -->
     <ProductDirectoryList ListName="iOSXCTestProduct">
-        <ProductDirectory Name="iOSXCTestProject" Path="project" LibType="static"/>
+        <ProductDirectory Name="iOSXCTestProject" Path="" LibType="static"/>
       
         <ProductDirectory Name="Libs" Deliver="false" LibType="static"/>
         <ProductDirectory Name="PublicAPI" Deliver="false" LibType="static"/>
@@ -227,7 +227,7 @@
   <!-- ProductDirectory used by all Android JUnit products -->
   <!-- *********************************************************************************************** -->
   <ProductDirectoryList ListName="WinRTCppUnitTestProduct">
-    <ProductDirectory Name="WinRTCppUnitTestProject" Path="project" LibType="static"/>
+    <ProductDirectory Name="WinRTCppUnitTestProject" Path="" LibType="static"/>
 
     <ProductDirectory Name="Libs" Deliver="false" LibType="static"/>
     <ProductDirectory Name="PublicAPI" Deliver="false" LibType="static"/>

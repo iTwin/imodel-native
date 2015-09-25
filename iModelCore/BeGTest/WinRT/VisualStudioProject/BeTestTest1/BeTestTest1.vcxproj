@@ -123,7 +123,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      <AdditionalIncludeDirectories>$(VCInstallDir)UnitTest\include;%(AdditionalIncludeDirectories);$(ProjectDir)\PublicApi;$(ProjectDir)\VendorApi</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCInstallDir)UnitTest\include;%(AdditionalIncludeDirectories);$(ProjectDir)\PublicApi;$(ProjectDir)\VendorApi;$(ProjectDir)\gensrc</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDLL;_UNICODE;UNICODE;WINAPI_FAMILY=WINAPI_FAMILY_APP;BENTLEY_WINRT;CREATE_STATIC_LIBRARIES</PreprocessorDefinitions>
       <UseFullPaths>true</UseFullPaths>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -251,29 +251,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BeTestHost.cpp" />
-    <ClCompile Include="source\BackDoorECDbUnitTests.cpp" />
-    <ClCompile Include="source\BackDoorDgnProjectUnitTests.cpp" />
-    <ClCompile Include="source\BackDoorMobileDgnUnitTests.cpp" />
-    <ClCompile Include="source\NonPublishedBentleyUnitTests.cpp" />
-    <ClCompile Include="source\NonPublishedBeSQLiteUnitTests.cpp" />
-    <ClCompile Include="source\NonPublishedECDbUnitTests.cpp" />
-    <ClCompile Include="source\NonPublishedDgnProjectUnitTests.cpp" />
-    <ClCompile Include="source\NonPublishedECObjectsUnitTests.cpp" />
-    <ClCompile Include="source\NonPublishedMobileDgnUnitTests.cpp" />
-    <ClCompile Include="source\NonPublishedScenarioECObjectsUnitTests.cpp" />
-    <ClCompile Include="source\PerformanceECDbUnitTests.cpp" />
-    <ClCompile Include="source\PerformanceDgnProjectUnitTests.cpp" />
-    <ClCompile Include="source\PerformanceECObjectsUnitTests.cpp" />
-    <ClCompile Include="source\PublishedBentleyUnitTests.cpp" />
-    <ClCompile Include="source\PublishedBeSQLiteUnitTests.cpp" />
-    <ClCompile Include="source\PublishedECDbUnitTests.cpp" />
-    <ClCompile Include="source\PublishedDgnProjectUnitTests.cpp" />
-    <ClCompile Include="source\PublishedECObjectsUnitTests.cpp" />
-    <ClCompile Include="source\PublishedGeomLibsUnitTests.cpp" />
-    <ClCompile Include="source\PublishedMobileDgnUnitTests.cpp" />
-    <ClCompile Include="source\PublishedWSClientUnitTests.cpp" />
-    <ClCompile Include="source\TestFixtureECObjectsUnitTests.cpp" />
     <ClCompile Include="unittest1.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    __GENERATED_SOURCE_FILES__
   </ItemGroup>
   <ItemGroup>
     <SDKReference Include="CppUnitTestFramework, Version=11.0" />

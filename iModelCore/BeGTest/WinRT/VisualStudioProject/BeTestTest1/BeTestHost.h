@@ -27,6 +27,7 @@ struct BeTestHost : RefCounted<BeTest::Host>
     virtual void  _GetOutputRoot (BeFileName& path) override;
     virtual void  _GetTempDir (BeFileName& path) override;
     virtual void* _InvokeP (char const*, void*) override;
+    virtual void  _GetFrameworkSqlangFiles(BeFileName& path) override;
 
     static RefCountedPtr<BeTestHost> Create (wchar_t const* home);
     };

@@ -1,21 +1,21 @@
 import sys,re
 
-def getAssetsXml (assetsFilePath):
-    file = open (assetsFilePath, 'r')
+def getCppsXml (sourceFilesFilePath):
+    file = open (sourceFilesFilePath, 'r')
     lines = file.readlines ()
     file.close ()
     
     xml = ''
     for line in lines:
-        assets = line.split ()
-        for asset in assets:
-            xml = xml + '<None Include="' + asset + '"><DeploymentContent>true</DeploymentContent></None>\n'
+        sourceFiles = line.split ()
+        for sourceFile in sourceFiles:
+            xml = xml + '<ClCompile Include="' + sourceFile + '" />\n'
     return xml
 
 if __name__ == '__main__':
     project = sys.argv[1]
-    toMatch  = '__ASSETS__'
-    replacement = getAssetsXml (sys.argv[2])
+    toMatch  = '__GENERATED_SOURCE_FILES__'
+    replacement = getCppsXml (sys.argv[2])
 
     oFile = open (project, 'r')
     lines = oFile.readlines ()
