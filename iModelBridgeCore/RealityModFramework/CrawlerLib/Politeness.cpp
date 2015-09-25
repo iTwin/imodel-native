@@ -18,10 +18,12 @@ using namespace std;
 Politeness::Politeness(IRobotsTxtDownloader* downloader)
     : m_UserAgent(L"*")
     {
+    BeAssert(downloader != NULL);
+
     m_pDownloader = downloader;
     m_RespectRobotsTxt = false;
     m_RespectRobotsTxtIfDisallowRoot = true;
-    m_MaxCrawlDelay = (numeric_limits<uint32_t>::max)();
+    m_MaxCrawlDelayInSeconds = (numeric_limits<uint32_t>::max)();
     }
 
 //---------------------------------------------------------------------------------------
@@ -37,6 +39,8 @@ Politeness::~Politeness()
 //+---------------+---------------+---------------+---------------+---------------+------
 bool Politeness::CanDownloadUrl(UrlPtr const& url)
     {
+    BeAssert(url != NULL);
+
     if(!m_RespectRobotsTxt)
         return true;
     else
@@ -56,6 +60,9 @@ bool Politeness::CanDownloadUrl(UrlPtr const& url)
 //+---------------+---------------+---------------+---------------+---------------+------
 bool Politeness::IsContentDisallowUrl(RobotsTxtContentPtr const& content, UrlPtr const& url) const
     {
+    BeAssert(content != NULL);
+    BeAssert(url != NULL);
+
     if(content->IsRootDisallowed(m_UserAgent) && !m_RespectRobotsTxtIfDisallowRoot)
         return false;
 
@@ -67,6 +74,8 @@ bool Politeness::IsContentDisallowUrl(RobotsTxtContentPtr const& content, UrlPtr
 //+---------------+---------------+---------------+---------------+---------------+------
 void Politeness::DownloadRobotsTxt(UrlPtr const& url)
     {
+    BeAssert(url != NULL);
+
     RobotsTxtContentPtr content = m_pDownloader->DownloadRobotsTxt(url);
     m_RobotsTxtFilesPerDomain.emplace(url->GetDomainName(), content);
     }
@@ -76,6 +85,8 @@ void Politeness::DownloadRobotsTxt(UrlPtr const& url)
 //+---------------+---------------+---------------+---------------+---------------+------
 uint32_t Politeness::GetCrawlDelay(UrlPtr const& url)
     {
+    BeAssert(url != NULL);
+
     if(m_RespectRobotsTxt)
         {
         auto iterator = m_RobotsTxtFilesPerDomain.find(url->GetDomainName());
@@ -85,7 +96,7 @@ uint32_t Politeness::GetCrawlDelay(UrlPtr const& url)
             iterator = m_RobotsTxtFilesPerDomain.find(url->GetDomainName());
             }
         RobotsTxtContentPtr content = iterator->second;
-        return (std::min)(m_MaxCrawlDelay, content->GetCrawlDelay(m_UserAgent));
+        return (std::min)(m_MaxCrawlDelayInSeconds, content->GetCrawlDelay(m_UserAgent));
         }
     return 0;
     }

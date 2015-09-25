@@ -23,16 +23,27 @@ BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 
 //=======================================================================================
 //! @bsiclass
+// This interface class defines the methods required for a Robot text file downloader.
+// Robot.txt files are files that can be located at the root of a web domain that
+// indicates the rules to be followed when this web site is accessed by a robot
+// process instead of by human operator.
 //=======================================================================================
 class IRobotsTxtDownloader
     {
     public:
     CRAWLERLIB_EXPORT virtual ~IRobotsTxtDownloader() { }
+
+    //=======================================================================================
+    // This method extracts the robot.txt file from the web domain indicated by the URL
+    // provided.
+    //=======================================================================================
     virtual RobotsTxtContentPtr DownloadRobotsTxt(UrlPtr const& pi_Url) = 0;
     };
 
 //=======================================================================================
 //! @bsiclass
+// Concrete Robot text downloader that implements the IRobotsTxtDownloader interface.
+// This implementation makes use of CURL to download the file.
 //=======================================================================================
 class RobotsTxtDownloader : public IRobotsTxtDownloader
     {
@@ -40,6 +51,11 @@ class RobotsTxtDownloader : public IRobotsTxtDownloader
     CRAWLERLIB_EXPORT RobotsTxtDownloader();
     CRAWLERLIB_EXPORT virtual ~RobotsTxtDownloader();
 
+    //=======================================================================================
+    // Downloads the content of the robot.txt file.
+    // The url provided must only contain the domain part eg. http:\\www.bentley.com
+    // The url provided may not be null.
+    //=======================================================================================
     CRAWLERLIB_EXPORT RobotsTxtContentPtr DownloadRobotsTxt(UrlPtr const& pi_Url) override;
 
     private:

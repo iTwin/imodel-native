@@ -13,6 +13,8 @@ BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 
 //=======================================================================================
 //! @bsiclass
+// Simple object to represent a download job definition.
+// A job contans an Url and a crawl delay.
 //=======================================================================================
 struct DownloadJob : public RefCountedBase
     {

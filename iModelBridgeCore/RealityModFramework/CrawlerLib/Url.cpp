@@ -22,6 +22,9 @@ const std::wregex Url::s_RelativeUrlWithDotRegex = wregex(L"^.(/[\\S]+)$");
 Url::Url(WString const& url, UrlPtr const& parent)
     : RefCountedBase()
     {
+    // A parent must always be provided when this constructor is used.
+    BeAssert(parent != NULL);
+
     wcmatch match;
     if(regex_match(url.c_str(), match, s_UrlRegex))
         {

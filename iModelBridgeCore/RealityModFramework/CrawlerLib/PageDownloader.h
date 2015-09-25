@@ -27,6 +27,9 @@ BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 
 //=======================================================================================
 //! @bsiclass
+// Interface for a page downloader. The page downloader downloads a web page as described
+// by a download job. The page downloader contains various setting that control its operation
+// such as timeout delay, SSL validation and so on.
 //=======================================================================================
 class IPageDownloader
     {
@@ -43,11 +46,19 @@ class IPageDownloader
     virtual void SetListOfValidContentType(bvector<WString> const& types) = 0;
     virtual void SetParseLinksRelNoFollow(bool parse) = 0;
     virtual void SetParsePagesWithNoFollowMetaTag(bool parse) = 0;
+
+    //=======================================================================================
+    // The AbortDownload can be called by another thread to Abort a download process.
+    // Implementation of the behavior is optional if the implementation used does not permit it.
+    //=======================================================================================
     virtual void AbortDownload() = 0;
     };
 
 //=======================================================================================
 //! @bsiclass
+// Concrete basic implementation of an IPageDownloader. This page downloader based
+// on CURL download the page described in the download job provided at DownloadPage().
+// Various settings are taken into account. Refer to IPageDownloader for details.
 //=======================================================================================
 class PageDownloader : public IPageDownloader
     {

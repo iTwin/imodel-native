@@ -42,6 +42,8 @@ PageParser::PageParser()
 //+---------------+---------------+---------------+---------------+---------------+------
 PageContentPtr PageParser::ParsePage(WString const& text, UrlPtr const& url) const
     {
+    BeAssert(url != NULL);
+
     PageContentPtr content = new PageContent(*url, text);
 
     AddLinksFromText(text, url, content);
@@ -54,6 +56,9 @@ PageContentPtr PageParser::ParsePage(WString const& text, UrlPtr const& url) con
 //+---------------+---------------+---------------+---------------+---------------+------
 void PageParser::AddLinksFromText(WString const& text, UrlPtr const& url, PageContentPtr content) const
     {
+    BeAssert(content != NULL);
+    BeAssert(url != NULL);
+
     if(!m_ParsePagesWithNoFollowMetaTag && regex_search(text.c_str(), PageParser::s_NoFollowMetaTagRegex))
         return;
 
@@ -78,6 +83,8 @@ void PageParser::AddLinksFromText(WString const& text, UrlPtr const& url, PageCo
 
 PageContentPtr PageParser::GetEmptyPageContent(UrlPtr const& url) const
     {
+    BeAssert(url != NULL);
+
     PageContentPtr content = new PageContent(*url, L"");
 
     return content;

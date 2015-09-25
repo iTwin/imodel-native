@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include <CrawlerLib/CrawlerFactory.h>
+#include <CrawlerLib/Crawler.h>
 
 
 USING_NAMESPACE_BENTLEY_CRAWLERLIB
@@ -19,13 +19,12 @@ class CrawlerLibClient : ICrawlerObserver
     public:
     CrawlerLibClient()
         {
-        //Use the CrawlerFactory to easily build a crawler. You are responsible of deleting it.
-        crawler = CrawlerFactory::CreateCrawler(25/*8 simultaneous downloads maximum by default*/);
+        //Use the Create() static method to create a crawler.
+        crawler = Crawler::Create(25/*8 simultaneous downloads maximum by default*/);
         }
 
     virtual ~CrawlerLibClient()
         {
-        delete crawler;
         }
 
     //Callback method provided by the ICrawlerObserver interface
@@ -90,7 +89,7 @@ class CrawlerLibClient : ICrawlerObserver
         }
 
     private:
-    Crawler* crawler;
+    CrawlerPtr crawler;
     };
 
 

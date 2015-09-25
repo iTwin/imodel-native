@@ -25,13 +25,17 @@ BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 class UrlQueue
     {
     public:
+    //=======================================================================================
+    // A valid IPoliteness object must be provided. The UrlQueue takes ownership of the 
+    // politeness object and is responsible of destroying it.
+    //=======================================================================================
     CRAWLERLIB_EXPORT UrlQueue(IPoliteness* politeness);
     CRAWLERLIB_EXPORT virtual ~UrlQueue();
 
     CRAWLERLIB_EXPORT virtual size_t NumberOfUrls() const;
 
     CRAWLERLIB_EXPORT size_t GetMaxNumberOfVisitedUrls();
-    CRAWLERLIB_EXPORT virtual void SetMaxNumberOfVisitedUrls(size_t n); //Those method are virtual so they can be mocked/spy in tests
+    CRAWLERLIB_EXPORT virtual void SetMaxNumberOfVisitedUrls(size_t n); //Those methods are virtual so they can be mocked/spy in tests
     CRAWLERLIB_EXPORT virtual void SetAcceptExternalLinks(bool accept);
     CRAWLERLIB_EXPORT virtual void SetAcceptLinksInExternalLinks(bool accept);
     CRAWLERLIB_EXPORT virtual void SetMaximumCrawlDepth(uint32_t depth);
@@ -40,7 +44,15 @@ class UrlQueue
     CRAWLERLIB_EXPORT virtual void SetRobotsTxtUserAgent(WString const& userAgent);
     CRAWLERLIB_EXPORT virtual void SetMaxRobotTxtCrawlDelay(uint32_t delay);
 
+    //=======================================================================================
+    // Add as url to the queue. The url cannot be null.
+    //=======================================================================================
     CRAWLERLIB_EXPORT virtual void AddUrl(UrlPtr const& url);
+
+    
+    //=======================================================================================
+    // Returns the next download job based on the next url in the queue to be processed.
+    //=======================================================================================
     CRAWLERLIB_EXPORT virtual DownloadJobPtr NextDownloadJob();
 
     private:
