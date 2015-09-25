@@ -32,6 +32,7 @@ TEST_F(ChangeManagerTests, SetSyncActive_SchemaUpdatedAndCacheStateReset_KeepsSy
     auto cache = GetTestCache();
     // Act
     cache->GetChangeManager().SetSyncActive(true);
+    EXPECT_TRUE(cache->GetChangeManager().IsSyncActive());
     auto status = cache->UpdateSchemas({GetTestSchema()});
     // Assert
     EXPECT_EQ(SUCCESS, status);
