@@ -162,13 +162,27 @@ static void initLogging (char const* argv0)
 +---------------+---------------+---------------+---------------+---------------+------*/
 class BeGTestListener : public ::testing::EmptyTestEventListener
     {
+    Utf8String m_currTestCaseName;
+    Utf8String m_currTestName;
+
     virtual void OnTestStart (const ::testing::TestInfo& test_info) override
         {
+        m_currTestCaseName = test_info.test_case_name();
+        m_currTestName = test_info.name();
+
         // Zip the temp directory at the start of every test to simulate the transitory nature of temp on some platforms.
         BeFileName tempDir;
         BeTest::GetHost().GetTempDir (tempDir);
         BeFileName::EmptyAndRemoveDirectory (tempDir.c_str());
         BeFileName::CreateNewDirectory (tempDir.c_str());
+        }
+
+    // Called after a failed assertion or a SUCCEED() invocation.
+    virtual void OnTestPartResult(const ::testing::TestPartResult& test_part_result) 
+        {
+        if (test_part_result.failed())
+            fprintf(stderr, "Test %s.%s failed at %s:%d: %s\n", m_currTestCaseName.c_str(), m_currTestName.c_str(), 
+                test_part_result.file_name(), test_part_result.line_number(), test_part_result.summary());
         }
 
     virtual void OnTestProgramEnd(const ::testing::UnitTest& unit_test) override
