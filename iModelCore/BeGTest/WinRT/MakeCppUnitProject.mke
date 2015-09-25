@@ -1,0 +1,136 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: WinRT/MakeCppUnitProject.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%ifndef TEST_NAME
+    %error Must define TEST_NAME as the name of the .exe to create
+%endif
+
+%ifndef TEST_COLLECTION_PRODUCT
+    %error TEST_COLLECTION_PRODUCT must point to the product that contains the unit tests and their supporting libraries and assets
+%endif
+
+# Optional. TEST_FRAMEWORK_SQLANG - Full filepath of .db3 file to return as the "framework" sqlang file
+
+%include mdl.mki
+
+%if $(TARGET_PLATFORM)!="WinRT"
+    %error This makefile should be used only when TARGET_PLATFORM is WinRT
+%endif
+
+baseDir             = $(_MakeFilePath)
+o                   = $(OutputRootDir)build/BeTestWinRT/
+tmp                 = $(o)tmp/
+projectDir          = $(o)Project/
+unitTestsDir        = $(OutputRootDir)build/UnitTests/
+
+collectionProduct = $(OutputRootDir)../Product/${TEST_COLLECTION_PRODUCT}/
+collectionAssetsDir = $(collectionProduct)Assets/
+collectionAssembliesDir = $(collectionProduct)Assemblies/
+collectionLibsDir = $(collectionProduct)Libs/
+collectionTestObjectsDir = $(collectionProduct)Objects/
+
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    always:
+        $(rmdirRecursiveCmd) $(o)
+
+    %return 
+%else
+    always:
+        ~mkdir $(o)
+        ~mkdir $(tmp)
+        !~@putenv PYTHONPATH=$(PYTHONPATH)$(bsicommon_ospathsep)$(SrcBsiCommon)PublicSDK
+%endif
+
+#--------------------------------------------------------------------------------------
+# Copy the entire project structure (physical directories + symlinked files)
+# The VS project file will be modified (and we don't want to check that in) so make a hard copy for it
+# Also create a hard copy of the .sln so that there is no confusion over which vcxproj to open
+#--------------------------------------------------------------------------------------
+always:
+    CopyWithSymlinks.py $(baseDir)VisualStudioProject/BeTestTest1 $(projectDir)
+    !-$(deleteCmd) $(projectDir)BeTestTest1.vcxproj
+    $(copyCmd) $(baseDir)VisualStudioProject/BeTestTest1/BeTestTest1.vcxproj $(projectDir)BeTestTest1.vcxproj
+    !-$(deleteCmd) $(projectDir)BeTestTest1.sln
+    $(copyCmd) $(baseDir)VisualStudioProject/BeTestTest1/BeTestTest1.sln $(projectDir)BeTestTest1.sln
+    
+#--------------------------------------------------------------------------------------
+# Deliver unit test source files
+#--------------------------------------------------------------------------------------
+%include GenerateCppUnitSource.mki
+
+always:
+    !~@mkdir $(tmp)
+
+#--------------------------------------------------------------------------------------
+# Update the .vcxproj file to reference all assets and put them to project dir
+#--------------------------------------------------------------------------------------
+$(tmp)deliverables.list : $(_assets)
+    $(msg)
+    >$@
+    $[@subst $(collectionAssetsDir) "" $[@wildcard $(collectionAssetsDir)*]]
+    $[@subst $(collectionAssembliesDir) "" $[@wildcard $(collectionAssembliesDir)*]]
+    <
+
+always:
+    $(baseDir)AddAssetReferencesToVSProject.py $(projectDir)BeTestTest1.vcxproj $(tmp)deliverables.list
+    CopyWithSymlinks.py $(collectionAssetsDir) $(projectDir)
+    CopyWithSymlinks.py $(collectionAssembliesDir) $(projectDir)
+    
+#--------------------------------------------------------------------------------------
+# Deliver a single DLL that contains the unit tests themselves
+#--------------------------------------------------------------------------------------
+unitTestObjs = $[@wildcard $(collectionTestObjectsDir)*$(oext)]
+
+DLM_NAME            = UnitTests
+DLM_DEST            = $(projectDir)
+DLM_EXTENSION       = $(shlibext)
+DLM_OBJECT_FILES    = $(unitTestObjs)
+DLM_EXPORT_OBJS     = $(unitTestObjs)
+DLM_OBJECT_DEST     = $(o)
+DLM_EXPORT_DEST     = $(o)
+DLM_SYMB_DEST       = $(o)
+DLM_MAP_DEST        = $(o)
+DLM_NO_SIGN         = 1
+DLM_NO_DEF          = 1
+DLM_NO_DLS          = 1
+DLM_NOENTRY         = 0
+DLM_CONTEXT_LOCATION = $(BuildContext)Delivery/
+LINKER_LIBRARIES   =   $[@wildcard $(collectionLibsDir)*$(libext)]
+
+%include dlmlink.mki
+
+#--------------------------------------------------------------------------------------
+# VS will also need to link with BentleyG.dll (See BeTestHost.cpp). The DLL is delivered for use at run time as part of assets.
+# Put the .lib file in the project for use at build time.
+#--------------------------------------------------------------------------------------
+$(projectDir)Bentley.lib : $(BuildContext)SubParts/Libs/Bentley.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(projectDir)BentleyAllocator.lib : $(BuildContext)SubParts/Libs/BentleyAllocator.lib
+    $(LinkFirstDepToFirstTarget)
+
+#--------------------------------------------------------------------------------------
+# VS will also need to link with BeSQLiteG.dll (See BeTestHost.cpp). The DLL is delivered for use at run time as part of assets.
+# Put the .lib file in the project for use at build time.
+#--------------------------------------------------------------------------------------
+$(projectDir)BeSQLite.lib : $(BuildContext)SubParts/Libs/BeSQLite.lib
+    $(LinkFirstDepToFirstTarget)
+
+#--------------------------------------------------------------------------------------
+# Deliver header files that VS will need in order to compile the test wrappers
+#--------------------------------------------------------------------------------------
+$(projectDir)PublicApi : $(BuildContext)PublicApi
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(projectDir)VendorApi : $(BuildContext)VendorApi
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+#--------------------------------------------------------------------------------------
+# Delivery
+#--------------------------------------------------------------------------------------
+$(BuildContext)Delivery/Project : $(o)Project
+    $(LinkFirstDepToFirstTargetAsDirectory)

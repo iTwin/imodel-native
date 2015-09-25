@@ -1,0 +1,63 @@
+#undef BE_TEST_SETUP_JNI_WRAPPER
+#undef BE_TEST_TEARDOWN_JNI_WRAPPER
+#undef BE_TEST_RUNNER_JNI_WRAPPER
+#define BE_TEST_SETUP_JNI_WRAPPER(JTC)
+#define BE_TEST_TEARDOWN_JNI_WRAPPER(JTC)
+#define BE_TEST_RUNNER_JNI_WRAPPER(JTS,JTC)
+
+#undef  BE_TEST_SETUP
+#undef  BE_TEST_TEARDOWN
+#undef  BE_TEST_RUNNER
+
+// Declare the test case setup, teardown and test runner functions
+#define BE_TEST_SETUP(TC)     extern "C" EXPORT_ATTRIBUTE void setUpTestCase_##TC ();
+#define BE_TEST_TEARDOWN(TC)  extern "C" EXPORT_ATTRIBUTE void tearDownTestCase_##TC ();
+#define BE_TEST_RUNNER(TS,TC) extern "C" EXPORT_ATTRIBUTE int run_TEST_##TS##_##TC ();
+
+// Note: The makefile will set include path to point to the UnitTests.list.h that should be used
+#include <UnitTests.list.h>
+
+#undef  BE_TEST_SETUP
+#undef  BE_TEST_TEARDOWN
+#undef  BE_TEST_RUNNER
+
+#define BE_TEST_SETUP(TC)
+#define BE_TEST_RUNNER(TS,TC)
+#define BE_TEST_TEARDOWN(TC)
+
+namespace  BeTestWinRT
+{
+    namespace __REPO__
+    {
+        TEST_CLASS(__FIXTURE__)
+        {
+        public:
+            TEST_METHOD_INITIALIZE (SetUpTest) { doSetUpL10N (); }
+            TEST_METHOD_CLEANUP (TearDownTest) { doTearDownL10N (); }
+
+            #undef BE_TEST_SETUP
+            #define BE_TEST_SETUP(TC)       setUpTestCase_##TC ();
+            TEST_CLASS_INITIALIZE (SetUpTestCase)
+                {
+                doSetUp ();
+                #include <UnitTests.list.h>
+                }
+            #undef BE_TEST_SETUP
+            #define BE_TEST_SETUP(TC)
+            
+            #undef BE_TEST_TEARDOWN
+            #define BE_TEST_TEARDOWN(TC)    tearDownTestCase_##TC ();
+            TEST_CLASS_CLEANUP (TearDownTestCase) 
+                {
+                #include <UnitTests.list.h>
+                doTearDown ();
+                }
+            #undef  BE_TEST_TEARDOWN
+            #define BE_TEST_TEARDOWN(TC)
+
+            #undef BE_TEST_RUNNER
+            #define BE_TEST_RUNNER(TS,TC)   TEST_METHOD (TC) { Assert::IsTrue (0 == run_TEST_##TS##_##TC ()); }
+            #include <UnitTests.list.h>
+        };
+    }
+}

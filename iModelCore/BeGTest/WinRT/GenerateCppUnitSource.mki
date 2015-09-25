@@ -1,0 +1,27 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: WinRT/GenerateCppUnitSource.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------
+# CppUnit wrappers
+#
+#   GenerateCppUnitSource.py finds the unit tests that are linked into a known directory.
+#   For each, it generates a .cpp file that defines OCUnit test case methods that call the run_TEST_... functions that invoke the unit tests.
+#   Make this depend on the *UnitTests.list.h files - these change when a unit test is added or removed
+#--------------------------------------------------------------------------------------
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(tmp)GenerateCppUnitSource.mki : $[@wildcard $(unitTestsDir)*UnitTests.list.h] $(baseDir)CppUnit.cpp.template $(_MakeFileSpec)
+        $(msg)
+        !@$(baseDir)GenerateCppUnitSource.py $(unitTestsDir) $(baseDir)CppUnit.cpp.template > $@
+        ~time
+%endif
+
+%iffile $(tmp)GenerateCppUnitSource.mki
+    %include $(tmp)GenerateCppUnitSource.mki
+%endif
+
+always:
+    !-$(deleteCmd) $(tmp)GenerateCppUnitSource.mki

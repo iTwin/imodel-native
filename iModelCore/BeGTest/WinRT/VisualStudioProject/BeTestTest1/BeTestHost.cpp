@@ -1,0 +1,159 @@
+/*----------------------------------------------------------------------+
+|
+|     $Source: WinRT/VisualStudioProject/BeTestTest1/BeTestHost.cpp $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++----------------------------------------------------------------------*/
+#include "BeTestHost.h"
+#include <Bentley/BeFileName.h>
+#include <BeSQLite/L10N.h>
+#include <Windows.h>
+#include <Bentley/BeThread.h>
+#include <collection.h>
+#include <ppltasks.h>
+#include "CppUnitTest.h"
+
+USING_NAMESPACE_BENTLEY_SQLITE
+using namespace Microsoft::VisualStudio::CppUnitTestFramework;
+using namespace Windows::UI::Xaml;
+using namespace Windows::UI::Xaml::Controls;
+using namespace Windows::UI::Core;
+using namespace Windows::Foundation;
+using namespace Windows::System::Threading;
+using namespace Windows::ApplicationModel::Core;
+
+typedef void (*NativeSizeChangedEventHandler) (double width, double height);
+
+static unsigned _stdcall startNewThread (T_ThreadStart startAddr, void* arg)
+    {
+    auto workItemHandler = ref new WorkItemHandler ([=] (IAsyncAction^)
+        {
+        startAddr (arg);
+        }, Platform::CallbackContext::Any);
+    ThreadPool::RunAsync (workItemHandler);
+    return 1;
+    }
+
+void ExecuteOnUiThread (DispatchedHandler^ action)
+    {
+    HANDLE syncEvent = ::CreateEventEx (NULL, NULL, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS);
+    CoreApplication::MainView->CoreWindow->Dispatcher->RunAsync (CoreDispatcherPriority::Normal, ref new DispatchedHandler ([=] ()
+        {
+        action ();
+        ::SetEvent (syncEvent);
+        }));
+    ::WaitForSingleObjectEx (syncEvent, INFINITE, FALSE);
+    ::CloseHandle (syncEvent);
+    }
+
+BeTestHost::BeTestHost (wchar_t const* home)
+    {
+    m_home.SetName (Windows::ApplicationModel::Package::Current->InstalledLocation->Path->Data ());
+    m_home.AppendSeparator();
+
+    m_docs.SetName (Windows::ApplicationModel::Package::Current->InstalledLocation->Path->Data ());
+    m_docs.AppendToPath (L"BeTestDocuments");
+    m_docs.AppendSeparator();
+
+    m_output.SetName (Windows::Storage::ApplicationData::Current->LocalFolder->Path->Data ());
+    m_output.AppendSeparator();
+
+    m_temp.SetName (Windows::Storage::ApplicationData::Current->TemporaryFolder->Path->Data ());
+    m_temp.AppendSeparator();
+        
+    BeThreadUtilities::SetThreadStartHandler (startNewThread);
+    }
+
+void BeTestHost::_GetDocumentsRoot (BeFileName& path) 
+    {
+    path = m_docs;
+    }
+
+void BeTestHost::_GetDgnPlatformAssetsDirectory (BeFileName& path) 
+    {
+    path = m_home;
+    }
+
+void BeTestHost::_GetOutputRoot (BeFileName& path) 
+    {
+    path = m_output;
+    }
+    
+void BeTestHost::_GetTempDir (BeFileName& path) 
+    {
+    path = m_temp;
+    }
+
+void* BeTestHost::_InvokeP (char const* requestId, void* args)  
+    {
+    if (0 == strcmp (requestId, "getUiThreadDispatcher"))
+        {
+        Windows::UI::Core::CoreDispatcher^ dispatcher = nullptr;
+        ExecuteOnUiThread (ref new DispatchedHandler ([&] ()
+            {
+            dispatcher = Windows::UI::Core::CoreWindow::GetForCurrentThread ()->Dispatcher;
+            }));
+        BeAssert (nullptr != dispatcher);
+        return (void*) dispatcher;
+        }
+    else if (0 == strcmp (requestId, "getWindow"))
+        {
+        Window^ window = nullptr;
+        ExecuteOnUiThread (ref new DispatchedHandler ([&] ()
+            {
+            window = Window::Current;
+            }));    
+        BeAssert (nullptr != window);
+        return (void*) window;
+        }
+    else if (0 == strcmp (requestId, "getSwapChainPanel"))
+        {
+        HANDLE panelLoadedEvent = ::CreateEventEx (NULL, NULL, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS);
+        SwapChainPanel^ panel = nullptr;
+        ExecuteOnUiThread (ref new DispatchedHandler ([&] ()
+            {
+            panel = ref new SwapChainPanel ();
+            Window::Current->Content = panel;
+            Window::Current->Activate ();
+            EventRegistrationToken eventId = panel->Loaded += ref new Windows::UI::Xaml::RoutedEventHandler ([&] (Platform::Object^ sender, RoutedEventArgs^ e)
+                {
+                panel->Loaded -= eventId;
+                ::SetEvent (panelLoadedEvent);
+                });
+            }));
+        BeAssert (nullptr != panel);
+        ::WaitForSingleObjectEx (panelLoadedEvent, INFINITE, FALSE);
+        ::CloseHandle (panelLoadedEvent);
+        return (void*) panel;
+        }
+    else if (0 == strcmp (requestId, "destroySwapChainPanel"))
+        {
+        ExecuteOnUiThread (ref new DispatchedHandler ([&] ()
+            {
+            Window::Current->Content = nullptr;
+            }));
+        return NULL;
+        }
+    else if (0 == strcmp (requestId, "setSwapChainPanelResizeHandler"))
+        {
+        ExecuteOnUiThread (ref new DispatchedHandler ([&] ()
+            {
+            NativeSizeChangedEventHandler handler = (NativeSizeChangedEventHandler) args;
+            SwapChainPanel^ panel = (SwapChainPanel^) Window::Current->Content;
+            BeAssert (nullptr != panel);
+            panel->SizeChanged += ref new SizeChangedEventHandler ([=] (Platform::Object^ sender, SizeChangedEventArgs^ e)
+                {
+                handler (e->NewSize.Width, e->NewSize.Height);
+                });
+            handler (panel->ActualWidth, panel->ActualHeight);
+            }));
+        return NULL;
+        }
+    return NULL;
+    }
+
+RefCountedPtr<BeTestHost> BeTestHost::Create (wchar_t const* home) 
+    {
+    return new BeTestHost (home);
+    }

@@ -1,0 +1,42 @@
+#include <SDKDDKVer.h>
+#include "CppUnitTest.h"
+#define BETEST_NO_INCLUDE_BOOST_FOR_EACH
+#include <Bentley/BeTest.h>
+#include <Bentley/BeAssert.h>
+#include <Bentley/BeFileName.h>
+#include <Logging/bentleylogging.h>
+#include <BeSQLite/L10N.h>
+#include <stdlib.h>
+#include "BeTestHost.h"
+
+using namespace Microsoft::VisualStudio::CppUnitTestFramework;
+
+static void doSetUp ()
+    {
+    wchar_t const* home = L"E:\\out\\WinRTx86\\static\\BuildContexts\\BeTestWinRT\\SubParts\\GUnitTests";
+
+    BeTest::Initialize (*BeTestHost::Create (home));
+
+    NativeLogging::LoggingConfig::SetOption (CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_WARNING);
+    NativeLogging::LoggingConfig::ActivateProvider (NativeLogging::CONSOLE_LOGGING_PROVIDER);
+    NativeLogging::LoggingConfig::SetSeverity (L"Performance", NativeLogging::LOG_ERROR);
+    }
+
+static void doTearDown ()
+    {
+    BeTest::Uninitialize ();
+    }
+
+static void doSetUpL10N ()
+    {
+    BeFileName frameworkSqlang;
+    BeTest::GetHost().GetFrameworkSqlangFiles(frameworkSqlang);
+    // Some tests do not have language file. Skip L10N initialization because L10N assert will block the test.
+    if(frameworkSqlang.DoesPathExist())
+        BeSQLite::L10N::Initialize(frameworkSqlang);
+    }
+
+static void doTearDownL10N ()
+    {
+    BeSQLite::L10N::Shutdown ();
+    }

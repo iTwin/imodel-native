@@ -1,0 +1,263 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>171645f1-d309-4d3a-95b0-8fe28e7f13b1</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>14e04c5d-6d21-4707-ae7a-f4ac4001c634</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>3f78cf0c-c225-4a2e-bd01-86ea8dfe0e20</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Package">
+      <UniqueIdentifier>edf8072f-15f6-44bb-9296-37a1138fb69f</UniqueIdentifier>
+      <Extensions>appxmanifest;tile;settings</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BeTestHost.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="unittest1.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BeTestHost.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\BackDoorMobileDgnUnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\PublishedMobileDgnUnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\BackDoorECDbUnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\BackDoorDgnProjectUnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\NonPublishedBentleyUnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\NonPublishedECDbUnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\NonPublishedDgnProjectUnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\NonPublishedMobileDgnUnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\PerformanceECDbUnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\PerformanceDgnProjectUnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\PublishedBentleyUnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\PublishedECDbUnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\PublishedDgnProjectUnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\PublishedGeomLibsUnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\NonPublishedBeSQLiteUnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\NonPublishedECObjectsUnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\NonPublishedScenarioECObjectsUnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\PerformanceECObjectsUnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\PublishedBeSQLiteUnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\PublishedECObjectsUnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\PublishedWSClientUnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\TestFixtureECObjectsUnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Images\UnitTestLogo.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Images\UnitTestSmallLogo.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Images\UnitTestSplashScreen.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Images\UnitTestStoreLogo.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <AppxManifest Include="Package.appxmanifest">
+      <Filter>Package</Filter>
+    </AppxManifest>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BeTestTest1_TemporaryKey.pfx" />
+    <None Include="UnitTests.dll" />
+    <None Include="BeCasablanca.dll" />
+    <None Include="BeIcu4c.dll" />
+    <None Include="BeLibxml2.dll" />
+    <None Include="BentleyAllocator.dll" />
+    <None Include="BentleyG.dll" />
+    <None Include="BentleyG0504.MobileDgn.Win8.dll" />
+    <None Include="BentleyGeomG.dll" />
+    <None Include="BentleyGeomSerializationG.dll" />
+    <None Include="BeSQLiteECG.dll" />
+    <None Include="BeSQLiteG.dll" />
+    <None Include="BeTestDocuments" />
+    <None Include="BeTestDocuments\DgnDb" />
+    <None Include="BeXmlG.dll" />
+    <None Include="DgnPlatformG.dll" />
+    <None Include="DgnToolsG.dll" />
+    <None Include="DgnViewG.dll" />
+    <None Include="ECObjectsG.dll" />
+    <None Include="ECSchemas" />
+    <None Include="ECSchemas\Dgn" />
+    <None Include="ECSchemas\Dgn\Bentley_Markup.01.00.ecschema.xml" />
+    <None Include="ECSchemas\Dgn\Bentley_MarkupExtension.01.01.ecschema.xml" />
+    <None Include="ECSchemas\Dgn\dgn.01.01.ecschema.xml" />
+    <None Include="ECSchemas\Dgn\DgnMarkupSchema.01.00.ecschema.xml" />
+    <None Include="ECSchemas\ECDb" />
+    <None Include="ECSchemas\ECDb\ECDb_FileInfo.01.00.ecschema.xml" />
+    <None Include="ECSchemas\Standard" />
+    <None Include="ECSchemas\Standard\Bentley_Common_Classes.01.01.ecschema.xml" />
+    <None Include="ECSchemas\Standard\Bentley_ECSchemaMap.01.00.ecschema.xml" />
+    <None Include="ECSchemas\Standard\Bentley_Standard_Classes.01.00.ecschema.xml" />
+    <None Include="ECSchemas\Standard\Bentley_Standard_CustomAttributes.01.11.ecschema.xml" />
+    <None Include="ECSchemas\Standard\Dimension_Schema.01.00.ecschema.xml" />
+    <None Include="ECSchemas\Standard\EditorCustomAttributes.01.02.ecschema.xml" />
+    <None Include="ECSchemas\Standard\iip_mdb_customAttributes.01.00.ecschema.xml" />
+    <None Include="ECSchemas\Standard\KindOfQuantity_Schema.01.01.ecschema.xml" />
+    <None Include="ECSchemas\Standard\rdl_customAttributes.01.00.ecschema.xml" />
+    <None Include="ECSchemas\Standard\SIUnitSystemDefaults.01.00.ecschema.xml" />
+    <None Include="ECSchemas\Standard\Units_Schema.01.00.ecschema.xml" />
+    <None Include="ECSchemas\Standard\Unit_Attributes.01.00.ecschema.xml" />
+    <None Include="ECSchemas\Standard\USCustomaryUnitSystemDefaults.01.00.ecschema.xml" />
+    <None Include="ECSchemas\Supplemental" />
+    <None Include="ECSchemas\Supplemental\AutoPlantPDW_Supplemental.ecschema.xml" />
+    <None Include="ECSchemas\Supplemental\PDS_Supplemental.ecschema.xml" />
+    <None Include="ECSchemas\Supplemental\Stress_Supplemental.ecschema.xml" />
+    <None Include="fonts" />
+    <None Include="fonts\LastResortFonts" />
+    <None Include="fonts\LastResortFonts\LastResortRscFont.rsc" />
+    <None Include="fonts\LastResortFonts\LastResortShxFont.shx" />
+    <None Include="fonts\LastResortFonts\LastResortTTFont.ttf" />
+    <None Include="fonts\MstnFontConfig.xml" />
+    <None Include="icudt53l.dat" />
+    <None Include="qvision.dll" />
+    <None Include="seed" />
+    <None Include="seed\markup.dgn" />
+    <None Include="seed\markup.idgndb" />
+    <None Include="seed\markup.imodel" />
+    <None Include="seed\republish.bat">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="SeedData" />
+    <None Include="SeedData\BadRelationship.01.00.ecschema.xml" />
+    <None Include="SeedData\BaseSchema.01.00.ecschema.xml" />
+    <None Include="SeedData\BentleyBase.01.00.ecschema.xml" />
+    <None Include="SeedData\Bentley_JSpace_ClassEditor_CustomAttributes.02.00.ecschema.xml" />
+    <None Include="SeedData\Bentley_JSpace_CustomAttributes.02.00.ecschema.xml" />
+    <None Include="SeedData\Bentley_Plant.06.00.ecschema.xml" />
+    <None Include="SeedData\Bentley_Plant_CustomAttributes.02.00.ecschema.xml" />
+    <None Include="SeedData\bmf.01.02.ecschema.xml" />
+    <None Include="SeedData\BusinessKey.01.00.ecschema.xml" />
+    <None Include="SeedData\CircleSchema.01.00.ecschema.xml" />
+    <None Include="SeedData\DictionaryMetaData.01.00.ecschema.xml" />
+    <None Include="SeedData\DuplicatePrefixes.01.00.ecschema.xml" />
+    <None Include="SeedData\ECRules.01.00.ecschema.xml" />
+    <None Include="SeedData\EmptyArrayInstance.xml" />
+    <None Include="SeedData\EmptyCustomAttribute.01.00.ecschema.xml" />
+    <None Include="SeedData\IllFormedXml.01.00.ecschema.xml" />
+    <None Include="SeedData\InvalidReference.01.00.ecschema.xml" />
+    <None Include="SeedData\InvalidVersionString.01.00.ecschema.xml" />
+    <None Include="SeedData\jclass.02.00.ecschema.xml" />
+    <None Include="SeedData\MasterSchema.01.00.ecschema.xml" />
+    <None Include="SeedData\MasterSchema_Supplemental_Testing.01.00.ecschema.xml" />
+    <None Include="SeedData\MismatchedInstance.xml" />
+    <None Include="SeedData\MismatchedSchema.01.00.ecschema.xml" />
+    <None Include="SeedData\MissingClassName.01.00.ecschema.xml" />
+    <None Include="SeedData\MissingECSchemaNode.01.00.ecschema.xml" />
+    <None Include="SeedData\MissingNamespace.01.00.ecschema.xml" />
+    <None Include="SeedData\MissingNamespaceOnCustomAttribute.01.00.ecschema.xml" />
+    <None Include="SeedData\MissingNodes.01.00.ecschema.xml" />
+    <None Include="SeedData\MissingSchemaName.01.00.ecschema.xml" />
+    <None Include="SeedData\OnlyRequiredECSchemaAttributes.01.00.ecschema.xml" />
+    <None Include="SeedData\OpenPlant.01.02.ecschema.xml" />
+    <None Include="SeedData\OpenPlant_3D.01.02.ecschema.xml" />
+    <None Include="SeedData\OpenPlant_3D_Instance.xml" />
+    <None Include="SeedData\OpenPlant_3D_ProjectProperties.01.02.ecschema.xml" />
+    <None Include="SeedData\OpenPlant_Catalogue.01.02.ecschema.xml" />
+    <None Include="SeedData\OpenPlant_Model_Server.01.00.ecschema.xml" />
+    <None Include="SeedData\OpenPlant_PID.01.02.ecschema.xml" />
+    <None Include="SeedData\OpenPlant_ProjectProperties.01.02.ecschema.xml" />
+    <None Include="SeedData\OpenPlant_Supplemental_Mapping_OPPID.01.01.ecschema.xml" />
+    <None Include="SeedData\pid.01.02.ecschema.xml" />
+    <None Include="SeedData\pidSnippet.01.02.ecschema.xml" />
+    <None Include="SeedData\Polymorphism.01.00.ecschema.xml" />
+    <None Include="SeedData\PolymorphismInstance.xml" />
+    <None Include="SeedData\rdl_customAttributes.01.00.ecschema.xml" />
+    <None Include="SeedData\ruleSet.xml" />
+    <None Include="SeedData\SchemaThatReferences.01.00.ecschema.xml" />
+    <None Include="SeedData\schematics.01.02.ecschema.xml" />
+    <None Include="SeedData\SimpleTest_EmptyInstance.xml" />
+    <None Include="SeedData\SimpleTest_FirstSchema.01.00.ecschema.xml" />
+    <None Include="SeedData\SimpleTest_Instance.xml" />
+    <None Include="SeedData\SquareSchema.01.00.ecschema.xml" />
+    <None Include="SeedData\StepLibMetadata.01.00.ecschema.xml" />
+    <None Include="SeedData\testReferencedSchema.01.00.ecschema.xml" />
+    <None Include="SeedData\testschema.01.00.ecschema.xml" />
+    <None Include="SeedData\TestSupplementalSchema.01.00.ecschema.xml" />
+    <None Include="SeedData\TestUnitDefaults.01.00.ecschema.xml" />
+    <None Include="SeedData\Unit_Attributes.01.00.ecschema.xml" />
+    <None Include="SeedData\UnsupportedECXmlNamespace.01.00.ecschema.xml" />
+    <None Include="SeedData\Ustn_ElementParams-schema.xml" />
+    <None Include="SeedData\Widgets.01.00.ecschema.xml" />
+    <None Include="SeedData\Widgets.09.06.ecschema.xml" />
+    <None Include="SeedData\WidthDefaults.01.00.ecschema.xml" />
+    <None Include="sqlang" />
+    <None Include="sqlang\MobileDgn_de.sqlang.db3" />
+    <None Include="sqlang\MobileDgn_en.sqlang.db3" />
+    <None Include="sqlang\MobileDgn_es.sqlang.db3" />
+    <None Include="sqlang\MobileDgn_it.sqlang.db3" />
+    <None Include="sqlang\MobileDgn_ja.sqlang.db3" />
+    <None Include="sqlang\MobileDgn_pseudo.sqlang.db3" />
+    <None Include="sqlang\MobileDgn_ru.sqlang.db3" />
+    <None Include="sqlang\MobileDgn_zh-cn.sqlang.db3" />
+    <None Include="sqlang\MobileDgn_zh-tw.sqlang.db3" />
+    <None Include="ToolsubsG.dll" />
+    <None Include="WebServicesClient.dll" />
+    <None Include="sqlang\BeGTest_en-US.sqlang.db3" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="UnitTests.lib" />
+  </ItemGroup>
+</Project>
