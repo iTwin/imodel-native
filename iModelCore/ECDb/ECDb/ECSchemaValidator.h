@@ -11,7 +11,6 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-
 struct ECSchemaValidationResult;
 
 //=======================================================================================
@@ -23,10 +22,11 @@ private:
     ECSchemaValidator ();
     ~ECSchemaValidator ();
 
-    static bool ValidateClass (ECSchemaValidationResult& result, ECN::ECClassCR ecClass, bool supportLegacySchemas);
+    static bool ValidateSchema(ECSchemaValidationResult&, ECN::ECSchemaCR, bool supportLegacySchemas);
+    static bool ValidateClass (ECSchemaValidationResult&, ECN::ECClassCR, bool supportLegacySchemas);
 
 public:
-    static bool ValidateSchema (ECSchemaValidationResult& result, ECN::ECSchemaCR schema, bool supportLegacySchemas);
+    static bool ValidateSchemas(ECSchemaValidationResult&, bvector<ECN::ECSchemaP> const&, bool supportLegacySchemas);
     };
 
 
@@ -43,9 +43,10 @@ public:
         {
         CaseInsensitiveClassNames, //!< Names of ECClasses within one ECSchema must be case insensitive, i.e. must not only differ by case
         CaseInsensitivePropertyNames, //!< Names of ECProperties within one ECClass must be case insensitive, i.e. must not only differ by case
+        ConsistentClassHierarchy,
         NoPropertiesOfSameTypeAsClass, //!< Struct or array properties within an ECClass must not be of same type or derived type than the ECClass.
-        ValidRelationshipConstraints,
-        ConsistentClassHierarchy
+        SchemaNamespacePrefix,
+        ValidRelationshipConstraints
         };
 
     //=======================================================================================
@@ -72,18 +73,18 @@ public:
 private:
     Type m_type;
 
+    virtual bool _ValidateSchemas(bvector<ECN::ECSchemaP> const& schemas, ECN::ECSchemaCR schema) { return true; }
     virtual bool _ValidateSchema (ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) { return true; }
     virtual bool _ValidateClass (ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) { return true; }
     virtual std::unique_ptr<Error> _GetError () const = 0;
 
 protected:
-    explicit ECSchemaValidationRule (Type type)
-         : m_type (type)
-        {}
+    explicit ECSchemaValidationRule (Type type) : m_type (type) {}
 
 public:
     virtual ~ECSchemaValidationRule () {}
 
+    bool ValidateSchemas(bvector<ECN::ECSchemaP> const& schemas, ECN::ECSchemaCR schema);
     bool ValidateSchema (ECN::ECSchemaCR schema, ECN::ECClassCR ecClass);
     bool ValidateClass (ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty);
 
@@ -347,4 +348,37 @@ public:
     ~ConsistentClassHierarchyRule() {}
     };
 
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      07/2015
+//+===============+===============+===============+===============+===============+======
+struct SchemaNamespacePrefixRule : ECSchemaValidationRule
+    {
+private:
+    //=======================================================================================
+    // @bsiclass                                                Krischan.Eberle      07/2015
+    //+===============+===============+===============+===============+===============+======
+    struct Error : ECSchemaValidationRule::Error
+        {
+    private:
+        std::vector<ECN::ECSchemaCP> m_invalidNamespacePrefixes;
+
+        virtual Utf8String _ToString() const override;
+
+    public:
+        explicit Error(Type ruleType) : ECSchemaValidationRule::Error(ruleType) {}
+        ~Error() {}
+
+        void AddInvalidPrefix(ECN::ECSchemaCR schema) { m_invalidNamespacePrefixes.push_back(&schema); }
+        bool HasInconsistencies() const { return !m_invalidNamespacePrefixes.empty(); }
+        };
+
+    mutable std::unique_ptr<Error> m_error;
+
+    virtual bool _ValidateSchemas(bvector<ECN::ECSchemaP> const&, ECN::ECSchemaCR) override;
+    virtual std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
+
+public:
+    SchemaNamespacePrefixRule();
+    ~SchemaNamespacePrefixRule(){}
+    };
 END_BENTLEY_SQLITE_EC_NAMESPACE

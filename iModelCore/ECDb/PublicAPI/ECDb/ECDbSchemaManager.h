@@ -184,28 +184,25 @@ private:
     RefCountedPtr<ECDbSchemaWriter> m_ecImporter;
     mutable BeMutex m_criticalSection;
 
-    BentleyStatus BatchImportOrUpdateECSchemas (SchemaImportContext const& context, bvector<ECN::ECDiffPtr>&  diffs, bvector<ECN::ECSchemaP> const& schemas, ImportOptions const& options, bool addToReaderCache = false) const;
-    BentleyStatus ImportECSchema (ECN::ECSchemaCR ecSchema, bool addToReaderCache = false) const;
-    BentleyStatus UpdateECSchema (ECN::ECDiffPtr& diff, ECN::ECSchemaCR ecSchema) const;
-    //! The list excludes ECSchemas that have already been imported into the ECDb file
-    void BuildDependencyOrderedSchemaList (bvector<ECN::ECSchemaP>& schemas, ECN::ECSchemaP schema) const;
+    BentleyStatus BatchImportOrUpdateECSchemas (SchemaImportContext const&, bvector<ECN::ECSchemaCP>& importedSchemas, bvector<ECN::ECDiffPtr>&  diffs, ECN::ECSchemaCacheR, ImportOptions const&, bool addToReaderCache = false) const;
+    BentleyStatus ImportECSchema (ECN::ECSchemaCR, bool addToReaderCache = false) const;
+    BentleyStatus UpdateECSchema (ECN::ECDiffPtr&, ECN::ECSchemaCR) const;
     void ReportUpdateError (ECN::ECSchemaCR newSchema, ECN::ECSchemaCR existingSchema, Utf8CP reason) const;
-    static bool ContainsDuplicateSchemas(bvector<ECN::ECSchemaP> const& schema);
     
-    ECN::ECSchemaCP GetECSchema (ECN::ECSchemaId schemaId, bool ensureAllClassesLoaded) const;
+    ECN::ECSchemaCP GetECSchema (ECN::ECSchemaId, bool ensureAllClassesLoaded) const;
     //! Ensure that all direct subclasses of @p ecClass are loaded. Subclasses of its subclasses are not loaded
     //! @param[in] ecClass ECClass whose direct subclasses should be loaded
     //! @return ::SUCCESS or ::ERROR
-    BentleyStatus EnsureDerivedClassesExist (ECN::ECClassCR ecClass) const;
+    BentleyStatus EnsureDerivedClassesExist (ECN::ECClassCR) const;
     //! Implementation of IECSchemaLocater
-    virtual ECN::ECSchemaPtr _LocateSchema (ECN::SchemaKeyR key, ECN::SchemaMatchType matchType, ECN::ECSchemaReadContextR schemaContext) override;
+    virtual ECN::ECSchemaPtr _LocateSchema (ECN::SchemaKeyR, ECN::SchemaMatchType, ECN::ECSchemaReadContextR) override;
 
     //! Implementation of IECClassLocater
     virtual ECN::ECClassCP _LocateClass (Utf8CP schemaName, Utf8CP className) override;
 
 public:
 #if !defined (DOCUMENTATION_GENERATOR)
-    ECDbSchemaManager (ECDb&, ECDbMap&);
+    ECDbSchemaManager(ECDb&, ECDbMap&);
     virtual ~ECDbSchemaManager ();
 #endif
 
@@ -220,7 +217,7 @@ public:
     //!                     All schemas should be read from single ECSchemaReadContext.  if any dublicate schema is found in schemaCache the function will return error.
     //! @param[in] options Schema import options
     //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
-    ECDB_EXPORT BentleyStatus ImportECSchemas (ECN::ECSchemaCacheR schemaCache, ImportOptions const& options = ImportOptions ()) const;
+    ECDB_EXPORT BentleyStatus ImportECSchemas (ECN::ECSchemaCacheR schemaCache, ImportOptions const& options = ImportOptions()) const;
     
     //! Checks whether the ECDb file contains the ECSchema with the specified name or not.
     //! @param[in] schemaName Name of the ECSchema to check for

@@ -27,9 +27,7 @@ ECDbSchemaManager::ECDbSchemaManager (ECDbR ecdb, ECDbMapR map)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      01/2013
 //---------------------------------------------------------------------------------------
-ECDbSchemaManager::~ECDbSchemaManager ()
-    {
-    }
+ECDbSchemaManager::~ECDbSchemaManager () {}
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        06/2012
@@ -54,7 +52,82 @@ BentleyStatus ECDbSchemaManager::GetECSchemas (ECSchemaList& schemas, bool ensur
     return SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* Returns true if thisSchema directly references possiblyReferencedSchema
+* @bsimethod                                 Ramanujam.Raman                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DirectlyReferences(ECSchemaCP thisSchema, ECSchemaCP possiblyReferencedSchema)
+    {
+    ECSchemaReferenceListCR referencedSchemas = thisSchema->GetReferencedSchemas();
+    for (ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
+        {
+        if (it->second.get() == possiblyReferencedSchema)
+            return true;
+        }
+    return false;
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Casey.Mullen      01/2013
+//---------------------------------------------------------------------------------------
+bool DependsOn(ECSchemaCP thisSchema, ECSchemaCP possibleDependency)
+    {
+    if (DirectlyReferences(thisSchema, possibleDependency))
+        return true;
+
+    SupplementalSchemaMetaDataPtr metaData;
+    if (SupplementalSchemaMetaData::TryGetFromSchema(metaData, *possibleDependency)
+        && metaData.IsValid()
+        && metaData->IsForPrimarySchema(thisSchema->GetName(), 0, 0, SCHEMAMATCHTYPE_Latest))
+        {
+        return true; // possibleDependency supplements thisSchema. possibleDependency must be imported before thisSchema
+        }
+
+    // Maybe possibleDependency supplements one of my references?
+    ECSchemaReferenceListCR referencedSchemas = thisSchema->GetReferencedSchemas();
+    for (ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
+        {
+        if (DependsOn(it->second.get(), possibleDependency))
+            return true;
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Ramanujam.Raman                07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void InsertSchemaInDependencyOrderedList(bvector<ECSchemaP>& schemas, ECSchemaP insertSchema)
+    {
+    if (std::find(schemas.begin(), schemas.end(), insertSchema) != schemas.end())
+        return; // This (and its referenced ECSchemas) are already in the list
+
+    bvector<ECSchemaP>::reverse_iterator rit;
+    for (rit = schemas.rbegin(); rit < schemas.rend(); ++rit)
+        {
+        if (DependsOn(insertSchema, *rit))
+            {
+            schemas.insert(rit.base(), insertSchema); // insert right after the referenced schema in the list
+            return;
+            }
+        }
+
+    schemas.insert(schemas.begin(), insertSchema); // insert at the beginning
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Ramanujam.Raman                07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void BuildDependencyOrderedSchemaList(bvector<ECSchemaP>& schemas, ECSchemaP insertSchema)
+    {
+    InsertSchemaInDependencyOrderedList(schemas, insertSchema);
+    ECSchemaReferenceListCR referencedSchemas = insertSchema->GetReferencedSchemas();
+    for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter)
+        {
+        ECSchemaR referencedSchema = *iter->second.get();
+        InsertSchemaInDependencyOrderedList(schemas, &referencedSchema);
+        }
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                     06/2012
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -81,74 +154,15 @@ ImportOptions const& options
     StopWatch timer(true);
 
     BeMutexHolder lock (m_criticalSection);
-    bvector<ECSchemaP> schemas;
-    cache.GetSchemas (schemas);
-    for (ECSchemaP schema : schemas)
-        {
-        ECSchemaId id = ECDbSchemaPersistence::GetECSchemaId(this->m_ecdb, *schema);
-        if (schema->HasId())
-            {
-            if (id == 0 || id != schema->GetId())
-                {
-                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
-                return ERROR;
-                }
-            }
-        }
-    // WIP_ECDB: Experiment with removing this on trunk. BatchImportECSchema now does its own dependency ordering. Not changing on Graphite01 in case the order is important for ECDbMapping, below
-    bvector<ECSchemaP> schemasToImport;
-    for (ECSchemaP schema: schemas)
-        {
-        BeAssert (schema != nullptr);
-        if (schema == nullptr) continue;
-
-        //Checks whether the schema contains classes or properties whose names only differ by case. This is (still) allowed in ECObjects,
-        //but not supported by ECDb. (for non-legacy schemas, a check failure means abortion)
-        ECSchemaValidationResult validationResult;
-        bool isValid = ECSchemaValidator::ValidateSchema (validationResult, *schema, options.SupportLegacySchemas ());
-        if (validationResult.HasErrors ())
-            {
-            std::vector<Utf8String> errorMessages;
-            validationResult.ToString (errorMessages);
-
-            ECDbIssueSeverity sev;
-            if (options.SupportLegacySchemas ())
-                sev = ECDbIssueSeverity::Warning;
-            else
-                {
-                sev = ECDbIssueSeverity::Error;
-                m_ecdb.GetECDbImplR().GetIssueReporter().Report(sev, "Failed to import ECSchemas. Details: ");
-                }
-
-            for (Utf8StringCR errorMessage : errorMessages)
-                m_ecdb.GetECDbImplR().GetIssueReporter().Report(sev, errorMessage.c_str ());
-            }
-
-        if (!isValid)
-            return ERROR;
-
-        Utf8String schemaName(schema->GetName());
-        if (!ContainsECSchema (schemaName.c_str ()) || options.UpdateExistingSchemas ()) // skip ECSchemas that are already imported(if not updating)
-            BuildDependencyOrderedSchemaList (schemasToImport, schema);
-        }
     
-    if (ContainsDuplicateSchemas(schemasToImport))
-        return ERROR;
-
-    bvector<ECDiffPtr> diffs; 
-    auto stat = BatchImportOrUpdateECSchemas (context, diffs, schemasToImport, options, true);
-    if (SUCCESS != stat)
+    bvector<ECSchemaCP> importedSchemas;
+    bvector<ECDiffPtr> diffs;
+    if (SUCCESS != BatchImportOrUpdateECSchemas (context, importedSchemas, diffs, cache, options, true))
         return ERROR;
   
-    bvector<ECSchemaCP> schemasToImportCP;
-    for (auto schema : schemasToImport)
-        {
-        schemasToImportCP.push_back (schema);
-        }
-
-    MapStatus mapStatus = m_map.MapSchemas (context, schemasToImportCP, !diffs.empty ());
-    if (mapStatus == MapStatus::Error)
+    if (MapStatus::Error == m_map.MapSchemas (context, importedSchemas, !diffs.empty ()))
         return ERROR;
+
     //Clear cache in case we have diffs
     if (!diffs.empty())
         m_ecdb.ClearECDbCache();
@@ -157,36 +171,37 @@ ImportOptions const& options
     LOG.infov("Imported ECSchemas in %.4f msecs.",  timer.GetElapsedSeconds() * 1000.0);
     return SUCCESS;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                  Muhammad.Zaighum                      11/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool ECDbSchemaManager::ContainsDuplicateSchemas(bvector<ECSchemaP> const& schemas)
-    {
-    bmap<Utf8String, ECSchemaCP> myMap;
-    for (ECSchemaCP schema : schemas)
-        {
-        if (myMap[schema->GetFullSchemaName()] == schema)
-            {
-            LOG.errorv("Found more then one in-memory copy of ECSchema %s. Use single ECSchemaReadContext to deserialize ECSchemas.", schema->GetFullSchemaName().c_str());
-            return true;
-            }
-
-        myMap[schema->GetFullSchemaName()] = schema;
-        }
- 
-    return false;
-    }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        29/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportContext const& context, bvector<ECDiffPtr>&  diffs, bvector<ECSchemaP> const& schemas, ImportOptions const& options, bool addToReaderCache) const
+BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportContext const& context, bvector<ECN::ECSchemaCP>& importedSchemas, bvector<ECN::ECDiffPtr>&  diffs, ECSchemaCacheR schemaCache, ImportOptions const& options, bool addToReaderCache) const
     {
+    bvector<ECSchemaP> schemas;
+    schemaCache.GetSchemas(schemas);
+
+    bvector<ECSchemaP> schemasToImport;
+    for (ECSchemaP schema : schemas)
+        {
+        BeAssert(schema != nullptr);
+        if (schema == nullptr) continue;
+
+        ECSchemaId id = ECDbSchemaPersistence::GetECSchemaId(this->m_ecdb, *schema);
+        if (schema->HasId() && (id == 0 || id != schema->GetId()))
+            {
+            m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
+            return ERROR;
+            }
+
+        if (id <= 0ULL || // skip ECSchemas that are already imported(if not updating)
+            options.UpdateExistingSchemas())
+            BuildDependencyOrderedSchemaList(schemasToImport, schema);
+        }
+
     //1. Only import supplemental schema if doSupplement = True AND saveSupplementals = TRUE
     bvector<ECSchemaP> primarySchemas;
     bvector<ECSchemaP> suppSchemas;
-    for (ECSchemaP schema : schemas)
+    for (ECSchemaP schema : schemasToImport)
         {
         if (schema->IsSupplementalSchema())
             suppSchemas.push_back(schema);
@@ -227,16 +242,41 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
         }
 
     // The dependency order may have *changed* due to supplementation adding new ECSchema references! Re-sort them.
-    bvector<ECSchemaP> dependencyOrderedSchemas;
+    bvector<ECSchemaP> dependencyOrderedPrimarySchemas;
     for (ECSchemaP schema : primarySchemas)
-        BuildDependencyOrderedSchemaList (dependencyOrderedSchemas, schema);
+        BuildDependencyOrderedSchemaList (dependencyOrderedPrimarySchemas, schema);
     
     primarySchemas.clear (); // Just make sure no one tries to use it anymore
 
-    for (ECSchemaP schema : dependencyOrderedSchemas)
+    ECSchemaValidationResult validationResult;
+    bool isValid = ECSchemaValidator::ValidateSchemas(validationResult, dependencyOrderedPrimarySchemas, options.SupportLegacySchemas());
+    if (validationResult.HasErrors())
         {
+        std::vector<Utf8String> errorMessages;
+        validationResult.ToString(errorMessages);
+
+        ECDbIssueSeverity sev;
+        if (options.SupportLegacySchemas())
+            sev = ECDbIssueSeverity::Warning;
+        else
+            {
+            sev = ECDbIssueSeverity::Error;
+            m_ecdb.GetECDbImplR().GetIssueReporter().Report(sev, "Failed to import ECSchemas. Details: ");
+            }
+
+        for (Utf8StringCR errorMessage : errorMessages)
+            m_ecdb.GetECDbImplR().GetIssueReporter().Report(sev, errorMessage.c_str());
+        }
+
+    if (!isValid)
+        return ERROR;
+
+    for (ECSchemaCP schema : dependencyOrderedPrimarySchemas)
+        {
+        importedSchemas.push_back(schema);
+
         ECDiffPtr diff;
-        if (0 != ECDbSchemaPersistence::GetECSchemaId(m_ecdb, schema->GetName().c_str()))
+        if (0ULL != ECDbSchemaPersistence::GetECSchemaId(m_ecdb, schema->GetName().c_str()))
             {
             if (!options.UpdateExistingSchemas())
                 continue;
@@ -433,10 +473,7 @@ BentleyStatus ECDbSchemaManager::GetECClassKeys (ECClassKeys& keys, Utf8CP schem
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDbSchemaManager::ClearCache () const
-    {
-    m_ecReader->ClearCache();
-    }
+void ECDbSchemaManager::ClearCache () const { m_ecReader->ClearCache(); }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        09/2012
@@ -444,87 +481,7 @@ void ECDbSchemaManager::ClearCache () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle               12/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDbCR ECDbSchemaManager::GetECDb () const
-    {
-    return m_ecdb;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Returns true if thisSchema directly references possiblyReferencedSchema                                                                                      
-* @bsimethod                                 Ramanujam.Raman                05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DirectlyReferences (ECSchemaCP thisSchema, ECSchemaCP possiblyReferencedSchema)
-    {
-    ECSchemaReferenceListCR referencedSchemas = thisSchema->GetReferencedSchemas();
-    for (ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
-        {
-        if (it->second.get() == possiblyReferencedSchema)
-            return true;
-        }
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Casey.Mullen      01/2013
-//---------------------------------------------------------------------------------------
-bool DependsOn (ECSchemaCP thisSchema, ECSchemaCP possibleDependency)
-    {
-    if (DirectlyReferences(thisSchema, possibleDependency))
-        return true;
-
-    SupplementalSchemaMetaDataPtr metaData;
-    if (SupplementalSchemaMetaData::TryGetFromSchema(metaData, *possibleDependency) 
-        && metaData.IsValid() 
-        && metaData->IsForPrimarySchema (thisSchema->GetName(), 0, 0, SCHEMAMATCHTYPE_Latest))
-        {
-        return true; // possibleDependency supplements thisSchema. possibleDependency must be imported before thisSchema
-        }
-
-    // Maybe possibleDependency supplements one of my references?
-    ECSchemaReferenceListCR referencedSchemas = thisSchema->GetReferencedSchemas();
-    for (ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
-        {
-        if (DependsOn (it->second.get(), possibleDependency))
-            return true;
-        }
-
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Ramanujam.Raman                07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void InsertSchemaInDependencyOrderedList (bvector<ECSchemaP>& schemas, ECSchemaP insertSchema)
-    {
-    if (std::find (schemas.begin(), schemas.end(), insertSchema) != schemas.end())
-        return; // This (and its referenced ECSchemas) are already in the list
-
-    bvector<ECSchemaP>::reverse_iterator rit;
-    for (rit = schemas.rbegin(); rit < schemas.rend(); ++rit)
-        {
-        if (DependsOn (insertSchema, *rit))
-            {
-            schemas.insert (rit.base(), insertSchema); // insert right after the referenced schema in the list
-            return;
-            }
-        }
-
-    schemas.insert (schemas.begin(), insertSchema); // insert at the beginning
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Ramanujam.Raman                07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECDbSchemaManager::BuildDependencyOrderedSchemaList (bvector<ECSchemaP>& schemas, ECSchemaP insertSchema) const
-    {
-    InsertSchemaInDependencyOrderedList (schemas, insertSchema);
-    ECSchemaReferenceListCR referencedSchemas = insertSchema->GetReferencedSchemas();
-    for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter)
-        {
-        ECSchemaR referencedSchema = *iter->second.get();
-        InsertSchemaInDependencyOrderedList (schemas, &referencedSchema);
-        }
-    }
+ECDbCR ECDbSchemaManager::GetECDb () const { return m_ecdb; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      01/2013

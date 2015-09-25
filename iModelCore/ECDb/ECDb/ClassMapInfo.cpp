@@ -63,7 +63,7 @@ MapStatus ClassMapInfo::Initialize()
         else
             m_tableName.append("_ArrayOf");
 
-        m_tableName.append(Utf8String(m_ecClass.GetName()));
+        m_tableName.append(m_ecClass.GetName());
         }
 
     if (m_ecInstanceIdColumnName.empty())

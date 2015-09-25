@@ -1156,6 +1156,24 @@ ECDbPropertyPathId ECDbSchemaPersistence::GetECPropertyPathId(ECPropertyId rootE
 
     return 0;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbSchemaPersistence::GetSchemaNamespacePrefixes(bvector<Utf8String>& prefixes, ECDbCR ecdb)
+    {
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "SELECT NamespacePrefix FROM ec_Schema"))
+        return ERROR;
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        prefixes.push_back(stmt->GetValueText(0));
+        }
+
+    return SUCCESS;
+    }
+
 //******************** DbCustomAttributeInfo *******************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  11/2012

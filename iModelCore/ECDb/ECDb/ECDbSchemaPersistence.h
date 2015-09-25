@@ -378,6 +378,8 @@ struct ECDbSchemaPersistence
         static  BentleyStatus GetClassesMappedToTable(std::vector<ECClassId>& classIds, ECDbSqlTable const& table, bool skipRelationships, ECDbCR);
         static                bool IsCustomAttributeDefined(ECDbCR, ECClassId caClassId, ECContainerId caSourceContainerId, ECContainerType caContainerType);
         static  ECDbPropertyPathId GetECPropertyPathId(ECPropertyId rootECPropertyId, Utf8CP accessString, ECDbCR);
+
+        static BentleyStatus GetSchemaNamespacePrefixes(bvector<Utf8String>& prefixes, ECDbCR);
     };
 
 
