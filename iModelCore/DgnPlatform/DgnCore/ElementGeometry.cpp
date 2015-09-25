@@ -3665,13 +3665,88 @@ bool ElementGeometryBuilder::Append(TextStringCR text)
     return AppendWorld(*ElementGeometry::Create(text));
     }
 
+BEGIN_UNNAMED_NAMESPACE
+
+//=======================================================================================
+//! Allows for the ViewContext-based TextAnnotationDraw to be used with an ElementGeometryBuilder.
+// @bsiclass                                                    Jeff.Marker     09/2015
+//=======================================================================================
+struct TextAnnotationDrawToElementGeometry : IElementGraphicsProcessor
+{
+private:
+    TextAnnotationDrawCR m_annotationDraw;
+    ElementGeometryBuilderR m_builder;
+    DgnCategoryId m_categoryId;
+    Transform m_transform;
+
+public:
+    TextAnnotationDrawToElementGeometry(TextAnnotationDrawCR annotationDraw, ElementGeometryBuilderR builder, DgnCategoryId categoryId) :
+        m_annotationDraw(annotationDraw), m_builder(builder), m_categoryId(categoryId), m_transform(Transform::FromIdentity()) {}
+
+    virtual void _AnnounceTransform(TransformCP transform) override { if (nullptr != transform) { m_transform = *transform; } else { m_transform.InitIdentity(); } }
+    virtual void _AnnounceElemDisplayParams(ElemDisplayParamsCR params) override { m_builder.Append(params); }
+    virtual BentleyStatus _ProcessTextString(TextStringCR) override;
+    virtual BentleyStatus _ProcessCurveVector(CurveVectorCR, bool isFilled) override;
+    virtual void _OutputGraphics(ViewContextR) override;
+};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     09/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus TextAnnotationDrawToElementGeometry::_ProcessTextString(TextStringCR text)
+    {
+    if (m_transform.IsIdentity())
+        {
+        m_builder.Append(text);
+        }
+    else
+        {
+        TextString transformedText(text);
+        transformedText.ApplyTransform(m_transform);
+        m_builder.Append(transformedText);
+        }
+
+    return SUCCESS; // SUCCESS means handled
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     09/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus TextAnnotationDrawToElementGeometry::_ProcessCurveVector(CurveVectorCR curves, bool isFilled)
+    {
+    if (m_transform.IsIdentity())
+        {
+        m_builder.Append(curves);
+        }
+    else
+        {
+        CurveVector transformedCurves(curves);
+        transformedCurves.TransformInPlace(m_transform);
+        m_builder.Append(transformedCurves);
+        }
+
+    return SUCCESS; // SUCCESS means handled
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     09/2015
+//---------------------------------------------------------------------------------------
+void TextAnnotationDrawToElementGeometry::_OutputGraphics(ViewContextR context)
+    {
+    context.GetCurrentDisplayParams().SetCategoryId(m_categoryId);
+    m_annotationDraw.Draw(context);
+    }
+
+END_UNNAMED_NAMESPACE
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ElementGeometryBuilder::Append(TextAnnotationCR text)
     {
     TextAnnotationDraw annotationDraw(text);
-    annotationDraw.Draw(*this, m_dgnDb, m_elParams.GetCategoryId());
+    TextAnnotationDrawToElementGeometry annotationDrawToGeom(annotationDraw, *this, m_elParams.GetCategoryId());
+    ElementGraphicsOutput::Process(annotationDrawToGeom, m_dgnDb);
 
     return true;
     }
