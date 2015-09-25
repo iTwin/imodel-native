@@ -205,37 +205,11 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnMaterial::_GetInsertParams(bvector<Utf8CP>& insertParams)
+void dgn_ElementHandler::Material::_GetClassParams(ECSqlClassParams& params)
     {
-    T_Super::_GetInsertParams(insertParams);
-    GetParams(insertParams);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnMaterial::_GetUpdateParams(bvector<Utf8CP>& updateParams)
-    {
-    T_Super::_GetUpdateParams(updateParams);
-    GetParams(updateParams);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnMaterial::_GetSelectParams(bvector<Utf8CP>& params)
-    {
-    T_Super::_GetSelectParams(params);
-    GetParams(params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnMaterial::GetParams(bvector<Utf8CP>& params)
-    {
-    params.push_back("Descr");
-    params.push_back("Data");
+    T_Super::_GetClassParams(params);
+    params.Add("Descr");
+    params.Add("Data");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -265,11 +239,11 @@ DgnDbStatus DgnMaterial::_BindUpdateParams(ECSqlStatement& stmt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnMaterial::_ExtractSelectParams(ECSqlStatement& stmt, SelectParams const& params)
+DgnDbStatus DgnMaterial::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
     auto status = T_Super::_ExtractSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
-        m_data.Init(stmt.GetValueText(params.GetParameterIndex("Descr")), stmt.GetValueText(params.GetParameterIndex("Data")));
+        m_data.Init(stmt.GetValueText(params.GetSelectIndex("Descr")), stmt.GetValueText(params.GetSelectIndex("Data")));
     
     return status;
     }

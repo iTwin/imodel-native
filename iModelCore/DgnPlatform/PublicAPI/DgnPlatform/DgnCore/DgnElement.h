@@ -142,6 +142,55 @@ public:
 
 typedef QvElemSet<QvKey32> T_QvElemSet;
 
+//=======================================================================================
+//! A list of parameters used in ECSql SELECT, INSERT, and UPDATE statements for a
+//! specific ECClass. Maps names to indices in the results of a SELECT statement or in
+//! the bindings of an INSERT or UPDATE statement.
+//! @ingroup DgnElementGroup
+// @bsiclass                                                     Paul.Connelly   09/15
+//=======================================================================================
+struct ECSqlClassParams
+{
+public:
+    enum class StatementType
+    {
+        Select          = 1 << 0, //!< Property should be included in SELECT statements from DgnElement::_LoadFromDb()
+        Insert          = 1 << 1, //!< Property should be included in INSERT statements from DgnElement::_InsertInDb()
+        Update          = 1 << 2, //!< Property should be included in UPDATE statements from DgnElement::_UpdateInDb()
+        ReadOnly        = Select | Insert, //!< Property cannot be modified via UPDATE statement
+        All             = Select | Insert | Update, //!< Property should be included in all ECSql statements
+        InsertUpdate    = Insert | Update, //!< Property should not be included in SELECT statements
+    };
+
+    struct Entry
+    {
+        Utf8CP          m_name;
+        StatementType   m_type;
+
+        Entry() : m_name(nullptr), m_type(StatementType::All) { }
+        Entry(Utf8CP name, StatementType type) : m_name(name), m_type(type) { }
+    };
+
+    typedef bvector<Entry> Entries;
+private:
+    Entries m_entries;
+public:
+    //! Adds a parameter to the list
+    //! @param[in]      parameterName The name of the parameter. @em Must be a pointer to a string with static storage duration.
+    //! @param[in]      type          The type(s) of statements in which this parameter is used.
+    DGNPLATFORM_EXPORT void Add(Utf8CP parameterName, StatementType type=StatementType::All);
+
+    //! Returns an index usable for accessing the columns with the specified name in the results of an ECSql SELECT query.
+    //! @param[in]      parameterName The name of the parameter
+    //! @return The index of the corresponding column in the query results, or -1 if no such column exists
+    DGNPLATFORM_EXPORT int GetSelectIndex(Utf8CP parameterName) const;
+//__PUBLISH_SECTION_END__
+    Entries const& GetEntries() const { return m_entries; }
+//__PUBLISH_SECTION_START__
+};
+
+ENUM_IS_FLAGS(ECSqlClassParams::StatementType);
+
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
     private: typedef __superclass__ T_Super;\
     public: static Utf8CP MyECClassName() {return __ECClassName__;}\
@@ -189,24 +238,6 @@ public:
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
         void SetCode(Code code) {m_code = code;}      //!< Set the code for DgnElements created with this CreateParams
         void SetParentId(DgnElementId parent) {m_parentId=parent;} //!< Set the ParentId for DgnElements created with this CreateParams
-    };
-
-    //! Maps indices in the results of the SELECT statement used by _ExtractSelectParams() to property names.
-    struct SelectParams
-    {
-    private:
-        bvector<Utf8CP> m_parameters;
-    public:
-        //! Adds a parameter name to the list. Note that the name is stored as Utf8CP.
-        //! @param[in]      parameterName The name of the parameter.
-        DGNPLATFORM_EXPORT void Add(Utf8CP parameterName);
-        //! Returns the index of the parameter with the specified name
-        //! @param[in]      parameterName The name of the parameter to look up
-        //! @return The index of the parameter within the list, or -1 if no such parameter exists
-        DGNPLATFORM_EXPORT int GetParameterIndex(Utf8CP parameterName) const;
-    //__PUBLISH_SECTION_END__
-        bvector<Utf8CP>& GetParameters() { return m_parameters; }
-    //__PUBLISH_SECTION_START__
     };
 
     //! The Hilite state of a DgnElement. If an element is "hilited", its appearance is changed to call attention to it.
@@ -543,7 +574,6 @@ public:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
 private:
-    void GetParamList(bvector<Utf8CP>& paramList, bool isForUpdate);
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement, bool isForUpdate);
     template<class T> void CallAppData(T const& caller) const;
 
@@ -579,22 +609,15 @@ protected:
 
     DGNPLATFORM_EXPORT virtual ~DgnElement();
 
-    //! Called to get a list of the parameters/properties that need to be selected when loading an element from the table.
-    //! @param[in]      selectParams The list to which to add your subclass's parameters
-    //! @note If you override this method, you @em must call T_Super::_GetSelectParams in order to get the superclasses' properties.
-    //! This call will be followed by a call to _ExtractSelectParams.
-    //! The parameter names are stored as Utf8CP, so they are required to be static strings.
-    DGNPLATFORM_EXPORT virtual void _GetSelectParams(bvector<Utf8CP>& selectParams);
-
-    //! Invoked after _GetSelectParams() when loading an element from the table, to allow subclasses to extract their property values
-    //! from the SELECT statement. The parameters are those which were specified in _GetSelectParams().
+    //! Invoked when loading an element from the table, to allow subclasses to extract their property values
+    //! from the SELECT statement. The parameters are those which were specified by this elements Handler.
     //! @param[in]      statement    The SELECT statement which selected the data from the table
     //! @param[in]      selectParams The properties selected by the SELECT statement. Use this to obtain an index into the statement.
     //! @return DgnDbStatus::Success if the data was loaded successfully, or else an error status.
     //! @note If you override this method, you @em must first call T_Super::_ExtractSelectParams, forwarding its status.
     //! You should then extract your subclass properties from the supplied ECSqlStatement, using
     //! selectParams.GetParameterIndex() to look up the index of each parameter within the statement.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, SelectParams const& selectParams);
+    virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) { return DgnDbStatus::Success; }
 
     //! Override this method if your element needs to load additional data from the database when it is loaded (for example,
     //! look up related data in another table).
@@ -606,14 +629,8 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnInsert, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert();
 
-    //! Called to get a list of parameters/properties that need to be added when inserting a new element in the table.
-    //! @note If you override this method, you must call T_Super::_GetInsertParams in order to get the superclasses' properties.
-    //! This call will be followed by a call to _BindInsertParams which will actually bind the parameter values to the statement.
-    DGNPLATFORM_EXPORT virtual void _GetInsertParams(bvector<Utf8CP>& insertParams);
-
     //! Called to bind the element's property values to the ECSqlStatement when inserting
-    //! a new element.  The parameters to bind were the ones that were added in the call
-    //! to _GetInsertParams.  
+    //! a new element.  The parameters to bind were the ones specified by this element's Handler.
     //! @note If you override this method, you should bind your subclass properties
     //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
     //! Then you @em must call T_Super::_BindInsertParams, forwarding its status.
@@ -639,14 +656,8 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnUpdate, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR original);
 
-    //! Called to get a list of parameters/properties that need to be added when updating an element in the table.
-    //! @note If you override this method, you must call T_Super::_GetUpdateParams in order to get the superclasses' properties.
-    //! This call will be followed by a call to _BindUpdateParams which will actually bind the parameter values to the statement.
-    DGNPLATFORM_EXPORT virtual void _GetUpdateParams(bvector<Utf8CP>& updateParams);
-
     //! Called to bind the element's property values to the ECSqlStatement when updating
-    //! an existing element.  The parameters to bind were the ones that were added in the call
-    //! to _GetUpdateParams.  
+    //! an existing element.  The parameters to bind were the ones specified by this element's Handler
     //! @note If you override this method, you should bind your subclass properties
     //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
     //! Then you @em must call T_Super::_BindUpdateParams, forwarding its status.
@@ -981,8 +992,6 @@ public:
     //! @see GetLabel, GetCode, _GetDisplayLabel
     Utf8String GetDisplayLabel() const {return _GetDisplayLabel();}
 
-    void GetSelectParams(bvector<Utf8CP>& selectParams) { return _GetSelectParams(selectParams); }
-
     //! Query the DgnDb for the children of this DgnElement.
     //! @return DgnElementIdSet containing the DgnElementIds of all child elements of this DgnElement. Will be empty if no children.
     DGNPLATFORM_EXPORT DgnElementIdSet QueryChildren() const;
@@ -1155,10 +1164,8 @@ protected:
     //! Override to validate the category.
     //! @return DgnDbStatus::Success if the categoryId was changed, error status otherwise.
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId; return DgnDbStatus::Success;}
-    DGNPLATFORM_EXPORT virtual void _GetInsertParams(bvector<Utf8CP>& insertParams) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    DGNPLATFORM_EXPORT virtual void _GetUpdateParams(bvector<Utf8CP>& updateParams) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR original) override;
 
@@ -1403,6 +1410,8 @@ public:
     DGNPLATFORM_EXPORT static DgnElementId QueryFromMember(DgnDbR db, DgnClassId groupClassId, DgnElementId memberElementId);
 };
 
+struct ECSqlClassInfo;
+
 //=======================================================================================
 //! The DgnElements for a DgnDb.
 //! This class holds a cache of reference-counted DgnElements. All in-memory DgnElements for a DgnDb are held in its DgnElements member.
@@ -1446,9 +1455,9 @@ private:
     struct ElementSelectStatement
     {
         BeSQLite::EC::CachedECSqlStatementPtr m_statement;
-        DgnElement::SelectParams const& m_parameters;
+        ECSqlClassParams const& m_params;
 
-        ElementSelectStatement(BeSQLite::EC::CachedECSqlStatement* stmt, DgnElement::SelectParams const& params) : m_statement(stmt), m_parameters(params) { }
+        ElementSelectStatement(BeSQLite::EC::CachedECSqlStatement* stmt, ECSqlClassParams const& params) : m_statement(stmt), m_params(params) { }
     };
 
     struct HandlerStatementCache
@@ -1457,9 +1466,7 @@ private:
         struct Entry
         {
             ElementHandlerP m_handler;
-            BeSQLite::EC::CachedECSqlStatementPtr m_selectStatement;
-            DgnElement::SelectParams m_selectParams;
-            Utf8String m_selectECSql;
+            BeSQLite::EC::CachedECSqlStatementPtr m_select;
 
             explicit Entry(ElementHandlerP handler=nullptr) : m_handler(handler) { }
         };
@@ -1470,7 +1477,7 @@ private:
 
         Entry* FindEntry(ElementHandlerR handler) const;
     public:
-        ElementSelectStatement GetPreparedSelectStatement(DgnElementR el) const;
+        ElementSelectStatement GetPreparedSelectStatement(DgnElementR el, ElementHandlerR handler, ECSqlClassInfo const& classInfo) const;
         void Empty();
     };
 
@@ -1503,6 +1510,8 @@ private:
     DGNPLATFORM_EXPORT DgnElementCPtr UpdateElement(DgnElementR element, DgnDbStatus* stat);
 
     ElementSelectStatement GetPreparedSelectStatement(DgnElementR el) const;
+    BeSQLite::EC::CachedECSqlStatementPtr GetPreparedInsertStatement(DgnElementR el) const;
+    BeSQLite::EC::CachedECSqlStatementPtr GetPreparedUpdateStatement(DgnElementR el) const;
 public:
     BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}
