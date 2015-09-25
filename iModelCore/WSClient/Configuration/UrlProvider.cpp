@@ -18,6 +18,7 @@ bool UrlProvider::s_isInitialized = false;
 static UrlProvider::Environment s_env;
 IBuddiClientPtr UrlProvider::s_buddi;
 ILocalState* UrlProvider::s_localState = nullptr;
+IHttpHandlerPtr UrlProvider::s_customHandler;
 
 // Region IDs from the buddi.bentley.com
 uint32_t s_regionsId[3] = {
@@ -104,10 +105,11 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::UsageTracking(
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UrlProvider::Initialize(Environment env, ILocalState* customLocalState, IBuddiClientPtr customBuddi)
+void UrlProvider::Initialize(Environment env, ILocalState* customLocalState, IBuddiClientPtr customBuddi, IHttpHandlerPtr customHandler)
     {
     s_localState = customLocalState ? customLocalState : &MobileDgnCommon::LocalState();
-    s_buddi = customBuddi ? customBuddi : std::make_shared<BuddiClient>();
+    s_customHandler = customHandler;
+    s_buddi = customBuddi ? customBuddi : std::make_shared<BuddiClient>(s_customHandler);
     s_env = env;
     s_isInitialized = true;
 
