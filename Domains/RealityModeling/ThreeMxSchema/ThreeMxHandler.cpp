@@ -15,20 +15,26 @@ HANDLER_DEFINE_MEMBERS(ThreeMxModelHandler)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-static ThreeMxScenePtr     readScene (BeFileNameR fileName, DgnDbR db, Utf8StringCR fileId)
+ThreeMxScenePtr      ThreeMxModel::ReadScene (BeFileNameR fileName, DgnDbR db, Utf8StringCR fileId)
     {
     // Find resolved file name for the point cloud
     BentleyStatus status = T_HOST.GetPointCloudAdmin()._ResolveFileName(fileName, fileId, db);
     if (status != SUCCESS)
         return nullptr;
 
-    S3SceneInfo     sceneInfo;
-    std::string     err;
-    ThreeMxScenePtr scene;
+    S3SceneInfo         sceneInfo;
+    std::string         err;
+    ThreeMxScenePtr     scene;
+    Transform           transform;
+    DRange3d            range;
 
     if (SUCCESS != BaseSceneNode::Read3MX (fileName, sceneInfo, err) ||
-        ! (scene = MRMeshScene::Create (sceneInfo, fileName)).IsValid())
+       ! (scene = MRMeshScene::Create (sceneInfo, fileName)).IsValid())
         return nullptr;
+
+    if (SUCCESS == scene->_GetRange (range, Transform::FromIdentity()) &&
+        SUCCESS == ThreeMxGCS::GetProjectionTransform (transform, sceneInfo, db, range))
+        scene->SetTransform (transform);
 
     return scene;
     }
@@ -43,7 +49,7 @@ DgnModelId ThreeMxModel::CreateThreeMxModel(DgnDbR db, Utf8StringCR fileId)
 
     BeFileName      fileName;
     
-    ThreeMxScenePtr scene = readScene (fileName, db, fileId);
+    ThreeMxScenePtr scene = ReadScene (fileName, db, fileId);
     if (! scene.IsValid())
         return DgnModelId();
     
@@ -65,7 +71,7 @@ ThreeMxScenePtr  ThreeMxModel::GetScene ()
         {
         BeFileName      fileName;
 
-        m_scene = readScene (fileName, GetDgnDb(), m_properties.m_fileId);
+        m_scene = ReadScene (fileName, GetDgnDb(), m_properties.m_fileId);
         }
 
     return m_scene;

@@ -51,6 +51,8 @@ struct MRMeshGeometry : RefCountedBase
     PolyfaceHeaderPtr           GetPolyface () { return m_polyface; }
     void                        Draw (ViewContextR viewContext, MRMeshNodeR node, MRMeshContextCR meshContext);
     void                        DrawCut (ViewContextR viewContext, DPlane3dCR plane);
+    BentleyStatus               GetRange (DRange3dR range, TransformCR transform) const;
+
 
     size_t                      GetMemorySize() const;
     void                        ClearQvElems () { m_qvElem = NULL; }
@@ -95,6 +97,7 @@ struct MRMeshContext
     bool                m_loadSynchronous;
     bool                m_useFixedResolution;
     double              m_fixedResolution;
+    QvCache*            m_qvCache;
 
     mutable size_t      m_lastPumpTicks;
     mutable size_t      m_nodeCount;
@@ -106,7 +109,7 @@ struct MRMeshContext
     bool                GetLoadSynchronous () const { return m_loadSynchronous; }
     bool                UseFixedResolution ()const  { return m_useFixedResolution; }
     double              GetFixedResolution () const { return m_fixedResolution; }
-    QvCache*            GetQvCache() const          { BeAssert (false); return NULL; }
+    QvCache*            GetQvCache() const          { return m_qvCache; }
 
 };  // MRMeshContext
 
@@ -130,6 +133,8 @@ public:
     static ThreeMxScenePtr  Create (S3SceneInfo const& sceneInfo, WCharCP fileName);
 
     virtual void    _Draw (ViewContextR viewContext, MRMeshContextCR MeshContext) override;
+    virtual BentleyStatus   _GetRange (DRange3dR range, TransformCR transform)  const override;
+
 
     void            DrawBoundingSpheres (ViewContextR viewContext);
     void            DrawMeshes (IDrawGeomP drawGeom, TransformCR transform);
@@ -206,6 +211,8 @@ struct MRMeshNode :  BaseMeshNode,  RefCountedBase
     bool                        Validate (MRMeshNodeCP parent) const;
     void                        GetDepthMap (bvector<size_t>& map, bvector <bset<BeFileName>>& fileNames, size_t depth);
     void                        Clear();
+    BentleyStatus               GetRange (DRange3dR range, TransformCR transform) const;
+
     
     static MRMeshNodePtr        Create (S3NodeInfo const& info, MRMeshNodeP parent);
     static MRMeshNodePtr        Create ();

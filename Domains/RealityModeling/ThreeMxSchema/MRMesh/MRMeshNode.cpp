@@ -388,24 +388,12 @@ bool IsRangeInView (IViewContextP viewContext, const ::DPoint3d& center, const d
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool    MRMeshNode::TestVisibility (bool& isUnderMaximumSize, ViewContextR viewContext, MRMeshContextCR meshContext)
     {
-#ifdef OPTION_SS3_BUILD
-    // ToDo may need better test.
-    if (DrawPurpose::DRAW_PURPOSE_CutXGraphicsCreate == viewContext.GetDrawPurpose ())
-        {
-        isUnderMaximumSize = false;
-        return true;
-        }
-    if (!IsRangeInView (&viewContext, m_info.m_center, m_info.m_radius))
-        return false;
-
-#else
     ClipVectorCP        clip;
 
     if (NULL != (clip = viewContext.GetTransformClipStack().GetClip()) &&
         !clip->PointInside (m_info.m_center, m_info.m_radius))
             return false;
 
-#endif
     if (meshContext.UseFixedResolution())
         {
         isUnderMaximumSize = (m_info.m_radius / meshContext.GetFixedResolution()) < m_info.m_dMax;
@@ -732,6 +720,34 @@ void  MRMeshNode::GetDepthMap (bvector<size_t>& map, bvector <bset<BeFileName>>&
         child->GetDepthMap (map, fileNames, depth+1);
     }
 
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   MRMeshNode::GetRange (DRange3dR range, TransformCR transform) const
+    {
+    range = DRange3d::NullRange();
+
+    for (auto const& child : m_children)     // Prefer the more accurate child range...
+        {
+        DRange3d        childRange = DRange3d::NullRange();
+
+        if (SUCCESS == child->GetRange (range, transform))
+            range.UnionOf (range, childRange);
+        }
+
+    if (range.IsNull())
+        {
+        for (auto const& mesh : m_meshes)
+            {
+            DRange3d        meshRange = DRange3d::NullRange();
+
+            if (SUCCESS == mesh->GetRange (range, transform))
+                range.UnionOf (range, meshRange);
+            }
+        }
+    return range.IsNull() ? ERROR : SUCCESS;
+    }
 
 
 

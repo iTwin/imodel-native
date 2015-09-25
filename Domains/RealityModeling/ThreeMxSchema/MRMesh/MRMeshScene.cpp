@@ -74,21 +74,6 @@ void        MRMeshScene::DrawBoundingSpheres (ViewContextR viewContext)
     }
 
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void    MRMeshScene::_Draw (ViewContextR viewContext, MRMeshContextCR MeshContext)
-    {
-    for (bvector<MRMeshNodePtr>::iterator child = m_children.begin (); child != m_children.end (); child++)
-        {
-        if (viewContext.CheckStop())
-            return;
-
-        (*child)->Draw (viewContext, MeshContext);
-        }
-    }
-
-
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -153,13 +138,40 @@ size_t      MRMeshScene::GetMaxDepth () const
     return 1 + maxChildDepth;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                      Ray.Bentley     09/2015
+//----------------------------------------------------------------------------------------
+BentleyStatus   MRMeshScene::_GetRange (DRange3dR range, TransformCR transform) const
+    {
+    range.Init ();
+    for (auto const& child : m_children)
+        {
+        DRange3d        childRange = DRange3d::NullRange();
+
+        if (SUCCESS == child->GetRange (range, transform))
+            range.UnionOf (range, childRange);
+        }
+
+    return range.IsNull() ? ERROR : SUCCESS;
+    }
 
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void    MRMeshScene::_Draw (ViewContextR viewContext, MRMeshContextCR MeshContext)
+    {
+    viewContext.PushTransform (m_transform);
 
+    for (bvector<MRMeshNodePtr>::iterator child = m_children.begin (); child != m_children.end (); child++)
+        {
+        if (viewContext.CheckStop())
+            break;
 
-
-
-
+        (*child)->Draw (viewContext, MeshContext);
+        }
+    viewContext.PopTransformClip ();
+    }
 
 

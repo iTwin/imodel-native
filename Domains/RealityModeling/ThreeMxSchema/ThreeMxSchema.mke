@@ -100,7 +100,9 @@ $(o)MRMeshUtil.obj              : $(mrMeshSrc)MRMeshUtil.cpp ${threeMxSchemaDepe
 #----------------------------------------------------------------------
 #   Schema
 #----------------------------------------------------------------------
-$(o)ThreeMxHandler$(oext)       : $(threeMxSchemaSrc)ThreeMxHandler.cpp             ${threeMxSchemaDepends} 
+$(o)ThreeMxHandler$(oext)       : $(threeMxSchemaSrc)ThreeMxHandler.cpp           ${threeMxSchemaDepends} 
+
+$(o)ThreeMxGCS$(oext)          : $(threeMxSchemaSrc)ThreeMxGCS.cpp                ${threeMxSchemaDepends} 
 
 $(o)ThreeMxDomain$(oext)       : $(threeMxSchemaSrc)ThreeMxDomain.cpp             ${threeMxSchemaDepends} 
 

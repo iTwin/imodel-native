@@ -132,6 +132,7 @@ void MRMeshGeometry::ReleaseQVisionCache ()
 
     if (NULL != m_qvElem)
         T_HOST.GetGraphicsAdmin()._DeleteQvElem (m_qvElem);
+
     m_qvElem = NULL;
     }
 
@@ -141,6 +142,22 @@ void MRMeshGeometry::ReleaseQVisionCache ()
 MRMeshGeometryPtr MRMeshGeometry::Create (int nbVertices,float* positions,float* normals,int nbTriangles,int* indices,float* textureCoordinates,int textureId)
     {
     return new MRMeshGeometry (nbVertices, positions, normals, nbTriangles, indices, textureCoordinates, textureId);
+    }
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   MRMeshGeometry::GetRange (DRange3dR range, TransformCR transform) const
+    {
+    for (DPoint3dCP point = m_polyface->GetPointCP(), end = point + m_polyface->GetPointCount(); point < end; )
+        {
+        DPoint3d    transformedPoint;
+
+        transform.Multiply (transformedPoint, *point++);
+
+        range.Extend (transformedPoint);
+        }
+    return SUCCESS;
     }
 
 /*-----------------------------------------------------------------------------------**//**

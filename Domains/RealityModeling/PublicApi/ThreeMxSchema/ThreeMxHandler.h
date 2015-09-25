@@ -8,10 +8,10 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
+THREEMXSCHEMA_TYPEDEFS (S3SceneInfo)
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 BEGIN_BENTLEY_THREEMX_SCHEMA_NAMESPACE
-
 
 
 //=======================================================================================
@@ -20,9 +20,25 @@ BEGIN_BENTLEY_THREEMX_SCHEMA_NAMESPACE
 struct ThreeMxScene : RefCountedBase
 {
 
-    virtual void _Draw (ViewContextR viewContext, struct MRMeshContext const& meshContext) = 0;
+    Transform       m_transform;
+
+    ThreeMxScene () : m_transform (Transform::FromIdentity()) { }
+    void    SetTransform (TransformCR transform) { m_transform = transform; }
+
+    virtual void            _Draw (ViewContextR viewContext, struct MRMeshContext const& meshContext) = 0;
+    virtual BentleyStatus   _GetRange (DRange3dR range, TransformCR transform)  const = 0;;
 
 };  // ThreeMxScene
+
+//=======================================================================================
+// @bsiclass                                                    Ray.Bentley     09/2015
+//=======================================================================================
+struct ThreeMxGCS
+{
+    static BentleyStatus GetProjectionTransform (TransformR transform, S3SceneInfoCR sceneInfo, DgnDbR db, DRange3dCR range);
+    
+};
+
 
 typedef RefCountedPtr <struct ThreeMxScene>      ThreeMxScenePtr;
 
@@ -34,8 +50,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ThreeMxModel : PhysicalModel
     DEFINE_T_SUPER(PhysicalModel)
 
 private:
-    ThreeMxScenePtr     m_scene;
-    DRange3d            GetSceneRange();
+    ThreeMxScenePtr         m_scene;
+    DRange3d                GetSceneRange();
+    static ThreeMxScenePtr  ReadScene (BeFileNameR fileName, DgnDbR db, Utf8StringCR fileId);
 
     ~ThreeMxModel() { }
 
