@@ -88,7 +88,8 @@ public:
     static TextAnnotationElementPtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<TextAnnotationElement>(id); }
 
     explicit TextAnnotationElement(CreateParams const& params) : T_Super(params) {}
-    
+    static TextAnnotationElementPtr Create(CreateParams const& params) { return new TextAnnotationElement(params); }
+
     TextAnnotationCP GetAnnotation() const { TextAnnotationItemCP item = GetItemCP(); return item ? item->GetAnnotation() : nullptr; }
     void SetAnnotation(TextAnnotationCP value) { GetItemR().SetAnnotation(value); }
     
@@ -129,6 +130,7 @@ public:
     static PhysicalTextAnnotationElementPtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<PhysicalTextAnnotationElement>(id); }
 
     explicit PhysicalTextAnnotationElement(CreateParams const& params) : T_Super(params) {}
+    static PhysicalTextAnnotationElementPtr Create(CreateParams const& params) { return new PhysicalTextAnnotationElement(params); }
     
     TextAnnotationCP GetAnnotation() const { TextAnnotationItemCP item = GetItemCP(); return item ? item->GetAnnotation() : nullptr; }
     void SetAnnotation(TextAnnotationCP value) { GetItemR().SetAnnotation(value); }

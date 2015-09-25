@@ -113,9 +113,7 @@ DgnDbStatus TextAnnotationItem::_GenerateElementGeometry(GeometricElementR el, G
         builder = ElementGeometryBuilder::Create(*el.GetModel(), el.GetCategoryId(), elem2d->GetPlacement().GetOrigin(), elem2d->GetPlacement().GetAngle());
         }
     
-    TextAnnotationDraw annotationDraw(*m_annotation);
-    annotationDraw.Draw(*builder, el.GetDgnDb(), el.GetCategoryId());
-    
+    builder->Append(*m_annotation);
     builder->SetGeomStreamAndPlacement(el);
     
     return DgnDbStatus::Success;
