@@ -451,11 +451,11 @@
     </Product>
 
     <!-- (There must be a static and a dynamic version to support how we build for the various platforms.) -->
-    <Part Name="TestCollection-NoView-Dynamic" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="TestCollection-NoView-Dynamic" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
         <SubPart PartName="TestCollection-NoView"/>
     </Part>
 
-    <Part Name="TestCollection-NoView-Static" ExcludePlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="TestCollection-NoView-Static" ExcludePlatforms="x86,x64,Linux*,MacOS*,WinRT*">
         <SubPart PartName="TestCollection-NoView" LibType="static" />
     </Part>
 
@@ -551,11 +551,11 @@
     </Part>
 
     <!-- Define dynamic and static versions of the test collection -->
-    <Part Name="TestCollection-Performance-Dynamic" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="TestCollection-Performance-Dynamic" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
         <SubPart PartName="TestCollection-Performance"/>
     </Part>
 
-    <Part Name="TestCollection-Performance-Static" ExcludePlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="TestCollection-Performance-Static" ExcludePlatforms="x86,x64,Linux*,MacOS*,WinRT*">
         <SubPart PartName="TestCollection-Performance" LibType="static" />
     </Part>
 
