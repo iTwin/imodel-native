@@ -26,7 +26,7 @@ o                   = $(OutputRootDir)build/BeTestWinRT/
 tmp                 = $(o)tmp/
 projectDir          = $(o)Project/
 
-collectionProduct = $(OutputRootDir)../Product/${TEST_COLLECTION_PRODUCT}/
+collectionProduct = $(OutputRootDir)Product/${TEST_COLLECTION_PRODUCT}/
 collectionAssetsDir = $(collectionProduct)Assets/
 collectionAssembliesDir = $(collectionProduct)Assemblies/
 collectionLibsDir = $(collectionProduct)Libs/
@@ -116,6 +116,9 @@ always:
 #--------------------------------------------------------------------------------------
 unitTestObjs = $[@wildcard $(collectionTestObjectsDir)*$(oext)]
 
+%warn $(collectionTestObjectsDir)
+%warn $[@wildcard $(collectionTestObjectsDir)*$(oext)]
+
 DLM_NAME            = UnitTests
 DLM_DEST            = $(projectDir)
 DLM_EXPORT_DEST     = $(projectDir)
@@ -134,8 +137,7 @@ LINKER_LIBRARIES   =   $[@wildcard $(collectionLibsDir)*$(libext)]
 %include dlmlink.mki
 
 #--------------------------------------------------------------------------------------
-# VS will also need to link with BentleyG.dll (See BeTestHost.cpp). The DLL is delivered for use at run time as part of assets.
-# Put the .lib file in the project for use at build time.
+# Libs used by the test runner itself
 #--------------------------------------------------------------------------------------
 $(projectDir)Bentley.lib : $(BuildContext)SubParts/Libs/Bentley.lib
     $(LinkFirstDepToFirstTarget)
@@ -143,10 +145,6 @@ $(projectDir)Bentley.lib : $(BuildContext)SubParts/Libs/Bentley.lib
 $(projectDir)BentleyAllocator.lib : $(BuildContext)SubParts/Libs/BentleyAllocator.lib
     $(LinkFirstDepToFirstTarget)
 
-#--------------------------------------------------------------------------------------
-# VS will also need to link with BeSQLiteG.dll (See BeTestHost.cpp). The DLL is delivered for use at run time as part of assets.
-# Put the .lib file in the project for use at build time.
-#--------------------------------------------------------------------------------------
 $(projectDir)BeSQLite.lib : $(BuildContext)SubParts/Libs/BeSQLite.lib
     $(LinkFirstDepToFirstTarget)
 
