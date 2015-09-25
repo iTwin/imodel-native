@@ -41,8 +41,10 @@ always:
     %return
 %endif
 
+fixedExePath = $[@realpath $(GTEST_EXE)]
+
 %ifdef __unix
-    RUN_PREFIX = export LD_LIBRARY_PATH=$[@dir $(GTEST_EXE)] ;
+    RUN_PREFIX = export LD_LIBRARY_PATH=$[@dir $(fixedExePath)] ;
 %endif
 
 always:
@@ -51,7 +53,7 @@ always:
     !~@mkdir ${runDir}/Output
     !~@mkdir ${runDir}/Temp
     !~@mkdir ${LogDir}
-    $(RUN_PREFIX) $(GTEST_EXE) --gtest_output="xml:$(LogDir)TestResults.xml" > $(LogDir)TestResults.txt
+    $(RUN_PREFIX) $(fixedExePath) --gtest_output="xml:$(LogDir)TestResults.xml" > $(LogDir)TestResults.txt
 
 %message .
 %message See $(LogDir)TestResults.txt for logging output, interleaved with test output. 
