@@ -1494,10 +1494,11 @@ template<typename T> static uint16_t buildParamString(Utf8StringR str, ECSqlClas
         if (type != (entry.m_type & type))
             continue;
 
-        if (0 < count++)
+        if (0 < count)
             str.append(1, ',');
 
-        func(entry.m_name);
+        func(entry.m_name, count);
+        ++count;
         }
 
     return count;
@@ -1520,7 +1521,7 @@ ECSqlClassInfo const& dgn_ElementHandler::Element::GetECSqlClassInfo()
         // Build SELECT statement
         m_classInfo.m_select = "SELECT ";
         m_classInfo.m_numSelectParams = buildParamString(m_classInfo.m_select, entries, ECSqlClassParams::StatementType::Select,
-            [&](Utf8CP name) { m_classInfo.m_select.append(1, '[').append(name).append(1, ']'); });
+            [&](Utf8CP name, uint16_t count) { m_classInfo.m_select.append(1, '[').append(name).append(1, ']'); });
 
         if (0 < m_classInfo.m_numSelectParams)
             {
@@ -1536,9 +1537,12 @@ ECSqlClassInfo const& dgn_ElementHandler::Element::GetECSqlClassInfo()
         m_classInfo.m_insert.append("INSERT INTO ").append(fullClassName).append(1, '(');
         Utf8String insertValues;
         m_classInfo.m_numInsertParams = buildParamString(m_classInfo.m_insert, entries, ECSqlClassParams::StatementType::Insert,
-            [&](Utf8CP name)
+            [&](Utf8CP name, uint16_t count)
                 {
                 m_classInfo.m_insert.append(1, '[').append(name).append(1, ']');
+                if (0 < count)
+                    insertValues.append(1, ',');
+
                 insertValues.append(":[").append(name).append(1, ']');
                 });
 
@@ -1550,7 +1554,7 @@ ECSqlClassInfo const& dgn_ElementHandler::Element::GetECSqlClassInfo()
         // Build UPDATE statement
         m_classInfo.m_update.append("UPDATE ONLY ").append(fullClassName).append(" SET ");
         m_classInfo.m_numUpdateParams = buildParamString(m_classInfo.m_update, entries, ECSqlClassParams::StatementType::Update,
-            [&](Utf8CP name)
+            [&](Utf8CP name, uint16_t count)
                 {
                 m_classInfo.m_update.append(1, '[').append(name).append("]=:[").append(name).append(1, ']');
                 });
