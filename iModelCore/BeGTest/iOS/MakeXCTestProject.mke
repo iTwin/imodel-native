@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: MakeSenTestProject.mke $
+#     $Source: iOS/MakeXCTestProject.mke $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -39,6 +39,7 @@ unitTestsDir = $(collectionProduct)Objects/
     always:
         ~mkdir $(o)
         ~mkdir $(tmp)
+        ~mkdir $(XCodeProject)
         !~@putenv PYTHONPATH=$(PYTHONPATH)$(bsicommon_ospathsep)$(SrcBsiCommon)PublicSDK
 %endif
 
@@ -47,6 +48,19 @@ unitTestsDir = $(collectionProduct)Objects/
 #--------------------------------------------------------------------------------------
 always:
     CopyWithSymlinks.py $(baseDir)XCodeProject/BeTestiOS $(XCodeProject)
+
+#--------------------------------------------------------------------------------------
+# Write out a file that contains a macro that defines the name of of the framework sqlang file to use
+#--------------------------------------------------------------------------------------
+%ifndef TEST_FRAMEWORK_SQLANG
+    TEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3
+%endif
+
+always:
+    !~@mkdir $(XCodeProject)BeTestiOSTests
+    > $(XCodeProject)BeTestiOSTests/TEST_FRAMEWORK_SQLANG_DEF.h
+\#define TEST_FRAMEWORK_SQLANG L"$(TEST_FRAMEWORK_SQLANG)"
+    <
 
 #--------------------------------------------------------------------------------------
 # Generate SenTest wrappers
