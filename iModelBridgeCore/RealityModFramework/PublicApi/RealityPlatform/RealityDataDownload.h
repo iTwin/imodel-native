@@ -34,7 +34,7 @@ public:
         {
         AString  url;
         WString  filename;
-        int      index;
+        size_t   index;
 
 
         // internal used only
@@ -43,24 +43,42 @@ public:
         RealityDataDownload_ProgressCallBack pProgressFunc;
         };
 
-    
-    REALITYDATAPLATFORM_EXPORT static RealityDataDownloadPtr Create(const std::pair<AString, WString>* pi_pUrl_OutFileName, int pi_nbEntry);
+    typedef std::vector<std::pair<AString, WString>>    UrlLink_UrlFile;
 
+    //! Create an instance of RealityDataDownload
+    //! @param[in]  pi_Link_FileName A list of (Url link, url file)
+    //! @return NULL if error   
+    REALITYDATAPLATFORM_EXPORT static RealityDataDownloadPtr Create(const UrlLink_UrlFile& pi_Link_FileName);
+
+    // pio_rFileName could already contain the first part of the path, like "C:\\Data\\"
+    //               the filename extract from the url, will be concatenated. 
+    // Note:
+    //      Not working very well for OSM link.
+
+    //! Utility method to extract filename from the url link if possible.
+    //! @param[in/out] pio_rFileName Could already contain the first part of the path, like "C:\\Data\\"
+    //!                              the filename extract from the url, will be concatenated. 
+    //! @param[in] pi_Url            Url link string.
+    REALITYDATAPLATFORM_EXPORT static void RealityDataDownload::ExtractFileName(WString& pio_rFileName, const AString& pi_Url);
+
+    //! Set callback to follow progression of the download.
     REALITYDATAPLATFORM_EXPORT void SetProgressCallBack(RealityDataDownload_ProgressCallBack pi_func) {m_pProgressFunc = pi_func;};
+    //! Set callback to know to status, download done or error.
     REALITYDATAPLATFORM_EXPORT void SetStatusCallBack(RealityDataDownload_StatusCallBack pi_func) { m_pStatusFunc = pi_func; };
 
+    //! Start the download progress for all links.
     REALITYDATAPLATFORM_EXPORT bool Perform();
 
 private:
     RealityDataDownload() { m_pCurlHandle=NULL;};
-    RealityDataDownload(const std::pair<AString, WString>* pi_pUrl_OutFileName, int pi_nbEntry);
+    RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName);
     ~RealityDataDownload();
 
-    bool SetupCurlandFile(int pi_index);
+    bool SetupCurlandFile(size_t pi_index);
 
     void*                       m_pCurlHandle;
-    int                         m_nbEntry;
-    int                         m_curEntry;
+    size_t                      m_nbEntry;
+    size_t                      m_curEntry;
 //    HArrayAutoPtr<FileTransfer> m_pEntries;
     FileTransfer                *m_pEntries;
 
