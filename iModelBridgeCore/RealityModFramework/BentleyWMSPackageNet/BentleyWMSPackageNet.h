@@ -32,14 +32,14 @@ namespace RealityDataPackageWrapper
         {
         public:
             //! Create package.
-            static void Create(System::String^  location, 
-                               System::String^  name,
-                               System::String^  description,
-                               System::String^  copyright,
-                               List<double>^    regionOfInterest,
+            static void Create(System::String^ location, 
+                               System::String^ name,
+                               System::String^ description,
+                               System::String^ copyright,
+                               List<double>^ regionOfInterest,
                                ImageryGroupNet^ imageryData,
-                               ModelGroupNet^   modelData,
-                               PinnedGroupNet^  pinnedData,
+                               ModelGroupNet^ modelData,
+                               PinnedGroupNet^ pinnedData,
                                TerrainGroupNet^ terrainData);
         
         private:
@@ -134,31 +134,36 @@ namespace RealityDataPackageWrapper
         {
         public:
             //! Create generic data source.
-            static RealityDataSourceNet^ Create(System::String^ url,
+            static RealityDataSourceNet^ Create(System::String^ uri,
                                                 System::String^ type,
-                                                System::String^ copyright);
+                                                System::String^ copyright,
+                                                double size);             
 
+            //! Get the source uri. It could be a full URL or a path relative to the package file.
+            System::String^ GetUri() { return m_uri; }
 
-
-            System::String^ GetUrl() { return m_url; }
+            //! Get the source type.
             System::String^ GetSourceType() { return m_type; }
+
+            //! Get the data copyright.
             System::String^ GetCopyright() { return m_copyright; }
-            System::String^ GetXmlFragment() { return m_xmlFragment; }
-            
+
+            //! Get the data size in kilobytes. 
+            double  GetFilesize() { return m_size; }
+
         protected:
-            RealityDataSourceNet(System::String^ url,
+            RealityDataSourceNet(System::String^ uri, 
                                  System::String^ type,
-                                 System::String^ copyright);
+                                 System::String^ copyright,
+                                 double size);
 
             ~RealityDataSourceNet();
 
-            System::String^ m_xmlFragment;
-
         private:
-            System::String^ m_url;
+            System::String^ m_uri;
             System::String^ m_type;
             System::String^ m_copyright;  
-            
+            double m_size;
         };
 
     //=====================================================================================
@@ -167,42 +172,50 @@ namespace RealityDataPackageWrapper
     public ref class WmsSourceNet : public RealityDataSourceNet
         {
         public:
-            static WmsSourceNet^ Create(System::String^    url,
-                                        System::String^    copyright,
-                                        double             bboxMinX,
-                                        double             bboxMinY,
-                                        double             bboxMaxX,
-                                        double             bboxMaxY,
-                                        System::String^    version,
-                                        System::String^    layers,
-                                        System::String^    csType,
-                                        System::String^    csLabel,
-                                        size_t             metaWidth,
-                                        size_t             metaHeight,
-                                        System::String^    styles,
-                                        System::String^    format,
-                                        System::String^    vendorSpecific,
-                                        bool               isTransparent);
+            //! Create WMS data source.
+            static WmsSourceNet^ Create(System::String^ uri,
+                                        System::String^ copyright,     
+                                        double size,                   
+                                        double bboxMinX,
+                                        double bboxMinY,
+                                        double bboxMaxX,
+                                        double bboxMaxY,
+                                        System::String^ version,
+                                        System::String^ layers,
+                                        System::String^ csType,
+                                        System::String^ csLabel,
+                                        size_t metaWidth,              
+                                        size_t metaHeight,             
+                                        System::String^ styles,        
+                                        System::String^ format,        
+                                        System::String^ vendorSpecific,
+                                        bool isTransparent);           
+
+            //! Get XML representation.
+            System::String^ GetXmlFragment() { return m_xmlFragment; }
 
         private:
-            WmsSourceNet(System::String^   url,
-                         System::String^   copyright,         
-                         double            bboxMinX,
-                         double            bboxMinY,
-                         double            bboxMaxX,
-                         double            bboxMaxY,
-                         System::String^   version,
-                         System::String^   layers,
-                         System::String^   csType,
-                         System::String^   csLabel,
-                         size_t            metaWidth,
-                         size_t            metaHeight,
-                         System::String^   styles,
-                         System::String^   format,
-                         System::String^   vendorSpecific,
-                         bool              isTransparent);
+            WmsSourceNet(System::String^ uri,
+                         System::String^ copyright,
+                         double size,
+                         double bboxMinX,
+                         double bboxMinY,
+                         double bboxMaxX,
+                         double bboxMaxY,
+                         System::String^ version,
+                         System::String^ layers,
+                         System::String^ csType,
+                         System::String^ csLabel,
+                         size_t metaWidth,              
+                         size_t metaHeight,             
+                         System::String^ styles,        
+                         System::String^ format,        
+                         System::String^ vendorSpecific,
+                         bool isTransparent);     
 
             ~WmsSourceNet();
+
+            System::String^ m_xmlFragment;
         };
 
     //=====================================================================================
@@ -211,21 +224,29 @@ namespace RealityDataPackageWrapper
     public ref class UsgsSourceNet : public RealityDataSourceNet
         {
         public:
-            static UsgsSourceNet^ Create(System::String^        url, 
-                                         System::String^        copyright,
-                                         System::String^        dataType,
-                                         System::String^        dataLocation,
+            //! Create USGS data source.
+            static UsgsSourceNet^ Create(System::String^ uri,
+                                         System::String^ copyright,         
+                                         double size,                       
+                                         System::String^ dataType,
+                                         System::String^ dataLocation,      
                                          List<System::String^>^ sisterFiles,
-                                         System::String^        metadata);
+                                         System::String^ metadata);
+
+            //! Get XML representation.
+            System::String^ GetXmlFragment() { return m_xmlFragment; }
 
         private:
-            UsgsSourceNet(System::String^           url, 
-                          System::String^           copyright,
-                          System::String^           dataType, 
-                          System::String^           dataLocation,
-                          List<System::String^>^    sisterFiles,
-                          System::String^           metadata);
+            UsgsSourceNet(System::String^ uri,
+                          System::String^ copyright,
+                          double size,
+                          System::String^ dataType,
+                          System::String^ dataLocation,      
+                          List<System::String^>^ sisterFiles,
+                          System::String^ metadata);
 
             ~UsgsSourceNet();
+
+            System::String^ m_xmlFragment;
         };    
     }

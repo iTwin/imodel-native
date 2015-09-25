@@ -30,7 +30,7 @@ class CrawlerLibClient : ICrawlerObserver
     //Callback method provided by the ICrawlerObserver interface
     virtual void OnPageCrawled(PageContentCR page)
         {
-        printf("%ls\n", page.GetUrl().GetUrlWString());
+        printf("%ls\n", page.GetUrl().GetUrlWString().c_str());
         }
 
     void Run()
