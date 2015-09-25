@@ -457,9 +457,21 @@ RealityDataSourceR RealityData::GetSourceR() {return *m_pSource;}
 RealityDataSourceCR RealityData::GetSource() const {return *m_pSource;}
 Utf8StringCR RealityData::GetCopyright() const { return m_copyright; }
 void RealityData::SetCopyright(Utf8CP dataCopyright) { m_copyright = dataCopyright; }
+double RealityData::GetFilesize() const { return m_size; }
+void RealityData::SetFilesize(double size) { m_size = size; }
 
-RealityData::RealityData(RealityDataSourceR dataSource):m_pSource(&dataSource){}
-RealityData::RealityData(RealityDataSourceR dataSource, Utf8CP dataCopyright) : m_pSource(&dataSource), m_copyright(dataCopyright) {}
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+RealityData::RealityData(RealityDataSourceR dataSource)
+    : m_pSource(&dataSource),
+      m_copyright(""),          // Default.
+      m_size(0)                 // Default.
+    {}
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
 RealityData::~RealityData(){}
 
 //----------------------------------------------------------------------------------------
@@ -469,16 +481,19 @@ RealityPackageStatus RealityData::_Read(BeXmlNodeR dataNode)
     {
     RealityPackageStatus status = RealityPackageStatus::MissingDataSource;
 
-    // Copyright should be the first child element followed by a source node.
     for (BeXmlNodeP pChildElement = dataNode.GetFirstChild(); NULL != pChildElement; pChildElement = pChildElement->GetNextSibling())
         {
-        if (pChildElement->IsName("Copyright"))
+        if (pChildElement->IsName(PACKAGE_ELEMENT_Copyright))
             pChildElement->GetContent(m_copyright);
-
-        m_pSource = RealityDataSourceSerializer::Get().Load(status, *pChildElement);
-        if(RealityPackageStatus::UnknownElementType != status)
-            break;  // either we loaded the source or we had an error loading it.
-            
+        else if (pChildElement->IsName(PACKAGE_ELEMENT_Filesize))
+            pChildElement->GetContentDoubleValue(m_size);
+        else
+            {
+            m_pSource = RealityDataSourceSerializer::Get().Load(status, *pChildElement);
+            if(RealityPackageStatus::UnknownElementType != status)
+                break;  // either we loaded the source or we had an error loading it.
+            }
+        
         status = RealityPackageStatus::MissingDataSource;   // reset status we do not want return UnknownElementType if it's the last iteration.
         }
 
@@ -493,9 +508,21 @@ RealityPackageStatus RealityData::_Write(BeXmlNodeR dataNode) const
     if(!m_pSource.IsValid())
         return RealityPackageStatus::MissingDataSource;
 
-    BeXmlNodeP pCopyrightNode = dataNode.AddElementStringValue(PACKAGE_ELEMENT_Copyright, m_copyright.c_str());
-    if (NULL == pCopyrightNode)
-        return RealityPackageStatus::UnknownError;
+    // Optional data copyright.
+    if (!m_copyright.empty())
+        {
+        BeXmlNodeP pCopyrightNode = dataNode.AddElementStringValue(PACKAGE_ELEMENT_Copyright, m_copyright.c_str());
+        if (NULL == pCopyrightNode)
+            return RealityPackageStatus::UnknownError;
+        }
+
+    // Optional data size.
+    if (0 != m_size)
+        {
+        BeXmlNodeP pFilesizeNode = dataNode.AddElementDoubleValue(PACKAGE_ELEMENT_Filesize, m_size);
+        if (NULL == pFilesizeNode)
+            return RealityPackageStatus::UnknownError;
+        }
 
     return RealityDataSourceSerializer::Get().Store(*m_pSource, dataNode);
     }

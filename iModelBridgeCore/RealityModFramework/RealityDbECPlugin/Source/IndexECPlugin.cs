@@ -563,7 +563,13 @@ namespace Bentley.ECPluginExamples
                 string type = entity.GetPropertyValue("DataSourceType").StringValue;
                 string copyright = queriedMetadatas.First(m => m.InstanceId == entity.InstanceId).GetPropertyValue("Legal").StringValue;
 
-                usgsSourceNetList.Add(UsgsSourceNet.Create(copyright, url, type, "", new List<string>(), metadata));
+                usgsSourceNetList.Add(UsgsSourceNet.Create(url,                     // Url
+                                                           copyright,               // Data copyright
+                                                           0,                       // Data size
+                                                           type,                    // Main file type
+                                                           "",                      // Main file location
+                                                           new List<string>(),      // Sister Files 
+                                                           metadata));              // Metadata location 
             }
 
             return usgsSourceNetList;
@@ -737,18 +743,19 @@ namespace Bentley.ECPluginExamples
                 if (vendorSpecific.EndsWith("&"))
                     vendorSpecific = vendorSpecific.TrimEnd('&');
 
-                wmsMapInfoList.Add(WmsSourceNet.Create(mapInfo.Legal,                      // Copyright
-                                                       mapInfo.GetMapURL.TrimEnd('?'),    // Url
-                                                       minX, minY, maxX, maxY,             // Bbox min/max values
-                                                       mapInfo.Version,                    // Version
-                                                       mapInfo.Layers,                     // Layers (comma-separated list)
-                                                       csType,                             // Coordinate System Type
-                                                       mapInfo.CoordinateSystem,           // Coordinate System Label
-                                                       10, 10,                             // MetaWidth and MetaHeight
-                                                       mapInfo.SelectedStyle,              // Styles (comma-separated list)
-                                                       mapInfo.SelectedFormat,             // Format
-                                                       vendorSpecific,                     // Vendor Specific
-                                                       true));                             // Transparency
+                wmsMapInfoList.Add(WmsSourceNet.Create(mapInfo.GetMapURL.TrimEnd ('?'),     // Url
+                                                       mapInfo.Legal,                       // Copyright
+                                                       0,                                   // Size
+                                                       minX, minY, maxX, maxY,              // Bbox min/max values
+                                                       mapInfo.Version,                     // Version
+                                                       mapInfo.Layers,                      // Layers (comma-separated list)
+                                                       csType,                              // Coordinate System Type
+                                                       mapInfo.CoordinateSystem,            // Coordinate System Label
+                                                       10, 10,                              // MetaWidth and MetaHeight
+                                                       mapInfo.SelectedStyle,               // Styles (comma-separated list)
+                                                       mapInfo.SelectedFormat,              // Format
+                                                       vendorSpecific,                      // Vendor Specific
+                                                       true));                              // Transparency
 
             }
             return wmsMapInfoList;
