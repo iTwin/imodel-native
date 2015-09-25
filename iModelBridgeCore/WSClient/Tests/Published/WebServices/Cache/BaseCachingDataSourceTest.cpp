@@ -12,22 +12,27 @@
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #ifdef USE_GTEST
-CachingDataSourcePtr BaseCachingDataSourceTest::s_reusableDataSourceV1;
-CachingDataSourcePtr BaseCachingDataSourceTest::s_reusableDataSourceV2;
 
-std::shared_ptr<MockWSRepositoryClient> BaseCachingDataSourceTest::s_reusableClient;
+bmap<BeVersion, CachingDataSourcePtr> BaseCachingDataSourceTest::s_reusableDataSources;
+std::shared_ptr<MockWSRepositoryClient> BaseCachingDataSourceTest::s_mockClient;
 
 CachingDataSourcePtr BaseCachingDataSourceTest::GetTestDataSourceV1()
     {
-    return GetTestDataSourceV1(s_reusableDataSourceV1, StubWSInfoWebApi({1, 3}));
+    return GetTestDataSource({1, 3});
     }
 
 CachingDataSourcePtr BaseCachingDataSourceTest::GetTestDataSourceV2()
     {
-    return GetTestDataSourceV1(s_reusableDataSourceV2, StubWSInfoWebApi({2, 0}));
+    return GetTestDataSource({2, 0});
     }
 
-CachingDataSourcePtr BaseCachingDataSourceTest::GetTestDataSourceV1(CachingDataSourcePtr& reusable, WSInfoCR info)
+CachingDataSourcePtr BaseCachingDataSourceTest::GetTestDataSource(BeVersion webApiVersion)
+    {
+    SetupTestDataSource(s_reusableDataSources[webApiVersion], StubWSInfoWebApi(webApiVersion));
+    return s_reusableDataSources[webApiVersion];
+    }
+
+void BaseCachingDataSourceTest::SetupTestDataSource(CachingDataSourcePtr& reusable, WSInfoCR info)
     {
     if (nullptr == reusable)
         {
@@ -39,8 +44,6 @@ CachingDataSourcePtr BaseCachingDataSourceTest::GetTestDataSourceV1(CachingDataS
     EXPECT_EQ(SUCCESS, txn.Commit());
 
     reusable->GetCacheAccessThread()->OnEmpty()->Wait();
-
-    return reusable;
     }
 
 CachingDataSourcePtr BaseCachingDataSourceTest::CreateMockedCachingDataSource
@@ -80,11 +83,11 @@ BeFileName temporaryDir
 
 std::shared_ptr<MockWSRepositoryClient> BaseCachingDataSourceTest::GetMockClientPtr()
     {
-    if (nullptr == s_reusableClient)
+    if (nullptr == s_mockClient)
         {
-        s_reusableClient = MockWSRepositoryClient::Create();
+        s_mockClient = MockWSRepositoryClient::Create();
         }
-    return s_reusableClient;
+    return s_mockClient;
     }
 
 MockWSRepositoryClient& BaseCachingDataSourceTest::GetMockClient()
@@ -133,9 +136,9 @@ WSInfoCR info
 
 void BaseCachingDataSourceTest::TearDown()
     {
-    if (s_reusableClient)
+    if (s_mockClient)
         {
-        Mock::VerifyAndClearExpectations(s_reusableClient.get());
+        Mock::VerifyAndClearExpectations(s_mockClient.get());
         }
 
     BaseCacheTest::TearDown();
@@ -145,9 +148,8 @@ void BaseCachingDataSourceTest::SetUpTestCase()
     {
     CacheTransactionManager::SetAllowUnsafeAccess(true);
 
-    s_reusableDataSourceV1 = nullptr;
-    s_reusableDataSourceV2 = nullptr;
-    s_reusableClient = nullptr;
+    s_reusableDataSources.clear();
+    s_mockClient = nullptr;
 
     BaseCacheTest::SetUpTestCase();
     }
@@ -156,9 +158,8 @@ void BaseCachingDataSourceTest::TearDownTestCase()
     {
     CacheTransactionManager::SetAllowUnsafeAccess(false);
 
-    s_reusableDataSourceV1 = nullptr;
-    s_reusableDataSourceV2 = nullptr;
-    s_reusableClient = nullptr;
+    s_reusableDataSources.clear();
+    s_mockClient = nullptr;
 
     BaseCacheTest::TearDownTestCase();
     }
