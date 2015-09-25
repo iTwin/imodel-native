@@ -67,7 +67,24 @@ $(outputDir)Scripts/installApk$(scriptExt) : $(testApk) $(_makefilespec)
     %endif
     ~time
 
+$(outputDir)Scripts/runOneTest$(scriptExt) : $(baseDir)runOneTest$(scriptExt)
+    $(LinkFirstDepToFirstTarget)
+
+$(outputDir)Scripts/runTests$(scriptExt): $(_makefilespec)
+    $(msg)
+    >$@
+        $(adbCmd) shell am instrument -w com.bentley.unittest\/com.bentley.unittest.BeInstrumentationTestRunner
+        <
+    ~time
+    %if defined (__unix)
+        chmod +x $@
+    %endif
+
 %if !defined (BMAKE_DELETE_ALL_TARGETS)
 %message To install tests, execute the following command:  
 %message     $(outputDir)Scripts/installApk$(scriptExt)
+%message To run tests:
+%message     $(outputDir)Scripts/runTests$(scriptExt)
+%message To run a single unit test:
+%message     $(outputDir)Scripts/runOneTest$(scriptExt)
 %endif
