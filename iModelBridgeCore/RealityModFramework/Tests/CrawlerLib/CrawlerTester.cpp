@@ -78,7 +78,7 @@ class SingleDownloaderCrawlerTester : public ::testing::Test
         std::vector<IPageDownloader*> downloaders;
         downloaders.push_back(downloader);
 
-        crawler = new Crawler(queue, downloaders);
+        crawler = Crawler::Create(queue, downloaders);
 
         seed = new UrlMock(L"http://seed.com");
         linkInPage = new UrlMock(L"http://link.com");
@@ -99,13 +99,12 @@ class SingleDownloaderCrawlerTester : public ::testing::Test
 
     void TearDown()
         {
-        delete crawler;
         }
 
     PageDownloaderMock* downloader;
     PolitenessMock* politeness;
     UrlQueueMock* queue;
-    Crawler* crawler;
+    CrawlerPtr crawler;
 
     UrlPtr seed;
     UrlPtr linkInPage;
@@ -227,18 +226,17 @@ class MultiDownloaderCrawlerTester : public ::testing::Test
         downloaders.push_back(downloader1);
         downloaders.push_back(downloader2);
 
-        crawler = new Crawler(queue, downloaders);
+        crawler = Crawler::Create(queue, downloaders);
         }
 
     void TearDown()
         {
-        delete crawler;
         }
 
     PageDownloaderMock* downloader1;
     PageDownloaderMock* downloader2;
 
-    Crawler* crawler;
+    CrawlerPtr crawler;
     };
 
 TEST_F(MultiDownloaderCrawlerTester, SettingTheUserAgentUpdatesAllDownloaders)

@@ -23,6 +23,7 @@ void CrawlDelaySleeper::Sleep(uint32_t domainCrawlDelayInSeconds, DomainName con
     if(domainCrawlDelayInSeconds <= 0)
         return;
 
+    // Add (thread safe) the domain if it is not already present in the map of domains
     m_AddDomainToMapMutex.lock();
     auto domainIterator = m_MutexPerDomain.find(domain);
     if(domainIterator == m_MutexPerDomain.end())
@@ -33,6 +34,7 @@ void CrawlDelaySleeper::Sleep(uint32_t domainCrawlDelayInSeconds, DomainName con
         }
     m_AddDomainToMapMutex.unlock();
 
+    // Once the domain mutex is optionaly added then located ... sleep delay is applicable
     std::mutex& mutex = domainIterator->second.first;
     std::lock_guard<std::mutex> lock(mutex);
 

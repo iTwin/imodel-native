@@ -21,6 +21,7 @@ BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 
 //=======================================================================================
 //! @bsiclass
+// A page parser parses a HTML page provided. It generates a page content.
 //=======================================================================================
 class PageParser
     {

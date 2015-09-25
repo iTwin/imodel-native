@@ -33,6 +33,8 @@ RobotsTxtDownloader::~RobotsTxtDownloader()
 //+---------------+---------------+---------------+---------------+---------------+------
 RobotsTxtContentPtr RobotsTxtDownloader::DownloadRobotsTxt(UrlPtr const& pi_Url)
     {
+    BeAssert(pi_Url != NULL);
+
     UrlPtr robotsTxtUrl = new Url(L"/robots.txt", pi_Url);
     SetResourceUrl(robotsTxtUrl->GetUrlWString());
 
@@ -75,6 +77,9 @@ void RobotsTxtDownloader::SetDataWritingSettings(WString* buffer, void* writeFun
 //+---------------+---------------+---------------+---------------+---------------+------
 size_t RobotsTxtDownloader::CurlWriteCallback(void* contents, size_t size, size_t nmemb, void* userp)
     {
+    BeAssert(contents != NULL);
+    BeAssert(userp != NULL);
+
     Utf8String s((char *) contents, size * nmemb);
     ((WString*) userp)->AppendUtf8(s.c_str());
     return size * nmemb;

@@ -29,31 +29,55 @@ class UrlQueue;
 
 //=======================================================================================
 //! @bsiclass
+// Defines the crawler observer interface as a abstract class.
+// The crawler observer that must inherit from the present one must implement
+// a behavior for the OnPageCrawled() method.
 //=======================================================================================
 class ICrawlerObserver
     {
     public:
     virtual ~ICrawlerObserver() {}
+
+    //=======================================================================================
+    // OnPageCrawled is called during the call process whenever a page is discovered by the 
+    // crawler. The page content object given defines the page discovered. It is up to
+    // the effective crawler observer to discard, classify, copy or do whatever process
+    // is required on the page.
+    //=======================================================================================
     virtual void OnPageCrawled(PageContentCR page) = 0;
     };
 
 //=======================================================================================
 //! @bsiclass
+// The crawler is the main concept in the crawler library. The crawler is responsible of
+// orchestrating the crawling process. 
+// In a normal context a crawler is created, then configured and the the crawling
+// process is started. During the crawl process a crawl observer will be called regularly
+// when a page has been discovered.
 //=======================================================================================
-class Crawler
+struct Crawler : public RefCountedBase
     {
     public:
 
     //---------------------------------------------------------------------------------------
-    // Do not call this constructor directly. Use the CrawlerFactory instead.
+    // Static Create
+    // These methods create a crawler.
+    // Either the simpler creater is called that creates a list of default downloaders 
+    // the the limit of simultanous download indicated or these downloaders are
+    // provided along with a queue.
+    // The default downloaders are PageDownloader objects and the queue is a UrlQueue object.
+    // The constructor that receives downloader and queue claim exclusive ownership 
+    // to these and will delete every of those objects upon destruction.
     //
-    // @bsimethod                                                 Alexandre.Gariepy   08/15
+    // @bsimethod                                                 Alain.Robert   09/15
     //+---------------+---------------+---------------+---------------+---------------+------
-    CRAWLERLIB_EXPORT Crawler(UrlQueue* queue, std::vector<IPageDownloader*> const& downloaders);
-    Crawler() = delete;
-    CRAWLERLIB_EXPORT virtual ~Crawler();
+    CRAWLERLIB_EXPORT static CrawlerPtr Create(size_t maxNumberOfSimultaneousDownloads = 8);
+    CRAWLERLIB_EXPORT static CrawlerPtr Create(UrlQueue* queue, std::vector<IPageDownloader*> const& downloaders);
 
     //---------------------------------------------------------------------------------------
+    // Starts the crawling process according to the crawler settings set using the various
+    // configuration methods provided. At a minimum a crawler observer (ICrawlerObserver)
+    // must be set.
     // This call blocks until the crawling is complete. The results are returned via the
     // ICrawlerObserver interface.
     //
@@ -108,6 +132,9 @@ class Crawler
     CRAWLERLIB_EXPORT void SetObserver(ICrawlerObserver* observer);
 
     //---------------------------------------------------------------------------------------
+    // Sets the maximum number of links to crawl. After this limit has been reached the crawling
+    //  process will abort. This setting is part of the queue object either given or
+    // created by the Create() process.
     // @bsimethod                                                 Alexandre.Gariepy   08/15
     //+---------------+---------------+---------------+---------------+---------------+------
     CRAWLERLIB_EXPORT void SetMaxNumberOfLinkToCrawl(size_t n);
@@ -116,6 +143,8 @@ class Crawler
     // This method sets the user agent parameter of the HTTP request used to download web pages.
     // This is different from the user agent name found in the robots.txt.
     // See https://en.wikipedia.org/wiki/List_of_HTTP_header_fields#Request_fields
+    // The user agent specified will, of course, apply to every downloader objects managed
+    // by the crawler.
     //
     // @bsimethod                                                 Alexandre.Gariepy   08/15
     //+---------------+---------------+---------------+---------------+---------------+------
@@ -124,14 +153,15 @@ class Crawler
     //---------------------------------------------------------------------------------------
     // The request timeout is the time allowed for a complete request to finish. This includes
     // the connection and download phases. By default, there is no timeout, each request
-    // have an unlimited time to complete (or fail).
+    // has an unlimited time to complete (or fail). This setting will apply to every downloader
+    // managed by the crawler.
     //
     // @bsimethod                                                 Alexandre.Gariepy   08/15
     //+---------------+---------------+---------------+---------------+---------------+------
     CRAWLERLIB_EXPORT void SetRequestTimeoutInSeconds(long timeout);
 
     //---------------------------------------------------------------------------------------
-    // Wheter or not a download request should follow HTTP redirects (3XX HTTP codes).
+    // Wether or not a download request should follow HTTP redirects (3XX HTTP codes).
     //
     // @bsimethod                                                 Alexandre.Gariepy   08/15
     //+---------------+---------------+---------------+---------------+---------------+------
@@ -148,14 +178,15 @@ class Crawler
     //---------------------------------------------------------------------------------------
     // See http://curl.haxx.se/libcurl/c/CURLOPT_SSL_VERIFYPEER.html
     // False by default.
+    // Set to true if SSL certificates must be validated.
     //
     // @bsimethod                                                 Alexandre.Gariepy   08/15
     //+---------------+---------------+---------------+---------------+---------------+------
     CRAWLERLIB_EXPORT void ValidateSslCertificates(bool validate);
 
     //---------------------------------------------------------------------------------------
-    // Before donwloading a resource, a HEAD HTTP request can be done to retrieve the
-    // content type of the resource. This is done by default.
+    // Before donwloading a resource, a HEAD HTTP request can be sent to retrieve the
+    // content type of the resource. This process is performed by default.
     //
     // @bsimethod                                                 Alexandre.Gariepy   08/15
     //+---------------+---------------+---------------+---------------+---------------+------
@@ -163,7 +194,7 @@ class Crawler
 
     //---------------------------------------------------------------------------------------
     // This sets the list of accepted content types. ValidateContentType needs to be set to true
-    // for this method to take effect. By default, only text/htlm and text/plain are accepted.
+    // for this method to be effective. By default, only text/htlm and text/plain are accepted.
     // Keep in mind that the web page parser is only designed to parse <a></a> html tags. This
     // means that other content types can be downloaded and returned to the user, but the crawler
     // won't be able to find links to crawl in theses resources.
@@ -174,7 +205,7 @@ class Crawler
 
     //---------------------------------------------------------------------------------------
     // The seed provided to the crawler have a depth of 0, links in the seed have a depth of 1,
-    // links in thoses links have aa depth of 2, etc. By default, there is no depth limit.
+    // links in thoses links have a depth of 2, etc. By default, there is no depth limit.
     //
     // @bsimethod                                                 Alexandre.Gariepy   08/15
     //+---------------+---------------+---------------+---------------+---------------+------
@@ -218,7 +249,7 @@ class Crawler
     CRAWLERLIB_EXPORT void SetRespectRobotTxt(bool respect);
 
     //---------------------------------------------------------------------------------------
-    // Use this method to desoey the robots.txt when it disallows crawling the root, for example
+    // Use this method to disobey the robots.txt when it disallows crawling the root, for example
     //      User-agent: *
     //      Disallow: /
     // False by default.
@@ -228,9 +259,9 @@ class Crawler
     CRAWLERLIB_EXPORT void SetRespectRobotTxtIfDisallowRoot(bool respect);
 
     //---------------------------------------------------------------------------------------
-    // This sets the user agent of the crawler to precise which rules to follow in the
+    // This sets the user agent of the crawler to indicate which rules to follow in the
     // robots.txt. When set, the crawler follows the rules of both the set user agent and
-    // the wildcard "*". By default, the crawler obeys only to the rules that applies to the
+    // the wildcard "*". By default, the crawler obeys only the rules that apply to the
     // wildcard "*".
     //
     // @bsimethod                                                 Alexandre.Gariepy   08/15
@@ -246,7 +277,7 @@ class Crawler
     CRAWLERLIB_EXPORT void SetMaxRobotTxtCrawlDelay(uint32_t delayInSeconds);
 
     //---------------------------------------------------------------------------------------
-    // Appart from the robots.txt, pages can use the paramenter rel="nofollow" in the html
+    // Appart from the robots.txt, pages can use the parameter rel="nofollow" in the html
     // <a><\a> tags to exclude some links. Thoses links are crawled by default.
     // See https://support.google.com/webmasters/answer/96569?hl=en
     //
@@ -265,6 +296,17 @@ class Crawler
 
 
     private:
+
+    //---------------------------------------------------------------------------------------
+    // Do not call this constructor directly. Use the Crawler static Create() methods instead.
+    //
+    // @bsimethod                                                 Alexandre.Gariepy   08/15
+    //+---------------+---------------+---------------+---------------+---------------+------
+    Crawler(UrlQueue* queue, std::vector<IPageDownloader*> const& downloaders);
+    Crawler() = delete;
+    virtual ~Crawler();
+
+
     bool CanStartDownload(std::future<PageContentPtr> const& asyncDownloadThread) const;
     bool IsDownloadResultReady(std::future<PageContentPtr> const& asyncDownloadThread) const;
     void StartNextDownload(std::future<PageContentPtr>& asyncDownloadThread, IPageDownloader* downloaderToUse);

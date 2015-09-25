@@ -20,6 +20,36 @@ const chrono::milliseconds s_AsyncWaitTime = chrono::milliseconds(75);
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
+CrawlerPtr Crawler::Create(size_t maxNumberOfSimultaneousDownloads)
+    {
+    CrawlDelaySleeperPtr sleeper = new CrawlDelaySleeper;
+    std::vector<IPageDownloader*> downloaders;
+    for(size_t i = 0; i < maxNumberOfSimultaneousDownloads; ++i)
+        {
+        IPageDownloader* downloader = new PageDownloader(sleeper);
+        downloaders.push_back(downloader);
+        }
+
+    IRobotsTxtDownloader* robotsTxtDownloader = new RobotsTxtDownloader;
+
+    IPoliteness* politeness = new Politeness(robotsTxtDownloader);
+    UrlQueue* queue = new UrlQueue(politeness);
+
+    return new Crawler(queue, downloaders);
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+CrawlerPtr Crawler::Create(UrlQueue* queue, std::vector<IPageDownloader*> const& downloaders)
+    { 
+      return new Crawler(queue, downloaders);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
 Crawler::Crawler(UrlQueue* queue, std::vector<IPageDownloader*> const& downloaders)
     : m_NumberOfDownloaders(downloaders.size()), m_StopFlag(false), m_PauseFlag(false)
     {

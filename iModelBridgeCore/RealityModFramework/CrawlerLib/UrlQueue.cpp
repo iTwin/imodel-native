@@ -16,6 +16,8 @@ using namespace std;
 //+---------------+---------------+---------------+---------------+---------------+------
 UrlQueue::UrlQueue(IPoliteness* politeness)
     {
+    BeAssert(politeness != NULL);
+
     m_NumberOfUrls = 0;
     m_MaxNumberOfVisitedUrls = (numeric_limits<size_t>::max)(); //The paratheses are there to prevent the max() macro to replace this call
     m_AcceptExternalLinks = false;
@@ -51,8 +53,8 @@ DownloadJobPtr UrlQueue::NextDownloadJob()
 
     UrlPtr nextUrl = m_CurrentDomain->second.front();
     m_CurrentDomain->second.pop();
-    uint32_t crawlDelay = m_pPoliteness->GetCrawlDelay(nextUrl);
-    DownloadJobPtr nextDownloadJob = new DownloadJob(crawlDelay, nextUrl);
+    uint32_t crawlDelayInSeconds = m_pPoliteness->GetCrawlDelay(nextUrl);
+    DownloadJobPtr nextDownloadJob = new DownloadJob(crawlDelayInSeconds, nextUrl);
 
     if(m_CurrentDomain->second.size() == 0)
         {
@@ -72,6 +74,8 @@ DownloadJobPtr UrlQueue::NextDownloadJob()
 //+---------------+---------------+---------------+---------------+---------------+------
 void UrlQueue::AddUrl(UrlPtr const& url)
     {
+    BeAssert(url != NULL);
+
     if(IsAcceptedUrl(url) && m_VisitedUrls.size() < m_MaxNumberOfVisitedUrls)
         {
         auto currentQueueIterator = m_QueuesPerDomain.find(url->GetDomainName());
@@ -90,6 +94,8 @@ void UrlQueue::AddUrl(UrlPtr const& url)
 //+---------------+---------------+---------------+---------------+---------------+------
 bool UrlQueue::IsAcceptedUrl(UrlPtr const& url) const
     {
+    BeAssert(url != NULL);
+
     return !HaveAlreadyVisited(url)
         && (url->GetDepth() <= m_MaximumCrawlDepth)
         && (m_AcceptExternalLinks || !url->IsExternalPage())
@@ -102,6 +108,7 @@ bool UrlQueue::IsAcceptedUrl(UrlPtr const& url) const
 //+---------------+---------------+---------------+---------------+---------------+------
 bool UrlQueue::HaveAlreadyVisited(UrlPtr const& url) const
     {
+    BeAssert(url != NULL);
     return m_VisitedUrls.find(url) != m_VisitedUrls.end();
     }
 

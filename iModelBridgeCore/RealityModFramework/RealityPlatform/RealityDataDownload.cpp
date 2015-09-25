@@ -61,7 +61,7 @@ static int callback_progress_func(void *pClient,
     struct RealityDataDownload::FileTransfer *pFileTrans = (struct RealityDataDownload::FileTransfer *)pClient;
 
     if (NULL != pFileTrans->pProgressFunc)
-        (pFileTrans->pProgressFunc)(pFileTrans->index, pClient, (size_t)dlnow, (size_t)dltotal);
+        (pFileTrans->pProgressFunc)((int)pFileTrans->index, pClient, (size_t)dlnow, (size_t)dltotal);
 
     return 0;
 }
@@ -70,15 +70,15 @@ static int callback_progress_func(void *pClient,
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Donald.Morissette  9/2015
 //----------------------------------------------------------------------------------------
-RealityDataDownloadPtr RealityDataDownload::Create(const std::pair<AString, WString>* pi_pUrl_OutFileName, int pi_nbEntry)
+RealityDataDownloadPtr RealityDataDownload::Create(const UrlLink_UrlFile& pi_Link_FileName)
     {
-    if (pi_nbEntry > 0 && pi_pUrl_OutFileName != NULL)
-        return new RealityDataDownload(pi_pUrl_OutFileName, pi_nbEntry);
+    if (pi_Link_FileName.size() > 0)
+        return new RealityDataDownload(pi_Link_FileName);
     else
         return NULL;
     }
 
-RealityDataDownload::RealityDataDownload(const std::pair<AString, WString>* pi_pUrl_OutFileName, int pi_nbEntry)
+RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName)
     {
     curl_global_init(CURL_GLOBAL_DEFAULT);
 
@@ -86,12 +86,12 @@ RealityDataDownload::RealityDataDownload(const std::pair<AString, WString>* pi_p
     m_pProgressFunc = NULL;
     m_pStatusFunc   = NULL;
 
-    m_nbEntry = pi_nbEntry;
+    m_nbEntry = pi_Link_FileName.size();
     m_pEntries = new FileTransfer[m_nbEntry];
-    for (int i=0; i<m_nbEntry; ++i)
+    for (size_t i=0; i<m_nbEntry; ++i)
         {
-        m_pEntries[i].url = pi_pUrl_OutFileName[i].first;
-        m_pEntries[i].filename = pi_pUrl_OutFileName[i].second;
+        m_pEntries[i].url = pi_Link_FileName[i].first;
+        m_pEntries[i].filename = pi_Link_FileName[i].second;
         m_pEntries[i].iAppend = 0;
         }
     }
@@ -163,7 +163,7 @@ bool RealityDataDownload::Perform()
                 curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &pClient);
                 struct FileTransfer *pFileTrans = (struct FileTransfer *)pClient;
 
-                m_pStatusFunc(pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+                m_pStatusFunc((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
 //                fprintf(stderr, "R: %d - %s <%ls>\n", msg->data.result, curl_easy_strerror(msg->data.result), pFileTrans->filename.c_str());
 
                 if (pFileTrans->fileStream.IsOpen())
@@ -194,7 +194,7 @@ bool RealityDataDownload::Perform()
     
 
 
-bool RealityDataDownload::SetupCurlandFile(int pi_index)
+bool RealityDataDownload::SetupCurlandFile(size_t pi_index)
 {
     CURL *pCurl = NULL;
 
@@ -225,21 +225,6 @@ bool RealityDataDownload::SetupCurlandFile(int pi_index)
 
         curl_easy_setopt(pCurl, CURLOPT_PRIVATE, &(m_pEntries[pi_index]));
 
-#if 0
-        // Extract filename form URL, the last part of the URL until a '/'or '\' or '='
-        WString urlW(m_pEntries[pi_index].url.c_str(), BentleyCharEncoding::Utf8);
-        urlW.ReplaceAll(WCSALT_DIR_SEPARATOR, WCSDIR_SEPARATOR);
-        bvector<WString> pathComponents;
-        WString delim = WCSDIR_SEPARATOR;
-        delim += L"=";
-        BeStringUtilities::Split(urlW.c_str(), delim.c_str(), NULL, pathComponents);
-
-        WString filename;
-        BeFileName::BuildName(filename, NULL, m_pEntries[pi_index].filename.c_str(), pathComponents[pathComponents.size() - 1].c_str(), NULL);
-
-        m_pEntries[pi_index].filename = filename;
-#endif
-
         m_pEntries[pi_index].index = pi_index;
         m_pEntries[pi_index].pProgressFunc = m_pProgressFunc;
 
@@ -248,3 +233,21 @@ bool RealityDataDownload::SetupCurlandFile(int pi_index)
 
     return (pCurl != NULL);
 }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Donald.Morissette  9/2015
+//----------------------------------------------------------------------------------------
+void RealityDataDownload::ExtractFileName(WString& pio_rFileName, const AString& pi_Url)
+    {
+    // Extract filename form URL, the last part of the URL until a '/'or '\' or '='
+    WString urlW(pi_Url.c_str(), BentleyCharEncoding::Utf8);
+    urlW.ReplaceAll(WCSALT_DIR_SEPARATOR, WCSDIR_SEPARATOR);
+    bvector<WString> pathComponents;
+    WString delim = WCSDIR_SEPARATOR;
+    delim += L"=";
+    BeStringUtilities::Split(urlW.c_str(), delim.c_str(), NULL, pathComponents);
+
+    BeFileName::BuildName(pio_rFileName, NULL, pio_rFileName.c_str(), pathComponents[pathComponents.size() - 1].c_str(), NULL);
+
+    }
