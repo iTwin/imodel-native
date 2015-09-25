@@ -182,7 +182,6 @@ private:
     friend struct RedlineModelHandler;
 
 protected:
-    DgnModelType _GetModelType() const override {return DgnModelType::Sheet;}
     void _ToPropertiesJson(Json::Value&) const override;
     void _FromPropertiesJson(Json::Value const&) override;
 
@@ -419,8 +418,6 @@ private:
     friend struct PhysicalRedlineModelHandler;
 
 protected:
-    virtual DgnModelType _GetModelType() const override {return DgnModelType::Physical;}
-
     static PhysicalRedlineModelPtr Create(DgnMarkupProjectR markupProject, Utf8CP name, PhysicalModelCR subjectViewTargetModel);
 
 public:

@@ -121,7 +121,6 @@ struct QueryModel : PhysicalModel
 private:
     Selector m_selector;
     Results* m_currQueryResults;
-    virtual DgnModelType _GetModelType() const override {return DgnModelType::Query;}
     void ResetResults(){ ReleaseAllElements(); ClearRangeIndex(); m_filled=true;}
     DGNPLATFORM_EXPORT explicit QueryModel (DgnDbR);
     virtual void _FillModel() override {} // QueryModels are never filled.

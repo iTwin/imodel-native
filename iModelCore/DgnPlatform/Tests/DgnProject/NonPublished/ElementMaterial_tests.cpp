@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+      
 |
 |  $Source: Tests/DgnProject/NonPublished/ElementMaterial_tests.cpp $
 |
@@ -49,7 +49,7 @@ static void setUpView (DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnMaterialId     createTexturedMaterial (DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, RenderMaterial::MapUnits unitMode)
+static DgnMaterialId     createTexturedMaterial (DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, RenderMaterialMap::Units unitMode)
     {
     Json::Value                     renderMaterialAsset;
     RgbFactor                       red = { 1.0, 0.0, 0.0};
@@ -59,7 +59,7 @@ static DgnMaterialId     createTexturedMaterial (DgnDbR dgnDb, Utf8CP materialNa
     BeFile                          imageFile;
 
     
-    RenderMaterial::SetColor (renderMaterialAsset, RENDER_MATERIAL_Color, red);
+    RenderMaterialUtil::SetColor (renderMaterialAsset, RENDER_MATERIAL_Color, red);
     renderMaterialAsset[RENDER_MATERIAL_FlagHasBaseColor] = true;
     
 
@@ -97,7 +97,7 @@ static DgnMaterialId     createTexturedMaterial (DgnDbR dgnDb, Utf8CP materialNa
 
     patternMap[RENDER_MATERIAL_TextureId]        = textureId.GetValue();
     patternMap[RENDER_MATERIAL_PatternScaleMode] = (int) unitMode;
-    patternMap[RENDER_MATERIAL_PatternMapping]   = (int) RenderMaterial::MapMode::Parametric;
+    patternMap[RENDER_MATERIAL_PatternMapping]   = (int) RenderMaterialMap::Mode::Parametric;
 
     mapsMap[RENDER_MATERIAL_MAP_Pattern] = patternMap;
     renderMaterialAsset[RENDER_MATERIAL_Map] = mapsMap;
@@ -165,14 +165,14 @@ TEST_F(ElementGeometryBuilderTests, CreateElementWithMaterials)
 
     Render::ElemDisplayParams elemDisplayParams;
     elemDisplayParams.SetCategoryId(m_defaultCategoryId);
-    elemDisplayParams.SetMaterial(createTexturedMaterial(*m_db, "Parametric Texture", textureImage.c_str(), RenderMaterial::MapUnits::Relative));
+    elemDisplayParams.SetMaterial(createTexturedMaterial(*m_db, "Parametric Texture", textureImage.c_str(), RenderMaterialMap::Units::Relative));
     EXPECT_TRUE( builder->Append(elemDisplayParams));
 
     DPoint3d        origin = DPoint3d::FromZero();
 
     appendGeometry (origin, *builder);
 
-    elemDisplayParams.SetMaterial(createTexturedMaterial(*m_db, "Meter Texture", textureImage.c_str() , RenderMaterial::MapUnits::Meters));
+    elemDisplayParams.SetMaterial(createTexturedMaterial(*m_db, "Meter Texture", textureImage.c_str() , RenderMaterialMap::Units::Meters));
     EXPECT_TRUE( builder->Append(elemDisplayParams));
 
     appendGeometry (origin, *builder);

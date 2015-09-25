@@ -1617,8 +1617,7 @@ void ElemMatSymb::Init()
     m_rasterPat         = 0;
     m_patternParams     = nullptr;
     m_gradient          = nullptr;
-
-    m_material.Invalidate();
+    m_material          = nullptr;
     m_lStyleSymb.Clear();
     }
 
@@ -1718,7 +1717,7 @@ void ElemMatSymb::FromResolvedElemDisplayParams(ElemDisplayParamsCR elParams, Vi
         m_isBlankingRegion = (FillDisplay::Blanking == elParams.GetFillDisplay());
         }
 
-    m_material = elParams.GetMaterial();
+    m_material = JsonRenderMaterial::Create (context.GetDgnDb(), elParams.GetMaterial());
 
     if (0.0 != netElemTransparency)
         {
@@ -1784,14 +1783,6 @@ bool ElemMatSymb::operator==(ElemMatSymbCR rhs) const
         return false;
 
     return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemMatSymb::SetMaterial(DgnMaterialId material)
-    {
-    m_material = material;
     }
 
 /*---------------------------------------------------------------------------------**//**

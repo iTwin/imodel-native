@@ -30,7 +30,6 @@
 #define DGN_CLASSNAME_ElementItem           "ElementItem"
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
-#define DGN_CLASSNAME_GraphicsModel2d       "GraphicsModel2d"
 #define DGN_CLASSNAME_Light                 "Light"
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
@@ -675,7 +674,7 @@ private:
     typedef bmap<DgnModelId,DgnModelPtr> T_DgnModelMap;
 
     T_DgnModelMap   m_models;
-    bmap<DgnModelId,bpair<uint64_t,DgnModelType>> m_modelDependencyIndexAndType;
+    bmap<DgnModelId,uint64_t> m_modelDependencyIndices;
 
     DgnModelPtr LoadDgnModel(DgnModelId modelId);
     void Empty();
@@ -696,19 +695,16 @@ public:
         DgnClassId   m_classId;
         Utf8String   m_name;
         Utf8String   m_description;
-        DgnModelType m_modelType;
         bool         m_inGuiList;
 
     public:
         Model()
             {
-            m_modelType = DgnModelType::Physical;
             m_inGuiList = true;
             };
 
-        Model(Utf8CP name, DgnModelType modelType, DgnClassId classid, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_name(name)
+        Model(Utf8CP name, DgnClassId classid, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_name(name)
             {
-            m_modelType = modelType;
             m_inGuiList = true;
             }
 
@@ -719,16 +715,14 @@ public:
         void SetInGuiList(bool val)   {m_inGuiList = val;}
         void SetId(DgnModelId id) {m_id = id;}
         void SetClassId(DgnClassId classId) {m_classId = classId;}
-        void SetModelType(DgnClassId classId, DgnModelType val) {m_classId = classId; m_modelType = val;}
+        void SetModelType(DgnClassId classId) {m_classId = classId;}
 
         DgnModelId GetId() const {return m_id;}
         Utf8CP GetNameCP() const {return m_name.c_str();}
         Utf8String GetName() const {return m_name;}
         Utf8CP GetDescription() const {return m_description.c_str();}
-        DgnModelType GetModelType() const {return m_modelType;}
         DgnClassId GetClassId() const {return m_classId;}
         bool InGuiList() const {return m_inGuiList;}
-        bool Is3d() const {return m_modelType==DgnModelType::Physical;}
 
     }; // Model
 
@@ -749,11 +743,9 @@ public:
             DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
             DGNPLATFORM_EXPORT Utf8CP GetName() const;
             DGNPLATFORM_EXPORT Utf8CP GetDescription() const;
-            DGNPLATFORM_EXPORT DgnModelType GetModelType() const;
             DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
             DGNPLATFORM_EXPORT bool InGuiList() const;
 
-            bool Is3d() const {return GetModelType()==DgnModelType::Physical;}
             Entry const& operator*() const {return *this;}
         };
 
@@ -792,12 +784,11 @@ public:
     //! @return The model's ModelId. Check dgnModelId.IsValid() to see if the DgnModelId was found.
     DGNPLATFORM_EXPORT DgnModelId QueryModelId(Utf8CP name) const;
 
-    //! Query for the dependency index and type of the specified model
+    //! Query for the dependency index of the specified model
     //! @param[out] dependencyIndex  The model's DependencyIndex property value
-    //! @param[out] modelType   The model's type
     //! @param[in] modelId      The model's ID
     //! @return non-zero if the model does not exist
-    DGNPLATFORM_EXPORT BentleyStatus QueryModelDependencyIndexAndType(uint64_t& dependencyIndex, DgnModelType& modelType, DgnModelId modelId);
+    DGNPLATFORM_EXPORT BentleyStatus QueryModelDependencyIndex(uint64_t& dependencyIndex, DgnModelId modelId);
 
     //! Make an iterator over the models in this DgnDb.
     Iterator MakeIterator(Utf8CP where=nullptr, ModelIterate itType=ModelIterate::All) const {return Iterator(m_dgndb, where, itType);}

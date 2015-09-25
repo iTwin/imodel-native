@@ -709,7 +709,6 @@ static void insertBoxElement(DgnElementId& eid, PhysicalModelR physicalTestModel
     BeAssert(testCategoryId.IsValid());
 
     PhysicalElementPtr testElement = PhysicalElement::Create(physicalTestModel, testCategoryId);
-    testElement->SetLabel("ChangeSetTestElementLabel");
 
     DPoint3d sizeOfBlock = DPoint3d::From(1, 1, 1);
     DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(0, 0, 0), sizeOfBlock, true);

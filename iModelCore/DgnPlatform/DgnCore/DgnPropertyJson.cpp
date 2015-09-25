@@ -27,6 +27,8 @@ static Utf8CP DGNPROPERTYJSON_System                = "sys";
 static Utf8CP DGNPROPERTYJSON_Numerator             = "num";
 static Utf8CP DGNPROPERTYJSON_Denominator           = "den";
 static Utf8CP DGNPROPERTYJSON_Label                 = "label";
+static Utf8CP DGNPROPERTYJSON_Azimuth               = "azimuth";
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
@@ -93,9 +95,10 @@ void DgnModel::Properties::FromJson(JsonValueCR inValue)
     m_masterUnit.FromJson(inValue[DGNPROPERTYJSON_MasterUnit]);
     m_subUnit.FromJson(inValue[DGNPROPERTYJSON_SubUnit]);
 
-    m_roundoffUnit = inValue[DGNPROPERTYJSON_RoundoffUnit].asDouble();
-    m_roundoffRatio    = inValue[DGNPROPERTYJSON_RoundoffRatio].asDouble();
-    m_formatterBaseDir = inValue[DGNPROPERTYJSON_FormatterBaseDir].asDouble();
+    m_roundoffUnit      = inValue[DGNPROPERTYJSON_RoundoffUnit].asDouble();
+    m_roundoffRatio     = inValue[DGNPROPERTYJSON_RoundoffRatio].asDouble();
+    m_formatterBaseDir  = inValue[DGNPROPERTYJSON_FormatterBaseDir].asDouble();
+    m_azimuthAngle      = inValue[DGNPROPERTYJSON_Azimuth].asDouble();
     }
 
 //---------------------------------------------------------------------------------------
@@ -111,4 +114,5 @@ void DgnModel::Properties::ToJson(JsonValueR outValue) const
     outValue[DGNPROPERTYJSON_RoundoffUnit] = m_roundoffUnit;
     outValue[DGNPROPERTYJSON_RoundoffRatio]    = m_roundoffRatio;
     outValue[DGNPROPERTYJSON_FormatterBaseDir] = m_formatterBaseDir;
+    outValue[DGNPROPERTYJSON_Azimuth] = m_azimuthAngle;
     }

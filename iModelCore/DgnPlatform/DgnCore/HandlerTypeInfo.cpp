@@ -99,7 +99,7 @@ static BentleyStatus getCategoryDisplayName(Utf8StringR displayNameStr, DgnCateg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void getCategoryString(Utf8StringR categoryStr, DgnElementCR element)
+static void getCategoryString(Utf8StringR categoryStr, GeometricElementCR element)
     {
     DgnCategories::Category const& category = element.GetDgnDb().Categories().Query(element.GetCategoryId());
 

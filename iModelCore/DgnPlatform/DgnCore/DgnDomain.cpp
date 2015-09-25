@@ -553,7 +553,7 @@ DgnDbStatus dgn_ElementHandler::Element::_VerifySchema(DgnDomains& domains)
     auto const& schemas = domains.GetDgnDb().Schemas();
     dgn_ElementHandler::Element* handlerSuperClass = (dgn_ElementHandler::Element*) GetSuperClass();
 
-    DgnElement::CreateParams params(domains.GetDgnDb(), DgnModelId(), DgnClassId(), DgnCategoryId());
+    DgnElement::CreateParams params(domains.GetDgnDb(), DgnModelId(), DgnClassId());
     DgnElementPtr thisEl = _CreateInstance(params);
     if (0 != strcmp(thisEl->_GetECClassName(), GetClassName().c_str()))
         {

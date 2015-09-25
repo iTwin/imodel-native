@@ -1545,7 +1545,7 @@ ElemMatSymbR     SimplifyViewDrawGeom::GetCurrentMatSymb(ElemMatSymbR matSymb)
         matSymb.SetWidth(m_overrideMatSymb.GetWidth());
 
     if (0 != (m_overrideMatSymb.GetFlags() & MATSYMB_OVERRIDE_RenderMaterial))
-        matSymb.SetMaterial(m_overrideMatSymb.GetMaterial());
+        matSymb.SetMaterial(const_cast <RenderMaterialP> (m_overrideMatSymb.GetMaterial()));
 
     return matSymb;
     }
