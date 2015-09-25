@@ -41,15 +41,16 @@ always:
     %return
 %endif
 
+%ifdef __unix
+    RUN_PREFIX = export LD_LIBRARY_PATH=$[@dir $(GTEST_EXE)] ;
+%endif
+
 always:
     !~@mkdir ${GTEST_OUTPUT_DIR}
     !~@mkdir ${runDir}
     !~@mkdir ${runDir}/Output
     !~@mkdir ${runDir}/Temp
     !~@mkdir ${LogDir}
-    %ifdef __unix
-        RUN_PREFIX=export LD_LIBRARY_PATH=$[@dir $(GTEST_EXE)] ;
-    %endif
     $(RUN_PREFIX) $(GTEST_EXE) --gtest_output="xml:$(LogDir)TestResults.xml" > $(LogDir)TestResults.txt
 
 %message .
