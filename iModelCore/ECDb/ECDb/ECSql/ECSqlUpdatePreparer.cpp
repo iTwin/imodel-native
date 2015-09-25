@@ -296,8 +296,8 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp (NativeSqlBuilder::Lis
             //if value is null exp, we need to pass target operand snippets
             if (ECSqlExpPreparer::IsNullExp (*valueExp))
                 {
-                BeAssert (dynamic_cast<ConstantValueExp const*> (valueExp) != nullptr);
-                stat = ECSqlExpPreparer::PrepareNullConstantValueExp (rhsNativeSqlSnippets, ctx, static_cast<ConstantValueExp const*> (valueExp), sqlSnippetCount);
+                BeAssert (dynamic_cast<LiteralValueExp const*> (valueExp) != nullptr);
+                stat = ECSqlExpPreparer::PrepareNullLiteralValueExp (rhsNativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (valueExp), sqlSnippetCount);
                 }
             else
                 stat = ECSqlExpPreparer::PrepareValueExp (rhsNativeSqlSnippets, ctx, valueExp);

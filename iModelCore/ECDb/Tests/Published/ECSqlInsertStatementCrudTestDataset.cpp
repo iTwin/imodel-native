@@ -404,6 +404,21 @@ ECSqlTestDataset ECSqlInsertTestDataset::MiscTests (ECDbTestProject& testProject
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     //*******************************************************
+    // Insert expressions 
+    //*******************************************************
+    ecsql = "INSERT INTO ecsql.P (I) VALUES (1 + 1)";
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 1, true);
+
+    ecsql = "INSERT INTO ecsql.P (I) VALUES (5 * 4)";
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 1, true);
+
+    ecsql = "INSERT INTO ecsql.P (L) VALUES (1 + GetECClass())";
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 1, true);
+
+    ecsql = "INSERT INTO ecsql.P (L) VALUES (GetECClass() * 4)";
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 1, true);
+
+    //*******************************************************
     // Insert ECInstanceId 
     //*******************************************************
     //NULL for ECInstanceId means ECDb auto-generates the ECInstanceId.

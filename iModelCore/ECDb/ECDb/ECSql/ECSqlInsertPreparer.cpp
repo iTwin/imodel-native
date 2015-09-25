@@ -598,9 +598,9 @@ ECSqlStatus ECSqlInsertPreparer::GetConstraintClassIdExpValue(bool& isParameter,
     auto constraintECClassIdValueExp = valueListExp.GetChildren().Get<Exp> (valueExpIndex);
     const auto expType = constraintECClassIdValueExp->GetType();
 
-    if (expType == Exp::Type::ConstantValue)
+    if (expType == Exp::Type::LiteralValue)
         {
-        auto constraintECClassIdConstantValueExp = static_cast<ConstantValueExp const*> (constraintECClassIdValueExp);
+        auto constraintECClassIdConstantValueExp = static_cast<LiteralValueExp const*> (constraintECClassIdValueExp);
         auto const& typeInfo = constraintECClassIdConstantValueExp->GetTypeInfo();
         if (!typeInfo.IsExactNumeric())
             {
@@ -620,7 +620,7 @@ ECSqlStatus ECSqlInsertPreparer::GetConstraintClassIdExpValue(bool& isParameter,
         }
 
 
-    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "In an ECSQL INSERT statement only literal values or parameters are allowed for the %s property.", constraintClassIdPropertyName);
+    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "In an ECSQL INSERT statement only literal expressions or parameters are allowed for the %s property.", constraintClassIdPropertyName);
     return ECSqlStatus::InvalidECSql;
     }
 
@@ -762,11 +762,11 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
     BeAssert(preparedStatement != nullptr);
     ECClassId classId = classMap.GetClass().GetId();
     const Exp::Type expType = valueExp->GetType();
-    if (expType == Exp::Type::ConstantValue)
+    if (expType == Exp::Type::LiteralValue)
         {
         if (!isEndTableRelationship)
             {
-            ConstantValueExp const* constValueExp = static_cast<ConstantValueExp const*> (valueExp);
+            LiteralValueExp const* constValueExp = static_cast<LiteralValueExp const*> (valueExp);
             ECInstanceId instanceId(constValueExp->GetValueAsInt64());
             preparedStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement::ECInstanceKeyInfo(classId, instanceId));
             }
