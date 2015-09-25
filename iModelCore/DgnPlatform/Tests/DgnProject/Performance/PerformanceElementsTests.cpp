@@ -103,7 +103,7 @@ DgnDbStatus PerformanceElement1::_BindInsertParams(BeSQLite::EC::ECSqlStatement&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PerformanceElement1::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
+DgnDbStatus PerformanceElement1::_ExtractSelectParams(ECSqlStatement& stmt, DgnElement::SelectParams const& params)
     {
     auto stat = T_Super::_ExtractSelectParams(stmt, params);
     if (DgnDbStatus::Success == stat)
@@ -214,7 +214,7 @@ DgnDbStatus PerformanceElement2::_BindInsertParams(BeSQLite::EC::ECSqlStatement&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PerformanceElement2::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
+DgnDbStatus PerformanceElement2::_ExtractSelectParams(ECSqlStatement& stmt, DgnElement::SelectParams const& params)
     {
     auto status = T_Super::_ExtractSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
@@ -325,7 +325,7 @@ DgnDbStatus PerformanceElement3::_BindInsertParams(BeSQLite::EC::ECSqlStatement&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PerformanceElement3::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
+DgnDbStatus PerformanceElement3::_ExtractSelectParams(ECSqlStatement& stmt, DgnElement::SelectParams const& params)
     {
     auto status = T_Super::_ExtractSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
@@ -436,7 +436,7 @@ DgnDbStatus PerformanceElement4::_BindInsertParams(BeSQLite::EC::ECSqlStatement&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PerformanceElement4::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
+DgnDbStatus PerformanceElement4::_ExtractSelectParams(ECSqlStatement& stmt, DgnElement::SelectParams const& params)
     {
     auto status = T_Super::_ExtractSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
@@ -549,7 +549,7 @@ DgnDbStatus PerformanceElement4b::_BindInsertParams(BeSQLite::EC::ECSqlStatement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PerformanceElement4b::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
+DgnDbStatus PerformanceElement4b::_ExtractSelectParams(ECSqlStatement& stmt, DgnElement::SelectParams const& params)
     {
     auto status = T_Super::_ExtractSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)

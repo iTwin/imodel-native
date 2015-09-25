@@ -1441,9 +1441,9 @@ private:
     struct ElementSelectStatement
     {
         BeSQLite::EC::CachedECSqlStatementPtr m_statement;
-        BeSQLite::EC::ECSqlSelectParameters const& m_parameters;
+        DgnElement::SelectParams const& m_parameters;
 
-        ElementSelectStatement(BeSQLite::EC::CachedECSqlStatement* stmt, BeSQLite::EC::ECSqlSelectParameters const& params) : m_statement(stmt), m_parameters(params) { }
+        ElementSelectStatement(BeSQLite::EC::CachedECSqlStatement* stmt, DgnElement::SelectParams const& params) : m_statement(stmt), m_parameters(params) { }
     };
 
     struct HandlerStatementCache
@@ -1453,7 +1453,7 @@ private:
         {
             ElementHandlerP m_handler;
             BeSQLite::EC::CachedECSqlStatementPtr m_selectStatement;
-            BeSQLite::EC::ECSqlSelectParameters m_selectParams;
+            DgnElement::SelectParams m_selectParams;
             Utf8String m_selectECSql;
 
             explicit Entry(ElementHandlerP handler=nullptr) : m_handler(handler) { }
