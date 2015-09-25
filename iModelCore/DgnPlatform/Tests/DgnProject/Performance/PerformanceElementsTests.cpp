@@ -100,6 +100,22 @@ DgnDbStatus PerformanceElement1::_BindInsertParams(BeSQLite::EC::ECSqlStatement&
     return T_Super::_BindInsertParams(statement);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus PerformanceElement1::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
+    {
+    auto stat = T_Super::_ExtractSelectParams(stmt, params);
+    if (DgnDbStatus::Success == stat)
+        {
+        m_prop1_1 = stmt.GetValueText(params.GetParameterIndex("Prop1_1"));
+        m_prop1_2 = stmt.GetValueInt64(params.GetParameterIndex("Prop1_2"));
+        m_prop1_3 = stmt.GetValueDouble(params.GetParameterIndex("Prop1_3"));
+        }
+
+    return stat;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -193,6 +209,22 @@ DgnDbStatus PerformanceElement2::_BindInsertParams(BeSQLite::EC::ECSqlStatement&
     if (DgnDbStatus::Success != stat)
         return stat;
     return T_Super::_BindInsertParams(statement);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus PerformanceElement2::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
+    {
+    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    if (DgnDbStatus::Success == status)
+        {
+        m_prop2_1 = stmt.GetValueText(params.GetParameterIndex("Prop2_1"));
+        m_prop2_2 = stmt.GetValueInt64(params.GetParameterIndex("Prop2_2"));
+        m_prop2_3 = stmt.GetValueDouble(params.GetParameterIndex("Prop2_3"));
+        }
+
+    return status;
     }
 
 //---------------------------------------------------------------------------------------
@@ -290,6 +322,22 @@ DgnDbStatus PerformanceElement3::_BindInsertParams(BeSQLite::EC::ECSqlStatement&
     return T_Super::_BindInsertParams(statement);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus PerformanceElement3::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
+    {
+    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    if (DgnDbStatus::Success == status)
+        {
+        m_prop3_1 = stmt.GetValueText(params.GetParameterIndex("Prop3_1"));
+        m_prop3_2 = stmt.GetValueInt64(params.GetParameterIndex("Prop3_2"));
+        m_prop3_3 = stmt.GetValueDouble(params.GetParameterIndex("Prop3_3"));
+        }
+
+    return status;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -383,6 +431,22 @@ DgnDbStatus PerformanceElement4::_BindInsertParams(BeSQLite::EC::ECSqlStatement&
     if (DgnDbStatus::Success != stat)
         return stat;
     return T_Super::_BindInsertParams(statement);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus PerformanceElement4::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
+    {
+    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    if (DgnDbStatus::Success == status)
+        {
+        m_prop4_1 = stmt.GetValueText(params.GetParameterIndex("Prop4_1"));
+        m_prop4_2 = stmt.GetValueInt64(params.GetParameterIndex("Prop4_2"));
+        m_prop4_3 = stmt.GetValueDouble(params.GetParameterIndex("Prop4_3"));
+        }
+
+    return status;
     }
 
 //---------------------------------------------------------------------------------------
@@ -482,6 +546,23 @@ DgnDbStatus PerformanceElement4b::_BindInsertParams(BeSQLite::EC::ECSqlStatement
     return T_Super::_BindInsertParams(statement);    
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus PerformanceElement4b::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
+    {
+    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    if (DgnDbStatus::Success == status)
+        {
+        m_prop4b_1 = stmt.GetValueText(params.GetParameterIndex("Prop4b_1"));
+        m_prop4b_2 = stmt.GetValueInt64(params.GetParameterIndex("Prop4b_2"));
+        m_prop4b_3 = stmt.GetValueDouble(params.GetParameterIndex("Prop4b_3"));
+        m_prop4b_4 = stmt.GetValuePoint3D(params.GetParameterIndex("Prop4b_4"));
+        }
+
+    return status;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -571,13 +652,22 @@ SimpleElementCPtr SimpleElement::Update()
 struct PerformanceElementsTestFixture : public PerformanceElementTestFixture
     {
     private:
-        void CreateElements(int numInstances, Utf8CP schemaName, Utf8CP className, bvector<DgnElementPtr>& elements);
+        DgnModelPtr CreateElements(int numInstances, Utf8CP schemaName, Utf8CP className, bvector<DgnElementPtr>& elements)
+            {
+            DgnModelPtr modelPtr;
+            CreateElements(numInstances, schemaName, className, elements, modelPtr);
+            return modelPtr;
+            }
+
+        void CreateElements(int numInstances, Utf8CP schemaName, Utf8CP className, bvector<DgnElementPtr>& elements, DgnModelPtr& modelPtr);
+
         void InitializeProject(WCharCP dbName);
 
     protected:
     //PerformanceTestingFrameWork     m_testObj;
     void TimeInsertion(int numInstances, Utf8CP schemaName, Utf8CP className, Utf8String testcaseName, Utf8String testName);
     void TimeUpdate(int numInstances, Utf8CP schemaName, Utf8CP className, Utf8String testcaseName, Utf8String testName);
+    void TimeModelFill(int numInstances, Utf8CP schemaName, Utf8CP className, Utf8String testcaseName, Utf8String testName, bool wantProfiler = false);
 
     public:
         PerformanceElementsTestFixture()
@@ -609,9 +699,9 @@ void PerformanceElementsTestFixture::InitializeProject(WCharCP dbName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElementsTestFixture::CreateElements(int numInstances, Utf8CP schemaName, Utf8CP className, bvector<DgnElementPtr>& elements)
+void PerformanceElementsTestFixture::CreateElements(int numInstances, Utf8CP schemaName, Utf8CP className, bvector<DgnElementPtr>& elements, DgnModelPtr& model)
     {
-    DgnModelPtr model = CreatePhysicalModel();
+    model = CreatePhysicalModel();
     DgnCategoryId catid = m_db->Categories().QueryHighestId();
     DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(schemaName, className));
     
@@ -767,7 +857,7 @@ void PerformanceElementsTestFixture::TimeUpdate(int numInstances, Utf8CP schemaN
         element->Insert(&stat);
         ASSERT_EQ(DgnDbStatus::Success, stat);
         }
-    printf("Attach profiler"); getchar();
+    //printf("Attach profiler"); getchar();
     StopWatch timer(true);
     for (DgnElementPtr& element : testElements)
         {
@@ -775,9 +865,55 @@ void PerformanceElementsTestFixture::TimeUpdate(int numInstances, Utf8CP schemaN
         ASSERT_EQ(DgnDbStatus::Success, stat);
         }
     timer.Stop();
-    printf("Detach profiler"); getchar();
+    //printf("Detach profiler"); getchar();
     LOGTODB(testcaseName, testName, timer.GetElapsedSeconds(), Utf8PrintfString("Updating %d %s elements", numInstances, className).c_str(), numInstances);
 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void PerformanceElementsTestFixture::TimeModelFill(int numInstances, Utf8CP schemaName, Utf8CP className, Utf8String testcaseName, Utf8String testName, bool wantProfiler)
+    {
+    WString wClassName;
+    wClassName.AssignUtf8(className);
+    WPrintfString dbName(L"PerformanceElement\\Update%ls%d.dgndb", wClassName.c_str(), numInstances);
+    InitializeProject(dbName.c_str());
+    bvector<DgnElementPtr> testElements;
+    DgnModelPtr model = CreateElements(numInstances, schemaName, className, testElements);
+
+    // Create a bunch of elements
+    DgnDbStatus stat = DgnDbStatus::Success;
+    for (DgnElementPtr& element : testElements)
+        {
+        element->Insert(&stat);
+        ASSERT_EQ(DgnDbStatus::Success, stat);
+        }
+
+    // Flush all elements from the cache
+    testElements.clear();
+    model->EmptyModel();
+    m_db->Elements().Purge(0);
+    EXPECT_EQ(0, m_db->Elements().GetTotals().m_extant);
+
+    // Load all elements
+    if (wantProfiler)
+        {
+        printf("Attach profiler...\n");
+        getchar();
+        }
+
+    StopWatch timer(true);
+    model->FillModel();
+    timer.Stop();
+    if (wantProfiler)
+        {
+        printf("Detach profiler...\n");
+        getchar();
+        }
+
+    EXPECT_EQ(numInstances, m_db->Elements().GetTotals().m_extant);
+    LOGTODB(testcaseName, testName, timer.GetElapsedSeconds(), Utf8PrintfString("Loading %d %s elements", numInstances, className).c_str(), numInstances);
     }
 
 TEST_F(PerformanceElementsTestFixture, ElementInsert)
@@ -798,16 +934,32 @@ TEST_F(PerformanceElementsTestFixture, ElementInsert)
 
 TEST_F(PerformanceElementsTestFixture, ElementUpdate)
     {
-    //TimeUpdate(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
-    //TimeUpdate(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
-    //TimeUpdate(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
-    //TimeUpdate(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
-    //TimeUpdate(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
-    //TimeUpdate(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
-    //TimeUpdate(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
-    //TimeUpdate(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
-    //TimeUpdate(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
-    //TimeUpdate(1000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
+    TimeUpdate(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
+    TimeUpdate(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
+    TimeUpdate(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
+    TimeUpdate(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
+    TimeUpdate(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
+    TimeUpdate(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
+    TimeUpdate(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
+    TimeUpdate(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
+    TimeUpdate(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
+    TimeUpdate(1000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
     TimeUpdate(10000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
-    //TimeUpdate(100000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
+    TimeUpdate(100000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
+    }
+
+TEST_F(PerformanceElementsTestFixture, ElementLoad)
+    {
+    TimeModelFill(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
+    TimeModelFill(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
+    TimeModelFill(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
+    TimeModelFill(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
+    TimeModelFill(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
+    TimeModelFill(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
+    TimeModelFill(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
+    TimeModelFill(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
+    TimeModelFill(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
+    TimeModelFill(1000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
+    TimeModelFill(10000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
+    TimeModelFill(100000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
     }

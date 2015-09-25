@@ -558,7 +558,7 @@ DgnDbStatus DgnElement::_UpdateInDb()
     bvector<Utf8CP> updateParams;
     _GetUpdateParams(updateParams);
 
-    Utf8String ecSql("UPDATE [");
+    Utf8String ecSql("UPDATE ONLY [");
     ecSql.append(elementClass->GetSchema().GetName()).append("].[").append(elementClass->GetName()).append("] SET ");
     int propCount = 0;
     for (Utf8CP param : updateParams)
@@ -603,33 +603,13 @@ DgnDbStatus DgnElement::_ExtractSelectParams(ECSqlStatement&, SelectParams const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_LoadFromDb()
     {
-    ECClassCP elementClass = GetElementClass();
-    if (nullptr == elementClass)
-        {
-        BeAssert(false);
-        return DgnDbStatus::BadElement;
-        }
-
-    SelectParams params;
-    _GetSelectParams(params.GetParameters());
-    if (params.GetParameters().empty())
+    DgnElements::ElementSelectStatement select = GetDgnDb().Elements().GetPreparedSelectStatement(*this);
+    if (select.m_statement.IsNull())
         return DgnDbStatus::Success;
-
-    Utf8String ecSql("SELECT [");
-    ecSql.append(BeStringUtilities::Join(params.GetParameters(), "],["));
-    ecSql.append("] FROM [");
-    ecSql.append(elementClass->GetSchema().GetName()).append("].[").append(elementClass->GetName());
-    ecSql.append("] WHERE ECInstanceId=?");
-
-    CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement(ecSql.c_str());
-    if (!stmt.IsValid())
+    else if (BE_SQLITE_ROW != select.m_statement->Step())
         return DgnDbStatus::ReadError;
-
-    stmt->BindId(1, m_elementId);
-    if (BE_SQLITE_ROW != stmt->Step())
-        return DgnDbStatus::ReadError;
-
-    return _ExtractSelectParams(*stmt, params);
+    else
+        return _ExtractSelectParams(*select.m_statement, select.m_parameters);
     }
 
 /*---------------------------------------------------------------------------------**//**

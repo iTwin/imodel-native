@@ -53,6 +53,8 @@ struct PerformanceElement1 : Dgn::PhysicalElement
         virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
         virtual void _GetUpdateParams(bvector<Utf8CP>& updateParams) override;
         virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
+        virtual void _GetSelectParams(bvector<Utf8CP>& params) override { T_Super::_GetSelectParams(params); GetParams(params); }
+        virtual Dgn::DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& stmt, BeSQLite::EC::ECSqlSelectParameters const& params) override;
 
     public:
         static PerformanceElement1Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category);
@@ -88,6 +90,8 @@ struct PerformanceElement2 : PerformanceElement1
         virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
         virtual void _GetUpdateParams(bvector<Utf8CP>& updateParams) override;
         virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
+        virtual void _GetSelectParams(bvector<Utf8CP>& params) override { T_Super::_GetSelectParams(params); GetParams(params); }
+        virtual Dgn::DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& stmt, BeSQLite::EC::ECSqlSelectParameters const& params) override;
 
     public:
         static PerformanceElement2Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category);
@@ -123,6 +127,8 @@ struct PerformanceElement3 : PerformanceElement2
         virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
         virtual void _GetUpdateParams(bvector<Utf8CP>& updateParams) override;
         virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
+        virtual void _GetSelectParams(bvector<Utf8CP>& params) override { T_Super::_GetSelectParams(params); GetParams(params); }
+        virtual Dgn::DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& stmt, BeSQLite::EC::ECSqlSelectParameters const& params) override;
 
     public:
         static PerformanceElement3Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category);
@@ -161,6 +167,8 @@ struct PerformanceElement4 : PerformanceElement3
         virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
         virtual void _GetUpdateParams(bvector<Utf8CP>& updateParams) override;
         virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
+        virtual void _GetSelectParams(bvector<Utf8CP>& params) override { T_Super::_GetSelectParams(params); GetParams(params); }
+        virtual Dgn::DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& stmt, BeSQLite::EC::ECSqlSelectParameters const& params) override;
 
     public:
         static PerformanceElement4Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category);
@@ -200,6 +208,8 @@ struct PerformanceElement4b : PerformanceElement3
         virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
         virtual void _GetUpdateParams(bvector<Utf8CP>& updateParams) override;
         virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
+        virtual void _GetSelectParams(bvector<Utf8CP>& params) override { T_Super::_GetSelectParams(params); GetParams(params); }
+        virtual Dgn::DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& stmt, BeSQLite::EC::ECSqlSelectParameters const& params) override;
 
     public:
         static PerformanceElement4bPtr Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category);
