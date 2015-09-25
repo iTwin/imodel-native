@@ -151,11 +151,6 @@
         <SubPart PartName="BeSQLite"            PartFile="BeSQLite"     Repository="BeSQLite" />
         <Bindings>
             <PublicAPI Domain="BeGTest" />
-            <Files Required="false" SubPartDirectory="Gtest-Tools">Delivery/buildGtest.mke</Files>
-            <Files Required="false" SubPartDirectory="Gtest-Tools">Delivery/BeGTestExe.cpp</Files>
-            <Files Required="false" SubPartDirectory="Gtest-Tools">Delivery/logging.config.xml</Files>
-            <Files Required="false" SubPartDirectory="Gtest-Tools">Delivery/RunGtest.mke</Files>
-            <Files Required="false" SubPartDirectory="Gtest-Tools">Delivery/RunTests.py</Files>
         </Bindings>
     </Part>
 

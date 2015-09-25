@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: RunTests.py $
+#  $Source: gtest/RunTests.py $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
