@@ -33,6 +33,12 @@ HANDLER_DEFINE_MEMBERS(PerformanceElement4Handler)
 HANDLER_DEFINE_MEMBERS(PerformanceElement4bHandler)
 DOMAIN_DEFINE_MEMBERS(PerformanceElementsTestDomain)
 
+void PerformanceElement1Handler::_GetClassParams(ECSqlClassParams& params) { T_Super::_GetClassParams(params); PerformanceElement1::GetParams(params); }
+void PerformanceElement2Handler::_GetClassParams(ECSqlClassParams& params) { T_Super::_GetClassParams(params); PerformanceElement2::GetParams(params); }
+void PerformanceElement3Handler::_GetClassParams(ECSqlClassParams& params) { T_Super::_GetClassParams(params); PerformanceElement3::GetParams(params); }
+void PerformanceElement4Handler::_GetClassParams(ECSqlClassParams& params) { T_Super::_GetClassParams(params); PerformanceElement4::GetParams(params); }
+void PerformanceElement4bHandler::_GetClassParams(ECSqlClassParams& params) { T_Super::_GetClassParams(params); PerformanceElement4b::GetParams(params); }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            08/2015
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -61,11 +67,11 @@ void PerformanceElementsTestDomain::RegisterDomainAndImportSchema(DgnDbR db, ECN
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement1::GetParams(bvector<Utf8CP>& params)
+void PerformanceElement1::GetParams(ECSqlClassParams& params)
     {
-    params.push_back("Prop1_1");
-    params.push_back("Prop1_2");
-    params.push_back("Prop1_3");
+    params.Add("Prop1_1");
+    params.Add("Prop1_2");
+    params.Add("Prop1_3");
     }
 
 //---------------------------------------------------------------------------------------
@@ -78,15 +84,6 @@ DgnDbStatus PerformanceElement1::BindParams(BeSQLite::EC::ECSqlStatement& statem
         (ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex("Prop1_3"), m_prop1_3)))
         return DgnDbStatus::BadArg;
     return DgnDbStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement1::_GetInsertParams(bvector<Utf8CP>& insertParams)
-    {
-    T_Super::_GetInsertParams(insertParams);
-    GetParams(insertParams);
     }
 
 //---------------------------------------------------------------------------------------
@@ -103,26 +100,17 @@ DgnDbStatus PerformanceElement1::_BindInsertParams(BeSQLite::EC::ECSqlStatement&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PerformanceElement1::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
+DgnDbStatus PerformanceElement1::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
     auto stat = T_Super::_ExtractSelectParams(stmt, params);
     if (DgnDbStatus::Success == stat)
         {
-        m_prop1_1 = stmt.GetValueText(params.GetParameterIndex("Prop1_1"));
-        m_prop1_2 = stmt.GetValueInt64(params.GetParameterIndex("Prop1_2"));
-        m_prop1_3 = stmt.GetValueDouble(params.GetParameterIndex("Prop1_3"));
+        m_prop1_1 = stmt.GetValueText(params.GetSelectIndex("Prop1_1"));
+        m_prop1_2 = stmt.GetValueInt64(params.GetSelectIndex("Prop1_2"));
+        m_prop1_3 = stmt.GetValueDouble(params.GetSelectIndex("Prop1_3"));
         }
 
     return stat;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement1::_GetUpdateParams(bvector<Utf8CP>& updateParams)
-    {
-    GetParams(updateParams);
-    T_Super::_GetUpdateParams(updateParams);
     }
 
 //---------------------------------------------------------------------------------------
@@ -172,11 +160,11 @@ PerformanceElement1CPtr PerformanceElement1::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement2::GetParams(bvector<Utf8CP>& params)
+void PerformanceElement2::GetParams(ECSqlClassParams& params)
     {
-    params.push_back("Prop2_1");
-    params.push_back("Prop2_2");
-    params.push_back("Prop2_3");
+    params.Add("Prop2_1");
+    params.Add("Prop2_2");
+    params.Add("Prop2_3");
     }
 
 //---------------------------------------------------------------------------------------
@@ -189,15 +177,6 @@ DgnDbStatus PerformanceElement2::BindParams(BeSQLite::EC::ECSqlStatement& statem
         (ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex("Prop2_3"), m_prop2_3)))
         return DgnDbStatus::BadArg;
     return DgnDbStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement2::_GetInsertParams(bvector<Utf8CP>& insertParams)
-    {
-    T_Super::_GetInsertParams(insertParams);
-    GetParams(insertParams);
     }
 
 //---------------------------------------------------------------------------------------
@@ -214,26 +193,17 @@ DgnDbStatus PerformanceElement2::_BindInsertParams(BeSQLite::EC::ECSqlStatement&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PerformanceElement2::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
+DgnDbStatus PerformanceElement2::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
     auto status = T_Super::_ExtractSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
-        m_prop2_1 = stmt.GetValueText(params.GetParameterIndex("Prop2_1"));
-        m_prop2_2 = stmt.GetValueInt64(params.GetParameterIndex("Prop2_2"));
-        m_prop2_3 = stmt.GetValueDouble(params.GetParameterIndex("Prop2_3"));
+        m_prop2_1 = stmt.GetValueText(params.GetSelectIndex("Prop2_1"));
+        m_prop2_2 = stmt.GetValueInt64(params.GetSelectIndex("Prop2_2"));
+        m_prop2_3 = stmt.GetValueDouble(params.GetSelectIndex("Prop2_3"));
         }
 
     return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement2::_GetUpdateParams(bvector<Utf8CP>& updateParams)
-    {
-    GetParams(updateParams);
-    T_Super::_GetUpdateParams(updateParams);
     }
 
 //---------------------------------------------------------------------------------------
@@ -283,11 +253,11 @@ PerformanceElement2CPtr PerformanceElement2::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement3::GetParams(bvector<Utf8CP>& params)
+void PerformanceElement3::GetParams(ECSqlClassParams& params)
     {
-    params.push_back("Prop3_1");
-    params.push_back("Prop3_2");
-    params.push_back("Prop3_3");
+    params.Add("Prop3_1");
+    params.Add("Prop3_2");
+    params.Add("Prop3_3");
     }
 
 //---------------------------------------------------------------------------------------
@@ -300,15 +270,6 @@ DgnDbStatus PerformanceElement3::BindParams(BeSQLite::EC::ECSqlStatement& statem
         (ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex("Prop3_3"), m_prop3_3)))
         return DgnDbStatus::BadArg;
     return DgnDbStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement3::_GetInsertParams(bvector<Utf8CP>& insertParams)
-    {
-    T_Super::_GetInsertParams(insertParams);
-    GetParams(insertParams);
     }
 
 //---------------------------------------------------------------------------------------
@@ -325,26 +286,17 @@ DgnDbStatus PerformanceElement3::_BindInsertParams(BeSQLite::EC::ECSqlStatement&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PerformanceElement3::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
+DgnDbStatus PerformanceElement3::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
     auto status = T_Super::_ExtractSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
-        m_prop3_1 = stmt.GetValueText(params.GetParameterIndex("Prop3_1"));
-        m_prop3_2 = stmt.GetValueInt64(params.GetParameterIndex("Prop3_2"));
-        m_prop3_3 = stmt.GetValueDouble(params.GetParameterIndex("Prop3_3"));
+        m_prop3_1 = stmt.GetValueText(params.GetSelectIndex("Prop3_1"));
+        m_prop3_2 = stmt.GetValueInt64(params.GetSelectIndex("Prop3_2"));
+        m_prop3_3 = stmt.GetValueDouble(params.GetSelectIndex("Prop3_3"));
         }
 
     return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement3::_GetUpdateParams(bvector<Utf8CP>& updateParams)
-    {
-    GetParams(updateParams);
-    T_Super::_GetUpdateParams(updateParams);
     }
 
 //---------------------------------------------------------------------------------------
@@ -394,11 +346,11 @@ PerformanceElement3CPtr PerformanceElement3::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement4::GetParams(bvector<Utf8CP>& params)
+void PerformanceElement4::GetParams(ECSqlClassParams& params)
     {
-    params.push_back("Prop4_1");
-    params.push_back("Prop4_2");
-    params.push_back("Prop4_3");
+    params.Add("Prop4_1");
+    params.Add("Prop4_2");
+    params.Add("Prop4_3");
     }
 
 //---------------------------------------------------------------------------------------
@@ -411,15 +363,6 @@ DgnDbStatus PerformanceElement4::BindParams(BeSQLite::EC::ECSqlStatement& statem
         (ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex("Prop4_3"), m_prop4_3)))
         return DgnDbStatus::BadArg;
     return DgnDbStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement4::_GetInsertParams(bvector<Utf8CP>& insertParams)
-    {
-    T_Super::_GetInsertParams(insertParams);
-    GetParams(insertParams);
     }
 
 //---------------------------------------------------------------------------------------
@@ -436,26 +379,17 @@ DgnDbStatus PerformanceElement4::_BindInsertParams(BeSQLite::EC::ECSqlStatement&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PerformanceElement4::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
+DgnDbStatus PerformanceElement4::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
     auto status = T_Super::_ExtractSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
-        m_prop4_1 = stmt.GetValueText(params.GetParameterIndex("Prop4_1"));
-        m_prop4_2 = stmt.GetValueInt64(params.GetParameterIndex("Prop4_2"));
-        m_prop4_3 = stmt.GetValueDouble(params.GetParameterIndex("Prop4_3"));
+        m_prop4_1 = stmt.GetValueText(params.GetSelectIndex("Prop4_1"));
+        m_prop4_2 = stmt.GetValueInt64(params.GetSelectIndex("Prop4_2"));
+        m_prop4_3 = stmt.GetValueDouble(params.GetSelectIndex("Prop4_3"));
         }
 
     return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement4::_GetUpdateParams(bvector<Utf8CP>& updateParams)
-    {
-    GetParams(updateParams);
-    T_Super::_GetUpdateParams(updateParams);
     }
 
 //---------------------------------------------------------------------------------------
@@ -505,12 +439,12 @@ PerformanceElement4CPtr PerformanceElement4::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement4b::GetParams(bvector<Utf8CP>& params)
+void PerformanceElement4b::GetParams(ECSqlClassParams& params)
     {
-    params.push_back("Prop4b_1");
-    params.push_back("Prop4b_2");
-    params.push_back("Prop4b_3");
-    params.push_back("Prop4b_4");
+    params.Add("Prop4b_1");
+    params.Add("Prop4b_2");
+    params.Add("Prop4b_3");
+    params.Add("Prop4b_4");
     }
 
 //---------------------------------------------------------------------------------------
@@ -527,15 +461,6 @@ DgnDbStatus PerformanceElement4b::BindParams(BeSQLite::EC::ECSqlStatement& state
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement4b::_GetInsertParams(bvector<Utf8CP>& insertParams)
-    {
-    T_Super::_GetInsertParams(insertParams);
-    GetParams(insertParams);
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            08/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 DgnDbStatus PerformanceElement4b::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
@@ -549,27 +474,18 @@ DgnDbStatus PerformanceElement4b::_BindInsertParams(BeSQLite::EC::ECSqlStatement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PerformanceElement4b::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
+DgnDbStatus PerformanceElement4b::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
     auto status = T_Super::_ExtractSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
-        m_prop4b_1 = stmt.GetValueText(params.GetParameterIndex("Prop4b_1"));
-        m_prop4b_2 = stmt.GetValueInt64(params.GetParameterIndex("Prop4b_2"));
-        m_prop4b_3 = stmt.GetValueDouble(params.GetParameterIndex("Prop4b_3"));
-        m_prop4b_4 = stmt.GetValuePoint3D(params.GetParameterIndex("Prop4b_4"));
+        m_prop4b_1 = stmt.GetValueText(params.GetSelectIndex("Prop4b_1"));
+        m_prop4b_2 = stmt.GetValueInt64(params.GetSelectIndex("Prop4b_2"));
+        m_prop4b_3 = stmt.GetValueDouble(params.GetSelectIndex("Prop4b_3"));
+        m_prop4b_4 = stmt.GetValuePoint3D(params.GetSelectIndex("Prop4b_4"));
         }
 
     return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement4b::_GetUpdateParams(bvector<Utf8CP>& updateParams)
-    {
-    GetParams(updateParams);
-    T_Super::_GetUpdateParams(updateParams);
     }
 
 //---------------------------------------------------------------------------------------

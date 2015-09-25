@@ -76,20 +76,11 @@ DgnDbStatus TestElement::_InsertInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestElement::_GetSelectParams(bvector<Utf8CP>& params)
-    {
-    T_Super::_GetSelectParams(params);
-    params.push_back(TMTEST_TEST_ELEMENT_TestElementProperty);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
+DgnDbStatus TestElement::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
     auto status = T_Super::_ExtractSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
-        m_testElemProperty = stmt.GetValueText(params.GetParameterIndex(TMTEST_TEST_ELEMENT_TestElementProperty));
+        m_testElemProperty = stmt.GetValueText(params.GetSelectIndex(TMTEST_TEST_ELEMENT_TestElementProperty));
 
     return status;
     }
@@ -97,10 +88,10 @@ DgnDbStatus TestElement::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestElement::_GetInsertParams(bvector<Utf8CP>& params)
+void TestElementHandler::_GetClassParams(ECSqlClassParams& params)
     {
-    T_Super::_GetInsertParams(params);
-    params.push_back(TMTEST_TEST_ELEMENT_TestElementProperty);
+    T_Super::_GetClassParams(params);
+    params.Add(TMTEST_TEST_ELEMENT_TestElementProperty);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -113,15 +104,6 @@ DgnDbStatus TestElement::_BindInsertParams(ECSqlStatement& stmt)
         stmt.BindText(stmt.GetParameterIndex(TMTEST_TEST_ELEMENT_TestElementProperty), m_testElemProperty.c_str(), IECSqlBinder::MakeCopy::No);
 
     return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TestElement::_GetUpdateParams(bvector<Utf8CP>& params)
-    {
-    T_Super::_GetUpdateParams(params);
-    params.push_back(TMTEST_TEST_ELEMENT_TestElementProperty);
     }
 
 /*---------------------------------------------------------------------------------**//**
