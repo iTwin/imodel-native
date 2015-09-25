@@ -255,8 +255,8 @@ BentleyStatus ECSqlParser::parse_derived_column (unique_ptr<DerivedPropertyExp>&
     {
     insertExp = nullptr;
     //insert does not support polymorphic classes. Passing false therefore.
-    unique_ptr<ClassNameExp> tableNodeExp = nullptr;
-    BentleyStatus stat = parse_table_node(tableNodeExp, parseNode->getChild(2), false);
+    unique_ptr<ClassNameExp> classNameExp = nullptr;
+    BentleyStatus stat = parse_table_node(classNameExp, parseNode->getChild(2), false);
     if (SUCCESS != stat)
         return stat;
 
@@ -270,7 +270,7 @@ BentleyStatus ECSqlParser::parse_derived_column (unique_ptr<DerivedPropertyExp>&
     if (SUCCESS != stat)
         return stat;
 
-    insertExp = unique_ptr<InsertStatementExp> (new InsertStatementExp(tableNodeExp, insertPropertyNameListExp, valuesOrQuerySpecExp));
+    insertExp = unique_ptr<InsertStatementExp> (new InsertStatementExp(classNameExp, insertPropertyNameListExp, valuesOrQuerySpecExp));
     return SUCCESS;
     }
 

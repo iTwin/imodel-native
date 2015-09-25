@@ -42,7 +42,7 @@ std::unique_ptr<ClassMapInfo> ClassMapInfoFactory::Create(MapStatus& mapStatus, 
 //@bsimethod                                 Affan.Khan                            07/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMapInfo::ClassMapInfo (ECClassCR ecClass, ECDbMapCR ecDbMap)
-    : m_ecdbMap(ecDbMap), m_ecClass(ecClass), m_isMapToVirtualTable(IClassMap::IsAbstractECClass(ecClass)), m_classHasCurrentTimeStampProperty(nullptr), m_parentClassMap(nullptr)
+    : m_ecdbMap(ecDbMap), m_ecClass(ecClass), m_isMapToVirtualTable(IClassMap::IsAbstractECClass(ecClass)), m_classHasCurrentTimeStampProperty(nullptr), m_isECInstanceIdAutogenerationDisabled (false), m_parentClassMap(nullptr)
     {}
 
 //---------------------------------------------------------------------------------
@@ -364,6 +364,57 @@ BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
             return ERROR;
 
         m_dbIndexes.push_back(indexInfo);
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ClassHasDisableECInstanceIdAutogenerationCA(bool* appliesToSubclasses, ECClassCR ecclass)
+    {
+    if (appliesToSubclasses != nullptr)
+        *appliesToSubclasses = false;
+
+    IECInstancePtr disableECInstanceIdAutoGenerationCA = ecclass.GetCustomAttribute("DisableECInstanceIdAutogeneration");
+    if (disableECInstanceIdAutoGenerationCA != nullptr && appliesToSubclasses != nullptr)
+        {
+        ECValue v;
+        if (ECOBJECTS_STATUS_Success != disableECInstanceIdAutoGenerationCA->GetValue(v, "AppliesToSubclasses"))
+            {
+            BeAssert(false && "CA DisableECInstanceIdAutogeneration is expected to have a property AppliesToSubclasses");
+            return false;
+            }
+
+        *appliesToSubclasses = v.IsNull() || v.GetBoolean();
+        }
+
+    return disableECInstanceIdAutoGenerationCA != nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ClassMapInfo::InitializeDisableECInstanceIdAutogeneration()
+    {
+    if (ClassHasDisableECInstanceIdAutogenerationCA(nullptr, m_ecClass))
+        {
+        m_isECInstanceIdAutogenerationDisabled = true;
+        return SUCCESS;
+        }
+
+    for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
+        {
+        bool appliesToSubclasses = false;
+        if (ClassHasDisableECInstanceIdAutogenerationCA(&appliesToSubclasses, *baseClass))
+            {
+            if (appliesToSubclasses)
+                {
+                m_isECInstanceIdAutogenerationDisabled = true;
+                return SUCCESS;
+                }
+            }
         }
 
     return SUCCESS;

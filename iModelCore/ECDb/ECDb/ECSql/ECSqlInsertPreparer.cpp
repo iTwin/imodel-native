@@ -741,6 +741,12 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
     if (ctx.IsEmbeddedStatement())
         return ECInstanceIdMode::NotUserProvided; 
 
+    ECSqlInsertPreparedStatement* preparedStatement = ctx.GetECSqlStatementR().GetPreparedStatementP<ECSqlInsertPreparedStatement>();
+    BeAssert(preparedStatement != nullptr);
+
+    if (classMap.IsECInstanceIdAutogenerationDisabled())
+        preparedStatement->SetIsECInstanceIdAutogenerationDisabled();
+
     //Validate whether ECInstanceId is specified and value is set to NULL -> auto-generate ECInstanceId
     auto propNameListExp = exp.GetPropertyNameListExp();
     ecinstanceIdExpIndex = propNameListExp->GetSpecialTokenExpIndexMap().GetIndex(ECSqlSystemProperty::ECInstanceId);
@@ -758,8 +764,6 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
     //as end table relationships don't hve their own ECInstanceId
     const bool isEndTableRelationship = classMap.GetClassMapType() == IClassMap::Type::RelationshipEndTable;
 
-    auto preparedStatement = ctx.GetECSqlStatementR ().GetPreparedStatementP<ECSqlInsertPreparedStatement> ();
-    BeAssert(preparedStatement != nullptr);
     ECClassId classId = classMap.GetClass().GetId();
     const Exp::Type expType = valueExp->GetType();
     if (expType == Exp::Type::LiteralValue)

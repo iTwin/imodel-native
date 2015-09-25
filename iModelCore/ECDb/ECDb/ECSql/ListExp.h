@@ -51,9 +51,7 @@ private:
     virtual Utf8String _ToString() const override { return "PropertyNameList"; }
 
 public :
-    PropertyNameListExp ()
-        : Exp () 
-        {}
+    PropertyNameListExp () : Exp () {}
 
     void AddPropertyNameExp (std::unique_ptr<PropertyNameExp>& propertyNameExp);
     PropertyNameExp const* GetPropertyNameExp (size_t index) const;

@@ -44,6 +44,7 @@ private:
     bvector<ClassIndexInfoPtr> m_dbIndexes; 
     IClassMap const* m_parentClassMap;
     bool m_isMapToVirtualTable;
+    bool m_isECInstanceIdAutogenerationDisabled;
     ECN::ECPropertyCP m_classHasCurrentTimeStampProperty;
 
 protected:
@@ -53,6 +54,7 @@ protected:
 
 private:
     BentleyStatus InitializeFromClassMapCA ();
+    BentleyStatus InitializeDisableECInstanceIdAutogeneration();
     BentleyStatus InitializeFromClassHasCurrentTimeStampProperty();
 
     BentleyStatus DoEvaluateMapStrategy(bool& baseClassesNotMappedYet, UserECDbMapStrategy&);

@@ -126,9 +126,8 @@ public:
         EmbeddedType //!<Class of the mapping is viewed as struct type embedded into another class
         };
 
-    
-
 private:
+    bool m_isECInstanceIdAutogenerationDisabled;
 
     virtual IClassMap const& _GetView (View classView) const = 0;
     virtual Type _GetClassMapType () const = 0;
@@ -139,6 +138,10 @@ private:
     virtual ECDbMapStrategy const& _GetMapStrategy () const = 0;
     virtual ECDbMapCR _GetECDbMap () const = 0;
     virtual ClassDbView const& _GetDbView () const = 0;
+
+protected:
+    IClassMap() :m_isECInstanceIdAutogenerationDisabled(false) {}
+
 public:
     virtual ~IClassMap () {}
 
@@ -166,6 +169,7 @@ public:
     ECDbMapCR GetECDbMap () const;
     ClassDbView const& GetDbView () const;
     Type GetClassMapType () const;
+    bool IsECInstanceIdAutogenerationDisabled() const { return m_isECInstanceIdAutogenerationDisabled; }
 
     StorageDescription const& GetStorageDescription() const;
     bool IsMappedToSecondaryTable () const;
