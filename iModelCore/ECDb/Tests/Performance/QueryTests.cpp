@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <UnitTests/NonPublished/ECDb/ECDbTestProject.h>
+#include "../NonPublished/PublicApi/NonPublished/ECDb/ECDbTestProject.h"
 #include "PerformanceTests.h"
 
 using namespace BentleyApi::ECN;

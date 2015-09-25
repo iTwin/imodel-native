@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlTestFixture.h"
 #include <cmath> // for std::pow
-#include <UnitTests/BackDoor/ECDb/Backdoor.h>
+#include "../BackDoor/PublicAPI/BackDoor/ECDb/Backdoor.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 

@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceBisDesignTestFixture.h"
-#include <UnitTests/NonPublished/ECDb/ECDbTestProject.h>
+#include "../NonPublished/PublicApi/NonPublished/ECDb/ECDbTestProject.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 

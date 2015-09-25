@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceBisDesignTestFixture.h"
-#include <UnitTests/NonPublished/ECDb/ECDbTestProject.h>
+#include "../NonPublished/PublicApi/NonPublished/ECDb/ECDbTestProject.h"
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE

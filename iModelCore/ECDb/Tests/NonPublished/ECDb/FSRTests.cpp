@@ -1,4 +1,4 @@
-#include <UnitTests/NonPublished/ECDb/ECDbTestProject.h>
+#include "../PublicApi/NonPublished/ECDb/ECDbTestProject.h"
 #include <Bentley/BeDirectoryIterator.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <ECDb/ECDbApi.h>
