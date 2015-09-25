@@ -1444,7 +1444,6 @@ private:
         typedef bvector<Entry> Entries;
 
         mutable Entries m_entries;
-        mutable BeSQLite::BeDbMutex m_mutex;
 
         Entry* FindEntry(ElementHandlerR handler) const;
     public:

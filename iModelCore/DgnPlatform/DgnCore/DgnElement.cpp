@@ -558,7 +558,7 @@ DgnDbStatus DgnElement::_UpdateInDb()
     bvector<Utf8CP> updateParams;
     _GetUpdateParams(updateParams);
 
-    Utf8String ecSql("UPDATE [");
+    Utf8String ecSql("UPDATE ONLY [");
     ecSql.append(elementClass->GetSchema().GetName()).append("].[").append(elementClass->GetName()).append("] SET ");
     int propCount = 0;
     for (Utf8CP param : updateParams)

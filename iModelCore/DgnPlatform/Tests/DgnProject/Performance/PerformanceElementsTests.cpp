@@ -667,7 +667,7 @@ struct PerformanceElementsTestFixture : public PerformanceElementTestFixture
     //PerformanceTestingFrameWork     m_testObj;
     void TimeInsertion(int numInstances, Utf8CP schemaName, Utf8CP className, Utf8String testcaseName, Utf8String testName);
     void TimeUpdate(int numInstances, Utf8CP schemaName, Utf8CP className, Utf8String testcaseName, Utf8String testName);
-    void TimeModelFill(int numInstances, Utf8CP schemaName, Utf8CP className, Utf8String testcaseName, Utf8String testName);
+    void TimeModelFill(int numInstances, Utf8CP schemaName, Utf8CP className, Utf8String testcaseName, Utf8String testName, bool wantProfiler = false);
 
     public:
         PerformanceElementsTestFixture()
@@ -857,7 +857,7 @@ void PerformanceElementsTestFixture::TimeUpdate(int numInstances, Utf8CP schemaN
         element->Insert(&stat);
         ASSERT_EQ(DgnDbStatus::Success, stat);
         }
-    printf("Attach profiler"); getchar();
+    //printf("Attach profiler"); getchar();
     StopWatch timer(true);
     for (DgnElementPtr& element : testElements)
         {
@@ -865,7 +865,7 @@ void PerformanceElementsTestFixture::TimeUpdate(int numInstances, Utf8CP schemaN
         ASSERT_EQ(DgnDbStatus::Success, stat);
         }
     timer.Stop();
-    printf("Detach profiler"); getchar();
+    //printf("Detach profiler"); getchar();
     LOGTODB(testcaseName, testName, timer.GetElapsedSeconds(), Utf8PrintfString("Updating %d %s elements", numInstances, className).c_str(), numInstances);
 
     }
@@ -873,7 +873,7 @@ void PerformanceElementsTestFixture::TimeUpdate(int numInstances, Utf8CP schemaN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceElementsTestFixture::TimeModelFill(int numInstances, Utf8CP schemaName, Utf8CP className, Utf8String testcaseName, Utf8String testName)
+void PerformanceElementsTestFixture::TimeModelFill(int numInstances, Utf8CP schemaName, Utf8CP className, Utf8String testcaseName, Utf8String testName, bool wantProfiler)
     {
     WString wClassName;
     wClassName.AssignUtf8(className);
@@ -897,9 +897,20 @@ void PerformanceElementsTestFixture::TimeModelFill(int numInstances, Utf8CP sche
     EXPECT_EQ(0, m_db->Elements().GetTotals().m_extant);
 
     // Load all elements
+    if (wantProfiler)
+        {
+        printf("Attach profiler...\n");
+        getchar();
+        }
+
     StopWatch timer(true);
     model->FillModel();
     timer.Stop();
+    if (wantProfiler)
+        {
+        printf("Detach profiler...\n");
+        getchar();
+        }
 
     EXPECT_EQ(numInstances, m_db->Elements().GetTotals().m_extant);
     LOGTODB(testcaseName, testName, timer.GetElapsedSeconds(), Utf8PrintfString("Loading %d %s elements", numInstances, className).c_str(), numInstances);
@@ -923,18 +934,18 @@ TEST_F(PerformanceElementsTestFixture, ElementInsert)
 
 TEST_F(PerformanceElementsTestFixture, ElementUpdate)
     {
-    //TimeUpdate(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
-    //TimeUpdate(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
-    //TimeUpdate(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
-    //TimeUpdate(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
-    //TimeUpdate(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
-    //TimeUpdate(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
-    //TimeUpdate(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
-    //TimeUpdate(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
-    //TimeUpdate(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
-    //TimeUpdate(1000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
+    TimeUpdate(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
+    TimeUpdate(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
+    TimeUpdate(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
+    TimeUpdate(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
+    TimeUpdate(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
+    TimeUpdate(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
+    TimeUpdate(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
+    TimeUpdate(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
+    TimeUpdate(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
+    TimeUpdate(1000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
     TimeUpdate(10000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
-    //TimeUpdate(100000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
+    TimeUpdate(100000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
     }
 
 TEST_F(PerformanceElementsTestFixture, ElementLoad)

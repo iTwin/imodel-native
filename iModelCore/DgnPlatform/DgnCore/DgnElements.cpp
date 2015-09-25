@@ -1409,8 +1409,6 @@ void DgnElements::HandlerStatementCache::Empty()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElements::ElementSelectStatement DgnElements::HandlerStatementCache::GetPreparedSelectStatement(DgnElementR el) const
     {
-    BeDbMutexHolder _v_(m_mutex);
-
     CachedECSqlStatementPtr stmt;
 
     ElementHandlerR handler = el.GetElementHandler();
@@ -1450,7 +1448,7 @@ DgnElements::ElementSelectStatement DgnElements::HandlerStatementCache::GetPrepa
                 {
                 Utf8String ecSql("SELECT [");
                 ecSql.append(BeStringUtilities::Join(entry->m_selectParams.GetParameters(), "],["));
-                ecSql.append("] FROM [");
+                ecSql.append("] FROM ONLY [");
                 ecSql.append(elementClass->GetSchema().GetName()).append("].[").append(elementClass->GetName());
                 ecSql.append("] WHERE ECInstanceId=?");
 
@@ -1480,6 +1478,7 @@ DgnElements::ElementSelectStatement DgnElements::HandlerStatementCache::GetPrepa
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElements::ElementSelectStatement DgnElements::GetPreparedSelectStatement(DgnElementR el) const
     {
+    BeDbMutexHolder _v(m_mutex);
     return m_handlerStmts.GetPreparedSelectStatement(el);
     }
 
