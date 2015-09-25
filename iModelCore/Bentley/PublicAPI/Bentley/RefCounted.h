@@ -37,9 +37,8 @@ public:
 #define DEFINE_BENTLEY_REF_COUNTED_MEMBERS \
 private:\
     mutable BeAtomic<uint32_t> m_refCount;        \
-protected:\
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS           \
 public:\
+    DEFINE_BENTLEY_NEW_DELETE_OPERATORS           \
     uint32_t AddRef() const {return ++m_refCount;}\
     uint32_t Release() const                      \
         {                                         \
