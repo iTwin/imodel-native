@@ -48,9 +48,9 @@ always:
     !~@mkdir ${runDir}/Temp
     !~@mkdir ${LogDir}
     %ifdef __unix
-        export LD_LIBRARY_PATH=$[@dir $(GTEST_EXE)]
+        RUN_PREFIX=export LD_LIBRARY_PATH=$[@dir $(GTEST_EXE)] ;
     %endif
-    $(GTEST_EXE) --gtest_output="xml:$(LogDir)TestResults.xml" > $(LogDir)TestResults.txt
+    $(RUN_PREFIX) $(GTEST_EXE) --gtest_output="xml:$(LogDir)TestResults.xml" > $(LogDir)TestResults.txt
 
 %message .
 %message See $(LogDir)TestResults.txt for logging output, interleaved with test output. 
