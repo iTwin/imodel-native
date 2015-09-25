@@ -303,7 +303,7 @@ extern "C" {
 */
 #define SQLITE_VERSION        "3.8.12"
 #define SQLITE_VERSION_NUMBER 3008012
-#define SQLITE_SOURCE_ID      "2015-09-15 15:55:15 b7469c44be77358e02892a3abc696f7caa0dcd3b"
+#define SQLITE_SOURCE_ID      "2015-09-24 14:26:51 c91065f8edb1e54076791716fc20d3fcfe3070dc"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -3820,7 +3820,7 @@ SQLITE_API const char *SQLITE_STDCALL sqlite3_bind_parameter_name(sqlite3_stmt*,
 **
 ** See also: [sqlite3_bind_blob|sqlite3_bind()],
 ** [sqlite3_bind_parameter_count()], and
-** [sqlite3_bind_parameter_index()].
+** [sqlite3_bind_parameter_name()].
 */
 SQLITE_API int SQLITE_STDCALL sqlite3_bind_parameter_index(sqlite3_stmt*, const char *zName);
 
@@ -11677,6 +11677,9 @@ SQLITE_PRIVATE int sqlite3PagerReadFileheader(Pager*, int, unsigned char*);
 /* Functions used to configure a Pager object. */
 SQLITE_PRIVATE void sqlite3PagerSetBusyhandler(Pager*, int(*)(void *), void *);
 SQLITE_PRIVATE int sqlite3PagerSetPagesize(Pager*, u32*, int);
+#ifdef SQLITE_HAS_CODEC
+SQLITE_PRIVATE void sqlite3PagerAlignReserve(Pager*,Pager*);
+#endif
 SQLITE_PRIVATE int sqlite3PagerMaxPageCount(Pager*, int);
 SQLITE_PRIVATE void sqlite3PagerSetCachesize(Pager*, int);
 SQLITE_PRIVATE void sqlite3PagerSetMmapLimit(Pager *, sqlite3_int64);
