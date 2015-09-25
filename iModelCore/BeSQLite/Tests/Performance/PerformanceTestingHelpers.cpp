@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 //#ifdef WIP_DOES_NOT_BUILD_ON_ANDROID_OR_IOS
 
-#include <PerformanceTestingHelper/PerformanceTestingHelpers.h>
+#include "include/PerformanceTestingHelpers.h"
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Majd.Uddin                      08/15
