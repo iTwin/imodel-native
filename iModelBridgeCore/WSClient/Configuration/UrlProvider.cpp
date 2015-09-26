@@ -151,7 +151,7 @@ Utf8String UrlProvider::GetUrl(Utf8CP urlName, const Utf8String* defaultUrls)
         return url;
         }
 
-    //url = GetBuddiUrl(urlName);
+    url = GetBuddiUrl(urlName);
     if (!url.empty())
         {
         s_localState->SaveValue(LOCAL_STATE_NAMESPACE, urlName, url);
