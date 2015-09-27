@@ -112,3 +112,4 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterTableHandler(dgn_TableHandler::ElementDep::GetHandler());
     RegisterTableHandler(dgn_TableHandler::BeProperties::GetHandler());
     }
+
