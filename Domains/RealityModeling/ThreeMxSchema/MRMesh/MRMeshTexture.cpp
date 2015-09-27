@@ -18,7 +18,11 @@ StatusInt readRGBFromJPEGData (bvector<Byte>& rgb, Point2dR size, Byte const* jp
     {
     ImageUtilities::RgbImageInfo        outInfo, inInfo;
 
-    memset (&inInfo, 0, sizeof (inInfo));       // Not reall used.
+    memset (&inInfo, 0, sizeof (inInfo));       // Not really used.
+    inInfo.hasAlpha = true;
+    inInfo.isBGR = false;
+    inInfo.isTopDown = true;
+
 
     if (SUCCESS != ImageUtilities::ReadImageFromJpgBuffer (rgb, outInfo, jpegData, jpegDataSize, inInfo))
         return ERROR;
@@ -100,36 +104,67 @@ public:
 };  // MRMeshTextureImage
 
 
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     09/2015
++===============+===============+===============+===============+===============+======*/
+struct MRMeshRenderMaterial : RenderMaterial
+{
+
+protected:
+    RenderMaterialMapPtr    m_patternMap;
+    mutable uintptr_t       m_qvMaterialId;
+
+    MRMeshRenderMaterial (RenderMaterialMapPtr& patternMap) : m_patternMap (patternMap), m_qvMaterialId (0) { }
+
+public:
+       virtual     RenderMaterialPtr       _Clone () const override { return new MRMeshRenderMaterial (*this); }
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static RenderMaterialPtr Create (Byte const* imageData, Point2dCR imageSize)
+    {
+    RenderMaterialMapPtr        patternMap = SimpleBufferPatternMap::Create (imageData, imageSize);
+    
+    return new MRMeshRenderMaterial (patternMap);
+    }
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual     uintptr_t  _GetQvMaterialId (DgnDbR dgnDb, bool createIfNotFound) const override
+    {
+    if (createIfNotFound)
+        return m_qvMaterialId = (uintptr_t) this;        // These qvMaterials will not be shared -- just use own memory address as qvMaterialId.
+
+    return m_qvMaterialId;
+
+    }
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual     RenderMaterialMapPtr    _GetMap (char const* key) const override 
+    {
+    if (0 != strcmp (key, RENDER_MATERIAL_MAP_Pattern))
+        {
+        BeAssert (false);
+        return nullptr;
+        }
+        
+    return m_patternMap;
+    }
+
+};  // MRMeshRenderMaterial
+
+
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    MRMeshTexture::Initialize (MRMeshNodeCR node, MRMeshContextCR host, ViewContextR viewContext)
     {
-#ifdef WIP
-    if (m_material.IsValid())
-        return;
-    m_material = Material::Create (viewContext.GetCurrentModel()->GetDgnFileP()->GetDictionaryModel());            // use dictionary model rather than the modelRef directly - else the textures are cleared when the modelRef is closed (TFS# 217354).
-    m_material->GetSettingsR().InitDefaults();
-    m_material->GetSettingsR().SetHasBaseColor (true);
-    m_material->GetSettingsR().SetSpecularIntensity (0.0);          // Per Jerry Flynn.
-    m_material->GetPaletteR().SetName (L"Acute3D");
-
-    if (NULL != viewContext.GetCurrentDisplayParams() &&
-        0.0 != viewContext.GetCurrentDisplayParams()->GetTransparency())
-        m_material->GetSettingsR().SetTransmitIntensity(viewContext.GetCurrentDisplayParams()->GetTransparency()); 
-
-    MaterialMapP                    materialMap   = m_material->GetSettingsR().GetMapsR().AddMap (MaterialMap::MAPTYPE_Pattern);
-    MaterialMapLayerR               materialLayer = materialMap->GetLayersR().GetTopLayerR ();
-    EmbeddedMaterialLayerImagePtr   embeddedImage = MRMeshTextureImage::Create (m_size, m_data, m_compressedData);
-    WString                         name;
-
-    BeFileName::ParseName (NULL, NULL, &name, NULL, node.GetFileName().c_str());
-
-    m_material->SetNameNoLimit (name.c_str());
-
-    materialLayer.SetFileName ((node.GetFileName() + WPrintfString (L"%I64d", host.GetElement().IsValid() ? host.GetElement().GetElementId() : 0)).c_str());
-    materialLayer.SetEmbeddedImage (embeddedImage);
-#endif
+    if (!m_material.IsValid())
+        m_material = MRMeshRenderMaterial::Create (&m_data.front(), m_size);
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -137,12 +172,16 @@ void    MRMeshTexture::Initialize (MRMeshNodeCR node, MRMeshContextCR host, View
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    MRMeshTexture::Activate (ViewContextR viewContext)
     {
-#ifdef WIP
-    ElemMatSymbP elemMatSymb = viewContext.GetElemMatSymb();
+    if (!m_material.IsValid())
+        {
+        BeAssert (false);
+        return;
+        }
+
+    ElemMatSymbP    elemMatSymb = viewContext.GetElemMatSymb();
 
     elemMatSymb->SetMaterial (m_material.get());
-    viewContext.GetIDrawGeom().ActivateMatSymb (elemMatSymb);
-#endif
+    viewContext.GetIDrawGeom ().ActivateMatSymb (elemMatSymb);
     }
 
 
@@ -151,7 +190,7 @@ void    MRMeshTexture::Activate (ViewContextR viewContext)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool    MRMeshTexture::IsInitialized() const
     {
-    return false;       // WIP
+    return m_material.IsValid();
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -161,10 +200,8 @@ size_t      MRMeshTexture::GetMemorySize() const
     {
     size_t      size = m_data.size();
 
-#ifdef WIP
     if (m_material.IsValid())
         size += m_size.x * m_size.y * 8;     // Approximate memory for QVision and embedded material.
-#endif
 
     return size;
     }

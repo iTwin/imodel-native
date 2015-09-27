@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "..\ThreeMxSchemaInternal.h"
 
+#include    <DgnPlatform/DgnCore/HttpHandler.h>
+
 #include    <windows.h>
 
 
@@ -835,8 +837,6 @@ BentleyStatus  MRMeshUtil::ReadSceneFile (S3SceneInfo& sceneInfo, WCharCP  fileN
     std::string     err;
     BeFileName      beFileName (fileName);
 
-
-#ifdef WIP_URL_SUPPORT
     if (!beFileName.IsUrl())
         return BaseSceneNode::Read3MX (beFileName, sceneInfo, err);
 
@@ -854,9 +854,6 @@ BentleyStatus  MRMeshUtil::ReadSceneFile (S3SceneInfo& sceneInfo, WCharCP  fileN
     std::istream        stream (&buff);
 
     return (SUCCESS == BaseSceneNode::Read3MX (stream, sceneInfo, err)) ? SUCCESS : ERROR;
-#else
-    return BaseSceneNode::Read3MX (beFileName, sceneInfo, err);
-#endif
     }
 
 

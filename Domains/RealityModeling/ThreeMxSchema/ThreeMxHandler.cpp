@@ -82,6 +82,7 @@ ThreeMxScenePtr  ThreeMxModel::GetScene ()
 //----------------------------------------------------------------------------------------
 AxisAlignedBox3d ThreeMxModel::_QueryModelRange() const
     {
+    BeAssert (false);
     return AxisAlignedBox3d();          // Needs work...
     }   
 
