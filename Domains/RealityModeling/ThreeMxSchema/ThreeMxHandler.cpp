@@ -100,8 +100,13 @@ void ThreeMxModel::_AddGraphicsToScene (ViewContextR viewContext)
         }
 
     MRMeshContext       meshContext (Transform::FromIdentity(), viewContext, 0.0);
+    ViewFlags           viewFlags = *viewContext.GetViewFlags(), saveViewFlags = viewFlags;
 
+    viewFlags.ignoreLighting = true;
+    
+    viewContext.GetViewport()->GetIViewOutput()->SetRenderMode (viewFlags);
     scene->_Draw (viewContext, meshContext);
+    viewContext.GetViewport()->GetIViewOutput()->SetRenderMode (saveViewFlags);
     }
 
 //----------------------------------------------------------------------------------------
