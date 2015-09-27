@@ -1526,7 +1526,7 @@ ECSqlClassInfo const& dgn_ElementHandler::Element::GetECSqlClassInfo()
         if (0 < m_classInfo.m_numSelectParams)
             {
             m_classInfo.m_select.append(" FROM ONLY ").append(fullClassName);
-            m_classInfo.m_select.append("] WHERE ECInstanceId=?");
+            m_classInfo.m_select.append(" WHERE ECInstanceId=?");
             }
         else
             {
