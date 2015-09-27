@@ -47,6 +47,7 @@ static Utf8CP VIEWFLAG_frontClip                 = "frontClip";
 static Utf8CP VIEWFLAG_backClip                  = "backClip";
 static Utf8CP VIEWFLAG_noClipVolume              = "noClipVol";
 static Utf8CP VIEWFLAG_renderMode                = "renderMode";
+static Utf8CP VIEWFLAG_ignoreLighting            = "ignoreLighting";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
@@ -154,6 +155,7 @@ void ViewFlags::From3dJson(JsonValueCR val)
     noFrontClip = !val[VIEWFLAG_frontClip].asBool();
     noBackClip  = !val[VIEWFLAG_backClip].asBool();
     noClipVolume = val[VIEWFLAG_noClipVolume].asBool();
+    ignoreLighting = val[VIEWFLAG_ignoreLighting].asBool();
 
     m_renderMode = DgnRenderMode(val[VIEWFLAG_renderMode].asUInt());
     }
@@ -189,6 +191,7 @@ void ViewFlags::To3dJson(JsonValueR val) const
     if (!noFrontClip) val[VIEWFLAG_frontClip] = true;
     if (!noBackClip) val[VIEWFLAG_backClip] = true;
     if (noClipVolume) val[VIEWFLAG_noClipVolume] = true;
+    if (ignoreLighting) val[VIEWFLAG_ignoreLighting] = true;
 
     val[VIEWFLAG_renderMode] =(uint8_t) m_renderMode;
     }
