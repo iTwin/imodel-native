@@ -953,8 +953,70 @@ TEST(ECDbInstances, FindECInstances)
         }
     }
 
-extern IECRelationshipInstancePtr CreateRelationship(ECDbTestProject& test, Utf8CP sourceClassName, Utf8CP targetClassName, Utf8CP relationshipClassName);
-extern void PersistRelationship (IECRelationshipInstanceR relInstance, ECDbR ecdb);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Ramanujam.Raman                   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+IECRelationshipInstancePtr CreateRelationship (ECN::ECRelationshipClassCR relationshipClass, IECInstanceR source, IECInstanceR target)
+    {
+    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (relationshipClass);
+    StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
+    if (relationshipInstance == nullptr)
+        return nullptr;
+
+    relationshipInstance->SetSource (&source);
+    relationshipInstance->SetTarget (&target);
+    relationshipInstance->SetInstanceId ("source->target");
+    return relationshipInstance;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Ramanujam.Raman                   05/12
++---------------+---------------+---------------+---------------+---------------+------*/
+IECRelationshipInstancePtr CreateRelationship 
+(
+ECDbTestProject& test, 
+Utf8CP sourceClassName, 
+Utf8CP targetClassName, 
+Utf8CP relationshipClassName
+)
+    {
+    bvector<IECInstancePtr> instances;
+    auto stat = test.GetInstances (instances, sourceClassName);
+    if (stat != SUCCESS)
+        //GetInstances asserts already on failure
+        return nullptr;
+
+    IECInstancePtr sourceInstance = instances[0];
+
+    stat = test.GetInstances (instances, targetClassName);
+    if (stat != SUCCESS)
+        //GetInstances asserts already on failure
+        return nullptr;
+
+    IECInstancePtr targetInstance = instances[0];
+
+    ECSchemaPtr schema = test.GetTestSchemaManager ().GetTestSchema ();
+    EXPECT_TRUE (schema != nullptr) << "ECDbTestSchemaManager::GetTestSchema returned null";
+    if (schema == nullptr)
+        return nullptr;
+
+    ECRelationshipClassCP relClass = schema->GetClassP (relationshipClassName)->GetRelationshipClassCP();
+    EXPECT_TRUE (relClass != nullptr) << "Could not find relationship class " << relationshipClassName << " in test schema";
+    if (relClass == nullptr)
+        return nullptr;
+
+    return CreateRelationship (*relClass, *sourceInstance, *targetInstance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Ramanujam.Raman                   06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void PersistRelationship (IECRelationshipInstanceR relInstance, ECDbR ecdb)
+    {
+    ECInstanceInserter inserter (ecdb, relInstance.GetClass ());
+    ASSERT_TRUE (inserter.IsValid ());
+    auto insertStatus = inserter.Insert (relInstance);
+    ASSERT_EQ (SUCCESS, insertStatus);    
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Carole.MacDonald                   02/14
