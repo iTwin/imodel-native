@@ -272,8 +272,8 @@ Utf8String IClassMap::ToString() const
 // @bsimethod                                 Ramanujam.Raman                06/2012
 //---------------------------------------------------------------------------------------
 ClassMap::ClassMap(ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
-: IClassMap(), m_ecDbMap(ecDbMap), m_table(nullptr), m_ecClass(ecClass), m_mapStrategy(mapStrategy),
-m_parentMapClassId(ECClass::UNSET_ECCLASSID), m_dbView(nullptr), m_isDirty(setIsDirty), m_columnFactory(*this), /*clang says not used - m_useSharedColumnStrategy (false),*/ m_id(0ULL)
+    : IClassMap(), m_ecDbMap(ecDbMap), m_table(nullptr), m_ecClass(ecClass), m_mapStrategy(mapStrategy),
+    m_parentMapClassId(ECClass::UNSET_ECCLASSID), m_dbView(nullptr), m_isDirty(setIsDirty), m_columnFactory(*this), m_id(0ULL)
     {}
 
 //---------------------------------------------------------------------------------------

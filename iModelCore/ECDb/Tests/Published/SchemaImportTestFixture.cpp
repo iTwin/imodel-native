@@ -30,6 +30,7 @@ void SchemaImportTestFixture::AssertSchemaImport(TestItem const& testItem, Utf8C
     AssertSchemaImport(localECDb, asserted, testItem, ecdbFileName);
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -39,7 +40,10 @@ void SchemaImportTestFixture::AssertSchemaImport(bool& asserted, ECDbCR ecdb, Te
     ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
     context->AddSchemaLocater(ecdb.GetSchemaLocater());
 
-    ASSERT_EQ (SUCCESS, ECDbTestUtility::ReadECSchemaFromString(context, testItem.m_schemaXml.c_str())) << testItem.m_assertMessage.c_str();
+    for (Utf8StringCR schemaXml : testItem.m_schemaXmlList)
+        {
+        ASSERT_EQ(SUCCESS, ECDbTestUtility::ReadECSchemaFromString(context, schemaXml.c_str())) << testItem.m_assertMessage.c_str();
+        }
 
     if (!testItem.m_expectedToSucceed)
         BeTest::SetFailOnAssert(false);

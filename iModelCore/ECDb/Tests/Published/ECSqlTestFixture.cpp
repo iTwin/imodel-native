@@ -14,19 +14,6 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //********************* ECSqlTestFixture ********************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  04/13
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlTestFixture::ECSqlTestFixture ()
-    : m_testProject (nullptr)
-    {
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  04/13
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlTestFixture::~ECSqlTestFixture ()
-    {
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  09/13
@@ -43,32 +30,9 @@ ECDbR ECSqlTestFixture::SetUp (Utf8CP ecdbFileName, WCharCP schemaECXmlFileName,
 ECDbR ECSqlTestFixture::_SetUp (Utf8CP ecdbFileName, WCharCP schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount)
     {
     // Create and populate a sample project
-    m_testProject = CreateTestProject (ecdbFileName, schemaECXmlFileName, openParams, perClassRowCount);
+    SetTestProject(CreateTestProject (ecdbFileName, schemaECXmlFileName, openParams, perClassRowCount));
     return GetTestProject ().GetECDb ();
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  04/13
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-unique_ptr<ECDbTestProject> ECSqlTestFixture::CreateTestProject (Utf8CP ecdbFileName, WCharCP schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount)
-    {
-    Utf8String filePath;
-    // Create and populate a sample project
-        {
-        ECDbTestProject testProject;
-        auto& ecdb = testProject.Create (ecdbFileName, schemaECXmlFileName, perClassRowCount);
-        filePath = ecdb.GetDbFileName();
-        }
-
-    //re-open the file so that we can determine the open mode
-
-    auto testProject = unique_ptr<ECDbTestProject> (new ECDbTestProject ());
-    testProject->Open (filePath.c_str (), openParams);
-
-    return move (testProject);
-    }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/14
@@ -258,33 +222,6 @@ void ECSqlTestFixture::VerifyECSqlValue (ECSqlStatement const& statement, JsonVa
 
     ASSERT_EQ ((int) expectedValue.size (), actualArrayLength);
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  09/13
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlTestFixture::SetTestProject (unique_ptr<ECDbTestProject> testProject)
-    {
-    m_testProject = move (testProject);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  04/13
-//+---------------+---------------+---------------+---------------+---------------+------
-ECDbTestProject& ECSqlTestFixture::GetTestProject () const
-    {
-    return _GetTestProject ();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  04/13
-//+---------------+---------------+---------------+---------------+---------------+------
-//virtual
-ECDbTestProject& ECSqlTestFixture::_GetTestProject () const
-    {
-    return *m_testProject;
-    }
-
-
 
 
 END_ECDBUNITTESTS_NAMESPACE

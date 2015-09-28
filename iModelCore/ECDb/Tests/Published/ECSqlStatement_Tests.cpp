@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlTestFixture.h"
 #include <cmath>
+#include <algorithm>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -532,12 +533,16 @@ TEST_F (ECSqlSelectTests, NestedSelectStatementsTests)
     stmt.Finalize ();
 
     //Using GetECClassId in Nested Select statement
+    ECClassId supplierClassId = ecdb.Schemas().GetECClassId("ECST", "Supplier", ResolveSchema::BySchemaNamespacePrefix);
+    ECClassId customerClassId = ecdb.Schemas().GetECClassId("ECST", "Customer", ResolveSchema::BySchemaNamespacePrefix);
+    ECClassId firstClassId = std::min<ECClassId>(supplierClassId, customerClassId);
+    ECClassId secondClassId = std::max<ECClassId>(supplierClassId, customerClassId);
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ECClassId, COUNT(*) FROM (SELECT GetECClassId() ECClassId, ECInstanceId FROM ECST.Supplier UNION ALL SELECT GetECClassId() ECClassId, ECInstanceId FROM ECST.Customer) GROUP BY ECClassId ORDER BY ECClassId"));
     ASSERT_TRUE (stmt.Step () == BE_SQLITE_ROW);
-    ASSERT_EQ (129, stmt.GetValueInt (0));
+    ASSERT_EQ (firstClassId, stmt.GetValueInt (0));
     ASSERT_EQ (3, stmt.GetValueInt (1));
     ASSERT_TRUE (stmt.Step () == BE_SQLITE_ROW);
-    ASSERT_EQ (135, stmt.GetValueInt (0));
+    ASSERT_EQ (secondClassId, stmt.GetValueInt (0));
     ASSERT_EQ (3, stmt.GetValueInt (1));
     ASSERT_TRUE (stmt.Step () == BE_SQLITE_DONE);
     stmt.Finalize ();

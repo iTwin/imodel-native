@@ -14,6 +14,38 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Krischan.Eberle                    05/2014
 //---------------------------------------------------------------------------------------
 //static
+bool ECSchemaValidator::ValidateSchemas(ECSchemaValidationResult& result, bvector<ECN::ECSchemaP> const& schemas, bool supportLegacySchemas)
+    {
+    std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
+    validationTasks.push_back(std::move(std::unique_ptr<ECSchemaValidationRule>(new SchemaNamespacePrefixRule())));
+
+    bool valid = true;
+    for (ECSchemaCP schema : schemas)
+        {
+        for (auto& task : validationTasks)
+            {
+            bool succeeded = task->ValidateSchemas(schemas, *schema);
+            if (!succeeded)
+                valid = false;
+            }
+
+        bool succeeded = ValidateSchema(result, *schema, supportLegacySchemas);
+        if (!succeeded)
+            valid = false;
+        }
+
+    for (auto& task : validationTasks)
+        {
+        task->AddErrorToResult(result);
+        }
+
+    return valid;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    05/2014
+//---------------------------------------------------------------------------------------
+//static
 bool ECSchemaValidator::ValidateSchema (ECSchemaValidationResult& result, ECN::ECSchemaCR schema, bool supportLegacySchemas)
     {
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
@@ -101,6 +133,13 @@ void ECSchemaValidationResult::ToString (std::vector<Utf8String>& errorMessages)
 //**********************************************************************
 // ECSchemaValidationRule
 //**********************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    09/2015
+//---------------------------------------------------------------------------------------
+bool ECSchemaValidationRule::ValidateSchemas(bvector<ECN::ECSchemaP> const& schemas, ECN::ECSchemaCR schema)
+    {
+    return _ValidateSchemas(schemas, schema);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
@@ -691,6 +730,73 @@ Utf8String ConsistentClassHierarchyRule::Error::InvalidClass::ToString() const
     Utf8String str(m_class->GetFullName());
     str.append(" (").append(kindStr).append(")");
     return std::move(str);
+    }
+
+//**********************************************************************
+// SchemaNamespacePrefixRule
+//**********************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    07/2015
+//---------------------------------------------------------------------------------------
+SchemaNamespacePrefixRule::SchemaNamespacePrefixRule()
+    : ECSchemaValidationRule(Type::SchemaNamespacePrefix), m_error(nullptr)
+    {
+    m_error = std::unique_ptr<Error>(new Error(GetType()));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    07/2015
+//---------------------------------------------------------------------------------------
+bool SchemaNamespacePrefixRule::_ValidateSchemas(bvector<ECSchemaP> const& schemas, ECN::ECSchemaCR schema)
+    {
+    bool valid = true;
+    Utf8StringCR prefix = schema.GetNamespacePrefix().c_str();
+    if (prefix.empty() || !ECNameValidation::IsValidName(prefix.c_str()))
+        {
+        m_error->AddInvalidPrefix(schema);
+        valid = false;
+        }
+
+    return valid;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    07/2015
+//---------------------------------------------------------------------------------------
+std::unique_ptr<ECSchemaValidationRule::Error> SchemaNamespacePrefixRule::_GetError() const
+    {
+    if (!m_error->HasInconsistencies())
+        return nullptr;
+
+    return std::move(m_error);
+    }
+
+//**********************************************************************
+// SchemaNamespacePrefixRule::Error
+//**********************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    07/2015
+//---------------------------------------------------------------------------------------
+Utf8String SchemaNamespacePrefixRule::Error::_ToString() const
+    {
+    if (m_invalidNamespacePrefixes.empty())
+        return "";
+
+    Utf8String error("Found ECSchemas with invalid namespace prefixes: ");
+    bool isFirstItem = true;
+    for (ECSchemaCP schema : m_invalidNamespacePrefixes)
+        {
+        if (!isFirstItem)
+            error.append("; ");
+
+        Utf8String descr;
+        descr.Sprintf("'%': Prefix '%s' is empty or not a valid EC name", schema->GetFullSchemaName().c_str(), schema->GetNamespacePrefix().c_str());
+        error.append(descr);
+        isFirstItem = false;
+        }
+
+    return std::move(error);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

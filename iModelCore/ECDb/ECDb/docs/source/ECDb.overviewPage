@@ -163,8 +163,8 @@
     
     It is suggested that you avoid names that only differ by case throughout the system
 
- //   ### Schema
- //  - A unique namespace prefix must be defined and the namespace prefix must be a valid ECName.
+    ### Schema
+    - A unique namespace prefix must be defined and the namespace prefix must be a valid ECName and must not be empty.
 
     ### Class
     - Abstract classes cannot be instantiated. This means you cannot use an abstract class in an ECSQL INSERT statement.
@@ -173,7 +173,6 @@
         - An @ref BentleyApi::ECN::ECClass "ECClass" may not have an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" as a base class
           and vice versa
         - A domain class may not have a struct as subclass or vice versa
-        - a class 
 
     ### Relationship Class
     - An @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" may not have a regular @ref BentleyApi::ECN::ECClass "ECClass" as a base class

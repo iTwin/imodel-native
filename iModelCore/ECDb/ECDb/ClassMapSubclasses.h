@@ -37,7 +37,7 @@ private:
         virtual ECN::ECClassId _GetParentMapClassId () const override { return m_secondaryTableClassMap.GetParentMapClassId (); }
         virtual ClassDbView const& _GetDbView () const override { return m_secondaryTableClassMap.GetDbView (); }
     public:
-        explicit EmbeddedTypeClassMap (ClassMapCR secondaryTableClassMap) : m_secondaryTableClassMap (secondaryTableClassMap) {}
+        explicit EmbeddedTypeClassMap (ClassMapCR secondaryTableClassMap) : IClassMap(), m_secondaryTableClassMap (secondaryTableClassMap) {}
 
         ~EmbeddedTypeClassMap () {}
 

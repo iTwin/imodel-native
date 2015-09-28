@@ -429,10 +429,11 @@ DbResult ECDbProfileManager::ProfileCreator::CreateTableECSchema(Db& db)
         "VersionMinor INTEGER"
         ");");
 
+    stat = db.ExecuteSql("CREATE UNIQUE INDEX uix_ec_Schema_Name ON ec_Schema(Name COLLATE NOCASE);");
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql("CREATE UNIQUE INDEX uix_ec_Schema_Name ON ec_Schema(Name COLLATE NOCASE);");
+    return db.ExecuteSql("CREATE UNIQUE INDEX uix_ec_Schema_NamespacePrefix ON ec_Schema(NamespacePrefix COLLATE NOCASE);");
     }
 
 //-----------------------------------------------------------------------------------------

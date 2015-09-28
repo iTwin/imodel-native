@@ -321,7 +321,7 @@ struct ECDbSchemaPersistence
         typedef ECSchemaKeyList*          ECSchemaKeyListP;
 
         //Insert new item
-        static  BentleyStatus InsertECSchema(ECDbCR, DbECSchemaInfo const&);
+        static  DbResult InsertECSchema(ECDbCR, DbECSchemaInfo const&);
         static  BentleyStatus InsertECClass(ECDbCR, DbECClassInfo const&);
         static  BentleyStatus InsertBaseClass(ECDbCR, DbBaseClassInfo const&);
         static  BentleyStatus InsertECProperty(ECDbCR, DbECPropertyInfo const&);
@@ -378,6 +378,8 @@ struct ECDbSchemaPersistence
         static  BentleyStatus GetClassesMappedToTable(std::vector<ECClassId>& classIds, ECDbSqlTable const& table, bool skipRelationships, ECDbCR);
         static                bool IsCustomAttributeDefined(ECDbCR, ECClassId caClassId, ECContainerId caSourceContainerId, ECContainerType caContainerType);
         static  ECDbPropertyPathId GetECPropertyPathId(ECPropertyId rootECPropertyId, Utf8CP accessString, ECDbCR);
+
+        static BentleyStatus GetSchemaNamespacePrefixes(bvector<Utf8String>& prefixes, ECDbCR);
     };
 
 

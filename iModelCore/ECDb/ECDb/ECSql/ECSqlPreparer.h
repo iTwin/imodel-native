@@ -53,7 +53,6 @@ public:
     static ECSqlStatus PrepareClassRefExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ClassRefExp const&);
     static ECSqlStatus PrepareClassRefExp (NativeSqlBuilder& nativeSqlSnippet, ECSqlPrepareContext& ctx, ClassRefExp const&);
     static ECSqlStatus PrepareComputedExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ComputedExp const* exp);
-    static ECSqlStatus PrepareConstantValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ConstantValueExp const* exp);
     static ECSqlStatus PrepareCrossJoinExp (ECSqlPrepareContext& ctx, CrossJoinExp const&);
     static ECSqlStatus PrepareDerivedPropertyExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, DerivedPropertyExp const* exp);
     static ECSqlStatus PrepareFromExp (ECSqlPrepareContext& ctx, FromExp const* exp);
@@ -63,8 +62,9 @@ public:
     static ECSqlStatus PrepareHavingExp (ECSqlPrepareContext& ctx, HavingExp const* exp);
     static ECSqlStatus PrepareLikeRhsValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, LikeRhsValueExp const* exp);
     static ECSqlStatus PrepareLimitOffsetExp (ECSqlPrepareContext& ctx, LimitOffsetExp const*);
+    static ECSqlStatus PrepareLiteralValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, LiteralValueExp const* exp);
     static ECSqlStatus PrepareNaturalJoinExp (ECSqlPrepareContext& ctx, NaturalJoinExp const&);
-    static ECSqlStatus PrepareNullConstantValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ConstantValueExp const* exp, size_t targetExpNativeSqlSnippetCount);
+    static ECSqlStatus PrepareNullLiteralValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, LiteralValueExp const* exp, size_t targetExpNativeSqlSnippetCount);
     static ECSqlStatus PrepareOrderByExp (ECSqlPrepareContext& ctx, OrderByExp const* exp);
     static ECSqlStatus PrepareParameterExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ParameterExp const* exp, bool targetIsVirtual, bool enforceConstraints);
     static ECSqlStatus PreparePropertyNameListExp (NativeSqlBuilder::ListOfLists& nativeSqlSnippetLists, ECSqlPrepareContext& ctx, PropertyNameListExp const* exp);
