@@ -83,7 +83,7 @@ public class __FIXTURE__ extends ActivityInstrumentationTestCase2<TestActivity>
 */
         System.loadLibrary ("gnustl_shared");
         System.loadLibrary ("android");
-        /*__BE_TEST_LOAD_SHARED_LIBRARIES__*/
+        __BE_TEST_LOAD_SHARED_LIBRARIES_PREFIX__ System.loadLibrary ("__BE_TEST_LOAD_SHARED_LIBRARIES__");
         // The unit tests
         System.loadLibrary ("AndroidTestJni");
         }
