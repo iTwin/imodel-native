@@ -186,6 +186,7 @@ public:
     DGNPLATFORM_EXPORT int GetSelectIndex(Utf8CP parameterName) const;
 //__PUBLISH_SECTION_END__
     Entries const& GetEntries() const { return m_entries; }
+    void RemoveAllButSelect();
 //__PUBLISH_SECTION_START__
 };
 

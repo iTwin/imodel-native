@@ -584,7 +584,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RunGtest-TestCollection-Performance" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Gtest-DgnPlatform-TestCollection-Performance/PerformanceTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/TestCollection-Performance" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest-TestCollection-Performance" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Gtest-DgnPlatform-TestCollection-Performance/DgnPlatform-TestCollection-Performance -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/TestCollection-Performance" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="Gtest-DgnPlatform-TestCollection-Performance" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>

@@ -1480,6 +1480,12 @@ DgnElements::ElementSelectStatement DgnElements::HandlerStatementCache::GetPrepa
             }
         }
 
+    if (stmt.IsValid())
+        {
+        BeAssert(el.GetElementId().IsValid());
+        stmt->BindId(1, el.GetElementId());
+        }
+
     return ElementSelectStatement(stmt.get(), classInfo.m_params);
     }
 
@@ -1520,10 +1526,10 @@ ECSqlClassInfo const& dgn_ElementHandler::Element::GetECSqlClassInfo()
 
         // Build SELECT statement
         m_classInfo.m_select = "SELECT ";
-        m_classInfo.m_numSelectParams = buildParamString(m_classInfo.m_select, entries, ECSqlClassParams::StatementType::Select,
+        uint16_t numSelectParams = buildParamString(m_classInfo.m_select, entries, ECSqlClassParams::StatementType::Select,
             [&](Utf8CP name, uint16_t count) { m_classInfo.m_select.append(1, '[').append(name).append(1, ']'); });
 
-        if (0 < m_classInfo.m_numSelectParams)
+        if (0 < numSelectParams)
             {
             m_classInfo.m_select.append(" FROM ONLY ").append(fullClassName);
             m_classInfo.m_select.append(" WHERE ECInstanceId=?");
@@ -1536,7 +1542,7 @@ ECSqlClassInfo const& dgn_ElementHandler::Element::GetECSqlClassInfo()
         // Build INSERT statement
         m_classInfo.m_insert.append("INSERT INTO ").append(fullClassName).append(1, '(');
         Utf8String insertValues;
-        m_classInfo.m_numInsertParams = buildParamString(m_classInfo.m_insert, entries, ECSqlClassParams::StatementType::Insert,
+        uint16_t numInsertParams = buildParamString(m_classInfo.m_insert, entries, ECSqlClassParams::StatementType::Insert,
             [&](Utf8CP name, uint16_t count)
                 {
                 m_classInfo.m_insert.append(1, '[').append(name).append(1, ']');
@@ -1546,7 +1552,7 @@ ECSqlClassInfo const& dgn_ElementHandler::Element::GetECSqlClassInfo()
                 insertValues.append(":[").append(name).append(1, ']');
                 });
 
-        if (0 < m_classInfo.m_numInsertParams)
+        if (0 < numInsertParams)
             m_classInfo.m_insert.append(")VALUES(").append(insertValues).append(1, ')');
         else
             m_classInfo.m_insert.clear();
@@ -1562,6 +1568,9 @@ ECSqlClassInfo const& dgn_ElementHandler::Element::GetECSqlClassInfo()
             m_classInfo.m_update.append( "WHERE ECInstanceId=?");
         else
             m_classInfo.m_update.clear();
+
+        // We no longer need any param names except those used in INSERT.
+        m_classInfo.m_params.RemoveAllButSelect();
 
         m_classInfo.m_initialized = true;
         }
