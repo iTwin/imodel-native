@@ -39,7 +39,7 @@ struct PerformanceElement1 : Dgn::PhysicalElement
     DGNELEMENT_DECLARE_MEMBERS(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, Dgn::PhysicalElement);
 
     private:
-        void GetParams(ECSqlClassParams& params);
+        static void GetParams(ECSqlClassParams& params);
         DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
 
         Utf8String m_prop1_1;
@@ -71,7 +71,7 @@ struct PerformanceElement2 : PerformanceElement1
     DGNELEMENT_DECLARE_MEMBERS(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, PerformanceElement1);
  
     private:
-        void GetParams(ECSqlClassParams& params);
+        static void GetParams(ECSqlClassParams& params);
         DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
 
         Utf8String m_prop2_1;
@@ -104,7 +104,7 @@ struct PerformanceElement3 : PerformanceElement2
     DGNELEMENT_DECLARE_MEMBERS(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, PerformanceElement2);
 
     private:
-        void GetParams(ECSqlClassParams& params);
+        static void GetParams(ECSqlClassParams& params);
         DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
 
         Utf8String m_prop3_1;
@@ -139,7 +139,7 @@ struct PerformanceElement4 : PerformanceElement3
     DGNELEMENT_DECLARE_MEMBERS(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, PerformanceElement3);
 
     private:
-        void GetParams(ECSqlClassParams& params);
+        static void GetParams(ECSqlClassParams& params);
         DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
 
         Utf8String m_prop4_1;
@@ -175,7 +175,7 @@ struct PerformanceElement4b : PerformanceElement3
     DGNELEMENT_DECLARE_MEMBERS(ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, PerformanceElement3);
 
     private:
-        void GetParams(ECSqlClassParams& params);
+        static void GetParams(ECSqlClassParams& params);
         DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
 
         Utf8String m_prop4b_1;

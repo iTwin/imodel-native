@@ -974,6 +974,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
+                <CreateIndex>False</CreateIndex><!-- We already index on Code -->
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="False">
