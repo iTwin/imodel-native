@@ -29,32 +29,32 @@ namespace IndexECPlugin.Source.QueryProviders
         //const int USGSIdLenght = 24;
         private readonly List<UsgsAPICategory> CategoryTable = new List<UsgsAPICategory> 
         { //new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "2 arc-second DEM - Alaska", Format = "none", Priority = 0, Type = ""},
-          new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1 meter DEM", Format = "IMG", Priority = 1, Type = "Terrain"},
-          new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1/9 arc-second DEM", Format = "IMG", Priority = 2, Type = "Terrain"},
-          new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1/3 arc-second DEM", Format = "IMG", Priority = 3, Type = "Terrain"},
-          new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1 arc-second DEM", Format = "IMG", Priority = 4, Type = "Terrain"},
-          //new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1/3 arc-second Contours", Format = "Shapefile", Priority = 6, Type = "Terrain"},
-          //new UsgsAPICategory(){Title = "Elevation Source Data (3DEP)", SubTitle = "DEM Source (OPR)", Format = "none", Priority = 0, Type = ""},
-          //new UsgsAPICategory(){Title = "Elevation Source Data (3DEP)", SubTitle = "Ifsar Digital Surface Model (DSM)", Format = "none", Priority = 0, Type = ""},
-          //new UsgsAPICategory(){Title = "Elevation Source Data (3DEP)", SubTitle = "Ifsar Orthorectified Radar Image (ORI)", Format = "none", Priority = 0, Type = ""},
-          //new UsgsAPICategory(){Title = "Elevation Source Data (3DEP)", SubTitle = "Lidar Point Cloud (LPC)", Format = "LAS", Priority = 1, Type = "PointCloud"},
-          //new UsgsAPICategory(){Title = "Hydrography (NHD) and Watersheds (WBD)", SubTitle = "National Hydrography Dataset (NHD) Best Resolution", Format = "Shapefile", Priority = 1, Type = "WaterBody"},
-          //new UsgsAPICategory(){Title = "Hydrography (NHD) and Watersheds (WBD)", SubTitle = "National Hydrography Dataset (NHD) Medium Resolution", Format = "Shapefile", Priority = 2, Type = "WaterBody"},
-          //new UsgsAPICategory(){Title = "National Land Cover Database (NLCD)", SubTitle = "National Land Cover Database (NLCD) - 2011", Format = "GeoTIFF", Priority = 1, Type = "Imagery"},
-          //new UsgsAPICategory(){Title = "National Land Cover Database (NLCD)", SubTitle = "National Land Cover Database (NLCD) - 2006", Format = "GeoTIFF", Priority = 2, Type = "Imagery"},
-          //new UsgsAPICategory(){Title = "National Land Cover Database (NLCD)", SubTitle = "National Land Cover Database (NLCD) - 2001", Format = "GeoTIFF", Priority = 3, Type = "Imagery"},
-          //new UsgsAPICategory(){Title = "Hydrography (NHD) and Watersheds (WBD)", SubTitle = "National Watershed Boundary Dataset (WBD)", Format = "Shapefile", Priority = 1, Type = "WaterBody"},
-          //new UsgsAPICategory(){Title = "Boundaries - National Boundary Dataset", SubTitle = "Boundaries - National Boundary Dataset", Format = "none", Priority = 0, Type = ""},
-          new UsgsAPICategory(){Title = "Imagery - 1 foot (HRO)", SubTitle = "Imagery - 1 foot (HRO)", Format = "JPEG2000", Priority = 1, Type = "Imagery"},
-          new UsgsAPICategory(){Title = "Imagery - 1 meter (NAIP)", SubTitle = "Imagery - 1 meter (NAIP)", Format = "JPEG2000", Priority = 1, Type = "Imagery"},
-          //new UsgsAPICategory(){Title = "Historical Topographic Maps", SubTitle = "Historical Topographic Maps", Format = "none", Priority = 0, Type = ""},
-          //new UsgsAPICategory(){Title = "Map Indices", SubTitle = "Map Indices", Format = "none", Priority = 0, Type = ""},
-          //new UsgsAPICategory(){Title = "Names - Geographic Names Information System (GNIS)", SubTitle = "Names - Geographic Names Information System (GNIS)", Format = "none", Priority = 0, Type = ""},
-          //new UsgsAPICategory(){Title = "Small-scale Datasets", SubTitle = "Small-scale Datasets", Format = "none", Priority = 0, Type = ""},
-          //new UsgsAPICategory(){Title = "Structures - National Structures Dataset", SubTitle = "Structures - National Structures Dataset", Format = "Shapefile", Priority = 2, Type = "Bridge,Building"},
-          //new UsgsAPICategory(){Title = "Transportation - National Transportation Dataset", SubTitle = "Transportation - National Transportation Dataset", Format = "Shapefile", Priority = 1, Type = "Roadway"},
-          //new UsgsAPICategory(){Title = "US Topo", SubTitle = "US Topo", Format = "none", Priority = 0, Type = ""},
-          //new UsgsAPICategory(){Title = "Woodland Tint", SubTitle = "Woodland Tint", Format = "none", Priority = 0, Type = ""}
+          new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1 meter DEM", Format = "IMG", Priority = 1, Classification = "Terrain"},
+          new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1/9 arc-second DEM", Format = "IMG", Priority = 2, Classification = "Terrain"},
+          new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1/3 arc-second DEM", Format = "IMG", Priority = 3, Classification = "Terrain"},
+          new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1 arc-second DEM", Format = "IMG", Priority = 4, Classification = "Terrain"},
+          //new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1/3 arc-second Contours", Format = "Shapefile", Priority = 6, Classification = "Terrain"},
+          //new UsgsAPICategory(){Title = "Elevation Source Data (3DEP)", SubTitle = "DEM Source (OPR)", Format = "none", Priority = 0, Classification = ""},
+          //new UsgsAPICategory(){Title = "Elevation Source Data (3DEP)", SubTitle = "Ifsar Digital Surface Model (DSM)", Format = "none", Priority = 0, Classification = ""},
+          //new UsgsAPICategory(){Title = "Elevation Source Data (3DEP)", SubTitle = "Ifsar Orthorectified Radar Image (ORI)", Format = "none", Priority = 0, Classification = ""},
+          //new UsgsAPICategory(){Title = "Elevation Source Data (3DEP)", SubTitle = "Lidar Point Cloud (LPC)", Format = "LAS", Priority = 1, Classification = "PointCloud"},
+          //new UsgsAPICategory(){Title = "Hydrography (NHD) and Watersheds (WBD)", SubTitle = "National Hydrography Dataset (NHD) Best Resolution", Format = "Shapefile", Priority = 1, Classification = "WaterBody"},
+          //new UsgsAPICategory(){Title = "Hydrography (NHD) and Watersheds (WBD)", SubTitle = "National Hydrography Dataset (NHD) Medium Resolution", Format = "Shapefile", Priority = 2, Classification = "WaterBody"},
+          //new UsgsAPICategory(){Title = "National Land Cover Database (NLCD)", SubTitle = "National Land Cover Database (NLCD) - 2011", Format = "GeoTIFF", Priority = 1, Classification = "Imagery"},
+          //new UsgsAPICategory(){Title = "National Land Cover Database (NLCD)", SubTitle = "National Land Cover Database (NLCD) - 2006", Format = "GeoTIFF", Priority = 2, Classification = "Imagery"},
+          //new UsgsAPICategory(){Title = "National Land Cover Database (NLCD)", SubTitle = "National Land Cover Database (NLCD) - 2001", Format = "GeoTIFF", Priority = 3, Classification = "Imagery"},
+          //new UsgsAPICategory(){Title = "Hydrography (NHD) and Watersheds (WBD)", SubTitle = "National Watershed Boundary Dataset (WBD)", Format = "Shapefile", Priority = 1, Classification = "WaterBody"},
+          //new UsgsAPICategory(){Title = "Boundaries - National Boundary Dataset", SubTitle = "Boundaries - National Boundary Dataset", Format = "none", Priority = 0, Classification = ""},
+          new UsgsAPICategory(){Title = "Imagery - 1 foot (HRO)", SubTitle = "Imagery - 1 foot (HRO)", Format = "JPEG2000", Priority = 1, Classification = "Imagery"},
+          new UsgsAPICategory(){Title = "Imagery - 1 meter (NAIP)", SubTitle = "Imagery - 1 meter (NAIP)", Format = "JPEG2000", Priority = 1, Classification = "Imagery"},
+          //new UsgsAPICategory(){Title = "Historical Topographic Maps", SubTitle = "Historical Topographic Maps", Format = "none", Priority = 0, Classification = ""},
+          //new UsgsAPICategory(){Title = "Map Indices", SubTitle = "Map Indices", Format = "none", Priority = 0, Classification = ""},
+          //new UsgsAPICategory(){Title = "Names - Geographic Names Information System (GNIS)", SubTitle = "Names - Geographic Names Information System (GNIS)", Format = "none", Priority = 0, Classification = ""},
+          //new UsgsAPICategory(){Title = "Small-scale Datasets", SubTitle = "Small-scale Datasets", Format = "none", Priority = 0, Classification = ""},
+          //new UsgsAPICategory(){Title = "Structures - National Structures Dataset", SubTitle = "Structures - National Structures Dataset", Format = "Shapefile", Priority = 2, Classification = "Bridge,Building"},
+          //new UsgsAPICategory(){Title = "Transportation - National Transportation Dataset", SubTitle = "Transportation - National Transportation Dataset", Format = "Shapefile", Priority = 1, Classification = "Roadway"},
+          //new UsgsAPICategory(){Title = "US Topo", SubTitle = "US Topo", Format = "none", Priority = 0, Classification = ""},
+          //new UsgsAPICategory(){Title = "Woodland Tint", SubTitle = "Woodland Tint", Format = "none", Priority = 0, Classification = ""}
         };
         
         ECQuery m_query;
@@ -453,6 +453,7 @@ namespace IndexECPlugin.Source.QueryProviders
             instance["Id"].StringValue = sourceID;
 
             // MainURL
+            // FileSize (in KB)
             JArray weblinks = json["webLinks"] as JArray;
 
             if (weblinks != null)
@@ -464,6 +465,7 @@ namespace IndexECPlugin.Source.QueryProviders
                     if ((weblink["title"] != null) && (acceptedFormats.Contains(weblink["title"].Value<string>())))
                     {
                         instance["MainURL"].StringValue = weblink["uri"].Value<string>();
+                        instance["FileSize"].NativeValue = weblink["length"].Value<long>() / 1024;
                         break;
                     }
                 }
@@ -917,70 +919,77 @@ namespace IndexECPlugin.Source.QueryProviders
                 m_storedParents = new Dictionary<string,IECInstance>();
             }
 
-            foreach (var USGSResult in GetNonFormattedUSGSResults())
+            var criteriaList = ExtractPropertyWhereClauses();
+
+            foreach (var bundle in GetNonFormattedUSGSResults(criteriaList))
             {
-                IECClass ecClass = m_query.SearchClasses.First().Class;
-                IECInstance instance = ecClass.CreateInstance();
 
-                JToken item = USGSResult.jtoken;
+                
 
-                InitializePropertiesToNull(instance, ecClass);
+                var FilteredList = SpecialFilteringAndExtracting(bundle.jtokenList, bundle.Dataset, criteriaList);
 
-                Random rnd = new Random();
 
-                ////TODO : Erase this when the id problem is fixed **************
-                //int id;
-                //do
-                //{
-                //    id = rnd.Next(40000, 50000);
-                //}while (instanceList.Any( inst => inst["Id"].IntValue == id));
-                //instance["Id"].IntValue = id;
-                ////*************************************************************
 
-                instance.InstanceId = item.TryToGetString("sourceId");
-                instance["Id"].StringValue = item.TryToGetString("sourceId");
-
-                instance["Name"].StringValue = item.TryToGetString("title");
-
-                var bbox = item["boundingBox"];
-
-                if (bbox != null)
+                foreach (var item in FilteredList)
                 {
-                    instance["Footprint"].StringValue = "{ \"points\" : " + String.Format("[[{0},{1}],[{0},{3}],[{2},{3}],[{2},{1}],[{0},{1}]]", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY")) + ", \"coordinate_system\" : \"4326\" }";
-                }
-                instance["ThumbnailURL"].StringValue = item.TryToGetString("previewGraphicURL");
-                instance["MetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/" + instance.InstanceId;
-                instance["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + instance.InstanceId + "?format=fgdc";
-                instance["RawMetadataFormat"].StringValue = "FGDC";
-                instance["SubAPI"].StringValue = "USGS";
+                    IECClass ecClass = m_query.SearchClasses.First().Class;
+                    IECInstance instance = ecClass.CreateInstance();
 
-                instance["DataProvider"].StringValue = "USGS";
-                instance["DataProviderName"].StringValue = "United States Geological Survey";
+                    InitializePropertiesToNull(instance, ecClass);
 
+                    JToken jtoken = item.jToken;
 
+                    instance.InstanceId = jtoken.TryToGetString("sourceId");
+                    instance["Id"].StringValue = jtoken.TryToGetString("sourceId");
 
-                //instance["ParentDatasetIdStr"].StringValue = tuple.Item2;
+                    instance["Name"].StringValue = jtoken.TryToGetString("title");
 
-                if (m_storedParents != null)
-                {
-                    string relInstId = USGSResult.DatasetId;
-                    if (!m_storedParents.ContainsKey(relInstId))
+                    var bbox = jtoken["boundingBox"];
+
+                    if (bbox != null)
                     {
-                        m_storedParents.Add(relInstId, QuerySingleSpatialEntityWithDetailsView(relInstId, ecClass));
+                        instance["Footprint"].StringValue = "{ \"points\" : " + String.Format("[[{0},{1}],[{0},{3}],[{2},{3}],[{2},{1}],[{0},{1}]]", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY")) + ", \"coordinate_system\" : \"4326\" }";
                     }
-                    if (m_storedParents[relInstId] != null)
+                    instance["ThumbnailURL"].StringValue = jtoken.TryToGetString("previewGraphicURL");
+                    instance["MetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/" + instance.InstanceId;
+                    instance["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + instance.InstanceId + "?format=fgdc";
+                    instance["RawMetadataFormat"].StringValue = "FGDC";
+                    instance["SubAPI"].StringValue = "USGS";
+
+                    instance["DataProvider"].StringValue = "USGS";
+                    instance["DataProviderName"].StringValue = "United States Geological Survey";
+
+                    if (item.Date.HasValue)
                     {
-                        var relationshipInst = relCrit.RelatedClassSpecifier.RelationshipClass.CreateRelationship(m_storedParents[relInstId], instance);
+                        instance["Date"].NativeValue = item.Date.Value;
+                    }
+                    instance["AccuracyResolutionDensity"].StringValue = item.Resolution;
 
-                        //relationshipInst.InstanceId = "test";
-                        instance.GetRelationshipInstances().Add(relationshipInst);
+                    instance["Classification"].StringValue = bundle.Classification;
+
+                    //instance["ParentDatasetIdStr"].StringValue = tuple.Item2;
+
+                    if (m_storedParents != null)
+                    {
+                        string relInstId = bundle.DatasetId;
+                        if (!m_storedParents.ContainsKey(relInstId))
+                        {
+                            m_storedParents.Add(relInstId, QuerySingleSpatialEntityWithDetailsView(relInstId, ecClass));
+                        }
+                        if (m_storedParents[relInstId] != null)
+                        {
+                            var relationshipInst = relCrit.RelatedClassSpecifier.RelationshipClass.CreateRelationship(m_storedParents[relInstId], instance);
+
+                            //relationshipInst.InstanceId = "test";
+                            instance.GetRelationshipInstances().Add(relationshipInst);
+                        }
+
                     }
 
+
+
+                    instanceList.Add(instance);
                 }
-
-
-
-                instanceList.Add(instance);
             }
 
             return instanceList;
@@ -991,7 +1000,7 @@ namespace IndexECPlugin.Source.QueryProviders
         /// </summary>
         /// <returns>Non formatted data (still in JSON form), along with the ID of the parent dataset. This ID was added there to prevent
         /// having to query USGS for every single data</returns>
-        private IEnumerable<USGSRequestBundle> GetNonFormattedUSGSResults()
+        private IEnumerable<USGSRequestBundle> GetNonFormattedUSGSResults(List<SingleWhereCriteriaHolder> whereCriteriaList)
         {
 
             List<USGSRequestBundle> instanceList = new List<USGSRequestBundle>();
@@ -1003,75 +1012,117 @@ namespace IndexECPlugin.Source.QueryProviders
 
             List<UsgsRequest> reqList = new List<UsgsRequest>();
 
-            using (HttpClient client = new HttpClient())
+            List<String> requestedClassificationList = new List<String>();
+            bool selectAllClasses = true;
+
+            foreach (var criteriaHolder in whereCriteriaList)
             {
-                
-                client.Timeout = new TimeSpan(100000000);
-                using (HttpResponseMessage response = client.GetAsync(WebReqCategories).Result)
+                if ((criteriaHolder.Operator == RelationalOperator.IN) && criteriaHolder.Property.Name == "Classification")
                 {
-                    if (!response.IsSuccessStatusCode)
+                    foreach(var classification in criteriaHolder.Value.Split(','))
                     {
-                        throw new Exception("USGS request timed out.");
+                        requestedClassificationList.Add(classification);
+                        selectAllClasses = false;
                     }
-                    using (HttpContent content = response.Content)
+                }
+            }
+
+
+            try
+            {
+                using (HttpClient client = new HttpClient())
+                {
+
+                    client.Timeout = new TimeSpan(0, 0, 15);
+                    //client.Timeout = new TimeSpan(15000);
+                    using (HttpResponseMessage response = client.GetAsync(WebReqCategories).Result)
                     {
-                        string responseString = content.ReadAsStringAsync().Result;
-
-                        JArray json = JArray.Parse(responseString);
-
-                        foreach (var entry in json)
+                        if (!response.IsSuccessStatusCode)
                         {
-                            if (entry["tags"].HasValues)
-                            {
+                            throw new Exception("USGS did not respond succesfully.");
+                        }
+                        using (HttpContent content = response.Content)
+                        {
+                            string responseString = content.ReadAsStringAsync().Result;
 
-                                foreach (JProperty subEntry in entry["tags"])
+                            JArray json = JArray.Parse(responseString);
+
+                            foreach (var entry in json)
+                            {
+                                if (entry["tags"].HasValues)
                                 {
-                                    System.Console.Out.Write(subEntry.Value["title"]);
+
+                                    foreach (JProperty subEntry in entry["tags"])
+                                    {
+                                        System.Console.Out.Write(subEntry.Value["title"]);
+                                        foreach (var category in CategoryTable)
+                                        {
+                                            if (entry["title"].Value<string>() == category.Title &&
+                                               subEntry.Value["title"].Value<string>() == category.SubTitle &&
+                                               category.Priority != 0 &&
+                                               (selectAllFormats || formatList.Any(f => f.ToLower() == category.Format.ToLower())) &&
+                                               (selectAllClasses || requestedClassificationList.Any(c => c == category.Classification)))
+                                            {
+                                                UsgsRequest req = new UsgsRequest()
+                                                {
+                                                    Dataset = subEntry.Value["sbDatasetTag"].Value<string>(),
+                                                    DatasetID = subEntry.Value["id"].Value<string>(),
+                                                    Format = category.Format,
+                                                    Category = category.Title,
+                                                    Priority = category.Priority,
+                                                    Classification = category.Classification
+                                                };
+
+                                                reqList.Add(req);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                                else
+                                {
                                     foreach (var category in CategoryTable)
                                     {
                                         if (entry["title"].Value<string>() == category.Title &&
-                                           subEntry.Value["title"].Value<string>() == category.SubTitle &&
+                                           entry["title"].Value<string>() == category.SubTitle &&
                                            category.Priority != 0 &&
-                                           (selectAllFormats || formatList.Any(f => f.ToLower() == category.Format.ToLower())))
+                                           (selectAllFormats || formatList.Any(f => f.ToLower() == category.Format.ToLower())) &&
+                                           (selectAllClasses || requestedClassificationList.Any(c => c == category.Classification)))
                                         {
                                             UsgsRequest req = new UsgsRequest()
                                             {
-                                                Dataset = subEntry.Value["sbDatasetTag"].Value<string>(),
-                                                DatasetID = subEntry.Value["id"].Value<string>(),
+                                                Dataset = entry["sbDatasetTag"].Value<string>(),
+                                                DatasetID = entry["id"].Value<string>(),
                                                 Format = category.Format,
                                                 Category = category.Title,
-                                                Priority = category.Priority
+                                                Priority = category.Priority,
+                                                Classification = category.Classification
                                             };
-
                                             reqList.Add(req);
                                             break;
                                         }
                                     }
                                 }
                             }
-                            else
-                            {
-                                foreach (var category in CategoryTable)
-                                {
-                                    if (entry["title"].Value<string>() == category.Title &&
-                                       entry["title"].Value<string>() == category.SubTitle &&
-                                       category.Priority != 0)
-                                    {
-                                        UsgsRequest req = new UsgsRequest()
-                                        {
-                                            Dataset = entry["sbDatasetTag"].Value<string>(),
-                                            DatasetID = entry["id"].Value<string>(),
-                                            Format = category.Format,
-                                            Category = category.Title,
-                                            Priority = category.Priority
-                                        };
-                                        reqList.Add(req);
-                                        break;
-                                    }
-                                }
-                            }
                         }
                     }
+                }
+            }
+            catch(TaskCanceledException)
+            {
+                //Request timed out. We return our empty list
+                //return instanceList;
+                throw new Bentley.Exceptions.EnvironmentalException("USGS request timed out");
+            }
+            catch (System.AggregateException ex)
+            {
+                if((ex.InnerExceptions.Count == 1) && (ex.InnerException.GetType() == typeof(TaskCanceledException)))
+                {
+                    throw new Bentley.Exceptions.EnvironmentalException("USGS request timed out");
+                }
+                else
+                {
+                    throw ex;
                 }
             }
             reqList.Sort();
@@ -1093,33 +1144,51 @@ namespace IndexECPlugin.Source.QueryProviders
 
                 string readyToSend = WebReq.Replace("_bbox", bbox).Replace("_datasets", req.Dataset).Replace("_prodFormats", req.Format).Replace(' ', '+');
 
-                using (HttpClient client = new HttpClient())
+                try
                 {
-
-                    using (HttpResponseMessage response = client.GetAsync(readyToSend).Result)
+                    using (HttpClient client = new HttpClient())
                     {
-                        if (response.IsSuccessStatusCode)
+                        client.Timeout = new TimeSpan(0, 0, 15);
+                        using (HttpResponseMessage response = client.GetAsync(readyToSend).Result)
                         {
-                            using (HttpContent content = response.Content)
+                            if (response.IsSuccessStatusCode)
                             {
-                                string responseString = content.ReadAsStringAsync().Result;
-
-                                JObject jsonResp = JObject.Parse(responseString);
-
-                                //IEnumerable<JToken> tempContainer = SpecialFiltering(jsonResp["items"], req);
-
-                                lock (locker)
+                                using (HttpContent content = response.Content)
                                 {
-                                    instanceList.AddRange(jsonResp["items"].Select(item => new USGSRequestBundle { jtoken = item, DatasetId = req.DatasetID }));
-                                    //foreach (var item in jsonResp["items"] as JArray)
-                                    //{
-                                    //    instanceList.Add(item);
+                                    string responseString = content.ReadAsStringAsync().Result;
 
-                                    //}
+                                    JObject jsonResp = JObject.Parse(responseString);
+
+                                    lock (locker)
+                                    {
+                                        instanceList.Add(new USGSRequestBundle { jtokenList = jsonResp["items"], DatasetId = req.DatasetID, Dataset = req.Dataset, Classification = req.Classification });
+                                        //foreach (var item in jsonResp["items"] as JArray)
+                                        //{
+                                        //    instanceList.Add(item);
+
+                                        //}
+                                    }
+
                                 }
-
                             }
                         }
+                    }
+                }
+                catch (TaskCanceledException)
+                {
+                    //Request timed out. We return our empty list
+                    //return instanceList;
+                    throw new Bentley.Exceptions.EnvironmentalException("USGS request timed out");
+                }
+                catch (System.AggregateException ex)
+                {
+                    if ((ex.InnerExceptions.Count == 1) && (ex.InnerException.GetType() == typeof(TaskCanceledException)))
+                    {
+                        throw new Bentley.Exceptions.EnvironmentalException("USGS request timed out");
+                    }
+                    else
+                    {
+                        throw ex;
                     }
                 }
             });
@@ -1127,79 +1196,193 @@ namespace IndexECPlugin.Source.QueryProviders
             return instanceList;
         }
 
-        private IEnumerable<JToken> SpecialFiltering(IEnumerable<JToken> tokenList, UsgsRequest req)
+        private IEnumerable<USGSExtractedResult> SpecialFilteringAndExtracting(IEnumerable<JToken> tokenList, string dataset, List<SingleWhereCriteriaHolder> criteriaList)
         {
-            switch(req.Dataset)
+
+            DateTime? minDate = null;
+            DateTime? maxDate = null;
+
+            foreach(var criteria in criteriaList)
+            {
+                if (criteria.Property.Name == "Date")
+                {
+                    DateTime givenDate;
+                    bool success = DateTime.TryParse(criteria.Value, out givenDate);
+                    if (success)
+                    {
+                        if ((criteria.Operator == RelationalOperator.LT) || (criteria.Operator == RelationalOperator.LTEQ))
+                        {
+                            if (!maxDate.HasValue || (maxDate.Value > givenDate))
+                            {
+                                maxDate = givenDate;
+                            }
+                        }
+                        if (criteria.Operator == RelationalOperator.GT || (criteria.Operator == RelationalOperator.GTEQ))
+                        {
+                            if (!minDate.HasValue || (minDate.Value < givenDate))
+                            {
+                                minDate = givenDate;
+                            }
+                        }
+                        if (criteria.Operator == RelationalOperator.EQ)
+                        {
+                            if (!maxDate.HasValue || (maxDate.Value > givenDate))
+                            {
+                                maxDate = givenDate;
+                            }
+                            if (!minDate.HasValue || (minDate.Value < givenDate))
+                            {
+                                minDate = givenDate;
+                            }
+                        }
+                    }
+                }
+            }
+
+            //if(minDate.HasValue && maxDate.HasValue && minDate.Value > maxDate.Value)
+            //{
+            //    throw new UserFriendlyException("The date criteria is invalid.");
+            //}
+
+            //if(m_query.ExtendedData.ContainsKey("minDate"))
+            //{
+            //    string minDateString = m_query.ExtendedData["minDate"].ToString();
+            //    minDate = DateTime.ParseExact(minDateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            //}
+            //if(m_query.ExtendedData.ContainsKey("maxDate"))
+            //{
+            //    string maxDateString = m_query.ExtendedData["maxDate"].ToString();
+            //    maxDate = DateTime.ParseExact(maxDateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            //}
+
+            bool takeMostRecentOnly = false;
+
+            if (m_query.ExtendedData.ContainsKey("mostRecent"))
+            {
+                string mostRecentString = m_query.ExtendedData["mostRecent"].ToString();
+                if (mostRecentString.ToLower() == "true")
+                {
+                    takeMostRecentOnly = true;
+                }
+
+
+            }
+
+            switch(dataset)
             {
                 case "High Resolution Orthoimagery" :
                     //Would it be a good idea to create a hierarchy of classes of filters?
                     //For now, we only go to private functions...
-                    return HROFilter(tokenList);
+                    return HROFilter(tokenList, minDate, maxDate, takeMostRecentOnly);
+                //case "USDA National Agriculture Imagery Program (NAIP)":
+                //    return NAIPFilter
                 default :
-                    return tokenList;
+                    return tokenList.Select(token => new USGSExtractedResult { jToken = token, Date = null, Resolution = null});
             }
             
         }
 
         /// <summary>
-        /// High resolution orthoimagery dataset special filtering. We need to eliminate superfluous
+        /// High resolution orthoimagery (HRO) dataset special filtering. We need to eliminate superfluous
         /// entries in this dataset. There can be copies of the same entry and data for multiple dates
-        /// for the same location. For now, we filter all of this by taking only the most recent. 
-        /// The date is retrieved from the name (title) of the data.
+        /// for the same location. If takeMostRecentOnly, we take only the most recent. 
+        /// The date is retrieved from the name (found in downloadURL) of the data.
         /// </summary>
         /// <param name="tokenList">The complete list of json entries of the HRO dataset obtained from USGS api</param>
+        /// <param name="minDate">Lower bound for the date filter</param>
+        /// <param name="maxDate">Upper bound for the date filter</param>
+        /// <param name="takeMostRecentOnly">Filter entries to take only the most recent entry for each bounding box</param>
         /// <returns>The list of entries, exempt from superfluous data</returns>
-        private IEnumerable<JToken> HROFilter(IEnumerable<JToken> tokenList)
+        private IEnumerable<USGSExtractedResult> HROFilter(IEnumerable<JToken> tokenList, DateTime? minDate, DateTime? maxDate, bool takeMostRecentOnly)
         {
             //Filter by bounding box
-            Dictionary<string, JToken> bboxDictionary = new Dictionary<string, JToken>();
+            Dictionary<string, USGSExtractedResult> bboxDictionary = new Dictionary<string, USGSExtractedResult>();
+            List<USGSExtractedResult> results = null;
+            if(!takeMostRecentOnly)
+            {
+                results = new List<USGSExtractedResult>();
+            }
 
             foreach(JToken newToken in tokenList)
             {
+                //Check if date is between the range
+
+                string newTokenZipURL = newToken.TryToGetString("downloadURL");
+                string[] newTokenZipURLSplit = newTokenZipURL.Split('/', '\\');
+
+                //The zip name is the last string in the array
+                string zipName = newTokenZipURLSplit[newTokenZipURLSplit.Length - 1];
+
+                string[] zipNameSplit = zipName.Split('_');
+
+                //According to the convention, the date of acquisition is located after the first underscore character
+                string newDateString = zipNameSplit[1];
+                
+                string newTokenResolution = zipNameSplit[2].Replace('x', '.');
+
+                if(newDateString.Length != 6)
+                {
+                    throw new Bentley.EC.Persistence.Operations.OperationFailedException("Error while filtering results.");
+                }
+
+                DateTime newTokenDate = DateTime.ParseExact(newDateString + "01", "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
+
+                if((minDate.HasValue) && (newTokenDate < minDate.Value))
+                {
+                    //It is not in the requested time lapse. We skip this one.
+                    continue;
+                }
+                if ((maxDate.HasValue) && (newTokenDate > maxDate.Value))
+                {
+                    //It is not in the requested time lapse. We skip this one.
+                    continue;
+                }
+
                 var bboxString = newToken["boundingBox"].ToString();
                 if (bboxDictionary.ContainsKey(bboxString))
                 {
-                    var firstToken = bboxDictionary[bboxString];
 
-                    string firstTokenName = firstToken.TryToGetString("title");
-                    string[] firstTitleSplit = firstTokenName.Split(' ');
+                    var firstTokenObject = bboxDictionary[bboxString];
 
-                    //In all the data we've seen, the date is always the fourth last string in the title.
-                    string firstDateString = firstTitleSplit[firstTitleSplit.Length - 4];
-
-                    //The date is always in the format YYYYMM, making it possible to convert it to an int and then comparing it
-                    //directly
-
-                    int firstDate = 0;
-                    bool problemParsing1 = int.TryParse(firstDateString, out firstDate);
-
+                    string firstTokenName = firstTokenObject.jToken.TryToGetString("title");
                     string newTokenName = newToken.TryToGetString("title");
-                    string[] newTitleSplit = newTokenName.Split(' ');
 
-                    //In all the data we've seen, the date is always the fourth last string in the title.
-                    string newDateString = newTitleSplit[newTitleSplit.Length - 4];
-
-                    //The date is always in the format YYYYMM, making it possible to convert it to an int and then comparing it
-                    //directly
-                    int newDate = 0;
-                    bool problemParsing2 = int.TryParse(newDateString, out newDate);
-
-                    if(problemParsing1 || problemParsing2)
+                    if (firstTokenName == newTokenName)
                     {
-                        //It seems we haven't got the right date string...
-                        throw new Bentley.EC.Persistence.Operations.OperationFailedException("Error while filtering results.");
+                        //The title of the two entries is the same. It is a duplicate entry, so we skip
+                        continue;
                     }
-                    if(newDate > firstDate)
+                    if (takeMostRecentOnly)
                     {
-                        bboxDictionary[bboxString] = newToken;
+                        string[] firstTitleSplit = firstTokenName.Split(' ');
+
+                        if (newTokenDate > firstTokenObject.Date)
+                        {
+                            bboxDictionary[bboxString] = new USGSExtractedResult{jToken = newToken, Date = newTokenDate, Resolution = newTokenResolution};
+                        }
+                    }
+                    else
+                    {
+                        //If we do not take only the most recent, we can add it to the results directly
+                        results.Add(new USGSExtractedResult { jToken = newToken, Date = newTokenDate, Resolution = newTokenResolution });
                     }
                 }
                 else
                 {
-                    bboxDictionary[bboxString] = newToken;
+                    bboxDictionary[bboxString] = new USGSExtractedResult { jToken = newToken, Date = newTokenDate, Resolution = newTokenResolution }; ;
+                    if (!takeMostRecentOnly)
+                    {
+                        //If we do not take only the most recent, we can add it to the results directly
+                        results.Add(new USGSExtractedResult { jToken = newToken, Date = newTokenDate, Resolution = newTokenResolution });
+                    }
                 }
             }
-            return bboxDictionary.Values;
+            if(takeMostRecentOnly)
+            {
+                //If we take only the most recent, all of the entries we select are already in the dictionary
+                return bboxDictionary.Values;
+            }
+            return results;
         }
 
         private void InitializePropertiesToNull(IECInstance instance, IECClass ecClass)
@@ -1389,6 +1572,39 @@ namespace IndexECPlugin.Source.QueryProviders
             {
                 throw new NotImplementedException("The download of the thumbnail located at " + thumbnailUri + " is not implemented yet.");
             }
+        }
+
+        private List<SingleWhereCriteriaHolder> ExtractPropertyWhereClauses()
+        {
+            List<SingleWhereCriteriaHolder> singleWhereCriteriaList = new List<SingleWhereCriteriaHolder>();
+            var whereCriteria = m_query.WhereClause;
+            for (int i = 0; i < whereCriteria.Count; i++)
+            {
+                if (i > 0)
+                {
+                    if(whereCriteria.GetLogicalOperatorBefore(i) != LogicalOperator.AND)
+                    {
+                        throw new UserFriendlyException("Please use only AND operator to filter the USGS requests");
+                    }
+                }
+                WhereCriterion criterion = whereCriteria[i];
+                if (criterion is PropertyExpression)
+                {
+                    PropertyExpression propertyExpression = (PropertyExpression)criterion;
+
+                    singleWhereCriteriaList.Add(new SingleWhereCriteriaHolder { Property = propertyExpression.LeftSideProperty, Operator = propertyExpression.Operator, Value = propertyExpression.RightSideString });
+                }
+                if (criterion is RelatedCriterion)
+                {
+                    throw new UserFriendlyException("Related Criterions are not allowed on USGS requests");
+                }
+                if (criterion is WhereCriteria)
+                {
+                    throw new UserFriendlyException("Complex expressions are not allowed on USGS requests");
+                }
+            }
+
+            return singleWhereCriteriaList;
         }
 
     }

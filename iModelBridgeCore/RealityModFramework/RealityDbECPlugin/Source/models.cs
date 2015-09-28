@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Bentley.EC.Persistence.Query;
+using Bentley.ECObjects.Schema;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -70,6 +72,11 @@ namespace IndexECPlugin.Source
         /// TO BE DONE
         /// </summary>
         public IEnumerable<double[]> Footprint { get; set; }
+
+        ///// <summary>
+        ///// 
+        ///// </summary>
+        //public string Type { get; set; }
     }
 
     /// <summary>
@@ -148,7 +155,7 @@ namespace IndexECPlugin.Source
         /// <summary>
         /// 
         /// </summary>
-        public String Type { get; set; }
+        public String Classification { get; set; }
     }
 
     /// <summary>
@@ -182,6 +189,11 @@ namespace IndexECPlugin.Source
         public int Priority { get; set; }
 
         /// <summary>
+        /// 
+        /// </summary>
+        public string Classification { get; set; }
+
+        /// <summary>
         ///   
         /// </summary>
         public int CompareTo(UsgsRequest req)
@@ -203,15 +215,67 @@ namespace IndexECPlugin.Source
         /// <summary>
         /// 
         /// </summary>
-        public JToken jtoken { get; set; }
+        public IEnumerable<JToken> jtokenList { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
         public string DatasetId { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Dataset { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Classification { get; set; }
     }
 
-    //internal enum ObjectType
+    /// <summary>
+    /// 
+    /// </summary>
+    public class USGSExtractedResult
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        public JToken jToken { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public DateTime? Date { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Resolution { get; set; }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public class SingleWhereCriteriaHolder
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        public IECProperty Property { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Value { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public RelationalOperator Operator { get; set; }
+    }
+
+    //internal enum ObjectClassification
     //{
     //    None = 0,
     //    Roadway,

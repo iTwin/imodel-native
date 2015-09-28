@@ -163,9 +163,24 @@ namespace IndexECPlugin.Source
 
             if ((op != RelationalOperator.ISNULL) && (op != RelationalOperator.ISNOTNULL))
             {
-                string paramName = GetNewParamName();
-                m_sqlWhereClause += AddBrackets(columnName) + " " + sqlOp + paramName + " ";
-                m_paramNameValueMap.Add(paramName, new Tuple<string, DbType>(rightSideString, dbType));
+                if (op == RelationalOperator.IN)
+                {
+                    List<String> paramNameList = new List<String>();
+                    foreach (string rightSideStringPart in rightSideString.Split(','))
+                    {
+                        string paramName = GetNewParamName();
+                        //m_sqlWhereClause += paramName + ",";
+                        paramNameList.Add(paramName);
+                        m_paramNameValueMap.Add(paramName, new Tuple<string, DbType>(rightSideStringPart, dbType));
+                    }
+                    m_sqlWhereClause += AddBrackets(columnName) + " " + sqlOp + " (" + String.Join(",", paramNameList.ToArray()) + ") ";
+                }
+                else
+                {
+                    string paramName = GetNewParamName();
+                    m_sqlWhereClause += AddBrackets(columnName) + " " + sqlOp + paramName + " ";
+                    m_paramNameValueMap.Add(paramName, new Tuple<string, DbType>(rightSideString, dbType));
+                }
             }
             else
             {

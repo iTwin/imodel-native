@@ -8,12 +8,12 @@ set @SDSID = SCOPE_IDENTITY()
 INSERT [dbo].[Metadatas]([Legal])
 VALUES ('© OpenStreetMap contributors')
 
-declare @MID int
+declare @METAID int
 
-set @MID = SCOPE_IDENTITY()
+set @METAID = SCOPE_IDENTITY()
 
 INSERT [dbo].[SpatialEntityBases]([Footprint], [Name], [DataSourceTypesAvailable], [Metadata_Id])
-VALUES (geometry::STGeomFromText('POLYGON((-180 -90, -180 90, 180 90, 180 -90, -180 -90))', 4326), 'OpenStreetMap', 'OSM', @MID)
+VALUES (geometry::STGeomFromText('POLYGON((-180 -90, -180 90, 180 90, 180 -90, -180 -90))', 4326), 'OpenStreetMap', 'OSM', @METAID)
 
 declare @SEBID int
 

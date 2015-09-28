@@ -166,9 +166,27 @@
             </ECCustomAttributes>
         </ECProperty>
         
+        <ECProperty propertyName="Date" typeName="dateTime">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Date</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Classification" typeName="string" >
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Classification</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
         <ECProperty propertyName="ParentDatasetIdStr" typeName="string" />
         
-        <ECProperty propertyName="Classification" typeName="int" />
+        
+        
+        
     </ECClass>
     
     <ECClass typeName="SpatialEntity" isDomainClass="true" baseClass="SpatialEntityBase">
@@ -461,6 +479,14 @@
             <ECCustomAttributes>
                 <DBColumn>
                     <ColumnName>SisterFiles</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="FileSize" typeName="long">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>FileSize</ColumnName>
                 </DBColumn>
             </ECCustomAttributes>
         </ECProperty>
@@ -922,6 +948,30 @@
             </ECCustomAttributes>
         </ECProperty>
         
+        <ECProperty propertyName="AccuracyResolutionDensity" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>AccuracyResolutionDensity</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Date" typeName="dateTime">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Date</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Classification" typeName="string" >
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Classification</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
         <!--ECProperty propertyName="ParentDatasetIdStr" typeName="string" /-->
         <ECProperty propertyName="DataProvider" typeName="string" />
         <ECProperty propertyName="DataProviderName" typeName="string" />
@@ -1004,7 +1054,7 @@
     <ECRelationshipClass 
       typeName="SpatialEntityDatasetToAlternateDataset" 
       description="Link between SpatialEntityDataset and an alternate dataset." 
-      strength="Referencing" 
+      strength="referencing" 
       strengthDirection="forward">
         <ECCustomAttributes>
             <RelationshipKeys>
@@ -1112,7 +1162,7 @@
     <ECRelationshipClass 
       typeName="WMSServerToWMSLayer" 
       description="Link between WMSServer and the WMSLayers it holds." 
-      strength="Holding" 
+      strength="holding" 
       strengthDirection="forward">
         <ECCustomAttributes>
             <RelationshipKeys>
@@ -1133,7 +1183,7 @@
     <ECRelationshipClass 
       typeName="WMSLayerToSubLayer" 
       description="Link between WMSLayer and its sub layers." 
-      strength="Holding" 
+      strength="holding" 
       strengthDirection="forward">
         <ECCustomAttributes>
             <RelationshipKeys>
@@ -1162,8 +1212,17 @@
         <ECArrayProperty propertyName="RequestedEntities" typeName="RequestedEntity" minOccurs="1" maxOccurs="unbounded" />
         <ECProperty propertyName="CoordinateSystem" typeName="string" />
         <ECProperty propertyName="Polygon" typeName="string" />
+        <ECProperty propertyName="OSM" typeName="boolean" />
     </ECClass>
-    
+
+    <ECClass typeName="AutomaticRequest" isDomainClass="true">
+        <ECProperty propertyName="Polygon" typeName="string" />
+        <ECProperty propertyName="MostRecent" typeName="boolean" />
+        <ECProperty propertyName="BestResolution" typeName="boolean" />
+        <ECProperty propertyName="Classification" typeName="string" />
+        <ECProperty propertyName="OSM" typeName="boolean" />
+    </ECClass>
+   
     <ECClass typeName="PreparedPackage" isDomainClass="true">
         <ECCustomAttributes>
             <FileHolder>

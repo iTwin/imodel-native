@@ -137,7 +137,7 @@ namespace Bentley.ECPluginExamples
             }
 
 
-
+            
             ////we did not find an existing identifier, check if the directory on the location exists
             if (!File.Exists(location))
             {
@@ -429,19 +429,93 @@ namespace Bentley.ECPluginExamples
         IExtendedParameters extendedParameters
         )
         {
-            //For now, we only "insert" objects of the PackageRequest class
+            string className = instance.ClassDefinition.Name;
 
-            QueryModule queryModule = sender.ParentECPlugin.QueryModule;
-
-            if(instance.ClassDefinition.Name != "PackageRequest")
+            switch(className)
             {
-                throw new UserFriendlyException("The only insert operation permitted is a PackageResquest instance insertion.");
+                case "PackageRequest":
+                    InsertPackageRequest(sender, connection, instance, sender.ParentECPlugin.QueryModule);
+                    return;
+                case "AutomaticRequest":
+                    InsertAutomaticRequest(sender, connection, instance, sender.ParentECPlugin.QueryModule);
+                    return;
+
+                default:
+                    throw new UserFriendlyException("The only insert operation permitted is a PackageRequest instance insertion.");
+            }
+            
+        }
+
+        private string InsertAutomaticRequest(OperationModule sender, RepositoryConnection connection, IECInstance instance, QueryModule queryModule)
+        {
+            if((instance.GetPropertyValue("Polygon") == null) ||
+               (instance.GetPropertyValue("MostRecent") == null) ||
+               (instance.GetPropertyValue("BestResolution") == null) ||
+               (instance.GetPropertyValue("Classification") == null) ||
+               (instance.GetPropertyValue("OSM") == null))
+            {
+                throw new UserFriendlyException("There are missing properties in the request.");
             }
 
-            //TODO: Implement a package creation procedure that isn't hard coded for a particular schema... Probably impossible.
-            
-            string coordinateSystem = null;
+            string selectedRegionStr = instance.GetPropertyValue("Polygon").StringValue;
+            string mostRecent = instance.GetPropertyValue("MostRecent").StringValue;
+            string bestResolution = instance.GetPropertyValue("BestResolution").StringValue;
 
+
+
+            IECClass SEWDVClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityWithDetailsView");
+            
+            //Since the request expects from us to find all the entries by ourselves, we query their ids here.
+            ECQuery query = new ECQuery(SEWDVClass);
+            query.SelectClause.SelectAllProperties = false;
+            query.SelectClause.SelectedProperties = new List<IECProperty>();
+            query.SelectClause.SelectedProperties.Add(SEWDVClass.First(prop => prop.Name == "Id"));
+
+            query.WhereClause = new WhereCriteria(new PropertyExpression(RelationalOperator.IN, SEWDVClass.Properties(false).First(p => p.Name == "Classification"), instance.GetPropertyValue("Classification").StringValue));
+            // We add a special clause for OSM. OSM is to exclude, since it is already added in InsertPackageRequest
+            query.WhereClause.Add(new PropertyExpression(RelationalOperator.NE, SEWDVClass.Properties(false).First(p => p.Name == "DataSourceTypesAvailable"), "OSM"));
+            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("Polygon", "{points:" + selectedRegionStr + ",coordinate_system:\'4326\'}"));
+            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("MostRecent", mostRecent));
+            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("BestResolution", bestResolution));
+
+            var queriedEntities = ExecuteQuery(queryModule, connection, query, null);
+
+            IECClass packageRequestClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "PackageRequest");
+            //IECClass requestedEntityClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "RequestedEntity");
+
+
+            //We create the PackageRequest instance needed to launch the InsertPackageRequest method
+            IECInstance packageRequestInstance = packageRequestClass.CreateInstance();
+
+            IECArrayValue requestedEntitiesECArray;
+            if (null == (requestedEntitiesECArray = packageRequestInstance["RequestedEntities"] as IECArrayValue))
+            {
+                throw new Bentley.EC.Persistence.Operations.OperationFailedException("The server is unable to complete the requested order");
+            }
+            int i = 0;
+            foreach(var entity in queriedEntities)
+            {
+                IECStructValue requestedEntity = requestedEntitiesECArray[i] as IECStructValue;
+                requestedEntity["ID"].StringValue = entity.InstanceId;
+                requestedEntity["SelectedFormat"].StringValue = "image/png";
+                requestedEntity["SelectedStyle"].StringValue = "default";
+            }
+
+            packageRequestInstance["Polygon"].StringValue = selectedRegionStr;
+            packageRequestInstance["CoordinateSystem"].StringValue = "EPSG:4326";
+            packageRequestInstance["OSM"].NativeValue = instance.GetPropertyValue("OSM").NativeValue;
+
+
+            instance.InstanceId = InsertPackageRequest(sender, connection, packageRequestInstance, queryModule);
+
+            return instance.InstanceId;
+
+        }
+
+        private string InsertPackageRequest(OperationModule sender, RepositoryConnection connection, IECInstance instance, QueryModule queryModule)
+        {
+            string coordinateSystem = null;
+             
             var csPropValue = instance.GetPropertyValue("CoordinateSystem");
 
             if ((csPropValue != null) && (!csPropValue.IsNull))
@@ -449,16 +523,27 @@ namespace Bentley.ECPluginExamples
                 coordinateSystem = instance.GetPropertyValue("CoordinateSystem").StringValue;
             }
 
+            var osmPropValue = instance.GetPropertyValue("OSM");
+            bool osm = false;
+            if (osmPropValue != null)
+            {
+                if(osmPropValue.StringValue.ToLower() == "true")
+                osm = true;
+            }
+
             IECArrayValue requestedEntitiesECArray = instance.GetPropertyValue("RequestedEntities") as IECArrayValue;
-            if(requestedEntitiesECArray == null)
+            if (requestedEntitiesECArray == null)
             {
                 throw new ProgrammerException("The ECSchema is not valid. PackageRequest must have an array property");
             }
 
+
+
             //List<RequestedEntity> bentleyFileInfoList = new List<RequestedEntity>();
             List<RequestedEntity> dbRequestedEntities = new List<RequestedEntity>();
             List<RequestedEntity> usgsRequestedEntities = new List<RequestedEntity>();
-            for(int i = 0; i < requestedEntitiesECArray.Count; i++)
+            List<RequestedEntity> basicRequestedEntities = new List<RequestedEntity>();
+            for (int i = 0; i < requestedEntitiesECArray.Count; i++)
             {
 
                 var requestedEntity = ECStructToRequestedEntity(requestedEntitiesECArray[i] as IECStructValue);
@@ -473,9 +558,16 @@ namespace Bentley.ECPluginExamples
                 }
             }
 
+            if (osm)
+            {
+                basicRequestedEntities.Add(CreateOSMRequestedEntity(sender, connection, queryModule));
+            }
+
             List<WmsSourceNet> wmsSourceList = IndexPackager(sender, connection, queryModule, coordinateSystem, dbRequestedEntities);
 
             List<UsgsSourceNet> usgsSourceList = UsgsPackager(sender, connection, queryModule, usgsRequestedEntities);
+
+            List<RealityDataSourceNet> osmSourceList = RealityDataPackager(sender, connection, queryModule, basicRequestedEntities);
 
             // Create package bounding box (region of interest).
             List<double> selectedRegion = new List<double>();
@@ -489,35 +581,122 @@ namespace Bentley.ECPluginExamples
             try
             {
                 // Create imagery group.
-                ImageryGroupNet imgGroup = ImageryGroupNet.Create ();
+                ImageryGroupNet imgGroup = ImageryGroupNet.Create();
                 foreach (WmsSourceNet wmsSource in wmsSourceList)
-                    {
-                    imgGroup.AddData (wmsSource);
-                    }
+                {
+                    imgGroup.AddData(wmsSource);
+                }
                 foreach (UsgsSourceNet usgsSource in usgsSourceList)
-                    {
-                    imgGroup.AddData (usgsSource);
-                    }
+                {
+                    imgGroup.AddData(usgsSource);
+                }
 
                 // Create model group.
-                ModelGroupNet modelGroup = ModelGroupNet.Create ();
-
+                ModelGroupNet modelGroup = ModelGroupNet.Create();
+                foreach (RealityDataSourceNet osmSource in osmSourceList)
+                {
+                    modelGroup.AddData(osmSource);
+                }
                 // Create pinned group.
-                PinnedGroupNet pinnedGroup = PinnedGroupNet.Create ();
+                PinnedGroupNet pinnedGroup = PinnedGroupNet.Create();
 
                 // Create terrain group.
-                TerrainGroupNet terrainGroup = TerrainGroupNet.Create ();
+                TerrainGroupNet terrainGroup = TerrainGroupNet.Create();
 
                 // Create package.
                 string description = "";
                 string copyright = "";
-                RealityDataPackageNet.Create (m_packagesLocation, name, description, copyright, selectedRegion, imgGroup, modelGroup, pinnedGroup, terrainGroup);
+                RealityDataPackageNet.Create(m_packagesLocation, name, description, copyright, selectedRegion, imgGroup, modelGroup, pinnedGroup, terrainGroup);
             }
             catch (Exception e)
             {
-                throw new UserFriendlyException("There was a problem with the processing of the order.", e);
+                throw new Bentley.EC.Persistence.Operations.OperationFailedException("There was a problem with the processing of the order.", e);
             }
             instance.InstanceId = name + ".xrdp";
+            return instance.InstanceId;
+        }
+
+        //This is only there to find the id of the osm entry in the database
+        private RequestedEntity CreateOSMRequestedEntity(OperationModule sender, RepositoryConnection connection, QueryModule queryModule)
+        {
+            IECClass spatialEntityClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntity");
+
+            ECQuery query = new ECQuery(spatialEntityClass);
+            query.SelectClause.SelectAllProperties = false;
+            query.SelectClause.SelectedProperties = new List<IECProperty>();
+            query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "Id"));
+
+            query.WhereClause = new WhereCriteria(new PropertyExpression(RelationalOperator.EQ, spatialEntityClass.Properties(true).First(p => p.Name == "DataSourceTypesAvailable"), "OSM"));
+            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
+
+            var queriedSpatialEntities = ExecuteQuery(queryModule, connection, query, null);
+
+            return new RequestedEntity
+            {
+                ID = queriedSpatialEntities.First().InstanceId,
+                //Type = "OSM"
+            };
+
+        }
+
+        private List<RealityDataSourceNet> RealityDataPackager(OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> basicRequestedEntities)
+        {
+            List<RealityDataSourceNet> RDSNList = new List<RealityDataSourceNet>();
+
+            if (basicRequestedEntities.Count == 0)
+            {
+                return RDSNList;
+            }
+
+            IECRelationshipClass metadataRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityBaseToMetadata") as IECRelationshipClass;
+            IECClass metadataClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Metadata");
+            RelatedInstanceSelectCriteria metadataRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(metadataRelClass, RelatedInstanceDirection.Forward, metadataClass), false);
+
+            IECRelationshipClass dataSourceRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityToSpatialDataSource") as IECRelationshipClass;
+            IECClass dataSourceClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialDataSource");
+            RelatedInstanceSelectCriteria dataSourceRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(dataSourceRelClass, RelatedInstanceDirection.Forward, dataSourceClass), false);
+
+            IECClass spatialEntityClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntity");
+            
+            ECQuery query = new ECQuery(spatialEntityClass);
+            query.SelectClause.SelectAllProperties = false;
+            query.SelectClause.SelectedProperties = new List<IECProperty>();
+            //query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "Id"));
+            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(basicRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
+            query.SelectClause.SelectedRelatedInstances.Add(metadataRelCrit);
+            query.SelectClause.SelectedRelatedInstances.Add(dataSourceRelCrit);
+
+            metadataRelCrit.SelectAllProperties = false;
+            metadataRelCrit.SelectedProperties = new List<IECProperty>();
+            metadataRelCrit.SelectedProperties.Add(metadataClass.First(prop => prop.Name == "Legal"));
+
+            dataSourceRelCrit.SelectAllProperties = false;
+            dataSourceRelCrit.SelectedProperties = new List<IECProperty>();
+            dataSourceRelCrit.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "MainURL"));
+            dataSourceRelCrit.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "DataSourceType"));
+
+            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
+
+            var queriedSpatialEntities = ExecuteQuery(queryModule, connection, query, null);
+
+            foreach (IECInstance spatialEntity in queriedSpatialEntities)
+            {
+
+                IECRelationshipInstance firstMetadataRel = spatialEntity.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "SpatialEntityBaseToMetadata");
+                IECInstance firstMetadata = firstMetadataRel.Target;
+
+                IECRelationshipInstance firstDataSourceRel = spatialEntity.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource");
+                IECInstance firstSpatialDataSource = firstDataSourceRel.Target;
+
+                string uri = firstSpatialDataSource.GetPropertyValue("MainURL").StringValue;
+                string type = firstSpatialDataSource.GetPropertyValue("DataSourceType").StringValue;
+                string copyright = firstMetadata.GetPropertyValue("Legal").StringValue;
+
+                RDSNList.Add(RealityDataSourceNet.Create(uri, type, copyright, 0));
+            }
+
+            return RDSNList;
+            
         }
 
         private List<UsgsSourceNet> UsgsPackager(OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> usgsRequestedEntities)
@@ -538,6 +717,7 @@ namespace Bentley.ECPluginExamples
             query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "Metadata"));
             query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "MainURL"));
             query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "DataSourceType"));
+            query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "FileSize"));
 
             query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
 
@@ -562,12 +742,15 @@ namespace Bentley.ECPluginExamples
                 string url = entity.GetPropertyValue("MainURL").StringValue;
                 string type = entity.GetPropertyValue("DataSourceType").StringValue;
                 string copyright = queriedMetadatas.First(m => m.InstanceId == entity.InstanceId).GetPropertyValue("Legal").StringValue;
+                long fileSize = (long) entity.GetPropertyValue("FileSize").NativeValue;
+                ulong uFileSize = (fileSize > 0) ? (ulong)fileSize : 0;
+                string location = entity.GetPropertyValue("LocationInCompound").StringValue;
 
                 usgsSourceNetList.Add(UsgsSourceNet.Create(url,                     // Url
                                                            copyright,               // Data copyright
-                                                           0,                       // Data size
+                                                           uFileSize,               // Data size
                                                            type,                    // Main file type
-                                                           "",                      // Main file location
+                                                           location,                // Main file location
                                                            new List<string>(),      // Sister Files 
                                                            metadata));              // Metadata location 
             }
