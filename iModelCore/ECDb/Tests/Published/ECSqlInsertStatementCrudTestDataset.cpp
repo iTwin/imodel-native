@@ -412,10 +412,10 @@ ECSqlTestDataset ECSqlInsertTestDataset::MiscTests (ECDbTestProject& testProject
     ecsql = "INSERT INTO ecsql.P (I) VALUES (5 * 4)";
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 1, true);
 
-    ecsql = "INSERT INTO ecsql.P (L) VALUES (1 + GetECClass())";
+    ecsql = "INSERT INTO ecsql.P (L) VALUES (1 + GetECClassId())";
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 1, true);
 
-    ecsql = "INSERT INTO ecsql.P (L) VALUES (GetECClass() * 4)";
+    ecsql = "INSERT INTO ecsql.P (L) VALUES (GetECClassId() * 4)";
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 1, true);
 
     //*******************************************************

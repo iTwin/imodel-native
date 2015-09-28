@@ -558,7 +558,7 @@ TEST(ECSqlParseTest, ForAndroid)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                       10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbSchemas, VerifyEmptyECSchemaCanBeRead)
+TEST(ECDbSchemas, VerifyEmptyECSchemaCannotBeRead)
     {
     ECDb ecdb;
     BeFileName temporaryDir;
@@ -574,11 +574,9 @@ TEST(ECDbSchemas, VerifyEmptyECSchemaCanBeRead)
     auto cache = ECSchemaCache::Create();
     cache->AddSchema (*emptySchema);
     auto schemaStat = ecdb.Schemas().ImportECSchemas(*cache);
-    ASSERT_EQ (SUCCESS, schemaStat) << "Importing empty ECSchema failed";
-    ecdb.ClearECDbCache();
-    ECSchemaCP stroedEmptySchema = ecdb. Schemas ().GetECSchema ("EmptyECSchema");
-    ASSERT_TRUE (stroedEmptySchema != nullptr);
+    ASSERT_EQ (ERROR, schemaStat) << "Importing empty ECSchema succeeded unexpectedly";
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                       03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1394,6 +1392,7 @@ ECSchemaCachePtr& testSchemaCache
     ECSchemaPtr schema = nullptr;
     ECObjectsStatus stat = ECSchema::CreateSchema (schema, "foo", 1, 0);
     ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << "Creating test schema failed";
+    schema->SetNamespacePrefix("f");
 
     ECClassP domainClass = nullptr;
     stat = schema->CreateClass (domainClass, "domain1");
@@ -2578,7 +2577,7 @@ TEST(ECDbSchemas, IntegrityCheck)
     ECDbR db = saveTestProject.Create("IntegrityCheck.ecdb", L"IntegrityCheck.01.00.ecschema.xml", true);
     Statement stmt;
     std::map<Utf8String, Utf8String> expected;
-    expected["ic_TargetBase"] = "CREATE TABLE [ic_TargetBase] ([ECInstanceId] INTEGER NOT NULL, [ECClassId] INTEGER, [I] INTEGER, [S] TEXT, [SourceECInstanceId] INTEGER, PRIMARY KEY ([ECInstanceId]), FOREIGN KEY ([SourceECInstanceId]) REFERENCES [ic_SourceBase] ([ECInstanceId]) ON DELETE CASCADE ON UPDATE NO ACTION";
+    expected["ic_TargetBase"] = "CREATE TABLE [ic_TargetBase] ([ECInstanceId] INTEGER NOT NULL, [ECClassId] INTEGER, [I] INTEGER, [S] TEXT, [SourceECInstanceId] INTEGER, PRIMARY KEY ([ECInstanceId]), FOREIGN KEY ([SourceECInstanceId]) REFERENCES [ic_SourceBase] ([ECInstanceId]) ON DELETE CASCADE ON UPDATE NO ACTION)";
 
     stmt.Prepare(db, "select name, sql from sqlite_master Where type='table' AND tbl_name = 'ic_TargetBase'");
     int nRows = 0;
