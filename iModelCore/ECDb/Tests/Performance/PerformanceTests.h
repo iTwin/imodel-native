@@ -9,6 +9,6 @@
 #include <Bentley/BeTest.h>
 #include <Bentley/BeTimeUtilities.h>
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTests.h"
-#include <PerformanceTestingHelper/PerformanceTestingHelpers.h>
+#include <UnitTests/BackDoor/PerformanceTestingHelper/PerformanceTestingHelpers.h>
 
 
