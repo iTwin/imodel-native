@@ -381,7 +381,7 @@ DbResult DgnDomains::InsertHandler(DgnDomain::Handler& handler)
     DgnClassId id = GetClassId(handler);
     if (!id.IsValid())
         {
-        BeAssert(false);
+        // BeAssert(false);
         // handler is registered against a class that doesn't exist
         return BE_SQLITE_ERROR;
         }

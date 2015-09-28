@@ -128,6 +128,7 @@ struct IViewOutput : IRefCounted, IViewDraw
 
 protected:
     virtual void      _SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText) = 0;
+    virtual void      _SetRenderMode (ViewFlags viewFlags) { }
     virtual DgnDisplayCoreTypes::DeviceContextP    _GetScreenDC() const = 0;
     virtual StatusInt _AssignDC(DgnDisplayCoreTypes::DeviceContextP) = 0;
     virtual void      _AddLights(bool threeDview, RotMatrixCP rotMatrixP, DgnModelP model) = 0;
@@ -176,6 +177,7 @@ protected:
 
 public:
     DGNPLATFORM_EXPORT void SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText);
+    DGNPLATFORM_EXPORT void SetRenderMode (ViewFlags viewFlags);
     DGNPLATFORM_EXPORT DgnDisplayCoreTypes::DeviceContextP GetScreenDC () const;
     DGNPLATFORM_EXPORT StatusInt AssignDC (DgnDisplayCoreTypes::DeviceContextP);
     DGNPLATFORM_EXPORT void AddLights(bool threeDview, RotMatrixCP rotMatrixP, DgnModelP model = NULL);
