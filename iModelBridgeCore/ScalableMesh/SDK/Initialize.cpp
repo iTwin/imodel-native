@@ -438,7 +438,7 @@ void CloseSDK()
     {
     file = nullptr;
     docPtr = nullptr;
-    DgnPlatform::Raster::RasterCoreLib::GetHost().Terminate(true);
+
     }
     }
 

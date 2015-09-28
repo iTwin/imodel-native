@@ -21,7 +21,7 @@ namespace ScalableMeshSDKSample
             NULL 
             );
         if (m_pipe == NULL || m_pipe == INVALID_HANDLE_VALUE) fwprintf(stderr, L"Error creating pipe\n");
-        //if (!ConnectNamedPipe(m_pipe, NULL)) fwprintf(stderr, L"No client connected\n");
+        if (!ConnectNamedPipe(m_pipe, NULL)) fwprintf(stderr, L"No client connected\n");
         }
 
     BentleyStatus ScalableMeshSDKSample::Initialize(int argc, WCharP argv[])
@@ -35,7 +35,7 @@ namespace ScalableMeshSDKSample
             {
             OpenPipe();
             }
-        DgnViewLib::Initialize(*this, false); // this initializes the DgnDb libraries
+        DgnViewLib::Initialize(*this, true); // this initializes the DgnDb libraries
         InitializeSDK(*this);
         setlocale(LC_CTYPE, "");
         return SUCCESS;
