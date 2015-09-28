@@ -385,8 +385,9 @@ SimpleBufferPatternMap::SimpleBufferPatternMap (Byte const* imageData, Point2dCR
 * @bsimethod                                                    RayBentley      09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 SimpleBufferPatternMap::~SimpleBufferPatternMap ()
-    {
-    // Needs work.   Free QVision texture.
+    {    
+    if (0 != m_qvTextureId)
+        T_HOST.GetGraphicsAdmin()._DeleteTexture (m_qvTextureId);
     }
 
 /*---------------------------------------------------------------------------------**//**
