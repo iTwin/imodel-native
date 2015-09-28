@@ -1480,6 +1480,12 @@ DgnElements::ElementSelectStatement DgnElements::HandlerStatementCache::GetPrepa
             }
         }
 
+    if (stmt.IsValid())
+        {
+        BeAssert(el.GetElementId().IsValid());
+        stmt->BindId(1, el.GetElementId());
+        }
+
     return ElementSelectStatement(stmt.get(), classInfo.m_params);
     }
 
