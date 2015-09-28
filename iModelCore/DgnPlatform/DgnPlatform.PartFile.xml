@@ -96,6 +96,7 @@
 
     <!-- Allow dependent tests to #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h> -->
     <Part Name="DgnPlatformUnitTestHelpers" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
+        <SubPart PartName="DgnPlatformDLL"      PartFile="DgnPlatform"  Repository="DgnPlatform" />
         <Bindings>
             <Files Required="false" SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/ScopedDgnHost.h</Files>
         </Bindings>
