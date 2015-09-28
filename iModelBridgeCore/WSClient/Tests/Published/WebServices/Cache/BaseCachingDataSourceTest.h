@@ -23,12 +23,11 @@
 class BaseCachingDataSourceTest : public BaseCacheTest
     {
     private:
-        static CachingDataSourcePtr s_reusableDataSourceV1;
-        static CachingDataSourcePtr s_reusableDataSourceV2;
-        static std::shared_ptr<MockWSRepositoryClient> s_reusableClient;
+        static bmap<BeVersion, CachingDataSourcePtr> s_reusableDataSources;
+        static std::shared_ptr<MockWSRepositoryClient> s_mockClient;
 
     private:
-        CachingDataSourcePtr GetTestDataSourceV1(CachingDataSourcePtr& reusable, WSInfoCR info);
+        void SetupTestDataSource(CachingDataSourcePtr& reusable, WSInfoCR info);
         std::shared_ptr<MockWSRepositoryClient> GetMockClientPtr();
 
     protected:
@@ -46,6 +45,9 @@ class BaseCachingDataSourceTest : public BaseCacheTest
         CachingDataSourcePtr GetTestDataSourceV1();
         // Get reusable WebApi 2.0 CachingDataSource created with GetMockClient() MockWSRepositoryClient;
         CachingDataSourcePtr GetTestDataSourceV2();
+        // Get reusable WebApi version CachingDataSource created with GetMockClient() MockWSRepositoryClient;
+        CachingDataSourcePtr GetTestDataSource(BeVersion webApiVersion);
+
         // Use for CachingDataSource created with GetTestDataSourceV1 ();
         MockWSRepositoryClient& GetMockClient();
 

@@ -77,7 +77,7 @@ void DataSourceCacheOpenState::OnSchemaChanged()
 +--------------------------------------------------------------------------------------*/
 void DataSourceCacheOpenState::ClearRuntimeCaches()
     {
-    m_isSyncActive = m_core ? m_core->m_changeManager.IsSyncActive() : false;
+    m_isSyncActive = m_core ? m_core->m_changeManager.IsSyncActive() : m_isSyncActive;
     m_core = nullptr;
     }
 

@@ -22,7 +22,8 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 #define MESSAGE_STRING_FIELD(x) messageObj[(x)].asCString()
 #define HTTP_DEFAULT_TIMEOUT 10
 
-ClientInfoPtr s_clientInfo;
+static ClientInfoPtr s_clientInfo;
+static IHttpHandlerPtr s_customHandler;
 static std::shared_ptr<WorkerThreadPool> s_threadPool;
 
 std::map<Utf8String, ConnectSpaces::StatusAction> ConnectSpaces::sm_actionMap;
@@ -31,11 +32,12 @@ Utf8String ConnectSpaces::sm_eulaUrlBase;
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSpaces::Initialize(ClientInfoPtr clientInfo)
+void ConnectSpaces::Initialize(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler)
     {
     BeAssert(nullptr != clientInfo);
 
     s_clientInfo = clientInfo;
+    s_customHandler = customHandler;
     s_threadPool = WorkerThreadPool::Create(1, "ConnectSpaces::web");
 
     sm_actionMap[CS_MESSAGE_SetCredentials] = SetCredentialsAction;
@@ -71,7 +73,7 @@ void ConnectSpaces::Uninitialize()
 * @bsimethod                                                    Travis.Cobbs    05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectSpaces::ConnectSpaces() :
-m_client(s_clientInfo, UrlProvider::GetSecurityConfigurator()),
+m_client(s_clientInfo, UrlProvider::GetSecurityConfigurator(s_customHandler)),
 m_cancelToken(SimpleCancellationToken::Create())
     {}
 

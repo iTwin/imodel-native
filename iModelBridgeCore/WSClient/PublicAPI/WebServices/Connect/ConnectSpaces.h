@@ -17,6 +17,7 @@
 #include <MobileDgn/MobileDgnCommon.h>
 #include <MobileDgn/Utils/Http/Credentials.h>
 #include <MobileDgn/Utils/Http/HttpClient.h>
+#include <MobileDgn/Utils/Http/ProxyHttpHandler.h>
 #include <MobileDgn/Utils/Threading/WorkerThreadPool.h>
 #include <WebServices/Connect/SamlToken.h>
 
@@ -56,7 +57,7 @@ struct ConnectSpaces
     {
     public:
         //! Initialize once in app lifetime
-        WSCLIENT_EXPORT static void Initialize(ClientInfoPtr clientInfo);
+        WSCLIENT_EXPORT static void Initialize(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler = nullptr);
         WSCLIENT_EXPORT static bool IsInitialized();
         WSCLIENT_EXPORT static void Uninitialize();
 

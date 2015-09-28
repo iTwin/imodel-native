@@ -53,6 +53,7 @@ struct UrlProvider
 
         static ILocalState* s_localState;
         static IBuddiClientPtr s_buddi;
+        static IHttpHandlerPtr s_customHandler;
 
     private:
         static Utf8String GetBuddiUrl(Utf8StringCR urlName);
@@ -61,7 +62,8 @@ struct UrlProvider
     public:
         WSCLIENT_EXPORT static void Initialize(Environment env,
                                                ILocalState* customlocalState = nullptr,
-                                               IBuddiClientPtr customBuddi = nullptr);
+                                               IBuddiClientPtr customBuddi = nullptr,
+                                               IHttpHandlerPtr customHandler = nullptr);
 
         //! Should be used with all requests to provided URLs!
         //! Returns handler that will configure requests depending on environment.
@@ -73,6 +75,7 @@ struct UrlProvider
         struct Urls
             {
             WSCLIENT_EXPORT static const UrlDescriptor ConnectEula;
+            WSCLIENT_EXPORT static const UrlDescriptor ConnectProjectUrl;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgGlobal;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgPersonalPublishing;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgProjectContent;
