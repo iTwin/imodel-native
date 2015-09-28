@@ -77,6 +77,8 @@
         <ProductDirectory Name="CordovaLibs"                        Deliver="false" LibType="static"/>
         <ProductDirectory Name="MobileDgnNativeAssemblies"          Path="Assemblies"/>
         <ProductDirectory Name="MobileDgnNativeAssemblies"          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="BeCasablancaAssemblies"             Path="Assemblies"/>
+        <ProductDirectory Name="BeCasablancaAssemblies"             Deliver="false" LibType="static"/>
 
         <ProductDirectory Name="Libs"                               Path="Libs"/>
         <ProductDirectory Name="Libs"                               Path="Libs" LibType="static"/>
