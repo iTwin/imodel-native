@@ -132,7 +132,7 @@ public:
 
     static ThreeMxScenePtr  Create (S3SceneInfo const& sceneInfo, WCharCP fileName);
 
-    virtual void    _Draw (ViewContextR viewContext, MRMeshContextCR MeshContext) override;
+    virtual void    _Draw (bool& childrenScheduled, ViewContextR viewContext, MRMeshContextCR MeshContext) override;
     virtual BentleyStatus   _GetRange (DRange3dR range, TransformCR transform)  const override;
 
 
@@ -179,7 +179,7 @@ struct MRMeshNode :  BaseMeshNode,  RefCountedBase
     void                        RequestLoadUntilDisplayable ();
     bool                        LoadedUntilDisplayable () const;
     void                        Dump (WStringCR prefix);
-    BentleyStatus               Draw (ViewContextR viewContext, MRMeshContextCR MeshContext);
+    BentleyStatus               Draw (bool& childrenScheduled, ViewContextR viewContext, MRMeshContextCR MeshContext);
     BentleyStatus               DrawCut (ViewContextR viewContext, MRMeshContextCR MeshContext, DPlane3dCR plane);
     void                        Draw (IDrawGeomR drawGeom, TransformCR tranform);
     void                        DrawMeshes (IDrawGeomP drawGeom, TransformCR transform);
@@ -240,7 +240,9 @@ struct  MRMeshCacheManager
     void                        FlushNonVisibleNodes ();
     void                        Debug ();
     void                        Flush ();
-    void                        ProcessRequests ();
+
+    enum class RequestStatus { Finished, None, Processed };
+    RequestStatus               ProcessRequests ();
 
 
 

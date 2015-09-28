@@ -474,15 +474,10 @@ RealityDataCacheResult RequestData(MRMeshNode* node, BeFileNameCR path, bool syn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ProcessRequests ()
+MRMeshCacheManager::RequestStatus ProcessRequests ()
     {
-#ifdef WIP
     if (m_requests.empty())
-        {
-        m_progressiveStarted = false;
-        ProgressiveDisplayManager::GetManager().EndProgressive (*this);
-        return;
-        }
+        return  MRMeshCacheManager::RequestStatus::Finished;
 
     static double       s_timeoutDelta = .2 * s_timerResolution;
     double              startTime = getTime(), endTime = startTime + s_timeoutDelta;
@@ -503,16 +498,6 @@ void ProcessRequests ()
             case RealityDataCacheResult::Success:
                 {
                 curr->first->_SetDirectory (BeFileName (BeFileName::DevAndDir, fileName));
-
-                for (auto& viewport : curr->second.m_viewports)
-                    {
-                    if (NULL != viewport)
-                        {
-                        BSIRect dirtyRegion;
-                        if (GetRegion (dirtyRegion, viewport, *curr->first, curr->second.m_transform))
-                            ProgressiveDisplayManager::GetManager ().SetNeedsRefresh (viewport, &dirtyRegion);
-                        }
-                    }
 
                 requestsProcessed++;
                 curr = m_requests.erase (curr);
@@ -536,7 +521,8 @@ void ProcessRequests ()
                 break;
             }
         }
-#endif
+
+    return (0 == requestsProcessed) ? MRMeshCacheManager::RequestStatus::None : MRMeshCacheManager::RequestStatus::Processed;
     }
 
 
@@ -812,7 +798,7 @@ MRMeshCacheManager::MRMeshCacheManager()
     {
     }
 
-void MRMeshCacheManager::ProcessRequests ()                 { if (NULL != m_cache) m_cache->ProcessRequests(); }
+MRMeshCacheManager::RequestStatus MRMeshCacheManager::ProcessRequests () { return (NULL == m_cache) ? MRMeshCacheManager::RequestStatus::Finished :  m_cache->ProcessRequests(); }
 void MRMeshCacheManager::Debug ()                           { if (NULL != m_cache) m_cache->Debug(); }
 void MRMeshCacheManager::Flush ()                           { if (NULL != m_cache) m_cache->FlushNonVisibleNodes(); }
 void MRMeshCacheManager::RemoveRequest (MRMeshNodeR node)   { if (NULL != m_cache) m_cache->RemoveCacheRequests (node); }

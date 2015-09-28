@@ -8,6 +8,7 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
+THREEMXSCHEMA_TYPEDEFS (ThreeMxModel)
 THREEMXSCHEMA_TYPEDEFS (S3SceneInfo)
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -25,7 +26,7 @@ struct ThreeMxScene : RefCountedBase
     ThreeMxScene () : m_transform (Transform::FromIdentity()) { }
     void    SetTransform (TransformCR transform) { m_transform = transform; }
 
-    virtual void            _Draw (ViewContextR viewContext, struct MRMeshContext const& meshContext) = 0;
+    virtual void            _Draw (bool& childrenScheduled, ViewContextR viewContext, struct MRMeshContext const& meshContext) = 0;
     virtual BentleyStatus   _GetRange (DRange3dR range, TransformCR transform)  const = 0;;
 
 };  // ThreeMxScene

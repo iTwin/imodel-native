@@ -103,10 +103,9 @@ BentleyStatus MRMeshNode::Load ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus MRMeshNode::LoadUntilDisplayable ()
     {
-#ifdef NEEDS_WORK_PAUSE
-    static  uint32_t    s_notifyTicks = 300;
-    uint32_t            startTicks = mdlSystem_getTicks();
-    bool                loadingMessageDisplayed = false;
+    static  uint32_t    s_sleepMillis = 20;
+//  uint32_t            startTicks = mdlSystem_getTicks();
+//  bool                loadingMessageDisplayed = false;
 
     while (!LoadedUntilDisplayable ())
         {
@@ -114,8 +113,9 @@ BentleyStatus MRMeshNode::LoadUntilDisplayable ()
 
         MRMeshCacheManager::GetManager().ProcessRequests();
         RequestLoadUntilDisplayable();
-        mdlSystem_pauseTicks (1);
+        BeThreadUtilities::BeSleep (s_sleepMillis);
 
+#ifdef NEEDS_WORK_LOAD_NOTIFY
         if (!loadingMessageDisplayed &&
             (mdlSystem_getTicks() - startTicks) > s_notifyTicks)
             {
@@ -126,8 +126,10 @@ BentleyStatus MRMeshNode::LoadUntilDisplayable ()
             loadingMessageDisplayed = true;
             NotificationManager().OutputMessage (NotifyMessageDetails (OutputMessagePriority::Info, message.c_str()));
             }
+#endif
         }
 
+#ifdef NEEDS_WORK_LOAD_NOTIFY
      if (loadingMessageDisplayed)
         {
         WString     message;
@@ -135,21 +137,6 @@ BentleyStatus MRMeshNode::LoadUntilDisplayable ()
         RmgrResource::LoadWString (message, g_rfHandle, STRINGLISTID_Misc, MISC_LoadingComplete);
 
         NotificationManager().OutputMessage (NotifyMessageDetails (OutputMessagePriority::Info, message.c_str()));
-        }
-#else
-    if (SUCCESS != Load ())
-        return ERROR;
-
-    m_primary = true;           // Mark this as a primary node (will never get flushed).
-    if (IsDisplayable())
-        return SUCCESS;
-
-    for (bvector <MRMeshNodePtr>::iterator child = m_children.begin(); child != m_children.end();)
-        {
-        if (SUCCESS != (*child)->LoadUntilDisplayable ())
-            m_children.erase (child);
-        else
-            child++;
         }
 #endif
     return SUCCESS;
@@ -433,13 +420,12 @@ void    MRMeshNode::MarkVisible (size_t& visibleCount, ViewContextR viewContext,
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MRMeshNode::Draw (ViewContextR viewContext, MRMeshContextCR meshContext)
+BentleyStatus MRMeshNode::Draw (bool& childrenScheduled, ViewContextR viewContext, MRMeshContextCR meshContext)
     {
    bool                isUnderMaximumSize = false, childrenNeedLoading = false;
 
     if (!TestVisibility (isUnderMaximumSize, viewContext, meshContext) || !IsLoaded())
         return SUCCESS;
-
 
     T_MeshNodeArray     unloadedVisibleChildren;
     
@@ -452,7 +438,7 @@ BentleyStatus MRMeshNode::Draw (ViewContextR viewContext, MRMeshContextCR meshCo
             if (DrawPurpose::Update != viewContext.GetDrawPurpose() && viewContext.CheckStop())      // Only check stop when not updating  -- doing it during update can leave incomplete display.
                 return SUCCESS;
 
-            (*child)->Draw (viewContext, meshContext);
+            (*child)->Draw (childrenScheduled, viewContext, meshContext);
             }
         return SUCCESS;
         }
@@ -468,7 +454,10 @@ BentleyStatus MRMeshNode::Draw (ViewContextR viewContext, MRMeshContextCR meshCo
         !isUnderMaximumSize &&
         childrenNeedLoading &&
         NULL != viewContext.GetViewport())
+        {
+        childrenScheduled = true;
         MRMeshCacheManager::GetManager().QueueChildLoad (unloadedVisibleChildren, viewContext.GetViewport(), meshContext.GetTransform());
+        }
 
     return SUCCESS;
     }

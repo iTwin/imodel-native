@@ -1,4 +1,4 @@
-/*-------------------------------------------------------------------------------------+
+    /*-------------------------------------------------------------------------------------+
 |
 |     $Source: ThreeMxSchema/ThreeMxHandler.cpp $
 |
@@ -11,6 +11,50 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_THREEMX_SCHEMA
 
 HANDLER_DEFINE_MEMBERS(ThreeMxModelHandler)
+
+//========================================================================================
+// @bsiclass                                                        Ray.Bentley     09/2015
+//========================================================================================
+struct ThreeMxSchema::ThreeMxProgressiveDisplay : Dgn::IProgressiveDisplay, NonCopyableClass
+{
+    DEFINE_BENTLEY_REF_COUNTED_MEMBERS
+
+protected:
+    ThreeMxModelR        m_model;
+
+    ThreeMxProgressiveDisplay (ThreeMxModelR model) : m_model (model) { }
+
+public:
+    virtual bool _WantTimeoutSet(uint32_t& limit)   {return false; }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                      Ray.Bentley     09/2015
+//----------------------------------------------------------------------------------------
+virtual Completion _Process(ViewContextR viewContext) override
+    {
+    switch (MRMeshCacheManager::GetManager().ProcessRequests())
+        {
+        default:
+        case MRMeshCacheManager::RequestStatus::None:
+        case MRMeshCacheManager::RequestStatus::Processed:
+            return Completion::HealRequired;
+
+        case MRMeshCacheManager::RequestStatus::Finished:
+            return Completion::Finished;
+        }
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                      Ray.Bentley     09/2015
+//----------------------------------------------------------------------------------------
+static void Schedule (ThreeMxModelR model, ViewContextR viewContext)
+    {
+    ThreeMxProgressiveDisplay*   progressiveDisplay = new ThreeMxProgressiveDisplay (model);
+
+    viewContext.GetViewport()->ScheduleProgressiveDisplay (*progressiveDisplay);
+    }
+
+};  //  ThreeMxProgressiveDisplay
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
@@ -99,15 +143,20 @@ void ThreeMxModel::_AddGraphicsToScene (ViewContextR viewContext)
         BeAssert (false);
         return;
         }
+    
 
     MRMeshContext       meshContext (Transform::FromIdentity(), viewContext, 0.0);
     ViewFlags           viewFlags = *viewContext.GetViewFlags(), saveViewFlags = viewFlags;
+    bool                childrenScheduled = false;
 
     viewFlags.ignoreLighting = true;
     
     viewContext.GetViewport()->GetIViewOutput()->SetRenderMode (viewFlags);
-    scene->_Draw (viewContext, meshContext);
+    scene->_Draw (childrenScheduled, viewContext, meshContext);
     viewContext.GetViewport()->GetIViewOutput()->SetRenderMode (saveViewFlags);
+
+    if (childrenScheduled)
+        ThreeMxProgressiveDisplay::Schedule (*this, viewContext);
     }
 
 //----------------------------------------------------------------------------------------

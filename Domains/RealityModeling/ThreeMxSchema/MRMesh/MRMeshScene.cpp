@@ -160,7 +160,7 @@ BentleyStatus   MRMeshScene::_GetRange (DRange3dR range, TransformCR transform) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    MRMeshScene::_Draw (ViewContextR viewContext, MRMeshContextCR MeshContext)
+void    MRMeshScene::_Draw (bool& childrenScheduled, ViewContextR viewContext, MRMeshContextCR MeshContext)
     {
     viewContext.PushTransform (m_transform);
 
@@ -169,7 +169,7 @@ void    MRMeshScene::_Draw (ViewContextR viewContext, MRMeshContextCR MeshContex
         if (viewContext.CheckStop())
             break;
 
-        (*child)->Draw (viewContext, MeshContext);
+        (*child)->Draw (childrenScheduled, viewContext, MeshContext);
         }
     viewContext.PopTransformClip ();
     }
