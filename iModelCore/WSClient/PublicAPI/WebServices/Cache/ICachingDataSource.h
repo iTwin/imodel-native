@@ -143,7 +143,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             ICancellationTokenPtr cancellationToken = nullptr
             ) = 0;
 
-        //! Do objects query to server or cache (depending on DataOrigin) and cache results with responseKey.
+        //! Do objects query to server or cache (depending on DataOrigin) and cache results with responseKey. Return flat list of instances cached.
         //! @param[in] responseKey - identifier for holding cached data
         //! @param[in] query - server query
         //! @param[in] origin - specify what data to try returning
@@ -158,7 +158,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             ICancellationTokenPtr cancellationToken
             ) = 0;
 
-        //! Do objects query to server without reading data from cache.
+        //! Do objects query to server or cache (depending on DataOrigin) and cache results with responseKey. Return ECInstanceKeys of instances cached.
         //! @param[in] responseKey - identifier for holding cached data
         //! @param[in] query - server query
         //! @param[in] origin - specify what data to try returning

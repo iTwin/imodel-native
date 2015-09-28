@@ -168,7 +168,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_NullSchemaPassed_Error)
     EXPECT_EQ(ERROR, result);
     }
 
-TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaChangeListenerRegisteredAndSchemaPassed_CallsListener)
+TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaChangeListenerRegisteredAndSchemaPassed_CallsListenerBeforeAndAfterSchemaUpdate)
     {
     MockECDbSchemaChangeListener listener;
 
@@ -176,7 +176,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaChangeListenerRegisteredAndSche
     cache.Create(BeFileName(":memory:"), CacheEnvironment());
     cache.RegisterSchemaChangeListener(&listener);
 
-    EXPECT_CALL(listener, OnSchemaChanged()).Times(1);
+    EXPECT_CALL(listener, OnSchemaChanged()).Times(2);
     ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema()}));
     }
 
@@ -201,7 +201,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_CalledOnOtherConnection_CallsListener
     // Update schemas on one connection
     Savepoint sp1(cache1.GetECDb(), "Foo", true);
 
-    EXPECT_CALL(listener1, OnSchemaChanged()).Times(1);
+    EXPECT_CALL(listener1, OnSchemaChanged()).Times(2);
     ASSERT_EQ(SUCCESS, cache1.UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema()}));
     Mock::VerifyAndClear(&listener1);
 
