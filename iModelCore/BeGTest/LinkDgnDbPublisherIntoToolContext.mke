@@ -13,7 +13,13 @@ PolicyFile = ${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
 always:
     !~@mkdir $(OutputRootDir)ToolContext
 
-$(OutputRootDir)ToolContext/DgnDbPublisher.bat : $(OutputRootDir)Product/DgnV8Converter/DgnV8Converter.exe $(_MakeFileSpec)
+%ifdef CREATE_STATIC_LIBRARIES
+    ProductDir = $(OutputRootDir)../Product/
+%else
+    ProductDir = $(OutputRootDir)Product/
+%endif
+
+$(OutputRootDir)ToolContext/DgnDbPublisher.bat : $(ProductDir)DgnV8Converter/DgnV8Converter.exe $(_MakeFileSpec)
     $(msg)
     >$@
     $(OutputRootDir)Product/DgnV8Converter/DgnV8Converter.exe %*
