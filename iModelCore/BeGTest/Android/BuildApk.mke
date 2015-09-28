@@ -21,6 +21,7 @@
 baseDir             = $(_MakeFilePath)
 outputDir           = $(OutputRootDir)build/$(TEST_NAME)/
 mainDir             = $(outputDir)project/app/src/main/
+libsDir             = $(outputDir)project/app/libs/
 androidTestDir      = $(outputDir)project/app/src/androidTest/
 testApk             = $(outputDir)project/app/build/outputs/apk/Test-debug.apk
 testRunner          = $(outputDir)project/app/build/outputs/apk/Test-debug-androidTest-unaligned.apk
@@ -49,7 +50,7 @@ _gradleOptions = --project-dir ${outputDir}/project/
 # --------------------------------------------------------
 # Build the .class files and the .APK files
 # --------------------------------------------------------
-$(testApk) : $(_makefilespec) $[@wildcard $(mainDir)java/com/bentley/test/*.java] $[@wildcard $(androidTestDir)java/com/bentley/unittest/*.java]
+$(testApk) : $(_makefilespec) $[@wildcard $(mainDir)java/com/bentley/test/*.java] $[@wildcard $(androidTestDir)java/com/bentley/unittest/*.java] $[@wildcard $(libsDir)*]
     $(msg)
     !-$(deleteCmd) $@
     $(_gradleCmd) $(_gradleOptions)
