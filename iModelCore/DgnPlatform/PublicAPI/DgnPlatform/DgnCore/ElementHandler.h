@@ -59,12 +59,10 @@ struct ECSqlClassInfo
     Utf8String m_insert;
     Utf8String m_update;
     ECSqlClassParams m_params;
-    uint16_t m_numSelectParams;
-    uint16_t m_numInsertParams;
     uint16_t m_numUpdateParams;
     bool m_initialized;
 
-    ECSqlClassInfo() : m_numSelectParams(0), m_numInsertParams(0), m_numUpdateParams(0), m_initialized(false) { }
+    ECSqlClassInfo() : m_numUpdateParams(0), m_initialized(false) { }
 };
 
 // This macro declares the required members for an ElementHandler. It is often the entire contents of an ElementHandler's class declaration.
