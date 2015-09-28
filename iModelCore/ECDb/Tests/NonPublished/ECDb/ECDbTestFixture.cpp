@@ -5,7 +5,8 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <UnitTests/NonPublished/ECDb/ECDbTestFixture.h>
+#include "../PublicApi/NonPublished/ECDb/ECDbTestFixture.h"
+
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
