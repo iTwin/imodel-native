@@ -570,6 +570,9 @@ DgnDbStatus GeometricElement::_LoadFromDb()
 //---------------+---------------+---------------+---------------+---------------+-------
 DgnDbStatus GeometricElement::_InsertInDb()
     {
+    if (HasGeometry() && !_IsPlacementValid())
+        return DgnDbStatus::BadElement;
+
     DgnDbStatus stat;
 
     if (DgnDbStatus::Success != (stat = T_Super::_InsertInDb()))
@@ -580,9 +583,6 @@ DgnDbStatus GeometricElement::_InsertInDb()
     stmt->BindId(3, m_elementId);
 
     stat = _BindPlacement(*stmt);
-    if (DgnDbStatus::NoGeometry == stat)
-        return DgnDbStatus::Success;
-
     if (DgnDbStatus::Success == stat)
         stat = WriteGeomStream(*stmt, dgnDb);
 
@@ -606,18 +606,18 @@ DgnDbStatus GeometricElement::_InsertInDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement::_UpdateInDb()
     {
+    if (HasGeometry() && !_IsPlacementValid())
+        return DgnDbStatus::BadElement;
+
     DgnDbStatus stat = T_Super::_UpdateInDb();
     if (DgnDbStatus::Success != stat)
         return stat;
 
     DgnDbR dgnDb = GetDgnDb();
-    CachedStatementPtr stmt=dgnDb.Elements().GetStatement("INSERT OR REPLACE INTO " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " (Geom,Placement,ElementId) VALUES(?,?,?)");
+    CachedStatementPtr stmt = dgnDb.Elements().GetStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " SET Geom=?,Placement=? WHERE ElementId=?");
     stmt->BindId(3, m_elementId);
 
     stat = _BindPlacement(*stmt);
-    if (DgnDbStatus::NoGeometry == stat)
-        return DgnDbStatus::Success;
-
     if (DgnDbStatus::Success == stat)
         stat = WriteGeomStream(*stmt, dgnDb);
 
@@ -746,9 +746,15 @@ DgnDbStatus GeometricElement::WriteGeomStream(Statement& stmt, DgnDbR dgnDb)
 DgnDbStatus DgnElement3d::_BindPlacement(Statement& stmt)
     {
     if (!m_placement.IsValid())
-        return DgnDbStatus::NoGeometry;
+        {
+        BeAssert(!HasGeometry() && "An element with geometry requires a valid placement");
+        stmt.BindNull(2);
+        }
+    else
+        {
+        stmt.BindBlob(2, &m_placement, sizeof(m_placement), Statement::MakeCopy::No);
+        }
 
-    stmt.BindBlob(2, &m_placement, sizeof(m_placement), Statement::MakeCopy::No);
     return DgnDbStatus::Success;
     }
 
@@ -813,9 +819,15 @@ DgnClassId DrawingElement::QueryClassId(DgnDbR db)
 DgnDbStatus DgnElement2d::_BindPlacement(Statement& stmt)
     {
     if (!m_placement.IsValid())
-        return DgnDbStatus::NoGeometry;
+        {
+        BeAssert(!HasGeometry() && "An element with geometry requires a valid placement");
+        stmt.BindNull(2);
+        }
+    else
+        {
+        stmt.BindBlob(2, &m_placement, sizeof(m_placement), Statement::MakeCopy::No);
+        }
 
-    stmt.BindBlob(2, &m_placement, sizeof(m_placement), Statement::MakeCopy::No);
     return DgnDbStatus::Success;
     }
 
