@@ -22,21 +22,21 @@ double      RenderMaterial::_GetDouble (char const* key, BentleyStatus* status) 
     if (NULL != status)
         *status = SUCCESS;
 
-    if (0 == strcmpi (key, RENDER_MATERIAL_Finish))
+    if (0 == BeStringUtilities::Stricmp(key, RENDER_MATERIAL_Finish))
         return DEFAULT_Finish;
 
-    if (0 == strcmpi (key, RENDER_MATERIAL_Diffuse))
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Diffuse))
         return DEFAULT_Diffuse;
 
-    if (0 == strcmpi (key, RENDER_MATERIAL_Specular))
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Specular))
         return DEFAULT_Specular;
 
-    if (0 == strcmpi (key, RENDER_MATERIAL_Reflect) ||
-        0 == strcmpi (key, RENDER_MATERIAL_Transmit))
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Reflect) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Transmit))
         return 0.0;
 
-    if (0 == strcmpi (key, RENDER_MATERIAL_Glow) ||
-        0 == strcmpi (key, RENDER_MATERIAL_Refract))
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Glow) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Refract))
         return 1.0;
 
     BeAssert (false);
@@ -54,10 +54,10 @@ bool        RenderMaterial::_GetBool (char const* key, BentleyStatus* status) co
     if (NULL != status)
         *status = SUCCESS;
 
-    if (0 == strcmpi (key, RENDER_MATERIAL_FlagHasBaseColor) ||
-        0 == strcmpi (key, RENDER_MATERIAL_FlagHasSpecularColor) ||
-        0 == strcmpi (key, RENDER_MATERIAL_FlagHasFinish) ||
-        0 == strcmpi (key, RENDER_MATERIAL_FlagNoShadows))
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_FlagHasBaseColor) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_FlagHasSpecularColor) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_FlagHasFinish) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_FlagNoShadows))
         return false;
 
     BeAssert (false);
@@ -92,7 +92,7 @@ double      RenderMaterialMap::_GetDouble (char const* key, BentleyStatus* statu
     if (NULL != status)
         *status = SUCCESS;
 
-    if (0 == strcmpi (key, RENDER_MATERIAL_PatternAngle))
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_PatternAngle))
         return 0.0;
 
     BeAssert (false);
@@ -110,8 +110,8 @@ bool        RenderMaterialMap::_GetBool (char const* key, BentleyStatus* status)
     if (NULL != status)
         *status = SUCCESS;
 
-    if (0 == strcmpi (key, RENDER_MATERIAL_PatternFlipU) ||
-        0 == strcmpi (key, RENDER_MATERIAL_PatternFlipV))
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_PatternFlipU) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_PatternFlipV))
         return false;
 
     
