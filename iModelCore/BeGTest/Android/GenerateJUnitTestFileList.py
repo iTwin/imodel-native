@@ -38,7 +38,7 @@ def GenJUnitTestFilesForDir (dirNameIn, listfilename, javaTemplate, jniTemplate)
             print '     @$(baseDir)SearchAndReplace.py  ' + junitTestFilePath + ' __REPO__ ' + utPackageName
             print '     @$(baseDir)SearchAndReplace.py  ' + junitTestFilePath + ' __FIXTURE__ ' + utClassName
             print '     %if defined (shared_libraries)'
-            print '         @$(baseDir)SearchAndReplace.py  ' + junitTestFilePath + ' /*__BE_TEST_LOAD_SHARED_LIBRARIES__*/ "loadNativeLibraries ("$(shared_libraries)");"'
+            print '         @$(baseDir)SearchAndReplace.py  ' + junitTestFilePath + ' \/*__BE_TEST_LOAD_SHARED_LIBRARIES__*\/ "loadNativeLibraries ("$(shared_libraries)");"'
             print '     %endif'
             print '     ~time'
             print '\n'
