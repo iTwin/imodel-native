@@ -458,7 +458,7 @@ bool LimitOffsetExp::IsValidChildExp (ValueExp const& exp)
         return true;
 
     // we allow non-integral numeric expressions as well, assuming that the underlying db will handle casting
-    return exp.IsConstant() && exp.GetTypeInfo().IsNumeric(); 
+    return exp.GetTypeInfo().IsNumeric(); 
     }
 
 //-----------------------------------------------------------------------------------------
