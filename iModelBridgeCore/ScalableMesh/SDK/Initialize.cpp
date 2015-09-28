@@ -25,9 +25,193 @@ using namespace std;
 #include <RmgrTools/Tools/RscFileManager.h>
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
+using namespace Bentley::DgnPlatform;
+using namespace Bentley::GeoCoordinates;
 
 namespace ScalableMeshSDKSample
     {
+    struct AppViewManager : Bentley::DgnPlatform::IViewManager
+        {
+        private:
+            Bentley::DgnPlatform::IndexedViewSet* m_activeViewSet;
+            HWND                                  m_topWindow;
+    
+            virtual Bentley::DgnPlatform::DgnDisplayCoreTypes::WindowP _GetTopWindow(int) override {return (Bentley::DgnPlatform::DgnDisplayCoreTypes::WindowP)m_topWindow;}
+            virtual bool                                               _DoesHostHaveFocus() {return false;}
+            virtual Bentley::DgnPlatform::IndexedViewSet&              _GetActiveViewSet() override {assert(!"Not expect to be call in offline mode"); return *m_activeViewSet;}
+            virtual int             _GetCurrentViewNumber() override {return 0;}
+            virtual HUDManagerP     _GetHUDManager () {return NULL;}
+
+        public:
+    
+            //void SetActiveDgn (AppViewSet* newDgn) {m_activeViewSet = newDgn;}
+            //void SetActiveDgn (DemoViewSet* newDgn) {m_activeViewSet = newDgn;}
+            AppViewManager() {m_activeViewSet = NULL; m_topWindow = NULL;}
+        };
+
+        //=======================================================================================
+        // @bsiclass                                                    Keith.Bentley   01/10
+        //=======================================================================================
+        class AppHost : public Bentley::DgnPlatform::DgnViewLib::Host
+        {
+            AppViewManager   m_viewManager;
+
+        protected:
+
+            virtual Bentley::DgnPlatform::DgnPlatformLib::Host::NotificationAdmin&  _SupplyNotificationAdmin() override;        
+            virtual void                                                            _SupplyProductName(WStringR name) override;     
+            virtual Bentley::DgnPlatform::DgnFileIOLib::Host::DigitalRightsManager& _SupplyDigitalRightsManager() override;     
+            //virtual GraphicsAdmin&                                                 _SupplyGraphicsAdmin() override;            
+            //virtual ViewStateAdmin&                                                _SupplyViewStateAdmin() override;           
+            //virtual ToolAdmin&                                                     _SupplyToolAdmin() override;                
+            virtual Bentley::DgnPlatform::IViewManager&                             _SupplyViewManager() override;              
+            //virtual SolidsKernelAdmin&                                             _SupplySolidsKernelAdmin() override;        
+            virtual Bentley::DgnPlatform::DgnPlatformLib::Host::RasterAttachmentAdmin&      _SupplyRasterAttachmentAdmin() override;    
+            virtual Bentley::DgnPlatform::DgnPlatformLib::Host::PointCloudAdmin&            _SupplyPointCloudAdmin() override;          
+            //virtual FontAdmin&                                                     _SupplyFontAdmin() override;                
+            //virtual MaterialAdmin&                                                 _SupplyMaterialAdmin();                     
+            //virtual ProgressiveDisplayManager&                                     _SupplyProgressiveDisplayManager() override;
+            virtual Bentley::DgnPlatform::DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin() override;
+
+        public:
+            void Startup (/*HWND*/);
+        
+            void Terminate ();
+
+            //DemoViewManager& GetDemoViewManager(){return m_viewManager;}
+        };
+
+        //=======================================================================================
+        // @bsiclass                                                    Keith.Bentley   01/10
+        //=======================================================================================
+        struct AppNotificationAdmin : Bentley::DgnPlatform::DgnPlatformLib::Host::NotificationAdmin
+        {
+            virtual StatusInt _OutputMessage (Bentley::DgnPlatform::NotifyMessageDetails const& msg) override;
+            virtual void      _OutputPrompt (WCharCP) override;
+            virtual Bentley::DgnPlatform::NotificationManager::MessageBoxValue _OpenMessageBox (Bentley::DgnPlatform::NotificationManager::MessageBoxType, WCharCP, Bentley::DgnPlatform::NotificationManager::MessageBoxIconType) override;
+        };
+
+        /*=================================================================================**//**
+        * DgnViewDemo only displays the contents of a file on the screen. It does not EXPORT
+        * engineering data. Therefore, it is safe for DgnViewDemo to open rights-restricted DGN files.
+        * @bsiclass                                     Sam.Wilson                      06/2010
+        +===============+===============+===============+===============+===============+======*/
+        struct ReadOnlyDigitalRightsManager : Bentley::DgnPlatform::DgnFileIOLib::Host::DigitalRightsManager
+        {
+        //    virtual StatusInt _OnEnterRestrictedMode (bool assertKeys, Bentley::DgnFileProtection::KeyMaterialWithDescription* keylist, uint32_t nkeys, Bentley::DgnPlatform::DgnFileP file, uint32_t rights) override {return SUCCESS;}
+        };
+
+
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct AppRasterCoreAdmin : Bentley::DgnPlatform::Raster::RasterCoreAdmin
+{
+virtual bool                    _IsProgressiveDisplayEnabled() const    {return true;}
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     		Marc.Bedard     02/2011
++===============+===============+===============+===============+===============+======*/
+struct AppRasterCoreLibHost : Bentley::DgnPlatform::Raster::RasterCoreLib::Host 
+{
+virtual Bentley::DgnPlatform::Raster::RasterCoreAdmin& _SupplyRasterCoreAdmin() override {return *new AppRasterCoreAdmin();}
+}; // RasterCoreLib::Host
+
+void AppHost::Startup (/*HWND*/)
+    {       
+    //InitMonikerFactories();
+
+    //IScalableMeshAdmin::SetCanImportPODFile(true);    
+
+    //Init GDAL path.    
+    WString gdalDataPath(L".\\Gdal_Data\\");        
+    ConfigurationManager::DefineVariable (L"_USTN_RASTERGDALDATA", gdalDataPath.c_str());
+
+    RscFileManager::StaticInitialize(L"en");
+        
+    DgnViewLib::Initialize (*this, true);
+
+    //Application needs to initialize PdfLibInitializer dll if it wants support for PDF raster attachment.
+    //Bentley::PdfLibInitializer::Initialize(*new ViewDemoPdfLibInitializerHost());
+
+    Bentley::DgnPlatform::Raster::RasterCoreLib::Initialize (*new AppRasterCoreLibHost());
+    BeAssert (Bentley::DgnPlatform::Raster::RasterCoreLib::IsInitialized());
+
+    //Ensure basegeocoord is initialized.
+    _SupplyGeoCoordinationAdmin()._GetServices();
+    
+    //Required for reading TM element
+    //Bentley::TerrainModel::Element::DTMElementHandlerManager::InitializeForOfflineTmImport();
+
+    //m_viewManager.SetTopWindow(topWindow);
+
+    // Setup location to find parasolid schema files (schema directory was created under exe location)...
+    /*
+    WString baseDir;
+    getBaseDirOfExecutingModule (baseDir);
+    
+    ConfigurationManager::DefineVariable (L"MS_SMARTSOLID", baseDir.c_str ());
+    */
+    }
+
+void AppHost::Terminate ()
+    {
+    //call rasterCore cleanup code
+    Bentley::DgnPlatform::Raster::RasterCoreLib::GetHost().Terminate(true);
+
+    //call PdfLibInitializer dll cleanup code.
+    //Bentley::PdfLibInitializer::GetHost().Terminate(true);
+    }
+
+void                                                                   AppHost::_SupplyProductName(WStringR name)   {name.assign(L"DgnView Demo");}
+Bentley::DgnPlatform::DgnPlatformLib::Host::NotificationAdmin&         AppHost::_SupplyNotificationAdmin()          {return *new AppNotificationAdmin();}
+Bentley::DgnPlatform::DgnFileIOLib::Host::DigitalRightsManager&        AppHost::_SupplyDigitalRightsManager()       {return *new ReadOnlyDigitalRightsManager;}
+//GraphicsAdmin&             AppHost::_SupplyGraphicsAdmin()              {return *new DgnViewGraphicsAdmin();}
+//ViewStateAdmin&            AppHost::_SupplyViewStateAdmin()             {return *new DemoViewStateAdmin();}
+//ToolAdmin&                 AppHost::_SupplyToolAdmin()                  {return *new DemoToolAdmin();}
+Bentley::DgnPlatform::IViewManager&                                    AppHost::_SupplyViewManager()                {return m_viewManager; }
+//SolidsKernelAdmin&         AppHost::_SupplySolidsKernelAdmin()          {return *new AppSolidKernelAdmin();}
+Bentley::DgnPlatform::DgnPlatformLib::Host::RasterAttachmentAdmin&     AppHost::_SupplyRasterAttachmentAdmin()      {return Bentley::DgnPlatform::Raster::RasterCoreLib::GetDefaultRasterAttachmentAdmin();}
+Bentley::DgnPlatform::DgnPlatformLib::Host::PointCloudAdmin&           AppHost::_SupplyPointCloudAdmin()            {return *new Bentley::DgnPlatform::PointCloudDisplayAdmin();}
+//FontAdmin&                 AppHost::_SupplyFontAdmin()                  {return *new DemoFontAdmin();}
+//MaterialAdmin&             AppHost::_SupplyMaterialAdmin()              {return *new DemoMaterialAdmin(); }
+//ProgressiveDisplayManager& AppHost::_SupplyProgressiveDisplayManager()  {return *new DemoProgressiveDisplayManager(); }
+Bentley::DgnPlatform::DgnPlatformLib::Host::GeoCoordinationAdmin&      AppHost::_SupplyGeoCoordinationAdmin()       
+    {        
+    
+    WString geocoordinateDataPath(L".\\GeoCoordinateData\\");    
+
+    return *DgnGeoCoordinationAdmin::Create (geocoordinateDataPath.c_str(), IACSManager::GetManager()); 
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Kevin.Nyman     11/09
++---------------+---------------+---------------+---------------+---------------+-****/
+StatusInt AppNotificationAdmin::_OutputMessage (NotifyMessageDetails const& msg)
+    {
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Kevin.Nyman     11/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void      AppNotificationAdmin::_OutputPrompt (WCharCP prompt)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+NotificationManager::MessageBoxValue AppNotificationAdmin::_OpenMessageBox (NotificationManager::MessageBoxType, WCharCP message, NotificationManager::MessageBoxIconType iconType)
+    {
+    return NotificationManager::MESSAGEBOX_VALUE_Ok;
+    }
+
+
+
   struct SampleAdmin : Bentley::ScalableMesh::ScalableMeshAdmin
         {
         DgnModelRef* s_activeDgnModelRefP;
@@ -80,7 +264,7 @@ private:
         WString fileName(m_mrdtmMonikerPtr->ResolveFileName(&status));
         
         if (BSISUCCESS != status)
-            fileName = m_mrdtmMonikerPtr->GetPortableName(); // File not found. Return file name with configuration variable.
+            fileName = m_mrdtmMonikerPtr->GetPortableName(); // File not found. Return s_dgnFile name with configuration variable.
 
         return Bentley::ScalableMesh::LocalFileURL(fileName.c_str());
         }
@@ -105,7 +289,7 @@ private:
                                                                         const DocumentEnv&                  env) const override
         {
         // TDORAY: Recreate the moniker using new env prior to serializing it in order so
-        // that relative path is correct on file moves...
+        // that relative path is correct on s_dgnFile moves...
 
         const WString& monikerString(m_mrdtmMonikerPtr->Externalize());
         if (!WriteStringW(stream, monikerString.c_str()))
@@ -221,22 +405,6 @@ void InitMonikerFactories()
     }
 
     
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct AppRasterCoreAdmin : Bentley::DgnPlatform::Raster::RasterCoreAdmin
-{
-virtual bool                    _IsProgressiveDisplayEnabled() const    {return true;}
-};
-
-/*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     02/2011
-+===============+===============+===============+===============+===============+======*/
-struct AppRasterCoreLibHost : Bentley::DgnPlatform::Raster::RasterCoreLib::Host 
-{
-virtual Bentley::DgnPlatform::Raster::RasterCoreAdmin& _SupplyRasterCoreAdmin() override {return *new AppRasterCoreAdmin();}
-}; 
-
 
 
 Bentley::RefCountedPtr<DgnDocument> docPtr = nullptr;
@@ -244,6 +412,9 @@ Bentley::RefCountedPtr<DgnFile> file = nullptr;
 
 void InitializeSDK(DgnPlatformLib::Host& host)
         {
+        AppHost appHost;
+        appHost.Startup ();
+
         DependencyManager::SetTrackingDisabled(true);
         DependencyManager::SetProcessingDisabled(true);
         DgnFileStatus status;
@@ -265,8 +436,8 @@ void InitializeSDK(DgnPlatformLib::Host& host)
 
 void CloseSDK()
     {
-    file->SetAbandonChangesFlag();
-    file->ProcessChanges(DgnPlatform::DgnSaveReason::ApplInitiated);
     file = nullptr;
+    docPtr = nullptr;
     }
     }
+

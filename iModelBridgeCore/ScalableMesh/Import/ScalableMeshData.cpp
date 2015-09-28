@@ -13,19 +13,22 @@ struct ScalableMeshData::Impl : public ShareableObjectTypeTrait<Impl>::type
     bool                        m_isGroundDetection;
     bool                        m_isGISData;
     WString                     m_elevationProperty;
+    
     // not persisted information
+    //NEEDS_WORK_SM Temp variable for YII
+    __int64                     m_maximumNbPoints;
     std::vector<DRange3d>       m_vectorRangeAdd;
-
-    explicit                    Impl            (const std::vector<DRange3d>& extent, const time_t time, SMis3D isRepresenting3dData = SMis3D::isUnknown, bool isGroundDetection = false, UpToDateState state=UpToDateState::UP_TO_DATE, std::vector<DRange3d> vecRangeAdd = {})
+              
+    explicit                    Impl            (const std::vector<DRange3d>& extent, const time_t time, SMis3D isRepresenting3dData = SMis3D::isUnknown, bool isGroundDetection = false, UpToDateState state=UpToDateState::UP_TO_DATE, __int64 maximumNbPoints = numeric_limits<__int64>::max(), std::vector<DRange3d> vecRangeAdd = {})
         : m_extent(extent),
           m_upToDateState(state),
           m_time(time), 
           m_vectorRangeAdd(vecRangeAdd),
           m_isRepresenting3dData(isRepresenting3dData),
           m_isGroundDetection(isGroundDetection),
-          m_isGISData(false)
+          m_isGISData(false),
+          m_maximumNbPoints(maximumNbPoints)
         {
-
         }      
 
     static void                   UpdateForEdit   (ImplPtr& instancePtr)
@@ -52,8 +55,8 @@ ScalableMeshData::ScalableMeshData(Impl* implP)
     }
 
 ScalableMeshData::ScalableMeshData(const ScalableMeshData& rhs)
-    {
-    m_implP = new Impl(rhs.m_implP->m_extent, rhs.m_implP->m_time, rhs.m_implP->m_isRepresenting3dData, rhs.m_implP->m_isGroundDetection, rhs.m_implP->m_upToDateState, rhs.m_implP->m_vectorRangeAdd);
+    {        
+    m_implP = new Impl(rhs.m_implP->m_extent, rhs.m_implP->m_time, rhs.m_implP->m_isRepresenting3dData, rhs.m_implP->m_isGroundDetection, rhs.m_implP->m_upToDateState, rhs.m_implP->m_maximumNbPoints, rhs.m_implP->m_vectorRangeAdd);
     }
 
 ScalableMeshData::ScalableMeshData(BinaryIStream& stream)
@@ -154,6 +157,16 @@ void ScalableMeshData::SetRepresenting3dData(SMis3D isRepresenting3dData)
 void ScalableMeshData::SetRepresenting3dData(bool isRepresenting3dData)
     {
     m_implP->m_isRepresenting3dData = isRepresenting3dData ? SMis3D::is3D : SMis3D::is25D;
+    }
+
+__int64 ScalableMeshData::GetMaximumNbPoints() const
+    {
+    return m_implP->m_maximumNbPoints;
+    }
+
+void ScalableMeshData::SetMaximumNbPoints(__int64 maximumNbPoints)
+    {
+    m_implP->m_maximumNbPoints = maximumNbPoints;
     }
 
 void ScalableMeshData::Serialize(BinaryOStream& stream) const

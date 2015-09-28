@@ -3,7 +3,7 @@
 #include "SDKSampleImporter.h"
 
 namespace ScalableMeshSDKSample
-    {
+    {   
 
     void ScalableMeshSDKSample::OpenPipe()
         {
@@ -21,7 +21,7 @@ namespace ScalableMeshSDKSample
             NULL 
             );
         if (m_pipe == NULL || m_pipe == INVALID_HANDLE_VALUE) fwprintf(stderr, L"Error creating pipe\n");
-        //if (!ConnectNamedPipe(m_pipe, NULL)) fwprintf(stderr, L"No client connected\n");
+        if (!ConnectNamedPipe(m_pipe, NULL)) fwprintf(stderr, L"No client connected\n");
         }
 
     BentleyStatus ScalableMeshSDKSample::Initialize(int argc, WCharP argv[])
@@ -60,51 +60,116 @@ namespace ScalableMeshSDKSample
             }
         return 0;
         }
+    
+        
+    struct TransmittedDataHeader
+        {
+        TransmittedDataHeader(bool arePoints, bool is3dData)
+            {
+            m_arePoints = arePoints;
+            m_is3dData = is3dData;
+            }
 
+        bool m_arePoints;
+        bool m_is3dData;
+        };
+
+    struct  TransmittedPointsHeader : public TransmittedDataHeader
+        {      
+        TransmittedPointsHeader(unsigned int nbOfPoints, bool is3dData)
+        : TransmittedDataHeader(true, is3dData)
+            {
+            m_nbOfPoints = nbOfPoints;
+            }
+
+        unsigned int m_nbOfPoints;        
+        };
 
     HANDLE s_pipe;
+        
+
+    static FILE*  s_pPointResultFile = 0;
+
+#if 0 
+
+bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoints3d)
+	{
+	char coordinateBuffer[300];   
+    int  NbChars;        
+
+    for (size_t PointInd = 0; PointInd < nbOfPoints; PointInd++)
+        {                
+        NbChars = sprintf(coordinateBuffer, 
+                          "%.20f,%.20f,%.20f\n", 
+                          points[PointInd].x, 
+                          points[PointInd].y, 
+                          points[PointInd].z);         
+
+        size_t nbCharsWritten = fwrite (coordinateBuffer, 1, NbChars, s_pPointResultFile);
+                
+        assert(NbChars == nbCharsWritten);    
+        }  
+
+    fflush(s_pPointResultFile);
+
+    return true;
+	}
+#endif
+
     bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoints3d)
-        {
-        const double endOfPacket = DBL_MAX;
-        const unsigned char pointPacketMagicNumber = 0xFF;
-        size_t length = nbOfPoints*sizeof(DPoint3d) + sizeof(bool) + sizeof(double) + 1;
-        unsigned char* transmission = new unsigned char[length];
-        transmission[0] = pointPacketMagicNumber;
-        DWORD  numBytesWritten;
-        memcpy(transmission + 1, points, nbOfPoints*sizeof(DPoint3d));
-        memcpy(transmission + 1 + nbOfPoints*sizeof(DPoint3d), &arePoints3d, sizeof(bool));
-        memcpy(transmission + 1 + nbOfPoints*sizeof(DPoint3d) + sizeof(bool), &endOfPacket, sizeof(double));
-        WriteFile(
-            s_pipe,
-            transmission,
-            (DWORD)length,
-            &numBytesWritten,
-            NULL 
-            );
-        delete[] transmission;
+        {   
+        TransmittedPointsHeader pointHeader((unsigned int)nbOfPoints, arePoints3d);
+                
+        DWORD  numBytesWritten;        
+        WriteFile(s_pipe,
+                  &pointHeader,
+                  (DWORD)sizeof(pointHeader),
+                  &numBytesWritten,
+                  NULL 
+                  );
+
+        WriteFile(s_pipe,
+                  points,
+                  (DWORD)(sizeof(DPoint3d) * nbOfPoints),
+                  &numBytesWritten,
+                  NULL 
+                  );
+       
         return true;
         }
 
+    struct TransmittedFeatureHeader : public TransmittedDataHeader
+        {      
+        TransmittedFeatureHeader(unsigned int nbOfFeaturePoints, short featureType, bool is3dData)
+        : TransmittedDataHeader(false, is3dData)
+            {
+            m_nbOfFeaturePoints = nbOfFeaturePoints;
+            m_featureType = featureType;
+            }
+
+        short        m_featureType;
+        unsigned int m_nbOfFeaturePoints;        
+        };
+
     bool WriteFeatureCallback(const DPoint3d* featurePoints, size_t nbOfFeaturesPoints, DTMFeatureType featureType, bool isFeature3d)
-        {
-        const unsigned char featurePacketMagicNumber = 0xFA;
-        const double endOfPacket = DBL_MAX;
-        size_t length = nbOfFeaturesPoints*sizeof(DPoint3d) + sizeof(bool)+sizeof(DTMFeatureType) + sizeof(double) + 1;
-        unsigned char* transmission = new unsigned char[length];
-        DWORD  numBytesWritten;
-        transmission[0] = featurePacketMagicNumber;
-        memcpy(transmission + 1, &featureType, sizeof(DTMFeatureType));
-        memcpy(transmission + 1 + sizeof(DTMFeatureType), featurePoints, nbOfFeaturesPoints*sizeof(DPoint3d));
-        memcpy(transmission + 1 + sizeof(DTMFeatureType) + nbOfFeaturesPoints*sizeof(DPoint3d), &isFeature3d, sizeof(bool));
-        memcpy(transmission + 1 + sizeof(DTMFeatureType) + nbOfFeaturesPoints*sizeof(DPoint3d) + sizeof(bool), &endOfPacket, sizeof(double));
-        WriteFile(
-            s_pipe,
-            transmission,
-            (DWORD)length,
-            &numBytesWritten,
-            NULL
-            );
-        delete[] transmission;
+        {        
+        TransmittedFeatureHeader featureHeader((unsigned int)nbOfFeaturesPoints, (short)featureType, isFeature3d);
+
+        DWORD numBytesWritten;        
+        WriteFile(s_pipe,
+                  &featureHeader,
+                  (DWORD)sizeof(featureHeader),
+                  &numBytesWritten,
+                  NULL 
+                  );
+        
+        WriteFile(s_pipe,
+                  featurePoints,
+                  (DWORD)(sizeof(DPoint3d) * nbOfFeaturesPoints),
+                  &numBytesWritten,
+                  NULL 
+                  );
+
         return true;
         }
 
@@ -112,6 +177,7 @@ namespace ScalableMeshSDKSample
         {
         BeXmlStatus status;
 
+       // s_pPointResultFile = fopen("D:\\MyDoc\\CC - Iteration 6\\YIIDataset\\saltLakeWithCC.xyz", "w+");                
 
         Bentley::ScalableMesh::IScalableMeshSourceImporterPtr importerPtr(Bentley::ScalableMesh::IScalableMeshSourceImporter::Create());
         s_pipe = m_pipe;
@@ -142,6 +208,8 @@ namespace ScalableMeshSDKSample
                 return importerPtr->Import() ? SUCCESS : ERROR;
                 }
             }
+
+        //fclose(s_pPointResultFile);
 
         return SUCCESS;
         }
@@ -222,9 +290,8 @@ namespace ScalableMeshSDKSample
 
     void ScalableMeshSDKSample::Start()
         {
-        Import();
-        CloseSDK();
-        Terminate(true);
+        Import();        
+        //Terminate(true);
         }
 
     void ScalableMeshSDKSample::Import()
@@ -261,5 +328,8 @@ int wmain(int argc, wchar_t* argv[])
         }
     app.Initialize(argc, argv);
     app.Start();
+
+    ScalableMeshSDKSample::CloseSDK();
+
     return 0;
     }

@@ -144,7 +144,7 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
             WString model = L"Default";
             WString level = L"Default";
 
-            DgnFileOpenParams fileOpenParams(sourcePath.c_str(), false, DgnFilePurpose::MasterFile);
+            DgnFileOpenParams fileOpenParams(sourcePath.c_str(), true, DgnFilePurpose::MasterFile);
 
             Bentley::RefCountedPtr<DgnFile> dgnFilePtr(fileOpenParams.CreateFileAndLoad());
 
@@ -200,7 +200,6 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
 
         status = pTestChildNode->GetAttributeStringValue(datasetIsGround, "grounddetection");
 
-
         if (status == BEXML_Success)
             {
             if (datasetIsGround.Equals(L"1"))
@@ -213,6 +212,19 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
 
                 sourceImportConfig.SetReplacementSMData(data);
                 }
+            }
+
+        UInt64 maxNbPointsToImport;
+
+        status = pTestChildNode->GetAttributeUInt64Value(maxNbPointsToImport, "maxNbPointsToImport");
+
+        if (status == BEXML_Success)
+            {            
+            SourceImportConfig& sourceImportConfig = srcPtr->EditConfig();
+            ScalableMeshData data = sourceImportConfig.GetReplacementSMData();
+
+            data.SetMaximumNbPoints(maxNbPointsToImport);
+            sourceImportConfig.SetReplacementSMData(data);
             }
 
         return true;

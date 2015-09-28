@@ -35,7 +35,7 @@
         </Bindings>
     </Part>
     
-        <Part Name="ScalableMeshImporterSample" BentleyBuildMakeFile="SDK/SDKSample.mke" OnlyPlatforms="x64,x86" ExcludeLibType="Static">
+    <Part Name="ScalableMeshImporterSample" BentleyBuildMakeFile="SDK/SDKSample.mke" OnlyPlatforms="x64,x86" ExcludeLibType="Static">
         <SubPart PartName="ScalableMesh" />
         <Bindings>
             <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScalableMeshSDKSample.exe
@@ -46,7 +46,7 @@
         </Bindings>
     </Part>
     
-        <ProductDirectoryList ListName="ScalableMeshSDK">
+    <ProductDirectoryList ListName="ScalableMeshSDK">
         <ProductDirectory Name="TMSchemas"  Deliver="true" Path="Dlls"/>
         <ProductDirectory Name="ECSchemas"  Deliver="true" Path="Dlls"/>
         <ProductDirectory Name="PublicAPI" Path="PublicAPI" Deliver="true"/>
@@ -67,8 +67,8 @@
         <ProductDirectory Name="MdlsysAsneededSmartsolid" Path="Dlls"/>
         <ProductDirectory Name="AdobeResource" Deliver="false"/>
         <ProductDirectory Name="CSMapMergeModules" Deliver="false"/>
-        <ProductDirectory Name="GeoCoordData" Deliver="false"/>
-        <ProductDirectory Name="GdalData" Deliver="false"/>
+        <ProductDirectory Name="GeoCoordData" Deliver="true" Path="Dlls/GeoCoordinateData"/>
+        <ProductDirectory Name="GdalData" Deliver="true" Path="Dlls/Gdal_Data"/>      
        <ProductDirectory Name="Libs"  Deliver="false" LibType="static" />
        <ProductDirectory Name="Libs"  Deliver="false"/>
        <ProductDirectory Name="ScalableMeshLibs"  Path="Libs" Deliver="true"/>
@@ -82,8 +82,8 @@
        <ProductDirectory Name="TerrainModelElementHandler" Path="Dlls" />
     </ProductDirectoryList>
     
-      <Product Name="ScalableMeshSDK"  PrgOutputDir="ScalableMeshSDK" SaveProduct="true" >    
-    <SubPart PartName="ScalableMeshImporterSample"/>  
+      <Product Name="ScalableMeshSDK"  PrgOutputDir="ScalableMesh" SaveProduct="true" >    
+        <SubPart PartName="ScalableMeshImporterSample"/>  
         <SubPart PartName="PSolidCore" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="PSolidAcisInterop" PartFile="DgnDisplay" Repository="DgnDisplay" />          
     <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />
