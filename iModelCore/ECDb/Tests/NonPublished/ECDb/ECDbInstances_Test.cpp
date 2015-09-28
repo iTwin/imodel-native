@@ -956,7 +956,7 @@ TEST(ECDbInstances, FindECInstances)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECRelationshipInstancePtr CreateRelationship (ECN::ECRelationshipClassCR relationshipClass, IECInstanceR source, IECInstanceR target)
+static IECRelationshipInstancePtr createRelationship (ECN::ECRelationshipClassCR relationshipClass, IECInstanceR source, IECInstanceR target)
     {
     StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (relationshipClass);
     StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
@@ -971,7 +971,7 @@ IECRelationshipInstancePtr CreateRelationship (ECN::ECRelationshipClassCR relati
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECRelationshipInstancePtr CreateRelationship 
+static IECRelationshipInstancePtr createRelationship 
 (
 ECDbTestProject& test, 
 Utf8CP sourceClassName, 
@@ -1004,13 +1004,13 @@ Utf8CP relationshipClassName
     if (relClass == nullptr)
         return nullptr;
 
-    return CreateRelationship (*relClass, *sourceInstance, *targetInstance);
+    return createRelationship (*relClass, *sourceInstance, *targetInstance);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PersistRelationship (IECRelationshipInstanceR relInstance, ECDbR ecdb)
+static void persistRelationship (IECRelationshipInstanceR relInstance, ECDbR ecdb)
     {
     ECInstanceInserter inserter (ecdb, relInstance.GetClass ());
     ASSERT_TRUE (inserter.IsValid ());
@@ -1027,9 +1027,9 @@ TEST(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
     ECDbTestProject testProject;
     auto& ecdb = testProject.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
 
-    IECRelationshipInstancePtr relationship = CreateRelationship(testProject, "Foo", "Bar", "Foo_has_Bars");
+    IECRelationshipInstancePtr relationship = createRelationship(testProject, "Foo", "Bar", "Foo_has_Bars");
     ASSERT_TRUE(relationship.IsValid());
-    PersistRelationship(*relationship, ecdb);
+    persistRelationship(*relationship, ecdb);
 
     ECSqlStatement ecStatement;
     ASSERT_TRUE(ECSqlStatus::Success == ecStatement.Prepare(ecdb, "SELECT c0.intFoo, c1.stringBar from [StartupCompany].[Foo] c0 join [StartupCompany].[Bar] c1 using [StartupCompany].[Foo_has_Bars]"));
