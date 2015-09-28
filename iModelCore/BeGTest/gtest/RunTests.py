@@ -1454,12 +1454,7 @@ class DgnPlatformTestRunner:
                     archString = '-a'+m_arch
                     Log ("*"*80)
                     Log ("* WARNING!!! ")
-                    Log ("* Firebug defined in shell. Additional tests run which returned an error that developer usually do not run.")
-                    Log ("* To run these tests you run the following parts.")
-                    Log ("*     bb -r dgnplatformtest -f dgnplatformtest -p RunDgnPlatformTest_All b {0} -f".format (archString))
-                    Log ("*   or")
-                    #Log ("*     RunDgnPlatformTest_Performance")
-                    Log ("*     bb -r dgnplatformtest -f dgnplatformtest -p RunDgnPlatformTest_Regression b {0} -f".format (archString))
+                    Log ("* Firebug defined in shell. Additional tests run which returned an error that developers usually do not run.")
                     Log ("*"*80)
 
         else:
