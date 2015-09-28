@@ -380,21 +380,17 @@ void DgnElement::_OnReversedAdd() const
         model->_OnReversedAddElement(*this);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-void DgnElement::GetParamList(bvector<Utf8CP>& paramList, bool isForUpdate)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_ElementHandler::Element::_GetClassParams(ECSqlClassParams& params)
     {
-    if (!isForUpdate)
-        {
-        paramList.push_back(DGN_ELEMENT_PROPNAME_ECINSTANCEID);
-        paramList.push_back(DGN_ELEMENT_PROPNAME_MODELID);
-        }
-
-    paramList.push_back(DGN_ELEMENT_PROPNAME_CODE);
-    paramList.push_back(DGN_ELEMENT_PROPNAME_CODEAUTHORITYID);
-    paramList.push_back(DGN_ELEMENT_PROPNAME_CODENAMESPACE);
-    paramList.push_back(DGN_ELEMENT_PROPNAME_PARENTID);
+    params.Add(DGN_ELEMENT_PROPNAME_ECINSTANCEID, ECSqlClassParams::StatementType::Insert);
+    params.Add(DGN_ELEMENT_PROPNAME_MODELID, ECSqlClassParams::StatementType::Insert);
+    params.Add(DGN_ELEMENT_PROPNAME_CODE, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(DGN_ELEMENT_PROPNAME_CODEAUTHORITYID, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(DGN_ELEMENT_PROPNAME_CODENAMESPACE, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(DGN_ELEMENT_PROPNAME_PARENTID, ECSqlClassParams::StatementType::InsertUpdate);
     }
 
 //---------------------------------------------------------------------------------------
@@ -422,21 +418,22 @@ DgnDbStatus DgnElement::BindParams(ECSqlStatement& statement, bool isForUpdate)
     return DgnDbStatus::Success;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-void DgnElement::_GetInsertParams(bvector<Utf8CP>& insertParams)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_ElementHandler::Physical::_GetClassParams(ECSqlClassParams& params)
     {
-    GetParamList(insertParams, false);
+    T_Super::_GetClassParams(params);
+    params.Add(DGN_GEOMETRICELEMENT_PROPNAME_CATEGORYID, ECSqlClassParams::StatementType::InsertUpdate);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::_GetInsertParams(bvector<Utf8CP>& insertParams)
+void dgn_ElementHandler::Drawing::_GetClassParams(ECSqlClassParams& params)
     {
-    T_Super::_GetInsertParams(insertParams);
-    insertParams.push_back(DGN_GEOMETRICELEMENT_PROPNAME_CATEGORYID);
+    T_Super::_GetClassParams(params);
+    params.Add(DGN_GEOMETRICELEMENT_PROPNAME_CATEGORYID, ECSqlClassParams::StatementType::InsertUpdate);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -464,54 +461,17 @@ DgnDbStatus GeometricElement::_BindInsertParams(ECSqlStatement& stmt)
 //---------------+---------------+---------------+---------------+---------------+-------
 DgnDbStatus DgnElement::_InsertInDb()
     {
-    ECClassCP elementClass = GetElementClass();
-    if (nullptr == elementClass)
-        {
-        BeAssert(false);
-        return DgnDbStatus::BadElement;
-        }
-
-    bvector<Utf8CP> insertParams;
-    _GetInsertParams(insertParams);
-
-    Utf8String ecSql("INSERT INTO [");
-    ecSql.append(elementClass->GetSchema().GetName()).append("].[").append(elementClass->GetName()).append("](");
-    Utf8String values;
-    int propCount = 0;
-    for (Utf8CP param : insertParams)
-        {
-        if (propCount++ != 0)
-            {
-            ecSql.append(",");
-            values.append(",");
-            }
-        ecSql.append("[").append(param).append("]");
-        values.append(":[").append(param).append("]");
-        }
-    ecSql.append(")VALUES(").append(values).append(")");
-
-    CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement(ecSql.c_str());
-    if (!statement.IsValid())
+    CachedECSqlStatementPtr statement = GetDgnDb().Elements().GetPreparedInsertStatement(*this);
+    if (statement.IsNull())
         return DgnDbStatus::WriteError;
 
-    DgnDbStatus stat = _BindInsertParams(*statement);
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
-    if (BE_SQLITE_DONE == statement->Step())
-        return DgnDbStatus::Success;
+    auto status = _BindInsertParams(*statement);
+    if (DgnDbStatus::Success != status || BE_SQLITE_DONE == statement->Step())
+        return status;
 
     // SQLite doesn't tell us which constraint failed - check if it's the Code.
     auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
     return existingElemWithCode.IsValid() ? DgnDbStatus::DuplicateCode : DgnDbStatus::WriteError;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-void DgnElement::_GetUpdateParams(bvector<Utf8CP>& updateParams)
-    {
-    GetParamList(updateParams, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -520,15 +480,6 @@ void DgnElement::_GetUpdateParams(bvector<Utf8CP>& updateParams)
 DgnDbStatus DgnElement::_BindUpdateParams(ECSqlStatement& statement)
     {
     return BindParams(statement, true);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::_GetUpdateParams(bvector<Utf8CP>& params)
-    {
-    T_Super::_GetUpdateParams(params);
-    params.push_back(DGN_GEOMETRICELEMENT_PROPNAME_CATEGORYID);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -548,73 +499,13 @@ DgnDbStatus GeometricElement::_BindUpdateParams(ECSqlStatement& stmt)
 //---------------+---------------+---------------+---------------+---------------+-------
 DgnDbStatus DgnElement::_UpdateInDb()
     {
-    ECClassCP elementClass = GetElementClass();
-    if (nullptr == elementClass)
-        {
-        BeAssert(false);
-        return DgnDbStatus::BadElement;
-        }
-
-    bvector<Utf8CP> updateParams;
-    _GetUpdateParams(updateParams);
-
-    Utf8String ecSql("UPDATE [");
-    ecSql.append(elementClass->GetSchema().GetName()).append("].[").append(elementClass->GetName()).append("] SET ");
-    int propCount = 0;
-    for (Utf8CP param : updateParams)
-        {
-        if (propCount++ != 0)
-            ecSql.append(",");
-        ecSql.append("[").append(param).append("]=:[").append(param).append("]");
-        }
-    ecSql.append(" WHERE ECInstanceId=?");
-
-    CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement(ecSql.c_str());
-    if (!statement.IsValid())
+    CachedECSqlStatementPtr stmt = GetDgnDb().Elements().GetPreparedUpdateStatement(*this);
+    if (stmt.IsNull())
         return DgnDbStatus::WriteError;
 
-    statement->BindId(propCount+1, m_elementId);
-    DgnDbStatus stat = _BindUpdateParams(*statement);
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
-    return BE_SQLITE_DONE != statement->Step() ? DgnDbStatus::WriteError : DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::_GetSelectParams(bvector<Utf8CP>&)
-    {
-    // all params loaded when bootstrapping in DgnElements::LoadElement()...
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_ExtractSelectParams(ECSqlStatement&, ECSqlSelectParameters const&)
-    {
-    // all params loaded when bootstrapping in DgnElements::LoadElement()...
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::_GetSelectParams(bvector<Utf8CP>& params)
-    {
-    T_Super::_GetSelectParams(params);
-    params.push_back(DGN_GEOMETRICELEMENT_PROPNAME_CATEGORYID);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSelectParameters const& params)
-    {
-    auto status = T_Super::_ExtractSelectParams(stmt, params);
-    if (DgnDbStatus::Success == status)
-        m_categoryId = stmt.GetValueId<DgnCategoryId>(params.GetParameterIndex(DGN_GEOMETRICELEMENT_PROPNAME_CATEGORYID));
+    DgnDbStatus status = _BindUpdateParams(*stmt);
+    if (DgnDbStatus::Success == status && BE_SQLITE_DONE != stmt->Step())
+        status = DgnDbStatus::WriteError;
 
     return status;
     }
@@ -624,33 +515,13 @@ DgnDbStatus GeometricElement::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlSe
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_LoadFromDb()
     {
-    ECClassCP elementClass = GetElementClass();
-    if (nullptr == elementClass)
-        {
-        BeAssert(false);
-        return DgnDbStatus::BadElement;
-        }
-
-    ECSqlSelectParameters params;
-    _GetSelectParams(params.GetParameters());
-    if (params.GetParameters().empty())
+    DgnElements::ElementSelectStatement select = GetDgnDb().Elements().GetPreparedSelectStatement(*this);
+    if (select.m_statement.IsNull())
         return DgnDbStatus::Success;
-
-    Utf8String ecSql("SELECT [");
-    ecSql.append(BeStringUtilities::Join(params.GetParameters(), "],["));
-    ecSql.append("] FROM [");
-    ecSql.append(elementClass->GetSchema().GetName()).append("].[").append(elementClass->GetName());
-    ecSql.append("] WHERE ECInstanceId=?");
-
-    CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement(ecSql.c_str());
-    if (!stmt.IsValid())
+    else if (BE_SQLITE_ROW != select.m_statement->Step())
         return DgnDbStatus::ReadError;
-
-    stmt->BindId(1, m_elementId);
-    if (BE_SQLITE_ROW != stmt->Step())
-        return DgnDbStatus::ReadError;
-
-    return _ExtractSelectParams(*stmt, params);
+    else
+        return _ExtractSelectParams(*select.m_statement, select.m_params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2235,3 +2106,55 @@ DgnDbStatus InstanceBackedItem::_UpdateProperties(DgnElementCR el)
     ECInstanceUpdater& updater = CachedECInstanceUpdaters::GetECInstanceUpdater(el.GetDgnDb(), m_instance->GetClass());
     return (BSISUCCESS != updater.Update(*m_instance)) ? DgnDbStatus::WriteError : DgnDbStatus::Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSqlClassParams::Add(Utf8CP name, StatementType type)
+    {
+    BeAssert(!Utf8String::IsNullOrEmpty(name));
+    if (!Utf8String::IsNullOrEmpty(name))
+        {
+        BeAssert(m_entries.end() == std::find_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return 0 == ::strcmp(name, arg.m_name); }));
+        Entry entry(name, type);
+        if (StatementType::Select == (type & StatementType::Select) && 0 < m_entries.size())
+            {
+            // We want to be able to quickly look up the index for a name for SELECT query results...so group them together at the front of the list.
+            m_entries.insert(m_entries.begin(), entry);
+            }
+        else
+            {
+            m_entries.push_back(entry);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+int ECSqlClassParams::GetSelectIndex(Utf8CP name) const
+    {
+    // NB: All parameters valid for SELECT statements are grouped at the beginning of the list.
+    BeAssert(!Utf8String::IsNullOrEmpty(name));
+    if (!Utf8String::IsNullOrEmpty(name))
+        {
+        auto found = std::find_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return arg.m_name == name; });
+        if (m_entries.end() == found)
+            {
+            // Ideally callers always pass the same static string we originally stored...fallback...
+            found = std::find_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return 0 == ::strcmp(arg.m_name, name); });
+            BeAssert(m_entries.end() == found && "Prefer to pass the same string with static storage duration to GetSelectIndex() as was previously passed to Add()");
+            }
+
+        BeAssert(m_entries.end() != found);
+        if (m_entries.end() != found)
+            {
+            BeAssert(StatementType::Select == (found->m_type & StatementType::Select));
+            if (StatementType::Select == (found->m_type & StatementType::Select))
+                return static_cast<int>(found - m_entries.begin());
+            }
+        }
+
+    return -1;
+    }
+

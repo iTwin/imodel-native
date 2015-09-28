@@ -64,11 +64,8 @@ protected:
     virtual DgnDbStatus _UpdateInDb() override;
     virtual DgnDbStatus _DeleteInDb() const override;
 
-    virtual void _GetSelectParams(bvector<Utf8CP>& selectParams) override;
-    virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, BeSQLite::EC::ECSqlSelectParameters const& selectParams) override;
-    virtual void _GetInsertParams(bvector<Utf8CP>& params) override;
+    virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
     virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    virtual void _GetUpdateParams(bvector<Utf8CP>& params) override;
     virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     virtual void _CopyFrom(DgnElementCR el) override;
 
@@ -89,6 +86,7 @@ public:
 struct TestElementHandler : dgn_ElementHandler::Physical
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, dgn_ElementHandler::Physical, )
+protected: virtual void _GetClassParams(ECSqlClassParams& params) override;
 };
 struct GTestElement2dHandler;
 
