@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/ECDB/Published/ECSqlTestFixture.h $
+|     $Source: Tests/Published/ECSqlTestFixture.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -13,29 +13,17 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //=======================================================================================    
 // @bsiclass                                                 Krischan.Eberle     04/2013
 //=======================================================================================    
-struct ECSqlTestFixture : public ::testing::Test
+struct ECSqlTestFixture : public ECDbTestFixture
     {
 private:
-    std::unique_ptr<ECDbTestProject> m_testProject;
-
     virtual ECDbR _SetUp (Utf8CP ecdbFileName, WCharCP schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount);
-    virtual ECDbTestProject& _GetTestProject () const;
 
 protected:
-    static std::unique_ptr<ECDbTestProject> CreateTestProject (Utf8CP ecdbFileName, WCharCP schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount);
     ECDbR SetUp (Utf8CP ecdbFileName, WCharCP schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount);
 
     static void BindFromJson (BentleyStatus& succeeded, ECSqlStatement const& statement, JsonValueCR jsonValue, IECSqlBinder& structBinder);
     static void VerifyECSqlValue (ECSqlStatement const& statement, JsonValueCR expectedValue, IECSqlValue const& ecsqlValue);
 
-    void SetTestProject (std::unique_ptr<ECDbTestProject> testProject);
-    ECDbTestProject& GetTestProject () const;
-
-public:
-    ECSqlTestFixture ();
-    virtual ~ECSqlTestFixture ();
-    virtual void SetUp () override {}
-    virtual void TearDown () override {}
     };
 
 
