@@ -67,6 +67,7 @@ public:
 
     ThreeMxScenePtr  GetScene ();
     void             SetScene (ThreeMxScenePtr& scene)    { m_scene = scene; }
+    void             SetFileId (Utf8StringCR fileId)      { m_properties.m_fileId = fileId; }
 
     struct Properties
         {
