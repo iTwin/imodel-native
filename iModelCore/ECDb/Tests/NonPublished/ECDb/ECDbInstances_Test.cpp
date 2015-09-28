@@ -954,71 +954,6 @@ TEST(ECDbInstances, FindECInstances)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   01/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-static IECRelationshipInstancePtr createRelationship (ECN::ECRelationshipClassCR relationshipClass, IECInstanceR source, IECInstanceR target)
-    {
-    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (relationshipClass);
-    StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
-    if (relationshipInstance == nullptr)
-        return nullptr;
-
-    relationshipInstance->SetSource (&source);
-    relationshipInstance->SetTarget (&target);
-    relationshipInstance->SetInstanceId ("source->target");
-    return relationshipInstance;
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   05/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-static IECRelationshipInstancePtr createRelationship 
-(
-ECDbTestProject& test, 
-Utf8CP sourceClassName, 
-Utf8CP targetClassName, 
-Utf8CP relationshipClassName
-)
-    {
-    bvector<IECInstancePtr> instances;
-    auto stat = test.GetInstances (instances, sourceClassName);
-    if (stat != SUCCESS)
-        //GetInstances asserts already on failure
-        return nullptr;
-
-    IECInstancePtr sourceInstance = instances[0];
-
-    stat = test.GetInstances (instances, targetClassName);
-    if (stat != SUCCESS)
-        //GetInstances asserts already on failure
-        return nullptr;
-
-    IECInstancePtr targetInstance = instances[0];
-
-    ECSchemaPtr schema = test.GetTestSchemaManager ().GetTestSchema ();
-    EXPECT_TRUE (schema != nullptr) << "ECDbTestSchemaManager::GetTestSchema returned null";
-    if (schema == nullptr)
-        return nullptr;
-
-    ECRelationshipClassCP relClass = schema->GetClassP (relationshipClassName)->GetRelationshipClassCP();
-    EXPECT_TRUE (relClass != nullptr) << "Could not find relationship class " << relationshipClassName << " in test schema";
-    if (relClass == nullptr)
-        return nullptr;
-
-    return createRelationship (*relClass, *sourceInstance, *targetInstance);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   06/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void persistRelationship (IECRelationshipInstanceR relInstance, ECDbR ecdb)
-    {
-    ECInstanceInserter inserter (ecdb, relInstance.GetClass ());
-    ASSERT_TRUE (inserter.IsValid ());
-    auto insertStatus = inserter.Insert (relInstance);
-    ASSERT_EQ (SUCCESS, insertStatus);    
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Carole.MacDonald                   02/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
@@ -1027,9 +962,32 @@ TEST(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
     ECDbTestProject testProject;
     auto& ecdb = testProject.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
 
-    IECRelationshipInstancePtr relationship = createRelationship(testProject, "Foo", "Bar", "Foo_has_Bars");
-    ASSERT_TRUE(relationship.IsValid());
-    persistRelationship(*relationship, ecdb);
+    bvector<IECInstancePtr> instances;
+    ASSERT_EQ(SUCCESS, testProject.GetInstances(instances, "Foo"));
+
+    IECInstancePtr sourceInstance = instances[0];
+
+    ASSERT_EQ(SUCCESS, testProject.GetInstances(instances, "Bar"));
+
+    IECInstancePtr targetInstance = instances[0];
+
+    ECSchemaPtr schema = testProject.GetTestSchemaManager().GetTestSchema();
+    ASSERT_TRUE(schema != nullptr) << "ECDbTestSchemaManager::GetTestSchema returned null";
+
+    ECRelationshipClassCP relClass = schema->GetClassP("Foo_has_Bars")->GetRelationshipClassCP();
+    ASSERT_TRUE(relClass != nullptr) << "Could not find relationship class Foo_has_Bars in test schema";
+
+    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClass);
+    StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
+    ASSERT_TRUE(relationshipInstance.IsValid());
+    relationshipInstance->SetSource(sourceInstance.get());
+    relationshipInstance->SetTarget(targetInstance.get());
+    relationshipInstance->SetInstanceId("source->target");
+
+    ECInstanceInserter inserter(ecdb, *relClass);
+    ASSERT_TRUE(inserter.IsValid());
+    auto insertStatus = inserter.Insert(*relationshipInstance);
+    ASSERT_EQ(SUCCESS, insertStatus);
 
     ECSqlStatement ecStatement;
     ASSERT_TRUE(ECSqlStatus::Success == ecStatement.Prepare(ecdb, "SELECT c0.intFoo, c1.stringBar from [StartupCompany].[Foo] c0 join [StartupCompany].[Bar] c1 using [StartupCompany].[Foo_has_Bars]"));
@@ -1049,8 +1007,6 @@ TEST(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
     ASSERT_TRUE(rows > 0) << "Should have found at least one Foo instance";
 
     ecStatement.Reset();
-    ECSchemaPtr schema = testProject.GetTestSchemaManager ().GetTestSchema ();
-    ASSERT_TRUE (schema != nullptr) << "ECDbTestSchemaManager::GetTestSchema returned null";
 
     rows = 0;
     ECClassCP ecClass = schema->GetClassP ("Bar");

@@ -13,61 +13,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbSchemaWriter::EnsureNamespacePrefixIsUnique (ECSchemaCR ecSchema)
+DbResult ECDbSchemaWriter::CreateECSchemaEntry(ECSchemaCR ecSchema, ECSchemaId ecSchemaId)
     {
-    /*ECDB_RULE: ECSchema Prefix need to be unique so if there is a existing schema with prefix of this schema
-                 then we need to to add a number to that to make it unique. If prefix is empty then we assign
-                 schema name to it.
-
-    */
-    Utf8String ns = ecSchema.GetNamespacePrefix();
-    ns.Trim();
-    if (ns.empty())
-        {
-        LOG.warningv("Importing ECSchema '%s' has no NamespacePrefix. Name of this ECSchema will be set as its NamespacePrefix", ecSchema.GetName().c_str());
-        ns = ecSchema.GetName();
-        }
-    //verify ns is unique
-    Utf8String currentNSPrefix = ns.c_str();
-    Statement stmt;
-    stmt.Prepare(m_ecdb,"SELECT Name FROM ec_Schema WHERE NamespacePrefix = ?");
-    stmt.BindText(1, currentNSPrefix, Statement::MakeCopy::No);
-    if (stmt.Step() == BE_SQLITE_ROW)
-        {       
-        LOG.warningv ("Importing ECSchema '%s' has NamespacePrefix '%s' which already exist in ECDb for ECSchema '%s. System will now attempt to generate a unique prefix for importing ECSchema.", ecSchema.GetName().c_str(), ns.c_str(), stmt.GetValueText(0));
-        Utf8String newPrefix;
-        int prefixIndex = 1;
-        do
-            {
-            stmt.Reset ();
-            stmt.ClearBindings ();
-            newPrefix.Sprintf ("%s%d", currentNSPrefix.c_str(), prefixIndex++);
-            stmt.BindText(1, newPrefix, Statement::MakeCopy::No);
-            } while(stmt.Step() == BE_SQLITE_ROW);
-        if (currentNSPrefix.Equals(newPrefix))
-            {
-            BeAssert(false && "Failed to generate a unique schema prefix");
-            LOG.errorv ("Failed to Generate Unique NamespacePrefix for ECSchema %s", ecSchema.GetName().c_str());    
-            return false;
-            }
-        ns = newPrefix.c_str();
-        LOG.warningv ("Generated a new NamespacePrefix='%s' for newly importing ECSchema '%s'", ecSchema.GetName().c_str(), ns.c_str());
-        }
-    if (!ns.Equals(ecSchema.GetNamespacePrefix()))
-        const_cast<ECSchemaR>(ecSchema).SetNamespacePrefix(ns);
-    return true;
-    }
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaWriter::CreateECSchemaEntry(ECSchemaCR ecSchema, ECSchemaId ecSchemaId)
-    {
-    //We need to always ensure namespace prefix is always unique and if necessary generate new namespace prefix. 
-    if (!EnsureNamespacePrefixIsUnique (ecSchema))
-        return ERROR;
-
     DbECSchemaInfo info;
-
     info.ColsInsert =
         DbECSchemaInfo::COL_Id |
         DbECSchemaInfo::COL_Name |
@@ -90,7 +38,6 @@ BentleyStatus ECDbSchemaWriter::CreateECSchemaEntry(ECSchemaCR ecSchema, ECSchem
         info.ColsInsert |= DbECSchemaInfo::COL_DisplayLabel;
         }
 
-    //save to db
     return ECDbSchemaPersistence::InsertECSchema (m_ecdb, info);
     }
 
@@ -316,13 +263,22 @@ BentleyStatus ECDbSchemaWriter::Import(ECN::ECSchemaCR ecSchema)
     // GenerateId
     BeRepositoryBasedId nextId;
     if (BE_SQLITE_OK != m_ecdb.GetECDbImplR().GetECSchemaIdSequence().GetNextValue(nextId))
+        {
+        BeAssert(false && "Could not generate new ECSchemaId");
         return ERROR;
+        }
 
     ecSchemaId = nextId.GetValue ();
     const_cast<ECSchemaR>(ecSchema).SetId(ecSchemaId);
 
-    if (SUCCESS != CreateECSchemaEntry(ecSchema, ecSchemaId))
+    DbResult stat = CreateECSchemaEntry(ecSchema, ecSchemaId);
+    if (BE_SQLITE_OK != stat)
+        {
+        if (BE_SQLITE_CONSTRAINT_UNIQUE == stat)
+            m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchema '%s'. Namespace prefix '%s' is already used by an existing ECSchema.", 
+                                                            ecSchema.GetFullSchemaName().c_str(), ecSchema.GetNamespacePrefix().c_str());
         return ERROR;
+        }
 
     ECSchemaReferenceListCR referencedSchemas = ecSchema.GetReferencedSchemas();
     for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter)
@@ -350,7 +306,10 @@ BentleyStatus ECDbSchemaWriter::Import(ECN::ECSchemaCR ecSchema)
         if (!ECDbSchemaPersistence::ContainsECSchemaReference (m_ecdb, ecSchemaId, referenceId))
             {
             if (SUCCESS != CreateECSchemaReferenceEntry(ecSchemaId, referenceId))
+                {
+                BeAssert(false && "Could not insert schema reference entry");
                 return ERROR;
+                }
             }
         }
 
@@ -358,13 +317,18 @@ BentleyStatus ECDbSchemaWriter::Import(ECN::ECSchemaCR ecSchema)
         {
         if (SUCCESS != ImportECClass(*ecClass))
             {
-            LOG.errorv("Failed to import ECClass '%s'.", ecClass->GetFullName());
-            BeDataAssert(false);
+            m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECClass '%s'.", ecClass->GetFullName());
             return ERROR;
             }
         }
 
-    return ImportCustomAttributes(ecSchema, ecSchemaId, ECContainerType::Schema);
+    if (SUCCESS != ImportCustomAttributes(ecSchema, ecSchemaId, ECContainerType::Schema))
+        {
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import custom attributes of ECSchema '%s'.", ecSchema.GetFullSchemaName().c_str());
+        return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------------

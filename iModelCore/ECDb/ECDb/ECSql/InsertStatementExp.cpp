@@ -39,8 +39,9 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext&
         {
             case FinalizeParseMode::BeforeFinalizingChildren:
                 {
-                auto classNameExp = GetClassNameExp();
-                auto classList = unique_ptr<RangeClassRefList>(new RangeClassRefList());
+                ClassNameExp const* classNameExp = GetClassNameExp();
+
+                unique_ptr<RangeClassRefList> classList = unique_ptr<RangeClassRefList>(new RangeClassRefList());
                 classList->push_back(classNameExp);
                 m_finalizeParsingArgCache = move(classList);
                 ctx.PushFinalizeParseArg(m_finalizeParsingArgCache.get());
@@ -114,6 +115,16 @@ Exp::FinalizeParseStatus InsertStatementExp::Validate (ECSqlParseContext& ctx) c
         {
         ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Mismatching number of items in VALUES clause.");
         return FinalizeParseStatus::Error;
+        }
+
+    if (propertyNameListExp->GetSpecialTokenExpIndexMap().IsUnset(ECSqlSystemProperty::ECInstanceId))
+        {
+        ClassNameExp const* classNameExp = GetClassNameExp();
+        if (classNameExp->GetInfo().GetMap().IsECInstanceIdAutogenerationDisabled())
+            {
+            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSQL INSERT must always specify the ECInstanceId as ECInstanceId auto-generation is disabled for the ECClass (via custom attribute): %s", ToECSql().c_str());
+            return FinalizeParseStatus::Error;
+            }
         }
 
     for (size_t i = 0; i < expectedValueCount; i++)

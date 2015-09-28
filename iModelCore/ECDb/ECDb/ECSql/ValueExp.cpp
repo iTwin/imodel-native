@@ -250,161 +250,6 @@ Utf8String CastExp::_ToString() const
     return str;
     }
 
-//*************************** ConstantValueExp ******************************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-Utf8CP const  ConstantValueExp::CURRENT_DATE = "CURRENT_DATE";
-Utf8CP const  ConstantValueExp::CURRENT_TIMESTAMP = "CURRENT_TIMESTAMP";
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                   09/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
- BentleyStatus ConstantValueExp::Create (unique_ptr<ValueExp>& exp, ECSqlParseContext& ctx, Utf8CP value, ECSqlTypeInfo typeInfo)
-    {
-    exp = nullptr;
-
-    unique_ptr<ConstantValueExp> valueExp = unique_ptr<ConstantValueExp> (new ConstantValueExp (value, typeInfo));
-    BentleyStatus stat = valueExp->ResolveDataType(ctx);
-    if (stat == SUCCESS)
-        exp = move(valueExp);
-
-    return stat;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                   09/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ConstantValueExp::ConstantValueExp (Utf8CP value, ECSqlTypeInfo typeInfo)
-   : ValueExp (), m_value (value)
-    {
-    SetTypeInfo (typeInfo);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8StringCR ConstantValueExp::GetValue () const
-    {
-    return m_value;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-int64_t ConstantValueExp::GetValueAsInt64 () const
-    {
-    int64_t v = 0;
-    sscanf(m_value.c_str(), "%" PRId64, &v);
-    return v;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-bool ConstantValueExp::GetValueAsBoolean () const
-    {
-    if (m_value.EqualsI("TRUE"))
-        return true;
-    if (m_value.EqualsI("FALSE"))
-        return false;
-
-    BeAssert(false && "value doesn't represent a boolean value of 'true' or 'false'");
-    return false;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                   09/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ConstantValueExp::ResolveDataType (ECSqlParseContext& ctx)
-    {
-    if (GetTypeInfo ().GetPrimitiveType () == PRIMITIVETYPE_DateTime)
-        {
-        DateTime::Info dtInfo;
-        if (m_value.EqualsI (CURRENT_DATE))
-            dtInfo = DateTime::Info (DateTime::Kind::Unspecified, DateTime::Component::Date);
-        else if (m_value.EqualsI (CURRENT_TIMESTAMP))
-            //deviating from SQL-99 ECSQL considers CURRENT_TIMESTAMP to return a UTC time stamp
-            dtInfo = DateTime::Info (DateTime::Kind::Utc, DateTime::Component::DateAndTime);
-        else
-            {
-            DateTime dt;
-            if (SUCCESS != DateTime::FromString(dt, m_value.c_str()))
-                {
-                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid format for DATE/TIMESTAMP in expression '%s'.", ToECSql().c_str());
-                return ERROR;
-                }
-
-            dtInfo = dt.GetInfo ();
-            }
-
-        DateTimeInfo dtMetadata (dtInfo);
-        SetTypeInfo (ECSqlTypeInfo (PRIMITIVETYPE_DateTime, &dtMetadata));
-        }
-
-    return SUCCESS;
-    }
-
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-void ConstantValueExp::_DoToECSql(Utf8StringR ecsql) const
-    {
-    auto const& typeInfo = GetTypeInfo ();
-    if (typeInfo.GetKind() == ECSqlTypeInfo::Kind::Null)
-        {
-        ecsql.append("NULL");
-        return;
-        }
-
-    if (typeInfo.IsPrimitive())
-        {
-        auto primType = typeInfo.GetPrimitiveType();
-        if (primType == PRIMITIVETYPE_String)
-            {
-            ecsql.append("'").append(m_value).append("'");
-            return;
-            }
-
-        if (primType == PRIMITIVETYPE_DateTime)
-            {
-            if (BeStringUtilities::Strnicmp(m_value.c_str(), "CURRENT", 7) == 0)
-                {
-                ecsql.append(m_value);
-                return;
-                }
-
-            auto const& dtInfo = typeInfo.GetDateTimeInfo();
-            if (!dtInfo.IsComponentNull() && dtInfo.GetInfo(false).GetComponent() == DateTime::Component::Date)
-                ecsql.append("DATE '").append(m_value).append("'");
-            else
-                ecsql.append("TIMESTAMP '").append(m_value).append("'");
-
-            return;
-            }
-        }
-
-    ecsql.append(m_value);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String ConstantValueExp::_ToString() const 
-    {
-    Utf8String str ("ConstantValue [Value: ");
-    str.append (m_value.c_str ());
-    
-    if (GetTypeInfo ().IsPrimitive ())
-        str.append (", Type: ").append (ExpHelper::ToString (GetTypeInfo ().GetPrimitiveType ()));
-
-    str.append ("]");
-    return str;
-    }
-
 
 //****************************** ECClassIdFunctionExp *****************************************
 //-----------------------------------------------------------------------------------------
@@ -710,6 +555,173 @@ void LikeRhsValueExp::_DoToECSql(Utf8StringR ecsql) const
         ecsql.append (" ESCAPE ").append (GetEscapeExp ()->ToECSql ()); 
     }
 
+//*************************** LiteralValueExp ******************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+Utf8CP const  LiteralValueExp::CURRENT_DATE = "CURRENT_DATE";
+Utf8CP const  LiteralValueExp::CURRENT_TIMESTAMP = "CURRENT_TIMESTAMP";
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   09/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BentleyStatus LiteralValueExp::Create(unique_ptr<ValueExp>& exp, ECSqlParseContext& ctx, Utf8CP value, ECSqlTypeInfo typeInfo)
+    {
+    exp = nullptr;
+
+    unique_ptr<LiteralValueExp> valueExp = unique_ptr<LiteralValueExp>(new LiteralValueExp(value, typeInfo));
+    BentleyStatus stat = valueExp->ResolveDataType(ctx);
+    if (stat == SUCCESS)
+        exp = move(valueExp);
+
+    return stat;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   09/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+LiteralValueExp::LiteralValueExp(Utf8CP value, ECSqlTypeInfo typeInfo)
+    : ValueExp(true), m_value(value)
+    {
+    SetTypeInfo(typeInfo);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8StringCR LiteralValueExp::GetValue() const
+    {
+    return m_value;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+int64_t LiteralValueExp::GetValueAsInt64() const
+    {
+    int64_t v = 0;
+    sscanf(m_value.c_str(), "%" PRId64, &v);
+    return v;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+bool LiteralValueExp::GetValueAsBoolean() const
+    {
+    if (m_value.EqualsI("TRUE"))
+        return true;
+    if (m_value.EqualsI("FALSE"))
+        return false;
+
+    BeAssert(false && "value doesn't represent a boolean value of 'true' or 'false'");
+    return false;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   09/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus LiteralValueExp::ResolveDataType(ECSqlParseContext& ctx)
+    {
+    if (GetTypeInfo().GetPrimitiveType() == PRIMITIVETYPE_DateTime)
+        {
+        DateTime::Info dtInfo;
+        if (m_value.EqualsI(CURRENT_DATE))
+            dtInfo = DateTime::Info(DateTime::Kind::Unspecified, DateTime::Component::Date);
+        else if (m_value.EqualsI(CURRENT_TIMESTAMP))
+            //deviating from SQL-99 ECSQL considers CURRENT_TIMESTAMP to return a UTC time stamp
+            dtInfo = DateTime::Info(DateTime::Kind::Utc, DateTime::Component::DateAndTime);
+        else
+            {
+            DateTime dt;
+            if (SUCCESS != DateTime::FromString(dt, m_value.c_str()))
+                {
+                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid format for DATE/TIMESTAMP in expression '%s'.", ToECSql().c_str());
+                return ERROR;
+                }
+
+            dtInfo = dt.GetInfo();
+            }
+
+        DateTimeInfo dtMetadata(dtInfo);
+        SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_DateTime, &dtMetadata));
+        }
+
+    return SUCCESS;
+    }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+void LiteralValueExp::_DoToECSql(Utf8StringR ecsql) const
+    {
+    auto const& typeInfo = GetTypeInfo();
+    if (typeInfo.GetKind() == ECSqlTypeInfo::Kind::Null)
+        {
+        ecsql.append("NULL");
+        return;
+        }
+
+    if (typeInfo.IsPrimitive())
+        {
+        auto primType = typeInfo.GetPrimitiveType();
+        if (primType == PRIMITIVETYPE_String)
+            {
+            ecsql.append("'").append(m_value).append("'");
+            return;
+            }
+
+        if (primType == PRIMITIVETYPE_DateTime)
+            {
+            if (BeStringUtilities::Strnicmp(m_value.c_str(), "CURRENT", 7) == 0)
+                {
+                ecsql.append(m_value);
+                return;
+                }
+
+            auto const& dtInfo = typeInfo.GetDateTimeInfo();
+            if (!dtInfo.IsComponentNull() && dtInfo.GetInfo(false).GetComponent() == DateTime::Component::Date)
+                ecsql.append("DATE '").append(m_value).append("'");
+            else
+                ecsql.append("TIMESTAMP '").append(m_value).append("'");
+
+            return;
+            }
+        }
+
+    ecsql.append(m_value);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    08/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String LiteralValueExp::_ToString() const
+    {
+    Utf8String str("LiteralValue [Value: ");
+    str.append(m_value.c_str());
+
+    if (GetTypeInfo().IsPrimitive())
+        str.append(", Type: ").append(ExpHelper::ToString(GetTypeInfo().GetPrimitiveType()));
+
+    str.append("]");
+    return str;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+Utf8String LiteralValueExp::EscapeStringLiteral(Utf8StringCR constantStringLiteral)
+    {
+    Utf8String tmp = constantStringLiteral;
+    tmp.ReplaceAll("'", "''");
+    return tmp;
+    }
+
+
 //****************************** ParameterExp *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
@@ -917,7 +929,10 @@ Exp::FinalizeParseStatus FoldFunctionCallExp::_FinalizeParsing(ECSqlParseContext
     ECN::PrimitiveType returnType = DetermineReturnType(ctx.GetECDb(), functionName, childCount);
     SetTypeInfo(ECSqlTypeInfo(returnType));
 
-    ECSqlTypeInfo const& typeInfo = GetChild<ValueExp> (0)->GetTypeInfo ();
+    ValueExp const* argExp = GetChild<ValueExp>(0);
+    SetIsConstant(argExp->IsConstant());
+
+    ECSqlTypeInfo const& typeInfo = argExp->GetTypeInfo ();
     if (!typeInfo.IsPrimitive () || typeInfo.GetPrimitiveType () != PRIMITIVETYPE_String)
         {
         ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid function call '%s'. Function %s expects string argument", ToECSql ().c_str (), functionName);

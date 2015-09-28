@@ -22,17 +22,19 @@ public:
     //+---------------+---------------+---------------+---------------+---------------+------
     struct TestItem
         {
-        Utf8String m_schemaXml;
+        std::vector<Utf8String> m_schemaXmlList;
         bool m_expectedToSucceed;
         Utf8String m_assertMessage;
 
-        TestItem(Utf8CP schemaXml, bool expectedToSucceeed, Utf8CP assertMessage) : m_schemaXml(schemaXml), m_expectedToSucceed(expectedToSucceeed), m_assertMessage(assertMessage) {}
-        TestItem(Utf8CP schemaXml, bool expectedToSucceeed) : m_schemaXml(schemaXml), m_expectedToSucceed(expectedToSucceeed) {}
+        TestItem(std::vector<Utf8String> const& schemaXmlList, bool expectedToSucceeed, Utf8CP assertMessage) : m_schemaXmlList(schemaXmlList), m_expectedToSucceed(expectedToSucceeed), m_assertMessage(assertMessage) {}
+        TestItem(Utf8CP schemaXml, bool expectedToSucceeed, Utf8CP assertMessage) : m_schemaXmlList({schemaXml}), m_expectedToSucceed(expectedToSucceeed), m_assertMessage(assertMessage) {}
+        TestItem(Utf8CP schemaXml, bool expectedToSucceeed) : m_schemaXmlList({Utf8String(schemaXml)}), m_expectedToSucceed(expectedToSucceeed) {}
         };
 
 protected:
     void AssertSchemaImport(TestItem const&, Utf8CP ecdbFileName) const;
     void AssertSchemaImport(ECDbR, bool& asserted, TestItem const&, Utf8CP ecdbFileName) const;
+    void AssertSchemaImport(ECDbR, bool& asserted, std::vector<TestItem> const&, Utf8CP ecdbFileName) const;
     void AssertSchemaImport(bool& asserted, ECDbCR, TestItem const&) const;
 
     void AssertIndexExists(ECDbCR, Utf8CP indexName, bool expectedToExist);

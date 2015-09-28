@@ -21,10 +21,16 @@ struct ValueExp : ComputedExp
     {
     DEFINE_EXPR_TYPE(Value)
 protected:
-    ValueExp () : ComputedExp () {}
+    bool m_isConstant;
 
+    ValueExp() : ComputedExp(), m_isConstant(false) {}
+    ValueExp (bool isConstant) : ComputedExp (), m_isConstant (isConstant) {}
+
+    void SetIsConstant(bool isConstant) { m_isConstant = isConstant; }
 public:
     virtual ~ValueExp () {}
+
+    bool IsConstant() const { return m_isConstant; }
     };
 
 //=======================================================================================
@@ -76,7 +82,7 @@ private:
 
 public:
     BinaryValueExp(std::unique_ptr<ValueExp> lhs, BinarySqlOperator op ,std::unique_ptr<ValueExp> rhs)
-        : ValueExp (), m_op(op)
+        : ValueExp (lhs->IsConstant() && rhs->IsConstant()), m_op(op)
         {
         m_leftOperandExpIndex = AddChild (std::move(lhs));
         m_rightOperandExpIndex = AddChild (std::move(rhs));
@@ -104,7 +110,7 @@ private:
 
 public:
     CastExp (std::unique_ptr<ValueExp> castOperand, Utf8CP castTargetType)
-        : ValueExp (), m_castTargetType (castTargetType)
+        : ValueExp (castOperand->IsConstant()), m_castTargetType (castTargetType)
         {
         m_castOperandIndex = AddChild (std::move (castOperand));
         }
@@ -119,9 +125,9 @@ public:
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      04/2013
 //+===============+===============+===============+===============+===============+======
-struct ConstantValueExp : ValueExp
+struct LiteralValueExp : ValueExp
     {
-    DEFINE_EXPR_TYPE(ConstantValue) 
+    DEFINE_EXPR_TYPE(LiteralValue)
 public:
     static Utf8CP const CURRENT_DATE;
     static Utf8CP const CURRENT_TIMESTAMP;
@@ -129,7 +135,7 @@ public:
 private:
     Utf8String m_value;
 
-    ConstantValueExp (Utf8CP value, ECSqlTypeInfo type);
+    LiteralValueExp (Utf8CP value, ECSqlTypeInfo type);
 
     BentleyStatus ResolveDataType (ECSqlParseContext&);
 
@@ -143,12 +149,7 @@ public:
     int64_t GetValueAsInt64() const;
     bool GetValueAsBoolean() const;
 
-    static Utf8String EscapeStringLiteral (Utf8StringCR constantStringLiteral)
-        {
-        Utf8String tmp = constantStringLiteral;
-        tmp.ReplaceAll ("'", "''");
-        return tmp;
-        }
+    static Utf8String EscapeStringLiteral (Utf8StringCR constantStringLiteral);
     };
 
 //=======================================================================================
@@ -227,7 +228,7 @@ private:
 
 public:
     explicit LikeRhsValueExp (std::unique_ptr<ValueExp> rhsExp, std::unique_ptr<ValueExp> escapeExp = nullptr)
-        : ValueExp (), m_escapeExpIndex (UNSET_CHILDINDEX)
+        : ValueExp (rhsExp->IsConstant()), m_escapeExpIndex (UNSET_CHILDINDEX)
         {
         m_rhsExpIndex = AddChild (std::move(rhsExp));
         if (escapeExp != nullptr)
@@ -346,7 +347,7 @@ private:
 
 public:
     UnaryValueExp(ValueExp* operand, UnarySqlOperator op)
-        : ValueExp (), m_op(op)
+        : ValueExp (operand->IsConstant()), m_op(op)
         {
         m_operandExpIndex = AddChild (std::unique_ptr<Exp> (operand));
         }

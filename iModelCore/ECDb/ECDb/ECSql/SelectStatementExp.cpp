@@ -326,7 +326,7 @@ Exp::FinalizeParseStatus GroupByExp::_FinalizeParsing(ECSqlParseContext& ctx, Fi
         ValueExp const* groupingValueExp = groupingValueListExp->GetValueExp(i);
         const Exp::Type expType = groupingValueExp->GetType();
         ECSqlTypeInfo const& typeInfo = groupingValueExp->GetTypeInfo();
-        if (expType == Exp::Type::Parameter || expType == Exp::Type::ConstantValue || !typeInfo.IsPrimitive() || typeInfo.IsPoint())
+        if (expType == Exp::Type::Parameter || groupingValueExp->IsConstant() || !typeInfo.IsPrimitive() || typeInfo.IsPoint())
             {
             ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid expression '%s' in GROUP BY: Parameters, constants, points, structs and arrays are not supported.", ToECSql().c_str());
             return FinalizeParseStatus::Error;

@@ -255,8 +255,8 @@ BentleyStatus ECSqlParser::parse_derived_column (unique_ptr<DerivedPropertyExp>&
     {
     insertExp = nullptr;
     //insert does not support polymorphic classes. Passing false therefore.
-    unique_ptr<ClassNameExp> tableNodeExp = nullptr;
-    BentleyStatus stat = parse_table_node(tableNodeExp, parseNode->getChild(2), false);
+    unique_ptr<ClassNameExp> classNameExp = nullptr;
+    BentleyStatus stat = parse_table_node(classNameExp, parseNode->getChild(2), false);
     if (SUCCESS != stat)
         return stat;
 
@@ -270,7 +270,7 @@ BentleyStatus ECSqlParser::parse_derived_column (unique_ptr<DerivedPropertyExp>&
     if (SUCCESS != stat)
         return stat;
 
-    insertExp = unique_ptr<InsertStatementExp> (new InsertStatementExp(tableNodeExp, insertPropertyNameListExp, valuesOrQuerySpecExp));
+    insertExp = unique_ptr<InsertStatementExp> (new InsertStatementExp(classNameExp, insertPropertyNameListExp, valuesOrQuerySpecExp));
     return SUCCESS;
     }
 
@@ -774,7 +774,7 @@ BentleyStatus ECSqlParser::parse_update_statement_searched (unique_ptr<UpdateSta
         Exp::IsAsteriskToken(parseNode->getChild(2)->getTokenValue().c_str()))
         {
         unique_ptr<ValueExp> argExp = nullptr;
-        stat = ConstantValueExp::Create(argExp, *m_context, Exp::ASTERISK_TOKEN, ECSqlTypeInfo(ECSqlTypeInfo::Kind::Varies));
+        stat = LiteralValueExp::Create(argExp, *m_context, Exp::ASTERISK_TOKEN, ECSqlTypeInfo(ECSqlTypeInfo::Kind::Varies));
         if (SUCCESS != stat)
             return stat;
 
@@ -1050,9 +1050,9 @@ BentleyStatus ECSqlParser::parse_datetime_value_fct(unique_ptr<ValueExp>& exp, O
     if (parseNode->count() == 1 ) //Keyword
         {
         if (type->getTokenID() == SQL_TOKEN_CURRENT_DATE)
-            return ConstantValueExp::Create (exp, *m_context, "CURRENT_DATE", ECSqlTypeInfo (ECN::PRIMITIVETYPE_DateTime));
+            return LiteralValueExp::Create (exp, *m_context, "CURRENT_DATE", ECSqlTypeInfo (ECN::PRIMITIVETYPE_DateTime));
         if (type->getTokenID() == SQL_TOKEN_CURRENT_TIMESTAMP)
-            return ConstantValueExp::Create (exp, *m_context, "CURRENT_TIMESTAMP", ECSqlTypeInfo (ECN::PRIMITIVETYPE_DateTime));
+            return LiteralValueExp::Create (exp, *m_context, "CURRENT_TIMESTAMP", ECSqlTypeInfo (ECN::PRIMITIVETYPE_DateTime));
 
         GetIssueReporter().Report(ECDbIssueSeverity::Error, "Unrecognized keyword '%s'.", parseNode->getTokenValue().c_str());
         return ERROR;
@@ -1061,7 +1061,7 @@ BentleyStatus ECSqlParser::parse_datetime_value_fct(unique_ptr<ValueExp>& exp, O
     auto unparsedDateOrTimestampValue = parseNode->getChild(1)->getTokenValue().c_str ();
     //WIP_ECSQL: Parse date value into a structure
     if (type->getTokenID () == SQL_TOKEN_DATE || type->getTokenID () == SQL_TOKEN_TIMESTAMP)
-        return ConstantValueExp::Create (exp, *m_context, unparsedDateOrTimestampValue, ECSqlTypeInfo (ECN::PRIMITIVETYPE_DateTime));
+        return LiteralValueExp::Create (exp, *m_context, unparsedDateOrTimestampValue, ECSqlTypeInfo (ECN::PRIMITIVETYPE_DateTime));
 
     exp = nullptr;
     BeAssert (false && "Wrong grammar");
@@ -2586,7 +2586,7 @@ BentleyStatus ECSqlParser::parse_value_exp(unique_ptr<ValueExp>& valueExp, OSQLP
                 return ERROR;
         };
 
-    return ConstantValueExp::Create(valueExp, *m_context, value, dataType);
+    return LiteralValueExp::Create(valueExp, *m_context, value, dataType);
     }
 
 //-----------------------------------------------------------------------------------------

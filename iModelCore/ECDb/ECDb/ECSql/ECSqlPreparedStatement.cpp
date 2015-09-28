@@ -312,7 +312,13 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
         ecinstanceidOfInsert = m_ecInstanceKeyInfo.GetUserProvidedECInstanceId();
     else
         {
-        //user hasn't provided an ecinstanceid (neither literally nor through binding) -> auto generate it
+        //user hasn't provided an ecinstanceid (neither literally nor through binding)
+        if (m_isECInstanceIdAutogenerationDisabled)
+            {
+            GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Always must provide an ECInstanceId for the ECSQL %s as ECInstanceId auto-generation was disabled for the ECClass (via custom attribute).", GetECSql());
+            return BE_SQLITE_ERROR;
+            }
+
         if (GenerateECInstanceIdAndBindToInsertStatement(ecinstanceidOfInsert) != ECSqlStatus::Success)
             return BE_SQLITE_ERROR;
 
@@ -330,7 +336,7 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
             {
             //this can only happen in a specific case with inserting an end table relationship, as there inserting really
             //means to update a row in the end table.
-            GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Could not insert the ECRelationship. Either the source or target constraint's ECInstanceId does not exist or the source or target constraint's cardinality is violated.");
+            GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Could not insert the ECRelationship (%s). Either the source or target constraint's ECInstanceId does not exist or the source or target constraint's cardinality is violated.", GetECSql());
             return BE_SQLITE_ERROR;
             }
 
