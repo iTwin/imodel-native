@@ -76,34 +76,25 @@
         </Bindings>
     </Part>
 
-    <Part Name="BackdoorForUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor -dIsBackDoor">
+    <Part Name="BackDoorForUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=BackDoor -dIsBackDoor">
         <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ECDb/Backdoor" SourceName="Delivery/UnitTests/Objects/Backdoor"/>
-        </Bindings>
-    </Part>
-
-    <Part Name="UnitTests-NonPublished" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
-        <SubPart PartName="PrewireForUnitTests" />
-        <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ECDb/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ECDb/BackDoor" SourceName="Delivery/UnitTests/Objects/BackDoor"/>
         </Bindings>
     </Part>
 
     <Part Name="UnitTests-Performance" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="PerformanceTestingHelpers" PartFile="BeSQLite" Repository="BeSQLite"/>
-        <!-- Performance tests actually depend on NonPublished tests, e.g., for the implementation of ECDbTestProject -->
-        <SubPart PartName="UnitTests-NonPublished"/>
         <!-- And, Performance tests depend on BackDoor for ReadJsonInputFromFile -->
-        <SubPart PartName="BackdoorForUnitTests"/>
+        <SubPart PartName="BackDoorForUnitTests"/>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ECDb/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
         </Bindings>
     </Part>
 
     <Part Name="UnitTests-Published" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
-        <SubPart PartName="BackdoorForUnitTests" />
+        <SubPart PartName="BackDoorForUnitTests" />
         <SubPart PartName="PublishedApi" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ECDb/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
@@ -130,7 +121,6 @@
 
     <!-- Define the collection of all available tests. -->
     <Part Name="TestCollection-All">
-        <SubPart PartName="UnitTests-NonPublished" />
         <SubPart PartName="UnitTests-Published" />
         <!--
         <SubPart PartName="UnitTests-Performance" />

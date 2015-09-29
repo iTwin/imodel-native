@@ -10,7 +10,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <ECObjects/ECObjectsAPI.h>
 
-#include "../../../../Backdoor/PublicApi/BackDoor/ECDb/Backdoor.h"
+#include "ECDbTests.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 

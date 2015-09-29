@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 #include "SchemaImportTestFixture.h"
+#include "../BackDoor/PublicApi/BackDoor/ECDb/BackDoor.h"
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -3075,7 +3076,7 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
     manyFooHasManyGoo->GetSource().SetCardinality("N");
     manyFooHasManyGoo->GetTarget().AddClass(*goo);
     manyFooHasManyGoo->GetTarget().SetCardinality("N");
-    Backdoor::ECObjects::ECSchemaReadContext::AddSchema(*readContext, *testSchema);
+    BackDoor::ECObjects::ECSchemaReadContext::AddSchema(*readContext, *testSchema);
 
     if (allowDuplicateRelationships)
         {

@@ -1,5 +1,4 @@
 #include "ECDbPublishedTests.h"
-#include <ECDb/ECDbApi.h>
 #include <Bentley/BeDirectoryIterator.h>
 #include <vector>
 #include <BeXml/BeXml.h>

@@ -14,9 +14,10 @@
     <None Include="ignore_list.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BackDoor\Backdoor.cpp" />
+    <ClCompile Include="BackDoor\BackDoor.cpp" />
+    <ClCompile Include="BackDoor\ECDbTestFixture.cpp" />
     <ClCompile Include="BackDoor\ECDbTestLogger.cpp" />
-    <ClCompile Include="NonPublished\ECDb\ECDbTestProject.cpp" />
+    <ClCompile Include="BackDoor\ECDbTestProject.cpp" />
     <ClCompile Include="Performance\DevSummitPerformanceTests.cpp" />
     <ClCompile Include="Performance\PerformanceBisDesignStudies_Test.cpp" />
     <ClCompile Include="Performance\PerformanceBisDesignTestFixture.cpp" />
@@ -47,7 +48,6 @@
     <ClCompile Include="Published\ECSqlCustomFunction_Tests.cpp" />
     <ClCompile Include="Published\ECSqlDeleteStatementCrudTestDataset.cpp" />
     <ClCompile Include="Published\ECSqlInsertStatementCrudTestDataset.cpp" />
-    <ClCompile Include="Published\ECSqlQueryAdapter_Tests.cpp" />
     <ClCompile Include="Published\ECSqlRangeTree_Tests.cpp" />
     <ClCompile Include="Published\ECSqlSelectStatementCrudTestDataset.cpp" />
     <ClCompile Include="Published\ECSqlCrudTestFixture.cpp" />
@@ -71,9 +71,10 @@
     <ClCompile Include="Published\SchemaImportTestFixture.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\Backdoor.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\BackDoor.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTestFixture.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTestProject.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTests.h" />
-    <ClInclude Include="NonPublished\PublicApi\NonPublished\ECDb\ECDbTestProject.h" />
     <ClInclude Include="Performance\PerformanceBisDesignTestFixture.h" />
     <ClInclude Include="Performance\PerformanceECDbMapCATests.h" />
     <ClInclude Include="Performance\PerformanceTests.h" />

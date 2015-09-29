@@ -8,6 +8,9 @@
 #include "ECDbTestProject.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
+//=======================================================================================    
+// @bsiclass                                                 Carole.MacDonald     09/2015
+//=======================================================================================    
 struct ECDbTestFixture : public ::testing::Test
     {
     private:

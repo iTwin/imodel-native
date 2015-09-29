@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlTestFixture.h"
 #include <cmath> // for std::pow
-#include "../BackDoor/PublicAPI/BackDoor/ECDb/Backdoor.h"
+#include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
@@ -508,7 +508,7 @@ struct GeometryTypeECSqlFunction : ECSqlScalarFunction, ScalarFunction::IScalar
             bvector<Byte> byteVec;
             byteVec.reserve(blobSizeU);
             byteVec.assign(geomBlob, geomBlob + blobSizeU);
-            IGeometryPtr geom = Backdoor::IGeometryFlatBuffer::BytesToGeometry(byteVec);
+            IGeometryPtr geom = BackDoor::IGeometryFlatBuffer::BytesToGeometry(byteVec);
             if (geom == nullptr)
                 {
                 ctx->SetResultError("Argument to GETGEOMETRYTYPE is not an IGeometry", -1);

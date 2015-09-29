@@ -8,7 +8,7 @@
 #include "PublicAPI/BackDoor/ECDb/BackDoor.h"
 #include <GeomSerialization/GeomSerializationApi.h>
 
-namespace ECDbBackdoor = BentleyApi::BeSQLite::EC::Tests::BackDoor;
+namespace ECDbBackDoor = BentleyApi::BeSQLite::EC::Tests::BackDoor;
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 

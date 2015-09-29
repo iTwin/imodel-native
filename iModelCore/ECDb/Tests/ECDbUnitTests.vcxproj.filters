@@ -1,9 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="NonPublished\ECDb\ECDbTestProject.cpp">
-      <Filter>NonPublished\ECDb</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECDbDateTime_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -25,14 +22,8 @@
     <ClCompile Include="Published\ECSqlStatement_Tests.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
-    <ClCompile Include="BackDoor\Backdoor.cpp">
-      <Filter>Backdoor</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECDbRelationshipStrength_Test.cpp">
       <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECSqlQueryAdapter_Tests.cpp">
-      <Filter>Published\ECSql</Filter>
     </ClCompile>
     <ClCompile Include="Published\ECSqlStatementCrud_Tests.cpp">
       <Filter>Published\ECSql\ECSqlCrud</Filter>
@@ -77,7 +68,7 @@
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="BackDoor\ECDbTestLogger.cpp">
-      <Filter>Backdoor</Filter>
+      <Filter>BackDoor</Filter>
     </ClCompile>
     <ClCompile Include="Performance\QueryTests.cpp">
       <Filter>Performance</Filter>
@@ -175,6 +166,15 @@
     <ClCompile Include="Published\FSRTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="BackDoor\ECDbTestFixture.cpp">
+      <Filter>BackDoor</Filter>
+    </ClCompile>
+    <ClCompile Include="BackDoor\ECDbTestProject.cpp">
+      <Filter>BackDoor</Filter>
+    </ClCompile>
+    <ClCompile Include="BackDoor\BackDoor.cpp">
+      <Filter>BackDoor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">
@@ -189,14 +189,8 @@
     <ClInclude Include="Published\ECSqlTestFixture.h">
       <Filter>Published\ECSql</Filter>
     </ClInclude>
-    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\Backdoor.h">
-      <Filter>Backdoor</Filter>
-    </ClInclude>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTests.h">
-      <Filter>Backdoor</Filter>
-    </ClInclude>
-    <ClInclude Include="NonPublished\PublicApi\NonPublished\ECDb\ECDbTestProject.h">
-      <Filter>NonPublished\PublicApi</Filter>
+      <Filter>BackDoor</Filter>
     </ClInclude>
     <ClInclude Include="Published\ECSqlStatementCrudAsserter.h">
       <Filter>Published\ECSql\ECSqlCrud</Filter>
@@ -246,14 +240,17 @@
     <ClInclude Include="Performance\PerformanceECDbMapCATests.h">
       <Filter>Performance</Filter>
     </ClInclude>
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\BackDoor.h">
+      <Filter>BackDoor</Filter>
+    </ClInclude>
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTestFixture.h">
+      <Filter>BackDoor</Filter>
+    </ClInclude>
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTestProject.h">
+      <Filter>BackDoor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="NonPublished">
-      <UniqueIdentifier>{ddecf192-6907-4ed1-befd-59402b488323}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="NonPublished\ECDb">
-      <UniqueIdentifier>{28a7cb59-54b2-4f5c-96c2-a48bde96df7f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Intermediate Files">
       <UniqueIdentifier>{ec07e436-edb0-4501-9d77-00baee770a6b}</UniqueIdentifier>
     </Filter>
@@ -263,14 +260,8 @@
     <Filter Include="Published">
       <UniqueIdentifier>{bb23112c-0b1b-4756-9e82-b0b0d8e7301b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="NonPublished\PublicApi">
-      <UniqueIdentifier>{078a114f-653a-42cf-896d-5484ba1a041d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Published\ECSql">
       <UniqueIdentifier>{cf8fae63-4351-4d33-98af-816e66e0d708}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Backdoor">
-      <UniqueIdentifier>{4888a13a-3bdb-4b36-b77c-5a4d589ea3f7}</UniqueIdentifier>
     </Filter>
     <Filter Include="Published\ECSql\ECSqlCrud">
       <UniqueIdentifier>{cdf49771-97d3-40e0-95d9-91bc31c7c801}</UniqueIdentifier>
@@ -280,6 +271,9 @@
     </Filter>
     <Filter Include="Performance\BisDesign">
       <UniqueIdentifier>{f9eb09bd-e1ae-40d4-a895-d9bbc9798957}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="BackDoor">
+      <UniqueIdentifier>{4888a13a-3bdb-4b36-b77c-5a4d589ea3f7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
