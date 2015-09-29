@@ -17,6 +17,8 @@ struct ECDbTestFixture : public ::testing::Test
         std::unique_ptr<ECDbTestProject> m_testProject;
         static bmap<std::pair<WCharCP, int>, Utf8String> s_seedDbs;
 
+        static bool s_isInitialized;
+
         virtual ECDbTestProject& _GetTestProject () const;
 
     protected:
@@ -31,6 +33,10 @@ struct ECDbTestFixture : public ::testing::Test
         virtual void SetUp () override {}
         virtual void TearDown () override {}
 
-    };
+        //! Initializes the test environment by setting up the schema read context and search dirs etc.
+        //! Gets implicitly called when calling CreateTestProject, too. Tests that don't use
+        //! that method can call this method statically.
+        static void Initialize();
+     };
 
 END_ECDBUNITTESTS_NAMESPACE

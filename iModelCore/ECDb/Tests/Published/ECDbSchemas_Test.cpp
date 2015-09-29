@@ -444,7 +444,7 @@ TEST(ECDbSchemas, SqliteIssue)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECDbSchemas, UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
     Utf8String ecdbPath = CopyOldProfileTestFileEx ("ecschema_upgrade.ecdb");
 
     ECDbTestProject testProject;

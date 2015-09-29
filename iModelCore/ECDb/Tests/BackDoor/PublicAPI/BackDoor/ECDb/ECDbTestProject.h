@@ -114,15 +114,16 @@ private:
     static void            PopulatePrimitiveValue (ECN::ECValueR value, ECN::PrimitiveType primitiveType, ECN::ECPropertyCP ecProperty);
     static void            GenerateRandomValue (ECN::ECValueR value, ECN::PrimitiveType type, ECN::ECPropertyCP ecproperty = nullptr);
 
+    //! Initializes the test environment by setting up the schema read context and search dirs etc.
+    //! Gets implicitly called when constructing an ECDbTestProject, too. Tests that don't use
+    //! the ECDbTestProject can call this method statically.
+    static void            Initialize();
+    static bool            IsInitialized();
+
 public:
                            ECDbTestProject ();
                            ~ECDbTestProject ();
     
-    //! Initializes the test environment by setting up the schema read context and search dirs etc.
-    //! Gets implicitly called when constructing an ECDbTestProject, too. Tests that don't use
-    //! the ECDbTestProject can call this method statically.
-    static void            Initialize ();
-    static bool            IsInitialized ();
     Utf8CP                 GetECDbPath () const;
     static Utf8String      BuildECDbPath (Utf8CP ecdbFileName);
 

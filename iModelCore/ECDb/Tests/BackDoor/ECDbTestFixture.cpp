@@ -12,10 +12,9 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 
 // static
 bmap<std::pair<WCharCP, int>, Utf8String> ECDbTestFixture::s_seedDbs; // empty
+bool ECDbTestFixture::s_isInitialized = false;
 
-ECDbTestFixture::ECDbTestFixture() : m_testProject(nullptr)
-    {
-    }
+ECDbTestFixture::ECDbTestFixture() : m_testProject(nullptr) {}
 
 void ECDbTestFixture::SetTestProject (std::unique_ptr<ECDbTestProject> testProject)
     {
@@ -76,6 +75,27 @@ std::unique_ptr<ECDbTestProject> ECDbTestFixture::CreateTestProject (Utf8CP ecdb
         auto testProject = std::unique_ptr<ECDbTestProject> (new ECDbTestProject ());
         testProject->Open (filePath.c_str (), openParams);
         return move (testProject);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle     09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+void ECDbTestFixture::Initialize()
+    {
+    if (!s_isInitialized)
+        {
+        //establish standard schema search paths (they are in the application dir)
+        BeFileName applicationSchemaDir;
+        BeTest::GetHost().GetDgnPlatformAssetsDirectory(applicationSchemaDir);
+
+        BeFileName temporaryDir;
+        BeTest::GetHost().GetOutputRoot(temporaryDir);
+
+        ECDb::Initialize(temporaryDir, &applicationSchemaDir);
+        srand((uint32_t) BeTimeUtilities::QueryMillisecondsCounter());
+        s_isInitialized = true;
+        }
     }
 
 END_ECDBUNITTESTS_NAMESPACE

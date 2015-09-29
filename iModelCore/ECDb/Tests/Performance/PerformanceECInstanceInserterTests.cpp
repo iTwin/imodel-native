@@ -706,7 +706,7 @@ struct TestResult
 void SetupDeleteTest(DbR db, int64_t& globalInstanceCount, TestParamters const& param)
     {
 
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
     Utf8String dbPath = ECDbTestProject::BuildECDbPath(param.GetFileName().c_str());
     WString dbPathW;
     BeStringUtilities::Utf8ToWChar(dbPathW, dbPath.c_str());

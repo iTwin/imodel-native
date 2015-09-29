@@ -108,7 +108,7 @@ TEST(ECInstanceIdHelper, ECInstanceIdInstanceIdConversion)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECDbInstances, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
 
     BeFileName schemaDir;
     BeTest::GetHost ().GetDocumentsRoot (schemaDir);
@@ -158,7 +158,7 @@ TEST (ECDbInstances, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
 
 //TEST (ECDbInstances, ViewTrigger)
 //    {
-//    ECDbTestProject::Initialize ();
+//    ECDbTestFixture::Initialize ();
 //
 //        {
 //        printf ("Deleting using ECSql\r\n");

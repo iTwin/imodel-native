@@ -16,7 +16,7 @@ static const int INSTANCES_PER_CLASS_COUNT = 100000;
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (Performance_BisDesign_TablePerClassScenario_TestFixture, Test)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
     Utf8CP dbFileName = "performance_bisdesign_tableperclass.db";
 
     Context context (10, INSTANCES_PER_CLASS_COUNT);
@@ -28,7 +28,7 @@ TEST_F (Performance_BisDesign_TablePerClassScenario_TestFixture, Test)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (Performance_BisDesign_MasterTableScenario_TestFixture, Test)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
     Utf8CP dbFileName = "performance_bisdesign_mastertable.db";
 
     Context context (10, INSTANCES_PER_CLASS_COUNT);
@@ -40,7 +40,7 @@ TEST_F (Performance_BisDesign_MasterTableScenario_TestFixture, Test)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (Performance_BisDesign_MasterTableAndDomainTablesScenario_TestFixture, Test)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
     Utf8CP dbFileName = "performance_bisdesign_mastertableplustableperclass.db";
 
     Context context (10, INSTANCES_PER_CLASS_COUNT);
@@ -53,7 +53,7 @@ TEST_F (Performance_BisDesign_MasterTableAndDomainTablesScenario_TestFixture, Te
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (Performance_BisDesign, InsertPerformanceAndNumberOfIndicesTest)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
     BeFileName dbPath (ECDbTestProject::BuildECDbPath ("performance_bisdesign_insertperformance_and_indexcount.db"));
 
     
