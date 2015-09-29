@@ -186,11 +186,11 @@ class GtestStdoutResultParser ():
     #                                           Kevin.Nyman         8/09
     #---+---------+---------+---------+---------+---------+---------+---------#
     def PrintCommandLineToRun (self, num, arrayOfTestNames, command, wasCrash):
-        result = "\nTo debug just the failing tests: \n"
+        result = "\nTo debug just the failing tests, run the following command under the debugger: \n"
         if wasCrash:
-            result = "\nTo debug the crashing test: \n"
+            result = "\nTo debug the crashing test, run the following command under the debugger: \n"
 
-        platformArg = '-a'+self.m_arch + " -exeName="+self.m_exeName
+        #platformArg = '-a'+self.m_arch + " --exeName="+self.m_exeName + " --output_dir="+self.m_outputDir
 
         numFailing = num 
         gtestFilter = ""
@@ -204,16 +204,16 @@ class GtestStdoutResultParser ():
             sep = ":"
             count += 1
 
-        cmdLine = getSrcRootEnvVar()+os.path.join("BeGTest", "gtest", "runtests.py ") + command
+        #cmdLine = getSrcRootEnvVar()+os.path.join("BeGTest", "gtest", "runtests.py ") + command
 
         if (numFailing > MAX):
             result += "WARNING::: Truncating command line to the first " + str(MAX) + " failing tests out of " + str (self.GetFailCount()) + " failing tests.\n"
-        result += "    "+ cmdLine + " " + platformArg + " --vs12 --gtest_filter=" + gtestFilter + " --gtest_break_on_failure\n"
+        #result += "    "+ cmdLine + " " + platformArg + " --vs12 --gtest_filter=" + gtestFilter + " --gtest_break_on_failure\n"
+        result += self.m_exeName + " --gtest_filter=" + gtestFilter + " --gtest_break_on_failure\n"
         if not wasCrash:
             result += "\nTo debug all tests: \n"
-            result += "    " + cmdLine + " " + platformArg + " --vs12 --gtest_break_on_failure\n"
-
-        result = 
+            #result += "    " + cmdLine + " " + platformArg + " --vs12 --gtest_break_on_failure\n"
+            result += self.m_exeName + " --gtest_break_on_failure\n"
 
         return result
 
