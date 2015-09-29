@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 #include "SchemaImportTestFixture.h"
+#include "../BackDoor/PublicApi/BackDoor/ECDb/BackDoor.h"
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -1029,6 +1030,69 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   09/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaImportTestFixture, ECDbMap_TablePrefix)
+    {
+     {
+     TestItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "        <ECCustomAttributes>"
+            "            <SchemaMap xmlns='ECDbMap.01.00'>"
+            "                <TablePrefix>myownprefix</TablePrefix>"
+            "            </SchemaMap>"
+            "        </ECCustomAttributes>"
+            "    <ECClass typeName='A' isDomainClass='True'>"
+            "        <ECProperty propertyName='P1' typeName='string' />"
+            "    </ECClass>"
+            "    <ECClass typeName='B' isDomainClass='True'>"
+            "        <ECProperty propertyName='P2' typeName='string' />"
+            "    </ECClass>"
+            "</ECSchema>",
+            true, "");
+
+    ECDb db;
+    bool asserted = false;
+    AssertSchemaImport(db, asserted, testItem, "tableprefix.ecdb");
+    ASSERT_FALSE(asserted);
+
+    //verify tables
+    ASSERT_TRUE(db.TableExists("myownprefix_A"));
+    ASSERT_TRUE(db.TableExists("myownprefix_B"));
+    ASSERT_FALSE(db.TableExists("ts_A"));
+    ASSERT_FALSE(db.TableExists("ts_B"));
+    }
+
+     {
+     TestItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+                       "<ECSchema schemaName='test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                       "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                       "        <ECCustomAttributes>"
+                       "            <SchemaMap xmlns='ECDbMap.01.00'>"
+                       "            </SchemaMap>"
+                       "        </ECCustomAttributes>"
+                       "    <ECClass typeName='A' isDomainClass='True'>"
+                       "        <ECProperty propertyName='P1' typeName='string' />"
+                       "    </ECClass>"
+                       "    <ECClass typeName='B' isDomainClass='True'>"
+                       "        <ECProperty propertyName='P2' typeName='string' />"
+                       "    </ECClass>"
+                       "</ECSchema>",
+                       true, "");
+
+     ECDb db;
+     bool asserted = false;
+     AssertSchemaImport(db, asserted, testItem, "tableprefix.ecdb");
+     ASSERT_FALSE(asserted);
+
+     //verify tables
+     ASSERT_TRUE(db.TableExists("ts_A"));
+     ASSERT_TRUE(db.TableExists("ts_B"));
+     }
+
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -3075,7 +3139,7 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
     manyFooHasManyGoo->GetSource().SetCardinality("N");
     manyFooHasManyGoo->GetTarget().AddClass(*goo);
     manyFooHasManyGoo->GetTarget().SetCardinality("N");
-    Backdoor::ECObjects::ECSchemaReadContext::AddSchema(*readContext, *testSchema);
+    BackDoor::ECObjects::ECSchemaReadContext::AddSchema(*readContext, *testSchema);
 
     if (allowDuplicateRelationships)
         {

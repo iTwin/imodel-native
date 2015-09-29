@@ -5,7 +5,6 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECDbPublishedTests.h"
 #include "SchemaImportTestFixture.h"
 
 USING_NAMESPACE_BENTLEY_EC
@@ -17,7 +16,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaImportTestFixture, ECDbSchemaRules_Casing)
     {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
 
     std::vector <TestItem> testItems {
         TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
@@ -99,7 +98,7 @@ TEST_F(SchemaImportTestFixture, ECDbSchemaRules_Casing)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaImportTestFixture, ECDbSchemaRules_SchemaNamespacePrefix)
     {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
 
     {
     TestItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='123' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -180,7 +179,7 @@ TEST_F(SchemaImportTestFixture, ECDbSchemaRules_SchemaNamespacePrefix)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaImportTestFixture, ECDbSchemaRules_Instantiability)
     {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
 
     TestItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                       "<ECClass typeName='AbstractClass' isDomainClass='False' isStruct='False' isCustomAttributeClass='False' >"
@@ -230,7 +229,7 @@ TEST_F(SchemaImportTestFixture, ECDbSchemaRules_Instantiability)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaImportTestFixture, ECDbSchemaRules_PropertyOfSameTypeAsClass)
     {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
 
     std::vector <TestItem> testItems {
         TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
@@ -296,7 +295,7 @@ TEST_F(SchemaImportTestFixture, ECDbSchemaRules_PropertyOfSameTypeAsClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaImportTestFixture, ECDbSchemaRules_Relationship)
     {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
 
     std::vector <TestItem> testItems {
         TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -529,7 +528,7 @@ TEST_F(SchemaImportTestFixture, ECDbSchemaRules_Relationship)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaImportTestFixture, ECDbSchemaRules_ConsistentClassHierarchy)
     {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
 
     std::vector <TestItem> testItems {
         TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"

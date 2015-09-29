@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/BackDoor/PublicAPI/BackDoor/ECDb/Backdoor.h $
+|  $Source: Tests/BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -18,7 +18,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //! tests to call functions that are not part of the published api.
 // @bsiclass                                                 
 //+===============+===============+===============+===============+===============+======
-namespace Backdoor
+namespace BackDoor
     {
     namespace ECObjects
         {

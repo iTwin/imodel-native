@@ -5,7 +5,6 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "../NonPublished/PublicApi/NonPublished/ECDb/ECDbTestProject.h"
 #include <rapidjson/BeRapidJson.h>
 #include "PerformanceTests.h"
 

@@ -1509,7 +1509,7 @@ void setProductsValues (StandaloneECInstancePtr instance, int ProductId, Utf8CP 
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECSqlTestFixture, DeleteWithNestedSelectStatments)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
 
     ECDb ecdb;
     ASSERT_TRUE (BE_SQLITE_OK == ECDbTestUtility::CreateECDb (ecdb, nullptr, L"DeleteWithNestedSelect.ecdb"));

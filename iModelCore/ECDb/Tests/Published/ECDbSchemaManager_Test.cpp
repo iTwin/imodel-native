@@ -154,7 +154,7 @@ TEST (ECDbSchemaManager, GetDerivedECClassesWithoutIncrementalLoading)
 //+---------------+---------------+---------------+---------------+---------------+------
 void SetupTestECDb (BeFileNameCR filePath)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
 
     if (filePath.DoesPathExist ())
         {
@@ -249,7 +249,7 @@ ECSchemaPtr CreateTestSchema ()
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbMap, RelationshipMapCAOnSubclasses)
     {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
 
     ECDb ecdb;
     auto stat = ECDbTestUtility::CreateECDb(ecdb, nullptr, L"RelationshipMapCAOnSubclasses.ecdb");
@@ -357,7 +357,7 @@ BentleyStatus TryGetHasForeignKey(bool& hasForeignKey, ECDbCR ecdb, Utf8CP table
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbMap, ForeignKeyMapWhereLinkTableIsRequired)
     {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
     WCharCP ecdbName = L"ForeignKeyMapWhereLinkTableIsRequired.ecdb";
 
         {
@@ -400,7 +400,7 @@ TEST(ECDbMap, ForeignKeyMapWhereLinkTableIsRequired)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbMap, ForeignKeyMapWithKeyProperty)
     {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
     WCharCP ecdbName = L"ForeignKeyMapWithKeyProp.ecdb";
     Utf8CP childTableName = "ts_Child";
 
@@ -693,7 +693,7 @@ TEST(ECDbMap, ForeignKeyMapWithKeyProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbMap, ForeignKeyMapWithECInstanceIdKeyProperty)
     {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
     WCharCP ecdbName = L"ForeignKeyMapWithECInstanceIdKeyProp.ecdb";
     Utf8CP childTableName = "ts_Child";
 
@@ -914,7 +914,7 @@ TEST(ECDbMap, ForeignKeyMapWithECInstanceIdKeyProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbMap, ForeignKeyMapWithoutKeyProperty)
     {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
 
     WCharCP ecdbName = L"ForeignKeyMapWithoutKeyProp.ecdb";
     Utf8CP childTableName = "ts_Child";
@@ -1207,7 +1207,7 @@ TEST(ECDbSchemaManager, ImportSchema)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbSchemaManager, AddDuplicateECSchemaInCache)
 {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
 
     ECDb ecdb;
     auto stat = ECDbTestUtility::CreateECDb(ecdb, nullptr, L"ecschemamanagertest.ecdb");
@@ -1233,7 +1233,7 @@ TEST(ECDbSchemaManager, AddDuplicateECSchemaInCache)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbSchemaManager, ImportDuplicateSchema)
 {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
 
     ECDb ecdb;
     auto stat = ECDbTestUtility::CreateECDb(ecdb, nullptr, L"ecschemamanagertest.ecdb");
@@ -1306,7 +1306,7 @@ TEST(ECDbSchemaManager, UpdateExistingSchema)
 TEST(ECDbSchemaManager, UpdateExsitingSchemaDifferntCache)
 {
 
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
     ECDb testEcdb;
     DbResult dbresult = ECDbTestUtility::CreateECDb(testEcdb, nullptr, L"ecschemamanagertest.ecdb");
     ASSERT_TRUE(dbresult == BE_SQLITE_OK) << "Couldn't create ecdb";
@@ -1368,7 +1368,7 @@ TEST(ECDbSchemaManager, UpdateExsitingSchemaDifferntCache)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbSchemaManager, SchemaCache)
 {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
     ECSchemaPtr schemaPtr = NULL;
     ECSchemaReadContextPtr  context = nullptr;
@@ -1403,7 +1403,7 @@ TEST(ECDbSchemaManager, SchemaCache)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbSchemaManager, ImportingSchemaInDifferentECDB)
 {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
     ECDb ecdb, testecdb;
     auto stat = ECDbTestUtility::CreateECDb(ecdb, nullptr, L"testecdbSchema.ecdb");
     ASSERT_TRUE(stat == BE_SQLITE_OK);
@@ -1428,7 +1428,7 @@ TEST(ECDbSchemaManager, ImportingSchemaInDifferentECDB)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbSchemaManager, ImportSupplementedSchemaDoSupplementationFalse)
 {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
     ECDb testecdb;
     auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
     ASSERT_TRUE(stat == BE_SQLITE_OK);
@@ -1467,7 +1467,7 @@ TEST(ECDbSchemaManager, ImportSupplementedSchemaDoSupplementationFalse)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbSchemaManager, ImportMultipalSupplementalSchemas)
 {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
     ECDb testecdb;
     auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
     ASSERT_TRUE(stat == BE_SQLITE_OK);
@@ -1535,7 +1535,7 @@ TEST(ECDbSchemaManager, ImportMultipalSupplementalSchemas)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbSchemaManager, ImportLowPrioritySupplementalSchama)
 {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
     ECDb testecdb;
     auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
     ASSERT_TRUE(stat == BE_SQLITE_OK);
@@ -1561,7 +1561,7 @@ TEST(ECDbSchemaManager, ImportLowPrioritySupplementalSchama)
 //+---------------+---------------+---------------+---------------+---------------+------
  TEST(ECDbSchemaManager, ImportReferenceSchemaReferedByMultipleSchemas)
     {
-     ECDbTestProject::Initialize();
+     ECDbTestFixture::Initialize();
      ECDb testecdb;
      auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"referancedSchematest.ecdb");
      ASSERT_TRUE(stat == BE_SQLITE_OK);
@@ -1586,7 +1586,7 @@ TEST(ECDbSchemaManager, ImportLowPrioritySupplementalSchama)
  //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbSchemaManager, ImportHighPrioritySupplementalSchama)
 {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
     ECDb testecdb;
     auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
     ASSERT_TRUE(stat == BE_SQLITE_OK);
@@ -1630,7 +1630,7 @@ TEST(ECDbSchemaManager, TestGetClassResolver)
 // A primary schema should be supplemented with the latest available supplemental schema
 TEST(ECDbSchemaManager, SupplementSchemaWithLatestSupplementalSchema)
 {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
     ECDb testecdb;
     auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
     ASSERT_TRUE(stat == BE_SQLITE_OK);
@@ -1678,7 +1678,7 @@ TEST(ECDbSchemaManager, SupplementSchemaWithLatestSupplementalSchema)
 //supplemental schema whose primary schema's major version is greater then the major version of current primary schema.
 TEST(ECDbSchemaManager, SupplementSchemaWithGreaterMajorVersionPrimary)
 {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
     ECDb testecdb;
     auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
     ASSERT_TRUE(stat == BE_SQLITE_OK);
@@ -1722,7 +1722,7 @@ TEST(ECDbSchemaManager, SupplementSchemaWithGreaterMajorVersionPrimary)
 //supplement current primary schema with a supplemental schema whose primary schema's minor version is less then the current schema.
 TEST(ECDbSchemaManager, SupplementSchemaWithLessMinorVersionPrimarySchema)
 {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
     ECDb testecdb;
     auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
     ASSERT_TRUE(stat == BE_SQLITE_OK);
@@ -1762,7 +1762,7 @@ TEST(ECDbSchemaManager, SupplementSchemaWithLessMinorVersionPrimarySchema)
 //suppelement schema with a supplemental schema whose primary schema's minor version is greater then the current.
 TEST(ECDbSchemaManager, SupplementSchemaWithGreaterMinorVersionPrimarySchema)
 {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
     ECDb testecdb;
     auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
     ASSERT_TRUE(stat == BE_SQLITE_OK);
