@@ -45,6 +45,8 @@ std::unique_ptr<ECDbTestProject> ECDbTestFixture::CreateTestProject (Utf8CP ecdb
 
 std::unique_ptr<ECDbTestProject> ECDbTestFixture::CreateTestProject (Utf8CP ecdbFileName, WCharCP schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount)
     {
+    Initialize();
+
     Utf8String filePath;
     // Create and populate a sample project
         {
