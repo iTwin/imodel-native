@@ -1929,7 +1929,6 @@ TEST(ECDbSchemas, ECDbSchemaManagerAPITest)
         {
          ECSchemaCP outSchema = schemaManager.GetECSchema (schemaKey.GetName ());
          EXPECT_TRUE(outSchema != nullptr);
-         EXPECT_TRUE(outSchema->HasId());
          ECSchemaId ecSchemaId = outSchema->GetId();
          EXPECT_TRUE(ecSchemaId != 0);
 
@@ -2264,29 +2263,6 @@ void ECDbSchemaFixture::deleteExistingDgnb(WCharCP ECDbName)
         }
     
     }
-/*---------------------------------------------------------------------------------**//**
- * @bsimethod                                   Adeel.Shoukat                        04/13
- +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDbSchemaFixture,SchemaMapCustomAttributeTablePrefix)
-    {
-    ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
-    SchemaKey schemaKey ("ECDbMap", 1, 0);
-    ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
-    EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
-    ECClassCP testClass = ecdbMapSchema->GetClassCP("SchemaMap");
-    IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    ecInctance->SetValue("TablePrefix", ECValue("Pre"));
-    MappingSchema->SetCustomAttribute(*ecInctance);
-    WCharCP fileName=L"SchemaHintTablePrefix.ecdb";
-    deleteExistingDgnb(fileName);
-    DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
-    ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
-    auto status = db. Schemas ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
-    ASSERT_EQ (SUCCESS, status);
-    EXPECT_TRUE(db.TableExists("Pre_A"));
-    EXPECT_TRUE(db.TableExists("Pre_ArrayOfB"));
-    EXPECT_TRUE(db.TableExists("Pre_ArrayOfC"));
-    }
 
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Adeel.Shoukat                        04/13
@@ -2297,7 +2273,7 @@ TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeOwnTableNonPolymorphic)
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
     SchemaKey schemaKey ("ECDbMap", 1, 0);
     ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
-    EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
+    EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.m_schemaName.c_str() << "' not found.";
     ECClassCP testClass = ecdbMapSchema->GetClassCP("ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ecInctance->SetValue("MapStrategy.Strategy", ECValue("OwnTable"));
@@ -2319,7 +2295,7 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeOwnTablePolymorphic)
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
     SchemaKey schemaKey ("ECDbMap", 1, 0);
     ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
-    EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
+    EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.m_schemaName.c_str() << "' not found.";
     ECClassCP testClass = ecdbMapSchema->GetClassCP("ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ecInctance->SetValue("MapStrategy.Strategy", ECValue("OwnTable"));
@@ -2342,7 +2318,7 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeNotMapped)
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
     SchemaKey schemaKey ("ECDbMap", 1, 0);
     ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
-    EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
+    EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.m_schemaName.c_str() << "' not found.";
     ECClassCP testClass = ecdbMapSchema->GetClassCP("ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ecInctance->SetValue("MapStrategy.Strategy", ECValue("NotMapped"));
@@ -2363,7 +2339,7 @@ TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeSharedTablePolymorphic)
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
     SchemaKey schemaKey("ECDbMap", 1, 0);
     ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
-    EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
+    EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.m_schemaName.c_str() << "' not found.";
     ECClassCP testClass = ecdbMapSchema->GetClassCP("ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ecInctance->SetValue("MapStrategy.Strategy", ECValue("SharedTable"));
@@ -2392,7 +2368,7 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeNotMappedPolymorphic)
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
     SchemaKey schemaKey ("ECDbMap", 1, 0);
     ECSchemaPtr ecdbMapSchema =  MappingSchemaContext->LocateSchema(schemaKey,SCHEMAMATCHTYPE_LatestCompatible);
-    EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
+    EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.m_schemaName.c_str() << "' not found.";
     ECClassCP testClass = ecdbMapSchema->GetClassCP("ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ecInctance->SetValue("MapStrategy.Strategy", ECValue("NotMapped"));

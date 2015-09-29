@@ -1658,4 +1658,48 @@ BentleyStatus ECDbTestUtility::SetECInstanceId (ECN::IECInstanceR instance, ECIn
     return ecstat == ECOBJECTS_STATUS_Success ? SUCCESS : ERROR;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Muhammad.Zaighum                  05/13
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BentleyStatus ECDbTestUtility::ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath)
+    {
+    const Byte utf8BOM[] = {0xef, 0xbb, 0xbf};
+
+    Utf8String fileContent;
+
+    BeFile file;
+    if (BeFileStatus::Success != file.Open(jsonFilePath, BeFileAccess::Read))
+        return ERROR;
+
+    uint64_t rawSize;
+    if (BeFileStatus::Success != file.GetSize(rawSize) || rawSize > UINT32_MAX)
+        return ERROR;
+
+    uint32_t sizeToRead = (uint32_t) rawSize;
+
+    uint32_t sizeRead;
+    ScopedArray<Byte> scopedBuffer(sizeToRead);
+    Byte* buffer = scopedBuffer.GetData();
+    if (BeFileStatus::Success != file.Read(buffer, &sizeRead, sizeToRead) || sizeRead != sizeToRead)
+        return ERROR;
+
+    if (buffer[0] != utf8BOM[0] || buffer[1] != utf8BOM[1] || buffer[2] != utf8BOM[2])
+        {
+        LOG.error("Json file is expected to be encoded in UTF-8");
+        return ERROR;
+        }
+
+    for (uint32_t ii = 3; ii < sizeRead; ii++)
+        {
+        if (buffer[ii] == '\n' || buffer[ii] == '\r')
+            continue;
+        fileContent.append(1, buffer[ii]);
+        }
+
+    file.Close();
+
+    return Json::Reader::Parse(fileContent, jsonInput) ? SUCCESS : ERROR;
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

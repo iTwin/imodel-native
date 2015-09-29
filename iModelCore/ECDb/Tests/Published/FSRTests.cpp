@@ -1,12 +1,21 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  $Source: Tests/Published/FSRTests.cpp $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 #include <Bentley/BeDirectoryIterator.h>
 #include <vector>
+#include <BeSQLite/BeSQLite.h>
 #include <BeXml/BeXml.h>
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_LOGGING
+
 using namespace Tests;
 
 

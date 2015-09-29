@@ -190,6 +190,8 @@ public:
     static void     DebugDumpJson (const Json::Value& jsonValue);
     static bool     IsECValueNull (ECN::ECValueCR value);
     
+    static BentleyStatus ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath);
+
     static bool     CompareECDateTimes (int64_t expectedECTicks, int64_t actualECTicks);
     static void     AssertECDateTime (ECN::ECValueCR expectedECValue, const Db& db, double actualJd);
     static void     AssertECDateTime (int64_t expectedCETicks, int64_t actualCETicks, Utf8CP assertMessageHeader);

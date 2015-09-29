@@ -337,7 +337,7 @@ Utf8CP nonNullPropertyName
 )
     {
     ECClassP testClassP = testProject.GetTestSchemaManager ().GetTestSchema ()->GetClassP (testClassName);
-    if (testClassP != nullptr)
+    if (testClassP == nullptr)
         return ERROR;
 
     testClass = testClassP;
@@ -1218,7 +1218,7 @@ TEST(ECDbInstances, AdapterCheckClassBeforeOperation)
     BeTest::SetFailOnAssert(false);
     // Parse JSON value using JsonCpp
     Json::Value jsonInput;
-    ReadJsonInputFromFile(jsonInput, jsonInputFile);
+    ASSERT_EQ(SUCCESS, ECDbTestUtility::ReadJsonInputFromFile(jsonInput, jsonInputFile));
 
     JsonInserter jsonInserter(db, *employee);
     sms = jsonInserter.Insert(instanceKey, jsonInput);
