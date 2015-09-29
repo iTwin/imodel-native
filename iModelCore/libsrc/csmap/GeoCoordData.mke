@@ -2,7 +2,7 @@
 #
 #     $Source: GeoCoordData.mke $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 #----------------------------------------------------------------
@@ -17,9 +17,9 @@ PolicyFile=${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
 %include mdl.mki
 
 %if defined (Minimal)
-    GeoCoordData = $(outBuildContexts)csmap/Delivery/GeoCoordDataMinimal/
+    GeoCoordData = $(BuildContext)Delivery/GeoCoordDataMinimal/
 %else
-    GeoCoordData = $(outBuildContexts)csmap/Delivery/GeoCoordData/
+    GeoCoordData = $(BuildContext)Delivery/GeoCoordData/
 %endif
 
 #----------------------------------------------------------------------
@@ -39,10 +39,14 @@ always:
 # After creation of link, the compilation of dictionary is performed.
 # Note that compiled binary dictionary is now built compile time and not 
 # source code controlled.
-always:
-    CreateSymLinks.py   -f"$(OutputRootDir)build/csmap/OSTN02.txt=$(csDictionariesDir)OSTN02.txt"
-    CreateSymLinks.py   -f"$(OutputRootDir)build/csmap/OSTN97.txt=$(csDictionariesDir)OSTN97.txt"
-	$(OutputRootDir)build/csmap/cs_comp.exe -b $(csDictionariesDir) $(OutputRootDir)build/csmap/
+# THIS IS WHAT SHOULD HAVE BEEN DONE BUT TO SOLVE ADMINISTRATIVE PROBLEMS UPON iOS AND ANDROID BUILD
+# WE REVERTED TO BUILDING MANUALLY THE DICTIONARY AND CHECKING IT INTO SOURCE CODE TREE.
+# THE APPROPRIATE MANAGERS ARE READY TO LIVE WITH MANUAL MAINTENANCE AND CLUTTERING OF MERCURIAL SERVER
+# WITH BINARY FILES
+#always:
+#    CreateSymLinks.py   -f"$(OutputRootDir)build/csmap/OSTN02.txt=$(csDictionariesDir)OSTN02.txt"
+#    CreateSymLinks.py   -f"$(OutputRootDir)build/csmap/OSTN97.txt=$(csDictionariesDir)OSTN97.txt"
+#	$(CS_COMP_PATH)build/csmap/cs_comp$(exeext) -b $(csDictionariesDir) $(OutputRootDir)build/csmap/
 
 #---------------------------------------------------------------------
 #   This is the minimal set of data for products that don't allow selection
@@ -51,10 +55,10 @@ always:
 #---------------------------------------------------------------------
 %if defined(Minimal)
 always:
-    CreateSymLinks.py   -f"$(GeoCoordData)datum.dty=$(OutputRootDir)build/csmap/datum.dty"
-    CreateSymLinks.py   -f"$(GeoCoordData)GeodeticPath.dty=$(OutputRootDir)build/csmap/GeodeticPath.dty"
-    CreateSymLinks.py   -f"$(GeoCoordData)GeodeticTransform.dty=$(OutputRootDir)build/csmap/GeodeticTransform.dty"
-    CreateSymLinks.py   -f"$(GeoCoordData)ellipsoid.dty=$(OutputRootDir)build/csmap/ellipsoid.dty"
+    CreateSymLinks.py   -f"$(GeoCoordData)datum.dty=$(csDeliverDir)datum.dty"
+    CreateSymLinks.py   -f"$(GeoCoordData)GeodeticPath.dty=$(csDeliverDir)GeodeticPath.dty"
+    CreateSymLinks.py   -f"$(GeoCoordData)GeodeticTransform.dty=$(csDeliverDir)GeodeticTransform.dty"
+    CreateSymLinks.py   -f"$(GeoCoordData)ellipsoid.dty=$(csDeliverDir)ellipsoid.dty"
     CreateSymLinks.py   -f"$(GeoCoordData)license.txt=$(csDictionariesDir)license.txt"
 
 %endif
@@ -64,7 +68,7 @@ always:
 #---------------------------------------------------------------------
 %if !defined (Minimal) || defined (NAD27ConvNAD83)
 always:
-    CreateSymLinks.py   -m"$(GeoCoordData)USA/NADCON=$(csDictionariesDir)USA/NADCON/*"
+    CreateSymLinks.py   -m"$(GeoCoordData)Usa/Nadcon=$(csDictionariesDir)Usa/Nadcon/*"
 
 %endif
 
@@ -75,8 +79,8 @@ always:
 
 #    Geodetic Data Catalog files, which are used in conjunction with .las, .los files:
 always:
-    CreateSymLinks.py   -f"$(GeoCoordData)GeoidHeight.gdc=$(csDictionariesDir)GeoidHeight.gdc
-    CreateSymLinks.py   -f"$(GeoCoordData)Vertcon.gdc=$(csDictionariesDir)Vertcon.gdc
+    CreateSymLinks.py   -f"$(GeoCoordData)GeoidHeight.gdc=$(csDictionariesDir)GeoidHeight.gdc"
+    CreateSymLinks.py   -f"$(GeoCoordData)Vertcon.gdc=$(csDictionariesDir)Vertcon.gdc"
 
 always:
     CreateSymLinks.py   -f"$(GeoCoordData)coordsys.dty=$(OutputRootDir)build/csmap/coordsys.dty"
@@ -96,11 +100,12 @@ always:
     CreateSymLinks.py   -d"$(GeoCoordData)SouthAfrica=$(csDictionariesDir)SouthAfrica"
     CreateSymLinks.py   -d"$(GeoCoordData)Spain=$(csDictionariesDir)Spain"
     CreateSymLinks.py   -d"$(GeoCoordData)Switzerland=$(csDictionariesDir)Switzerland"
-    CreateSymLinks.py   -d"$(GeoCoordData)USA/HARN=$(csDictionariesDir)USA/HARN"
-    CreateSymLinks.py   -d"$(GeoCoordData)USA/VERTCON=$(csDictionariesDir)USA/VERTCON"
+    CreateSymLinks.py   -d"$(GeoCoordData)Usa/Harn=$(csDictionariesDir)Usa/Harn"
+    CreateSymLinks.py   -d"$(GeoCoordData)Usa/Vertcon=$(csDictionariesDir)Usa/Vertcon"
 %endif
     
-%if !defined (Minimal)
+##### NOT_NOW_GRAPHITE_WIP #####
+%if !defined (Minimal) && $(TARGET_PLATFORM)=="Windows" && defined (NOT_NOW_GRAPHITE_WIP)
     installer:
         $(_bmake) $(make_opt) $(baseDir)install/GeoCoordDataMergeModule.mke
 

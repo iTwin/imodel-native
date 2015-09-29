@@ -441,6 +441,15 @@ int EXP_LVL9 CSmrcatF (Const struct cs_Mrcat_ *mrcat,double xy [2],Const double 
 			del_lng = lng - mrcat->cent_lng;
 		}
 	}
+	if (del_lng > mrcat->eastLimit)
+	{
+		rtn_val = cs_CNVRT_RNG;
+		while (del_lng > mrcat->eastLimit)
+		{
+			lng -= cs_Two_pi;
+			del_lng = lng - mrcat->cent_lng;
+		}
+	}
 
 
 

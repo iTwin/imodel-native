@@ -15,11 +15,11 @@
      -->
 
 
-    <Part Name="GeoCoordData" BMakeFile="GeoCoordData.mke">
-        <RequiredRepository>bsitools-wix_3.0.5419.0</RequiredRepository>
+    <Part Name="GeoCoordData" BentleyBuildMakeFile="GeoCoordData.mke">
+<!--        <RequiredRepository>bsitools-wix_3.0.5419.0</RequiredRepository> -->
         <SubPart PartName="GeoCoordDataMinimal"/>
         <Bindings>
-            <Files ProductDirectoryName="GeoCoordData" >
+            <Files ProductDirectoryName="GeoCoordData" SubPartDirectory="GeoCoordData" SourceName="Delivery/GeoCoordData">
                 Delivery/GeoCoordData/coordsys.dty
                 Delivery/GeoCoordData/coordsys.dty.xml
                 Delivery/GeoCoordData/NameMapper.csv
@@ -28,7 +28,7 @@
                 Delivery/GeoCoordData/Vertcon.gdc
                 Delivery/GeoCoordData/UserOverrideGeodeticTransformSeed.asc
             </Files>
-            <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="USA" SourceName="Delivery/GeoCoordData/USA" />
+            <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="Usa" SourceName="Delivery/GeoCoordData/Usa" />
             <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="Australia" SourceName="Delivery/GeoCoordData/Australia" />
             <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="Brazil" SourceName="Delivery/GeoCoordData/Brazil" />
             <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="Canada" SourceName="Delivery/GeoCoordData/Canada" />
@@ -39,14 +39,14 @@
             <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="SouthAfrica" SourceName="Delivery/GeoCoordData/SouthAfrica" />
             <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="Spain" SourceName="Delivery/GeoCoordData/Spain" />
             <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="Switzerland" SourceName="Delivery/GeoCoordData/Switzerland" />
-            <MergeModules ProductDirectoryName="CSMapMergeModules">Install/GeoCoordDataMergeModule.msm</MergeModules>
+<!--             <MergeModules ProductDirectoryName="CSMapMergeModules">Install/GeoCoordDataMergeModule.msm</MergeModules> -->
         </Bindings>
     </Part>
 
-    <Part Name="GeoCoordDataMinimal" BMakeFile="GeoCoordData.mke" BMakeOptions="+dMinimal">
+    <Part Name="GeoCoordDataMinimal" BentleyBuildMakeFile="GeoCoordData.mke" BMakeOptions="+dMinimal">
         <SubPart PartName="CsmapCompiler"/>
         <Bindings>
-            <Files ProductDirectoryName="GeoCoordData">
+            <Files ProductDirectoryName="GeoCoordData" SubPartDirectory="GeoCoordData" SourceName="Delivery/GeoCoordDataMinimal">
                 Delivery/GeoCoordDataMinimal/datum.dty
                 Delivery/GeoCoordDataMinimal/GeodeticPath.dty
                 Delivery/GeoCoordDataMinimal/GeodeticTransform.dty
@@ -56,10 +56,24 @@
         </Bindings>
     </Part>
 
-    <Part Name="csmap" BentleyBuildMakeFile="csmap.mke">
+    <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
+    <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke">
         <Bindings>
             <VendorAPI Domain="csmap" />
-            <Libs>Delivery/*$(stlibext)</Libs>
+            <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/csmap-notice.txt</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="CsmapCompiler" BMakeFile="Dictionaries/compiler.mke" OnlyPlatforms="x86,x64">
+        <SubPart PartName="csmapStatic"/>
+    </Part>
+
+    <Part Name="csmapStatic" BentleyBuildMakeFile="csmap.mke" BMakeOptions="+dCREATE_STATIC_LIBRARIES">
+        <SubPart PartName="PublicAPI"/>
+        <!-- This MKE file can also produce a shared library with MFC support; you will need to create another part if you want that. -->
+        <Bindings>
+            <Libs ProductDirectoryName="CsmapStaticLibDir" Required="false">Delivery/$(stlibprefix)BeCsmapStatic$(stlibext)</Libs>
+            <Libs>Delivery/$(stlibprefix)BeCsmapStatic$(stlibdebugext)</Libs>
         </Bindings>
     </Part>
 

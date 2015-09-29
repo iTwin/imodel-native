@@ -91,7 +91,7 @@ int EXP_LVL1 CS_altdr (Const char *alt_dir)
 	   
 	   There is no "getenv" in the NS VC++ Version 8 embedded
 	   environment. */
-#if !defined (__WINCE__)
+#if !defined (__WINCE__) && !defined (BENTLEY_WINRT)
 	if (alt_dir == NULL)
 	{
 		cp = CS_getenv (cs_Envvar);
@@ -141,9 +141,23 @@ int EXP_LVL1 CS_altdr (Const char *alt_dir)
 	   desired location.  Note, we only use the name here, we
 	   don't check the magic number.  Maybe we should. */
 
+#if defined (GEOCOORD_ENHANCEMENT) 
+
+#if defined (CHECK_COORDSYS_FILE)
 	strcpy (cp,cs_Csname);
 	st = CS_access (ctemp,0);
 	*cp = '\0';
+#else
+	// strcpy (cp,cs_Dtname);
+        st = CS_access (ctemp, 0);
+#endif
+
+#else
+	strcpy (cp,cs_Csname);
+	st = CS_access (ctemp,0);
+	*cp = '\0';		
+#endif
+
 	if (st == 0)
 	{
 		/* Here if a Coordinate System Dictionary exists

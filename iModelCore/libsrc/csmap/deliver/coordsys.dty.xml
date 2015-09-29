@@ -6971,6 +6971,21 @@
                     <KeyName>DHDN/BeTA2010.Gauss3d-5</KeyName>
                   </Member>
                   <Member>
+                    <KeyName>DHDN/BeTA2010.Gauss3d-1</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>DHDN/BeTA2010.Gauss3d-2</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>DHDN/BeTA2010.Gauss3d-3</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>DHDN/BeTA2010.Gauss3d-4</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>DHDN/BeTA2010.Gauss3d-5</KeyName>
+                  </Member>
+                  <Member>
                     <KeyName>DHDN/BeTA.Gauss3d-1</KeyName>
                   </Member>
                   <Member>
@@ -9793,7 +9808,6 @@
               </Member>
               <Member>
                 <KeyName>EPSG:20437</KeyName>
-              </Member>
             </Members>
             <Groups>
               <Group>
@@ -22896,8 +22910,6 @@
             <Members>
               <Member>
                 <KeyName>EPSG:900913</KeyName>
-              </Member>
-              <Member>
                 <KeyName>WGS84.UPSNorth</KeyName>
               </Member>
               <Member>
@@ -26739,6 +26751,9 @@
                   </Member>
                   <Member>
                     <KeyName>MGI.AustriaLambert</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>MGI.Austria</KeyName>
                   </Member>
                   <Member>
                     <KeyName>MGI.Austria</KeyName>

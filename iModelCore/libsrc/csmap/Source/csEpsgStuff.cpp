@@ -2982,7 +2982,11 @@ bool TcsEpsgDataSetV6::ProjectedCoordsys (struct cs_Csdef_& coordsys,const TcsEp
 		// CS-MAP projections.
 		for (prjTblPtr = cs_Prjtab;prjTblPtr->code != cs_PRJCOD_END;prjTblPtr += 1)
 		{
-			if (mthEpsgCode == prjTblPtr->epsg)
+// BENTLEY CHANGE - arm64 long vs. int size difference
+//          if (mthEpsgCode == prjTblPtr->epsg)
+			if (mthEpsgCode == (unsigned long)prjTblPtr->epsg)
+// END BENTLEY CHANGE
+
 			{
 				break;
 			}

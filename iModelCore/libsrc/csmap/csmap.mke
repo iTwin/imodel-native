@@ -6,7 +6,7 @@
 #       $Date: 2010/04/21 15:09:58 $
 #     $Author: Alain.Robert $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 #----------------------------------------------------------------
@@ -32,32 +32,37 @@
 #   Define standard macros.
 #----------------------------------------------------------------------
 # Determine the subdirectory of objects to put csmap objects
-PolicyFile      = ${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
 baseDir 	= $(_MakeFilePath)
 
 HAVE_PERMISSION_TO_COMPILE_AT_W3=1
+
+#libsrc\csmap\source\rcWktKonstants.cpp(219,53) : error: 'cs_EpsgOpMthMap' initialized and declared 'extern'
+GCC_NOSTRICT=1
 
 %ifdef MFC
   uiAppName     = csmapmfcui
   appName       = csmapmfc
 %else
   uiAppName     = csmapui
-  appName       = BeCsmap
+  appName       = BeCsmapStatic
 %endif
 
+# Ignore warnings in third-party code.
+IS_THIRD_PARTY_LIBRARY = 1
+
 PolicyFile=${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
+
 %include mdl.mki
 
-
-
-
 o = $(OutputRootDir)build/csmap/
+
+CCompPDBName = BeCsmapStatic
 
 #----------------------------------------------------------------------
 #   CSMap subdirectories
 #----------------------------------------------------------------------
-csSrcDir = $(baseDir)source/
-csMapInc = $(baseDir)include/
+csSrcDir = $(baseDir)Source/
+csMapInc = $(baseDir)Include/
 
 dirToSearch = $(csMapInc)
 %include cincapnd.mki
@@ -103,38 +108,32 @@ nameToDefine = BENTLEY_TOOLSUBS_MEMALLOC
 # CCompOpts + -Fp$(o)cs_map.pch -YX$(lInc)cs_map.h
 CCompOpts + -D__CPP__
 
+%if defined (MSVC_VERSION)
+    %if MSVC_VERSION >= 1800
+        # New warning in VC12; ignore instead of changing third-party code.
+        # warning C4756: overflow in constant arithmetic
+        CCompOpts + -wd4756
+    %endif
 
 # Run-Time Error Checks: Remove the 'c' option which check is a value is assigned to a smaller data type and results in a data loss.
 # It happens a lot when decompressing and since this an external lib, we won't fix it. Error occurs in send_bits (trees.c)
 VCRuntimeCheckOption = \/RTCsu
 
-#---------------------------------------------
-# Specify source, objects and resources
-#---------------------------------------------
-%ifdef MFC
-  uiObjs = \
-    $(o)mgTest$(oext)         \
-    $(o)csDualBrowse$(oext)   \
-    $(o)csBrowser$(oext)      \
-    $(o)csDataDir$(oext)      \
-    $(o)csEdit$(oext)         \
-    $(o)csKeyNm$(oext)        \
-    $(o)CSwinHlp$(oext)       \
-    $(o)dtEdit$(oext)         \
-    $(o)dtSelect$(oext)       \
-    $(o)elEdit$(oext)         \
-    $(o)csTest$(oext)         \
-    $(o)elSelect$(oext)       \
-    $(o)CS_mfc$(oext)         \
-#    $(o)gdcEdit$(oext)         
+%endif
+
+# Prefer to disable warnings in third-party code vs. editing it.
+%if $(BUILD_TOOLSET) == "CLANG"
+    OldLLVMCommonCompOpts =% $(LLVMCommonCompOpts)
+    LLVMCommonCompOpts + -Wno-error=implicit-function-declaration
 %endif
 
 #---------------------------------------------
 # Compile the source files for the Library
 #---------------------------------------------
+    csmapCompileDepends=$(_MakeFileSpec)
 
-MultiCompileDepends=$(_MakeFileSpec)
-%include MultiCppCompileRule.mki
+    MultiCompileDepends=$(_MakeFileSpec) $(csmapCompileDepends)
+    %include MultiCppCompileRule.mki
 
 # Order of files should be maintained as much as possible the same as the original csmap file Makefile.am
 # Except that C files and C++ are maintained separate C files first the C++ files.
@@ -163,7 +162,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 
     $(o)CS_category$(oext):           $(csSrcDir)CS_category.c ${MultiCompileDepends}
 
-    $(o)CS_ctio$(oext):               $(csSrcDir)CS_ctio.c ${MultiCompileDepends}
+    $(o)CS_ctio$(oext):               $(csSrcDir)cs_ctio.c ${MultiCompileDepends}
     
     $(o)CS_csini$(oext):              $(csSrcDir)CS_csini.c ${MultiCompileDepends}
 
@@ -171,7 +170,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 
     $(o)CS_csprm$(oext):              $(csSrcDir)CS_csprm.c ${MultiCompileDepends}
 
-    $(o)CS_cswktloc$(oext):           $(csSrcDir)CS_cswktloc.c ${MultiCompileDepends}
+    $(o)CS_cswktloc$(oext):           $(csSrcDir)CS_csWktLoc.c ${MultiCompileDepends}
 
     $(o)CS_datum$(oext):              $(csSrcDir)CS_datum.c ${MultiCompileDepends}
 
@@ -412,23 +411,65 @@ MultiCompileDepends=$(_MakeFileSpec)
 
     $(o)csNameMapperSupport$(oext):   $(csSrcDir)csNameMapperSupport.cpp ${MultiCompileDepends}
 
+    $(o)csIoUtil$(oext):              $(csSrcDir)csIoUtil.cpp ${MultiCompileDepends}
+
     $(o)rcWellKnownText$(oext):       $(csSrcDir)rcWellKnownText.cpp ${MultiCompileDepends}
 
     $(o)rcWktKonstants$(oext):        $(csSrcDir)rcWktKonstants.cpp ${MultiCompileDepends}
+    
+    %include MultiCppCompileGo.mki
+    objs +% $(MultiCompileObjectList)
 
-    $(o)CSIoUtil$(oext):              $(csSrcDir)CSIoUtil.cpp ${MultiCompileDepends}
+%ifdef MFC
+    cCompOpts + -D__MFC__ -D_AFXDLL -D_WINDOWS
 
-%include MultiCppCompileGo.mki
-LIB_OBJS =% $(MultiCompileObjectList)
+    MultiCompileDepends=$(_MakeFileSpec)
+    %include MultiCppCompileRule.mki
 
+    $(o)mgTest$(oext):                $(csSrcDir)mgTest.cpp ${MultiCompileDepends}
 
+    $(o)csDualBrowse$(oext):          $(csSrcDir)csDualBrowse.cpp ${MultiCompileDepends}
 
+    $(o)csBrowser$(oext):             $(csSrcDir)csBrowser.cpp ${MultiCompileDepends}
+
+    $(o)csDataDir$(oext):             $(csSrcDir)csDataDir.cpp ${MultiCompileDepends}
+
+    $(o)csEdit$(oext):                $(csSrcDir)csEdit.cpp ${MultiCompileDepends}
+
+    $(o)csKeyNm$(oext):               $(csSrcDir)csKeyNm.cpp ${MultiCompileDepends}
+
+    $(o)CSwinHlp$(oext):              $(csSrcDir)CSwinHlp.cpp ${MultiCompileDepends}
+
+    $(o)dtEdit$(oext):                $(csSrcDir)dtEdit.cpp ${MultiCompileDepends}
+
+    $(o)dtSelect$(oext):              $(csSrcDir)dtSelect.cpp ${MultiCompileDepends}
+
+    $(o)elEdit$(oext):                $(csSrcDir)elEdit.cpp ${MultiCompileDepends}
+
+    $(o)csTest$(oext):                $(csSrcDir)csTest.cpp ${MultiCompileDepends}
+    
+    $(o)elSelect$(oext):              $(csSrcDir)elSelect.cpp ${MultiCompileDepends}
+
+    $(o)gdcEdit$(oext):               $(csSrcDir)gdcEdit.cpp ${MultiCompileDepends}
+
+    %include MultiCppCompileGo.mki
+    objs +% $(MultiCompileObjectList)
+
+    $(o)CS_mfc$(oext):                $(csSrcDir)CS_mfc.c
+
+    objs + $(o)CS_mfc$(oext)
+
+%endif
+
+%if $(BUILD_TOOLSET) == "CLANG"
+    LLVMCommonCompOpts = $(OldLLVMCommonCompOpts)
+%endif
 
 #----------------------------------------------------------------------
 #   Create the static library
 #----------------------------------------------------------------------
-
-LIB_NAME                = BeCsmap
+LIB_OBJS                = $(objs)
+LIB_NAME                = BeCsmapStatic
 LIB_DEST                = $(o)
 LIB_TMP_DIR             = $(o)
 LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
@@ -442,6 +483,3 @@ always:
     |----------------------------------------
     |*** $(appName) Build Complete ***
     |----------------------------------------
-
-CreateBuildContext:
-    CreateSymLinks.py   -d"$(OutBuildContexts)csmap/VendorAPI/csmap=$(baseDir)Include"

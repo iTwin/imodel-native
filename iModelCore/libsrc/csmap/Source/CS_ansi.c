@@ -456,7 +456,7 @@ double EXP_LVL1 CS_ansiAtof (Const char *string)
 #endif
 char * EXP_LVL9 CS_getenv (Const char *varName)
 {
-#if _RUN_TIME == _rt_WINCE
+#if (_RUN_TIME == _rt_WINCE) || defined (BENTLEY_WINRT)
 	/* There is no environment in Windows CE.  Only the registry.
 	   Thus, we simply indicate that the variable didn't exist.
 	   Since use of environmental variables is optional in
