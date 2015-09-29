@@ -898,6 +898,8 @@ struct ECDbMapStorage
 
         const Utf8CP Sql_InsertPropertyPath = "INSERT OR REPLACE INTO ec_PropertyPath (Id, RootPropertyId, AccessString) VALUES (?,?,?)";
         const Utf8CP Sql_InsertClassMap = "INSERT OR REPLACE INTO ec_ClassMap(Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, IsMapStrategyPolymorphic) VALUES (?,?,?,?,?,?)";
+        const Utf8CP Sql_DeleteClassMap = "DELETE FROM ec_ClassMap WHERE Id = ?";
+
         const Utf8CP Sql_InsertPropertyMap = "INSERT OR REPLACE INTO ec_PropertyMap (ClassMapId, PropertyPathId, ColumnId) VALUES (?,?,?)";
         const Utf8CP Sql_SelectPropertyPath = "SELECT Id, RootPropertyId, AccessString FROM ec_PropertyPath";
         const Utf8CP Sql_SelectClassMap = "SELECT Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, IsMapStrategyPolymorphic FROM ec_ClassMap ORDER BY Id, ParentId";
@@ -909,7 +911,8 @@ struct ECDbMapStorage
             SqlInsertPropertyMap,
             SqlSelectPropertyPath,
             SqlSelectClassMap,
-            SqlSelectPropertyMap
+            SqlSelectPropertyMap,
+            SqlDeleteClassMap,
             };
 
 
