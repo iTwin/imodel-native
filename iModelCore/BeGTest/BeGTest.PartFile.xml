@@ -77,11 +77,15 @@
         <ProductDirectory Name="CordovaLibs"                        Deliver="false" LibType="static"/>
         <ProductDirectory Name="MobileDgnNativeAssemblies"          Path="Assemblies"/>
         <ProductDirectory Name="MobileDgnNativeAssemblies"          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="WSClientAssemblies"                 Path="Assemblies"/>
+        <ProductDirectory Name="WSClientAssemblies"                 Deliver="false" LibType="static"/>
 
         <ProductDirectory Name="Libs"                               Path="Libs"/>
         <ProductDirectory Name="Libs"                               Path="Libs" LibType="static"/>
         <ProductDirectory Name="BentleyLibs"                        Path="Libs"/>
         <ProductDirectory Name="BentleyLibs"                        Path="Libs" LibType="static"/>
+        <ProductDirectory Name="WSClientLibs"                       Path="Libs"/>
+        <ProductDirectory Name="WSClientLibs"                       Path="Libs" LibType="static"/>
         <ProductDirectory Name="BeStaticLibDir"                     Path="Libs"/>
         <ProductDirectory Name="BeStaticLibDir"                     Path="Libs" LibType="static"/>
         <ProductDirectory Name="BeJsonCppStaticLibDir"              Path="Libs"/>

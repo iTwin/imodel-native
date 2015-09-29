@@ -76,14 +76,10 @@ public class __FIXTURE__ extends ActivityInstrumentationTestCase2<TestActivity>
     static void loadNativeLibraries () 
         {
         // System libraries
-/*#if defined (ANDROID_NDK_IS_CRYSTAX)
-        System.loadLibrary ("stdc++");
-        System.loadLibrary ("crystax_shared");
-  #endif
-*/
         System.loadLibrary ("gnustl_shared");
         System.loadLibrary ("android");
-        __BE_TEST_LOAD_SHARED_LIBRARIES_PREFIX__ System.loadLibrary ("__BE_TEST_LOAD_SHARED_LIBRARIES__");
+        // Supporting Bentley libraries
+        loadNativeLibraries ("__ANDROIDJUNITTEST_SHARED_LIBRARIES__");
         // The unit tests
         System.loadLibrary ("AndroidTestJni");
         }

@@ -47,7 +47,8 @@ unitTestsDir = $(collectionProduct)Objects/
 inputSoDir = $(collectionProduct)Libs/
 
 %ifdef SHARED_LIBRARIES
-    shared_libraries_full_path = $[@realpath $[@addsuffix $(shlibext) $[@addprefix $(inputSoDir)$(shlibprefix), $(SHARED_LIBRARIES)]]]
+    __ANDROIDJUNITTEST_SHARED_LIBRARIES__ = $[@subst "," " " $(SHARED_LIBRARIES)]
+    shared_libraries_full_path = $[@realpath $[@addsuffix $(shlibext) $[@addprefix $(inputSoDir)$(shlibprefix), $(__ANDROIDJUNITTEST_SHARED_LIBRARIES__)]]]
 %endif
 
 %if defined (BMAKE_DELETE_ALL_TARGETS)
