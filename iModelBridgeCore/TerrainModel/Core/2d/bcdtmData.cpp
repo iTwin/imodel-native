@@ -2294,9 +2294,9 @@ int bcdtmData_replaceDtmFeaturePointsMultipleDtmObject
     {
     int    ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE (0);
     long   dtmFeature,featureDeleted=false ;
-    DTMFeatureType featureType, rollBackFeatureType;
+    DTMFeatureType featureType = DTMFeatureType::None, rollBackFeatureType;
     char   dtmFeatureStateName[100],dtmFeatureTypeName[100] ;
-    DTMUserTag    featureTag ;
+    DTMUserTag    featureTag = 0;
     BC_DTM_FEATURE  *dtmFeatureP ;
     /*
     ** Write Entry Message

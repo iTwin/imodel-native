@@ -702,7 +702,7 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_dtmFeatureTypeOccurrencesDtmObject(BC_
  long            pnt1,pnt2,pnt3,fndType,insideFence,fenceLoad,numMask,numMarked=0 ;
  long            findType,trgPnt1,trgPnt2,trgPnt3 ;
  unsigned char   *charP,*pointMaskP=nullptr ;
- DPoint3d             *p3dP,tinPoint,edgePts[10],trgPts[5],*featurePtsP=nullptr ;
+ DPoint3d             *p3dP,tinPoint = DPoint3d::From(0,0,0),edgePts[10],trgPts[5],*featurePtsP=nullptr ;
  DTM_TIN_NODE    *nodeP,*node1P,*node2P,*node3P ;
  BC_DTM_FEATURE  *dtmFeatureP ;
  BC_DTM_OBJ      *clipDtmP=nullptr  ;
