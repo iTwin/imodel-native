@@ -314,10 +314,14 @@ struct OnUpdatedCaller
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::_OnUpdated(DgnElementCR original) const
     {
-    // we need to call the events on BOTH sets of appdata
-    original.CallAppData(OnUpdatedCaller(*this, original));
+    // We need to call the events on both sets of AppData. Start by calling the appdata on this (the replacement)
+    // element. NOTE: This is where Aspects, etc. actually update the database.
     CallAppData(OnUpdatedCaller(*this, original));
 
+    // All done. This gives appdata on the *original* element a notification that the update has happened
+    original.CallAppData(OnUpdatedCaller(*this, original));
+
+    // now tell the model that one of its elements has been changed.
     GetModel()->_OnUpdatedElement(*this, original);
     }
 
@@ -769,7 +773,7 @@ DgnDbStatus DgnElement3d::_LoadFromDb()
 
     if (stmt->GetColumnBytes(0) != sizeof(m_placement))
         {
-        BeAssert(false);
+        BeAssert(false); 
         return DgnDbStatus::ReadError;
         }
 
