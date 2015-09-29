@@ -1099,13 +1099,14 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
         DgnCategoryId m_categoryId;
 
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId())
-            : T_Super(db, modelId, classId, code, id, parent), m_categoryId(category) { }
+            : T_Super(db, modelId, classId, code, id, parent), m_categoryId(category) {}
 
-        CreateParams(T_Super const& params, DgnCategoryId category = DgnCategoryId()) : T_Super(params), m_categoryId(category) { }
+        CreateParams(T_Super const& params, DgnCategoryId category = DgnCategoryId()) : T_Super(params), m_categoryId(category) {}
     };
 protected:
     GeomStream m_geom;
-    DgnCategoryId   m_categoryId;
+    DgnCategoryId m_categoryId;
+    mutable Render::GraphicSet m_graphics;
 
     //! Change the category of this DgnElement.
     //! The default implementation sets the category without doing any checking.
@@ -1132,12 +1133,10 @@ protected:
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
     virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
 
-//__PUBLISH_SECTION_END__
 public:
     // NB: This only exists until _LoadFromDb() is fixed up...we need to set the category directly when reading from db, without validating through _SetCategoryId().
-    void SetCategoryIdInternal(DgnCategoryId id) { m_categoryId = id; }
-//__PUBLISH_SECTION_START__
-public:
+    void SetCategoryIdInternal(DgnCategoryId id) {m_categoryId = id;}
+
     Render::GraphicSet& Graphics() const {return m_graphics;}
     DGNPLATFORM_EXPORT void SaveGeomStream(GeomStreamCP);
     DGNPLATFORM_EXPORT virtual void _Draw(ViewContextR) const;

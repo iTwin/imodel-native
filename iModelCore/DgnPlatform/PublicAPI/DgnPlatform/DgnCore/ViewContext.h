@@ -874,5 +874,4 @@ public:
 
 /** @endGroup */
 
-
 END_BENTLEY_DGN_NAMESPACE

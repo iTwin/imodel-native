@@ -1612,12 +1612,12 @@ void ElemMatSymb::Init()
     m_elementStyle      = 0;
     m_isFilled          = false;
     m_isBlankingRegion  = false;
-    m_extSymbID         = 0;
+    m_extSymbId         = 0;
     m_rasterWidth       = 1;
     m_rasterPat         = 0;
     m_patternParams     = nullptr;
     m_gradient          = nullptr;
-    m_material          = nullptr;
+    m_materialId.Invalidate();
     m_lStyleSymb.Clear();
     }
 
@@ -1717,7 +1717,7 @@ void ElemMatSymb::FromResolvedElemDisplayParams(ElemDisplayParamsCR elParams, Vi
         m_isBlankingRegion = (FillDisplay::Blanking == elParams.GetFillDisplay());
         }
 
-    m_material = JsonRenderMaterial::Create (context.GetDgnDb(), elParams.GetMaterial());
+    m_materialId = elParams.GetMaterialId();
 
     if (0.0 != netElemTransparency)
         {
@@ -1773,8 +1773,8 @@ bool ElemMatSymb::operator==(ElemMatSymbCR rhs) const
         rhs.m_elementStyle     != m_elementStyle     ||
         rhs.m_isFilled         != m_isFilled         ||
         rhs.m_isBlankingRegion != m_isBlankingRegion ||
-        rhs.m_extSymbID        != m_extSymbID        ||
-        rhs.m_material         != m_material         ||
+        rhs.m_extSymbId        != m_extSymbId        ||
+        rhs.m_materialId       != m_materialId       ||
         rhs.m_rasterWidth      != m_rasterWidth      ||
         rhs.m_rasterPat        != m_rasterPat)
         return false;
@@ -1795,8 +1795,8 @@ ElemMatSymb::ElemMatSymb(ElemMatSymbCR rhs)
     m_elementStyle      = rhs.m_elementStyle;
     m_isFilled          = rhs.m_isFilled;
     m_isBlankingRegion  = rhs.m_isBlankingRegion;
-    m_extSymbID         = rhs.m_extSymbID;
-    m_material          = rhs.m_material;
+    m_extSymbId         = rhs.m_extSymbId;
+    m_materialId        = rhs.m_materialId;
     m_rasterWidth       = rhs.m_rasterWidth;
     m_rasterPat         = rhs.m_rasterPat;
     m_lStyleSymb        = rhs.m_lStyleSymb;
@@ -1813,8 +1813,8 @@ ElemMatSymbR ElemMatSymb::operator=(ElemMatSymbCR rhs)
     m_elementStyle      = rhs.m_elementStyle;
     m_isFilled          = rhs.m_isFilled;
     m_isBlankingRegion  = rhs.m_isBlankingRegion;
-    m_extSymbID         = rhs.m_extSymbID;
-    m_material          = rhs.m_material;
+    m_extSymbId         = rhs.m_extSymbId;
+    m_materialId        = rhs.m_materialId;
     m_rasterWidth       = rhs.m_rasterWidth;
     m_rasterPat         = rhs.m_rasterPat;
     m_lStyleSymb        = rhs.m_lStyleSymb;

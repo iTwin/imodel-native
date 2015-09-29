@@ -1016,7 +1016,7 @@ void ElementGeomIO::Writer::Append(ISolidKernelEntityCR entity, bool saveBRepOnl
                 FB::FaceSymbology  fbSymb(!faceParams.IsLineColorFromSubCategoryAppearance(), !faceParams.IsMaterialFromSubCategoryAppearance(),
                                           faceParams.IsLineColorFromSubCategoryAppearance() ? 0 : faceParams.GetLineColor().GetValue(),
                                           faceParams.GetSubCategoryId().GetValueUnchecked(),
-                                          faceParams.IsMaterialFromSubCategoryAppearance() ? 0 : faceParams.GetMaterial().GetValueUnchecked(),
+                                          faceParams.IsMaterialFromSubCategoryAppearance() ? 0 : faceParams.GetMaterialId().GetValueUnchecked(),
                                           faceParams.GetTransparency(), uv);
 
                 fbSymbVec.push_back(fbSymb);
@@ -1306,11 +1306,11 @@ void ElementGeomIO::Writer::Append(ElemDisplayParamsCR elParams)
     //                          when !useMaterial because ElemDisplayParams::Resolve hasn't been called...
     bool useMaterial = !elParams.IsMaterialFromSubCategoryAppearance();
 
-    if (useMaterial && elParams.GetMaterial().IsValid())
+    if (useMaterial && elParams.GetMaterialId().IsValid())
         {
         FlatBufferBuilder fbb;
 
-        auto mloc = FB::CreateMaterial(fbb, useMaterial, useMaterial ? elParams.GetMaterial().GetValue() : 0, nullptr, nullptr, 0.0, 0.0, 0.0);
+        auto mloc = FB::CreateMaterial(fbb, useMaterial, useMaterial ? elParams.GetMaterialId().GetValue() : 0, nullptr, nullptr, 0.0, 0.0, 0.0);
         fbb.Finish(mloc);
 
         Append(Operation(OpCode::Material, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
@@ -1527,7 +1527,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ISolidKernelEntityPtr& en
             faceParams.SetLineColor(ColorDef(fbSymb->color()));
 
         if (fbSymb->useMaterial())
-            faceParams.SetMaterial(DgnMaterialId((uint64_t)fbSymb->materialId()));
+            faceParams.SetMaterialId(DgnMaterialId((uint64_t)fbSymb->materialId()));
 
         faceParams.SetTransparency(fbSymb->transparency());
 
@@ -1733,9 +1733,9 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ElemDisplayParamsR elPara
                 {
                 DgnMaterialId material((uint64_t)ppfb->materialId());
 
-                if (elParams.IsMaterialFromSubCategoryAppearance() || material != elParams.GetMaterial())
+                if (elParams.IsMaterialFromSubCategoryAppearance() || material != elParams.GetMaterialId())
                     {
-                    elParams.SetMaterial(material);
+                    elParams.SetMaterialId(material);
                     changed = true;
                     }
                 }

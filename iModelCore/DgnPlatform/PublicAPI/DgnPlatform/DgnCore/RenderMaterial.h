@@ -6,28 +6,13 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+//__PUBLISH_SECTION_START__
 
 #include    <json/value.h>
 
-//__PUBLISH_SECTION_START__
-
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-//=======================================================================================
-// @bsiclass                                            Ray.Bentley     09/2015
-//=======================================================================================
-struct RenderMaterial : RefCountedBase
-{
-    virtual     RenderMaterialPtr       _Clone () const = 0;
-    virtual     double                  _GetDouble (char const* key, BentleyStatus* status = NULL) const = 0;
-    virtual     bool                    _GetBool (char const* key, BentleyStatus* status = NULL) const = 0;
-    virtual     RgbFactor               _GetColor (char const* key, BentleyStatus* status = NULL) const = 0;
-    virtual     RenderMaterialMapPtr    _GetMap (char const* key) const = 0;
-    virtual     uintptr_t               _GetQvMaterialId (DgnDbR dgnDb, bool createIfNotFound) const = 0;
-
-
-};
-
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 
 //=======================================================================================
 // @bsiclass                                            Ray.Bentley     09/2015
@@ -50,84 +35,6 @@ DGNPLATFORM_EXPORT    virtual     RgbFactor               _GetColor (char const*
 DGNPLATFORM_EXPORT    virtual     RenderMaterialMapPtr    _GetMap (char const* key) const override;
 DGNPLATFORM_EXPORT    virtual     uintptr_t               _GetQvMaterialId (DgnDbR dgnDb, bool createIfNotFound) const override;
 };
-
-//=======================================================================================
-// @bsiclass                                            Ray.Bentley     09/2015
-//=======================================================================================
-struct RenderMaterialMap : RefCountedBase
-{
-
-    enum class Type
-        {
-        None                    = 0,
-        Pattern                 = 1,
-        Bump                    = 2,
-        Specular                = 3,
-        Reflect                 = 4,
-        Transparency            = 5,
-        Translucency            = 6,
-        Finish                  = 7,
-        Diffuse                 = 8,
-        GlowAmount              = 9,
-        ClearcoatAmount         = 10,
-        AnisotropicDirection    = 11,
-        SpecularColor           = 12,
-        TransparentColor        = 13,
-        TranslucencyColor       = 14,
-        Displacement            = 15,
-        Normal                  = 16,
-        FurLength               = 17,
-        FurDensity              = 18,
-        FurJitter               = 19,
-        FurFlex                 = 20,
-        FurClumps               = 21,
-        FurDirection            = 22,
-        FurVector               = 23,
-        FurBump                 = 24,
-        FurCurls                = 25,
-        GlowColor               = 26,
-        ReflectColor            = 27,
-        RefractionRoughness     = 28,
-        SpecularFresnel         = 29,
-        Geometry                = 30,
-        };
-
-    enum class Mode : int
-        {
-        None                    = -1,
-        Parametric              = 0,
-        ElevationDrape          = 1,
-        Planar                  = 2,
-        DirectionalDrape        = 3,
-        Cubic                   = 4,
-        Spherical               = 5,
-        Cylindrical             = 6,
-        Solid                   = 7,
-        //! Only valid for lights.
-        FrontProject            = 8,
-        };
-
-    enum class Units
-        {
-        Relative               = 0,
-        Meters                 = 3,
-        Millimeters            = 4,
-        Feet                   = 5,
-        Inches                 = 6,
-        };
-
-
-    virtual Mode                _GetMode () const        { return Mode::Parametric; }
-    virtual Units               _GetUnits () const       { return Units::Relative; }
-    virtual DPoint2d            _GetScale (BentleyStatus* status = NULL) const = 0;
-    virtual DPoint2d            _GetOffset (BentleyStatus* status = NULL) const = 0;
-    virtual BentleyStatus       _GetData (DgnTextures::TextureData& data, bvector<Byte>& image, DgnDbR dgnDb) const = 0;
-    virtual double              _GetDouble (char const* key, BentleyStatus* status = NULL) const = 0;
-    virtual bool                _GetBool (char const* key, BentleyStatus* status = NULL) const = 0;
-    virtual uintptr_t           _GetQvTextureId (DgnDbR dgnDb, bool createIfNotFound) const = 0;
-
-
-};  // RenderMaterialMap.
 
 
 //=======================================================================================
@@ -157,8 +64,6 @@ DGNPLATFORM_EXPORT    virtual uintptr_t           _GetQvTextureId (DgnDbR dgnDb,
 
 };
 
-
-
 //=======================================================================================
 // @bsiclass                                             
 //=======================================================================================
@@ -168,6 +73,7 @@ struct RenderMaterialUtil
     DGNPLATFORM_EXPORT static void      SetColor (Json::Value& renderMaterial, char const* keyword, RgbFactorCR color);
     DGNPLATFORM_EXPORT static void      SetPoint (Json::Value& renderMaterial, char const* keyword, DPoint3dCR point);
 };
+#endif
 
 
 

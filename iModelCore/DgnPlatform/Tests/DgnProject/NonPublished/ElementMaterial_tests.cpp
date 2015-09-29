@@ -18,11 +18,10 @@ struct ElementGeometryBuilderTests : public DgnDbTestFixture
 
 };
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void setUpView (DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId)
+static void setUpView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId)
     {
     DgnViews::View view;
 
@@ -36,7 +35,7 @@ static void setUpView (DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elemen
 
     ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
 
-    PhysicalViewController viewController (dgnDb, view.GetId());
+    PhysicalViewController viewController(dgnDb, view.GetId());
     viewController.SetStandardViewRotation(StandardView::Iso);
     viewController.LookAtVolume(elementBox, nullptr, &viewMargin);
     viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::SmoothShade);
@@ -49,7 +48,7 @@ static void setUpView (DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnMaterialId     createTexturedMaterial (DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, RenderMaterialMap::Units unitMode)
+static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, Render::Texture::Units unitMode)
     {
     Json::Value                     renderMaterialAsset;
     RgbFactor                       red = { 1.0, 0.0, 0.0};
@@ -57,19 +56,17 @@ static DgnMaterialId     createTexturedMaterial (DgnDbR dgnDb, Utf8CP materialNa
     uint32_t                        width, height;
     ImageUtilities::RgbImageInfo    rgbImageInfo;
     BeFile                          imageFile;
-
-    
-    RenderMaterialUtil::SetColor (renderMaterialAsset, RENDER_MATERIAL_Color, red);
+   
+    Render::Texture::SetColor(renderMaterialAsset, RENDER_MATERIAL_Color, red);
     renderMaterialAsset[RENDER_MATERIAL_FlagHasBaseColor] = true;
-    
 
-    if (BeFileStatus::Success == imageFile.Open (pngFileName, BeFileAccess::Read) &&
-        SUCCESS == ImageUtilities::ReadImageFromPngFile (fileImageData, rgbImageInfo, imageFile))
+    if (BeFileStatus::Success == imageFile.Open(pngFileName, BeFileAccess::Read) &&
+        SUCCESS == ImageUtilities::ReadImageFromPngFile(fileImageData, rgbImageInfo, imageFile))
         {
         width = rgbImageInfo.width;
         height = rgbImageInfo.height;
 
-        imageData.resize (width * height * 4);
+        imageData.resize(width * height * 4);
 
         for (size_t i=0, j=0; i<imageData.size(); )
             {
@@ -82,7 +79,7 @@ static DgnMaterialId     createTexturedMaterial (DgnDbR dgnDb, Utf8CP materialNa
     else
         {
         width = height = 512;
-        imageData.resize (width * height * 4);
+        imageData.resize(width * height * 4);
 
         size_t      value = 0;
         for (auto& imageByte : imageData)
@@ -90,22 +87,20 @@ static DgnMaterialId     createTexturedMaterial (DgnDbR dgnDb, Utf8CP materialNa
         }
 
 
-    DgnTextures::Texture    texture (DgnTextures::TextureData (DgnTextures::Format::RAW, &imageData.front(), imageData.size(), width, height));
-    DgnTextureId            textureId = dgnDb.Textures().Insert (texture);
+    DgnTextures::Texture texture(DgnTextures::TextureData(DgnTextures::Format::RAW, &imageData.front(), imageData.size(), width, height));
+    DgnTextureId textureId = dgnDb.Textures().Insert(texture);
 
     Json::Value     patternMap, mapsMap;
 
     patternMap[RENDER_MATERIAL_TextureId]        = textureId.GetValue();
     patternMap[RENDER_MATERIAL_PatternScaleMode] = (int) unitMode;
-    patternMap[RENDER_MATERIAL_PatternMapping]   = (int) RenderMaterialMap::Mode::Parametric;
+    patternMap[RENDER_MATERIAL_PatternMapping]   = (int) Render::Texture::Mode::Parametric;
 
     mapsMap[RENDER_MATERIAL_MAP_Pattern] = patternMap;
     renderMaterialAsset[RENDER_MATERIAL_Map] = mapsMap;
 
-
-    DgnMaterials::Material material (materialName, "Test Palette");
-
-    material.SetRenderingAsset (renderMaterialAsset);
+    DgnMaterials::Material material(materialName, "Test Palette");
+    material.SetRenderingAsset(renderMaterialAsset);
 
     return dgnDb.Materials().Insert(material);
     }
@@ -113,13 +108,13 @@ static DgnMaterialId     createTexturedMaterial (DgnDbR dgnDb, Utf8CP materialNa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void appendGeometry (DPoint3dR origin, ElementGeometryBuilderR builder)
+static void appendGeometry(DPoint3dR origin, ElementGeometryBuilderR builder)
     {
     double      dz = 3.0;
     double      radius = 1.5;
     DPoint3d    localOrigin = origin;
 
-    DgnConeDetail       cylinderDetail(localOrigin, DPoint3d::FromSumOf (localOrigin, DVec3d::From (0.0, 0.0, dz)), radius, radius, true);
+    DgnConeDetail       cylinderDetail(localOrigin, DPoint3d::FromSumOf(localOrigin, DVec3d::From(0.0, 0.0, dz)), radius, radius, true);
     ISolidPrimitivePtr  cylinder = ISolidPrimitive::CreateDgnCone(cylinderDetail);
 
     EXPECT_TRUE(builder.Append(*cylinder));
@@ -131,20 +126,19 @@ static void appendGeometry (DPoint3dR origin, ElementGeometryBuilderR builder)
 
     EXPECT_TRUE(builder.Append(*sphere));
 
-    double              width   = 1.0;
-    double              height  = 2.0;
-    double              length  = 3.0;
+    double width = 1.0;
+    double height = 2.0;
+    double length = 3.0;
 
     localOrigin.z +=  radius + 1.0;
 
-    DgnBoxDetail        boxDetail (localOrigin, DPoint3d::FromSumOf (localOrigin, DVec3d::From (0.0, 0.0,  height)), DVec3d::From (1.0, 0.0, 0.0), DVec3d::From (0.0, 1.0, 0.0), width, length, width, length, true);
-    ISolidPrimitivePtr  box = ISolidPrimitive::CreateDgnBox (boxDetail);
+    DgnBoxDetail        boxDetail(localOrigin, DPoint3d::FromSumOf(localOrigin, DVec3d::From(0.0, 0.0,  height)), DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 1.0, 0.0), width, length, width, length, true);
+    ISolidPrimitivePtr  box = ISolidPrimitive::CreateDgnBox(boxDetail);
 
     EXPECT_TRUE(builder.Append(*box));
 
     origin.x += 4.0;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2015
@@ -165,27 +159,24 @@ TEST_F(ElementGeometryBuilderTests, CreateElementWithMaterials)
 
     Render::ElemDisplayParams elemDisplayParams;
     elemDisplayParams.SetCategoryId(m_defaultCategoryId);
-    elemDisplayParams.SetMaterial(createTexturedMaterial(*m_db, "Parametric Texture", textureImage.c_str(), RenderMaterialMap::Units::Relative));
+    elemDisplayParams.SetMaterialId(createTexturedMaterial(*m_db, "Parametric Texture", textureImage.c_str(), Render::Texture::Units::Relative));
     EXPECT_TRUE( builder->Append(elemDisplayParams));
 
-    DPoint3d        origin = DPoint3d::FromZero();
+    DPoint3d origin = DPoint3d::FromZero();
+    appendGeometry(origin, *builder);
 
-    appendGeometry (origin, *builder);
-
-    elemDisplayParams.SetMaterial(createTexturedMaterial(*m_db, "Meter Texture", textureImage.c_str() , RenderMaterialMap::Units::Meters));
+    elemDisplayParams.SetMaterialId(createTexturedMaterial(*m_db, "Meter Texture", textureImage.c_str() , Render::Texture::Units::Meters));
     EXPECT_TRUE( builder->Append(elemDisplayParams));
 
-    appendGeometry (origin, *builder);
+    appendGeometry(origin, *builder);
 
 
     EXPECT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
     EXPECT_TRUE(m_db->Elements().Insert(*el).IsValid());
 
     Placement3d        placement;
+    builder->GetPlacement(placement);
 
-    builder->GetPlacement (placement);
-
-    setUpView (*m_db, *model, placement.GetElementBox(), m_defaultCategoryId);
+    setUpView(*m_db, *model, placement.GetElementBox(), m_defaultCategoryId);
     m_db->SaveSettings();   
     }
-

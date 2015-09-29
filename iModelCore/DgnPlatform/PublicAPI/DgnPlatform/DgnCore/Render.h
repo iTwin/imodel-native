@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnModel.h"
+#include "DgnTexture.h"
 #include "ImageUtilities.h"
 #include "AreaPattern.h"
 
@@ -35,6 +36,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Renderer)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Scene)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Texture)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ViewDraw)
 
 DEFINE_REF_COUNTED_PTR(CachedDraw)
@@ -49,6 +51,7 @@ DEFINE_REF_COUNTED_PTR(Renderer)
 DEFINE_REF_COUNTED_PTR(Scene)
 DEFINE_REF_COUNTED_PTR(Target)
 DEFINE_REF_COUNTED_PTR(Task)
+DEFINE_REF_COUNTED_PTR(Texture)
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   09/15
@@ -109,7 +112,7 @@ struct Renderer : NonCopyableClass
 
     virtual bool _WantInvertBlackBackground() {return false;}
 
-    virtual bool _GetModelBackgroundOverride(ColorDef& rgbColor, DgnModelType modelType) {return false;}
+    virtual bool _GetModelBackgroundOverride(ColorDef& rgbColor) {return false;}
 
     //! If true, the UI icons that this library loads will be processed to darken their edges to attempt to increase visibility.
     virtual bool _ShouldEnhanceIconEdges() {return false;}
@@ -165,6 +168,73 @@ struct Material : IRefCounted, NonCopyableClass
 //=======================================================================================
 struct Texture : IRefCounted, NonCopyableClass
 {
+    struct Trans {double m_val[2][3];};
+
+    enum class Type
+    {
+        None                    = 0,
+        Pattern                 = 1,
+        Bump                    = 2,
+        Specular                = 3,
+        Reflect                 = 4,
+        Transparency            = 5,
+        Translucency            = 6,
+        Finish                  = 7,
+        Diffuse                 = 8,
+        GlowAmount              = 9,
+        ClearcoatAmount         = 10,
+        AnisotropicDirection    = 11,
+        SpecularColor           = 12,
+        TransparentColor        = 13,
+        TranslucencyColor       = 14,
+        Displacement            = 15,
+        Normal                  = 16,
+        FurLength               = 17,
+        FurDensity              = 18,
+        FurJitter               = 19,
+        FurFlex                 = 20,
+        FurClumps               = 21,
+        FurDirection            = 22,
+        FurVector               = 23,
+        FurBump                 = 24,
+        FurCurls                = 25,
+        GlowColor               = 26,
+        ReflectColor            = 27,
+        RefractionRoughness     = 28,
+        SpecularFresnel         = 29,
+        Geometry                = 30,
+    };
+
+    enum class Mode : int
+    {
+        None                    = -1,
+        Parametric              = 0,
+        ElevationDrape          = 1,
+        Planar                  = 2,
+        DirectionalDrape        = 3,
+        Cubic                   = 4,
+        Spherical               = 5,
+        Cylindrical             = 6,
+        Solid                   = 7,
+        //! Only valid for lights.
+        FrontProject            = 8,
+    };
+
+    enum class Units
+    {
+        Relative               = 0,
+        Meters                 = 3,
+        Millimeters            = 4,
+        Feet                   = 5,
+        Inches                 = 6,
+    };
+
+    DGNPLATFORM_EXPORT static Trans GetPatternTransform(Json::Value const&);
+    DGNPLATFORM_EXPORT static Mode GetMode(Json::Value const&);
+    DGNPLATFORM_EXPORT static Units GetUnits(Json::Value const&);
+    DGNPLATFORM_EXPORT static double GetUnitScale(Units units);
+    DGNPLATFORM_EXPORT static void SetPoint(Json::Value& out, Utf8CP keyword, DPoint3dCR point);
+    DGNPLATFORM_EXPORT static void SetColor(Json::Value& out, Utf8CP keyword, RgbFactorCR color);
 };
 
 //=======================================================================================
@@ -448,6 +518,7 @@ private:
     bool                m_resolved:1;                   //!< whether Resolve has established SubCategory::Appearance/effective values.
     DgnCategoryId       m_categoryId;                   //!< the Category Id on which the geometry is drawn.
     DgnSubCategoryId    m_subCategoryId;                //!< the SubCategory Id that controls the appearence of subsequent geometry.
+    DgnMaterialId       m_material;                     //!< render material ID.
     int32_t             m_elmPriority;                  //!< display priority (applies to 2d only)
     int32_t             m_netPriority;                  //!< net display priority for element/category (applies to 2d only)
     uint32_t            m_weight;
@@ -459,7 +530,6 @@ private:
     double              m_fillTransparency;             //!< fill transparency, 1.0 == completely transparent.
     double              m_netFillTransparency;          //!< net transparency for fill/category.
     DgnGeometryClass    m_geometryClass;                //!< geometry class
-    DgnMaterialId       m_material;                     //!< render material ID.
     LineStyleInfoPtr    m_styleInfo;                    //!< line style id plus modifiers.
     GradientSymbPtr     m_gradient;                     //!< gradient fill settings.
     PatternParamsPtr    m_pattern;                      //!< area pattern settings.
@@ -484,7 +554,7 @@ public:
     void SetTransparency(double transparency) {m_elmTransparency = m_netElmTransparency = m_fillTransparency = m_netFillTransparency = transparency;} // NOTE: Sets BOTH element and fill transparency...
     void SetFillTransparency(double transparency) {m_fillTransparency = m_netFillTransparency = transparency;}
     void SetDisplayPriority(int32_t priority) {m_elmPriority = m_netPriority = priority;} // Set display priority (2d only).
-    void SetMaterial(DgnMaterialId material) {m_appearanceOverrides.m_material = true; m_material = material;}
+    void SetMaterialId(DgnMaterialId material) {m_appearanceOverrides.m_material = true; m_material = material;}
     void SetPatternParams(PatternParamsP patternParams) {m_pattern = patternParams;}
 
     //! @cond DONTINCLUDEINDOC
@@ -523,7 +593,7 @@ public:
     //! Get fill display setting
     FillDisplay GetFillDisplay() const {return m_fillDisplay;}
 
-    //! Get gradient fill information. Valid when FillDisplay::Never != GetFillDisplay() and not nullptr.
+    //! Get gradient fill information. Valid when FillDisplay::Never != GetFillDisplay() and not nullptrptr.
     GradientSymbCP GetGradient() const {return m_gradient.get();}
 
     //! Get the area pattern params.
@@ -545,7 +615,7 @@ public:
     double GetFillTransparency() const {return m_fillTransparency;}
 
     //! Get render material.
-    DgnMaterialId GetMaterial() const {BeAssert(m_appearanceOverrides.m_material || m_resolved); return m_material; }
+    DgnMaterialId GetMaterialId() const {BeAssert(m_appearanceOverrides.m_material || m_resolved); return m_material; }
 
     //! Get element display priority (2d only).
     int32_t GetDisplayPriority() const {return m_elmPriority;}
@@ -564,7 +634,7 @@ private:
     //         memset (&m_lStyle, 0, offsetof (LineStyleSymb, m_planeByRows)- offsetof (LineStyleSymb, m_lStyle));
     //         So it will be necessary to update it if first/last member are changed. */
 
-    ILineStyleCP    m_lStyle;       // if NULL, no linestyle active
+    ILineStyleCP    m_lStyle;       // if nullptr, no linestyle active
     struct
         {
         uint32_t       scale:1;
@@ -611,7 +681,7 @@ public:
     DGNPLATFORM_EXPORT int FromNaturalElemDisplayParams(ElemDisplayParamsR, ViewContextR context, DPoint3dCP, DPoint3dCP);
     DGNPLATFORM_EXPORT int FromResolvedStyle(LineStyleInfoCP styleInfo, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent);
 
-    void Clear() {m_lStyle = NULL; m_options.orgWidth = m_options.endWidth = false; m_textureHandle = 0; }
+    void Clear() {m_lStyle = nullptr; m_options.orgWidth = m_options.endWidth = false; m_textureHandle = 0; }
     void Init(ILineStyleCP);
 
 public:
@@ -696,8 +766,8 @@ private:
     int                 m_elementStyle;
     bool                m_isFilled;
     bool                m_isBlankingRegion;
-    uintptr_t           m_extSymbID;
-    RenderMaterialPtr   m_material;
+    uintptr_t           m_extSymbId;
+    DgnMaterialId       m_materialId;
     uint32_t            m_rasterWidth;
     uint32_t            m_rasterPat;
     LineStyleSymb       m_lStyleSymb;
@@ -717,11 +787,11 @@ public:
     // Get the element style.
     int GetElementStyle() {return m_elementStyle;}
 
-    //! Get the extended material ID from this ElemMatSymb
-    uintptr_t GetExtSymbId() const {return m_extSymbID;}
+    //! Get the extended material Id from this ElemMatSymb
+    uintptr_t GetExtSymbId() const {return m_extSymbId;}
 
     //! Set the extended material ID for this ElemMatSymb
-    void SetExtSymbId(uintptr_t extSymbID) {m_extSymbID = extSymbID;}
+    void SetExtSymbId(uintptr_t extSymbId) {m_extSymbId = extSymbId;}
 
     //! Set the gradient symbology
     void SetGradient(GradientSymbP gradient) {m_gradient = gradient;}
@@ -767,7 +837,7 @@ public:
     GradientSymbCP GetGradientSymb() const {return m_gradient.get();}
 
     //! Get the render material.
-    RenderMaterialCP GetMaterial() const {return m_material.get();}
+    DgnMaterialId GetMaterialId() const {return m_materialId;}
 
     //! Get the area pattern params.
     PatternParamsCP GetPatternParams() const {return m_patternParams.get();}
@@ -800,7 +870,7 @@ public:
     //! Set the raster pattern for this ElemMatSymb.
     //! @param[in] rasterPat   the 32 bit on-off pattern to be repeated along lines drawn using this ElemMatSymb.
     //! @see          #GetRasterPattern
-    void SetRasterPattern(uint32_t rasterPat) {m_rasterPat = rasterPat; m_elementStyle = 0; m_extSymbID = 0;}
+    void SetRasterPattern(uint32_t rasterPat) {m_rasterPat = rasterPat; m_elementStyle = 0; m_extSymbId = 0;}
 
     //! Set a raster pattern derived from a line code for this ElemMatSymb. Used to support plotting of cosmetic line styles mapped to line codes.
     //! @param[in] index       the new line style code.
@@ -812,7 +882,7 @@ public:
     LineStyleSymbR GetLineStyleSymbR () {return m_lStyleSymb;}
 
     //! Set the render material.
-    DGNPLATFORM_EXPORT void SetMaterial(RenderMaterialP material) { m_material = material; }
+    void SetMaterialId(DgnMaterialId id) {m_materialId = id;}
 
     //! Set area patterning parameters.
     void SetPatternParams(PatternParamsP patternParams) {m_patternParams = patternParams;}
@@ -869,7 +939,7 @@ public:
     uint32_t GetWidth() const {return m_matSymb.GetWidth();}
     uint32_t GetRasterPattern() const {return m_matSymb.GetRasterPattern();}
     int32_t GetRasterPatternIndex() const {return m_matSymb.GetRasterPatternIndex();}
-    RenderMaterialCP GetMaterial() const {return m_matSymb.GetMaterial();}
+    DgnMaterialId GetMaterialId() const {return m_matSymb.GetMaterialId();}
     PatternParamsCP GetPatternParams() const {return m_matSymb.GetPatternParams();}
 
     DGNPLATFORM_EXPORT void Clear();
@@ -879,9 +949,9 @@ public:
     void SetLineTransparency(Byte trans) {m_matSymb.SetLineTransparency(trans); m_flags |= MATSYMB_OVERRIDE_ColorTransparency;}
     void SetFillTransparency(Byte trans) {m_matSymb.SetFillTransparency(trans); m_flags |= MATSYMB_OVERRIDE_FillColorTransparency;}
     void SetWidth(uint32_t width) {m_matSymb.SetWidth(width); m_flags |= MATSYMB_OVERRIDE_RastWidth;}
-    void SetRasterPattern(uint32_t rasterPat) {m_matSymb.SetRasterPattern(rasterPat); m_flags |= MATSYMB_OVERRIDE_Style; m_matSymb.GetLineStyleSymbR().SetLineStyle(NULL);}
-    void SetIndexedRasterPattern(int32_t index, uint32_t rasterPat) {m_matSymb.SetIndexedRasterPattern(index, rasterPat); m_flags |= MATSYMB_OVERRIDE_Style; m_matSymb.GetLineStyleSymbR().SetLineStyle(NULL);}
-    void SetMaterial(RenderMaterialP material) {m_matSymb.SetMaterial(material); m_flags |= MATSYMB_OVERRIDE_RenderMaterial;}
+    void SetRasterPattern(uint32_t rasterPat) {m_matSymb.SetRasterPattern(rasterPat); m_flags |= MATSYMB_OVERRIDE_Style; m_matSymb.GetLineStyleSymbR().SetLineStyle(nullptr);}
+    void SetIndexedRasterPattern(int32_t index, uint32_t rasterPat) {m_matSymb.SetIndexedRasterPattern(index, rasterPat); m_flags |= MATSYMB_OVERRIDE_Style; m_matSymb.GetLineStyleSymbR().SetLineStyle(nullptr);}
+    void SetMaterialId(DgnMaterialId id) {m_matSymb.SetMaterialId(id); m_flags |= MATSYMB_OVERRIDE_RenderMaterial;}
     void SetPatternParams(PatternParamsP patternParams) {m_matSymb.SetPatternParams(patternParams);}
     void SetProxy(bool edge, bool hidden) {m_flags |= (MATSYMB_OVERRIDE_IsProxy | (edge ? MATSYMB_OVERRIDE_IsProxyEdge : 0) | (hidden ? MATSYMB_OVERRIDE_IsProxyHidden: 0)); }
     bool GetProxy(bool& edge, bool& hidden) {edge = 0 != (m_flags & MATSYMB_OVERRIDE_IsProxyEdge); hidden = 0 != (m_flags & MATSYMB_OVERRIDE_IsProxyHidden); return 0 != (m_flags & MATSYMB_OVERRIDE_IsProxy); }
@@ -907,11 +977,11 @@ struct IPointCloudDrawParams
     //  Added to points returned by GetPoints or GetFPoints
     virtual bool GetOrigin(DPoint3dP origin) = 0; // returns false if no origin
 
-    virtual ColorDef const* GetRgbColors() = 0; // Returns NULL if not using colors
+    virtual ColorDef const* GetRgbColors() = 0; // Returns nullptr if not using colors
 
     virtual uint32_t GetNumPoints() = 0;
-    virtual DPoint3dCP GetDPoints() = 0; // Returns NULL if using floats
-    virtual FPoint3dCP GetFPoints() = 0; // Returns NULL if using doubles
+    virtual DPoint3dCP GetDPoints() = 0; // Returns nullptr if using floats
+    virtual FPoint3dCP GetFPoints() = 0; // Returns nullptr if using doubles
 };
 
 //=======================================================================================
@@ -935,7 +1005,7 @@ struct GraphicStroker
     //! @note A valid range is required only if _GetSizeDependentGeometryPossible returns true.
     virtual DRange3d _GetRange() const {return DRange3d::NullRange();}
 
-    //! Return Graphic created by a prior call to _StrokeForCache. When nullptr is returned, _Stroke will be called to create a new Graphic.
+    //! Return Graphic created by a prior call to _StrokeForCache. When nullptrptr is returned, _Stroke will be called to create a new Graphic.
     virtual Graphic* _FindGraphic(DgnViewportCR) const = 0;
 
     //! Save the Graphic created by calling _StrokeForCache for use in subsequent draws.
@@ -1025,9 +1095,9 @@ protected:
     virtual void _DrawBSplineSurface(MSBsplineSurfaceCR surface) = 0;
     virtual void _DrawPolyface(PolyfaceQueryCR meshData, bool filled = false) = 0;
     virtual StatusInt _DrawBody(ISolidKernelEntityCR, double pixelSize = 0.0) = 0;
-    virtual void _DrawTextString(TextStringCR text, double* zDepth = NULL) = 0;
+    virtual void _DrawTextString(TextStringCR text, double* zDepth = nullptr) = 0;
     virtual void _DrawMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) = 0;
-    virtual void _PushTransClip(TransformCP trans, ClipPlaneSetCP clip = NULL) = 0;
+    virtual void _PushTransClip(TransformCP trans, ClipPlaneSetCP clip = nullptr) = 0;
     virtual void _PopTransClip() = 0;
     virtual RangeResult _PushBoundingRange3d(DPoint3dCP range) = 0;
     virtual RangeResult _PushBoundingRange2d(DPoint2dCP range, double zDepth) = 0;
@@ -1065,7 +1135,7 @@ public:
     //! @param[in]          numPoints   Number of vertices in points array.
     //! @param[in]          points      Array of vertices in the line string.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
+    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
     void DrawLineString3d(int numPoints, DPoint3dCP points, DPoint3dCP range) {_DrawLineString3d(numPoints, points, range);}
 
     //! Draw a 2D line string.
@@ -1073,14 +1143,14 @@ public:
     //! @param[in]          points      Array of vertices in the line string.
     //! @param[in]          zDepth      Z depth value in local coordinates.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
+    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
     void DrawLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) {_DrawLineString2d(numPoints, points, zDepth, range);}
 
     //! Draw a 3D point string. A point string is displayed as a series of points, one at each vertex in the array, with no vectors connecting the vertices.
     //! @param[in]          numPoints   Number of vertices in points array.
     //! @param[in]          points      Array of vertices in the point string.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
+    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
     void DrawPointString3d(int numPoints, DPoint3dCP points, DPoint3dCP range) {_DrawPointString3d(numPoints, points, range);}
 
     //! Draw a 2D point string. A point string is displayed as a series of points, one at each vertex in the array, with no vectors connecting the vertices.
@@ -1088,7 +1158,7 @@ public:
     //! @param[in]          points      Array of vertices in the point string.
     //! @param[in]          zDepth      Z depth value.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
+    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
     void DrawPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) {_DrawPointString2d(numPoints, points, zDepth, range);}
 
     //! Draw a closed 3D shape.
@@ -1097,7 +1167,7 @@ public:
     //! @param[in]          points      Array of vertices of the shape.
     //! @param[in]          filled      If true, the shape will be drawn filled.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
+    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
     void DrawShape3d(int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range) {_DrawShape3d(numPoints, points, filled, range);}
 
     //! Draw a 2D shape.
@@ -1107,7 +1177,7 @@ public:
     //! @param[in]          zDepth      Z depth value.
     //! @param[in]          filled      If true, the shape will be drawn filled.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
+    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
     void DrawShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range) {_DrawShape2d(numPoints, points, filled, zDepth, range);}
 
     //! Draw a 3D elliptical arc or ellipse.
@@ -1115,7 +1185,7 @@ public:
     //! @param[in]          isEllipse   If true, and if full sweep, then draw as an ellipse instead of an arc.
     //! @param[in]          filled      If true, and isEllipse is also true, then draw ellipse filled.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the arc.
-    //!                                     This argument is optional and is only used to speed processing. If you do not already have the range, pass NULL.
+    //!                                     This argument is optional and is only used to speed processing. If you do not already have the range, pass nullptr.
     void DrawArc3d(DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range) {_DrawArc3d(ellipse, isEllipse, filled, range);}
 
     //! Draw a 2D elliptical arc or ellipse.
@@ -1124,7 +1194,7 @@ public:
     //! @param[in]          filled      If true, and isEllipse is also true, then draw ellipse filled.
     //! @param[in]          zDepth      Z depth value
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the arc.
-    //!                                     This argument is optional and is only used to speed processing. If you do not already have the range, pass NULL.
+    //!                                     This argument is optional and is only used to speed processing. If you do not already have the range, pass nullptr.
     void DrawArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range) {_DrawArc2d(ellipse, isEllipse, filled, zDepth, range);}
 
     //! Draw a BSpline curve.
@@ -1158,15 +1228,15 @@ public:
 
     //! Draw a series of Glyphs
     //! @param[in]          text        Text drawing parameters
-    //! @param[in]          zDepth      Priority value in 2d or NULL
-    void DrawTextString(TextStringCR text, double* zDepth = NULL) {_DrawTextString(text, zDepth);}
+    //! @param[in]          zDepth      Priority value in 2d or nullptr
+    void DrawTextString(TextStringCR text, double* zDepth = nullptr) {_DrawTextString(text, zDepth);}
 
     //! Draw a filled triangle strip from 3D points.
     //! @param[in]          numPoints   Number of vertices in \c points array.
     //! @param[in]          points      Array of vertices.
     //! @param[in]          usageFlags  0 or 1 if tri-strip represents a thickened line.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
+    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
     void DrawTriStrip3d(int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range) {_DrawTriStrip3d(numPoints, points, usageFlags, range);}
 
     //! Draw a filled triangle strip from 2D points.
@@ -1175,7 +1245,7 @@ public:
     //! @param[in]          zDepth      Z depth value.
     //! @param[in]          usageFlags  0 or 1 if tri-strip represents a thickened line.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
+    //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
     void DrawTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range) {_DrawTriStrip2d(numPoints, points, usageFlags, zDepth, range);}
 
     RangeResult PushBoundingRange3d(DPoint3dCP range) {return _PushBoundingRange3d(range);}
@@ -1251,7 +1321,7 @@ public:
     //! @param[in]      sprite          The sprite definition.
     //! @param[in]      location        The location where the origin of the sprite should be drawn (in DgnCoordSystem::View coordinates.)
     //! @param[in]      xVec            A vector that points in the direction (in DgnCoordSystem::View coordinates) that the x vector
-    //!                                     of the sprite definition should be oriented. This allows for rotating sprites. If NULL, sprite is draw
+    //!                                     of the sprite definition should be oriented. This allows for rotating sprites. If nullptr, sprite is draw
     //!                                     unrotated.
     //! @param[in]      transparency    Sprite is drawn with this transparency  (0=opaque, 255=invisible).
     //! @note this method is only valid from View Decorators.
@@ -1362,7 +1432,7 @@ private:
     mutable bool  m_lockVp;
 
 public:
-    PaintOptions(DgnDrawBuffer buffer=DgnDrawBuffer::None, BSIRectCP subRect=NULL) : m_buffer(buffer), m_subRect(subRect)
+    PaintOptions(DgnDrawBuffer buffer=DgnDrawBuffer::None, BSIRectCP subRect=nullptr) : m_buffer(buffer), m_subRect(subRect)
         {
         m_drawMode = DgnDrawMode::Normal;
         m_eraseBefore = true;
@@ -1462,7 +1532,7 @@ protected:
     virtual bool      _CheckNeedsHeal(BSIRect* rect) = 0;
     virtual void      _BeginDecorating(BSIRect const* rect) = 0;
     virtual void      _BeginOverlayMode() = 0;
-    virtual Scene*    _GetScene() = 0; // May return NULL
+    virtual Scene*    _GetScene() = 0; // May return nullptr
     virtual void      _SetFlashMode(bool newMode) = 0;
     virtual BentleyStatus _FillImageCaptureBuffer(bvector<unsigned char>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) = 0;
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
@@ -1473,7 +1543,7 @@ public:
     void SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText) {_SetViewAttributes(viewFlags, bgColor, usebgTexture, aaLines, aaText);}
     RenderDevice* GetRenderDevice() const {return _GetRenderDevice();}
     StatusInt AssignRenderDevice(RenderDevice* device) {return _AssignRenderDevice(device);}
-    void AddLights(bool threeDview, RotMatrixCP rotMatrixP, DgnModelP model = NULL) {_AddLights(threeDview, rotMatrixP, model);}
+    void AddLights(bool threeDview, RotMatrixCP rotMatrixP, DgnModelP model = nullptr) {_AddLights(threeDview, rotMatrixP, model);}
     void AdjustBrightness(bool useFixedAdaptation, double brightness){_AdjustBrightness(useFixedAdaptation, brightness);}
     uint64_t GetLightStamp() {return _GetLightStamp();}
     void DefineFrustum(DPoint3dCR frustPts, double fraction, bool is2d) {_DefineFrustum(frustPts, fraction, is2d);}
@@ -1506,10 +1576,10 @@ public:
 #endif
 
     //! Push a transform and/or a clip plane set
-    //! @param[in]          trans           Transform to push. May be NULL.
-    //! @param[in]          clipPlaneSet    Clip planes to push. May be NULL.
+    //! @param[in]          trans           Transform to push. May be nullptr.
+    //! @param[in]          clipPlaneSet    Clip planes to push. May be nullptr.
     //! @see #PopTransClip
-    void PushTransClip(TransformCP trans, ClipPlaneSetCP clipPlaneSet = NULL) {_PushTransClip(trans, clipPlaneSet);}
+    void PushTransClip(TransformCP trans, ClipPlaneSetCP clipPlaneSet = nullptr) {_PushTransClip(trans, clipPlaneSet);}
 
     //! Pop the most recently pushed transform and clipping.
     //! @see #PushTransClip

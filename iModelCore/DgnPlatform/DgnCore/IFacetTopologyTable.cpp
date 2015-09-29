@@ -396,7 +396,7 @@ FaceAttachment::FaceAttachment (ElemDisplayParamsCR sourceParams)
     m_color = m_useColor ? sourceParams.GetLineColor() : ColorDef::Black();
 
     if (m_useMaterial = !sourceParams.IsMaterialFromSubCategoryAppearance())
-        m_material = sourceParams.GetMaterial();
+        m_material = sourceParams.GetMaterialId();
 
     m_uv.Init(0.0, 0.0);
     }
@@ -414,7 +414,7 @@ void FaceAttachment::ToElemDisplayParams (ElemDisplayParamsR elParams) const
         elParams.SetLineColor(m_color);
 
     if (m_useMaterial)
-        elParams.SetMaterial(m_material);
+        elParams.SetMaterialId(m_material);
     }
 
 /*---------------------------------------------------------------------------------**//**

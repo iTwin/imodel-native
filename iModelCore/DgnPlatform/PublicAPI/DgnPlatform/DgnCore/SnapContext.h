@@ -20,7 +20,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 struct SnapContext : ViewContext
 {
 protected:
-    Render::NullOutput      m_output;
+    Render::NullOutput m_output;
     SnapDetailP     m_snapPath; // result of the snap
     double          m_snapAperture;
     SnapMode        m_snapMode;

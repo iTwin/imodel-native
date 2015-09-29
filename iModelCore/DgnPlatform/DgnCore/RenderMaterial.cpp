@@ -7,246 +7,129 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/2015
+* @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RenderMaterialPtr    JsonRenderMaterial::Create (DgnDbCR dgnDb, DgnMaterialId materialId)
+double Texture::GetUnitScale(Units units)
     {
-    if (!materialId.IsValid())
-        return nullptr;
-
-    DgnMaterials::Material material = dgnDb.Materials().Query (materialId);
-
-    if (!material.IsValid())
+    switch (units)
         {
-        BeAssert (false);
-        return nullptr;
-        }
-    Json::Value     renderMaterial;
-    
-    if (SUCCESS != material.GetRenderingAsset (renderMaterial))
-        {
-        BeAssert (false);
-        return nullptr;
-        }
+        case Units::Meters:
+            return 1.0;
 
-    return new JsonRenderMaterial (renderMaterial, materialId);
+        case Units::Millimeters:
+            return UnitDefinition::GetStandardUnit(StandardUnit::MetricMillimeters).ToMeters();
+
+        case Units::Feet:
+            return UnitDefinition::GetStandardUnit(StandardUnit::EnglishFeet).ToMeters();
+            
+        case Units::Inches:
+            return UnitDefinition::GetStandardUnit(StandardUnit::EnglishInches).ToMeters();
+
+        default:
+            BeAssert(false);
+            return 1.0;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/2015
+* @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static double  getDoubleValue (Json::Value const& rootValue, char const* key, BentleyStatus* status)
+Texture::Mode Texture::GetMode(Json::Value const& in) 
     {
-    Json::Value     value = rootValue[key];
+    Json::Value const& value = in[RENDER_MATERIAL_PatternMapping];
 
-    if (!value.isDouble())
+    if (!value.isInt())
         {
-        if (NULL != status) 
-            *status = ERROR;
-
-        return 0.0;
+        BeAssert(false);
+        return Mode::Parametric;
         }
-    if (NULL != status) 
-        *status = SUCCESS;
-    return value.asDouble();
+
+    return (Mode) value.asInt();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/2015
+* @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool  getBoolValue (Json::Value const& rootValue, char const* key, BentleyStatus* status)
+Texture::Units Texture::GetUnits(Json::Value const& in) 
     {
-    Json::Value     value = rootValue[key];
+    Json::Value const& value = in[RENDER_MATERIAL_PatternScaleMode];
 
-    if (!value.isBool())
+    if (!value.isInt())
         {
-        if (NULL != status) 
-            *status = ERROR;
-
-        return 0.0;
+        BeAssert(false);
+        return Units::Relative;
         }
-    if (NULL != status) 
-        *status = SUCCESS;
-
-    return value.asBool();
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Ray.Bentley     08/2015
-//---------------------------------------------------------------------------------------
-static RgbFactor getColorValue (Json::Value const& rootValue, const char* key, BentleyStatus* status)
-    {
-    Json::Value     value = rootValue[key];
-    RgbFactor       rgb = {0.0, 0.0, 0.0};
-
-    if (value.size() < 3)
-        {
-        BeAssert (false);
-        if (NULL != status) 
-            *status = ERROR;
-
-        return rgb;
-        }
-    rgb.red     = value[0].asDouble();
-    rgb.green   = value[1].asDouble();
-    rgb.blue    = value[2].asDouble();
-    
-    if (NULL != status) 
-        *status = SUCCESS;
-
-    return rgb;
+    return (Units) value.asInt();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Ray.Bentley     08/2015
 //---------------------------------------------------------------------------------------
-static DPoint2d getDPoint2dValue (Json::Value const& rootValue, const char* key, BentleyStatus* status)
+static DPoint2d getDPoint2dValue(Json::Value const& value)
     {
-    Json::Value     value = rootValue[key];
-    DPoint2d        point = { 0.0, 0.0 };
+    DPoint2d point = { 0.0, 0.0 };
 
     if (value.size() < 2)
         {
-        BeAssert (false);
-        if (NULL != status) 
-            *status = ERROR;
-
+        BeAssert(false);
         return point;
         }
-    point.x     = value[0].asDouble();
-    point.y     = value[1].asDouble();
-    
-    if (NULL != status) 
-        *status = SUCCESS;
 
+    point.x = value[0].asDouble();
+    point.y = value[1].asDouble();
     return point;
     }
 
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-double      JsonRenderMaterial::_GetDouble (char const* key, BentleyStatus* status) const     { return getDoubleValue (m_value, key, status); }
-bool        JsonRenderMaterial::_GetBool (char const* key, BentleyStatus* status) const       { return getBoolValue (m_value, key, status); }
-RgbFactor   JsonRenderMaterial::_GetColor (char const* key, BentleyStatus* status) const      { return getColorValue (m_value, key, status); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      08/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RenderMaterialMapPtr   JsonRenderMaterial::_GetMap (char const* key) const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Ray.Bentley     08/2015
+//---------------------------------------------------------------------------------------
+Render::Texture::Trans Render::Texture::GetPatternTransform(Json::Value const& value)
     {
-    Json::Value     mapsMap, patternMap;
-
-    if ((mapsMap = m_value[RENDER_MATERIAL_Map]).isNull() ||
-        (patternMap = mapsMap[key]).isNull())
-        return nullptr;
-
-    return JsonRenderMaterialMap::Create (patternMap);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t  JsonRenderMaterial::_GetQvMaterialId (DgnDbR dgnDb, bool createIfNotFound) const 
-    {
-    uintptr_t   qvMaterialId;
-
-    if (0 == (qvMaterialId = dgnDb.Materials().GetQvMaterialId (m_materialId)) && createIfNotFound)
-        qvMaterialId = dgnDb.Materials().AddQvMaterialId (m_materialId);
-
-    return qvMaterialId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-double      JsonRenderMaterialMap::_GetDouble (char const* key, BentleyStatus* status) const  {  return getDoubleValue (m_value, key, status); }
-bool        JsonRenderMaterialMap::_GetBool (char const* key, BentleyStatus* status) const    {  return getBoolValue (m_value, key, status); }
-DPoint2d    JsonRenderMaterialMap::_GetScale (BentleyStatus* status) const                    {  return getDPoint2dValue (m_value, RENDER_MATERIAL_PatternScale, status); }
-DPoint2d    JsonRenderMaterialMap::_GetOffset(BentleyStatus* status) const                    {  return getDPoint2dValue (m_value, RENDER_MATERIAL_PatternOffset, status); }
+    Render::Texture::Trans transform;
+    for (size_t i=0; i<2; ++i)
+        {
+        for (size_t j=0; j<3; ++j)
+            transform.m_val[i][j] = (i==j) ? 1.0 : 0.0;
+        }
+    
+    double          angleRadians    = Angle::DegreesToRadians(value[RENDER_MATERIAL_PatternAngle].asDouble());
+    double          cosAngle        = cos(angleRadians);
+    double          sinAngle        = sin(angleRadians);
+    bool            xFlip           = value[RENDER_MATERIAL_PatternFlipU].asBool();
+    bool            yFlip           = value[RENDER_MATERIAL_PatternFlipV].asBool();
+    DPoint2d        scale           = getDPoint2dValue(value[RENDER_MATERIAL_PatternScale]);
+    DPoint2d        offset          = getDPoint2dValue(value[RENDER_MATERIAL_PatternOffset]);
+    static double   s_minScale      = 1.0E-10;
  
+    Units units = GetUnits(value);
+    if (Units::Relative != units)
+        scale.Scale(GetUnitScale(units));
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      08/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RenderMaterialMap::Mode JsonRenderMaterialMap::_GetMode () const 
-    {
-    Json::Value     value = m_value[RENDER_MATERIAL_PatternMapping];
+    scale.x = std::max(scale.x, s_minScale);
+    scale.y = std::max(scale.y, s_minScale);
 
-    if (!value.isInt())
-        {
-        BeAssert (false);
-        return RenderMaterialMap::Mode::Parametric;
-        }
-    return (RenderMaterialMap::Mode) value.asInt();
+    if (xFlip)
+        scale.x = -scale.x;
+
+    if (yFlip)
+        scale.y = -scale.y;
+
+    transform.m_val[0][0] = cosAngle / scale.x;
+    transform.m_val[0][1] = sinAngle / scale.x;
+    transform.m_val[0][2] = offset.x;
+
+    transform.m_val[1][0] =  sinAngle / scale.y;
+    transform.m_val[1][1] = -cosAngle / scale.y;
+    transform.m_val[1][2] = offset.x;
+
+    return transform;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RenderMaterialMap::Units JsonRenderMaterialMap::_GetUnits () const 
-    {
-    Json::Value     value = m_value[RENDER_MATERIAL_PatternScaleMode];
-
-    if (!value.isInt())
-        {
-        BeAssert (false);
-        return RenderMaterialMap::Units::Relative;
-        }
-    return (RenderMaterialMap::Units) value.asInt();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      08/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   JsonRenderMaterialMap::_GetData (DgnTextures::TextureData& data, bvector<Byte>& image, DgnDbR dgnDb) const
-    {
-    Json::Value     textureIdValue = m_value[RENDER_MATERIAL_TextureId];
-
-    if (textureIdValue.isNull())     
-        return ERROR;                 // No external file support for now.
-
-    DgnTextureId            textureId = (DgnTextureId) textureIdValue.asUInt64();
-    DgnTextures::Texture    texture = dgnDb.Textures().Query (textureId);
-
-    if (!texture.IsValid())
-        {
-        BeAssert (false);
-        return ERROR;
-        }
-
-    data = texture.GetData();
-    return texture.GetImage (image);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t  JsonRenderMaterialMap::_GetQvTextureId (DgnDbR dgnDb, bool createIfNotFound) const 
-    {
-    Json::Value     textureIdValue = m_value[RENDER_MATERIAL_TextureId];
-
-    if (textureIdValue.isNull())     
-        return ERROR;                 // No external file support for now.
-
-    DgnTextureId    textureId = (DgnTextureId) textureIdValue.asUInt64();
-    uintptr_t       qvTextureId;
-
-    if (0 == (qvTextureId = dgnDb.Textures().GetQvTextureId (textureId)) && createIfNotFound)
-        qvTextureId = dgnDb.Textures().AddQvTextureId (textureId);
-
-    return qvTextureId;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      08/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void     RenderMaterialUtil::SetColor (Json::Value& renderMaterial, char const* keyword, RgbFactorCR color)
+void Texture::SetColor(Json::Value& out, Utf8CP keyword, RgbFactorCR color)
     {
     Json::Value     colorValue;
 
@@ -254,13 +137,13 @@ void     RenderMaterialUtil::SetColor (Json::Value& renderMaterial, char const* 
     colorValue[1] = color.green;
     colorValue[2] = color.blue;
 
-    renderMaterial[keyword] = colorValue;
+    out[keyword] = colorValue;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void     RenderMaterialUtil::SetPoint (Json::Value& renderMaterial, char const* keyword, DPoint3dCR point)
+void Texture::SetPoint(Json::Value& out, Utf8CP keyword, DPoint3dCR point)
     {
     Json::Value     pointValue;
 
@@ -268,32 +151,5 @@ void     RenderMaterialUtil::SetPoint (Json::Value& renderMaterial, char const* 
     pointValue[1] = point.y;
     pointValue[2] = point.z;
 
-    renderMaterial[keyword] = pointValue;
+    out[keyword] = pointValue;
     }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      08/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-double     RenderMaterialUtil::GetMapUnitScale (RenderMaterialMap::Units mapUnits)
-    {
-    switch (mapUnits)
-        {
-        default:
-            BeAssert (false);
-            return 1.0;
-
-        case RenderMaterialMap::Units::Meters:
-            return 1.0;
-
-        case RenderMaterialMap::Units::Millimeters:
-            return UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters).GetConversionFactorFrom (UnitDefinition::GetStandardUnit (StandardUnit::MetricMillimeters));
-
-        case RenderMaterialMap::Units::Feet:
-            return UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters).GetConversionFactorFrom (UnitDefinition::GetStandardUnit (StandardUnit::EnglishFeet));
-            
-        case RenderMaterialMap::Units::Inches:
-            return UnitDefinition::GetStandardUnit (StandardUnit::MetricMeters).GetConversionFactorFrom (UnitDefinition::GetStandardUnit (StandardUnit::EnglishInches));
-        }
-    }
-
