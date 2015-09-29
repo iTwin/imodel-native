@@ -1967,3 +1967,62 @@ DPoint3dCP pEndTangent
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2015
+//---------------------------------------------------------------------------------------
+LsComponentPtr LsStrokePatternComponent::_GetForTextureGeneration() const
+    {
+    LsOkayForTextureGeneration isOkay = _IsOkayForTextureGeneration();
+    BeAssert(LsOkayForTextureGeneration::NotAllowed != isOkay);   //  The caller should have tested for this.
+
+    if (isOkay == LsOkayForTextureGeneration::NoChangeRequired)
+        return const_cast<LsStrokePatternComponentP>(this);
+
+    LsStrokePatternComponentP retval = new LsStrokePatternComponent(this);
+
+    if (GetPhaseMode() != LsStrokePatternComponent::PHASEMODE_Fixed)
+        retval->SetDistancePhase(0.0);
+
+
+    for (size_t i = 0; i < retval->m_nStrokes; ++i)
+        {
+        LsStroke& stroke(*(retval->m_strokes + i));
+        if (stroke.GetCapMode() != LsCapMode::Open)
+            stroke.SetCapMode(LsCapMode::Closed);
+
+        stroke.SetIsStretchable(false);
+        //  end conditions are not enabled so it should not be necessary to mess with dash-first, etc.
+        //  Since we draw exactly one iteration for generating the texture, corner mode (IsRigid) should not be important.
+        }
+
+    return retval;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2015
+//---------------------------------------------------------------------------------------
+LsOkayForTextureGeneration LsStrokePatternComponent::_IsOkayForTextureGeneration() const 
+    {
+    if (m_okayForTextureGeneration != Dgn::LsOkayForTextureGeneration::Unknown)
+        return m_okayForTextureGeneration;
+
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::NoChangeRequired; 
+
+    if (HasIterationLimit())
+        return m_okayForTextureGeneration = LsOkayForTextureGeneration::NotAllowed;
+
+    //  Need to verify that fixed with a distance != 0 is okay.
+    if (GetPhaseMode() != LsStrokePatternComponent::PHASEMODE_Fixed)
+        m_okayForTextureGeneration = LsOkayForTextureGeneration::ChangeRequired;
+
+    for (uint32_t i = 0; i < m_nStrokes; ++i)
+        {
+        LsStroke const& stroke(*(m_strokes+i));
+        
+        if (stroke.IsStretchable() || (stroke.GetCapMode() != LsCapMode::Closed && stroke.GetCapMode() != LsCapMode::Open))
+            UpdateLsOkayForTextureGeneration(m_okayForTextureGeneration, LsOkayForTextureGeneration::ChangeRequired);
+        }
+
+    return m_okayForTextureGeneration;
+    }
+

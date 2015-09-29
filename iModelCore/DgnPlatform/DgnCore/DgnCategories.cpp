@@ -91,7 +91,7 @@ DgnCategoryId DgnCategories::QueryCategoryId(Utf8CP code) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryId DgnCategories::QueryCategoryId(DgnSubCategoryId subCategoryId) const
     {
-    BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock; // See comments on HighPriorityOperationBlock
+    BeSQLite::wt_OperationForGraphics wt_OperationForGraphics; // See comments on wt_OperationForGraphics
 
     CachedStatementPtr stmt;
     m_dgndb.GetCachedStatement(stmt, "SELECT CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_SubCategory) " WHERE Id=?");
@@ -130,8 +130,8 @@ DgnCategories::Category DgnCategories::Query(DgnCategoryId id) const
         return Category();
 
     // This has no effect unless there is a range tree query occurring during update dynamics.  See comments
-    // on HighPriorityOperationBlock for more information.
-    BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock;
+    // on wt_OperationForGraphics for more information.
+    BeSQLite::wt_OperationForGraphics wt_OperationForGraphics;
     CachedStatementPtr stmt;
     m_dgndb.GetCachedStatement(stmt, "SELECT Code,Label,Descr,Rank,Scope FROM " DGN_TABLE(DGN_CLASSNAME_Category) " WHERE Id=?");
     stmt->BindId(1, id);
@@ -155,7 +155,7 @@ DgnCategories::Category DgnCategories::Query(DgnCategoryId id) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategories::Iterator::const_iterator DgnCategories::Iterator::begin() const
     {
-    BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock;
+    BeSQLite::wt_OperationForGraphics wt_OperationForGraphics;
     if (!m_stmt.IsValid())
         {
         Utf8String sqlString = MakeSqlString("SELECT Id,Code,Label,Descr,Rank,Scope FROM " DGN_TABLE(DGN_CLASSNAME_Category));
@@ -305,7 +305,7 @@ DgnCategories::SubCategory DgnCategories::QuerySubCategory(DgnSubCategoryId subC
     if (!subCategoryId.IsValid())
         return SubCategory();
 
-    BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock; // See comments on HighPriorityOperationBlock
+    BeSQLite::wt_OperationForGraphics wt_OperationForGraphics; // See comments on wt_OperationForGraphics
 
     CachedStatementPtr stmt;
     m_dgndb.GetCachedStatement(stmt, "SELECT CategoryId,Code,Label,Descr,Props FROM " DGN_TABLE(DGN_CLASSNAME_SubCategory) " WHERE Id=?");

@@ -2517,6 +2517,6 @@ IProgressiveDisplay::Completion ProgressiveViewFilter::_Process(ViewContextR con
 +---------------+---------------+---------------+---------------+---------------+------*/
 ProgressiveViewFilter::~ProgressiveViewFilter()
     {
-    HighPriorityOperationBlock  _v_v;
+    wt_OperationForGraphics  _v_v;
     m_rangeStmt = nullptr;
     }

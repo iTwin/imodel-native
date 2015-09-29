@@ -438,6 +438,7 @@ LsOkayForTextureGeneration LsPointComponent::_IsOkayForTextureGeneration() const
             return m_okayForTextureGeneration = LsOkayForTextureGeneration::NotAllowed;
         }
 
+    UpdateLsOkayForTextureGeneration(m_okayForTextureGeneration, VerifySymbols());
     return m_okayForTextureGeneration;
     }
 
@@ -596,6 +597,100 @@ LsComponentReader*    reader
         }
 
     return pointComp;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2015
+//---------------------------------------------------------------------------------------
+LsOkayForTextureGeneration LsPointComponent::VerifySymbol(double& adjustment, double startOfStroke, double patternLength, uint32_t strokeIndex) const
+    {
+    adjustment = 0;
+
+    LsStrokeCP pStroke = m_strokeComponent->GetStrokeCP(strokeIndex);
+    LsSymbolReferenceCP    symRef = GetSymbolForStrokeCP (strokeIndex);
+    if (NULL == symRef)
+        return  LsOkayForTextureGeneration::NoChangeRequired;
+
+    LsOkayForTextureGeneration retval = LsOkayForTextureGeneration::NoChangeRequired;
+    double xOrigin = 0;
+    double outStrokeLen = pStroke->GetLength();
+
+    switch (symRef->GetJustification())
+        {
+        case LCPOINT_ORIGIN:
+            xOrigin = startOfStroke;
+            break;
+
+        case LCPOINT_CENTER:
+            xOrigin = startOfStroke + outStrokeLen/2;
+            break;
+
+        case LCPOINT_END:
+            xOrigin = startOfStroke + outStrokeLen;
+            break;
+
+        default:
+            BeAssert(false && L"Unknown stroke justification");
+            return  LsOkayForTextureGeneration::NotAllowed;
+        }
+
+    LsSymbolComponentCP symbolComponent = symRef->GetSymbolComponentCP();
+    BeAssert(NULL != symbolComponent);
+    if (NULL == symbolComponent)
+        return LsOkayForTextureGeneration::NotAllowed;
+
+    DRange3d  range3d;
+
+    symbolComponent->GetRange(range3d);
+
+    //  Now adjust the range.  This is simplified because we just drawing a line that has coordinates (0,0,0), (strokeLen, 0, 0).  We are assuming
+    //  top view so have identity for the view transform.
+    //
+    //  For these tests we are just using a scale factor of 1.
+    //
+    //  Converting to texture always forces Relative rotation so it is okay to assume Relative here.  We should test the range of the rotated graphics but for now will just
+    //  test the unrotated range of the unrotated graphics.  
+    double xLow = range3d.low.x*symbolComponent->GetUnitScale() + xOrigin;
+    double xHigh = range3d.high.x*symbolComponent->GetUnitScale() + xOrigin;
+    if (xLow < 0)
+        {
+        adjustment = 0 - xLow;
+        retval = LsOkayForTextureGeneration::ChangeRequired;
+        if (xHigh + adjustment >= patternLength)
+            retval = LsOkayForTextureGeneration::NotAllowed;
+        }
+    else if (xHigh >= patternLength)
+        {
+        adjustment = patternLength - xHigh;
+        retval = LsOkayForTextureGeneration::ChangeRequired;
+        if (xLow + adjustment < 0)
+            retval = LsOkayForTextureGeneration::NotAllowed;
+        }
+
+    return retval;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2015
+//---------------------------------------------------------------------------------------
+LsOkayForTextureGeneration LsPointComponent::VerifySymbols() const
+    {
+    LsOkayForTextureGeneration  result = LsOkayForTextureGeneration::NoChangeRequired;
+    double currentOffset = 0;
+    if (!m_strokeComponent.IsValid())
+        return result;
+
+    double patternLength = m_strokeComponent->GetLength(NULL);
+    for (uint32_t i = 0; i < m_strokeComponent->GetNumberStrokes(); ++i)
+        {
+        double adjustment = 0.0;
+        LsStrokeCP pStroke = m_strokeComponent->GetStrokeCP(i);
+        LsOkayForTextureGeneration temp =  VerifySymbol(adjustment, currentOffset, patternLength, i);
+        UpdateLsOkayForTextureGeneration(result, temp);
+        currentOffset += pStroke->GetLength();
+        }
+
+    return result;
     }
 
 size_t                       LsPointComponent::GetNumberSymbols()         const   {return m_symbols.size ();}

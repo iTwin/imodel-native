@@ -1233,6 +1233,8 @@ public:
     virtual LsComponentPtr _GetForTextureGeneration() const override;
     virtual void _StartTextureGeneration() const override;
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override;
+    LsOkayForTextureGeneration VerifySymbols() const;
+    LsOkayForTextureGeneration VerifySymbol(double& adjustment, double startingOffset, double patternLength, uint32_t strokeIndex) const;
 
     static BentleyStatus   CreateRscFromDgnDb(V10LinePoint** rscOut, DgnDbR project, LsComponentId id);
 

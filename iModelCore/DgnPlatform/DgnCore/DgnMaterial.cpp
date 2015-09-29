@@ -82,8 +82,8 @@ DgnMaterials::Material DgnMaterials::Query(DgnMaterialId id) const
         return Material();
 
     // This has no effect unless there is a range tree query occurring during update dynamics.  See comments
-    // on HighPriorityOperationBlock for more information.
-    BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock;
+    // on wt_OperationForGraphics for more information.
+    BeSQLite::wt_OperationForGraphics wt_OperationForGraphics;
     CachedStatementPtr stmt;
     m_dgndb.GetCachedStatement(stmt, "SELECT Value,Name,Descr,Palette,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Material) " WHERE Id=?");
     stmt->BindId(1, id);

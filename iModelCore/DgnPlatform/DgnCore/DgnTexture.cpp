@@ -107,7 +107,7 @@ DgnTextures::Texture DgnTextures::Query(DgnTextureId id) const
     if (!id.IsValid())
         return tx;
 
-    BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock;
+    BeSQLite::wt_OperationForGraphics wt_OperationForGraphics;
     CachedStatementPtr stmt;
     m_dgndb.GetCachedStatement(stmt, "SELECT Name,Descr,Data,Format,Width,Height,Flags FROM " DGN_TABLE(DGN_CLASSNAME_Texture) " WHERE Id=?");
     stmt->BindId(1, id);

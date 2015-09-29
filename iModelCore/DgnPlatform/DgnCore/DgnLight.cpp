@@ -66,7 +66,7 @@ DgnLights::Light DgnLights::Query(DgnLightId id) const
     if (!id.IsValid())
         return Light();
 
-    BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock;
+    BeSQLite::wt_OperationForGraphics wt_OperationForGraphics;
     CachedStatementPtr stmt;
     m_dgndb.GetCachedStatement(stmt, "SELECT Value,Name,Descr FROM " DGN_TABLE(DGN_CLASSNAME_Light) " WHERE Id=?");
     stmt->BindId(1, id);

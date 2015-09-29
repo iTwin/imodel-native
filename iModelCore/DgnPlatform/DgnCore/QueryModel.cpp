@@ -215,7 +215,7 @@ bool QueryModel::Selector::_CheckStop()
 
     if (GetState() != State::AbortRequested)
         {
-        if (!m_inRangeSelectionStep || !HighPriorityOperationSequencer::IsHighPriorityOperationActive())
+        if (!m_inRangeSelectionStep || !GraphicsAndQuerySequencer::qt_isOperationRequiredForGraphicsPending())
             return false;
 
         m_restartRangeQuery = true;
@@ -296,7 +296,7 @@ void QueryModel::Selector::qt_SearchRangeTree(DgnDbRTree3dViewFilter& filter)
         {
         ClearAborted();
 
-        if (HighPriorityOperationSequencer::IsHighPriorityOperationActive())
+        if (GraphicsAndQuerySequencer::qt_isOperationRequiredForGraphicsPending())
             {
             for (unsigned i = 0; i < 10 && !_CheckStop(); ++i)
                 BeThreadUtilities::BeSleep(2); // Let it run for awhile. If there was one call to XAttributeHandle::DoSelect, there will probably be more.
@@ -341,9 +341,9 @@ void QueryModel::Selector::qt_SearchRangeTree(DgnDbRTree3dViewFilter& filter)
 void QueryModel::Selector::qt_ProcessRequest() 
     {
     UpdateLogging::RecordStartQuery();
-    //  Notify HighPriorityOperationSequencer that this thread is running 
+    //  Notify GraphicsAndQuerySequencer that this thread is running 
     //  a range tree operation and is therefore exempt from checks for high priority required.
-    RangeTreeOperationBlock rangeTreeOperationBlock(m_dgndb);
+    qt_RangeTreeOperationBlock qt_RangeTreeOperationBlock(m_dgndb);
 
     DgnDbRTree3dViewFilter filter(*m_viewport, this, m_dgndb, m_maxElements, m_minimumPixels, m_noQuery ? nullptr : m_alwaysDraw, m_neverDraw);
     if (m_clipVector.IsValid())
