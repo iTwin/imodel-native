@@ -5,7 +5,6 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECDbPublishedTests.h"
 #include "ECInstanceAdaptersTestFixture.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE

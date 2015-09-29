@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/NonPublished/PublicApi/NonPublished/ECDb/ECDbTestProject.h $
+|  $Source: Tests/BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,7 +10,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <ECObjects/ECObjectsAPI.h>
 
-#include "../../../../Backdoor/PublicApi/BackDoor/ECDb/Backdoor.h"
+#include "ECDbTests.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
@@ -114,15 +114,16 @@ private:
     static void            PopulatePrimitiveValue (ECN::ECValueR value, ECN::PrimitiveType primitiveType, ECN::ECPropertyCP ecProperty);
     static void            GenerateRandomValue (ECN::ECValueR value, ECN::PrimitiveType type, ECN::ECPropertyCP ecproperty = nullptr);
 
+    //! Initializes the test environment by setting up the schema read context and search dirs etc.
+    //! Gets implicitly called when constructing an ECDbTestProject, too. Tests that don't use
+    //! the ECDbTestProject can call this method statically.
+    static void            Initialize();
+    static bool            IsInitialized();
+
 public:
                            ECDbTestProject ();
                            ~ECDbTestProject ();
     
-    //! Initializes the test environment by setting up the schema read context and search dirs etc.
-    //! Gets implicitly called when constructing an ECDbTestProject, too. Tests that don't use
-    //! the ECDbTestProject can call this method statically.
-    static void            Initialize ();
-    static bool            IsInitialized ();
     Utf8CP                 GetECDbPath () const;
     static Utf8String      BuildECDbPath (Utf8CP ecdbFileName);
 
@@ -189,6 +190,8 @@ public:
     static void     DebugDumpJson (const Json::Value& jsonValue);
     static bool     IsECValueNull (ECN::ECValueCR value);
     
+    static BentleyStatus ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath);
+
     static bool     CompareECDateTimes (int64_t expectedECTicks, int64_t actualECTicks);
     static void     AssertECDateTime (ECN::ECValueCR expectedECValue, const Db& db, double actualJd);
     static void     AssertECDateTime (int64_t expectedCETicks, int64_t actualCETicks, Utf8CP assertMessageHeader);

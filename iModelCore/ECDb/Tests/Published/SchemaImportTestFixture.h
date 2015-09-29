@@ -43,7 +43,7 @@ protected:
     void AssertIndex(ECDbCR, Utf8CP indexName, bool isUnique, Utf8CP tableName, std::vector<Utf8CP> const& columns, Utf8CP whereExpWithoutClassIdFilter, std::vector<ECN::ECClassId> const& classIdFilter, bool negateClassIdFilter = false);
 
 public:
-    SchemaImportTestFixture() { ECDbTestProject::Initialize(); }
+    SchemaImportTestFixture() { ECDbTestFixture::Initialize(); }
     virtual ~SchemaImportTestFixture() {}
     };
 

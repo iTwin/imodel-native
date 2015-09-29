@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/NonPublished/ECDb/ECDbProfile_Test.cpp $
+|  $Source: Tests/Published/ECDbProfile_Test.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "../PublicApi/NonPublished/ECDb/ECDbTestProject.h"
+#include "ECDbPublishedTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -30,7 +30,7 @@ void AssertProfileUpgrade (Utf8CP ecdbPath, Db::OpenParams const& openParams, bo
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbProfile, CreationTest)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
 
     Utf8String dbPath = ECDbTestProject::BuildECDbPath ("ecdbprofiletest.db");
     WString dbPathW;
@@ -136,7 +136,7 @@ TEST(ECDbProfile, UpgradeReadwriteFileTest)
 //+---------------+---------------+---------------+---------------+---------------+------
 void RunUpgradeTest (Db::OpenParams const& openParams)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
 
     Utf8String emptyECDb1_0Path = CopyTestFile ("profile1_0_empty.ecdb");
     Utf8String nonemptyECDb1_0Path = CopyTestFile ("profile1_0_nonempty.ecdb");
@@ -158,7 +158,7 @@ void RunUpgradeTest (Db::OpenParams const& openParams)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbProfile, OpenNonECDbFileTest)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
 
     Utf8String dbPath = ECDbTestProject::BuildECDbPath ("noecdbprofile.db");
 
@@ -245,7 +245,7 @@ void AssertIsProfile1_0_File (Db& ecdb, Utf8CP ecdbPath)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECDbProfile, VerifyNoAutoUpgradeForLegacyFilesWithoutCGColumns)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
 
     Utf8String legacyECDbPath = CopyTestFile ("legacyfilewithoutcommongeometrycolumns.ecdb");
     ECDb legacyECDb;

@@ -3080,6 +3080,9 @@ CachedStatementPtr ECDbMapStorage::GetStatement (StatementType type)
     DbResult stat = BE_SQLITE_ERROR;
     switch (type)
         {
+        case StatementType::SqlDeleteClassMap:
+            stat = m_manager.GetECDbR().GetCachedStatement(stmt, Sql_DeleteClassMap);
+            break;
         case StatementType::SqlInsertPropertyPath:
             stat = m_manager.GetECDbR ().GetCachedStatement (stmt, Sql_InsertPropertyPath);
             break;
@@ -3098,6 +3101,7 @@ CachedStatementPtr ECDbMapStorage::GetStatement (StatementType type)
         case StatementType::SqlSelectPropertyMap:
             stat = m_manager.GetECDbR ().GetCachedStatement (stmt, Sql_SelectPropertyMap);
             break;
+
         }
     if (stat != BE_SQLITE_OK)
         {
@@ -3174,6 +3178,12 @@ DbResult ECDbMapStorage::InsertPropertyMap (ECDbPropertyMapInfo const& o)
 //---------------------------------------------------------------------------------------
 DbResult ECDbMapStorage::InsertClassMap (ECDbClassMapInfo const& o)
     {
+    //TEMP fix for conceptstation
+    auto deleteSt = GetStatement(StatementType::SqlDeleteClassMap);
+    deleteSt->BindInt64(1, o.GetId());
+    deleteSt->Step();
+    //===============================
+    
     auto stmt = GetStatement (StatementType::SqlInsertClassMap);
     if (stmt == nullptr)
         {

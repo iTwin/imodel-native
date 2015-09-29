@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/NonPublished/ECDb/ECDbInstances_Test.cpp $
+|  $Source: Tests/Published/ECDbInstances_Test.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "../PublicApi/NonPublished/ECDb/ECDbTestProject.h"
+#include "ECDbPublishedTests.h"
 #include <limits>
 #include <initializer_list>
 USING_NAMESPACE_BENTLEY_EC
@@ -103,9 +103,12 @@ TEST(ECInstanceIdHelper, ECInstanceIdInstanceIdConversion)
     BeTest::SetFailOnAssert (true);
     }   
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                     09/13
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECDbInstances, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
 
     BeFileName schemaDir;
     BeTest::GetHost ().GetDocumentsRoot (schemaDir);
@@ -155,7 +158,7 @@ TEST (ECDbInstances, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
 
 //TEST (ECDbInstances, ViewTrigger)
 //    {
-//    ECDbTestProject::Initialize ();
+//    ECDbTestFixture::Initialize ();
 //
 //        {
 //        printf ("Deleting using ECSql\r\n");
@@ -334,19 +337,14 @@ Utf8CP nonNullPropertyName
 )
     {
     ECClassP testClassP = testProject.GetTestSchemaManager ().GetTestSchema ()->GetClassP (testClassName);
-
-    if (!EXPECTED_CONDITION (testClassP != nullptr))
-        {
+    if (testClassP == nullptr)
         return ERROR;
-        }
 
     testClass = testClassP;
 
     ECInstanceInserter inserter (testProject.GetECDb (), *testClass);
-    if (!EXPECTED_CONDITION (inserter.IsValid ()))
-        {
+    if (!inserter.IsValid ())
         return ERROR;
-        }
 
     // Create a new instance with only one prop value being populated (to avoid the special
     // case of a fully empty instance - which might need extra treatment)
@@ -1220,7 +1218,7 @@ TEST(ECDbInstances, AdapterCheckClassBeforeOperation)
     BeTest::SetFailOnAssert(false);
     // Parse JSON value using JsonCpp
     Json::Value jsonInput;
-    ReadJsonInputFromFile(jsonInput, jsonInputFile);
+    ASSERT_EQ(SUCCESS, ECDbTestUtility::ReadJsonInputFromFile(jsonInput, jsonInputFile));
 
     JsonInserter jsonInserter(db, *employee);
     sms = jsonInserter.Insert(instanceKey, jsonInput);

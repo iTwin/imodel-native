@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/NonPublished/ECDb/ECInstanceIdSequence_Tests.cpp $
+|  $Source: Tests/Published/ECInstanceIdSequence_Tests.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "../PublicApi/NonPublished/ECDb/ECDbTestProject.h"
+#include "ECDbPublishedTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -112,7 +112,8 @@ ECClassCR ecClass
 )
     {
     ECInstanceInserter inserter(ecdb, ecClass);
-    POSTCONDITION (inserter.IsValid(), nullptr);
+    if (!inserter.IsValid())
+        return nullptr;
 
     IECInstancePtr testInstance = ECDbTestProject::CreateArbitraryECInstance(ecClass);
 
@@ -143,11 +144,12 @@ IECInstancePtr target
     relation->SetTarget(target.get());
 
     ECInstanceInserter inserter(ecdb, relationClass);
-    POSTCONDITION (inserter.IsValid(), ECInstanceKey());
+    if (!inserter.IsValid())
+        return ECInstanceKey();
 
     ECInstanceKey instanceKey;
-    auto insertStatus = inserter.Insert(instanceKey, *relation);
-    POSTCONDITION (SUCCESS == insertStatus, ECInstanceKey());
+    if (SUCCESS != inserter.Insert(instanceKey, *relation))
+        return ECInstanceKey();
 
     return instanceKey;
     }
