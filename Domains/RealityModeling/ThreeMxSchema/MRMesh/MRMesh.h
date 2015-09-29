@@ -159,12 +159,12 @@ struct MRMeshNode :  BaseMeshNode,  RefCountedBase
     T_MeshNodeArray                 m_children;
     bvector <MRMeshGeometryPtr>     m_meshes;
     bvector <MRMeshTexturePtr>      m_textures;
-    bool                            m_mark;
     BeFileName                      m_dir;
     bool                            m_primary;                  // The root node and all descendents until displayable are marked as primary and never flushed.
     bool                            m_childrenRequested;
+    uint64_t                        m_lastUsed;
 
-    MRMeshNode (S3NodeInfo const&info, struct MRMeshNode* parent) : m_info (info), m_parent (parent), m_mark (false), m_primary(false), m_childrenRequested (false) { }
+    MRMeshNode (S3NodeInfo const&info, struct MRMeshNode* parent) : m_info (info), m_parent (parent), m_primary(false), m_childrenRequested (false), m_lastUsed (0) { }
     ~MRMeshNode ();
 
     virtual void                _SetDirectory(BeFileNameCR dir) override { m_dir = dir; }
@@ -198,10 +198,6 @@ struct MRMeshNode :  BaseMeshNode,  RefCountedBase
     size_t                      GetMeshCount () const;
     size_t                      GetMaxDepth () const;
     bool                        TestVisibility (bool& isUnderMaximumSize, ViewContextR viewContext, MRMeshContextCR meshContext);
-    void                        MarkVisible (size_t& visibleCount, ViewContextR viewContext, MRMeshContextCR meshContext);
-    void                        ClearUnmarked ();
-    void                        ClearMarks ();
-    size_t                      GetMarkCount () const;
     void                        RemoveChild (MRMeshNodeP child);
     void                        Clone (MRMeshNode const& other);
     void                        ClearQvElems ();
@@ -212,7 +208,7 @@ struct MRMeshNode :  BaseMeshNode,  RefCountedBase
     void                        GetDepthMap (bvector<size_t>& map, bvector <bset<BeFileName>>& fileNames, size_t depth);
     void                        Clear();
     BentleyStatus               GetRange (DRange3dR range, TransformCR transform) const;
-
+    void                        FlushStale (uint64_t staleTime);
     
     static MRMeshNodePtr        Create (S3NodeInfo const& info, MRMeshNodeP parent);
     static MRMeshNodePtr        Create ();
@@ -225,9 +221,7 @@ struct MRMeshNode :  BaseMeshNode,  RefCountedBase
 struct  MRMeshCacheManager
 {
     struct MRMeshCache*         m_cache;
-
     static MRMeshCacheManager   s_manager;
-
     static MRMeshCacheManagerR  GetManager()  { return s_manager; }
 
     MRMeshCacheManager();
@@ -237,9 +231,8 @@ struct  MRMeshCacheManager
     void                        AddRoot (MRMeshNodeR root);
     BentleyStatus               SynchronousRead (MRMeshNodeR node, BeFileNameCR fileName);
     void                        RemoveRequest (MRMeshNodeR node);
-    void                        FlushNonVisibleNodes ();
     void                        Debug ();
-    void                        Flush ();
+    void                        Flush (uint64_t staleTime);
 
     enum class RequestStatus { Finished, None, Processed };
     RequestStatus               ProcessRequests ();

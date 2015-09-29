@@ -49,60 +49,6 @@ MRMeshTexture::MRMeshTexture (Byte const* pData, size_t dataSize)
     readRGBFromJPEGData (m_data, m_size, pData, dataSize);
     }
 
-//=======================================================================================
-// @bsiclass                                                    Ray.Bentley     05/2015
-//=======================================================================================
-struct MRMeshTextureImage 
-{
-protected:
-    Point2d             m_size;
-    bvector<Byte>       m_compressedData;
-    bvector<Byte>       m_data;
-    
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-MRMeshTextureImage (Point2dCR size, bvector<Byte>& data, bvector<Byte>& compressedData) : m_size (size)
-    { 
-    // store both the compressed and uncompressed -- the uncompressed will be used for the initial
-    // display and then freed (to optimize performance and memory usage).
-    m_data.swap (data);
-    m_compressedData.swap (compressedData);
-    }
-
-#ifdef WIP
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _GetData (Byte* data) const override
-    {
-    if (!m_data.empty())
-        {
-        // First time through -- this will be for screen display.  After
-        // copying the uncompressed data, free it to reduce memory size.
-        memcpy (data, &m_data.front(), m_data.size());
-
-        (const_cast <bvector<Byte>*> (&m_data))->clear();
-
-        return SUCCESS;
-        }
-
-    Point2d         size;
-    bvector<Byte>   tempData;
-    readRGBFromJPEGData (tempData, size, &m_compressedData.front(), m_compressedData.size());
-
-    memcpy (data, &tempData.front(), tempData.size());
-
-    return SUCCESS;
-    }
-
-
-public:
-    static EmbeddedMaterialLayerImagePtr Create (Point2dCR size, bvector<Byte>& data, bvector<Byte>& compressedData) { return new MRMeshTextureImage (size, data, compressedData); }
-#endif
-
-};  // MRMeshTextureImage
-
 
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     09/2015

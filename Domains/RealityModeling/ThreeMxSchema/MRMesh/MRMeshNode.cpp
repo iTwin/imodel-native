@@ -12,21 +12,6 @@
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
                                              
 MRMeshNode::~MRMeshNode() { MRMeshCacheManager::GetManager().RemoveRequest (*this); }
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void    MRMeshNode::ClearUnmarked ()
-    {
-    if (!m_mark && !m_primary)
-        {
-        Clear ();
-        }
-    else
-        {
-        for (bvector <MRMeshNodePtr>::iterator child = m_children.begin (); child != m_children.end (); child++)
-            (*child)->ClearUnmarked ();
-        }
-    }
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
@@ -330,46 +315,6 @@ void MRMeshNode::DrawMeshes (IDrawGeomP drawGeom, TransformCR transform)
     }
 
 
-#ifdef OPTION_SS3_BUILD
-//=======================================================================================
-// @bsimethod                                                    Daryl.Holmwood  04/10
-//=======================================================================================
-bool IsRangeInView (IViewContextP viewContext, const ::DPoint3d& center, const double radius)
-    {
-    // No Viewport so return entire range.
-    if (!viewContext->GetViewport ())
-        return true;
-
-    static ::DRange3d const s_fullNpcRange =
-        {
-                { 0.0, 0.0, 0.0 },
-                { 1.0, 1.0, 1.0 }
-        };
-    ::DPoint3d updateViewRangePts[8];
-
-    // Convert Range to npc.
-    updateViewRangePts[0].x = center.x - radius; updateViewRangePts[0].y = center.y - radius; updateViewRangePts[0].z = center.z - radius;
-    updateViewRangePts[1].x = center.x - radius; updateViewRangePts[1].y = center.y + radius; updateViewRangePts[1].z = center.z - radius;
-    updateViewRangePts[2].x = center.x + radius; updateViewRangePts[2].y = center.y + radius; updateViewRangePts[2].z = center.z - radius;
-    updateViewRangePts[3].x = center.x + radius; updateViewRangePts[3].y = center.y - radius; updateViewRangePts[3].z = center.z - radius;
-    updateViewRangePts[4].x = center.x - radius; updateViewRangePts[4].y = center.y - radius; updateViewRangePts[4].z = center.z + radius;
-    updateViewRangePts[5].x = center.x - radius; updateViewRangePts[5].y = center.y + radius; updateViewRangePts[5].z = center.z + radius;
-    updateViewRangePts[6].x = center.x + radius; updateViewRangePts[6].y = center.y + radius; updateViewRangePts[6].z = center.z + radius;
-    updateViewRangePts[7].x = center.x + radius; updateViewRangePts[7].y = center.y - radius; updateViewRangePts[7].z = center.z + radius;
-    viewContext->LocalToView (updateViewRangePts, updateViewRangePts, 8);
-    viewContext->ViewToNpc (updateViewRangePts, updateViewRangePts, 8);
-    ::DRange3d refClipRange;
-    refClipRange.initFrom (updateViewRangePts, 8);
-
-    // Clip this into view npc only.
-    // If we have a subclip use this to clip against as well.
-    if (!refClipRange.isContained (&s_fullNpcRange) && !bsiDRange3d_intersect (&refClipRange, (::DRange3dP)&s_fullNpcRange, &refClipRange))
-        return false;
-
-    return true;
-    }
-#endif
-
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -397,35 +342,14 @@ bool    MRMeshNode::TestVisibility (bool& isUnderMaximumSize, ViewContextR viewC
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    MRMeshNode::MarkVisible (size_t& visibleCount, ViewContextR viewContext, MRMeshContextCR meshContext)
-    {
-    bool        isUnderMaximumSize = false,  isDisplayable = IsDisplayable();
-
-    if (isDisplayable &&
-        !TestVisibility (isUnderMaximumSize, viewContext, meshContext))
-        return;
-
-    if (!m_mark)
-        {
-        m_mark = true;
-        visibleCount++;
-        }
-    if ((!isUnderMaximumSize || !isDisplayable))
-        {
-        for (bvector<MRMeshNodePtr>::iterator child = m_children.begin (); child != m_children.end (); child++)
-            (*child)->MarkVisible (visibleCount, viewContext, meshContext);
-        }
-    }
-
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus MRMeshNode::Draw (bool& childrenScheduled, ViewContextR viewContext, MRMeshContextCR meshContext)
     {
    bool                isUnderMaximumSize = false, childrenNeedLoading = false;
 
     if (!TestVisibility (isUnderMaximumSize, viewContext, meshContext) || !IsLoaded())
         return SUCCESS;
+
+    m_lastUsed = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
 
     T_MeshNodeArray     unloadedVisibleChildren;
     
@@ -556,31 +480,6 @@ size_t      MRMeshNode::GetNodeCount () const
 
     return count;
     }
-
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t      MRMeshNode::GetMarkCount () const
-    {
-    size_t      count = (IsLoaded() && m_mark) ? 1 : 0;
-
-    for (bvector<MRMeshNodePtr>::const_iterator child = m_children.begin (); child != m_children.end (); child++)
-        count += (*child)->GetMarkCount ();
-
-    return count;
-    }
-
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void        MRMeshNode::ClearMarks ()
-    {
-    m_mark = false;
-
-    for (bvector<MRMeshNodePtr>::iterator child = m_children.begin (); child != m_children.end (); child++)
-        (*child)->ClearMarks ();
-    }
-
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -661,7 +560,6 @@ void MRMeshNode::Clone (MRMeshNode const& other)
     m_dir       = other.m_dir;
     m_meshes    = other.m_meshes;
     m_textures  = other.m_textures;
-    m_mark      = other.m_mark;
     m_children.clear();
 
     for (bvector <MRMeshNodePtr>::const_iterator otherChild = other.m_children.begin(); otherChild != other.m_children.end(); otherChild++)
@@ -738,6 +636,21 @@ BentleyStatus   MRMeshNode::GetRange (DRange3dR range, TransformCR transform) co
     return range.IsNull() ? ERROR : SUCCESS;
     }
 
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void MRMeshNode::FlushStale (uint64_t staleTime)
+    {
+    if (m_lastUsed < staleTime)
+        {
+        Clear ();
+        }
+    else
+        {
+        for (bvector <MRMeshNodePtr>::iterator child = m_children.begin (); child != m_children.end (); child++)
+            (*child)->FlushStale (staleTime);
+        }
+    }
 
 
 

@@ -380,7 +380,7 @@ typedef RefCountedPtr<MRMeshFileData> MRMeshFileDataPtr;
 +===============+===============+===============+===============+===============+======*/
 struct   NodeRequest
 {
-    Transform                       m_transform;
+    Transform                   m_transform;
     bset<DgnViewportP>          m_viewports;
 
     NodeRequest () { }
@@ -413,7 +413,6 @@ void Initialize ()
 
     m_cache = &T_HOST.GetRealityDataAdmin().GetCache();
     m_cache->RegisterSource(*FileRealityDataSource::Create(s_fileThreadCount));
-//  m_cache->RegisterSource(*HttpRealityDataSource::Create(s_httpThreadCount));         // This is already added by the RealityDataAdmin.
     }
 
 
@@ -615,53 +614,16 @@ size_t GetMaxDepth ()
 
 
                
-
-/*-----------------------------------------------------------------------------------**//**
+  /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t GetMarkCount ()
+BentleyStatus   FlushStale (uint64_t staleTime)
     {
-    size_t      markCount = 0;
-
-    for (auto& root : m_roots)
-        markCount += root->GetMarkCount ();
-
-    return markCount;
-    }
-
- /*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   FlushNonVisibleNodes ()
-    {
-#ifdef NEEDS_WORK   
-    double      preFlushResolutionRatio = MRMeshUtil::CalculateResolutionRatio();
-
     if (!m_requests.empty())
         return ERROR;
 
-    if (s_debugCacheLevel)
-        {
-        printf ("Before Flush...\n");
-        Debug();
-        }
-
-    size_t      visibleCount = 0;
-
     for (auto& root : m_roots)
-        root->ClearMarks();
-
-    MarkVisible (visibleCount);
-
-    for (auto& root : m_roots)
-        root->ClearUnmarked ();
-
-    if (s_debugCacheLevel)
-        {
-        printf ("After Flush...\n");
-        Debug();
-        }
-#endif
+        root->FlushStale (staleTime);
 
     return SUCCESS;
     }
@@ -762,16 +724,6 @@ void MRMeshCacheManager::AddRoot (MRMeshNodeR node)
     m_cache->AddRoot (node);
     }
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void MRMeshCacheManager::FlushNonVisibleNodes ()
-    {
-    if (NULL != m_cache)
-        m_cache->FlushNonVisibleNodes ();
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -800,7 +752,7 @@ MRMeshCacheManager::MRMeshCacheManager()
 
 MRMeshCacheManager::RequestStatus MRMeshCacheManager::ProcessRequests () { return (NULL == m_cache) ? MRMeshCacheManager::RequestStatus::Finished :  m_cache->ProcessRequests(); }
 void MRMeshCacheManager::Debug ()                           { if (NULL != m_cache) m_cache->Debug(); }
-void MRMeshCacheManager::Flush ()                           { if (NULL != m_cache) m_cache->FlushNonVisibleNodes(); }
+void MRMeshCacheManager::Flush (uint64_t staleTime)         { if (NULL != m_cache) m_cache->FlushStale (staleTime); }
 void MRMeshCacheManager::RemoveRequest (MRMeshNodeR node)   { if (NULL != m_cache) m_cache->RemoveCacheRequests (node); }
 
 /*---------------------------------------------------------------------------------**//**
