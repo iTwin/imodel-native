@@ -16,13 +16,6 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-//struct Performance_ECSQLVersusECInstanceInserter : public ::testing::Test
-//{
-//public:
-//    double m_eciiTime;
-//    double m_ecsqlTime;
-//
-//    Performance_ECSQLVersusECInstanceInserter::Performance_ECSQLVersusECInstanceInserter() { m_eciiTime = m_ecsqlTime = 0.0; }
 //*************************************************************************************************
 // ECInstanceInserter vs ECSQL performance
 //*************************************************************************************************

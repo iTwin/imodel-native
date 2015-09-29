@@ -13,7 +13,6 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-void ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath);
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     09/13
 //+---------------+---------------+---------------+---------------+---------------+------

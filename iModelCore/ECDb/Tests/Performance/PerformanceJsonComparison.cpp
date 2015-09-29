@@ -10,8 +10,6 @@
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-void ReadJsonInputFromFile (Json::Value& jsonInput, BeFileName& jsonFilePath);
-
 //---------------------------------------------------------------------------------------
 // @bsitest                                    Shaun.Sewall                     12/13
 //---------------------------------------------------------------------------------------
@@ -25,7 +23,7 @@ TEST(PerformanceJsonComparison, ParseJsonUsingStartupCompany)
     inputFile.AppendToPath (L"DgnDb");
     inputFile.AppendToPath (L"StartupCompany.json");
     Json::Value seedObj (Json::objectValue);
-    ReadJsonInputFromFile (seedObj, inputFile);
+    ECDbTestUtility::ReadJsonInputFromFile (seedObj, inputFile);
 
     Json::Value rowObj (Json::objectValue);
     Json::Value rowsArray (Json::arrayValue);
