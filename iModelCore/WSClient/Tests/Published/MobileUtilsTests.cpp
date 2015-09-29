@@ -69,8 +69,7 @@ void WSClientBaseTest::SetUp()
     BeSQLiteLib::Initialize(m_pathProvider.GetTemporaryDirectory());
     BeSQLite::EC::ECDb::Initialize(m_pathProvider.GetTemporaryDirectory(), &m_pathProvider.GetAssetsRootDirectory());
 
-    L10N::SqlangFiles sqlangFiles(BeFileName(m_pathProvider.GetAssetsRootDirectory()).AppendToPath(L"sqlang\\BeGTest_en-US.sqlang.db3"));
-    MobileDgnL10N::ReInitialize(sqlangFiles, sqlangFiles);
+    MobileDgnL10N::ReInitialize (MobileDgnL10N::GetDefaultFrameworkSqlangFiles (), MobileDgnL10N::GetDefaultFrameworkSqlangFiles ());
     }
 
 void WSClientBaseTest::TearDown()
