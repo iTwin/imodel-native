@@ -1767,7 +1767,7 @@ DbFile::~DbFile()
     BeAssert(m_statements.IsEmpty());
     BeAssert(nullptr == m_cachedProps);
 
-    DbResult rc =  (DbResult) sqlite3_close(m_sqlDb);
+    DbResult rc = (DbResult) sqlite3_close(m_sqlDb);
 
     if (BE_SQLITE_OK != rc)
         {
@@ -1792,7 +1792,6 @@ bool Db::IsDbOpen() const
     {
     return  (nullptr != m_dbFile) && (nullptr != m_dbFile->m_sqlDb);
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10

@@ -14,7 +14,7 @@
 
     This is what you need to do to use it:
     1. In your file, include header file like this:
-        #include <PerformanceTestingHelper/PerformanceTestingHelpers.h>
+        #include <UnitTests/BackDoor/PerformanceTestingHelper/PerformanceTestingHelpers.h>
     2. Now when you want to write a Time to the db, add following line:
         LOGTODB(TEST_DETAILS, m_InsertTime, "Sql Insert time", 1000);
        It automatically adds Test case name and Test name. You will need to provide time in seconds and then some additional details and number of operations. Last two arguments are optional.

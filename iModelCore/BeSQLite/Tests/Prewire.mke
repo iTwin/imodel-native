@@ -1,0 +1,16 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: Tests/Prewire.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+baseDir = $(_MakeFilePath)
+
+$(BuildContext)Delivery/UnitTests/PerformanceTestingHelpers.h : $(baseDir)Performance/include/PerformanceTestingHelpers.h
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)

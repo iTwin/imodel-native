@@ -8,5 +8,5 @@
 #pragma once
 //this is just a wrapper header that avoids that all published ATPs have to add the below include.
 
-#include <UnitTests/NonPublished/BeSQLite/BeSQLiteTests.h>
+#include "../NonPublished/PublicAPI/NonPublished/BeSQLite/BeSQLiteTests.h"
 
