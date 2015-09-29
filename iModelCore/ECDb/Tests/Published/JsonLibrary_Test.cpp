@@ -12,9 +12,6 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-// helper method from PerformanceECJsonInserterTests.cpp
-extern void ReadJsonInputFromFile (Json::Value&, BeFileName&);
-
 //---------------------------------------------------------------------------------------
 // Test code grabbed (and refactored) from rapidjson/examples/tutorial/tutorial.cpp
 // @bsitest                                    Shaun.Sewall                     01/14
@@ -273,7 +270,7 @@ TEST (RapidJson, InsertIntoECDb)
 
     // Parse JSON value using JsonCpp
     Json::Value jsonInput;
-    ReadJsonInputFromFile (jsonInput, jsonInputFile);
+    ASSERT_EQ(SUCCESS, ECDbTestUtility::ReadJsonInputFromFile (jsonInput, jsonInputFile));
 
     // Parse JSON value using RapidJson
     rapidjson::Document rapidJsonInput;

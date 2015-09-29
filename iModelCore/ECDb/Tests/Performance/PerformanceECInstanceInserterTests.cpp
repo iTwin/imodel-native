@@ -5,26 +5,17 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 #include <Bentley/BeTest.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <ECDb/ECDbApi.h>
 #include <BeSQLite/BeSQLite.h>
-#include "../NonPublished/PublicApi/NonPublished/ECDb/ECDbTestProject.h"
-#include "../BackDoor/PublicApi/BackDoor/ECDb/Backdoor.h"
 #include "PerformanceTests.h"
+#include "../BackDoor/PublicApi/BackDoor/ECDb/BackDoor.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-//struct Performance_ECSQLVersusECInstanceInserter : public ::testing::Test
-//{
-//public:
-//    double m_eciiTime;
-//    double m_ecsqlTime;
-//
-//    Performance_ECSQLVersusECInstanceInserter::Performance_ECSQLVersusECInstanceInserter() { m_eciiTime = m_ecsqlTime = 0.0; }
 //*************************************************************************************************
 // ECInstanceInserter vs ECSQL performance
 //*************************************************************************************************
@@ -223,7 +214,7 @@ private:
         {
             const int parameterIndex = kvPair.second;
             ECValue v;
-            Backdoor::ECObjects::ECValue::SetAllowsPointersIntoInstanceMemory(v, true);
+            BackDoor::ECObjects::ECValue::SetAllowsPointersIntoInstanceMemory(v, true);
             auto stat = testInstance.GetValue(v, kvPair.first);
             if (stat != ECObjectsStatus::ECOBJECTS_STATUS_Success)
                 return false;
@@ -310,7 +301,7 @@ private:
         if (ecValue.IsString() && !ecValue.IsUtf8())
             return IECSqlBinder::MakeCopy::Yes;
 
-        return Backdoor::ECObjects::ECValue::AllowsPointersIntoInstanceMemory(ecValue) ? IECSqlBinder::MakeCopy::No : IECSqlBinder::MakeCopy::Yes;
+        return BackDoor::ECObjects::ECValue::AllowsPointersIntoInstanceMemory(ecValue) ? IECSqlBinder::MakeCopy::No : IECSqlBinder::MakeCopy::Yes;
     }
 
 public:
@@ -708,7 +699,7 @@ struct TestResult
 void SetupDeleteTest(DbR db, int64_t& globalInstanceCount, TestParamters const& param)
     {
 
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
     Utf8String dbPath = ECDbTestProject::BuildECDbPath(param.GetFileName().c_str());
     WString dbPathW;
     BeStringUtilities::Utf8ToWChar(dbPathW, dbPath.c_str());

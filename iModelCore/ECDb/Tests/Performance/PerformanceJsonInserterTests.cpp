@@ -5,13 +5,11 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "../NonPublished/PublicApi/NonPublished/ECDb/ECDbTestProject.h"
 #include "PerformanceTests.h"
 
 using namespace BentleyApi::ECN;
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
-extern void ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath);
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Muhammad.Zaighum                  05/13
@@ -29,7 +27,7 @@ TEST(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
 
     // Parse JSON value using JsonCpp
     Json::Value jsonInput;
-    ReadJsonInputFromFile(jsonInput, jsonInputFile);
+    ECDbTestUtility::ReadJsonInputFromFile(jsonInput, jsonInputFile);
     ECClassCP documentClass = ecdb.Schemas().GetECClass("eB_PW_CommonSchema_WSB", "Document");
     ASSERT_TRUE(documentClass != nullptr);
     ASSERT_TRUE(documentClass != nullptr);
@@ -68,7 +66,7 @@ TEST(PerformanceJsonInserter, InsertRapidJsonInsertJasonCppUsingPresistanceAPI)
 
     // Parse JSON value using JsonCpp
     Json::Value jsonInput;
-    ReadJsonInputFromFile(jsonInput, jsonInputFile);
+    ECDbTestUtility::ReadJsonInputFromFile(jsonInput, jsonInputFile);
 
     // Parse JSON value using RapidJson
     rapidjson::Document rapidJsonInput;

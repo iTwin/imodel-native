@@ -1,11 +1,12 @@
 ﻿/*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/NonPublished/ECDb/ECDbSql_Test.cpp $
+|  $Source: Tests/Published/ECDbSql_Test.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "../PublicApi/NonPublished/ECDb/ECDbTestProject.h"
+#include "ECDbPublishedTests.h"
+
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
@@ -28,7 +29,7 @@ BentleyStatus ImportSchema(ECDbR ecdb, Utf8CP schemaXml)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ECDbSql, PartialIndex)
     {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
     ECDb db;
     ASSERT_EQ(BE_SQLITE_OK, ECDbTestUtility::CreateECDb(db, nullptr, L"ecdbmapindextest.ecdb"));
 
@@ -101,7 +102,7 @@ TEST(ECDbSql, PartialIndex)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ECDbSql, UniqueIndex)
     {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
     ECDb db;
     ASSERT_EQ(BE_SQLITE_OK, ECDbTestUtility::CreateECDb(db, nullptr, L"ecdbmapindextest.ecdb"));
 
@@ -161,7 +162,7 @@ TEST(ECDbSql, UniqueIndex)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ECDbSql, IndexErrors)
     {
-    ECDbTestProject::Initialize();
+    ECDbTestFixture::Initialize();
 
     bvector<bpair<Utf8String,BentleyStatus>> testSchemaXmls;
     testSchemaXmls.push_back(bpair<Utf8String, BentleyStatus>(

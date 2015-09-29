@@ -43,7 +43,7 @@ else
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECSqlBuilderTests, ECSqlSelectBuilder_CopySemantics)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"StartupCompany.02.00.ecschema.xml");
     auto testClass = testSchema->GetClassCP ("AAA");
 
@@ -67,7 +67,7 @@ TEST (ECSqlBuilderTests, ECSqlSelectBuilder_CopySemantics)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECSqlBuilderTests, ECSqlSelectBuilder_Comparisons)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
 
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"StartupCompany.02.00.ecschema.xml");
     auto testClass = testSchema->GetClassCP ("AAA");
@@ -231,7 +231,7 @@ TEST (ECSqlBuilderTests, ECSqlSelectBuilder_Comparisons)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECSqlBuilderTests, ECSqlSelectBuilder_IncompleteBuilder)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"StartupCompany.02.00.ecschema.xml");
     auto testClass = testSchema->GetClassCP ("AAA");
 
@@ -255,7 +255,7 @@ TEST (ECSqlBuilderTests, ECSqlSelectBuilder_IncompleteBuilder)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECSqlBuilderTests, ECSqlSelectBuilder_ToString)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"ECSqlTest.01.00.ecschema.xml");
     auto pClass = testSchema->GetClassCP ("P");
     auto psaClass = testSchema->GetClassCP ("PSA");
@@ -455,7 +455,7 @@ TEST (ECSqlBuilderTests, ECSqlSelectBuilder_ToString)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECSqlBuilderTests, ECSqlInsertBuilder_CopySemantics)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"StartupCompany.02.00.ecschema.xml");
     auto testClass = testSchema->GetClassCP ("AAA");
 
@@ -480,7 +480,7 @@ TEST (ECSqlBuilderTests, ECSqlInsertBuilder_CopySemantics)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECSqlBuilderTests, ECSqlInsertBuilder_Comparisons)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"StartupCompany.02.00.ecschema.xml");
     auto testClass = testSchema->GetClassCP ("AAA");
 
@@ -549,7 +549,7 @@ TEST (ECSqlBuilderTests, ECSqlInsertBuilder_IncompleteBuilder)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECSqlBuilderTests, ECSqlInsertBuilder_ToString)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"ECSqlTest.01.00.ecschema.xml");
     auto psaClass = testSchema->GetClassCP ("PSA");
     auto nonDomainStructWithPrims = testSchema->GetClassCP ("PStruct");
@@ -589,7 +589,7 @@ TEST (ECSqlBuilderTests, ECSqlInsertBuilder_ToString)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECSqlBuilderTests, ECSqlUpdateBuilder_CopySemantics)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"StartupCompany.02.00.ecschema.xml");
     auto testClass = testSchema->GetClassCP ("AAA");
 
@@ -609,7 +609,7 @@ TEST (ECSqlBuilderTests, ECSqlUpdateBuilder_CopySemantics)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECSqlBuilderTests, ECSqlUpdateBuilder_Comparisons)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"StartupCompany.02.00.ecschema.xml");
     auto testClass = testSchema->GetClassCP ("AAA");
 
@@ -729,7 +729,7 @@ TEST (ECSqlBuilderTests, ECSqlUpdateBuilder_IncompleteBuilder)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECSqlBuilderTests, ECSqlUpdateBuilder_ToString)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"ECSqlTest.01.00.ecschema.xml");
     auto psaClass = testSchema->GetClassCP ("PSA");
     auto nonDomainStructWithPrims = testSchema->GetClassCP ("PStruct");
@@ -773,7 +773,7 @@ TEST (ECSqlBuilderTests, ECSqlUpdateBuilder_ToString)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECSqlBuilderTests, ECSqlDeleteBuilder_CopySemantics)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"StartupCompany.02.00.ecschema.xml");
     auto testClass = testSchema->GetClassCP ("AAA");
 
@@ -793,7 +793,7 @@ TEST (ECSqlBuilderTests, ECSqlDeleteBuilder_CopySemantics)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECSqlBuilderTest, ECSqlDeleteBuilder_Comparisons)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"StartupCompany.02.00.ecschema.xml");
     auto testClass = testSchema->GetClassCP ("AAA");
 
@@ -885,7 +885,7 @@ TEST (ECSqlBuilderTests, ECSqlDeleteBuilder_IncompleteBuilder)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECSqlBuilderTests, ECSqlDeleteBuilder_ToString)
     {
-    ECDbTestProject::Initialize ();
+    ECDbTestFixture::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"ECSqlTest.01.00.ecschema.xml");
     auto psaClass = testSchema->GetClassCP ("PSA");
     auto nonDomainStructWithPrims = testSchema->GetClassCP ("PStruct");
