@@ -2145,7 +2145,7 @@ int ECSqlClassParams::GetSelectIndex(Utf8CP name) const
         auto found = std::find_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return arg.m_name == name; });
         if (m_entries.end() == found)
             {
-            // Ideally callers always pass the same static string we originally stored...fallback...
+            // Ideally callers always pass the same static string we originally stored...fallback to string comparison...
             found = std::find_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return 0 == ::strcmp(arg.m_name, name); });
             BeAssert(m_entries.end() == found && "Prefer to pass the same string with static storage duration to GetSelectIndex() as was previously passed to Add()");
             }
@@ -2160,5 +2160,15 @@ int ECSqlClassParams::GetSelectIndex(Utf8CP name) const
         }
 
     return -1;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSqlClassParams::RemoveAllButSelect()
+    {
+    // Once we've constructed the handler info, we need only retain those property names which are used in SELECT statements.
+    auto removeAt = std::remove_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return StatementType::Select != (arg.m_type & StatementType::Select); });
+    m_entries.erase(removeAt, m_entries.end());
     }
 
