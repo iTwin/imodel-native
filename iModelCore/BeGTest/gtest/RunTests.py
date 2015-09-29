@@ -44,7 +44,8 @@ class GtestStdoutResultParser ():
     #-------------------------------------------------------------------------#
     #                                           Kevin.Nyman         8/09
     #---+---------+---------+---------+---------+---------+---------+---------#
-    def __init__ (self, filename, fileWithAllTests, arch):
+    def __init__ (self, filename, fileWithAllTests, arch, exeName):
+        self.m_exeName = exeName
         self.m_filename = filename
         self.m_listOfFailingTests = []
         self.m_listOfFailingTestNames = []
@@ -189,7 +190,7 @@ class GtestStdoutResultParser ():
         if wasCrash:
             result = "\nTo debug the crashing test: \n"
 
-        platformArg = '-a'+self.m_arch
+        platformArg = '-a'+self.m_arch + " -exeName="+self.m_exeName
 
         numFailing = num 
         gtestFilter = ""
@@ -203,7 +204,7 @@ class GtestStdoutResultParser ():
             sep = ":"
             count += 1
 
-        cmdLine = getSrcRootEnvVar()+os.path.join("BeGTest","runtests.py ") + command
+        cmdLine = getSrcRootEnvVar()+os.path.join("BeGTest", "gtest", "runtests.py ") + command
 
         if (numFailing > MAX):
             result += "WARNING::: Truncating command line to the first " + str(MAX) + " failing tests out of " + str (self.GetFailCount()) + " failing tests.\n"
@@ -211,6 +212,9 @@ class GtestStdoutResultParser ():
         if not wasCrash:
             result += "\nTo debug all tests: \n"
             result += "    " + cmdLine + " " + platformArg + " --vs12 --gtest_break_on_failure\n"
+
+        result = 
+
         return result
 
     #-------------------------------------------------------------------------#
@@ -881,7 +885,7 @@ class DgnPlatformTestRunner:
         testResultsFilename = self.GeneratePathForTarget ("TestResults.txt", testType)
         testListFile = self.GeneratePathForTarget ("ListOfAllTests.txt", testType)
 
-        parser = GtestStdoutResultParser (testResultsFilename, testListFile, self.m_arch)
+        parser = GtestStdoutResultParser (testResultsFilename, testListFile, self.m_arch, self.m_exeName)
         parser.ParseFile ()
         Log ("\n\n")  
         if shouldPrintResults:
@@ -904,7 +908,7 @@ class DgnPlatformTestRunner:
         testResultsFilename = self.GeneratePathForTarget ("TestResults.txt", testType)
         testListFile = self.GeneratePathForTarget ("ListOfAllTests.txt", testType)
 
-        parser = GtestStdoutResultParser (testResultsFilename, testListFile, self.m_arch)
+        parser = GtestStdoutResultParser (testResultsFilename, testListFile, self.m_arch, self.m_exeName)
         parser.ParseFile ()
         return (parser.GetErrorCount (), parser.TruncatedErrorsToString (testType))
 
@@ -912,7 +916,7 @@ class DgnPlatformTestRunner:
     #                                           Kevin.Nyman         10/09
     #---+---------+---------+---------+---------+---------+---------+---------#
     def PrintResultsAndUnfinishedTests (self, testResultsFilename, testListFile):
-        parser = GtestStdoutResultParser (testResultsFilename, testListFile, self.m_arch)
+        parser = GtestStdoutResultParser (testResultsFilename, testListFile, self.m_arch, self.m_exeName)
         parser.ParseFile ()
         f = open (testResultsFilename, "r")
         for line in f:
@@ -938,7 +942,7 @@ class DgnPlatformTestRunner:
     #                                           Kevin.Nyman         10/09
     #---+---------+---------+---------+---------+---------+---------+---------#
     def OutputFinishedAndNotFinishedFiles (self, testResultsFilename, testListFile, finishedTestsFilename, unfinishedTestsFilename):
-        parser = GtestStdoutResultParser (testResultsFilename, testListFile, self.m_arch)
+        parser = GtestStdoutResultParser (testResultsFilename, testListFile, self.m_arch, self.m_exeName)
         parser.ParseFile ()
         parser.UnfinishedTestListToFile (unfinishedTestsFilename)
         parser.FinishedTestListToFile (finishedTestsFilename)
@@ -976,7 +980,7 @@ class DgnPlatformTestRunner:
             Exit (result)
 
         # count how many tests that should run so we can gauge how many tests we have completed.
-        parser = GtestStdoutResultParser ("", fileWithTestsThatWillRun, self.m_arch)
+        parser = GtestStdoutResultParser ("", fileWithTestsThatWillRun, self.m_arch, self.m_exeName)
         parser.PrepareListOfAllTests ()
         count = len(parser.m_listOfAllTests)
         
@@ -1028,7 +1032,7 @@ class DgnPlatformTestRunner:
             Exit (result)
 
         # count how many tests that should run so we can gauge how many tests we have completed.
-        parser = GtestStdoutResultParser ("", fileWithTestsThatWillRun, self.m_arch)
+        parser = GtestStdoutResultParser ("", fileWithTestsThatWillRun, self.m_arch, self.m_exeName)
         parser.PrepareListOfAllTests ()
         totalCount = len(parser.m_listOfAllTests)
         
