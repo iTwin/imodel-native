@@ -1012,6 +1012,7 @@ void  BeTest::Host::GetDocumentsRoot (BeFileName& path)         {_GetDocumentsRo
 void  BeTest::Host::GetDgnPlatformAssetsDirectory (BeFileName& path) {_GetDgnPlatformAssetsDirectory (path);}
 void  BeTest::Host::GetOutputRoot (BeFileName& path)            {_GetOutputRoot (path);}
 void  BeTest::Host::GetTempDir (BeFileName& path)               {_GetTempDir (path);}
+void  BeTest::Host::GetFrameworkSqlangFiles (BeFileName& path)  {_GetFrameworkSqlangFiles(path);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2012

@@ -10,8 +10,6 @@ BeFileNameTests.UNCReadOnlyTest         # Testable UNC path is required to be av
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
 
-BeFileNameTests.RemoveQuotesWithNoQuotes        # ???
-
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------

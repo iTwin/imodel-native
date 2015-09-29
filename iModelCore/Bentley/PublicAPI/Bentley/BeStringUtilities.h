@@ -551,6 +551,12 @@ public:
     //! @return Returns a string comprised of all strings in the list in input order, separated by the supplied delimiter.
     BENTLEYDLL_EXPORT static Utf8String    Join (bvector<Utf8String> const& strings, Utf8CP delimiter = NULL);
 
+    //! Joins a list of strings into a single string, optionally separated by a delimiter.
+    //! @param[in]      strings     The list of strings to join
+    //! @param[in]      delimiter   The delimiter to be inserted between each string
+    //! @return Returns a string comprised of all strings in the list in input order, separated by the supplied delimiter.
+    BENTLEYDLL_EXPORT static Utf8String    Join (bvector<Utf8CP> const& strings, Utf8CP delimiter = NULL);
+
     //! Default logic for parsing a user supplied argument list.  Tokenizes based on whitespace and does not tokenize within double-quoted substrings.
     //! @param[out]     subStrings   The resulting sub strings will be added to this collection
     //! @param[in]      inString     The string to tokenize; cannot be NULL or empty

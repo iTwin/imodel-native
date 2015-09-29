@@ -102,9 +102,9 @@ typedef char                Utf8Char;
 
 #if defined (__cplusplus)
 #define ENUM_IS_FLAGS(ENUMTYPE) \
-inline ENUMTYPE operator| (ENUMTYPE a, ENUMTYPE b) { return static_cast<ENUMTYPE>(static_cast<int>(a) | static_cast<int>(b)); } \
-inline ENUMTYPE operator& (ENUMTYPE a, ENUMTYPE b) { return static_cast<ENUMTYPE>(static_cast<int>(a) & static_cast<int>(b)); } \
-inline ENUMTYPE operator~ (ENUMTYPE a) { return static_cast<ENUMTYPE>(~(static_cast<int>(a))); }
+inline ENUMTYPE operator| (ENUMTYPE a, ENUMTYPE b) { return static_cast<ENUMTYPE>(static_cast<std::underlying_type<ENUMTYPE>::type>(a) | static_cast<std::underlying_type<ENUMTYPE>::type>(b)); } \
+inline ENUMTYPE operator& (ENUMTYPE a, ENUMTYPE b) { return static_cast<ENUMTYPE>(static_cast<std::underlying_type<ENUMTYPE>::type>(a) & static_cast<std::underlying_type<ENUMTYPE>::type>(b)); } \
+inline ENUMTYPE operator~ (ENUMTYPE a) { return static_cast<ENUMTYPE>(~(static_cast<std::underlying_type<ENUMTYPE>::type>(a))); }
 #else
 #define ENUM_IS_FLAGS (ENUMTYPE)
 #endif
