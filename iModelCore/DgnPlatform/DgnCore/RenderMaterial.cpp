@@ -7,6 +7,125 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
+//=======================================================================================
+// RenderMaterial...
+//=======================================================================================
+#define DEFAULT_Finish          .05
+#define DEFAULT_Specular        .05
+#define DEFAULT_Diffuse         .5
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+double      RenderMaterial::_GetDouble (char const* key, BentleyStatus* status) const
+    {
+    if (NULL != status)
+        *status = SUCCESS;
+
+    if (0 == BeStringUtilities::Stricmp(key, RENDER_MATERIAL_Finish))
+        return DEFAULT_Finish;
+
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Diffuse))
+        return DEFAULT_Diffuse;
+
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Specular))
+        return DEFAULT_Specular;
+
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Reflect) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Transmit))
+        return 0.0;
+
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Glow) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Refract))
+        return 1.0;
+
+    BeAssert (false);
+    if (NULL != status)
+        *status = ERROR;
+
+    return 0.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool        RenderMaterial::_GetBool (char const* key, BentleyStatus* status) const
+    {
+    if (NULL != status)
+        *status = SUCCESS;
+
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_FlagHasBaseColor) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_FlagHasSpecularColor) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_FlagHasFinish) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_FlagNoShadows))
+        return false;
+
+    BeAssert (false);
+    if (NULL != status)
+        *status = ERROR;
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+RgbFactor  RenderMaterial::_GetColor (char const* key, BentleyStatus* status) const
+    {
+    BeAssert (false);
+    if (NULL != status)
+        *status = ERROR;
+
+    RgbFactor   color  = {1.0, 1.0, 1.0};
+
+    return color;
+    }
+
+//=======================================================================================
+// RenderMaterialMap...
+//=======================================================================================
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+double      RenderMaterialMap::_GetDouble (char const* key, BentleyStatus* status) const
+    {
+    if (NULL != status)
+        *status = SUCCESS;
+
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_PatternAngle))
+        return 0.0;
+
+    BeAssert (false);
+    if (NULL != status)
+        *status = ERROR;
+
+    return 0.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool        RenderMaterialMap::_GetBool (char const* key, BentleyStatus* status) const
+    {
+    if (NULL != status)
+        *status = SUCCESS;
+
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_PatternFlipU) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_PatternFlipV))
+        return false;
+
+    
+    BeAssert (false);
+    if (NULL != status)
+        *status = ERROR;
+
+    return false;
+    }
+
+
+//=======================================================================================
+// JSonRenderMaterial...
+//=======================================================================================
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/

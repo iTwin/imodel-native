@@ -9,11 +9,11 @@
 
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <Bentley/BeTest.h>
-#include <DgnPlatform/DgnHandlers/ScopedDgnHost.h>
+#include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 #include "GenericDgnModelTestFixture.h"
-#include <UnitTests/BackDoor/DgnProject/DgnElementHelpers.h>
-#include <UnitTests/BackDoor/DgnProject/DgnDbUtilities.h>
-#include <UnitTests/BackDoor/DgnProject/DgnPlatformTestDomain.h>
+#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnElementHelpers.h"
+#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnDbUtilities.h"
+#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 
 #define LOCALIZED_STR(str) str
 

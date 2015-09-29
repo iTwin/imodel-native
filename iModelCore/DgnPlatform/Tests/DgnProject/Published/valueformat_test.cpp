@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <Bentley/BeTest.h>
-#include <DgnPlatform/DgnHandlers/ScopedDgnHost.h>
-#include <UnitTests/BackDoor/DgnProject/BackDoor.h>
+#include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
+#include "../BackDoor/PublicAPI/BackDoor/DgnProject/BackDoor.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_DGNDB_UNIT_TESTS_NAMESPACE

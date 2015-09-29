@@ -12,7 +12,7 @@
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <ECDb/ECDbApi.h>
-#include <DgnPlatform/DgnHandlers/ScopedDgnHost.h>
+#include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 
 USING_NAMESPACE_BENTLEY_DGN
@@ -64,10 +64,8 @@ protected:
     virtual DgnDbStatus _UpdateInDb() override;
     virtual DgnDbStatus _DeleteInDb() const override;
 
-    virtual DgnDbStatus _LoadFromDb() override;
-    virtual void _GetInsertParams(bvector<Utf8CP>& params) override;
+    virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
     virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    virtual void _GetUpdateParams(bvector<Utf8CP>& params) override;
     virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     virtual void _CopyFrom(DgnElementCR el) override;
 
@@ -88,6 +86,7 @@ public:
 struct TestElementHandler : dgn_ElementHandler::Physical
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, dgn_ElementHandler::Physical, )
+protected: virtual void _GetClassParams(ECSqlClassParams& params) override;
 };
 struct GTestElement2dHandler;
 

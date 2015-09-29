@@ -751,11 +751,6 @@ public:
 //! An ElemMatSymb is the "cooked" material and symbology that determines the real appearance (e.g. color/width/raster pattern/linestyle,
 //! etc.) used to draw all geometry.
 //!
-//! The processing of "cooking" an ElemDisplayParams into an ElemMatSymb involves resolving color table indices (if color is indexed),
-//! applying line weight to width mappings, resolving custom line styles, etc.
-//! For example, an ElemMatSymb stores the full RGBA values for color and fill color, versus the index into a color table
-//! stored in ElemDisplayParams.
-//!
 //! Viewports always have an "active" ElemMatSymb.
 //=======================================================================================
 struct  ElemMatSymb

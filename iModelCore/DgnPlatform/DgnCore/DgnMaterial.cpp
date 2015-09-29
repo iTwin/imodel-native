@@ -197,3 +197,136 @@ Utf8CP DgnMaterials::Iterator::Entry::GetPalette() const {Verify(); return m_sql
 Utf8CP DgnMaterials::Iterator::Entry::GetDescr() const {Verify(); return m_sql->GetValueText(3);}
 Utf8CP DgnMaterials::Iterator::Entry::GetValue() const {Verify(); return m_sql->GetValueText(4);}
 DgnMaterialId DgnMaterials::Iterator::Entry::GetParentId() const {Verify(); return m_sql->GetValueId<DgnMaterialId>(5);}
+
+#include <DgnPlatform/DgnCore/MaterialElement.h>
+
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
+namespace dgn_ElementHandler
+{
+    HANDLER_DEFINE_MEMBERS(Material);
+}
+
+END_BENTLEY_DGNPLATFORM_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_ElementHandler::Material::_GetClassParams(ECSqlClassParams& params)
+    {
+    T_Super::_GetClassParams(params);
+    params.Add("Descr");
+    params.Add("Data");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnMaterial::_BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) 
+    {
+    auto status = T_Super::_BindInsertParams(stmt);
+    if (DgnDbStatus::Success == status)
+        status = BindParams(stmt);
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnMaterial::_BindUpdateParams(ECSqlStatement& stmt)
+    {
+    auto status = T_Super::_BindUpdateParams(stmt);
+    if (DgnDbStatus::Success == status)
+        status = BindParams(stmt);
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnMaterial::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+    {
+    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    if (DgnDbStatus::Success == status)
+        m_data.Init(stmt.GetValueText(params.GetSelectIndex("Descr")), stmt.GetValueText(params.GetSelectIndex("Data")));
+    
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnMaterial::BindParams(ECSqlStatement& stmt)
+    {
+    if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex("Descr"), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No)
+        || ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex("Data"), m_data.m_value.c_str(), IECSqlBinder::MakeCopy::No))
+        return DgnDbStatus::BadArg;
+    else
+        return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnMaterial::_CopyFrom(DgnElementCR el) 
+    {
+    T_Super::_CopyFrom(el);
+    auto other = dynamic_cast<DgnMaterialCP>(&el);
+    BeAssert(nullptr != other);
+    if (nullptr != other)
+        m_data = other->m_data;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnMaterial::_SetParentId(DgnElementId parentId) 
+    {
+    if (parentId.IsValid())
+        {
+        // parent must be another material
+        auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_MaterialElement) " WHERE ECInstanceId=?");
+        if (!stmt.IsValid())
+            return DgnDbStatus::InvalidParent;
+
+        stmt->BindId(1, parentId);
+        if (BE_SQLITE_ROW != stmt->Step() || 1 != stmt->GetValueInt(0))
+            return DgnDbStatus::InvalidParent;
+        }
+
+    // TODO? Base implementation doesn't check for cycles...
+    return T_Super::_SetParentId(parentId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnAuthority::Code makeMaterialCode(Utf8StringCR palette, Utf8StringCR material, DgnDbR db)
+    {
+    // ###TODO?
+    //  Should we automatically create the material authority when initializing the DB?
+    //  Do we need a special MaterialAuthority class?
+    static const Utf8CP s_authorityName = "DgnMaterialAuthority";
+    auto auth = db.Authorities().Get<NamespaceAuthority>(s_authorityName);
+    if (auth.IsNull())
+        {
+        auto newAuth = NamespaceAuthority::CreateNamespaceAuthority(s_authorityName, db);
+        db.Authorities().Insert(*newAuth);
+        auth = db.Authorities().Get<NamespaceAuthority>(s_authorityName);
+        }
+
+    BeAssert(auth.IsValid());
+    return auth.IsValid() ? auth->CreateCode(material, palette) : DgnAuthority::Code();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnMaterial::CreateParams::CreateParams(DgnDbR db, DgnModelId modelId, Utf8StringCR paletteName, Utf8StringCR materialName, Utf8StringCR value, DgnElementId parentMaterialId, Utf8StringCR descr)
+    : DgnMaterial::CreateParams(db, modelId, DgnMaterial::QueryDgnClassId(db), makeMaterialCode(paletteName, materialName, db), DgnElementId(), parentMaterialId, value, descr)
+    {
+    //
+    }
+

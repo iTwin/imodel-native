@@ -1707,7 +1707,6 @@ BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TiledRaster::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, BeSQLiteRealityDataStorage::SelectOptions const& options)
     {
-    HighPriorityOperationBlock highPriority;
     BeMutexHolder lock(cs);
 
     CachedStatementPtr stmt;
@@ -1753,7 +1752,6 @@ BentleyStatus TiledRaster::_Persist(BeSQLite::Db& db, BeMutex& cs) const
     if (SUCCESS != GetExpirationDate().ToUnixMilliseconds(expirationDate))
         return ERROR;
 
-    HighPriorityOperationBlock highPriority;
     BeMutexHolder lock(cs);
 
     CachedStatementPtr selectStatement;

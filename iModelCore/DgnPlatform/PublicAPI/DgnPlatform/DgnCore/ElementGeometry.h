@@ -12,6 +12,7 @@
 #include "SolidKernel.h"
 #include "GeomPart.h"
 #include "ViewContext.h"
+#include "Annotations/TextAnnotation.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -417,6 +418,7 @@ DGNPLATFORM_EXPORT bool Append (MSBsplineSurfaceCR); //! 3d only
 DGNPLATFORM_EXPORT bool Append (PolyfaceQueryCR); //! 3d only
 DGNPLATFORM_EXPORT bool Append (ISolidKernelEntityCR); //! 3d only
 DGNPLATFORM_EXPORT bool Append (TextStringCR);
+DGNPLATFORM_EXPORT bool Append (TextAnnotationCR);
 
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateGeomPart (DgnDbR db, bool is3d);
 

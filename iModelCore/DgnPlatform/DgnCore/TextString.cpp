@@ -392,7 +392,7 @@ void TextString::DrawTextAdornments(ViewContextR context) const
     
     pts[1].x = m_range.high.x;
     pts[1].y = pts[0].y;
-    pts[0].z = 0.0;
+    pts[1].z = 0.0;
 
     context.PushTransform(ComputeTransform());
     context.CookDisplayParams();

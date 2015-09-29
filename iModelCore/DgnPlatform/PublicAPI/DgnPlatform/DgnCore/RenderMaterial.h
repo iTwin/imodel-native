@@ -52,18 +52,39 @@ public:
     static RenderMaterialMapPtr  Create (Json::Value const& value) { return new JsonRenderMaterialMap (value); }
 
 
-DGNPLATFORM_EXPORT    virtual Mode                _GetMode () const override;
-DGNPLATFORM_EXPORT    virtual Units               _GetUnits () const override;
-DGNPLATFORM_EXPORT    virtual DPoint2d            _GetScale (BentleyStatus* status = NULL) const override;
-DGNPLATFORM_EXPORT    virtual DPoint2d            _GetOffset (BentleyStatus* status = NULL) const override;
-DGNPLATFORM_EXPORT    virtual BentleyStatus       _GetData (DgnTextures::TextureData& data, bvector<Byte>& image, DgnDbR dgnDb) const override;
-DGNPLATFORM_EXPORT    virtual double              _GetDouble (char const* key, BentleyStatus* status = NULL) const override;
-DGNPLATFORM_EXPORT    virtual bool                _GetBool (char const* key, BentleyStatus* status = NULL) const override;
-DGNPLATFORM_EXPORT    virtual uintptr_t           _GetQvTextureId (DgnDbR dgnDb, bool createIfNotFound) const override;
-
+    DGNPLATFORM_EXPORT    virtual Mode                _GetMode () const override;
+    DGNPLATFORM_EXPORT    virtual Units               _GetUnits () const override;
+    DGNPLATFORM_EXPORT    virtual DPoint2d            _GetScale (BentleyStatus* status = NULL) const override;
+    DGNPLATFORM_EXPORT    virtual DPoint2d            _GetOffset (BentleyStatus* status = NULL) const override;
+    DGNPLATFORM_EXPORT    virtual double              _GetDouble (char const* key, BentleyStatus* status = NULL) const override;
+    DGNPLATFORM_EXPORT    virtual bool                _GetBool (char const* key, BentleyStatus* status = NULL) const override;
+    DGNPLATFORM_EXPORT    virtual BentleyStatus       _GetImage (bvector<Byte>& data, Point2dR size, DgnDbR dgnDb) const override;
+    DGNPLATFORM_EXPORT    virtual uintptr_t           _GetQvTextureId (DgnDbR dgnDb, bool createIfNotFound) const override;
 
 };
 
+//=======================================================================================
+// @bsiclass                                             
+//=======================================================================================
+struct SimpleBufferPatternMap : RenderMaterialMap
+{
+protected:
+    mutable uintptr_t   m_qvTextureId;
+    bvector<Byte>       m_imageData;
+    Point2d             m_imageSize;
+
+    SimpleBufferPatternMap (Byte const* imageData, Point2dCR imageSize);
+
+public:
+    DGNPLATFORM_EXPORT static RenderMaterialMapPtr  Create (Byte const* imageData, Point2dCR imageSize);
+
+    DGNPLATFORM_EXPORT ~SimpleBufferPatternMap ();
+
+    virtual uintptr_t   _GetQvTextureId (DgnDbR dgnDb, bool createIfNotFound) const override;
+
+    DGNPLATFORM_EXPORT virtual BentleyStatus _GetImage (bvector<Byte>& data, Point2dR size, DgnDbR dgnDb) const override;
+                                                                                                 
+};
 //=======================================================================================
 // @bsiclass                                             
 //=======================================================================================

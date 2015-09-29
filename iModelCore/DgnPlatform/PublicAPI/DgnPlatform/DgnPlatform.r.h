@@ -101,6 +101,7 @@ public:
     uint32_t    noFrontClip:1;      //!< Controls whether the front clipping plane is used. Note the inversion. Elements beyond will not be displayed.
     uint32_t    noBackClip:1;       //!< Controls whether the back clipping plane is used. Note the inversion. Elements beyond will not be displayed.
     uint32_t    noClipVolume:1;     //!< Controls whether the clip volume is applied. Note the inversion. Elements beyond will not be displayed.
+    uint32_t    ignoreLighting:1;   //!< Controls whether lights are used.
 
     void SetRenderMode (DgnRenderMode value) {m_renderMode = value;}
     DgnRenderMode GetRenderMode() const {return m_renderMode;}

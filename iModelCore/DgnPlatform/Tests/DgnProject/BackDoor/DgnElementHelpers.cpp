@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <Bentley/BeTest.h>
-#include <UnitTests/BackDoor/DgnProject/DgnElementHelpers.h>
+#include "PublicAPI/BackDoor/DgnProject/DgnElementHelpers.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 
