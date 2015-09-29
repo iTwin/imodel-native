@@ -1529,54 +1529,23 @@ TEST (BeFileNameTests, BeFileNameRemoveQuotes)
     WCharCP fileName1  = L"\"temp.txt\"";
     WCharCP expectedName = L"temp.txt";
 
-
     BeFileName fromFileName1 (fileName1);
-        
     fromFileName1.RemoveQuotes ();
+
     EXPECT_NE(fromFileName1.GetName(),fileName1)<<  "After removing quotes\n"<<fromFileName1.GetName()<<"\n"<<"before removing quotes\n"<<fileName1 ;
     EXPECT_TRUE (0==wcscmp(expectedName, fromFileName1.GetName()));
-    
-    SUCCEED ();
+
+    // Just confirm that it works fine if there are no Quotes
+    WCharCP fileName2 = L"temp.txt";
+
+    BeFileName fromFileName2(fileName2);
+    fromFileName2.RemoveQuotes();
+
+    EXPECT_NE(fromFileName2.GetName(), fileName1) << "After removing quotes\n" << fromFileName2.GetName() << "\n" << "before removing quotes\n" << fileName2;
+    EXPECT_TRUE(0 == wcscmp(expectedName, fromFileName2.GetName()));
+
 }
 
-//---------------------------------------------------------------------------------------
-// @betest                                     Hassan.Arshad                  10/13
-// Desc: Testing of RemoveQuotes() method.
-// Expected Result: File name has no quotes so unicode should also not change
-//---------------------------------------------------------------------------------------
-TEST (BeFileNameTests,RemoveQuotesWithNoQuotes)
-{
-    WCharCP fileName1  = L"temp.txt";
-    WCharCP expectedName = L"temp.txt";
-
-
-    BeFileName fromFileName1 (fileName1);
-        
-    fromFileName1.RemoveQuotes ();
-    EXPECT_STREQ(fromFileName1.GetName(),fileName1)<< "After removing quotes\n"<<fromFileName1.GetName()<<"\n"<<"before removing quotes\n"<<fileName1 ;
-    EXPECT_TRUE (0==wcscmp(expectedName, fromFileName1.GetName()));
-    
-    SUCCEED ();
-}
-
-//---------------------------------------------------------------------------------------
-// @betest                                     Hassan.Arshad                  10/13
-// Desc: Testing of RemoveQuotes() method.
-// Expected Result: File name has no quotes so unicode should also not change
-//---------------------------------------------------------------------------------------
-TEST (BeFileNameTests,RemoveQuotesFalseComparison)
-{
-    WCharCP fileName1  = L"temp.txt";
-    WCharCP expectedName = L"true.txt";
-
-    BeFileName fromFileName1 (fileName1);
-        
-    fromFileName1.RemoveQuotes ();
-    EXPECT_STREQ(fromFileName1.GetName(),fileName1)<< "After removing quotes\n"<<fromFileName1.GetName()<<"\n"<<"before removing quotes\n"<<fileName1 ;
-    EXPECT_FALSE (0==wcscmp(expectedName, fromFileName1.GetName()));
-    
-    SUCCEED ();
-}
 //------------------------------------------------------------------------------------------------------------------
 // @betest                                     Hassan.Arshad                  10/13
 // Desc: Testing of ParseNameNoClear    (    WStringP     dev, WStringP     dir, WStringP     name, WStringP     ext ) method.
@@ -1881,17 +1850,8 @@ TEST (BeFileNameTests, BeFileNameBeGetDiskFreeSpace)
 
     EXPECT_TRUE(BeFileNameStatus::Success ==diskSpaceStatus)<<(uint32_t)diskSpaceStatus;
 
-    // make sure we get correct result when we can't create a directory;
-    // Windows systems (up to WinRT) don't have protected directories
-#ifndef BENTLEY_WIN32
-#ifdef BENTLEY_WINRT
-    path.SetName (L"C:\\somenonexistent\\protected\\directory");
-#else
-    path.SetName (L"\\bin\\somenonexistent\\protected\\directory");
-#endif
-    status = BeFileName::CreateNewDirectory (path);
-    ASSERT_TRUE (BeFileNameStatus::CantCreate == status);
-#endif
+    // TO DO: Need to verify if Free bytes have correct value
+
     }
 
 //---------------------------------------------------------------------------------------
