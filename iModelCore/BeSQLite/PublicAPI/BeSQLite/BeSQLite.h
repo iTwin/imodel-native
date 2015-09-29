@@ -2618,71 +2618,78 @@ public:
 };
 
 //=======================================================================================
-//! Creating an instance of HighPriorityOperationSequencer notifies HighPriorityOperationSequencer
+//! Creating an instance of wt_OperationForGraphics notifies GraphicsAndQuerySequencer
 //! that the subsequent operations are high priority and should be allowed even if
-//! high priority is required. It also notifies the range tree operation that it should
-//! abort the current range tree query to let the high priority query to continue.
+//! the query thread is running a query. It also notifies the range tree operation that it should
+//! abort the current range tree query to let work thread operation continue.
+//!
+//! It is important to avoid restarting the query in the query thread, so any query that 
+//! uses wt_OperationForGraphics should cache the results of the work thread query so it can avoid
+//! repeating the work thread query.
 // @bsiclass                                                    John.Gooding    01/2013
 //=======================================================================================
-struct HighPriorityOperationBlock
+struct wt_OperationForGraphics
     {
-    BE_SQLITE_EXPORT HighPriorityOperationBlock();
-    BE_SQLITE_EXPORT ~HighPriorityOperationBlock();
+    BE_SQLITE_EXPORT wt_OperationForGraphics();
+    BE_SQLITE_EXPORT ~wt_OperationForGraphics();
     };
 
 //=======================================================================================
-//! Creating an instance of RangeTreeOperationBlock notifies the HighPriorityOperationSequencer
-//! that the current thread is doing a range tree operation.  That means that operations
-//! in this thread are allowed even if they are not high priority. Code that executes
-//! within the scope of a RangeTreeOperationBlock must check for IsHighPriorityOperationActive
-//! and, if it is, must respond appropriately.
+//! Creating an instance of qt_RangeTreeOperationBlock notifies the GraphicsAndQuerySequencer
+//! that the current thread (should be the query thread) is doing a range tree operation.  
+//! The operations in this thread are allowed without checking for wt_OperationForGraphics. 
+//! Code that executes within the scope of a qt_RangeTreeOperationBlock must check for 
+//! qt_isOperationRequiredForGraphicsPending and, if it is, must respond appropriately.
 // @bsiclass                                                    John.Gooding    01/2013
 //=======================================================================================
-struct RangeTreeOperationBlock
+struct qt_RangeTreeOperationBlock
     {
-    BE_SQLITE_EXPORT RangeTreeOperationBlock(BeSQLite::Db const& sqlDb);
-    BE_SQLITE_EXPORT ~RangeTreeOperationBlock();
+    BE_SQLITE_EXPORT qt_RangeTreeOperationBlock(BeSQLite::Db const& sqlDb);
+    BE_SQLITE_EXPORT ~qt_RangeTreeOperationBlock();
     };
 
 //=======================================================================================
-//! Creating an instance of HighPriorityRequired notifies the HighPriorityOperationSequencer
-//! that the current thread is doing an operation that prohibits all but high priority operations.
+//! Creating an instance of wt_GraphicsAndQuerySequencerDiagnosticsEnabler notifies the GraphicsAndQuerySequencer
+//! that the current thread is doing an operation that prohibits any operation that is not
+//! required for the current update to continue.
+//!
 //! In a release build this has no affect. In a debug build it allows CheckSQLiteOperationAllowed
-//! to assert if it detects a BeSQLite operation that is not high priority.
+//! to assert if it detects a BeSQLite operation on the query DB outside of the query thread
+//! when there is no active wt_OperationForGraphics object.
 // @bsiclass                                                    John.Gooding    01/2013
 //=======================================================================================
-struct HighPriorityRequired
+struct wt_GraphicsAndQuerySequencerDiagnosticsEnabler
     {
-    BE_SQLITE_EXPORT HighPriorityRequired();
-    BE_SQLITE_EXPORT ~HighPriorityRequired();
+    BE_SQLITE_EXPORT wt_GraphicsAndQuerySequencerDiagnosticsEnabler();
+    BE_SQLITE_EXPORT ~wt_GraphicsAndQuerySequencerDiagnosticsEnabler();
     };
 
 //=======================================================================================
 // @bsiclass                                                    John.Gooding    01/2013
 //=======================================================================================
-struct HighPriorityOperationSequencer
+struct GraphicsAndQuerySequencer
 {
-friend struct HighPriorityOperationBlock;
-friend struct RangeTreeOperationBlock;
-friend struct HighPriorityRequired;
+friend struct wt_OperationForGraphics;
+friend struct qt_RangeTreeOperationBlock;
+friend struct wt_GraphicsAndQuerySequencerDiagnosticsEnabler;
 
 private:
-    static bool s_isHighPriorityRequired;
-    static int  s_inHighPriorityOperation;
+    static bool s_areSequencerDiagnosticsEnabled;
+    static int  s_nPendingGraphicsPriorityRequests;
     static intptr_t s_rangeTreeThreadId;
-    static SqlDbP s_queryDb;
+    static SqlDbP s_queryThreadDb;
 
-    static void StartRangeTreeOperation(BeSQLite::Db const& queryDb);
-    static void EndRangeTreeOperation();
-    static void StartHighPriorityOperation();
-    static void EndHighPriorityOperation();
-    BE_SQLITE_EXPORT static void StartHighPriorityRequired();
-    BE_SQLITE_EXPORT static void EndHighPriorityRequired();
+    static void qt_StartRangeTreeOperation(BeSQLite::Db const& queryDb);
+    static void qt_EndRangeTreeOperation();
+    static void wt_StartOperationRequiredForGraphics();
+    static void wt_EndOperationRequiredForGraphics();
+    static void wt_BeginDiagnostics();
+    static void wt_EndDiagnostics();
 
 public:
     //! This is called at the start of an update that must not block.  Calls to this should
     //! never be nested.
-    BE_SQLITE_EXPORT static bool IsHighPriorityOperationActive();
+    BE_SQLITE_EXPORT static bool qt_isOperationRequiredForGraphicsPending();
     static void CheckSQLiteOperationAllowed(SqlDbP queryDb);
 };
 

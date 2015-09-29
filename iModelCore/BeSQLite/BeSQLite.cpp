@@ -49,7 +49,7 @@ extern "C" int checkNoActiveStatements(SqlDbP db);
 #if defined (NDEBUG)
     #define HPOS_CheckSQLiteOperationAllowed(queryDb)
 #else
-    #define HPOS_CheckSQLiteOperationAllowed(queryDb) HighPriorityOperationSequencer::CheckSQLiteOperationAllowed(queryDb)
+    #define HPOS_CheckSQLiteOperationAllowed(queryDb) GraphicsAndQuerySequencer::CheckSQLiteOperationAllowed(queryDb)
 #endif
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
@@ -2374,43 +2374,43 @@ Utf8CP Db::InterpretDbResult(DbResult result)
     return "<unkown result code>";
     }
 
-bool HighPriorityOperationSequencer::s_isHighPriorityRequired;
-int HighPriorityOperationSequencer::s_inHighPriorityOperation;
-intptr_t HighPriorityOperationSequencer::s_rangeTreeThreadId;
-SqlDbP HighPriorityOperationSequencer::s_queryDb;
+bool GraphicsAndQuerySequencer::s_areSequencerDiagnosticsEnabled;
+int GraphicsAndQuerySequencer::s_nPendingGraphicsPriorityRequests;
+intptr_t GraphicsAndQuerySequencer::s_rangeTreeThreadId;
+SqlDbP GraphicsAndQuerySequencer::s_queryThreadDb;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2013
 //---------------------------------------------------------------------------------------
-void HighPriorityOperationSequencer::StartHighPriorityRequired()
+void GraphicsAndQuerySequencer::wt_BeginDiagnostics()
     {
-    BeAssert(!s_isHighPriorityRequired);
-    s_isHighPriorityRequired = true;
+    BeAssert(!s_areSequencerDiagnosticsEnabled);
+    s_areSequencerDiagnosticsEnabled = true;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2013
 //---------------------------------------------------------------------------------------
-void HighPriorityOperationSequencer::EndHighPriorityRequired()
+void GraphicsAndQuerySequencer::wt_EndDiagnostics()
     {
-    BeAssert(s_isHighPriorityRequired);
-    s_isHighPriorityRequired = false;
+    BeAssert(s_areSequencerDiagnosticsEnabled);
+    s_areSequencerDiagnosticsEnabled = false;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2013
 //---------------------------------------------------------------------------------------
-void HighPriorityOperationSequencer::StartRangeTreeOperation(BeSQLite::Db const& queryDb)
+void GraphicsAndQuerySequencer::qt_StartRangeTreeOperation(BeSQLite::Db const& queryDb)
     {
     BeAssert(0 == s_rangeTreeThreadId);
-    s_queryDb = queryDb.GetSqlDb();
+    s_queryThreadDb = queryDb.GetSqlDb();
     s_rangeTreeThreadId = BeThreadUtilities::GetCurrentThreadId();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2013
 //---------------------------------------------------------------------------------------
-void HighPriorityOperationSequencer::EndRangeTreeOperation()
+void GraphicsAndQuerySequencer::qt_EndRangeTreeOperation()
     {
     BeAssert(0 != s_rangeTreeThreadId);
     s_rangeTreeThreadId = 0;
@@ -2419,54 +2419,54 @@ void HighPriorityOperationSequencer::EndRangeTreeOperation()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2013
 //---------------------------------------------------------------------------------------
-void HighPriorityOperationSequencer::StartHighPriorityOperation()
+void GraphicsAndQuerySequencer::wt_StartOperationRequiredForGraphics()
     {
-    s_inHighPriorityOperation++;
+    s_nPendingGraphicsPriorityRequests++;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2013
 //---------------------------------------------------------------------------------------
-void HighPriorityOperationSequencer::EndHighPriorityOperation()
+void GraphicsAndQuerySequencer::wt_EndOperationRequiredForGraphics()
     {
-    BeAssert(s_inHighPriorityOperation > 0);
-    s_inHighPriorityOperation--;
+    BeAssert(s_nPendingGraphicsPriorityRequests > 0);
+    s_nPendingGraphicsPriorityRequests--;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2013
 //---------------------------------------------------------------------------------------
-bool HighPriorityOperationSequencer::IsHighPriorityOperationActive()
+bool GraphicsAndQuerySequencer::qt_isOperationRequiredForGraphicsPending()
     {
-    return s_inHighPriorityOperation != 0;
+    return s_nPendingGraphicsPriorityRequests != 0;
     }
 
 //---------------------------------------------------------------------------------------
 // The only purpose of this method is to assert in a debug build with an operation is not allowed
 // @bsimethod                                                   John.Gooding    01/2013
 //---------------------------------------------------------------------------------------
-void HighPriorityOperationSequencer::CheckSQLiteOperationAllowed(SqlDbP queryDb)
+void GraphicsAndQuerySequencer::CheckSQLiteOperationAllowed(SqlDbP pendingOperation)
     {
 #if !defined (NDEBUG)
-    if (!s_isHighPriorityRequired || s_inHighPriorityOperation)
+    if (!s_areSequencerDiagnosticsEnabled || s_nPendingGraphicsPriorityRequests)
         return;
 
     if (BeThreadUtilities::GetCurrentThreadId() == s_rangeTreeThreadId)
         return;
 
-    if (queryDb != s_queryDb)
+    if (pendingOperation != s_queryThreadDb)
         return;
 
     BeAssert(false);// && "detected an sql operation that may block dynamic update");
 #endif
     }
 
-HighPriorityOperationBlock::HighPriorityOperationBlock() { HighPriorityOperationSequencer::StartHighPriorityOperation(); }
-HighPriorityOperationBlock::~HighPriorityOperationBlock() { HighPriorityOperationSequencer::EndHighPriorityOperation(); }
-RangeTreeOperationBlock::RangeTreeOperationBlock(BeSQLite::Db const&queryDb) { HighPriorityOperationSequencer::StartRangeTreeOperation(queryDb); }
-RangeTreeOperationBlock::~RangeTreeOperationBlock() { HighPriorityOperationSequencer::EndRangeTreeOperation(); }
-HighPriorityRequired::HighPriorityRequired() { HighPriorityOperationSequencer::StartHighPriorityRequired(); }
-HighPriorityRequired::~HighPriorityRequired() { HighPriorityOperationSequencer::EndHighPriorityRequired(); }
+wt_OperationForGraphics::wt_OperationForGraphics() { GraphicsAndQuerySequencer::wt_StartOperationRequiredForGraphics(); }
+wt_OperationForGraphics::~wt_OperationForGraphics() { GraphicsAndQuerySequencer::wt_EndOperationRequiredForGraphics(); }
+qt_RangeTreeOperationBlock::qt_RangeTreeOperationBlock(BeSQLite::Db const&queryDb) { GraphicsAndQuerySequencer::qt_StartRangeTreeOperation(queryDb); }
+qt_RangeTreeOperationBlock::~qt_RangeTreeOperationBlock() { GraphicsAndQuerySequencer::qt_EndRangeTreeOperation(); }
+wt_GraphicsAndQuerySequencerDiagnosticsEnabler::wt_GraphicsAndQuerySequencerDiagnosticsEnabler() { GraphicsAndQuerySequencer::wt_BeginDiagnostics(); }
+wt_GraphicsAndQuerySequencerDiagnosticsEnabler::~wt_GraphicsAndQuerySequencerDiagnosticsEnabler() { GraphicsAndQuerySequencer::wt_EndDiagnostics(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
