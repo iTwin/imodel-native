@@ -23,7 +23,7 @@ void ECDbTestFixture::SetTestProject (std::unique_ptr<ECDbTestProject> testProje
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  04/13
+// @bsimethod                                     Carole.MacDonald     09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 ECDbTestProject& ECDbTestFixture::GetTestProject () const
     {
@@ -31,7 +31,7 @@ ECDbTestProject& ECDbTestFixture::GetTestProject () const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  04/13
+// @bsimethod                                     Carole.MacDonald     09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //virtual
 ECDbTestProject& ECDbTestFixture::_GetTestProject () const
