@@ -396,7 +396,7 @@ BentleyStatus ECDbSchemaWriter::EnsureECSchemaExists(ECClassCR ecClass)
         return SUCCESS;
     BeAssert(false && "I think we just should assume that the entry already exists, rather than relying on just-in-time? Or is this for when we branch off into related ECClasses?");
     //Add ECSchema entry but do not traverse its ECClasses.
-    if (SUCCESS != CreateECSchemaEntry(ecClass.GetSchema(), ecSchemaId))
+    if (BE_SQLITE_OK != CreateECSchemaEntry(ecClass.GetSchema(), ecSchemaId))
         return ERROR;
 
     return ImportECCustomAttributeECClass(ecClass.GetSchema());
