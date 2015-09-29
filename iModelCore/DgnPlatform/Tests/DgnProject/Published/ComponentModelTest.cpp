@@ -374,6 +374,7 @@ void ComponentModelTest::GenerateCMSchema()
     OpenComponentDb(Db::OpenMode::ReadWrite);
     ECN::ECSchemaPtr schema;
     ASSERT_EQ( ECN::ECOBJECTS_STATUS_Success , ECN::ECSchema::CreateSchema(schema, TEST_JS_NAMESPACE, 0, 0) );
+    schema->SetNamespacePrefix("cmt");
     schema->AddReferencedSchema(*const_cast<ECN::ECSchemaP>(m_componentDb->Schemas().GetECSchema(DGN_ECSCHEMA_NAME)), "dgn");
     ASSERT_EQ( DgnDbStatus::Success , ComponentModel::AddAllToECSchema(*schema, *m_componentDb) );
     ASSERT_EQ( ECN::SCHEMA_WRITE_STATUS_Success , schema->WriteToXmlFile(m_componentSchemaFileName) );
@@ -701,6 +702,7 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClient)
     SimulateClient();
     }
 
+#ifdef WIP_MOVE_INTO_PERFORMANCE_TESTS
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
@@ -811,5 +813,7 @@ TEST_F(ComponentModelTest, Performance_PlaceElements)
 
     // 1,781,760 ComponentModelTest_Performance_PlaceElements.idgndb
     }
+
+#endif//def WIP_MOVE_INTO_PERFORMANCE_TESTS
 
 #endif //ndef BENTLEYCONFIG_NO_JAVASCRIPT
