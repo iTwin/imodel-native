@@ -10,8 +10,8 @@
 
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <Bentley/BeTest.h>
-#include <UnitTests/BackDoor/DgnProject/BackDoor.h>
-#include <DgnPlatform/DgnHandlers/ScopedDgnHost.h>
+#include "../BackDoor/PublicAPI/BackDoor/DgnProject/BackDoor.h"
+#include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <ECDb/ECDbApi.h>

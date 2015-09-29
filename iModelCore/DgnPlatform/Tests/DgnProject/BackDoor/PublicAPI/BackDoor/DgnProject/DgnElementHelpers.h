@@ -8,7 +8,7 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
-#include <UnitTests/BackDoor/DgnProject/BackDoor.h>
+#include "BackDoor.h"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 

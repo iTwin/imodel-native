@@ -7,6 +7,125 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
+//=======================================================================================
+// RenderMaterial...
+//=======================================================================================
+#define DEFAULT_Finish          .05
+#define DEFAULT_Specular        .05
+#define DEFAULT_Diffuse         .5
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+double      RenderMaterial::_GetDouble (char const* key, BentleyStatus* status) const
+    {
+    if (NULL != status)
+        *status = SUCCESS;
+
+    if (0 == BeStringUtilities::Stricmp(key, RENDER_MATERIAL_Finish))
+        return DEFAULT_Finish;
+
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Diffuse))
+        return DEFAULT_Diffuse;
+
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Specular))
+        return DEFAULT_Specular;
+
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Reflect) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Transmit))
+        return 0.0;
+
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Glow) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Refract))
+        return 1.0;
+
+    BeAssert (false);
+    if (NULL != status)
+        *status = ERROR;
+
+    return 0.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool        RenderMaterial::_GetBool (char const* key, BentleyStatus* status) const
+    {
+    if (NULL != status)
+        *status = SUCCESS;
+
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_FlagHasBaseColor) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_FlagHasSpecularColor) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_FlagHasFinish) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_FlagNoShadows))
+        return false;
+
+    BeAssert (false);
+    if (NULL != status)
+        *status = ERROR;
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+RgbFactor  RenderMaterial::_GetColor (char const* key, BentleyStatus* status) const
+    {
+    BeAssert (false);
+    if (NULL != status)
+        *status = ERROR;
+
+    RgbFactor   color  = {1.0, 1.0, 1.0};
+
+    return color;
+    }
+
+//=======================================================================================
+// RenderMaterialMap...
+//=======================================================================================
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+double      RenderMaterialMap::_GetDouble (char const* key, BentleyStatus* status) const
+    {
+    if (NULL != status)
+        *status = SUCCESS;
+
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_PatternAngle))
+        return 0.0;
+
+    BeAssert (false);
+    if (NULL != status)
+        *status = ERROR;
+
+    return 0.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool        RenderMaterialMap::_GetBool (char const* key, BentleyStatus* status) const
+    {
+    if (NULL != status)
+        *status = SUCCESS;
+
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_PatternFlipU) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_PatternFlipV))
+        return false;
+
+    
+    BeAssert (false);
+    if (NULL != status)
+        *status = ERROR;
+
+    return false;
+    }
+
+
+//=======================================================================================
+// JSonRenderMaterial...
+//=======================================================================================
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/2015
@@ -170,6 +289,13 @@ DPoint2d    JsonRenderMaterialMap::_GetScale (BentleyStatus* status) const      
 DPoint2d    JsonRenderMaterialMap::_GetOffset(BentleyStatus* status) const                    {  return getDPoint2dValue (m_value, RENDER_MATERIAL_PatternOffset, status); }
  
 
+
+
+//=======================================================================================
+// JsonRenderMaterialMap...
+//=======================================================================================
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -203,7 +329,7 @@ RenderMaterialMap::Units JsonRenderMaterialMap::_GetUnits () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   JsonRenderMaterialMap::_GetData (DgnTextures::TextureData& data, bvector<Byte>& image, DgnDbR dgnDb) const
+BentleyStatus   JsonRenderMaterialMap::_GetImage (bvector<Byte>& data, Point2dR imageSize, DgnDbR dgnDb) const
     {
     Json::Value     textureIdValue = m_value[RENDER_MATERIAL_TextureId];
 
@@ -219,8 +345,7 @@ BentleyStatus   JsonRenderMaterialMap::_GetData (DgnTextures::TextureData& data,
         return ERROR;
         }
 
-    data = texture.GetData();
-    return texture.GetImage (image);
+    return texture.GetImage (data);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -241,6 +366,61 @@ uintptr_t  JsonRenderMaterialMap::_GetQvTextureId (DgnDbR dgnDb, bool createIfNo
 
     return qvTextureId;
     }
+
+//=======================================================================================
+// SimpleBufferPatternMap...
+//=======================================================================================
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+SimpleBufferPatternMap::SimpleBufferPatternMap (Byte const* imageData, Point2dCR imageSize) : m_imageSize (imageSize), m_qvTextureId (0)
+    {
+    size_t      dataSize = 4 * imageSize.x * imageSize.y;
+
+    m_imageData.resize (dataSize);                     
+    memcpy (&m_imageData.front(), imageData, dataSize);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+SimpleBufferPatternMap::~SimpleBufferPatternMap ()
+    {
+    // Needs work.   Free QVision texture.
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus  SimpleBufferPatternMap::_GetImage (bvector<Byte>& imageData, Point2dR imageSize, DgnDbR dgnDb) const
+    {
+    imageData = m_imageData;
+    imageSize = m_imageSize;
+
+    return SUCCESS;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+uintptr_t SimpleBufferPatternMap::_GetQvTextureId (DgnDbR dgnDb, bool createIfNotFound) const 
+    {
+    if (createIfNotFound)
+        return m_qvTextureId = (uintptr_t) this;        // These textures will not be shared -- use own memory address as qvTextureId.
+
+    return m_qvTextureId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+RenderMaterialMapPtr  SimpleBufferPatternMap::Create (Byte const* imageData, Point2dCR imageSize)
+    {
+    return new SimpleBufferPatternMap (imageData, imageSize);
+    }
+
+//=======================================================================================
+// RenderMaterialUtils...
+//=======================================================================================
 
 
 /*---------------------------------------------------------------------------------**//**

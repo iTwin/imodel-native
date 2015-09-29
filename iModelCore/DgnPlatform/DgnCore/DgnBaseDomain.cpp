@@ -8,6 +8,7 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/DgnMarkupProject.h>
 #include <DgnPlatform/DgnCore/Annotations/TextAnnotationElement.h>
+#include <DgnPlatform/DgnCore/MaterialElement.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -76,6 +77,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(ViewHandler::GetHandler());
     RegisterHandler(DgnElementDependencyHandler::GetHandler());
     RegisterHandler(dgn_AspectHandler::Aspect::GetHandler());
+    RegisterHandler(dgn_AspectHandler::TextAnnotationItemHandler::GetHandler());
 
     RegisterHandler(dgn_ModelHandler::Model::GetHandler());
     RegisterHandler(dgn_ModelHandler::Physical::GetHandler());
@@ -96,8 +98,9 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::Physical::GetHandler());
     RegisterHandler(dgn_ElementHandler::Drawing::GetHandler());
     RegisterHandler(dgn_ElementHandler::Group::GetHandler());
-    RegisterHandler(dgn_ElementHandler::TextAnnotation::GetHandler());
-    RegisterHandler(dgn_ElementHandler::PhysicalTextAnnotation::GetHandler());
+    RegisterHandler(dgn_ElementHandler::TextAnnotationHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::PhysicalTextAnnotationHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::Material::GetHandler());
 
     RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Local::GetHandler());
@@ -109,3 +112,4 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterTableHandler(dgn_TableHandler::ElementDep::GetHandler());
     RegisterTableHandler(dgn_TableHandler::BeProperties::GetHandler());
     }
+

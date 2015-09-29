@@ -374,6 +374,7 @@ void ComponentModelTest::GenerateCMSchema()
     OpenComponentDb(Db::OpenMode::ReadWrite);
     ECN::ECSchemaPtr schema;
     ASSERT_EQ( ECN::ECOBJECTS_STATUS_Success , ECN::ECSchema::CreateSchema(schema, TEST_JS_NAMESPACE, 0, 0) );
+    schema->SetNamespacePrefix("cmt");
     schema->AddReferencedSchema(*const_cast<ECN::ECSchemaP>(m_componentDb->Schemas().GetECSchema(DGN_ECSCHEMA_NAME)), "dgn");
     ASSERT_EQ( DgnDbStatus::Success , ComponentModel::AddAllToECSchema(*schema, *m_componentDb) );
     ASSERT_EQ( ECN::SCHEMA_WRITE_STATUS_Success , schema->WriteToXmlFile(m_componentSchemaFileName) );
@@ -706,20 +707,16 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClient)
 //---------------------------------------------------------------------------------------
 static void insertBoxElement(DgnElementId& eid, PhysicalModelR physicalTestModel, DgnCategoryId testCategoryId)
     {
-    BeAssert(testCategoryId.IsValid());
-
     PhysicalElementPtr testElement = PhysicalElement::Create(physicalTestModel, testCategoryId);
 
     DPoint3d sizeOfBlock = DPoint3d::From(1, 1, 1);
     DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(0, 0, 0), sizeOfBlock, true);
     ISolidPrimitivePtr testGeomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
-    BeAssert(testGeomPtr.IsValid());
 
     DPoint3d centerOfBlock = DPoint3d::From(0, 0, 0);
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(physicalTestModel, testCategoryId, centerOfBlock, YawPitchRollAngles());
     builder->Append(*testGeomPtr);
-    BentleyStatus status = builder->SetGeomStreamAndPlacement(*testElement);
-    BeAssert(status == SUCCESS);
+    builder->SetGeomStreamAndPlacement(*testElement);
 
     eid = physicalTestModel.GetDgnDb().Elements().Insert(*testElement)->GetElementId();
     }
@@ -727,7 +724,7 @@ static void insertBoxElement(DgnElementId& eid, PhysicalModelR physicalTestModel
 /*---------------------------------------------------------------------------------**//**
 * count to be used by all placement performance tests
 +---------------+---------------+---------------+---------------+---------------+------*/
-static const int ninstances = 1000;
+static const int ninstances = 100000;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
@@ -757,6 +754,9 @@ TEST_F(ComponentModelTest, Performance_PlaceInstances)
     //  Import the CM
     Client_ImportCM(TEST_WIDGET_COMPONENT_NAME);
 
+    StopWatch timer("place components");
+    timer.Start();
+
     //  Cache a solution
     Json::Value wsln1(Json::objectValue);
     wsln1["X"] = 10;
@@ -767,8 +767,6 @@ TEST_F(ComponentModelTest, Performance_PlaceInstances)
     Client_SolveAndCapture(solutionId, TEST_WIDGET_COMPONENT_NAME, wsln1, false);
 
     //  Place instances of this solution
-    StopWatch timer("place components");
-    timer.Start();
     for (int i=0; i<ninstances; ++i)
         {
         DPoint3d placementOrigin = DPoint3d::From(1,2,3);
@@ -778,9 +776,9 @@ TEST_F(ComponentModelTest, Performance_PlaceInstances)
         DgnElementPtr instanceDgnElement = solutions.CreateSolutionInstanceElement(*targetModel, solutionId, placementOrigin, placementAngles);
     
         ECN::IECInstancePtr props;
-        ASSERT_EQ( DgnDbStatus::Success , solutions.CreateSolutionInstanceItem(*instanceDgnElement, props, solutionId) );
+        solutions.CreateSolutionInstanceItem(*instanceDgnElement, props, solutionId);
     
-        ASSERT_TRUE( instanceDgnElement->Insert().IsValid() );
+        instanceDgnElement->Insert().IsValid();
         }
     timer.Stop();
     NativeLogging::LoggingManager::GetLogger("Performance")->infov("place instances of %d solutions: %lf seconds (%lf instances / second)", ninstances, timer.GetElapsedSeconds(), ninstances/timer.GetElapsedSeconds());

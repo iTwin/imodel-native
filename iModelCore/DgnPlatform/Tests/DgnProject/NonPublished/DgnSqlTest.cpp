@@ -452,12 +452,12 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
     Utf8String qplan = m_db->ExplainQuery(sql);
     auto scanRt = qplan.find("SCAN TABLE dgn_RTree3d VIRTUAL TABLE INDEX");
     auto searchItem = qplan.find("SEARCH TABLE dgn_ElementItem USING INTEGER PRIMARY KEY");
-    auto searchElement = qplan.find("SEARCH TABLE dgn_Element USING INTEGER PRIMARY KEY");
-    ASSERT_NE(Utf8String::npos , scanRt );
-    ASSERT_NE(Utf8String::npos , searchItem );
-    ASSERT_NE(Utf8String::npos , searchElement );
-    ASSERT_LT(scanRt , searchItem );
-    ASSERT_LT(scanRt , searchElement );
+    auto searchElement = qplan.find("SEARCH TABLE dgn_Element USING COVERING INDEX");
+    ASSERT_NE(Utf8String::npos, scanRt) << "Unexpected query plan for SQL " << sql << ". Actual query plan: " << qplan.c_str();
+    ASSERT_NE(Utf8String::npos , searchItem ) << "Unexpected query plan for SQL " << sql << ". Actual query plan: " << qplan.c_str();
+    ASSERT_NE(Utf8String::npos , searchElement ) << "Unexpected query plan for SQL " << sql << ". Actual query plan: " << qplan.c_str();
+    ASSERT_LT(scanRt , searchItem) << "Unexpected query plan for SQL " << sql << ". Actual query plan: " << qplan.c_str();
+    ASSERT_LT(scanRt , searchElement) << "Unexpected query plan for SQL " << sql << ". Actual query plan: " << qplan.c_str();
 
     //  Initial placement: Robot1 is not touching any obstacle
     //

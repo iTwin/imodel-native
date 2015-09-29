@@ -286,6 +286,7 @@ DG_INLINE void ICachedDraw::PopTransform() {_PopTransClip();}
 DG_INLINE void IViewOutput::AdjustBrightness(bool useFixedAdaptation, double brightness) {_AdjustBrightness(useFixedAdaptation, brightness);}
 DG_INLINE uint64_t IViewOutput::GetLightStamp() {return _GetLightStamp();}
 DG_INLINE void IViewOutput::SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText) {_SetViewAttributes(viewFlags, bgColor, usebgTexture, aaLines, aaText);}
+DG_INLINE void IViewOutput::SetRenderMode (ViewFlags viewFlags) {_SetRenderMode (viewFlags); }
 DG_INLINE DgnDisplayCoreTypes::DeviceContextP      IViewOutput::GetScreenDC() const {return _GetScreenDC();}
 DG_INLINE StatusInt IViewOutput::AssignDC(DgnDisplayCoreTypes::DeviceContextP dc){return _AssignDC(dc);}
 DG_INLINE void IViewOutput::AddLights(bool threeDview, const RotMatrix* rotMatrixP, DgnModelP model){_AddLights(threeDview, rotMatrixP, model);}
