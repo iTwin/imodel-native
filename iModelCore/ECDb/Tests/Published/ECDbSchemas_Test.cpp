@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/NonPublished/ECDb/ECDbSchemas_Test.cpp $
+|  $Source: Tests/Published/ECDbSchemas_Test.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "../PublicApi/NonPublished/ECDb/ECDbTestProject.h"
+#include "ECDbPublishedTests.h"
 #include <initializer_list>
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -314,6 +314,9 @@ TEST(ECDbSchemas, UpdatingExistingECSchema)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Affan.Khan                         05/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ECDbSchemas, UpdateExistingECSchemaWithNewProperties)
     {
     ECDbTestProject testProject;

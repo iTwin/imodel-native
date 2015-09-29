@@ -16,14 +16,7 @@
   <ItemGroup>
     <ClCompile Include="BackDoor\Backdoor.cpp" />
     <ClCompile Include="BackDoor\ECDbTestLogger.cpp" />
-    <ClCompile Include="NonPublished\ECDb\ECDbInstances_Test.cpp" />
-    <ClCompile Include="NonPublished\ECDb\ECDbProfile_Test.cpp" />
-    <ClCompile Include="NonPublished\ECDb\ECDbSchemas_Test.cpp" />
-    <ClCompile Include="NonPublished\ECDb\ECDbSql_Test.cpp" />
     <ClCompile Include="NonPublished\ECDb\ECDbTestProject.cpp" />
-    <ClCompile Include="NonPublished\ECDb\ECInstanceIdSequence_Tests.cpp" />
-    <ClCompile Include="NonPublished\ECDb\ECSqlStatementCache_Test.cpp" />
-    <ClCompile Include="NonPublished\ECDb\FSRTests.cpp" />
     <ClCompile Include="Performance\DevSummitPerformanceTests.cpp" />
     <ClCompile Include="Performance\PerformanceBisDesignStudies_Test.cpp" />
     <ClCompile Include="Performance\PerformanceBisDesignTestFixture.cpp" />
@@ -34,15 +27,20 @@
     <ClCompile Include="Performance\PerformanceSchemaImportTests.cpp" />
     <ClCompile Include="Performance\QueryTests.cpp" />
     <ClCompile Include="Published\ECDbFileInfoTests.cpp" />
+    <ClCompile Include="Published\ECDbInstances_Test.cpp" />
     <ClCompile Include="Published\ECDbMapCA_Tests.cpp" />
+    <ClCompile Include="Published\ECDbProfile_Test.cpp" />
     <ClCompile Include="Published\ECDbReadTests.cpp" />
     <ClCompile Include="Published\ECDbRelationshipStrength_Test.cpp" />
     <ClCompile Include="Published\ECDbRelationshipTests.cpp" />
     <ClCompile Include="Published\ECDbSchemaManager_Test.cpp" />
     <ClCompile Include="Published\ECDbSchemaRules_Test.cpp" />
+    <ClCompile Include="Published\ECDbSchemas_Test.cpp" />
+    <ClCompile Include="Published\ECDbSql_Test.cpp" />
     <ClCompile Include="Published\ECDb_Tests.cpp" />
     <ClCompile Include="Published\ECInstanceAdaptersTestFixture.cpp" />
     <ClCompile Include="Published\ECInstanceECSqlSelectAdpaterTests.cpp" />
+    <ClCompile Include="Published\ECInstanceIdSequence_Tests.cpp" />
     <ClCompile Include="Published\ECInstanceInserterTests.cpp" />
     <ClCompile Include="Published\ECInstanceUpdaterTests.cpp" />
     <ClCompile Include="Published\ECSqlCrudAsserter.cpp" />
@@ -54,6 +52,7 @@
     <ClCompile Include="Published\ECSqlSelectStatementCrudTestDataset.cpp" />
     <ClCompile Include="Published\ECSqlCrudTestFixture.cpp" />
     <ClCompile Include="Published\ECSqlCommonTestDataset.cpp" />
+    <ClCompile Include="Published\ECSqlStatementCache_Test.cpp" />
     <ClCompile Include="Published\ECSqlStatementCrudTestDatasetHelper.cpp" />
     <ClCompile Include="Published\ECSqlStatementCrud_Tests.cpp" />
     <ClCompile Include="Published\ECSqlExpectedResultImpls.cpp" />
@@ -65,6 +64,7 @@
     <ClCompile Include="Published\ECSqlTestFixture.cpp" />
     <ClCompile Include="Published\ECSqlUpdateStatementCrudTestDataset.cpp" />
     <ClCompile Include="Published\FieldEngineer_Test.cpp" />
+    <ClCompile Include="Published\FSRTests.cpp" />
     <ClCompile Include="Published\InstanceCRUDTests.cpp" />
     <ClCompile Include="Published\JsonLibrary_Test.cpp" />
     <ClCompile Include="Published\RandomECInstanceGenerator.cpp" />

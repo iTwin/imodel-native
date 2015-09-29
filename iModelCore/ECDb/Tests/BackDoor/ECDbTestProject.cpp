@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/NonPublished/ECDb/ECDbTestProject.cpp $
+|  $Source: Tests/BackDoor/ECDbTestProject.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |

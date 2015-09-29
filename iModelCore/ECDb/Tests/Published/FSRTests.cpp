@@ -1,8 +1,6 @@
-#include "../PublicApi/NonPublished/ECDb/ECDbTestProject.h"
-#include <Bentley/BeDirectoryIterator.h>
-#include <ECObjects/ECObjectsAPI.h>
+#include "ECDbPublishedTests.h"
 #include <ECDb/ECDbApi.h>
-#include <BeSQLite/BeSQLite.h>
+#include <Bentley/BeDirectoryIterator.h>
 #include <vector>
 #include <BeXml/BeXml.h>
 

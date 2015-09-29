@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/NonPublished/PublicApi/NonPublished/ECDb/ECDbTestProject.h $
+|  $Source: Tests/BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |

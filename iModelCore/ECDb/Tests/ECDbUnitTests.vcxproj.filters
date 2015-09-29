@@ -1,12 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="NonPublished\ECDb\ECDbSchemas_Test.cpp">
-      <Filter>NonPublished\ECDb</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\ECDb\ECDbInstances_Test.cpp">
-      <Filter>NonPublished\ECDb</Filter>
-    </ClCompile>
     <ClCompile Include="NonPublished\ECDb\ECDbTestProject.cpp">
       <Filter>NonPublished\ECDb</Filter>
     </ClCompile>
@@ -21,9 +15,6 @@
     </ClCompile>
     <ClCompile Include="Published\FieldEngineer_Test.cpp">
       <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\ECDb\ECDbProfile_Test.cpp">
-      <Filter>NonPublished\ECDb</Filter>
     </ClCompile>
     <ClCompile Include="Published\ECDb_Tests.cpp">
       <Filter>Published</Filter>
@@ -88,9 +79,6 @@
     <ClCompile Include="BackDoor\ECDbTestLogger.cpp">
       <Filter>Backdoor</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\ECDb\ECInstanceIdSequence_Tests.cpp">
-      <Filter>NonPublished\ECDb</Filter>
-    </ClCompile>
     <ClCompile Include="Performance\QueryTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
@@ -127,17 +115,11 @@
     <ClCompile Include="Published\ECDbSchemaManager_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\ECDb\FSRTests.cpp">
-      <Filter>NonPublished\ECDb</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECDbFileInfoTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Performance\PerformanceECInstanceInserterTests.cpp">
       <Filter>Performance</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\ECDb\ECSqlStatementCache_Test.cpp">
-      <Filter>NonPublished\ECDb</Filter>
     </ClCompile>
     <ClCompile Include="Performance\PerformanceJsonComparison.cpp">
       <Filter>Performance</Filter>
@@ -157,9 +139,6 @@
     <ClCompile Include="Performance\PerformanceSchemaImportTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\ECDb\ECDbSql_Test.cpp">
-      <Filter>NonPublished\ECDb</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECSqlRangeTree_Tests.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
@@ -173,6 +152,27 @@
       <Filter>Performance</Filter>
     </ClCompile>
     <ClCompile Include="Published\ECDbSchemaRules_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbInstances_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbProfile_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbSchemas_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbSql_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECInstanceIdSequence_Tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlStatementCache_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\FSRTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
   </ItemGroup>

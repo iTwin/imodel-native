@@ -1,14 +1,14 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/BackDoor/Backdoor.cpp $
+|  $Source: Tests/BackDoor/BackDoor.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "PublicAPI/BackDoor/ECDb/Backdoor.h"
+#include "PublicAPI/BackDoor/ECDb/BackDoor.h"
 #include <GeomSerialization/GeomSerializationApi.h>
 
-namespace ECDbBackdoor = BentleyApi::BeSQLite::EC::Tests::Backdoor;
+namespace ECDbBackdoor = BentleyApi::BeSQLite::EC::Tests::BackDoor;
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
@@ -56,7 +56,7 @@ END_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  07/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECDbBackdoor::ECObjects::ECValue::SetAllowsPointersIntoInstanceMemory (ECN::ECValueR value, bool allow)
+void ECDbBackDoor::ECObjects::ECValue::SetAllowsPointersIntoInstanceMemory (ECN::ECValueR value, bool allow)
     {
     value.SetAllowsPointersIntoInstanceMemory (allow);
     }
@@ -64,7 +64,7 @@ void ECDbBackdoor::ECObjects::ECValue::SetAllowsPointersIntoInstanceMemory (ECN:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  07/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECN::ECObjectsStatus ECDbBackdoor::ECObjects::ECSchemaReadContext::AddSchema(ECN::ECSchemaReadContext& context, ECN::ECSchemaR schema)
+ECN::ECObjectsStatus ECDbBackDoor::ECObjects::ECSchemaReadContext::AddSchema(ECN::ECSchemaReadContext& context, ECN::ECSchemaR schema)
     {
     return context.AddSchema(schema);
     }
@@ -72,7 +72,7 @@ ECN::ECObjectsStatus ECDbBackdoor::ECObjects::ECSchemaReadContext::AddSchema(ECN
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  07/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECDbBackdoor::ECObjects::ECValue::AllowsPointersIntoInstanceMemory (ECN::ECValueCR value)
+bool ECDbBackDoor::ECObjects::ECValue::AllowsPointersIntoInstanceMemory (ECN::ECValueCR value)
     {
     return value.AllowsPointersIntoInstanceMemory ();
     }
@@ -80,7 +80,7 @@ bool ECDbBackdoor::ECObjects::ECValue::AllowsPointersIntoInstanceMemory (ECN::EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  07/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-IGeometryPtr ECDbBackdoor::IGeometryFlatBuffer::BytesToGeometry(bvector <Byte> &buffer)
+IGeometryPtr ECDbBackDoor::IGeometryFlatBuffer::BytesToGeometry(bvector <Byte> &buffer)
     {
     return BentleyGeometryFlatBuffer::BytesToGeometry(buffer);
     }
