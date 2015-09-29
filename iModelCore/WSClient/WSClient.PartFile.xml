@@ -278,14 +278,20 @@
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // Unit Tests                                                             // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
-    
-    <Part Name="WSClientUnitTests" ExcludePlatforms="Linux*,MacOS*" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" 
-     BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)WSClient/Tests/ -dBEGTEST_NAME=WSClient -dBEGTEST_DEPENDENCIES=$(SrcRoot)WSClient/Tests/dependencies.mki">
-        <!-- Get the tested API -->
-        <SubPart PartName="WebServicesClient" />
+    <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
         <SubPart PartName="WebServicesCache" />
-        <!-- Needed for published unit tests -->
+        <SubPart PartName="WebServicesClient"/>
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="WebServices" SubPartDirectory="UnitTests/WebServices"> Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-Published" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
+        <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="WebServicesClient-PublishedAPI" />
         <SubPart PartName="WebServicesCache-PublishedAPI" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="WebServices/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+        </Bindings>
     </Part>
 </BuildContext>
