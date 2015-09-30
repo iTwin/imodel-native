@@ -104,7 +104,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECClass>
     <ECClass typeName="GeometricModel" isDomainClass="True">
         <BaseClass>Model</BaseClass>
-        <ECProperty propertyName="Space" typeName="int" />
         <ECProperty propertyName="Solver" typeName="string" />
         <ECProperty propertyName="DependencyIndex" typeName="int" />
     </ECClass>
@@ -590,6 +589,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <ECProperty propertyName="Placement" typeName="binary"/>
         <ECProperty propertyName="Geom" typeName="binary"/>
+        <ECProperty propertyName="InPhysicalSpace" typeName="int" /><!-- Used strictly for the trigger which updates the range index -->
     </ECClass>
     <ECRelationshipClass typeName="ElementOwnsGeom" isDomainClass="True" strength="embedding" strengthDirection="forward">
         <ECCustomAttributes>
