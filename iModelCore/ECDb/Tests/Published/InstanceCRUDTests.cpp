@@ -998,7 +998,9 @@ TEST_F (InstanceCRUDTests, InsertUpdateDeleteTest)
     InstanceCRUDTests::initBeSQLiteLib ();
     BeFileName productSchemas;
     BeTest::GetHost ().GetDgnPlatformAssetsDirectory (productSchemas);
-    productSchemas.AppendToPath (L"BeTestDocuments\\DgnDb\\BentleyProductSchema");
+    productSchemas.AppendToPath (L"Documents");
+    productSchemas.AppendToPath (L"DgnDb");
+    productSchemas.AppendToPath (L"BentleyProductSchema");
     if (BeFileName::DoesPathExist (productSchemas.GetName ()))
         {
 		WString tempDirName;
@@ -1096,7 +1098,9 @@ TEST_F (InstanceCRUDTests, singleClassTest)
     InstanceCRUDTests::initBeSQLiteLib ();
     BeFileName schemaPath;
     BeTest::GetHost ().GetDgnPlatformAssetsDirectory (schemaPath);
-    schemaPath.AppendToPath (L"BeTestDocuments\\DgnDb\\BentleyProductSchema");
+    schemaPath.AppendToPath (L"Documents");
+    schemaPath.AppendToPath (L"DgnDb");
+    schemaPath.AppendToPath (L"BentleyProductSchema");
     schemaPath.AppendToPath (folderName);
     schemaPath.AppendToPath (L"\\");
     ECSchemaReadContextPtr schemaReadContext = nullptr;
