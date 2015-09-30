@@ -19,13 +19,14 @@ struct ECDbTestFixture : public ::testing::Test
 
         static bool s_isInitialized;
 
-        virtual ECDbTestProject& _GetTestProject () const;
+        virtual ECDbTestProject& _GetTestProject() const { return *m_testProject; }
 
     protected:
-        static std::unique_ptr<ECDbTestProject> CreateTestProject (Utf8CP ecdbFileName, WCharCP schemaECXmlFileName);
-        static std::unique_ptr<ECDbTestProject> CreateTestProject (Utf8CP ecdbFileName, WCharCP schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount);
-        void SetTestProject (std::unique_ptr<ECDbTestProject> testProject);    
         ECDbTestProject& GetTestProject () const;
+ 
+        ECDbTestProject& SetupTestProject(Utf8CP ecdbFileName, WCharCP schemaECXmlFileName, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite), int perClassRowCount = 0);
+
+        static std::unique_ptr<ECDbTestProject> CreateTestProject(Utf8CP ecdbFileName, WCharCP schemaECXmlFileName, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite), int perClassRowCount = 0);
 
     public:
         ECDbTestFixture ();

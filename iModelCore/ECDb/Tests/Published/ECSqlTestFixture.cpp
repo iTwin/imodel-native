@@ -30,7 +30,7 @@ ECDbR ECSqlTestFixture::SetUp (Utf8CP ecdbFileName, WCharCP schemaECXmlFileName,
 ECDbR ECSqlTestFixture::_SetUp (Utf8CP ecdbFileName, WCharCP schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount)
     {
     // Create and populate a sample project
-    SetTestProject(CreateTestProject (ecdbFileName, schemaECXmlFileName, openParams, perClassRowCount));
+    SetupTestProject (ecdbFileName, schemaECXmlFileName, openParams, perClassRowCount);
     return GetTestProject ().GetECDb ();
     }
 

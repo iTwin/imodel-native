@@ -175,6 +175,9 @@
     <ClCompile Include="BackDoor\BackDoor.cpp">
       <Filter>BackDoor</Filter>
     </ClCompile>
+    <ClCompile Include="Performance\PerformanceECSqlTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">
