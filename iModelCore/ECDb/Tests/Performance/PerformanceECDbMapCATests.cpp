@@ -69,7 +69,7 @@ void PerformanceECDbMapCATestFixture::DeleteInstances(ECDbR ecdb)
         ECSqlStatus stat = stmt.Prepare(ecdb, deleteSql);
         if (!stat.IsSuccess())
             {
-            FAIL();
+            ASSERT_TRUE(false);
             return;
             }
 
@@ -77,13 +77,13 @@ void PerformanceECDbMapCATestFixture::DeleteInstances(ECDbR ecdb)
             {
             if (!stmt.BindInt64(1, (int64_t) (instanceId++)).IsSuccess())
                 {
-                FAIL();
+                ASSERT_TRUE(false);
                 return;
                 }
 
-            if (BE_SQLITE_DONE != stmt.Step())
+            if (BE_SQLITE_DONE != stmt.Step() || ecdb.GetModifiedRowCount() == 0)
                 {
-                FAIL();
+                ASSERT_TRUE(false);
                 return;
                 }
 
@@ -122,20 +122,20 @@ void PerformanceECDbMapCATestFixture::UpdateInstances(ECDbR ecdb)
                 {
                 if (!stmt.BindText(parameterIndex, ("UpdatedValue"), IECSqlBinder::MakeCopy::No).IsSuccess())
                     {
-                    FAIL();
+                    ASSERT_TRUE(false);
                     return;
                     }
                 }
 
             if (!stmt.BindInt64(propertyCount + 1, (int64_t) (instanceId++)).IsSuccess())
                 {
-                FAIL();
+                ASSERT_TRUE(false);
                 return;
                 }
 
-            if (BE_SQLITE_DONE != stmt.Step())
+            if (BE_SQLITE_DONE != stmt.Step() || ecdb.GetModifiedRowCount() == 0)
                 {
-                FAIL();
+                ASSERT_TRUE(false);
                 return;
                 }
 
@@ -166,7 +166,7 @@ void PerformanceECDbMapCATestFixture::InsertInstances(ECDbR ecdb)
         ECSqlStatus stat = stmt.Prepare (ecdb, insertSql);
         if (!stat.IsSuccess())
             {
-            FAIL();
+            ASSERT_TRUE(false);
             return;
             }
 
@@ -174,7 +174,7 @@ void PerformanceECDbMapCATestFixture::InsertInstances(ECDbR ecdb)
             {
             if (!stmt.BindInt64(1, (int64_t) (instanceId++)).IsSuccess())
                 {
-                FAIL();
+                ASSERT_TRUE(false);
                 return;
                 }
 
@@ -182,14 +182,14 @@ void PerformanceECDbMapCATestFixture::InsertInstances(ECDbR ecdb)
                 {
                 if (!stmt.BindText(parameterIndex, "Init Value", IECSqlBinder::MakeCopy::No).IsSuccess())
                     {
-                    FAIL();
+                    ASSERT_TRUE(false);
                     return;
                     }
                 }
 
-            if (BE_SQLITE_DONE != stmt.Step())
+            if (BE_SQLITE_DONE != stmt.Step() || ecdb.GetModifiedRowCount() == 0)
                 {
-                FAIL();
+                ASSERT_TRUE(false);
                 return;
                 }
 
