@@ -25,6 +25,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/*lint -esym(534,CSrgf93Init) */
 /*lint -esym(534,_filbuf) */
 /*lint -esym(534,CS_atof,CS_ftoa) */
 /*lint -esym(578,cs_TestDir) */

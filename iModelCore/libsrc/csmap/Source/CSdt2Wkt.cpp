@@ -27,7 +27,7 @@
 
 #include "cs_map.h"
 #include "cs_Legacy.h"
-#include "cs_wkt.h"
+#include "CS_wkt.h"
 #include "csNameMapperSupport.h"
 
 bool CSgetParamNm (char* paramName,size_t paramSize,EcsNameFlavor nmFlavor,int paramCode);

@@ -33,7 +33,7 @@
 */
 
 #include "cs_map.h"
-#include "cs_wkt.h"
+#include "CS_wkt.h"
 
 long32_t CSepsgOpCodeMap (const char *wktName,enum ErcWktFlavor flavor)
 {

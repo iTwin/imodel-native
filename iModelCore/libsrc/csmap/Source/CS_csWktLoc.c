@@ -26,7 +26,7 @@
 */
 
 #include "cs_map.h"
-#include "cs_wkt.h"
+#include "CS_wkt.h"
 
 /* The following static variables are used to carry the translation of a WKT
    string to CS-MAP format.

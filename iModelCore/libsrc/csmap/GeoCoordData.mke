@@ -25,7 +25,7 @@ PolicyFile=${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
 #----------------------------------------------------------------------
 #   We link the CSMap data subdirectories to our output directory
 #----------------------------------------------------------------------
-csDeliverDir    	= $(baseDir)deliver/
+csDeliverDir        = $(baseDir)deliver/
 csDictionariesDir   = $(baseDir)Dictionaries/
 
 #----------------------------------------------------------------------
@@ -83,7 +83,7 @@ always:
     CreateSymLinks.py   -f"$(GeoCoordData)Vertcon.gdc=$(csDictionariesDir)Vertcon.gdc"
 
 always:
-    CreateSymLinks.py   -f"$(GeoCoordData)coordsys.dty=$(OutputRootDir)build/csmap/coordsys.dty"
+    CreateSymLinks.py   -f"$(GeoCoordData)coordsys.dty=$(csDeliverDir)coordsys.dty"
     CreateSymLinks.py   -f"$(GeoCoordData)coordsys.dty.xml=$(csDeliverDir)coordsys.dty.xml"
     CreateSymLinks.py   -f"$(GeoCoordData)UserOverrideGeodeticTransformSeed.asc=$(csDictionariesDir)UserOverrideGeodeticTransformSeed.asc"
     CreateSymLinks.py   -f"$(GeoCoordData)NameMapper.csv=$(csDictionariesDir)NameMapper.csv"

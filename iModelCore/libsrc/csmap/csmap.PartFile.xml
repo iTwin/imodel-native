@@ -77,11 +77,4 @@
         </Bindings>
     </Part>
 
-    <Part Name="CsmapCompiler" BMakeFile="Dictionaries/compiler.mke">
-        <SubPart PartName="csmap"/>
-    </Part>
-
-
-
-
 </BuildContext>

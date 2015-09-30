@@ -811,15 +811,6 @@ Const double            ll [2]
 #else
     lam = lambda - trmBFParams->projecMercen;
 
-    /* Modified from the original Bernard Flaceliere code since the tolerance is too small
-       and results in infinity or undefined values below */
-    if (lam - cs_Pi_o_2 > -0.000001)
-        lam = cs_Pi_o_2 -0.000001;
-    else if (lam + cs_Pi_o_2 < 0.000001)
-        lam = -cs_Pi_o_2 + 0.000001;
-#else
-    lam = lambda - trmBFParams->projecMercen;
-
     if (lam - cs_Pi_o_2 > -0.0000000001)
         lam = cs_Pi_o_2 -0.0000000001;
     else if (lam + cs_Pi_o_2< 0.0000000001)

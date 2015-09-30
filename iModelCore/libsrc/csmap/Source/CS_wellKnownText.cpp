@@ -30,7 +30,7 @@
 #include "cs_map.h"
 #include "cs_Legacy.h"
 #include "rcWellKnownText.hpp"
-#include "cs_wkt.h"
+#include "CS_wkt.h"
 #include "csNameMapperSupport.h"
 
 #if defined (GEOCOORD_ENHANCEMENT)
