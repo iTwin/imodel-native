@@ -1282,14 +1282,15 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnDbStatus* 
     if (DgnDbStatus::Success != stat)
         return nullptr;
 
+    replacement._OnUpdated(element);
+    FinishUpdate(replacement, element);
+
     if (element.m_parentId != replacement.m_parentId) // did parent change?
         parent = GetElement(replacement.m_parentId);
 
     if (parent.IsValid())
-        parent->_OnChildUpdated(replacement);
+        parent->_OnChildUpdated(element);
 
-    replacement._OnUpdated(element);
-    FinishUpdate(replacement, element);
     return &element;
     }
 

@@ -1847,6 +1847,8 @@ DgnDbStatus ComponentModel::ExportSchemaTo(DgnDbR clientDb, DgnDbR componentDb, 
     ECN::ECSchemaPtr schema;
     if (ECN::ECOBJECTS_STATUS_Success != ECN::ECSchema::CreateSchema(schema, schemaName, 0, 0))
         return DgnDbStatus::BadSchema;
+
+    schema->SetNamespacePrefix(schemaName);
     
     schema->AddReferencedSchema(*const_cast<ECN::ECSchemaP>(componentDb.Schemas().GetECSchema(DGN_ECSCHEMA_NAME)), "dgn");
 

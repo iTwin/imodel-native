@@ -702,6 +702,7 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClient)
     SimulateClient();
     }
 
+#ifdef WIP_MOVE_INTO_PERFORMANCE_TESTS
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
@@ -812,5 +813,7 @@ TEST_F(ComponentModelTest, Performance_PlaceElements)
 
     // 1,781,760 ComponentModelTest_Performance_PlaceElements.idgndb
     }
+
+#endif//def WIP_MOVE_INTO_PERFORMANCE_TESTS
 
 #endif //ndef BENTLEYCONFIG_NO_JAVASCRIPT

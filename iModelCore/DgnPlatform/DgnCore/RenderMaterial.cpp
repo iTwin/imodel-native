@@ -345,6 +345,8 @@ BentleyStatus   JsonRenderMaterialMap::_GetImage (bvector<Byte>& data, Point2dR 
         return ERROR;
         }
 
+    imageSize.Init(texture.GetData().GetWidth(), texture.GetData().GetHeight());
+
     return texture.GetImage (data);
     }
 

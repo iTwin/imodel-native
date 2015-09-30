@@ -572,6 +572,32 @@ public:
         DGNPLATFORM_EXPORT DgnDbStatus ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR egaInstance);
     };
 
+    //! Allows a business key (unique identifier string) from an external system (identified by DgnAuthorityId) to be associated with a DgnElement via a persistent ElementAspect
+    struct EXPORT_VTABLE_ATTRIBUTE ExternalKey : AppData
+    {
+    private:
+        DgnAuthorityId m_authorityId;
+        Utf8String m_externalKey;
+
+        ExternalKey(DgnAuthorityId authorityId, Utf8CP externalKey)
+            {
+            m_authorityId = authorityId;
+            m_externalKey = externalKey;
+            }
+
+    protected:
+        DGNPLATFORM_EXPORT virtual DropMe _OnInserted(DgnElementCR) override;
+
+    public:
+        DGNPLATFORM_EXPORT static RefCountedPtr<ExternalKey> Create(DgnAuthorityId authorityId, Utf8CP externalKey);
+        DGNPLATFORM_EXPORT static DgnDbStatus QueryExternalKey(Utf8StringR, DgnElementCR, DgnAuthorityId);
+        DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR, DgnAuthorityId);
+        DgnAuthorityId GetAuthorityId() const {return m_authorityId;}
+        Utf8CP GetExternalKey() const {return m_externalKey.c_str();}
+    };
+
+    typedef RefCountedPtr<ExternalKey> ExternalKeyPtr;
+
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
 private:
@@ -1578,14 +1604,16 @@ public:
     //! @param[in] element The DgnElement to insert.
     //! @param[in] stat An optional status value. Will be DgnDbStatus::Success if the insert was successful, error status otherwise.
     //! @return RefCountedCPtr to the newly persisted /b copy of /c element. Will be invalid if the insert failed.
-    //! @remarks The element's code must be unique among all elements within the DgnDb, or this method will fail with DgnDbStatus::InvalidName.
+    //! @note The element's code must be unique among all elements within the DgnDb, or this method will fail with DgnDbStatus::DuplicateCode.
     template<class T> RefCountedCPtr<T> Insert(T& element, DgnDbStatus* stat=nullptr) {return (T const*) InsertElement(element, stat).get();}
 
     //! Update the original persistent DgnElement from which the supplied DgnElement was copied.
-    //! @param[in] element The modified copy of element to update.
+    //! @param[in] modifiedElement The modified copy of the DgnElement to update.
     //! @param[in] stat An optional status value. Will be DgnDbStatus::Success if the update was successful, error status otherwise.
     //! @return RefCountedCPtr to the modified persistent element. Will be invalid if the update failed.
-    template<class T> RefCountedCPtr<T> Update(T& element, DgnDbStatus* stat=nullptr) {return (T const*) UpdateElement(element, stat).get();}
+    //! @note This call returns a RefCountedCPtr to the *original* peristent element (which has now been updated to reflect the changes from
+    //! modifiedElement). modifiedElement does *not* become persistent from this call.
+    template<class T> RefCountedCPtr<T> Update(T& modifiedElement, DgnDbStatus* stat=nullptr) {return (T const*) UpdateElement(modifiedElement, stat).get();}
 
     //! Delete a DgnElement from this DgnDb.
     //! @param[in] element The element to delete.
