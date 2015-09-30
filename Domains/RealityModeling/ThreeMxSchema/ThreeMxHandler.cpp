@@ -61,7 +61,6 @@ static void Schedule (ThreeMxModelR model, ViewContextR viewContext)
 //----------------------------------------------------------------------------------------
 ThreeMxScenePtr      ThreeMxModel::ReadScene (BeFileNameR fileName, DgnDbR db, Utf8StringCR fileId)
     {
-    // Find resolved file name for the point cloud
     BentleyStatus status = T_HOST.GetPointCloudAdmin()._ResolveFileName(fileName, fileId, db);
     if (status != SUCCESS)
         return nullptr;
@@ -143,7 +142,6 @@ void ThreeMxModel::_AddGraphicsToScene (ViewContextR viewContext)
         BeAssert (false);
         return;
         }
-    
 
     MRMeshContext       meshContext (Transform::FromIdentity(), viewContext, 0.0);
     ViewFlags           viewFlags = *viewContext.GetViewFlags(), saveViewFlags = viewFlags;

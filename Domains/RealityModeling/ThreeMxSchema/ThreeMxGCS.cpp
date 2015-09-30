@@ -11,6 +11,8 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_THREEMX_SCHEMA
 
 
+#define ZERO_ELEVATION
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
@@ -23,6 +25,10 @@ BentleyStatus ThreeMxGCS::GetProjectionTransform (TransformR transform, S3SceneI
 
     if (3 == sceneInfo.SRSOrigin.size())
         transform = Transform::From (DPoint3d::FromXYZ (sceneInfo.SRSOrigin[0], sceneInfo.SRSOrigin[1], sceneInfo.SRSOrigin[2]));
+
+#ifdef ZERO_ELEVATION
+    transform = Transform::FromProduct (transform, Transform::From (0.0, 0.0, -range.low.z));
+#endif
 
     if (sceneInfo.SRS.empty())
         return SUCCESS;         // No GCS...
