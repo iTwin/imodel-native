@@ -102,8 +102,8 @@ public class TestActivity extends Activity implements SurfaceHolder.Callback
         	Log.d (LOG_TAG, "Failed to create file in cacheDir");
         	}
         
-                    /* assets       docs                          temp      localState */
-        initializeJni (appDataDir, appDataDir+"/BeTestDocuments", cacheDir, appDataDir);
+                    /* assets       docs                    temp      localState */
+        initializeJni (appDataDir, appDataDir+"/Documents", cacheDir, appDataDir);
 
     	extractAssets (this, appDataDir, ASSETS_MANIFEST);
     	s_didExtractAssets = true;

@@ -132,8 +132,8 @@
     <None Include="BentleyGeomSerializationG.dll" />
     <None Include="BeSQLiteECG.dll" />
     <None Include="BeSQLiteG.dll" />
-    <None Include="BeTestDocuments" />
-    <None Include="BeTestDocuments\DgnDb" />
+    <None Include="Documents" />
+    <None Include="Documents\DgnDb" />
     <None Include="BeXmlG.dll" />
     <None Include="DgnPlatformG.dll" />
     <None Include="DgnToolsG.dll" />

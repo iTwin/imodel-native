@@ -31,7 +31,7 @@ IMPLEMENTATION_BEGIN
 #define INIT_METHOD     + (void) begtest_initialize {
 INIT_METHOD
     NSArray*  documentPaths  = NSSearchPathForDirectoriesInDomains (NSDocumentDirectory, NSUserDomainMask, YES);
-    NSString* documentDir    = [[documentPaths objectAtIndex:0] stringByAppendingPathComponent:@"BeTestDocuments"];
+    NSString* documentDir    = [[documentPaths objectAtIndex:0] stringByAppendingPathComponent:@"Documents"];
     
     #ifdef COMMENT_OUT // *** No. We have some tests that have no documents
     // When running the tests on a simulator for the first time, XCode is not able to deploy the application data package
