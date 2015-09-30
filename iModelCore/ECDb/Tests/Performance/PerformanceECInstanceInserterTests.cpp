@@ -5,9 +5,6 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <Bentley/BeTest.h>
-#include <ECObjects/ECObjectsAPI.h>
-#include <ECDb/ECDbApi.h>
 #include <BeSQLite/BeSQLite.h>
 #include "PerformanceTests.h"
 #include "../BackDoor/PublicApi/BackDoor/ECDb/BackDoor.h"
