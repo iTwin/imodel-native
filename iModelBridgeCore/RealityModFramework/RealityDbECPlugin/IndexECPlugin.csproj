@@ -101,6 +101,7 @@
     <Compile Include="Source\Helpers\DBGeometryHelpers.cs" />
     <Compile Include="Source\Helpers\ECToSQLMap.cs" />
     <Compile Include="Source\Helpers\SchemaHelper.cs" />
+    <Compile Include="Source\Helpers\IUSGSDataExtractor.cs" />
     <Compile Include="Source\IndexConstants.cs" />
     <Compile Include="Source\IndexPolicyHandler.cs" />
     <Compile Include="Source\JTokenExtension.cs" />

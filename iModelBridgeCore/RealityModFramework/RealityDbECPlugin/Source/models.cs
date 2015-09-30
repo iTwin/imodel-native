@@ -246,12 +246,22 @@ namespace IndexECPlugin.Source
         /// <summary>
         /// 
         /// </summary>
+        public string Title { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
         public DateTime? Date { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
         public string Resolution { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string ResolutionInMeters { get; set; }
     }
 
     /// <summary>

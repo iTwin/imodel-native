@@ -964,6 +964,7 @@ namespace IndexECPlugin.Source.QueryProviders
                         instance["Date"].NativeValue = item.Date.Value;
                     }
                     instance["AccuracyResolutionDensity"].StringValue = item.Resolution;
+                    instance["ResolutionInMeters"].StringValue = item.ResolutionInMeters;
 
                     instance["Classification"].StringValue = bundle.Classification;
 
@@ -1255,27 +1256,33 @@ namespace IndexECPlugin.Source.QueryProviders
             //    maxDate = DateTime.ParseExact(maxDateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
             //}
 
-            bool takeMostRecentOnly = false;
+            //bool takeMostRecentOnly = false;
 
-            if (m_query.ExtendedData.ContainsKey("mostRecent"))
-            {
-                string mostRecentString = m_query.ExtendedData["mostRecent"].ToString();
-                if (mostRecentString.ToLower() == "true")
-                {
-                    takeMostRecentOnly = true;
-                }
+            //if (m_query.ExtendedData.ContainsKey("mostRecent"))
+            //{
+            //    string mostRecentString = m_query.ExtendedData["mostRecent"].ToString();
+            //    if (mostRecentString.ToLower() == "true")
+            //    {
+            //        takeMostRecentOnly = true;
+            //    }
 
 
-            }
+            //}
 
             switch(dataset)
             {
                 case "High Resolution Orthoimagery" :
                     //Would it be a good idea to create a hierarchy of classes of filters?
                     //For now, we only go to private functions...
-                    return HROFilter(tokenList, minDate, maxDate, takeMostRecentOnly);
-                //case "USDA National Agriculture Imagery Program (NAIP)":
-                //    return NAIPFilter
+                    return DatasetFilter(tokenList, minDate, maxDate, /*takeMostRecentOnly,*/ new HRODataExtractor());
+                case "USDA National Agriculture Imagery Program (NAIP)":
+                    return DatasetFilter(tokenList, minDate, maxDate, /*takeMostRecentOnly,*/ new NAIPDataExtractor());
+                case "Digital Elevation Model (DEM) 1 meter":
+                    return DatasetFilter(tokenList, minDate, maxDate, new NEDDataExtractor(dataset));
+                case "National Elevation Dataset (NED) 1/9 arc-second":
+                case "National Elevation Dataset (NED) 1/3 arc-second":
+                case "National Elevation Dataset (NED) 1 arc-second":
+                    return DatasetFilter(tokenList, minDate, maxDate, new NEDDataExtractor(dataset));
                 default :
                     return tokenList.Select(token => new USGSExtractedResult { jToken = token, Date = null, Resolution = null});
             }
@@ -1283,49 +1290,34 @@ namespace IndexECPlugin.Source.QueryProviders
         }
 
         /// <summary>
-        /// High resolution orthoimagery (HRO) dataset special filtering. We need to eliminate superfluous
-        /// entries in this dataset. There can be copies of the same entry and data for multiple dates
-        /// for the same location. If takeMostRecentOnly, we take only the most recent. 
-        /// The date is retrieved from the name (found in downloadURL) of the data.
+        /// Dataset special filtering. We eliminate duplicate
+        /// entries (having the same title) and filter by date.
         /// </summary>
         /// <param name="tokenList">The complete list of json entries of the HRO dataset obtained from USGS api</param>
         /// <param name="minDate">Lower bound for the date filter</param>
         /// <param name="maxDate">Upper bound for the date filter</param>
-        /// <param name="takeMostRecentOnly">Filter entries to take only the most recent entry for each bounding box</param>
+        /// <param name="extractor">An implementation of IUSGSDataExtractor, which will extract the date and resolution according to the dataset</param>
         /// <returns>The list of entries, exempt from superfluous data</returns>
-        private IEnumerable<USGSExtractedResult> HROFilter(IEnumerable<JToken> tokenList, DateTime? minDate, DateTime? maxDate, bool takeMostRecentOnly)
+        private IEnumerable<USGSExtractedResult> DatasetFilter(IEnumerable<JToken> tokenList, DateTime? minDate, DateTime? maxDate, /*bool takeMostRecentOnly,*/ IUSGSDataExtractor extractor)
         {
             //Filter by bounding box
-            Dictionary<string, USGSExtractedResult> bboxDictionary = new Dictionary<string, USGSExtractedResult>();
-            List<USGSExtractedResult> results = null;
-            if(!takeMostRecentOnly)
-            {
-                results = new List<USGSExtractedResult>();
-            }
+            //Dictionary<string, USGSExtractedResult> bboxDictionary = new Dictionary<string, USGSExtractedResult>();
+            List<USGSExtractedResult> results = new List<USGSExtractedResult>();
+            //if(!takeMostRecentOnly)
+            //{
+            //    results = new List<USGSExtractedResult>();
+            //}
 
             foreach(JToken newToken in tokenList)
             {
-                //Check if date is between the range
+                string title;
+                DateTime newTokenDate;
+                string newTokenResolution;
+                string newTokenResolutionInMeters;
 
-                string newTokenZipURL = newToken.TryToGetString("downloadURL");
-                string[] newTokenZipURLSplit = newTokenZipURL.Split('/', '\\');
-
-                //The zip name is the last string in the array
-                string zipName = newTokenZipURLSplit[newTokenZipURLSplit.Length - 1];
-
-                string[] zipNameSplit = zipName.Split('_');
-
-                //According to the convention, the date of acquisition is located after the first underscore character
-                string newDateString = zipNameSplit[1];
+                extractor.ExtractTitleDateAndResolution(newToken, out title, out newTokenDate, out newTokenResolution, out newTokenResolutionInMeters);
                 
-                string newTokenResolution = zipNameSplit[2].Replace('x', '.');
-
-                if(newDateString.Length != 6)
-                {
-                    throw new Bentley.EC.Persistence.Operations.OperationFailedException("Error while filtering results.");
-                }
-
-                DateTime newTokenDate = DateTime.ParseExact(newDateString + "01", "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
+                //Check if date is between the range
 
                 if((minDate.HasValue) && (newTokenDate < minDate.Value))
                 {
@@ -1339,49 +1331,52 @@ namespace IndexECPlugin.Source.QueryProviders
                 }
 
                 var bboxString = newToken["boundingBox"].ToString();
-                if (bboxDictionary.ContainsKey(bboxString))
+                //if (bboxDictionary.ContainsKey(bboxString))
+                //{
+
+                //    //var firstTokenObject = bboxDictionary[bboxString];
+
+                //    string firstTokenName = firstTokenObject.jToken.TryToGetString("title");
+                //    string newTokenName = newToken.TryToGetString("title");
+
+                //    if (firstTokenName == newTokenName)
+                //    {
+                //        //The title of the two entries is the same. It is a duplicate entry, so we skip
+                //        continue;
+                //    }
+                //    //if (takeMostRecentOnly)
+                //    //{
+                //    //    string[] firstTitleSplit = firstTokenName.Split(' ');
+
+                //    //    if (newTokenDate > firstTokenObject.Date)
+                //    //    {
+                //    //        bboxDictionary[bboxString] = new USGSExtractedResult{jToken = newToken, Date = newTokenDate, Resolution = newTokenResolution};
+                //    //    }
+                //    //}
+                //    //else
+                //    //{
+                //        //If we do not take only the most recent, we can add it to the results directly
+                //        results.Add(new USGSExtractedResult { jToken = newToken, Title = title, Date = newTokenDate, Resolution = newTokenResolution });
+                //    //}
+                //}
+                if(!results.Any(r => r.Title == title))
                 {
+                    //There is no result having the same title
 
-                    var firstTokenObject = bboxDictionary[bboxString];
 
-                    string firstTokenName = firstTokenObject.jToken.TryToGetString("title");
-                    string newTokenName = newToken.TryToGetString("title");
-
-                    if (firstTokenName == newTokenName)
-                    {
-                        //The title of the two entries is the same. It is a duplicate entry, so we skip
-                        continue;
-                    }
-                    if (takeMostRecentOnly)
-                    {
-                        string[] firstTitleSplit = firstTokenName.Split(' ');
-
-                        if (newTokenDate > firstTokenObject.Date)
-                        {
-                            bboxDictionary[bboxString] = new USGSExtractedResult{jToken = newToken, Date = newTokenDate, Resolution = newTokenResolution};
-                        }
-                    }
-                    else
-                    {
-                        //If we do not take only the most recent, we can add it to the results directly
-                        results.Add(new USGSExtractedResult { jToken = newToken, Date = newTokenDate, Resolution = newTokenResolution });
-                    }
-                }
-                else
-                {
-                    bboxDictionary[bboxString] = new USGSExtractedResult { jToken = newToken, Date = newTokenDate, Resolution = newTokenResolution }; ;
-                    if (!takeMostRecentOnly)
-                    {
-                        //If we do not take only the most recent, we can add it to the results directly
-                        results.Add(new USGSExtractedResult { jToken = newToken, Date = newTokenDate, Resolution = newTokenResolution });
-                    }
+                    //bboxDictionary[bboxString] = new USGSExtractedResult { jToken = newToken, Date = newTokenDate, Resolution = newTokenResolution };
+                    //if (!takeMostRecentOnly)
+                    //{
+                    //    //If we do not take only the most recent, we can add it to the results directly
+                    results.Add(new USGSExtractedResult { jToken = newToken, Title = title, Date = newTokenDate, Resolution = newTokenResolution, ResolutionInMeters = newTokenResolutionInMeters });
+                    //}
                 }
             }
-            if(takeMostRecentOnly)
-            {
-                //If we take only the most recent, all of the entries we select are already in the dictionary
-                return bboxDictionary.Values;
-            }
+            //if(takeMostRecentOnly)
+            //{
+            //    //If we take only the most recent, all of the entries we select are already in the dictionary
+            //    return bboxDictionary.Values;
+            //}
             return results;
         }
 

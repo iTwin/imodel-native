@@ -972,6 +972,7 @@
             </ECCustomAttributes>
         </ECProperty>
         
+        <ECProperty propertyName="ResolutionInMeters" typeName="string" />
         <!--ECProperty propertyName="ParentDatasetIdStr" typeName="string" /-->
         <ECProperty propertyName="DataProvider" typeName="string" />
         <ECProperty propertyName="DataProviderName" typeName="string" />
@@ -982,7 +983,7 @@
         <ECProperty propertyName="SubAPI" typeName="string" />
     </ECClass>
     
-    <ECClass typeName="USGSEntity" isDomainClass="true">
+<!--     <ECClass typeName="USGSEntity" isDomainClass="true">
         <ECCustomAttributes>
             <QueryType>
                 <QueryType>usgsapi</QueryType>
@@ -992,8 +993,7 @@
         <ECProperty propertyName="PreviewLink" typeName="string" />
         <ECProperty propertyName="DownloadLink" typeName="string" />
         <ECProperty propertyName="BoundingBox" typeName="string" />
-        <!--ECProperty propertyName="Payload" typeName="string" /-->
-    </ECClass>
+    </ECClass> -->
     
     <!--ECClass typeName="USGSThumbnail" isDomainClass="true">
         <ECCustomAttributes>

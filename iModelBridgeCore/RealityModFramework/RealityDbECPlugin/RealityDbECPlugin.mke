@@ -101,6 +101,7 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/Helpers/DBGeometryhelpers.cs \
             $(baseDir)Source/Helpers/TableDescriptor.cs \
             $(baseDir)Source/Helpers/SchemaHelper.cs \
+            $(baseDir)Source/Helpers/IUSGSDataExtractor.cs \
             $(baseDir)Source/FileRetrievalControllers/PackageRetrievalController.cs \
             $(baseDir)Source/FileRetrievalControllers/SQLThumbnailRetrievalController.cs \
             $(baseDir)Source/FileRetrievalControllers/USGSThumbnailRetrievalController.cs \
@@ -116,7 +117,7 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/IndexNavigationModule.cs \
             $(baseDir)Source/models.cs \
             $(baseDir)Source/IndexConstants.cs \
-            $(baseDir)Source/JTokenExtension.cs
+            $(baseDir)Source/JTokenExtension.cs 
 
 #ASSEMBLY_RESX_FILE_TO_BUILD = $(baseDir)LocalizableStrings.resx
 #ASSEMBLY_RES_TO_ADD = LocalizableStrings

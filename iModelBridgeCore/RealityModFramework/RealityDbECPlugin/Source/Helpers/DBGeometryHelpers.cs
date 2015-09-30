@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Bentley.Exceptions;
+using System;
 using System.Collections.Generic;
 //using System.Data.Entity.Spatial;
 using System.Globalization;
@@ -217,6 +218,22 @@ namespace IndexECPlugin.Source.Helpers
 
 
             return String.Format("{0},{1},{2},{3}", bbox[0], bbox[1], bbox[2], bbox[3]);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="arcsec">number of arsec</param>
+        /// <param name="lat">Latitude in degrees</param>
+        /// <returns></returns>
+        public static double ConvertArcsecLatToMeter(double arcsec, double lat)
+        {
+            //6371000 * Math.Cos(lat*Math.PI*2/360) * arcsec/206265
+            if ((lat > 90) || (lat < -90))
+            {
+                throw new UserFriendlyException("Please use a valid number for latitude");
+            }
+            return 30.87 * Math.Cos(lat * Math.PI / 180) * arcsec;
         }
     }
 
