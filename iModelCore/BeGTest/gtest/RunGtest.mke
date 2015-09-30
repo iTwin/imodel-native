@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: RunGtest.mke $
+#     $Source: gtest/RunGtest.mke $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -18,6 +18,7 @@
 BentleyTestDir=$(SrcRoot)util/gtest/BentleyTest/
 runDir=$[@realpath ${GTEST_OUTPUT_DIR}]/run/
 LogDir=$(runDir)/logs/
+LogFile=$(LogDir)BeGTeststdout.log
 
 # NB: If you change the name of the output log file, you must also change it in RunBeGTest.logging.config.xml
 
@@ -31,7 +32,30 @@ always:
     ~@putenv BEGTEST_LOGGING_CONFIG=$(BEGTEST_LOGGING_CONFIG)
 %else    
     %message Using your environment's BEGTEST_LOGGING_CONFIG=$(BEGTEST_LOGGING_CONFIG)
-    %message !!! If you don't turn on Console logging, you won't get interleaved output at $(LogDir)TestResults.txt !!!
+    %message !!! If you don't turn on Console logging, you won't get interleaved output at $(LogDir)PublishedTestResults.txt !!!
+%endif
+
+%message .
+%message See $(LogDir)TestsTestResults.txt for logging output, interleaved with test output. 
+%message .
+
+%if $(TARGET_PLATFORM)=="Windows"
+    RunPrefix=start \/WAIT
+%elif $(TARGET_PLATFORM) == "Linux" || $(TARGET_PLATFORM) == "MacOS"
+    # This is a hack because symlinks wreck havoc when running on Linux... some shells and apps resolve, some resolve partially, some don't... sucks, but this is the most reliable way.
+    # See associated code in RunTests.py:GetExeLocation
+    appDirectory        = $[@basename $[@dir $(GTEST_EXE)]]
+    copyFromDirectory   = $(OutputRootDir)Product/
+    copyToDirectory     = $(OutputRootDir)ProductCopy/
+
+    %if defined (BMAKE_DELETE_ALL_TARGETS)
+        always:
+            $(rmdirRecursiveCmd) $(copyToDirectory)$(appDirectory)
+    %else
+        always:
+            !~@mkdir $(copyToDirectory)
+            rsync -rLptgoD $(copyFromDirectory)${appDirectory} $(copyToDirectory)
+    %endif
 %endif
 
 %if defined (BMAKE_DELETE_ALL_TARGETS)
@@ -41,28 +65,15 @@ always:
     %return
 %endif
 
-%ifdef __unix
-    # TRICKY: if GTEST_EXE points to a product directory (which it normally will), we must set LD_LIBRARY_PATH to point to it, as that is where the .dylibs are.
-    #           If we were to use the value of apply realpath to GTEST_EXE we would get the linked directory, e.g., the build directory. That would be useless as a library path.
-    RUN_PREFIX = export LD_LIBRARY_PATH=$[@dir $(GTEST_EXE)] ;
-%endif
-
 always:
     !~@mkdir ${GTEST_OUTPUT_DIR}
     !~@mkdir ${runDir}
     !~@mkdir ${runDir}/Output
     !~@mkdir ${runDir}/Temp
     !~@mkdir ${LogDir}
-
-%ifdef GTEST_SHOW_PROGRESS
-always:
-    $(RUN_PREFIX) $[@realpath $(GTEST_EXE)] --gtest_output="xml:$(LogDir)TestResults.xml"
-%else
-always:
-    $(RUN_PREFIX) $[@realpath $(GTEST_EXE)] --gtest_output="xml:$(LogDir)TestResults.xml" > $(LogDir)TestResults.txt
-
-    %message .
-    %message See $(LogDir)TestResults.txt for logging output, interleaved with test output. 
-    %message .
-%endif
-
+    $(RunPrefix) python $(_MakeFilePath)RunTests.py --exename="$(GTEST_EXE)" --gtest_output="xml:$(LogDir)TestResults.xml" --truncate_output --output_dir=$(GTEST_OUTPUT_DIR) --log_file=$(LogFile)
+    %if !defined (NO_BREAK)
+       $(BentleyTestDir)PrintLogAndReturnResult.py $(LogFile)
+    %else
+       -$(BentleyTestDir)PrintLogAndReturnResult.py $(LogFile)
+    %endif # !defined (NO_BREAK)
