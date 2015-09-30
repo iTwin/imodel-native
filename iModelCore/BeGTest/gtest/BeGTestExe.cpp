@@ -56,15 +56,15 @@ struct BeGTestHost : RefCounted<BeTest::Host>
     void _GetDocumentsRoot (BeFileName& path) override
         {
         path = m_programPath;
-        path.AppendToPath (L"DgnPlatformAssetsDirectory");
-        path.AppendToPath (L"BeTestDocuments");
+        path.AppendToPath (L"Assets");
+        path.AppendToPath (L"Documents");
         path.AppendSeparator ();
         }
 
     void _GetDgnPlatformAssetsDirectory (BeFileName& path) override
         {
         path = m_programPath;
-        path.AppendToPath (L"DgnPlatformAssetsDirectory");
+        path.AppendToPath (L"Assets");
         path.AppendSeparator ();
         }
 

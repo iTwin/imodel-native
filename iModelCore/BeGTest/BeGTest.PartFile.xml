@@ -98,8 +98,8 @@
         <ProductDirectory Name="UnitTests-Assets"                   Path="Assets" LibType="static"/>
         <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore"/>
         <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore" LibType="static"/>
-        <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/BeTestDocuments/DgnDb"/>
-        <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/BeTestDocuments/DgnDb" LibType="static"/>
+        <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/Documents/DgnDb"/>
+        <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/Documents/DgnDb" LibType="static"/>
         <ProductDirectory Name="ECSchemas"                          Path="Assets"/>
         <ProductDirectory Name="ECSchemas"                          Path="Assets" LibType="static"/>
         <ProductDirectory Name="DgnPlatformSqlang"                  Path="Assets/sqlang"/>
@@ -169,7 +169,7 @@
         <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
         <ProductDirectory Name="BentleyNativeAssemblies" Path=""/>
         <ProductDirectory Name="LoggingNativeAssemblies" Path=""/>
-        <ProductDirectory Name="Gtest-DgnPlatformAssetsDirectory" Path="DgnPlatformAssetsDirectory"/>
+        <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
 
         <ProductDirectory Name="Libs" Deliver="false"/>
         <ProductDirectory Name="Libs" Deliver="false" LibType="static"/>

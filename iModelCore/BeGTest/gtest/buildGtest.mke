@@ -112,4 +112,4 @@ always:
     python $(SrcBsiCommon)build/CreateSymLinks.py -m "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(collectionProduct)Assemblies/*$(shlibext)"
     python $(SrcBsiCommon)build/CreateSymLinks.py -m "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(BuildContext)SubParts/Assemblies/*$(shlibext)"
     python $(SrcBsiCommon)build/CreateSymLinks.py -f "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies/logging.config.xml=$(baseDir)logging.config.xml"
-    python $(SrcBsiCommon)build/CreateSymLinks.py -d "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/DgnPlatformAssetsDirectory=$(collectionProduct)Assets"
+    python $(SrcBsiCommon)build/CreateSymLinks.py -d "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assets=$(collectionProduct)Assets"

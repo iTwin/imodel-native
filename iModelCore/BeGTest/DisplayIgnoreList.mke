@@ -12,14 +12,14 @@ BentleyTestDir=$(SrcRoot)util/gtest/BentleyTest/
 LogDir=$(OutputRootDir)build/BeGTest/run/logs/
 
 always:
-    $(_MakeFilePath)DisplayIgnoreList.py "$(OutputRootDir)Product/BeGTest/bin/DgnPlatformAssetsDirectory/Ignore" > $(LogDir)ignored.txt
+    $(_MakeFilePath)DisplayIgnoreList.py "$(OutputRootDir)Product/BeGTest/bin/Assets/Ignore" > $(LogDir)ignored.txt
 
 %if $[@readfile $(LogDir)ignored.txt] != " "
     %warn ************************
     %warn Ignoring Some Tests
     %warn ************************
     always:
-        @$(_MakeFilePath)DisplayIgnoreList.py "$(OutputRootDir)Product/BeGTest/bin/DgnPlatformAssetsDirectory/Ignore" -box
+        @$(_MakeFilePath)DisplayIgnoreList.py "$(OutputRootDir)Product/BeGTest/bin/Assets/Ignore" -box
 %endif
 
 %if $[@readfile $(LogDir)ignored.txt] != " "
