@@ -54,7 +54,7 @@ BeTestHost::BeTestHost (wchar_t const* home)
     m_home.AppendSeparator();
 
     m_docs.SetName (Windows::ApplicationModel::Package::Current->InstalledLocation->Path->Data ());
-    m_docs.AppendToPath (L"BeTestDocuments");
+    m_docs.AppendToPath (L"Documents");
     m_docs.AppendSeparator();
 
     m_output.SetName (Windows::Storage::ApplicationData::Current->LocalFolder->Path->Data ());

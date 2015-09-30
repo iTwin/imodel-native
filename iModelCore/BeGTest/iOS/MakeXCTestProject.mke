@@ -100,17 +100,17 @@ $(XCodeProject)VendorAPI : $(BuildContext)VendorApi
 $(tmp)assets : $(collectionProduct)Assets
     $(LinkFirstDepToFirstTargetAsDirectory)
     
-# Need to move BeTestDocuments to AppData package (need hard copied to copy them to device)
+# Need to move Assets/Documents to AppData package (need hard copied to copy them to device)
 $(XCodeProject)BeTestiOSAppData.xcappdata : $(baseDir)BeTestiOSAppData.xcappdata
     cp -r $(baseDir)BeTestiOSAppData.xcappdata $(XCodeProject)BeTestiOSAppData.xcappdata
     ~time
 
 _documentsManifest = $(XCodeProject)BeTestiOSAppData.xcappdata/AppData/Documents/documents.manifest
-%iffile $(tmp)assets/BeTestDocuments
+%iffile $(tmp)assets/Documents
     always:
         rm -rf $(XCodeProject)BeTestiOSAppData.xcappdata/AppData/Documents
         !~mkdir $(XCodeProject)BeTestiOSAppData.xcappdata/AppData/Documents
-        cp -r  $(tmp)assets/BeTestDocuments $(XCodeProject)BeTestiOSAppData.xcappdata/AppData/Documents
+        cp -r  $(tmp)assets/Documents $(XCodeProject)BeTestiOSAppData.xcappdata/AppData/Documents
         $(SrcRoot)bsicommon/build/CreateAssetsManifest.py $(_documentsManifest) $(XCodeProject)BeTestiOSAppData.xcappdata/AppData/Documents
 %else
     always:

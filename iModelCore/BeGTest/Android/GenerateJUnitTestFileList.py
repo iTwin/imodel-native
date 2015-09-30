@@ -37,9 +37,7 @@ def GenJUnitTestFilesForDir (dirNameIn, listfilename, javaTemplate, jniTemplate)
             print '     @$(BENTLEY_ANDROID_TOOLCHAIN_preprocess) -I . -I $(outputDir) -I ' + dirName + junitTestDefine + javaTemplate + ' > ' + junitTestFilePath
             print '     @$(baseDir)SearchAndReplace.py  ' + junitTestFilePath + ' __REPO__ ' + utPackageName
             print '     @$(baseDir)SearchAndReplace.py  ' + junitTestFilePath + ' __FIXTURE__ ' + utClassName
-            print '     %if defined (shared_libraries)'
-            print '         @$(baseDir)SearchAndReplace.py  ' + junitTestFilePath + ' \/*__BE_TEST_LOAD_SHARED_LIBRARIES__*\/ "loadNativeLibraries ("$(shared_libraries)");"'
-            print '     %endif'
+            print '     @$(baseDir)SearchAndReplace.py  ' + junitTestFilePath + ' __ANDROIDJUNITTEST_SHARED_LIBRARIES__ "$(__ANDROIDJUNITTEST_SHARED_LIBRARIES__)"'
             print '     ~time'
             print '\n'
             

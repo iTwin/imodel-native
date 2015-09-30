@@ -77,6 +77,8 @@
         <ProductDirectory Name="CordovaLibs"                        Deliver="false" LibType="static"/>
         <ProductDirectory Name="MobileDgnNativeAssemblies"          Path="Assemblies"/>
         <ProductDirectory Name="MobileDgnNativeAssemblies"          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="WSClientAssemblies"                 Path="Assemblies"/>
+        <ProductDirectory Name="WSClientAssemblies"                 Deliver="false" LibType="static"/>
         <ProductDirectory Name="BeCasablancaAssemblies"             Path="Assemblies"/>
         <ProductDirectory Name="BeCasablancaAssemblies"             Deliver="false" LibType="static"/>
 
@@ -84,6 +86,8 @@
         <ProductDirectory Name="Libs"                               Path="Libs" LibType="static"/>
         <ProductDirectory Name="BentleyLibs"                        Path="Libs"/>
         <ProductDirectory Name="BentleyLibs"                        Path="Libs" LibType="static"/>
+        <ProductDirectory Name="WSClientLibs"                       Path="Libs"/>
+        <ProductDirectory Name="WSClientLibs"                       Path="Libs" LibType="static"/>
         <ProductDirectory Name="BeStaticLibDir"                     Path="Libs"/>
         <ProductDirectory Name="BeStaticLibDir"                     Path="Libs" LibType="static"/>
         <ProductDirectory Name="BeJsonCppStaticLibDir"              Path="Libs"/>
@@ -94,8 +98,8 @@
         <ProductDirectory Name="UnitTests-Assets"                   Path="Assets" LibType="static"/>
         <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore"/>
         <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore" LibType="static"/>
-        <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/BeTestDocuments/DgnDb"/>
-        <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/BeTestDocuments/DgnDb" LibType="static"/>
+        <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/Documents/DgnDb"/>
+        <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/Documents/DgnDb" LibType="static"/>
         <ProductDirectory Name="ECSchemas"                          Path="Assets"/>
         <ProductDirectory Name="ECSchemas"                          Path="Assets" LibType="static"/>
         <ProductDirectory Name="DgnPlatformSqlang"                  Path="Assets/sqlang"/>
@@ -165,7 +169,7 @@
         <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
         <ProductDirectory Name="BentleyNativeAssemblies" Path=""/>
         <ProductDirectory Name="LoggingNativeAssemblies" Path=""/>
-        <ProductDirectory Name="Gtest-DgnPlatformAssetsDirectory" Path="DgnPlatformAssetsDirectory"/>
+        <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
 
         <ProductDirectory Name="Libs" Deliver="false"/>
         <ProductDirectory Name="Libs" Deliver="false" LibType="static"/>
