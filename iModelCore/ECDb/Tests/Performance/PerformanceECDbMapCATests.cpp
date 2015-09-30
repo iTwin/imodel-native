@@ -454,7 +454,7 @@ void PerformanceECDbMapCATestFixture::GenerateSqlCRUDTestStatements (ECSchemaR e
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
     {
-    m_instancesPerClass = 1000000;
+    m_instancesPerClass = 100000;
     m_propertiesPerClass = 150;
     ECDbTestProject test;
     ECDbR ecdb = test.Create ("ECSqlStatementPerformanceTest.ecdb");
