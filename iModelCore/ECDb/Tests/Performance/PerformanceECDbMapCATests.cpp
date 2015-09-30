@@ -305,10 +305,10 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformance_SharedTable_SharedColum
     DeleteInstances (ecdb);
     ASSERT_GE(m_deleteTime, 0.0) << "ECSQL DELETE test failed";
 
-    LOGTODB(TEST_DETAILS, m_insertTime, "Insert time", m_instancesPerClass);
-    LOGTODB(TEST_DETAILS, m_selectTime, "Select time", m_instancesPerClass);
-    LOGTODB(TEST_DETAILS, m_updateTime, "Update time", m_instancesPerClass);
-    LOGTODB(TEST_DETAILS, m_deleteTime, "Delete time", m_instancesPerClass);
+    LOGTODB(TEST_DETAILS, m_insertTime, "Insert time", (int) m_instancesPerClass);
+    LOGTODB(TEST_DETAILS, m_selectTime, "Select time", (int) m_instancesPerClass);
+    LOGTODB(TEST_DETAILS, m_updateTime, "Update time", (int) m_instancesPerClass);
+    LOGTODB(TEST_DETAILS, m_deleteTime, "Delete time", (int) m_instancesPerClass);
     }
 
 //---------------------------------------------------------------------------------------
@@ -487,13 +487,13 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
 
     Utf8String testDescription;
     testDescription.Sprintf("ECSQL INSERT against ECClass with %d properties.", m_propertiesPerClass);
-    LOGTODB(TEST_DETAILS, m_insertTime, testDescription.c_str(), m_instancesPerClass);
+    LOGTODB(TEST_DETAILS, m_insertTime, testDescription.c_str(), (int) m_instancesPerClass);
     testDescription.Sprintf("ECSQL SELECT * FROM ONLY against ECClass with %d properties - no result set iteration.", m_propertiesPerClass);
-    LOGTODB(TEST_DETAILS, m_selectTime, testDescription.c_str(), m_instancesPerClass);
+    LOGTODB(TEST_DETAILS, m_selectTime, testDescription.c_str(), (int) m_instancesPerClass);
     testDescription.Sprintf("ECSQL UPDATE ONLY against ECClass with %d properties.", m_propertiesPerClass);
-    LOGTODB(TEST_DETAILS, m_updateTime, testDescription.c_str(), m_instancesPerClass);
+    LOGTODB(TEST_DETAILS, m_updateTime, testDescription.c_str(), (int) m_instancesPerClass);
     testDescription.Sprintf("ECSQL DELETE FROM ONLY against ECClass with %d properties.", m_propertiesPerClass);
-    LOGTODB(TEST_DETAILS, m_deleteTime, testDescription.c_str(), m_instancesPerClass);
+    LOGTODB(TEST_DETAILS, m_deleteTime, testDescription.c_str(), (int) m_instancesPerClass);
 
     ASSERT_EQ(BE_SQLITE_OK, ecdb.AbandonChanges());
 
@@ -597,13 +597,13 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
     LOG.infov("Scenario - DELETE - 1 class [%d properties each] , %d instances per class took - %.4f s.", m_propertiesPerClass, m_instancesPerClass, m_deleteTime);
     
     testDescription.Sprintf("SQL INSERT against table of ECClass with %d properties.", m_propertiesPerClass);
-    LOGTODB(TEST_DETAILS, m_insertTime, testDescription.c_str(), m_instancesPerClass);
+    LOGTODB(TEST_DETAILS, m_insertTime, testDescription.c_str(), (int) m_instancesPerClass);
     testDescription.Sprintf("SQL SELECT * FROM table of ECClass with %d properties - no result set iteration.", m_propertiesPerClass);
-    LOGTODB(TEST_DETAILS, m_selectTime, testDescription.c_str(), m_instancesPerClass);
+    LOGTODB(TEST_DETAILS, m_selectTime, testDescription.c_str(), (int) m_instancesPerClass);
     testDescription.Sprintf("SQL UPDATE against table of ECClass with %d properties.", m_propertiesPerClass);
-    LOGTODB(TEST_DETAILS, m_updateTime, testDescription.c_str(), m_instancesPerClass);
+    LOGTODB(TEST_DETAILS, m_updateTime, testDescription.c_str(), (int) m_instancesPerClass);
     testDescription.Sprintf("SQL DELETE against table ECClass with %d properties.", m_propertiesPerClass);
-    LOGTODB(TEST_DETAILS, m_deleteTime, testDescription.c_str(), m_instancesPerClass);
+    LOGTODB(TEST_DETAILS, m_deleteTime, testDescription.c_str(), (int) m_instancesPerClass);
     }
 
 END_ECDBUNITTESTS_NAMESPACE
