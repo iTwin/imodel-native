@@ -247,7 +247,12 @@ DgnDbStatus DgnElement::_OnInsert()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement::_OnInsert()
     {
-    return !m_categoryId.IsValid() ? DgnDbStatus::InvalidCategory : T_Super::_OnInsert();
+    if (!m_categoryId.IsValid())
+        return DgnDbStatus::InvalidCategory;
+    else if (HasGeometry() && !_IsPlacementValid())
+        return DgnDbStatus::BadElement;
+    else
+        return T_Super::_OnInsert();
     }
 
 struct OnInsertedCaller
@@ -299,7 +304,12 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement::_OnUpdate(DgnElementCR original)
     {
-    return !m_categoryId.IsValid() ? DgnDbStatus::InvalidCategory : T_Super::_OnUpdate(original);
+    if (!m_categoryId.IsValid())
+        return DgnDbStatus::InvalidCategory;
+    else if (HasGeometry() && !_IsPlacementValid())
+        return DgnDbStatus::BadElement;
+    else
+        return T_Super::_OnUpdate(original);
     }
 
 struct OnUpdatedCaller
@@ -466,12 +476,18 @@ DgnDbStatus DgnElement::_InsertInDb()
         return DgnDbStatus::WriteError;
 
     auto status = _BindInsertParams(*statement);
-    if (DgnDbStatus::Success != status || BE_SQLITE_DONE == statement->Step())
-        return status;
+    if (DgnDbStatus::Success == status)
+        {
+        auto stmtResult = statement->Step();
+        if (BE_SQLITE_DONE != stmtResult)
+            {
+            // SQLite doesn't tell us which constraint failed - check if it's the Code.
+            auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
+            status = existingElemWithCode.IsValid() ? DgnDbStatus::DuplicateCode : DgnDbStatus::WriteError;
+            }
+        }
 
-    // SQLite doesn't tell us which constraint failed - check if it's the Code.
-    auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
-    return existingElemWithCode.IsValid() ? DgnDbStatus::DuplicateCode : DgnDbStatus::WriteError;
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -570,9 +586,6 @@ DgnDbStatus GeometricElement::_LoadFromDb()
 //---------------+---------------+---------------+---------------+---------------+-------
 DgnDbStatus GeometricElement::_InsertInDb()
     {
-    if (HasGeometry() && !_IsPlacementValid())
-        return DgnDbStatus::BadElement;
-
     DgnDbStatus stat;
 
     if (DgnDbStatus::Success != (stat = T_Super::_InsertInDb()))
@@ -606,9 +619,6 @@ DgnDbStatus GeometricElement::_InsertInDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement::_UpdateInDb()
     {
-    if (HasGeometry() && !_IsPlacementValid())
-        return DgnDbStatus::BadElement;
-
     DgnDbStatus stat = T_Super::_UpdateInDb();
     if (DgnDbStatus::Success != stat)
         return stat;
@@ -693,7 +703,7 @@ DgnDbStatus GeomStream::WriteGeomStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8C
     if (BE_SQLITE_DONE != stmt.Step())
         return DgnDbStatus::WriteError;
 
-    if (1 == snappy.GetCurrChunk())
+    if (1 >= snappy.GetCurrChunk())
         return DgnDbStatus::Success;
 
     StatusInt status = snappy.SaveToRow(dgnDb, table, colname, rowId);
@@ -771,7 +781,13 @@ DgnDbStatus DgnElement3d::_LoadFromDb()
     stmt->BindId(1, m_elementId);
 
     if (BE_SQLITE_ROW != stmt->Step())
-        return DgnDbStatus::Success; // it is legal to have an element with no geometry.
+        return DgnDbStatus::ReadError; // it is legal to have an element with no geometry - but it must have an entry (with nulls) in the element geom table
+
+    if (stmt->IsColumnNull(0))
+        {
+        m_placement = Placement3d();
+        return DgnDbStatus::Success;
+        }
 
     if (stmt->GetColumnBytes(0) != sizeof(m_placement))
         {
@@ -844,7 +860,13 @@ DgnDbStatus DgnElement2d::_LoadFromDb()
     stmt->BindId(1, m_elementId);
 
     if (BE_SQLITE_ROW != stmt->Step())
-        return DgnDbStatus::Success; // it is legal to have an element with no geometry.
+        return DgnDbStatus::ReadError; // it is legal to have an element with no geometry - but it still must have an entry in the element geom table (with nulls)
+
+    if (stmt->IsColumnNull(0))
+        {
+        m_placement = Placement2d();
+        return DgnDbStatus::Success;
+        }
 
     if (stmt->GetColumnBytes(0) != sizeof(m_placement))
         {
