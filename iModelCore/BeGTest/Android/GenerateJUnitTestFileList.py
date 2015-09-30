@@ -14,7 +14,7 @@ def GenJUnitTestFilesForDir (rootDir, dirNameIn, listfilename, javaTemplate, jni
 
     utPackageName           = dirName[len(rootDir):]
     print '#utPackageName='+utPackageName
-    utPackageName = utPackageName.replace('/', '_');
+    utPackageName = utPackageName.replace('/', '');
     print '#utPackageName='+utPackageName
     unitTestsListHfileName  = os.path.join (dirName, listfilename)
     unitTestsListFileName   = utPackageName + '.list.h'
