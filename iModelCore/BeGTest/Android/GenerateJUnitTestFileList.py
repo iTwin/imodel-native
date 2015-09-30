@@ -10,12 +10,8 @@ def GenJUnitTestFilesForDir (rootDir, dirNameIn, listfilename, javaTemplate, jni
     if rootDir[-1] != '/':
         rootDir += '/'
 
-    print '#rootDir='+rootDir
-
     utPackageName           = dirName[len(rootDir):]
-    print '#utPackageName='+utPackageName
     utPackageName = utPackageName.replace('/', '');
-    print '#utPackageName='+utPackageName
     unitTestsListHfileName  = os.path.join (dirName, listfilename)
     unitTestsListFileName   = utPackageName + '.list.h'
     unitTestsJniFileName    = utPackageName + 'JniTest.cpp'

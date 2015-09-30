@@ -1,10 +1,14 @@
 import sys, os, re, string
 import stat
 
-def processDir (dirNameIn, listfilename, senTestTemplate, XCodeProject_BeTestiOSName):
+def processDir (rootDir, dirNameIn, listfilename, senTestTemplate, XCodeProject_BeTestiOSName):
     dirName = dirNameIn.replace ('\\', '/')
     
-    repoUT                  = os.path.basename (dirName)
+    if rootDir[-1] != '/':
+        rootDir += '/'
+
+    repoUT                  = dirName[len(rootDir):]
+    repoUT = repoUT.replace('/', '');
     testFilePath            = '$('+XCodeProject_BeTestiOSName+')BeTestiOSTests/UnitTests.mm'
     tmpTestFileDir          = '$(o)tmp/' + repoUT + '/'
     unitTestsListHfileName  = os.path.join (dirName, listfilename)
@@ -55,6 +59,8 @@ def main():
     if not dir[-1] in '/\\':
         dir = dir + os.sep
 
+    dir = dir.replace('\\', '/')
+
     dotmm = sys.argv[2].replace  ('\\', '/')
 
     for root,dirs,files in os.walk (dir, topdown=True, onerror=None, followlinks=True):
@@ -62,7 +68,7 @@ def main():
             continue
         for file in files:
             if file == 'UnitTests.list.h':
-                processDir (root, file, dotmm, XCodeProject_BeTestiOSName)
+                processDir (dir, root, file, dotmm, XCodeProject_BeTestiOSName)
 
 if __name__ == '__main__':
     main()

@@ -4,7 +4,11 @@ import stat
 def processDir (dirNameIn, listfilename, templateFile):
     dirName = dirNameIn.replace ('\\', '/') # <outputdir>/build/UnitTests/<reponame>/Published<reponame>UnitTests/
 
-    repoUT                  = os.path.basename (dirName)
+    if rootDir[-1] != '/':
+        rootDir += '/'
+
+    repoUT                  = dirName[len(rootDir):]
+    repoUT = repoUT.replace('/', '');
     testFileDir             = '$(o)Project/source/'
     testFileName            = repoUT + '.cpp'
     testFilePath            = testFileDir + testFileName
@@ -54,6 +58,8 @@ def main():
     if not dir[-1] in '/\\':
         dir = dir + os.sep
 
+    dir = dir.replace('\\', '/')
+
     templateFile = sys.argv[2].replace  ('\\', '/')
 
     for root,dirs,files in os.walk (dir, topdown=True, onerror=None, followlinks=True):
@@ -61,7 +67,7 @@ def main():
             continue
         for file in files:
             if file == 'UnitTests.list.h':
-                processDir (root, file, templateFile)
+                processDir (dir, root, file, templateFile)
 
 if __name__ == '__main__':
     main()
