@@ -572,6 +572,32 @@ public:
         DGNPLATFORM_EXPORT DgnDbStatus ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR egaInstance);
     };
 
+    //! Allows a business key (unique identifier string) from an external system (identified by DgnAuthorityId) to be associated with a DgnElement via a persistent ElementAspect
+    struct EXPORT_VTABLE_ATTRIBUTE ExternalKey : AppData
+    {
+    private:
+        DgnAuthorityId m_authorityId;
+        Utf8String m_externalKey;
+
+        ExternalKey(DgnAuthorityId authorityId, Utf8CP externalKey)
+            {
+            m_authorityId = authorityId;
+            m_externalKey = externalKey;
+            }
+
+    protected:
+        DGNPLATFORM_EXPORT virtual DropMe _OnInserted(DgnElementCR) override;
+
+    public:
+        DGNPLATFORM_EXPORT static RefCountedPtr<ExternalKey> Create(DgnAuthorityId authorityId, Utf8CP externalKey);
+        DGNPLATFORM_EXPORT static DgnDbStatus QueryExternalKey(Utf8StringR, DgnElementCR, DgnAuthorityId);
+        DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR, DgnAuthorityId);
+        DgnAuthorityId GetAuthorityId() const {return m_authorityId;}
+        Utf8CP GetExternalKey() const {return m_externalKey.c_str();}
+    };
+
+    typedef RefCountedPtr<ExternalKey> ExternalKeyPtr;
+
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
 private:
