@@ -30,9 +30,18 @@ void PerformanceECDbMapCATestFixture::ReadInstances(ECDbR ecdb)
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
             if (!stmt.BindInt64(1, (int64_t) (instanceId++)).IsSuccess())
+                {
+                FAIL();
                 return;
+                }
 
-            stmt.Step();
+            DbResult stat = stmt.Step();
+            if (stat != BE_SQLITE_ROW && stat != BE_SQLITE_DONE)
+                {
+                FAIL();
+                return;
+                }
+
             stmt.Reset();
             stmt.ClearBindings();
             }
@@ -59,15 +68,24 @@ void PerformanceECDbMapCATestFixture::DeleteInstances(ECDbR ecdb)
         ECSqlStatement stmt;
         ECSqlStatus stat = stmt.Prepare(ecdb, deleteSql);
         if (!stat.IsSuccess())
+            {
+            FAIL();
             return;
+            }
 
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
             if (!stmt.BindInt64(1, (int64_t) (instanceId++)).IsSuccess())
+                {
+                FAIL();
                 return;
+                }
 
             if (BE_SQLITE_DONE != stmt.Step())
+                {
+                FAIL();
                 return;
+                }
 
             stmt.Reset();
             stmt.ClearBindings();
@@ -103,14 +121,23 @@ void PerformanceECDbMapCATestFixture::UpdateInstances(ECDbR ecdb)
             for (int parameterIndex = 1; parameterIndex <= propertyCount; parameterIndex++)
                 {
                 if (!stmt.BindText(parameterIndex, ("UpdatedValue"), IECSqlBinder::MakeCopy::No).IsSuccess())
+                    {
+                    FAIL();
                     return;
+                    }
                 }
 
             if (!stmt.BindInt64(propertyCount + 1, (int64_t) (instanceId++)).IsSuccess())
+                {
+                FAIL();
                 return;
+                }
 
             if (BE_SQLITE_DONE != stmt.Step())
+                {
+                FAIL();
                 return;
+                }
 
             stmt.Reset ();
             stmt.ClearBindings ();
@@ -138,21 +165,33 @@ void PerformanceECDbMapCATestFixture::InsertInstances(ECDbR ecdb)
         ECSqlStatement stmt;
         ECSqlStatus stat = stmt.Prepare (ecdb, insertSql);
         if (!stat.IsSuccess())
+            {
+            FAIL();
             return;
+            }
 
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
             if (!stmt.BindInt64(1, (int64_t) (instanceId++)).IsSuccess())
+                {
+                FAIL();
                 return;
+                }
 
             for (int parameterIndex = 2; parameterIndex <= (propertyCount+1); parameterIndex++)
                 {
                 if (!stmt.BindText(parameterIndex, "Init Value", IECSqlBinder::MakeCopy::No).IsSuccess())
+                    {
+                    FAIL();
                     return;
+                    }
                 }
 
             if (BE_SQLITE_DONE != stmt.Step())
+                {
+                FAIL();
                 return;
+                }
 
             stmt.Reset ();
             stmt.ClearBindings ();

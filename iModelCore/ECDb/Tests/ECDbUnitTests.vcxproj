@@ -23,6 +23,7 @@
     <ClCompile Include="Performance\PerformanceBisDesignTestFixture.cpp" />
     <ClCompile Include="Performance\PerformanceECDbMapCATests.cpp" />
     <ClCompile Include="Performance\PerformanceECInstanceInserterTests.cpp" />
+    <ClCompile Include="Performance\PerformanceECSqlTests.cpp" />
     <ClCompile Include="Performance\PerformanceJsonComparison.cpp" />
     <ClCompile Include="Performance\PerformanceJsonInserterTests.cpp" />
     <ClCompile Include="Performance\PerformanceSchemaImportTests.cpp" />
@@ -129,7 +130,7 @@
     <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild GUnitTests_*DgnDb BeGTestExe -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild GUnitTests_*DgnDb BeGTestExe -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild GUnitTests_*DgnDb BeGTestExe -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c</NMakeCleanCommandLine>
     <IncludePath>$(IncludePath);$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\;$(SrcRoot)DgnPlatform\DgnCore\ECDb\</IncludePath>
-    <NMakeIncludeSearchPath>$(ProjectDir)\Published\;$(ProjectDir);$(ProjectDir)\Published\ECSql\;$(ProjectDir)\Performance\;$(ProjectDir)\NonPublished\PublicAPI\NonPublished\ECDb\;$(ProjectDir)\BackDoor\PublicAPI\BackDoor\ECDb\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\build\UnitTests\ECDb\PublishedECDbUnitTests\PublicAPI\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\build\UnitTests\ECDb\BackDoorECDbUnitTests\PublicAPI\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\build\UnitTests\ECDb\NonPublishedECDbUnitTests\PublicAPI\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\build\UnitTests\ECDb\PerformanceECDbUnitTests\PublicAPI\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ECDb\PublicAPI\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ECDb\VendorAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(ProjectDir)\Published\;$(ProjectDir);$(ProjectDir)\Published\ECSql\;$(ProjectDir)\Performance\;$(ProjectDir)\BackDoor\PublicAPI\BackDoor\ECDb\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\build\UnitTests\ECDb\PublishedECDbUnitTests\PublicAPI\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\build\UnitTests\ECDb\BackDoorECDbUnitTests\PublicAPI\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\build\UnitTests\ECDb\PerformanceECDbUnitTests\PublicAPI\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ECDb\PublicAPI\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ECDb\VendorAPI\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ECDb\SubParts\UnitTests\Include\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeOutput>$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\product\BeGTest\bin\BeGTest.exe</NMakeOutput>
