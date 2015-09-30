@@ -31,7 +31,7 @@ extern "C" struct   cs_Unittab_     cs_Unittab[];
 #using      <Bentley.GeometryNET.Structs.dll>
 #using      <Bentley.UI.dll>
 
-namespace Bentley {
+BEGIN_BENTLEY_API_NAMESPACE
 
 namespace GeoCoordinatesNET {
 
@@ -98,9 +98,28 @@ public enum class  GeoDatumToWGS84Method
     ConvertType_CHENYX    =   26,
 #ifdef GEOCOORD_ENHANCEMENT
     ConvertType_GENGRID   =   27,
-#endif
+#endif	
+    };
+/*=================================================================================**//**
+* This value struct represents a GeoPoint in the system. It has exactly the same layout
+* and is completely compatible with the GeoPoint in the global namespace defined in basetype.h,
+* but of course the compiler has no idea of that, so you have to static_cast to convert.
++===============+===============+===============+===============+===============+======*/
+public value struct GeoPoint
+    {
+    double              longitude;
+    double              latitude;
+    double              elevation;
+
+    void Init (double inLong, double inLat, double inElev) {longitude = inLong; latitude=inLat; elevation = inElev;}
     };
 
+public value struct GeoPoint2d
+    {
+    double              longitude;
+    double              latitude;
+    void Init (double inLong, double inLat) {longitude = inLong; latitude = inLat;}
+    };
 
 /*=================================================================================**//**
 * This managed class manages the GeoCoordinates in the system.
@@ -2727,9 +2746,9 @@ ECUI::ECEnumerablePropertyDescriptor^   propertyDescriptor
     bool            foundOurDatumName = false;
     if ( (nullptr != gcs) && (NULL != (sourceLibrary = gcs->SourceLibrary)) && sourceLibrary->IsUserLibrary() )
         {
-        UInt32 datumCount   = (UInt32) sourceLibrary->GetDatumCount();
+        uint32_t datumCount   = (uint32_t) sourceLibrary->GetDatumCount();
         ourDatumName = gcs->DatumName;
-        for (UInt32 iDatum=0; iDatum < datumCount; iDatum++)
+        for (uint32_t iDatum=0; iDatum < datumCount; iDatum++)
             {
             WString datumName;
             sourceLibrary->GetDatumName (iDatum, datumName);
@@ -2932,8 +2951,8 @@ ECUI::ECEnumerablePropertyDescriptor^   propertyDescriptor
     bool        foundOurEllipsoidName = false;
     if ( (NULL != sourceLibrary) && sourceLibrary->IsUserLibrary() )
         {
-        UInt32      ellipsoidCount = (UInt32) sourceLibrary->GetEllipsoidCount();
-        for (UInt32 iEllipsoid=0; iEllipsoid < ellipsoidCount; iEllipsoid++)
+        uint32_t    ellipsoidCount = (uint32_t) sourceLibrary->GetEllipsoidCount();
+        for (uint32_t iEllipsoid=0; iEllipsoid < ellipsoidCount; iEllipsoid++)
             {
             WString ellipsoidName;
             sourceLibrary->GetEllipsoidName (iEllipsoid, ellipsoidName);
@@ -7863,7 +7882,7 @@ virtual void            SaveState ();
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   06/09
-* Should return an array of 7 Int32, containing one instance each of 0 through 6.
+* Should return an array of 7 int32_t, containing one instance each of 0 through 6.
 * The columnOrder[0] is the position of the Key Name column.
 * The columnOrder[1] is the position of the Description Name column.
 * The columnOrder[2] is the position of the Units column.
@@ -7872,11 +7891,11 @@ virtual void            SaveState ();
 * The columnOrder[5] is the position of the Datum column.
 * The columnOrder[6] is the position of the Ellipsoid Name column.
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual array<Int32>^   GetColumnOrder();
+virtual array<int32_t>^   GetColumnOrder();
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   06/09
-* Should return an array of 7 Int32, containing the widths of each column.
+* Should return an array of 7 int32_t, containing the widths of each column.
 * The columnOrder[0] is the width of the Key Name column.
 * The columnOrder[1] is the width of the Description Name column.
 * The columnOrder[2] is the width of the Units column.
@@ -7885,19 +7904,19 @@ virtual array<Int32>^   GetColumnOrder();
 * The columnOrder[5] is the width of the Datum column.
 * The columnOrder[6] is the width of the Ellipsoid Name column.
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual array<Int32>^   GetColumnWidths();
+virtual array<int32_t>^   GetColumnWidths();
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   06/09
 * Should save the array passed to it to the internal state.
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void        SaveColumnOrder (array<Int32>^ columnOrder);
+virtual void        SaveColumnOrder (array<int32_t>^ columnOrder);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   06/09
 * Should save the array passed to it to the internal state.
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void        SaveColumnWidths (array<Int32>^ columnWidths);
+virtual void        SaveColumnWidths (array<int32_t>^ columnWidths);
 };
 
 public ref class DefaultHostFormProvider : IHostFormProvider2
@@ -9314,7 +9333,7 @@ void            WriteOrganizationFiles
 public ref class    ListViewSorter : SC::IComparer
 {
 private:
-Int32                   m_column;
+int32_t                 m_column;
 SWF::SortOrder          m_sortOrder;
 SWF::ListView^          m_list;
 
@@ -9332,8 +9351,8 @@ ListViewSorter (SWF::ListView^ list)
     list->ColumnClick += gcnew SWF::ColumnClickEventHandler (this, &ListViewSorter::ColumnClick);
     }
 
-property Int32          Column
-    { Int32 get() { return m_column; } }
+property int32_t        Column
+    { int32_t get() { return m_column; } }
 
 property SWF::SortOrder SortOrder
     { SWF::SortOrder get() { return m_sortOrder; } }
@@ -9364,7 +9383,7 @@ virtual int     Compare (Object^ lhs, Object^ rhs)
         {
         if (m_column == 4)
             // this is the EPSG column.
-            result = Int32::Parse (lhsText, SG::NumberStyles::Number) - Int32::Parse (rhsText, SG::NumberStyles::Number);
+            result = int32_t::Parse (lhsText, SG::NumberStyles::Number) - int32_t::Parse (rhsText, SG::NumberStyles::Number);
         else
             result = String::Compare (lhsText, rhsText, true);
         }
@@ -9375,7 +9394,7 @@ virtual int     Compare (Object^ lhs, Object^ rhs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   06/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                Sort (Int32 column)
+void                Sort (int32_t column)
     {
     SWF::SortOrder order = SWF::SortOrder::Ascending;
 
@@ -9388,7 +9407,7 @@ void                Sort (Int32 column)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   06/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                Sort (Int32 column, SWF::SortOrder order)
+void                Sort (int32_t column, SWF::SortOrder order)
     {
     if (column != m_column)
         {
@@ -9768,7 +9787,7 @@ System::EventArgs^      eventArgs
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   06/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            GetSettings ([SRI::Out] array<Int32>^% columnOrder, [SRI::Out] array<Int32>^% columnWidths, int expectedDimension)
+void            GetSettings ([SRI::Out] array<int32_t>^% columnOrder, [SRI::Out] array<int32_t>^% columnWidths, int expectedDimension)
     {
     columnOrder     = nullptr;
     columnWidths    = nullptr;
@@ -9798,8 +9817,8 @@ void            SaveSettings ()
 
     int     numColumns = listColumns->Count;
 
-    array<Int32>^ columnOrder  = gcnew array<Int32> (numColumns);
-    array<Int32>^ columnWidths = gcnew array<Int32> (numColumns);
+    array<int32_t>^ columnOrder  = gcnew array<int32_t> (numColumns);
+    array<int32_t>^ columnWidths = gcnew array<int32_t> (numColumns);
 
     for (int iColumn = 0; iColumn < numColumns; iColumn++)
         {
@@ -9983,8 +10002,8 @@ SWF::Button^    searchButton
     m_backgroundWorker->WorkerSupportsCancellation = true;
 
 
-    array<Int32>^   columnOrder;
-    array<Int32>^   columnWidths;
+    array<int32_t>^   columnOrder;
+    array<int32_t>^   columnWidths;
     GetSettings (columnOrder, columnWidths, 7);
 
     SWF::ListView::ColumnHeaderCollection^ columns = m_listView->Columns;
@@ -10889,7 +10908,7 @@ void            LibrarySelectionControl::EditEllipsoidsClickEvent (System::Objec
 
 }   // End of GeocoordinatesNET Namespace
 
-END_BENTLEY_NAMESPACE
+END_BENTLEY_API_NAMESPACE
 
 namespace BGC   = Bentley::GeoCoordinates;
 namespace BGCN  = Bentley::GeoCoordinatesNET;

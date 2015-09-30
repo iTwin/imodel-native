@@ -2,35 +2,24 @@
 |
 |     $Source: BaseGeoCoord/PublicAPI/basegeocoordapi.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-#include <Bentley\Bentley.h>
-#include <Bentley\WString.h>
+#include <Bentley/Bentley.h>
+#include <Bentley/WString.h>
 #include <string>
-
-#if defined (CREATE_STATIC_LIBRARIES)
-    #undef BASEGEOCOORD_EXPORTED
-    #define BASEGEOCOORD_EXPORTED
-#else 
-    #if defined (__BASEGEOCOORD_BUILD__)
-        #define BASEGEOCOORD_EXPORTED    __declspec(dllexport)
-    #else
-        #define BASEGEOCOORD_EXPORTED    __declspec(dllimport)
-    #endif
-#endif
+#include "ExportMacros.h"
 
 // Forward Declarations
 struct IGeoTiffKeysList;
 
-// Forward Declarations in Bentley::GeoCoordinates namespace
+// Forward Declarations
 BEGIN_BENTLEY_NAMESPACE
 namespace GeoCoordinates {class BaseGCS;}
 END_BENTLEY_NAMESPACE
-
 
 BEGIN_EXTERN_C
 
@@ -45,24 +34,23 @@ WCharCP dataDirectory
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  08/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-BASEGEOCOORD_EXPORTED Bentley::GeoCoordinates::BaseGCS* baseGeoCoord_allocate
+BASEGEOCOORD_EXPORTED BentleyApi::GeoCoordinates::BaseGCS* baseGeoCoord_allocate
 (
 );
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BASEGEOCOORD_EXPORTED   Bentley::GeoCoordinates::BaseGCS* baseGeoCoord_allocateFromBaseGCSKeyName
+BASEGEOCOORD_EXPORTED   BentleyApi::GeoCoordinates::BaseGCS* baseGeoCoord_allocateFromBaseGCSKeyName
 (
 WCharCP keyName // The coordinate system key name.
 );
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  08/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED void baseGeoCoord_deallocate
 (
-Bentley::GeoCoordinates::BaseGCS* pBaseGcs
+GeoCoordinates::BaseGCS* pBaseGcs
 );
 
 /*---------------------------------------------------------------------------------**//**
@@ -71,9 +59,9 @@ Bentley::GeoCoordinates::BaseGCS* pBaseGcs
 BASEGEOCOORD_EXPORTED StatusInt baseGeoCoord_initFromGeoTiffKeys
 (
 StatusInt*                        warning,            // Warning. Function returns SUCCESS, but some warning desribed in ERRMSG and warning, passed back.
-Bentley::WString*                 warningOrErrorMsg,  // Error message.
+WString*                 warningOrErrorMsg,  // Error message.
 IGeoTiffKeysList*                 geoTiffKeys,        // The GeoTiff key list
-Bentley::GeoCoordinates::BaseGCS* pBaseGcs
+GeoCoordinates::BaseGCS* pBaseGcs
 );
 
 /*---------------------------------------------------------------------------------**//**
@@ -82,10 +70,10 @@ Bentley::GeoCoordinates::BaseGCS* pBaseGcs
 BASEGEOCOORD_EXPORTED StatusInt baseGeoCoord_initFromWellKnownText
 (
 StatusInt*                         warning,            // Warning. Function returns SUCCESS, but some warning desribed in ERRMSG and warning, passed back.
-Bentley::WString*                  warningOrErrorMsg,  // Error message.
-Int32                              wktFlavor,          // The WKT Flavor.
+WString*                  warningOrErrorMsg,  // Error message.
+int32_t                            wktFlavor,          // The WKT Flavor.
 WCharCP                            wellKnownText,      // The Well Known Text specifying the coordinate system.
-Bentley::GeoCoordinates::BaseGCS*  pBaseGcs
+GeoCoordinates::BaseGCS*  pBaseGcs
 );
 
 /*---------------------------------------------------------------------------------**//**
@@ -97,8 +85,8 @@ double* outCartesianX,
 double* outCartesianY,
 double  inCartesianX,
 double  inCartesianY,
-Bentley::GeoCoordinates::BaseGCS* pSrcGcs,
-Bentley::GeoCoordinates::BaseGCS* pDstGcs
+GeoCoordinates::BaseGCS* pSrcGcs,
+GeoCoordinates::BaseGCS* pDstGcs
 );
 
 /*---------------------------------------------------------------------------------**//**
@@ -106,7 +94,7 @@ Bentley::GeoCoordinates::BaseGCS* pDstGcs
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED double baseGeoCoord_getUnitsFromMeters
 (
-Bentley::GeoCoordinates::BaseGCS* pBaseGcs
+GeoCoordinates::BaseGCS* pBaseGcs
 );
 
 /*---------------------------------------------------------------------------------**//**
@@ -114,15 +102,15 @@ Bentley::GeoCoordinates::BaseGCS* pBaseGcs
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED int baseGeoCoord_getEPSGUnitCode
 (
-Bentley::GeoCoordinates::BaseGCS* pBaseGcs
+GeoCoordinates::BaseGCS* pBaseGcs
 );
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BASEGEOCOORD_EXPORTED Bentley::GeoCoordinates::BaseGCS* baseGeoCoord_clone
+BASEGEOCOORD_EXPORTED GeoCoordinates::BaseGCS* baseGeoCoord_clone
 (
-Bentley::GeoCoordinates::BaseGCS* pBaseGcs
+GeoCoordinates::BaseGCS* pBaseGcs
 );
 
 
@@ -132,7 +120,7 @@ Bentley::GeoCoordinates::BaseGCS* pBaseGcs
 BASEGEOCOORD_EXPORTED StatusInt baseGeoCoord_getGeoTiffKeys
 (
 IGeoTiffKeysList* pList,
-Bentley::GeoCoordinates::BaseGCS* pBaseGcs
+GeoCoordinates::BaseGCS* pBaseGcs
 );
 
 /*---------------------------------------------------------------------------------**//**
@@ -141,8 +129,8 @@ Bentley::GeoCoordinates::BaseGCS* pBaseGcs
 BASEGEOCOORD_EXPORTED StatusInt baseGeoCoord_getWellKnownText
 (
 WStringR                          wellKnownText,      // The WKT.
-Int32                             wktFlavor,          // The WKT Flavor.
-Bentley::GeoCoordinates::BaseGCS* pBaseGcs
+int32_t                           wktFlavor,          // The WKT Flavor.
+GeoCoordinates::BaseGCS* pBaseGcs
 );
 
 /*---------------------------------------------------------------------------------**//**
@@ -150,7 +138,7 @@ Bentley::GeoCoordinates::BaseGCS* pBaseGcs
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED bool baseGeoCoord_isValid
 (
-Bentley::GeoCoordinates::BaseGCS* pBaseGcs
+GeoCoordinates::BaseGCS* pBaseGcs
 );
 
 /*---------------------------------------------------------------------------------**//**
@@ -158,8 +146,8 @@ Bentley::GeoCoordinates::BaseGCS* pBaseGcs
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED bool baseGeoCoord_isEquivalent
 (
-Bentley::GeoCoordinates::BaseGCS* pBaseGcs1,
-Bentley::GeoCoordinates::BaseGCS* pBaseGcs2
+GeoCoordinates::BaseGCS* pBaseGcs1,
+GeoCoordinates::BaseGCS* pBaseGcs2
 );
 
 /*---------------------------------------------------------------------------------**//**
@@ -178,7 +166,7 @@ BASEGEOCOORD_EXPORTED StatusInt baseGeoCoord_getCartesianFromLatLong
 (
 double*                           pCartesianPt,
 double*                           pGeoPt,
-Bentley::GeoCoordinates::BaseGCS* pBaseGcs
+GeoCoordinates::BaseGCS* pBaseGcs
 );
 
 /*---------------------------------------------------------------------------------**//**
@@ -187,7 +175,7 @@ Bentley::GeoCoordinates::BaseGCS* pBaseGcs
 BASEGEOCOORD_EXPORTED StatusInt baseGeoCoord_setQuadrant
 (
 short                             quadrant,
-Bentley::GeoCoordinates::BaseGCS* pBaseGcs
+GeoCoordinates::BaseGCS* pBaseGcs
 );
 
 END_EXTERN_C

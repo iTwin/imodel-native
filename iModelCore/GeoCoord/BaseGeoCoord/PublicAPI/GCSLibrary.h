@@ -2,18 +2,21 @@
 |
 |     $Source: BaseGeoCoord/PublicAPI/GCSLibrary.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-//__BENTLEY_INTERNAL_ONLY__
+/*__PUBLISH_SECTION_START__*/
+// This is internal, because it includes csmap\cs_map.h. That file defines all kinds of macros (such as MAXINT) that conflict with Windows .h files.
 
-#include    <GeoCoord\BaseGeoCoord.h>
-#include    <CSMap\cs_map.h>
+#include "ExportMacros.h"
+
+#include    <GeoCoord/BaseGeoCoord.h>
+#include    <csmap/cs_map.h>
 #include    <string>
-#include    <Bentley\bmap.h>
-#include    <Bentley\bvector.h>
+#include    <Bentley/bmap.h>
+#include    <Bentley/bvector.h>
 
 BEGIN_BENTLEY_NAMESPACE
 
@@ -28,6 +31,7 @@ namespace GeoCoordinates {
 +===============+===============+===============+===============+===============+======*/
 struct  Library
 {
+    virtual ~Library() {;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -51,7 +55,7 @@ virtual WString         GetGUIName () = 0;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual CSParameters*   GetCS (UInt32 index) = 0;
+virtual CSParameters*   GetCS (uint32_t index) = 0;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   07/07
@@ -71,7 +75,7 @@ virtual StatusInt       ReplaceCS (BaseGCSP oldGCS, BaseGCSP newGCS) = 0;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt       GetCSName (UInt32 index, WStringR csName) = 0;
+virtual StatusInt       GetCSName (uint32_t index, WStringR csName) = 0;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   07/07
@@ -109,7 +113,7 @@ virtual CSDatumDef*     GetDatum (WCharCP datumName) = 0;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual CSDatumDef*     GetDatum (UInt32 index) = 0;
+virtual CSDatumDef*     GetDatum (uint32_t index) = 0;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/10
@@ -134,7 +138,7 @@ virtual StatusInt       ReplaceDatum (const CSDatumDef& oldDatum, const CSDatumD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt       GetDatumName (UInt32 index, WStringR datumName) = 0;
+virtual StatusInt       GetDatumName (uint32_t index, WStringR datumName) = 0;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/10
@@ -195,7 +199,7 @@ virtual CSEllipsoidDef* GetEllipsoid (WCharCP ellipsoidName) = 0;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual CSEllipsoidDef* GetEllipsoid (UInt32 index) = 0;
+virtual CSEllipsoidDef* GetEllipsoid (uint32_t index) = 0;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/10
@@ -220,7 +224,7 @@ virtual StatusInt       ReplaceEllipsoid (const CSEllipsoidDef& oldEllipsoid, co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt       GetEllipsoidName (UInt32 index, WStringR ellipsoidName) = 0;
+virtual StatusInt       GetEllipsoidName (uint32_t index, WStringR ellipsoidName) = 0;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/10
@@ -262,8 +266,10 @@ struct ParamMapEntry : public CSParameters
 typedef bmap <WString, ParamMapEntry*>      T_CSParamMap;
 typedef bvector <Library*>                  T_UserLibraryList;
 
+#ifdef _MSC_VER
 #pragma warning (push)
 #pragma warning(disable:4251) //get rid of warning so we can use the vector class
+#endif
 struct  BASEGEOCOORD_EXPORTED   LibraryManager
 {
 private:
@@ -362,11 +368,10 @@ LibraryManager    ();
 static LibraryManager*     s_instance;
 
 };
+#ifdef _MSC_VER
 #pragma warning (pop)
-
+#endif
 
 } // ends GeoCoordinates namespace
 
 END_BENTLEY_NAMESPACE
-
-

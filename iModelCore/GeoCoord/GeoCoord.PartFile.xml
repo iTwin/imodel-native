@@ -2,78 +2,38 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\bsicommon\build\PartFile.xsd">
 
-    <Part Name="GeoCoordHeaderFiles" BMakeFile="BaseGeoCoord\GeocoordPrewire.mke">
-        <SubPart PartName="Base"            PartFile="Bentley"      Repository="Bentley" />
-        <SubPart PartName="HeaderFiles"     PartFile="RmgrTools"    Repository="RmgrTools" />
+    <Part Name="GeoCoordHeaderFiles" BentleyBuildMakeFile="BaseGeoCoord/GeoCoordPrewire.mke">
         <Bindings>
             <PublicAPI Domain="GeoCoord" />
         </Bindings>
     </Part>
 
     <!-- To Use the GeoCoord part, always include either GeoCoordData or GeoCoordDataMinimal from the csmap partfile -->
-    <Part Name="GeoCoord" BMakeFile="BaseGeoCoord\GeoCoord.mke" ApiNumber="2">
-        <SubPart PartName="CSMap"                   PartFile="csmap"                Repository="libsrc-csmap" />
+    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
+    <Part Name="GeoCoord" BentleyBuildMakeFile="BaseGeoCoord/GeoCoord.mke" ApiNumber="G">
+        <SubPart PartName="csmapStatic"             PartFile="csmap"                Repository="libsrc-csmap" />
         <SubPart PartName="GeoCoordHeaderFiles" />
         <SubPart PartName="BentleyDll"              PartFile="Bentley"              Repository="Bentley" />
-        <SubPart PartName="TranskitSupportTools"    PartFile="RmgrTools"            Repository="RmgrTools" />
-        <SubPart PartName="RmgrToolsDll"            PartFile="RmgrTools"            Repository="RmgrTools"/>
+        <SubPart PartName="ToolsubsDll"             PartFile="RmgrTools"                    Repository="RmgrTools"/>
         <SubPart PartName="GeomDlls"                PartFile="geomlibs"             Repository="GeomLibs" />
-        <SubPart PartName="TransKitTools"           PartFile="TransKitTools"        Repository="TransKitTools" />
         <Bindings>
             <PublicAPI Domain="GeoCoord" />
-            <Libs>Delivery\$(shlibprefix)BaseGeoCoord$(libext)</Libs>
-            <Libs ProductDirectoryName="PowerPlatformSdkLibs" Required="false">Delivery\$(shlibprefix)BaseGeoCoord$(libext)</Libs>
-            <Assemblies ProductDirectoryName="GeoCoordNativeAssemblies">Delivery\$(shlibprefix)BaseGeoCoord$(ApiNumber)$(shlibext)
-                <TransKit SourceDirectory="Delivery\GeoCoord\transkit" />
+            <Libs>Delivery/$(libprefix)BaseGeoCoord$(libext)</Libs>
+            <Assemblies ProductDirectoryName="GeoCoordNativeAssemblies">Delivery/$(shlibprefix)BaseGeoCoord$(ApiNumber)$(shlibext)
             </Assemblies>
         </Bindings>
     </Part>
 
     <!-- To Use the GeoCoordManaged part, always include either GeoCoordData or GeoCoordDataMinimal from the csmap partfile -->
-    <Part Name="GeoCoordManaged" BMakeFile="BaseGeoCoord\BaseManagedGeoCoord.mke" ApiNumber="2">
+    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
+    <Part Name="GeoCoordManaged" BMakeFile="BaseGeoCoord/BaseManagedGeoCoord.mke" ApiNumber="G">
         <SubPart PartName="GeoCoord" />
-        <SubPart PartName="ECObjectsManaged"            PartFile="ecf"                Repository="ecf"/>
-        <SubPart PartName="BentleyGeometryNetAssembly"  PartFile="BentleyGeometryNet" Repository="BentleyGeometryNet"/>
+        <SubPart PartName="ECObjectsManaged"  PartFile="ecf"                Repository="ecf"/>
         <Bindings>
-            <Libs>Delivery\Bentley.GeoCoord.lib</Libs>
-            <Libs ProductDirectoryName="PowerPlatformSdkLibs" Required="false">Delivery\Bentley.GeoCoord.lib</Libs>
-            <Assemblies ProductDirectoryName="GeoCoordManagedAssemblies">Delivery\Bentley.GeoCoord$(ApiNumber).dll
-                <TransKit SourceDirectory="Delivery\GeoCoordManaged\transkit" />
+            <Libs>Delivery/Bentley.GeoCoord.lib</Libs>
+            <Assemblies ProductDirectoryName="GeoCoordManagedAssemblies">Delivery/Bentley.GeoCoord$(ApiNumber).dll
+                <TransKit SourceDirectory="Delivery/GeoCoordManaged/transkit" />
             </Assemblies>
-        </Bindings>
-    </Part>
-
-    <Part Name="DgnGeoCoordHeaderFiles" BMakeFile="DgnGeoCoord\DgnGeocoord.prewire.mke">
-        <Bindings>
-            <PublicAPI Domain="DgnGeoCoord" />
-        </Bindings>
-    </Part>
-
-    <Part Name="DgnGeoCoord" BMakeFile="DgnGeoCoord\DgnGeoCoord.mke" ApiNumber="2" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86">
-        <SubPart PartName="DgnPlatformDll"      PartFile="DgnPlatform"                  Repository="DgnPlatform"/>
-        <SubPart PartName="RmgrToolsDll"        PartFile="RmgrTools"                    Repository="RmgrTools"/>
-        <SubPart PartName="GeoCoord"            PartFile="GeoCoord"                     Repository="GeoCoord"/>
-        <SubPart PartName="ECObjectsNative"     PartFile="ecobjects"                    Repository="ecobjects" />
-        <SubPart PartName="DgnGeoCoordHeaderFiles" />
-        <!-- Eula is currently required because it always gets pulled into the transkit.  There may be a way to change that to avoid this,
-             but it isn't obvious.  -->
-        <SubPart PartName="Eula"                PartFile="Eula"                         Repository="Miscdev-Eula" />
-        <Bindings>
-            <Libs>Delivery\DgnGeoCoord.lib</Libs>
-            <Files ProductDirectoryName="DgnPlatformNativeAssemblies">Delivery\$(shlibprefix)DgnGeoCoord$(ApiNumber)$(shlibext)
-            </Files> 
-        </Bindings>
-    </Part>
-
-    <Part Name="DgnGeoCoordManaged" BMakeFile="DgnGeoCoord\DgnGeoCoordManaged.mke" ApiNumber="2" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86">
-        <SubPart PartName="DgnGeoCoord" />
-        <SubPart PartName="GeoCoordManaged" />
-        <SubPart PartName="DgnPlatformNETAssembly" PartFile="DgnPlatformNET" Repository="DgnPlatformNET" />
-        <SubPart PartName="ECXAttributes" PartFile="DgnPlatformNET" Repository="DgnPlatformNET" />
-        <Bindings>
-            <Assemblies ProductDirectoryName="GeoCoordManagedAssemblies">Delivery\Bentley.DgnGeoCoord$(ApiNumber).dll
-                <TransKit SourceDirectory="Delivery\DgnGeoCoordManaged\transkit" />
-            </Assemblies> 
         </Bindings>
     </Part>
 
@@ -81,7 +41,6 @@
     <Part Name="GeoCoordMinimal" PrgOutputDir="GeoCoordLib">
         <SubPart PartName="GeoCoord" />
         <SubPart PartName="GeoCoordDataMinimal"  PartFile="csmap"          Repository="libsrc-csmap" />
-        <SubPart PartName="DgnGeoCoord" />
     </Part>
 
     <!-- Standalone GeoCoord delivery, uses full GeographicData -->

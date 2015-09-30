@@ -3,7 +3,7 @@
 |
 |   $Source: BaseGeoCoord/EllipsoidEditingPanel.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 
@@ -520,8 +520,8 @@ EllipsoidLibraryNode (String^ name, SWF::ContextMenu^ contextMenu, BGC::LibraryP
     m_isUserLib = sourceLibrary->IsUserLibrary();
 
     // load all the members. It is not worth "delay loading", we are going to open the library nodes immediately anyway.
-    UInt32  ellipsoidCount = (UInt32) sourceLibrary->GetEllipsoidCount();
-    for (UInt32 iEllipsoid=0; iEllipsoid < ellipsoidCount; iEllipsoid++)
+    uint32_t ellipsoidCount = (uint32_t) sourceLibrary->GetEllipsoidCount();
+    for (uint32_t iEllipsoid=0; iEllipsoid < ellipsoidCount; iEllipsoid++)
         {
         WString ellipsoidName;
         if (BSISUCCESS == sourceLibrary->GetEllipsoidName (iEllipsoid, ellipsoidName))

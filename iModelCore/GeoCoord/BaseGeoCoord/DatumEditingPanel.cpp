@@ -3,7 +3,7 @@
 |
 |   $Source: BaseGeoCoord/DatumEditingPanel.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 
@@ -520,8 +520,8 @@ DatumLibraryNode (String^ name, SWF::ContextMenu^ contextMenu, BGC::LibraryP sou
     m_isUserLib = sourceLibrary->IsUserLibrary();
 
     // load all the members. It is not worth "delay loading", we are going to open the library nodes immediately anyway.
-    UInt32  datumCount = (UInt32) sourceLibrary->GetDatumCount();
-    for (UInt32 iDatum=0; iDatum < datumCount; iDatum++)
+    uint32_t datumCount = (uint32_t) sourceLibrary->GetDatumCount();
+    for (uint32_t iDatum=0; iDatum < datumCount; iDatum++)
         {
         WString datumName;
         if (BSISUCCESS == sourceLibrary->GetDatumName (iDatum, datumName))

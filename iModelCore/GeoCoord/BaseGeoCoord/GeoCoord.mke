@@ -2,20 +2,20 @@
 #
 #     $Source: BaseGeoCoord/GeoCoord.mke $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-appName         = basegeocoord
-sAppName        = basegeocoord
+appName         = BaseGeoCoord
+sAppName        = BaseGeoCoord
 baseDir         = $(_MakeFilePath)
 
-publicAPISrc    = $(baseDir)PublicApi/
+publicAPISrc    = $(baseDir)PublicAPI/
 
 PolicyFile = $(SrcRoot)GeoCoord/mki/GeoCoordPolicy.mki
 %include mdl.mki
 
-maName          = basegeocoord
-dllName         = basegeocoord
+maName          = BaseGeoCoord
+dllName         = BaseGeoCoord
 alternateMkiName= $(sAppName)rsc
 
 nameToDefine    = STANDALONE_BSI
@@ -55,11 +55,15 @@ nameToDefine = GEOCOORD_ENHANCEMENT
 #---------------------------------------------
 dlmObjs     = $(o)basegeocoord$(oext)
 
+# Note: Even though we know that BeCsmapStatic$ is always linked statically, we still put it into the LINKER_LIBRARIES list below.
+# That is so that it can be *excluded* from the (static) link of this library when it is built for platforms such as Android and iOS
+# that always build static libraries. On such platforms, it is up to the final consumer of these (static) libraries to know and link them all.
+# We must *not* try to nest one static library inside another, as that is not supported on all platforms.
 
 #---------------------------------------------
 #        Compile the source files for the DLM
 #---------------------------------------------
-$(o)basegeocoord$(oext):     $(baseDir)basegeocoord.cpp  $(baseDir)GCSlibrary.cpp $(PublicAPISrc)BaseGeoCoord.h $(PublicAPISrc)GCSlibrary.h
+$(o)basegeocoord$(oext):     $(baseDir)basegeocoord.cpp  $(baseDir)GCSLibrary.cpp $(PublicAPISrc)BaseGeoCoord.h $(PublicAPISrc)GCSLibrary.h
 
 
 #--------------------------------------------------------------
@@ -79,24 +83,13 @@ DLM_NO_DEF                  = 1
 DLM_NO_DLS                  = 1
 DLM_NOMSBUILTINS            = 1
 DLM_SPECIAL_LINKOPT         = -Fixed:no
-LINKER_LIBRARIES            = $(rmgrExportLib) $(BuildContext)SubParts/Libs/$(stlibprefix)BeCsmap$(stlibext)
+LINKER_LIBRARIES            = $(ToolsubsExportLib)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(stlibprefix)BeCsmapStatic$(stlibext)
 DLM_DEST                    = $(o)
 DLM_EXPORT_DEST             = $(o)
 
 %include $(sharedmki)CommonCompileLinkPolicy.mki
 
-#----------------------------------------------------------------------------------------------------------------------------------------------------
-# REMOVE_BASE_ADDRESS -- Remove base address when xp support is dropped
-# See http://bsw-wiki.bentley.com/default.aspx/Development/RemovalOfBaseAddressingInBeijing.html (specifically the 'Caveats' section)
-#----------------------------------------------------------------------------------------------------------------------------------------------------
-DLM_BASE_ADDRESS = 0x53020000
-
 %include $(sharedMki)linkLibrary.mki
 
-%undef DLM_BASE_ADDRESS
 
-NO_MUI_HARVEST=1
-MuiBaseName = $(appName)$(DLM_API_NUMBER).dll
-MuiTranskitDeliveryDir = $(ContextDeliveryDir)GeoCoord/TransKit/
-
-%include $(SharedMki)CreateAndSymlinkMui.mki

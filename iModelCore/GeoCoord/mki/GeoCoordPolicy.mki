@@ -79,32 +79,27 @@ SrcBaseGeoCoord =   $(SrcGeoCoord)BaseGeoCoord/
 BaseGeoPublicApiSrc =  $(SrcBaseGeoCoord)PublicApi/
 BaseGeoCoordAPISrc = $(BuildContextPublicApiDir)GeoCoord/
 
-SrcDgnGeoCoord =   $(SrcGeoCoord)DgnGeoCoord/
-DgnGeoPublicApiSrc =  $(SrcDgnGeoCoord)PublicApi/
-DgnGeoCoordAPISrc = $(BuildContextPublicApiDir)DgnGeoCoord/
-
 #----------------------------------------------------------
 #  Output Dirs
 #----------------------------------------------------------
 build           =       $(OutGeoCoord)build/
-dgnGeoCoordObj  =       $(build)geocoord/
-geoCoordManagedObj  =   $(build)geocoordManaged/
 
 #----------------------------------------------------------
 #  Libraries
 #----------------------------------------------------------
-BaseGeocoordLib         = basegeocoord.lib
-DgnGeoCoordLib          = DgnGeoCoord.lib
+BaseGeocoordLib         = $(shlibprefix)BaseGeoCoord$(shlibext)
 
-BentleyLib              = Bentley.lib
-BentleyGeomLib          = BentleyGeom.lib
-DgnPlatformLib          = DgnPlatform.lib
-rmgrsubsLib             = RmgrTools.lib
-ECNativeObjectsLib      = ECObjects.lib
+BentleyLib              = $(libprefix)Bentley$(libext)
+BentleyGeomLib          = $(libprefix)BentleyGeom$(libext)
+DgnPlatformLib          = $(libprefix)DgnPlatform$(libext)
+ToolsubsLib             = $(libprefix)Toolsubs$(libext)
+ECNativeObjectsLib      = $(libprefix)ECObjects$(libext)
+BeSQLiteLib             = $(libprefix)BeSQLite$(libext)
 
-rmgrExportLib               = $(BuildContextSubPartsLib)$(rmgrsubsLib)
+ToolsubsExportLib           = $(BuildContextSubPartsLib)$(ToolsubsLib)
 DgnPlatformExportLib        = $(ContextSubpartsLibs)$(DgnPlatformLib)
 geomExportLib               = $(ContextSubpartsLibs)$(BentleyGeomLib)
+BeSQLiteExportLib           = $(ContextSubpartsLibs)$(BeSQLiteLib)
 
 
 

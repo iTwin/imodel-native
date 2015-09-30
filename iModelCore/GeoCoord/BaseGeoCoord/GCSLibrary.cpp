@@ -10,6 +10,10 @@
 // NOTE: This file is #included from BaseManagedGCS.cpp
 
 
+#if defined (__unix__)
+#include <unistd.h>
+#endif
+
 /*=================================================================================**//**
 * UserLibrary class
 +===============+===============+===============+===============+===============+======*/
@@ -51,9 +55,10 @@ T_WStringVector*    m_csNames;
 T_WStringVector*    m_datumNames;
 T_WStringVector*    m_ellipsoidNames;
 bool                m_consolidatedFormat;
-UInt32              m_ellipsoidStart;
-UInt32              m_datumStart;
-UInt32              m_gcsStart;
+uint32_t            m_ellipsoidStart;
+uint32_t            m_datumStart;
+uint32_t            m_gcsStart;
+
 
 
 WStringP            m_orgFileName;
@@ -100,7 +105,7 @@ WString         guiName
     m_consolidatedFormat    = false;
     m_ellipsoidStart        = 0;
     m_datumStart            = 0;
-    m_gcsStart              = sizeof (UInt32);  // positioned just past the magic number.
+    m_gcsStart              = sizeof (uint32_t);  // positioned just past the magic number.
 
     m_orgFileName           = NULL;
     }
@@ -134,20 +139,20 @@ virtual CSParameters*   GetCS (CSDefinition& csDef)
     // If we have a datum we try to get it from this UserLibrary. If that fails, it (and the Ellipsoid) must be in the system library, so just use CScsloc1.
     if (0 != csDef.dat_knm[0])
         {
-        WString datumName (csDef.dat_knm);
+        WString datumName (csDef.dat_knm,false);
         // can't find datum in this UserLibrary, so datum must come from the system library, we can just use CScsloc1 to do that.
         if (NULL == (localDatum = this->GetDatum (datumName.c_str())))
             return CSMap::CScsloc1 (&csDef);
 
         // We have to find the Ellipsoid. It can either be in this library or in the system library.
-        WString ellipsoidName (localDatum->ell_knm);
+        WString ellipsoidName (localDatum->ell_knm,false);
         if (NULL == (localEllipsoid = this->GetEllipsoid (ellipsoidName.c_str())))
             localEllipsoid = CS_eldef (localDatum->ell_knm);
         }
     else if (0 != csDef.elp_knm[0])
         {
         // we do not have a datum. If the ellipsoid is in this UserLibrary, we use it. Otherwise, we just use CScsloc1.
-        WString ellipsoidName (csDef.elp_knm);
+        WString ellipsoidName (csDef.elp_knm,false);
         if (NULL == (localEllipsoid = this->GetEllipsoid (ellipsoidName.c_str())))
             return CSMap::CScsloc1 (&csDef);
         }
@@ -175,7 +180,7 @@ virtual WString         GetGUIName () override
 * NOTE: This always returns either NULL or or a CSParameters that needs to be CSMap::CS_free'd
 * @bsimethod                                                    Barry.Bentley   07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual CSParameters*   GetCS (unsigned int index) override
+virtual CSParameters*   GetCS (uint32_t index) override
     {
     GetCSNames();
     if (index >= m_csNames->size())
@@ -190,7 +195,7 @@ virtual CSParameters*   GetCS (unsigned int index) override
 virtual bool            CSInLibrary (WCharCP csName) override
     {
     GetCSNames();
-    for each (WString nameString in *m_csNames)
+    for (WString const& nameString : *m_csNames)
         {
         if (0 == nameString.CompareToI (csName))
             return true;
@@ -205,8 +210,8 @@ virtual StatusInt       DeleteCS (BaseGCSP gcsToDelete) override
     {
     csFILE*     stream;
     WCharCP     csNameP = gcsToDelete->GetName();
-    long        readPosition;
-    long        writePosition;
+    int32_t        readPosition;
+    int32_t        writePosition;
 
     if (NULL == (stream = OpenLibraryFile (_STRM_BINUP)))
         return GEOCOORDERR_LibraryReadonly;
@@ -258,8 +263,15 @@ virtual StatusInt       DeleteCS (BaseGCSP gcsToDelete) override
     // flush, and then truncate the file.
     fflush (stream);
     int fileDescriptor = _fileno (stream);
+#ifdef _WIN32
     _chsize (fileDescriptor, writePosition);
-
+#else
+    #if defined (ANDROID) || defined (__APPLE__)
+        ftruncate (fileDescriptor, (uint32_t)writePosition);
+    #else
+        ftruncate64 (fileDescriptor, (uint32_t)writePosition);
+    #endif
+#endif
     CS_fclose(stream);
 
     // Discard our list of coordinate system names.
@@ -288,7 +300,7 @@ virtual StatusInt       CreateNewCS (WString& newName, WCharCP sourceName) overr
 
     // make up a new name, make sure it is unique across all the libraries we have.
     WChar  proposedName[1024];
-    swprintf (proposedName, L"Copy-%ls", sourceName);
+    BeStringUtilities::Snwprintf (proposedName, L"Copy-%ls", sourceName);
 
     // make sure the name is not too long.
     proposedName[23] = 0;
@@ -299,7 +311,7 @@ virtual StatusInt       CreateNewCS (WString& newName, WCharCP sourceName) overr
         {
         if (NULL == LibraryManager::Instance()->GetCS (foundInLibrary, proposedName))
             break;
-        swprintf (proposedName, L"Copy_%d-%ls", iName, sourceName);
+        BeStringUtilities::Snwprintf (proposedName, L"Copy_%d-%ls", iName, sourceName);
         proposedName[23] = 0;
         }
 
@@ -416,7 +428,7 @@ error:
 public:
 virtual StatusInt       GetCSName
 (
-unsigned int    index,
+uint32_t  index,
 WStringR        csNameOut
 ) override
     {
@@ -470,13 +482,7 @@ virtual bool            IsUserLibrary () override
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual bool            IsReadOnly () override
     {
-    // it's readonly if the file is readonly.
-    struct __stat64 fileStat;
-
-    if (0 != _wstat64 (m_libraryPath.data(), &fileStat))
-        return true;
-
-    return (0 == (fileStat.st_mode & _S_IWRITE));
+    return BeFileName::IsFileReadOnly (m_libraryPath.c_str());
     }
 
 private:
@@ -582,10 +588,10 @@ StatusInt               FindCSDef (CSDefinition* csDefP, WCharCP name)
 // the data following the magic number in a new-format user library.
 struct  ConsolidatedFileHeader
     {
-    UInt32  m_ellipsoidStart;
-    UInt32  m_datumStart;
-    UInt32  m_gcsStart;
-    UInt32  m_reserved[4];
+    uint32_t m_ellipsoidStart;
+    uint32_t m_datumStart;
+    uint32_t m_gcsStart;
+    uint32_t m_reserved[4];
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -639,7 +645,7 @@ StatusInt       DiscoverFormat ()
             {
             CS_erpt (cs_IOERR);
             CS_fclose (stream);
-            return NULL;
+            return BSIERROR;
             }
         m_consolidatedFormat    = true;
         m_ellipsoidStart        = header.m_ellipsoidStart;
@@ -651,7 +657,7 @@ StatusInt       DiscoverFormat ()
         CS_fclose (stream);
         // strcpy (csErrnam,cs_Dir);
         CS_erpt (cs_CS_BAD_MAGIC);
-        return NULL;
+        return BSIERROR;
         }
 
     CS_fclose(stream);
@@ -682,7 +688,7 @@ void            GetCSNames ()
     while ((st = CS_csrd (stream, &cs_def, &crypt)) > 0)
         {
         // Add the new item to the list.
-        m_csNames->push_back (WString(cs_def.key_nm));
+        m_csNames->push_back (WString(cs_def.key_nm,false));
         }
     CS_fclose (stream);
     }
@@ -694,6 +700,10 @@ void            GetCSNames ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual CSDatumDef*     GetDatum (WCharCP datumName) override
     {
+    double   cs_DelMax = 50000.0;
+    double   cs_RotMax = 50000.0;
+    double   cs_SclMax = 2000.0;
+
     if (!m_consolidatedFormat)
         return NULL;
 
@@ -718,7 +728,7 @@ virtual CSDatumDef*     GetDatum (WCharCP datumName) override
     CSDatumDef* dtptr = NULL;
 
     // Search for the requested datum. The search has to stop at the end of the used datum slots.
-    long        sortEndPosition = m_datumStart + ((UInt32) GetDatumCount() * sizeof (CSDatumDef));
+    int32_t        sortEndPosition = m_datumStart + ((uint32_t) GetDatumCount() * sizeof (CSDatumDef));
     int flag = CS_bins (stream, m_datumStart, sortEndPosition, sizeof (localDatumDef), &localDatumDef, (CMPFUNC_CAST)CS_dtcmp);
     if (flag < 0)
         goto error;
@@ -753,9 +763,6 @@ virtual CSDatumDef*     GetDatum (WCharCP datumName) override
     stream = NULL;
 
     /* Verify that the values are not completely bogus. Values from CSMap. Comment in cs_dtio.c indicates completely different values, but CSdata.c sets them as shown here. */
-    double   cs_DelMax = 50000.0;
-    double   cs_RotMax = 50000.0;
-    double   cs_SclMax = 2000.0;
     if (fabs (dtptr->delta_X) > cs_DelMax || fabs (dtptr->delta_Y) > cs_DelMax || fabs (dtptr->delta_Z) > cs_DelMax ||
             fabs (dtptr->rot_X) > cs_RotMax    || fabs (dtptr->rot_Y) > cs_RotMax || fabs (dtptr->rot_Z) > cs_RotMax ||
             fabs (dtptr->bwscale) > cs_SclMax)
@@ -780,7 +787,7 @@ error:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual CSDatumDef*     GetDatum (unsigned int index) override
+virtual CSDatumDef*     GetDatum (uint32_t index) override
     {
     if (!m_consolidatedFormat)
         return NULL;
@@ -799,7 +806,7 @@ virtual CSDatumDef*     GetDatum (unsigned int index) override
 virtual bool            DatumInLibrary (WCharCP datumName) override
     {
     GetDatumNames();
-    for each (WString nameString in *m_datumNames)
+    for (WString const& nameString : *m_datumNames)
         {
         if (0 == nameString.CompareToI (datumName))
             return true;
@@ -825,8 +832,8 @@ virtual StatusInt       DeleteDatum (WCharCP datumName) override
 
     // step past the ellipsoids
     int     maxDatums       = (m_gcsStart - m_datumStart) / sizeof (CSDatumDef);
-    long    readPosition    = m_datumStart;
-    long    writePosition   = readPosition;
+    int32_t    readPosition    = m_datumStart;
+    int32_t    writePosition   = readPosition;
 
     CS_fseek (stream, readPosition, SEEK_SET);
 
@@ -903,7 +910,7 @@ virtual StatusInt       CreateNewDatum (DatumP& newDatum, WCharCP seedName) over
         {
         if ( (!this->DatumInLibrary (proposedName)) && (!systemLibrary->DatumInLibrary (proposedName)) )
             break;
-        swprintf (proposedName, L"%ls-%d", seedName, iName);
+        BeStringUtilities::Snwprintf (proposedName, L"%ls-%d", seedName, iName);
         proposedName[23] = 0;
         }
 
@@ -941,10 +948,10 @@ virtual StatusInt       ReplaceDatum (const CSDatumDef& oldDatum, const CSDatumD
     // If the name has changed, we need to make sure it's unique.
     StatusInt   status      = SUCCESS;
     bool        nameChanged = false;
-    UInt32      numDatums   = 0;
-    if (0 != strcmpi (oldDatumDef.key_nm, newDatumDef.key_nm))
+    uint32_t    numDatums   = 0;
+    if (0 != BeStringUtilities::Stricmp (oldDatumDef.key_nm, newDatumDef.key_nm))
         {
-        WString newDatumName (newDatumDef.key_nm);
+        WString newDatumName (newDatumDef.key_nm,false);
 
         // name change. Make sure the name isn't already in this library.
         if (this->DatumInLibrary (newDatumName.c_str()))
@@ -955,7 +962,7 @@ virtual StatusInt       ReplaceDatum (const CSDatumDef& oldDatum, const CSDatumD
             return GEOCOORDERR_DatumNoUniqueName;
 
         nameChanged = true;
-        numDatums = (UInt32) GetDatumCount();
+        numDatums = (uint32_t) GetDatumCount();
         }
 
     // Get the current time.
@@ -973,7 +980,7 @@ virtual StatusInt       ReplaceDatum (const CSDatumDef& oldDatum, const CSDatumD
         return GEOCOORDERR_DatumIllegalName;
 
     // find the end position (before opening the file).
-    long        sortEndPosition = m_datumStart + ((UInt32) GetDatumCount() * sizeof (CSDatumDef));
+    int32_t        sortEndPosition = m_datumStart + ((uint32_t) GetDatumCount() * sizeof (CSDatumDef));
 
     csFILE*         stream;
     if (NULL == (stream = OpenLibraryFile (_STRM_BINUP)))
@@ -1024,7 +1031,7 @@ error:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt       GetDatumName (unsigned int index, WStringR datumName) override
+virtual StatusInt       GetDatumName (uint32_t index, WStringR datumName) override
     {
     if (!m_consolidatedFormat)
         return BSIERROR;
@@ -1056,7 +1063,7 @@ private:
 bool                    DatumUsedByAnyGCS (csFILE* stream, WCharCP datumName)
     {
     // step past the datums and ellipsoids
-    long    readPosition    = m_gcsStart;
+    int32_t    readPosition    = m_gcsStart;
     CS_fseek (stream, readPosition, SEEK_SET);
 
     AString searchName (datumName);
@@ -1089,7 +1096,7 @@ bool                    DatumUsedByAnyGCS (csFILE* stream, WCharCP datumName)
 void            DatumRenamed (csFILE* stream, CharCP oldDatumName, CharCP newDatumName)
     {
     // step past the datums and ellipsoids
-    long    readPosition    = m_gcsStart;
+    int32_t    readPosition    = m_gcsStart;
     CS_fseek (stream, readPosition, SEEK_SET);
 
     // step through the file record by record until we encounter one that uses the Datum we're looking for.
@@ -1124,7 +1131,7 @@ void            DatumRenamed (csFILE* stream, CharCP oldDatumName, CharCP newDat
 bool                    EllipsoidUsedByAnyDatumOrGCS (csFILE* stream, CharCP ellipsoidName)
     {
     // step past the datums and ellipsoids
-    long    readPosition    = m_datumStart;
+    int32_t    readPosition    = m_datumStart;
     CS_fseek (stream, readPosition, SEEK_SET);
 
     // step through the file Datum's record by record until we encounter one that uses the Datum we're looking for.
@@ -1177,7 +1184,7 @@ bool                    EllipsoidUsedByAnyDatumOrGCS (csFILE* stream, CharCP ell
 void            EllipsoidRenamed (csFILE* stream, CharCP oldEllipsoidName, CharCP newEllipsoidName)
     {
     // step past the datums and ellipsoids
-    long    readPosition    = m_datumStart;
+    int32_t    readPosition    = m_datumStart;
     CS_fseek (stream, readPosition, SEEK_SET);
 
     // step through the file Datum's record by record until we encounter one that uses the Datum we're looking for.
@@ -1267,7 +1274,7 @@ StatusInt       AddDatum (const CSDatumDef& datum) override
         return GEOCOORDERR_LibraryReadonly;
 
     // Step through until we find the end of the datums.
-    long    writePosition = FindFirstEmptyDatumRecord (stream);
+    int32_t    writePosition = FindFirstEmptyDatumRecord (stream);
     if (writePosition < 0)
         {
         assert (false);
@@ -1309,14 +1316,14 @@ error:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       InitializeUserEllipsoidsInFile (csFILE* stream, UInt32 numUserEllipsoids)
+StatusInt       InitializeUserEllipsoidsInFile (csFILE* stream, uint32_t numUserEllipsoids)
     {
     CSEllipsoidDef  zeroEllipsoidDef;
     memset (&zeroEllipsoidDef, 0, sizeof (zeroEllipsoidDef));
 
-    UInt32  writePosition   = m_ellipsoidStart;
+    uint32_t writePosition   = m_ellipsoidStart;
     CS_fseek (stream, writePosition, SEEK_SET);
-    for (UInt32 iEllipsoid = 0; iEllipsoid < numUserEllipsoids; iEllipsoid++)
+    for (uint32_t iEllipsoid = 0; iEllipsoid < numUserEllipsoids; iEllipsoid++)
         {
         size_t writeCount = CS_fwrite (&zeroEllipsoidDef, 1, sizeof (zeroEllipsoidDef), stream);
 
@@ -1333,14 +1340,14 @@ StatusInt       InitializeUserEllipsoidsInFile (csFILE* stream, UInt32 numUserEl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       InitializeUserDatumsInFile (csFILE* stream, UInt32 numUserDatums)
+StatusInt       InitializeUserDatumsInFile (csFILE* stream, uint32_t numUserDatums)
     {
     CSDatumDef  zeroDatumDef;
     memset (&zeroDatumDef, 0, sizeof (zeroDatumDef));
 
-    UInt32  writePosition   = m_datumStart;
+    uint32_t writePosition   = m_datumStart;
     CS_fseek (stream, writePosition, SEEK_SET);
-    for (UInt32 iDatum = 0; iDatum < numUserDatums; iDatum++)
+    for (uint32_t iDatum = 0; iDatum < numUserDatums; iDatum++)
         {
         size_t writeCount = CS_fwrite (&zeroDatumDef, 1, sizeof (zeroDatumDef), stream);
         if (sizeof (zeroDatumDef) != writeCount)
@@ -1387,7 +1394,7 @@ StatusInt       WriteHeaderToFile (csFILE* stream)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ConvertToConsolidatedFile (UInt32 numUserEllipsoids, UInt32 numUserDatums)
+StatusInt       ConvertToConsolidatedFile (uint32_t numUserEllipsoids, uint32_t numUserDatums)
     {
     // we convert the file in place.
     // The new file format leaves space at the beginning for user defined Datums and user defined ellipsoids.
@@ -1399,8 +1406,8 @@ StatusInt       ConvertToConsolidatedFile (UInt32 numUserEllipsoids, UInt32 numU
         return GEOCOORDERR_LibraryReadonly;
 
     // get starting read position
-    UInt32  gcsCount        = (UInt32) this->GetCSCount();
-    UInt32  oldGCSStart     = m_gcsStart;
+    uint32_t gcsCount        = (uint32_t) this->GetCSCount();
+    uint32_t oldGCSStart     = m_gcsStart;
 
     // update the starting positions
     m_ellipsoidStart        = sizeof (FileMagicNumbers) + sizeof (ConsolidatedFileHeader);
@@ -1409,9 +1416,9 @@ StatusInt       ConvertToConsolidatedFile (UInt32 numUserEllipsoids, UInt32 numU
 
     if (0 != gcsCount)
         {
-        long    readPosition    = oldGCSStart + ((gcsCount-1) * sizeof(CSDefinition));
-        long    writePosition   = m_gcsStart  + ((gcsCount-1) * sizeof(CSDefinition));
-        for (UInt iGCS = 0; iGCS < gcsCount; iGCS++)
+        int32_t    readPosition    = oldGCSStart + ((gcsCount-1) * sizeof(CSDefinition));
+        int32_t    writePosition   = m_gcsStart  + ((gcsCount-1) * sizeof(CSDefinition));
+        for (unsigned int iGCS = 0; iGCS < gcsCount; iGCS++)
             {
             CS_fseek (stream, readPosition, SEEK_SET);
 
@@ -1452,7 +1459,7 @@ StatusInt       ConvertToConsolidatedFile (UInt32 numUserEllipsoids, UInt32 numU
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            IsEmptyDatumRecord (csFILE* stream, long readPosition)
+bool            IsEmptyDatumRecord (csFILE* stream, int32_t readPosition)
     {
     bool        returnVal = false;
     CSDatumDef  datumDef;
@@ -1476,10 +1483,10 @@ bool            IsEmptyDatumRecord (csFILE* stream, long readPosition)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-long            FindFirstEmptyDatumRecord (csFILE* stream)
+int32_t            FindFirstEmptyDatumRecord (csFILE* stream)
     {
     // Step through until we find the end of the datums.
-    long    readPosition    = m_datumStart;
+    int32_t    readPosition    = m_datumStart;
     int     maxDatums       = (m_gcsStart - m_datumStart) / sizeof (CSDatumDef);
     int     iDatum;
     // step through the file record by record until we find the end.
@@ -1502,10 +1509,10 @@ long            FindFirstEmptyDatumRecord (csFILE* stream)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-long            FindFirstEmptyEllipsoidRecord (csFILE* stream)
+int32_t            FindFirstEmptyEllipsoidRecord (csFILE* stream)
     {
     // Step through until we find the end of the ellipsoids.
-    long    readPosition    = m_ellipsoidStart;
+    int32_t    readPosition    = m_ellipsoidStart;
     int     maxEllipsoids   = (m_datumStart - m_ellipsoidStart) / sizeof (CSEllipsoidDef);
     int     iEllipsoid;
     // step through the file record by record until we find the end.
@@ -1548,7 +1555,7 @@ void            GetDatumNames ()
     CSDatumDef  datumDef;
     int         maxDatums   = (m_gcsStart - m_datumStart) / sizeof (datumDef);
     int         iDatum      = 0;
-    UInt32      readPosition = m_datumStart;
+    uint32_t    readPosition = m_datumStart;
     for (iDatum = 0; iDatum < maxDatums; iDatum++)
         {
         // we first read to see whether it's a blank datum
@@ -1564,7 +1571,7 @@ void            GetDatumNames ()
             }
 
         // Add the new item to the list.
-        m_datumNames->push_back (WString(datumDef.key_nm));
+        m_datumNames->push_back (WString(datumDef.key_nm,false));
         readPosition += sizeof (CSDatumDef);
         }
     CS_fclose (stream);
@@ -1576,6 +1583,11 @@ void            GetDatumNames ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual CSEllipsoidDef* GetEllipsoid (WCharCP ellipsoidName) override
     {
+    double cs_ERadMax = 7.0E+06;
+    double cs_PRadMax = 7.0E+06;
+    double cs_ERadMin = 6.0E+06;
+    double cs_PRadMin = 6.0E+06;
+
     if (!m_consolidatedFormat)
         return NULL;
 
@@ -1598,9 +1610,10 @@ virtual CSEllipsoidDef* GetEllipsoid (WCharCP ellipsoidName) override
         return NULL;
 
     CSEllipsoidDef* elptr = NULL;
+    double my_flat = 0.0;
 
     // Search for the requested ellipsoid . The search has to stop at the end of the used ellipsoid slots.
-    long        sortEndPosition = m_ellipsoidStart + ((UInt32) GetEllipsoidCount() * sizeof (CSEllipsoidDef));
+    int32_t        sortEndPosition = m_ellipsoidStart + ((uint32_t) GetEllipsoidCount() * sizeof (CSEllipsoidDef));
     int flag = CS_bins (stream, m_ellipsoidStart, sortEndPosition, sizeof (localEllipsoidDef), &localEllipsoidDef, (CMPFUNC_CAST)CS_elcmp);
     if (flag < 0)
         goto error;
@@ -1648,7 +1661,7 @@ virtual CSEllipsoidDef* GetEllipsoid (WCharCP ellipsoidName) override
         }
 
     /* e_rad and p_rad are both greater than zero. */
-    double my_flat = 1.0 - (elptr->p_rad / elptr->e_rad);
+    my_flat = 1.0 - (elptr->p_rad / elptr->e_rad);
     if (my_flat < 0.0)
         {
         CS_stncp (csErrnam,elptr->key_nm,MAXPATH);
@@ -1687,7 +1700,7 @@ error:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual CSEllipsoidDef* GetEllipsoid (unsigned int index) override
+virtual CSEllipsoidDef* GetEllipsoid (uint32_t index) override
     {
     if (!m_consolidatedFormat)
         return NULL;
@@ -1706,7 +1719,7 @@ virtual CSEllipsoidDef* GetEllipsoid (unsigned int index) override
 virtual bool            EllipsoidInLibrary (WCharCP ellipsoidName) override
     {
     GetEllipsoidNames();
-    for each (WString nameString in *m_ellipsoidNames)
+    for (WString const& nameString : *m_ellipsoidNames)
         {
         if (0 == nameString.CompareToI (ellipsoidName))
             return true;
@@ -1734,8 +1747,8 @@ virtual StatusInt       DeleteEllipsoid (WCharCP ellipsoidName) override
 
     // step past the header
     int     maxEllipsoids   = (m_datumStart - m_ellipsoidStart) / sizeof (CSEllipsoidDef);
-    long    readPosition    = m_ellipsoidStart;
-    long    writePosition   = readPosition;
+    int32_t    readPosition    = m_ellipsoidStart;
+    int32_t    writePosition   = readPosition;
 
     CS_fseek (stream, readPosition, SEEK_SET);
 
@@ -1810,7 +1823,7 @@ virtual StatusInt       CreateNewEllipsoid (CSEllipsoidDef*& newEllipsoidDef, WC
         {
         if ( (NULL == this->GetEllipsoid (proposedName)) && (NULL == systemLibrary->GetEllipsoid (proposedName)) )
             break;
-        swprintf (proposedName, L"%ls-%d", seedName, iName);
+        BeStringUtilities::Snwprintf (proposedName, L"%ls-%d", seedName, iName);
         proposedName[23] = 0;
         }
 
@@ -1864,7 +1877,7 @@ StatusInt       AddEllipsoid (const CSEllipsoidDef& ellipsoid) override
         return GEOCOORDERR_LibraryReadonly;
 
     // Step through until we find the end of the ellipsoids.
-    long    writePosition = FindFirstEmptyEllipsoidRecord (stream);
+    int32_t    writePosition = FindFirstEmptyEllipsoidRecord (stream);
     if (writePosition < 0)
         {
         assert (false);
@@ -1921,10 +1934,10 @@ virtual StatusInt       ReplaceEllipsoid (const CSEllipsoidDef& oldEllipsoid, co
     // If the name has changed, we need to make sure it's unique.
     StatusInt   status      = SUCCESS;
     bool        nameChanged = false;
-    UInt32      numEllipsoids   = 0;
-    if (0 != strcmpi (oldEllipsoidDef.key_nm, newEllipsoidDef.key_nm))
+    uint32_t    numEllipsoids   = 0;
+    if (0 != BeStringUtilities::Stricmp (oldEllipsoidDef.key_nm, newEllipsoidDef.key_nm))
         {
-        WString newEllipsoidName (newEllipsoidDef.key_nm);
+        WString newEllipsoidName (newEllipsoidDef.key_nm,false);
         // name change. Make sure the name isn't already in this library.
         if (NULL != this->GetEllipsoid (newEllipsoidName.c_str()))
             return GEOCOORDERR_EllipsoidNoUniqueName;
@@ -1934,7 +1947,7 @@ virtual StatusInt       ReplaceEllipsoid (const CSEllipsoidDef& oldEllipsoid, co
             return GEOCOORDERR_EllipsoidNoUniqueName;
 
         nameChanged = true;
-        numEllipsoids = (UInt32) GetEllipsoidCount();
+        numEllipsoids = (uint32_t) GetEllipsoidCount();
         }
 
     // Get the current time.
@@ -1952,7 +1965,7 @@ virtual StatusInt       ReplaceEllipsoid (const CSEllipsoidDef& oldEllipsoid, co
         return GEOCOORDERR_EllipsoidIllegalName;
 
     // find the end position (before opening the file).
-    long        sortEndPosition = m_ellipsoidStart + ((UInt32) GetEllipsoidCount() * sizeof (CSEllipsoidDef));
+    int32_t        sortEndPosition = m_ellipsoidStart + ((uint32_t) GetEllipsoidCount() * sizeof (CSEllipsoidDef));
 
     csFILE*         stream;
     if (NULL == (stream = OpenLibraryFile (_STRM_BINUP)))
@@ -2006,7 +2019,7 @@ error:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt       GetEllipsoidName (unsigned int index, WStringR ellipsoidName) override
+virtual StatusInt       GetEllipsoidName (uint32_t index, WStringR ellipsoidName) override
     {
     if (!m_consolidatedFormat)
         return BSIERROR;
@@ -2034,7 +2047,7 @@ virtual size_t          GetEllipsoidCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            IsEmptyEllipsoidRecord (csFILE* stream, UInt32 readPosition)
+bool            IsEmptyEllipsoidRecord (csFILE* stream, uint32_t readPosition)
     {
     bool            returnVal = false;
     CSEllipsoidDef  ellipsoidDef;
@@ -2077,7 +2090,7 @@ void            GetEllipsoidNames ()
     CSEllipsoidDef  ellipsoidDef;
     int     maxEllipsoids   = (m_datumStart - m_ellipsoidStart) / sizeof (ellipsoidDef);
     int     iEllipsoid      = 0;
-    UInt32  readPosition    = m_ellipsoidStart;
+    uint32_t readPosition    = m_ellipsoidStart;
     for (iEllipsoid = 0; iEllipsoid < maxEllipsoids; iEllipsoid++)
         {
         // if CS_elrd returns 0 or negative, we ran out. This happens only if there are no GCS's in the library, which we don't expect to happen.
@@ -2093,7 +2106,7 @@ void            GetEllipsoidNames ()
             }
 
         // Add the new item to the list.
-        m_ellipsoidNames->push_back (WString(ellipsoidDef.key_nm));
+        m_ellipsoidNames->push_back (WString(ellipsoidDef.key_nm,false));
         readPosition += sizeof (CSEllipsoidDef);
         }
     CS_fclose (stream);
@@ -2105,6 +2118,8 @@ void            GetEllipsoidNames ()
 StatusInt       CreateNewFile (bool overwriteExisting)
     {
     // if the file exists, only overwrite it if the argument is true.
+    // Note: this method is also un-implemented in Vancouver
+    return BSIERROR;
     }
 
 };
@@ -2114,7 +2129,7 @@ StatusInt       CreateNewFile (bool overwriteExisting)
 +===============+===============+===============+===============+===============+======*/
 struct  CSMapLibrary : public Library
 {
-unsigned int    m_csCount;
+uint32_t  m_csCount;
 WStringP        m_libraryFileName;
 WStringP        m_orgFileName;
 
@@ -2166,7 +2181,7 @@ virtual WString     GetGUIName () override
 * NOTE: This always returns either NULL or or a CSParameters that needs to be CSMap::CS_free'd
 * @bsimethod                                                    Barry.Bentley   07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual CSParameters*   GetCS (unsigned int index) override
+virtual CSParameters*   GetCS (uint32_t index) override
     {
     char    csNameBuf[128];
     if (CS_csEnum (index, csNameBuf, sizeof(csNameBuf)))
@@ -2187,7 +2202,7 @@ virtual bool            CSInLibrary (WCharCP csName) override
     AString mbName (csName);
 
     // Look for the last entry
-    for (unsigned int index = 0; index < 200000; index++)
+    for (uint32_t index = 0; index < 200000; index++)
         {
         if (0 == CS_stricmp (cp, mbName.c_str()))
             return true;
@@ -2232,7 +2247,7 @@ virtual StatusInt       ReplaceCS (BaseGCSP oldGCS, BaseGCSP newGCS) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt       GetCSName (unsigned int index, WStringR csName) override
+virtual StatusInt       GetCSName (uint32_t index, WStringR csName) override
     {
     csName.clear();
 
@@ -2260,7 +2275,7 @@ virtual size_t          GetCSCount () override
         return 0;
 
     // Look for the last entry
-    unsigned int index;
+    uint32_t index;
     for (index = 0; ; index++)
         {
         // find the end of the current string
@@ -2332,7 +2347,7 @@ virtual CSDatumDef*     GetDatum (WCharCP datumName) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual CSDatumDef*     GetDatum (unsigned int index) override
+virtual CSDatumDef*     GetDatum (uint32_t index) override
     {
     return NULL;
     }
@@ -2349,7 +2364,7 @@ virtual bool            DatumInLibrary (WCharCP datumName) override
     AString mbDatumName (datumName);
 
     // Look for the last entry
-    for (unsigned int index = 0; index < 200000; index++)
+    for (uint32_t index = 0; index < 200000; index++)
         {
         if (0 == CS_stricmp (cp, mbDatumName.c_str()))
             return true;
@@ -2399,7 +2414,7 @@ virtual StatusInt       ReplaceDatum (const CSDatumDef& oldDatum, const CSDatumD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt       GetDatumName (unsigned int index, WStringR datumName) override
+virtual StatusInt       GetDatumName (uint32_t index, WStringR datumName) override
     {
     return BSIERROR;
     }
@@ -2425,7 +2440,7 @@ virtual CSEllipsoidDef* GetEllipsoid (WCharCP ellipsoidName) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual CSEllipsoidDef* GetEllipsoid (unsigned int index) override
+virtual CSEllipsoidDef* GetEllipsoid (uint32_t index) override
     {
     return NULL;
     }
@@ -2442,7 +2457,7 @@ virtual bool            EllipsoidInLibrary (WCharCP ellipsoidName) override
     AString mbEllipsoidName (ellipsoidName);
 
     // Look for the last entry
-    for (unsigned int index = 0; index < 200000; index++)
+    for (uint32_t index = 0; index < 200000; index++)
         {
         if (0 == CS_stricmp (cp, mbEllipsoidName.c_str()))
             return true;
@@ -2492,7 +2507,7 @@ virtual StatusInt       ReplaceEllipsoid (const CSEllipsoidDef& oldEllipsoid, co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt       GetEllipsoidName (unsigned int index, WStringR datumName) override
+virtual StatusInt       GetEllipsoidName (uint32_t index, WStringR datumName) override
     {
     datumName.clear();
     return BSIERROR;
@@ -2848,7 +2863,7 @@ void            LibraryManager::AddUserLibrary (WCharCP libraryPath, WCharCP gui
     for (listIterator = m_userLibraryList->begin(); listIterator != m_userLibraryList->end(); listIterator++)
         {
         Library*  userLib = *listIterator;
-        if (0 == wcsicmp (userLib->GetLibraryFileName(), libraryPath))
+        if (0 == BeStringUtilities::Wcsicmp (userLib->GetLibraryFileName(), libraryPath))
             {
             // Remove all entries using this library from the cache.
             T_CSParamMap::iterator  iterator;

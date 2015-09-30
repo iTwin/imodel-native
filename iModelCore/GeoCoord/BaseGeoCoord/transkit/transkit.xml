@@ -2,7 +2,7 @@
 
 <Transkit>
 
-    <BentleyRsc Name="basegeocoord2.dll.mui" >
+    <BentleyRsc Name="basegeocoord.mui" >
         <ResourceSource>*.r</ResourceSource>
     </BentleyRsc>
 

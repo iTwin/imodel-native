@@ -8,43 +8,75 @@
 #pragma once
 
 /*__PUBLISH_SECTION_START__*/
-#include <Geom\GeomApi.h>
+#include <Geom/GeomApi.h>
 #include "BaseGeoDefs.r.h"
 
 typedef struct cs_Csprm_    CSParameters;
 
-#if defined (CREATE_STATIC_LIBRARIES)
-    #undef BASEGEOCOORD_EXPORTED
-    #define BASEGEOCOORD_EXPORTED
-    #undef BASEMANAGEDGCS_EXPORTED
-    #define BASEMANAGEDGCS_EXPORTED
-#else 
-#if defined (__BASEGEOCOORD_BUILD__) && !defined (__BASEMANAGEDGCS_BUILD__)
-#   define BASEGEOCOORD_EXPORTED      __declspec(dllexport)
-#else
-#   define BASEGEOCOORD_EXPORTED      __declspec(dllimport)
-#endif
+#include "ExportMacros.h"
 
-#if defined (__BASEMANAGEDGCS_BUILD__)
-#   define BASEMANAGEDGCS_EXPORTED    __declspec(dllexport)
-#else
-#   define BASEMANAGEDGCS_EXPORTED    __declspec(dllimport)
-#endif
-#endif
-
-#include <Bentley\Bentley.h>
-#include <Bentley\WString.h>
-#include <Bentley\RefCounted.h>
-#include <Bentley\bvector.h>
+#include <Bentley/Bentley.h>
+#include <Bentley/WString.h>
+#include <Bentley/RefCounted.h>
+#include <Bentley/bvector.h>
 
 struct IGeoTiffKeysList;
 
+/** @namespace BentleyApi::GeoCoordinates Geographic Coordinate System classes @see GeoCoordinate */
 BEGIN_BENTLEY_NAMESPACE
 
 namespace GeoCoordinates {
 
-enum VertDatumCode;
-enum WGS84ConvertCode;
+/*__PUBLISH_SECTION_END__*/
+// NOTE: This was added to meet the Caltrans requirements for setting the Vertical Datum separately from the Datum.
+/*__PUBLISH_SECTION_START__*/
+enum VertDatumCode
+    {
+    vdcFromDatum    = 0,    // Vertical Datum implied by Datum
+    vdcNGVD29       = 1,    // Vertical Datum of 1929
+    vdcNAVD88       = 2,    // Vertical Datum of 1988.
+    vdcGeoid        = 3     // Other Geoid (indicates GeoidHeight.gdc catalog should be used)
+    };
+
+/*__PUBLISH_SECTION_END__*/
+// NOTE: The values in this enum are copied from cs_map.h. I don't want to users of this .h file to have to include CS_map.h, so I have to copy it. Check it.
+/*__PUBLISH_SECTION_START__*/
+enum WGS84ConvertCode
+    {
+    ConvertType_NONE      =   0,
+    ConvertType_MOLO      =   1,
+    ConvertType_MREG      =   2,
+    ConvertType_BURS      =   3,
+    ConvertType_NAD27     =   4,
+    ConvertType_NAD83     =   5,
+    ConvertType_WGS84     =   6,
+    ConvertType_WGS72     =   7,
+    ConvertType_HPGN      =   8,
+    ConvertType_7PARM     =   9,
+    ConvertType_AGD66     =   10,
+    ConvertType_3PARM     =   11,
+    ConvertType_6PARM     =   12,
+    ConvertType_4PARM     =   13,
+    ConvertType_AGD84     =   14,
+    ConvertType_NZGD4     =   15,
+    ConvertType_ATS77     =   16,
+    ConvertType_GDA94     =   17,
+    ConvertType_NZGD2K    =   18,
+    ConvertType_CSRS      =   19,
+    ConvertType_TOKYO     =   20,
+    ConvertType_RGF93     =   21,
+    ConvertType_ED50      =   22,
+    ConvertType_DHDN      =   23,
+    ConvertType_ETRF89    =   24,
+    ConvertType_GEOCTR    =   25,
+    ConvertType_CHENYX    =   26,
+#ifdef GEOCOORD_ENHANCEMENT
+    ConvertType_GENGRID   =   27,      
+    ConvertType_MAXVALUE  =   27,       // the maximum allowable value.
+#else
+    ConvertType_MAXVALUE  =   26,       // the maximum allowable value.
+#endif
+    };
 
 typedef struct Library*                 LibraryP;
 
@@ -131,18 +163,17 @@ typedef class DatumConverter*       DatumConverterP;
 * @ingroup GeoCoordinate
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-MPUBLIC class BaseGCS : public RefCountedBase
+MPUBLIC class EXPORT_VTABLE_ATTRIBUTE BaseGCS : public RefCountedBase
 {
-/*__PUBLISH_SECTION_END__*/
-private:
+protected:
 CSParameters*           	m_csParameters;                 // all coordinate system parameters, gathered for use by the CSMap transformation functions.
 mutable BaseGCSCP          	m_destinationGCS;            // current destination coordinate system.
 mutable bvector<BaseGCSCP> 	m_listOfPointingGCS;         // List of BaseGCS that are using the current BaseGCS as a cached destination GCS      
 mutable DatumConverterP 	m_datumConverter;               // datum converter from this Lat/Long to the Lat/Long of m_destinationGCS.
 bool                    	m_reprojectElevation;           // if true, LatLongFromLatLong adjusts elevation values.
-Int32                   	m_coordSysId;                   // our internal coordinate system ID
+int32_t                  m_coordSysId;                   // our internal coordinate system ID
 VertDatumCode           	m_verticalDatum;
-Int32                   	m_csError;
+int32_t                  m_csError;
 bool                    	m_canEdit;
 mutable LibraryP        	m_sourceLibrary;                // The library from which the GCS originated. NULL means system library.
 mutable bool            	m_failedToFindSourceLibrary;    // We tried to find the source library, but were unable to do so.
@@ -157,12 +188,11 @@ mutable WStringP        	m_ellipsoidNameString;
 mutable WStringP        	m_ellipsoidDescriptionString;
 
 /// @cond NODOC
-friend struct DgnGCS;
 friend struct GeoTiffKeyInterpreter;
 friend struct GeoTiffKeyCreator;
 /// @endcond
 
-private:
+protected:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   07/06
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -186,7 +216,7 @@ BASEGEOCOORD_EXPORTED                   BaseGCS (WCharCP coordinateSystemKeyName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-BASEGEOCOORD_EXPORTED                   BaseGCS (CSParameters& csParameters, Int32 coordSysId, LibraryP sourceLibrary);
+BASEGEOCOORD_EXPORTED                   BaseGCS (CSParameters& csParameters, int32_t coordSysId, LibraryP sourceLibrary);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   07/06
@@ -231,11 +261,10 @@ BASEGEOCOORD_EXPORTED void UnRegisterIsADestinationOf(BaseGCSCR baseGCSThatUsesC
 
 public:
 
-BASEGEOCOORD_EXPORTED static BaseGCSPtr CreateGCS (CSParameters const& csParameters, Int32 coordSysId);
+BASEGEOCOORD_EXPORTED static BaseGCSPtr CreateGCS (CSParameters const& csParameters, int32_t coordSysId);
 
-BASEGEOCOORD_EXPORTED static BaseGCSPtr CreateGCS (CSParameters const& csParameters, Int32 coordSysId, LibraryP sourceLibrary);
+BASEGEOCOORD_EXPORTED static BaseGCSPtr CreateGCS (CSParameters const& csParameters, int32_t coordSysId, LibraryP sourceLibrary);
 
-/*__PUBLISH_CLASS_VIRTUAL__*/
 public:
 /*---------------------------------------------------------------------------------**//**
 * Initialize the Geographic Coordinate System libraries. MicroStation performs the
@@ -246,7 +275,6 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED static void       Initialize (WCharCP dataDirectory);
 
-/*__PUBLISH_SECTION_START__*/
 public:
 
 /*---------------------------------------------------------------------------------**//**
@@ -597,8 +625,7 @@ BASEGEOCOORD_EXPORTED StatusInt         SetDescription (WCharCP description);
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED WCharCP           GetProjection() const;
 
-enum ProjectionCodeValue
-    {
+enum ProjectionCodeValue : unsigned short     {
     pcvInvalid                                      = 0,
     pcvUnity                                        = 1,
     pcvTransverseMercator                           = 3,
@@ -1634,6 +1661,39 @@ BaseGCSCR        compareTo
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED bool              Compare (BaseGCSCR compareTo, bool& datumDifferent, bool& csDifferent, bool& verticalDatumDifferent, bool& localTransformDifferent, bool stopFirstDifference) const;
 
+/*---------------------------------------------------------------------------------**//**
+* Returns the mathematical domain of application for GCS. The domain will usually be
+* much larger than the user domain yet caller must remember that distortion may result 
+* outside the user domain.
+* This method is intended to provide a strong limit to displaying geospatial objects
+* expressed in a BaseGCS. Outside this limit the representation is meaningless and may
+* lead to conversion errors and wild points.
+* It is assumed that any geospatial object can be fully represented within its own 
+* interpretation BaseGCS. The usefulness of the present method becames evident when we must
+* reproject a gepospatial object expressed in a BaseGCS into another BaseGCS that has
+* a mathematical domain smaller than the one of the geospatial object. The proper way to
+* deal with domains is to obtain the two mathematical domains of both BaseGCS, intersect
+* them together and convert the result in cartesian coordinate of either BaseGCS.
+* The result shape is the mathematical limit of the geospatial object when reprojected 
+* to the other coordinate reference system.
+* To illustrate the process let us assume we have a DGN using the New Zealand Grid
+* BaseGCS for a map in New  Zealand. As a base map we want to use Bing. Raster Manager
+* will compute the mathematical limit of reprojecting Bing into a New Zealand GCS
+* resulting in clipping Bing to the New Zealand area only.
+* 
+* @param[out] shape A list of GeoPoint (latitude/longitude) that contains the definition
+*             of the shape of the mathematical domain. The shape contains the closing
+*             point. This shape is usually rectangular but for some specific projections
+*             may contain more points. The shape is always returned even if an error occurs
+*             In this case the shape will either contain the user domain definition
+*             or a shape containing the whole Earth (excluding the poles)
+* @return BSIERROR in case of error or if computations are not implemented for this
+*         projection method and BSISUCCESS otherwise. Note that a valid shape is always 
+*         returned even if an error occurs.
+* @bsimethod                                                    AlainRobert  2/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+BASEGEOCOORD_EXPORTED StatusInt GetMathematicalDomain(bvector<GeoPoint>&    shape) const;
+
 #ifdef DICTIONARY_MANAGEMENT_ONLY
 /*---------------------------------------------------------------------------------**//**
 * Creates a string that contains the CSMAP ASC format text definition of the BaseGCS.
@@ -1949,17 +2009,6 @@ double          inRadians
 
 };
 
-/*__PUBLISH_SECTION_END__*/
-// NOTE: This was added to meet the Caltrans requirements for setting the Vertical Datum separately from the Datum.
-/*__PUBLISH_SECTION_START__*/
-enum VertDatumCode
-    {
-    vdcFromDatum    = 0,    // Vertical Datum implied by Datum
-    vdcNGVD29       = 1,    // Vertical Datum of 1929
-    vdcNAVD88       = 2,    // Vertical Datum of 1988.
-    vdcGeoid        = 3     // Other Geoid (indicates GeoidHeight.gdc catalog should be used)
-    };
-
 enum LocalTransformType
     {
     TRANSFORM_None                  = 0,
@@ -1979,7 +2028,7 @@ class MemberEnumerator;
 * @ingroup GeoCoordinate
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-MPUBLIC class Group
+MPUBLIC class EXPORT_VTABLE_ATTRIBUTE Group
 {
 /*__PUBLISH_CLASS_VIRTUAL__*/
 public:
@@ -2031,7 +2080,7 @@ private:
 Group (WStringCR name, WStringCR description)
     {
     m_name = name;
-    m_description;
+    m_description = description;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2048,7 +2097,7 @@ Group (WStringCR name, WStringCR description)
 * @ingroup GeoCoordinate
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-MPUBLIC class GroupEnumerator
+MPUBLIC class EXPORT_VTABLE_ATTRIBUTE GroupEnumerator
 {
 /*__PUBLISH_CLASS_VIRTUAL__*/
 public:
@@ -2096,7 +2145,7 @@ GroupEnumerator ();
 /*=================================================================================**//**
 * Member Enumerator class.
 +===============+===============+===============+===============+===============+======*/
-MPUBLIC class MemberEnumerator
+MPUBLIC class EXPORT_VTABLE_ATTRIBUTE MemberEnumerator
 {
 /*__PUBLISH_CLASS_VIRTUAL__*/
 public:
@@ -2159,6 +2208,7 @@ END_BENTLEY_NAMESPACE
 *  of the Initialize method, most have the CS-map name.
 *
 +===============+===============+===============+===============+===============+======*/
+/*__PUBLISH_SECTION_START__*/
 typedef struct cs_Csdef_    CSDefinition;
 typedef struct cs_Datum_    CSDatum;
 typedef struct cs_Dtdef_    CSDatumDef;
@@ -2169,6 +2219,7 @@ typedef struct cs_GxXform_  CSGeodeticTransform;
 typedef struct cs_Prjprm_   CSParamInfo;
 typedef struct cs_Unittab_  CSUnitInfo;
 typedef struct cs_Mgrs_     CSMilitaryGrid;
+/*__PUBLISH_SECTION_END__*/
 
 // NOTE: The values in this enum are copied from cs_map.h. I don't want to users of this .h file to have to include CS_map.h, so I have to copy from it. Check it.
 enum CSMapErrors
@@ -2229,7 +2280,7 @@ BASEGEOCOORD_EXPORTED static void             CS_fillIn (CSDefinition*);
 
 BASEGEOCOORD_EXPORTED static int              CSerpt (char *mesg,int size,int err_num);
 
-BASEGEOCOORD_EXPORTED static int              CS_wktToCsEx (CSDefinition *csDef, CSDatumDef *dtDef, CSEllipsoidDef *elDef, Bentley::GeoCoordinates::BaseGCS::WktFlavor flavor, CharCP wellKnownText);
+BASEGEOCOORD_EXPORTED static int              CS_wktToCsEx (CSDefinition *csDef, CSDatumDef *dtDef, CSEllipsoidDef *elDef, GeoCoordinates::BaseGCS::WktFlavor flavor, CharCP wellKnownText);
 
 BASEGEOCOORD_EXPORTED static bool             CS_prjprm (CSParamInfo *info, int projectionCode, int paramNum);
 
@@ -2411,7 +2462,7 @@ virtual void    CartesianFromInternalCartesian2D (DPoint2dR outCartesian, DPoint
 * Save local transform parameters to memory.
 * @bsimethod                                    Barry.Bentley                   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    SaveParameters (UInt16& transformType, double parameters[12]) const = 0;
+virtual void    SaveParameters (uint16_t& transformType, double parameters[12]) const = 0;
 
 /*---------------------------------------------------------------------------------**//**
 * Read local transform parameters from memory.
@@ -2523,7 +2574,7 @@ BASEGEOCOORD_EXPORTED virtual void  GetDescription (WString& description) const 
 * Save local transform parameters to memory.
 * @bsimethod                                    Barry.Bentley                   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BASEGEOCOORD_EXPORTED virtual void  SaveParameters (UInt16& transformType, double parameters[12]) const override;
+BASEGEOCOORD_EXPORTED virtual void  SaveParameters (uint16_t& transformType, double parameters[12]) const override;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/10
@@ -2678,7 +2729,7 @@ BASEGEOCOORD_EXPORTED bool          MoveNext();
 * @return   the current Unit.
 * @bsimethod                                    Barry.Bentley                   02/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-BASEGEOCOORD_EXPORTED UnitCP        GetCurrent();
+BASEGEOCOORD_EXPORTED Unit const*        GetCurrent();
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   08/10
@@ -2686,6 +2737,8 @@ BASEGEOCOORD_EXPORTED UnitCP        GetCurrent();
 BASEGEOCOORD_EXPORTED void          Destroy() const;
 
 };
+
+typedef class Unit const*       UnitCP;
 
 typedef class Ellipsoid*                EllipsoidP;
 /*__PUBLISH_SECTION_START__*/
@@ -2703,7 +2756,7 @@ class   Ellipsoid
 {
 /*__PUBLISH_SECTION_END__*/
 private:
-Int32                   m_csError;
+int32_t                 m_csError;
 CSEllipsoidDef         *m_ellipsoidDef;
 LibraryP                m_sourceLibrary;
 mutable WStringP        m_nameString;
@@ -2977,49 +3030,10 @@ BASEGEOCOORD_EXPORTED void              Destroy() const;
 };
 
 
-/*__PUBLISH_SECTION_END__*/
-// NOTE: The values in this enum are copied from cs_map.h. I don't want to users of this .h file to have to include CS_map.h, so I have to copy it. Check it.
-/*__PUBLISH_SECTION_START__*/
-enum WGS84ConvertCode
-    {
-    ConvertType_NONE      =   0,
-    ConvertType_MOLO      =   1,
-    ConvertType_MREG      =   2,
-    ConvertType_BURS      =   3,
-    ConvertType_NAD27     =   4,
-    ConvertType_NAD83     =   5,
-    ConvertType_WGS84     =   6,
-    ConvertType_WGS72     =   7,
-    ConvertType_HPGN      =   8,
-    ConvertType_7PARM     =   9,
-    ConvertType_AGD66     =   10,
-    ConvertType_3PARM     =   11,
-    ConvertType_6PARM     =   12,
-    ConvertType_4PARM     =   13,
-    ConvertType_AGD84     =   14,
-    ConvertType_NZGD4     =   15,
-    ConvertType_ATS77     =   16,
-    ConvertType_GDA94     =   17,
-    ConvertType_NZGD2K    =   18,
-    ConvertType_CSRS      =   19,
-    ConvertType_TOKYO     =   20,
-    ConvertType_RGF93     =   21,
-    ConvertType_ED50      =   22,
-    ConvertType_DHDN      =   23,
-    ConvertType_ETRF89    =   24,
-    ConvertType_GEOCTR    =   25,
-    ConvertType_CHENYX    =   26,
-    ConvertType_GENGRID   =   27,      
-    ConvertType_MAXVALUE  =   27,       // the maximum allowable value.
-    };
-
 
 typedef class DatumEnumerator*    DatumEnumeratorP;
 typedef class Datum const*        DatumCP;
-
-/*__PUBLISH_SECTION_END__*/
 typedef class Datum*              DatumP;
-/*__PUBLISH_SECTION_START__*/
 
 /*=================================================================================**//**
 Position and orientation relative to a WGS84 Datum
@@ -3030,7 +3044,7 @@ class   Datum
 {
 /*__PUBLISH_SECTION_END__*/
 private:
-Int32                       m_csError;
+int32_t                     m_csError;
 CSDatumDef*                 m_datumDef;
 mutable CSDatum*            m_csDatum;    // this is created only if needed.
 
@@ -3507,5 +3521,3 @@ BASEMANAGEDGCS_EXPORTED static BaseGCSP   OpenSelectorDialog (BaseGCSP initialGC
 
 } // ends GeoCoordinates namespace
 END_BENTLEY_NAMESPACE
-
-

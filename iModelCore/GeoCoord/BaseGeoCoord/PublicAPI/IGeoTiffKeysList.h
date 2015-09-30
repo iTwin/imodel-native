@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: BaseGeoCoord/PublicAPI/IGeoTiffKeysList.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -28,7 +28,7 @@ struct GeoKeyItem
     unsigned short  KeyID;
     DataType        KeyDataType;
     union {
-          unsigned long  LongVal;
+          uint32_t  LongVal;
           double         DoubleVal;
           const char*    StringVal;
           }KeyValue;
@@ -60,7 +60,7 @@ struct GeoKeyItem
             size_t StrLength = strlen(pi_rObj.KeyValue.StringVal) + 1;
             char* pStrVal = new char[StrLength];
 
-            strcpy_s(pStrVal, StrLength, pi_rObj.KeyValue.StringVal);
+            strcpy (pStrVal, pi_rObj.KeyValue.StringVal);
 
             KeyValue.StringVal = pStrVal;
             }
@@ -74,7 +74,7 @@ struct GeoKeyItem
 virtual bool            GetFirstKey(GeoKeyItem* po_Key)=0;
 virtual bool            GetNextKey(GeoKeyItem* po_Key)=0;
 
-virtual void            AddKey (unsigned short pi_KeyID, unsigned long pi_value)=0;
+virtual void            AddKey (unsigned short pi_KeyID, uint32_t pi_value)=0;
 virtual void            AddKey (unsigned short pi_KeyID, double pi_value)=0;
 virtual void            AddKey (unsigned short pi_KeyID, const std::string& pi_value)=0;
 };
