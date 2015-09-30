@@ -103,6 +103,7 @@
     </Part>
 
     <Part Name="DgnPlatformSqlang" BentleyBuildMakeFile="${SrcBsiCommon}sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)Build/DgnPlatform/DgnPlatform_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
+        <SubPart PartName="DgnPlatformDLL" />
         <Bindings>
             <Files ProductDirectoryName="DgnPlatformSqlang" Required="true">Delivery/sqlang/DgnPlatform_en.sqlang.db3</Files>
         </Bindings>
