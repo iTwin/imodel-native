@@ -4,10 +4,18 @@ import stat
 def convertToJniName (nm):
     return nm.replace ('_', '_1')
 
-def GenJUnitTestFilesForDir (dirNameIn, listfilename, javaTemplate, jniTemplate):
+def GenJUnitTestFilesForDir (rootDir, dirNameIn, listfilename, javaTemplate, jniTemplate):
     dirName = dirNameIn.replace ('\\', '/') # <outputdir>/build/UnitTests/<reponame>/Published<reponame>UnitTests/
     
-    utPackageName           = os.path.basename (dirName)
+    if rootDir[-1] != '/':
+        rootDir += '/'
+
+    print '#rootDir='+rootDir
+
+    utPackageName           = dirName[len(rootDir):]
+    print '#utPackageName='+utPackageName
+    utPackageName = utPackageName.replace('/', '_');
+    print '#utPackageName='+utPackageName
     unitTestsListHfileName  = os.path.join (dirName, listfilename)
     unitTestsListFileName   = utPackageName + '.list.h'
     unitTestsJniFileName    = utPackageName + 'JniTest.cpp'
@@ -69,6 +77,8 @@ def main():
     if not dir[-1] in '/\\':
         dir = dir + os.sep
 
+    dir = dir.replace('\\', '/')
+
     java = sys.argv[2].replace  ('\\', '/')
     jni  = sys.argv[3].replace  ('\\', '/')
 
@@ -77,7 +87,7 @@ def main():
             continue
         for file in files:
             if file == 'UnitTests.list.h':
-                GenJUnitTestFilesForDir (root, file, java, jni)
+                GenJUnitTestFilesForDir (dir, root, file, java, jni)
 
 if __name__ == '__main__':
     main()
