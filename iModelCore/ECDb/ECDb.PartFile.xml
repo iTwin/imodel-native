@@ -152,7 +152,7 @@
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ECDbTest/Assemblies/*</Files>
-            <Directory ProductDirectoryName="Gtest-DgnPlatformAssetsDirectory" SourceName="Delivery/Gtest/ECDbTest/DgnPlatformAssetsDirectory" />
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ECDbTest/Assets" />
         </Bindings>
     </Part>
 
