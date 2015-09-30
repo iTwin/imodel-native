@@ -27,7 +27,7 @@
 
 #include "cs_map.h"
 #include "rcWellKnownText.hpp"
-#include "cs_wkt.h"
+#include "CS_wkt.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // This array associates the WKT type enumerator with the identifying text

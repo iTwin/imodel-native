@@ -30,7 +30,7 @@
 #include "cs_map.h"
 #include "csNameMapperSupport.h"
 #include "rcWellKnownText.hpp"
-#include "cs_wkt.h"
+#include "CS_wkt.h"
 
 extern "C" struct csWktPrjNameMap_ csWktPrjNameMap [];
 extern "C" struct csWktPrmNameMap_ csWktPrmNameMap [];

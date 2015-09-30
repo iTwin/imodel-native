@@ -49,7 +49,7 @@ CS_SRC = \
 	CS_geoct.c \
 	CS_geoid96.c \
 	CS_geoid99.c \
-	CS_GeoidHeight.c \
+	CS_geoidHeight.c \
 	CS_gissupprt.c \
 	CS_gnomc.c \
 	CS_gpio.c \
@@ -113,13 +113,13 @@ CS_SRC = \
 	CS_vdgrn.c \
 	CS_VertconUS.c \
 	CS_vrtcon.c \
-	cs_wellknowntext.cpp \
+	CS_wellKnownText.cpp \
 	CS_wgs72.c \
 	CS_winkelTripel.c \
 	CS_zones.c \
 	csBrowser.cpp \
 	CScs2Wkt.cpp \
-	cscscomp.c \
+	CScscomp.c \
 	csCsvFileSupport.cpp \
 	CSdata.c \
 	csDataDir.cpp \
@@ -196,7 +196,7 @@ CS_OBJ = \
 	CS_geoct.obj \
 	CS_geoid96.obj \
 	CS_geoid99.obj \
-	CS_GeoidHeight.obj \
+	CS_geoidHeight.obj \
 	CS_gissupprt.obj \
 	CS_gnomc.obj \
 	CS_gpio.obj \
@@ -260,13 +260,13 @@ CS_OBJ = \
 	CS_vdgrn.obj \
 	CS_VertconUS.obj \
 	CS_vrtcon.obj \
-	cs_wellknowntext.obj \
+	CS_wellKnownText.obj \
 	CS_wgs72.obj \
 	CS_winkelTripel.obj \
 	CS_zones.obj \
 	csBrowser.obj \
 	CScs2Wkt.obj \
-	cscscomp.obj \
+	CScscomp.obj \
 	csCsvFileSupport.obj \
 	CSdata.obj \
 	csDataDir.obj \
