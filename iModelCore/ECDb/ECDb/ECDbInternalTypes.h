@@ -158,10 +158,13 @@ private:
     Enum();
     ~Enum();
 
-public:
     template<typename TEnum>
-    static typename std::underlying_type<TEnum>::type ToUnderlyingType(TEnum val) { return static_cast<std::underlying_type<TEnum>::type>(val); }
+    static typename std::underlying_type<TEnum>::type ToUnderlyingType(TEnum val) { return Convert<TEnum, typename std::underlying_type<TEnum>::type>(val); }
 
+    template<typename TEnum>
+    static TEnum FromUnderlyingType(typename std::underlying_type<TEnum>::type underlyingType) { return Convert<typename std::underlying_type<TEnum>::type, TEnum>(underlyingType); }
+
+public:
     template<typename TFromEnum, typename TToEnum>
     static TToEnum Convert(TFromEnum val) { return static_cast<TToEnum>(val); }
 
@@ -172,10 +175,10 @@ public:
     static TEnum FromInt(int val) { return Convert<int,TEnum>(val); }
     
     template<typename TEnum>
-    static TEnum Or(TEnum lhs, TEnum rhs) { return Convert<typename std::underlying_type <TEnum>::type, TEnum>(ToUnderlyingType(lhs) | ToUnderlyingType(rhs)); }
+    static TEnum Or(TEnum lhs, TEnum rhs) { return FromUnderlyingType<TEnum>(ToUnderlyingType<TEnum>(lhs) | ToUnderlyingType<TEnum>(rhs)); }
     
     template<typename TEnum>
-    static TEnum And(TEnum lhs, TEnum rhs) { return Convert<typename std::underlying_type <TEnum>::type, TEnum>(ToUnderlyingType(lhs) & ToUnderlyingType(rhs)); }
+    static TEnum And(TEnum lhs, TEnum rhs) { return FromUnderlyingType<TEnum>(ToUnderlyingType<TEnum>(lhs) & ToUnderlyingType<TEnum>(rhs)); }
         
     template<typename TEnum>
     static bool Contains(TEnum test, TEnum candidate) { return Enum::And(test, candidate) == candidate; }
