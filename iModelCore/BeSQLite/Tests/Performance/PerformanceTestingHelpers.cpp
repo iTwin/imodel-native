@@ -40,7 +40,7 @@ void PerformanceResultRecorder::writeResults(Utf8String testcaseName, Utf8String
 
     if (!existingFile)
         fprintf(logFile, "TestCaseName, TestName, ExecutionTime, TestDescription, opCount\n");
-    fprintf(logFile, "%s, %s, %.4f, \"%s\", %ld\n", testcaseName.c_str(), testName.c_str(), timeInSeconds, testDescription.c_str(), opCount);
+    fprintf(logFile, "%s, %s, %.4f, \"%s\", %d\n", testcaseName.c_str(), testName.c_str(), timeInSeconds, testDescription.c_str(), opCount);
 
     fclose(logFile);
 }
