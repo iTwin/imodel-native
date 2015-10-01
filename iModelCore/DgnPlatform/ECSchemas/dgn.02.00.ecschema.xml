@@ -442,6 +442,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
+                    <Collation>NoCase</Collation>
                     <IsUnique>False</IsUnique>
                 </PropertyMap>
             </ECCustomAttributes>
@@ -451,6 +452,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
+                    <Collation>NoCase</Collation>
                     <!-- Code by itself is not necessarily unique, but CodeAuthorityId+CodeNameSpace+Code is unique.  -->
                     <IsUnique>False</IsUnique>
                 </PropertyMap>
