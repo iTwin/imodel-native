@@ -18,6 +18,7 @@ BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 
 #include <Bentley/BeAssert.h>
 #include "DgnAuthority.h"
+#include "MemoryManager.h"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -1207,6 +1208,7 @@ protected:
     explicit GeometricElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId) {}
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() +(sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
     virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
+    virtual bool _IsPlacementValid() const = 0;
 
 //__PUBLISH_SECTION_END__
 public:
@@ -1225,6 +1227,7 @@ public:
     DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const;
     DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const; //!< Default snap using CurvePrimitive in HitDetail.
     bool HasGeometry() const {return m_geom.HasGeometry();} //!< return false if this GeometricElement currently has no geometry (is empty).
+    bool IsPlacementValid() const {return _IsPlacementValid(); }
     AxisAlignedBox3d CalculateRange3d() const {return _CalculateRange3d();}
 
     //! Get the GeomStream for this GeometricElement.
@@ -1268,6 +1271,7 @@ protected:
     Placement3d m_placement;
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _BindPlacement(BeSQLite::Statement&) override;
+    bool _IsPlacementValid() const override final { return m_placement.IsValid(); }
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super));}
     explicit DgnElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
@@ -1333,6 +1337,7 @@ protected:
     Placement2d m_placement;
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _BindPlacement(BeSQLite::Statement&) override;
+    bool _IsPlacementValid() const override final { return m_placement.IsValid(); }
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
     DgnElement2dCP _ToElement2d() const override {return this;}
     AxisAlignedBox3d _CalculateRange3d() const override {return m_placement.CalculateRange();}
@@ -1448,7 +1453,7 @@ struct ECSqlClassInfo;
 //! @see DgnDb::Elements
 //! @ingroup DgnElementGroup
 //=======================================================================================
-struct DgnElements : DgnDbTable
+struct DgnElements : DgnDbTable, IMemoryConsumer
 {
     friend struct DgnDb;
     friend struct DgnElement;
@@ -1539,6 +1544,9 @@ private:
     ElementSelectStatement GetPreparedSelectStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedInsertStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedUpdateStatement(DgnElementR el) const;
+
+    virtual int64_t _CalculateBytesConsumed() const override { return GetTotalAllocated(); }
+    virtual int64_t _Purge(int64_t memTarget) override;
 public:
     BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}
@@ -1562,14 +1570,6 @@ public:
 
     //! Query for the DgnElementId of the element that has the specified code
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(Utf8CP codeAuthorityName, Utf8StringCR codeValue, Utf8StringCR nameSpace="") const;
-
-    //! Free unreferenced elements in the pool until the total amount of memory used by the pool is no more than a target number of bytes.
-    //! @param[in] memTarget The target number of bytes used by elements in the pool. If the pool is currently using more than this target,
-    //! unreferenced elements are freed until the the pool uses no more than targetMem bytes. Least recently used elements are freed first.
-    //! If memTarget <= 0, all unreferenced elements are freed.
-    //! @note: There is no guarantee that the pool will not actually consume more than memTarget bytes after this call, since elements with
-    //! reference counts greater than 0 cannot be purged.
-    DGNPLATFORM_EXPORT void Purge(int64_t memTarget);
 
     //! Get the total counts for the current state of the pool.
     DGNPLATFORM_EXPORT Totals GetTotals() const;

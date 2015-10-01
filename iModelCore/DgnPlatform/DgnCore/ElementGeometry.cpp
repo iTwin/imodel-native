@@ -2241,6 +2241,9 @@ static void Increment(ViewContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImportContext& importer)
     {
+    if (!source.HasGeometry())
+        return DgnDbStatus::Success;    // otherwise we end up writing a header for an otherwise empty stream...
+
     Writer writer(importer.GetDestinationDb());
     Reader reader(importer.GetSourceDb());
     Collection collection(source.GetData(), source.GetSize());
@@ -3213,6 +3216,9 @@ BentleyStatus ElementGeometryBuilder::SetGeomStreamAndPlacement(GeometricElement
 
     if (m_is3d)
         {
+        if (!m_placement3d.IsValid())
+            return ERROR;
+
         DgnElement3dP element3d;
 
         if (nullptr == (element3d = element.ToElement3dP()))
@@ -3222,6 +3228,9 @@ BentleyStatus ElementGeometryBuilder::SetGeomStreamAndPlacement(GeometricElement
         }
     else
         {
+        if (!m_placement2d.IsValid())
+            return ERROR;
+
         DgnElement2dP element2d;
 
         if (nullptr == (element2d = element.ToElement2dP()))

@@ -519,6 +519,9 @@ public:
             //! Delete a specific texture, tile, or icon.
             virtual void _DeleteTexture(uintptr_t textureId) {}
 
+            //! Delete a specific texture, tile, or icon.
+            virtual void _DeleteMaterial (uintptr_t textureId) {}
+
             //! Define a tile texture
             virtual void _DefineTile(uintptr_t textureId, char const* tileName, Point2dCR imageSize, bool enableAlpha, uint32_t imageFormat, uint32_t pitch, Byte const* imageData) {}
 

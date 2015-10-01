@@ -223,46 +223,14 @@ TEST_F(ElementGeomPartTests, CreateElementsAndDeleteGemPart)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ElementGeomPartTests, GeomPartWitoutGeometry)
-{
-    SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
-
-    //Create a GeomPart
-    ElementGeometryPtr elGPtr = ElementGeometry::Create(*GeomHelper::computeShape());
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateGeomPart(*m_db, true);
-
-    DgnGeomPartPtr geomPartPtr = DgnGeomPart::Create("TestGeomPart");
-    EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
-
-    EXPECT_EQ(SUCCESS, m_db->GeomParts().InsertGeomPart(*geomPartPtr));
-
-    DgnGeomPartId existingPartId = m_db->GeomParts().QueryGeomPartId(geomPartPtr->GetCode());
-    EXPECT_TRUE(existingPartId.IsValid());
-
-    //Add two elements using this GeomPart
-    auto key1 = InsertElementUsingGeomPart(geomPartPtr->GetCode(), m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
-    EXPECT_TRUE(key1.GetElementId().IsValid());
-
-    auto key2 = InsertElementUsingGeomPart(geomPartPtr->GetCode(), m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
-    EXPECT_TRUE(key2.GetElementId().IsValid());
-
-    auto key3 = InsertElement(DgnElement::Code(), m_defaultModelId, m_defaultCategoryId)->GetElementKey();
-    EXPECT_TRUE(key3.GetElementId().IsValid());
-    
-}
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Umar.Hayat      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, GeomPart2d)
 {
     SetupProject(L"2dMetricGeneral.idgndb", L"GeomParts2d.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeomPart
     ElementGeometryPtr elGPtr = ElementGeometry::Create(*GeomHelper::computeShape2d());
-    TextString textStringElem;
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateGeomPart(*m_db, false);
-    builder->Append(textStringElem);
+    builder->Append(*elGPtr);
     DgnGeomPartPtr geomPartPtr = DgnGeomPart::Create("TestGeomPart");
     EXPECT_TRUE(geomPartPtr != NULL);
     EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
