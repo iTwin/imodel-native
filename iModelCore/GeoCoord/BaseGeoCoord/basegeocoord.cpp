@@ -3185,7 +3185,7 @@ StatusInt       ProcessModelTypeKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
             return GEOCOORDERR_GeocentricNotSupported;
 
         default:
-            BeDataAssert (false);
+            assert (false);
             return GEOCOORDERR_UnexpectedGeoTiffModelType;
         }
     return SUCCESS;
@@ -5998,9 +5998,11 @@ bool        geoCoordError       // true for our error codes, false for CSMap err
     {
     OpenResourceFile();
 
-    if (SUCCESS == s_geoCoordResources->GetString (message, messageOffset, MSGLISTID_GeoCoordErrors))
-        return;
-
+    if (-1 != s_rscFileHandle)
+        {
+        if (SUCCESS == s_geoCoordResources->GetString (message, messageOffset, MSGLISTID_GeoCoordErrors))
+            return;
+        }
     message.Sprintf (L"GeoCoord error %d\n", messageOffset + GeoCoordErrorBase);
     }
 
@@ -7865,11 +7867,13 @@ StatusInt BaseGCS::DefinitionComplete ()
         if (m_sourceLibrary != NULL && m_sourceLibrary->IsUserLibrary())
             {
             // Try to locate datum and ellipsoid definition in this library. 
+            CSDatumDef* datum = m_sourceLibrary->GetDatum (WString(m_csParameters->csdef.dat_knm, false).c_str());
 
             // If no datum found then ... too bad.
             if (NULL == datum)
                 return cs_Error;
 
+            CSEllipsoidDef* ellipsoid = m_sourceLibrary->GetEllipsoid (WString(m_csParameters->csdef.elp_knm, false).c_str());
 
             // If no ellipsoid found then ... too bad.
             if (NULL == ellipsoid)
@@ -13942,7 +13946,6 @@ StatusInt   MilitaryGridConverter::MilitaryGridFromLatLong (WString& mgString, G
     return status;
     }
 
-#if defined (WIP_L10N)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   12/09
@@ -13963,6 +13966,9 @@ BaseGCS::ProjectionCodeValue    projectionCode
 
     return GetLocalizedProjectionName (outString, dgnProjectionType);
     }
+	
+#if defined (WIP_L10N)
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   12/09
@@ -13975,8 +13981,11 @@ DgnProjectionTypes          projectionType
     {
     OpenResourceFile();
 
-    if (SUCCESS != s_geoCoordResources->GetString (outString, projectionType, MSGLISTID_GeoCoordNames))
-        outString.clear();
+    if (-1 != s_rscFileHandle)
+        {
+        if (SUCCESS != s_geoCoordResources->GetString (outString, projectionType, MSGLISTID_GeoCoordNames))
+            outString.clear();
+        }
 
     return outString.c_str();
     }
@@ -13992,8 +14001,11 @@ DgnGeoCoordStrings      stringNum
     {
     OpenResourceFile();
 
-    if (SUCCESS != s_geoCoordResources->GetString (outString, stringNum, MSGLISTID_DgnGeoCoordStrings))
-        outString.clear();
+    if (-1 != s_rscFileHandle)
+        {
+        if (SUCCESS != s_geoCoordResources->GetString (outString, stringNum, MSGLISTID_DgnGeoCoordStrings))
+            outString.clear();
+        }
 
     return outString.c_str();
     }
@@ -14006,7 +14018,7 @@ DgnGeoCoordStrings      stringNum
 WCharCP    BaseGeoCoordResource::GetLocalizedProjectionName
 (
 WStringR                outString,
-CSMapProjectionTypes    projectionType
+DgnProjectionTypes    projectionType
 )
     {
     outString.clear();
@@ -14016,16 +14028,12 @@ CSMapProjectionTypes    projectionType
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t const * BaseGeoCoordResource::GetLocalizedStringW
+WCharCP BaseGeoCoordResource::GetLocalizedString
 (
-wchar_t *               outString,
-DgnGeoCoordStrings      stringNum,
-size_t                  outSize
+WStringR                outString,
+DgnGeoCoordStrings      stringNum
 )
     {
-    if ( (NULL == outString) || (0 == outSize) )
-        return NULL;
-
     return NULL;
     }
 

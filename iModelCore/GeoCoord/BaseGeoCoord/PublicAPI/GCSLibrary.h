@@ -7,7 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-/*__PUBLISH_SECTION_START__*/
+/*__BENTLEY_INTERNAL_ONLY__*/
+
 // This is internal, because it includes csmap\cs_map.h. That file defines all kinds of macros (such as MAXINT) that conflict with Windows .h files.
 
 #include "ExportMacros.h"
@@ -156,7 +157,7 @@ virtual CSGeodeticTransform*    GetGeodeticTransform (WCharCP geodeticTrasnformN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Alain.Robert   06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual CSGeodeticTransform*    GetGeodeticTransform (UInt32 index) = 0;
+virtual CSGeodeticTransform*    GetGeodeticTransform (uint32_t index) = 0;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Alain.Robert   06/2013
@@ -181,7 +182,7 @@ virtual StatusInt               ReplaceGeodeticTransform (const CSGeodeticTransf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt               GetGeodeticTransformName (UInt32 index, WStringR geodeticTransformName) = 0;
+virtual StatusInt               GetGeodeticTransformName (uint32_t index, WStringR geodeticTransformName) = 0;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/10

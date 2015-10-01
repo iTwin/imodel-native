@@ -21,14 +21,14 @@ extern "C" struct   cs_Unittab_     cs_Unittab[];
 #pragma managed
 
 #using      <mscorlib.dll>
-#using      <Bentley.ECObjects3.dll>
+#using      <Bentley.ECObjects.2.0.dll>
 #using      <System.dll>
 #using      <System.Drawing.dll>
 #using      <System.Windows.Forms.dll>
 #using      <system.Xml.dll>
 #using      <GeoCoordExceptions.netmodule>        // C# netmodule
 #using      <Bentley.Platform.dll>
-#using      <Bentley.GeometryNET.Structs.dll>
+#using      <Bentley.Geometry.2.0.dll>
 #using      <Bentley.UI.dll>
 
 BEGIN_BENTLEY_API_NAMESPACE
@@ -648,7 +648,7 @@ int             DefinitionComplete ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 double          GetScaleAlongMeridian
 (
-GEOM::GeoPoint        point
+GEOM::GeoPoint const%       point
 )
     {
     pin_ptr<const GEOM::GeoPoint> pinnedInLL = &point;
@@ -661,7 +661,7 @@ GEOM::GeoPoint        point
 +---------------+---------------+---------------+---------------+---------------+------*/
 double          GetScaleAlongParallel
 (
-GEOM::GeoPoint        point
+GEOM::GeoPoint const%       point
 )
     {
     pin_ptr<const GEOM::GeoPoint> pinnedInLL = &point;
@@ -674,7 +674,7 @@ GEOM::GeoPoint        point
 +---------------+---------------+---------------+---------------+---------------+------*/
 double          GetGridScale
 (
-GEOM::GeoPoint        point
+GEOM::GeoPoint const%      point
 )
     {
     pin_ptr<const GEOM::GeoPoint> pinnedInLL = &point;
@@ -687,7 +687,7 @@ GEOM::GeoPoint        point
 +---------------+---------------+---------------+---------------+---------------+------*/
 double          GetConvergenceAngle
 (
-GEOM::GeoPoint        point
+GEOM::GeoPoint const%     point
 )
     {
     pin_ptr<const GEOM::GeoPoint> pinnedInLL = &point;
@@ -700,10 +700,10 @@ GEOM::GeoPoint        point
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       GetDistance
 (
-[SRI::Out] double%  distance,
-[SRI::Out] double%  azimuth,
-GEOM::GeoPoint      startPoint,
-GEOM::GeoPoint      endPoint
+[SRI::Out] double%     distance,
+[SRI::Out] double%     azimuth,
+GEOM::GeoPoint const%  startPoint,
+GEOM::GeoPoint const%  endPoint
 )
     {
     pin_ptr<const GEOM::GeoPoint> pinnedStartPoint = &startPoint;
@@ -790,7 +790,7 @@ bool            CanSaveToGeoTiffKeys
 StatusInt       CartesianFromLatLong
 (
 [SRI::Out] GEOM::DPoint3d%  outCartesian,
-GEOM::GeoPoint              inLatLong
+GEOM::GeoPoint const%       inLatLong
 )
     {
     pin_ptr<GEOM::DPoint3d> pinnedCartesian = &outCartesian;
@@ -807,7 +807,7 @@ GEOM::GeoPoint              inLatLong
 StatusInt       LatLongFromCartesian
 (
 [SRI::Out] GEOM::GeoPoint%  outLatLong,
-GEOM::DPoint3d              inCartesian         // => cartesian coordinates in this GCS
+GEOM::DPoint3d const%       inCartesian         // => cartesian coordinates in this GCS
 )
     {
     pin_ptr<GEOM::GeoPoint> pinnedLatLong = &outLatLong;
@@ -823,7 +823,7 @@ GEOM::DPoint3d              inCartesian         // => cartesian coordinates in t
 StatusInt       LatLongFromLatLong
 (
 [SRI::Out] GEOM::GeoPoint%  outLatLong,
-GEOM::GeoPoint              inLatLong,
+GEOM::GeoPoint const%       inLatLong,
 BaseGCS^                    destGCS
 )
     {
@@ -840,7 +840,7 @@ BaseGCS^                    destGCS
 StatusInt       LatLongFromLatLong2D
 (
 [SRI::Out] GEOM::GeoPoint2d%    outLatLong,
-GEOM::GeoPoint2d                inLatLong,
+GEOM::GeoPoint2d const%         inLatLong,
 BaseGCS^                        destGCS
 )
     {

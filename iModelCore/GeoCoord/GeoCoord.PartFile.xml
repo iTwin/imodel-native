@@ -48,15 +48,7 @@
         <SubPart PartName="GeoCoordMinimal" />
         <SubPart PartName="GeoCoord" />
         <SubPart PartName="GeoCoordManaged" />
-        <SubPart PartName="DgnGeoCoordManaged" />
         <SubPart PartName="GeoCoordData"            PartFile="csmap"        Repository="libsrc-csmap" />
-    </Part>
-
-    <!-- Part used by firebug/PRG that adds the static version of GeoCoord. 
-         Doing so avoid propagating the static version into all clients of GeoCoordFull -->
-    <Part Name="GeoCoordFullProduct" PrgOutputDir="GeoCoordLib">
-        <SubPart PartName="GeoCoordFull" />
-        <SubPart PartName="GeoCoord" LibType="Static"/> <!--To get it into LKGs-->
     </Part>
 
 

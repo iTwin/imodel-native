@@ -60,11 +60,14 @@ _WIN32_IE=0x0501
 symbolsDir          = $(OutGeoCoord)symbols/
     symbolsDllDir   = $(symbolsDir)dll/
     symbolsExeDir   = $(symbolsDir)exe/
+    mapsDir         = $(symbolsDir)maps/
 
 %if defined (SPLITSYM) && !defined (NO_SPLITSYM)
     ASSEMBLY_SYMB_DIR = $(symbolsDllDir)
     DLM_SYMB_DEST   = $(symbolsDllDir)
     EXE_SYMB_DEST   = $(symbolsExeDir)
+    EXE_MAP_DEST    = $(mapsDir)
+    DLM_MAP_DEST    = $(mapsDir)
 %endif
 
 #----------------------------------------------------------
