@@ -42,7 +42,7 @@ static void importDgnSchema(DgnDbR db, bool updateExisting)
     BeAssert(status == SUCCESS);
     }
 
-#define GEOM_IN_PHYSICAL_SPACE_CLAUSE " 1 = (SELECT Model.Space FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Geom INNER JOIN " DGN_TABLE(DGN_CLASSNAME_Element) " Elm ON Elm.Id=new.ElementId INNER JOIN " DGN_TABLE(DGN_CLASSNAME_Model) " Model ON Model.Id=Elm.ModelId) "
+#define GEOM_IN_PHYSICAL_SPACE_CLAUSE " 1 = new.InPhysicalSpace "
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/11

@@ -129,4 +129,123 @@ TEST_F (DgnElementTests, UpdateElement)
     EXPECT_STREQ("Updated Test Element", dynamic_cast<TestElement const*>(updatedElement.get())->GetTestElementProperty().c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ElementGeomAndPlacementTests : DgnElementTests
+{
+    ElementGeometryBuilderPtr CreateGeom();
+    RefCountedPtr<DgnElement3d> CreateElement(bool wantPlacement, bool wantGeom);
+    static bool AreEqualPlacements(Placement3dCR a, Placement3dCR b);
+    void TestLoadElem(DgnElementId id, Placement3d const* placement, bool hasGeometry);
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementGeometryBuilderPtr ElementGeomAndPlacementTests::CreateGeom()
+    {
+    DgnModelPtr model = m_db->Models().GetModel(m_defaultModelId);
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
+    CurveVectorPtr curveVector = GeomHelper::computeShape();
+    builder->Append(*curveVector);
+    double dz = 3.0, radius = 1.5;
+    DgnConeDetail cylinderDetail(DPoint3d::From(0, 0, 0), DPoint3d::From(0, 0, dz), radius, radius, true);
+    ISolidPrimitivePtr cylinder = ISolidPrimitive::CreateDgnCone(cylinderDetail);
+    builder->Append(*cylinder);
+
+    DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,
+        0, 0, 2,
+        0, 3, 0,
+        0.0, Angle::TwoPi());
+    ICurvePrimitivePtr ellipse = ICurvePrimitive::CreateArc(ellipseData);
+    builder->Append(*ellipse);
+
+    ElemDisplayParams elemDisplayParams;
+    elemDisplayParams.SetCategoryId(m_defaultCategoryId);
+    elemDisplayParams.SetWeight(2);
+    builder->Append(elemDisplayParams);
+
+    return builder;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ElementGeomAndPlacementTests::AreEqualPlacements(Placement3dCR a, Placement3dCR b)
+    {
+    return DoubleOps::AlmostEqual(a.GetOrigin().x, b.GetOrigin().x)
+        && DoubleOps::AlmostEqual(a.GetOrigin().y, b.GetOrigin().y)
+        && DoubleOps::AlmostEqual(a.GetOrigin().z, b.GetOrigin().z)
+        && DoubleOps::AlmostEqual(a.GetAngles().GetYaw().Degrees(), b.GetAngles().GetYaw().Degrees())
+        && DoubleOps::AlmostEqual(a.GetAngles().GetPitch().Degrees(), b.GetAngles().GetPitch().Degrees())
+        && DoubleOps::AlmostEqual(a.GetAngles().GetRoll().Degrees(), b.GetAngles().GetRoll().Degrees());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementGeomAndPlacementTests::TestLoadElem(DgnElementId id, Placement3d const* placement, bool hasGeometry)
+    {
+    auto el = m_db->Elements().Get<DgnElement3d>(id);
+    ASSERT_TRUE(el.IsValid());
+    EXPECT_EQ(nullptr != placement, el->IsPlacementValid());
+    if (nullptr != placement)
+        {
+        EXPECT_TRUE(placement->IsValid());
+        EXPECT_TRUE(el->GetPlacement().IsValid());
+        EXPECT_TRUE(AreEqualPlacements(*placement, el->GetPlacement()));
+        }
+
+    EXPECT_EQ(hasGeometry, el->HasGeometry());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementGeomAndPlacementTests, ValidateOnInsert)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"ElementGeomAndPlacement.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    m_defaultModelId = m_db->Models().QueryFirstModelId();
+
+    DgnElementId noPlacementNoGeomId, placementAndGeomId, placementAndNoGeomId;
+    Placement3d placement;
+
+        {
+        // Null placement + null geom
+        TestElementPtr el = TestElement::CreateWithoutGeometry(*m_db, m_defaultModelId, m_defaultCategoryId);
+        EXPECT_TRUE(m_db->Elements().Insert(*el).IsValid());
+        TestLoadElem(el->GetElementId(), nullptr, false);
+        noPlacementNoGeomId = el->GetElementId();
+
+        // Non-null placement + non-null geom
+        el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
+        auto geom = CreateGeom();
+        EXPECT_EQ(SUCCESS, geom->SetGeomStreamAndPlacement(*el));
+        placement = el->GetPlacement();
+        EXPECT_TRUE(placement.IsValid());
+        EXPECT_TRUE(m_db->Elements().Insert(*el).IsValid());
+        placementAndGeomId = el->GetElementId();
+
+        // Non-null placement + null geom
+        el = TestElement::CreateWithoutGeometry(*m_db, m_defaultModelId, m_defaultCategoryId);
+        el->SetPlacement(placement);
+        EXPECT_TRUE(m_db->Elements().Insert(*el).IsValid());
+        placementAndNoGeomId = el->GetElementId();
+
+        // Null placement + non-null geom
+        el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
+        EXPECT_EQ(SUCCESS, geom->SetGeomStreamAndPlacement(*el));
+        el->SetPlacement(Placement3d());
+        DgnDbStatus status;
+        EXPECT_FALSE(m_db->Elements().Insert(*el, &status).IsValid());
+        EXPECT_EQ(DgnDbStatus::BadElement, status);
+        }
+
+    m_db->Elements().Purge(0);
+
+    TestLoadElem(noPlacementNoGeomId, nullptr, false);
+    TestLoadElem(placementAndGeomId, &placement, true);
+    TestLoadElem(placementAndNoGeomId, &placement, false);
+    }
 
