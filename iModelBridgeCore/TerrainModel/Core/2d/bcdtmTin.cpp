@@ -2338,7 +2338,7 @@ BENTLEYDTM_Private int bcdtmTin_insertDtmFeatureTypeIntoDtmObject(BC_DTM_OBJ *dt
 ** This Function Inserts Dtm Features Into A Dtm Object
 */
 {
-    std::lock_guard<std::mutex> lck (s_safeInsert);
+    //std::lock_guard<std::mutex> lck (s_safeInsert);
 
     
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
