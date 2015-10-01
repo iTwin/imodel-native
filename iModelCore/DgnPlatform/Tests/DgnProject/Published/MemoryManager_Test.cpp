@@ -42,12 +42,12 @@ struct MemoryManagerTests : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryManagerTests, CalculateAndPurge)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"MemoryManager_Test.idgndb", BeSQLite::Db::OpenMode::Readonly);
+    SetupProject(L"3dMetricGeneral.idgndb", L"MemoryManager_Test.idgndb", BeSQLite::Db::OpenMode::ReadWrite); // because ImportSchemas() fails our test if Readonly...
 
     DgnDb& db = *m_db;
     MemoryManager& mgr = db.Memory();
 
-    bvector<TestConsumer> consumers =
+    TestConsumer consumers[] =
         {
         TestConsumer(Priority::Moderate, 100),
         TestConsumer(Priority::VeryLow, 100),
@@ -61,28 +61,31 @@ TEST_F(MemoryManagerTests, CalculateAndPurge)
 
     EXPECT_EQ(500, mgr.CalculateBytesConsumed());
 
-    EXPECT_TRUE(mgr.Purge(150));
+    EXPECT_TRUE(mgr.Purge(350));
     EXPECT_EQ(300, mgr.CalculateBytesConsumed());
 
 #define EXPECT_CONSUMED(INDEX, VALUE) EXPECT_EQ(consumers[INDEX].CalculateBytesConsumed(), VALUE)
 
-    EXPECT_CONSUMED(0, 0);
     EXPECT_CONSUMED(1, 0);
+    EXPECT_CONSUMED(3, 0);
+    EXPECT_CONSUMED(0, 100);
     EXPECT_CONSUMED(2, 100);
-    EXPECT_CONSUMED(3, 100);
     EXPECT_CONSUMED(4, 100);
 
-    consumers[0].SetAllocation(100);
-    EXPECT_TRUE(mgr.Purge(150));
+    consumers[1].SetAllocation(100);
+    EXPECT_TRUE(mgr.Purge(250));
     EXPECT_EQ(200, mgr.CalculateBytesConsumed());
 
-    EXPECT_CONSUMED(0, 0);
     EXPECT_CONSUMED(1, 0);
-    EXPECT_CONSUMED(2, 0);
-    EXPECT_CONSUMED(3, 100);
+    EXPECT_CONSUMED(3, 0);
+    EXPECT_CONSUMED(0, 0);
+    EXPECT_CONSUMED(2, 100);
     EXPECT_CONSUMED(4, 100);
 
     EXPECT_TRUE(mgr.Purge(500));
+    EXPECT_EQ(200, mgr.CalculateBytesConsumed());
+
+    EXPECT_TRUE(mgr.Purge(0));
     EXPECT_EQ(0, mgr.CalculateBytesConsumed());
 
     for (auto& consumer : consumers)
