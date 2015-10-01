@@ -79,6 +79,4 @@ $(dgnScriptGen)DgnScriptBootstrap.cpp : $(dgnScriptGen)DgnJsApi.js $(dgnJsApiTsD
 
 
 $(BuildContext)Delivery/DgnJsApi.d.ts : $(dgnScriptGen)DgnJsApi.d.ts
-    python $(SrcBsiCommon)build/CreateSymLinks.py -d""$@=$<""
-
-#    $(LinkFirstDepToFirstTargetAsDirectory)
+    $(LinkFirstDepToFirstTarget)
