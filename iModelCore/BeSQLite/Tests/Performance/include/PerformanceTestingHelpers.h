@@ -35,7 +35,8 @@ Notes:
 #include <Logging/bentleylogging.h>
 
 #define PERFORMANCELOG (*NativeLogging::LoggingManager::GetLogger (L"Performance"))
-#define LOGTODB PerformanceResultRecorder::LogToDb
+//#define LOGTODB PerformanceResultRecorder::LogToDb
+#define LOGTODB PerformanceResultRecorder::writeResults
 // Get Test name details
 #if defined (USE_GTEST)
     #define TEST_DETAILS ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name(), ::testing::UnitTest::GetInstance()->current_test_info()->name()
@@ -59,6 +60,7 @@ public:
     static DbResult createDb(Db& db, BeFileName dbName);
     static void LogToDb(Utf8String testcaseName, Utf8String testName, double timeInSeconds, Utf8String testDescription = "", int opCount = -1);
     static bool getCounters(int& startNum, int& endNum, int& increment);
+    static void writeResults(Utf8String testcaseName, Utf8String testName, double timeInSeconds, Utf8String testDescription = "", int opCount = -1);
     
     bool SetupResultDb();
     bool writeTodb(StopWatch &timerCount, Utf8String testcaseName, Utf8String testName, Utf8String testDescription="", int opCount=-1);
