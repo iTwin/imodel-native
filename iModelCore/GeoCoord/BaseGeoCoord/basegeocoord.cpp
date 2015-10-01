@@ -11203,7 +11203,8 @@ VerticalDatumConverter* verticalDatumConverter
     m_verticalDatumConverter    = verticalDatumConverter;
 
     // Allow soft errors to go through and let caller decide of the way to process ... (Soft errors will have return status greater than 0)
-    m_datumConvert->block_err   = cs_DTCFLG_BLK_W;
+    if (NULL != m_datumConvert)
+        m_datumConvert->block_err   = cs_DTCFLG_BLK_W;
 
     // by default, we don't convert elevations when we're converting 3D.
     // to make it do so, call SetReprojectElevation (true);
