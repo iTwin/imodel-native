@@ -143,8 +143,6 @@ $(XCodeProject)Libs/$(stlibprefix)BeGTestStatic$(stlibext) : $(o)$(stlibprefix)$
 #--------------------------------------------------------------------------------------
 # Delivery
 #--------------------------------------------------------------------------------------
-$(BuildContext)Delivery/iOSXCTest/$(TEST_NAME)/Project : $(XCodeProject)
-    python $(SrcBsiCommon)build/CreateSymLinks.py -d""$@=$<""
-
-#    $(LinkFirstDepToFirstTargetAsDirectory)
+$(BuildContext)Delivery/iOSXCTest/$(TEST_NAME)/Project : ${XCodeProject}
+    $(LinkFirstDepToFirstTargetAsDirectory)
 	
