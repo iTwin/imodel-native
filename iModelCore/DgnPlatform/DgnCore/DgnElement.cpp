@@ -596,7 +596,7 @@ DgnDbStatus GeometricElement::_InsertInDb()
         return stat;
 
     DgnDbR dgnDb = GetDgnDb();
-    CachedStatementPtr stmt=dgnDb.Elements().GetStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ElementGeom) "(Geom,Placement,ElementId,InPhysicalSpace) VALUES(?,?,?)");
+    CachedStatementPtr stmt=dgnDb.Elements().GetStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ElementGeom) "(Geom,Placement,ElementId,InPhysicalSpace) VALUES(?,?,?,?)");
     stmt->BindId(3, m_elementId);
 
     DgnModelPtr model = GetModel();

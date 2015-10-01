@@ -112,6 +112,9 @@ struct DGN_placement_aabb : PlacementFunc
             case sizeof(Placement2d):
                 bb = ToPlacement2d(args).CalculateRange();
                 break;
+            case 0:
+                ctx.SetResultNull();
+                return;
 
             default:
                 SetInputError(ctx);
@@ -152,6 +155,9 @@ struct DGN_placement_eabb : PlacementFunc
             case sizeof(Placement2d):
                 bb = ElementAlignedBox3d(ToPlacement2d(args).GetElementBox());
                 break;
+            case 0:
+                ctx.SetResultNull();
+                return;
 
             default:
                 SetInputError(ctx);
@@ -191,6 +197,10 @@ struct DGN_placement_origin : PlacementFunc
             case sizeof(Placement2d):
                 org = DPoint3d::From(ToPlacement2d(args).GetOrigin());
                 break;
+
+            case 0:
+                ctx.SetResultNull();
+                return;
 
             default:
                 SetInputError(ctx);
@@ -232,6 +242,10 @@ struct DGN_placement_angles : PlacementFunc
             case sizeof(Placement2d):
                 angles = YawPitchRollAngles(ToPlacement2d(args).GetAngle(), AngleInDegrees(), AngleInDegrees());
                 break;
+
+            case 0:
+                ctx.SetResultNull();
+                return;
 
             default:
                 SetInputError(ctx);
@@ -293,6 +307,12 @@ struct DGN_angles_value : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
+        if (args[0].IsNull())
+            {
+            ctx.SetResultNull();
+            return;
+            }
+
         int member = args[1].GetValueInt();
         if (args[0].GetValueBytes() != sizeof(YawPitchRollAngles) || member<0 || member>2)
             return SetInputError(ctx);
@@ -324,6 +344,12 @@ struct DGN_angles_maxdiff : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
+        if (args[0].IsNull() || args[1].IsNull())
+            {
+            ctx.SetResultNull();
+            return;
+            }
+
         if (args[0].GetValueBytes() != sizeof(YawPitchRollAngles) ||
             args[1].GetValueBytes() != sizeof(YawPitchRollAngles))
             return SetInputError(ctx);
@@ -620,6 +646,9 @@ struct DGN_bbox_union : AggregateFunction
 
     void _StepAggregate(Context& ctx, int nArgs, DbValue* args) override
         {
+        if (args[0].IsNull())
+            return;
+
         if (args[0].GetValueBytes() != sizeof(DRange3d))
             return SetInputError(ctx);
         
