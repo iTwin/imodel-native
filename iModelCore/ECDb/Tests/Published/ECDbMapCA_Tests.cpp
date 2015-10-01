@@ -13,217 +13,6 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Maha Nasir                     08/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (SchemaImportTestFixture, ECDbMapTests)
-    {
-    std::vector<TestItem> testItems{
-
-    TestItem (
-    "<?xml version='1.0' encoding='utf-8'?>"
-    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-    "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-    "    <ECClass typeName='Parent' isDomainClass='True'>"
-    "        <ECProperty propertyName='Price' typeName='double' />"
-    "    </ECClass>"
-    "    <ECClass typeName='Base' isDomainClass='False' isStruct='True'>"
-    "        <BaseClass>Parent</BaseClass>"
-    "        <ECProperty propertyName='Item' typeName='double' />"
-    "    </ECClass>"
-    "</ECSchema>", false, "Struct is not supported within a class heirarchy."),
-
-    TestItem (
-    "<?xml version='1.0' encoding='utf-8'?>"
-    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-    "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-    "    <ECClass typeName='ParentA' isDomainClass='True'>"
-    "        <ECCustomAttributes>"
-    "            <ClassMap xmlns='ECDbMap.01.00'>"
-    "                <MapStrategy>"
-    "                   <Strategy>OwnTable</Strategy>"
-    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-    "                 </MapStrategy>"
-    "            </ClassMap>"
-    "        </ECCustomAttributes>"
-    "        <ECProperty propertyName='Price' typeName='double' />"
-    "    </ECClass>"
-    "    <ECClass typeName='ParentB' isDomainClass='True'>"
-    "        <BaseClass>ParentA</BaseClass>"
-    "        <ECCustomAttributes>"
-    "            <ClassMap xmlns='ECDbMap.01.00'>"
-    "                <MapStrategy>"
-    "                   <Strategy>SharedTable</Strategy>"
-    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-    "                 </MapStrategy>"
-    "            </ClassMap>"
-    "        </ECCustomAttributes>"
-    "        <ECProperty propertyName='Price' typeName='double' />"
-    "    </ECClass>"
-    "</ECSchema>", false, "Conflicting Map Strategies SharedTable(Polymorphic) for derived Class where base class has strategy OwnTable(Polymorphic)"),
-
-    TestItem (
-    "<?xml version='1.0' encoding='utf-8'?>"
-    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-    "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-    "    <ECClass typeName='Parent' isDomainClass='True'>"
-    "        <ECCustomAttributes>"
-    "            <ClassMap xmlns='ECDbMap.01.00'>"
-    "                <MapStrategy>"
-    "                   <Strategy>SharedTable</Strategy>"
-    "                   <Options>SharedColumns</Options>"
-    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-    "                 </MapStrategy>"
-    "            </ClassMap>"
-    "        </ECCustomAttributes>"
-    "        <ECProperty propertyName='Price' typeName='double' />"
-    "    </ECClass>"
-    "    <ECClass typeName='Child' isDomainClass='True'>"
-    "        <BaseClass>Parent</BaseClass>"
-    "        <ECCustomAttributes>"
-    "            <ClassMap xmlns='ECDbMap.01.00'>"
-    "                <MapStrategy>"
-    "                   <Options>DisableSharedColumns</Options>"
-    "                   <Strategy>OwnTable</Strategy>"
-    "                 </MapStrategy>"
-    "            </ClassMap>"
-    "        </ECCustomAttributes>"
-    "        <ECProperty propertyName='Price' typeName='double' />"
-    "    </ECClass>"
-    "</ECSchema>", false , "Option 'DisableSharedColumn' doesn't allow strategy to be set."),
-
-    TestItem (
-    "<?xml version='1.0' encoding='utf-8'?>"
-    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-    "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-    "    <ECClass typeName='ParentA' isDomainClass='True'>"
-    "        <ECCustomAttributes>"
-    "            <ClassMap xmlns='ECDbMap.01.00'>"
-    "                <MapStrategy>"
-    "                   <Strategy>ExistingTable</Strategy>"
-    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-    "                 </MapStrategy>"
-    "            </ClassMap>"
-    "        </ECCustomAttributes>"
-    "        <ECProperty propertyName='Price_parentA' typeName='double' />"
-    "    </ECClass>"
-    "</ECSchema>", false, ""),
-
-    TestItem (
-    "<?xml version='1.0' encoding='utf-8'?>"
-    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-    "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-    "    <ECClass typeName='Parent' isDomainClass='True'>"
-    "        <ECCustomAttributes>"
-    "            <ClassMap xmlns='ECDbMap.01.00'>"
-    "                <MapStrategy>"
-    "                   <Strategy>SharedTable</Strategy>"
-    "                   <Options>ReadOnly</Options>"
-    "                 </MapStrategy>"
-    "                <TableName>TestTable</TableName>"
-    "            </ClassMap>"
-    "        </ECCustomAttributes>"
-    "        <ECProperty propertyName='Price' typeName='double' />"
-    "    </ECClass>"
-    "</ECSchema>", false, "Option ReadOnly, can only be used with the Strategy ExistingTable"),
-
-    TestItem (
-    "<?xml version='1.0' encoding='utf-8'?>"
-    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-    "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-    "    <ECClass typeName='Parent' isDomainClass='True'>"
-    "        <ECCustomAttributes>"
-    "            <ClassMap xmlns='ECDbMap.01.00'>"
-    "                <MapStrategy>"
-    "                   <Strategy>ExistingTable</Strategy>"
-    "                   <Options>abc</Options>"
-    "                 </MapStrategy>"
-    "                <TableName>TestTable</TableName>"
-    "            </ClassMap>"
-    "        </ECCustomAttributes>"
-    "        <ECProperty propertyName='Price' typeName='double' />"
-    "    </ECClass>"
-    "</ECSchema>", false, "abc is not a valid MapStarategy Option"),
-
-    TestItem (
-    "<?xml version='1.0' encoding='utf-8'?>"
-    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-    "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-    "    <ECClass typeName='Parent' isDomainClass='True'>"
-    "        <ECCustomAttributes>"
-    "            <ClassMap xmlns='ECDbMap.01.00'>"
-    "                <MapStrategy>"
-    "                   <Strategy>OwnTable</Strategy>"
-    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-    "                </MapStrategy>"
-    "            </ClassMap>"
-    "        </ECCustomAttributes>"
-    "        <ECProperty propertyName='Price' typeName='double' />"
-    "    </ECClass>"
-    "    <ECClass typeName='Child' isDomainClass='True'>"
-    "        <BaseClass>Parent</BaseClass>"
-    "        <ECCustomAttributes>"
-    "            <ClassMap xmlns='ECDbMap.01.00'>"
-    "                <MapStrategy>"
-    "                   <Strategy>SharedTable</Strategy>"
-    "                </MapStrategy>"
-    "                <TableName>TestTable</TableName>"
-    "            </ClassMap>"
-    "        </ECCustomAttributes>"
-    "        <ECProperty propertyName='P3' typeName='int' />"
-    "    </ECClass>"
-    "</ECSchema>", false, "Polymorphic parent class (with any strategy) doesn't allow a child class to have it's own strategy."),
-
-    TestItem ("<?xml version='1.0' encoding='utf-8'?>"
-    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-    "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-    "    <ECClass typeName='Parent' isDomainClass='True'>"
-    "        <ECCustomAttributes>"
-    "            <ClassMap xmlns='ECDbMap.01.00'>"
-    "                <MapStrategy>"
-    "                   <Strategy>SharedTable</Strategy>"
-    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-    "                </MapStrategy>"
-    "            </ClassMap>"
-    "        </ECCustomAttributes>"
-    "        <ECProperty propertyName='P1' typeName='int' />"
-    "    </ECClass>"
-    "    <ECClass typeName='Child1' isDomainClass='True'>"
-    "        <BaseClass>Parent</BaseClass>"
-    "        <ECCustomAttributes>"
-    "            <ClassMap xmlns='ECDbMap.01.00'>"
-    "                <MapStrategy>"
-    "                   <Strategy>NotMapped</Strategy>"
-    "                </MapStrategy>"
-    "            </ClassMap>"
-    "        </ECCustomAttributes>"
-    "        <ECProperty propertyName='Price' typeName='double' />"
-    "    </ECClass>"
-    "</ECSchema>", false, "Strategy NotMapped-polymorphic is not supported within a  class heirarchy"),
-
-    TestItem (
-    "<?xml version='1.0' encoding='utf-8'?>"
-    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-    "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-    "    <ECClass typeName='ClassA' isDomainClass='True'>"
-    "        <ECCustomAttributes>"
-    "            <ClassMap xmlns='ECDbMap.01.00'>"
-    "                <MapStrategy>"
-    "                   <Strategy>OwnTable</Strategy>"
-    "                </MapStrategy>"
-    "                <TableName>bla</TableName>"
-    "            </ClassMap>"
-    "        </ECCustomAttributes>"
-    "        <ECProperty propertyName='Price' typeName='double' />"
-    "    </ECClass>"
-    "</ECSchema>", false, "Own Table does'nt allows a user Defined table name.")
-    };
-
-    for (TestItem const& item : testItems)
-        {
-        AssertSchemaImport (item, "ecdbmapcatests.ecdb");
-        }
-    }
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaImportTestFixture, ECDbMapCATests)
@@ -245,7 +34,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "    <ECClass typeName='ClassAB' isDomainClass='True'>"
     "        <BaseClass>ClassA</BaseClass>"
     "    </ECClass>"
-    "</ECSchema>", false, ""),
+    "</ECSchema>", false, "Invalid MapStrategy"),
 
     TestItem ("<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -261,7 +50,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "        </ECCustomAttributes>"
     "        <ECProperty propertyName='Price' typeName='double' />"
     "    </ECClass>"
-    "</ECSchema>", false, ""),
+    "</ECSchema>", false, "Option SharedColumns can only be used with strategy SharedTable"),
 
     TestItem ("<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -343,7 +132,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "        </ECCustomAttributes>"
     "        <ECProperty propertyName='Price' typeName='double' />"
     "    </ECClass>"
-    "</ECSchema>", false, "MapStrategy SharedTable, polymorphic doesn't allow TableName to be set."),
+    "</ECSchema>", false, "MapStrategy SharedTable (applies to subclasses) doesn't allow TableName to be set."),
 
     TestItem ("<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -1021,7 +810,187 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "        <BaseClass>Base</BaseClass>"
     "        <ECProperty propertyName='P1' typeName='int' />"
     "    </ECClass>"
-    "</ECSchema>", false, "NotMapped within Class Hierarchy is not Supported")
+    "</ECSchema>", false, "NotMapped within Class Hierarchy is not Supported"),
+
+        TestItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "    <ECClass typeName='Parent' isDomainClass='True'>"
+            "        <ECProperty propertyName='Price' typeName='double' />"
+            "    </ECClass>"
+            "    <ECClass typeName='Base' isDomainClass='False' isStruct='True'>"
+            "        <BaseClass>Parent</BaseClass>"
+            "        <ECProperty propertyName='Item' typeName='double' />"
+            "    </ECClass>"
+            "</ECSchema>", false, "Struct is not supported within a class heirarchy."),
+
+        TestItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "    <ECClass typeName='ParentA' isDomainClass='True'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Strategy>OwnTable</Strategy>"
+            "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+            "                 </MapStrategy>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Price' typeName='double' />"
+            "    </ECClass>"
+            "    <ECClass typeName='ParentB' isDomainClass='True'>"
+            "        <BaseClass>ParentA</BaseClass>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Strategy>SharedTable</Strategy>"
+            "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+            "                 </MapStrategy>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Price' typeName='double' />"
+            "    </ECClass>"
+            "</ECSchema>", false, "Conflicting Map Strategies SharedTable(Polymorphic) for derived Class where base class has strategy OwnTable(Polymorphic)"),
+
+        TestItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "    <ECClass typeName='Parent' isDomainClass='True'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Strategy>SharedTable</Strategy>"
+            "                   <Options>SharedColumns</Options>"
+            "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+            "                 </MapStrategy>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Price' typeName='double' />"
+            "    </ECClass>"
+            "    <ECClass typeName='Child' isDomainClass='True'>"
+            "        <BaseClass>Parent</BaseClass>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Options>DisableSharedColumns</Options>"
+            "                   <Strategy>OwnTable</Strategy>"
+            "                 </MapStrategy>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Price' typeName='double' />"
+            "    </ECClass>"
+            "</ECSchema>", false, "Option 'DisableSharedColumn' doesn't allow strategy to be set."),
+
+        TestItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "    <ECClass typeName='ParentA' isDomainClass='True'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Strategy>ExistingTable</Strategy>"
+            "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+            "                 </MapStrategy>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Price_parentA' typeName='double' />"
+            "    </ECClass>"
+            "</ECSchema>", false, ""),
+
+        TestItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "    <ECClass typeName='Parent' isDomainClass='True'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Strategy>ExistingTable</Strategy>"
+            "                   <Options>abc</Options>"
+            "                 </MapStrategy>"
+            "                <TableName>TestTable</TableName>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Price' typeName='double' />"
+            "    </ECClass>"
+            "</ECSchema>", false, "abc is not a valid MapStrategy Option"),
+
+        TestItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "    <ECClass typeName='Parent' isDomainClass='True'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Strategy>OwnTable</Strategy>"
+            "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+            "                </MapStrategy>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Price' typeName='double' />"
+            "    </ECClass>"
+            "    <ECClass typeName='Child' isDomainClass='True'>"
+            "        <BaseClass>Parent</BaseClass>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Strategy>SharedTable</Strategy>"
+            "                </MapStrategy>"
+            "                <TableName>TestTable</TableName>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='P3' typeName='int' />"
+            "    </ECClass>"
+            "</ECSchema>", false, "Polymorphic parent class (with any strategy) doesn't allow a child class to have it's own strategy."),
+
+        TestItem("<?xml version='1.0' encoding='utf-8'?>"
+                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                 "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                 "    <ECClass typeName='Parent' isDomainClass='True'>"
+                 "        <ECCustomAttributes>"
+                 "            <ClassMap xmlns='ECDbMap.01.00'>"
+                 "                <MapStrategy>"
+                 "                   <Strategy>SharedTable</Strategy>"
+                 "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                 "                </MapStrategy>"
+                 "            </ClassMap>"
+                 "        </ECCustomAttributes>"
+                 "        <ECProperty propertyName='P1' typeName='int' />"
+                 "    </ECClass>"
+                 "    <ECClass typeName='Child1' isDomainClass='True'>"
+                 "        <BaseClass>Parent</BaseClass>"
+                 "        <ECCustomAttributes>"
+                 "            <ClassMap xmlns='ECDbMap.01.00'>"
+                 "                <MapStrategy>"
+                 "                   <Strategy>NotMapped</Strategy>"
+                 "                </MapStrategy>"
+                 "            </ClassMap>"
+                 "        </ECCustomAttributes>"
+                 "        <ECProperty propertyName='Price' typeName='double' />"
+                 "    </ECClass>"
+                 "</ECSchema>", false, "Strategy NotMapped-polymorphic is not supported within a  class hierarchy"),
+
+        TestItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "    <ECClass typeName='ClassA' isDomainClass='True'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Strategy>OwnTable</Strategy>"
+            "                </MapStrategy>"
+            "                <TableName>bla</TableName>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Price' typeName='double' />"
+            "    </ECClass>"
+            "</ECSchema>", false, "Own Table doesn't allows a user Defined table name.")
     };
 
     for (TestItem const& item : testItems)
@@ -2910,16 +2879,15 @@ protected:
         enum class Options
             {
             None = 0,
-            Readonly = 1,
-            SharedColumns = 2
+            SharedColumns = 1
             };
 
         Strategy m_strategy;
         Options m_options;
-        bool m_isPolymorphic;
+        bool m_appliesToSubclasses;
 
-        ResolvedMapStrategy() : m_strategy(Strategy::NotMapped), m_options(Options::None), m_isPolymorphic(false) {}
-        ResolvedMapStrategy(Strategy strategy, Options options, bool isPolymorphic) : m_strategy(strategy), m_options(options), m_isPolymorphic(isPolymorphic) {}
+        ResolvedMapStrategy() : m_strategy(Strategy::NotMapped), m_options(Options::None), m_appliesToSubclasses(false) {}
+        ResolvedMapStrategy(Strategy strategy, Options options, bool appliesToSubclasses) : m_strategy(strategy), m_options(options), m_appliesToSubclasses(appliesToSubclasses) {}
         };
 
 private:
@@ -3068,14 +3036,14 @@ size_t ReferentialIntegrityTestFixture::GetRelationshipInstanceCount(ECDbCR ecdb
 ReferentialIntegrityTestFixture::ResolvedMapStrategy ReferentialIntegrityTestFixture::GetMapStrategy(ECDbR ecdb, ECClassId ClassId) const
         {
         Statement stmt;
-        stmt.Prepare (ecdb, "SELECT MapStrategy, MapStrategyOptions, IsMapStrategyPolymorphic FROM ec_ClassMap WHERE ClassId = ?");
+        stmt.Prepare (ecdb, "SELECT MapStrategy, MapStrategyOptions, MapStrategyAppliesToSubclasses FROM ec_ClassMap WHERE ClassId = ?");
         stmt.BindInt64 (1, ClassId);
         if (stmt.Step() == BE_SQLITE_ROW)
             {
             ResolvedMapStrategy::Strategy strat = (ResolvedMapStrategy::Strategy) stmt.GetValueInt(0);
             ResolvedMapStrategy::Options options = stmt.IsColumnNull(1) ? ResolvedMapStrategy::Options::None : (ResolvedMapStrategy::Options) stmt.GetValueInt(1);
-            bool isPolymorphic = stmt.GetValueInt(2) != 0;
-            return ResolvedMapStrategy(strat, options, isPolymorphic);
+            bool appliesToSubclasses = stmt.GetValueInt(2) != 0;
+            return ResolvedMapStrategy(strat, options, appliesToSubclasses);
             }
 
         return ResolvedMapStrategy();
@@ -3254,7 +3222,7 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
 
     ASSERT_EQ(ResolvedMapStrategy::Strategy::OwnTable, mapStrategy.m_strategy);
     ASSERT_EQ(ResolvedMapStrategy::Options::None, mapStrategy.m_options);
-    ASSERT_FALSE(mapStrategy.m_isPolymorphic);
+    ASSERT_FALSE(mapStrategy.m_appliesToSubclasses);
     ASSERT_EQ(count_ManyFooHasManyGoo, GetRelationshipInstanceCount(ecdb, "ts.ManyFooHasManyGoo"));
     }
 

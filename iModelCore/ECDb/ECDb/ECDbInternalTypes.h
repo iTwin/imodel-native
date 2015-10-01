@@ -11,6 +11,7 @@
 #include <Bentley/BeStringUtilities.h>
 #include <Bentley/BeAssert.h>
 #include "ECDbLogger.h"
+#include <type_traits>
 
 ECDB_TYPEDEFS(ECDbMap);
 
@@ -149,6 +150,38 @@ enum class ECContainerType
 #define ECDB_COL_ECArrayIndex           "ECArrayIndex"
 
 //=======================================================================================
+// @bsiclass                                 Affan.Khan                10/2015
+//+===============+===============+===============+===============+===============+======
+struct Enum
+    {
+private:
+    Enum();
+    ~Enum();
+
+public:
+    template<typename TEnum>
+    static typename std::underlying_type<TEnum>::type ToUnderlyingType(TEnum val) { return static_cast<std::underlying_type<TEnum>::type>(val); }
+
+    template<typename TFromEnum, typename TToEnum>
+    static TToEnum Convert(TFromEnum val) { return static_cast<TToEnum>(val); }
+
+    template<typename TEnum>
+    static int ToInt(TEnum val) { return Convert<TEnum,int>(val); }
+
+    template<typename TEnum>
+    static TEnum FromInt(int val) { return Convert<int,TEnum>(val); }
+    
+    template<typename TEnum>
+    static TEnum Or(TEnum lhs, TEnum rhs) { return Convert<typename std::underlying_type <TEnum>::type, TEnum>(ToUnderlyingType(lhs) | ToUnderlyingType(rhs)); }
+    
+    template<typename TEnum>
+    static TEnum And(TEnum lhs, TEnum rhs) { return Convert<typename std::underlying_type <TEnum>::type, TEnum>(ToUnderlyingType(lhs) & ToUnderlyingType(rhs)); }
+        
+    template<typename TEnum>
+    static bool Contains(TEnum test, TEnum candidate) { return Enum::And(test, candidate) == candidate; }
+    };
+
+//=======================================================================================
 // For case-sensitive UTF-8 string comparisons in STL collections.
 // @bsistruct
 //+===============+===============+===============+===============+===============+======
@@ -164,22 +197,12 @@ struct CompareUtf8
 //+===============+===============+===============+===============+===============+======
 struct CompareIUtf8
     {
-    bool operator()(Utf8CP s1, Utf8CP s2) const { return BeStringUtilities::Stricmp (s1, s2) < 0;}
+    bool operator()(Utf8CP s1, Utf8CP s2) const { return BeStringUtilities::Stricmp(s1, s2) < 0; }
 
     bool operator()(Utf8StringCR s1, Utf8StringCR s2) const
         {
-        return BeStringUtilities::Stricmp (s1.c_str (), s2.c_str ()) < 0;
+        return BeStringUtilities::Stricmp(s1.c_str(), s2.c_str()) < 0;
         }
     };
-
-//#define ECDbKnownColumns::DataColumn  0x0U
-//#define ECDbKnownColumns::ECInstanceId  0x1U
-//#define ECDbKnownColumns::ECClassId  0x2U
-//#define ECDbKnownColumns::ParentECInstanceId  0x4U
-//#define ECDbKnownColumns::ECPropertyPathId  0x8U
-//#define ECArraryIndex  0x10U
-//
-//#define ECDbSystemColumns  (ECDbKnownColumns::ECInstanceId | ECDbKnownColumns::ECClassId | ECDbKnownColumns::ParentECInstanceId | ECDbKnownColumns::ECPropertyPathId | ECArraryIndex)
-//
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

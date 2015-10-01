@@ -184,11 +184,11 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
         m_parentClassMap = parentClassMap;
         BeAssert(parentClassMap->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && parentClassMap->GetMapStrategy().AppliesToSubclasses ());
 
-        ECDbMapStrategy::Option option = ECDbMapStrategy::Option::None;
-        if (userStrategy.GetOption() != UserECDbMapStrategy::Option::DisableSharedColumns && 
-                (rootUserStrategy.GetOption() == UserECDbMapStrategy::Option::SharedColumns || 
-                 rootUserStrategy.GetOption() == UserECDbMapStrategy::Option::SharedColumnsForSubclasses))
-            option = ECDbMapStrategy::Option::SharedColumns;
+        ECDbMapStrategy::Options option = ECDbMapStrategy::Options::None;
+        if (userStrategy.GetOptions() != UserECDbMapStrategy::Options::DisableSharedColumns && 
+                (rootUserStrategy.GetOptions() == UserECDbMapStrategy::Options::SharedColumns || 
+                 rootUserStrategy.GetOptions() == UserECDbMapStrategy::Options::SharedColumnsForSubclasses))
+            option = ECDbMapStrategy::Options::SharedColumns;
 
         return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::SharedTable, option, true);
         }
@@ -227,8 +227,8 @@ bool ClassMapInfo::ValidateChildStrategy(UserECDbMapStrategy const& rootStrategy
                 {
                 isValid = childStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::None &&
                     !childStrategy.AppliesToSubclasses() &&
-                    (childStrategy.GetOption() == UserECDbMapStrategy::Option::None ||
-                    childStrategy.GetOption() == UserECDbMapStrategy::Option::DisableSharedColumns);
+                    (childStrategy.GetOptions() == UserECDbMapStrategy::Options::None ||
+                    childStrategy.GetOptions() == UserECDbMapStrategy::Options::DisableSharedColumns);
 
                 if (!isValid)
                     detailError = "For subclasses of a class with MapStrategy SharedTable (AppliesToSubclasses), Strategy must be unset and Option must either be unset or 'DisableSharedColumns'.";
@@ -241,7 +241,7 @@ bool ClassMapInfo::ValidateChildStrategy(UserECDbMapStrategy const& rootStrategy
                 {
                 isValid = childStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::None &&
                     !childStrategy.AppliesToSubclasses() &&
-                    childStrategy.GetOption() == UserECDbMapStrategy::Option::None;
+                    childStrategy.GetOptions() == UserECDbMapStrategy::Options::None;
 
                 if (!isValid)
                     detailError = "For subclasses of a class with a polymorphic SharedTable (polymorphic), no MapStrategy may be defined.";

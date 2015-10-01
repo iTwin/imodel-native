@@ -242,43 +242,33 @@ ECSchemaPtr CreateTestSchema ()
 
     return testSchema;
     }
- 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  04/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbMap, RelationshipMapCAOnSubclasses)
+TEST_F(SchemaImportTestFixture, RelationshipMapCAOnSubclasses)
     {
-    ECDbTestFixture::Initialize();
-
-    ECDb ecdb;
-    auto stat = ECDbTestUtility::CreateECDb(ecdb, nullptr, L"RelationshipMapCAOnSubclasses.ecdb");
-    ASSERT_TRUE(stat == BE_SQLITE_OK);
-
-    //Importing the DGN ECSchema requires the dgn_RTree3d table to pre-exist (Which a DgnDb file ensures). So
-    //we add the table manually here
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE VIRTUAL TABLE dgn_RTree3d USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ);"));
-
-    Utf8CP testSchemaXml =
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+    TestItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
         "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-        "  <ECSchemaReference name = 'dgn' version = '02.00' prefix = 'dgn' />"
+        "  <ECClass typeName='Element' >"
+        "    <ECProperty propertyName='Code' typeName='string' />"
+        "  </ECClass>"
         "  <ECClass typeName='MyElement' >"
-        "    <BaseClass>dgn:Element</BaseClass>"
+        "    <BaseClass>Element</BaseClass>"
         "    <ECProperty propertyName='MyName' typeName='string' />"
         "  </ECClass>"
         "  <ECClass typeName='YourElement' >"
-        "    <BaseClass>dgn:Element</BaseClass>"
+        "    <BaseClass>Element</BaseClass>"
         "    <ECProperty propertyName='YourName' typeName='string' />"
         "  </ECClass>"
+        "  <ECRelationshipClass typeName='ElementOwnsChildElements' isDomainClass='False' />"
         "  <ECRelationshipClass typeName='MyElementHasYourElements' isDomainClass='True' strength='embedding'>"
         "    <ECCustomAttributes>"
         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
         "            <ForeignKeyColumn>ParentId</ForeignKeyColumn>"
         "        </ForeignKeyRelationshipMap>"
         "    </ECCustomAttributes>"
-        "   <BaseClass>dgn:ElementOwnsChildElements</BaseClass>"
+        "   <BaseClass>ElementOwnsChildElements</BaseClass>"
         "    <Source cardinality='(1,1)' polymorphic='True'>"
         "      <Class class = 'MyElement' />"
         "    </Source>"
@@ -286,25 +276,18 @@ TEST(ECDbMap, RelationshipMapCAOnSubclasses)
         "      <Class class = 'YourElement' />"
         "    </Target>"
         "  </ECRelationshipClass>"
-        "</ECSchema>";
+        "</ECSchema>", true, "");
 
-    BeFileName searchPath;
-    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchPath);
-    searchPath.AppendToPath(L"ECSchemas");
-    searchPath.AppendToPath(L"Dgn");
-
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    schemaContext->AddSchemaLocater(ecdb.GetSchemaLocater());
-    schemaContext->AddSchemaPath(searchPath.GetName());
-
-    ECDbTestUtility::ReadECSchemaFromString(schemaContext, testSchemaXml);
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemaContext->GetCache()));
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testItem, "RelationshipMapCAOnSubclasses.ecdb");
+    ASSERT_FALSE(asserted);
 
     bvector<Utf8String> columns;
-    ASSERT_TRUE (ecdb.GetColumns(columns, "dgn_element"));
+    ASSERT_TRUE(ecdb.GetColumns(columns, "ts_element"));
     auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
     auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
-    ASSERT_TRUE(it == columns.end()) << "dgn_element table should not contain an extra foreign key column as the relationship map specifies to use the ParentId column";
+    ASSERT_TRUE(it == columns.end()) << "ts_element table should not contain an extra foreign key column as the relationship map specifies to use the ParentId column";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1279,7 +1262,6 @@ TEST(ECDbSchemaManager, UpdateExistingSchema)
 
     ECSchemaCP schemap = ecdbr. Schemas ().GetECSchema ("TestSchema", true);
     ASSERT_TRUE(schemap != nullptr);
-    printf("%s\n", schemap->GetName().c_str());
     ASSERT_EQ(4, schemap->GetClassCount()) << "Class count doesn't match the original number of classes";
 
     ECClassCP ecclass = ecdbr. Schemas ().GetECClass ("TestSchema", "DerivedTestClass");
