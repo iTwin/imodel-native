@@ -29,6 +29,7 @@ private:
 IStrokeForCache&    m_stroker;
 DRange3d            m_range;
 ViewContextP        m_context;
+DgnCategoryId       m_categoryId;
 Transform           m_currentTransform;
 
 protected:
@@ -36,7 +37,7 @@ protected:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-explicit LineStyleRangeCollector(IStrokeForCache& stroker) : m_stroker(stroker) 
+explicit LineStyleRangeCollector(IStrokeForCache& stroker, DgnCategoryId categoryId) : m_stroker(stroker), m_categoryId(categoryId)
     {
     m_range.Init();
     m_currentTransform.InitIdentity();
@@ -66,8 +67,9 @@ virtual BentleyStatus _ProcessCurveVector(CurveVectorCR curves, bool isFilled) o
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-virtual void _OutputGraphics(ViewContextR context) override
+virtual void _OutputGraphics(ViewContext& context) override
     {
+    context.GetCurrentDisplayParams().SetCategoryId(m_categoryId);
     m_stroker._StrokeForCache(context);
     }
 
@@ -84,9 +86,9 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-static void Process(DRange3dR range, IStrokeForCache& stroker)
+static void Process(DRange3dR range, IStrokeForCache& stroker, DgnCategoryId categoryId)
     {
-    LineStyleRangeCollector  processor(stroker);
+    LineStyleRangeCollector  processor(stroker, categoryId);
 
     ElementGraphicsOutput::Process(processor, stroker._GetDgnDb());
 
@@ -198,59 +200,51 @@ Utf8String         LsDefinition::GetStyleName () const
     return Utf8String(retval);
     }
 
-//  Logic to make a line style behave as a raster line style.
-//---------------------------------------------------------------------------------------
-// This color may possibly come from the element, or it may come from the line style.
-// If it comes from the element, do we need a different map for every color?
-//
-// The texture may also have to reflect differences in line style overrides.
-//
-// @bsimethod                                                   John.Gooding    08/2015
-//---------------------------------------------------------------------------------------
-/* static */  void CreateGeometryMapMaterial(ViewContextR context, IStrokeForCache& stroker, intptr_t textureId)
+//=======================================================================================
+//! Base class for StrokeComponentForRange and ComponentToTextureStroker
+// @bsiclass                                                    John.Gooding    10/2015
+//=======================================================================================
+struct ComponentStroker : Dgn::IStrokeForCache
     {
-    context.GetIViewDraw ().DefineQVGeometryMap (textureId, stroker, nullptr, false, context, false);
-    return;
-    }
-
-//=======================================================================================
-//! Used to generate a texture based on a line style.
-// @bsiclass                                                    John.Gooding    08/2015
-//=======================================================================================
-struct          ComponentToTextureStroker : Dgn::IStrokeForCache
-{
-private:
+protected:
     ViewContextR        m_viewContext;
     LsComponentPtr      m_component;
-    LineStyleSymbR      m_lineStyleSymb;
-    //LsDefinitionR       m_lsDef;
     DPoint3d            m_points[2];
-    double              m_multiplier;
-    double              m_length;
-    Transform           m_transformForTexture;
-    bool                m_haveRange;
-    DRange3d            m_range;
-
 public:
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, LsDefinitionR lsDef) : m_viewContext(viewContext), m_lineStyleSymb(lineStyleSymb), /*m_lsDef(lsDef),*/ m_haveRange(false)
+ComponentStroker(ViewContextR viewContext, LsComponentR component) : m_viewContext(viewContext), m_component(&component)
     {
-    LsComponentCP    topComponent = lsDef.GetComponentCP (nullptr);
-    BeAssert(topComponent->_IsOkayForTextureGeneration() != LsOkayForTextureGeneration::NotAllowed && topComponent->_IsOkayForTextureGeneration() != LsOkayForTextureGeneration::Unknown);
-    m_component = topComponent->_GetForTextureGeneration();
-
-    m_length = m_component->_GetLength() * lineStyleSymb.GetScale();
-    if (m_length <  mgds_fc_epsilon)
-        m_length = 1.0;   //  Apparently nothing is length dependent.
+    double length = component._GetLength();
+    if (length <  mgds_fc_epsilon)
+        length = 1.0;   //  Apparently nothing is length dependent.
 
     //  NEEDSWORK_LINESTYLES decide how to scale when creating texture.
-    m_multiplier = 1024.0 * 1024 * 1024;
-    m_transformForTexture.InitFromScaleFactors(m_multiplier, m_multiplier, m_multiplier);
     m_points[0].Init(0, 0, 0);
-    m_points[1].Init(m_length, 0, 0);
+    m_points[1].Init(length, 0, 0);
+    }
+
+int32_t _GetQvIndex() const override {return 1;}
+QvElemP _GetQvElem(double pixelSize = 0.0) const override {return nullptr;}
+void _SaveQvElem(QvElemP, double pixelSize = 0.0, double sizeDependentRatio = 0.0) const override {}
+DgnDbR _GetDgnDb() const override { return m_viewContext.GetDgnDb(); }
+};
+
+//=======================================================================================
+//! Used to calculate the range of the line style.
+// @bsiclass                                                    John.Gooding    09/2015
+//=======================================================================================
+struct          StrokeComponentForRange : ComponentStroker
+{
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+StrokeComponentForRange(ViewContextR viewContext, LsComponentR component) : ComponentStroker(viewContext, component)
+    {
+    //  It should have already created a copy of the components if that is necessary
+    BeAssert(m_component->_IsOkayForTextureGeneration() == LsOkayForTextureGeneration::NoChangeRequired);
     }
 
 //---------------------------------------------------------------------------------------
@@ -258,14 +252,59 @@ ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb
 //---------------------------------------------------------------------------------------
 void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
     {
-    if (!m_haveRange)
-        {
-        m_haveRange = true;  //  avoid infinite recursion
-        DRange3d range;
-        LineStyleRangeCollector::Process(range, *this);
-        m_range = range;
-        }
+    LineStyleSymb defaultLsSymb;
+    defaultLsSymb.Init(nullptr);
+    m_component->_StrokeLineString(&context, &defaultLsSymb, m_points, 2, false);
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2015
+//---------------------------------------------------------------------------------------
+void ComputeRange(DRange3dR range)
+    {
+    LineStyleRangeCollector::Process(range, *this, m_viewContext.GetCurrentDisplayParams().GetCategoryId());
+    }
+};
+
+
+//=======================================================================================
+//! Used to generate a texture based on a line style.
+// @bsiclass                                                    John.Gooding    08/2015
+//=======================================================================================
+struct          ComponentToTextureStroker : ComponentStroker
+{
+private:
+    LineStyleSymbR      m_lineStyleSymb;
+    double              m_multiplier;
+    double              m_length;
+    Transform           m_transformForTexture;
+
+public:
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, LsComponentR component) : ComponentStroker(viewContext, component), m_lineStyleSymb(lineStyleSymb)
+    {
+    //  If a modified copy is required, the caller passed the copy. 
+    BeAssert(component._IsOkayForTextureGeneration() == LsOkayForTextureGeneration::NoChangeRequired);
+
+    //  m_length = m_component->_GetLength() * lineStyleSymb.GetScale(); -- maybe push lineStyleSymb to ComponentStroker
+
+    //  NEEDSWORK_LINESTYLES decide how to scale when creating texture.
+#if defined(NOTNOW)
+    m_multiplier = 1024.0 * 1024 * 1024;
+    m_transformForTexture.InitFromScaleFactors(m_multiplier, m_multiplier, m_multiplier);
+#else
+    m_transformForTexture.InitIdentity();
+#endif
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
+    {
     ElemDisplayParams   savedParams(context.GetCurrentDisplayParams());
     ElemMatSymb         savedMatSymb (*context.GetElemMatSymb());
 
@@ -327,16 +366,26 @@ intptr_t  LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR
     if (comp.IsNull())
         return 0;
 
-    ComponentToTextureStroker   stroker(viewContext, lineStyleSymb, *this);
-    
-    viewContext.GetIViewDraw ().DefineQVGeometryMap (intptr_t(this), stroker, NULL, false, viewContext, false);
+    DRange3d  lsRange;
+    StrokeComponentForRange rangeStroker(viewContext, *comp);
+    rangeStroker.ComputeRange(lsRange);
+
+    ComponentToTextureStroker   stroker(viewContext, lineStyleSymb, *comp);
+
+    DRange2d range2d;
+    range2d.low.x = 0;  // maybe minimum of 0 and lsRange.low.x
+    range2d.low.y = lsRange.low.y;
+    range2d.high.x = std::max(lsRange.high.x, comp->_GetLength());
+    range2d.high.y = lsRange.high.y;
+
+    viewContext.GetIViewDraw ().DefineQVGeometryMap (intptr_t(this), stroker, range2d, false, viewContext, false);
     return intptr_t(this);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t     LsDefinition::GetTextureHandle (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceRaster, double scale) 
+uintptr_t     LsDefinition::GetTextureHandle (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceTexture, double scale) 
     {
     if (!m_lsComp.IsValid())
         {
@@ -373,9 +422,9 @@ uintptr_t     LsDefinition::GetTextureHandle (ViewContextR viewContext, LineStyl
                     }
                 }
             }
-        else if (forceRaster)
+        else if (forceTexture)
             {
-            //  Convert this type to raster on the fly if possible
+            //  Convert this type to texture on the fly if possible
 #if TRYING_DIRECT_LINESTYLES
             m_textureHandle = 0; 
 #else

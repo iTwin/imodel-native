@@ -363,7 +363,7 @@ LsPointComponent::LsPointComponent(LsPointComponentCR source) : LsComponent(sour
     m_strokeComponent = source.m_strokeComponent;
     m_okayForTextureGeneration = source.m_okayForTextureGeneration;
     m_postProcessed = false;
-    for (LsSymbolReference const& ref: m_symbols)
+    for (LsSymbolReference const& ref: source.m_symbols)
         m_symbols.push_back(ref);
     }
 
@@ -417,6 +417,9 @@ LsComponentPtr LsPointComponent::_GetForTextureGeneration() const
 LsOkayForTextureGeneration LsPointComponent::_IsOkayForTextureGeneration() const
     {
     if (!m_strokeComponent.IsValid())
+        //  If there is not a stroke component then either part of the line style definition is missing
+        //  or all symbols are associated with vertices instead of strokes. Either way, there is no
+        //  way to generate a texture from this line style.
         return LsOkayForTextureGeneration::NotAllowed;
 
     if (m_okayForTextureGeneration != LsOkayForTextureGeneration::Unknown)
@@ -618,15 +621,15 @@ LsOkayForTextureGeneration LsPointComponent::VerifySymbol(double& adjustment, do
     switch (symRef->GetJustification())
         {
         case LCPOINT_ORIGIN:
-            xOrigin = startOfStroke;
+            xOrigin = startOfStroke + symRef->m_offset.x;
             break;
 
         case LCPOINT_CENTER:
-            xOrigin = startOfStroke + outStrokeLen/2;
+            xOrigin = startOfStroke + outStrokeLen/2 + symRef->m_offset.x;
             break;
 
         case LCPOINT_END:
-            xOrigin = startOfStroke + outStrokeLen;
+            xOrigin = startOfStroke + outStrokeLen + symRef->m_offset.x;
             break;
 
         default:
@@ -650,21 +653,26 @@ LsOkayForTextureGeneration LsPointComponent::VerifySymbol(double& adjustment, do
     //
     //  Converting to texture always forces Relative rotation so it is okay to assume Relative here.  We should test the range of the rotated graphics but for now will just
     //  test the unrotated range of the unrotated graphics.  
-    double xLow = range3d.low.x*symbolComponent->GetUnitScale() + xOrigin;
-    double xHigh = range3d.high.x*symbolComponent->GetUnitScale() + xOrigin;
+    double xLow = range3d.low.x/symbolComponent->GetUnitScale() + xOrigin;
+    double xHigh = range3d.high.x/symbolComponent->GetUnitScale() + xOrigin;
+
     if (xLow < 0)
         {
         adjustment = 0 - xLow;
         retval = LsOkayForTextureGeneration::ChangeRequired;
+#if defined(NEEDSWORK_LINESTYLE)  //  How can we handle the symbol being larger than the stroke?  It is for Batten. It is easy to make this mistake and notice it if there is a small overlap.
         if (xHigh + adjustment >= patternLength)
             retval = LsOkayForTextureGeneration::NotAllowed;
+#endif
         }
     else if (xHigh >= patternLength)
         {
         adjustment = patternLength - xHigh;
         retval = LsOkayForTextureGeneration::ChangeRequired;
+#if defined(NEEDSWORK_LINESTYLE)  //  How can we handle the symbol being larger than the stroke?  It is for Batten
         if (xLow + adjustment < 0)
             retval = LsOkayForTextureGeneration::NotAllowed;
+#endif
         }
 
     return retval;

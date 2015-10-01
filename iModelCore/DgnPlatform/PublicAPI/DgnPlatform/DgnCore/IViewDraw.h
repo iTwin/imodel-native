@@ -498,7 +498,7 @@ public:
     DgnGeometryClass GetGeometryClass() const {return m_geometryClass;}
 
     //! Get line style information.
-    LineStyleInfoCP GetLineStyle() const {BeAssert(m_appearanceOverrides.m_style || m_resolved); return m_styleInfo.get();}
+    LineStyleInfoCP GetLineStyle() const {/* BeAssert(m_appearanceOverrides.m_style || m_resolved); */ return m_styleInfo.get();}
 
     //! Get element weight.
     uint32_t GetWeight() const {BeAssert(m_appearanceOverrides.m_weight || m_resolved); return m_weight;}
@@ -1220,7 +1220,7 @@ protected:
     virtual void _ClearZ () = 0;
 
     virtual uintptr_t _DefineQVTexture(WCharCP textureName, DgnDbP) {return 0;}
-    virtual void _DefineQVGeometryMap(uintptr_t textureId, IStrokeForCache&, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern) {}
+    virtual void _DefineQVGeometryMap(uintptr_t textureId, IStrokeForCache&, DRange2dCR range, bool useCellColors, ViewContextR seedContext, bool forAreaPattern) {}
 
     virtual bool _IsOutputQuickVision() const = 0;
     virtual bool _ApplyMonochromeOverrides(ViewFlagsCR) const = 0;
@@ -1292,7 +1292,7 @@ public:
 
     DGNPLATFORM_EXPORT void ClearZ ();
     DGNPLATFORM_EXPORT uintptr_t DefineQVTexture(WCharCP textureName, DgnDbP dgnFile);
-    DGNPLATFORM_EXPORT void DefineQVGeometryMap(uintptr_t textureId, IStrokeForCache&, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern = false);
+    DGNPLATFORM_EXPORT void DefineQVGeometryMap(uintptr_t textureId, IStrokeForCache&, DRange2dCR range, bool useCellColors, ViewContextR seedContext, bool forAreaPattern = false);
     DGNPLATFORM_EXPORT bool IsOutputQuickVision() const;
     bool ApplyMonochromeOverrides(ViewFlagsCR) const;
 }; // IViewDraw
