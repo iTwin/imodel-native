@@ -816,33 +816,6 @@ TEST (DateTimeTests, FromStringWCharCPTests)
     }
 
 //---------------------------------------------------------------------------------------
-// @betest                                      Krischan.Eberle                    02/13
-//---------------------------------------------------------------------------------------
-TEST (Performance_DateTimeTests, FromString)
-    {
-    bvector<Utf8String> testDates;
-    testDates.push_back ("2012-12-05");
-    testDates.push_back ("2013-12-05T13:11:22");
-    testDates.push_back ("2013-12-05T13:11:22Z");
-    testDates.push_back ("2013-12-05T13:11:22+01:45");
-    testDates.push_back ("2013-01-09T12:30:00.0000000Z");
-
-    const auto repetitionCount = 10000;
-    for (auto const& testDate : testDates)
-        {
-        StopWatch timer (true);
-        for (auto i = 0; i < repetitionCount; i++)
-            {
-            DateTime dt;
-            ASSERT_EQ (SUCCESS, DateTime::FromString (dt, testDate.c_str ()));
-            }
-
-        timer.Stop ();
-        LOG.infov ("DateTime::FromString (\"%hs\"): %.4f msecs [%d repetitions].", testDate.c_str (), timer.GetElapsedSeconds () * 1000.0, repetitionCount);
-        }
-    }
-
-//---------------------------------------------------------------------------------------
 // @betest                                      Krischan.Eberle                    10/12
 //---------------------------------------------------------------------------------------
 TEST (DateTimeTests, GetCurrentTimeTests)
