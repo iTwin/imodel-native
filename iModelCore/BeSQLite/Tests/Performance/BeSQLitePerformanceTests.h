@@ -9,4 +9,5 @@
 //this is just a wrapper header that avoids that all published ATPs have to add the below include.
 
 #include "../NonPublished/PublicAPI/NonPublished/BeSQLite/BeSQLiteTests.h"
+#include "PerformanceTestingFixture.h"
 
