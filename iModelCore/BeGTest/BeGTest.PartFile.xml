@@ -92,6 +92,8 @@
         <ProductDirectory Name="BeStaticLibDir"                     Path="Libs" LibType="static"/>
         <ProductDirectory Name="BeJsonCppStaticLibDir"              Path="Libs"/>
         <ProductDirectory Name="BeJsonCppStaticLibDir"              Path="Libs" LibType="static"/>
+        <ProductDirectory Name="ECObjectsLibs"                      Path="Libs"/>
+        <ProductDirectory Name="ECObjectsLibs"                      Path="Libs" LibType="static"/>
         <ProductDirectory Name="UnitTests-Objects"                  Path="Objects"/>
         <ProductDirectory Name="UnitTests-Objects"                  Path="Objects" LibType="static"/>
         <ProductDirectory Name="UnitTests-Assets"                   Path="Assets"/>
