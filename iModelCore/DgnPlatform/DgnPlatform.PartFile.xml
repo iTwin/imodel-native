@@ -547,6 +547,7 @@
         <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="UnitTests-Performance"        Repository="BeSQLite" PartFile="BeSQLite"/>
         <SubPart PartName="UnitTests-Performance"        Repository="ECDb" PartFile="ECDb"/>
+        <SubPart PartName="UnitTests-Performance"        Repository="Bentley" PartFile="Bentley"/>
         <SubPart PartName="UnitTests-Performance"        Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <!-- Pull in the dgnplatform's db3 file to serve as the "framework" sqlang for testing purposes -->
         <SubPart PartName="DgnPlatformSqlang"            Repository="DgnPlatform" PartFile="DgnPlatform"/>
