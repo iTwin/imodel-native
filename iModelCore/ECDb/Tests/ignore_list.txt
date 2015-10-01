@@ -1,7 +1,6 @@
 #----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
-Performance*            # Performance tests are always excluded from being run during a build.
 InstanceCRUDTests.* 	# No need to run with the build, used by testing after build for verifying CRUD operations.
 
 #----------------------------------------------------------------------------------------
