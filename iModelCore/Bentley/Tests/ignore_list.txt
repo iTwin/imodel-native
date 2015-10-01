@@ -1,7 +1,6 @@
 #----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
-Performance*                            # Performance tests are always excluded from being run during a build.
 BeFileNameTests.BeFileNameUNCPathTest   # Testable UNC path is required to be available globally.
 BeFileNameTests.UNCPrefixedTest         # Testable UNC path is required to be available globally.
 BeFileNameTests.UNCReadOnlyTest         # Testable UNC path is required to be available globally.
