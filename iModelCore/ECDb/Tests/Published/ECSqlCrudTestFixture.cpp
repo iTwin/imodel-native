@@ -151,12 +151,12 @@ struct ECSqlTestExecutor
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECSqlCrudTestFixture::RunTest (ECSqlTestDataset const& dataset, ECSqlCrudAsserterList const& asserters) const
     {
-    Savepoint savepoint (GetTestProject ().GetECDb (), "RunTest", true);
+    Savepoint savepoint (GetECDb (), "RunTest", true);
     ECSqlTestExecutor executor;
 
     for (auto const& testItem : dataset.GetTestItems ())
         {
-        executor.Execute (testItem, asserters, GetTestProject ().GetECDb (), false);
+        executor.Execute (testItem, asserters, GetECDb (), false);
         }
     executor.WaitForAll ();
     //rollback any changes the tests might have made
@@ -168,30 +168,20 @@ void ECSqlCrudTestFixture::RunTest (ECSqlTestDataset const& dataset, ECSqlCrudAs
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-//static
-unique_ptr<ECDbTestProject> ECSqlSelectTestFixture::s_perSessionTestProject = nullptr;
-
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                  09/13
-//+---------------+---------------+---------------+---------------+---------------+------
 //virtual
 void ECSqlSelectTestFixture::SetUp ()
     {
-    SetUp ("ecsqlselecttests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), PerClassRowCount);
+    SetUp ("ecsqlselecttests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams (Db::OpenMode::ReadWrite), PerClassRowCount);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //virtual
-ECDbR ECSqlSelectTestFixture::_SetUp (Utf8CP ecdbFileName, WCharCP schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount)
+ECDbR ECSqlSelectTestFixture::_SetUp (Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount)
     {
-    if (!HasPerSessionProject ())
-        // Create and populate a sample project
-        s_perSessionTestProject = CreateTestProject (ecdbFileName, schemaECXmlFileName, openParams, perClassRowCount);
-
-    return s_perSessionTestProject->GetECDb ();
+    SetupECDb (ecdbFileName, schemaECXmlFileName, openParams, perClassRowCount);
+    return GetECDb();
     }
 
 
@@ -202,26 +192,9 @@ ECDbR ECSqlSelectTestFixture::_SetUp (Utf8CP ecdbFileName, WCharCP schemaECXmlFi
 void ECSqlSelectTestFixture::RunTest (ECSqlTestDataset const& dataset) const
     {
     ECSqlCrudAsserterList asserters;
-    asserters.push_back (unique_ptr<ECSqlCrudAsserter> (new ECSqlSelectStatementCrudAsserter (GetTestProject ())));
+    asserters.push_back (unique_ptr<ECSqlCrudAsserter> (new ECSqlSelectStatementCrudAsserter (GetECDb ())));
 
     RunTest (dataset, asserters);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                  09/13
-//+---------------+---------------+---------------+---------------+---------------+------
-bool ECSqlSelectTestFixture::HasPerSessionProject ()
-    {
-    return s_perSessionTestProject != nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                  09/13
-//+---------------+---------------+---------------+---------------+---------------+------
-//virtual
-ECDbTestProject& ECSqlSelectTestFixture::_GetTestProject() const 
-    {
-    return *s_perSessionTestProject;
     }
 
 
@@ -232,7 +205,7 @@ ECDbTestProject& ECSqlSelectTestFixture::_GetTestProject() const
 //virtual
 void ECSqlNonSelectTestFixture::SetUp ()
     {
-    SetUp ("ecsqlnonselecttests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (ECDb::OpenMode::ReadWrite), PerClassRowCount);
+    SetUp ("ecsqlnonselecttests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams (ECDb::OpenMode::ReadWrite), PerClassRowCount);
     }
 
 //---------------------------------------------------------------------------------------
@@ -242,7 +215,7 @@ void ECSqlNonSelectTestFixture::SetUp ()
 void ECSqlNonSelectTestFixture::RunTest (ECSqlTestDataset const& dataset) const
     {
     ECSqlCrudAsserterList asserters;
-    asserters.push_back (unique_ptr<ECSqlCrudAsserter> (new ECSqlNonSelectStatementCrudAsserter (GetTestProject ())));
+    asserters.push_back (unique_ptr<ECSqlCrudAsserter> (new ECSqlNonSelectStatementCrudAsserter (GetECDb())));
 
     RunTest (dataset, asserters);
     }

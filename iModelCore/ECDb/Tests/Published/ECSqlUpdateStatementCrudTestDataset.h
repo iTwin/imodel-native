@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/ECDB/Published/ECSqlUpdateStatementCrudTestDataset.h $
+|     $Source: Tests/Published/ECSqlUpdateStatementCrudTestDataset.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,10 +26,10 @@ public:
     static ECSqlTestDataset MiscTests (int rowCountPerClass);
     static ECSqlTestDataset ParameterAdvancedTests (int rowCountPerClass);
     static ECSqlTestDataset PolymorphicTests (int rowCountPerClass);
-    static ECSqlTestDataset RelationshipEndTableMappingTests (ECDbTestProject& testProject, int rowCountPerClass);
-    static ECSqlTestDataset RelationshipLinkTableMappingTests (ECDbTestProject& testProject, int rowCountPerClass);
-    static ECSqlTestDataset RelationshipWithAnyClassConstraintTests (ECDbTestProject& testProject, int rowCountPerClass);
-    static ECSqlTestDataset RelationshipWithAdditionalPropsTests (ECDbTestProject& testProject, int rowCountPerClass);
+    static ECSqlTestDataset RelationshipEndTableMappingTests (int rowCountPerClass);
+    static ECSqlTestDataset RelationshipLinkTableMappingTests (int rowCountPerClass);
+    static ECSqlTestDataset RelationshipWithAnyClassConstraintTests (int rowCountPerClass);
+    static ECSqlTestDataset RelationshipWithAdditionalPropsTests (ECDbR, int rowCountPerClass);
     static ECSqlTestDataset StructTests (int rowCountPerClass);
     static ECSqlTestDataset TargetClassTests (int rowCountPerClass);
     };

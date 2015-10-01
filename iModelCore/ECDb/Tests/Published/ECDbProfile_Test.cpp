@@ -32,7 +32,7 @@ TEST(ECDbProfile, CreationTest)
     {
     ECDbTestFixture::Initialize ();
 
-    Utf8String dbPath = ECDbTestProject::BuildECDbPath ("ecdbprofiletest.db");
+    Utf8String dbPath = ECDbTestUtility::BuildECDbPath ("ecdbprofiletest.db");
     WString dbPathW;
     BeStringUtilities::Utf8ToWChar (dbPathW, dbPath.c_str ());
     if (BeFileName::DoesPathExist (dbPathW.c_str ()))
@@ -160,7 +160,7 @@ TEST(ECDbProfile, OpenNonECDbFileTest)
     {
     ECDbTestFixture::Initialize ();
 
-    Utf8String dbPath = ECDbTestProject::BuildECDbPath ("noecdbprofile.db");
+    Utf8String dbPath = ECDbTestUtility::BuildECDbPath ("noecdbprofile.db");
 
         {
         WString dbPathW;

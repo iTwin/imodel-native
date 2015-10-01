@@ -115,7 +115,7 @@ ECClassCR ecClass
     if (!inserter.IsValid())
         return nullptr;
 
-    IECInstancePtr testInstance = ECDbTestProject::CreateArbitraryECInstance(ecClass);
+    IECInstancePtr testInstance = ECDbTestUtility::CreateArbitraryECInstance(ecClass);
 
     auto insertStatus = inserter.Insert(instanceKey, *testInstance);
     if (insertStatus != SUCCESS)

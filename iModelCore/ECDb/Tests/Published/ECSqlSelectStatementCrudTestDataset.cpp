@@ -917,7 +917,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::DateTimeTests (int rowCountPerClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlTestDataset ECSqlSelectTestDataset::ECInstanceIdTests (ECDbTestProject& testProject, int rowCountPerClass)
+ECSqlTestDataset ECSqlSelectTestDataset::ECInstanceIdTests (ECDbCR ecdb, int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
 
@@ -925,7 +925,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::ECInstanceIdTests (ECDbTestProject& tes
 
             {
             ECSqlStatement stmt;
-            if (ECSqlStatus::Success != stmt.Prepare(testProject.GetECDb(), "SELECT ECInstanceId FROM ONLY ecsql.PSA"))
+            if (ECSqlStatus::Success != stmt.Prepare(ecdb, "SELECT ECInstanceId FROM ONLY ecsql.PSA"))
                 return dataset;
 
             while (stmt.Step() == BE_SQLITE_ROW)

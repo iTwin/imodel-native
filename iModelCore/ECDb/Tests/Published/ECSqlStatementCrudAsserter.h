@@ -29,7 +29,7 @@ protected:
     static ECSqlStatus BindIGeometryParameter (ECSqlStatement& statement, int parameterIndex, IGeometryCP geomParameter);
 
 public:
-    explicit ECSqlStatementCrudAsserter (ECDbTestProject& testProject) : ECSqlCrudAsserter(testProject) {}
+    explicit ECSqlStatementCrudAsserter (ECDb& ecdb) : ECSqlCrudAsserter(ecdb) {}
     virtual ~ECSqlStatementCrudAsserter () {}
     };
 
@@ -62,7 +62,7 @@ private:
     static Utf8String DataTypeToString (ECN::ECTypeDescriptor const& dataType);
 
 public:
-    explicit ECSqlSelectStatementCrudAsserter (ECDbTestProject& testProject) : ECSqlStatementCrudAsserter(testProject) {}
+    explicit ECSqlSelectStatementCrudAsserter (ECDb& ecdb) : ECSqlStatementCrudAsserter(ecdb) {}
     ~ECSqlSelectStatementCrudAsserter () {}
     };
 
@@ -81,7 +81,7 @@ private:
     DbResult Step (ECSqlStatement& statement, bool disableBeAsserts) const;
 
 public:
-    explicit ECSqlNonSelectStatementCrudAsserter (ECDbTestProject& testProject) : ECSqlStatementCrudAsserter(testProject) {}
+    explicit ECSqlNonSelectStatementCrudAsserter (ECDb& ecdb) : ECSqlStatementCrudAsserter(ecdb) {}
     ~ECSqlNonSelectStatementCrudAsserter () {}
     };
 

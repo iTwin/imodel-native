@@ -10,7 +10,7 @@
 using namespace BentleyApi::ECN;
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
-struct PerformanceQueryTests : PerformanceTestFixtureBase
+struct PerformanceQueryTests : public ::testing::Test
     {
     private:
         ECDbTestProject m_testProject;

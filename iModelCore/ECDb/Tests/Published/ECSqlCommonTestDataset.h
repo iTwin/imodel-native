@@ -35,17 +35,17 @@ private:
 
 public:
     //Generates test datasets common to all ECSQL types
-    static ECSqlTestDataset WhereAbstractClassTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
-    static ECSqlTestDataset WhereAndOrPrecedenceTests(ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
-    static ECSqlTestDataset WhereBasicsTests(ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
-    static ECSqlTestDataset WhereCommonGeometryTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
-    static ECSqlTestDataset WhereFunctionTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
-    static ECSqlTestDataset WhereMatchTests(ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
-    static ECSqlTestDataset WhereRelationshipEndTableMappingTests(ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
-    static ECSqlTestDataset WhereRelationshipLinkTableMappingTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
-    static ECSqlTestDataset WhereRelationshipWithAnyClassConstraintTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
-    static ECSqlTestDataset WhereRelationshipWithAdditionalPropsTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
-    static ECSqlTestDataset WhereStructTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass);
+    static ECSqlTestDataset WhereAbstractClassTests (ECSqlType ecsqlType, ECDbCR, int rowCountPerClass);
+    static ECSqlTestDataset WhereAndOrPrecedenceTests(ECSqlType ecsqlType, ECDbCR, int rowCountPerClass);
+    static ECSqlTestDataset WhereBasicsTests(ECSqlType ecsqlType, ECDbCR, int rowCountPerClass);
+    static ECSqlTestDataset WhereCommonGeometryTests (ECSqlType ecsqlType, ECDbCR, int rowCountPerClass);
+    static ECSqlTestDataset WhereFunctionTests (ECSqlType ecsqlType, ECDbCR, int rowCountPerClass);
+    static ECSqlTestDataset WhereMatchTests(ECSqlType ecsqlType, ECDbCR, int rowCountPerClass);
+    static ECSqlTestDataset WhereRelationshipEndTableMappingTests(ECSqlType ecsqlType, ECDbR, int rowCountPerClass);
+    static ECSqlTestDataset WhereRelationshipLinkTableMappingTests (ECSqlType ecsqlType, ECDbR, int rowCountPerClass);
+    static ECSqlTestDataset WhereRelationshipWithAnyClassConstraintTests (ECSqlType ecsqlType, ECDbR, int rowCountPerClass);
+    static ECSqlTestDataset WhereRelationshipWithAdditionalPropsTests (ECSqlType ecsqlType, ECDbR, int rowCountPerClass);
+    static ECSqlTestDataset WhereStructTests (ECSqlType ecsqlType, ECDbCR, int rowCountPerClass);
     };
 
 END_ECDBUNITTESTS_NAMESPACE

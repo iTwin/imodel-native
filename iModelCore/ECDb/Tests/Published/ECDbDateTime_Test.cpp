@@ -212,10 +212,10 @@ TEST(ECDbDateTime, InsertDateTimeValues)
     {
     // Create and populate a sample project
     ECDbTestProject testProject;
-    testProject.Create ("ecdbdatetime.ecdb", L"ECSqlTest.01.00.ecschema.xml", false);
+    ECDbCR ecdb = testProject.Create ("ecdbdatetime.ecdb", L"ECSqlTest.01.00.ecschema.xml", false);
 
     Utf8CP const testClassName = "PSADateTime";
-    ECClassP testClass = testProject.GetTestSchemaManager ().GetTestSchema ()->GetClassP (testClassName);
+    ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", testClassName);
 
     bvector<Utf8String> nonArrayPropertyAccessStringList;
     bvector<DateTime> expectedNonArrayDateTimeList;
@@ -249,10 +249,10 @@ TEST(ECDbDateTime, ECSqlStatementGetValueDateTime)
     {
     // Create and populate a sample project
     ECDbTestProject testProject;
-    ECDbR db = testProject.Create ("ecdbdatetime.ecdb", L"ECSqlTest.01.00.ecschema.xml", false);
+    ECDbR ecdb = testProject.Create ("ecdbdatetime.ecdb", L"ECSqlTest.01.00.ecschema.xml", false);
 
     Utf8CP const testClassName = "PSADateTime";
-    ECClassP testClass = testProject.GetTestSchemaManager ().GetTestSchema ()->GetClassP (testClassName);
+    ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", testClassName);
 
     //test set up -> insert test data
     bvector<Utf8String> nonArrayPropertyAccessStringList;
@@ -268,7 +268,7 @@ TEST(ECDbDateTime, ECSqlStatementGetValueDateTime)
 
     Utf8String ecsql = ecsqlBuilder.ToString ();
     ECSqlStatement statement;
-    auto stat = statement.Prepare (db, ecsql.c_str ());
+    auto stat = statement.Prepare (ecdb, ecsql.c_str ());
     ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparing ECSQL '" << ecsql.c_str () << "' failed.";
     statement.BindId (1, ecInstanceKey.GetECInstanceId ());
 
@@ -353,12 +353,12 @@ TEST(ECDbDateTime, DateTimeStorageAccuracyTest)
     {
     // Create and populate a sample project
     ECDbTestProject testProject;
-    ECDbR db = testProject.Create ("ecdbdatetime.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
+    ECDbR ecdb = testProject.Create ("ecdbdatetime.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
 
     Utf8CP const testClassName = "AAA";
     Utf8CP const dateTimePropertyName = "t";
 
-    ECClassCP testClass = testProject.GetTestSchemaManager ().GetTestSchema ()->GetClassP (testClassName);
+    ECClassCP testClass = ecdb.Schemas().GetECClass("StartupCompany", testClassName);
     ASSERT_TRUE (testClass != nullptr);
 
     bvector<ECValue> testDateList;
@@ -373,7 +373,7 @@ TEST(ECDbDateTime, DateTimeStorageAccuracyTest)
     bmap<ECInstanceId, ECValue> testDataset;
     for (ECValueCR testECValue : testDateList)
         {
-        IECInstancePtr testInstance = testProject.CreateECInstance (*testClass);
+        IECInstancePtr testInstance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
         testInstance->SetValue (dateTimePropertyName, testECValue);
         ECInstanceKey instanceKey;
@@ -388,7 +388,7 @@ TEST(ECDbDateTime, DateTimeStorageAccuracyTest)
     ecsqlBuilder.Select (selectClause.c_str ()).From (*testClass, false);
 
     ECSqlStatement statement;
-    auto stat = statement.Prepare (db, ecsqlBuilder.ToString ().c_str ());
+    auto stat = statement.Prepare (ecdb, ecsqlBuilder.ToString ().c_str ());
     ASSERT_EQ(ECSqlStatus::Success, stat);
 
     size_t rowCount = 0;

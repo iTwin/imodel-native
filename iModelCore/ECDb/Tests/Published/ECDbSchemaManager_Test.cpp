@@ -23,7 +23,7 @@ ECSchemaPtr CreateTestSchema ();
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECDbSchemaManager, IncrementalLoading)
     {
-    BeFileName testFilePath (ECDbTestProject::BuildECDbPath ("ecschemamanagertest.ecdb"));
+    BeFileName testFilePath (ECDbTestUtility::BuildECDbPath ("ecschemamanagertest.ecdb"));
     SetupTestECDb (testFilePath);
 
     const int expectedClassCount = CreateTestSchema ()->GetClassCount ();
@@ -104,7 +104,7 @@ TEST (ECDbSchemaManager, IncrementalLoading)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECDbSchemaManager, GetDerivedECClasses)
     {
-    BeFileName testFilePath (ECDbTestProject::BuildECDbPath ("ecschemamanagertest.ecdb"));
+    BeFileName testFilePath (ECDbTestUtility::BuildECDbPath ("ecschemamanagertest.ecdb"));
     SetupTestECDb (testFilePath);
 
     ECDb testFile;
@@ -130,7 +130,7 @@ TEST (ECDbSchemaManager, GetDerivedECClasses)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECDbSchemaManager, GetDerivedECClassesWithoutIncrementalLoading)
     {
-    BeFileName testFilePath (ECDbTestProject::BuildECDbPath ("ecschemamanagertest.ecdb"));
+    BeFileName testFilePath (ECDbTestUtility::BuildECDbPath ("ecschemamanagertest.ecdb"));
     SetupTestECDb (testFilePath);
 
     ECDb testFile;

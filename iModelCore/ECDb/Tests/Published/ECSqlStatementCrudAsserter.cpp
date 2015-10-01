@@ -55,7 +55,7 @@ ECSqlStatus ECSqlStatementCrudAsserter::PrepareStatement (ECSqlStatement& statem
     {
     DisableBeAsserts d (disableBeAsserts);
 
-    return statement.Prepare (GetDgnDb (), ecsql);
+    return statement.Prepare (GetECDb(), ecsql);
     }
 
 //---------------------------------------------------------------------------------------
@@ -335,7 +335,7 @@ void ECSqlSelectStatementCrudAsserter::AssertCurrentCell (ECSqlTestItem const& t
         if (!expectedToSucceed)
             BeTest::SetFailOnAssert (false);
 
-        ECDbIssueListener issueListener(GetTestProject().GetECDb());
+        ECDbIssueListener issueListener(GetECDb());
 
         //do the actual call to IECSqlValue::GetXXX
         getValueCall();
@@ -371,7 +371,7 @@ void ECSqlSelectStatementCrudAsserter::AssertArrayCell (ECSqlTestItem const& tes
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECSqlSelectStatementCrudAsserter::AssertColumnInfo (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& value, ECTypeDescriptor const* parentDataType) const
     {
-    ECDbIssueListener issueListener(GetTestProject().GetECDb());
+    ECDbIssueListener issueListener(GetECDb());
     auto const& columnInfo = value.GetColumnInfo ();
     ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "IECSqlValue::GetColumnInfo unexpectedly caused an error.";
 

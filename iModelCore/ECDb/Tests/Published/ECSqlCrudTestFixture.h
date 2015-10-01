@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/ECDB/Published/ECSqlCrudTestFixture.h $
+|     $Source: Tests/Published/ECSqlCrudTestFixture.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,24 +32,17 @@ struct ECSqlCrudTestFixture : public ECSqlTestFixture
 struct ECSqlSelectTestFixture : public ECSqlCrudTestFixture
     {
 private:
-    static std::unique_ptr<ECDbTestProject> s_perSessionTestProject;
-
-    static bool HasPerSessionProject ();
-
-    virtual ECDbR _SetUp (Utf8CP ecdbFileName, WCharCP schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount) override;
-    virtual ECDbTestProject& _GetTestProject () const override;
+    virtual ECDbR _SetUp (Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount) override;
 
 protected:
     static const int PerClassRowCount = 10;
+
+    ECSqlSelectTestFixture() : ECSqlCrudTestFixture() {}
 
     virtual void RunTest (ECSqlTestDataset const& dataset) const override;
     using ECSqlCrudTestFixture::RunTest;
 
 public:
-    ECSqlSelectTestFixture () 
-        : ECSqlCrudTestFixture ()
-        {}
-
     virtual ~ECSqlSelectTestFixture () {}
 
     virtual void SetUp () override;
@@ -68,10 +61,9 @@ protected:
     virtual void RunTest (ECSqlTestDataset const& dataset) const override;
     using ECSqlCrudTestFixture::RunTest;
 
+    ECSqlNonSelectTestFixture() : ECSqlCrudTestFixture() {}
+
 public:
-    ECSqlNonSelectTestFixture () 
-        : ECSqlCrudTestFixture ()
-        {}
 
     virtual ~ECSqlNonSelectTestFixture () {}
 
