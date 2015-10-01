@@ -100,4 +100,6 @@ $(dgnScriptGen)GeomJsApiBootstrap.cpp : $(dgnScriptGen)GeomJsApi.js $(geomJsApiT
 
 
 $(BuildContext)Delivery/GeomJsApi.d.ts : $(dgnScriptGen)GeomJsApi.d.ts
-    $(LinkFirstDepToFirstTarget)
+    python $(SrcBsiCommon)build/CreateSymLinks.py -d""$@=$<""
+
+#    $(LinkFirstDepToFirstTargetAsDirectory)
