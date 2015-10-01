@@ -306,7 +306,7 @@ TEST(ECDbSchemas, UpdatingExistingECSchema)
 
         for( int i=0; i<3; i++)
             {
-            auto newInst = ECDbTestProject::CreateArbitraryECInstance (*ecClass, PopulatePrimitiveValueWithCustomDataSet2);
+            auto newInst = ECDbTestUtility::CreateArbitraryECInstance (*ecClass, PopulatePrimitiveValueWithCustomDataSet2);
             ECInstanceKey instanceKey;
             auto insertStatus = inserter.Insert (instanceKey, *newInst);
             ASSERT_EQ (SUCCESS, insertStatus);    
@@ -1330,10 +1330,10 @@ TEST (ECDbSchemas, DiegoRelationshipTest)
     ASSERT_TRUE (aGeometricModel != nullptr);
 
 
-    auto  iCivilModel1 = ECDbTestProject::CreateArbitraryECInstance (*aCivilModel);
-    auto  iCivilModel2 = ECDbTestProject::CreateArbitraryECInstance (*aCivilModel);
+    auto  iCivilModel1 = ECDbTestUtility::CreateArbitraryECInstance (*aCivilModel);
+    auto  iCivilModel2 = ECDbTestUtility::CreateArbitraryECInstance (*aCivilModel);
 
-    auto  iGeometricModel = ECDbTestProject::CreateArbitraryECInstance (*aGeometricModel);
+    auto  iGeometricModel = ECDbTestUtility::CreateArbitraryECInstance (*aGeometricModel);
 
     StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*(aCivilModelHasDataSetModel->GetRelationshipClassCP()));
 
@@ -1860,8 +1860,7 @@ TEST(ECDbSchemas, ECDbSchemaManagerAPITest)
     ECDbTestProject saveTestProject;
     saveTestProject.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false); 
 
-    ECSchemaPtr diskSchema = saveTestProject.GetTestSchemaManager ().GetTestSchema ();
-    
+    ECSchemaPtr diskSchema = ECDbTestUtility::ReadECSchemaFromDisk(L"StartupCompany.02.00.ecschema.xml");
     // Reopen the test project
     ECDb db;
     DbResult stat = db.OpenBeSQLiteDb (saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly));

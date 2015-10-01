@@ -54,7 +54,7 @@ TEST_F (Performance_BisDesign_MasterTableAndDomainTablesScenario_TestFixture, Te
 TEST (Performance_BisDesign, InsertPerformanceAndNumberOfIndicesTest)
     {
     ECDbTestFixture::Initialize ();
-    BeFileName dbPath (ECDbTestProject::BuildECDbPath ("performance_bisdesign_insertperformance_and_indexcount.db"));
+    BeFileName dbPath (ECDbTestUtility::BuildECDbPath ("performance_bisdesign_insertperformance_and_indexcount.db"));
 
     
     const int tableCount = 50;

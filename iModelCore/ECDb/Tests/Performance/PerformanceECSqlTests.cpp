@@ -31,18 +31,18 @@ struct PerformanceECSqlTestFixture : public ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceECSqlTestFixture, WhereClauseWithPrimaryKey)
     {
-/*    int instanceCount = 100000;
+    const int instanceCount = 100000;
 
     {
-    ECDbR ecdb = SetupTestProject("ecsqlperformance.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OpenMode::ReadWrite), 0).GetECDb();
-
+    SetupECDb("ecsqlperformance.ecdb", BeFileName("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), instanceCount);
+    
     }
 
     TestItem testItem("UPDATE ecsql.TH3 SET S='S', S1='S1', S2='S2', S3='S3' WHERE ECInstanceId=?");
 
-    for (int )
+    //for (int )
 
-    */
+    
     }
 
 END_ECDBUNITTESTS_NAMESPACE

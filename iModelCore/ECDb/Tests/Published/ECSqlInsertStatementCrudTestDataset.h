@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/ECDB/Published/ECSqlInsertStatementCrudTestDataset.h $
+|     $Source: Tests/Published/ECSqlInsertStatementCrudTestDataset.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,13 +27,13 @@ public:
     static ECSqlTestDataset DateTimeTests ();
     static ECSqlTestDataset FunctionTests ();
     static ECSqlTestDataset IntoTests ();
-    static ECSqlTestDataset MiscTests (ECDbTestProject& testProject);
+    static ECSqlTestDataset MiscTests (ECDbR);
     static ECSqlTestDataset ParameterAdvancedTests ();
-    static ECSqlTestDataset RelationshipEndTableMappingTests (ECDbTestProject& testProject);
-    static ECSqlTestDataset RelationshipLinkTableMappingTests (ECDbTestProject& testProject);
-    static ECSqlTestDataset RelationshipWithAnyClassConstraintTests (ECDbTestProject& testProject);
-    static ECSqlTestDataset RelationshipWithAdditionalPropsTests (ECDbTestProject& testProject);
-    static ECSqlTestDataset RelationshipWithParametersTests (ECDbTestProject& testProject);
+    static ECSqlTestDataset RelationshipEndTableMappingTests (ECDbR);
+    static ECSqlTestDataset RelationshipLinkTableMappingTests (ECDbCR);
+    static ECSqlTestDataset RelationshipWithAnyClassConstraintTests (ECDbR);
+    static ECSqlTestDataset RelationshipWithAdditionalPropsTests (ECDbCR);
+    static ECSqlTestDataset RelationshipWithParametersTests (ECDbR);
     static ECSqlTestDataset StructTests ();
     };
 

@@ -99,9 +99,8 @@ TEST(ECDbInstances, ReadPolymorphic)
      * Test retrieval when parent and children are all in the same table (TablePerHierarchy)
      * Number of instances of Furniture and children = 9 (Furniture =3, Chair = 3, Desk = 3)
      */
-    ECSchemaPtr schema = saveTestProject.GetTestSchemaManager ().GetTestSchema ();
     size_t count;
-    ECClassP furniture = schema->GetClassP ("Furniture");
+    ECClassCP furniture = db.Schemas().GetECClass("StartupCompany", "Furniture");
     ASSERT_TRUE (furniture != nullptr);
     count = CountInstancesOfClass (db, *furniture, false);
     ASSERT_EQ (3, count);
@@ -112,7 +111,7 @@ TEST(ECDbInstances, ReadPolymorphic)
      * Test retrieval when parent and childrenare all in different tables (TablePerClass)
      * Number of instances of Hardware and children = 9 (Hardware = 3, Computer = 3, Monitor = 3)
      */
-    ECClassP hardware = schema->GetClassP ("Hardware");
+    ECClassCP hardware = db.Schemas().GetECClass("StartupCompany", "Hardware");
     ASSERT_TRUE (hardware != nullptr);
     count = CountInstancesOfClass (db, *hardware, false);
     ASSERT_EQ (3, count);
@@ -184,7 +183,7 @@ TEST(ECDbInstances, OrderBy)
     ECDbR db = testProject.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
 
     // Add some employees
-    ECClassCP employeeClass = testProject.GetTestSchemaManager().GetTestSchema()->GetClassP ("Employee");
+    ECClassCP employeeClass = db.Schemas().GetECClass("StartupCompany", "Employee");
     IECInstancePtr employee;
     employee = CreatePerson (*employeeClass, "Leonardo", "Da Vinci");
     InsertInstance (db, *employeeClass, *employee);
@@ -240,7 +239,7 @@ TEST(ECDbInstances, LimitOffset)
     ECDbR db = testProject.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
 
     // Populate 100 instances
-    ECClassCP ecClass = testProject.GetTestSchemaManager().GetTestSchema()->GetClassP ("ClassWithPrimitiveProperties");
+    ECClassCP ecClass = db.Schemas().GetECClass("StartupCompany", "ClassWithPrimitiveProperties");
     IECInstancePtr ecInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
     ECInstanceInserter inserter (db, *ecClass);
     ASSERT_TRUE (inserter.IsValid ());

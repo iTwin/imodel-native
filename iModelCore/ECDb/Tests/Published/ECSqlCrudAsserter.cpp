@@ -49,22 +49,6 @@ void ECSqlCrudAsserter::LogECSqlSupport (ECSqlTestItem const& testItem) const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  04/13
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8CP ECSqlCrudAsserter::GetTargetOperationName () const
-    {
-    return _GetTargetOperationName ();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  04/13
-//+---------------+---------------+---------------+---------------+---------------+------
-ECDbR ECSqlCrudAsserter::GetDgnDb () const
-    {
-    return m_testProject.GetECDb ();
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  03/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static

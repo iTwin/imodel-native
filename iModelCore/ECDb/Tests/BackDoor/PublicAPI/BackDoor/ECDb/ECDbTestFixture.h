@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECDbTestProject.h"
+#include "ECDbTests.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 //=======================================================================================    
@@ -13,31 +13,31 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //=======================================================================================    
 struct ECDbTestFixture : public ::testing::Test
     {
-    private:
-        std::unique_ptr<ECDbTestProject> m_testProject;
-        static bmap<std::pair<WCharCP, int>, Utf8String> s_seedDbs;
+private:
+    mutable ECDb m_ecdb;
+    static bmap<std::pair<WCharCP, int>, Utf8String> s_seedECDbs;
 
-        static bool s_isInitialized;
+    static bool s_isInitialized;
 
-        virtual ECDbTestProject& _GetTestProject() const { return *m_testProject; }
+    virtual ECDb& _GetECDb() const { return m_ecdb; }
 
-    protected:
-        ECDbTestProject& GetTestProject () const;
+protected:
+    ECDb& GetECDb() const { return _GetECDb(); }
  
-        ECDbTestProject& SetupTestProject(Utf8CP ecdbFileName, WCharCP schemaECXmlFileName, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite), int perClassRowCount = 0);
+    void SetupECDb(Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite), int perClassRowCount = 0);
 
-        static std::unique_ptr<ECDbTestProject> CreateTestProject(Utf8CP ecdbFileName, WCharCP schemaECXmlFileName, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite), int perClassRowCount = 0);
+    static DbResult CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite), int perClassRowCount = 0);
 
-    public:
-        ECDbTestFixture ();
-        virtual ~ECDbTestFixture () {};
-        virtual void SetUp () override {}
-        virtual void TearDown () override {}
+public:
+    ECDbTestFixture () {}
+    virtual ~ECDbTestFixture () {};
+    virtual void SetUp () override {}
+    virtual void TearDown () override {}
 
-        //! Initializes the test environment by setting up the schema read context and search dirs etc.
-        //! Gets implicitly called when calling CreateTestProject, too. Tests that don't use
-        //! that method can call this method statically.
-        static void Initialize();
+    //! Initializes the test environment by setting up the schema read context and search dirs etc.
+    //! Gets implicitly called when calling CreateTestProject, too. Tests that don't use
+    //! that method can call this method statically.
+    static void Initialize();
      };
 
 END_ECDBUNITTESTS_NAMESPACE

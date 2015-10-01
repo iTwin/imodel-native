@@ -16,8 +16,8 @@
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp" />
     <ClCompile Include="BackDoor\ECDbTestFixture.cpp" />
-    <ClCompile Include="BackDoor\ECDbTestLogger.cpp" />
     <ClCompile Include="BackDoor\ECDbTestProject.cpp" />
+    <ClCompile Include="BackDoor\ECDbTests.cpp" />
     <ClCompile Include="Performance\DevSummitPerformanceTests.cpp" />
     <ClCompile Include="Performance\PerformanceBisDesignStudies_Test.cpp" />
     <ClCompile Include="Performance\PerformanceBisDesignTestFixture.cpp" />
@@ -40,7 +40,6 @@
     <ClCompile Include="Published\ECDbSchemas_Test.cpp" />
     <ClCompile Include="Published\ECDbSql_Test.cpp" />
     <ClCompile Include="Published\ECDb_Tests.cpp" />
-    <ClCompile Include="Published\ECInstanceAdaptersTestFixture.cpp" />
     <ClCompile Include="Published\ECInstanceECSqlSelectAdpaterTests.cpp" />
     <ClCompile Include="Published\ECInstanceIdSequence_Tests.cpp" />
     <ClCompile Include="Published\ECInstanceInserterTests.cpp" />
@@ -82,7 +81,6 @@
     <ClInclude Include="Performance\ProfileBreak.h" />
     <ClInclude Include="Published\ECDbPublishedTests.h" />
     <ClCompile Include="Published\ECDbDateTime_Test.cpp" />
-    <ClInclude Include="Published\ECInstanceAdaptersTestFixture.h" />
     <ClInclude Include="Published\ECSqlCrudAsserter.h" />
     <ClInclude Include="Published\ECSqlDeleteStatementCrudTestDataset.h" />
     <ClInclude Include="Published\ECSqlExpectedResultImpls.h" />

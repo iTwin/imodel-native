@@ -330,25 +330,27 @@ BentleyStatus SetupInsertECInstanceWithNullValues
 ECInstanceKey& instanceKey,
 ECValueP nonNullValue,
 ECClassCP& testClass,
-ECDbTestProject& testProject, 
+ECDbCR ecdb,
+Utf8CP testSchemaName,
 Utf8CP testClassName,
 Utf8CP nonNullPropertyName
 )
     {
-    ECClassP testClassP = testProject.GetTestSchemaManager ().GetTestSchema ()->GetClassP (testClassName);
-    if (testClassP == nullptr)
+    testClass = ecdb.Schemas().GetECClass (testSchemaName, testClassName);
+    if (testClass == nullptr)
         return ERROR;
 
-    testClass = testClassP;
-
-    ECInstanceInserter inserter (testProject.GetECDb (), *testClass);
+    ECInstanceInserter inserter (ecdb, *testClass);
     if (!inserter.IsValid ())
         return ERROR;
 
     // Create a new instance with only one prop value being populated (to avoid the special
     // case of a fully empty instance - which might need extra treatment)
-    IECInstancePtr testInstance = testProject.CreateECInstance (*testClass);
-    testProject.AssignRandomValueToECInstance (nonNullValue, testInstance, nonNullPropertyName);
+    StandaloneECEnablerP instanceEnabler = testClass->GetDefaultStandaloneEnabler();
+    IECInstancePtr testInstance = instanceEnabler->CreateInstance();
+    EXPECT_TRUE(testInstance != nullptr);
+
+    ECDbTestUtility::AssignRandomValueToECInstance (nonNullValue, testInstance, nonNullPropertyName);
 
     auto stat = inserter.Insert (instanceKey, *testInstance);
     BeAssert (stat == SUCCESS);
@@ -369,7 +371,7 @@ TEST(ECDbInstances, InsertECInstancesWithNullValues)
 
     ECInstanceKey instanceKey;
     ECClassCP testClass = nullptr;
-    BentleyStatus setupState = SetupInsertECInstanceWithNullValues (instanceKey, nullptr, testClass, testProject, testClassName, nonNullPropertyName);
+    BentleyStatus setupState = SetupInsertECInstanceWithNullValues (instanceKey, nullptr, testClass, db, "ECSqlTest", testClassName, nonNullPropertyName);
     ASSERT_EQ (SUCCESS, setupState);
 
     Utf8String ecsql ("SELECT * FROM ");
@@ -418,7 +420,7 @@ TEST(ECDbInstances, ECInstanceAdapterGetECInstanceWithNullValues)
 
     ECInstanceKey instanceKey;
     ECClassCP testClass = nullptr;
-    BentleyStatus setupState = SetupInsertECInstanceWithNullValues (instanceKey, nullptr, testClass, testProject, testClassName, nonNullPropertyName);
+    BentleyStatus setupState = SetupInsertECInstanceWithNullValues (instanceKey, nullptr, testClass, db, "ECSqlTest", testClassName, nonNullPropertyName);
     ASSERT_EQ (SUCCESS, setupState);
 
     Utf8String ecsql ("SELECT * FROM ");
@@ -479,7 +481,7 @@ TEST(ECDbInstances, ImportSchemaThenInsertInstances)
 
     ECClassP building = ecSchema->GetClassP("Building");
 
-    auto newInst = ECDbTestProject::CreateArbitraryECInstance (*building, PopulatePrimitiveValueWithCustomDataSet);
+    auto newInst = ECDbTestUtility::CreateArbitraryECInstance (*building, PopulatePrimitiveValueWithCustomDataSet);
     ECInstanceInserter inserter (db, *building);
     ECInstanceKey instanceKey;
     auto insertStatus = inserter.Insert (instanceKey, *newInst);
@@ -827,7 +829,7 @@ TEST(ECDbInstances, UpdateECInstances)
             }
 
         // Create a new instance with new custom data;
-        IECInstancePtr updateInst = test.CreateArbitraryECInstance (importedInstance->GetClass(), PopulatePrimitiveValueWithCustomDataSet);
+        IECInstancePtr updateInst = ECDbTestUtility::CreateArbitraryECInstance (importedInstance->GetClass(), PopulatePrimitiveValueWithCustomDataSet);
 
         // Set instance id we need this for update operation
         updateInst->SetInstanceId (importedInstance->GetInstanceId().c_str());
@@ -960,18 +962,15 @@ TEST(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
     auto& ecdb = testProject.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
 
     bvector<IECInstancePtr> instances;
-    ASSERT_EQ(SUCCESS, testProject.GetInstances(instances, "Foo"));
+    ASSERT_EQ(SUCCESS, testProject.GetInstances(instances, "StartupCompany", "Foo"));
 
     IECInstancePtr sourceInstance = instances[0];
 
-    ASSERT_EQ(SUCCESS, testProject.GetInstances(instances, "Bar"));
+    ASSERT_EQ(SUCCESS, testProject.GetInstances(instances, "StartupCompany", "Bar"));
 
     IECInstancePtr targetInstance = instances[0];
 
-    ECSchemaPtr schema = testProject.GetTestSchemaManager().GetTestSchema();
-    ASSERT_TRUE(schema != nullptr) << "ECDbTestSchemaManager::GetTestSchema returned null";
-
-    ECRelationshipClassCP relClass = schema->GetClassP("Foo_has_Bars")->GetRelationshipClassCP();
+    ECRelationshipClassCP relClass = ecdb.Schemas().GetECClass("StartupCompany", "Foo_has_Bars")->GetRelationshipClassCP();
     ASSERT_TRUE(relClass != nullptr) << "Could not find relationship class Foo_has_Bars in test schema";
 
     StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClass);
@@ -1006,7 +1005,7 @@ TEST(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
     ecStatement.Reset();
 
     rows = 0;
-    ECClassCP ecClass = schema->GetClassP ("Bar");
+    ECClassCP ecClass = ecdb.Schemas().GetECClass("StartupCompany", "Bar");
     ASSERT_TRUE (ecClass != nullptr) << "ECDbTestSchemaManager::GetClassP returned null";
     while (ecStatement.Step() == BE_SQLITE_ROW)
         {
@@ -1142,12 +1141,12 @@ TEST (ECDbInstances, DeleteWithRelationshipBetweenStructs)
 
     ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false, false)));
 
-    auto struct1Inst = ECDbTestProject::CreateArbitraryECInstance(*struct1, ECDbTestProject::PopulatePrimitiveValueWithRandomValues);
+    auto struct1Inst = ECDbTestUtility::CreateArbitraryECInstance(*struct1, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
     ECInstanceInserter inserter1 (ecdb, *struct1);
     ASSERT_TRUE (inserter1.IsValid ());
     auto insertStatus = inserter1.Insert (*struct1Inst);
 
-    auto struct2Inst = ECDbTestProject::CreateArbitraryECInstance(*struct2, ECDbTestProject::PopulatePrimitiveValueWithRandomValues);
+    auto struct2Inst = ECDbTestUtility::CreateArbitraryECInstance(*struct2, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
     ECInstanceInserter inserter2 (ecdb, *struct2);
     ASSERT_TRUE (inserter2.IsValid ());
     insertStatus = inserter2.Insert (*struct2Inst);
@@ -1191,7 +1190,7 @@ TEST(ECDbInstances, AdapterCheckClassBeforeOperation)
     ECClassCP project = db.Schemas().GetECClass("StartupCompany", "Project");
     ASSERT_TRUE (project != nullptr);
     IECInstancePtr instance;
-    instance = ECDbTestProject::CreateArbitraryECInstance(*project, ECDbTestProject::PopulatePrimitiveValueWithRandomValues);
+    instance = ECDbTestUtility::CreateArbitraryECInstance(*project, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
 
     //ECInstance Adapters
     ECInstanceInserter inserter(db, *employee);
@@ -1255,7 +1254,7 @@ TEST(ECDbInstances, DomainCustomAttributeStructCombinations)
     ECClassCP allTrue = db.Schemas().GetECClass("TryClassCombinations", "S_T_CA_T_D_T");
     ASSERT_TRUE (allTrue != nullptr);
     IECInstancePtr instance;
-    instance = ECDbTestProject::CreateArbitraryECInstance(*allTrue, ECDbTestProject::PopulatePrimitiveValueWithRandomValues);
+    instance = ECDbTestUtility::CreateArbitraryECInstance(*allTrue, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
     ECInstanceInserter inserter(db, *allTrue);
     ECInstanceKey instanceKey;
     auto sms = inserter.Insert(instanceKey, *instance);
@@ -1263,14 +1262,14 @@ TEST(ECDbInstances, DomainCustomAttributeStructCombinations)
 
     ECClassCP Test1 = db.Schemas().GetECClass("TryClassCombinations", "S_T_CA_F_D_T");
     ASSERT_TRUE (Test1 != nullptr);
-    instance = ECDbTestProject::CreateArbitraryECInstance (*Test1, ECDbTestProject::PopulatePrimitiveValueWithRandomValues);
+    instance = ECDbTestUtility::CreateArbitraryECInstance (*Test1, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
     ECInstanceInserter inserter2(db, *Test1);
     sms = inserter2.Insert(instanceKey, *instance);
     EXPECT_EQ(SUCCESS, sms);
 
     ECClassCP Test2 = db.Schemas().GetECClass("TryClassCombinations", "S_F_CA_T_D_T");
     ASSERT_TRUE (Test2 != nullptr);
-    instance = ECDbTestProject::CreateArbitraryECInstance (*Test2, ECDbTestProject::PopulatePrimitiveValueWithRandomValues);
+    instance = ECDbTestUtility::CreateArbitraryECInstance (*Test2, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
     ECInstanceInserter inserter3(db, *Test2);
     sms = inserter3.Insert(instanceKey, *instance);
     EXPECT_EQ(SUCCESS, sms);

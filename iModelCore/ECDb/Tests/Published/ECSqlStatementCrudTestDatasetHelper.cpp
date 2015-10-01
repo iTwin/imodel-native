@@ -86,10 +86,10 @@ ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddStepFailingNonSelect (ECS
 // @bsimethod                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECInstanceId ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ECDbTestProject& testProject, Utf8CP ecsql)
+ECInstanceId ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ECDbCR ecdb, Utf8CP ecsql)
     {
     ECSqlStatement stmt;
-    auto stat = stmt.Prepare (testProject.GetECDbCR(), ecsql);
+    auto stat = stmt.Prepare (ecdb, ecsql);
     if (stat != ECSqlStatus::Success)
         {
         EXPECT_EQ(ECSqlStatus::Success, stat) << "Inserting test instance with '" << ecsql << "' failed. Preparation failed";
@@ -105,20 +105,6 @@ ECInstanceId ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ECDbTestPr
         }
     else
         return newECInstanceKey.GetECInstanceId ();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  12/13
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECN::ECClassId ECSqlStatementCrudTestDatasetHelper::GetClassId (ECDbTestSchemaManager const& schemaManager, Utf8CP schemaName, Utf8CP className)
-    {
-    auto ecClass = schemaManager.GetClass (schemaName, className);
-    EXPECT_TRUE (ecClass != nullptr);
-    if (ecClass == nullptr)
-        return -1LL;
-
-    return ecClass->GetId ();
     }
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -6,12 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-#include "ECInstanceAdaptersTestFixture.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
-struct ECInstanceInserterTests : ECInstanceAdaptersTestFixture
+struct ECInstanceInserterTests : ECDbTestFixture
     {
     protected:
         void InsertInstances(Utf8CP className, Utf8CP schemaName, int numberOfInstances, bool populateAllProperties);
@@ -20,17 +19,18 @@ struct ECInstanceInserterTests : ECInstanceAdaptersTestFixture
 
 void ECInstanceInserterTests::InsertInstances(Utf8CP className, Utf8CP schemaName, int numberOfInstances, bool populateAllProperties)
     {
-    SetTestProject(CreateTestProject("insertInstances.ecdb", L"KitchenSink.01.00.ecschema.xml"));
-    ECDbR db = GetTestProject().GetECDb();
-    ECClassCP testClass = db.Schemas().GetECClass (schemaName, className);
+    ECDb ecdb;
+    CreateECDb(ecdb, "insertInstances.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml"));
+
+    ECClassCP testClass = ecdb.Schemas().GetECClass (schemaName, className);
     
-    ECInstanceInserter inserter(db, *testClass);
+    ECInstanceInserter inserter(ecdb, *testClass);
     bvector<IECInstancePtr> instances;
     for (int i = 0; i < numberOfInstances; i++)
         {
         IECInstancePtr instance;
         if (populateAllProperties)
-            instance = ECDbTestProject::CreateArbitraryECInstance (*testClass, ECDbTestProject::PopulatePrimitiveValueWithRandomValues);
+            instance = ECDbTestUtility::CreateArbitraryECInstance (*testClass, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
         else
             instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
 
@@ -42,7 +42,7 @@ void ECInstanceInserterTests::InsertInstances(Utf8CP className, Utf8CP schemaNam
     ECSqlStatement countStatement;
     Utf8String ecSql;
     ecSql.Sprintf("SELECT count(*) FROM ONLY [%s].[%s]", schemaName, className);
-    countStatement.Prepare(db, ecSql.c_str());
+    countStatement.Prepare(ecdb, ecSql.c_str());
     DbResult result;
 
     int total = 0;
@@ -52,7 +52,7 @@ void ECInstanceInserterTests::InsertInstances(Utf8CP className, Utf8CP schemaNam
 
     ecSql.Sprintf("SELECT c0.[ECInstanceId], c0.GetECClassId() as ECClassId , * FROM [%s].[%s] c0", schemaName, className);
     ECSqlStatement queryStatement;
-    queryStatement.Prepare(db, ecSql.c_str());
+    queryStatement.Prepare(ecdb, ecSql.c_str());
     int i = 0;
     bool areEqual;
     ECInstanceECSqlSelectAdapter dataAdapter (queryStatement);
@@ -70,26 +70,26 @@ extern IECRelationshipInstancePtr CreateRelationship (ECRelationshipClassCR rela
 
 void ECInstanceInserterTests::InsertRelationshipInstances(Utf8CP relationshipClassName, Utf8CP sourceClassName, Utf8CP targetClassName, Utf8CP schemaName, int numberOfSourceInstances, int numberOfTargetInstancesPerSource)
     {
-    SetTestProject(CreateTestProject("insertInstances.ecdb", L"KitchenSink.01.00.ecschema.xml"));
-    ECDbR db = GetTestProject().GetECDb();
+    ECDb ecdb;
+    CreateECDb(ecdb, "insertInstances.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml"));
 
-    ECClassCP sourceClass = db.Schemas().GetECClass (schemaName, sourceClassName);
-    ECClassCP targetClass = db.Schemas().GetECClass (schemaName, targetClassName);
+    ECClassCP sourceClass = ecdb.Schemas().GetECClass (schemaName, sourceClassName);
+    ECClassCP targetClass = ecdb.Schemas().GetECClass (schemaName, targetClassName);
 
-    ECClassCP tempClass = db. Schemas ().GetECClass (schemaName, relationshipClassName);
+    ECClassCP tempClass = ecdb.Schemas ().GetECClass (schemaName, relationshipClassName);
     ECRelationshipClassCP relationshipClass = tempClass->GetRelationshipClassCP ();
 
-    ECInstanceInserter sourceInserter(db, *sourceClass);
-    ECInstanceInserter targetInserter(db, *targetClass);
-    ECInstanceInserter relationshipInserter(db, *relationshipClass);
+    ECInstanceInserter sourceInserter(ecdb, *sourceClass);
+    ECInstanceInserter targetInserter(ecdb, *targetClass);
+    ECInstanceInserter relationshipInserter(ecdb, *relationshipClass);
 
     for (int sourceIndex = 0; sourceIndex < numberOfSourceInstances; sourceIndex++)
         {
-        IECInstancePtr sourceInstance = ECDbTestProject::CreateArbitraryECInstance (*sourceClass, ECDbTestProject::PopulatePrimitiveValueWithRandomValues);
+        IECInstancePtr sourceInstance = ECDbTestUtility::CreateArbitraryECInstance (*sourceClass, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
         ASSERT_EQ(SUCCESS, sourceInserter.Insert(*sourceInstance));
         for (int targetIndex = 0; targetIndex < numberOfTargetInstancesPerSource; targetIndex++)
             {
-            IECInstancePtr targetInstance = ECDbTestProject::CreateArbitraryECInstance (*targetClass, ECDbTestProject::PopulatePrimitiveValueWithRandomValues);
+            IECInstancePtr targetInstance = ECDbTestUtility::CreateArbitraryECInstance (*targetClass, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
             ECInstanceKey relationshipId;
             ASSERT_EQ(SUCCESS, targetInserter.Insert(*targetInstance));
 
@@ -149,9 +149,10 @@ TEST_F(ECInstanceInserterTests, InsertSingleInstanceOfComplexClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECInstanceInserterTests, InsertSingleRuleInstance)
     {
-    SetTestProject(CreateTestProject("insertRulesInstances.ecdb", L"ECRules.01.00.ecschema.xml"));
-    ECDbR db = GetTestProject().GetECDb();
-    ECSchemaCP rulesECSchema = db. Schemas ().GetECSchema ("ECRules");
+    ECDb ecdb;
+    CreateECDb(ecdb, "insertRulesInstances.ecdb", BeFileName(L"ECRules.01.00.ecschema.xml"));
+
+    ECSchemaCP rulesECSchema = ecdb.Schemas ().GetECSchema ("ECRules");
     ASSERT_TRUE (rulesECSchema != nullptr);
 
     ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (*rulesECSchema);
@@ -168,16 +169,16 @@ TEST_F (ECInstanceInserterTests, InsertSingleRuleInstance)
     ASSERT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
     WString orignalXml, afterXml;
     testInstance->WriteToXmlString (orignalXml, false, false);
-    ECInstanceInserter inserter(db, testInstance->GetClass());
+    ECInstanceInserter inserter(ecdb, testInstance->GetClass());
     auto status = inserter.Insert (*testInstance);
     ASSERT_EQ(SUCCESS, status);
 
     Utf8CP ecsql = "SELECT GetECClassId() as ECClassId, * FROM ECRules.RuleSet";
     ECSqlStatement queryStatement;
-    ASSERT_EQ(ECSqlStatus::Success, queryStatement.Prepare(db, ecsql));
+    ASSERT_EQ(ECSqlStatus::Success, queryStatement.Prepare(ecdb, ecsql));
     ECInstanceECSqlSelectAdapter dataAdapter (queryStatement);
     DbResult result;
-    db.SaveChanges ();
+    ecdb.SaveChanges ();
     while ((result = queryStatement.Step()) == BE_SQLITE_ROW)
         {
         IECInstancePtr actual = dataAdapter.GetInstance ();
@@ -193,10 +194,10 @@ TEST_F (ECInstanceInserterTests, InsertSingleRuleInstance)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
     {
-    SetTestProject (CreateTestProject ("insertwithuserprovidedecinstanceid.ecdb", L"ECSqlTest.01.00.ecschema.xml"));
-    ECDbR ecdb = GetTestProject ().GetECDb ();
+    ECDb ecdb;
+    CreateECDb(ecdb, "insertwithuserprovidedecinstanceid.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
-    ECClassCP testClass = ecdb. Schemas ().GetECClass ("ECSqlTest", "P");
+    ECClassCP testClass = ecdb.Schemas ().GetECClass ("ECSqlTest", "P");
     ASSERT_TRUE (testClass != nullptr);
 
     ECInstanceInserter inserter (ecdb, *testClass);
@@ -310,12 +311,12 @@ void AssertCurrentTimeStamp (ECDbR ecdb, ECInstanceId const& id, bool expectedIs
     }
 
 //---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                  01/15
+// @bsiclass                                     Muhammad.Zaighum                  01/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
     {
-    SetTestProject (CreateTestProject ("insertwithcurrenttimestamptrigger.ecdb", L"ECSqlTest.01.00.ecschema.xml"));
-    ECDbR ecdb = GetTestProject ().GetECDb ();
+    ECDb ecdb;
+    CreateECDb(ecdb, "insertwithcurrenttimestamptrigger.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
     auto testClass = ecdb.Schemas ().GetECClass ("ECSqlTest", "ClassWithLastModProp");
     ASSERT_TRUE (testClass != nullptr);
 

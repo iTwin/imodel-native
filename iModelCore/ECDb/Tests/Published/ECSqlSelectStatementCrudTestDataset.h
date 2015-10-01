@@ -25,7 +25,7 @@ public:
     static ECSqlTestDataset CastTests (int rowCountPerClass);
     static ECSqlTestDataset CommonGeometryTests (int rowCountPerClass);
     static ECSqlTestDataset DateTimeTests (int rowCountPerClass);
-    static ECSqlTestDataset ECInstanceIdTests (ECDbTestProject& testProject, int rowCountPerClass);
+    static ECSqlTestDataset ECInstanceIdTests (ECDbCR, int rowCountPerClass);
     static ECSqlTestDataset FromTests (int rowCountPerClass);
     static ECSqlTestDataset FunctionTests (int rowCountPerClass);
     static ECSqlTestDataset GroupByTests (int rowCountPerClass);

@@ -6,26 +6,25 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-#include "ECInstanceAdaptersTestFixture.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-struct ECInstanceUpdaterTests : ECInstanceAdaptersTestFixture
+struct ECInstanceUpdaterTests : ECDbTestFixture
     {
     protected:
         void UpdateInstances(Utf8CP className, Utf8CP schemaName, int numberOfInstances, bool populateAllProperties)
             {
-            SetTestProject(CreateTestProject("updateInstances.ecdb", L"KitchenSink.01.00.ecschema.xml"));
-            ECDbR db = GetTestProject().GetECDb();
-            ECClassCP testClass = db.Schemas().GetECClass (schemaName, className);
+            ECDb ecdb;
+            CreateECDb(ecdb, "updateInstances.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml"));
+            ECClassCP testClass = ecdb.Schemas().GetECClass(schemaName, className);
 
-            ECInstanceInserter inserter(db, *testClass);
+            ECInstanceInserter inserter(ecdb, *testClass);
             ECInstanceUpdater* updater = nullptr;
             for (int i = 0; i < numberOfInstances; i++)
                 {
-                IECInstancePtr instance = ECDbTestProject::CreateArbitraryECInstance(*testClass, ECDbTestProject::PopulatePrimitiveValueWithRandomValues);
+                IECInstancePtr instance = ECDbTestUtility::CreateArbitraryECInstance(*testClass, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
                     
                 auto status = inserter.Insert (*instance);
                 ASSERT_EQ(SUCCESS, status);
@@ -34,7 +33,7 @@ struct ECInstanceUpdaterTests : ECInstanceAdaptersTestFixture
                 if (populateAllProperties)
                     {
                     updatedInstance = instance->CreateCopyThroughSerialization();
-                    ECDbTestProject::PopulateECInstance(updatedInstance, ECDbTestProject::PopulatePrimitiveValueWithRandomValues);
+                    ECDbTestUtility::PopulateECInstance(updatedInstance, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
                     }
                 else
                     {
@@ -51,9 +50,9 @@ struct ECInstanceUpdaterTests : ECInstanceAdaptersTestFixture
                 if (nullptr == updater)
                     {
                     if (populateAllProperties)
-                        updater = new ECInstanceUpdater(db, *testClass);
+                        updater = new ECInstanceUpdater(ecdb, *testClass);
                     else
-                        updater = new ECInstanceUpdater(db, *updatedInstance);
+                        updater = new ECInstanceUpdater(ecdb, *updatedInstance);
                     }
 
                 if (testClass->GetPropertyCount() == 0)
@@ -69,7 +68,7 @@ struct ECInstanceUpdaterTests : ECInstanceAdaptersTestFixture
 
                 SqlPrintfString ecSql ("SELECT c0.[ECInstanceId], c0.GetECClassId() as ECClassId, * FROM %s.%s c0 WHERE ECInstanceId=%s", Utf8String(schemaName).c_str(), Utf8String(className).c_str(), Utf8String(instance->GetInstanceId()).c_str());
                 ECSqlStatement statement;
-                ECSqlStatus prepareStatus = statement.Prepare (db, ecSql.GetUtf8CP());
+                ECSqlStatus prepareStatus = statement.Prepare (ecdb, ecSql.GetUtf8CP());
                 ECInstanceECSqlSelectAdapter dataAdapter (statement);
                 ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
                 DbResult result;
@@ -108,12 +107,12 @@ TEST_F(ECInstanceUpdaterTests, UpdateMultipleInstancesOfPrimitiveClassWithIncomp
 
 
 //---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                  01/15
+// @bsiclass                                     Muhammad.Zaighum                  01/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
     {
-    SetTestProject (CreateTestProject ("updatewithcurrenttimestamptrigger.ecdb", L"ECSqlTest.01.00.ecschema.xml"));
-    ECDbR ecdb = GetTestProject ().GetECDb ();
+    ECDb ecdb;
+    CreateECDb(ecdb, "updatewithcurrenttimestamptrigger.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
     auto testClass = ecdb.Schemas ().GetECClass ("ECSqlTest", "ClassWithLastModProp");
     ASSERT_TRUE (testClass != nullptr);
 

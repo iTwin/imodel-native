@@ -73,7 +73,7 @@ TEST_F (ECSqlSelectTestFixture, AliasTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlSelectTestFixture, ECInstanceIdTests)
     {
-    auto dataset = ECSqlSelectTestDataset::ECInstanceIdTests (GetTestProject(), PerClassRowCount);
+    auto dataset = ECSqlSelectTestDataset::ECInstanceIdTests (GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -253,7 +253,7 @@ TEST_F(ECSqlSelectTestFixture, UnionTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlSelectTestFixture, WhereAbstractClassTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereAbstractClassTests (ECSqlType::Select, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereAbstractClassTests (ECSqlType::Select, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -262,7 +262,7 @@ TEST_F (ECSqlSelectTestFixture, WhereAbstractClassTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlSelectTestFixture, WhereAndOrPrecedenceTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereAndOrPrecedenceTests(ECSqlType::Select, GetTestProject(), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereAndOrPrecedenceTests(ECSqlType::Select, GetECDb(), PerClassRowCount);
     RunTest(dataset);
     }
 
@@ -271,7 +271,7 @@ TEST_F(ECSqlSelectTestFixture, WhereAndOrPrecedenceTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlSelectTestFixture, WhereBasicsTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType::Select, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType::Select, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -280,7 +280,7 @@ TEST_F (ECSqlSelectTestFixture, WhereBasicsTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlSelectTestFixture, WhereCommonGeometryTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereCommonGeometryTests (ECSqlType::Select, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereCommonGeometryTests (ECSqlType::Select, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -289,7 +289,7 @@ TEST_F (ECSqlSelectTestFixture, WhereCommonGeometryTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlSelectTestFixture, WhereFunctionTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType::Select, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType::Select, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -298,7 +298,7 @@ TEST_F (ECSqlSelectTestFixture, WhereFunctionTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlSelectTestFixture, WhereMatchTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereMatchTests(ECSqlType::Select, GetTestProject(), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereMatchTests(ECSqlType::Select, GetECDb(), PerClassRowCount);
     RunTest(dataset);
     }
 
@@ -307,7 +307,7 @@ TEST_F(ECSqlSelectTestFixture, WhereMatchTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlSelectTestFixture, WhereRelationshipEndTableMappingTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests (ECSqlType::Select, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests (ECSqlType::Select, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -316,7 +316,7 @@ TEST_F (ECSqlSelectTestFixture, WhereRelationshipEndTableMappingTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlSelectTestFixture, WhereRelationshipLinkTableMappingTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests (ECSqlType::Select, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests (ECSqlType::Select, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -325,7 +325,7 @@ TEST_F (ECSqlSelectTestFixture, WhereRelationshipLinkTableMappingTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlSelectTestFixture, WhereRelationshipWithAdditionalPropsTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTests (ECSqlType::Select, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTests (ECSqlType::Select, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -334,7 +334,7 @@ TEST_F (ECSqlSelectTestFixture, WhereRelationshipWithAdditionalPropsTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlSelectTestFixture, WhereRelationshipWithAnyClassConstraintTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAnyClassConstraintTests (ECSqlType::Select, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAnyClassConstraintTests (ECSqlType::Select, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -343,7 +343,7 @@ TEST_F (ECSqlSelectTestFixture, WhereRelationshipWithAnyClassConstraintTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlSelectTestFixture, WhereStructTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereStructTests (ECSqlType::Select, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereStructTests (ECSqlType::Select, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -354,9 +354,7 @@ TEST_F (ECSqlSelectTestFixture, WhereStructTests)
 struct ECSqlInsertTestFixture : public ECSqlNonSelectTestFixture
     {
 public:
-    ECSqlInsertTestFixture ()
-        : ECSqlNonSelectTestFixture () {}
-
+    ECSqlInsertTestFixture () : ECSqlNonSelectTestFixture () {}
     virtual ~ECSqlInsertTestFixture () {}
     };
 
@@ -410,7 +408,7 @@ TEST_F (ECSqlInsertTestFixture, IntoTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlInsertTestFixture, MiscTests)
     {
-    auto dataset = ECSqlInsertTestDataset::MiscTests (GetTestProject ());
+    auto dataset = ECSqlInsertTestDataset::MiscTests (GetECDb());
     RunTest (dataset);
     }
 
@@ -428,7 +426,7 @@ TEST_F (ECSqlInsertTestFixture, ParameterAdvancedTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlInsertTestFixture, RelationshipEndTableMappingTests)
     {
-    auto dataset = ECSqlInsertTestDataset::RelationshipEndTableMappingTests (GetTestProject ());
+    auto dataset = ECSqlInsertTestDataset::RelationshipEndTableMappingTests (GetECDb());
     RunTest (dataset);
     }
 
@@ -437,7 +435,7 @@ TEST_F (ECSqlInsertTestFixture, RelationshipEndTableMappingTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlInsertTestFixture, RelationshipLinkTableMappingTests)
     {
-    auto dataset = ECSqlInsertTestDataset::RelationshipLinkTableMappingTests (GetTestProject ());
+    auto dataset = ECSqlInsertTestDataset::RelationshipLinkTableMappingTests (GetECDb());
     RunTest (dataset);
     }
 
@@ -446,7 +444,7 @@ TEST_F (ECSqlInsertTestFixture, RelationshipLinkTableMappingTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlInsertTestFixture, RelationshipWithAnyClassConstraintTests)
     {
-    auto dataset = ECSqlInsertTestDataset::RelationshipWithAnyClassConstraintTests (GetTestProject ());
+    auto dataset = ECSqlInsertTestDataset::RelationshipWithAnyClassConstraintTests (GetECDb());
     RunTest (dataset);
     }
 
@@ -455,7 +453,7 @@ TEST_F (ECSqlInsertTestFixture, RelationshipWithAnyClassConstraintTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlInsertTestFixture, RelationshipWithAdditionalPropsTests)
     {
-    auto dataset = ECSqlInsertTestDataset::RelationshipWithAdditionalPropsTests (GetTestProject ());
+    auto dataset = ECSqlInsertTestDataset::RelationshipWithAdditionalPropsTests (GetECDb());
     RunTest (dataset);
     }
 
@@ -464,7 +462,7 @@ TEST_F (ECSqlInsertTestFixture, RelationshipWithAdditionalPropsTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlInsertTestFixture, RelationshipWithParametersTests)
     {
-    auto dataset = ECSqlInsertTestDataset::RelationshipWithParametersTests (GetTestProject ());
+    auto dataset = ECSqlInsertTestDataset::RelationshipWithParametersTests (GetECDb());
     RunTest (dataset);
     }
 
@@ -485,8 +483,7 @@ TEST_F (ECSqlInsertTestFixture, StructTests)
 struct ECSqlUpdateTestFixture : public ECSqlNonSelectTestFixture
     {
 public:
-    ECSqlUpdateTestFixture () 
-        : ECSqlNonSelectTestFixture () {}
+    ECSqlUpdateTestFixture () : ECSqlNonSelectTestFixture () {}
     virtual ~ECSqlUpdateTestFixture () {}
     };
 
@@ -558,7 +555,7 @@ TEST_F (ECSqlUpdateTestFixture, PolymorphicTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlUpdateTestFixture, RelationshipEndTableMappingTests)
     {
-    auto dataset = ECSqlUpdateTestDataset::RelationshipEndTableMappingTests (GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlUpdateTestDataset::RelationshipEndTableMappingTests (PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -567,7 +564,7 @@ TEST_F (ECSqlUpdateTestFixture, RelationshipEndTableMappingTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlUpdateTestFixture, RelationshipLinkTableMappingTests)
     {
-    auto dataset = ECSqlUpdateTestDataset::RelationshipLinkTableMappingTests (GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlUpdateTestDataset::RelationshipLinkTableMappingTests (PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -576,7 +573,7 @@ TEST_F (ECSqlUpdateTestFixture, RelationshipLinkTableMappingTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlUpdateTestFixture, RelationshipWithAnyClassConstraintTests)
     {
-    auto dataset = ECSqlUpdateTestDataset::RelationshipWithAnyClassConstraintTests (GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlUpdateTestDataset::RelationshipWithAnyClassConstraintTests (PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -585,7 +582,7 @@ TEST_F (ECSqlUpdateTestFixture, RelationshipWithAnyClassConstraintTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlUpdateTestFixture, RelationshipWithAdditionalPropsTests)
     {
-    auto dataset = ECSqlUpdateTestDataset::RelationshipWithAdditionalPropsTests (GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlUpdateTestDataset::RelationshipWithAdditionalPropsTests (GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -612,7 +609,7 @@ TEST_F (ECSqlUpdateTestFixture, TargetClassTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlUpdateTestFixture, WhereAbstractClassTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereAbstractClassTests (ECSqlType::Update, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereAbstractClassTests (ECSqlType::Update, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -621,7 +618,7 @@ TEST_F (ECSqlUpdateTestFixture, WhereAbstractClassTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlUpdateTestFixture, WhereAndOrPrecedenceTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereAndOrPrecedenceTests(ECSqlType::Update, GetTestProject(), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereAndOrPrecedenceTests(ECSqlType::Update, GetECDb(), PerClassRowCount);
     RunTest(dataset);
     }
 
@@ -630,7 +627,7 @@ TEST_F(ECSqlUpdateTestFixture, WhereAndOrPrecedenceTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlUpdateTestFixture, WhereBasicsTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType::Update, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType::Update, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -639,7 +636,7 @@ TEST_F (ECSqlUpdateTestFixture, WhereBasicsTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlUpdateTestFixture, WhereCommonGeometryTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereCommonGeometryTests (ECSqlType::Update, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereCommonGeometryTests (ECSqlType::Update, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -648,7 +645,7 @@ TEST_F (ECSqlUpdateTestFixture, WhereCommonGeometryTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlUpdateTestFixture, WhereFunctionTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType::Update, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType::Update, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -657,7 +654,7 @@ TEST_F (ECSqlUpdateTestFixture, WhereFunctionTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlUpdateTestFixture, WhereMatchTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereMatchTests(ECSqlType::Update, GetTestProject(), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereMatchTests(ECSqlType::Update, GetECDb(), PerClassRowCount);
     RunTest(dataset);
     }
 
@@ -666,7 +663,7 @@ TEST_F(ECSqlUpdateTestFixture, WhereMatchTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlUpdateTestFixture, WhereRelationshipEndTableMappingTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests (ECSqlType::Update, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests (ECSqlType::Update, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -675,7 +672,7 @@ TEST_F (ECSqlUpdateTestFixture, WhereRelationshipEndTableMappingTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlUpdateTestFixture, WhereRelationshipLinkTableMappingTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests (ECSqlType::Update, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests (ECSqlType::Update, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -684,7 +681,7 @@ TEST_F (ECSqlUpdateTestFixture, WhereRelationshipLinkTableMappingTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlUpdateTestFixture, WhereRelationshipWithAdditionalPropsTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTests (ECSqlType::Update, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTests (ECSqlType::Update, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -693,7 +690,7 @@ TEST_F (ECSqlUpdateTestFixture, WhereRelationshipWithAdditionalPropsTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlUpdateTestFixture, WhereRelationshipWithAnyClassConstraintTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAnyClassConstraintTests (ECSqlType::Update, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAnyClassConstraintTests (ECSqlType::Update, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -702,7 +699,7 @@ TEST_F (ECSqlUpdateTestFixture, WhereRelationshipWithAnyClassConstraintTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlUpdateTestFixture, WhereStructTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereStructTests (ECSqlType::Update, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereStructTests (ECSqlType::Update, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -713,8 +710,7 @@ TEST_F (ECSqlUpdateTestFixture, WhereStructTests)
 struct ECSqlDeleteTestFixture : public ECSqlNonSelectTestFixture
     {
 public:
-    ECSqlDeleteTestFixture () 
-        : ECSqlNonSelectTestFixture () {}
+    ECSqlDeleteTestFixture () : ECSqlNonSelectTestFixture () {}
     virtual ~ECSqlDeleteTestFixture () {}
     };
 
@@ -751,7 +747,7 @@ TEST_F (ECSqlDeleteTestFixture, PolymorphicTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlDeleteTestFixture, WhereAbstractClassTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereAbstractClassTests (ECSqlType::Delete, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereAbstractClassTests (ECSqlType::Delete, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -760,7 +756,7 @@ TEST_F (ECSqlDeleteTestFixture, WhereAbstractClassTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlDeleteTestFixture, WhereAndOrPrecedenceTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereAndOrPrecedenceTests(ECSqlType::Delete, GetTestProject(), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereAndOrPrecedenceTests(ECSqlType::Delete, GetECDb(), PerClassRowCount);
     RunTest(dataset);
     }
 
@@ -769,7 +765,7 @@ TEST_F(ECSqlDeleteTestFixture, WhereAndOrPrecedenceTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlDeleteTestFixture, WhereBasicsTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType::Delete, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType::Delete, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -778,7 +774,7 @@ TEST_F (ECSqlDeleteTestFixture, WhereBasicsTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlDeleteTestFixture, WhereCommonGeometryTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereCommonGeometryTests (ECSqlType::Delete, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereCommonGeometryTests (ECSqlType::Delete, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -787,7 +783,7 @@ TEST_F (ECSqlDeleteTestFixture, WhereCommonGeometryTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlDeleteTestFixture, WhereFunctionTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType::Delete, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType::Delete, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -796,7 +792,7 @@ TEST_F (ECSqlDeleteTestFixture, WhereFunctionTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlDeleteTestFixture, WhereMatchTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereMatchTests(ECSqlType::Delete, GetTestProject(), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereMatchTests(ECSqlType::Delete, GetECDb(), PerClassRowCount);
     RunTest(dataset);
     }
 
@@ -805,7 +801,7 @@ TEST_F(ECSqlDeleteTestFixture, WhereMatchTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlDeleteTestFixture, WhereRelationshipEndTableMappingTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests (ECSqlType::Delete, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests (ECSqlType::Delete, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -814,7 +810,7 @@ TEST_F (ECSqlDeleteTestFixture, WhereRelationshipEndTableMappingTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlDeleteTestFixture, WhereRelationshipLinkTableMappingTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests (ECSqlType::Delete, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests (ECSqlType::Delete, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -823,7 +819,7 @@ TEST_F (ECSqlDeleteTestFixture, WhereRelationshipLinkTableMappingTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlDeleteTestFixture, WhereRelationshipWithAdditionalPropsTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTests (ECSqlType::Delete, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTests (ECSqlType::Delete, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -832,7 +828,7 @@ TEST_F (ECSqlDeleteTestFixture, WhereRelationshipWithAdditionalPropsTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlDeleteTestFixture, WhereRelationshipWithAnyClassConstraintTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAnyClassConstraintTests (ECSqlType::Delete, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereRelationshipWithAnyClassConstraintTests (ECSqlType::Delete, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
@@ -841,7 +837,7 @@ TEST_F (ECSqlDeleteTestFixture, WhereRelationshipWithAnyClassConstraintTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlDeleteTestFixture, WhereStructTests)
     {
-    auto dataset = ECSqlCommonTestDataset::WhereStructTests (ECSqlType::Delete, GetTestProject (), PerClassRowCount);
+    auto dataset = ECSqlCommonTestDataset::WhereStructTests (ECSqlType::Delete, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
 
