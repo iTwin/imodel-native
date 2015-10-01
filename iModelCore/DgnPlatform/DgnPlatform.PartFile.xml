@@ -103,6 +103,7 @@
     </Part>
 
     <Part Name="DgnPlatformSqlang" BentleyBuildMakeFile="${SrcBsiCommon}sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)Build/DgnPlatform/DgnPlatform_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
+        <SubPart PartName="DgnPlatformDLL" />
         <Bindings>
             <Files ProductDirectoryName="DgnPlatformSqlang" Required="true">Delivery/sqlang/DgnPlatform_en.sqlang.db3</Files>
         </Bindings>
@@ -468,7 +469,7 @@
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/NoViewTests/Assemblies/*</Files>
-            <Directory ProductDirectoryName="Gtest-DgnPlatformAssetsDirectory" SourceName="Delivery/Gtest/NoViewTests/DgnPlatformAssetsDirectory" />
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/NoViewTests/Assets" />
         </Bindings>
     </Part>
 
@@ -580,7 +581,7 @@
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/DgnPlatform-TestCollection-Performance/Assemblies/*</Files>
-            <Directory ProductDirectoryName="Gtest-DgnPlatformAssetsDirectory" SourceName="Delivery/Gtest/DgnPlatform-TestCollection-Performance/DgnPlatformAssetsDirectory" />
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/DgnPlatform-TestCollection-Performance/Assets" />
         </Bindings>
     </Part>
 
