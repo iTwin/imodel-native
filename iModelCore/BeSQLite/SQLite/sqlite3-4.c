@@ -2444,15 +2444,15 @@ SQLITE_PRIVATE void sqlite3ExprCodeLoadIndexColumn(
   int regOut      /* Store the index column value in this register */
 ){
   i16 iTabCol = pIdx->aiColumn[iIdxCol];
-  if( iTabCol>=(-1) ){
+  if( iTabCol==XN_EXPR ){
+    assert( pIdx->aColExpr );
+    assert( pIdx->aColExpr->nExpr>iIdxCol );
+    pParse->iSelfTab = iTabCur;
+    sqlite3ExprCode(pParse, pIdx->aColExpr->a[iIdxCol].pExpr, regOut);
+  }else{
     sqlite3ExprCodeGetColumnOfTable(pParse->pVdbe, pIdx->pTable, iTabCur,
                                     iTabCol, regOut);
-    return;
   }
-  assert( pIdx->aColExpr );
-  assert( pIdx->aColExpr->nExpr>iIdxCol );
-  pParse->iSelfTab = iTabCur;
-  sqlite3ExprCode(pParse, pIdx->aColExpr->a[iIdxCol].pExpr, regOut);
 }
 
 /*
@@ -7975,6 +7975,8 @@ SQLITE_PRIVATE void sqlite3FinishCoding(Parse *pParse){
           db->aDb[iDb].pSchema->iGeneration  /* P4 */
         );
         if( db->init.busy==0 ) sqlite3VdbeChangeP5(v, 1);
+        VdbeComment((v,
+              "usesStmtJournal=%d", pParse->mayAbort && pParse->isMultiWrite));
       }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
       for(i=0; i<pParse->nVtabLock; i++){
@@ -9865,8 +9867,7 @@ SQLITE_PRIVATE void sqlite3CreateView(
 
   if( pParse->nVar>0 ){
     sqlite3ErrorMsg(pParse, "parameters are not allowed in views");
-    sqlite3SelectDelete(db, pSelect);
-    return;
+    goto create_view_fail;
   }
   sqlite3StartTable(pParse, pName1, pName2, isTemp, 1, 0, noErr);
   p = pParse->pNewTable;
@@ -10918,7 +10919,7 @@ SQLITE_PRIVATE Index *sqlite3CreateIndex(
   /* Analyze the list of expressions that form the terms of the index and
   ** report any errors.  In the common case where the expression is exactly
   ** a table column, store that column in aiColumn[].  For general expressions,
-  ** populate pIndex->aColExpr and store -2 in aiColumn[].
+  ** populate pIndex->aColExpr and store XN_EXPR (-2) in aiColumn[].
   **
   ** TODO: Issue a warning if two or more columns of the index are identical.
   ** TODO: Issue a warning if the table primary key is used as part of the
@@ -10947,8 +10948,8 @@ SQLITE_PRIVATE Index *sqlite3CreateIndex(
           pListItem = &pCopy->a[i];
         }
       }
-      j = -2;
-      pIndex->aiColumn[i] = -2;
+      j = XN_EXPR;
+      pIndex->aiColumn[i] = XN_EXPR;
       pIndex->uniqNotNull = 0;
     }else{
       j = pCExpr->iColumn;
@@ -11001,7 +11002,7 @@ SQLITE_PRIVATE Index *sqlite3CreateIndex(
     }
     assert( i==pIndex->nColumn );
   }else{
-    pIndex->aiColumn[i] = -1;
+    pIndex->aiColumn[i] = XN_ROWID;
     pIndex->azColl[i] = "BINARY";
   }
   sqlite3DefaultRowEst(pIndex);
@@ -13108,7 +13109,7 @@ SQLITE_PRIVATE void sqlite3DeleteFrom(
     pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0, wcf, iTabCur+1);
     if( pWInfo==0 ) goto delete_from_cleanup;
     eOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
-    assert( IsVirtual(pTab)==0 || eOnePass==ONEPASS_OFF );
+    assert( IsVirtual(pTab)==0 || eOnePass!=ONEPASS_MULTI );
     assert( IsVirtual(pTab) || bComplex || eOnePass!=ONEPASS_OFF );
   
     /* Keep track of the number of rows to be deleted */
@@ -13119,7 +13120,7 @@ SQLITE_PRIVATE void sqlite3DeleteFrom(
     /* Extract the rowid or primary key for the current row */
     if( pPk ){
       for(i=0; i<nPk; i++){
-        assert( pPk->aiColumn[i]>=(-1) );
+        assert( pPk->aiColumn[i]>=0 );
         sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur,
                                         pPk->aiColumn[i], iPk+i);
       }
@@ -13191,7 +13192,7 @@ SQLITE_PRIVATE void sqlite3DeleteFrom(
     */
     if( eOnePass!=ONEPASS_OFF ){
       assert( nKey==nPk );  /* OP_Found will use an unpacked key */
-      if( aToOpen[iDataCur-iTabCur] ){
+      if( !IsVirtual(pTab) && aToOpen[iDataCur-iTabCur] ){
         assert( pPk!=0 || pTab->pSelect!=0 );
         sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, addrBypass, iKey, nKey);
         VdbeCoverage(v);
@@ -13213,7 +13214,11 @@ SQLITE_PRIVATE void sqlite3DeleteFrom(
       sqlite3VtabMakeWritable(pParse, pTab);
       sqlite3VdbeAddOp4(v, OP_VUpdate, 0, 1, iKey, pVTab, P4_VTAB);
       sqlite3VdbeChangeP5(v, OE_Abort);
+      assert( eOnePass==ONEPASS_OFF || eOnePass==ONEPASS_SINGLE );
       sqlite3MayAbort(pParse);
+      if( eOnePass==ONEPASS_SINGLE && sqlite3IsToplevel(pParse) ){
+        pParse->isMultiWrite = 0;
+      }
     }else
 #endif
     {
@@ -13556,7 +13561,7 @@ SQLITE_PRIVATE int sqlite3GenerateIndexKey(
   for(j=0; j<nCol; j++){
     if( pPrior
      && pPrior->aiColumn[j]==pIdx->aiColumn[j]
-     && pPrior->aiColumn[j]>=(-1)
+     && pPrior->aiColumn[j]!=XN_EXPR
     ){
       /* This column was already computed by the previous index */
       continue;
@@ -15644,6 +15649,8 @@ SQLITE_PRIVATE int sqlite3FkLocateIndex(
           char *zDfltColl;                  /* Def. collation for column */
           char *zIdxCol;                    /* Name of indexed column */
 
+          if( iCol<0 ) break; /* No foreign keys against expression indexes */
+
           /* If the index uses a collation sequence that is different from
           ** the default collation sequence for the column, this index is
           ** unusable. Bail out early in this case.  */
@@ -15796,6 +15803,7 @@ static void fkLookupParent(
         for(i=0; i<nCol; i++){
           int iChild = aiCol[i]+1+regData;
           int iParent = pIdx->aiColumn[i]+1+regData;
+          assert( pIdx->aiColumn[i]>=0 );
           assert( aiCol[i]!=pTab->iPKey );
           if( pIdx->aiColumn[i]==pTab->iPKey ){
             /* The parent key is a composite key that includes the IPK column */
@@ -16004,6 +16012,7 @@ static void fkScanChildren(
       assert( pIdx!=0 );
       for(i=0; i<pPk->nKeyCol; i++){
         i16 iCol = pIdx->aiColumn[i];
+        assert( iCol>=0 );
         pLeft = exprTableRegister(pParse, pTab, regData, iCol);
         pRight = exprTableColumn(db, pTab, pSrc->a[0].iCursor, iCol);
         pEq = sqlite3PExpr(pParse, TK_EQ, pLeft, pRight, 0);
@@ -16323,6 +16332,7 @@ SQLITE_PRIVATE void sqlite3FkCheck(
       if( aiCol[i]==pTab->iPKey ){
         aiCol[i] = -1;
       }
+      assert( pIdx==0 || pIdx->aiColumn[i]>=0 );
 #ifndef SQLITE_OMIT_AUTHORIZATION
       /* Request permission to read the parent key columns. If the 
       ** authorization callback returns SQLITE_IGNORE, behave as if any
@@ -16454,7 +16464,10 @@ SQLITE_PRIVATE u32 sqlite3FkOldmask(
       Index *pIdx = 0;
       sqlite3FkLocateIndex(pParse, pTab, p, &pIdx, 0);
       if( pIdx ){
-        for(i=0; i<pIdx->nKeyCol; i++) mask |= COLUMN_MASK(pIdx->aiColumn[i]);
+        for(i=0; i<pIdx->nKeyCol; i++){
+          assert( pIdx->aiColumn[i]>=0 );
+          mask |= COLUMN_MASK(pIdx->aiColumn[i]);
+        }
       }
     }
   }
@@ -16577,6 +16590,7 @@ static Trigger *fkActionTrigger(
       iFromCol = aiCol ? aiCol[i] : pFKey->aCol[0].iFrom;
       assert( iFromCol>=0 );
       assert( pIdx!=0 || (pTab->iPKey>=0 && pTab->iPKey<pTab->nCol) );
+      assert( pIdx==0 || pIdx->aiColumn[i]>=0 );
       tToCol.z = pTab->aCol[pIdx ? pIdx->aiColumn[i] : pTab->iPKey].zName;
       tFromCol.z = pFKey->pFrom->aCol[iFromCol].zName;
 
@@ -16886,11 +16900,11 @@ SQLITE_PRIVATE const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
       i16 x = pIdx->aiColumn[n];
       if( x>=0 ){
         pIdx->zColAff[n] = pTab->aCol[x].affinity;
-      }else if( x==(-1) ){
+      }else if( x==XN_ROWID ){
         pIdx->zColAff[n] = SQLITE_AFF_INTEGER;
       }else{
         char aff;
-        assert( x==(-2) );
+        assert( x==XN_EXPR );
         assert( pIdx->aColExpr!=0 );
         aff = sqlite3ExprAffinity(pIdx->aColExpr->a[n].pExpr);
         if( aff==0 ) aff = SQLITE_AFF_BLOB;
@@ -17056,7 +17070,7 @@ SQLITE_PRIVATE void sqlite3AutoincrementBegin(Parse *pParse){
   /* This routine is never called during trigger-generation.  It is
   ** only called from the top-level */
   assert( pParse->pTriggerTab==0 );
-  assert( pParse==sqlite3ParseToplevel(pParse) );
+  assert( sqlite3IsToplevel(pParse) );
 
   assert( v );   /* We failed long ago if this is not so */
   for(p = pParse->pAinc; p; p = p->pNext){
@@ -18213,13 +18227,13 @@ SQLITE_PRIVATE void sqlite3GenerateConstraintChecks(
     for(i=0; i<pIdx->nColumn; i++){
       int iField = pIdx->aiColumn[i];
       int x;
-      if( iField==(-2) ){
+      if( iField==XN_EXPR ){
         pParse->ckBase = regNewData+1;
         sqlite3ExprCode(pParse, pIdx->aColExpr->a[i].pExpr, regIdx+i);
         pParse->ckBase = 0;
         VdbeComment((v, "%s column %d", pIdx->zName, i));
       }else{
-        if( iField==(-1) || iField==pTab->iPKey ){
+        if( iField==XN_ROWID || iField==pTab->iPKey ){
           if( regRowid==regIdx+i ) continue; /* ROWID already in regIdx+i */
           x = regNewData;
           regRowid =  pIdx->pPartIdxWhere ? -1 : regIdx+i;
@@ -18278,6 +18292,7 @@ SQLITE_PRIVATE void sqlite3GenerateConstraintChecks(
         ** store it in registers regR..regR+nPk-1 */
         if( pIdx!=pPk ){
           for(i=0; i<pPk->nKeyCol; i++){
+            assert( pPk->aiColumn[i]>=0 );
             x = sqlite3ColumnOfIndex(pIdx, pPk->aiColumn[i]);
             sqlite3VdbeAddOp3(v, OP_Column, iThisCur, x, regR+i);
             VdbeComment((v, "%s.%s", pTab->zName,
@@ -18299,6 +18314,7 @@ SQLITE_PRIVATE void sqlite3GenerateConstraintChecks(
           for(i=0; i<pPk->nKeyCol; i++){
             char *p4 = (char*)sqlite3LocateCollSeq(pParse, pPk->azColl[i]);
             x = pPk->aiColumn[i];
+            assert( x>=0 );
             if( i==(pPk->nKeyCol-1) ){
               addrJump = addrUniqueOk;
               op = OP_Eq;
@@ -18550,7 +18566,7 @@ static int xferCompatibleIndex(Index *pDest, Index *pSrc){
     if( pSrc->aiColumn[i]!=pDest->aiColumn[i] ){
       return 0;   /* Different columns indexed */
     }
-    if( pSrc->aiColumn[i]==(-2) ){
+    if( pSrc->aiColumn[i]==XN_EXPR ){
       assert( pSrc->aColExpr!=0 && pDest->aColExpr!=0 );
       if( sqlite3ExprCompare(pSrc->aColExpr->a[i].pExpr,
                              pDest->aColExpr->a[i].pExpr, -1)!=0 ){
@@ -22355,8 +22371,8 @@ SQLITE_PRIVATE void sqlite3Pragma(
             int kk;
             for(kk=0; kk<pIdx->nKeyCol; kk++){
               int iCol = pIdx->aiColumn[kk];
-              assert( iCol>=0 && iCol<pTab->nCol );
-              if( pTab->aCol[iCol].notNull ) continue;
+              assert( iCol!=XN_ROWID && iCol<pTab->nCol );
+              if( iCol>=0 && pTab->aCol[iCol].notNull ) continue;
               sqlite3VdbeAddOp2(v, OP_IsNull, r1+kk, uniqOk);
               VdbeCoverage(v);
             }
@@ -27875,17 +27891,9 @@ static int selectExpander(Walker *pWalker, Select *p){
   */
   for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
     Table *pTab;
-    assert( pFrom->fg.isRecursive==0 || pFrom->pTab );
+    assert( pFrom->fg.isRecursive==0 || pFrom->pTab!=0 );
     if( pFrom->fg.isRecursive ) continue;
-    if( pFrom->pTab!=0 ){
-      /* This statement has already been prepared.  There is no need
-      ** to go further. */
-      assert( i==0 );
-#ifndef SQLITE_OMIT_CTE
-      selectPopWith(pWalker, p);
-#endif
-      return WRC_Prune;
-    }
+    assert( pFrom->pTab==0 );
 #ifndef SQLITE_OMIT_CTE
     if( withExpand(pWalker, pFrom) ) return WRC_Abort;
     if( pFrom->pTab ) {} else
@@ -28177,19 +28185,19 @@ static void selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
   struct SrcList_item *pFrom;
 
   assert( p->selFlags & SF_Resolved );
-  if( (p->selFlags & SF_HasTypeInfo)==0 ){
-    p->selFlags |= SF_HasTypeInfo;
-    pParse = pWalker->pParse;
-    pTabList = p->pSrc;
-    for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
-      Table *pTab = pFrom->pTab;
-      if( ALWAYS(pTab!=0) && (pTab->tabFlags & TF_Ephemeral)!=0 ){
-        /* A sub-query in the FROM clause of a SELECT */
-        Select *pSel = pFrom->pSelect;
-        if( pSel ){
-          while( pSel->pPrior ) pSel = pSel->pPrior;
-          selectAddColumnTypeAndCollation(pParse, pTab, pSel);
-        }
+  assert( (p->selFlags & SF_HasTypeInfo)==0 );
+  p->selFlags |= SF_HasTypeInfo;
+  pParse = pWalker->pParse;
+  pTabList = p->pSrc;
+  for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
+    Table *pTab = pFrom->pTab;
+    assert( pTab!=0 );
+    if( (pTab->tabFlags & TF_Ephemeral)!=0 ){
+      /* A sub-query in the FROM clause of a SELECT */
+      Select *pSel = pFrom->pSelect;
+      if( pSel ){
+        while( pSel->pPrior ) pSel = pSel->pPrior;
+        selectAddColumnTypeAndCollation(pParse, pTab, pSel);
       }
     }
   }
@@ -28515,7 +28523,17 @@ SQLITE_PRIVATE int sqlite3Select(
     struct SrcList_item *pItem = &pTabList->a[i];
     Select *pSub = pItem->pSelect;
     int isAggSub;
+    Table *pTab = pItem->pTab;
     if( pSub==0 ) continue;
+
+    /* Catch mismatch in the declared columns of a view and the number of
+    ** columns in the SELECT on the RHS */
+    if( pTab->nCol!=pSub->pEList->nExpr ){
+      sqlite3ErrorMsg(pParse, "expected %d columns for '%s' but got %d",
+                      pTab->nCol, pTab->zName, pSub->pEList->nExpr);
+      goto select_end;
+    }
+
     isAggSub = (pSub->selFlags & SF_Aggregate)!=0;
     if( flattenSubquery(pParse, p, i, isAgg, isAggSub) ){
       /* This subquery can be absorbed into its parent. */
@@ -30737,9 +30755,9 @@ SQLITE_PRIVATE void sqlite3Update(
 
   /* Register Allocations */
   int regRowCount = 0;   /* A count of rows changed */
-  int regOldRowid;       /* The old rowid */
-  int regNewRowid;       /* The new rowid */
-  int regNew;            /* Content of the NEW.* table in triggers */
+  int regOldRowid = 0;   /* The old rowid */
+  int regNewRowid = 0;   /* The new rowid */
+  int regNew = 0;        /* Content of the NEW.* table in triggers */
   int regOld = 0;        /* Content of OLD.* table in triggers */
   int regRowSet = 0;     /* Rowset of rows to be updated */
   int regKey = 0;        /* composite PRIMARY KEY value */
@@ -30903,29 +30921,20 @@ SQLITE_PRIVATE void sqlite3Update(
   if( pParse->nested==0 ) sqlite3VdbeCountChanges(v);
   sqlite3BeginWriteOperation(pParse, 1, iDb);
 
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  /* Virtual tables must be handled separately */
-  if( IsVirtual(pTab) ){
-    updateVirtualTable(pParse, pTabList, pTab, pChanges, pRowidExpr, aXRef,
-                       pWhere, onError);
-    pWhere = 0;
-    pTabList = 0;
-    goto update_cleanup;
-  }
-#endif
-
   /* Allocate required registers. */
-  regRowSet = ++pParse->nMem;
-  regOldRowid = regNewRowid = ++pParse->nMem;
-  if( chngPk || pTrigger || hasFK ){
-    regOld = pParse->nMem + 1;
+  if( !IsVirtual(pTab) ){
+    regRowSet = ++pParse->nMem;
+    regOldRowid = regNewRowid = ++pParse->nMem;
+    if( chngPk || pTrigger || hasFK ){
+      regOld = pParse->nMem + 1;
+      pParse->nMem += pTab->nCol;
+    }
+    if( chngKey || pTrigger || hasFK ){
+      regNewRowid = ++pParse->nMem;
+    }
+    regNew = pParse->nMem + 1;
     pParse->nMem += pTab->nCol;
   }
-  if( chngKey || pTrigger || hasFK ){
-    regNewRowid = ++pParse->nMem;
-  }
-  regNew = pParse->nMem + 1;
-  pParse->nMem += pTab->nCol;
 
   /* Start the view context. */
   if( isView ){
@@ -30947,6 +30956,15 @@ SQLITE_PRIVATE void sqlite3Update(
   if( sqlite3ResolveExprNames(&sNC, pWhere) ){
     goto update_cleanup;
   }
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  /* Virtual tables must be handled separately */
+  if( IsVirtual(pTab) ){
+    updateVirtualTable(pParse, pTabList, pTab, pChanges, pRowidExpr, aXRef,
+                       pWhere, onError);
+    goto update_cleanup;
+  }
+#endif
 
   /* Begin the database scan
   */
@@ -30987,7 +31005,7 @@ SQLITE_PRIVATE void sqlite3Update(
     if( pWInfo==0 ) goto update_cleanup;
     okOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
     for(i=0; i<nPk; i++){
-      assert( pPk->aiColumn[i]>=(-1) );
+      assert( pPk->aiColumn[i]>=0 );
       sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, pPk->aiColumn[i],
                                       iPk+i);
     }
@@ -31110,7 +31128,6 @@ SQLITE_PRIVATE void sqlite3Update(
   newmask = sqlite3TriggerColmask(
       pParse, pTrigger, pChanges, 1, TRIGGER_BEFORE, pTab, onError
   );
-  /*sqlite3VdbeAddOp3(v, OP_Null, 0, regNew, regNew+pTab->nCol-1);*/
   for(i=0; i<pTab->nCol; i++){
     if( i==pTab->iPKey ){
       sqlite3VdbeAddOp2(v, OP_Null, 0, regNew+i);
@@ -31301,21 +31318,23 @@ update_cleanup:
 /*
 ** Generate code for an UPDATE of a virtual table.
 **
-** The strategy is that we create an ephemeral table that contains
+** There are two possible strategies - the default and the special 
+** "onepass" strategy. Onepass is only used if the virtual table 
+** implementation indicates that pWhere may match at most one row.
+**
+** The default strategy is to create an ephemeral table that contains
 ** for each row to be changed:
 **
 **   (A)  The original rowid of that row.
-**   (B)  The revised rowid for the row. (note1)
+**   (B)  The revised rowid for the row.
 **   (C)  The content of every column in the row.
 **
-** Then we loop over this ephemeral table and for each row in
-** the ephemeral table call VUpdate.
+** Then loop through the contents of this ephemeral table executing a
+** VUpdate for each row. When finished, drop the ephemeral table.
 **
-** When finished, drop the ephemeral table.
-**
-** (note1) Actually, if we know in advance that (A) is always the same
-** as (B) we only store (A), then duplicate (A) when pulling
-** it out of the ephemeral table before calling VUpdate.
+** The "onepass" strategy does not use an ephemeral table. Instead, it
+** stores the same values (A, B and C above) in a register array and
+** makes a single invocation of VUpdate.
 */
 static void updateVirtualTable(
   Parse *pParse,       /* The parsing context */
@@ -31328,66 +31347,96 @@ static void updateVirtualTable(
   int onError          /* ON CONFLICT strategy */
 ){
   Vdbe *v = pParse->pVdbe;  /* Virtual machine under construction */
-  ExprList *pEList = 0;     /* The result set of the SELECT statement */
-  Select *pSelect = 0;      /* The SELECT statement */
-  Expr *pExpr;              /* Temporary expression */
   int ephemTab;             /* Table holding the result of the SELECT */
   int i;                    /* Loop counter */
-  int addr;                 /* Address of top of loop */
-  int iReg;                 /* First register in set passed to OP_VUpdate */
   sqlite3 *db = pParse->db; /* Database connection */
   const char *pVTab = (const char*)sqlite3GetVTable(db, pTab);
-  SelectDest dest;
+  WhereInfo *pWInfo;
+  int nArg = 2 + pTab->nCol;      /* Number of arguments to VUpdate */
+  int regArg;                     /* First register in VUpdate arg array */
+  int regRec;                     /* Register in which to assemble record */
+  int regRowid;                   /* Register for ephem table rowid */
+  int iCsr = pSrc->a[0].iCursor;  /* Cursor used for virtual table scan */
+  int aDummy[2];                  /* Unused arg for sqlite3WhereOkOnePass() */
+  int bOnePass;                   /* True to use onepass strategy */
+  int addr;                       /* Address of OP_OpenEphemeral */
 
-  /* Construct the SELECT statement that will find the new values for
-  ** all updated rows. 
-  */
-  pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(db, TK_ID, "_rowid_"));
-  if( pRowid ){
-    pEList = sqlite3ExprListAppend(pParse, pEList,
-                                   sqlite3ExprDup(db, pRowid, 0));
-  }
-  assert( pTab->iPKey<0 );
-  for(i=0; i<pTab->nCol; i++){
-    if( aXRef[i]>=0 ){
-      pExpr = sqlite3ExprDup(db, pChanges->a[aXRef[i]].pExpr, 0);
-    }else{
-      pExpr = sqlite3Expr(db, TK_ID, pTab->aCol[i].zName);
-    }
-    pEList = sqlite3ExprListAppend(pParse, pEList, pExpr);
-  }
-  pSelect = sqlite3SelectNew(pParse, pEList, pSrc, pWhere, 0, 0, 0, 0, 0, 0);
-  
-  /* Create the ephemeral table into which the update results will
-  ** be stored.
-  */
+  /* Allocate nArg registers to martial the arguments to VUpdate. Then
+  ** create and open the ephemeral table in which the records created from
+  ** these arguments will be temporarily stored. */
   assert( v );
   ephemTab = pParse->nTab++;
+  addr= sqlite3VdbeAddOp2(v, OP_OpenEphemeral, ephemTab, nArg);
+  regArg = pParse->nMem + 1;
+  pParse->nMem += nArg;
+  regRec = ++pParse->nMem;
+  regRowid = ++pParse->nMem;
 
-  /* fill the ephemeral table 
-  */
-  sqlite3SelectDestInit(&dest, SRT_EphemTab, ephemTab);
-  sqlite3Select(pParse, pSelect, &dest);
+  /* Start scanning the virtual table */
+  pWInfo = sqlite3WhereBegin(pParse, pSrc, pWhere, 0,0,WHERE_ONEPASS_DESIRED,0);
+  if( pWInfo==0 ) return;
 
-  /* Generate code to scan the ephemeral table and call VUpdate. */
-  iReg = ++pParse->nMem;
-  pParse->nMem += pTab->nCol+1;
-  addr = sqlite3VdbeAddOp2(v, OP_Rewind, ephemTab, 0); VdbeCoverage(v);
-  sqlite3VdbeAddOp3(v, OP_Column,  ephemTab, 0, iReg);
-  sqlite3VdbeAddOp3(v, OP_Column, ephemTab, (pRowid?1:0), iReg+1);
+  /* Populate the argument registers. */
+  sqlite3VdbeAddOp2(v, OP_Rowid, iCsr, regArg);
+  if( pRowid ){
+    sqlite3ExprCode(pParse, pRowid, regArg+1);
+  }else{
+    sqlite3VdbeAddOp2(v, OP_Rowid, iCsr, regArg+1);
+  }
   for(i=0; i<pTab->nCol; i++){
-    sqlite3VdbeAddOp3(v, OP_Column, ephemTab, i+1+(pRowid!=0), iReg+2+i);
+    if( aXRef[i]>=0 ){
+      sqlite3ExprCode(pParse, pChanges->a[aXRef[i]].pExpr, regArg+2+i);
+    }else{
+      sqlite3VdbeAddOp3(v, OP_VColumn, iCsr, i, regArg+2+i);
+    }
+  }
+
+  bOnePass = sqlite3WhereOkOnePass(pWInfo, aDummy);
+
+  if( bOnePass ){
+    /* If using the onepass strategy, no-op out the OP_OpenEphemeral coded
+    ** above. Also, if this is a top-level parse (not a trigger), clear the
+    ** multi-write flag so that the VM does not open a statement journal */
+    sqlite3VdbeChangeToNoop(v, addr);
+    if( sqlite3IsToplevel(pParse) ){
+      pParse->isMultiWrite = 0;
+    }
+  }else{
+    /* Create a record from the argument register contents and insert it into
+    ** the ephemeral table. */
+    sqlite3VdbeAddOp3(v, OP_MakeRecord, regArg, nArg, regRec);
+    sqlite3VdbeAddOp2(v, OP_NewRowid, ephemTab, regRowid);
+    sqlite3VdbeAddOp3(v, OP_Insert, ephemTab, regRec, regRowid);
+  }
+
+
+  if( bOnePass==0 ){
+    /* End the virtual table scan */
+    sqlite3WhereEnd(pWInfo);
+
+    /* Begin scannning through the ephemeral table. */
+    addr = sqlite3VdbeAddOp1(v, OP_Rewind, ephemTab); VdbeCoverage(v);
+
+    /* Extract arguments from the current row of the ephemeral table and 
+    ** invoke the VUpdate method.  */
+    for(i=0; i<nArg; i++){
+      sqlite3VdbeAddOp3(v, OP_Column, ephemTab, i, regArg+i);
+    }
   }
   sqlite3VtabMakeWritable(pParse, pTab);
-  sqlite3VdbeAddOp4(v, OP_VUpdate, 0, pTab->nCol+2, iReg, pVTab, P4_VTAB);
+  sqlite3VdbeAddOp4(v, OP_VUpdate, 0, nArg, regArg, pVTab, P4_VTAB);
   sqlite3VdbeChangeP5(v, onError==OE_Default ? OE_Abort : onError);
   sqlite3MayAbort(pParse);
-  sqlite3VdbeAddOp2(v, OP_Next, ephemTab, addr+1); VdbeCoverage(v);
-  sqlite3VdbeJumpHere(v, addr);
-  sqlite3VdbeAddOp2(v, OP_Close, ephemTab, 0);
 
-  /* Cleanup */
-  sqlite3SelectDelete(db, pSelect);  
+  /* End of the ephemeral table scan. Or, if using the onepass strategy,
+  ** jump to here if the scan visited zero rows. */
+  if( bOnePass==0 ){
+    sqlite3VdbeAddOp2(v, OP_Next, ephemTab, addr+1); VdbeCoverage(v);
+    sqlite3VdbeJumpHere(v, addr);
+    sqlite3VdbeAddOp2(v, OP_Close, ephemTab, 0);
+  }else{
+    sqlite3WhereEnd(pWInfo);
+  }
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
