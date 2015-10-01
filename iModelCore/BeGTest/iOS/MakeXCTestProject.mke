@@ -123,7 +123,7 @@ LIB_NAME = $(TEST_NAME)-Tests
 LIB_DEST = $(o)
 LIB_TMP_DIR = $(tmp)
 LIB_NO_CONTEXT_LINK = 1
-LIB_OBJS = $[@wildcard $(unitTestsDir)*$(oext)] $[@wildcard $(BuildContext)SubParts/Libs/*$(stlibext)] $[@wildcard $(collectionProduct)Libs/*$(stlibext)]
+LIB_OBJS = $[@wildcard $(unitTestsDir)*$(oext)] $[@wildcard $(collectionProduct)Libs/*$(stlibext)]
 %include creatlib.mki
 
 # NB: XCodeProject looks for 'libBeGTestStatic.a' so don't change the name!
