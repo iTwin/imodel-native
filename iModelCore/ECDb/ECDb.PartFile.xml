@@ -68,11 +68,14 @@
     </Part>
 
     <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
-        <SubPart PartName="UnitTests-Documents-DgnDb" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="ECDb"/>
         <SubPart PartName="Zlib"                             PartFile="Zlib"         Repository="Libsrc-Compress" />
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList"     ProductSubDirectory="ECDb" SubPartDirectory="UnitTests/ECDb"> Delivery/UnitTests/ignore_list.txt</Files>
+            <Files ProductDirectoryName="UnitTests-ECDbTestData"   ProductSubDirectory="Schemas"> Delivery/UnitTests/ECDbTestData/Schemas/*.xml</Files>
+            <Files ProductDirectoryName="UnitTests-ECDbTestData"> Delivery/UnitTests/ECDbTestData/*.txt</Files>
+            <Files ProductDirectoryName="UnitTests-ECDbTestData"> Delivery/UnitTests/ECDbTestData/*.json</Files>
+            <Files ProductDirectoryName="UnitTests-ECDbTestData"> Delivery/UnitTests/ECDbTestData/*.ecdb</Files>
         </Bindings>
     </Part>
 
@@ -98,24 +101,6 @@
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ECDb/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
         </Bindings>
-    </Part>
-
-    <!-- *** ********************************************************** *** -->
-    <!-- *** WARNING: Numerous BuildStrategies point to this part! *** -->
-    <!-- *** ********************************************************** *** -->
-    <!-- If you move this part, you must fix up the BuildStrategies that point to it. -->
-    <!-- TRICKY: Documents are only actually published for x64,x86 but we must do other processing for other platforms and other cases so no platforms can be excluded! -->
-    <Part Name="UnitTests_Documents" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishDocuments.mke" BMakeOptions="-dUNIT_TESTS_NAME=ECDbUnitTests -dUNIT_TESTS_DOCUMENTS_DIR=${SrcRoot}/DgnPlatformTest/DgnDbUnitTests/ -dUNIT_TESTS_DOCUMENTS_PREBUILTS_SUBDIR=DgnDb -dUNIT_TESTS_PUBLISH_CONFIG=${SrcRoot}/BeGTest/UnitTestPublisherConfiguration.xml">
-        <SubPart PartName="LinkDgnDbPublisherIntoToolContext" PartFile="BeGTest" Repository="BeGTest" />
-        <SubPart PartName="DgnDbUnitTestsData"/>
-        <Bindings>
-            <Directory SourceName="Delivery/UnitTests/Documents" SubPartDirectory="Documents/DgnDb" ProductDirectoryName="UnitTests_Documents_DgnDb" />
-            <!-- Note: for BTest, use pre-published documents -->
-        </Bindings>
-    </Part>
-
-    <Part Name="DgnDbUnitTestsData" OnlyPlatforms="x64,x86">
-        <RequiredRepository>DgnDbUnitTestsData</RequiredRepository>
     </Part>
 
     <!-- Define the collection of all available tests. -->

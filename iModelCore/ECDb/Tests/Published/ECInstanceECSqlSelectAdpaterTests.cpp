@@ -17,7 +17,6 @@ TEST(Performance_ECInstanceECSqlSelectAdapterTests, SelectFromComplexClass)
     {
     BeFileName seedPath;
     BeTest::GetHost().GetDocumentsRoot (seedPath);
-    seedPath.AppendToPath(L"DgnDb");
     seedPath.AppendToPath(L"ECDb");
     seedPath.AppendToPath(L"KitchenSinkWithInstances.ecdb");
 
@@ -62,7 +61,6 @@ TEST (Performance_ECInstanceECSqlSelectAdapterTests, SelectFromComplexClass_With
     {
     BeFileName seedPath;
     BeTest::GetHost ().GetDocumentsRoot (seedPath);
-    seedPath.AppendToPath (L"DgnDb");
     seedPath.AppendToPath (L"ECDb");
     seedPath.AppendToPath (L"KitchenSinkWithInstances.ecdb");
 

@@ -11,3 +11,7 @@ thisDir = $(_makeFilePath)
 
 $(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
     $(LinkFirstDepToFirstTarget)
+
+seedDataSource=$(SrcRoot)ECDb/Tests/Data/
+$(BuildContext)Delivery/UnitTests/ECDbTestData : $(seedDataSource)
+    $(LinkFirstDepToFirstTargetAsDirectory)

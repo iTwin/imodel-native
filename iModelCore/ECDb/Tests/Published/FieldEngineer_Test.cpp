@@ -187,7 +187,7 @@ bool CreateSimpleCompany (ECDbR ecDb)
     // Construct the sample schema path name
     BeFileName schemaPath;
     BeTest::GetHost().GetDocumentsRoot (schemaPath);
-    schemaPath.AppendToPath (L"DgnDb\\ECDb\\Schemas");
+    schemaPath.AppendToPath (L"ECDb\\Schemas");
     BeFileName schemaPathname (schemaPath);
     schemaPathname.AppendToPath (L"SimpleCompany.01.00.ecschema.xml");
     if (!schemaPathname.DoesPathExist())
@@ -567,7 +567,7 @@ TEST (FieldEngineer, RelationshipIssue)
     // Construct the sample schema path name
     BeFileName schemaPath;
     BeTest::GetHost().GetDocumentsRoot (schemaPath);
-    schemaPath.AppendToPath (L"DgnDb\\ECDb\\Schemas");
+    schemaPath.AppendToPath (L"ECDb\\Schemas");
     BeFileName schemaPathname (schemaPath);
     schemaPathname.AppendToPath (L"DSCacheJoinSchema.01.00.ecschema.xml");
     ASSERT_TRUE (BeFileName::DoesPathExist (schemaPathname.GetName()));

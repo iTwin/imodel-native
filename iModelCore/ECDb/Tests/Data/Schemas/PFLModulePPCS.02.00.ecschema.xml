@@ -1,0 +1,859 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0" schemaName="PFLModulePPCS" nameSpacePrefix="PDMS" version="02.00" xmlns:ec="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+  <ECClass typeName="EQUI" description="EQUI Description" isStruct="false" isDomainClass="true" isCustomAttributeClass="false">
+    <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="Attribute_name" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="TYPE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="LOCK" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="OWNER" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DESC" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="FUNC" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="PURP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="NUMB" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="AREA" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="USRWEI" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="USRWWE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="USRCOG" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="USRWCO" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="POS" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ORI" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DESP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="BUIL" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ISPE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="UWMTXT" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DSCO" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="PTSP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="INSC" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="SKEY" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="STLR" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ORRF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="STMF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="INVF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="SPRE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="FSTAT" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="MDSYSF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="INPRTR" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="OUPRTR" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="_TP_PRO_EQUI" typeName="string" displayLabel=":TP-PRO-EQUI" readOnly="false"/>
+    <ECProperty propertyName="_TP_PRO_CODE" typeName="string" displayLabel=":TP-PRO-CODE" readOnly="false"/>
+    <ECProperty propertyName="_TP_PEN_PROG" typeName="string" displayLabel=":TP-PEN-PROG" readOnly="false"/>
+    <ECProperty propertyName="_TP_PEN_STAT" typeName="string" displayLabel=":TP-PEN-STAT" readOnly="false"/>
+    <ECProperty propertyName="_TP_LIG_PROG" typeName="string" displayLabel=":TP-LIG-PROG" readOnly="false"/>
+    <ECProperty propertyName="_TP_LIG_STAT" typeName="string" displayLabel=":TP-LIG-STAT" readOnly="false"/>
+    <ECProperty propertyName="_TP_SOC_PROG" typeName="string" displayLabel=":TP-SOC-PROG" readOnly="false"/>
+    <ECProperty propertyName="_TP_SOC_STAT" typeName="string" displayLabel=":TP-SOC-STAT" readOnly="false"/>
+    <ECProperty propertyName="_TP_INS_PROG" typeName="string" displayLabel=":TP-INS-PROG" readOnly="false"/>
+    <ECProperty propertyName="_TP_INS_STAT" typeName="string" displayLabel=":TP-INS-STAT" readOnly="false"/>
+    <ECProperty propertyName="_TP_PLUG_P" typeName="string" displayLabel=":TP-PLUG-P" readOnly="false"/>
+    <ECProperty propertyName="_TP_DOC_NUM" typeName="string" displayLabel=":TP-DOC-NUM" readOnly="false"/>
+    <ECProperty propertyName="_TP_DOC_REV" typeName="string" displayLabel=":TP-DOC-REV" readOnly="false"/>
+    <ECProperty propertyName="_TPTOPOS" typeName="string" displayLabel=":TPTOPOS" readOnly="false"/>
+    <ECProperty propertyName="_MDSCOMMENT" typeName="string" displayLabel=":MDSCOMMENT" readOnly="false"/>
+    <ECProperty propertyName="_MDSORIGIN" typeName="string" displayLabel=":MDSORIGIN" readOnly="false"/>
+    <ECProperty propertyName="_MDSSREF" typeName="string" displayLabel=":MDSSREF" readOnly="false"/>
+    <ECProperty propertyName="_SHI_UBOLT_REF_EPCI" typeName="string" displayLabel=":SHI_UBOLT_REF_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_STAGE_EPCI" typeName="string" displayLabel=":SHI_STAGE_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_STRU_REF_EPCI" typeName="string" displayLabel=":SHI_STRU_REF_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_XCOG_EPCI" typeName="string" displayLabel=":SHI_XCOG_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_YCOG_EPCI" typeName="string" displayLabel=":SHI_YCOG_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_ZCOG_EPCI" typeName="string" displayLabel=":SHI_ZCOG_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_WEIGHT_EPCI" typeName="string" displayLabel=":SHI_WEIGHT_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_AREA_NO_EPCI" typeName="string" displayLabel=":SHI_AREA_NO_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_CLASH_DATE_EPCI" typeName="string" displayLabel=":SHI_CLASH_DATE_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_CLASH_CHK_EPCI" typeName="string" displayLabel=":SHI_CLASH_CHK_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_CLASHDATE1_EPCI" typeName="string" displayLabel=":SHI_CLASHDATE1_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_CLASHDATE2_EPCI" typeName="string" displayLabel=":SHI_CLASHDATE2_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_CLASHDATE3_EPCI" typeName="string" displayLabel=":SHI_CLASHDATE3_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_CLASHDATE4_EPCI" typeName="string" displayLabel=":SHI_CLASHDATE4_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_CLASHDATE5_EPCI" typeName="string" displayLabel=":SHI_CLASHDATE5_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_PREDOP_ST_EPCI" typeName="string" displayLabel=":SHI_PREDOP_ST_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_CLASH_DAILY" typeName="string" displayLabel=":CLASH-DAILY" readOnly="false"/>
+    <ECProperty propertyName="_CLASH_DAILY_DESC" typeName="string" displayLabel=":CLASH-DAILY-DESC" readOnly="false"/>
+    <ECProperty propertyName="_TP_PR_EQUI" typeName="string" displayLabel=":TP-PR-EQUI" readOnly="false"/>
+    <ECProperty propertyName="_TP_PR_EQUI_C" typeName="string" displayLabel=":TP-PR-EQUI-C" readOnly="false"/>
+    <ECProperty propertyName="_TP_PR_IN_JB" typeName="string" displayLabel=":TP-PR-IN-JB" readOnly="false"/>
+    <ECProperty propertyName="_TP_PR_IN_JB_C" typeName="string" displayLabel=":TP-PR-IN-JB-C" readOnly="false"/>
+    <ECProperty propertyName="_TP_PR_IN_MISC" typeName="string" displayLabel=":TP-PR-IN-MISC" readOnly="false"/>
+    <ECProperty propertyName="_TP_PR_IN_MISC_C" typeName="string" displayLabel=":TP-PR-IN-MISC-C" readOnly="false"/>
+    <ECProperty propertyName="_TP_PR_IN_TRANSIT" typeName="string" displayLabel=":TP-PR-IN-TRANSIT" readOnly="false"/>
+    <ECProperty propertyName="_TP_PR_IN_TRANSIT_C" typeName="string" displayLabel=":TP-PR-IN-TRANSIT-C" readOnly="false"/>
+    <ECProperty propertyName="_TP_PR_EA_LIGHT" typeName="string" displayLabel=":TP-PR-EA-LIGHT" readOnly="false"/>
+    <ECProperty propertyName="_TP_PR_EA_LIGHT_C" typeName="string" displayLabel=":TP-PR-EA-LIGHT-C" readOnly="false"/>
+    <ECProperty propertyName="_TP_PR_EA_TRANSIT" typeName="string" displayLabel=":TP-PR-EA-TRANSIT" readOnly="false"/>
+    <ECProperty propertyName="_TP_PR_EA_TRANSIT_C" typeName="string" displayLabel=":TP-PR-EA-TRANSIT-C" readOnly="false"/>
+    <ECProperty propertyName="_TP_PR_HVAC" typeName="string" displayLabel=":TP-PR-HVAC" readOnly="false"/>
+    <ECProperty propertyName="_TP_PR_HVAC_C" typeName="string" displayLabel=":TP-PR-HVAC-C" readOnly="false"/>
+    <ECProperty propertyName="_TP_HLDD01" typeName="string" displayLabel=":TP-HLDD01" readOnly="false"/>
+    <ECProperty propertyName="_TP_HLDD02" typeName="string" displayLabel=":TP-HLDD02" readOnly="false"/>
+    <ECProperty propertyName="_TP_HLDD03" typeName="string" displayLabel=":TP-HLDD03" readOnly="false"/>
+    <ECProperty propertyName="_TP_HLDD04" typeName="string" displayLabel=":TP-HLDD04" readOnly="false"/>
+    <ECProperty propertyName="_TP_HLDD05" typeName="string" displayLabel=":TP-HLDD05" readOnly="false"/>
+    <ECProperty propertyName="_TP_HLDD06" typeName="string" displayLabel=":TP-HLDD06" readOnly="false"/>
+    <ECProperty propertyName="_TP_HLDD07" typeName="string" displayLabel=":TP-HLDD07" readOnly="false"/>
+    <ECProperty propertyName="_TP_HLDD08" typeName="string" displayLabel=":TP-HLDD08" readOnly="false"/>
+    <ECProperty propertyName="_TP_HLDD09" typeName="string" displayLabel=":TP-HLDD09" readOnly="false"/>
+    <ECProperty propertyName="_TP_HLDD10" typeName="string" displayLabel=":TP-HLDD10" readOnly="false"/>
+    <ECProperty propertyName="_TP_HLDC01" typeName="string" displayLabel=":TP-HLDC01" readOnly="false"/>
+    <ECProperty propertyName="_TP_HLDC02" typeName="string" displayLabel=":TP-HLDC02" readOnly="false"/>
+    <ECProperty propertyName="_TP_HLDC03" typeName="string" displayLabel=":TP-HLDC03" readOnly="false"/>
+    <ECProperty propertyName="_TP_HLDC04" typeName="string" displayLabel=":TP-HLDC04" readOnly="false"/>
+    <ECProperty propertyName="_TP_HLDC05" typeName="string" displayLabel=":TP-HLDC05" readOnly="false"/>
+    <ECProperty propertyName="_TP_HLDC06" typeName="string" displayLabel=":TP-HLDC06" readOnly="false"/>
+    <ECProperty propertyName="_TP_HLDC07" typeName="string" displayLabel=":TP-HLDC07" readOnly="false"/>
+    <ECProperty propertyName="_TP_HLDC08" typeName="string" displayLabel=":TP-HLDC08" readOnly="false"/>
+    <ECProperty propertyName="_TP_HLDC09" typeName="string" displayLabel=":TP-HLDC09" readOnly="false"/>
+    <ECProperty propertyName="_TP_HLDC10" typeName="string" displayLabel=":TP-HLDC10" readOnly="false"/>
+    <ECProperty propertyName="_HOLD" typeName="string" displayLabel=":HOLD" readOnly="false"/>
+    <ECProperty propertyName="_HOLDDESC" typeName="string" displayLabel=":HOLDDESC" readOnly="false"/>
+    <ECProperty propertyName="_INPUT_BY" typeName="string" displayLabel=":INPUT-BY" readOnly="false"/>
+    <ECProperty propertyName="_STATUS" typeName="string" displayLabel=":STATUS" readOnly="false"/>
+    <ECProperty propertyName="_COMMENT" typeName="string" displayLabel=":COMMENT" readOnly="false"/>
+    <ECProperty propertyName="_IISS" typeName="string" displayLabel=":IISS" readOnly="false"/>
+    <ECProperty propertyName="_IISSDATE" typeName="string" displayLabel=":IISSDATE" readOnly="false"/>
+    <ECProperty propertyName="_ISODATE" typeName="string" displayLabel=":ISODATE" readOnly="false"/>
+    <ECProperty propertyName="_ISOSHTS" typeName="string" displayLabel=":ISOSHTS" readOnly="false"/>
+    <ECProperty propertyName="_LASTISO" typeName="string" displayLabel=":LASTISO" readOnly="false"/>
+    <ECProperty propertyName="_MTODATE" typeName="string" displayLabel=":MTODATE" readOnly="false"/>
+    <ECProperty propertyName="_MTOREV" typeName="string" displayLabel=":MTOREV" readOnly="false"/>
+    <ECProperty propertyName="_VDN" typeName="string" displayLabel=":VDN" readOnly="false"/>
+    <ECProperty propertyName="_VDR" typeName="string" displayLabel=":VDR" readOnly="false"/>
+    <ECProperty propertyName="_LPID" typeName="string" displayLabel=":LPID" readOnly="false"/>
+    <ECProperty propertyName="_EQUISIZE" typeName="string" displayLabel=":EQUISIZE" readOnly="false"/>
+    <ECProperty propertyName="_EQUIWEIGHT" typeName="string" displayLabel=":EQUIWEIGHT" readOnly="false"/>
+    <ECProperty propertyName="_LREV" typeName="string" displayLabel=":LREV" readOnly="false"/>
+    <ECProperty propertyName="_AREA" typeName="string" displayLabel=":AREA" readOnly="false"/>
+    <ECProperty propertyName="_MDSTRIMMER" typeName="string" displayLabel=":MDSTRIMMER" readOnly="false"/>
+    <ECProperty propertyName="_ACC_TRAY_1" typeName="string" displayLabel=":ACC-TRAY-1" readOnly="false"/>
+    <ECProperty propertyName="_ACC_TRAY_2" typeName="string" displayLabel=":ACC-TRAY-2" readOnly="false"/>
+    <ECProperty propertyName="_ACC_TRAY_3" typeName="string" displayLabel=":ACC-TRAY-3" readOnly="false"/>
+    <ECProperty propertyName="_ACC_TRAY_4" typeName="string" displayLabel=":ACC-TRAY-4" readOnly="false"/>
+    <ECProperty propertyName="_ACC_TRAY_5" typeName="string" displayLabel=":ACC-TRAY-5" readOnly="false"/>
+    <ECProperty propertyName="_ACC_TRAY_6" typeName="string" displayLabel=":ACC-TRAY-6" readOnly="false"/>
+    <ECProperty propertyName="_ACC_TRAY_7" typeName="string" displayLabel=":ACC-TRAY-7" readOnly="false"/>
+    <ECProperty propertyName="_E_INSTAL_DTL" typeName="string" displayLabel=":E-INSTAL-DTL" readOnly="false"/>
+    <ECProperty propertyName="_I_INSTAL_DTL" typeName="string" displayLabel=":I-INSTAL-DTL" readOnly="false"/>
+    <ECProperty propertyName="_PUSH_BUTTON" typeName="string" displayLabel=":PUSH-BUTTON" readOnly="false"/>
+    <ECProperty propertyName="_SUPT_DESC" typeName="string" displayLabel=":SUPT-DESC" readOnly="false"/>
+    <ECProperty propertyName="_E_ARRGT_NUM" typeName="string" displayLabel=":E-ARRGT-NUM" readOnly="false"/>
+    <ECProperty propertyName="_I_ARRGT_NUM" typeName="string" displayLabel=":I-ARRGT-NUM" readOnly="false"/>
+    <ECProperty propertyName="_WTEMT" typeName="string" displayLabel=":WTEMT" readOnly="false"/>
+    <ECProperty propertyName="_WTOPT" typeName="string" displayLabel=":WTOPT" readOnly="false"/>
+    <ECProperty propertyName="_WTTST" typeName="string" displayLabel=":WTTST" readOnly="false"/>
+    <ECProperty propertyName="_UNIT" typeName="string" displayLabel=":UNIT" readOnly="false"/>
+    <ECProperty propertyName="_ITEM" typeName="string" displayLabel=":ITEM" readOnly="false"/>
+    <ECProperty propertyName="_PART" typeName="string" displayLabel=":PART" readOnly="false"/>
+    <ECProperty propertyName="_LOOP" typeName="string" displayLabel=":LOOP" readOnly="false"/>
+    <ECProperty propertyName="_FUNCTION" typeName="string" displayLabel=":FUNCTION" readOnly="false"/>
+    <ECProperty propertyName="_CLASS" typeName="string" displayLabel=":CLASS" readOnly="false"/>
+    <ECProperty propertyName="_CONST" typeName="string" displayLabel=":CONST" readOnly="false"/>
+    <ECProperty propertyName="_CIRCUIT" typeName="string" displayLabel=":CIRCUIT" readOnly="false"/>
+    <ECProperty propertyName="_ARRGTNUM" typeName="string" displayLabel=":ARRGTNUM" readOnly="false"/>
+    <ECProperty propertyName="_NAMCON" typeName="string" displayLabel=":NAMCON" readOnly="false"/>
+    <ECProperty propertyName="_SECTIONED" typeName="string" displayLabel=":SECTIONED" readOnly="false"/>
+    <ECProperty propertyName="_NAMSUF" typeName="string" displayLabel=":NAMSUF" readOnly="false"/>
+    <ECProperty propertyName="_CHK_BY" typeName="string" displayLabel=":CHK-BY" readOnly="false"/>
+    <ECProperty propertyName="_IDATE" typeName="string" displayLabel=":IDATE" readOnly="false"/>
+    <ECProperty propertyName="_CDATE" typeName="string" displayLabel=":CDATE" readOnly="false"/>
+    <ECProperty propertyName="_CKTNUM" typeName="string" displayLabel=":CKTNUM" readOnly="false"/>
+    <ECProperty propertyName="OwnerType" typeName="string" readOnly="false"/>
+  </ECClass>
+  <ECClass typeName="LEVEL4" description="LEVEL4 Description" isStruct="false" isDomainClass="true" isCustomAttributeClass="false">
+    <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+  </ECClass>
+  <ECRelationshipClass typeName="EQUILEVEL4" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="embedding" strengthDirection="forward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="EQUI"/>
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="LEVEL4"/>
+    </Target>
+  </ECRelationshipClass>
+  <ECClass typeName="NOZZ" description="NOZZ Description" isStruct="false" isDomainClass="true" isCustomAttributeClass="false">
+    <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="Attribute_name" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="TYPE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="LOCK" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="OWNER" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DESC" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="FUNC" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="PURP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="POS" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ORI" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="TEMP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="PRES" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="TPRESS" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="CREF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="CATR" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="HEIG" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ANGL" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="RADI" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ISPE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DUTY" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DESP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ORRF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="STMF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="INVF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="BSEL" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="INPRTR" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="OUPRTR" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="_TP_SWL" typeName="string" displayLabel=":TP-SWL" readOnly="false"/>
+    <ECProperty propertyName="_TP_HANDLING" typeName="string" displayLabel=":TP-HANDLING" readOnly="false"/>
+    <ECProperty propertyName="_MDSCOMMENT" typeName="string" displayLabel=":MDSCOMMENT" readOnly="false"/>
+    <ECProperty propertyName="_HOLD" typeName="string" displayLabel=":HOLD" readOnly="false"/>
+    <ECProperty propertyName="_HOLDDESC" typeName="string" displayLabel=":HOLDDESC" readOnly="false"/>
+    <ECProperty propertyName="_COMMENT" typeName="string" displayLabel=":COMMENT" readOnly="false"/>
+    <ECProperty propertyName="OwnerType" typeName="string" readOnly="false"/>
+  </ECClass>
+  <ECRelationshipClass typeName="EQUINOZZ" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="embedding" strengthDirection="forward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="EQUI"/>
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="NOZZ"/>
+    </Target>
+  </ECRelationshipClass>
+  <ECClass typeName="SUBE" description="SUBE Description" isStruct="false" isDomainClass="true" isCustomAttributeClass="false">
+    <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="Attribute_name" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="TYPE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="LOCK" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="OWNER" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DESC" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="FUNC" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="PURP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="NUMB" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="AREA" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="USRWEI" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="USRWWE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="USRCOG" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="USRWCO" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="UWMTXT" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="POS" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ORI" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="BUIL" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ISPE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DSCO" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="PTSP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="INSC" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="SKEY" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="STLR" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DESP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ORRF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="STMF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="INVF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="SPRE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="MDSYSF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="_TP_BOJ_PROG" typeName="string" displayLabel=":TP-BOJ-PROG" readOnly="false"/>
+    <ECProperty propertyName="_TP_BOJ_STAT" typeName="string" displayLabel=":TP-BOJ-STAT" readOnly="false"/>
+    <ECProperty propertyName="_MDSCP1" typeName="string" displayLabel=":MDSCP1" readOnly="false"/>
+    <ECProperty propertyName="_MDSCP2" typeName="string" displayLabel=":MDSCP2" readOnly="false"/>
+    <ECProperty propertyName="_MDSCP3" typeName="string" displayLabel=":MDSCP3" readOnly="false"/>
+    <ECProperty propertyName="_MDSORIGIN" typeName="string" displayLabel=":MDSORIGIN" readOnly="false"/>
+    <ECProperty propertyName="_CP4" typeName="string" displayLabel=":CP4" readOnly="false"/>
+    <ECProperty propertyName="_CP5" typeName="string" displayLabel=":CP5" readOnly="false"/>
+    <ECProperty propertyName="_CP6" typeName="string" displayLabel=":CP6" readOnly="false"/>
+    <ECProperty propertyName="_AREA" typeName="string" displayLabel=":AREA" readOnly="false"/>
+    <ECProperty propertyName="_CPOS" typeName="string" displayLabel=":CPOS" readOnly="false"/>
+    <ECProperty propertyName="_CREF" typeName="string" displayLabel=":CREF" readOnly="false"/>
+    <ECProperty propertyName="_ACC_TRAY_1" typeName="string" displayLabel=":ACC-TRAY-1" readOnly="false"/>
+    <ECProperty propertyName="_ACC_TRAY_2" typeName="string" displayLabel=":ACC-TRAY-2" readOnly="false"/>
+    <ECProperty propertyName="_ACC_TRAY_3" typeName="string" displayLabel=":ACC-TRAY-3" readOnly="false"/>
+    <ECProperty propertyName="_ACC_TRAY_4" typeName="string" displayLabel=":ACC-TRAY-4" readOnly="false"/>
+    <ECProperty propertyName="_ACC_TRAY_5" typeName="string" displayLabel=":ACC-TRAY-5" readOnly="false"/>
+    <ECProperty propertyName="_ACC_TRAY_6" typeName="string" displayLabel=":ACC-TRAY-6" readOnly="false"/>
+    <ECProperty propertyName="_ACC_TRAY_7" typeName="string" displayLabel=":ACC-TRAY-7" readOnly="false"/>
+    <ECProperty propertyName="_E_INSTAL_DTL" typeName="string" displayLabel=":E-INSTAL-DTL" readOnly="false"/>
+    <ECProperty propertyName="_I_INSTAL_DTL" typeName="string" displayLabel=":I-INSTAL-DTL" readOnly="false"/>
+    <ECProperty propertyName="_PUSH_BUTTON" typeName="string" displayLabel=":PUSH-BUTTON" readOnly="false"/>
+    <ECProperty propertyName="_SUPT_DESC" typeName="string" displayLabel=":SUPT-DESC" readOnly="false"/>
+    <ECProperty propertyName="_E_ARRGT_NUM" typeName="string" displayLabel=":E-ARRGT-NUM" readOnly="false"/>
+    <ECProperty propertyName="_I_ARRGT_NUM" typeName="string" displayLabel=":I-ARRGT-NUM" readOnly="false"/>
+    <ECProperty propertyName="_WTEMT" typeName="string" displayLabel=":WTEMT" readOnly="false"/>
+    <ECProperty propertyName="_WTOPT" typeName="string" displayLabel=":WTOPT" readOnly="false"/>
+    <ECProperty propertyName="_WTTST" typeName="string" displayLabel=":WTTST" readOnly="false"/>
+    <ECProperty propertyName="_UNIT" typeName="string" displayLabel=":UNIT" readOnly="false"/>
+    <ECProperty propertyName="_ITEM" typeName="string" displayLabel=":ITEM" readOnly="false"/>
+    <ECProperty propertyName="_PART" typeName="string" displayLabel=":PART" readOnly="false"/>
+    <ECProperty propertyName="_LOOP" typeName="string" displayLabel=":LOOP" readOnly="false"/>
+    <ECProperty propertyName="_FUNCTION" typeName="string" displayLabel=":FUNCTION" readOnly="false"/>
+    <ECProperty propertyName="_CLASS" typeName="string" displayLabel=":CLASS" readOnly="false"/>
+    <ECProperty propertyName="_SCTN_NO" typeName="string" displayLabel=":SCTN-NO" readOnly="false"/>
+    <ECProperty propertyName="_NAMCON" typeName="string" displayLabel=":NAMCON" readOnly="false"/>
+    <ECProperty propertyName="_NAMSUF" typeName="string" displayLabel=":NAMSUF" readOnly="false"/>
+    <ECProperty propertyName="_CKTNUM" typeName="string" displayLabel=":CKTNUM" readOnly="false"/>
+    <ECProperty propertyName="OwnerType" typeName="string" readOnly="false"/>
+  </ECClass>
+  <ECRelationshipClass typeName="EQUISUBE" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="embedding" strengthDirection="forward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="EQUI"/>
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="SUBE"/>
+    </Target>
+  </ECRelationshipClass>
+  <ECClass typeName="FRMW" description="FRMW Description" isStruct="false" isDomainClass="true" isCustomAttributeClass="false">
+    <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="Attribute_name" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="TYPE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="LOCK" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="OWNER" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DESC" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="FUNC" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="PURP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="NUMB" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="BUIL" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="SHOP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="STSP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="MATR" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ISPE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="FIRE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DUNIO" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="PTSP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="INSC" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="SKEY" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="SUPR" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ORRF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="STMF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="INPRTR" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="OUPRTR" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="_SDNFMGRADE" typeName="string" displayLabel=":SDNFMGRADE" readOnly="false"/>
+    <ECProperty propertyName="_SDNFPSPEC" typeName="string" displayLabel=":SDNFPSPEC" readOnly="false"/>
+    <ECProperty propertyName="OwnerType" typeName="string" readOnly="false"/>
+  </ECClass>
+  <ECClass typeName="LEVEL5" description="LEVEL5 Description" isStruct="false" isDomainClass="true" isCustomAttributeClass="false">
+    <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+  </ECClass>
+  <ECRelationshipClass typeName="FRMWLEVEL5" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="embedding" strengthDirection="forward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="FRMW"/>
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="LEVEL5"/>
+    </Target>
+  </ECRelationshipClass>
+  <ECClass typeName="SBFR" description="SBFR Description" isStruct="false" isDomainClass="true" isCustomAttributeClass="false">
+    <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="Attribute_name" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="TYPE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="LOCK" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="OWNER" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DESC" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="FUNC" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="PURP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="NUMB" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="BUIL" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="SHOP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="STSP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="MATR" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ISPE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="FIRE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DUNIO" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="PTSP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="INSC" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="SKEY" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="SUPR" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ORRF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="STMF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="_CONFIG" typeName="string" displayLabel=":CONFIG" readOnly="false"/>
+    <ECProperty propertyName="_SUPDIR" typeName="string" displayLabel=":SUPDIR" readOnly="false"/>
+    <ECProperty propertyName="_SUPROT" typeName="string" displayLabel=":SUPROT" readOnly="false"/>
+    <ECProperty propertyName="_SUPORIG" typeName="string" displayLabel=":SUPORIG" readOnly="false"/>
+    <ECProperty propertyName="_SPVDIR" typeName="string" displayLabel=":SPVDIR" readOnly="false"/>
+    <ECProperty propertyName="OwnerType" typeName="string" readOnly="false"/>
+  </ECClass>
+  <ECRelationshipClass typeName="FRMWSBFR" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="embedding" strengthDirection="forward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="FRMW"/>
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="SBFR"/>
+    </Target>
+  </ECRelationshipClass>
+  <ECClass typeName="SCTN" description="SCTN Description" isStruct="false" isDomainClass="true" isCustomAttributeClass="false">
+    <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="Attribute_name" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="TYPE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="LOCK" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="OWNER" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DESC" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="FUNC" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="PURP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="GTYP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="NUMB" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DESP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="BUIL" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="SHOP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="BANG" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DRNS" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DRNE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="POSS" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="POSE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="JOIS" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="JOIE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="JLIN" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="JUSL" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="CTYS" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="CTYE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="MATR" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ISPE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="FIRE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="WELDDP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="POSNO" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="PARNAM" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="INRE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="SPRE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ANTY" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DRGP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="MEML" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ORRF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="INVF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="TMRREF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="REPCOU" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="PRODRF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="BEVCOD" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="_TP_SWL" typeName="string" displayLabel=":TP-SWL" readOnly="false"/>
+    <ECProperty propertyName="_TP_GRADE" typeName="string" displayLabel=":TP-GRADE" readOnly="false"/>
+    <ECProperty propertyName="_TP_CLASS" typeName="string" displayLabel=":TP-CLASS" readOnly="false"/>
+    <ECProperty propertyName="_TP_ITEM" typeName="string" displayLabel=":TP-ITEM" readOnly="false"/>
+    <ECProperty propertyName="_TP_TOUGHNESS" typeName="string" displayLabel=":TP-TOUGHNESS" readOnly="false"/>
+    <ECProperty propertyName="_SDNFSTATUS" typeName="string" displayLabel=":SDNFSTATUS" readOnly="false"/>
+    <ECProperty propertyName="_SDNFEXCLUDE" typeName="string" displayLabel=":SDNFEXCLUDE" readOnly="false"/>
+    <ECProperty propertyName="_SDNFMODNR" typeName="string" displayLabel=":SDNFMODNR" readOnly="false"/>
+    <ECProperty propertyName="_SDNFEMARK" typeName="string" displayLabel=":SDNFEMARK" readOnly="false"/>
+    <ECProperty propertyName="_SDNFMARK" typeName="string" displayLabel=":SDNFMARK" readOnly="false"/>
+    <ECProperty propertyName="_SDNFMGRADE" typeName="string" displayLabel=":SDNFMGRADE" readOnly="false"/>
+    <ECProperty propertyName="_SDNFTRRVNO" typeName="string" displayLabel=":SDNFTRRVNO" readOnly="false"/>
+    <ECProperty propertyName="_SDNFTRANO" typeName="string" displayLabel=":SDNFTRANO" readOnly="false"/>
+    <ECProperty propertyName="_SDNFREVNO" typeName="string" displayLabel=":SDNFREVNO" readOnly="false"/>
+    <ECProperty propertyName="_SDNFITIME" typeName="string" displayLabel=":SDNFITIME" readOnly="false"/>
+    <ECProperty propertyName="_SDNFIDATE" typeName="string" displayLabel=":SDNFIDATE" readOnly="false"/>
+    <ECProperty propertyName="_SDNFETIME" typeName="string" displayLabel=":SDNFETIME" readOnly="false"/>
+    <ECProperty propertyName="_SDNFEDATE" typeName="string" displayLabel=":SDNFEDATE" readOnly="false"/>
+    <ECProperty propertyName="_SDNFPSPEC" typeName="string" displayLabel=":SDNFPSPEC" readOnly="false"/>
+    <ECProperty propertyName="_SDNFHOLD" typeName="string" displayLabel=":SDNFHOLD" readOnly="false"/>
+    <ECProperty propertyName="_MDSANCREF" typeName="string" displayLabel=":MDSANCREF" readOnly="false"/>
+    <ECProperty propertyName="_MDSATTAREF" typeName="string" displayLabel=":MDSATTAREF" readOnly="false"/>
+    <ECProperty propertyName="_MDSCONFIGA" typeName="string" displayLabel=":MDSCONFIGA" readOnly="false"/>
+    <ECProperty propertyName="_MDSCONFIGB" typeName="string" displayLabel=":MDSCONFIGB" readOnly="false"/>
+    <ECProperty propertyName="_MDSCONN" typeName="string" displayLabel=":MDSCONN" readOnly="false"/>
+    <ECProperty propertyName="_MDSNOTE" typeName="string" displayLabel=":MDSNOTE" readOnly="false"/>
+    <ECProperty propertyName="_MDSNOTEPOS" typeName="string" displayLabel=":MDSNOTEPOS" readOnly="false"/>
+    <ECProperty propertyName="_MDSOLAP" typeName="string" displayLabel=":MDSOLAP" readOnly="false"/>
+    <ECProperty propertyName="_MDSONUM" typeName="string" displayLabel=":MDSONUM" readOnly="false"/>
+    <ECProperty propertyName="_MDSPCONN" typeName="string" displayLabel=":MDSPCONN" readOnly="false"/>
+    <ECProperty propertyName="_MDSPLATE" typeName="string" displayLabel=":MDSPLATE" readOnly="false"/>
+    <ECProperty propertyName="_MDSPOSNUM" typeName="string" displayLabel=":MDSPOSNUM" readOnly="false"/>
+    <ECProperty propertyName="_MDSSPLADJUST" typeName="string" displayLabel=":MDSSPLADJUST" readOnly="false"/>
+    <ECProperty propertyName="_MDSSPOOL" typeName="string" displayLabel=":MDSSPOOL" readOnly="false"/>
+    <ECProperty propertyName="_MDSWELDDATA" typeName="string" displayLabel=":MDSWELDDATA" readOnly="false"/>
+    <ECProperty propertyName="_MDSXCONN" typeName="string" displayLabel=":MDSXCONN" readOnly="false"/>
+    <ECProperty propertyName="_SSTX" typeName="string" displayLabel=":SSTX" readOnly="false"/>
+    <ECProperty propertyName="_SENX" typeName="string" displayLabel=":SENX" readOnly="false"/>
+    <ECProperty propertyName="_SPREF" typeName="string" displayLabel=":SPREF" readOnly="false"/>
+    <ECProperty propertyName="_ATTAREF" typeName="string" displayLabel=":ATTAREF" readOnly="false"/>
+    <ECProperty propertyName="OwnerType" typeName="string" readOnly="false"/>
+  </ECClass>
+  <ECRelationshipClass typeName="FRMWSCTN" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="embedding" strengthDirection="forward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="FRMW"/>
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="SCTN"/>
+    </Target>
+  </ECRelationshipClass>
+  <ECClass typeName="LEVEL10" description="LEVEL10 Description" isStruct="false" isDomainClass="true" isCustomAttributeClass="false">
+    <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+  </ECClass>
+  <ECClass typeName="LEVEL6" description="LEVEL6 Description" isStruct="false" isDomainClass="true" isCustomAttributeClass="false">
+    <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+  </ECClass>
+  <ECClass typeName="LEVEL7" description="LEVEL7 Description" isStruct="false" isDomainClass="true" isCustomAttributeClass="false">
+    <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+  </ECClass>
+  <ECRelationshipClass typeName="LEVEL6LEVEL7" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="embedding" strengthDirection="forward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="LEVEL6"/>
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="LEVEL7"/>
+    </Target>
+  </ECRelationshipClass>
+  <ECClass typeName="LEVEL8" description="LEVEL8 Description" isStruct="false" isDomainClass="true" isCustomAttributeClass="false">
+    <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+  </ECClass>
+  <ECRelationshipClass typeName="LEVEL7LEVEL8" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="embedding" strengthDirection="forward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="LEVEL7"/>
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="LEVEL8"/>
+    </Target>
+  </ECRelationshipClass>
+  <ECClass typeName="LEVEL9" description="LEVEL9 Description" isStruct="false" isDomainClass="true" isCustomAttributeClass="false">
+    <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+  </ECClass>
+  <ECRelationshipClass typeName="LEVEL8LEVEL9" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="embedding" strengthDirection="forward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="LEVEL8"/>
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="LEVEL9"/>
+    </Target>
+  </ECRelationshipClass>
+  <ECRelationshipClass typeName="LEVEL8SCTN" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="embedding" strengthDirection="forward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="LEVEL8"/>
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="SCTN"/>
+    </Target>
+  </ECRelationshipClass>
+  <ECRelationshipClass typeName="LEVEL9LEVEL10" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="embedding" strengthDirection="forward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="LEVEL9"/>
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="LEVEL10"/>
+    </Target>
+  </ECRelationshipClass>
+  <ECRelationshipClass typeName="SBFRLEVEL6" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="embedding" strengthDirection="forward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="SBFR"/>
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="LEVEL6"/>
+    </Target>
+  </ECRelationshipClass>
+  <ECRelationshipClass typeName="SBFRSCTN" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="embedding" strengthDirection="forward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="SBFR"/>
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="SCTN"/>
+    </Target>
+  </ECRelationshipClass>
+  <ECRelationshipClass typeName="SCTNLEVEL6" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="embedding" strengthDirection="forward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="SCTN"/>
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="LEVEL6"/>
+    </Target>
+  </ECRelationshipClass>
+  <ECRelationshipClass typeName="SCTNLEVEL7" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="embedding" strengthDirection="forward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="SCTN"/>
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="LEVEL7"/>
+    </Target>
+  </ECRelationshipClass>
+  <ECClass typeName="SITE" description="SITE Description" isStruct="false" isDomainClass="true" isCustomAttributeClass="false">
+    <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="Attribute_name" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="TYPE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="LOCK" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="OWNER" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DESC" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="FUNC" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="PURP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="NUMB" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="AREA" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="POS" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ORI" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="MODU" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ORRF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="STMF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="RLST" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="_TP_WEI_PIDS" typeName="string" displayLabel=":TP-WEI-PIDS" readOnly="false"/>
+    <ECProperty propertyName="_TP_WEI_STRS" typeName="string" displayLabel=":TP-WEI-STRS" readOnly="false"/>
+    <ECProperty propertyName="_TP_WEI_SUPP" typeName="string" displayLabel=":TP-WEI-SUPP" readOnly="false"/>
+    <ECProperty propertyName="_TP_WEI_HOLD" typeName="string" displayLabel=":TP-WEI-HOLD" readOnly="false"/>
+    <ECProperty propertyName="_SDNFELIST" typeName="string" displayLabel=":SDNFELIST" readOnly="false"/>
+    <ECProperty propertyName="_SDNFMODNR" typeName="string" displayLabel=":SDNFMODNR" readOnly="false"/>
+    <ECProperty propertyName="_SDNFTARGET" typeName="string" displayLabel=":SDNFTARGET" readOnly="false"/>
+    <ECProperty propertyName="_SDNFSOURCE" typeName="string" displayLabel=":SDNFSOURCE" readOnly="false"/>
+    <ECProperty propertyName="_SDNFDECODE" typeName="string" displayLabel=":SDNFDECODE" readOnly="false"/>
+    <ECProperty propertyName="_SDNFPRID" typeName="string" displayLabel=":SDNFPRID" readOnly="false"/>
+    <ECProperty propertyName="_SDNFSTID" typeName="string" displayLabel=":SDNFSTID" readOnly="false"/>
+    <ECProperty propertyName="_SDNFCLID" typeName="string" displayLabel=":SDNFCLID" readOnly="false"/>
+    <ECProperty propertyName="_SDNFEFID" typeName="string" displayLabel=":SDNFEFID" readOnly="false"/>
+    <ECProperty propertyName="_SDNFTRRVNO" typeName="string" displayLabel=":SDNFTRRVNO" readOnly="false"/>
+    <ECProperty propertyName="_SDNFTRANO" typeName="string" displayLabel=":SDNFTRANO" readOnly="false"/>
+    <ECProperty propertyName="_SDNFREVNO" typeName="string" displayLabel=":SDNFREVNO" readOnly="false"/>
+    <ECProperty propertyName="_SDNFITIME" typeName="string" displayLabel=":SDNFITIME" readOnly="false"/>
+    <ECProperty propertyName="_SDNFIDATE" typeName="string" displayLabel=":SDNFIDATE" readOnly="false"/>
+    <ECProperty propertyName="_SDNFETIME" typeName="string" displayLabel=":SDNFETIME" readOnly="false"/>
+    <ECProperty propertyName="_SDNFEDATE" typeName="string" displayLabel=":SDNFEDATE" readOnly="false"/>
+    <ECProperty propertyName="_MDSCP1" typeName="string" displayLabel=":MDSCP1" readOnly="false"/>
+    <ECProperty propertyName="_MDSCP2" typeName="string" displayLabel=":MDSCP2" readOnly="false"/>
+    <ECProperty propertyName="_MDSCP3" typeName="string" displayLabel=":MDSCP3" readOnly="false"/>
+    <ECProperty propertyName="_CP4" typeName="string" displayLabel=":CP4" readOnly="false"/>
+    <ECProperty propertyName="_CP5" typeName="string" displayLabel=":CP5" readOnly="false"/>
+    <ECProperty propertyName="_CP6" typeName="string" displayLabel=":CP6" readOnly="false"/>
+    <ECProperty propertyName="_PROJNUM" typeName="string" displayLabel=":PROJNUM" readOnly="false"/>
+    <ECProperty propertyName="_AREA" typeName="string" displayLabel=":AREA" readOnly="false"/>
+    <ECProperty propertyName="_BLDGDA" typeName="string" displayLabel=":BLDGDA" readOnly="false"/>
+  </ECClass>
+  <ECClass typeName="ZONE" description="ZONE Description" isStruct="false" isDomainClass="true" isCustomAttributeClass="false">
+    <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="Attribute_name" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="TYPE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="LOCK" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="OWNER" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DESC" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="FUNC" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="PURP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="NUMB" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="AREA" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="POS" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ORI" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="PSPE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ISPE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="TSPE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="BENDMA" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DUNIO" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="MODU" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ORRF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="STMF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="RLST" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="FSTAT" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="FACODE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="_TP_WEI_PRIM" typeName="string" displayLabel=":TP-WEI-PRIM" readOnly="false"/>
+    <ECProperty propertyName="_TP_WEI_SECO" typeName="string" displayLabel=":TP-WEI-SECO" readOnly="false"/>
+    <ECProperty propertyName="_TP_WEI_PENE" typeName="string" displayLabel=":TP-WEI-PENE" readOnly="false"/>
+    <ECProperty propertyName="_TP_WEI_RENF" typeName="string" displayLabel=":TP-WEI-RENF" readOnly="false"/>
+    <ECProperty propertyName="_TP_CTW_STUD" typeName="string" displayLabel=":TP-CTW-STUD" readOnly="false"/>
+    <ECProperty propertyName="_TP_CTW_DISC" typeName="string" displayLabel=":TP-CTW-DISC" readOnly="false"/>
+    <ECProperty propertyName="_TP_CTW_HOLD" typeName="string" displayLabel=":TP-CTW-HOLD" readOnly="false"/>
+    <ECProperty propertyName="_SDNFELIST" typeName="string" displayLabel=":SDNFELIST" readOnly="false"/>
+    <ECProperty propertyName="_SDNFMODNR" typeName="string" displayLabel=":SDNFMODNR" readOnly="false"/>
+    <ECProperty propertyName="_SDNFTARGET" typeName="string" displayLabel=":SDNFTARGET" readOnly="false"/>
+    <ECProperty propertyName="_SDNFSOURCE" typeName="string" displayLabel=":SDNFSOURCE" readOnly="false"/>
+    <ECProperty propertyName="_SDNFDECODE" typeName="string" displayLabel=":SDNFDECODE" readOnly="false"/>
+    <ECProperty propertyName="_SDNFPRID" typeName="string" displayLabel=":SDNFPRID" readOnly="false"/>
+    <ECProperty propertyName="_SDNFSTID" typeName="string" displayLabel=":SDNFSTID" readOnly="false"/>
+    <ECProperty propertyName="_SDNFCLID" typeName="string" displayLabel=":SDNFCLID" readOnly="false"/>
+    <ECProperty propertyName="_SDNFEFID" typeName="string" displayLabel=":SDNFEFID" readOnly="false"/>
+    <ECProperty propertyName="_SDNFITIME" typeName="string" displayLabel=":SDNFITIME" readOnly="false"/>
+    <ECProperty propertyName="_SDNFIDATE" typeName="string" displayLabel=":SDNFIDATE" readOnly="false"/>
+    <ECProperty propertyName="_SDNFETIME" typeName="string" displayLabel=":SDNFETIME" readOnly="false"/>
+    <ECProperty propertyName="_SDNFEDATE" typeName="string" displayLabel=":SDNFEDATE" readOnly="false"/>
+    <ECProperty propertyName="_MDSBARS" typeName="string" displayLabel=":MDSBARS" readOnly="false"/>
+    <ECProperty propertyName="_MDSCP1" typeName="string" displayLabel=":MDSCP1" readOnly="false"/>
+    <ECProperty propertyName="_MDSCP2" typeName="string" displayLabel=":MDSCP2" readOnly="false"/>
+    <ECProperty propertyName="_MDSCP3" typeName="string" displayLabel=":MDSCP3" readOnly="false"/>
+    <ECProperty propertyName="_MDSEDIT" typeName="string" displayLabel=":MDSEDIT" readOnly="false"/>
+    <ECProperty propertyName="_MDSHANGGROUP" typeName="string" displayLabel=":MDSHANGGROUP" readOnly="false"/>
+    <ECProperty propertyName="_MDSHANGROT" typeName="string" displayLabel=":MDSHANGROT" readOnly="false"/>
+    <ECProperty propertyName="_MDSHV" typeName="string" displayLabel=":MDSHV" readOnly="false"/>
+    <ECProperty propertyName="_MDSMAXBORE" typeName="string" displayLabel=":MDSMAXBORE" readOnly="false"/>
+    <ECProperty propertyName="_MDSMAXPIPES" typeName="string" displayLabel=":MDSMAXPIPES" readOnly="false"/>
+    <ECProperty propertyName="_MDSMINBORE" typeName="string" displayLabel=":MDSMINBORE" readOnly="false"/>
+    <ECProperty propertyName="_MDSRANGE" typeName="string" displayLabel=":MDSRANGE" readOnly="false"/>
+    <ECProperty propertyName="_MDSAUTOFILE" typeName="string" displayLabel=":MDSAUTOFILE" readOnly="false"/>
+    <ECProperty propertyName="_MDS_ZONE_TYPE" typeName="string" displayLabel=":MDS-ZONE-TYPE" readOnly="false"/>
+    <ECProperty propertyName="_CP4" typeName="string" displayLabel=":CP4" readOnly="false"/>
+    <ECProperty propertyName="_CP5" typeName="string" displayLabel=":CP5" readOnly="false"/>
+    <ECProperty propertyName="_CP6" typeName="string" displayLabel=":CP6" readOnly="false"/>
+    <ECProperty propertyName="_REVCOL" typeName="string" displayLabel=":REVCOL" readOnly="false"/>
+    <ECProperty propertyName="_AREA" typeName="string" displayLabel=":AREA" readOnly="false"/>
+    <ECProperty propertyName="_FUNCTION" typeName="string" displayLabel=":FUNCTION" readOnly="false"/>
+    <ECProperty propertyName="_CONST" typeName="string" displayLabel=":CONST" readOnly="false"/>
+    <ECProperty propertyName="OwnerType" typeName="string" readOnly="false"/>
+  </ECClass>
+  <ECRelationshipClass typeName="SITEZONE" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="embedding" strengthDirection="forward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="SITE"/>
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="ZONE"/>
+    </Target>
+  </ECRelationshipClass>
+  <ECClass typeName="STRU" description="STRU Description" isStruct="false" isDomainClass="true" isCustomAttributeClass="false">
+    <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="Attribute_name" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="TYPE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="LOCK" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="OWNER" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DESC" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="FUNC" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="PURP" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="NUMB" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="AREA" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="POS" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ORI" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="USRWEI" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="USRWWE" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="USRCOG" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="USRWCO" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="UWMTXT" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="BUIL" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="DUNIO" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="SKEY" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="ORRF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="STMF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="INVF" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="FSTAT" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="INPRTR" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="OUPRTR" typeName="string" readOnly="false"/>
+    <ECProperty propertyName="_TP_IFC" typeName="string" displayLabel=":TP-IFC" readOnly="false"/>
+    <ECProperty propertyName="_TP_IFA" typeName="string" displayLabel=":TP-IFA" readOnly="false"/>
+    <ECProperty propertyName="_TP_REV" typeName="string" displayLabel=":TP-REV" readOnly="false"/>
+    <ECProperty propertyName="_TP_REV0" typeName="string" displayLabel=":TP-REV0" readOnly="false"/>
+    <ECProperty propertyName="_TP_REV1" typeName="string" displayLabel=":TP-REV1" readOnly="false"/>
+    <ECProperty propertyName="_TP_REV2" typeName="string" displayLabel=":TP-REV2" readOnly="false"/>
+    <ECProperty propertyName="_TP_REV3" typeName="string" displayLabel=":TP-REV3" readOnly="false"/>
+    <ECProperty propertyName="_TP_REV4" typeName="string" displayLabel=":TP-REV4" readOnly="false"/>
+    <ECProperty propertyName="_TP_DAT0" typeName="string" displayLabel=":TP-DAT0" readOnly="false"/>
+    <ECProperty propertyName="_TP_DAT1" typeName="string" displayLabel=":TP-DAT1" readOnly="false"/>
+    <ECProperty propertyName="_TP_DAT2" typeName="string" displayLabel=":TP-DAT2" readOnly="false"/>
+    <ECProperty propertyName="_TP_DAT3" typeName="string" displayLabel=":TP-DAT3" readOnly="false"/>
+    <ECProperty propertyName="_TP_DAT4" typeName="string" displayLabel=":TP-DAT4" readOnly="false"/>
+    <ECProperty propertyName="_TP_MEM0" typeName="string" displayLabel=":TP-MEM0" readOnly="false"/>
+    <ECProperty propertyName="_TP_MEM1" typeName="string" displayLabel=":TP-MEM1" readOnly="false"/>
+    <ECProperty propertyName="_TP_MEM2" typeName="string" displayLabel=":TP-MEM2" readOnly="false"/>
+    <ECProperty propertyName="_TP_MEM3" typeName="string" displayLabel=":TP-MEM3" readOnly="false"/>
+    <ECProperty propertyName="_TP_MEM4" typeName="string" displayLabel=":TP-MEM4" readOnly="false"/>
+    <ECProperty propertyName="_TP_DRW0" typeName="string" displayLabel=":TP-DRW0" readOnly="false"/>
+    <ECProperty propertyName="_TP_DRW1" typeName="string" displayLabel=":TP-DRW1" readOnly="false"/>
+    <ECProperty propertyName="_TP_DRW2" typeName="string" displayLabel=":TP-DRW2" readOnly="false"/>
+    <ECProperty propertyName="_TP_DRW3" typeName="string" displayLabel=":TP-DRW3" readOnly="false"/>
+    <ECProperty propertyName="_TP_DRW4" typeName="string" displayLabel=":TP-DRW4" readOnly="false"/>
+    <ECProperty propertyName="_TP_CHK0" typeName="string" displayLabel=":TP-CHK0" readOnly="false"/>
+    <ECProperty propertyName="_TP_CHK1" typeName="string" displayLabel=":TP-CHK1" readOnly="false"/>
+    <ECProperty propertyName="_TP_CHK2" typeName="string" displayLabel=":TP-CHK2" readOnly="false"/>
+    <ECProperty propertyName="_TP_CHK3" typeName="string" displayLabel=":TP-CHK3" readOnly="false"/>
+    <ECProperty propertyName="_TP_CHK4" typeName="string" displayLabel=":TP-CHK4" readOnly="false"/>
+    <ECProperty propertyName="_TP_FCK0" typeName="string" displayLabel=":TP-FCK0" readOnly="false"/>
+    <ECProperty propertyName="_TP_FCK1" typeName="string" displayLabel=":TP-FCK1" readOnly="false"/>
+    <ECProperty propertyName="_TP_FCK2" typeName="string" displayLabel=":TP-FCK2" readOnly="false"/>
+    <ECProperty propertyName="_TP_FCK3" typeName="string" displayLabel=":TP-FCK3" readOnly="false"/>
+    <ECProperty propertyName="_TP_FCK4" typeName="string" displayLabel=":TP-FCK4" readOnly="false"/>
+    <ECProperty propertyName="_TP_PRO_PRIM" typeName="string" displayLabel=":TP-PRO-PRIM" readOnly="false"/>
+    <ECProperty propertyName="_TP_PRO_SECO" typeName="string" displayLabel=":TP-PRO-SECO" readOnly="false"/>
+    <ECProperty propertyName="_TP_PRO_PENE" typeName="string" displayLabel=":TP-PRO-PENE" readOnly="false"/>
+    <ECProperty propertyName="_TP_PRO_RENF" typeName="string" displayLabel=":TP-PRO-RENF" readOnly="false"/>
+    <ECProperty propertyName="_SDNFELIST" typeName="string" displayLabel=":SDNFELIST" readOnly="false"/>
+    <ECProperty propertyName="_SDNFMODNR" typeName="string" displayLabel=":SDNFMODNR" readOnly="false"/>
+    <ECProperty propertyName="_SDNFTARGET" typeName="string" displayLabel=":SDNFTARGET" readOnly="false"/>
+    <ECProperty propertyName="_SDNFSOURCE" typeName="string" displayLabel=":SDNFSOURCE" readOnly="false"/>
+    <ECProperty propertyName="_SDNFDECODE" typeName="string" displayLabel=":SDNFDECODE" readOnly="false"/>
+    <ECProperty propertyName="_SDNFPRID" typeName="string" displayLabel=":SDNFPRID" readOnly="false"/>
+    <ECProperty propertyName="_SDNFSTID" typeName="string" displayLabel=":SDNFSTID" readOnly="false"/>
+    <ECProperty propertyName="_SDNFCLID" typeName="string" displayLabel=":SDNFCLID" readOnly="false"/>
+    <ECProperty propertyName="_SDNFEFID" typeName="string" displayLabel=":SDNFEFID" readOnly="false"/>
+    <ECProperty propertyName="_SDNFITIME" typeName="string" displayLabel=":SDNFITIME" readOnly="false"/>
+    <ECProperty propertyName="_SDNFIDATE" typeName="string" displayLabel=":SDNFIDATE" readOnly="false"/>
+    <ECProperty propertyName="_SDNFETIME" typeName="string" displayLabel=":SDNFETIME" readOnly="false"/>
+    <ECProperty propertyName="_SDNFEDATE" typeName="string" displayLabel=":SDNFEDATE" readOnly="false"/>
+    <ECProperty propertyName="_MDSBUILDSTYL" typeName="string" displayLabel=":MDSBUILDSTYL" readOnly="false"/>
+    <ECProperty propertyName="_MDSTMPLORI" typeName="string" displayLabel=":MDSTMPLORI" readOnly="false"/>
+    <ECProperty propertyName="_MDSADP" typeName="string" displayLabel=":MDSADP" readOnly="false"/>
+    <ECProperty propertyName="_MDSADPREM" typeName="string" displayLabel=":MDSADPREM" readOnly="false"/>
+    <ECProperty propertyName="_MDSADPLOC" typeName="string" displayLabel=":MDSADPLOC" readOnly="false"/>
+    <ECProperty propertyName="_MDSANCREF" typeName="string" displayLabel=":MDSANCREF" readOnly="false"/>
+    <ECProperty propertyName="_MDSBARS" typeName="string" displayLabel=":MDSBARS" readOnly="false"/>
+    <ECProperty propertyName="_MDSBPREF1" typeName="string" displayLabel=":MDSBPREF1" readOnly="false"/>
+    <ECProperty propertyName="_MDSBPREF2" typeName="string" displayLabel=":MDSBPREF2" readOnly="false"/>
+    <ECProperty propertyName="_MDSCHECK" typeName="string" displayLabel=":MDSCHECK" readOnly="false"/>
+    <ECProperty propertyName="_MDSCOMMENT" typeName="string" displayLabel=":MDSCOMMENT" readOnly="false"/>
+    <ECProperty propertyName="_MDSDTYPE" typeName="string" displayLabel=":MDSDTYPE" readOnly="false"/>
+    <ECProperty propertyName="_MDSFRAMEDIR" typeName="string" displayLabel=":MDSFRAMEDIR" readOnly="false"/>
+    <ECProperty propertyName="_MDSFRAMIRROR" typeName="string" displayLabel=":MDSFRAMIRROR" readOnly="false"/>
+    <ECProperty propertyName="_MDSHV" typeName="string" displayLabel=":MDSHV" readOnly="false"/>
+    <ECProperty propertyName="_MDSHVACTYPE" typeName="string" displayLabel=":MDSHVACTYPE" readOnly="false"/>
+    <ECProperty propertyName="_MDSMAXBORE" typeName="string" displayLabel=":MDSMAXBORE" readOnly="false"/>
+    <ECProperty propertyName="_MDSMINBORE" typeName="string" displayLabel=":MDSMINBORE" readOnly="false"/>
+    <ECProperty propertyName="_MDSORIGIN" typeName="string" displayLabel=":MDSORIGIN" readOnly="false"/>
+    <ECProperty propertyName="_MDSPOSNUMMAX" typeName="string" displayLabel=":MDSPOSNUMMAX" readOnly="false"/>
+    <ECProperty propertyName="_MDSPROJSPEC" typeName="string" displayLabel=":MDSPROJSPEC" readOnly="false"/>
+    <ECProperty propertyName="_MDSRANGE" typeName="string" displayLabel=":MDSRANGE" readOnly="false"/>
+    <ECProperty propertyName="_MDSSHOPWELD" typeName="string" displayLabel=":MDSSHOPWELD" readOnly="false"/>
+    <ECProperty propertyName="_MDSSITEWELD" typeName="string" displayLabel=":MDSSITEWELD" readOnly="false"/>
+    <ECProperty propertyName="_MDSSPECIALNO" typeName="string" displayLabel=":MDSSPECIALNO" readOnly="false"/>
+    <ECProperty propertyName="_MDSSPLROT" typeName="string" displayLabel=":MDSSPLROT" readOnly="false"/>
+    <ECProperty propertyName="_MDSSREF" typeName="string" displayLabel=":MDSSREF" readOnly="false"/>
+    <ECProperty propertyName="_MDSSTDSUPP" typeName="string" displayLabel=":MDSSTDSUPP" readOnly="false"/>
+    <ECProperty propertyName="_MDSSUPPTYPE" typeName="string" displayLabel=":MDSSUPPTYPE" readOnly="false"/>
+    <ECProperty propertyName="_MDSTRIMMER" typeName="string" displayLabel=":MDSTRIMMER" readOnly="false"/>
+    <ECProperty propertyName="_MDSVIEWFLIP" typeName="string" displayLabel=":MDSVIEWFLIP" readOnly="false"/>
+    <ECProperty propertyName="_DATE0_EPCI" typeName="string" displayLabel=":DATE0_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_VIEWDIR_EPCI" typeName="string" displayLabel=":SHI_VIEWDIR_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_UBOLT_REF_EPCI" typeName="string" displayLabel=":SHI_UBOLT_REF_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_STAGE_EPCI" typeName="string" displayLabel=":SHI_STAGE_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_STRU_REF_EPCI" typeName="string" displayLabel=":SHI_STRU_REF_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_XCOG_EPCI" typeName="string" displayLabel=":SHI_XCOG_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_YCOG_EPCI" typeName="string" displayLabel=":SHI_YCOG_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_ZCOG_EPCI" typeName="string" displayLabel=":SHI_ZCOG_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_WEIGHT_EPCI" typeName="string" displayLabel=":SHI_WEIGHT_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_P_TYPE_EPCI" typeName="string" displayLabel=":SHI_P_TYPE_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_AREA_NO_EPCI" typeName="string" displayLabel=":SHI_AREA_NO_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_CLASH_DATE_EPCI" typeName="string" displayLabel=":SHI_CLASH_DATE_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_CLASH_CHK_EPCI" typeName="string" displayLabel=":SHI_CLASH_CHK_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_CLASHDATE1_EPCI" typeName="string" displayLabel=":SHI_CLASHDATE1_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_CLASHDATE2_EPCI" typeName="string" displayLabel=":SHI_CLASHDATE2_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_CLASHDATE3_EPCI" typeName="string" displayLabel=":SHI_CLASHDATE3_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_CLASHDATE4_EPCI" typeName="string" displayLabel=":SHI_CLASHDATE4_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_CLASHDATE5_EPCI" typeName="string" displayLabel=":SHI_CLASHDATE5_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_SHI_PREDOP_ST_EPCI" typeName="string" displayLabel=":SHI_PREDOP_ST_EPCI" readOnly="false"/>
+    <ECProperty propertyName="_CLASH_DAILY" typeName="string" displayLabel=":CLASH-DAILY" readOnly="false"/>
+    <ECProperty propertyName="_CLASH_DAILY_DESC" typeName="string" displayLabel=":CLASH-DAILY-DESC" readOnly="false"/>
+    <ECProperty propertyName="_TP_PR_CIVIL" typeName="string" displayLabel=":TP-PR-CIVIL" readOnly="false"/>
+    <ECProperty propertyName="_TP_PR_CIVIL_C" typeName="string" displayLabel=":TP-PR-CIVIL-C" readOnly="false"/>
+    <ECProperty propertyName="_TP_PR_STRU" typeName="string" displayLabel=":TP-PR-STRU" readOnly="false"/>
+    <ECProperty propertyName="_TP_PR_STRU_C" typeName="string" displayLabel=":TP-PR-STRU-C" readOnly="false"/>
+    <ECProperty propertyName="_HOLD" typeName="string" displayLabel=":HOLD" readOnly="false"/>
+    <ECProperty propertyName="_HOLDDESC" typeName="string" displayLabel=":HOLDDESC" readOnly="false"/>
+    <ECProperty propertyName="_INPUT_BY" typeName="string" displayLabel=":INPUT-BY" readOnly="false"/>
+    <ECProperty propertyName="_STATUS" typeName="string" displayLabel=":STATUS" readOnly="false"/>
+    <ECProperty propertyName="_COMMENT" typeName="string" displayLabel=":COMMENT" readOnly="false"/>
+    <ECProperty propertyName="_FUNCTION" typeName="string" displayLabel=":FUNCTION" readOnly="false"/>
+    <ECProperty propertyName="_CONST" typeName="string" displayLabel=":CONST" readOnly="false"/>
+    <ECProperty propertyName="_SUBTYPE" typeName="string" displayLabel=":SUBTYPE" readOnly="false"/>
+    <ECProperty propertyName="_CHK_BY" typeName="string" displayLabel=":CHK-BY" readOnly="false"/>
+    <ECProperty propertyName="_IDATE" typeName="string" displayLabel=":IDATE" readOnly="false"/>
+    <ECProperty propertyName="_CDATE" typeName="string" displayLabel=":CDATE" readOnly="false"/>
+    <ECProperty propertyName="OwnerType" typeName="string" readOnly="false"/>
+  </ECClass>
+  <ECRelationshipClass typeName="STRUFRMW" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="embedding" strengthDirection="forward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="STRU"/>
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="FRMW"/>
+    </Target>
+  </ECRelationshipClass>
+  <ECRelationshipClass typeName="SUBELEVEL5" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="embedding" strengthDirection="forward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="SUBE"/>
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="LEVEL5"/>
+    </Target>
+  </ECRelationshipClass>
+  <ECRelationshipClass typeName="SUBENOZZ" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="embedding" strengthDirection="forward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="SUBE"/>
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="NOZZ"/>
+    </Target>
+  </ECRelationshipClass>
+  <ECRelationshipClass typeName="ZONEEQUI" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="embedding" strengthDirection="forward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="ZONE"/>
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="EQUI"/>
+    </Target>
+  </ECRelationshipClass>
+  <ECRelationshipClass typeName="ZONESTRU" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="embedding" strengthDirection="forward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="ZONE"/>
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="STRU"/>
+    </Target>
+  </ECRelationshipClass>
+</ECSchema>

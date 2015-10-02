@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="ECSqlStatementTests" nameSpacePrefix="ECST" version="1.0" description="schema to test ecsql queries with meaningful data" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECClass typeName="Order" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="OrderId" typeName="int" />
+        <ECProperty propertyName="OrderDate" typeName="dateTime" />
+        <ECProperty propertyName="ProductDelivered" typeName="boolean" />
+    </ECClass>
+    <ECClass typeName="Customer" isDomainClass="True">
+        <ECProperty propertyName="CustomerId" typeName="int" />
+        <ECProperty propertyName="CustomerName" typeName="string" />
+        <ECProperty propertyName="ContactName" typeName="string" />
+        <ECProperty propertyName="Address" typeName="string" />
+        <ECProperty propertyName="City" typeName="string" />
+        <ECProperty propertyName="PostalCode" typeName="long" />
+        <ECProperty propertyName="Country" typeName="string" />
+        <ECArrayProperty propertyName="OrderArray" typeName="Order" minOccurs="1" maxOccurs="10" isStruct="True" />
+    </ECClass>
+    <ECClass typeName="Employee" isDomainClass="True">
+        <ECProperty propertyName="EmployeeId" typeName="int" />
+        <ECProperty propertyName="LastName" typeName="string" />
+        <ECProperty propertyName="FirstName" typeName="string" />
+        <ECProperty propertyName="DOB" typeName="dateTime" />
+        <ECProperty propertyName="Notes" typeName="string" />
+    </ECClass>
+    <ECRelationshipClass typeName="EmployeeCustomer" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="Employee" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="Customer" />
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="Products" isDomainClass="True">
+        <ECProperty propertyName="ProductId" typeName="int" />
+        <ECProperty propertyName="ProductName" typeName="string" />
+        <ECProperty propertyName="Price" typeName="double" />
+        <ECProperty propertyName="ProductAvailable" typeName="boolean" />
+    </ECClass>
+    <ECClass typeName="Supplier" isDomainClass="True">
+        <ECProperty propertyName="SupplierName" typeName="string" />
+        <ECProperty propertyName="SupplierId" typeName="int" />
+        <ECProperty propertyName="ContactName" typeName="string" />
+        <ECProperty propertyName="Address" typeName="string" />
+        <ECProperty propertyName="City" typeName="string" />
+        <ECProperty propertyName="PostalCode" typeName="long" />
+        <ECProperty propertyName="Country" typeName="string" />
+    </ECClass>
+    <ECRelationshipClass typeName="ProductSupplier" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,N)" polymorphic="True">
+            <Class class="Products" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="Supplier" />
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="Shipper" isDomainClass="True">
+        <ECProperty propertyName="ShipperId" typeName="int" />
+        <ECProperty propertyName="ShipperName" typeName="string" />
+        <ECProperty propertyName="Phone" typeName="long" />
+    </ECClass>
+</ECSchema>

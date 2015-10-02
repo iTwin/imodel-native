@@ -119,7 +119,7 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
 
     BeFileName testFilePath;
     BeTest::GetHost().GetDocumentsRoot(testFilePath);
-    testFilePath.AppendToPath(L"DgnDb");
+    testFilePath.AppendToPath(L"ECDb");
     testFilePath.AppendToPath(testFileNameW.c_str());
 
 
@@ -350,7 +350,7 @@ TEST(ECDbFileInfo, ImportExportEmptyFile)
 
     BeFileName testFilePath;
     BeTest::GetHost().GetDocumentsRoot(testFilePath);
-    testFilePath.AppendToPath(L"DgnDb");
+    testFilePath.AppendToPath(L"ECDb");
     testFilePath.AppendToPath(testFileNameW.c_str());
 
     //INSERT scenario
