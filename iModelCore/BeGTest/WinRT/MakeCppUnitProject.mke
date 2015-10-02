@@ -160,5 +160,5 @@ $(projectDir)VendorApi : $(BuildContext)VendorApi
 #--------------------------------------------------------------------------------------
 # Delivery
 #--------------------------------------------------------------------------------------
-$(BuildContext)Delivery/WinRTCppUnitTest/$(TEST_NAME)/Project : $(o)Project
+$(BuildContext)Delivery/WnRTCpU/$(TEST_NAME)/Project : $(o)Project
     $(LinkFirstDepToFirstTargetAsDirectory)
