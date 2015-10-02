@@ -226,8 +226,10 @@ $(libsDir)$(BENTLEY_ANDROID_AndroidABI)/gdb.setup : $(libsDir)$(BENTLEY_ANDROID_
 #--------------------------------------------------------------------------------------
 # Delivery
 #--------------------------------------------------------------------------------------
+# Intermediates are not needed in our delivery, and cause MAX_PATH issues with saving LKGs.
 $(BuildContext)Delivery/AndroidJUnit/$(TEST_NAME)/project : $(outputDir)project
-    $(LinkFirstDepToFirstTargetAsDirectory)
+    @mkdir $@
+    $(SrcBsiCommon)build/CopyWithSymlinks.py "$<" "$@" --excludePattern=intermediates
 
 always:
     $(_bmake) $(baseDir)BuildApk.mke -dTEST_NAME=$(TEST_NAME)
