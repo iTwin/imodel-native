@@ -16,7 +16,7 @@ Utf8CP const ECDbProfileManager::PROFILENAME = "ECDb";
 //static
 const PropertySpec ECDbProfileManager::PROFILEVERSION_PROPSPEC = PropertySpec("SchemaVersion", "ec_Db");
 //static
-const SchemaVersion ECDbProfileManager::MINIMUM_SUPPORTED_VERSION = SchemaVersion(2, 0, 0, 0);
+const SchemaVersion ECDbProfileManager::MINIMUM_SUPPORTED_VERSION = SchemaVersion(2, 1, 0, 0);
 
 //static
 std::vector<std::unique_ptr<ECDbProfileUpgrader>> ECDbProfileManager::s_upgraderSequence;
@@ -246,7 +246,7 @@ SchemaVersion ECDbProfileManager::GetExpectedProfileVersion()
 SchemaVersion ECDbProfileManager::GetMinimumAutoUpgradableProfileVersion()
     {
     //Auto-upgradable back to this version
-    return SchemaVersion(2, 0, 0, 0);
+    return MINIMUM_SUPPORTED_VERSION;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -485,7 +485,7 @@ Db& db
         //resolved map strategy:
         "MapStrategy INTEGER NOT NULL,"
         "MapStrategyOptions INTEGER,"
-        "IsMapStrategyPolymorphic BOOL NOT NULL CHECK (IsMapStrategyPolymorphic IN (0, 1))"
+        "MapStrategyAppliesToSubclasses BOOL NOT NULL CHECK (MapStrategyAppliesToSubclasses IN (0, 1))"
         ");");
 
     if (stat != BE_SQLITE_OK)

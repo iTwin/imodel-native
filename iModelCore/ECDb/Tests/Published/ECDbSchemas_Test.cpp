@@ -1698,18 +1698,6 @@ TEST(ECDbSchemas, ImportSupplementalSchemas)
     ECSchemaPtr ecSchema = nullptr;
     ECSchemaReadContextPtr schemaContext = nullptr;
 
-    //ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, *schemaContext,L"OpenPlant_3D.01.02.ecschema.xml");
-    //ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, *schemaContext,L"OpenPlant_3D_Supplemental_Isometrics_Isoextractor.01.02.ecschema.xml");
-    //ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, *schemaContext,L"OpenPlant_3D_Supplemental_Metric_DefaultValues.01.02.ecschema.xml");
-    //ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, *schemaContext,L"OpenPlant_3D_Supplemental_Model_Server.01.02.ecschema.xml");
-    //ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, *schemaContext,L"OpenPlant_3D_Supplemental_Modeling.01.02.ecschema.xml");
-    //ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, *schemaContext,L"OpenPlant_3D_Supplemental_ModelingViews.01.02.ecschema.xml");
-    //ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, *schemaContext,L"OpenPlant_Supplemental_Tagging.01.01.ecschema.xml");
-    //ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, *schemaContext,L"OpenPlant_Supplemental_Units_Metric.01.02.ecschema.xml");
-
-    //ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, *schemaContext,L"OpenPlant.01.02.ecschema.xml");
-    //ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, *schemaContext,L"OpenPlant_Supplemental_Tagging.01.01.ecschema.xml");
-    //ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, *schemaContext,L"OpenPlant_Supplemental_Units_Metric.01.02.ecschema.xml");
     ECSchemaPtr startup;
     ECSchemaPtr supple;
     ECDbTestUtility::ReadECSchemaFromDisk (startup, schemaContext, L"StartupCompany.02.00.ecschema.xml");
