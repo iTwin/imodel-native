@@ -14,7 +14,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //=======================================================================================    
 // @bsiclass                                   Krischan.Eberle                  07/15
 //=======================================================================================    
-struct SchemaImportTestFixture : public ::testing::Test
+struct SchemaImportTestFixture : public ECDbTestFixture
     {
 public:
     //---------------------------------------------------------------------------------------
@@ -33,8 +33,8 @@ public:
 
 protected:
     void AssertSchemaImport(TestItem const&, Utf8CP ecdbFileName) const;
+    void AssertSchemaImport(std::vector<TestItem> const&, Utf8CP ecdbFileName) const;
     void AssertSchemaImport(ECDbR, bool& asserted, TestItem const&, Utf8CP ecdbFileName) const;
-    void AssertSchemaImport(ECDbR, bool& asserted, std::vector<TestItem> const&, Utf8CP ecdbFileName) const;
     void AssertSchemaImport(bool& asserted, ECDbCR, TestItem const&) const;
 
     void AssertIndexExists(ECDbCR, Utf8CP indexName, bool expectedToExist);
@@ -42,8 +42,10 @@ protected:
     void AssertIndex(ECDbCR, Utf8CP indexName, bool isUnique, Utf8CP tableName, std::vector<Utf8CP> const& columns, std::vector<ECN::ECClassId> const& classIdFilter, bool negateClassIdFilter = false);
     void AssertIndex(ECDbCR, Utf8CP indexName, bool isUnique, Utf8CP tableName, std::vector<Utf8CP> const& columns, Utf8CP whereExpWithoutClassIdFilter, std::vector<ECN::ECClassId> const& classIdFilter, bool negateClassIdFilter = false);
 
+    void AssertForeignKey(bool expectedToHaveForeignKey, ECDbCR ecdb, Utf8CP tableName, Utf8CP foreignKeyColumnName = nullptr);
+
 public:
-    SchemaImportTestFixture() { ECDbTestFixture::Initialize(); }
+    SchemaImportTestFixture() {}
     virtual ~SchemaImportTestFixture() {}
     };
 

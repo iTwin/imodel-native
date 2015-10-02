@@ -10,14 +10,14 @@
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  07/15
+// @bsimethod                                   Krischan.Eberle                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void SchemaImportTestFixture::AssertSchemaImport(ECDbR ecdb, bool& asserted, TestItem const& testItem, Utf8CP ecdbFileName) const
+void SchemaImportTestFixture::AssertSchemaImport(std::vector<TestItem> const& testItems, Utf8CP ecdbFileName) const
     {
-    asserted = true;
-    ASSERT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb(ecdb, nullptr, WString(ecdbFileName, BentleyCharEncoding::Utf8).c_str()));
-
-    AssertSchemaImport(asserted, ecdb, testItem);
+    for (TestItem const& testItem : testItems)
+        {
+        AssertSchemaImport(testItem, ecdbFileName);
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -29,6 +29,19 @@ void SchemaImportTestFixture::AssertSchemaImport(TestItem const& testItem, Utf8C
     bool asserted = false;
     AssertSchemaImport(localECDb, asserted, testItem, ecdbFileName);
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  07/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void SchemaImportTestFixture::AssertSchemaImport(ECDbR ecdb, bool& asserted, TestItem const& testItem, Utf8CP ecdbFileName) const
+    {
+    asserted = true;
+    ASSERT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb(ecdb, nullptr, WString(ecdbFileName, BentleyCharEncoding::Utf8).c_str()));
+
+    AssertSchemaImport(asserted, ecdb, testItem);
+    }
+
 
 
 //---------------------------------------------------------------------------------------
@@ -55,6 +68,8 @@ void SchemaImportTestFixture::AssertSchemaImport(bool& asserted, ECDbCR ecdb, Te
 
     BeTest::SetFailOnAssert(true);
     }
+
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/15
@@ -150,6 +165,33 @@ void SchemaImportTestFixture::AssertIndex(ECDbCR ecdb, Utf8CP indexName, bool is
 
     ASSERT_STRCASEEQ(expectedDdl.c_str(), stmt.GetValueText(0));
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  06/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void SchemaImportTestFixture::AssertForeignKey(bool expectedToHaveForeignKey, ECDbCR ecdb, Utf8CP tableName, Utf8CP foreignKeyColumnName)
+    {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT sql FROM sqlite_master WHERE name=?"));
+
+    stmt.BindText(1, tableName, Statement::MakeCopy::No);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    Utf8String ddl(stmt.GetValueText(0));
+
+    //only one row expected
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+    Utf8String fkSearchString;
+    if (Utf8String::IsNullOrEmpty(foreignKeyColumnName))
+        fkSearchString = "FOREIGN KEY (";
+    else
+        fkSearchString.Sprintf("FOREIGN KEY ([%s", foreignKeyColumnName);
+
+    ASSERT_EQ(expectedToHaveForeignKey, ddl.find(fkSearchString) != ddl.npos);
+    }
+
+
 
 
 END_ECDBUNITTESTS_NAMESPACE

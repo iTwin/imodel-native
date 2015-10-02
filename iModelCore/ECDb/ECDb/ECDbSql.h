@@ -13,7 +13,7 @@
 #include <unordered_set>
 #include "BeRepositoryBasedIdSequence.h"
 #include "MapStrategy.h"
-#include <type_traits>
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #define ECDBSQL_VERSION_MAJOR 1
@@ -54,26 +54,6 @@ enum class ECDbKnownColumns
     };
 
 
-struct Enum
-    {
-    public:
-        template<typename T, typename U = typename std::underlying_type <T>::type>
-        static U ToUnderlyingType (T t){ return static_cast<U>(t); }
-        template<typename T, typename U = typename std::underlying_type <T>::type>
-        static U ConvertTo (T a){ return static_cast<U>(a); }
-        template<typename T, typename U = typename std::underlying_type <T>::type>
-        static T ConvertFrom (U a){ return static_cast<T>(a); }
-        template<typename T>
-        static int ToInt (T a){ return ConvertTo<T, int> (a); }
-        template<typename T>
-        static T FromInt (int a){ return ConvertFrom <T, decltype(a)> (a); }
-        template<typename T>
-        static T Or (T a, T b){ return  ConvertFrom<T> (ToUnderlyingType<T> (a) | ToUnderlyingType<T> (b)); }
-        template<typename T>
-        static T And (T a, T b){ return  ConvertFrom<T> (ToUnderlyingType<T> (a) & ToUnderlyingType<T> (b)); }
-        template<typename T>
-        static bool In (T value, T inList){ return  (ToUnderlyingType<T> (value) & ToUnderlyingType<T> (inList)) == ToUnderlyingType<T> (value); }
-    };
 
 enum class TriggerType
     {
@@ -897,12 +877,12 @@ struct ECDbMapStorage
     private:
 
         const Utf8CP Sql_InsertPropertyPath = "INSERT OR REPLACE INTO ec_PropertyPath (Id, RootPropertyId, AccessString) VALUES (?,?,?)";
-        const Utf8CP Sql_InsertClassMap = "INSERT OR REPLACE INTO ec_ClassMap(Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, IsMapStrategyPolymorphic) VALUES (?,?,?,?,?,?)";
+        const Utf8CP Sql_InsertClassMap = "INSERT OR REPLACE INTO ec_ClassMap(Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyAppliesToSubclasses) VALUES (?,?,?,?,?,?)";
         const Utf8CP Sql_DeleteClassMap = "DELETE FROM ec_ClassMap WHERE Id = ?";
 
         const Utf8CP Sql_InsertPropertyMap = "INSERT OR REPLACE INTO ec_PropertyMap (ClassMapId, PropertyPathId, ColumnId) VALUES (?,?,?)";
         const Utf8CP Sql_SelectPropertyPath = "SELECT Id, RootPropertyId, AccessString FROM ec_PropertyPath";
-        const Utf8CP Sql_SelectClassMap = "SELECT Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, IsMapStrategyPolymorphic FROM ec_ClassMap ORDER BY Id, ParentId";
+        const Utf8CP Sql_SelectClassMap = "SELECT Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyAppliesToSubclasses FROM ec_ClassMap ORDER BY Id, ParentId";
         const Utf8CP Sql_SelectPropertyMap = "SELECT PropertyPathId, T.Name TableName, C.Name ColumnName FROM ec_PropertyMap P INNER JOIN ec_Column C ON C.Id = P.ColumnId INNER JOIN ec_Table T ON T.Id = C.TableId WHERE P.ClassMapId = ?";
         enum class StatementType
             {

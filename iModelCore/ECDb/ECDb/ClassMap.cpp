@@ -693,7 +693,7 @@ ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty(ClassMapCR classMap,Class
     ColumnFactory::Specification::GenerateColumnNameOptions generateColumnNameOpts = ColumnFactory::Specification::GenerateColumnNameOptions::NameBasedOnClassIdAndCaseSaveAccessString;
     ECDbSqlColumn::Type requestedColumnType = ECDbSqlHelper::PrimitiveTypeToColumnType(columnType);
  
-    if (classMap.GetMapStrategy().GetOption() == ECDbMapStrategy::Option::SharedColumns)
+    if (Enum::Contains(classMap.GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::SharedColumns))
         {
         BeAssert(classMap.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable);
         strategy = ColumnFactory::Specification::Strategy::CreateOrReuseSharedColumn;
@@ -1423,8 +1423,8 @@ const PropertyMapSet::EndPoints PropertyMapSet::FindEndPoints (ECDbKnownColumns 
     EndPoints endPoints;
     for (auto const& endPoint : m_orderedEndPoints)
         {
-        if (Enum::In (endPoint->GetKnownColumnId (), filter))
-            endPoints.push_back (endPoint.get ());
+        if (Enum::Contains(filter, endPoint->GetKnownColumnId()))
+            endPoints.push_back(endPoint.get());
         }
 
     return endPoints;

@@ -992,14 +992,14 @@ ECDbMapAnalyser::Relationship&  ECDbMapAnalyser::GetRelationship (RelationshipCl
     for (auto& key : m_map.GetLightweightCache ().GetRelationships (classMap.GetClass ().GetId ()))
         {
         auto& constraitClass = GetClass (*GetClassMap (key.first));
-        if (Enum::In (ECDbMap::LightweightCache::RelationshipEnd::Source, key.second))
+        if (Enum::Contains(key.second, ECDbMap::LightweightCache::RelationshipEnd::Source))
             {
             if (isForward)
                 ptr->From ().GetClassesR ().insert (&constraitClass);
             else
                 ptr->To ().GetClassesR ().insert (&constraitClass);
             }
-        if (Enum::In (ECDbMap::LightweightCache::RelationshipEnd::Target, key.second))
+        if (Enum::Contains(key.second, ECDbMap::LightweightCache::RelationshipEnd::Target))
             {
             if (!isForward)
                 ptr->From ().GetClassesR ().insert (&constraitClass);

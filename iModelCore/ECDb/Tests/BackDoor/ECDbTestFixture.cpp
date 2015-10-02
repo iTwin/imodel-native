@@ -14,8 +14,18 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 // @bsimethod                                     Carole.MacDonald     09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 // static
-bmap<std::pair<WCharCP, int>, Utf8String> ECDbTestFixture::s_seedECDbs; // empty
+bmap<bpair<WString, int>, Utf8String> ECDbTestFixture::s_seedECDbs; // empty
 bool ECDbTestFixture::s_isInitialized = false;
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle     10/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//virtual
+void ECDbTestFixture::SetUp()
+    {
+    Initialize();
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle     09/2015
@@ -34,29 +44,33 @@ DbResult ECDbTestFixture::CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName, BeFileName
     Initialize();
 
     BeFileName ecdbPath;
-    // Create and populate a sample project
     {
-    Utf8String seedPath;
-    bmap<std::pair<WCharCP, int>, Utf8String>::const_iterator seedIter = s_seedECDbs.find(std::make_pair(schemaECXmlFileName, perClassRowCount));
+
+    bpair<WString, int> seedFileKey(schemaECXmlFileName.c_str(), perClassRowCount);
+
+    Utf8String seedFilePath;
+    auto seedIter = s_seedECDbs.find(seedFileKey);
     if (s_seedECDbs.end() == seedIter)
         {
-        Utf8String seedName;
-        seedName.Sprintf("ECDbTestFixture%d.ecdb", s_seedECDbs.size() + 1);
+        Utf8String seedFileName;
+        seedFileName.Sprintf("seed_%s_%d", schemaECXmlFileName.GetNameUtf8().c_str(), perClassRowCount);
+        seedFileName.ReplaceAll(".", "_");
+        seedFileName.append(".ecdb");
+
         ECDbTestProject testProject;
-        ECDb& ecdb = testProject.Create(seedName.c_str(), schemaECXmlFileName.c_str(), perClassRowCount);
-        seedPath = ecdb.GetDbFileName();
-        s_seedECDbs[std::make_pair(schemaECXmlFileName, perClassRowCount)] = seedPath;
+        ECDb& ecdb = testProject.Create(seedFileName.c_str(), schemaECXmlFileName.c_str(), perClassRowCount);
+        seedFilePath = ecdb.GetDbFileName();
+        s_seedECDbs[seedFileKey] = seedFilePath;
         }
     else
-        seedPath = seedIter->second;
+        seedFilePath = seedIter->second;
 
     BeTest::GetHost().GetOutputRoot(ecdbPath);
     ecdbPath.AppendToPath(WString(ecdbFileName, BentleyCharEncoding::Utf8).c_str());
     BeFileName::CreateNewDirectory(BeFileName::GetDirectoryName(ecdbPath).c_str());
-    BeFileName::BeCopyFile(BeFileName(seedPath.c_str()), ecdbPath);
+    BeFileName::BeCopyFile(BeFileName(seedFilePath.c_str()), ecdbPath);
     }
 
-    //re-open the file so that we can determine the open mode
     return ecdb.OpenBeSQLiteDb(ecdbPath, openParams);
     }
 

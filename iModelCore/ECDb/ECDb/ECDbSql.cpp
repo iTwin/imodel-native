@@ -152,29 +152,29 @@ std::weak_ptr<ECDbSqlColumn> ECDbSqlTable::GetColumnWeakPtr (Utf8CP name) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlTable::GetFilteredColumnList (std::vector<ECDbSqlColumn const*>& columns, PersistenceType persistenceType) const
+BentleyStatus ECDbSqlTable::GetFilteredColumnList(std::vector<ECDbSqlColumn const*>& columns, PersistenceType persistenceType) const
     {
     for (auto column : m_orderedColumns)
         {
-        if (column->GetPersistenceType () == persistenceType)
-            columns.push_back (column);
+        if (column->GetPersistenceType() == persistenceType)
+            columns.push_back(column);
         }
 
-    return columns.empty () ? BentleyStatus::ERROR : BentleyStatus::SUCCESS;
+    return columns.empty() ? ERROR : SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlTable::GetFilteredColumnList (std::vector<ECDbSqlColumn const*>& columns, ECDbKnownColumns knownColumnId) const
+BentleyStatus ECDbSqlTable::GetFilteredColumnList(std::vector<ECDbSqlColumn const*>& columns, ECDbKnownColumns knownColumnId) const
     {
     for (auto column : m_orderedColumns)
         {
-        if (Enum::In (column->GetKnownColumnId (), knownColumnId))
-            columns.push_back (column);
+        if (Enum::Contains(knownColumnId, column->GetKnownColumnId()))
+            columns.push_back(column);
         }
 
-    return columns.empty () ? BentleyStatus::ERROR : BentleyStatus::SUCCESS;
+    return columns.empty() ? ERROR : SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -3199,7 +3199,7 @@ DbResult ECDbMapStorage::InsertClassMap (ECDbClassMapInfo const& o)
 
     stmt->BindInt64(3, o.GetClassId ());
     stmt->BindInt(4, (int) o.GetMapStrategy ().GetStrategy ());
-    stmt->BindInt(5, (int) o.GetMapStrategy().GetOption());
+    stmt->BindInt(5, (int) o.GetMapStrategy().GetOptions());
     stmt->BindInt(6, o.GetMapStrategy().AppliesToSubclasses() ? 1 : 0);
 
     return stmt->Step ();
@@ -3305,7 +3305,7 @@ DbResult ECDbMapStorage::ReadClassMaps ()
 
         ECDbMapStrategy mapStrategy;
         if (SUCCESS != mapStrategy.Assign((ECDbMapStrategy::Strategy) stmt->GetValueInt(3),
-                                           (ECDbMapStrategy::Option) stmt->GetValueInt(4),
+                                           (ECDbMapStrategy::Options) stmt->GetValueInt(4),
                                             stmt->GetValueInt(5) == 1))
             {
             BeAssert(false && "Found invalid persistence values for ECDbMapStrategy");

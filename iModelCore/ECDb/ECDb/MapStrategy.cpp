@@ -11,10 +11,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                07/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus UserECDbMapStrategy::Assign(Strategy strategy, Option option, bool isPolymorphic)
+BentleyStatus UserECDbMapStrategy::Assign(Strategy strategy, Options options, bool isPolymorphic)
     {
     m_strategy = strategy;
-    m_option = option;
+    m_options = options;
     m_appliesToSubclasses = isPolymorphic;
 
     return IsValid() ? SUCCESS : ERROR;
@@ -28,25 +28,24 @@ bool UserECDbMapStrategy::IsValid() const
     switch (m_strategy)
         {
             case Strategy::None:
-                return !m_appliesToSubclasses && (m_option == Option::None || m_option == Option::DisableSharedColumns);
+                return !m_appliesToSubclasses && (m_options == Options::None || m_options == Options::DisableSharedColumns);
 
             case Strategy::SharedTable:
                 {
-                if (m_option == Option::None)
-                    return true;
-
                 if (!m_appliesToSubclasses)
-                    return m_option == Option::SharedColumns;
+                    return m_options == Options::None || m_options == Options::SharedColumns;
 
-                return m_option == Option::SharedColumns || m_option == Option::SharedColumnsForSubclasses;
+                Options validOptions1 = Enum::Or(Options::SharedColumns, Options::JoinedTableForSubclasses);
+                Options validOptions2 = Enum::Or(Options::SharedColumnsForSubclasses, Options::JoinedTableForSubclasses);
+                return m_options == Options::None || Enum::Contains(validOptions1, m_options) || Enum::Contains(validOptions2, m_options);
                 }
 
             case Strategy::ExistingTable:
-                return !m_appliesToSubclasses && (m_option == Option::None || m_option == Option::Readonly);
+                return !m_appliesToSubclasses && m_options == Options::None;
 
             default:
                 //these strategies must not have any options
-                return m_option == Option::None;
+                return m_options == Options::None;
         }
     }
 
@@ -70,7 +69,7 @@ BentleyStatus UserECDbMapStrategy::TryParse(UserECDbMapStrategy& mapStrategy, EC
     if (SUCCESS != TryParse(strategy, mapStrategyCustomAttribute.GetStrategy()))
         return ERROR;
 
-    Option option = Option::None;
+    Options option = Options::None;
     if (SUCCESS != TryParse(option, mapStrategyCustomAttribute.GetOptions()))
         return ERROR;
 
@@ -106,38 +105,33 @@ BentleyStatus UserECDbMapStrategy::TryParse(Strategy& mapStrategy, Utf8CP mapStr
 // @bsimethod                                 Krischan.Eberle                06/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus UserECDbMapStrategy::TryParse(Option& mapStrategyOption, Utf8CP mapStrategyOptionsStr)
+BentleyStatus UserECDbMapStrategy::TryParse(Options& mapStrategyOptions, Utf8CP mapStrategyOptionsStr)
     {
-    mapStrategyOption = Option::None;
+    mapStrategyOptions = Options::None;
     if (Utf8String::IsNullOrEmpty(mapStrategyOptionsStr))
         return SUCCESS;
 
     bvector<Utf8String> optionTokens;
     BeStringUtilities::Split(mapStrategyOptionsStr, ",;|", optionTokens);
 
-    if (optionTokens.size() > 1)
+    for (Utf8StringCR optionToken : optionTokens)
         {
-        LOG.errorv("Multiple MapStrategy options '%s' are not valid in ECDb. In ECDb multiple options are never necessary.",
-                   mapStrategyOptionsStr);
-        return ERROR;
-        }
+        if (optionToken.empty())
+            continue;
 
-    Utf8StringCR optionToken = optionTokens[0];
-    if (optionToken.empty())
-        return SUCCESS;
-
-    if (optionToken.EqualsI("Readonly"))
-        mapStrategyOption = Option::Readonly;
-    else if (optionToken.EqualsI("SharedColumns"))
-        mapStrategyOption = Option::SharedColumns;
-    else if (optionToken.EqualsI("SharedColumnsForSubclasses"))
-        mapStrategyOption = Option::SharedColumnsForSubclasses;
-    else if (optionToken.EqualsI("DisableSharedColumns"))
-        mapStrategyOption = Option::DisableSharedColumns;
-    else
-        {
-        LOG.errorv("'%s' is not a valid MapStrategy option value.", optionToken.c_str());
-        return ERROR;
+        if (optionToken.EqualsI("SharedColumns"))
+            mapStrategyOptions = Enum::Or(mapStrategyOptions, Options::SharedColumns);
+        else if (optionToken.EqualsI("SharedColumnsForSubclasses"))
+            mapStrategyOptions = Enum::Or(mapStrategyOptions, Options::SharedColumnsForSubclasses);
+        else if (optionToken.EqualsI("DisableSharedColumns"))
+            mapStrategyOptions = Enum::Or(mapStrategyOptions, Options::DisableSharedColumns);
+        else if (optionToken.EqualsI("JoinedTableForSubclasses"))
+            mapStrategyOptions = Enum::Or(mapStrategyOptions, Options::JoinedTableForSubclasses);
+        else
+            {
+            LOG.errorv("'%s' is not a valid MapStrategy option value.", optionToken.c_str());
+            return ERROR;
+            }
         }
 
     return SUCCESS;
@@ -178,27 +172,27 @@ Utf8String UserECDbMapStrategy::ToString() const
         }
 
     if (m_appliesToSubclasses)
-        str.append(" (polymorphic)");
+        str.append(" (applies to subclasses)");
 
-    switch (m_option)
+    switch (m_options)
         {
-            case Option::None:
+            case Options::None:
                 break;
 
-            case Option::Readonly:
-                str.append("Option: Readonly");
-                break;
-
-            case Option::SharedColumns:
+            case Options::SharedColumns:
                 str.append("Option: SharedColumns");
                 break;
 
-            case Option::SharedColumnsForSubclasses:
+            case Options::SharedColumnsForSubclasses:
                 str.append("Option: SharedColumnsForSubclasses");
                 break;
 
-            case Option::DisableSharedColumns:
+            case Options::DisableSharedColumns:
                 str.append("Option: DisableSharedColumns");
+                break;
+
+            case Options::JoinedTableForSubclasses:
+                str.append("Option: JoinedTableForSubclasses");
                 break;
 
             default:
@@ -208,6 +202,7 @@ Utf8String UserECDbMapStrategy::ToString() const
 
     return std::move(str);
     }
+
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                02/2015
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -234,25 +229,16 @@ BentleyStatus ECDbMapStrategy::Assign(UserECDbMapStrategy const& userStrategy)
             default:
                 BeAssert(false);
                 break;
-        }
+        };
 
-    switch (userStrategy.GetOption())
-        {
-            case UserECDbMapStrategy::Option::None:
-            case UserECDbMapStrategy::Option::SharedColumnsForSubclasses:
-            case UserECDbMapStrategy::Option::DisableSharedColumns:
-                m_option = Option::None;
-                break;
-            case UserECDbMapStrategy::Option::Readonly:
-                m_option = Option::Readonly;
-                break;
-            case UserECDbMapStrategy::Option::SharedColumns:
-                m_option = Option::SharedColumns;
-                break;
-            default:
-                BeAssert(false);
-                return ERROR;
-        }
+    const UserECDbMapStrategy::Options userOptions = userStrategy.GetOptions();
+    
+    m_options = Options::None;
+    if (Enum::Contains(userOptions, UserECDbMapStrategy::Options::SharedColumns))
+        m_options = Enum::Or(m_options, Options::SharedColumns);
+    
+    if (Enum::Contains(userOptions, UserECDbMapStrategy::Options::JoinedTableForSubclasses))
+        m_options = Enum::Or(m_options, Options::ParentOfJoinedTable);
 
     if (!IsValid())
         {
@@ -267,11 +253,11 @@ BentleyStatus ECDbMapStrategy::Assign(UserECDbMapStrategy const& userStrategy)
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                02/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbMapStrategy::Assign(Strategy strategy, Option option, bool isPolymorphic)
+BentleyStatus ECDbMapStrategy::Assign(Strategy strategy, Options option, bool appliesToSubclasses)
     {
     m_strategy = strategy;
-    m_option = option;
-    m_appliesToSubclasses = isPolymorphic;
+    m_options = option;
+    m_appliesToSubclasses = appliesToSubclasses;
     
     if (!IsValid())
         {
@@ -291,13 +277,17 @@ bool ECDbMapStrategy::IsValid() const
     switch (m_strategy)
         {
             case Strategy::SharedTable:
-                return m_option == Option::None || m_option == Option::SharedColumns;
+            {
+            if (!m_appliesToSubclasses)
+                return m_options == Options::None || m_options == Options::SharedColumns;
 
-            case Strategy::ExistingTable:
-                return m_option == Option::None || m_option == Option::Readonly;
+            Options validOptions1 = Enum::Or(Options::SharedColumns, Options::JoinedTable);
+            Options validOptions2 = Enum::Or(Options::SharedColumns, Options::ParentOfJoinedTable);
+            return m_options == Options::None || Enum::Contains(validOptions1, m_options) || Enum::Contains(validOptions2, m_options);
+            }
 
             default:
-                return m_option == Option::None;
+                return m_options == Options::None;
         }
     }
 
@@ -339,18 +329,14 @@ Utf8String ECDbMapStrategy::ToString() const
         }
 
     if (m_appliesToSubclasses)
-        str.append(" (polymorphic)");
+        str.append(" (applies to subclasses)");
 
-    switch (m_option)
+    switch (m_options)
         {
-            case Option::None:
+            case Options::None:
                 break;
 
-            case Option::Readonly:
-                str.append("Option: Readonly");
-                break;
-
-            case Option::SharedColumns:
+            case Options::SharedColumns:
                 str.append("Option: SharedColumns");
                 break;
 
