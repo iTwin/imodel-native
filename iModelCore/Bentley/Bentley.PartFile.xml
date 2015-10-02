@@ -88,4 +88,12 @@
         </Bindings>
     </Part>
 
+  <Part Name="UnitTests-Performance" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
+    <SubPart PartName="PrewireForUnitTests" />
+    <SubPart PartName="PerformanceTestingHelpers" PartFile="BeSQLite" Repository="BeSQLite"/>
+    <Bindings>
+      <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Bentley/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
+    </Bindings>
+  </Part>
+
 </BuildContext>

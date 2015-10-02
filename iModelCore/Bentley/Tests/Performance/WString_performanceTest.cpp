@@ -1,45 +1,57 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Published/WString_performanceTest.cpp $
+|  $Source: Tests/Performance/WString_performanceTest.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <Bentley/BeTest.h>
+#include "PerformanceTests.h"
 #include <Bentley/WString.h>
 
     static int s_niters = 100000;
+    StopWatch timer;
 
 TEST(PerformanceBentley, WStringCopying)
     {
     WString base = L"abcdef123456789";
+    timer.Start();
     for (int i=0; i<s_niters*10; ++i)
         {
         WString str = base;
         ASSERT_TRUE (!str.empty ());
         }
+    timer.Stop();
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "", s_niters);
     }
 
 TEST(PerformanceBentley, WStringCtors)
     {
     // Empty string construction
+    timer.Start();
     for (int i=0; i<s_niters*10; ++i)
         {
         WString str;
         ASSERT_TRUE (str.empty ());
         }
+    timer.Stop();
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Empty string Construction", s_niters);
 
     // simple construction
+    timer.Start();
     for (int i=0; i<s_niters*10; ++i)
         {
         WString str (1, L'0'+(i%10));
         ASSERT_TRUE (!str.empty ());
         }
+    timer.Stop();
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Simple Construction", s_niters);
+
     }
 
 TEST(PerformanceBentley, WStringAppendStayShort)
     {
     // append+stay short
+    timer.Start();
     for (int i=0; i<s_niters/10; ++i)
         {
         WString str;
@@ -50,11 +62,14 @@ TEST(PerformanceBentley, WStringAppendStayShort)
             ASSERT_EQ (str.length(), 1+j);
             }
         }
+    timer.Stop();
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "", s_niters);
     }
 
 TEST(PerformanceBentley, WStringAppendGrowLong)
     {
     // append+grow to long size
+    timer.Start();
     for (int i=0; i<s_niters/10; ++i)
         {
         WString str;
@@ -65,33 +80,42 @@ TEST(PerformanceBentley, WStringAppendGrowLong)
             ASSERT_EQ (str.length(), 1+j);
             }
         }
+    timer.Stop();
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "", s_niters);
     }
 
 TEST(PerformanceBentley, WStringCompare)
     {
     // compare
     WString str1 (L"xyz");
+    timer.Start();
     for (int i=0; i<s_niters*10; ++i)
         {
         WString str (1, L'0'+(i%10));
         ASSERT_TRUE (str != str1);
         ASSERT_TRUE (str1 == str1);
         }
+    timer.Stop();
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "", s_niters);
     }
 
 TEST(PerformanceBentley, StringConversions)
     {
     char const* asc = "Now is the time for all good men to come to the aid of the party.";
+    timer.Start();
     for (int i=0; i<s_niters; ++i)
         {
         WString str (asc, BentleyCharEncoding::Utf8);
         ASSERT_EQ (str[0], asc[0]);
         ASSERT_EQ (str[1], asc[1]);
         }
+    timer.Stop();
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "", s_niters);
     }
 
 TEST(PerformanceBentley, Formatting)
     {
+    timer.Start();
     for (int i=0; i<s_niters; ++i)
         {
         Utf8PrintfString str ("Iter [%d]", i);
@@ -117,15 +141,20 @@ TEST(PerformanceBentley, Formatting)
         lower.ToLower ();
         ASSERT_TRUE (lower == L"lower");
         }
+    timer.Stop();
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "For all Formatting", s_niters);
     }
 
 TEST(PerformanceBentley, LargeNumberOfWStrings)
     {
     bvector<WString> strings;
+    timer.Start();
     for (int i=0; i<s_niters*10; ++i)
         {
         strings.push_back (WString (L"a pretty long WString"));
         }
+    timer.Stop();
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "", s_niters);
 
     strings.clear();     // destruct them all
     }
