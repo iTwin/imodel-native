@@ -106,18 +106,11 @@ $(XCodeProject)BeTestiOSAppData.xcappdata : $(baseDir)BeTestiOSAppData.xcappdata
     ~time
 
 _documentsManifest = $(XCodeProject)BeTestiOSAppData.xcappdata/AppData/Documents/documents.manifest
-%iffile $(tmp)assets/Documents
-    always:
-        rm -rf $(XCodeProject)BeTestiOSAppData.xcappdata/AppData/Documents
-        !~mkdir $(XCodeProject)BeTestiOSAppData.xcappdata/AppData/Documents
-        cp -r  $(tmp)assets/Documents $(XCodeProject)BeTestiOSAppData.xcappdata/AppData/Documents
-        $(SrcRoot)bsicommon/build/CreateAssetsManifest.py $(_documentsManifest) $(XCodeProject)BeTestiOSAppData.xcappdata/AppData/Documents
-%else
-    always:
-        !~mkdir $(XCodeProject)BeTestiOSAppData.xcappdata/AppData/Documents
-        >$(_documentsManifest)
-        <
-%endif
+always:
+    rm -rf $(XCodeProject)BeTestiOSAppData.xcappdata/AppData/Documents
+    !~mkdir $(XCodeProject)BeTestiOSAppData.xcappdata/AppData/Documents
+    -cp -r  $(tmp)assets/Documents $(XCodeProject)BeTestiOSAppData.xcappdata/AppData/Documents
+    $(SrcRoot)bsicommon/build/CreateAssetsManifest.py $(_documentsManifest) $(XCodeProject)BeTestiOSAppData.xcappdata/AppData/Documents
 
 # Symlink other assets to the bundle
 always:
@@ -143,8 +136,6 @@ $(XCodeProject)Libs/$(stlibprefix)BeGTestStatic$(stlibext) : $(o)$(stlibprefix)$
 #--------------------------------------------------------------------------------------
 # Delivery
 #--------------------------------------------------------------------------------------
-$(BuildContext)Delivery/iOSXCTest/$(TEST_NAME)/Project : $(XCodeProject)
-    python $(SrcBsiCommon)build/CreateSymLinks.py -d""$@=$<""
-
-#    $(LinkFirstDepToFirstTargetAsDirectory)
+$(BuildContext)Delivery/iOSXCTest/$(TEST_NAME)/Project : ${XCodeProject}
+    $(LinkFirstDepToFirstTargetAsDirectory)
 	
