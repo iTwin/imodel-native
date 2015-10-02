@@ -184,7 +184,7 @@ static bool  getBoolValue (Json::Value const& rootValue, char const* key, Bentle
         if (NULL != status) 
             *status = ERROR;
 
-        return 0.0;
+        return false;
         }
     if (NULL != status) 
         *status = SUCCESS;
