@@ -39,8 +39,9 @@ void PerformanceResultRecorder::writeResults(Utf8String testcaseName, Utf8String
     PERFORMANCELOG.infov(L"CSV Results filename: %ls\n", dir.GetName());
 
     if (!existingFile)
-        fprintf(logFile, "TestCaseName, TestName, ExecutionTime, TestDescription, opCount\n");
-    fprintf(logFile, "%s, %s, %.4f, \"%s\", %d\n", testcaseName.c_str(), testName.c_str(), timeInSeconds, testDescription.c_str(), opCount);
+        fprintf(logFile, "DateTime, TestCaseName, TestName, ExecutionTime, TestDescription, opCount\n");
+    Utf8String dateTime = DateTime::GetCurrentTime().ToUtf8String();
+    fprintf(logFile, "%s, %s, %.4f, \"%s\", %ld\n", testcaseName.c_str(), testName.c_str(), timeInSeconds, testDescription.c_str(), opCount);
 
     fclose(logFile);
 }

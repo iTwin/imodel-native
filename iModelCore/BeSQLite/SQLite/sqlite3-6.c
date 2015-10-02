@@ -861,10 +861,12 @@ static int fts3PendingTermsAdd(
 */
 static int fts3PendingTermsDocid(
   Fts3Table *p,                   /* Full-text table handle */
+  int bDelete,                    /* True if this op is a delete */
   int iLangid,                    /* Language id of row being written */
   sqlite_int64 iDocid             /* Docid of row being written */
 ){
   assert( iLangid>=0 );
+  assert( bDelete==1 || bDelete==0 );
 
   /* TODO(shess) Explore whether partially flushing the buffer on
   ** forced-flush would provide better performance.  I suspect that if
@@ -872,7 +874,8 @@ static int fts3PendingTermsDocid(
   ** buffer was half empty, that would let the less frequent terms
   ** generate longer doclists.
   */
-  if( iDocid<=p->iPrevDocid 
+  if( iDocid<p->iPrevDocid 
+   || (iDocid==p->iPrevDocid && p->bPrevDelete==0)
    || p->iPrevLangid!=iLangid
    || p->nPendingData>p->nMaxPendingData 
   ){
@@ -881,6 +884,7 @@ static int fts3PendingTermsDocid(
   }
   p->iPrevDocid = iDocid;
   p->iPrevLangid = iLangid;
+  p->bPrevDelete = bDelete;
   return SQLITE_OK;
 }
 
@@ -1070,7 +1074,8 @@ static void fts3DeleteTerms(
     if( SQLITE_ROW==sqlite3_step(pSelect) ){
       int i;
       int iLangid = langidFromSelect(p, pSelect);
-      rc = fts3PendingTermsDocid(p, iLangid, sqlite3_column_int64(pSelect, 0));
+      i64 iDocid = sqlite3_column_int64(pSelect, 0);
+      rc = fts3PendingTermsDocid(p, 1, iLangid, iDocid);
       for(i=1; rc==SQLITE_OK && i<=p->nColumn; i++){
         int iCol = i-1;
         if( p->abNotindexed[iCol]==0 ){
@@ -3513,7 +3518,7 @@ static int fts3DoRebuild(Fts3Table *p){
     while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
       int iCol;
       int iLangid = langidFromSelect(p, pStmt);
-      rc = fts3PendingTermsDocid(p, iLangid, sqlite3_column_int64(pStmt, 0));
+      rc = fts3PendingTermsDocid(p, 0, iLangid, sqlite3_column_int64(pStmt, 0));
       memset(aSz, 0, sizeof(aSz[0]) * (p->nColumn+1));
       for(iCol=0; rc==SQLITE_OK && iCol<p->nColumn; iCol++){
         if( p->abNotindexed[iCol]==0 ){
@@ -5618,7 +5623,7 @@ SQLITE_PRIVATE int sqlite3Fts3UpdateMethod(
       }
     }
     if( rc==SQLITE_OK && (!isRemove || *pRowid!=p->iPrevDocid ) ){
-      rc = fts3PendingTermsDocid(p, iLangid, *pRowid);
+      rc = fts3PendingTermsDocid(p, 0, iLangid, *pRowid);
     }
     if( rc==SQLITE_OK ){
       assert( p->iPrevDocid==*pRowid );
@@ -18780,7 +18785,7 @@ static int sessionFindTable(
     ){
       rc = sqlite3session_attach(pSession, zName);
       if( rc==SQLITE_OK ){
-        pRet = pSession->pTable;
+        for(pRet=pSession->pTable; pRet->pNext; pRet=pRet->pNext);
         assert( 0==sqlite3_strnicmp(pRet->zName, zName, nName+1) );
       }
     }
@@ -19267,12 +19272,17 @@ SQLITE_API int SQLITE_STDCALL sqlite3session_attach(
       if( !pTab ){
         rc = SQLITE_NOMEM;
       }else{
-        /* Populate the new SessionTable object and link it into the list. */
+        /* Populate the new SessionTable object and link it into the list.
+        ** The new object must be linked onto the end of the list, not 
+        ** simply added to the start of it in order to ensure that tables
+        ** appear in the correct order when a changeset or patchset is
+        ** eventually generated. */
+        SessionTable **ppTab;
         memset(pTab, 0, sizeof(SessionTable));
         pTab->zName = (char *)&pTab[1];
         memcpy(pTab->zName, zName, nName+1);
-        pTab->pNext = pSession->pTable;
-        pSession->pTable = pTab;
+        for(ppTab=&pSession->pTable; *ppTab; ppTab=&(*ppTab)->pNext);
+        *ppTab = pTab;
       }
     }
   }
@@ -21812,19 +21822,26 @@ static int sessionChangesetToHash(
         if( 0==sqlite3_strnicmp(pTab->zName, zNew, nNew+1) ) break;
       }
       if( !pTab ){
+        SessionTable **ppTab;
+
         pTab = sqlite3_malloc(sizeof(SessionTable) + nCol + nNew+1);
         if( !pTab ){
           rc = SQLITE_NOMEM;
           break;
         }
         memset(pTab, 0, sizeof(SessionTable));
-        pTab->pNext = pGrp->pList;
         pTab->nCol = nCol;
         pTab->abPK = (u8*)&pTab[1];
         memcpy(pTab->abPK, abPK, nCol);
         pTab->zName = (char*)&pTab->abPK[nCol];
         memcpy(pTab->zName, zNew, nNew+1);
-        pGrp->pList = pTab;
+
+        /* The new object must be linked on to the end of the list, not
+        ** simply added to the start of it. This is to ensure that the
+        ** tables within the output of sqlite3changegroup_output() are in 
+        ** the right order.  */
+        for(ppTab=&pGrp->pList; *ppTab; ppTab=&(*ppTab)->pNext);
+        *ppTab = pTab;
       }else if( pTab->nCol!=nCol || memcmp(pTab->abPK, abPK, nCol) ){
         rc = SQLITE_SCHEMA;
         break;
