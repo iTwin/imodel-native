@@ -61,6 +61,8 @@
         <ProductDirectory Name="DgnPlatformNativeAssemblies"        Deliver="false" LibType="static"/>
         <ProductDirectory Name="BeCurlAssemblies"                   Path="Assemblies"/>
         <ProductDirectory Name="BeCurlAssemblies"                   Deliver="false" LibType="static"/>
+        <ProductDirectory Name="ConstructionAssemblies"             Path="Assemblies"/>
+        <ProductDirectory Name="ConstructionAssemblies"             Deliver="false" LibType="static"/>
         <ProductDirectory Name="ECObjectsNativeAssemblies"          Path="Assemblies"/>
         <ProductDirectory Name="ECObjectsNativeAssemblies"          Deliver="false" LibType="static"/>
         <ProductDirectory Name="GeoCoordNativeAssemblies"           Path="Assemblies"/>
@@ -69,6 +71,8 @@
         <ProductDirectory Name="PPNativeAssemblies"                 Deliver="false" LibType="static"/>
         <ProductDirectory Name="MdlsysAsneededSmartsolid"           Path="Assemblies"/>
         <ProductDirectory Name="MdlsysAsneededSmartsolid"           Deliver="false" LibType="static"/>
+        <ProductDirectory Name="PlanningAssemblies"                 Path="Assemblies"/>
+        <ProductDirectory Name="PlanningAssemblies"                 Deliver="false" LibType="static"/>
         <ProductDirectory Name="SmartSolidAssemblies"               Path="Assemblies"/>
         <ProductDirectory Name="SmartSolidAssemblies"               Deliver="false" LibType="static"/>
         <ProductDirectory Name="BePortableUiAssemblies"             Path="Assemblies"/>
@@ -92,6 +96,8 @@
         <ProductDirectory Name="BeStaticLibDir"                     Path="Libs" LibType="static"/>
         <ProductDirectory Name="BeJsonCppStaticLibDir"              Path="Libs"/>
         <ProductDirectory Name="BeJsonCppStaticLibDir"              Path="Libs" LibType="static"/>
+        <ProductDirectory Name="ConstructionLibs"                   Path="Libs"/>
+        <ProductDirectory Name="ConstructionLibs"                   Path="Libs" LibType="static"/>
         <ProductDirectory Name="ECObjectsLibs"                      Path="Libs"/>
         <ProductDirectory Name="ECObjectsLibs"                      Path="Libs" LibType="static"/>
         <ProductDirectory Name="UnitTests-Objects"                  Path="Objects"/>
@@ -120,6 +126,8 @@
         <ProductDirectory Name="GeoCoordDataMinimal"                Path="Assets/DgnGeoCoord" LibType="static"/>
         <ProductDirectory Name="MobileDgnSdkSeedFiles"              Path="Assets/seed"/>
         <ProductDirectory Name="MobileDgnSdkSeedFiles"              Path="Assets/seed" LibType="static"/>
+        <ProductDirectory Name="PlanningLibs"                       Path="Libs"/>
+        <ProductDirectory Name="PlanningLibs"                       Path="Libs" LibType="static"/>
         <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/GeomLibsTestData"/>
         <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/GeomLibsTestData" LibType="static"/>
 
