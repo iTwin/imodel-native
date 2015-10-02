@@ -53,8 +53,9 @@ DbResult ECDbTestFixture::CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName, BeFileName
     if (s_seedECDbs.end() == seedIter)
         {
         Utf8String seedFileName;
-        seedFileName.Sprintf("seed_%s_%d.ecdb", schemaECXmlFileName.GetNameUtf8().c_str(), perClassRowCount);
+        seedFileName.Sprintf("seed_%s_%d", schemaECXmlFileName.GetNameUtf8().c_str(), perClassRowCount);
         seedFileName.ReplaceAll(".", "_");
+        seedFileName.append(".ecdb");
 
         ECDbTestProject testProject;
         ECDb& ecdb = testProject.Create(seedFileName.c_str(), schemaECXmlFileName.c_str(), perClassRowCount);
