@@ -14,6 +14,7 @@
 #include "DgnMaterial.h"
 #include "DgnTexture.h"
 #include "DgnLight.h"
+#include "MemoryManager.h"
 #include <Bentley/BeFileName.h>
 
 /** @addtogroup DgnDbGroup
@@ -142,6 +143,7 @@ protected:
     DgnTextures     m_textures;
     DgnLights       m_lights;
     TxnManagerPtr   m_txnManager;
+    MemoryManager   m_memoryManager;
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
 
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
@@ -202,6 +204,7 @@ public:
     DgnTextures& Textures() const {return const_cast<DgnTextures&>(m_textures);}         //!< The textures for this DgnDb.
     DgnAuthorities& Authorities() const {return const_cast<DgnAuthorities&>(m_authorities);} //!< The authorities associated with this DgnDb
     DGNPLATFORM_EXPORT TxnManagerR Txns();                    //!< The Txns for this DgnDb.
+    MemoryManager& Memory() const { return const_cast<MemoryManager&>(m_memoryManager);}
 
     //! Gets a cached and prepared ECSqlStatement.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;

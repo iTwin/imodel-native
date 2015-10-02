@@ -239,6 +239,7 @@ public:
     AnnotationTextStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }
     AnnotationRunCollectionCR GetRuns() const { return m_runs; }
     AnnotationRunCollectionR GetRunsR() { return m_runs; }
+    void AppendRun(AnnotationRunBaseR run) { m_runs.push_back(&run); }
 };
 
 //=======================================================================================

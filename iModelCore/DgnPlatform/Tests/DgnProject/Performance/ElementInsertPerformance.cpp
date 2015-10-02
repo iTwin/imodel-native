@@ -37,13 +37,9 @@ struct PerformanceElementItem : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceElementItem, CRUD)
 {
-    //Read from ecdb: the start, maximum and increment number to run the test
     int startCount, maxCount,increment;
-    if (! PerformanceResultRecorder::getCounters(startCount, maxCount, increment))
-        {
-        startCount = increment = 100;
-        maxCount = 1000;
-        }
+    startCount = increment = 100;
+    maxCount = 1000;
 
     StopWatch elementTimer("Insert Element", false);
 

@@ -89,9 +89,9 @@ struct OverlapScorer
 //=======================================================================================
 struct IProgressiveDisplay : IRefCounted
 {
-    enum class Completion {Finished=0, Aborted=1, Failed=2};
+    enum class Completion {HealRequired = -1, Finished=0, Aborted=1, Failed=2};
     virtual Completion _Process(ViewContextR) = 0;   // if this returns Finished, it is removed from the viewport
-    virtual bool _WantTimeoutSet(uint32_t& limit) = 0;  // set limit and returns true to cause caller to call EnableStopAfterTimout
+    virtual bool _WantTimeoutSet(uint32_t& limit) = 0;  // set limit and returns true to cause caller to call EnableStopAfterTimeout
 };
 
 //=======================================================================================
