@@ -70,7 +70,6 @@ DbResult ECDbTestFixture::CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName, BeFileName
     BeFileName::BeCopyFile(BeFileName(seedFilePath.c_str()), ecdbPath);
     }
 
-    //re-open the file so that we can determine the open mode
     return ecdb.OpenBeSQLiteDb(ecdbPath, openParams);
     }
 
