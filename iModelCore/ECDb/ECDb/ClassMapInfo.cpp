@@ -184,13 +184,16 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
         m_parentClassMap = parentClassMap;
         BeAssert(parentClassMap->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && parentClassMap->GetMapStrategy().AppliesToSubclasses ());
 
-        ECDbMapStrategy::Options option = ECDbMapStrategy::Options::None;
-        if (userStrategy.GetOptions() != UserECDbMapStrategy::Options::DisableSharedColumns && 
-                (rootUserStrategy.GetOptions() == UserECDbMapStrategy::Options::SharedColumns || 
-                 rootUserStrategy.GetOptions() == UserECDbMapStrategy::Options::SharedColumnsForSubclasses))
-            option = ECDbMapStrategy::Options::SharedColumns;
+        ECDbMapStrategy::Options options = ECDbMapStrategy::Options::None;
+        if (!Enum::Contains(userStrategy.GetOptions(), UserECDbMapStrategy::Options::DisableSharedColumns) && 
+                (Enum::Contains(rootUserStrategy.GetOptions(), UserECDbMapStrategy::Options::SharedColumns) || 
+                 Enum::Contains(rootUserStrategy.GetOptions(), UserECDbMapStrategy::Options::SharedColumnsForSubclasses)))
+            options = ECDbMapStrategy::Options::SharedColumns;
 
-        return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::SharedTable, option, true);
+        if (Enum::Contains(rootUserStrategy.GetOptions(), UserECDbMapStrategy::Options::JoinedTableForSubclasses))
+            options = Enum::Or(options, ECDbMapStrategy::Options::JoinedTable);
+
+        return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::SharedTable, options, true);
         }
 
     // ClassMappingRule: If one or more parent is using OwnClass-polymorphic, use OwnClass-polymorphic mapping
@@ -250,11 +253,12 @@ bool ClassMapInfo::ValidateChildStrategy(UserECDbMapStrategy const& rootStrategy
                 }
         }
 
-    const NativeLogging::SEVERITY logSev = NativeLogging::LOG_ERROR;
-    if (!isValid && LOG.isSeverityEnabled(logSev))
-        LOG.messagev(logSev, "MapStrategy %s of ECClass '%s' does not match the MapStrategy %s on the root of the class hierarchy. %s",
-                    childStrategy.ToString().c_str(), m_ecClass.GetFullName(), rootStrategy.ToString().c_str(),
-                    detailError);
+    if (!isValid)
+        {
+        m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, 
+                     "MapStrategy %s of ECClass '%s' does not match the MapStrategy %s on the root of the class hierarchy. %s",
+                     childStrategy.ToString().c_str(), m_ecClass.GetFullName(), rootStrategy.ToString().c_str(), detailError);
+        }
 
     return isValid;
     }
