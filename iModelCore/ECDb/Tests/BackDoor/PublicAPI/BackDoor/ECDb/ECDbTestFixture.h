@@ -15,7 +15,7 @@ struct ECDbTestFixture : public ::testing::Test
     {
 private:
     mutable ECDb m_ecdb;
-    static bmap<std::pair<WCharCP, int>, Utf8String> s_seedECDbs;
+    static bmap<bpair<WString, int>, Utf8String> s_seedECDbs;
 
     static bool s_isInitialized;
 
