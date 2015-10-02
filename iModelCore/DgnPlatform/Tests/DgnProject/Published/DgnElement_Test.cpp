@@ -161,7 +161,7 @@ ElementGeometryBuilderPtr ElementGeomAndPlacementTests::CreateGeom()
     ICurvePrimitivePtr ellipse = ICurvePrimitive::CreateArc(ellipseData);
     builder->Append(*ellipse);
 
-    ElemDisplayParams elemDisplayParams;
+    Render::ElemDisplayParams elemDisplayParams;
     elemDisplayParams.SetCategoryId(m_defaultCategoryId);
     elemDisplayParams.SetWeight(2);
     builder->Append(elemDisplayParams);

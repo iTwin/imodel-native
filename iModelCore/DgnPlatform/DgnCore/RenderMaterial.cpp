@@ -155,7 +155,7 @@ double Texture::GetUnitScale(Units units)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Texture::Mode Texture::GetMode(JsonValueCR in) 
     {
-    JsonValueCR value =                  in[RENDER_MATERIAL_PatternMapping];
+    JsonValueCR value = in[RENDER_MATERIAL_PatternMapping];
 
     if (!value.isInt())
         {
@@ -171,20 +171,20 @@ Texture::Mode Texture::GetMode(JsonValueCR in)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Texture::Units Texture::GetUnits(JsonValueCR in) 
     {
-    Json::Value const& value = in[RENDER_MATERIAL_PatternScaleMode];
-
+    JsonValueCR value = in[RENDER_MATERIAL_PatternScaleMode];
     if (!value.isInt())
         {
         BeAssert(false);
         return Units::Relative;
         }
+
     return (Units) value.asInt();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Ray.Bentley     08/2015
 //---------------------------------------------------------------------------------------
-static DPoint2d getDPoint2dValue(Json::Value const& value)
+static DPoint2d getDPoint2dValue(JsonValueCR value)
     {
     DPoint2d point = { 0.0, 0.0 };
 
@@ -202,7 +202,7 @@ static DPoint2d getDPoint2dValue(Json::Value const& value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Ray.Bentley     08/2015
 //---------------------------------------------------------------------------------------
-Render::Texture::Trans Render::Texture::GetPatternTransform(Json::Value const& value)
+Render::Texture::Trans Render::Texture::GetPatternTransform(JsonValueCR value)
     {
     Render::Texture::Trans transform;
     for (size_t i=0; i<2; ++i)
@@ -247,7 +247,7 @@ Render::Texture::Trans Render::Texture::GetPatternTransform(Json::Value const& v
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Texture::SetColor(Json::Value& out, Utf8CP keyword, RgbFactorCR color)
+void Texture::SetColor(JsonValueR out, Utf8CP keyword, RgbFactorCR color)
     {
     Json::Value     colorValue;
 
@@ -261,7 +261,7 @@ void Texture::SetColor(Json::Value& out, Utf8CP keyword, RgbFactorCR color)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Texture::SetPoint(Json::Value& out, Utf8CP keyword, DPoint3dCR point)
+void Texture::SetPoint(JsonValueR out, Utf8CP keyword, DPoint3dCR point)
     {
     Json::Value     pointValue;
 

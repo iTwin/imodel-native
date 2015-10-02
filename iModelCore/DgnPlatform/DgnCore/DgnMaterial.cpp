@@ -142,13 +142,11 @@ BentleyStatus DgnMaterials::Material::GetAsset(JsonValueR value, Utf8CP keyword)
     if (!Json::Reader::Parse(GetValue(), root))
         return ERROR;
 
-    JsonValueCR     constValue =  root[keyWord];
-    
+    JsonValueCR constValue = root[keyword];
     if (constValue.isNull())
         return ERROR;
 
     value = constValue;
-
     return SUCCESS;
     }
 
