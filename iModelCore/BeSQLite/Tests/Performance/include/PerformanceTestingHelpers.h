@@ -31,6 +31,7 @@ Notes:
 #pragma once
 #include <Bentley/BeTest.h>
 #include <Bentley/BeTimeUtilities.h>
+#include <Bentley/DateTime.h>
 #include <Logging/bentleylogging.h>
 
 #define PERFORMANCELOG (*NativeLogging::LoggingManager::GetLogger (L"Performance"))
