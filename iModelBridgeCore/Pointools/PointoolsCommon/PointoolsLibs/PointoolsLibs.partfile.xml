@@ -254,7 +254,7 @@
     <!-- SubPart PartName="GLUI_VS2005" Repository="PointoolsLibs" / -->
     <SubPart PartName="FastDelegate" PartFile="FastDelegate" Repository="libsrc-FastDelegate"/>
     <SubPart PartName="Loki" PartFile="Loki" Repository="libsrc-loki"/>
-    <SubPart PartName="SCZ_Compress_VS2008" PartFile="scz_compress" Repository="libsrc-scz_compress"/>    
+    <SubPart PartName="SCZ_Compress_VS2005" PartFile="scz_compress" Repository="libsrc-scz_compress"/>    
   </Part>
   
   <Part Name="FreeGlut_VS2005" BMakeFile="PointoolsLibsVortex/FreeGlut/FreeGlut.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
