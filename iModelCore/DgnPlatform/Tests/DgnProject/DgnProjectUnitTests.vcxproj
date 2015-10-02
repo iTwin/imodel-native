@@ -72,6 +72,8 @@
     <ClCompile Include="Published\DgnLink_Test.cpp" />
     <ClCompile Include="Published\DgnModel_Test.cpp" />
     <ClCompile Include="Published\DgnScriptContext_Test.cpp" />
+    <ClCompile Include="Published\ElementGeometry_Tests.cpp" />
+    <ClCompile Include="Published\ElementGroup_Tests.cpp" />
     <ClCompile Include="Published\ImageUtilities_Test.cpp" />
     <ClCompile Include="Published\MarkupProject_Test.cpp" />
     <ClCompile Include="Published\NamedVolume_Test.cpp" />

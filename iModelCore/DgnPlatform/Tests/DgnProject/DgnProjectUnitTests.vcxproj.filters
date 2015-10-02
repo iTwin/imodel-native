@@ -196,6 +196,12 @@
     <ClCompile Include="Published\DgnScriptContext_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="Published\ElementGeometry_Tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ElementGroup_Tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">
