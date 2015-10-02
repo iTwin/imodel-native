@@ -230,11 +230,11 @@ struct Texture : IRefCounted, NonCopyableClass
     };
 
     DGNPLATFORM_EXPORT static Trans GetPatternTransform(Json::Value const&);
-    DGNPLATFORM_EXPORT static Mode GetMode(Json::Value const&);
-    DGNPLATFORM_EXPORT static Units GetUnits(Json::Value const&);
     DGNPLATFORM_EXPORT static double GetUnitScale(Units units);
-    DGNPLATFORM_EXPORT static void SetPoint(Json::Value& out, Utf8CP keyword, DPoint3dCR point);
-    DGNPLATFORM_EXPORT static void SetColor(Json::Value& out, Utf8CP keyword, RgbFactorCR color);
+    DGNPLATFORM_EXPORT static Units GetUnits(JsonValueCR in);
+    DGNPLATFORM_EXPORT static Mode GetMode(JsonValueCR);
+    DGNPLATFORM_EXPORT static void SetPoint(JsonValueR out, Utf8CP keyword, DPoint3dCR point);
+    DGNPLATFORM_EXPORT static void SetColor(JsonValueR out, Utf8CP keyword, RgbFactorCR color);
 };
 
 //=======================================================================================
@@ -762,7 +762,7 @@ private:
     bool                m_isFilled;
     bool                m_isBlankingRegion;
     uintptr_t           m_extSymbId;
-    DgnMaterialId       m_materialId;
+    MaterialPtr         m_material;
     uint32_t            m_rasterWidth;
     uint32_t            m_rasterPat;
     LineStyleSymb       m_lStyleSymb;
@@ -832,7 +832,7 @@ public:
     GradientSymbCP GetGradientSymb() const {return m_gradient.get();}
 
     //! Get the render material.
-    DgnMaterialId GetMaterialId() const {return m_materialId;}
+    MaterialPtr GetMaterial() const {return m_material;}
 
     //! Get the area pattern params.
     PatternParamsCP GetPatternParams() const {return m_patternParams.get();}
@@ -877,7 +877,7 @@ public:
     LineStyleSymbR GetLineStyleSymbR () {return m_lStyleSymb;}
 
     //! Set the render material.
-    void SetMaterialId(DgnMaterialId id) {m_materialId = id;}
+    void SetMaterial(Material* material) {m_material = material;}
 
     //! Set area patterning parameters.
     void SetPatternParams(PatternParamsP patternParams) {m_patternParams = patternParams;}
@@ -934,7 +934,7 @@ public:
     uint32_t GetWidth() const {return m_matSymb.GetWidth();}
     uint32_t GetRasterPattern() const {return m_matSymb.GetRasterPattern();}
     int32_t GetRasterPatternIndex() const {return m_matSymb.GetRasterPatternIndex();}
-    DgnMaterialId GetMaterialId() const {return m_matSymb.GetMaterialId();}
+    MaterialPtr GetMaterial() const {return m_matSymb.GetMaterial();}
     PatternParamsCP GetPatternParams() const {return m_matSymb.GetPatternParams();}
 
     DGNPLATFORM_EXPORT void Clear();
@@ -946,7 +946,7 @@ public:
     void SetWidth(uint32_t width) {m_matSymb.SetWidth(width); m_flags |= MATSYMB_OVERRIDE_RastWidth;}
     void SetRasterPattern(uint32_t rasterPat) {m_matSymb.SetRasterPattern(rasterPat); m_flags |= MATSYMB_OVERRIDE_Style; m_matSymb.GetLineStyleSymbR().SetLineStyle(nullptr);}
     void SetIndexedRasterPattern(int32_t index, uint32_t rasterPat) {m_matSymb.SetIndexedRasterPattern(index, rasterPat); m_flags |= MATSYMB_OVERRIDE_Style; m_matSymb.GetLineStyleSymbR().SetLineStyle(nullptr);}
-    void SetMaterialId(DgnMaterialId id) {m_matSymb.SetMaterialId(id); m_flags |= MATSYMB_OVERRIDE_RenderMaterial;}
+    void SetMaterial(Material* material) {m_matSymb.SetMaterial(material); m_flags |= MATSYMB_OVERRIDE_RenderMaterial;}
     void SetPatternParams(PatternParamsP patternParams) {m_matSymb.SetPatternParams(patternParams);}
     void SetProxy(bool edge, bool hidden) {m_flags |= (MATSYMB_OVERRIDE_IsProxy | (edge ? MATSYMB_OVERRIDE_IsProxyEdge : 0) | (hidden ? MATSYMB_OVERRIDE_IsProxyHidden: 0)); }
     bool GetProxy(bool& edge, bool& hidden) {edge = 0 != (m_flags & MATSYMB_OVERRIDE_IsProxyEdge); hidden = 0 != (m_flags & MATSYMB_OVERRIDE_IsProxyHidden); return 0 != (m_flags & MATSYMB_OVERRIDE_IsProxy); }

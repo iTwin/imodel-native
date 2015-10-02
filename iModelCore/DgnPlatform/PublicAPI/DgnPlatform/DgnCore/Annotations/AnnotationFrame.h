@@ -10,6 +10,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <Bentley/RefCounted.h>
+#include <DgnPlatform/DgnCore/DgnDb.h>
 #include "AnnotationFrameStyle.h"
 
 DGNPLATFORM_TYPEDEFS(AnnotationFrame);

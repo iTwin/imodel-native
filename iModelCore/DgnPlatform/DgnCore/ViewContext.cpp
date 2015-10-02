@@ -1617,7 +1617,7 @@ void ElemMatSymb::Init()
     m_rasterPat         = 0;
     m_patternParams     = nullptr;
     m_gradient          = nullptr;
-    m_materialId.Invalidate();
+    m_material          = nullptr;
     m_lStyleSymb.Clear();
     }
 
@@ -1717,7 +1717,9 @@ void ElemMatSymb::FromResolvedElemDisplayParams(ElemDisplayParamsCR elParams, Vi
         m_isBlankingRegion = (FillDisplay::Blanking == elParams.GetFillDisplay());
         }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_materialId = elParams.GetMaterialId();
+#endif
 
     if (0.0 != netElemTransparency)
         {
@@ -1774,7 +1776,7 @@ bool ElemMatSymb::operator==(ElemMatSymbCR rhs) const
         rhs.m_isFilled         != m_isFilled         ||
         rhs.m_isBlankingRegion != m_isBlankingRegion ||
         rhs.m_extSymbId        != m_extSymbId        ||
-        rhs.m_materialId       != m_materialId       ||
+        rhs.m_material         != m_material         ||
         rhs.m_rasterWidth      != m_rasterWidth      ||
         rhs.m_rasterPat        != m_rasterPat)
         return false;
@@ -1796,7 +1798,7 @@ ElemMatSymb::ElemMatSymb(ElemMatSymbCR rhs)
     m_isFilled          = rhs.m_isFilled;
     m_isBlankingRegion  = rhs.m_isBlankingRegion;
     m_extSymbId         = rhs.m_extSymbId;
-    m_materialId        = rhs.m_materialId;
+    m_material          = rhs.m_material;
     m_rasterWidth       = rhs.m_rasterWidth;
     m_rasterPat         = rhs.m_rasterPat;
     m_lStyleSymb        = rhs.m_lStyleSymb;
@@ -1814,7 +1816,7 @@ ElemMatSymbR ElemMatSymb::operator=(ElemMatSymbCR rhs)
     m_isFilled          = rhs.m_isFilled;
     m_isBlankingRegion  = rhs.m_isBlankingRegion;
     m_extSymbId         = rhs.m_extSymbId;
-    m_materialId        = rhs.m_materialId;
+    m_material          = rhs.m_material;
     m_rasterWidth       = rhs.m_rasterWidth;
     m_rasterPat         = rhs.m_rasterPat;
     m_lStyleSymb        = rhs.m_lStyleSymb;

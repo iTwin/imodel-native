@@ -14,6 +14,7 @@
 #define DEFAULT_Specular        .05
 #define DEFAULT_Diffuse         .5
     
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -122,10 +123,8 @@ bool        RenderMaterialMap::_GetBool (char const* key, BentleyStatus* status)
     return false;
     }
 
+#endif
 
-//=======================================================================================
-// JSonRenderMaterial...
-//=======================================================================================
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -154,9 +153,9 @@ double Texture::GetUnitScale(Units units)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Texture::Mode Texture::GetMode(Json::Value const& in) 
+Texture::Mode Texture::GetMode(JsonValueCR in) 
     {
-    Json::Value const& value = in[RENDER_MATERIAL_PatternMapping];
+    JsonValueCR value =                  in[RENDER_MATERIAL_PatternMapping];
 
     if (!value.isInt())
         {
@@ -170,7 +169,7 @@ Texture::Mode Texture::GetMode(Json::Value const& in)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Texture::Units Texture::GetUnits(Json::Value const& in) 
+Texture::Units Texture::GetUnits(JsonValueCR in) 
     {
     Json::Value const& value = in[RENDER_MATERIAL_PatternScaleMode];
 
@@ -240,7 +239,7 @@ Render::Texture::Trans Render::Texture::GetPatternTransform(Json::Value const& v
 
     transform.m_val[1][0] =  sinAngle / scale.y;
     transform.m_val[1][1] = -cosAngle / scale.y;
-    transform.m_val[1][2] = offset.x;
+    transform.m_val[1][2] = offset.y;
 
     return transform;
     }
