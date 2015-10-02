@@ -40,7 +40,6 @@ baseDir             = $(_MakeFilePath)
 outputDir           = $(OutputRootDir)build/$(TEST_NAME)/
 libsDir             = $(outputDir)project/app/libs/
 mainDir             = $(outputDir)project/app/src/main/
-androidTestDir      = $(outputDir)project/app/src/androidTest/
 
 collectionProduct = $(OutputRootDir)../Product/${TEST_COLLECTION_PRODUCT}/
 unitTestsDir = $(collectionProduct)Objects/
@@ -110,12 +109,14 @@ _assets = $[@wildcard $(mainDir)assets/*.*]
 
 
 #--------------------------------------------------------------------------------------
-# Populate $(unitTestsDir) with .java wrappers that look 
-# like JUnit test classes to JUnit. 
+# Populate $(unitTestsDir) with .java wrappers that look like JUnit test classes to JUnit. 
 # Also generate the jni .c files that call our C++ unit tests.
 #
-# GenerateJUnitTestFileList.py searches the UnitTests directory to find the unit tests that we want to run.
-# Make this depend on the <UT>UnitTests.list.h files - these change when a unit test is added or removed
+# Each suite of unit tests builds and delivers a file called UnitTests.list.h. This list file essentially contains 
+# a list of the tests that should be run. GenerateJUnitTestFileList.py uses this list file to generate .java and .cpp 
+# files that create wrappers for the listed tests.
+# GenerateJUnitTestFileList.py does this for all list files found under $(collectionProduct)Objects/ 
+# Thus, it generates wrappers for all test suites.
 #--------------------------------------------------------------------------------------
 $(outputDir)JUnitTestFiles.mki : $[@wildcard $(unitTestsDir)*UnitTests.list.h] $(baseDir)GenJUnitTestCaseS.java.c $(baseDir)GenJUnitTestCase.jni.cpp $(_MakeFileSpec)
     $(msg)
@@ -226,7 +227,7 @@ $(libsDir)$(BENTLEY_ANDROID_AndroidABI)/gdb.setup : $(libsDir)$(BENTLEY_ANDROID_
 #--------------------------------------------------------------------------------------
 # Delivery
 #--------------------------------------------------------------------------------------
-$(BuildContext)Delivery/AndroidJUnit/$(TEST_NAME)/project : $(outputDir)project
+$(BuildContext)Delivery/ANJU/$(TEST_NAME)/project : $(outputDir)project
     $(LinkFirstDepToFirstTargetAsDirectory)
 
 always:
