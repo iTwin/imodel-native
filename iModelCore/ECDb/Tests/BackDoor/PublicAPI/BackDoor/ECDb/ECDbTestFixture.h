@@ -29,15 +29,15 @@ protected:
     static DbResult CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite), int perClassRowCount = 0);
 
 public:
-    ECDbTestFixture () {}
+    ECDbTestFixture() {}
     virtual ~ECDbTestFixture () {};
-    virtual void SetUp () override {}
+    virtual void SetUp() override;
     virtual void TearDown () override {}
 
     //! Initializes the test environment by setting up the schema read context and search dirs etc.
     //! Gets implicitly called when calling CreateTestProject, too. Tests that don't use
     //! that method can call this method statically.
     static void Initialize();
-     };
+    };
 
 END_ECDBUNITTESTS_NAMESPACE

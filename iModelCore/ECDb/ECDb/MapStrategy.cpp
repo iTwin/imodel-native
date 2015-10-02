@@ -32,13 +32,12 @@ bool UserECDbMapStrategy::IsValid() const
 
             case Strategy::SharedTable:
                 {
-                if (m_options == Options::None)
-                    return true;
-
                 if (!m_appliesToSubclasses)
-                    return m_options == Options::SharedColumns;
+                    return m_options == Options::None || m_options == Options::SharedColumns;
 
-                return m_options == Options::SharedColumns || m_options == Options::SharedColumnsForSubclasses;
+                Options validOptions1 = Enum::Or(Options::SharedColumns, Options::JoinedTableForSubclasses);
+                Options validOptions2 = Enum::Or(Options::SharedColumnsForSubclasses, Options::JoinedTableForSubclasses);
+                return m_options == Options::None || Enum::Contains(validOptions1, m_options) || Enum::Contains(validOptions2, m_options);
                 }
 
             case Strategy::ExistingTable:

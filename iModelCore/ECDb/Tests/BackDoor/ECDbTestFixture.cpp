@@ -17,6 +17,16 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 bmap<std::pair<WCharCP, int>, Utf8String> ECDbTestFixture::s_seedECDbs; // empty
 bool ECDbTestFixture::s_isInitialized = false;
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle     10/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//virtual
+void ECDbTestFixture::SetUp()
+    {
+    Initialize();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle     09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -37,7 +47,7 @@ DbResult ECDbTestFixture::CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName, BeFileName
     // Create and populate a sample project
     {
     Utf8String seedPath;
-    bmap<std::pair<WCharCP, int>, Utf8String>::const_iterator seedIter = s_seedECDbs.find(std::make_pair(schemaECXmlFileName, perClassRowCount));
+    bmap<std::pair<WCharCP, int>, Utf8String>::const_iterator seedIter = s_seedECDbs.find(std::make_pair(schemaECXmlFileName.c_str(), perClassRowCount));
     if (s_seedECDbs.end() == seedIter)
         {
         Utf8String seedName;

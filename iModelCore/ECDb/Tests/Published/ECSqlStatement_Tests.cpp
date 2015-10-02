@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlTestFixture.h"
+#include "SchemaImportTestFixture.h"
+
 #include <cmath>
 #include <algorithm>
 
@@ -1081,31 +1083,30 @@ TEST_F (ECSqlTestFixture, PolymorphicUpdateWithSharedTable)
     stmt.Finalize ();
     }
 
-//WIP uncomment the test once Affan is done with Polymorphic Update.
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                  08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-//TEST_F (ECSqlTestFixture, PolymorphicUpdateTest)
-//    {
-//    // Create and populate a sample project
-//    ECDbR ecdb = SetUp ("PolymorphicDeleteTest.ecdb", L"NestedStructArrayTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), 0);
-//
-//    PopulateTestDb (ecdb);
-//
-//    //Updates the instances of ClassA all the Derived Classes Properties values should also be changed. 
-//    ECSqlStatement stmt;
-//    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "UPDATE nsat.ClassA SET T='UpdatedValue', I=2"));
-//    ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ());
-//    stmt.Finalize ();
-//
-//    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT I,T FROM nsat.ClassA"));
-//    while (stmt.Step () != BE_SQLITE_DONE)
-//        {
-//        EXPECT_EQ (2, stmt.GetValueInt (0)) << "The values don't match.";
-//        EXPECT_EQ ("UpdatedValue", (Utf8String)stmt.GetValueText (1)) << "The values don't match.";
-//        }
-//    stmt.Finalize ();
-//    }
+TEST_F(ECSqlTestFixture, PolymorphicUpdateTest)
+    {
+    // Create and populate a sample project
+    ECDbR ecdb = SetUp("PolymorphicUpdateTest.ecdb", BeFileName(L"NestedStructArrayTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), 0);
+
+    PopulateTestDb(ecdb);
+
+    //Updates the instances of ClassA all the Derived Classes Properties values should also be changed. 
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE nsat.ClassA SET T='UpdatedValue', I=2"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, GetECClassId(), I,T FROM nsat.ClassA"));
+    while (stmt.Step() != BE_SQLITE_DONE)
+        {
+        EXPECT_EQ(2, stmt.GetValueInt(2)) << "The values don't match for instance " << stmt.GetValueInt64(0) << " with class id: " << stmt.GetValueInt64(1);
+        EXPECT_STREQ("UpdatedValue", stmt.GetValueText(3)) << "The values don't match for instance " << stmt.GetValueInt64(0) << " with class id: " << stmt.GetValueInt64(1);
+        }
+    stmt.Finalize();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Maha Nasir                         09/15
@@ -1176,7 +1177,7 @@ TEST_F (ECSqlSelectTests, SelectQueriesOnDbGeneratedDuringBuild)
 
     stmt.Finalize ();
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM appdw.Equipment WHERE INSUL_THK= '2'"));
-    ASSERT_EQ (stmt.Step (), BE_SQLITE_ROW);
+    ASSERT_EQ (BE_SQLITE_ROW, stmt.Step ());
     ASSERT_EQ (6, stmt.GetValueInt (0));
     }
 /*---------------------------------------------------------------------------------**//**
@@ -3620,6 +3621,96 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingStructArrayUpdateWi
         ASSERT_EQ(count, pStructArray.GetArrayLength());
         }
     statement.Finalize();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     09/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaImportTestFixture, AmbiguousQuery)
+    {
+    TestItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                      "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                      "    <ECClass typeName='Struct' isDomainClass='True' isStruct='True'>"
+                      "        <ECProperty propertyName='P1' typeName='string' />"
+                      "        <ECProperty propertyName='P2' typeName='int' />"
+                      "    </ECClass>"
+                      "    <ECClass typeName='TestClass' isDomainClass='True'>"
+                      "        <ECProperty propertyName='P1' typeName='string'/>"
+                      "         <ECStructProperty propertyName = 'TestClass' typeName = 'Struct'/>"
+                      "    </ECClass>"
+                      "</ECSchema>", true, "");
+
+    ECDb db;
+    bool asserted = false;
+    AssertSchemaImport(db, asserted, testItem, "AmbiguousQuery.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECN::ECSchemaCP schema = db.Schemas().GetECSchema("TestSchema");
+
+    ECClassCP TestClass = schema->GetClassCP("TestClass");
+    ASSERT_TRUE(TestClass != nullptr);
+
+    ECN::StandaloneECInstancePtr Instance1 = TestClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECN::StandaloneECInstancePtr Instance2 = TestClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    Instance1->SetValue("P1", ECValue("Harvey"));
+    Instance1->SetValue("TestClass.P1", ECValue("val1"));
+    Instance1->SetValue("TestClass.P2", ECValue(123));
+
+    Instance2->SetValue("P1", ECValue("Mike"));
+    Instance2->SetValue("TestClass.P1", ECValue("val2"));
+    Instance2->SetValue("TestClass.P2", ECValue(345));
+
+    //Inserting values of TestClass
+    ECInstanceInserter inserter(db, *TestClass);
+    ASSERT_TRUE(inserter.IsValid());
+
+    auto stat = inserter.Insert(*Instance1, true);
+    ASSERT_TRUE(stat == SUCCESS);
+
+    stat = inserter.Insert(*Instance2, true);
+    ASSERT_TRUE(stat == SUCCESS);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT P1 FROM ts.TestClass"));
+    Utf8String ExpectedValueOfP1 = "Harvey-Mike-";
+    Utf8String ActualValueOfP1;
+
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        ActualValueOfP1.append(stmt.GetValueText(0));
+        ActualValueOfP1.append("-");
+        }
+
+    ASSERT_EQ(ExpectedValueOfP1, ActualValueOfP1);
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT TestClass.TestClass.P1 FROM ts.TestClass"));
+    Utf8String ExpectedValueOfStructP1 = "val1-val2-";
+    Utf8String ActualValueOfStructP1;
+
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        ActualValueOfStructP1.append(stmt.GetValueText(0));
+        ActualValueOfStructP1.append("-");
+        }
+
+    ASSERT_EQ(ExpectedValueOfStructP1, ActualValueOfStructP1);
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT TestClass.P2 FROM ts.TestClass"));
+    int ActualValueOfStructP2 = 468;
+    int ExpectedValueOfStructP2 = 0;
+
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        ExpectedValueOfStructP2 += stmt.GetValueInt(0);
+        }
+
+    ASSERT_EQ(ExpectedValueOfStructP2, ActualValueOfStructP2);
+    stmt.Finalize();
+
     }
 
 END_ECDBUNITTESTS_NAMESPACE
