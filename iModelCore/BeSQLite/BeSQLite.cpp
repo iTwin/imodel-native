@@ -2429,7 +2429,7 @@ void HighPriorityOperationSequencer::StartHighPriorityOperation()
 //---------------------------------------------------------------------------------------
 void HighPriorityOperationSequencer::EndHighPriorityOperation()
     {
-    BeAssert(s_inHighPriorityOperation > 0);
+//  BeAssert(s_inHighPriorityOperation > 0);
     s_inHighPriorityOperation--;
     }
 
@@ -4511,8 +4511,6 @@ static void logCallback(void *pArg, int iErrCode, Utf8CP zMsg)
     LOG.messagev(severity, "SQLITE_ERROR %x [%s]", iErrCode, zMsg);
     }
 
-extern "C" int sqlite3_json_init(sqlite3 *db, char **pzErrMsg, const sqlite3_api_routines *pApi);
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -4526,7 +4524,6 @@ DbResult BeSQLiteLib::Initialize(BeFileNameCR tempDir, LogErrors logErrors)
 
     sqlite3_initialize();
     sqlite3_auto_extension((void(*)(void))&besqlite_db_init);
-    sqlite3_auto_extension((void(*)(void))sqlite3_json_init);
 
     Utf8String tempDirUtf8 = tempDir.GetNameUtf8();
     if (!tempDir.DoesPathExist())

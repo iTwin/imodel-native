@@ -938,7 +938,9 @@ SQLITE_PRIVATE int sqlite3VtabBegin(sqlite3 *db, VTable *pVTab){
     if( rc==SQLITE_OK ){
       rc = pModule->xBegin(pVTab->pVtab);
       if( rc==SQLITE_OK ){
+        int iSvpt = db->nStatement + db->nSavepoint;
         addToVTrans(db, pVTab);
+        if( iSvpt ) rc = sqlite3VtabSavepoint(db, SAVEPOINT_BEGIN, iSvpt-1);
       }
     }
   }
@@ -1796,8 +1798,8 @@ static void explainAppendTerm(
 */
 static const char *explainIndexColumnName(Index *pIdx, int i){
   i = pIdx->aiColumn[i];
-  if( i==(-2) ) return "<expr>";
-  if( i==(-1) ) return "rowid";
+  if( i==XN_EXPR ) return "<expr>";
+  if( i==XN_ROWID ) return "rowid";
   return pIdx->pTable->aCol[i].zName;
 }
 
@@ -2264,7 +2266,7 @@ static int codeAllEqualityTerms(
     sqlite3VdbeJumpHere(v, j);
     for(j=0; j<nSkip; j++){
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, j, regBase+j);
-      testcase( pIdx->aiColumn[j]==(-2) );
+      testcase( pIdx->aiColumn[j]==XN_EXPR );
       VdbeComment((v, "%s", explainIndexColumnName(pIdx, j)));
     }
   }    
@@ -2450,8 +2452,8 @@ SQLITE_PRIVATE Bitmask sqlite3WhereCodeOneLoopStart(
         disableTerm(pLevel, pLoop->aLTerm[j]);
       }
     }
-    pLevel->op = OP_VNext;
     pLevel->p1 = iCur;
+    pLevel->op = pWInfo->eOnePass ? OP_Noop : OP_VNext;
     pLevel->p2 = sqlite3VdbeCurrentAddr(v);
     sqlite3ReleaseTempRange(pParse, iReg, nConstraint+2);
     sqlite3ExprCachePop(pParse);
@@ -4693,6 +4695,13 @@ SQLITE_PRIVATE int sqlite3WhereBreakLabel(WhereInfo *pWInfo){
 */
 SQLITE_PRIVATE int sqlite3WhereOkOnePass(WhereInfo *pWInfo, int *aiCur){
   memcpy(aiCur, pWInfo->aiCurOnePass, sizeof(int)*2);
+#ifdef WHERETRACE_ENABLED
+  if( sqlite3WhereTrace && pWInfo->eOnePass!=ONEPASS_OFF ){
+    sqlite3DebugPrintf("%s cursors: %d %d\n",
+         pWInfo->eOnePass==ONEPASS_SINGLE ? "ONEPASS_SINGLE" : "ONEPASS_MULTI",
+         aiCur[0], aiCur[1]);
+  }
+#endif
   return pWInfo->eOnePass;
 }
 
@@ -4788,13 +4797,13 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
   while( pScan->iEquiv<=pScan->nEquiv ){
     iCur = pScan->aiCur[pScan->iEquiv-1];
     iColumn = pScan->aiColumn[pScan->iEquiv-1];
-    if( iColumn==(-2) && pScan->pIdxExpr==0 ) return 0;
+    if( iColumn==XN_EXPR && pScan->pIdxExpr==0 ) return 0;
     while( (pWC = pScan->pWC)!=0 ){
       for(pTerm=pWC->a+k; k<pWC->nTerm; k++, pTerm++){
         if( pTerm->leftCursor==iCur
          && pTerm->u.leftColumn==iColumn
-         && (iColumn!=(-2)
-               || sqlite3ExprCompare(pTerm->pExpr->pLeft,pScan->pIdxExpr,iCur)==0)
+         && (iColumn!=XN_EXPR
+             || sqlite3ExprCompare(pTerm->pExpr->pLeft,pScan->pIdxExpr,iCur)==0)
          && (pScan->iEquiv<=1 || !ExprHasProperty(pTerm->pExpr, EP_FromJoin))
         ){
           if( (pTerm->eOperator & WO_EQUIV)!=0
@@ -4887,7 +4896,7 @@ static WhereTerm *whereScanInit(
   if( pIdx ){
     j = iColumn;
     iColumn = pIdx->aiColumn[j];
-    if( iColumn==(-2) ) pScan->pIdxExpr = pIdx->aColExpr->a[j].pExpr;
+    if( iColumn==XN_EXPR ) pScan->pIdxExpr = pIdx->aColExpr->a[j].pExpr;
   }
   if( pIdx && iColumn>=0 ){
     pScan->idxaff = pIdx->pTable->aCol[iColumn].affinity;
@@ -5326,7 +5335,7 @@ static void constructAutomaticIndex(
     }
   }
   assert( n==nKeyCol );
-  pIdx->aiColumn[n] = -1;
+  pIdx->aiColumn[n] = XN_ROWID;
   pIdx->azColl[n] = "BINARY";
 
   /* Create the automatic index */
@@ -5765,6 +5774,7 @@ static LogEst whereRangeAdjust(WhereTerm *pTerm, LogEst nNew){
 ** Return the affinity for a single column of an index.
 */
 static char sqlite3IndexColumnAffinity(sqlite3 *db, Index *pIdx, int iCol){
+  assert( iCol>=0 && iCol<pIdx->nColumn );
   if( !pIdx->zColAff ){
     if( sqlite3IndexAffinityStr(db, pIdx)==0 ) return SQLITE_AFF_BLOB;
   }
@@ -5822,8 +5832,7 @@ static int whereRangeSkipScanEst(
   int nLower = -1;
   int nUpper = p->nSample+1;
   int rc = SQLITE_OK;
-  int iCol = p->aiColumn[nEq];
-  u8 aff = sqlite3IndexColumnAffinity(db, p, iCol);
+  u8 aff = sqlite3IndexColumnAffinity(db, p, nEq);
   CollSeq *pColl;
   
   sqlite3_value *p1 = 0;          /* Value extracted from pLower */
@@ -6841,7 +6850,9 @@ static int whereLoopAddBtreeIndex(
       int iCol = pProbe->aiColumn[saved_nEq];
       pNew->wsFlags |= WHERE_COLUMN_EQ;
       assert( saved_nEq==pNew->u.btree.nEq );
-      if( iCol==(-1) || (iCol>0 && nInMul==0 && saved_nEq==pProbe->nKeyCol-1) ){
+      if( iCol==XN_ROWID 
+       || (iCol>0 && nInMul==0 && saved_nEq==pProbe->nKeyCol-1)
+      ){
         if( iCol>=0 && pProbe->uniqNotNull==0 ){
           pNew->wsFlags |= WHERE_UNQ_WANTED;
         }else{
@@ -7027,17 +7038,24 @@ static int indexMightHelpWithOrderBy(
   int iCursor
 ){
   ExprList *pOB;
+  ExprList *aColExpr;
   int ii, jj;
 
   if( pIndex->bUnordered ) return 0;
   if( (pOB = pBuilder->pWInfo->pOrderBy)==0 ) return 0;
   for(ii=0; ii<pOB->nExpr; ii++){
     Expr *pExpr = sqlite3ExprSkipCollate(pOB->a[ii].pExpr);
-    if( pExpr->op!=TK_COLUMN ) return 0;
-    if( pExpr->iTable==iCursor ){
+    if( pExpr->op==TK_COLUMN && pExpr->iTable==iCursor ){
       if( pExpr->iColumn<0 ) return 1;
       for(jj=0; jj<pIndex->nKeyCol; jj++){
         if( pExpr->iColumn==pIndex->aiColumn[jj] ) return 1;
+      }
+    }else if( (aColExpr = pIndex->aColExpr)!=0 ){
+      for(jj=0; jj<pIndex->nKeyCol; jj++){
+        if( pIndex->aiColumn[jj]!=XN_EXPR ) continue;
+        if( sqlite3ExprCompare(pExpr,aColExpr->a[jj].pExpr,iCursor)==0 ){
+          return 1;
+        }
       }
     }
   }
@@ -7186,7 +7204,7 @@ static int whereLoopAddBtree(
    && (pWInfo->pParse->db->flags & SQLITE_AutoIndex)!=0
    && pSrc->pIBIndex==0      /* Has no INDEXED BY clause */
    && !pSrc->fg.notIndexed   /* Has no NOT INDEXED clause */
-   && HasRowid(pTab)         /* Is not a WITHOUT ROWID table. (FIXME: Why not?) */
+   && HasRowid(pTab)         /* Not WITHOUT ROWID table. (FIXME: Why not?) */
    && !pSrc->fg.isCorrelated /* Not a correlated subquery */
    && !pSrc->fg.isRecursive  /* Not a recursive common table expression. */
   ){
@@ -7431,6 +7449,7 @@ static int whereLoopAddVirtual(
     pIdxInfo->orderByConsumed = 0;
     pIdxInfo->estimatedCost = SQLITE_BIG_DBL / (double)2;
     pIdxInfo->estimatedRows = 25;
+    pIdxInfo->idxFlags = 0;
     rc = vtabBestIndex(pParse, pTab, pIdxInfo);
     if( rc ) goto whereLoopAddVtab_exit;
     pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
@@ -7476,6 +7495,7 @@ static int whereLoopAddVirtual(
           ** (2) Multiple outputs from a single IN value will not merge
           ** together.  */
           pIdxInfo->orderByConsumed = 0;
+          pIdxInfo->idxFlags &= ~SQLITE_INDEX_SCAN_UNIQUE;
         }
       }
     }
@@ -7491,6 +7511,14 @@ static int whereLoopAddVirtual(
       pNew->rSetup = 0;
       pNew->rRun = sqlite3LogEstFromDouble(pIdxInfo->estimatedCost);
       pNew->nOut = sqlite3LogEst(pIdxInfo->estimatedRows);
+
+      /* Set the WHERE_ONEROW flag if the xBestIndex() method indicated
+      ** that the scan will visit at most one row. Clear it otherwise. */
+      if( pIdxInfo->idxFlags & SQLITE_INDEX_SCAN_UNIQUE ){
+        pNew->wsFlags |= WHERE_ONEROW;
+      }else{
+        pNew->wsFlags &= ~WHERE_ONEROW;
+      }
       whereLoopInsert(pBuilder, pNew);
       if( pNew->u.vtab.needFree ){
         sqlite3_free(pNew->u.vtab.idxStr);
@@ -7812,7 +7840,8 @@ static i8 wherePathSatisfiesOrderBy(
         nKeyCol = pIndex->nKeyCol;
         nColumn = pIndex->nColumn;
         assert( nColumn==nKeyCol+1 || !HasRowid(pIndex->pTable) );
-        assert( pIndex->aiColumn[nColumn-1]==(-1) || !HasRowid(pIndex->pTable));
+        assert( pIndex->aiColumn[nColumn-1]==XN_ROWID
+                          || !HasRowid(pIndex->pTable));
         isOrderDistinct = IsUniqueIndex(pIndex);
       }
 
@@ -7844,7 +7873,7 @@ static i8 wherePathSatisfiesOrderBy(
           revIdx = pIndex->aSortOrder[j];
           if( iColumn==pIndex->pTable->iPKey ) iColumn = -1;
         }else{
-          iColumn = -1;
+          iColumn = XN_ROWID;
           revIdx = 0;
         }
 
@@ -7870,9 +7899,15 @@ static i8 wherePathSatisfiesOrderBy(
           testcase( wctrlFlags & WHERE_GROUPBY );
           testcase( wctrlFlags & WHERE_DISTINCTBY );
           if( (wctrlFlags & (WHERE_GROUPBY|WHERE_DISTINCTBY))==0 ) bOnce = 0;
-          if( pOBExpr->op!=TK_COLUMN ) continue;
-          if( pOBExpr->iTable!=iCur ) continue;
-          if( pOBExpr->iColumn!=iColumn ) continue;
+          if( iColumn>=(-1) ){
+            if( pOBExpr->op!=TK_COLUMN ) continue;
+            if( pOBExpr->iTable!=iCur ) continue;
+            if( pOBExpr->iColumn!=iColumn ) continue;
+          }else{
+            if( sqlite3ExprCompare(pOBExpr,pIndex->aColExpr->a[j].pExpr,iCur) ){
+              continue;
+            }
+          }
           if( iColumn>=0 ){
             pColl = sqlite3ExprCollSeq(pWInfo->pParse, pOrderBy->a[i].pExpr);
             if( !pColl ) pColl = db->pDfltColl;
@@ -8703,7 +8738,8 @@ SQLITE_PRIVATE WhereInfo *sqlite3WhereBegin(
   }
 
   /* Construct the WhereLoop objects */
-  WHERETRACE(0xffff,("*** Optimizer Start ***\n"));
+  WHERETRACE(0xffff,("*** Optimizer Start *** (wctrlFlags: 0x%x)\n",
+             wctrlFlags));
 #if defined(WHERETRACE_ENABLED)
   if( sqlite3WhereTrace & 0x100 ){ /* Display all terms of the WHERE clause */
     int i;
@@ -9122,7 +9158,10 @@ SQLITE_PRIVATE void sqlite3WhereEnd(WhereInfo *pWInfo){
     }else if( pLoop->wsFlags & WHERE_MULTI_OR ){
       pIdx = pLevel->u.pCovidx;
     }
-    if( pIdx && !db->mallocFailed ){
+    if( pIdx
+     && (pWInfo->eOnePass==ONEPASS_OFF || !HasRowid(pIdx->pTable))
+     && !db->mallocFailed
+    ){
       last = sqlite3VdbeCurrentAddr(v);
       k = pLevel->addrBody;
       pOp = sqlite3VdbeGetOp(v, k);
@@ -9134,6 +9173,7 @@ SQLITE_PRIVATE void sqlite3WhereEnd(WhereInfo *pWInfo){
           if( !HasRowid(pTab) ){
             Index *pPk = sqlite3PrimaryKeyIndex(pTab);
             x = pPk->aiColumn[x];
+            assert( x>=0 );
           }
           x = sqlite3ColumnOfIndex(pIdx, x);
           if( x>=0 ){
@@ -16898,6 +16938,13 @@ static int openDatabase(
   }
 #endif
 
+#ifdef SQLITE_ENABLE_JSON1
+  if( !db->mallocFailed && rc==SQLITE_OK){
+    extern int sqlite3Json1Init(sqlite3*);
+    rc = sqlite3Json1Init(db);
+  }
+#endif
+
   /* -DSQLITE_DEFAULT_LOCKING_MODE=1 makes EXCLUSIVE the default locking
   ** mode.  -DSQLITE_DEFAULT_LOCKING_MODE=0 make NORMAL the default locking
   ** mode.  Doing nothing at all also makes NORMAL the default.
@@ -18972,6 +19019,7 @@ struct Fts3Table {
   int nPendingData;               /* Current bytes of pending data */
   sqlite_int64 iPrevDocid;        /* Docid of most recently inserted document */
   int iPrevLangid;                /* Langid of recently inserted document */
+  int bPrevDelete;                /* True if last operation was a delete */
 
 #if defined(SQLITE_DEBUG) || defined(SQLITE_COVERAGE_TEST)
   /* State variables used for validating that the transaction control
@@ -20547,6 +20595,19 @@ static void fts3SetEstimatedRows(sqlite3_index_info *pIdxInfo, i64 nRow){
 #endif
 }
 
+/*
+** Set the SQLITE_INDEX_SCAN_UNIQUE flag in pIdxInfo->flags. Unless this
+** extension is currently being used by a version of SQLite too old to
+** support index-info flags. In that case this function is a no-op.
+*/
+static void fts3SetUniqueFlag(sqlite3_index_info *pIdxInfo){
+#if SQLITE_VERSION_NUMBER>=3008012
+  if( sqlite3_libversion_number()>=3008012 ){
+    pIdxInfo->idxFlags |= SQLITE_INDEX_SCAN_UNIQUE;
+  }
+#endif
+}
+
 /* 
 ** Implementation of the xBestIndex method for FTS3 tables. There
 ** are three possible strategies, in order of preference:
@@ -20636,6 +20697,9 @@ static int fts3BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
       }
     }
   }
+
+  /* If using a docid=? or rowid=? strategy, set the UNIQUE flag. */
+  if( pInfo->idxNum==FTS3_DOCID_SEARCH ) fts3SetUniqueFlag(pInfo);
 
   iIdx = 1;
   if( iCons>=0 ){
