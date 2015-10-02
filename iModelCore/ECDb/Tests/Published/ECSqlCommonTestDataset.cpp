@@ -17,11 +17,11 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 // @bsimethod                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlTestDataset ECSqlCommonTestDataset::WhereAbstractClassTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass)
+ECSqlTestDataset ECSqlCommonTestDataset::WhereAbstractClassTests (ECSqlType ecsqlType, ECDbCR ecdb, int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
 
-    auto abstractClass = testProject.GetTestSchemaManager ().GetClass ("ECSqlTest", "AbstractTablePerHierarchy");
+    auto abstractClass = ecdb.Schemas().GetECClass("ECSqlTest", "AbstractTablePerHierarchy");
     Utf8String ecsqlStub;
     if (ToECSql(ecsqlStub, ecsqlType, *abstractClass, true)) //polymorphic
         {
@@ -54,7 +54,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereAbstractClassTests (ECSqlType ecsq
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
         }
 
-    auto abstractNoSubclassesClass = testProject.GetTestSchemaManager ().GetClass ("ECSqlTest", "AbstractNoSubclasses");
+    auto abstractNoSubclassesClass = ecdb.Schemas().GetECClass("ECSqlTest", "AbstractNoSubclasses");
     if (ToECSql(ecsqlStub, ecsqlType, *abstractNoSubclassesClass, true)) // polymorphic
         {
         Utf8String ecsql;
@@ -83,11 +83,11 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereAbstractClassTests (ECSqlType ecsq
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  06/15
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlTestDataset ECSqlCommonTestDataset::WhereAndOrPrecedenceTests(ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass)
+ECSqlTestDataset ECSqlCommonTestDataset::WhereAndOrPrecedenceTests(ECSqlType ecsqlType, ECDbCR ecdb, int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
 
-    ECClassCP testClass = testProject.GetTestSchemaManager().GetClass("ECSqlTest", "TH3");
+    ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "TH3");
     Utf8String testClassECSqlStub;
     if (ToECSql(testClassECSqlStub, ecsqlType, *testClass, false))
         {
@@ -115,11 +115,11 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereAndOrPrecedenceTests(ECSqlType ecs
 // @bsimethod                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlTestDataset ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass)
+ECSqlTestDataset ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType ecsqlType, ECDbCR ecdb, int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
 
-    auto pClass = testProject.GetTestSchemaManager ().GetClass ("ECSqlTest", "P");
+    auto pClass = ecdb.Schemas().GetECClass("ECSqlTest", "P");
     Utf8String pClassECSqlStub;
     if (ToECSql (pClassECSqlStub, ecsqlType, *pClass, false))
         {
@@ -244,11 +244,11 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType ecsqlType, 
 // @bsimethod                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlTestDataset ECSqlCommonTestDataset::WhereCommonGeometryTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass)
+ECSqlTestDataset ECSqlCommonTestDataset::WhereCommonGeometryTests (ECSqlType ecsqlType, ECDbCR ecdb, int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
 
-    auto testClass = testProject.GetTestSchemaManager ().GetClass ("ECSqlTest", "PASpatial");
+    auto testClass = ecdb.Schemas().GetECClass("ECSqlTest", "PASpatial");
     Utf8String testClassECSqlStub;
     if (ToECSql (testClassECSqlStub, ecsqlType, *testClass, false))
         {
@@ -267,7 +267,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereCommonGeometryTests (ECSqlType ecs
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
         }
 
-    testClass = testProject.GetTestSchemaManager ().GetClass ("ECSqlTest", "SSpatial");
+    testClass = ecdb.Schemas().GetECClass("ECSqlTest", "SSpatial");
     if (ToECSql (testClassECSqlStub, ecsqlType, *testClass, false))
         {
         Utf8String ecsql;
@@ -292,12 +292,12 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereCommonGeometryTests (ECSqlType ecs
 // @bsimethod                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlTestDataset ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass)
+ECSqlTestDataset ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType ecsqlType, ECDbCR ecdb, int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
 
-    auto pClass = testProject.GetTestSchemaManager ().GetClass ("ECSqlTest", "P");
-    const auto pClassId = pClass->GetId ();
+    ECClassCP pClass = ecdb.Schemas().GetECClass("ECSqlTest", "P");
+    const ECClassId pClassId = pClass->GetId ();
 
     Utf8String pClassECSqlStub;
     if (ToECSql (pClassECSqlStub, ecsqlType, *pClass, false))
@@ -354,11 +354,11 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType ecsqlType
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlTestDataset ECSqlCommonTestDataset::WhereMatchTests(ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass)
+ECSqlTestDataset ECSqlCommonTestDataset::WhereMatchTests(ECSqlType ecsqlType, ECDbCR ecdb, int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
 
-    ECClassCP testClass = testProject.GetTestSchemaManager().GetClass("ECSqlTest", "P");
+    ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "P");
     Utf8String testClassECSqlStub;
     if (ToECSql(testClassECSqlStub, ecsqlType, *testClass, false))
         {
@@ -389,26 +389,25 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereMatchTests(ECSqlType ecsqlType, EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass)
+ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests (ECSqlType ecsqlType, ECDbR ecdb, int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
 
-    auto psaClassId = ECSqlStatementCrudTestDatasetHelper::GetClassId (testProject.GetTestSchemaManager (), "ECSqlTest", "PSA");
-    auto pClassId = ECSqlStatementCrudTestDatasetHelper::GetClassId (testProject.GetTestSchemaManager (), "ECSqlTest", "P");
+    auto psaClassId = ecdb.Schemas().GetECClassId ("ECSqlTest", "PSA");
+    auto pClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "P");
 
     ECInstanceId psaECInstanceId;
     ECInstanceId pECInstanceId;
     ECInstanceId psaHasPECInstanceId;
 
     {
-    auto& ecdb = testProject.GetECDb ();
     Savepoint savepoint (ecdb, "Inserting test instances");
-    psaECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.PSA (I, S) VALUES (100, 'Test instance for relationship tests')");
-    pECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.P (I, S) VALUES (100, 'Test instance for relationship tests')");
+    psaECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSA (I, S) VALUES (100, 'Test instance for relationship tests')");
+    pECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.P (I, S) VALUES (100, 'Test instance for relationship tests')");
 
     Utf8String ecsql;
     ecsql.Sprintf ("INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES (%lld, %lld)", psaECInstanceId.GetValue(), pECInstanceId.GetValue());
-    psaHasPECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, ecsql.c_str ());
+    psaHasPECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, ecsql.c_str ());
     if (!psaECInstanceId.IsValid () || !pECInstanceId.IsValid () || !psaHasPECInstanceId.IsValid ())
         {
         savepoint.Cancel ();
@@ -418,7 +417,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests (
     savepoint.Commit ();
     }
 
-    auto psaHasPClass = testProject.GetTestSchemaManager ().GetClass ("ECSqlTest", "PSAHasP");
+    auto psaHasPClass = ecdb.Schemas().GetECClass ("ECSqlTest", "PSAHasP");
     Utf8String psaHasPClassECSqlStub;
     if (ToECSql (psaHasPClassECSqlStub, ecsqlType, *psaHasPClass, false))
         {
@@ -458,24 +457,23 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests (
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass)
+ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests (ECSqlType ecsqlType, ECDbR ecdb, int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
 
-    auto psaClassId = ECSqlStatementCrudTestDatasetHelper::GetClassId (testProject.GetTestSchemaManager (), "ECSqlTest", "PSA");
+    auto psaClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "PSA");
     
     ECInstanceId psaECInstanceId1;
     ECInstanceId psaECInstanceId2;
     ECInstanceId psaHasPsaECInstanceId;
     {
-    auto& ecdb = testProject.GetECDb ();
     Savepoint savepoint (ecdb, "Inserting test instances");
-    psaECInstanceId1 = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.PSA (I, S) VALUES (100, 'Test instance for relationship tests')");
-    psaECInstanceId2 = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.PSA (I, S) VALUES (200, 'Second test instance for relationship tests')");
+    psaECInstanceId1 = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSA (I, S) VALUES (100, 'Test instance for relationship tests')");
+    psaECInstanceId2 = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSA (I, S) VALUES (200, 'Second test instance for relationship tests')");
 
     Utf8String ecsql;
     ecsql.Sprintf ("INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, TargetECInstanceId) VALUES (%lld, %lld)", psaECInstanceId1.GetValue(), psaECInstanceId2.GetValue());
-    psaHasPsaECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, ecsql.c_str ());
+    psaHasPsaECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, ecsql.c_str ());
     if (!psaECInstanceId1.IsValid () || !psaECInstanceId2.IsValid () || !psaHasPsaECInstanceId.IsValid ())
         {
         savepoint.Cancel ();
@@ -486,7 +484,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests 
     }
 
 
-    auto psaHasPsaClass = testProject.GetTestSchemaManager ().GetClass ("ECSqlTest", "PSAHasPSA");
+    auto psaHasPsaClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSAHasPSA");
     Utf8String psaHasPsaClassECSqlStub;
     if (ToECSql (psaHasPsaClassECSqlStub, ecsqlType, *psaHasPsaClass, false))
         {
@@ -526,18 +524,17 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass)
+ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTests (ECSqlType ecsqlType, ECDbR ecdb, int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
 
-    auto psaClassId = ECSqlStatementCrudTestDatasetHelper::GetClassId (testProject.GetTestSchemaManager (), "ECSqlTest", "PSA");
-    auto pClassId = ECSqlStatementCrudTestDatasetHelper::GetClassId (testProject.GetTestSchemaManager (), "ECSqlTest", "P");
+    auto psaClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "PSA");
+    auto pClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "P");
 
     ECInstanceId ecInstanceId;
     {
-    auto& ecdb = testProject.GetECDb ();
     Savepoint savepoint (ecdb, "Inserting test instances");
-    ecInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId, B, D) VALUES (100, 200, False, 3.14)");
+    ecInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId, B, D) VALUES (100, 200, False, 3.14)");
     if (!ecInstanceId.IsValid ())
         {
         savepoint.Cancel ();
@@ -547,7 +544,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTes
     savepoint.Commit ();
     }
 
-    auto relClass = testProject.GetTestSchemaManager ().GetClass ("ECSqlTest", "PSAHasPWithPrimProps");
+    auto relClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSAHasPWithPrimProps");
     Utf8String relClassECSqlStub;
     if (ToECSql (relClassECSqlStub, ecsqlType, *relClass, false))
         {
@@ -596,29 +593,28 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTes
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAnyClassConstraintTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass)
+ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAnyClassConstraintTests (ECSqlType ecsqlType, ECDbR ecdb, int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
 
-    auto psaClassId = ECSqlStatementCrudTestDatasetHelper::GetClassId (testProject.GetTestSchemaManager (), "ECSqlTest", "PSA");
-    auto pClassId = ECSqlStatementCrudTestDatasetHelper::GetClassId (testProject.GetTestSchemaManager (), "ECSqlTest", "P");
+    auto psaClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "PSA");
+    auto pClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "P");
 
     ECInstanceId pECInstanceId;
     ECInstanceId psaECInstanceId (1000LL); //can be fictitious as it is not checked by ECDb
     ECInstanceId psaHasAnyClassECInstanceId;
     ECInstanceId anyClassHasPECInstanceId;
     {
-    auto& ecdb = testProject.GetECDb ();
     Savepoint savepoint (ecdb, "Inserting test instances");
-    pECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.P (I, S) VALUES (100, 'test instance')");
+    pECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.P (I, S) VALUES (100, 'test instance')");
 
     Utf8String ecsql;
     ecsql.Sprintf ("INSERT INTO ecsql.PSAHasAnyClass_0N (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%lld, 200, %lld)", psaECInstanceId.GetValue(), pClassId);
-    psaHasAnyClassECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, ecsql.c_str ());
+    psaHasAnyClassECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, ecsql.c_str ());
 
     //this is an end-table mapping. Therefore the source ecinstanceid must match the end table's row
     ecsql.Sprintf ("INSERT INTO ecsql.AnyClassHasP_0N (SourceECInstanceId, SourceECClassId, TargetECInstanceId) VALUES (%lld, %lld, %lld)", psaECInstanceId.GetValue(), psaClassId, pECInstanceId.GetValue());
-    anyClassHasPECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, ecsql.c_str ());
+    anyClassHasPECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, ecsql.c_str ());
 
     if (!pECInstanceId.IsValid () || !psaHasAnyClassECInstanceId.IsValid () || !anyClassHasPECInstanceId.IsValid ())
         {
@@ -630,7 +626,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAnyClassConstraint
     }
 
     //******* AnyClass on Target end ***********
-    auto psaHasAnyClass = testProject.GetTestSchemaManager ().GetClass ("ECSqlTest", "PSAHasAnyClass_0N");
+    auto psaHasAnyClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSAHasAnyClass_0N");
     Utf8String psaHasAnyClassECSqlStub;
     if (ToECSql (psaHasAnyClassECSqlStub, ecsqlType, *psaHasAnyClass, false))
         {
@@ -681,7 +677,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAnyClassConstraint
         }
 
     //******* AnyClass on Source end ***********
-    auto anyHasPClass = testProject.GetTestSchemaManager ().GetClass ("ECSqlTest", "AnyClassHasP_0N");
+    auto anyHasPClass = ecdb.Schemas().GetECClass("ECSqlTest", "AnyClassHasP_0N");
     Utf8String anyHasPClassECSqlStub;
     if (ToECSql (anyHasPClassECSqlStub, ecsqlType, *anyHasPClass, false))
         {
@@ -737,11 +733,11 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAnyClassConstraint
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlTestDataset ECSqlCommonTestDataset::WhereStructTests (ECSqlType ecsqlType, ECDbTestProject& testProject, int rowCountPerClass)
+ECSqlTestDataset ECSqlCommonTestDataset::WhereStructTests (ECSqlType ecsqlType, ECDbCR ecdb, int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
 
-    auto psaClass = testProject.GetTestSchemaManager ().GetClass ("ECSqlTest", "PSA");
+    auto psaClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSA");
     Utf8String psaClassECSqlStub;
     if (ToECSql (psaClassECSqlStub, ecsqlType, *psaClass, false))
         {
@@ -763,7 +759,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereStructTests (ECSqlType ecsqlType, 
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
         }
 
-    auto saClass = testProject.GetTestSchemaManager ().GetClass ("ECSqlTest", "SA");
+    auto saClass = ecdb.Schemas().GetECClass("ECSqlTest", "SA");
     Utf8String saClassECSqlStub;
     if (ToECSql (saClassECSqlStub, ecsqlType, *saClass, false))
         {

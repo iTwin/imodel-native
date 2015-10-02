@@ -486,7 +486,7 @@ BentleyStatus PerformanceBisDesignTestFixture::AddTestClassProperty (ECClassR te
 //static 
 void PerformanceBisDesignTestFixture::CreateTestDb (DbR db, Utf8CP fileName)
     {
-    BeFileName dbPath (ECDbTestProject::BuildECDbPath (fileName));
+    BeFileName dbPath (ECDbTestUtility::BuildECDbPath (fileName));
     if (dbPath.DoesPathExist ())
         dbPath.BeDeleteFile ();
 
@@ -499,7 +499,7 @@ void PerformanceBisDesignTestFixture::CreateTestDb (DbR db, Utf8CP fileName)
 //static 
 void PerformanceBisDesignTestFixture::OpenTestDb (DbR db, Utf8CP fileName, bool readonly)
     {
-    BeFileName dbPath (ECDbTestProject::BuildECDbPath (fileName));
+    BeFileName dbPath (ECDbTestUtility::BuildECDbPath (fileName));
     ASSERT_EQ (BE_SQLITE_OK, db.OpenBeSQLiteDb (dbPath, Db::OpenParams (readonly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite)));
     }
 

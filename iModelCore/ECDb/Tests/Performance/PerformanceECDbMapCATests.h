@@ -13,7 +13,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiClass                                       Muhammad Hassan                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct PerformanceECDbMapCATestFixture : public PerformanceTestFixtureBase
+struct PerformanceECDbMapCATestFixture : public ECDbTestFixture
     {
     public:
         size_t m_classNamePostFix = 1;
@@ -32,15 +32,15 @@ struct PerformanceECDbMapCATestFixture : public PerformanceTestFixtureBase
             Utf8String m_deleteECSql;
             };
         bmap<ECN::ECClassCP, ECSqlTestItem> m_sqlTestItems;
-        void CreateClassHierarchy (ECSchemaR testSchema, size_t LevelCount, ECClassR baseClass);
-        void CreatePrimitiveProperties (ECClassR ecClass);
-        void GenerateECSqlCRUDTestStatements (ECSchemaR ecSchema);
-        void GenerateSqlCRUDTestStatements (ECSchemaR ecSchema, ECClassR ecClass, Utf8StringR insertSql, Utf8StringR selectSql, Utf8StringR updateSql, Utf8StringR deleteSql);
+        void CreateClassHierarchy (ECN::ECSchemaR testSchema, size_t LevelCount, ECN::ECClassR baseClass);
+        void CreatePrimitiveProperties (ECN::ECClassR ecClass);
+        void GenerateECSqlCRUDTestStatements (ECN::ECSchemaR ecSchema);
+        void GenerateSqlCRUDTestStatements (ECN::ECSchemaR ecSchema, ECN::ECClassR ecClass, Utf8StringR insertSql, Utf8StringR selectSql, Utf8StringR updateSql, Utf8StringR deleteSql);
         void InsertInstances (ECDbR ecdb);
         void ReadInstances (ECDbR ecdb);
         void UpdateInstances (ECDbR ecdb);
         void DeleteInstances (ECDbR ecdb);
-        void GenerateReadUpdateDeleteStatements (ECSchemaR ecSchema);
+        void GenerateReadUpdateDeleteStatements (ECN::ECSchemaR ecSchema);
     };
 
 END_ECDBUNITTESTS_NAMESPACE

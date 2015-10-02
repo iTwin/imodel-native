@@ -684,33 +684,33 @@ ECSqlTestDataset ECSqlUpdateTestDataset::PolymorphicTests (int rowCountPerClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlTestDataset ECSqlUpdateTestDataset::RelationshipEndTableMappingTests (ECDbTestProject& testProject, int rowCountPerClass)
+ECSqlTestDataset ECSqlUpdateTestDataset::RelationshipEndTableMappingTests(int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
 
     Utf8CP ecsql = "UPDATE ONLY ecsql.PSAHasP SET SourceECInstanceId = 123";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     ecsql = "UPDATE ONLY ecsql.PSAHasP SET SourceECInstanceId = ?";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     ecsql = "UPDATE ONLY ecsql.PSAHasP SET TargetECInstanceId = 134";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     ecsql = "UPDATE ONLY ecsql.PSAHasP SET TargetECInstanceId = ?";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     ecsql = "UPDATE ONLY ecsql.PSAHasP SET SourceECClassId = 111";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     ecsql = "UPDATE ONLY ecsql.PSAHasP SET SourceECClassId = ?";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     ecsql = "UPDATE ONLY ecsql.PSAHasP SET TargetECClassId = 111";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     ecsql = "UPDATE ONLY ecsql.PSAHasP SET TargetECClassId = ?";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     return dataset;
     }
@@ -718,33 +718,33 @@ ECSqlTestDataset ECSqlUpdateTestDataset::RelationshipEndTableMappingTests (ECDbT
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlTestDataset ECSqlUpdateTestDataset::RelationshipLinkTableMappingTests (ECDbTestProject& testProject, int rowCountPerClass)
+ECSqlTestDataset ECSqlUpdateTestDataset::RelationshipLinkTableMappingTests(int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
 
     Utf8CP ecsql = "UPDATE ONLY ecsql.PSAHasPSA SET SourceECInstanceId = 123";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     ecsql = "UPDATE ONLY ecsql.PSAHasPSA SET SourceECInstanceId = ?";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     ecsql = "UPDATE ONLY ecsql.PSAHasPSA SET TargetECInstanceId = 134";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     ecsql = "UPDATE ONLY ecsql.PSAHasPSA SET TargetECInstanceId = ?";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     ecsql = "UPDATE ONLY ecsql.PSAHasPSA SET SourceECClassId = 111";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     ecsql = "UPDATE ONLY ecsql.PSAHasPSA SET SourceECClassId = ?";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     ecsql = "UPDATE ONLY ecsql.PSAHasPSA SET TargetECClassId = 111";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     ecsql = "UPDATE ONLY ecsql.PSAHasPSA SET TargetECClassId = ?";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     return dataset;
     }
@@ -752,14 +752,13 @@ ECSqlTestDataset ECSqlUpdateTestDataset::RelationshipLinkTableMappingTests (ECDb
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlTestDataset ECSqlUpdateTestDataset::RelationshipWithAdditionalPropsTests (ECDbTestProject& testProject, int rowCountPerClass)
+ECSqlTestDataset ECSqlUpdateTestDataset::RelationshipWithAdditionalPropsTests (ECDbR ecdb, int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
 
         {
-        auto& ecdb = testProject.GetECDb ();
         Savepoint savepoint (ecdb, "Inserting test instances");
-        const auto ecInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId) VALUES (100, 200)");
+        const auto ecInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId) VALUES (100, 200)");
         if (!ecInstanceId.IsValid ())
             {
             savepoint.Cancel ();
@@ -785,7 +784,7 @@ ECSqlTestDataset ECSqlUpdateTestDataset::RelationshipWithAdditionalPropsTests (E
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlTestDataset ECSqlUpdateTestDataset::RelationshipWithAnyClassConstraintTests (ECDbTestProject& testProject, int rowCountPerClass)
+ECSqlTestDataset ECSqlUpdateTestDataset::RelationshipWithAnyClassConstraintTests (int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
 

@@ -30,8 +30,7 @@ public:
     static ECSqlTestItem& AddStepFailingNonSelect (ECSqlTestDataset& dataset, Utf8CP ecsql, IECSqlExpectedResult::Category failureCategory, Utf8CP description = nullptr, bool rollbackAfterwards = false);
 
     //Helpers
-    static ECInstanceId InsertTestInstance (ECDbTestProject&, Utf8CP ecsql);
-    static ECN::ECClassId GetClassId (ECDbTestSchemaManager const& schemaManager, Utf8CP schemaName, Utf8CP className);
+    static ECInstanceId InsertTestInstance (ECDbCR, Utf8CP ecsql);
     };
 
 END_ECDBUNITTESTS_NAMESPACE

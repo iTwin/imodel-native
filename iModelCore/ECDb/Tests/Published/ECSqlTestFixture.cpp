@@ -18,7 +18,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDbR ECSqlTestFixture::SetUp (Utf8CP ecdbFileName, WCharCP schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount)
+ECDbR ECSqlTestFixture::SetUp (Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount)
     {
     return _SetUp (ecdbFileName, schemaECXmlFileName, openParams, perClassRowCount);
     }
@@ -27,11 +27,11 @@ ECDbR ECSqlTestFixture::SetUp (Utf8CP ecdbFileName, WCharCP schemaECXmlFileName,
 // @bsimethod                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //virtual
-ECDbR ECSqlTestFixture::_SetUp (Utf8CP ecdbFileName, WCharCP schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount)
+ECDbR ECSqlTestFixture::_SetUp (Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount)
     {
     // Create and populate a sample project
-    SetTestProject(CreateTestProject (ecdbFileName, schemaECXmlFileName, openParams, perClassRowCount));
-    return GetTestProject ().GetECDb ();
+    SetupECDb (ecdbFileName, BeFileName(schemaECXmlFileName), openParams, perClassRowCount);
+    return GetECDb();
     }
 
 //---------------------------------------------------------------------------------------

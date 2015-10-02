@@ -12,7 +12,7 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //======================================================================================
-// @bsimethod                                 Krischan.Eberle               07/2015
+// @bsiclass                                 Krischan.Eberle               07/2015
 //+===============+===============+===============+===============+===============+=====
 struct UserECDbMapStrategy
     {
@@ -32,27 +32,27 @@ public:
     //---------------------------------------------------------------------------------
     // @bsienum                                 Krischan.Eberle                06/2015
     //+---------------+---------------+---------------+---------------+---------------+------
-    enum class Option
+    enum class Options
         {
         None = 0,
-        Readonly = 1,
-        SharedColumns = 2,
-        SharedColumnsForSubclasses = 4,
-        DisableSharedColumns = 8
+        SharedColumns = 1,
+        SharedColumnsForSubclasses = 2,
+        DisableSharedColumns = 4,
+        JoinedTableForSubclasses = 8,
         };
 
 private:
     Strategy m_strategy;
-    Option m_option;
+    Options m_options;
     bool m_appliesToSubclasses;
     UserECDbMapStrategy const* m_root;
 
-    BentleyStatus Assign(Strategy strategy, Option option, bool appliesToSubclasses);
+    BentleyStatus Assign(Strategy strategy, Options, bool appliesToSubclasses);
     static BentleyStatus TryParse(Strategy&, Utf8CP str);
-    static BentleyStatus TryParse(Option& option, Utf8CP str);
+    static BentleyStatus TryParse(Options& option, Utf8CP str);
 
 public:
-    UserECDbMapStrategy() : m_strategy(Strategy::None), m_option(Option::None), m_appliesToSubclasses(false), m_root(nullptr) {}
+    UserECDbMapStrategy() : m_strategy(Strategy::None), m_options(Options::None), m_appliesToSubclasses(false), m_root(nullptr) {}
     ~UserECDbMapStrategy() {}
 
     UserECDbMapStrategy const& AssignRoot(UserECDbMapStrategy const& parent);
@@ -60,11 +60,11 @@ public:
     bool IsValid() const;
 
     Strategy GetStrategy() const { return m_strategy; }
-    Option GetOption() const { return m_option; }
+    Options GetOptions() const { return m_options; }
     bool AppliesToSubclasses() const { return m_appliesToSubclasses; }
 
     //! Indicates whether this strategy represents the 'unset' strategy
-    bool IsUnset() const { return m_strategy == Strategy::None && m_option == Option::None && !m_appliesToSubclasses; }
+    bool IsUnset() const { return m_strategy == Strategy::None && m_options == Options::None && !m_appliesToSubclasses; }
 
     Utf8String ToString() const;
 
@@ -72,7 +72,7 @@ public:
     };
 
 //======================================================================================
-// @bsimethod                                 Affan.Khan                02/2015
+// @bsiclass                                 Affan.Khan                02/2015
 //+===============+===============+===============+===============+===============+=====
 struct ECDbMapStrategy
     {
@@ -94,35 +94,36 @@ public:
     //---------------------------------------------------------------------------------
     // @bsienum                                 Krischan.Eberle                06/2015
     //+---------------+---------------+---------------+---------------+---------------+------
-    enum class Option
+    enum class Options
         {
         None = 0,
-        Readonly = 1,
-        SharedColumns = 2
+        SharedColumns = 1,
+        ParentOfJoinedTable = 2,
+        JoinedTable = 4
         };
 
 private:
     Strategy m_strategy;
-    Option m_option;
+    Options m_options;
     bool m_appliesToSubclasses;
     bool m_isResolved;
 
 public:
-    ECDbMapStrategy() : m_strategy(Strategy::OwnTable), m_option(Option::None), m_appliesToSubclasses(false), m_isResolved(false) {}
+    ECDbMapStrategy() : m_strategy(Strategy::OwnTable), m_options(Options::None), m_appliesToSubclasses(false), m_isResolved(false) {}
 
     //operators
-    bool operator== (ECDbMapStrategy const& rhs) const { return m_strategy == rhs.m_strategy && m_option == rhs.m_option && m_appliesToSubclasses == rhs.m_appliesToSubclasses && m_isResolved == rhs.m_isResolved; }
+    bool operator== (ECDbMapStrategy const& rhs) const { return m_strategy == rhs.m_strategy && m_options == rhs.m_options && m_appliesToSubclasses == rhs.m_appliesToSubclasses && m_isResolved == rhs.m_isResolved; }
     bool operator!= (ECDbMapStrategy const& rhs) const { return !(*this == rhs); }
 
     BentleyStatus Assign(UserECDbMapStrategy const&);
-    BentleyStatus Assign(Strategy strategy, Option option, bool isPolymorphic);
-    BentleyStatus Assign(Strategy strategy, bool isPolymorphic) { return Assign(strategy, Option::None, isPolymorphic); }
+    BentleyStatus Assign(Strategy, Options, bool isPolymorphic);
+    BentleyStatus Assign(Strategy strategy, bool isPolymorphic) { return Assign(strategy, Options::None, isPolymorphic); }
 
     bool IsValid() const;
 
     //Getters
     Strategy GetStrategy() const { return m_strategy; }
-    Option GetOption() const { return m_option; }
+    Options GetOptions() const { return m_options; }
     bool AppliesToSubclasses() const { return m_appliesToSubclasses; }
 
     bool IsResolved() const { return m_isResolved; }

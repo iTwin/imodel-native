@@ -67,9 +67,6 @@
     <ClCompile Include="Published\JsonLibrary_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="BackDoor\ECDbTestLogger.cpp">
-      <Filter>BackDoor</Filter>
-    </ClCompile>
     <ClCompile Include="Performance\QueryTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
@@ -86,9 +83,6 @@
       <Filter>Performance</Filter>
     </ClCompile>
     <ClCompile Include="Published\ECInstanceInserterTests.cpp">
-      <Filter>Published\ECSql</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECInstanceAdaptersTestFixture.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
     <ClCompile Include="Published\ECInstanceUpdaterTests.cpp">
@@ -175,6 +169,12 @@
     <ClCompile Include="BackDoor\BackDoor.cpp">
       <Filter>BackDoor</Filter>
     </ClCompile>
+    <ClCompile Include="Performance\PerformanceECSqlTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="BackDoor\ECDbTests.cpp">
+      <Filter>BackDoor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">
@@ -227,9 +227,6 @@
     </ClInclude>
     <ClInclude Include="Performance\PerformanceBisDesignTestFixture.h">
       <Filter>Performance\BisDesign</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\ECInstanceAdaptersTestFixture.h">
-      <Filter>Published\ECSql</Filter>
     </ClInclude>
     <ClInclude Include="Published\RandomECInstanceGenerator.h">
       <Filter>Published</Filter>

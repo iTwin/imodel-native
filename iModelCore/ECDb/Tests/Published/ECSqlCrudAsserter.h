@@ -34,7 +34,7 @@ protected:
 private:
     static BentleyApi::NativeLogging::ILogger* s_logger;
 
-    ECDbTestProject& m_testProject;
+    ECDb& m_ecdb;
 
     virtual void _Assert (ECSqlTestItem const& testItem) const = 0;
     virtual Utf8CP _GetTargetOperationName () const = 0;
@@ -44,15 +44,14 @@ private:
 
 protected:
 
-    ECDbTestProject& GetTestProject() const { return m_testProject; }
-    ECDbR GetDgnDb () const;
+    ECDb& GetECDb() const { return m_ecdb; }
 
 public:
-    explicit ECSqlCrudAsserter (ECDbTestProject& testProject) : m_testProject(testProject) {}
+    explicit ECSqlCrudAsserter (ECDb& ecdb) : m_ecdb(ecdb) {}
     virtual ~ECSqlCrudAsserter () {}
 
     void Assert (ECSqlTestItem const& testItem) const;
-    Utf8CP GetTargetOperationName () const;
+    Utf8CP GetTargetOperationName () const { return _GetTargetOperationName(); }
     };
 
 typedef std::vector<std::unique_ptr<ECSqlCrudAsserter>> ECSqlCrudAsserterList;

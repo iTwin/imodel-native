@@ -5,9 +5,6 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <Bentley/BeTest.h>
-#include <ECObjects/ECObjectsAPI.h>
-#include <ECDb/ECDbApi.h>
 #include <BeSQLite/BeSQLite.h>
 #include "PerformanceTests.h"
 #include "../BackDoor/PublicApi/BackDoor/ECDb/BackDoor.h"
@@ -399,7 +396,7 @@ void RunPerformanceComparison (bool& hasRun, double& insertTimingSecs, Utf8CP te
     for (auto ecClass : testClasses)
         {
         for (int i = 0; i < numberOfInstancesPerClass; i++)
-            testDataset.push_back (ECDbTestProject::CreateArbitraryECInstance (*ecClass, ECDbTestProject::PopulatePrimitiveValueWithRandomValues));
+            testDataset.push_back (ECDbTestUtility::CreateArbitraryECInstance (*ecClass, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues));
         }
 
     if (!testInserter.Prepare (ecdb, testClasses))
@@ -700,7 +697,7 @@ void SetupDeleteTest(DbR db, int64_t& globalInstanceCount, TestParamters const& 
     {
 
     ECDbTestFixture::Initialize();
-    Utf8String dbPath = ECDbTestProject::BuildECDbPath(param.GetFileName().c_str());
+    Utf8String dbPath = ECDbTestUtility::BuildECDbPath(param.GetFileName().c_str());
     WString dbPathW;
     BeStringUtilities::Utf8ToWChar(dbPathW, dbPath.c_str());
     if (BeFileName::DoesPathExist(dbPathW.c_str()))
