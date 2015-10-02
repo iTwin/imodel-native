@@ -115,13 +115,32 @@ struct RenderMaterialMap : RefCountedBase
         Inches                 = 6,
         };
 
+    enum class ImageFormat
+        {
+        Rgba                    = 0,
+        Bgra                    = 1,
+        Rgb                     = 2,
+        Bgr                     = 3,
+        Gray                    = 4,
+        };
+
 
     virtual Mode                        _GetMode () const        { return Mode::Parametric; }
     virtual Units                       _GetUnits () const       { return Units::Relative; }
+
+    //! The size of the image in Units.
     virtual DPoint2d                    _GetScale (BentleyStatus* status = NULL) const { return DPoint2d::From (1.0, 1.0); }
+
+    //! Image origin in Units.
     virtual DPoint2d                    _GetOffset (BentleyStatus* status = NULL) const { return DPoint2d::FromZero(); }
+
     DGNPLATFORM_EXPORT virtual double   _GetDouble (char const* key, BentleyStatus* status = NULL) const;
     DGNPLATFORM_EXPORT virtual bool     _GetBool (char const* key, BentleyStatus* status = NULL) const;
+
+    //! You can turn OFF alpha testing if your image does not have transparent pixels.
+    virtual bool                        _GetEnableAlphaTesting() const {return true;}
+
+    virtual ImageFormat                 _GetImageFormat() const { return ImageFormat::Rgba;}
     virtual BentleyStatus               _GetImage (bvector<Byte>& data, Point2dR size, DgnDbR dgnDb) const = 0;
     virtual uintptr_t                   _GetQvTextureId (DgnDbR dgnDb, bool createIfNotFound) const = 0;
 
@@ -162,12 +181,13 @@ struct SimpleBufferPatternMap : RenderMaterialMap
 {
 protected:
     mutable uintptr_t   m_qvTextureId;
-    bvector<Byte>       m_imageData;
+    bvector<Byte>       m_imageData;        // Rgba
     Point2d             m_imageSize;
 
     SimpleBufferPatternMap (Byte const* imageData, Point2dCR imageSize);
 
 public:
+    //! Create a material map from a Rgba buffer.
     DGNPLATFORM_EXPORT static RenderMaterialMapPtr  Create (Byte const* imageData, Point2dCR imageSize);
 
     DGNPLATFORM_EXPORT ~SimpleBufferPatternMap ();
@@ -311,6 +331,7 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 #define RENDER_MATERIAL_PatternWeight                               "pattern_weight" 
 #define RENDER_MATERIAL_PatternMapping                              "pattern_mapping" 
 #define RENDER_MATERIAL_PatternScaleMode                            "pattern_scalemode" 
+#define RENDER_MATERIAL_PatternTileSection                          "pattern_tilesection"
 #define RENDER_MATERIAL_BgTrans                                     "bgtrans" 
 #define RENDER_MATERIAL_Fresnel                                     "fresnel" 
 #define RENDER_MATERIAL_PixiePattern                                "pixie_pattern" 
