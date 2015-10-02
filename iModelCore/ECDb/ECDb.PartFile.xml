@@ -150,6 +150,12 @@
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
 
+    <ProductDirectoryList ListName="Empty" />
+    <Product Name="ECDbTested" AddIn="true" PrgOutputDir="ECDb" >
+        <SubPart PartName="RunGtest-TestCollection-All" />
+        <!--  *** NEEDS WORK: What's the best way to include all platforms? Redefine this container product as a 'MultiPlatform'? -->
+        <Directories DirectoryListName="Empty" />
+    </Product>
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // ECSqlConsole                                                           // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
