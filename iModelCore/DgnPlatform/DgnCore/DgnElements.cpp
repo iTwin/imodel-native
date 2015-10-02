@@ -954,10 +954,11 @@ void DgnElements::DropFromPool(DgnElementCR element) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::Purge(int64_t memTarget)
+int64_t DgnElements::_Purge(int64_t memTarget)
     {
     BeDbMutexHolder _v_v(m_mutex);
     m_tree->Purge(memTarget);
+    return GetTotalAllocated();
     }
 
 /*---------------------------------------------------------------------------------**//**

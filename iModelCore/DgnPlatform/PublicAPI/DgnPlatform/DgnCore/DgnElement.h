@@ -18,6 +18,7 @@ BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 
 #include <Bentley/BeAssert.h>
 #include "DgnAuthority.h"
+#include "MemoryManager.h"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -1452,7 +1453,7 @@ struct ECSqlClassInfo;
 //! @see DgnDb::Elements
 //! @ingroup DgnElementGroup
 //=======================================================================================
-struct DgnElements : DgnDbTable
+struct DgnElements : DgnDbTable, IMemoryConsumer
 {
     friend struct DgnDb;
     friend struct DgnElement;
@@ -1543,6 +1544,9 @@ private:
     ElementSelectStatement GetPreparedSelectStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedInsertStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedUpdateStatement(DgnElementR el) const;
+
+    virtual int64_t _CalculateBytesConsumed() const override { return GetTotalAllocated(); }
+    virtual int64_t _Purge(int64_t memTarget) override;
 public:
     BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}
@@ -1566,14 +1570,6 @@ public:
 
     //! Query for the DgnElementId of the element that has the specified code
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(Utf8CP codeAuthorityName, Utf8StringCR codeValue, Utf8StringCR nameSpace="") const;
-
-    //! Free unreferenced elements in the pool until the total amount of memory used by the pool is no more than a target number of bytes.
-    //! @param[in] memTarget The target number of bytes used by elements in the pool. If the pool is currently using more than this target,
-    //! unreferenced elements are freed until the the pool uses no more than targetMem bytes. Least recently used elements are freed first.
-    //! If memTarget <= 0, all unreferenced elements are freed.
-    //! @note: There is no guarantee that the pool will not actually consume more than memTarget bytes after this call, since elements with
-    //! reference counts greater than 0 cannot be purged.
-    DGNPLATFORM_EXPORT void Purge(int64_t memTarget);
 
     //! Get the total counts for the current state of the pool.
     DGNPLATFORM_EXPORT Totals GetTotals() const;
