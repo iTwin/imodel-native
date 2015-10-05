@@ -247,7 +247,12 @@ DgnDbStatus DgnElement::_OnInsert()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement::_OnInsert()
     {
-    return !m_categoryId.IsValid() ? DgnDbStatus::InvalidCategory : T_Super::_OnInsert();
+    if (!m_categoryId.IsValid())
+        return DgnDbStatus::InvalidCategory;
+    else if (HasGeometry() && !_IsPlacementValid())
+        return DgnDbStatus::BadElement;
+    else
+        return T_Super::_OnInsert();
     }
 
 struct OnInsertedCaller
@@ -299,7 +304,12 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement::_OnUpdate(DgnElementCR original)
     {
-    return !m_categoryId.IsValid() ? DgnDbStatus::InvalidCategory : T_Super::_OnUpdate(original);
+    if (!m_categoryId.IsValid())
+        return DgnDbStatus::InvalidCategory;
+    else if (HasGeometry() && !_IsPlacementValid())
+        return DgnDbStatus::BadElement;
+    else
+        return T_Super::_OnUpdate(original);
     }
 
 struct OnUpdatedCaller
@@ -470,12 +480,18 @@ DgnDbStatus DgnElement::_InsertInDb()
         return DgnDbStatus::WriteError;
 
     auto status = _BindInsertParams(*statement);
-    if (DgnDbStatus::Success != status || BE_SQLITE_DONE == statement->Step())
-        return status;
+    if (DgnDbStatus::Success == status)
+        {
+        auto stmtResult = statement->Step();
+        if (BE_SQLITE_DONE != stmtResult)
+            {
+            // SQLite doesn't tell us which constraint failed - check if it's the Code.
+            auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
+            status = existingElemWithCode.IsValid() ? DgnDbStatus::DuplicateCode : DgnDbStatus::WriteError;
+            }
+        }
 
-    // SQLite doesn't tell us which constraint failed - check if it's the Code.
-    auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
-    return existingElemWithCode.IsValid() ? DgnDbStatus::DuplicateCode : DgnDbStatus::WriteError;
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -580,13 +596,18 @@ DgnDbStatus GeometricElement::_InsertInDb()
         return stat;
 
     DgnDbR dgnDb = GetDgnDb();
-    CachedStatementPtr stmt=dgnDb.Elements().GetStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ElementGeom) "(Geom,Placement,ElementId) VALUES(?,?,?)");
+    CachedStatementPtr stmt=dgnDb.Elements().GetStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ElementGeom) "(Geom,Placement,ElementId,InPhysicalSpace) VALUES(?,?,?,?)");
     stmt->BindId(3, m_elementId);
 
-    stat = _BindPlacement(*stmt);
-    if (DgnDbStatus::NoGeometry == stat)
-        return DgnDbStatus::Success;
+    DgnModelPtr model = GetModel();
+    auto geomModel = model.IsValid() ? model->ToGeometricModel() : nullptr;
+    BeAssert(nullptr != geomModel);
+    if (nullptr == geomModel)
+        return DgnDbStatus::WriteError;
+    else
+        stmt->BindInt(4, CoordinateSpace::World == geomModel->GetCoordinateSpace() ? 1 : 0);
 
+    stat = _BindPlacement(*stmt);
     if (DgnDbStatus::Success == stat)
         stat = WriteGeomStream(*stmt, dgnDb);
 
@@ -615,13 +636,18 @@ DgnDbStatus GeometricElement::_UpdateInDb()
         return stat;
 
     DgnDbR dgnDb = GetDgnDb();
-    CachedStatementPtr stmt=dgnDb.Elements().GetStatement("INSERT OR REPLACE INTO " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " (Geom,Placement,ElementId) VALUES(?,?,?)");
-    stmt->BindId(3, m_elementId);
+    CachedStatementPtr stmt = dgnDb.Elements().GetStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " SET Geom=?,Placement=?,InPhysicalSpace=? WHERE ElementId=?");
+    stmt->BindId(4, m_elementId);
+
+    DgnModelPtr model = GetModel();
+    auto geomModel = model.IsValid() ? model->ToGeometricModel() : nullptr;
+    BeAssert(nullptr != geomModel);
+    if (nullptr == geomModel)
+        return DgnDbStatus::WriteError;
+    else
+        stmt->BindInt(3, CoordinateSpace::World == geomModel->GetCoordinateSpace() ? 1 : 0);
 
     stat = _BindPlacement(*stmt);
-    if (DgnDbStatus::NoGeometry == stat)
-        return DgnDbStatus::Success;
-
     if (DgnDbStatus::Success == stat)
         stat = WriteGeomStream(*stmt, dgnDb);
 
@@ -697,7 +723,7 @@ DgnDbStatus GeomStream::WriteGeomStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8C
     if (BE_SQLITE_DONE != stmt.Step())
         return DgnDbStatus::WriteError;
 
-    if (1 == snappy.GetCurrChunk())
+    if (1 >= snappy.GetCurrChunk())
         return DgnDbStatus::Success;
 
     StatusInt status = snappy.SaveToRow(dgnDb, table, colname, rowId);
@@ -750,9 +776,15 @@ DgnDbStatus GeometricElement::WriteGeomStream(Statement& stmt, DgnDbR dgnDb)
 DgnDbStatus DgnElement3d::_BindPlacement(Statement& stmt)
     {
     if (!m_placement.IsValid())
-        return DgnDbStatus::NoGeometry;
+        {
+        BeAssert(!HasGeometry() && "An element with geometry requires a valid placement");
+        stmt.BindNull(2);
+        }
+    else
+        {
+        stmt.BindBlob(2, &m_placement, sizeof(m_placement), Statement::MakeCopy::No);
+        }
 
-    stmt.BindBlob(2, &m_placement, sizeof(m_placement), Statement::MakeCopy::No);
     return DgnDbStatus::Success;
     }
 
@@ -769,7 +801,13 @@ DgnDbStatus DgnElement3d::_LoadFromDb()
     stmt->BindId(1, m_elementId);
 
     if (BE_SQLITE_ROW != stmt->Step())
-        return DgnDbStatus::Success; // it is legal to have an element with no geometry.
+        return DgnDbStatus::ReadError; // it is legal to have an element with no geometry - but it must have an entry (with nulls) in the element geom table
+
+    if (stmt->IsColumnNull(0))
+        {
+        m_placement = Placement3d();
+        return DgnDbStatus::Success;
+        }
 
     if (stmt->GetColumnBytes(0) != sizeof(m_placement))
         {
@@ -817,9 +855,15 @@ DgnClassId DrawingElement::QueryClassId(DgnDbR db)
 DgnDbStatus DgnElement2d::_BindPlacement(Statement& stmt)
     {
     if (!m_placement.IsValid())
-        return DgnDbStatus::NoGeometry;
+        {
+        BeAssert(!HasGeometry() && "An element with geometry requires a valid placement");
+        stmt.BindNull(2);
+        }
+    else
+        {
+        stmt.BindBlob(2, &m_placement, sizeof(m_placement), Statement::MakeCopy::No);
+        }
 
-    stmt.BindBlob(2, &m_placement, sizeof(m_placement), Statement::MakeCopy::No);
     return DgnDbStatus::Success;
     }
 
@@ -836,7 +880,13 @@ DgnDbStatus DgnElement2d::_LoadFromDb()
     stmt->BindId(1, m_elementId);
 
     if (BE_SQLITE_ROW != stmt->Step())
-        return DgnDbStatus::Success; // it is legal to have an element with no geometry.
+        return DgnDbStatus::ReadError; // it is legal to have an element with no geometry - but it still must have an entry in the element geom table (with nulls)
+
+    if (stmt->IsColumnNull(0))
+        {
+        m_placement = Placement2d();
+        return DgnDbStatus::Success;
+        }
 
     if (stmt->GetColumnBytes(0) != sizeof(m_placement))
         {
@@ -2172,3 +2222,75 @@ void ECSqlClassParams::RemoveAllButSelect()
     m_entries.erase(removeAt, m_entries.end());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::ExternalKeyPtr DgnElement::ExternalKey::Create(DgnAuthorityId authorityId, Utf8CP externalKey)
+    {
+    if (!authorityId.IsValid() || !externalKey || !*externalKey)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return new DgnElement::ExternalKey(authorityId, externalKey);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::AppData::DropMe DgnElement::ExternalKey::_OnInserted(DgnElementCR element)
+    {
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " DGN_SCHEMA(DGN_CLASSNAME_ElementExternalKey) " ([ElementId],[AuthorityId],[ExternalKey]) VALUES (?,?,?)");
+    if (!statement.IsValid())
+        return DgnElement::AppData::DropMe::Yes;
+
+    statement->BindId(1, element.GetElementId());
+    statement->BindId(2, GetAuthorityId());
+    statement->BindText(3, GetExternalKey(), IECSqlBinder::MakeCopy::No);
+
+    ECInstanceKey key;
+    if (BE_SQLITE_DONE != statement->Step(key))
+        {
+        BeAssert(false);
+        }
+
+    return DgnElement::AppData::DropMe::Yes;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::ExternalKey::QueryExternalKey(Utf8StringR externalKey, DgnElementCR element, DgnAuthorityId authorityId)
+    {
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT [ExternalKey] FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementExternalKey) " WHERE [ElementId]=? AND [AuthorityId]=?");
+    if (!statement.IsValid())
+        return DgnDbStatus::ReadError;
+
+    statement->BindId(1, element.GetElementId());
+    statement->BindId(2, authorityId);
+
+    if (BE_SQLITE_ROW != statement->Step())
+        return DgnDbStatus::ReadError;
+
+    externalKey.AssignOrClear(statement->GetValueText(0));
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::ExternalKey::Delete(DgnElementCR element, DgnAuthorityId authorityId)
+    {
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementExternalKey) " WHERE [ElementId]=? AND [AuthorityId]=?");
+    if (!statement.IsValid())
+        return DgnDbStatus::WriteError;
+
+    statement->BindId(1, element.GetElementId());
+    statement->BindId(2, authorityId);
+
+    if (BE_SQLITE_DONE != statement->Step())
+        return DgnDbStatus::WriteError;
+
+    return DgnDbStatus::Success;
+    }

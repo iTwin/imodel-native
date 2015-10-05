@@ -278,7 +278,7 @@ void QueryViewController::SaveSelectResults()
 #endif
 
     pool.ResetStatistics();
-    pool.Purge(GetMaxElementMemory());
+    GetDgnDb().Memory().Purge(GetMaxElementMemory());
 
 #if defined (TRACE_ELEMENT_POOL_USE)
     uint32_t elapsed = (uint32_t)(BeTimeUtilities::QueryMillisecondsCounter() - start);
