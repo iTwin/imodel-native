@@ -51,6 +51,53 @@ DGNPLATFORM_EXPORT    virtual     uintptr_t               _GetQvMaterialId (DgnD
 };
 
 //=======================================================================================
+// @bsiclass                                                    BentleySystems
+//=======================================================================================
+struct ImageBuffer: public RefCountedBase
+{   
+public:
+    // __PUBLISH_SECTION_END__
+    // These enum values are expected to match with QV_*_FORMAT.
+    // __PUBLISH_SECTION_START__
+    enum class Format
+        {
+        Rgba        = 0,
+        Bgra        = 1,
+        Rgb         = 2,
+        Bgr         = 3,
+        Gray        = 4,
+        };
+
+protected:
+    uint32_t        m_width;
+    uint32_t        m_height;
+    Format          m_format;
+    bvector<Byte>   m_data;  
+
+    ImageBuffer(); 
+    ImageBuffer(uint32_t width, uint32_t height, Format const& format, bvector<Byte>& data);
+
+    static size_t BytesPerPixel(Format const& format);
+
+public:
+
+    //! Create an uninitialized buffer that it is going to be filled later.
+    DGNPLATFORM_EXPORT static ImageBufferPtr Create(uint32_t width, uint32_t height, Format const& format);
+
+    //! Create from a vector. 'data' is not copied, std::move is used to avoid a buffer copy.
+    DGNPLATFORM_EXPORT static ImageBufferPtr Create(uint32_t width, uint32_t height, Format const& format, bvector<Byte>& data);
+       
+    DGNPLATFORM_EXPORT uint32_t     GetWidth() const;
+    DGNPLATFORM_EXPORT uint32_t     GetHeight() const;
+
+    DGNPLATFORM_EXPORT Format       GetFormat() const;
+    DGNPLATFORM_EXPORT Byte*        GetDataP();
+    DGNPLATFORM_EXPORT Byte const*  GetDataCP() const;
+    DGNPLATFORM_EXPORT size_t       GetDataSize() const; 
+
+};
+
+//=======================================================================================
 // @bsiclass                                            Ray.Bentley     09/2015
 //=======================================================================================
 struct RenderMaterialMap : RefCountedBase
@@ -115,16 +162,6 @@ struct RenderMaterialMap : RefCountedBase
         Inches                 = 6,
         };
 
-    enum class ImageFormat
-        {
-        Rgba                    = 0,
-        Bgra                    = 1,
-        Rgb                     = 2,
-        Bgr                     = 3,
-        Gray                    = 4,
-        };
-
-
     virtual Mode                        _GetMode () const        { return Mode::Parametric; }
     virtual Units                       _GetUnits () const       { return Units::Relative; }
 
@@ -140,8 +177,8 @@ struct RenderMaterialMap : RefCountedBase
     //! You can turn OFF alpha testing if your image does not have transparent pixels.
     virtual bool                        _GetEnableAlphaTesting() const {return true;}
 
-    virtual ImageFormat                 _GetImageFormat() const { return ImageFormat::Rgba;}
-    virtual BentleyStatus               _GetImage (bvector<Byte>& data, Point2dR size, DgnDbR dgnDb) const = 0;
+    //! Return an ImageBufferPtr or an invalid instance if an error occurs.
+    virtual ImageBufferPtr              _GetImage (DgnDbR dgnDb) const = 0;
     virtual uintptr_t                   _GetQvTextureId (DgnDbR dgnDb, bool createIfNotFound) const = 0;
 
 
@@ -169,7 +206,7 @@ public:
     DGNPLATFORM_EXPORT    virtual DPoint2d            _GetOffset (BentleyStatus* status = NULL) const override;
     DGNPLATFORM_EXPORT    virtual double              _GetDouble (char const* key, BentleyStatus* status = NULL) const override;
     DGNPLATFORM_EXPORT    virtual bool                _GetBool (char const* key, BentleyStatus* status = NULL) const override;
-    DGNPLATFORM_EXPORT    virtual BentleyStatus       _GetImage (bvector<Byte>& data, Point2dR size, DgnDbR dgnDb) const override;
+    DGNPLATFORM_EXPORT    virtual ImageBufferPtr      _GetImage (DgnDbR dgnDb) const override;
     DGNPLATFORM_EXPORT    virtual uintptr_t           _GetQvTextureId (DgnDbR dgnDb, bool createIfNotFound) const override;
 
 };
@@ -181,20 +218,18 @@ struct SimpleBufferPatternMap : RenderMaterialMap
 {
 protected:
     mutable uintptr_t   m_qvTextureId;
-    bvector<Byte>       m_imageData;        // Rgba
-    Point2d             m_imageSize;
+    ImageBufferPtr      m_imageBuffer;
 
-    SimpleBufferPatternMap (Byte const* imageData, Point2dCR imageSize);
-
-public:
-    //! Create a material map from a Rgba buffer.
-    DGNPLATFORM_EXPORT static RenderMaterialMapPtr  Create (Byte const* imageData, Point2dCR imageSize);
-
+    DGNPLATFORM_EXPORT SimpleBufferPatternMap (ImageBufferR buffer);
     DGNPLATFORM_EXPORT ~SimpleBufferPatternMap ();
 
-    virtual uintptr_t   _GetQvTextureId (DgnDbR dgnDb, bool createIfNotFound) const override;
+public:
+    //! Create a material map from an ImageBuffer. No copy occurs, 'buffer' refcount will be incremented.
+    DGNPLATFORM_EXPORT static RenderMaterialMapPtr  Create (ImageBufferR buffer);
+    
+    DGNPLATFORM_EXPORT virtual uintptr_t        _GetQvTextureId (DgnDbR dgnDb, bool createIfNotFound) const override;
 
-    DGNPLATFORM_EXPORT virtual BentleyStatus _GetImage (bvector<Byte>& data, Point2dR size, DgnDbR dgnDb) const override;
+    DGNPLATFORM_EXPORT virtual ImageBufferPtr   _GetImage (DgnDbR dgnDb) const override;
                                                                                                  
 };
 
