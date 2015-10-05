@@ -215,11 +215,13 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-ComponentStroker(ViewContextR viewContext, LsComponentR component) : m_viewContext(viewContext), m_component(&component)
+ComponentStroker(ViewContextR viewContext, LsComponentR component, double scale) : m_viewContext(viewContext), m_component(&component)
     {
     double length = component._GetLength();
     if (length <  mgds_fc_epsilon)
         length = 1.0;   //  Apparently nothing is length dependent.
+
+    length *= scale;
 
     //  NEEDSWORK_LINESTYLES decide how to scale when creating texture.
     m_points[0].Init(0, 0, 0);
@@ -241,7 +243,7 @@ struct          StrokeComponentForRange : ComponentStroker
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-StrokeComponentForRange(ViewContextR viewContext, LsComponentR component) : ComponentStroker(viewContext, component)
+StrokeComponentForRange(ViewContextR viewContext, LsComponentR component) : ComponentStroker(viewContext, component, 1.0)
     {
     //  It should have already created a copy of the components if that is necessary
     BeAssert(m_component->_IsOkayForTextureGeneration() == LsOkayForTextureGeneration::NoChangeRequired);
@@ -284,7 +286,7 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, LsComponentR component) : ComponentStroker(viewContext, component), m_lineStyleSymb(lineStyleSymb)
+ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, LsComponentR component) : ComponentStroker(viewContext, component, lineStyleSymb.GetScale()), m_lineStyleSymb(lineStyleSymb)
     {
     //  If a modified copy is required, the caller passed the copy. 
     BeAssert(component._IsOkayForTextureGeneration() == LsOkayForTextureGeneration::NoChangeRequired);
@@ -377,6 +379,10 @@ intptr_t  LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR
     range2d.low.y = lsRange.low.y;
     range2d.high.x = std::max(lsRange.high.x, comp->_GetLength());
     range2d.high.y = lsRange.high.y;
+
+    range2d.low.y *= lineStyleSymb.GetScale();
+    range2d.high.y *= lineStyleSymb.GetScale();
+    range2d.high.x *= lineStyleSymb.GetScale();
 
     viewContext.GetIViewDraw ().DefineQVGeometryMap (intptr_t(this), stroker, range2d, false, viewContext, false);
     return intptr_t(this);
