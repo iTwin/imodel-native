@@ -28,7 +28,7 @@
         <Directories DirectoryListName="BeTestDocumentsDirList" />
         <SubPart PartName="DgnV8Converter"/>
         <SubPart PartName="LinkDgnDbPublisherIntoToolContext" LibType="Dynamic"/>
-        <SubPart PartName="UnitTests_Documents" LibType="Static"    PartFile="ECDb" Repository="ECDb" />
+        <SubPart PartName="UnitTests_Documents" LibType="Static"    PartFile="DgnPlatform" Repository="DgnPlatform" />
     </Product>
 
     <Part Name="DgnV8Converter" OnlyPlatforms="x64,x86">
@@ -100,7 +100,7 @@
         <ProductDirectory Name="ConstructionLibs"                   Path="Libs" LibType="static"/>
         <ProductDirectory Name="ECObjectsLibs"                      Path="Libs"/>
         <ProductDirectory Name="ECObjectsLibs"                      Path="Libs" LibType="static"/>
-<ProductDirectory Name="PromiseKitLibs" Path="Libs" LibType="static"/>
+        <ProductDirectory Name="PromiseKitLibs"                     Path="Libs" LibType="static"/>
         <ProductDirectory Name="UnitTests-Objects"                  Path="Objects"/>
         <ProductDirectory Name="UnitTests-Objects"                  Path="Objects" LibType="static"/>
         <ProductDirectory Name="UnitTests-Assets"                   Path="Assets"/>
@@ -109,6 +109,8 @@
         <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore" LibType="static"/>
         <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/Documents/DgnDb"/>
         <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/Documents/DgnDb" LibType="static"/>
+        <ProductDirectory Name="UnitTests-ECDbTestData"             Path="Assets/Documents/ECDb" />
+        <ProductDirectory Name="UnitTests-ECDbTestData"             Path="Assets/Documents/ECDb" LibType="static"/>
         <ProductDirectory Name="ECSchemas"                          Path="Assets"/>
         <ProductDirectory Name="ECSchemas"                          Path="Assets" LibType="static"/>
         <ProductDirectory Name="DgnPlatformSqlang"                  Path="Assets/sqlang"/>
