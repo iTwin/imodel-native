@@ -71,7 +71,7 @@
         </Bindings>
     </Part>
 
-    <!-- Define a test collection part. This is included in MobileDgn's NonGtest-TestCollection-Aggregate -->
+    <!-- Define a test collection part. This is included in MobileDgn's TestsAggregate -->
     <Part Name="Tests">
         <SubPart PartName="UnitTests-NonPublished"/>
         <SubPart PartName="UnitTests-Published"/>
