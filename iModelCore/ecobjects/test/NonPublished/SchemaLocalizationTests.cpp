@@ -252,11 +252,12 @@ TEST_F(SchemaLocalizationTests, CustomStringsNotOverridden)
     SchemaKey key(L"House", 01, 00);
     testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
     EXPECT_TRUE(testSchema->IsSupplemented());
-    VerifyLocalized(testSchema, PK);
 
-    //testSchema->SetDisplayLabel(L"Banana");
-    //EXPECT_STREQ(L"Banana", testSchema->GetDisplayLabel().c_str());
-    //EXPECT_STREQ(L"Banana", testSchema->GetInvariantDisplayLabel().c_str());
+	VerifyLocalized(testSchema, PK);
+
+	testSchema->SetDisplayLabel(L"Banana");
+	EXPECT_STREQ(L"Banana", testSchema->GetDisplayLabel().c_str());
+	EXPECT_STREQ(L"Banana", testSchema->GetInvariantDisplayLabel().c_str());
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

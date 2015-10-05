@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "ECObjectsPch.h"
+#include <apr_sha1.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -39,14 +40,21 @@ WStringCR SchemaLocalizedStrings::GetLocalizedString(WCharCP labelKey, WStringCR
 
 WString SchemaLocalizedStrings::ComputeHash(WStringCR invariantString) const
     {
-    return L"";
-    //Utf8String convertedString = Utf8String(invariantString);
-    //
-    //CharP shaHash;
-    //apr_sha1_base64(convertedString.c_str(), invariantString.length(), shaHash);
-    //wchar_t locHash[8];
-    //wprintf(locHash, L"%02x%02x%02x%02x", shaHash[5], shaHash[6], shaHash[7], shaHash[8]);
-    //return locHash;
+    Utf8String convertedString = Utf8String(invariantString);
+
+	//copied part of apr_sha1_base64(const char *clear, int len, char *out)
+	//does the sha1 hash without encoding it in base64
+	apr_sha1_ctx_t context;
+	unsigned char digest[APR_SHA1_DIGESTSIZE];
+
+	apr_sha1_init(&context);
+	apr_sha1_update(&context, convertedString.c_str(), (int)convertedString.length());
+	apr_sha1_final(digest, &context);
+
+	//converting the first 4 characters of the sha1 hash to hex
+	wchar_t locHashWcharInHexFormat[9]; //9=4*2+1 hex is base 16 so takes double the character size
+	swprintf(locHashWcharInHexFormat, L"%02x%02x%02x%02x", (byte)digest[0], (byte)digest[1] , (byte)digest[2], (byte)digest[3]);
+	return locHashWcharInHexFormat;
     }
 
 WStringCR SchemaLocalizedStrings::GetSchemaDisplayLabel(ECSchemaCP ecSchema, WStringCR invariantDisplayLabel) const
@@ -301,13 +309,6 @@ bool SchemaLocalizedStrings::TryConstructStringMaps(bmap<WString, bpair<size_t, 
             bool isGUID;
             if (!TryGetBoolValue(*resourceEntry, isGUID, IS_GUID))
                 isGUID = false;
-
-            // Strip off hash ... TODO stop doing this once we can generate hash correctly
-            if (!key.StartsWithI(GUID))
-                {
-                size_t lastColon = key.rfind(COLON);
-                key = key.substr(0, lastColon + 1);
-                }
 
             size_t atIndex = key.find(AT);
 

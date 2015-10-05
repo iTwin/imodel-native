@@ -40,6 +40,18 @@ CPchOpts   = $(UsePrecompiledHeaderOptions)
 MultiCompileDepends=$(_MakeFileSpec) 
 %include MultiCppCompileRule.mki
 
+nameToDefine = APR_DECLARE_STATIC
+%include cdefapnd.mki
+
+dirToSearch = $(SrcRoot)/libsrc/apr/apr-1.3.2/include
+%include cincapnd.mki
+
+dirToSearch = $(SrcRoot)/libsrc/apr/apr-util-1.3.2/include
+%include cincapnd.mki
+
+nameToDefine = APU_DECLARE_STATIC
+%include cdefapnd.mki
+
 #----------------------------------------------------------------------
 #   Objects that go into the ECObjects library
 #----------------------------------------------------------------------
@@ -267,6 +279,10 @@ DLM_NOENTRY                 = 1
 %if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT
 LINKER_LIBRARIES            = xmllite$(libext)
 %endif
+LINKER_LIBRARIES            + $(BuildContext)SubParts/StaticLibs/libapr010302$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/StaticLibs/libaprutil010302$(libext)
+LINKER_LIBRARIES            + Ws2_32.lib
+LINKER_LIBRARIES			+ Advapi32.lib
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
