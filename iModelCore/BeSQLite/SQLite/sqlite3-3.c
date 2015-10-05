@@ -662,7 +662,7 @@ static int saveCursorPosition(BtCursor *pCur){
     pCur->eState = CURSOR_REQUIRESEEK;
   }
 
-  invalidateOverflowCache(pCur);
+  pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl|BTCF_AtLast);
   return rc;
 }
 
@@ -7625,7 +7625,7 @@ static int balance_nonroot(
     ** by smaller than the child due to the database header, and so all the
     ** free space needs to be up front.
     */
-    assert( nNew==1 );
+    assert( nNew==1 || CORRUPT_DB );
     rc = defragmentPage(apNew[0]);
     testcase( rc!=SQLITE_OK );
     assert( apNew[0]->nFree == 
@@ -25659,7 +25659,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_blob_open(
         int j;
         for(j=0; j<pIdx->nKeyCol; j++){
           /* FIXME: Be smarter about indexes that use expressions */
-          if( pIdx->aiColumn[j]==iCol || pIdx->aiColumn[j]==(-2) ){
+          if( pIdx->aiColumn[j]==iCol || pIdx->aiColumn[j]==XN_EXPR ){
             zFault = "indexed";
           }
         }

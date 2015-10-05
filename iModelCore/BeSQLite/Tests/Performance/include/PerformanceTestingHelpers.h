@@ -30,12 +30,12 @@ Notes:
 */
 #pragma once
 #include <Bentley/BeTest.h>
-#include <BeSQLite/BeSQLite.h>
 #include <Bentley/BeTimeUtilities.h>
+#include <Bentley/DateTime.h>
 #include <Logging/bentleylogging.h>
 
 #define PERFORMANCELOG (*NativeLogging::LoggingManager::GetLogger (L"Performance"))
-#define LOGTODB PerformanceResultRecorder::LogToDb
+#define LOGTODB PerformanceResultRecorder::writeResults
 // Get Test name details
 #if defined (USE_GTEST)
     #define TEST_DETAILS ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name(), ::testing::UnitTest::GetInstance()->current_test_info()->name()
@@ -43,39 +43,17 @@ Notes:
     #define TEST_DETAILS GetTestCaseNameA(), GetTestNameA()
 #endif
 
-USING_NAMESPACE_BENTLEY_SQLITE
-
 
 //=======================================================================================
 // @bsiclass                                                Majd.Uddin     05/2015
 //=======================================================================================
 struct PerformanceResultRecorder
 {
-private:
-    Db m_Db;
 
 public:
     PerformanceResultRecorder();
-    static DbResult createDb(Db& db, BeFileName dbName);
-    static void LogToDb(Utf8String testcaseName, Utf8String testName, double timeInSeconds, Utf8String testDescription = "", int opCount = -1);
-    static bool getCounters(int& startNum, int& endNum, int& increment);
+    static void writeResults(Utf8String testcaseName, Utf8String testName, double timeInSeconds, Utf8String testDescription = "", int opCount = -1);
     
-    bool SetupResultDb();
-    bool writeTodb(StopWatch &timerCount, Utf8String testcaseName, Utf8String testName, Utf8String testDescription="", int opCount=-1);
-    bool writeTodb(double timeInSeconds, Utf8String testcaseName, Utf8String testName, Utf8String testDescription="", int opCount=-1);
-
 };
 
-//=======================================================================================
-// @bsiclass                                                Majd.Uddin     08/2015
-//=======================================================================================
-struct PerformanceTestFixtureBase : public ::testing::Test
-{
-private:
-    BeFileName getDbFilePath(WCharCP dbName);
 
-public:
-    StopWatch                   m_stopwatch;
-    DbResult SetupDb(Db& db, WCharCP dbName);
-
-};
