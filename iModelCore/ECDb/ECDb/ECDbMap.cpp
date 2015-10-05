@@ -1453,8 +1453,6 @@ void HorizontalPartition::AppendECClassIdFilterSql(Utf8CP classIdColName, Native
     {
     BeAssert(!m_partitionClassIds.empty());
 
-    sqlBuilder.Append(classIdColName, true);
-
     std::vector<ECClassId> const* classIds = nullptr;
     BooleanSqlOperator inOperator;
     if (m_hasInversedPartitionClassIds)
@@ -1471,6 +1469,7 @@ void HorizontalPartition::AppendECClassIdFilterSql(Utf8CP classIdColName, Native
         inOperator = BooleanSqlOperator::In;
         }
 
+    sqlBuilder.Append(classIdColName, true);
     sqlBuilder.Append(inOperator);
     sqlBuilder.AppendParenLeft();
     bool isFirstItem = true;
