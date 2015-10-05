@@ -25,7 +25,7 @@ void deleteExistingFile (BeFileName filePath)
         {
         // Delete any previously exported file
         BeFileNameStatus fileDeleteStatus = BeFileName::BeDeleteFile (filePath.GetName ());
-        ASSERT_TRUE (BeFileNameStatus::Success == fileDeleteStatus);
+        ASSERT_EQ (BeFileNameStatus::Success, fileDeleteStatus);
         }
     }
 
@@ -349,6 +349,8 @@ TEST(ECDbFileInfo, ImportExportEmptyFile)
     BeFileName testFilePath;
     BeTest::GetHost().GetOutputRoot(testFilePath);
     testFilePath.AppendToPath(WString(testFileName, BentleyCharEncoding::Utf8).c_str());
+    deleteExistingFile(testFilePath);
+
     BeFile testFile;
     ASSERT_EQ(BeFileStatus::Success, testFile.Create(testFilePath.c_str()));
 
@@ -363,9 +365,11 @@ TEST(ECDbFileInfo, ImportExportEmptyFile)
     ASSERT_EQ(BE_SQLITE_OK, stat);
     ASSERT_TRUE(embeddedFileId.IsValid());
 
-    deleteExistingFile(testFilePath);
-
-    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Export(testFilePath.GetNameUtf8().c_str(), testFileName));
+    BeFileName testFileOutPath;
+    BeTest::GetHost().GetOutputRoot(testFileOutPath);
+    testFileOutPath.AppendToPath(L"EmptyFileOut.txt");
+    deleteExistingFile(testFileOutPath);
+    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Export(testFileOutPath.GetNameUtf8().c_str(), testFileName));
 }
 
 //---------------------------------------------------------------------------------------
