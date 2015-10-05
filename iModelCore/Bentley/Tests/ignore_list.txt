@@ -1,7 +1,6 @@
 #----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
-Performance*                            # Performance tests are always excluded from being run during a build.
 BeFileNameTests.BeFileNameUNCPathTest   # Testable UNC path is required to be available globally.
 BeFileNameTests.UNCPrefixedTest         # Testable UNC path is required to be available globally.
 BeFileNameTests.UNCReadOnlyTest         # Testable UNC path is required to be available globally.
@@ -9,6 +8,8 @@ BeFileNameTests.UNCReadOnlyTest         # Testable UNC path is required to be av
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
+BeFileListIterator.Test1        # Depends on BeTestDocuments. It should not. Change the test to populate a directory with test files.
+BeDirectoryIterator.Test1       # Depends on BeTestDocuments. It should not. Change the test to populate a directory with test files.
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
