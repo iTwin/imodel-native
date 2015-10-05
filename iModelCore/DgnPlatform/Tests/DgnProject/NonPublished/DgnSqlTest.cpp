@@ -837,8 +837,11 @@ TEST_F(SqlFunctionsTest, bbox_union)
     stmt.Finalize();
     //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_angles.sampleCode
     // An example of constructing a DGN_Angles object in order to test the placement angles of elements in the Db.
-    stmt.Prepare(*dgndb, "SELECT count(*) FROM "
-                         DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g WHERE DGN_angles_maxdiff(DGN_placement_angles(g.Placement),DGN_Angles(0,0,90)) < 1.0");
+    Utf8CP anglesSql = "SELECT count(*) FROM (SELECT Placement FROM "
+        DGN_TABLE(DGN_CLASSNAME_ElementGeom)
+        " WHERE Placement IS NOT NULL) WHERE DGN_angles_maxdiff(DGN_placement_angles(Placement),DGN_Angles(0,0,90)) < 1.0";
+
+    stmt.Prepare(*dgndb, anglesSql);
     //__PUBLISH_EXTRACT_END__
 
     rc = stmt.Step();

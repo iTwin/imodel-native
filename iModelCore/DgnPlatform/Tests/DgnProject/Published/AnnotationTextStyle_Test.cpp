@@ -146,8 +146,10 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
     DgnDbR project = *m_testDgnManager.GetDgnProjectP();
 
     //.............................................................................................
-    // Verify initial state. This is expected to be blank, but update this and other count checks if the seed files changes.
-    EXPECT_TRUE(0 == project.Styles().AnnotationTextStyles().MakeIterator().QueryCount());
+    // Verify initial state.
+	// The GenericDgnModelTestFixture will open 2dMetricGeneral, which contains a text element with style (none), thus there will be 1 style (the equivalent of style (none)).
+	static const size_t SEED_STYLE_COUNT = 1;
+	EXPECT_TRUE((0 + SEED_STYLE_COUNT) == project.Styles().AnnotationTextStyles().MakeIterator().QueryCount());
 
     //.............................................................................................
     // Insert
@@ -157,7 +159,7 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
     ASSERT_TRUE(SUCCESS == project.Styles().AnnotationTextStyles().Insert(*testStyle));
     ASSERT_TRUE(testStyle->GetId().IsValid());
 
-    EXPECT_TRUE(1 == project.Styles().AnnotationTextStyles().MakeIterator().QueryCount());
+	EXPECT_TRUE((1 + SEED_STYLE_COUNT) == project.Styles().AnnotationTextStyles().MakeIterator().QueryCount());
 
     //.............................................................................................
     // Query
@@ -190,7 +192,7 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
 
     ASSERT_TRUE(SUCCESS == project.Styles().AnnotationTextStyles().Update(*mutatedStyle));
 
-    EXPECT_TRUE(1 == project.Styles().AnnotationTextStyles().MakeIterator().QueryCount());
+	EXPECT_TRUE((1 + SEED_STYLE_COUNT) == project.Styles().AnnotationTextStyles().MakeIterator().QueryCount());
 
     fileStyle = project.Styles().AnnotationTextStyles().QueryByName(name.c_str());
     EXPECT_TRUE(fileStyle.IsValid());
@@ -203,6 +205,8 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
     // Iterate
     DgnAnnotationTextStyles::Iterator iter1 = project.Styles().AnnotationTextStyles().MakeIterator();
     size_t numStyles = 0;
+	bool foundOurStyle = false;
+
     for (auto const& style : iter1)
         {
         EXPECT_TRUE(!Utf8String::IsNullOrEmpty(style.GetName()));
@@ -211,18 +215,21 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
         AnnotationTextStylePtr iterStyle = project.Styles().AnnotationTextStyles().QueryById(style.GetId());
         ASSERT_TRUE(iterStyle.IsValid());
 
-        EXPECT_TRUE(0 == name.compare(iterStyle->GetName()));
+		if (!foundOurStyle)
+			foundOurStyle = (0 == name.compare(iterStyle->GetName()));
 
         ++numStyles;
         }
 
-    EXPECT_TRUE(1 == numStyles);
+	EXPECT_TRUE((1 + SEED_STYLE_COUNT) == numStyles);
+	EXPECT_TRUE(foundOurStyle);
 
     DgnAnnotationTextStyles::Iterator iter2 = project.Styles().AnnotationTextStyles().MakeIterator();
     iter2.Params().SetWhere("ORDER BY Name");
     numStyles = 0;
-
-    for (auto const& style : iter2)
+	foundOurStyle = false;
+    
+	for (auto const& style : iter2)
         {
         EXPECT_TRUE(!Utf8String::IsNullOrEmpty(style.GetName()));
         ASSERT_TRUE(style.GetId().IsValid());
@@ -230,18 +237,20 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
         AnnotationTextStylePtr iterStyle = project.Styles().AnnotationTextStyles().QueryById(style.GetId());
         ASSERT_TRUE(iterStyle.IsValid());
 
-        EXPECT_TRUE(0 == name.compare(iterStyle->GetName()));
+		if (!foundOurStyle)
+			foundOurStyle = (0 == name.compare(iterStyle->GetName()));
 
         ++numStyles;
         }
 
-    EXPECT_TRUE(1 == numStyles);
+	EXPECT_TRUE((1 + SEED_STYLE_COUNT) == numStyles);
+	EXPECT_TRUE(foundOurStyle);
 
     //.............................................................................................
     // Delete
     ASSERT_TRUE(SUCCESS == project.Styles().AnnotationTextStyles().Delete(mutatedStyle->GetId()));
 
-    EXPECT_TRUE(0 == project.Styles().AnnotationTextStyles().MakeIterator().QueryCount());
+	EXPECT_TRUE((0 + SEED_STYLE_COUNT) == project.Styles().AnnotationTextStyles().MakeIterator().QueryCount());
     EXPECT_TRUE(!project.Styles().AnnotationTextStyles().ExistsById(testStyle->GetId()));
     EXPECT_TRUE(!project.Styles().AnnotationTextStyles().ExistsByName(name.c_str()));
     }

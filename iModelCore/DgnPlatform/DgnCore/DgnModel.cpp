@@ -812,17 +812,12 @@ DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
 
     m_modelId = DgnModelId(m_dgndb, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
 
-    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Name,Descr,ECClassId,Visibility,Space) VALUES(?,?,?,?,?,?)");
+    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Name,Descr,ECClassId,Visibility) VALUES(?,?,?,?,?)");
     stmt.BindId(1, m_modelId);
     stmt.BindText(2, m_name.c_str(), Statement::MakeCopy::No);
     stmt.BindText(3, description, Statement::MakeCopy::No);
     stmt.BindId(4, GetClassId());
     stmt.BindInt(5, inGuiList ? 1 : 0);
-    auto geomModel = ToGeometricModel();
-    if (nullptr != geomModel)
-        stmt.BindInt(6, (int)geomModel->GetCoordinateSpace());
-    else
-        stmt.BindNull(6);
 
     auto rc = stmt.Step();
     if (BE_SQLITE_DONE != rc)
@@ -1852,6 +1847,8 @@ DgnDbStatus ComponentModel::ExportSchemaTo(DgnDbR clientDb, DgnDbR componentDb, 
     ECN::ECSchemaPtr schema;
     if (ECN::ECOBJECTS_STATUS_Success != ECN::ECSchema::CreateSchema(schema, schemaName, 0, 0))
         return DgnDbStatus::BadSchema;
+
+    schema->SetNamespacePrefix(schemaName);
     
     schema->AddReferencedSchema(*const_cast<ECN::ECSchemaP>(componentDb.Schemas().GetECSchema(DGN_ECSCHEMA_NAME)), "dgn");
 

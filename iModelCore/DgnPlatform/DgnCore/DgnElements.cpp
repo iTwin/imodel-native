@@ -954,10 +954,11 @@ void DgnElements::DropFromPool(DgnElementCR element) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::Purge(int64_t memTarget)
+int64_t DgnElements::_Purge(int64_t memTarget)
     {
     BeDbMutexHolder _v_v(m_mutex);
     m_tree->Purge(memTarget);
+    return GetTotalAllocated();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1282,14 +1283,15 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnDbStatus* 
     if (DgnDbStatus::Success != stat)
         return nullptr;
 
+    replacement._OnUpdated(element);
+    FinishUpdate(replacement, element);
+
     if (element.m_parentId != replacement.m_parentId) // did parent change?
         parent = GetElement(replacement.m_parentId);
 
     if (parent.IsValid())
-        parent->_OnChildUpdated(replacement);
+        parent->_OnChildUpdated(element);
 
-    replacement._OnUpdated(element);
-    FinishUpdate(replacement, element);
     return &element;
     }
 
