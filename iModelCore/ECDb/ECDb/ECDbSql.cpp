@@ -1294,9 +1294,7 @@ Utf8String ECDbSqlIndex::GenerateWhereClause(ECDbCR ecdb) const
     if (!m_additionalWhereExpression.empty())
         whereClauseBuilder.AppendParenLeft().Append(m_additionalWhereExpression.c_str()).AppendParenRight().AppendSpace().Append(BooleanSqlOperator::And);
 
-    whereClauseBuilder.Append(classIdCol->GetName().c_str(), true);
-    horizPartition->AppendECClassIdFilterSql(whereClauseBuilder);
-
+    horizPartition->AppendECClassIdFilterSql(classIdCol->GetName().c_str(), whereClauseBuilder);
     return whereClauseBuilder.ToString();
     }
 

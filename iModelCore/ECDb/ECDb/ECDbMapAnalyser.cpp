@@ -1408,8 +1408,7 @@ SqlViewBuilder ECDbMapAnalyser::BuildView (Class& nclass)
             if (classIdColumn->GetPersistenceType () == PersistenceType::Persisted && hp.NeedsClassIdFilter ())
                 {
                 select.Append (" WHERE ");
-                select.AppendEscaped (classIdColumn->GetName ().c_str ());
-                hp.AppendECClassIdFilterSql (select);
+                hp.AppendECClassIdFilterSql (classIdColumn->GetName().c_str(), select);
                 }
             }
 
