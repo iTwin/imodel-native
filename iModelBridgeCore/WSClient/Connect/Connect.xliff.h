@@ -28,6 +28,9 @@ MOBILEDGN_TRANSLATABLE_STRINGS_START(ConnectL10N, Connect)
     L10N_STRING(FIELDAPPS_ProductDemo)                   // =="Demo"==
     L10N_STRING(FIELDAPPS_EmailAndPasswordRequired)      // =="You must enter an email address and password."==
     L10N_STRING(FIELDAPPS_Error)                         // =="Error"==
+    L10N_STRING(FIELDAPPS_Warning)                       // =="Warning"==
+    L10N_STRING(FIELDAPPS_Yes)                           // =="Yes"==
+    L10N_STRING(FIELDAPPS_No)                            // =="No"==
     L10N_STRING(FIELDAPPS_SignInFailed)                  // =="Sign In Failed"==
     L10N_STRING(FIELDAPPS_UnknownError)                  // =="Unknown error."==
     L10N_STRING(FIELDAPPS_SignInUsername)                // =="Signed in username:"==
