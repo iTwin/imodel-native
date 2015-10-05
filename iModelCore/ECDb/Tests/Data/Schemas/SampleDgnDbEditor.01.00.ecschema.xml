@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="SampleDgnDbEditor" nameSpacePrefix="sdde" version="1.0" description="Sample DgnDb Editor" displayLabel="Sample DgnDb Editor" xmlns:ecschema="http://www.bentley.com/schemas/Bentley.ECXML.2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="ecschema ECSchema.xsd" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+            <SchemaFullNameAtEditingStart>SampleDgnDbEditor.01.00</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECClass typeName="ArchElement" isDomainClass="True">
+        <ECProperty propertyName="Name" typeName="string" />
+    </ECClass>
+    <ECClass typeName="ArchStorey" isDomainClass="True">
+        <ECProperty propertyName="Name" typeName="string" />
+    </ECClass>
+    <ECRelationshipClass typeName="ArchStoreyWithElements" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <LinkTableRelationshipMap xmlns="ECDbMap.01.00" />
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" polymorphic="True">
+            <Class class="ArchStorey" />
+        </Source>
+        <Target cardinality="(1,1)" polymorphic="True">
+            <Class class="ArchElement" />
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="HVACStorey" isDomainClass="True">
+        <ECProperty propertyName="Name" typeName="string" />
+    </ECClass>
+    <ECRelationshipClass typeName="ArchWithHVACStorey" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <LinkTableRelationshipMap xmlns="ECDbMap.01.00" />
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" polymorphic="True">
+            <Class class="ArchStorey" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="True">
+            <Class class="HVACStorey" />
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="GeometryTest" isDomainClass="True">
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="Geometry1" typeName="Bentley.Geometry.Common.IGeometry" />
+        <ECProperty propertyName="Geometry2" typeName="Bentley.Geometry.Common.IGeometry" />
+    </ECClass>
+    <!-- WIP: should use standard "BIS Placement" class when available -->
+    <ECClass typeName="Placement" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="Origin" typeName="point3d" />
+        <ECProperty propertyName="Yaw" typeName="double" />
+        <ECProperty propertyName="Pitch" typeName="double" />
+        <ECProperty propertyName="Roll" typeName="double" />
+    </ECClass>
+    <ECClass typeName="ShippingCostExpression" isDomainClass="True">
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="Description" typeName="string" />
+        <ECProperty propertyName="Expression" typeName="string" />
+    </ECClass>
+    <ECClass typeName="ShippingPhysicalItem" isDomainClass="True" />
+    <ECClass typeName="ShippingCrate" isDomainClass="True">
+        <BaseClass>ShippingPhysicalItem</BaseClass>
+        <ECStructProperty propertyName="Placement" typeName="Placement" />
+        <ECProperty propertyName="ExteriorLength" typeName="double" />
+        <ECProperty propertyName="ExteriorWidth" typeName="double" />
+        <ECProperty propertyName="ExteriorHeight" typeName="double" />
+        <ECProperty propertyName="Weight" typeName="double" />
+        <ECProperty propertyName="MaterialType" typeName="string" />
+    </ECClass>
+    <ECClass typeName="ShippingFactor" isDomainClass="True">
+        <ECCustomAttributes>
+            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                </MapStrategy>
+            </ECDbClassHint>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="Value" typeName="double" />
+    </ECClass>
+    <ECRelationshipClass typeName="ShippingPhysicalItemHasCostExpression" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,N)" roleLabel="source constraint" polymorphic="True">
+            <Class class="ShippingPhysicalItem" />
+        </Source>
+        <Target cardinality="(1,1)" roleLabel="target constraint" polymorphic="True">
+            <Class class="ShippingCostExpression" />
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="ShippingTube" isDomainClass="True">
+        <BaseClass>ShippingPhysicalItem</BaseClass>
+        <ECStructProperty propertyName="Placement" typeName="Placement" />
+        <ECProperty propertyName="Length" typeName="double" />
+        <ECProperty propertyName="Diameter" typeName="double" />
+        <ECProperty propertyName="TubeMaterialType" typeName="string" />
+        <ECProperty propertyName="CapMaterialType" typeName="string" />
+    </ECClass>
+</ECSchema>

@@ -159,7 +159,6 @@ TEST_F (ECInstanceInserterTests, InsertSingleRuleInstance)
 
     BeFileName instanceXmlFile;
     BeTest::GetHost().GetDocumentsRoot(instanceXmlFile);
-    instanceXmlFile.AppendToPath(L"DgnDb");
     instanceXmlFile.AppendToPath(L"ECDb");
     instanceXmlFile.AppendToPath(L"Schemas");
     instanceXmlFile.AppendToPath(L"RuleSetInstance1.xml");

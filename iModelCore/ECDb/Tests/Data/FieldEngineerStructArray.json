@@ -1,0 +1,243 @@
+﻿{
+   "$ECClassKey" : "eB_PW_CommonSchema_WSB.Document",
+   "$ECClassLabel" : "Document",
+   "$ECInstanceId" : "1",
+   "$ECInstanceLabel" : "A-Model.pdf",
+   "ApprovalStatus" : null,
+   "Attributes" : [
+      {
+         "Label" : "Project Name",
+         "Name" : "ProjectName",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "Spatial proj"
+      },
+      {
+         "Label" : "Project Number",
+         "Name" : "ProjectNumber",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "123333"
+      },
+      {
+         "Label" : "Project Location",
+         "Name" : "ProjectLocation",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "Vilnius"
+      },
+      {
+         "Label" : "Space1",
+         "Name" : "Space1",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "{00000000-0000-0000-0000-000000000000}"
+      },
+      {
+         "Label" : "Document Location",
+         "Name" : "DocumentLocation",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "pw:\\\\BSW-CONSTRUCT.bentley.com:PW_tem\\Documents\\Spatial info"
+      },
+      {
+         "Label" : "Document Type",
+         "Name" : "DocumentType",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "C"
+      },
+      {
+         "Label" : "Title",
+         "Name" : "Title1",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "A-MODEL.PDF"
+      },
+      {
+         "Label" : "Title2",
+         "Name" : "Title2",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "A-MODEL"
+      },
+      {
+         "Label" : "Title3",
+         "Name" : "Title3",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : ""
+      },
+      {
+         "Label" : "Title4",
+         "Name" : "Title4",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : ""
+      },
+      {
+         "Label" : "Percent Complete",
+         "Name" : "PercentComplete",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "40"
+      },
+      {
+         "Label" : "Attributes Updated",
+         "Name" : "AttributesUpdate",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "2013-01-09T12:30:00.0000000Z"
+      },
+      {
+         "Label" : "Storage",
+         "Name" : "Storage",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "Storage"
+      },
+      {
+         "Label" : "Space2",
+         "Name" : "Space2",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "{00000000-0000-0000-0000-000000000000}"
+      },
+      {
+         "Label" : "Drawn By",
+         "Name" : "DrawnBy",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "admin"
+      },
+      {
+         "Label" : "Date Drawn",
+         "Name" : "DateDrawn",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "2013-01-09T12:30:00.0000000Z"
+      },
+      {
+         "Label" : "Approved By",
+         "Name" : "ApprovedBy",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "admin"
+      },
+      {
+         "Label" : "Authorized By",
+         "Name" : "AuthorizedBy",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "admin"
+      },
+      {
+         "Label" : "Date Approved",
+         "Name" : "DateApproved",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "2013-01-09T12:30:00.0000000Z"
+      },
+      {
+         "Label" : "Date Authorized",
+         "Name" : "DateAuthorized",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "2013-01-09T12:30:00.0000000Z"
+      },
+      {
+         "Label" : "Deliverable",
+         "Name" : "DeliverableCheckbox",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : ""
+      },
+      {
+         "Label" : "Original Drawing By",
+         "Name" : "OriginalDrawingBy",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "admin"
+      },
+      {
+         "Label" : "Date Drawn",
+         "Name" : "OriginalDrawingDate",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "2013-01-09T12:30:00.0000000Z"
+      },
+      {
+         "Label" : "Approved?",
+         "Name" : "DocumentApproved",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "Yes"
+      },
+      {
+         "Label" : "Scale",
+         "Name" : "Scale",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "2013-01-09"
+      },
+      {
+         "Label" : "As of",
+         "Name" : "PercentDate",
+         "Type" : null,
+         "Unit" : null,
+         "Value" : "2013-01-09T07:00:00.0000000Z"
+      }
+   ],
+   "Class" : null,
+   "Code" : null,
+   "DateCreated" : "2013-01-08T08:12:04.523",
+   "DateEffective" : null,
+   "DateModified" : "2013-01-09T12:29:32.160",
+   "DateObsolete" : null,
+   "Description" : "A-Model",
+   "IsLatestApprovedRevision" : null,
+   "IsLatestRevision" : true,
+   "IsSuperseded" : null,
+   "Llx" : null,
+   "Lly" : null,
+   "Location" : {
+      "Center" : {
+         "x" : 1442316.5919489623,
+         "y" : 586684.08205638803,
+         "z" : 0.0
+      },
+      "Coordinates" : [
+         {
+            "x" : 1425966.6055165580,
+            "y" : 589914.91255909996,
+            "z" : 0.0
+         },
+         {
+            "x" : 1425966.6055165580,
+            "y" : 583453.25155367621,
+            "z" : 0.0
+         },
+         {
+            "x" : 1458666.5783813663,
+            "y" : 583453.25155367621,
+            "z" : 0.0
+         },
+         {
+            "x" : 1458666.5783813663,
+            "y" : 589914.91255909996,
+            "z" : 0.0
+         },
+         {
+            "x" : 1425966.6055165580,
+            "y" : 589914.91255909996,
+            "z" : 0.0
+         }
+      ],
+      "Type" : "polygon"
+   },
+   "Name" : "A-Model.pdf",
+   "Revision" : null,
+   "State" : null,
+   "Urx" : null,
+   "Ury" : null
+}

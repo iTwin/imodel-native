@@ -20,7 +20,6 @@ TEST(PerformanceJsonComparison, ParseJsonUsingStartupCompany)
     //-----------------------------------------------------------------------------------
     BeFileName inputFile;
     BeTest::GetHost().GetDocumentsRoot (inputFile);
-    inputFile.AppendToPath (L"DgnDb");
     inputFile.AppendToPath (L"StartupCompany.json");
     Json::Value seedObj (Json::objectValue);
     ECDbTestUtility::ReadJsonInputFromFile (seedObj, inputFile);

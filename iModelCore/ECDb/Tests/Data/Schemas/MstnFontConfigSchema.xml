@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ec:ECSchema schemaName="FontConfig" nameSpacePrefix="fontconfig" version="1.0" description="Font Configuration" xmlns:beca="EditorCustomAttributes.01.00" xmlns:ec="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ec:ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
+
+    <ec:ECClass typeName="NamedSymbol" isDomainClass="False" isStruct="True">
+        <ec:ECProperty propertyName="Key" typeName="string"/>
+        <ec:ECProperty propertyName="DisplayName" typeName="string"/>
+        <ec:ECProperty propertyName="CodePoint" typeName="int"/>
+    </ec:ECClass>
+
+    <ec:ECClass typeName="FontInfo" isDomainClass="False" isStruct="True">
+        <ec:ECProperty propertyName="Name" typeName="string"/>
+        <ec:ECProperty propertyName="Hidden" typeName="boolean"/>
+        <ec:ECProperty propertyName="CreateEditorTempFont" typeName="boolean"/>
+        <ec:ECProperty propertyName="DegreeChar" typeName="int"/>
+        <ec:ECProperty propertyName="DiameterChar" typeName="int"/>
+        <ec:ECProperty propertyName="PlusMinusChar" typeName="int"/>
+        <ec:ECArrayProperty propertyName="NamedSymbols" typeName="NamedSymbol" isStruct="True"/>
+    </ec:ECClass>
+
+    <ec:ECClass typeName="RscFontInfo" isDomainClass="False" isStruct="True">
+        <ec:BaseClass>FontInfo</ec:BaseClass>
+        <ec:ECProperty propertyName="FontNumber" typeName="int"/>
+        <ec:ECProperty propertyName="CodePage" typeName="int"/>
+        <ec:ECProperty propertyName="CreateShxUnifont" typeName="boolean"/>
+    </ec:ECClass>
+
+    <ec:ECClass typeName="ShxFontInfo" isDomainClass="False" isStruct="True">
+        <ec:BaseClass>FontInfo</ec:BaseClass>
+        <ec:ECProperty propertyName="CodePage" typeName="int"/>
+    </ec:ECClass>
+
+    <ec:ECClass typeName="TTFontInfo" isDomainClass="False" isStruct="True">
+        <ec:BaseClass>FontInfo</ec:BaseClass>
+    </ec:ECClass>
+
+    <ec:ECClass typeName="LangInfo" isDomainClass="False" isStruct="True">
+        <ec:ECProperty propertyName="Language" typeName="string"/>
+        <ec:ECProperty propertyName="DefaultRscFont" typeName="string"/>
+        <ec:ECProperty propertyName="DefaultShxFont" typeName="string"/>
+        <ec:ECProperty propertyName="DefaultShxBigFont" typeName="string"/>
+        <ec:ECProperty propertyName="DefaultTTFont" typeName="string"/>
+        <ec:ECProperty propertyName="TTFontLayout" typeName="int"/>
+        <ec:ECProperty propertyName="CustomFontCreation" typeName="boolean"/>
+    </ec:ECClass>
+
+    <ec:ECClass typeName="FontConfig" isDomainClass="True" isStruct="False">
+        <ec:ECArrayProperty propertyName="Languages" typeName="LangInfo" isStruct="True"/>
+        <ec:ECArrayProperty propertyName="Fonts" typeName="FontInfo" isStruct="True"/>
+        <ec:ECProperty propertyName="HideDuplicateNames" typeName="boolean"/>
+    </ec:ECClass>
+
+</ec:ECSchema>

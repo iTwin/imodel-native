@@ -265,7 +265,7 @@ TEST (RapidJson, InsertIntoECDb)
     // Read JSON input from file
     BeFileName jsonInputFile;
     BeTest::GetHost().GetDocumentsRoot (jsonInputFile);
-    jsonInputFile.AppendToPath (L"DgnDb");
+    jsonInputFile.AppendToPath (L"ECDb");
     jsonInputFile.AppendToPath (L"FieldEngineerStructArray.json");
 
     // Parse JSON value using JsonCpp

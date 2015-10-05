@@ -119,7 +119,7 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
 
     BeFileName testFilePath;
     BeTest::GetHost().GetDocumentsRoot(testFilePath);
-    testFilePath.AppendToPath(L"DgnDb");
+    testFilePath.AppendToPath(L"ECDb");
     testFilePath.AppendToPath(testFileNameW.c_str());
 
 
@@ -346,12 +346,11 @@ TEST(ECDbFileInfo, ImportExportEmptyFile)
 
     //test file
     Utf8CP testFileName = "EmptyFile.txt";
-    WString testFileNameW(testFileName, BentleyCharEncoding::Utf8);
-
     BeFileName testFilePath;
-    BeTest::GetHost().GetDocumentsRoot(testFilePath);
-    testFilePath.AppendToPath(L"DgnDb");
-    testFilePath.AppendToPath(testFileNameW.c_str());
+    BeTest::GetHost().GetOutputRoot(testFilePath);
+    testFilePath.AppendToPath(WString(testFileName, BentleyCharEncoding::Utf8).c_str());
+    BeFile testFile;
+    ASSERT_EQ(BeFileStatus::Success, testFile.Create(testFilePath.c_str()));
 
     //INSERT scenario
     DbEmbeddedFileTable& embeddedFileTable = ecdb.EmbeddedFiles();
@@ -364,12 +363,9 @@ TEST(ECDbFileInfo, ImportExportEmptyFile)
     ASSERT_EQ(BE_SQLITE_OK, stat);
     ASSERT_TRUE(embeddedFileId.IsValid());
 
-    BeFileName exportFilePath;
-    BeTest::GetHost().GetOutputRoot(exportFilePath);
-    exportFilePath.AppendToPath(testFileNameW.c_str());
-    deleteExistingFile(exportFilePath);
+    deleteExistingFile(testFilePath);
 
-    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Export(exportFilePath.GetNameUtf8().c_str(), testFileName));
+    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Export(testFilePath.GetNameUtf8().c_str(), testFileName));
 }
 
 //---------------------------------------------------------------------------------------
