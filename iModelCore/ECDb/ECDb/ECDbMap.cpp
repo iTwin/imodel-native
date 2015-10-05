@@ -1449,9 +1449,11 @@ bool HorizontalPartition::NeedsClassIdFilter() const
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2015
 //------------------------------------------------------------------------------------------
-void HorizontalPartition::AppendECClassIdFilterSql(NativeSqlBuilder& sqlBuilder) const
+void HorizontalPartition::AppendECClassIdFilterSql(Utf8CP classIdColName, NativeSqlBuilder& sqlBuilder) const
     {
     BeAssert(!m_partitionClassIds.empty());
+
+    sqlBuilder.Append(classIdColName, true);
 
     std::vector<ECClassId> const* classIds = nullptr;
     BooleanSqlOperator inOperator;
