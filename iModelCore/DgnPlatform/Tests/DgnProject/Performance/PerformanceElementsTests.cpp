@@ -584,6 +584,7 @@ struct PerformanceElementsTestFixture : public PerformanceElementTestFixture
     void TimeInsertion(int numInstances, Utf8CP schemaName, Utf8CP className, Utf8String testcaseName, Utf8String testName);
     void TimeUpdate(int numInstances, Utf8CP schemaName, Utf8CP className, Utf8String testcaseName, Utf8String testName);
     void TimeModelFill(int numInstances, Utf8CP schemaName, Utf8CP className, Utf8String testcaseName, Utf8String testName, bool wantProfiler = false);
+    void TimeDelete(int numInstances, Utf8CP schemaName, Utf8CP className, Utf8String testcaseName, Utf8String testName, bool wantProfiler = false);
 
     public:
         PerformanceElementsTestFixture()
@@ -832,6 +833,53 @@ void PerformanceElementsTestFixture::TimeModelFill(int numInstances, Utf8CP sche
     LOGTODB(testcaseName, testName, timer.GetElapsedSeconds(), Utf8PrintfString("Loading %d %s elements", numInstances, className).c_str(), numInstances);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+void PerformanceElementsTestFixture::TimeDelete(int numInstances, Utf8CP schemaName, Utf8CP className, Utf8String testcaseName, Utf8String testName, bool wantProfiler)
+    {
+    WString wClassName;
+    wClassName.AssignUtf8(className);
+    WPrintfString dbName(L"PerformanceElement\\Delete%ls%d.dgndb", wClassName.c_str(), numInstances);
+    InitializeProject(dbName.c_str());
+    bvector<DgnElementPtr> testElements;
+    DgnModelPtr model = CreateElements(numInstances, schemaName, className, testElements);
+    bvector<DgnElementId> ids;
+
+    // Create a bunch of elements
+    DgnDbStatus stat = DgnDbStatus::Success;
+    for (DgnElementPtr& element : testElements)
+        {
+        element->Insert(&stat);
+        ASSERT_EQ(DgnDbStatus::Success, stat);
+        ids.push_back(element->GetElementId());
+        }
+    m_db->SaveChanges();
+
+    if (wantProfiler)
+        {
+        printf("Attach profiler...\n");
+        getchar();
+        }
+
+    // Delete all elements
+    StopWatch timer(true);
+    for (DgnElementPtr& element : testElements)
+        {
+        m_db->Elements().Delete(*element);
+        ASSERT_EQ(DgnDbStatus::Success, stat);
+        }
+
+    timer.Stop();
+    if (wantProfiler)
+        {
+        printf("Detach profiler...\n");
+        getchar();
+        }
+    //EXPECT_EQ(0, m_db->Elements().GetTotals().m_extant);
+    LOGTODB(testcaseName, testName, timer.GetElapsedSeconds(), Utf8PrintfString("Deleting %d %s elements", numInstances, className).c_str(), numInstances);
+    }
+
 TEST_F(PerformanceElementsTestFixture, ElementInsert)
     {
     TimeInsertion(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
@@ -878,4 +926,20 @@ TEST_F(PerformanceElementsTestFixture, ElementLoad)
     TimeModelFill(1000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
     TimeModelFill(10000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
     TimeModelFill(100000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
+    }
+
+TEST_F(PerformanceElementsTestFixture, ElementDelete)
+    {
+    TimeDelete(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
+    TimeDelete(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
+    TimeDelete(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
+    TimeDelete(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
+    TimeDelete(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
+    TimeDelete(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
+    TimeDelete(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
+    TimeDelete(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
+    TimeDelete(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
+    TimeDelete(1000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
+    TimeDelete(10000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
+    TimeDelete(100000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
     }
