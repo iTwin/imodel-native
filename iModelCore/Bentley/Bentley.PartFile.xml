@@ -96,4 +96,36 @@
     </Bindings>
   </Part>
 
+    <!-- Define a test collection part. This is included in MobileDgn's TestsAggregate -->
+    <Part Name="Tests">
+        <SubPart PartName="UnitTests-NonPublished"/>
+        <SubPart PartName="UnitTests-Published"/>
+    </Part>
+
+    <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in MobileDgn's Gtest-Aggregator and RunGtest-MobileDgnTests parts -->
+    <Product Name="Bentley-Tests">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=BentleyTest -dTEST_COLLECTION_PRODUCT=Bentley-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="Bentley-Tests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/BentleyTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/BentleyTest/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="Bentley-Gtest" >
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Bentley-Gtest/BentleyTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/Bentley" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="Bentley-Gtest" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    </Part>
+
 </BuildContext>
