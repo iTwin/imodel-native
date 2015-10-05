@@ -102,7 +102,7 @@
         </Bindings>
     </Part>
 
-    <!-- Define a test collection part. This is included in MobileDgn's NonGtest-TestCollection-Aggregate -->
+    <!-- Define a test collection part. This is included in MobileDgn's TestsAggregate -->
     <!-- Also see DgnPlatform's Performance test aggregator -->
     <Part Name="Tests">
         <SubPart PartName="UnitTests-Published" />
