@@ -160,7 +160,64 @@ static ECSchemaPtr importECSchema (ECDbR ecDB, BeFileNameCR ecSchemaFile)
     return ecSchema;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Affan.Khan                         10/05
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ECDbSchemas, JoinedTableTest)
+    {
+    auto const schema =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
+        "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
+        "   xmlns:ecschema='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
+        "   xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'"
+        "   xsi:schemaLocation='ecschema ECSchema.xsd' >"
+        "    <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
+        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix='bsca' />"
+        "    <ECSchemaReference name='Bentley_Standard_Classes' version='01.00' prefix='bsm' />"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='Foo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                    <Strategy>SharedTable</Strategy>"
+        "                    <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                    <Options>JoinedTableForSubclasses</Options>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='A' typeName='long'/>"
+        "        <ECProperty propertyName='B' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='Goo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <ECProperty propertyName='C' typeName='long'/>"
+        "        <ECProperty propertyName='D' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='Boo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <ECProperty propertyName='E' typeName='long'/>"
+        "        <ECProperty propertyName='F' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='Roo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <ECProperty propertyName='G' typeName='long'/>"
+        "        <ECProperty propertyName='H' typeName='string'/>"
+        "    </ECClass>"
+        "</ECSchema>";
 
+    ECDbTestProject saveTestProject;
+    ECDbR db = saveTestProject.Create("JoinedTableTest.ecdb");
+    ECSchemaPtr joinedTableTestSchema;
+    auto readContext = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(joinedTableTestSchema, schema, *readContext);
+    ASSERT_TRUE(joinedTableTestSchema != nullptr);
+    auto importStatus = db.Schemas().ImportECSchemas(readContext->GetCache());
+    ASSERT_TRUE(importStatus == BentleyStatus::SUCCESS);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Affan.Khan                         05/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (ECDbSchemas, OrderOfPropertyIsPreservedInTableColumns)
     {
     ECDbTestProject saveTestProject;

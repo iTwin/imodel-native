@@ -191,8 +191,10 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
             options = ECDbMapStrategy::Options::SharedColumns;
 
         if (Enum::Contains(rootUserStrategy.GetOptions(), UserECDbMapStrategy::Options::JoinedTableForSubclasses))
+            {
             options = Enum::Or(options, ECDbMapStrategy::Options::JoinedTable);
-
+            m_tableName = m_parentClassMap->GetTable().GetName() + "_joinedTable";
+            }
         return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::SharedTable, options, true);
         }
 

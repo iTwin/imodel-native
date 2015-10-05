@@ -301,29 +301,48 @@ MapStatus ClassMap::Initialize(ClassMapInfo const& mapInfo)
 MapStatus ClassMap::_InitializePart1(ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
     m_dbView = std::unique_ptr<ClassDbView> (new ClassDbView(*this));
-
-    //if parent class map exists, its dbtable is reused.
-    if (parentClassMap != nullptr)
+    bool isJoinedTable = Enum::Contains(mapInfo.GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable);
+    if (isJoinedTable)
         {
-        PRECONDITION (!parentClassMap->GetMapStrategy().IsNotMapped(), MapStatus::Error);
+        PRECONDITION(parentClassMap != nullptr, MapStatus::Error);
         m_parentMapClassId = parentClassMap->GetClass().GetId();
-        m_table = &parentClassMap->GetTable();
-        }
-    else
-        {
+
         auto table = const_cast<ECDbMapR>(m_ecDbMap).FindOrCreateTable(
             mapInfo.GetTableName(),
             mapInfo.IsMapToVirtualTable(),
             mapInfo.GetECInstanceIdColumnName(),
-            IClassMap::IsMapToSecondaryTableStrategy(m_ecClass), 
-            mapInfo.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable); 
+            IClassMap::IsMapToSecondaryTableStrategy(m_ecClass),
+            mapInfo.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable);
 
-        if (!EXPECTED_CONDITION (table != nullptr))
+        if (!EXPECTED_CONDITION(table != nullptr))
             return MapStatus::Error;
 
         m_table = table;
         }
+    else
+        {
+        //if parent class map exists, its dbtable is reused.
+        if (parentClassMap != nullptr)
+            {
+            PRECONDITION(!parentClassMap->GetMapStrategy().IsNotMapped(), MapStatus::Error);
+            m_parentMapClassId = parentClassMap->GetClass().GetId();
+            m_table = &parentClassMap->GetTable();
+            }
+        else
+            {
+            auto table = const_cast<ECDbMapR>(m_ecDbMap).FindOrCreateTable(
+                mapInfo.GetTableName(),
+                mapInfo.IsMapToVirtualTable(),
+                mapInfo.GetECInstanceIdColumnName(),
+                IClassMap::IsMapToSecondaryTableStrategy(m_ecClass),
+                mapInfo.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable);
 
+            if (!EXPECTED_CONDITION(table != nullptr))
+                return MapStatus::Error;
+
+            m_table = table;
+            }
+        }
     //Add ECInstanceId property map
     //check if it already exists
     if (GetECInstanceIdPropertyMap() != nullptr)
@@ -371,6 +390,40 @@ MapStatus ClassMap::_InitializePart2(ClassMapInfo const& mapInfo, IClassMap cons
                 triggerName.Sprintf("%s_CurrentTimeStamp", column->GetTableR().GetName().c_str());
                 column->GetTableR().CreateTrigger(triggerName.c_str(), column->GetTableR(), whenCondtion.c_str(), body.c_str(), TriggerType::Create, TriggerSubType::After);
                 }
+            }
+        }
+
+    //Add cascade delete for joinedTable;
+    bool isJoinedTable = Enum::Contains(mapInfo.GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable);
+    if (isJoinedTable)
+        {
+        PRECONDITION(parentClassMap != nullptr, MapStatus::Error);
+        auto primaryKeyColumn = parentClassMap->GetTable().GetFilteredColumnFirst(ECDbKnownColumns::ECInstanceId);
+        auto foreignKeyColumn = GetTable().GetFilteredColumnFirst(ECDbKnownColumns::ECInstanceId);
+        PRECONDITION(primaryKeyColumn != nullptr, MapStatus::Error);
+        PRECONDITION(foreignKeyColumn != nullptr, MapStatus::Error);
+        bool createFKConstraint = true;
+        for (auto constraint : GetTable().GetConstraints())
+            {
+            if (constraint->GetType() == ECDbSqlConstraint::Type::ForeignKey)
+                {
+                auto fk = static_cast<ECDbSqlForeignKeyConstraint const*>(constraint);
+                if (&fk->GetTargetTable() == &parentClassMap->GetTable())
+                    {
+                    if (fk->GetSourceColumns().front() == foreignKeyColumn && fk->GetTargetColumns().front() == primaryKeyColumn)
+                        {
+                        createFKConstraint = false;
+                        break;
+                        }
+                    }
+                }
+            }
+
+        if (createFKConstraint)
+            {
+            auto fkConstraint = GetTable().CreateForeignKeyConstraint(parentClassMap->GetTable());
+            fkConstraint->Add(foreignKeyColumn->GetName().c_str(), primaryKeyColumn->GetName().c_str());
+            fkConstraint->SetOnDeleteAction(ECDbSqlForeignKeyConstraint::ActionType::Cascade);
             }
         }
 
