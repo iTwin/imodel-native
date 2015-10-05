@@ -464,18 +464,19 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
+        <ECProperty propertyName="CategoryId" typeName="long">
+            <!-- Is defined in Element table due to significant performance issues. Actually belongs in GeometricElement. -->
+            <!-- Foreign key relationship: ElementIsInCategory.CategoryId -->
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>True</IsNullable><!-- Always null for non-geometric elements. Always non-null for GeometricElements. Enforced in code -->
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
     </ECClass>
 
     <ECClass typeName="GeometricElement" isDomainClass="False">
         <BaseClass>Element</BaseClass>
-        <ECProperty propertyName="CategoryId" typeName="long">
-            <!-- Foreign key relationship: ElementIsInCategory.CategoryId -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>True</IsNullable><!-- Because Element uses shared table. Non-null categories enforced in code for geometric elements -->
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
     </ECClass>
 
     <ECClass typeName="Element3d" isDomainClass="False">
@@ -999,7 +1000,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
 
     <ECRelationshipClass typeName="ElementIsInCategory" isDomainClass="True" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,N)"  roleLabel="has N elements" polymorphic="True">
-            <Class class="GeometricElement">
+            <Class class="Element">
                 <Key>
                     <Property name="CategoryId" />
                 </Key>
