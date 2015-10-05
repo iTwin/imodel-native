@@ -229,7 +229,7 @@ TEST (BeSQLiteDb, ProfileTest)
 
         BeFileName testFile;
         BeTest::GetHost().GetDocumentsRoot(testFile);
-        testFile.AppendToPath(L"DgnDb").AppendToPath(L"StartupCompany.json");
+        testFile.AppendToPath(L"ECDb").AppendToPath(L"StartupCompany.json");
 
         stat = db.EmbeddedFiles().Import("test", testFile.GetNameUtf8().c_str(), ".json");
         ASSERT_EQ (BE_SQLITE_OK, stat) << "Embedding test file failed.";
@@ -273,7 +273,7 @@ TEST (BeSQLiteDb, ProfileTest)
 
         BeFileName testFile;
         BeTest::GetHost().GetDocumentsRoot(testFile);
-        testFile.AppendToPath(L"DgnDb").AppendToPath(L"StartupCompany.json");
+        testFile.AppendToPath(L"ECDb").AppendToPath(L"StartupCompany.json");
 
         stat = db.EmbeddedFiles().Import("test", testFile.GetNameUtf8().c_str(), ".json");
         ASSERT_EQ (BE_SQLITE_OK, stat) << "Embedding test file failed.";
