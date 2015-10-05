@@ -1,0 +1,66 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="SchoolSchema_Supplemental_Units" nameSpacePrefix="SSSS" version="1.1" displayLabel="School Supplemental" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECSchemaReference name="EditorCustomAttributes" version="01.01" prefix="beca" />
+    <ECCustomAttributes>
+        <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <PrimarySchemaName>SchoolSchema</PrimarySchemaName>
+            <PrimarySchemaMajorVersion>1</PrimarySchemaMajorVersion>
+            <PrimarySchemaMinorVersion>0</PrimarySchemaMinorVersion>
+            <Precedence>550</Precedence>
+            <Purpose>Units</Purpose>
+            <IsUserSpecific>False</IsUserSpecific>
+        </SupplementalSchemaMetaData>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <SchemaFullNameAtEditingStart>SchoolSchema_Supplemental_Units.01.01</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECClass typeName="Course" isDomainClass="True">
+        <ECCustomAttributes>
+            <TreeColorCustomAttributes xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <NodeBackColor>Aqua</NodeBackColor>
+                <NodeForeColor>Info</NodeForeColor>
+            </TreeColorCustomAttributes>
+            <CustomStructSerializer xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <SerializerName>course</SerializerName>
+            </CustomStructSerializer>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="Department" isDomainClass="True" />
+    <ECClass typeName="School" isDomainClass="True">
+        <ECCustomAttributes>
+            <Localizable xmlns="EditorCustomAttributes.01.01" />
+            <AllowDuplicateLocalizedValues xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Label>True</Label>
+                <Description>True</Description>
+            </AllowDuplicateLocalizedValues>
+        </ECCustomAttributes>
+        <ECProperty propertyName="campus" typeName="string">
+            <ECCustomAttributes>
+                <AlwaysExpand xmlns="EditorCustomAttributes.01.01">
+                    <ArrayMembers>True</ArrayMembers>
+                </AlwaysExpand>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.01">
+                    <TrueString>Yes</TrueString>
+                    <FalseString>No</FalseString>
+                </BooleanDisplay>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="code" typeName="string" />
+        <ECProperty propertyName="name" typeName="string" />
+    </ECClass>
+    <ECRelationshipClass typeName="SchoolDepartmentRelation" isDomainClass="False" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <Category xmlns="EditorCustomAttributes.01.01">
+                <Standard>10</Standard>
+                <Name>School</Name>
+                <DisplayLabel>School</DisplayLabel>
+                <Priority>20</Priority>
+                <Expand>True</Expand>
+            </Category>
+        </ECCustomAttributes>
+        <Source cardinality="(0,1)" polymorphic="True" />
+        <Target cardinality="(0,N)" polymorphic="True" />
+    </ECRelationshipClass>
+</ECSchema>

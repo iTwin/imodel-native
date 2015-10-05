@@ -7,7 +7,11 @@ InstanceCRUDTests.* 	# No need to run with the build, used by testing after buil
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
 
-#TFS#289784 Hassan/Maha need to fix the ATP (not an ECDb issue)
+# ECDb tests should not depend on DgnDb data
+ECDbFileInfo.ReplaceExistingEmbeddedFile
+ECDbFileInfo.ReadAddNewEntrySaveEmbeddedFile
+
+#TFS#289784 Hassan/Maha need to fix the ATP (not an ECDb issue) - and should not depend on DgnDb data
 ECSqlSelectTests.SelectQueriesOnDbGeneratedDuringBuild
 
 # TFS 178486 will address these (Affan): (ECSchema Update not working in 06 yet.)

@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="BaseSchemaA" nameSpacePrefix="bs" version="1.0" displayLabel="Base Schema A" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+            <SchemaFullNameAtEditingStart>BaseSchemaA.01.00</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECClass typeName="Address" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="Line1" typeName="string" />
+        <ECProperty propertyName="Line2" typeName="string" />
+        <ECArrayProperty propertyName="StringArray" typeName="string" minOccurs="0" maxOccurs="10" />
+    </ECClass>
+    <ECClass typeName="BaseAClass1" isDomainClass="True" />
+    <ECClass typeName="BaseAClass2" isDomainClass="True" />
+    <ECClass typeName="BaseSchemaACustomAttribute" isDomainClass="True" isCustomAttributeClass="True">
+        <ECProperty propertyName="StringValue" typeName="string" />
+        <ECProperty propertyName="IntValue" typeName="int" />
+        <ECProperty propertyName="DoubleValue" typeName="double" />
+        <ECArrayProperty propertyName="StringArray" typeName="string" minOccurs="0" maxOccurs="100" />
+        <ECStructProperty propertyName="AddressProperty" typeName="Address" />
+        <ECArrayProperty propertyName="AddressArray" typeName="Address" minOccurs="0" maxOccurs="10" isStruct="True" />
+    </ECClass>
+    <ECClass typeName="Foo" isDomainClass="True">
+        <ECProperty propertyName="stringProperty" typeName="string" />
+        <ECProperty propertyName="intProperty" typeName="int" />
+        <ECStructProperty propertyName="Address" typeName="Address" />
+    </ECClass>
+</ECSchema>

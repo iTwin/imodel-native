@@ -109,8 +109,7 @@ ECSqlStatus RegularClassSystemColumnPreparer::_GetWhereClause(ECSqlPrepareContex
     if (!whereClauseBuilder.IsEmpty())
         whereClauseBuilder.Append(BooleanSqlOperator::And);
 
-    whereClauseBuilder.Append(classIdCol->GetName().c_str(), true);
-    horizPartition->AppendECClassIdFilterSql(whereClauseBuilder);
+    horizPartition->AppendECClassIdFilterSql(classIdCol->GetName().c_str(), whereClauseBuilder);
     return ECSqlStatus::Success;
     }
 

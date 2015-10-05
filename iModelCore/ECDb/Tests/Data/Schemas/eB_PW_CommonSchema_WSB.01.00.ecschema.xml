@@ -1,0 +1,215 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="eB_PW_CommonSchema_WSB" nameSpacePrefix="eBPWC" version="1.0" description="CommonSchema for eB and PW in WSB MergeProvider" displayLabel="eB-PW CommonSchema for WSB" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECSchemaReference name="DataSourceSpecification" version="01.00" prefix="DSS" />
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+            <SchemaFullNameAtEditingStart>eB_PW_CommonSchema_WSB.01.00</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECClass typeName="AttributeStruct" isStruct="True" isDomainClass="False">
+        <ECProperty propertyName="Type" typeName="string" />
+        <ECProperty propertyName="Value" typeName="string" />
+        <ECProperty propertyName="Unit" typeName="string" />
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="Label" typeName="string" />
+    </ECClass>
+    <ECClass typeName="Document" isDomainClass="True">
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="Description" typeName="string" />
+        <ECProperty propertyName="Code" typeName="string" />
+        <ECProperty propertyName="Revision" typeName="string" />
+        <ECProperty propertyName="ApprovalStatus" typeName="string" />
+        <ECProperty propertyName="IsLatestRevision" typeName="boolean" />
+        <ECProperty propertyName="IsLatestApprovedRevision" typeName="boolean" />
+        <ECProperty propertyName="IsSuperseded" typeName="boolean" />
+        <ECProperty propertyName="State" typeName="string" />
+        <ECProperty propertyName="DateEffective" typeName="dateTime" />
+        <ECProperty propertyName="DateObsolete" typeName="dateTime" />
+        <ECProperty propertyName="Class" typeName="int" />
+        <ECProperty propertyName="DateModified" typeName="dateTime" />
+        <ECProperty propertyName="DateCreated" typeName="dateTime" />
+        <ECArrayProperty propertyName="Attributes" typeName="AttributeStruct" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+        <ECProperty propertyName="Llx" typeName="double" />
+        <ECProperty propertyName="Lly" typeName="double" />
+        <ECProperty propertyName="Urx" typeName="double" />
+        <ECProperty propertyName="Ury" typeName="double" />
+        <ECStructProperty propertyName="Location" typeName="LocationStruct" />
+    </ECClass>
+    <ECClass typeName="File" isDomainClass="True">
+        <ECCustomAttributes>
+            <FileDependentProperties xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <FileName>Name</FileName>
+                <FileSize>Size</FileSize>
+                <DateModified>DateModified</DateModified>
+                <IsReadOnly>IsLocked</IsReadOnly>
+            </FileDependentProperties>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="Size" typeName="long" />
+        <ECProperty propertyName="Format" typeName="string" />
+        <ECProperty propertyName="DateModified" typeName="dateTime" />
+        <ECProperty propertyName="IsLocked" typeName="boolean" />
+    </ECClass>
+    <ECClass typeName="Folder" isDomainClass="True">
+        <ECCustomAttributes>
+            <InstanceLabelSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertyName>Label</PropertyName>
+            </InstanceLabelSpecification>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Label" typeName="string" />
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="Description" typeName="string" />
+        <ECProperty propertyName="DateModified" typeName="dateTime" />
+        <ECProperty propertyName="DateCreated" typeName="dateTime" />
+        <ECProperty propertyName="Llx" typeName="double" />
+        <ECProperty propertyName="Lly" typeName="double" />
+        <ECProperty propertyName="Urx" typeName="double" />
+        <ECProperty propertyName="Ury" typeName="double" />
+        <ECStructProperty propertyName="Location" typeName="LocationStruct" />
+    </ECClass>
+    <ECClass typeName="PointStruct" isStruct="True" isDomainClass="False">
+        <ECProperty propertyName="x" typeName="double" />
+        <ECProperty propertyName="y" typeName="double" />
+        <ECProperty propertyName="z" typeName="double" />
+    </ECClass>
+    <ECClass typeName="LocationStruct" isStruct="True" isDomainClass="False">
+        <ECProperty propertyName="Type" typeName="string" />
+        <ECStructProperty propertyName="Center" typeName="PointStruct" />
+        <ECArrayProperty propertyName="Coordinates" typeName="PointStruct" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+    <ECClass typeName="Project" isDomainClass="True">
+        <ECCustomAttributes>
+            <InstanceLabelSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertyName>Label</PropertyName>
+            </InstanceLabelSpecification>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Label" typeName="string" />
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="Description" typeName="string" />
+        <ECProperty propertyName="EnvironmentId" typeName="int" />
+        <ECProperty propertyName="Code" typeName="string" />
+        <ECProperty propertyName="DateModified" typeName="dateTime" />
+        <ECProperty propertyName="DateCreated" typeName="dateTime" />
+        <ECArrayProperty propertyName="Attributes" typeName="AttributeStruct" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+        <ECProperty propertyName="Llx" typeName="double" />
+        <ECProperty propertyName="Lly" typeName="double" />
+        <ECProperty propertyName="Urx" typeName="double" />
+        <ECProperty propertyName="Ury" typeName="double" />
+        <ECStructProperty propertyName="Location" typeName="LocationStruct" />
+    </ECClass>
+    <ECClass typeName="GroupedVirtualItem" isDomainClass="True">
+        <ECCustomAttributes>
+            <InstanceLabelSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertyName>Description</PropertyName>
+            </InstanceLabelSpecification>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Code" typeName="string" />
+        <ECProperty propertyName="Description" typeName="string" />
+        <ECArrayProperty propertyName="Attributes" typeName="AttributeStruct" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+    <ECClass typeName="VirtualItemGroup" isDomainClass="True">
+        <ECCustomAttributes>
+            <InstanceLabelSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertyName>Description</PropertyName>
+            </InstanceLabelSpecification>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Code" typeName="string" />
+        <ECProperty propertyName="Description" typeName="string" />
+        <ECProperty propertyName="Revision" typeName="string" />
+        <ECProperty propertyName="ApprovalStatus" typeName="string" />
+        <ECProperty propertyName="IsLatestRevision" typeName="boolean" />
+        <ECProperty propertyName="IsLatestApprovedRevision" typeName="boolean" />
+        <ECProperty propertyName="IsSuperseded" typeName="boolean" />
+        <ECProperty propertyName="State" typeName="string" />
+        <ECProperty propertyName="Class" typeName="int" />
+        <ECProperty propertyName="ChangeControlled" typeName="boolean" />
+        <ECProperty propertyName="DateEffective" typeName="dateTime" />
+        <ECProperty propertyName="DateObsolete" typeName="dateTime" />
+        <ECProperty propertyName="Synopsis" typeName="string" />
+        <ECProperty propertyName="Remarks" typeName="string" />
+        <ECArrayProperty propertyName="Attributes" typeName="AttributeStruct" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+    <ECRelationshipClass typeName="FolderRelationship" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <RelationshipPurpose xmlns="DataSourceSpecification.01.00">
+                <IsForNavigation>True</IsForNavigation>
+            </RelationshipPurpose>
+        </ECCustomAttributes>
+        <Source cardinality="(0,N)" polymorphic="True">
+            <Class class="Folder" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="Document" />
+            <Class class="Folder" />
+            <Class class="GroupedVirtualItem" />
+            <Class class="Project" />
+            <Class class="VirtualItemGroup" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ProjectRelationship" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <RelationshipPurpose xmlns="DataSourceSpecification.01.00">
+                <IsForNavigation>True</IsForNavigation>
+            </RelationshipPurpose>
+        </ECCustomAttributes>
+        <Source cardinality="(0,N)" polymorphic="True">
+            <Class class="Project" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="Document" />
+            <Class class="Folder" />
+            <Class class="GroupedVirtualItem" />
+            <Class class="Project" />
+            <Class class="VirtualItemGroup" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="VirtualItemGroupRelationship" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <RelationshipPurpose xmlns="DataSourceSpecification.01.00">
+                <IsForNavigation>True</IsForNavigation>
+            </RelationshipPurpose>
+        </ECCustomAttributes>
+        <Source cardinality="(0,N)" polymorphic="True">
+            <Class class="VirtualItemGroup" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="Document" />
+            <Class class="GroupedVirtualItem" />
+            <Class class="Project" />
+            <Class class="VirtualItemGroup" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="GroupedVirtualItemRelationship" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <RelationshipPurpose xmlns="DataSourceSpecification.01.00">
+                <IsForNavigation>True</IsForNavigation>
+            </RelationshipPurpose>
+        </ECCustomAttributes>
+        <Source cardinality="(0,N)" polymorphic="True">
+            <Class class="GroupedVirtualItem" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="Document" />
+            <Class class="GroupedVirtualItem" />
+            <Class class="Project" />
+            <Class class="VirtualItemGroup" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="DocumentRelationship" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <RelationshipPurpose xmlns="DataSourceSpecification.01.00">
+                <IsForNavigation>True</IsForNavigation>
+            </RelationshipPurpose>
+        </ECCustomAttributes>
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="Document" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="File" />
+            <Class class="Document" />
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>

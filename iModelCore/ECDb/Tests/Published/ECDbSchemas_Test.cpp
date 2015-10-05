@@ -232,7 +232,6 @@ TEST (ECDbSchemas, DWGRTest)
     db.ClearECDbCache();
     BeFileName sourceDir;
     BeTest::GetHost ().GetDocumentsRoot (sourceDir);
-    sourceDir.AppendToPath (L"DgnDb");
     sourceDir.AppendToPath (L"ECDb");
     sourceDir.AppendToPath (L"Schemas");
 

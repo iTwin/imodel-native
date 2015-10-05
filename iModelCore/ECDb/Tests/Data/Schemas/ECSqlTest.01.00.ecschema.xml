@@ -1,0 +1,545 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="ECSqlTest" nameSpacePrefix="ecsql" version="1.0" description="ECSQL test schema" displayLabel="ECSQL test schema" xmlns:ecschema="http://www.bentley.com/schemas/Bentley.ECXML.2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="ecschema ECSchema.xsd" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.11" prefix="bsca" />
+    <ECSchemaReference name="Bentley_Standard_Classes" version="01.00" prefix="bsm" />
+    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+    
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.11">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+            <SchemaFullNameAtEditingStart>ECSqlTest.01.00</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+        
+       <SchemaMap xmlns="ECDbMap.01.00">
+            <TablePrefix>ecsqltest</TablePrefix>
+        </SchemaMap>
+    </ECCustomAttributes>
+    
+    <ECClass typeName="_UnderBar" description="The class name and all the properties of this class contain under bar in start in middle or at the end." isDomainClass="True">
+        <ECProperty propertyName="_ABC" typeName="int" />
+        <ECProperty propertyName="_A_B_C" typeName="string" />
+        <ECProperty propertyName="_ABC_" typeName="string" />
+        <ECProperty propertyName="ABC_" typeName="string" />
+        <ECProperty propertyName="A_B_C_" typeName="int" />
+    </ECClass>
+    <!-- Naming legend: (to keep class names short)
+        P - contains primitive properties
+        S - contains struct properties
+        A - contains array properties
+        no suffix - class
+        Struct suffix - struct
+        -->
+    <ECClass typeName="PStruct" description="Struct with primitive props (default mappings)" isStruct="True" isDomainClass="False">
+        <ECProperty propertyName="b" typeName="boolean" />
+        <ECProperty propertyName="bi" typeName="binary" />
+        <ECProperty propertyName="d" typeName="double" />
+        <ECProperty propertyName="dt" typeName="dateTime" />
+        <ECProperty propertyName="dtUtc" typeName="dateTime">
+            <ECCustomAttributes>
+<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                    <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Utc</DateTimeKind>
+                </DateTimeInfo>
+</ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="i" typeName="int" />
+        <ECProperty propertyName="l" typeName="long" />
+        <ECProperty propertyName="s" typeName="string" />
+        <ECProperty propertyName="p2d" typeName="point2d" />
+        <ECProperty propertyName="p3d" typeName="point3d" />
+    </ECClass>
+    <ECClass typeName="ABounded" description="Class with bounded array props" isDomainClass="True">
+        <ECArrayProperty propertyName="Prim_Array_Bounded" typeName="int" minOccurs="5" maxOccurs="10" />
+        <ECArrayProperty propertyName="PStruct_Array_Bounded" typeName="PStruct" minOccurs="5" maxOccurs="10" isStruct="True" />
+    </ECClass>
+    <ECClass typeName="Abstract" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
+        <ECProperty propertyName="I" typeName="int" />
+        <ECProperty propertyName="S" typeName="string" />
+    </ECClass>
+    <ECClass typeName="AbstractNoSubclasses" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
+        <ECProperty propertyName="I" typeName="int" />
+        <ECProperty propertyName="S" typeName="string" />
+    </ECClass>
+    <ECClass typeName="AbstractTablePerHierarchy" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="I" typeName="int" />
+        <ECProperty propertyName="S" typeName="string" />
+    </ECClass>
+    <ECClass typeName="SubTablePerHierarchy" isDomainClass="True">
+        <BaseClass>AbstractTablePerHierarchy</BaseClass>
+        <ECProperty propertyName="SubI" typeName="int" />
+    </ECClass>
+    <ECClass typeName="SubSubTablePerHierarchy" isDomainClass="True">
+        <BaseClass>SubTablePerHierarchy</BaseClass>
+        <ECProperty propertyName="SubSubS" typeName="string" />
+    </ECClass>
+    
+    <!--Following classes makes test case for the inherited relationship with and without properties -->
+    <ECRelationshipClass typeName="AbstractR" isDomainClass="False" isStruct="False" isCustomAttributeClass="False" strength="referencing" strengthDirection="forward" />
+
+    <ECClass typeName="P" description="Class with primitive properties (default mappings)" isDomainClass="True">
+        <ECProperty propertyName="B" typeName="boolean" />
+        <ECProperty propertyName="Bi" typeName="binary" />
+        <ECProperty propertyName="D" typeName="double" />
+        <ECProperty propertyName="Dt" typeName="dateTime" />
+        <ECProperty propertyName="DtUtc" typeName="dateTime">
+            <ECCustomAttributes>
+<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                    <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Utc</DateTimeKind>
+                </DateTimeInfo>
+</ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="DtUnspec" typeName="dateTime">
+            <ECCustomAttributes>
+<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                    <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Unspecified</DateTimeKind>
+                </DateTimeInfo>
+</ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="DateOnly" typeName="dateTime">
+            <ECCustomAttributes>
+<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                    <DateTimeComponent xmlns="Bentley_Standard_CustomAttributes.01.11">Date</DateTimeComponent>
+                </DateTimeInfo>
+</ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="I" typeName="int" />
+        <ECProperty propertyName="L" typeName="long" />
+        <ECProperty propertyName="S" typeName="string" />
+        <ECProperty propertyName="P2D" typeName="point2d" />
+        <ECProperty propertyName="P3D" typeName="point3d" />
+    </ECClass>
+    
+    <ECClass typeName="ClassWithLastModProp" isDomainClass="True">
+       <ECCustomAttributes>
+            <ClassHasCurrentTimeStampProperty xmlns="Bentley_Standard_CustomAttributes.01.11">
+                <PropertyName>LastMod</PropertyName>
+            </ClassHasCurrentTimeStampProperty>
+       </ECCustomAttributes>
+
+        <ECProperty propertyName="I" typeName="int" />
+        <ECProperty propertyName="S" typeName="string" />
+        <ECProperty propertyName="LastMod" typeName="dateTime">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                    <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+
+    <ECRelationshipClass typeName="AnyClassHasP_0N" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <!-- End table mapping -->
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="bsm:AnyClass" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="P" />
+        </Target>
+    </ECRelationshipClass>
+    <!-- ************* For DateTimeInfo tests ************************** -->
+    <ECClass typeName="DateTimeStruct" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="nodatetimeinfo" typeName="dateTime" />
+        <ECProperty propertyName="utc" typeName="dateTime">
+            <ECCustomAttributes>
+<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Utc</DateTimeKind>
+            </DateTimeInfo>
+</ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="dateonly" typeName="dateTime">
+            <ECCustomAttributes>
+<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                <DateTimeComponent xmlns="Bentley_Standard_CustomAttributes.01.11">Date</DateTimeComponent>
+            </DateTimeInfo>
+</ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="Empty" isDomainClass="True" />
+    <ECClass typeName="EmptyAbstractNoSubclasses" isDomainClass="False" />
+    <!-- ******************************************
+     Unsupported classes
+     *********************************************** -->
+    <ECClass typeName="PA" description="Primitive array" isDomainClass="True">
+        <ECArrayProperty propertyName="B_Array" typeName="boolean" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="Bi_Array" typeName="binary" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="D_Array" typeName="double" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="Dt_Array" typeName="dateTime" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="DtUtc_Array" typeName="dateTime" minOccurs="0" maxOccurs="unbounded">
+            <ECCustomAttributes>
+<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                    <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Utc</DateTimeKind>
+                </DateTimeInfo>
+</ECCustomAttributes>
+        </ECArrayProperty>
+        <ECArrayProperty propertyName="I_Array" typeName="int" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="L_Array" typeName="long" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="S_Array" typeName="string" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="P2D_Array" typeName="point2d" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="P3D_Array" typeName="point3d" minOccurs="0" maxOccurs="unbounded" />
+    </ECClass>
+    <ECClass typeName="PASpatial" description="Class including a CommonGeometry prop and a CommonGeometry array prop" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="B" typeName="boolean" />
+        <ECProperty propertyName="D" typeName="double" />
+        <ECProperty propertyName="I" typeName="int" />
+        <ECProperty propertyName="S" typeName="string" />
+        <ECProperty propertyName="Geometry" typeName="Bentley.Geometry.Common.IGeometry" />
+        <ECArrayProperty propertyName="Geometry_Array" typeName="Bentley.Geometry.Common.IGeometry" minOccurs="0" maxOccurs="unbounded" />
+    </ECClass>
+    <ECClass typeName="PSA" description="Class with primitive, struct, and array properties (default mappings)" isDomainClass="True">
+        <ECProperty propertyName="B" typeName="boolean" />
+        <ECProperty propertyName="Bi" typeName="binary" />
+        <ECProperty propertyName="D" typeName="double" />
+        <ECProperty propertyName="Dt" typeName="dateTime" />
+        <ECProperty propertyName="DtUtc" typeName="dateTime">
+            <ECCustomAttributes>
+<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                    <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Utc</DateTimeKind>
+                </DateTimeInfo>
+</ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="I" typeName="int" />
+        <ECProperty propertyName="L" typeName="long" />
+        <ECProperty propertyName="S" typeName="string" />
+        <ECProperty propertyName="P2D" typeName="point2d" />
+        <ECProperty propertyName="P3D" typeName="point3d" />
+        <ECStructProperty propertyName="PStructProp" typeName="PStruct" />
+        <ECArrayProperty propertyName="B_Array" typeName="boolean" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="Bi_Array" typeName="binary" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="D_Array" typeName="double" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="Dt_Array" typeName="dateTime" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="DtUtc_Array" typeName="dateTime" minOccurs="0" maxOccurs="unbounded">
+            <ECCustomAttributes>
+<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                    <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Utc</DateTimeKind>
+                </DateTimeInfo>
+</ECCustomAttributes>
+        </ECArrayProperty>
+        <ECArrayProperty propertyName="I_Array" typeName="int" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="L_Array" typeName="long" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="S_Array" typeName="string" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="P2D_Array" typeName="point2d" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="P3D_Array" typeName="point3d" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="PStruct_Array" typeName="PStruct" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+    <ECRelationshipClass typeName="PSAHasPSA_1N" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <!-- End table mapping -->
+        <BaseClass>AbstractR</BaseClass>
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="PSA" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="PSA" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PSAHasPSA_11" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <!-- End table mapping -->
+        <BaseClass>AbstractR</BaseClass>
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="PSA" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="True">
+            <Class class="PSA" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PSAHasPSA_NN" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <!-- Link table mapping -->
+        <BaseClass>PSAHasPSA_1N</BaseClass>
+        <BaseClass>PSAHasPSA_11</BaseClass>
+        <ECProperty propertyName="D" typeName="double" />
+        <ECProperty propertyName="I" typeName="int" />
+        <ECProperty propertyName="L" typeName="long" />
+        <ECProperty propertyName="P2D" typeName="point2d" />
+        <ECProperty propertyName="P3D" typeName="point3d" />
+        <Source cardinality="(0,N)" polymorphic="True">
+            <Class class="PSA" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="PSA" />
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="SAStruct" description="Struct with struct and struct array properties (default mappings)" isStruct="True" isDomainClass="True">
+        <ECStructProperty propertyName="PStructProp" typeName="PStruct" />
+        <ECArrayProperty propertyName="PStruct_Array" typeName="PStruct" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+    <ECClass typeName="SA" description="Class with struct and array properties (default mappings)" isDomainClass="True">
+        <ECArrayProperty propertyName="PStruct_Array" typeName="PStruct" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+        <ECStructProperty propertyName="SAStructProp" typeName="SAStruct" />
+    </ECClass>
+    <ECRelationshipClass typeName="PHasSA_11P" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <!-- Link table mapping because of additional props -->
+        <BaseClass>PSAHasPSA_NN</BaseClass>
+        <ECProperty propertyName="B" typeName="boolean" />
+        <ECProperty propertyName="Bi" typeName="binary" />
+        <ECProperty propertyName="Dt" typeName="dateTime" />
+        <ECProperty propertyName="DtUtc" typeName="dateTime" />
+        <ECStructProperty propertyName="PStructProp" typeName="PStruct" />
+        <ECProperty propertyName="S" typeName="string" />
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="P" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="True">
+            <Class class="SA" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PHasP_1NPSA" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <!-- Link table mapping because of additional props -->
+        <BaseClass>PHasSA_11P</BaseClass>
+        <ECArrayProperty propertyName="B_Array" typeName="boolean" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="Bi_Array" typeName="binary" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="D_Array" typeName="double" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="Dt_Array" typeName="dateTime" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="DtUtc_Array" typeName="dateTime" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="I_Array" typeName="int" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="L_Array" typeName="long" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="P2D_Array" typeName="point2d" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="P3D_Array" typeName="point3d" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="S_Array" typeName="string" minOccurs="0" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="Struct_Array" typeName="PStruct" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="P" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="P" />
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="PSADateTime" isDomainClass="True">
+        <ECProperty propertyName="nodatetimeinfo" typeName="dateTime" />
+        <ECProperty propertyName="emptydatetimeinfo" typeName="dateTime">
+            <ECCustomAttributes>
+<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+            </DateTimeInfo>
+</ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="utc" typeName="dateTime">
+            <ECCustomAttributes>
+<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Utc</DateTimeKind>
+            </DateTimeInfo>
+</ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="unspecified" typeName="dateTime">
+            <ECCustomAttributes>
+<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Unspecified</DateTimeKind>
+            </DateTimeInfo>
+</ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="local" typeName="dateTime">
+            <ECCustomAttributes>
+<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Local</DateTimeKind>
+            </DateTimeInfo>
+</ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="dateonly" typeName="dateTime">
+            <ECCustomAttributes>
+<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                <DateTimeComponent xmlns="Bentley_Standard_CustomAttributes.01.11">Date</DateTimeComponent>
+            </DateTimeInfo>
+</ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="garbagekind" typeName="dateTime">
+            <ECCustomAttributes>
+<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Garbage</DateTimeKind>
+            </DateTimeInfo>
+</ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="garbagecomponent" typeName="dateTime">
+            <ECCustomAttributes>
+<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                <DateTimeComponent xmlns="Bentley_Standard_CustomAttributes.01.11">Garbage</DateTimeComponent>
+            </DateTimeInfo>
+</ECCustomAttributes>
+        </ECProperty>
+        <ECArrayProperty propertyName="utcarray" typeName="dateTime" minOccurs="0" maxOccurs="unbounded">
+            <ECCustomAttributes>
+<DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.11">
+                <DateTimeKind xmlns="Bentley_Standard_CustomAttributes.01.11">Utc</DateTimeKind>
+            </DateTimeInfo>
+</ECCustomAttributes>
+        </ECArrayProperty>
+        <ECStructProperty propertyName="structwithdatetimes" typeName="DateTimeStruct" />
+        <ECArrayProperty propertyName="arrayofstructwithdatetimes" typeName="DateTimeStruct" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+    <ECRelationshipClass typeName="PSAHasAnyClass_0N" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <!-- Link table mapping (because of AnyClass constraint) -->
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="PSA" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="bsm:AnyClass" />
+        </Target>
+    </ECRelationshipClass>
+    <!-- Following is used with ONLY to see if ViewGeneration works for TablePerHierarchy-->
+    <ECClass typeName="THBase" isDomainClass="True">
+        <ECCustomAttributes>
+          <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                </MapStrategy>
+		  </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="S" typeName="string" />
+    </ECClass>
+    <ECRelationshipClass typeName="PSAHasOnlyTHBase_0N" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <!-- Target constraint is non-polymorphic! -->
+        <!-- End table mapping -->
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="PSA" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="False">
+            <Class class="THBase" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PSAHasOnlyTHBase_NN" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <!-- Target constraint is non-polymorphic! -->
+        <!-- Link table mapping -->
+        <Source cardinality="(0,N)" polymorphic="True">
+            <Class class="PSA" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="False">
+            <Class class="THBase" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PSAHasP" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <!-- End table mapping -->
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="PSA" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="P" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PSAHasP_N1" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <!-- End table mapping -->
+        <BaseClass>AbstractR</BaseClass>
+        <Source cardinality="(0,N)" polymorphic="True">
+            <Class class="PSA" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="True">
+            <Class class="P" />
+        </Target>
+    </ECRelationshipClass>
+
+    <!-- **************************************************************
+     Relationships 
+     **************************************************************  -->
+    <ECRelationshipClass typeName="PSAHasPSA" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <!-- Link table mapping -->
+        <Source cardinality="(0,N)" polymorphic="True">
+            <Class class="PSA" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="PSA" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PSAHasPWithPrimProps" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECProperty propertyName="B" typeName="boolean" />
+        <ECProperty propertyName="D" typeName="double" />
+        <ECProperty propertyName="I" typeName="int" />
+        <ECProperty propertyName="S" typeName="string" />
+        <!-- Link table mapping because of additional props -->
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="PSA" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="P" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PSAHasTHBase_0N" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <!-- End table mapping -->
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="PSA" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="THBase" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PSAHasTHBase_NN" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <!-- Link table mapping -->
+        <Source cardinality="(0,N)" polymorphic="True">
+            <Class class="PSA" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="THBase" />
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="PUnmapped" description="Class not mapped to a DB table" isDomainClass="True">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>NotMapped</Strategy>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="B" typeName="boolean" />
+        <ECProperty propertyName="D" typeName="double" />
+        <ECProperty propertyName="I" typeName="int" />
+        <ECProperty propertyName="S" typeName="string" />
+    </ECClass>
+    <ECClass typeName="SSpatial" description="Class containing a struct which contains a CommonGeometry prop and a CommonGeometry array prop" isDomainClass="True">
+        <ECStructProperty propertyName="PASpatialProp" typeName="PASpatial" />
+    </ECClass>
+    <ECClass typeName="Sub1" isDomainClass="True">
+        <BaseClass>Abstract</BaseClass>
+        <ECProperty propertyName="Sub1I" typeName="int" />
+    </ECClass>
+    <ECClass typeName="SubSub1" isDomainClass="True">
+        <BaseClass>Sub1</BaseClass>
+        <ECProperty propertyName="SubSub1I" typeName="int" />
+    </ECClass>
+    <!-- Following is used with ONLY to see if ViewGeneration works for TablePerClass-->
+    <ECClass typeName="TCBase" isDomainClass="True">
+        <ECProperty propertyName="S" typeName="string" />
+    </ECClass>
+    <ECClass typeName="TC1" isDomainClass="True">
+        <BaseClass>TCBase</BaseClass>
+        <ECProperty propertyName="S1" typeName="string" />
+    </ECClass>
+    <ECClass typeName="TC2" isDomainClass="True">
+        <BaseClass>TC1</BaseClass>
+        <ECProperty propertyName="S2" typeName="string" />
+    </ECClass>
+    <ECClass typeName="TC3" isDomainClass="True">
+        <BaseClass>TC2</BaseClass>
+        <ECProperty propertyName="S3" typeName="string" />
+    </ECClass>
+    <ECClass typeName="TC4" isDomainClass="True">
+        <BaseClass>TC3</BaseClass>
+        <ECProperty propertyName="S4" typeName="string" />
+    </ECClass>
+    <ECClass typeName="TC5" isDomainClass="True">
+        <BaseClass>TC4</BaseClass>
+        <ECProperty propertyName="S5" typeName="string" />
+    </ECClass>
+    <ECClass typeName="TH1" isDomainClass="True">
+        <BaseClass>THBase</BaseClass>
+        <ECProperty propertyName="S1" typeName="string" />
+    </ECClass>
+    <ECClass typeName="TH2" isDomainClass="True">
+        <BaseClass>TH1</BaseClass>
+        <ECProperty propertyName="S2" typeName="string" />
+    </ECClass>
+    <ECClass typeName="TH3" isDomainClass="True">
+        <BaseClass>TH2</BaseClass>
+        <ECProperty propertyName="S3" typeName="string" />
+    </ECClass>
+    <ECClass typeName="TH4" isDomainClass="True">
+        <BaseClass>TH3</BaseClass>
+        <ECProperty propertyName="S4" typeName="string" />
+    </ECClass>
+    <ECClass typeName="TH5" isDomainClass="True">
+        <BaseClass>TH4</BaseClass>
+        <ECProperty propertyName="S5" typeName="string" />
+    </ECClass>
+</ECSchema>

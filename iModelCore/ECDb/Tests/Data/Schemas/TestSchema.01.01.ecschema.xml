@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+            <SchemaFullNameAtEditingStart>TestSchema.01.01</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+            <SchemaFullNameAtEditingStart>TestSchema.01.01</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECClass typeName="Class" isDomainClass="True" />
+    <ECClass typeName="DerivedClass" isDomainClass="True">
+        <BaseClass>Class</BaseClass>
+    </ECClass>
+    <ECClass typeName="FileInfo" isDomainClass="True">
+        <ECProperty propertyName="FileInfoId" typeName="string" />
+        <ECProperty propertyName="Property" typeName="string" />
+    </ECClass>
+    <ECClass typeName="Settings" isDomainClass="True">
+        <ECProperty propertyName="FormateVersion" typeName="int" />
+    </ECClass>
+</ECSchema>
