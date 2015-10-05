@@ -111,10 +111,10 @@ bool        RenderMaterialMap::_GetBool (char const* key, BentleyStatus* status)
         *status = SUCCESS;
 
     if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_PatternFlipU) ||
-        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_PatternFlipV))
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_PatternFlipV) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_PatternTileSection))
         return false;
 
-    
     BeAssert (false);
     if (NULL != status)
         *status = ERROR;
