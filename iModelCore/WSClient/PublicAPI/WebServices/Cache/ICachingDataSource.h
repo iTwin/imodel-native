@@ -217,7 +217,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
 
         //! Push all local changes to server with SyncStatus::Ready.
         //! @param onProgress - callback to track progress. Will report object labels that are being synced and progress value if any files are being uploaded.
-        //! @param cancellationToken - for cancelling sync task
+        //! @param cancellationToken - cancelling sync task
+        //! @return fatal error (like server error or connection is lost) - sync is stopped and error is returned. 
+        //! If server returns error specific to instances being synced (forbidden, conflict, etc) – it is put into return value list and returned as “FailedObject” 
+        //! after everything is synced.
         virtual AsyncTaskPtr<BatchResult> SyncLocalChanges
             (
             SyncProgressCallback onProgress,
@@ -227,7 +230,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         //! Push specific local changes to server
         //! @param instancesToSync - locally changed instances to sync. Changes with SyncStatus::NotReady are also synced if specified.
         //! @param onProgress - callback to track progress. Will report object labels that are being synced and progress value if any files are being uploaded.
-        //! @param cancellationToken - for cancelling sync task
+        //! @param cancellationToken - cancelling sync task
+        //! @return fatal error (like server error or connection is lost) - sync is stopped and error is returned. 
+        //! If server returns error specific to instances being synced (forbidden, conflict, etc) – it is put into return value list and returned as “FailedObject” 
+        //! after everything is synced.
         virtual AsyncTaskPtr<BatchResult> SyncLocalChanges
             (
             const bset<ECInstanceKey>& instancesToSync,
@@ -239,8 +245,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         //! @param initialInstances - list of instances that should be used to start syncing
         //! @param initialQueries - list of queries that should be used to start syncing
         //! @param queryProviders - list of query providers to get queries for each instance that is being synced
-        //! @param cancellationToken
-        //! @return task with completion result
+        //! @param cancellationToken - cancelling sync task
+        //! @return fatal error (like server error or connection is lost) - sync is stopped and error is returned. 
+        //! If server returns error specific to instances being synced (forbidden, conflict, etc) – it is put into return value list and returned as “FailedObject” 
+        //! after everything is synced.
         virtual AsyncTaskPtr<BatchResult> SyncCachedData
             (
             bvector<ECInstanceKey> initialInstances,
@@ -258,6 +266,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         //! @param persistenceNavigationTrees - Update all items under specified objects including files
         //! @param temporaryNavigationTrees - Update only previously cached items under specified object and don't update any files
         //! @param temporaryNavigationTreesServerSelectProvider - Selected properties will be used to retrieve from server for "Update only" temporary navigation trees.
+        //! @param cancellationToken - cancelling sync task
+        //! @return fatal error (like server error or connection is lost) - sync is stopped and error is returned. 
+        //! If server returns error specific to instances being synced (forbidden, conflict, etc) – it is put into return value list and returned as “FailedObject” 
+        //! after everything is synced.
         virtual AsyncTaskPtr<BatchResult> CacheNavigation
             (
             const bvector<ObjectId>& persistenceNavigationTrees,
