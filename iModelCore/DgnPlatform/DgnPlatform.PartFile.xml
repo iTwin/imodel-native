@@ -599,7 +599,7 @@
         <SubProduct ProductName="DgnPlatform-TestCollection-Performance"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/DgnPlatform-TestCollection-Performance/Assemblies/*</Files>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/DgnPerformance/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/DgnPerformance/Assets" />
         </Bindings>
     </Part>
