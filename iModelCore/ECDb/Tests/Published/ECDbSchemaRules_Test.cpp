@@ -827,7 +827,66 @@ TEST_F(SchemaImportTestFixture, ECDbSchemaRules_RelationshipKeyProperties)
             "     </Target>"
             "  </ECRelationshipClass>"
             "</ECSchema>",
-             false, "Property path does not exist")};
+             false, "Property path does not exist"),
+
+        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                "  <ECClass typeName='Authority' >"
+                "    <ECProperty propertyName='Name' typeName='string' />"
+                "  </ECClass>"
+                "  <ECClass typeName='ElementCode' isDomainClass='False' isStruct='True'>"
+                "    <ECProperty propertyName='AuthorityId' typeName='int' />"
+                "    <ECProperty propertyName='Namespace' typeName='string' />"
+                "    <ECProperty propertyName='Code' typeName='string' />"
+                "  </ECClass>"
+                "  <ECClass typeName='Element' >"
+                "    <ECProperty propertyName='ModelId' typeName='long' />"
+                "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
+                "  </ECClass>"
+                "  <ECRelationshipClass typeName='AuthorityIssuesCode' isDomainClass='True' strength='referencing'>"
+                "    <Source cardinality='(1,1)' polymorphic='False'>"
+                "        <Class class='Authority' />"
+                "     </Source>"
+                "     <Target cardinality='(0,N)' polymorphic='True'>"
+                "         <Class class='Element'>"
+                "             <Key>"
+                 "                 <Property name='ModelId'/>"
+                 "                 <Property name='Code.AuthorityId'/>"
+                "             </Key>"
+                "         </Class>"
+                "     </Target>"
+                "  </ECRelationshipClass>"
+                "</ECSchema>",
+                false, "Multiple key properties are not supported"),
+
+        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                "  <ECClass typeName='Authority' >"
+                "    <ECProperty propertyName='Name' typeName='string' />"
+                "  </ECClass>"
+                "  <ECClass typeName='ElementCode' isDomainClass='False' isStruct='True'>"
+                "    <ECProperty propertyName='AuthorityId' typeName='int' />"
+                "    <ECProperty propertyName='Namespace' typeName='string' />"
+                "    <ECProperty propertyName='Code' typeName='string' />"
+                "  </ECClass>"
+                "  <ECClass typeName='Element' >"
+                "    <ECProperty propertyName='ModelId' typeName='long' />"
+                "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
+                "  </ECClass>"
+                "  <ECRelationshipClass typeName='AuthorityIssuesCode' isDomainClass='True' strength='referencing'>"
+                "     <Source cardinality='(1,1)' polymorphic='False'>"
+                "        <Class class='Authority' />"
+                "     </Source>"
+                "     <Target cardinality='(0,N)' polymorphic='True'>"
+                "         <Class class='Element'>"
+                "             <Key>"
+                "                 <Property name='ModelId'/>"
+                "             </Key>"
+                "         </Class>"
+                 "        <Class class='Authority' />"
+                 "     </Target>"
+                "  </ECRelationshipClass>"
+                "</ECSchema>",
+                false, "Multiple classes in a constraint with key properties are not supported")
+        };
 
     for (TestItem const& testItem : testItems)
         {

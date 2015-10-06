@@ -165,6 +165,8 @@ private:
     bool                GetConstraintECInstanceIdColumnName (Utf8StringR columnName, ECN::ECRelationshipEnd relationshipEnd, ECDbSqlTable const& table) const;
     virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const&, IClassMap const* parentClassMap) override;
     ECDbSqlColumn*      ConfigureForeignECClassIdKey(RelationshipMapInfo const&, ECN::ECRelationshipEnd relationshipEnd);
+
+    static bool HasKeyProperties(ECN::ECRelationshipConstraint const&);
 public:
     ~RelationshipClassLinkTableMap () {}
     static ClassMapPtr  Create (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new RelationshipClassLinkTableMap (ecRelClass, ecDbMap, mapStrategy, setIsDirty); }
