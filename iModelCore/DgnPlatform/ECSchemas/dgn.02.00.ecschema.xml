@@ -13,73 +13,61 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECCustomAttributes>
         <SystemSchema xmlns="Bentley_Standard_CustomAttributes.01.12"/>
     </ECCustomAttributes>
+    
+    <!-- ////////////////////////////////////////////////////////////////////////////// -->
+    <!-- // BIS-related core classes -->
+    <!-- ////////////////////////////////////////////////////////////////////////////// -->
 
-    <ECClass typeName="ComponentSolution" isDomainClass="True" >
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <!-- WIP_COMPONENTS: What I REALLY want is for the primary key to be (ComponentModelId,Parameters) -->
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="ComponentModelName" typeName="string"/>
-        <ECProperty propertyName="SolutionName" typeName="string"/>
-        <!-- The parameters used to generate this solution, as a JSON array -->
-        <ECProperty propertyName="Parameters" typeName="string"/>
-        <!-- WIP_COMPONENTS: I want (ComponentModelId,Parameters) to be unique and indexed -->
-        <ECProperty propertyName="Geom" typeName="binary"/>
-        <ECProperty propertyName="Range" typeName="binary"/>
-    </ECClass>
-
-    <!-- WIP_COMPONENTS I need to be able to use (ComponentModelName,SolutionName) as the key to the ComponentSolution table
-    <ECRelationshipClass typeName="ElementUsesSolution" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                <SourceECInstanceIdColumn>SolutionId</SourceECInstanceIdColumn>
-                <TargetECInstanceIdColumn>ElementId</TargetECInstanceIdColumn>
-            </LinkTableRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(0,1)" polymorphic="True">
-            <Class class="ComponentSolution" />
-        </Source>
-        <Target cardinality="(0,N)" polymorphic="True">
-            <Class class="Element" />
-        </Target>
-    </ECRelationshipClass>
-    -->
-
-    <ECClass typeName="EGASpecifier" description="Specifies an EGA" isDomainClass="False" isCustomAttributeClass="True">
-        <ECProperty propertyName="Type" typeName="string" description="The kind of EGA implementation that must be executed. One of: JavaScript, ... TBD" />
-        <ECProperty propertyName="Name" typeName="string" description="Identifies the script or parametric model within the Db that will be executed. For scripts, this should have the form program_name:function_name" />
-        <ECProperty propertyName="Inputs" typeName="string" description="comma-separated list of input parameter names. These are bound by name to the item's properties." />
-    </ECClass>
-
-    <ECClass typeName="HandlerInfo" description="Specifies handler information for an ECClass" isDomainClass="False" isCustomAttributeClass="True">
-        <ECProperty propertyName="RequiredForModification" typeName="boolean" description="Indicates whether a handler is required for instances of an ECClass to be modified." />
-        <ECProperty propertyName="AllowDeleteIfMissing" typeName="boolean" description="Indicates whether instances of an ECClass can be deleted if a handler is missing." />
-    </ECClass>
-
-    <ECClass typeName="ElementRTree" isDomainClass="True" >
+    <ECClass typeName="Authority" isDomainClass="True" >
+        <!-- Authority for element codes and classifications -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
-                    <Strategy>ExistingTable</Strategy>
+                    <Strategy>SharedTable</Strategy>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
-                <TableName>dgn_RTree3d</TableName>
-                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
-        <ECProperty propertyName="MinX" typeName="double"/>
-        <ECProperty propertyName="MaxX" typeName="double"/>
-        <ECProperty propertyName="MinY" typeName="double"/>
-        <ECProperty propertyName="MaxY" typeName="double"/>
-        <ECProperty propertyName="MinZ" typeName="double"/>
-        <ECProperty propertyName="MaxZ" typeName="double"/>
+        <ECProperty propertyName="Name" typeName="string" description="Name of authority" >
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <Collation>NoCase</Collation>
+                    <IsNullable>False</IsNullable>
+                    <IsUnique>True</IsUnique>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Props" typeName="string" description="Json string containing properties like URI" />
+    </ECClass>
+    <ECClass typeName="LocalAuthority" isDomainClass="True">
+        <BaseClass>Authority</BaseClass>
+    </ECClass>
+    <ECClass typeName="NamespaceAuthority" isDomainClass="True">
+        <BaseClass>Authority</BaseClass>
     </ECClass>
 
+    <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" isDomainClass="True" strengthDirection="forward" strength="referencing">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>NoAction</OnDeleteAction>
+                <CreateIndex>False</CreateIndex><!-- We already index on Code -->
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="False">
+            <Class class="Authority" />
+        </Source>
+        <Target cardinality="(0,N)" roleLabel="has N codes" polymorphic="True">
+            <Class class="Element" >
+                <Key>
+                    <Property name="CodeAuthorityId" />
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
+
     <ECClass typeName="Model" isDomainClass="True" >
+        <!--WIP: make Model abstract? -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
@@ -150,243 +138,26 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>PhysicalModel</BaseClass>
     </ECClass>
     
-    <ECClass typeName="Category" isDomainClass="True" >
+    <ECRelationshipClass typeName="ModelContainsElements" description="Associates elements with a model" isDomainClass="True" strength="embedding">
         <ECCustomAttributes>
-             <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>
-                    <Strategy>OwnTable</Strategy>
-                </MapStrategy>
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Code" typeName="string" description="Code for a category" >
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <Collation>NoCase</Collation>
-                    <IsNullable>False</IsNullable>
-                    <IsUnique>True</IsUnique>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Label" displayLabel="Category" typeName="string">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <Collation>NoCase</Collation>
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
-        <ECProperty propertyName="Scope" typeName="int" />
-        <ECProperty propertyName="Rank" typeName="int" />
-        <ECProperty propertyName="Props" typeName="string" />
-    </ECClass>
-
-    <ECClass typeName="Color" isDomainClass="True" >
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>
-                    <Strategy>OwnTable</Strategy>
-                </MapStrategy>
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <Indexes>
-                    <DbIndex>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>Name</string>
-                            <string>Book</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Name" displayLabel="" typeName="string" description="Name of Color" >
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <Collation>NoCase</Collation>
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Book" displayLabel="" typeName="string" description="Name of Book" >
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <Collation>NoCase</Collation>
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Value" displayLabel="" typeName="int" />
-    </ECClass>
-
-    <ECRelationshipClass typeName="CategoryOwnsSubCategories" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>Cascade</OnDeleteAction>
+           <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(1,1)" polymorphic="False">
-            <Class class="Category" />
+        <Source cardinality="(1,1)" roleLabel="is on 1 model" polymorphic="False">
+            <Class class="Model" />
         </Source>
-        <Target cardinality="(0,N)" polymorphic="False">
-            <Class class="SubCategory" >
+        <Target cardinality="(0,N)" roleLabel="has N elements" polymorphic="True">
+          <Class class="Element" >
                 <Key>
-                    <Property name="CategoryId" />
+                    <Property name="ModelId" />
                 </Key>
-            </Class>
+          </Class>
         </Target>
     </ECRelationshipClass>
 
-    <ECClass typeName="SubCategory" isDomainClass="True">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="CategoryId" typeName="long">
-            <!-- Foreign key relationship: CategoryOwnsSubCategories.CategoryId -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Code" typeName="string" description="Code for a subcategory">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <Collation>NoCase</Collation>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Label" displayLabel="SubCategory" typeName="string">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <Collation>NoCase</Collation>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
-        <ECProperty propertyName="Props" typeName="string"/>
-    </ECClass>
-
-    <ECClass typeName="View" isDomainClass="True" >
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
-                </MapStrategy>
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="ViewType" typeName="int" />
-        <ECProperty propertyName="Name" typeName="string" description="Name of view">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <Collation>NoCase</Collation>
-                    <IsNullable>False</IsNullable>
-                    <IsUnique>True</IsUnique>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
-        <ECProperty propertyName="Source" typeName="int" />
-        <ECProperty propertyName="BaseModel" typeName="int" />
-    </ECClass>
-    <ECClass typeName="PhysicalView" isDomainClass="True">
-        <BaseClass>View</BaseClass>
-    </ECClass>
-    <ECClass typeName="CameraView" isDomainClass="True">
-        <BaseClass>PhysicalView</BaseClass>
-    </ECClass>
-    <ECClass typeName="View2d" isDomainClass="True">
-        <BaseClass>View</BaseClass>
-    </ECClass>
-    <ECClass typeName="DrawingView" isDomainClass="True">
-        <BaseClass>View2d</BaseClass>
-    </ECClass>
-    <ECClass typeName="SheetView" isDomainClass="True">
-        <BaseClass>View2d</BaseClass>
-    </ECClass>
-    <ECClass typeName="RedlineView" isDomainClass="True">
-        <BaseClass>SheetView</BaseClass>
-    </ECClass>
-
-    <ECRelationshipClass typeName="ElementDrivesElement" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <!-- Relationship that indicates that an Element drives (controls the lifecyle or structure of) a dependent Element -->
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <!-- We must insist that all instances of all possible subclasses are stored together in a single table. 
-                     TxnManager knows about this table, and expects to find all instances this kind of relationship there. -->
-                <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
-                </MapStrategy>
-            </ClassMap>
-            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
-                <SourceECInstanceIdColumn>RootElementId</SourceECInstanceIdColumn>
-                <TargetECInstanceIdColumn>DependentElementId</TargetECInstanceIdColumn>
-            </LinkTableRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(0,N)" polymorphic="True">
-            <Class class="Element" />
-        </Source>
-        <Target cardinality="(0,N)" polymorphic="True">
-            <Class class="Element" />
-        </Target>
-        <ECProperty propertyName="Status" typeName="int" description="Bits that indicate the status of the dependency. Satisfied=0, Failed=1, Deferred=128. Deferred and Failed bits can be OR'd together."/>
-        <ECProperty propertyName="Priority" typeName="int" description="The priority of this dependency, relative to other EntityDrivesEntity instances. Note that EntityHasChildEntities dependencies always take priority over EntityDrivesEntity dependencies."/>
-    </ECRelationshipClass>
-
-    <ECClass typeName="ElementGroup" isDomainClass="True">
-        <!-- An ElementGroup is a non-Geometric Element that groups/references (but does not own) members that are Elements.  An Element can be in N ElementGroups. -->
-        <!-- Note: use ParentId on the Element base class to implement "owning" relationships.  An Element has 0 or 1 owner. -->
-        <BaseClass>Element</BaseClass>
-    </ECClass>
-
-    <ECRelationshipClass typeName="ElementGroupHasMembers" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                <SourceECInstanceIdColumn>GroupId</SourceECInstanceIdColumn>
-                <TargetECInstanceIdColumn>MemberId</TargetECInstanceIdColumn>
-            </LinkTableRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(0,N)" polymorphic="True">
-            <Class class="ElementGroup" />
-        </Source>
-        <Target cardinality="(0,N)" polymorphic="True">
-            <Class class="Element" />
-        </Target>
-    </ECRelationshipClass>
-
-    <ECRelationshipClass typeName="ModelDrivesModel" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <!-- Relationship that indicates that a Model drives (controls the lifecyle or structure of) a dependent Model -->
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
-                </MapStrategy>
-            </ClassMap>
-            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                <SourceECInstanceIdColumn>RootModelId</SourceECInstanceIdColumn>
-                <TargetECInstanceIdColumn>DependentModelId</TargetECInstanceIdColumn>
-            </LinkTableRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(0,N)" polymorphic="True">
-            <Class class="Model" />
-        </Source>
-        <Target cardinality="(0,N)" polymorphic="True">
-            <Class class="Model" />
-        </Target>
-    </ECRelationshipClass>
-
-    <!-- Abstract -->
     <ECClass typeName="Element" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
+        <!-- Abstract -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
@@ -474,29 +245,71 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
-
     <ECClass typeName="GeometricElement" isDomainClass="False">
         <BaseClass>Element</BaseClass>
     </ECClass>
-
     <ECClass typeName="Element3d" isDomainClass="False">
         <BaseClass>GeometricElement</BaseClass>
     </ECClass>
-
     <ECClass typeName="Element2d" isDomainClass="False">
         <BaseClass>GeometricElement</BaseClass>
     </ECClass>
-
     <ECClass typeName="PhysicalElement" isDomainClass="True">
         <BaseClass>Element3d</BaseClass>
     </ECClass>
-
     <ECClass typeName="DrawingElement" isDomainClass="True">
         <BaseClass>Element2d</BaseClass>
     </ECClass>
 
-    <!-- Abstract -->
+    <ECClass typeName="TextAnnotationItem" isDomainClass="True">
+        <BaseClass>ElementItem</BaseClass>
+        <ECProperty propertyName="TextAnnotation" typeName="binary"/>
+    </ECClass>
+    <ECClass typeName="TextAnnotationElement" isDomainClass="True">
+        <BaseClass>DrawingElement</BaseClass>
+    </ECClass>
+    <ECClass typeName="PhysicalTextAnnotationElement" isDomainClass="True">
+        <BaseClass>PhysicalElement</BaseClass>
+    </ECClass>
+    
+    <ECRelationshipClass typeName="ElementOwnsChildElements" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <Source cardinality="(1,1)" roleLabel="is on 1 element" polymorphic="True">
+            <Class class="Element" />
+        </Source>
+        <Target cardinality="(0,N)" roleLabel="is on N elements" polymorphic="True">
+            <Class class="Element" >
+                <Key>
+                    <Property name="ParentId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECClass typeName="ElementGroup" isDomainClass="True">
+        <!-- An ElementGroup is a non-Geometric Element that groups/references (but does not own) members that are Elements.  An Element can be in N ElementGroups. -->
+        <!-- Note: use ParentId on the Element base class to implement "owning" relationships.  An Element has 0 or 1 owner. -->
+        <BaseClass>Element</BaseClass>
+    </ECClass>
+    <ECRelationshipClass typeName="ElementGroupHasMembers" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
+                <SourceECInstanceIdColumn>GroupId</SourceECInstanceIdColumn>
+                <TargetECInstanceIdColumn>MemberId</TargetECInstanceIdColumn>
+            </LinkTableRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(0,N)" polymorphic="True">
+            <Class class="ElementGroup" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+
     <ECClass typeName="ElementAspect" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
+        <!-- Abstract -->
         <!-- An ElementAspect is related to an Element with a relationship of strength="embedding" (ElementAspect is deleted if the Element is deleted) -->
         <!-- Semantically, an ElementAspect can be considered part of the Element -->
         <ECCustomAttributes>
@@ -547,40 +360,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECProperty>
     </ECClass>
 
-    <ECClass typeName="ElementItem" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
-        <!-- The aspect that holds the intrinsic characteristics of the element (properties that are independent of the functional spec which is stored directly on the Element). ElementItem adds the additional constraint that an element can have only one item, regardless of the sub-class of the item. -->
-        <BaseClass>ElementUniqueAspect</BaseClass>
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>
-                    <!-- All subclasses of ElementItem will share the same table -->
-                    <Strategy>SharedTable</Strategy>
-                    <Options>SharedColumnsForSubclasses</Options>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
-                </MapStrategy>
-                <!-- The ECInstanceId for ElementItem is the same as the Id of the owning Element -->
-                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
-            </ClassMap>
-        </ECCustomAttributes>
-    </ECClass>
-    <ECRelationshipClass typeName="ElementOwnsItem" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>Cascade</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(1,1)" polymorphic="True">
-            <Class class="Element" />
-        </Source>
-        <Target cardinality="(0,1)" polymorphic="True">
-            <Class class="ElementItem">
-                <Key>
-                    <Property name="ECInstanceId"/>
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
-
     <ECClass typeName="ElementGeom" isDomainClass="True" >
         <!-- The aspect that holds the cached/resovled geometry for an Element -->
         <!-- This aspect is not subclassed -->
@@ -613,50 +392,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ElementGeomUsesParts" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <!-- Used to indicate that an ElementGeom uses a GeomPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeomPart. -->
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                <SourceECInstanceIdColumn>ElementId</SourceECInstanceIdColumn>
-                <TargetECInstanceIdColumn>GeomPartId</TargetECInstanceIdColumn>
-            </LinkTableRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(0,N)" polymorphic="False">
-            <Class class="ElementGeom" />
-        </Source>
-        <Target cardinality="(0,N)" polymorphic="False">
-            <Class class="GeomPart" />
-        </Target>
-    </ECRelationshipClass>
-
-    <ECClass typeName="GeomPart" isDomainClass="True">
-        <!-- WIP: need to create a partial index on Code -->
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Code" typeName="string">
-            <!-- "Code" must be unique (or Null). Typically programmatically-generated -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <!-- Null means an "anonymous" GeomPart that can only be looked up by Id -->
-                    <IsNullable>True</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Geom" typeName="binary">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECClass>
-    
     <ECClass typeName="ElementExternalKey" isDomainClass="True" >
         <!-- The aspect that holds an identifier from an external system -->
         <BaseClass>ElementMultiAspect</BaseClass>
@@ -723,24 +458,180 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </Target>
     </ECRelationshipClass>
 
-    <ECClass typeName="TextAnnotationItem" isDomainClass="True">
-        <BaseClass>ElementItem</BaseClass>
-        <ECProperty propertyName="TextAnnotation" typeName="binary"/>
+    <ECRelationshipClass typeName="ElementDrivesElement" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <!-- Relationship that indicates that an Element drives (controls the lifecyle or structure of) a dependent Element -->
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <!-- We must insist that all instances of all possible subclasses are stored together in a single table. 
+                     TxnManager knows about this table, and expects to find all instances this kind of relationship there. -->
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                </MapStrategy>
+            </ClassMap>
+            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
+                <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
+                <SourceECInstanceIdColumn>RootElementId</SourceECInstanceIdColumn>
+                <TargetECInstanceIdColumn>DependentElementId</TargetECInstanceIdColumn>
+            </LinkTableRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(0,N)" polymorphic="True">
+            <Class class="Element" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="Element" />
+        </Target>
+        <ECProperty propertyName="Status" typeName="int" description="Bits that indicate the status of the dependency. Satisfied=0, Failed=1, Deferred=128. Deferred and Failed bits can be OR'd together."/>
+        <ECProperty propertyName="Priority" typeName="int" description="The priority of this dependency, relative to other EntityDrivesEntity instances. Note that EntityHasChildEntities dependencies always take priority over EntityDrivesEntity dependencies."/>
+    </ECRelationshipClass>
+
+    <ECClass typeName="Category" isDomainClass="True" >
+        <ECCustomAttributes>
+             <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>OwnTable</Strategy>
+                </MapStrategy>
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Code" typeName="string" description="Code for a category" >
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <Collation>NoCase</Collation>
+                    <IsNullable>False</IsNullable>
+                    <IsUnique>True</IsUnique>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Label" displayLabel="Category" typeName="string">
+            <!-- WIP: remove? Use code? -->
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <Collation>NoCase</Collation>
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
+        <ECProperty propertyName="Scope" typeName="int" />
+        <ECProperty propertyName="Rank" typeName="int" />
+        <ECProperty propertyName="Props" typeName="string" />
     </ECClass>
-    <ECClass typeName="TextAnnotationElement" isDomainClass="True">
-        <BaseClass>DrawingElement</BaseClass>
+    <ECRelationshipClass typeName="ElementIsInCategory" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,N)"  roleLabel="has N elements" polymorphic="True">
+            <Class class="Element">
+                <Key>
+                    <Property name="CategoryId" />
+                </Key>
+            </Class>
+        </Source>
+        <Target cardinality="(1,1)" roleLabel="is in 1 category" polymorphic="False">
+            <Class class="Category" />
+        </Target>
+    </ECRelationshipClass>
+
+    <ECClass typeName="SubCategory" isDomainClass="True">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="CategoryId" typeName="long">
+            <!-- Foreign key relationship: CategoryOwnsSubCategories.CategoryId -->
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Code" typeName="string" description="Code for a subcategory">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <Collation>NoCase</Collation>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Label" displayLabel="SubCategory" typeName="string">
+            <!-- WIP: remove? Use code? -->
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <Collation>NoCase</Collation>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
+        <ECProperty propertyName="Props" typeName="string"/>
     </ECClass>
-    <ECClass typeName="PhysicalTextAnnotationElement" isDomainClass="True">
-        <BaseClass>PhysicalElement</BaseClass>
+    <ECRelationshipClass typeName="CategoryOwnsSubCategories" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Cascade</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" polymorphic="False">
+            <Class class="Category" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="False">
+            <Class class="SubCategory" >
+                <Key>
+                    <Property name="CategoryId" />
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECClass typeName="View" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                </MapStrategy>
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ViewType" typeName="int" />
+        <ECProperty propertyName="Name" typeName="string" description="Name of view">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <Collation>NoCase</Collation>
+                    <IsNullable>False</IsNullable>
+                    <IsUnique>True</IsUnique>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
+        <ECProperty propertyName="Source" typeName="int" />
+        <ECProperty propertyName="BaseModel" typeName="int" />
     </ECClass>
-    
+    <ECClass typeName="PhysicalView" isDomainClass="True">
+        <BaseClass>View</BaseClass>
+    </ECClass>
+    <ECClass typeName="CameraView" isDomainClass="True">
+        <BaseClass>PhysicalView</BaseClass>
+    </ECClass>
+    <ECClass typeName="View2d" isDomainClass="True">
+        <BaseClass>View</BaseClass>
+    </ECClass>
+    <ECClass typeName="DrawingView" isDomainClass="True">
+        <BaseClass>View2d</BaseClass>
+    </ECClass>
+    <ECClass typeName="SheetView" isDomainClass="True">
+        <BaseClass>View2d</BaseClass>
+    </ECClass>
+    <ECClass typeName="RedlineView" isDomainClass="True">
+        <BaseClass>SheetView</BaseClass>
+    </ECClass>
+
     <ECClass typeName="MaterialElement" isDomainClass="True">
+        <!-- WIP: Rename to Material after current Material class is deprecated? -->
         <BaseClass>Element</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
         <ECProperty propertyName="Data" displayLabel="" typeName="string" />
     </ECClass>
 
     <ECClass typeName="Material" isDomainClass="True" >
+        <!-- WIP: Deprecated?  Replaced by MaterialElement? -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
@@ -786,6 +677,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECClass>
 
     <ECClass typeName="Texture" isDomainClass="True">
+        <!-- WIP: convert to subclass of Element -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
@@ -849,6 +741,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECClass>
 
     <ECClass typeName="Light" isDomainClass="True">
+        <!-- WIP: convert to subclass of Element? -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
@@ -876,78 +769,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
         <ECProperty propertyName="Value" displayLabel="" typeName="string" />
     </ECClass>
-
-    <ECRelationshipClass typeName="ElementOwnsChildElements" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <Source cardinality="(1,1)" roleLabel="is on 1 element" polymorphic="True">
-            <Class class="Element" />
-        </Source>
-        <Target cardinality="(0,N)" roleLabel="is on N elements" polymorphic="True">
-            <Class class="Element" >
-                <Key>
-                    <Property name="ParentId"/>
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
-
-    <ECRelationshipClass typeName="ModelContainsElements" description="Associates elements with a model" isDomainClass="True" strength="embedding">
-        <ECCustomAttributes>
-           <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="is on 1 model" polymorphic="False">
-            <Class class="Model" />
-        </Source>
-        <Target cardinality="(0,N)" roleLabel="has N elements" polymorphic="True">
-          <Class class="Element" >
-                <Key>
-                    <Property name="ModelId" />
-                </Key>
-          </Class>
-        </Target>
-    </ECRelationshipClass>
-
-    <ECClass typeName="Link" description="Base class for links from elements to other objects (e.g. URLs and embedded files).">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Type" typeName="int" description="Type of style; see DGN_LINK_TYPE_*">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="DisplayLabel" typeName="string" description="Display label for this node">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Data" typeName="binary" description="Encoded link properties"/>
-    </ECClass>
-
-    <ECRelationshipClass typeName="ElementHasLinks" description="Associates links to an entity.">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                <SourceECInstanceIdColumn>ElementId</SourceECInstanceIdColumn>
-                <TargetECInstanceIdColumn>LinkId</TargetECInstanceIdColumn>
-            </LinkTableRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(1,N)" roleLabel="has 0 to N links" polymorphic="True">
-            <Class class="Element" />
-        </Source>
-        <Target cardinality="(0,N)" roleLabel="is on 1 or more elements" polymorphic="False">
-            <Class class="Link" />
-        </Target>
-    </ECRelationshipClass>
 
     <ECClass typeName="Style" description="Styles help define properties and standards shared among many elements, such as formatting peroperties for text.">
         <ECCustomAttributes>
@@ -982,7 +803,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="Descr" typeName="string" description="Description of the style"/>
         <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties"/>
     </ECClass>
-
     <ECRelationshipClass typeName="ElementUsesStyles">
         <ECCustomAttributes>
            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
@@ -998,64 +818,219 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ElementIsInCategory" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(0,N)"  roleLabel="has N elements" polymorphic="True">
-            <Class class="Element">
-                <Key>
-                    <Property name="CategoryId" />
-                </Key>
-            </Class>
+    <ECClass typeName="Link" description="Base class for links from elements to other objects (e.g. URLs and embedded files).">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Type" typeName="int" description="Type of style; see DGN_LINK_TYPE_*">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="DisplayLabel" typeName="string" description="Display label for this node">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Data" typeName="binary" description="Encoded link properties"/>
+    </ECClass>
+    <ECRelationshipClass typeName="ElementHasLinks" description="Associates links to an entity.">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
+                <SourceECInstanceIdColumn>ElementId</SourceECInstanceIdColumn>
+                <TargetECInstanceIdColumn>LinkId</TargetECInstanceIdColumn>
+            </LinkTableRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,N)" roleLabel="has 0 to N links" polymorphic="True">
+            <Class class="Element" />
         </Source>
-        <Target cardinality="(1,1)" roleLabel="is in 1 category" polymorphic="False">
-            <Class class="Category" />
+        <Target cardinality="(0,N)" roleLabel="is on 1 or more elements" polymorphic="False">
+            <Class class="Link" />
         </Target>
     </ECRelationshipClass>
 
-    <ECClass typeName="Authority" isDomainClass="True" >
-        <!-- Authority for element codes and classifications -->
+    <!-- ////////////////////////////////////////////////////////////////////////////// -->
+    <!-- // DgnDb "implementation detail" classes -->
+    <!-- ////////////////////////////////////////////////////////////////////////////// -->
+
+    <ECClass typeName="ComponentSolution" isDomainClass="True" >
+        <!-- WIP: Convert to subclass of DgnModel? -->
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <!-- WIP_COMPONENTS: What I REALLY want is for the primary key to be (ComponentModelId,Parameters) -->
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ComponentModelName" typeName="string"/>
+        <ECProperty propertyName="SolutionName" typeName="string"/>
+        <!-- The parameters used to generate this solution, as a JSON array -->
+        <ECProperty propertyName="Parameters" typeName="string"/>
+        <!-- WIP_COMPONENTS: I want (ComponentModelId,Parameters) to be unique and indexed -->
+        <ECProperty propertyName="Geom" typeName="binary"/>
+        <ECProperty propertyName="Range" typeName="binary"/>
+    </ECClass>
+
+    <!-- WIP_COMPONENTS I need to be able to use (ComponentModelName,SolutionName) as the key to the ComponentSolution table
+    <ECRelationshipClass typeName="ElementUsesSolution" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
+                <SourceECInstanceIdColumn>SolutionId</SourceECInstanceIdColumn>
+                <TargetECInstanceIdColumn>ElementId</TargetECInstanceIdColumn>
+            </LinkTableRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="ComponentSolution" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    -->
+
+    <ECClass typeName="EGASpecifier" description="Specifies an EGA" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Type" typeName="string" description="The kind of EGA implementation that must be executed. One of: JavaScript, ... TBD" />
+        <ECProperty propertyName="Name" typeName="string" description="Identifies the script or parametric model within the Db that will be executed. For scripts, this should have the form program_name:function_name" />
+        <ECProperty propertyName="Inputs" typeName="string" description="comma-separated list of input parameter names. These are bound by name to the item's properties." />
+    </ECClass>
+
+    <ECClass typeName="HandlerInfo" description="Specifies handler information for an ECClass" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="RequiredForModification" typeName="boolean" description="Indicates whether a handler is required for instances of an ECClass to be modified." />
+        <ECProperty propertyName="AllowDeleteIfMissing" typeName="boolean" description="Indicates whether instances of an ECClass can be deleted if a handler is missing." />
+    </ECClass>
+
+    <ECClass typeName="ElementRTree" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>ExistingTable</Strategy>
+                </MapStrategy>
+                <TableName>dgn_RTree3d</TableName>
+                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="MinX" typeName="double"/>
+        <ECProperty propertyName="MaxX" typeName="double"/>
+        <ECProperty propertyName="MinY" typeName="double"/>
+        <ECProperty propertyName="MaxY" typeName="double"/>
+        <ECProperty propertyName="MinZ" typeName="double"/>
+        <ECProperty propertyName="MaxZ" typeName="double"/>
+    </ECClass>
+
+    <ECClass typeName="GeomPart" isDomainClass="True">
+        <!-- WIP: need to create a partial index on Code -->
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Code" typeName="string">
+            <!-- "Code" must be unique (or Null). Typically programmatically-generated -->
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <!-- Null means an "anonymous" GeomPart that can only be looked up by Id -->
+                    <IsNullable>True</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Geom" typeName="binary">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECRelationshipClass typeName="ElementGeomUsesParts" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <!-- Used to indicate that an ElementGeom uses a GeomPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeomPart. -->
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
+                <SourceECInstanceIdColumn>ElementId</SourceECInstanceIdColumn>
+                <TargetECInstanceIdColumn>GeomPartId</TargetECInstanceIdColumn>
+            </LinkTableRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(0,N)" polymorphic="False">
+            <Class class="ElementGeom" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="False">
+            <Class class="GeomPart" />
+        </Target>
+    </ECRelationshipClass>
+    
+    <!-- ////////////////////////////////////////////////////////////////////////////// -->
+    <!-- // Deprecated classes -->
+    <!-- ////////////////////////////////////////////////////////////////////////////// -->
+
+    <ECClass typeName="ElementItem" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
+        <!-- WIP: Deprecated, replaced by TBD Item classes -->
+        <!-- The aspect that holds the intrinsic characteristics of the element (properties that are independent of the functional spec which is stored directly on the Element). ElementItem adds the additional constraint that an element can have only one item, regardless of the sub-class of the item. -->
+        <BaseClass>ElementUniqueAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <!-- All subclasses of ElementItem will share the same table -->
+                    <Strategy>SharedTable</Strategy>
+                    <Options>SharedColumnsForSubclasses</Options>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                </MapStrategy>
+                <!-- The ECInstanceId for ElementItem is the same as the Id of the owning Element -->
+                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECRelationshipClass typeName="ElementOwnsItem" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <!-- WIP: Deprecated -->
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Cascade</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" polymorphic="True">
+            <Class class="Element" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="True">
+            <Class class="ElementItem">
+                <Key>
+                    <Property name="ECInstanceId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="ModelDrivesModel" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <!-- Deprecated? Replaced by ModelDescribesItem relationship? -->
+        <!-- Relationship that indicates that a Model drives (controls the lifecyle or structure of) a dependent Model -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
                     <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
+            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
+                <SourceECInstanceIdColumn>RootModelId</SourceECInstanceIdColumn>
+                <TargetECInstanceIdColumn>DependentModelId</TargetECInstanceIdColumn>
+            </LinkTableRelationshipMap>
         </ECCustomAttributes>
-        <ECProperty propertyName="Name" typeName="string" description="Name of authority" >
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <Collation>NoCase</Collation>
-                    <IsNullable>False</IsNullable>
-                    <IsUnique>True</IsUnique>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Props" typeName="string" description="Json string containing properties like URI" />
-    </ECClass>
-    <ECClass typeName="LocalAuthority" isDomainClass="True">
-        <BaseClass>Authority</BaseClass>
-    </ECClass>
-    <ECClass typeName="NamespaceAuthority" isDomainClass="True">
-        <BaseClass>Authority</BaseClass>
-    </ECClass>
-
-    <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" isDomainClass="True" strengthDirection="forward" strength="referencing">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>NoAction</OnDeleteAction>
-                <CreateIndex>False</CreateIndex><!-- We already index on Code -->
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="False">
-            <Class class="Authority" />
+        <Source cardinality="(0,N)" polymorphic="True">
+            <Class class="Model" />
         </Source>
-        <Target cardinality="(0,N)" roleLabel="has N codes" polymorphic="True">
-            <Class class="Element" >
-                <Key>
-                    <Property name="CodeAuthorityId" />
-                </Key>
-            </Class>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="Model" />
         </Target>
     </ECRelationshipClass>
 
