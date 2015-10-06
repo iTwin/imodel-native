@@ -14,10 +14,10 @@
 baseDir = $(_MakeFilePath)
 
 # Compile and Link the unit tests
-BEGTEST_NAME  = $(TestDir)$(TestDir)
+BEGTEST_NAME  = $(TestDir)Reality
 BEGTEST_INPUT = $(baseDir)$(TestDir)/
 BEGTEST_IGNORE= $(baseDir)ignore_list.txt
-BEGTEST_OUTPUT=$(OutputRootDir)build/$(TestDir)/UnitTests/
+BEGTEST_OUTPUT=$(OutputRootDir)build/Reality/UnitTests/
 o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
 
 %ifdef UsePublishedApi
