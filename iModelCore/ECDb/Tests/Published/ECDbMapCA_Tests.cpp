@@ -2990,6 +2990,58 @@ TEST_F(ECDbMapCATestFixture, ForeignKeyMapWithKeyProperty)
 
         AssertForeignKey(true, ecdb, childTableName, "ParentId");
         }
+
+        {
+        TestItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                          "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+                          "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+                          "  <ECClass typeName='Authority' >"
+                          "    <ECProperty propertyName='Name' typeName='string' />"
+                          "  </ECClass>"
+                          "  <ECClass typeName='ElementCode' isDomainClass='False' isStruct='True'>"
+                          "    <ECProperty propertyName='AuthorityId' typeName='int' />"
+                          "    <ECProperty propertyName='Namespace' typeName='string' />"
+                          "    <ECProperty propertyName='Code' typeName='string' />"
+                          "  </ECClass>"
+                          "  <ECClass typeName='Element' >"
+                          "    <ECProperty propertyName='ModelId' typeName='long' />"
+                          "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
+                          "  </ECClass>"
+                          "  <ECRelationshipClass typeName='AuthorityIssuesCode' isDomainClass='True' strength='referencing'>"
+                          "    <ECCustomAttributes>"
+                          "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+                          "             <OnDeleteAction>NoAction</OnDeleteAction>"
+                          "        </ForeignKeyRelationshipMap>"
+                          "    </ECCustomAttributes>"
+                          "    <Source cardinality='(1,1)' polymorphic='False'>"
+                          "        <Class class='Authority' />"
+                          "     </Source>"
+                          "     <Target cardinality='(0,N)' polymorphic='True'>"
+                          "         <Class class='Element'>"
+                          "             <Key>"
+                          "                 <Property name='Code.AuthorityId'/>"
+                          "             </Key>"
+                          "         </Class>"
+                          "     </Target>"
+                          "  </ECRelationshipClass>"
+                          "</ECSchema>", true, "");
+
+        ECDb ecdb;
+        bool asserted = false;
+        AssertSchemaImport(ecdb, asserted, testItem, ecdbName);
+        ASSERT_FALSE(asserted);
+
+        ASSERT_TRUE(ecdb.ColumnExists("ts_Element", "Code_AuthorityId"));
+        bvector<Utf8String> columns;
+        ASSERT_TRUE(ecdb.GetColumns(columns, "ts_Element"));
+        ASSERT_EQ(5, columns.size()) << " ts_Element table should not contain an extra foreign key column as the relationship specifies a Key property";
+
+        auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
+        auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
+        ASSERT_TRUE(it == columns.end()) << " ts_Element table should not contain an extra foreign key column as the relationship specifies a Key property";
+
+        AssertForeignKey(true, ecdb, "ts_Element", "Code_AuthorityId");
+        }
     }
 
 //---------------------------------------------------------------------------------------
