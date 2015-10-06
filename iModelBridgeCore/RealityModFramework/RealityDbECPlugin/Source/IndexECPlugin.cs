@@ -222,36 +222,44 @@ namespace Bentley.ECPluginExamples
                         source = searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].StringValue;
                     }
                     //IEnumerable<IECInstance> instanceList;
-
-                    switch (source.ToLower())
+                    try
                     {
-                        case "index":
-                            using (SqlConnection sqlConnection = new SqlConnection(m_connectionString))
-                            {
-                                SchemaHelper schemaHelper = new SchemaHelper(sender.ParentECPlugin.SchemaModule, connection, SCHEMA_NAME); 
-                                helper = new SqlQueryProvider(query, querySettings, sqlConnection, schemaHelper);
+                        switch (source.ToLower())
+                        {
+                            case "index":
+                                using (SqlConnection sqlConnection = new SqlConnection(m_connectionString))
+                                {
+                                    SchemaHelper schemaHelper = new SchemaHelper(sender.ParentECPlugin.SchemaModule, connection, SCHEMA_NAME);
+                                    helper = new SqlQueryProvider(query, querySettings, sqlConnection, schemaHelper);
+                                    return helper.CreateInstanceList();
+                                }
+
+                            case "usgsapi":
+                                helper = new UsgsAPIQueryProvider(query, querySettings);
                                 return helper.CreateInstanceList();
-                            }
 
-                        case "usgsapi":
-                            helper = new UsgsAPIQueryProvider(query, querySettings);
-                            return helper.CreateInstanceList();
+                            case "all":
+                                List<IECInstance> instanceList = new List<IECInstance>();
+                                using (SqlConnection sqlConnection = new SqlConnection(m_connectionString))
+                                {
+                                    SchemaHelper schemaHelper = new SchemaHelper(sender.ParentECPlugin.SchemaModule, connection, SCHEMA_NAME);
+                                    helper = new SqlQueryProvider(query, querySettings, sqlConnection, schemaHelper);
+                                    instanceList = helper.CreateInstanceList().ToList();
+                                }
 
-                        case "all":
-                            List<IECInstance> instanceList = new List<IECInstance>();
-                            using (SqlConnection sqlConnection = new SqlConnection(m_connectionString))
-                            {
-                                SchemaHelper schemaHelper = new SchemaHelper(sender.ParentECPlugin.SchemaModule, connection, SCHEMA_NAME);
-                                helper = new SqlQueryProvider(query, querySettings, sqlConnection, schemaHelper);
-                                instanceList = helper.CreateInstanceList().ToList();
-                            }
-
-                            helper = new UsgsAPIQueryProvider(query, querySettings);
-                            instanceList.AddRange(helper.CreateInstanceList());
-                            return instanceList;
-                        default:
-                            //throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
-                            throw new UserFriendlyException("The source \"" + source + "\" does not exist. Choose between \"index\", \"usgsapi\" or \"all\"");
+                                helper = new UsgsAPIQueryProvider(query, querySettings);
+                                instanceList.AddRange(helper.CreateInstanceList());
+                                return instanceList;
+                            default:
+                                //throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
+                                throw new UserFriendlyException("The source \"" + source + "\" does not exist. Choose between \"index\", \"usgsapi\" or \"all\"");
+                        }
+                    }
+                    catch(System.Data.Common.DbException)
+                    {
+                        //For now, we intercept all of these sql exceptions to prevent any "revealing" messages about the sql command.
+                        //It would be nice to parse the exception to make it easier to pinpoint the problem for the user.
+                        throw new UserFriendlyException("The server has encountered a problem while processing your request. Please verify the syntax of your request. If the problem persists, the server may be down");
                     }
 
 
@@ -565,7 +573,7 @@ namespace Bentley.ECPluginExamples
 
             List<WmsSourceNet> wmsSourceList = IndexPackager(sender, connection, queryModule, coordinateSystem, dbRequestedEntities);
 
-            List<UsgsSourceNet> usgsSourceList = UsgsPackager(sender, connection, queryModule, usgsRequestedEntities);
+            List<Tuple<UsgsSourceNet, string>> usgsSourceList = UsgsPackager(sender, connection, queryModule, usgsRequestedEntities);
 
             List<RealityDataSourceNet> osmSourceList = RealityDataPackager(sender, connection, queryModule, basicRequestedEntities);
 
@@ -580,29 +588,47 @@ namespace Bentley.ECPluginExamples
             string name = Guid.NewGuid().ToString();
             try
             {
-                // Create imagery group.
                 ImageryGroupNet imgGroup = ImageryGroupNet.Create();
+                ModelGroupNet modelGroup = ModelGroupNet.Create();
+                PinnedGroupNet pinnedGroup = PinnedGroupNet.Create();
+                TerrainGroupNet terrainGroup = TerrainGroupNet.Create();
+
                 foreach (WmsSourceNet wmsSource in wmsSourceList)
                 {
                     imgGroup.AddData(wmsSource);
                 }
-                foreach (UsgsSourceNet usgsSource in usgsSourceList)
+                foreach (Tuple<UsgsSourceNet,string> usgsSourceTuple in usgsSourceList)
                 {
-                    imgGroup.AddData(usgsSource);
-                }
+                    //This switch case is temporary. The best thing we should have done
+                    //was to create a method for this, but these "sourceNet" will probably
+                    //change soon, so everything here is temporary until the database is in
+                    //a more complete form
+                    switch (usgsSourceTuple.Item2)
+	                {
 
-                // Create model group.
-                ModelGroupNet modelGroup = ModelGroupNet.Create();
+                        //TODO: Correct the switch case. The choice of the group for each class was not verified.
+                        case "Roadway":
+                        case "Bridge":
+                        case "Building":
+                        case "WaterBody":
+                        case "PointCloud":
+                            modelGroup.AddData(usgsSourceTuple.Item1);
+                            break;
+                        case "Terrain":
+                            terrainGroup.AddData(usgsSourceTuple.Item1);
+                            break;
+                        case "Imagery":
+		                default:
+                            imgGroup.AddData(usgsSourceTuple.Item1);
+                            break;
+	                }
+                }
+                
                 foreach (RealityDataSourceNet osmSource in osmSourceList)
                 {
                     modelGroup.AddData(osmSource);
                 }
-                // Create pinned group.
-                PinnedGroupNet pinnedGroup = PinnedGroupNet.Create();
-
-                // Create terrain group.
-                TerrainGroupNet terrainGroup = TerrainGroupNet.Create();
-
+                
                 // Create package.
                 string description = "";
                 string copyright = "";
@@ -699,9 +725,9 @@ namespace Bentley.ECPluginExamples
             
         }
 
-        private List<UsgsSourceNet> UsgsPackager(OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> usgsRequestedEntities)
+        private List<Tuple<UsgsSourceNet,string>> UsgsPackager(OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> usgsRequestedEntities)
         {
-            List<UsgsSourceNet> usgsSourceNetList = new List<UsgsSourceNet>();
+            List<Tuple<UsgsSourceNet, string>> usgsSourceNetList = new List<Tuple<UsgsSourceNet,string>>();
 
             if(usgsRequestedEntities.Count == 0)
             {
@@ -710,6 +736,7 @@ namespace Bentley.ECPluginExamples
 
             IECClass dataSourceClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialDataSource");
             IECClass metadataClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Metadata");
+            IECClass spatialentityBaseClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityBase");
 
             ECQuery query = new ECQuery(dataSourceClass);
             query.SelectClause.SelectAllProperties = false;
@@ -719,6 +746,17 @@ namespace Bentley.ECPluginExamples
             query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "DataSourceType"));
             query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "FileSize"));
 
+            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
+
+            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+
+            var queriedSpatialDataSources = ExecuteQuery(queryModule, connection, query, null);
+
+            query = new ECQuery(spatialentityBaseClass);
+            query.SelectClause.SelectAllProperties = false;
+            query.SelectClause.SelectedProperties = new List<IECProperty>();
+            query.SelectClause.SelectedProperties.Add(spatialentityBaseClass.First(prop => prop.Name == "Classification"));
+            
             query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
 
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
@@ -736,7 +774,7 @@ namespace Bentley.ECPluginExamples
 
             var queriedMetadatas = ExecuteQuery(queryModule, connection, query, null);
 
-            foreach(var entity in queriedSpatialEntities)
+            foreach(var entity in queriedSpatialDataSources)
             {
                 string metadata = entity.GetPropertyValue("Metadata").StringValue;
                 string url = entity.GetPropertyValue("MainURL").StringValue;
@@ -745,14 +783,22 @@ namespace Bentley.ECPluginExamples
                 long fileSize = (long) entity.GetPropertyValue("FileSize").NativeValue;
                 ulong uFileSize = (fileSize > 0) ? (ulong)fileSize : 0;
                 string location = entity.GetPropertyValue("LocationInCompound").StringValue;
+                var classificationPropValue = queriedSpatialEntities.First(m => m.InstanceId == entity.InstanceId).GetPropertyValue("Classification");
+                string classification = null;
+                if ((classificationPropValue != null) && (!classificationPropValue.IsNull))
+                {
+                    classification = classificationPropValue.StringValue;
+                }
 
-                usgsSourceNetList.Add(UsgsSourceNet.Create(url,                     // Url
-                                                           copyright,               // Data copyright
-                                                           uFileSize,               // Data size
-                                                           type,                    // Main file type
-                                                           location,                // Main file location
-                                                           new List<string>(),      // Sister Files 
-                                                           metadata));              // Metadata location 
+                usgsSourceNetList.Add(new Tuple<UsgsSourceNet, string>(UsgsSourceNet.Create(url,                     // Url
+                                                                                            copyright,               // Data copyright
+                                                                                            uFileSize,               // Data size
+                                                                                            type,                    // Main file type
+                                                                                            location,                // Main file location
+                                                                                            new List<string>(),      // Sister Files 
+                                                                                            metadata),
+                                                                                            classification));              // Metadata location 
+
             }
 
             return usgsSourceNetList;
