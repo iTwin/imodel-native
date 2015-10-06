@@ -309,7 +309,7 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
     //Iterating through the models
     DgnModels& modelTable = project->Models();
     DgnModels::Iterator iter = modelTable.MakeIterator();
-    ASSERT_EQ(2, iter.QueryCount());
+    ASSERT_EQ(3, iter.QueryCount()); // including dictionary model...
 
     //Set up testmodel properties as we know what the models in this file contain
     TestModelProperties models[3], testModel;
@@ -321,6 +321,9 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
     for (DgnModels::Iterator::Entry const& entry : iter)
     {
         ASSERT_TRUE(entry.GetModelId().IsValid()) << "Model Id is not Valid";
+        if (DgnModel::DictionaryId() == entry.GetModelId())
+            continue;
+
         WString entryNameW(entry.GetName(), true);               // string conversion
         WString entryDescriptionW(entry.GetDescription(), true); // string conversion
         testModel.SetTestModelProperties(entryNameW.c_str(), entryDescriptionW.c_str());
@@ -741,6 +744,13 @@ TEST_F(DgnModelTests, DictionaryModel)
     EXPECT_EQ(&dictModelR, dictModel.get());
 
     // The dictionary model cannot be copied
+    struct DisableAssertions
+        {
+        DisableAssertions() { BeTest::SetFailOnAssert(false); }
+        ~DisableAssertions() { BeTest::SetFailOnAssert(true); }
+        };
+
+    DisableAssertions _V_V_V;
     DgnImportContext cc(db, db);
     EXPECT_TRUE(DgnModel::Import(nullptr, dictModelR, cc).IsNull());
 
@@ -789,7 +799,7 @@ TEST_F (DgnModelTests, ModelsIterator)
 
     DgnModels& models = db->Models ();
     DgnModels::Iterator iter = models.MakeIterator ();
-    EXPECT_EQ (4, iter.QueryCount ());
+    EXPECT_EQ (5, iter.QueryCount ()); // including the dictionary model...
     DgnModels::Iterator::Entry entry = iter.begin ();
     int i = 0;
     for (auto const& entry : iter)
