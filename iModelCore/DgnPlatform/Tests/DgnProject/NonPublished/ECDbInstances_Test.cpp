@@ -565,7 +565,7 @@ bool RetrieveStartupCompanyJson (Json::Value& jsonValue, DgnDbR project)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstances, JsonValueStructure)
+TEST(JsonTests, JsonValueStructure)
     {
     ScopedDgnHost host;
 
@@ -611,7 +611,7 @@ TEST(ECDbInstances, JsonValueStructure)
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                   Ramanujam.Raman                  02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (ECDbInstances, FieldEngineerStructArray)
+TEST (JsonTests, FieldEngineerStructArray)
     {
     // TODO: This test needs to move to the ECDb layer in Graphite03. 
     ScopedDgnHost host;
@@ -635,7 +635,7 @@ TEST (ECDbInstances, FieldEngineerStructArray)
     // Construct the schema pathname
     BeFileName schemaPath;
     BeTest::GetHost().GetDocumentsRoot (schemaPath);
-    schemaPath.AppendToPath (L"DgnDb\\ECDb\\Schemas");
+    schemaPath.AppendToPath (L"ECDb\\Schemas");
     BeFileName schemaPathname (schemaPath);
     schemaPathname.AppendToPath (L"eB_PW_CommonSchema_WSB.01.00.ecschema.xml");
     ASSERT_TRUE (BeFileName::DoesPathExist (schemaPathname.GetName()));
@@ -655,7 +655,7 @@ TEST (ECDbInstances, FieldEngineerStructArray)
     Json::Value beforeImportJson;
     BeFileName beforeImportFile;
     BeTest::GetHost().GetDocumentsRoot (beforeImportFile);
-    beforeImportFile.AppendToPath (L"DgnDb");
+    beforeImportFile.AppendToPath (L"ECDb");
     beforeImportFile.AppendToPath (L"FieldEngineerStructArray.json");
     bool status = ReadJsonFromFile (beforeImportJson, beforeImportFile.GetName());
     ASSERT_TRUE (status);
