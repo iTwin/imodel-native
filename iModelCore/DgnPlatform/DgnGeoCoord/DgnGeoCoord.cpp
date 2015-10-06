@@ -38,94 +38,6 @@ using namespace BentleyApi::GeoCoordinates;
 
 BEGIN_UNNAMED_NAMESPACE
 
-struct CoordSysData
-{
-CSMapProjectionTypes    projectionCode;
-CharCP                keyName;
-};
-
-static  CoordSysData    csDataMap[] =
-{
-  { COORDSYS_ALBER,     CS_ALBER     },
-  { COORDSYS_AZMEA,     CS_AZMEA     },
-  { COORDSYS_AZMED,     CS_AZMED     },
-  { COORDSYS_BONNE,     CS_BONNE     },
-  { COORDSYS_BPCNC,     CS_BPCNC     },
-  { COORDSYS_CSINI,     CS_CSINI     },
-  { COORDSYS_EDCNC,     CS_EDCNC     },
-  { COORDSYS_EDCYL,     CS_EDCYL     },
-  { COORDSYS_EKRT4,     CS_EKRT4     },
-  { COORDSYS_EKRT6,     CS_EKRT6     },
-  { COORDSYS_GNOMC,     CS_GNOMC     },
-  { COORDSYS_HMLSN,     CS_HMLSN     },
-  { COORDSYS_LMBRT,     CS_LMBRT     },
-  { COORDSYS_LMTAN,     CS_LMTAN     },
-  { COORDSYS_MILLR,     CS_MILLR     },
-  { COORDSYS_MODPC,     CS_MODPC     },
-  { COORDSYS_MOLWD,     CS_MOLWD     },
-  { COORDSYS_MRCAT,     CS_MRCAT     },
-  { COORDSYS_MSTRO,     CS_MSTRO     },
-  { COORDSYS_NACYL,     CS_NACYL     },
-  { COORDSYS_NZLND,     CS_NZLND     },
-  { COORDSYS_OBLQ1,     CS_OBLQ1     },
-  { COORDSYS_OBLQ2,     CS_OBLQ2     },
-  { COORDSYS_ORTHO,     CS_ORTHO     },
-  { COORDSYS_PLYCN,     CS_PLYCN     },
-  { COORDSYS_ROBIN,     CS_ROBIN     },
-  { COORDSYS_SINUS,     CS_SINUS     },
-  { COORDSYS_STERO,     CS_STERO     },
-  { COORDSYS_TACYL,     CS_TACYL     },
-  { COORDSYS_TRMER,     CS_TRMER     },
-  { COORDSYS_UNITY,     CS_UNITY     },
-  { COORDSYS_VDGRN,     CS_VDGRN     },
-
-  { COORDSYS_UTMZN,     CS_UTMZN     },
-  { COORDSYS_LM1SP,     CS_LM1SP     },
-  { COORDSYS_OSTRO,     CS_OSTRO     },
-  { COORDSYS_PSTRO,     CS_PSTRO     },
-  { COORDSYS_RSKWC,     CS_RSKWC     },
-  { COORDSYS_RSKEW,     CS_RSKEW     },
-  { COORDSYS_SWISS,     CS_SWISS     },
-  { COORDSYS_LMBLG,     CS_LMBLG     },
-  { COORDSYS_SOTRM,     CS_SOTRM     },
-  { COORDSYS_HOM1U,     CS_HOM1U     },
-  { COORDSYS_HOM2U,     CS_HOM2U     },
-
-  { COORDSYS_GAUSK,     CS_GAUSK     },
-  { COORDSYS_KRVKP,     CS_KRVKP     },
-  { COORDSYS_KRVKR,     CS_KRVKR     },
-  { COORDSYS_MRCSR,     CS_MRCSR     },
-  { COORDSYS_OCCNC,     CS_OCCNC     },         // oblique conformal conic. Doesn't look like it was ever really supported.
-  { COORDSYS_KRVKG,     CS_KRVKG     },
-  { COORDSYS_TRMAF,     CS_TRMAF     },
-  { COORDSYS_PSTSL,     CS_PSTSL     },
-  { COORDSYS_NERTH,     CS_NERTH     },
-  { COORDSYS_SPCSL,     0,           },         // state plane - should never be projType, requires special treatment
-
-  { COORDSYS_HUEOV,     CS_HUEOV     },
-  { COORDSYS_SYS34,     CS_SYS34     },
-  { COORDSYS_OST97,     CS_OST97     },
-  { COORDSYS_OST02,     CS_OST02     },
-  { COORDSYS_S3499,     CS_S3499     },
-  { COORDSYS_AZEDE,     CS_AZEDE     },
-  { COORDSYS_KEYNM,     0,           },         // key name - doesn't really use the rscid.
-  { COORDSYS_LMMIN,     CS_LMMIN     },
-  { COORDSYS_LMWIS,     CS_LMWIS     },
-  { COORDSYS_TMMIN,     CS_TMMIN     },
-  { COORDSYS_TMWIS,     CS_TMWIS     },
-  { COORDSYS_RSKWO,     CS_RSKWO     },
-  { COORDSYS_WINKT,     CS_WINKT     },
-  { COORDSYS_TMKRG,     CS_TMKRG     },
-  { COORDSYS_NESRT,     CS_NESRT     },
-  { COORDSYS_LMBRTAF,   CS_LMBRTAF   },
-  { COORDSYS_UTMZNBF,   CS_UTMZNBF   },         // Total Transverse Mercator UTM Zone using Bernard Flaceliere calculation
-  { COORDSYS_TRMERBF,   CS_TRMERBF   },         // Total Transverse Mercator using Bernard Flaceliere calculation
-  { COORDSYS_FAVOR,     0,           },         // recently (XM) added stupidity
-  { COORDSYS_S3401,     CS_S3401     },
-  { COORDSYS_EDCYLE,    CS_EDCYLE    },
-  { COORDSYS_PCARREE,   CS_PCARREE   },
-  { COORDSYS_MRCATPV,   CS_MRCATPV   },
-};
 
 
 /*=================================================================================**//**
@@ -197,15 +109,13 @@ ProjectionParams    &projectionParams
         if (COORDSYS_UTM == extracted.coordsys)
             {
             Proj_Utmzn       utmzn;
-            memset(&utmzn, 0, sizeof (utmzn));
+            memset (&utmzn, 0, sizeof (utmzn));
 
-                int v;
-            if (!sscanf(extracted.zone_knm, "%d", &v))
+            if (!sscanf (extracted.zone_knm, "%d", &utmzn.zoneNo))
                 {
                 utmzn.zoneNo = 0;
                 return GeoCoordError_InvalidUTMZone;
                 }
-                utmzn.zoneNo = v;
 
             extracted.coordsys = extracted.projType = COORDSYS_UTMZN;
 
@@ -2189,25 +2099,7 @@ ProjectionParams    &projectionParams
     return SUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Barry.Bentley   11/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-public:
-static CSMapProjectionTypes     MSProjectionTypeFromCSDef
-(
-CharCP        projectionKeyName
-)
-    {
-    int             iCoordSys;
-    CoordSysData*   coordSys;
 
-    for (iCoordSys=0, coordSys = csDataMap; iCoordSys < DIM (csDataMap); iCoordSys++, coordSys++)
-        {
-        if ( (NULL != coordSys->keyName) && (0 == strcmp(projectionKeyName, coordSys->keyName)) )
-            return coordSys->projectionCode;
-        }
-    return COORDSYS_NONE;
-    }
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -3960,7 +3852,8 @@ LocalTransformerP   localTransformer
     type66.deprec_subpermast = type66.deprec_uorpersub = 1;
 #endif
 
-    CSMapProjectionTypes        projectionType = CoordinateSystemDgnFormatter::MSProjectionTypeFromCSDef(csParams.csdef.prj_knm);
+    DgnProjectionTypes  projectionType = BaseGCS::DgnProjectionTypeFromCSDefName (csParams.csdef.prj_knm);
+
     type66.protect              = csParams.csdef.protect;
     type66.projType             = projectionType;
     type66.family               = 0;    // not used
@@ -4580,6 +4473,10 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
         GeoPoint    destLatLong;
         stat2 = LatLongFromLatLong(destLatLong, srcLatLong, destMstnGCS);
 
+        // For datum conversion error 2 is in fact a strong warning instead of a hard math error ... we change to a warning
+        if (REPROJECT_CSMAPERR_OutOfMathematicalDomain == stat2)
+            stat2 = REPROJECT_CSMAPERR_OutOfUsefulRange;
+
         // does the caller want the destination LatLong?
         if (NULL != outLatLongDest)
             *outLatLongDest++ = destLatLong;
@@ -5101,7 +4998,8 @@ WCharCP        DgnGCS::GetProjectionName
 WStringR    outputBuffer
 ) const
     {
-    CSMapProjectionTypes projectionType = CoordinateSystemDgnFormatter::MSProjectionTypeFromCSDef(m_csParameters->csdef.prj_knm);
+    DgnProjectionTypes projectionType = BaseGCS::DgnProjectionTypeFromCSDefName (m_csParameters->csdef.prj_knm);
+	
     return BaseGeoCoordResource::GetLocalizedProjectionName(outputBuffer, projectionType);
     }
 
