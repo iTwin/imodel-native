@@ -883,7 +883,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(ECDbSqlColum
     if (!typeInfo.IsExactNumeric() && !typeInfo.IsString())
         {
         Utf8String error;
-        error.Sprintf("Unsupported data type of Key property '%s'. ECDb only supports integral or string Key properties.", foundPropName->c_str());
+        error.Sprintf("Unsupported data type of Key property '%s'. ECDb only supports Key properties that have an integral or string data type.", foundPropName->c_str());
         LogKeyPropertyRetrievalError(error.c_str(), relClass, constraintEnd);
         return ERROR;
         }

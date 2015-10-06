@@ -23,8 +23,10 @@ private:
 
 protected:
     ECDb& GetECDb() const { return _GetECDb(); }
- 
-    void SetupECDb(Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite), int perClassRowCount = 0);
+    BentleyStatus          GetInstances (bvector<ECN::IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className);
+
+    ECDb& SetupECDb(Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite), int perClassRowCount = 0);
+    ECDb& SetupECDb(Utf8CP ecdbFileName, WCharCP schemaECXmlFileName, bool importArbitraryNumberECInstances, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
 
     static DbResult CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite), int perClassRowCount = 0);
 
