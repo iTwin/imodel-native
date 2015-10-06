@@ -400,6 +400,15 @@ DbResult DgnDomains::InsertHandler(DgnDomain::Handler& handler)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDomain::Handler* DgnDomain::Handler::GetRootClass()
+    {
+    // "Handler" class itself has no domain...
+    return nullptr != m_superClass && nullptr != m_superClass->m_domain ? m_superClass->GetRootClass() : this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnDomain::Handler::_VerifySchema(DgnDomains& domains)

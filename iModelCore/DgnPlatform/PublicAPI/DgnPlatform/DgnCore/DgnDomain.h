@@ -219,6 +219,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         void SetDomain(DgnDomain& domain) {m_domain = &domain;}
         DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&);
 
+        Handler* GetRootClass();
     public:
         //! To enable version-checking for your handler, override this method to report the
         //! API version that was used to compiler your handler.
@@ -229,8 +230,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         virtual uint32_t _GetApiVersion() {return API_VERSION;}
 
         Handler* GetSuperClass() const {return m_superClass;}
-
-        Handler* GetRootClass() {return nullptr != GetSuperClass() ? m_superClass->GetRootClass() : this;}
 
         //! Get the name of the ECClass handled by this Handler
         Utf8StringCR GetClassName() const {return m_ecClassName;}
