@@ -91,6 +91,8 @@
 #define MSGLISTID_GeoCoordNames         2
 #define MSGLISTID_DgnGeoCoordStrings    3
 
+BEGIN_BENTLEY_NAMESPACE
+
 // Coordinate system identifiers. Do NOT renumber these as they are stored in the coordinate system element
 // These are the values that are saved in the element. They are not the values that CS_Map uses. See
 enum    DgnProjectionTypes 
@@ -184,6 +186,7 @@ enum    DgnProjectionTypes
     COORDSYS_UTM        =   102,    // (Cyln) Obsolete, use COORDSYS_UTMZN
     };
 
+END_BENTLEY_NAMESPACE
 
 /*__PUBLISH_SECTION_START__*/
 
