@@ -13,6 +13,8 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+struct ECDbInstances : ECDbTestFixture {};
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     09/13
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -105,7 +107,7 @@ TEST(ECInstanceIdHelper, ECInstanceIdInstanceIdConversion)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                     09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECDbInstances, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
+TEST_F (ECDbInstances, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
     {
     ECDbTestFixture::Initialize ();
 
@@ -224,7 +226,7 @@ TEST (ECDbInstances, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                         04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstances, DeleteECInstances)
+TEST_F(ECDbInstances, DeleteECInstances)
     {
     // Create and populate a sample project
     ECDbTestProject test;
@@ -241,11 +243,11 @@ TEST(ECDbInstances, DeleteECInstances)
         BentleyStatus stat = deleter.Delete (*importedInstance);
         ASSERT_EQ(SUCCESS, stat);
         }
-    }   
-TEST(ECDbInstances, QuoteTest)
+    }  
+
+TEST_F(ECDbInstances, QuoteTest)
     {
-    ECDbTestProject test;
-    ECDbR ecdb = test.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
+    ECDb& ecdb = SetupECDb ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
 
     ECSqlStatement stmt1;
     ASSERT_TRUE (stmt1.Prepare (ecdb, "INSERT INTO stco.ClassWithPrimitiveProperties (stringProp) VALUES('''a''a''')") == ECSqlStatus::Success);
@@ -360,11 +362,9 @@ Utf8CP nonNullPropertyName
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Krischan.Eberle                  09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstances, InsertECInstancesWithNullValues)
+TEST_F(ECDbInstances, InsertECInstancesWithNullValues)
     {
-    // Create and populate a sample project
-    ECDbTestProject testProject;
-    ECDbR db = testProject.Create ("insertwithnullvalues.ecdb", L"ECSqlTest.01.00.ecschema.xml", false);
+    ECDb& db = SetupECDb ("insertwithnullvalues.ecdb", L"ECSqlTest.01.00.ecschema.xml", false);
 
     Utf8CP const testClassName = "PSA";
     Utf8CP const nonNullPropertyName = "I";
@@ -409,11 +409,9 @@ TEST(ECDbInstances, InsertECInstancesWithNullValues)
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Krischan.Eberle                  09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstances, ECInstanceAdapterGetECInstanceWithNullValues)
+TEST_F(ECDbInstances, ECInstanceAdapterGetECInstanceWithNullValues)
     {
-    // Create and populate a sample project
-    ECDbTestProject testProject;
-    ECDbR db = testProject.Create ("insertwithnullvalues.ecdb", L"ECSqlTest.01.00.ecschema.xml", false);
+    ECDb& db = SetupECDb ("insertwithnullvalues.ecdb", L"ECSqlTest.01.00.ecschema.xml", false);
 
     Utf8CP const testClassName = "PSA";
     Utf8CP const nonNullPropertyName = "I";
@@ -459,36 +457,6 @@ TEST(ECDbInstances, ECInstanceAdapterGetECInstanceWithNullValues)
     ASSERT_EQ (1, rowCount);
     }
 
-//-------------------------------------------------------------------------------------
-/// <author>Carole.MacDonald</author>                     <date>08/2013</date>
-//---------------+---------------+---------------+---------------+---------------+-----
-TEST(ECDbInstances, ImportSchemaThenInsertInstances)
-    {
-    ECDbTestProject test;
-    auto& dgndb = test.Create("importecschema.ecdb");
-    Utf8String filename = dgndb.GetDbFileName();
-    dgndb.CloseDb();
-    ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb (filename.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
-    EXPECT_EQ (BE_SQLITE_OK, stat);
-
-    ECSchemaPtr ecSchema = nullptr;
-    ECSchemaReadContextPtr schemaContext = nullptr;
-
-    ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, schemaContext, L"StartupCompany.02.00.ecschema.xml");
-    ASSERT_EQ (SUCCESS, db.Schemas ().ImportECSchemas (schemaContext->GetCache(), 
-        ECDbSchemaManager::ImportOptions (false, false))) << "ImportECSchema should have imported successfully after closing and re-opening the database.";
-
-    ECClassP building = ecSchema->GetClassP("Building");
-
-    auto newInst = ECDbTestUtility::CreateArbitraryECInstance (*building, PopulatePrimitiveValueWithCustomDataSet);
-    ECInstanceInserter inserter (db, *building);
-    ECInstanceKey instanceKey;
-    auto insertStatus = inserter.Insert (instanceKey, *newInst);
-    ASSERT_EQ (SUCCESS, insertStatus);    
-
-    }
-
 void SetStruct1Values(StandaloneECInstancePtr instance, bool boolVal, int intVal)
     {
     instance->SetValue("Struct1BoolMember", ECValue(boolVal));
@@ -524,7 +492,7 @@ StandaloneECInstancePtr struct3
 //-------------------------------------------------------------------------------------
 /// <author>Carole.MacDonald</author>                     <date>08/2013</date>
 //---------------+---------------+---------------+---------------+---------------+-----
-TEST(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
+TEST_F(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
     {
     ECDbTestProject test;
     auto& dgndb = test.Create("importecschema.ecdb");
@@ -657,11 +625,9 @@ TEST(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Carole.MacDonald                 08/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbInstances, UpdateArrayProperty)
+TEST_F(ECDbInstances, UpdateArrayProperty)
     {
-    // Create
-    ECDbTestProject test;
-    ECDbR db = test.Create ("updateArrayProperty.ecdb", L"KitchenSink.01.00.ecschema.xml", false);
+    ECDb&db = SetupECDb ("updateArrayProperty.ecdb", L"KitchenSink.01.00.ecschema.xml", false);
 
     ECN::ECClassCP testClass = db.Schemas ().GetECClass ("KitchenSink", "TestClass");
     ASSERT_TRUE (testClass != nullptr);
@@ -728,7 +694,7 @@ TEST(ECDbInstances, UpdateArrayProperty)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                         04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstances, UpdateECInstances)
+TEST_F(ECDbInstances, UpdateECInstances)
     {
     // Create and populate a sample project
     ECDbTestProject test;
@@ -868,16 +834,9 @@ TEST(ECDbInstances, UpdateECInstances)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                           07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstances, FindECInstances)
+TEST_F(ECDbInstances, FindECInstances)
     {
-    // Save a test project
-    ECDbTestProject saveTestProject;
-    saveTestProject.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
-
-    // Reopen the test project
-    ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb (saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly));
-    ASSERT_EQ (BE_SQLITE_OK, stat);
+    ECDb& db = SetupECDb ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
 
     IECInstancePtr   resultInstance;
     ECValue          v;
@@ -955,18 +914,16 @@ TEST(ECDbInstances, FindECInstances)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Carole.MacDonald                   02/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
+TEST_F(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
     {
-    // Save a test project
-    ECDbTestProject testProject;
-    auto& ecdb = testProject.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
+    ECDb& ecdb = SetupECDb("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
 
     bvector<IECInstancePtr> instances;
-    ASSERT_EQ(SUCCESS, testProject.GetInstances(instances, "StartupCompany", "Foo"));
+    ASSERT_EQ(SUCCESS, GetInstances(instances, "StartupCompany", "Foo"));
 
     IECInstancePtr sourceInstance = instances[0];
 
-    ASSERT_EQ(SUCCESS, testProject.GetInstances(instances, "StartupCompany", "Bar"));
+    ASSERT_EQ(SUCCESS, GetInstances(instances, "StartupCompany", "Bar"));
 
     IECInstancePtr targetInstance = instances[0];
 
@@ -1022,16 +979,9 @@ TEST(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                           07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstances, SelectClause)
+TEST_F(ECDbInstances, SelectClause)
     {
-    // Save a test project
-    ECDbTestProject saveTestProject;
-    saveTestProject.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
-
-    // Reopen the test project
-    ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb (saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly));
-    ASSERT_EQ (BE_SQLITE_OK, stat);
+    ECDb& db = SetupECDb ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
 
     ECClassCP employee = db.Schemas().GetECClass("StartupCompany", "Employee");
     ASSERT_TRUE (employee != nullptr);
@@ -1096,7 +1046,7 @@ TEST(ECDbInstances, SelectClause)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald                   03/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECDbInstances, DeleteWithRelationshipBetweenStructs)
+TEST_F (ECDbInstances, DeleteWithRelationshipBetweenStructs)
     {
     ECDbTestProject test;
     ECDbR ecdb = test.Create("structs.ecdb");
@@ -1173,15 +1123,10 @@ TEST (ECDbInstances, DeleteWithRelationshipBetweenStructs)
 // Test for TFS 112251, the Adapter should check for the class before operation
 // @bsimethod                                   Majd.Uddin                   08/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbInstances, AdapterCheckClassBeforeOperation)
+TEST_F(ECDbInstances, AdapterCheckClassBeforeOperation)
     {
-    ECDbTestProject saveTestProject;
-    saveTestProject.Create("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
+    ECDb& db = SetupECDb("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
 
-    // Reopen the test project
-    ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb(saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::ReadWrite));
-    ASSERT_EQ(BE_SQLITE_OK, stat);
 
     //Get two classes and create instance of second
     ECClassCP employee = db.Schemas().GetECClass("StartupCompany", "Employee");
@@ -1240,15 +1185,10 @@ TEST(ECDbInstances, AdapterCheckClassBeforeOperation)
 // Test for TFS 99872, inserting classes that are Domain, Custom Attribute and Struct
 // @bsimethod                                   Majd.Uddin                   08/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbInstances, DomainCustomAttributeStructCombinations)
+TEST_F(ECDbInstances, DomainCustomAttributeStructCombinations)
 {
-    ECDbTestProject saveTestProject;
-    saveTestProject.Create("ClassCombinations.ecdb", L"TryClassCombinations.01.00.ecschema.xml", true);
+    ECDb& db = SetupECDb("ClassCombinations.ecdb", L"TryClassCombinations.01.00.ecschema.xml", false);
 
-    // Reopen the test project
-    ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb(saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::ReadWrite));
-    ASSERT_EQ(BE_SQLITE_OK, stat);
     
     //Trying all combinations where IsDomain is True. IsDomain False are Abstract classes and are not instantiated.
     ECClassCP allTrue = db.Schemas().GetECClass("TryClassCombinations", "S_T_CA_T_D_T");
