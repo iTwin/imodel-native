@@ -1,0 +1,16 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: Tests/Prewire.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+# un-comment this if you want to deliver ignore_list.txt
+#$(BuildContext)Delivery/UnitTests/ignore_list.txt : $(_MakeFilePath)ignore_list.txt
+#    $(LinkFirstDepToFirstTarget)
+
+# NEEDS WORK: Need a cleaner way to depend on RealityPackage.1.0.xsd. Probably, there should be a RealityPackageXsd with RealityPackage.1.0.xsd listed in its Bindings
+$(BuildContext)Delivery/UnitTests/RealityPackage.1.0.xsd : $(_MakeFilePath)../RealityPackage/RealityPackage.1.0.xsd
+    $(LinkFirstDepToFirstTarget)
