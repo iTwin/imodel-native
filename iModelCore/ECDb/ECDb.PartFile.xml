@@ -102,36 +102,24 @@
         </Bindings>
     </Part>
 
-    <!-- Define the collection of all available tests. -->
-    <Part Name="TestCollection-All">
+    <!-- Define a test collection part. This is included in MobileDgn's TestsAggregate -->
+    <!-- Also see DgnPlatform's Performance test aggregator -->
+    <Part Name="Tests">
         <SubPart PartName="UnitTests-Published" />
         <!--
         <SubPart PartName="UnitTests-Performance" />
         -->
     </Part>
 
-    <!-- Define dynamic and static versions of the test collection -->
-    <Part Name="TestCollection-All-Dynamic" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
-        <SubPart PartName="TestCollection-All"/>
-    </Part>
-
-    <Part Name="TestCollection-All-Static" ExcludePlatforms="x86,x64,Linux*,MacOS*,WinRT*">
-        <SubPart PartName="TestCollection-All" LibType="static" />
-    </Part>
-    
-    <!-- Define a product for this test collection -->
-    <Product Name="ECDb-TestCollection-All">
+    <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in MobileDgn's Gtest-Aggregator and RunGtest-MobileDgnTests parts -->
+    <Product Name="ECDb-Tests">
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
-        <SubPart PartName="TestCollection-All-Dynamic"/>
-        <SubPart PartName="TestCollection-All-Static" />
+        <SubPart PartName="Tests"/>
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
     </Product>
 
-    <!--                *************** -->
-    <!--                **** gtest **** -->
-    <!--                *************** -->
-    <Part Name="Gtest-TestCollection-All" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECDbTest -dTEST_COLLECTION_PRODUCT=ECDb-TestCollection-All" OnlyPlatforms="x86,x64,Linux*,MacOS*">
-        <SubProduct ProductName="ECDb-TestCollection-All"/>
+    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECDbTest -dTEST_COLLECTION_PRODUCT=ECDb-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="ECDb-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ECDbTest/Assemblies/*</Files>
@@ -139,13 +127,13 @@
         </Bindings>
     </Part>
 
-    <Product Name="Gtest-ECDbTest-TestCollection-All" >
-        <SubPart PartName="Gtest-TestCollection-All"/>
+    <Product Name="ECDb-Gtest" >
+        <SubPart PartName="Gtest"/>
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunGtest-TestCollection-All" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Gtest-ECDbTest-TestCollection-All/ECDbTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ECDb" OnlyPlatforms="x86,x64,MacOs*,Linux*">
-        <SubProduct ProductName="Gtest-ECDbTest-TestCollection-All" />
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ECDb-Gtest/ECDbTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ECDb" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="ECDb-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
 
