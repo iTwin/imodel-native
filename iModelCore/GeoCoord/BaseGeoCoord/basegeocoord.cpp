@@ -3620,7 +3620,7 @@ StatusInt       ProcessLinearUnitsKey (IGeoTiffKeysList::GeoKeyItem& geoKey, boo
 
                     // Append unit name at the end of description (which unfortunately often contain the unit name)
                     char  proposedDescription[1024];
-                    sprintf (proposedDescription, "%hs - %hs", m_csDef.desc_nm, pUnit->name);
+                    sprintf (proposedDescription, "%s - %s", m_csDef.desc_nm, pUnit->name);
 
                     // make sure the description is not too long.
                     proposedDescription[63] = 0;
@@ -4989,7 +4989,7 @@ int GeodeticCompilationErrorLog (char *mesg)
         }
         
     if (s_errorLogFile != NULL)
-        fprintf(s_errorLogFile, "%hs\n", mesg);
+        fprintf(s_errorLogFile, "%s\n", mesg);
 
     return SUCCESS;
     }
