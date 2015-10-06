@@ -13959,7 +13959,7 @@ BaseGCS::ProjectionCodeValue    projectionCode
     {
     DgnProjectionTypes  dgnProjectionType;
 
-    if (BaseGCS::pcvInvalid == (dgnProjectionType = BaseGCS::DgnProjectionTypeFromCSMapProjectionCode (projectionCode)))
+    if (DgnProjectionTypes::COORDSYS_NONE == (dgnProjectionType = BaseGCS::DgnProjectionTypeFromCSMapProjectionCode (projectionCode)))
         {
         outString.clear();
         return outString.c_str();
