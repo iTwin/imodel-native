@@ -599,6 +599,32 @@ public:
 
     typedef RefCountedPtr<ExternalKey> ExternalKeyPtr;
 
+    //! Allows a description to be associated with a DgnElement via a persistent ElementAspect
+    struct EXPORT_VTABLE_ATTRIBUTE Description : AppData
+    {
+    private:
+        DgnAuthorityId m_authorityId;
+        Utf8String m_description;
+
+        Description(DgnAuthorityId authorityId, Utf8CP description)
+            {
+            m_authorityId = authorityId;
+            m_description = description;
+            }
+
+    protected:
+        DGNPLATFORM_EXPORT virtual DropMe _OnInserted(DgnElementCR) override;
+
+    public:
+        DGNPLATFORM_EXPORT static RefCountedPtr<Description> Create(DgnAuthorityId authorityId, Utf8CP description);
+        DGNPLATFORM_EXPORT static DgnDbStatus QueryDescription(Utf8StringR, DgnElementCR, DgnAuthorityId);
+        DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR, DgnAuthorityId);
+        DgnAuthorityId GetAuthorityId() const {return m_authorityId;}
+        Utf8CP GetDescription() const {return m_description.c_str();}
+    };
+
+    typedef RefCountedPtr<Description> DescriptionPtr;
+
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
 private:
