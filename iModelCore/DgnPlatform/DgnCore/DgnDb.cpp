@@ -40,7 +40,7 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_colors(*this), m_categories(*this), m_domains(*this), m_styles(*this), m_views(*this),
                  m_geomParts(*this), m_units(*this), m_models(*this), m_elements(*this), 
-                 m_materials(*this), m_links(*this), m_authorities(*this), m_textures(*this), m_lights(*this),
+                 m_links(*this), m_authorities(*this), m_textures(*this), m_lights(*this),
                  m_ecsqlCache(50, "DgnDb")
     {
     }
@@ -408,3 +408,16 @@ DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : m_sourceDb(sour
     m_xyOffset = DPoint2d::From(destCoordinates.x, destCoordinates.y);
     m_yawAdj = AngleInDegrees::FromRadians(destGcs->GetAzimuth() - sourceGcs->GetAzimuth());
     }
+
+static uintptr_t  s_nextQvMaterialId;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+uintptr_t DgnDb::AddQvMaterialId(DgnMaterialId materialId) const { return (m_qvMaterialIds[materialId] = ++s_nextQvMaterialId); }
+uintptr_t DgnDb::GetQvMaterialId(DgnMaterialId materialId) const
+    {
+    auto const&   found = m_qvMaterialIds.find(materialId);
+
+    return (found == m_qvMaterialIds.end()) ? 0 : found->second; 
+    }
+

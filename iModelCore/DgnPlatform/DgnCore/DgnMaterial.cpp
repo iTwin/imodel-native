@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
+#ifdef REMOVE_ME
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -113,53 +114,6 @@ DgnMaterialId DgnMaterials::QueryMaterialId(Utf8StringCR name, Utf8StringCR pale
     return BE_SQLITE_ROW != stmt.Step() ? DgnMaterialId() : stmt.GetValueId<DgnMaterialId>(0);
     }
 
-static uintptr_t  s_nextQvMaterialId;
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t DgnMaterials::AddQvMaterialId(DgnMaterialId materialId) const { return (m_qvMaterialIds[materialId] = ++s_nextQvMaterialId); }
-uintptr_t DgnMaterials::GetQvMaterialId(DgnMaterialId materialId) const
-    {
-    auto const&   found = m_qvMaterialIds.find(materialId);
-
-    return (found == m_qvMaterialIds.end()) ? 0 : found->second; 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnMaterials::Material::GetAsset(JsonValueR value, Utf8CP keyWord) const
-    {
-    Json::Value root;
-
-    if (!Json::Reader::Parse(GetValue(), root))
-        return ERROR;
-
-    JsonValueCR     constValue =  root[keyWord];
-    
-    if (constValue.isNull())
-        return ERROR;
-
-    value = constValue;
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void  DgnMaterials::Material::SetAsset(JsonValueCR value, Utf8CP keyWord)
-    {
-    Json::Value root;
-
-    if (!Json::Reader::Parse(GetValue(), root))
-        root = Json::Value(Json::ValueType::objectValue);
-
-    root[keyWord] = value;
-
-    SetValue(Json::FastWriter::ToString(root).c_str());
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -196,6 +150,8 @@ Utf8CP DgnMaterials::Iterator::Entry::GetPalette() const {Verify(); return m_sql
 Utf8CP DgnMaterials::Iterator::Entry::GetDescr() const {Verify(); return m_sql->GetValueText(3);}
 Utf8CP DgnMaterials::Iterator::Entry::GetValue() const {Verify(); return m_sql->GetValueText(4);}
 DgnMaterialId DgnMaterials::Iterator::Entry::GetParentId() const {Verify(); return m_sql->GetValueId<DgnMaterialId>(5);}
+
+#endif
 
 #include <DgnPlatform/DgnCore/MaterialElement.h>
 
@@ -302,20 +258,9 @@ DgnDbStatus DgnMaterial::_SetParentId(DgnElementId parentId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnAuthority::Code makeMaterialCode(Utf8StringCR palette, Utf8StringCR material, DgnDbR db)
+DgnAuthority::Code DgnMaterial::CreateMaterialCode(Utf8StringCR palette, Utf8StringCR material, DgnDbR db)
     {
-    // ###TODO?
-    //  Should we automatically create the material authority when initializing the DB?
-    //  Do we need a special MaterialAuthority class?
-    static const Utf8CP s_authorityName = "DgnMaterialAuthority";
-    auto auth = db.Authorities().Get<NamespaceAuthority>(s_authorityName);
-    if (auth.IsNull())
-        {
-        auto newAuth = NamespaceAuthority::CreateNamespaceAuthority(s_authorityName, db);
-        db.Authorities().Insert(*newAuth);
-        auth = db.Authorities().Get<NamespaceAuthority>(s_authorityName);
-        }
-
+    auto auth = db.Authorities().Get<NamespaceAuthority>(DgnAuthority::MaterialId());
     BeAssert(auth.IsValid());
     return auth.IsValid() ? auth->CreateCode(material, palette) : DgnAuthority::Code();
     }
@@ -324,8 +269,53 @@ static DgnAuthority::Code makeMaterialCode(Utf8StringCR palette, Utf8StringCR ma
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnMaterial::CreateParams::CreateParams(DgnDbR db, DgnModelId modelId, Utf8StringCR paletteName, Utf8StringCR materialName, Utf8StringCR value, DgnElementId parentMaterialId, Utf8StringCR descr)
-    : DgnMaterial::CreateParams(db, modelId, DgnMaterial::QueryDgnClassId(db), makeMaterialCode(paletteName, materialName, db), DgnElementId(), parentMaterialId, value, descr)
+    : DgnMaterial::CreateParams(db, modelId, DgnMaterial::QueryDgnClassId(db), CreateMaterialCode(paletteName, materialName, db), DgnElementId(), parentMaterialId, value, descr)
     {
     //
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnMaterialId DgnMaterial::QueryMaterialId(Utf8StringCR paletteName, Utf8StringCR materialName, DgnDbR db)
+    {
+    DgnElementId elemId = db.Elements().QueryElementIdByCode(CreateMaterialCode(paletteName, materialName, db));
+    return DgnMaterialId(elemId.GetValueUnchecked());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DgnMaterial::GetAsset(JsonValueR value, Utf8CP keyWord) const
+    {
+    Json::Value root;
+
+    if (!Json::Reader::Parse(GetValue(), root))
+        return ERROR;
+
+    JsonValueCR     constValue =  root[keyWord];
+    
+    if (constValue.isNull())
+        return ERROR;
+
+    value = constValue;
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void  DgnMaterial::SetAsset(JsonValueCR value, Utf8CP keyWord)
+    {
+    Json::Value root;
+
+    if (!Json::Reader::Parse(GetValue(), root))
+        root = Json::Value(Json::ValueType::objectValue);
+
+    root[keyWord] = value;
+
+    SetValue(Json::FastWriter::ToString(root).c_str());
+    }
+
 

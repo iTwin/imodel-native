@@ -6,8 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-//__PUBLISH_SECTION_START__
+//__BENTLEY_INTERNAL_ONLY__
 
+#ifdef REMOVE_ME
 #include "DgnDbTables.h"
 
 // JSon  Material Asset Keywords.
@@ -147,9 +148,7 @@ public:
     //! @param[in]      palette The palette name
     //! @return The ID of the specified material, or an invalid ID if no such material exists.
     DGNPLATFORM_EXPORT DgnMaterialId QueryMaterialId(Utf8StringCR name, Utf8StringCR palette) const;
-
-    DGNPLATFORM_EXPORT uintptr_t GetQvMaterialId(DgnMaterialId materialId) const; //!< Return nonzero QuickVision material ID for QVision for supplied material ID.
-    DGNPLATFORM_EXPORT uintptr_t AddQvMaterialId(DgnMaterialId materialId) const; //!< set QuickVision material ID for supplied material Id.
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
+#endif

@@ -15,6 +15,9 @@
 
 #define DGN_CLASSNAME_MaterialElement "MaterialElement"
 
+// JSon  Material Asset Keywords.
+#define MATERIAL_ASSET_Rendering "RenderMaterial"
+
 DGNPLATFORM_TYPEDEFS(DgnMaterial);
 DGNPLATFORM_REF_COUNTED_PTR(DgnMaterial);
 
@@ -73,12 +76,14 @@ protected:
 public:
     explicit DgnMaterial(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }
 
+    DgnMaterialId GetMaterialId() const { return DgnMaterialId(GetElementId().GetValue()); }
     Utf8String GetPaletteName() const { return GetCode().GetNameSpace(); }
     Utf8String GetMaterialName() const { return GetCode().GetValue(); }
 
     Utf8StringCR GetValue() const { return m_data.m_value; }
     Utf8StringCR GetDescr() const { return m_data.m_descr; }
-    DgnMaterialCPtr GetParentMaterial() const { return GetDgnDb().Elements().Get<DgnMaterial>(GetParentId()); }
+    DgnMaterialId GetParentMaterialId() const { return DgnMaterialId(GetParentId().GetValueUnchecked()); }
+    DgnMaterialCPtr GetParentMaterial() const { return GetParentId().IsValid() ? GetDgnDb().Elements().Get<DgnMaterial>(GetParentId()) : nullptr; }
 
     void SetValue(Utf8StringCR value) { m_data.m_value = value; }
     void SetDescr(Utf8StringCR descr) { m_data.m_descr = descr; }
@@ -89,6 +94,26 @@ public:
 
     DgnMaterialCPtr Insert(DgnDbStatus* status = nullptr) { return GetDgnDb().Elements().Insert<DgnMaterial>(*this, status); }
     DgnMaterialCPtr Update(DgnDbStatus* status = nullptr) { return GetDgnDb().Elements().Update<DgnMaterial>(*this, status); }
+
+    //! Get an asset of the material as a Json value.  (Rendering, physical etc.)
+    //! @param[out] value  The Json value for the asset.
+    //! @param[in]  keyword asset keyword -- "RenderMaterial", "Physical" etc.
+    DGNPLATFORM_EXPORT BentleyStatus GetAsset(JsonValueR value, Utf8CP keyword) const; 
+
+    //! Set an asset of material from a Json value.
+    //! @param[in] value   The Json value for the asset.
+    //! @param[in] keyword asset keyword -- "RenderMaterial", "Physical" etc.
+    DGNPLATFORM_EXPORT void SetAsset(JsonValueCR value, Utf8CP keyword);
+
+    //! Set the rendering material asset.
+    void SetRenderingAsset(JsonValueCR value) {SetAsset(value, MATERIAL_ASSET_Rendering);}
+
+    //! Get the rendering material asset.
+    BentleyStatus GetRenderingAsset(JsonValueR value) const {return GetAsset(value, MATERIAL_ASSET_Rendering);}
+
+    DGNPLATFORM_EXPORT static DgnElement::Code CreateMaterialCode(Utf8StringCR paletteName, Utf8StringCR materialName, DgnDbR db);
+    DGNPLATFORM_EXPORT static DgnMaterialId QueryMaterialId(Utf8StringCR paletteName, Utf8StringCR materialName, DgnDbR db);
+    static DgnMaterialCPtr QueryMaterial(DgnMaterialId materialId, DgnDbR db) { return db.Elements().Get<DgnMaterial>(materialId); }
 };
 
 namespace dgn_ElementHandler

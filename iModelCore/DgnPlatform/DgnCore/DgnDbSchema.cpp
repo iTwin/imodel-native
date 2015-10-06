@@ -45,6 +45,20 @@ static void importDgnSchema(DgnDbR db, bool updateExisting)
 #define GEOM_IN_PHYSICAL_SPACE_CLAUSE " 1 = new.InPhysicalSpace "
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static DbResult insertAuthority(DgnDbR db, Statement& stmt, DgnAuthorityId id, Utf8CP name, AuthorityHandlerR handler)
+    {
+    stmt.BindId(1, id);
+    stmt.BindText(2, name, Statement::MakeCopy::No);
+    stmt.BindId(3, db.Domains().GetClassId(handler));
+
+    DbResult result = stmt.Step();
+    BeAssert(BE_SQLITE_DONE == result);
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreateDgnDbTables()
@@ -72,19 +86,18 @@ DbResult DgnDb::CreateDgnDbTables()
 
     importDgnSchema(*this, false);
 
-    // Every DgnDb has a "local" authority for element codes
+    // Every DgnDb has a few built-in authorities for element codes
         {
         Json::Value authorityProps(Json::objectValue);
         authorityProps["uri"] = "";
         Utf8String authorityJson = Json::FastWriter::ToString(authorityProps);
 
-        Statement statement(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Authority) " (Id,Name,ECClassId,Props) VALUES (1,'Local',?,?)"); // WIP: use Authority API when it exists
-        statement.BindId(1, Domains().GetClassId(dgn_AuthorityHandler::Local::GetHandler()));
-        statement.BindText(2, authorityJson, Statement::MakeCopy::No);
+        Statement statement(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Authority) " (Id,Name,ECClassId,Props) VALUES (?,?,?,?)");
+        statement.BindText(4, authorityJson, Statement::MakeCopy::No);
 
-        DbResult result = statement.Step();
-        BeAssert(BE_SQLITE_DONE == result);
-        UNUSED_VARIABLE(result);
+        insertAuthority(*this, statement, DgnAuthority::LocalId(), "Local", dgn_AuthorityHandler::Local::GetHandler());
+        statement.Reset();
+        insertAuthority(*this, statement, DgnAuthority::MaterialId(), "DgnMaterials", dgn_AuthorityHandler::Namespace::GetHandler());
         }
     
     ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_ElementGeom)
