@@ -430,6 +430,19 @@ DgnDbStatus DgnDomain::Handler::_VerifySchema(DgnDomains& domains)
 
         BeAssert(false);
         }
+    else
+        {
+        Handler* rootClass = GetRootClass();
+        ECN::ECClassCP rootEcClass = schemas.GetECClass(domains.GetClassId(*rootClass).GetValue());
+        BeAssert(nullptr != rootEcClass);
+        if (nullptr != rootEcClass && rootEcClass != myEcClass && !myEcClass->IsSingularlyDerivedFrom(*rootEcClass))
+            {
+            printf("ERROR: HANDLER [%s] handles ECClass '%s' which derives more than once from root ECClass '%s'.\n",
+            typeid(*this).name(), GetClassName().c_str(), rootClass->GetClassName().c_str());
+
+            BeAssert(false);
+            }
+        }
 #endif
     
     return DgnDbStatus::Success;
