@@ -490,7 +490,6 @@
         <SubPart PartName="UnitTests-Published"          Repository="BeSQLite"  PartFile="BeSQLite"/>
         <SubPart PartName="UnitTests-NonPublished"       Repository="BeSQLite"  PartFile="BeSQLite"/>
         <SubPart PartName="UnitTests-Published"          Repository="ECDb"      PartFile="ECDb"/>
-        <SubPart PartName="UnitTests-NonPublished"       Repository="ECDb"      PartFile="ECDb"/>
         <SubPart PartName="UnitTests-Published"          Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <SubPart PartName="UnitTests-NonPublished"       Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <!-- Pull in the dgnplatform's db3 file to serve as the "framework" sqlang for testing purposes -->

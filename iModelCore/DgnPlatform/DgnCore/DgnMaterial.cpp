@@ -120,7 +120,7 @@ DgnAuthority::Code DgnMaterial::CreateMaterialCode(Utf8StringCR palette, Utf8Str
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnMaterial::CreateParams::CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName, Utf8StringCR value, DgnModelId modelId, DgnElementId parentMaterialId, Utf8StringCR descr)
+DgnMaterial::CreateParams::CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName, Utf8StringCR value, DgnModelId modelId, DgnMaterialId parentMaterialId, Utf8StringCR descr)
     : DgnMaterial::CreateParams(db, modelId, DgnMaterial::QueryDgnClassId(db), CreateMaterialCode(paletteName, materialName, db), DgnElementId(), parentMaterialId, value, descr)
     {
     //
@@ -129,9 +129,9 @@ DgnMaterial::CreateParams::CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnMaterialId DgnMaterial::QueryMaterialId(Utf8StringCR paletteName, Utf8StringCR materialName, DgnDbR db)
+DgnMaterialId DgnMaterial::QueryMaterialId(DgnElement::Code const& code, DgnDbR db)
     {
-    DgnElementId elemId = db.Elements().QueryElementIdByCode(CreateMaterialCode(paletteName, materialName, db));
+    DgnElementId elemId = db.Elements().QueryElementIdByCode(code);
     return DgnMaterialId(elemId.GetValueUnchecked());
     }
 
@@ -177,7 +177,13 @@ DgnDbStatus DgnMaterial::_OnChildImport(DgnElementCR child, DgnModelR destModel,
     {
     DgnDbStatus status = T_Super::_OnChildImport(child, destModel, importer);
     if (DgnDbStatus::Success == status && importer.IsBetweenDbs() && !importer.FindElementId(GetElementId()).IsValid())
-        Import(&status, destModel, importer);
+        {
+        DgnMaterialId destParentId = DgnMaterial::QueryMaterialId(GetCode(), importer.GetDestinationDb());
+        if (!destParentId.IsValid())
+            Import(&status, destModel, importer);
+        else
+            importer.AddElementId(GetElementId(), destParentId);
+        }
 
     return status;
     }

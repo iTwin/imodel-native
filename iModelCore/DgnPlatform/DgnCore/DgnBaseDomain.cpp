@@ -94,6 +94,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ModelHandler::PointCloud::GetHandler());
     RegisterHandler(dgn_ModelHandler::Raster::GetHandler());
     RegisterHandler(dgn_ModelHandler::Resource::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Dictionary::GetHandler());
 
     RegisterHandler(dgn_ElementHandler::Element::GetHandler());
     RegisterHandler(dgn_ElementHandler::Physical::GetHandler());

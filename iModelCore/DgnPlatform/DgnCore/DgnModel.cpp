@@ -946,7 +946,11 @@ Utf8String DgnModels::GetUniqueModelName(Utf8CP baseName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelId DgnModels::QueryFirstModelId() const
     {
-    return MakeIterator().begin().GetModelId();
+    for (auto const& model : MakeIterator())
+        if (model.GetModelId() != DgnModel::DictionaryId())
+            return model.GetModelId();
+
+    return DgnModelId();
     }
 
 /*---------------------------------------------------------------------------------**//**

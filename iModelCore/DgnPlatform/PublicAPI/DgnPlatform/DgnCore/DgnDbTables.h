@@ -35,7 +35,6 @@
 #define DGN_CLASSNAME_Light                 "Light"
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
-#define DGN_CLASSNAME_Material              "Material"
 #define DGN_CLASSNAME_Model                 "Model"
 #define DGN_CLASSNAME_Model2d               "Model2d"
 #define DGN_CLASSNAME_NamespaceAuthority    "NamespaceAuthority"
@@ -766,7 +765,7 @@ public:
     DGNPLATFORM_EXPORT QvCache* GetQvCache(bool createIfNecessary=true);
     void SetQvCache(QvCache* qvCache) {m_qvCache = qvCache;}
 
-    //! Determine the Id of the first model in this DgnDb.
+    //! Determine the Id of the first non-dictionary model in this DgnDb.
     DGNPLATFORM_EXPORT DgnModelId QueryFirstModelId() const;
 
     //! Load a DgnModel from this DgnDb. Loading a model does not cause its elements to be filled. Rather, it creates an

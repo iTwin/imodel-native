@@ -21,16 +21,25 @@ private:
 protected:
     void SetupProject()
         {
-        BeFileName filename = DgnDbTestDgnManager::GetOutputFilePath(L"materials.idgndb");
+        m_db = CreateDb(L"materials.idgndb");
+        ASSERT_TRUE(m_db != nullptr);
+        }
+
+    DgnDbPtr CreateDb(WCharCP dbname)
+        {
+        BeFileName filename = DgnDbTestDgnManager::GetOutputFilePath(dbname);
         BeFileName::BeDeleteFile(filename);
 
         CreateDgnDbParams params;
         params.SetOverwriteExisting(false);
         DbResult status;
-        m_db = DgnDb::CreateDgnDb(&status, filename, params);
-        ASSERT_TRUE(m_db != nullptr);
-        ASSERT_EQ(BE_SQLITE_OK, status) << status;
+        DgnDbPtr db = DgnDb::CreateDgnDb(&status, filename, params);
+        EXPECT_EQ(BE_SQLITE_OK, status) << status;
+
+        return db;
         }
+
+    void ExpectParent(DgnDbR db, Utf8StringCR childName, Utf8StringCR parentName);
 
     DgnDbR GetDb() const { return *m_db; }
 
@@ -41,11 +50,12 @@ protected:
         return model->GetModelId();
         }
 
-    DgnMaterial::CreateParams MakeParams(DgnModelId modelId, Utf8StringCR palette, Utf8StringCR name, DgnElementId parent=DgnElementId(), Utf8StringCR descr="")
+    DgnMaterial::CreateParams MakeParams(DgnModelId modelId, Utf8StringCR palette, Utf8StringCR name, DgnMaterialId parent=DgnMaterialId(), Utf8StringCR descr="", DgnDbP pDb=nullptr)
         {
         static int32_t s_jsonDummy = 0;
         Utf8PrintfString value("value:%d", ++s_jsonDummy);
-        return DgnMaterial::CreateParams(*m_db, modelId, palette, name, value, parent, descr);
+        DgnDbR db = nullptr != pDb ? *pDb : *m_db;
+        return DgnMaterial::CreateParams(db, palette, name, value, modelId, parent, descr);
         }
 
     template<typename T, typename U>
@@ -56,6 +66,12 @@ protected:
         EXPECT_EQ(a.GetParentId(), b.GetParentId());
         EXPECT_EQ(a.GetDescr(), b.GetDescr());
         EXPECT_EQ(a.GetValue(), b.GetValue());
+        }
+
+    DgnMaterialCPtr CreateMaterial(Utf8StringCR palette, Utf8StringCR name, DgnMaterialId parentId = DgnMaterialId(), DgnDbP pDb = nullptr)
+        {
+        DgnMaterial material(MakeParams(DgnModel::DictionaryId(), palette, name, parentId, "", pDb));
+        return material.Insert();
         }
 };
 
@@ -121,4 +137,77 @@ TEST_F(MaterialTest, ParentChildCycles)
     EXPECT_EQ(DgnDbStatus::InvalidParent, status);
     }
 #endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void MaterialTest::ExpectParent(DgnDbR db, Utf8StringCR childName, Utf8StringCR parentName)
+    {
+    DgnMaterialId childId = DgnMaterial::QueryMaterialId("Palette", childName, db),
+                  parentId = DgnMaterial::QueryMaterialId("Palette", parentName, db);
+    EXPECT_TRUE(childId.IsValid());
+    EXPECT_TRUE(parentId.IsValid());
+
+    DgnMaterialCPtr child = DgnMaterial::QueryMaterial(childId, db),
+                    parent = DgnMaterial::QueryMaterial(parentId, db);
+    EXPECT_TRUE(child.IsValid());
+    EXPECT_TRUE(parent.IsValid());
+    if (child.IsValid() && parent.IsValid())
+        EXPECT_EQ(child->GetParentMaterialId(), parent->GetMaterialId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MaterialTest, ParentChildClone)
+    {
+    SetupProject();
+    DgnDbPtr db2 = CreateDb(L"clonematerials.idgndb");
+
+    Utf8String palette("Palette");
+    DgnMaterialCPtr parent = CreateMaterial(palette, "Parent");
+    ASSERT_TRUE(parent.IsValid());
+
+    DgnMaterialId parentId = parent->GetMaterialId();
+    DgnMaterialCPtr childA = CreateMaterial(palette, "ChildA", parentId),
+                    childB = CreateMaterial(palette, "ChildB", parentId);
+
+    ASSERT_TRUE(childA.IsValid());
+    ASSERT_TRUE(childB.IsValid());
+    EXPECT_EQ(parentId, childA->GetParentMaterialId());
+    EXPECT_EQ(parentId, childB->GetParentMaterialId());
+    EXPECT_EQ(childA->GetParentMaterial().get(), parent.get());
+    EXPECT_EQ(childB->GetParentMaterial().get(), parent.get());
+
+    DgnMaterialCPtr grandchildA = CreateMaterial(palette, "GrandchildA", childA->GetMaterialId());
+    ASSERT_TRUE(grandchildA.IsValid());
+    EXPECT_EQ(grandchildA->GetParentMaterialId(), childA->GetMaterialId());
+    EXPECT_EQ(grandchildA->GetParentMaterial().get(), childA.get());
+
+    DgnMaterialCPtr grandchildB = CreateMaterial(palette, "GrandchildB", childB->GetMaterialId());
+    ASSERT_TRUE(grandchildB.IsValid());
+
+    // Importing a child imports its parent. Importing a parent does not import its children.
+    DgnImportContext importer(GetDb(), *db2);
+    DgnElementCPtr clonedGrandchild = grandchildA->Import(nullptr, db2->GetDictionaryModel(), importer);
+    ASSERT_TRUE(clonedGrandchild.IsValid());
+
+    ExpectParent(*db2, "GrandchildA", "ChildA");
+    ExpectParent(*db2, "ChildA", "Parent");
+    EXPECT_FALSE(DgnMaterial::QueryMaterialId(palette, "ChildB", *db2).IsValid());
+    EXPECT_FALSE(DgnMaterial::QueryMaterialId(palette, "GrandchildB", *db2).IsValid());
+
+    // Importing a child when the parent already exists (by Code) associates the child to the existing parent.
+    // The version of ChildB in the destination db does not have a parent material.
+    DgnMaterialCPtr destChildA = CreateMaterial(palette, "ChildB", DgnMaterialId(), db2.get());
+    ASSERT_TRUE(destChildA.IsValid());
+
+    DgnImportContext importer2(GetDb(), *db2);
+    DgnMaterialCPtr destGrandchildB = dynamic_cast<DgnMaterialCP>(grandchildB->Import(nullptr, db2->GetDictionaryModel(), importer2).get());
+    ASSERT_TRUE(destGrandchildB.IsValid());
+
+    ExpectParent(*db2, "GrandchildB", "ChildB");
+    DgnMaterialCPtr destChildB = DgnMaterial::QueryMaterial(DgnMaterial::QueryMaterialId(palette, "ChildB", *db2), *db2);
+    EXPECT_FALSE(destChildB->GetParentMaterialId().IsValid());
+    }
 

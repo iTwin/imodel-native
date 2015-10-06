@@ -70,7 +70,7 @@ public:
         //! @param[in]      descr            Optional description of the material.
         //! @note The combination of palette and material name must be unique within the DgnDb.
         DGNPLATFORM_EXPORT CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName, Utf8StringCR value="", DgnModelId modelId=DgnModel::DictionaryId(),
-                    DgnElementId parentMaterialId=DgnElementId(), Utf8StringCR descr="");
+                    DgnMaterialId parentMaterialId=DgnMaterialId(), Utf8StringCR descr="");
 
         Utf8String GetPaletteName() const { return m_code.GetNameSpace(); } //!< Return the palette name
         Utf8String GetMaterialName() const { return m_code.GetValue(); } //!< Return the material name
@@ -131,8 +131,11 @@ public:
     //! Creates a Code for a material. The palette name serves as the namespace, and the material name as the value.
     DGNPLATFORM_EXPORT static DgnElement::Code CreateMaterialCode(Utf8StringCR paletteName, Utf8StringCR materialName, DgnDbR db);
 
+    //! Looks up the ID of the material with the specified code.
+    DGNPLATFORM_EXPORT static DgnMaterialId QueryMaterialId(DgnElement::Code const& code, DgnDbR db);
+
     //! Looks up the ID of the material with the specified palette + material name.
-    DGNPLATFORM_EXPORT static DgnMaterialId QueryMaterialId(Utf8StringCR paletteName, Utf8StringCR materialName, DgnDbR db);
+    static DgnMaterialId QueryMaterialId(Utf8StringCR paletteName, Utf8StringCR materialName, DgnDbR db) { return QueryMaterialId(CreateMaterialCode(paletteName, materialName, db), db); }
 
     //! Looks up a material by ID.
     static DgnMaterialCPtr QueryMaterial(DgnMaterialId materialId, DgnDbR db) { return db.Elements().Get<DgnMaterial>(materialId); }
