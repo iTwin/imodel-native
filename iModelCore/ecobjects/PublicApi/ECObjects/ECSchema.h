@@ -1212,6 +1212,7 @@ public:
 
     //__PUBLISH_SECTION_END__
     ECOBJECTS_EXPORT ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes);
+    ECOBJECTS_EXPORT bool IsSingularlyDerivedFrom(ECClassCR baseClass) const;
     //__PUBLISH_SECTION_START__
 
     // ************************************************************************************************************************

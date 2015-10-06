@@ -977,6 +977,40 @@ bool ECClass::HasBaseClasses () const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct DuplicateInheritanceDetector
+{
+    ECClassCR       m_baseClass;
+    mutable bool    m_baseClassFound;
+
+    DuplicateInheritanceDetector(ECClassCR baseClass) : m_baseClass(baseClass), m_baseClassFound(false) { }
+
+    static bool HasDuplicateInheritance(ECClassCP thisClass, const void* arg)
+        {
+        DuplicateInheritanceDetector const& det = *reinterpret_cast<DuplicateInheritanceDetector const*>(arg);
+        if (det.m_baseClassFound)
+            return true;
+        else if (ECClass::ClassesAreEqualByName(thisClass, &det.m_baseClass))
+            det.m_baseClassFound = true;
+
+        return false;
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECClass::IsSingularlyDerivedFrom(ECClassCR baseClass) const
+    {
+    DuplicateInheritanceDetector det(baseClass);
+    if (TraverseBaseClasses(&DuplicateInheritanceDetector::HasDuplicateInheritance, true, &det))
+        return false;   // multiply-derived
+    else
+        return det.m_baseClassFound; // singularly-derived
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::RemoveBaseClass (ECClassCR baseClass)
