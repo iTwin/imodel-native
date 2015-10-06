@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
-#include <DgnPlatform/DgnCore/MaterialElement.h>
+#include <DgnPlatform/DgnCore/DgnMaterial.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 

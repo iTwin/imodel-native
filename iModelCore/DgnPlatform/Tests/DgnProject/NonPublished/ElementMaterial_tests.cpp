@@ -8,7 +8,7 @@
 
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <numeric>
-#include <DgnPlatform/DgnCore/MaterialElement.h>
+#include <DgnPlatform/DgnCore/DgnMaterial.h>
 
 /*---------------------------------------------------------------------------------**//**
 * Test fixture for testing Element Geometry Builder
@@ -50,7 +50,7 @@ static void setUpView (DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnMaterialId     createTexturedMaterial (DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, RenderMaterialMap::Units unitMode, DgnModelId modelId)
+static DgnMaterialId     createTexturedMaterial (DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, RenderMaterialMap::Units unitMode)
     {
     Json::Value                     renderMaterialAsset;
     RgbFactor                       red = { 1.0, 0.0, 0.0};
@@ -103,7 +103,7 @@ static DgnMaterialId     createTexturedMaterial (DgnDbR dgnDb, Utf8CP materialNa
     mapsMap[RENDER_MATERIAL_MAP_Pattern] = patternMap;
     renderMaterialAsset[RENDER_MATERIAL_Map] = mapsMap;
 
-    DgnMaterial material(DgnMaterial::CreateParams(dgnDb, modelId, "Test Palette", materialName, ""));
+    DgnMaterial material(DgnMaterial::CreateParams(dgnDb, "Test Palette", materialName));
     material.SetRenderingAsset (renderMaterialAsset);
     auto createdMaterial = material.Insert();
     EXPECT_TRUE(createdMaterial.IsValid());
@@ -165,14 +165,14 @@ TEST_F(ElementGeometryBuilderTests, CreateElementWithMaterials)
 
     ElemDisplayParams elemDisplayParams;
     elemDisplayParams.SetCategoryId(m_defaultCategoryId);
-    elemDisplayParams.SetMaterial(createTexturedMaterial(*m_db, "Parametric Texture", textureImage.c_str(), RenderMaterialMap::Units::Relative, m_defaultModelId));
+    elemDisplayParams.SetMaterial(createTexturedMaterial(*m_db, "Parametric Texture", textureImage.c_str(), RenderMaterialMap::Units::Relative));
     EXPECT_TRUE( builder->Append(elemDisplayParams));
 
     DPoint3d        origin = DPoint3d::FromZero();
 
     appendGeometry (origin, *builder);
 
-    elemDisplayParams.SetMaterial(createTexturedMaterial(*m_db, "Meter Texture", textureImage.c_str() , RenderMaterialMap::Units::Meters, m_defaultModelId));
+    elemDisplayParams.SetMaterial(createTexturedMaterial(*m_db, "Meter Texture", textureImage.c_str() , RenderMaterialMap::Units::Meters));
     EXPECT_TRUE( builder->Append(elemDisplayParams));
 
     appendGeometry (origin, *builder);

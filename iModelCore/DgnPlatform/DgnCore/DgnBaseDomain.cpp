@@ -8,7 +8,7 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/DgnMarkupProject.h>
 #include <DgnPlatform/DgnCore/Annotations/TextAnnotationElement.h>
-#include <DgnPlatform/DgnCore/MaterialElement.h>
+#include <DgnPlatform/DgnCore/DgnMaterial.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -36,6 +36,7 @@ HANDLER_DEFINE_MEMBERS(WebMercator)
 HANDLER_DEFINE_MEMBERS(PointCloud)
 HANDLER_DEFINE_MEMBERS(Raster)
 HANDLER_DEFINE_MEMBERS(Resource)
+HANDLER_DEFINE_MEMBERS(Dictionary)
 HANDLER_DEFINE_MEMBERS(Model2d)
 };
 

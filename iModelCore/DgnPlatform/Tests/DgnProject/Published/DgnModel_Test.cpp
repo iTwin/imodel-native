@@ -723,6 +723,34 @@ TEST_F(DgnModelTests, ImportElementsWithDependencies)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnModelTests, DictionaryModel)
+    {
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbR db = *tdm.GetDgnProjectP();
+
+    DgnModelPtr model = db.Models().GetModel(DgnModel::DictionaryId());
+    EXPECT_TRUE(model.IsValid());
+
+    DictionaryModelPtr dictModel = db.Models().Get<DictionaryModel>(DgnModel::DictionaryId());
+    EXPECT_TRUE(dictModel.IsValid());
+    EXPECT_EQ(dictModel.get(), model.get());
+
+    DictionaryModelR dictModelR = db.GetDictionaryModel();
+    EXPECT_EQ(&dictModelR, dictModel.get());
+
+    // The dictionary model cannot be copied
+    DgnImportContext cc(db, db);
+    EXPECT_TRUE(DgnModel::Import(nullptr, dictModelR, cc).IsNull());
+
+    // The dictionary model cannot be imported
+    DgnDbPtr db2 = openCopyOfDb(L"DgnDb/3dMetricGeneral.idgndb", L"3dMetricGeneralcc.idgndb", DgnDb::OpenMode::ReadWrite);
+    DgnImportContext importer(db, *db2);
+    EXPECT_TRUE(DgnModel::Import(nullptr, dictModelR, importer).IsNull());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Maha Nasir                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, ModelsIterator)

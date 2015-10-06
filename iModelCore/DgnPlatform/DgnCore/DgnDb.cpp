@@ -421,3 +421,14 @@ uintptr_t DgnDb::GetQvMaterialId(DgnMaterialId materialId) const
     return (found == m_qvMaterialIds.end()) ? 0 : found->second; 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DictionaryModelR DgnDb::GetDictionaryModel()
+    {
+    // NB: Once loaded, a model is never dropped unless it is deleted (or its creation is undone). This cannot occur for dictionary model so returning a reference is safe
+    DictionaryModelPtr dict = Models().Get<DictionaryModel>(DgnModel::DictionaryId());
+    BeAssert(dict.IsValid() && "A DgnDb always has a dictionary model");
+    return *dict;
+    }
+

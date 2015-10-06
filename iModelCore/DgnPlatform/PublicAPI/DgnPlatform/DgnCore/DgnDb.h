@@ -152,6 +152,8 @@ protected:
 
     BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params);
     BeSQLite::DbResult CreateDgnDbTables();
+    BeSQLite::DbResult CreateAuthorities();
+    BeSQLite::DbResult CreateDictionaryModel();
     BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params);
     BeSQLite::DbResult SaveDgnDbSchemaVersion(DgnVersion version=DgnVersion(DGNDB_CURRENT_VERSION_Major,DGNDB_CURRENT_VERSION_Minor,DGNDB_CURRENT_VERSION_Sub1,DGNDB_CURRENT_VERSION_Sub2));
     BeSQLite::DbResult DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const&);
@@ -219,6 +221,8 @@ public:
 
     DGNPLATFORM_EXPORT uintptr_t GetQvMaterialId(DgnMaterialId materialId) const; //!< Return nonzero QuickVision material ID for QVision for supplied material ID.
     DGNPLATFORM_EXPORT uintptr_t AddQvMaterialId(DgnMaterialId materialId) const; //!< set QuickVision material ID for supplied material Id.
+
+    DGNPLATFORM_EXPORT DictionaryModelR GetDictionaryModel(); //!< Return the dictionary model for this DgnDb.
 };
 
 inline BeSQLite::DbResult DgnViews::QueryProperty(void* value, uint32_t size, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id)const {return m_dgndb.QueryProperty(value, size, spec, viewId.GetValue(), id);}

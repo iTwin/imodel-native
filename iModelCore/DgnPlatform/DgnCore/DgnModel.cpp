@@ -2025,3 +2025,17 @@ DgnDbStatus ComponentModel::Solve(ModelSolverDef::ParameterSet const& newParamet
         return DgnDbStatus::ValidationFailed;
     return DgnDbStatus::SQLiteError;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelPtr DictionaryModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const
+    {
+    if (nullptr != stat)
+        *stat = DgnDbStatus::WrongModel;
+
+    BeAssert(false && "The dictionary model cannot be cloned");
+    return nullptr;
+    }
+
+

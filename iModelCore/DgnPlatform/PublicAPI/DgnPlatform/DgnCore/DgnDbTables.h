@@ -21,6 +21,7 @@
 #define DGN_CLASSNAME_Color                 "Color"
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
 #define DGN_CLASSNAME_ComponentSolution     "ComponentSolution"
+#define DGN_CLASSNAME_DictionaryModel       "DictionaryModel"
 #define DGN_CLASSNAME_DrawingElement        "DrawingElement"
 #define DGN_CLASSNAME_DrawingModel          "DrawingModel"
 #define DGN_CLASSNAME_Element               "Element"

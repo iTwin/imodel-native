@@ -1079,6 +1079,16 @@ DgnElementCPtr DgnElement::Import(DgnDbStatus* stat, DgnModelR destModel, DgnImp
     if (nullptr != stat)
         *stat = DgnDbStatus::Success;
 
+    auto parent = GetDgnDb().Elements().GetElement(m_parentId);
+    DgnDbStatus parentStatus = DgnDbStatus::Success;
+    if (parent.IsValid() && DgnDbStatus::Success != (parentStatus = parent->_OnChildImport(*this, destModel, importer)))
+        {
+        if (nullptr != stat)
+            *stat = parentStatus;
+
+        return nullptr;
+        }
+
     DgnElementPtr cc = _CloneForImport(stat, destModel, importer); // (also calls _CopyFrom and _RemapIds)
     if (!cc.IsValid())
         return DgnElementCPtr();
@@ -1088,6 +1098,11 @@ DgnElementCPtr DgnElement::Import(DgnDbStatus* stat, DgnModelR destModel, DgnImp
         return ccp;
 
     importer.AddElementId(GetElementId(), ccp->GetElementId());
+
+    parent = ccp->GetDgnDb().Elements().GetElement(ccp->GetParentId());
+    if (parent.IsValid())
+        parent->_OnChildImported(*ccp, *this, importer);
+
     return ccp;
     }
 
