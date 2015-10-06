@@ -54,13 +54,12 @@
     <!-- This part enables the ECObjects unit tests to be built into the set of unit tests that run on multiple platforms. -->
 
     <Part Name="ECObjectsTestsBasicDependencies">
-        <SubPart PartName="google_gtest_lib"     PartFile="gtest"                   Repository="util-gtest" />
         <SubPart PartName="StandardSchemas"      PartFile="ECStandards"             Repository="ECStandards"/>
         <SubPart PartName="ECObjectsNative" />
     </Part>
 
     <Part Name="ECObjectsUnitTests" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)ECObjects/test/ -dBEGTEST_NAME=ECObjects -dBEGTEST_DEPENDENCIES=$(SrcRoot)ECObjects/test/SeedData.prewire.mke">
-        <SubPart PartName="ECObjectsTestsDependencies"/>
+        <SubPart PartName="TestDependencies"/>
         <SubPart PartName="PublishedApi"/>
     </Part>
 
@@ -81,76 +80,132 @@
         </Bindings>
     </Part>
 
-    <Part Name="ECObjectsTestsDependencies">
+    <Part Name="TestDependencies" BentleyBuildMakeFile="test/prewire.mke">
         <SubPart PartName="GeomlibsSerialization" PartFile="geomlibs" Repository="GeomLibs" />
         <SubPart PartName="ECObjectsTestsBasicDependencies"/>
         <SubPart PartName="ECObjectsTestsSeedData"/>
         <SubPart PartName="Logging" />
         <SubPart PartName="ECObjectsTestLoggingConfig"/>
-    </Part>
-
-    <Part Name="ECObjectsPublishedTests" BentleyBuildMakeFile="test/PublishedTests.mke" ExcludePlatforms="Android*,Linux*,iOS*">
-        <SubPart PartName="ECObjectsNonPublishedTests"/>
-        <SubPart PartName="ECObjectsTestsDependencies"/>
-        <SubPart PartName="PublishedApi"/>
         <Bindings>
-            <Files ProductDirectoryName="ECObjectsTestExe">Delivery/ECObjectsTest_Published.exe</Files>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="ECObjects" SubPartDirectory="UnitTests/ECObjects">Delivery/UnitTests/ignore_list.txt</Files>
         </Bindings>
     </Part>
 
-    <Part Name="ECObjectsNonPublishedTests" BentleyBuildMakeFile="test/NonPublishedTests.mke" ExcludePlatforms="Android*,Linux*,iOS*">
-        <SubPart PartName="google_gtest_lib"                PartFile="gtest"            Repository="util-gtest" />
-        <SubPart PartName="google_gmock_lib"                PartFile="gmock"            Repository="util-gmock" />
-        <SubPart PartName="ECObjectsTestsDependencies"/>
+    <Part Name="TestFixture" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=TestFixture">
+        <SubPart PartName="TestDependencies"/>
         <Bindings>
-            <Files ProductDirectoryName="ECObjectsTestExe">Delivery/ECObjectsTest_NonPublished.exe</Files>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/TestFixture" SourceName="Delivery/UnitTests/Objects/TestFixture"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="PublishedTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dIsPublished=1">
+        <SubPart PartName="NonPublishedTests"/>
+        <SubPart PartName="PublishedApi"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="NonPublishedTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="TestDependencies"/>
+        <SubPart PartName="TestFixture"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>
     </Part>
 <!--
-    <Part Name="ECObjectsScenarioTests" BentleyBuildMakeFile="test\scenarioTests.mke" ExcludePlatforms="Android*,Linux*,iOS*">
-        <SubPart PartName="ECObjectsTestsDependencies"/>
-        <SubPart PartName="PublishedApi"/>
+    <Part Name="ScenarioTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Scenario -dIsPublished=1">
+        <SubPart PartName="TestDependencies"/>
+        <SubPart PartName="TestFixture"/>
         <Bindings>
-            <Files ProductDirectoryName="ECObjectsTestExe">Delivery\ECObjectsTest_Scenario.exe</Files>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/Scenario" SourceName="Delivery/UnitTests/Objects/Scenario"/>
         </Bindings>
     </Part>
     
-    <Part Name="ECObjectsNonPublishedScenarioTests" BentleyBuildMakeFile="test\nonPublishedScenarioTests.mke" ExcludePlatforms="Android*,Linux*,iOS*">
-        <SubPart PartName="ECObjectsTestsDependencies"/>
+    <Part Name="ECObjectsNonPublishedScenarioTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublishedScenario">
+        <SubPart PartName="TestDependencies"/>
+        <SubPart PartName="TestFixture"/>
         <Bindings>
-            <Files ProductDirectoryName="ECObjectsTestExe">Delivery\ECObjectsTest_NonPublishedScenario.exe</Files>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/NonPublishedScenario" SourceName="Delivery/UnitTests/Objects/NonPublishedScenario"/>
         </Bindings>
     </Part>
 -->
-    <Part Name="ECObjectsPerformanceTests" BentleyBuildMakeFile="test\PerformanceTests.mke" ExcludePlatforms="Android*,Linux*,iOS*">
-      <SubPart PartName="ECObjectsTestsDependencies"/>
-      <SubPart PartName="PublishedApi"/>
-      <Bindings>
-        <Files ProductDirectoryName="ECObjectsTestExe">Delivery\ECObjectsTest_Performance.exe</Files>
-      </Bindings>
+    <Part Name="PerformanceTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
+        <SubPart PartName="TestDependencies"/>
+        <SubPart PartName="TestFixture"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
+        </Bindings>
     </Part>
 
+    <!-- This part is the default test collection. It is included in MobileDgn's aggregate test collection. -->
     <Part Name="Tests">
-        <SubPart PartName="ECObjectsPublishedTests" />
-        <SubPart PartName="ECObjectsNonPublishedTests" />
-        <SubPart PartName="ECObjectsPerformanceTests" />
-    <!--    <SubPart PartName="ECObjectsScenarioTests" />
-        <SubPart PartName="ECObjectsNonPublishedScenarioTests" />-->
+        <SubPart PartName="PublishedTests" />
+        <SubPart PartName="NonPublishedTests" />
+        <!--    
+        <SubPart PartName="ScenarioTests" />
+        <SubPart PartName="NonPublishedScenarioTests" />
+        -->
     </Part>
 
-    <Part Name="RunECObjectsTests" BentleyBuildMakeFile="test/ECObjectsNativeTest.run.mke" ExcludePlatforms="Android*,Linux*,iOS*">
-        <SubPart PartName="Tests" />
+    <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in MobileDgn's Gtest-Aggregator and RunGtest-MobileDgnTests parts -->
+    <Product Name="ECObjects-Tests">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECObjectsTest -dTEST_COLLECTION_PRODUCT=ECObjects-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="ECObjects-Tests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ECObjectsTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ECObjectsTest/Assets" />
+        </Bindings>
     </Part>
 
-    <Part Name="RunECObjectsPerformanceTests" BentleyBuildMakeFile="test/ECObjectsPerformanceTest.run.mke">
-        <SubPart PartName="ECObjectsPerformanceTests" />
+    <Product Name="ECObjects-Gtest" >
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ECObjects-Gtest/ECObjectsTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ECObjects" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="ECObjects-Gtest" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
 
-  <Product Name="ECObjectsStatic"> <!-- Only here to avoid putting directory list on ECObjectsTested -->
+    <!-- Define a gtest program to run the PerformanceTests. -->
+    <Product Name="ECObjects-PerformanceTests">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="PerformanceTests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="PerformanceGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECObjectsPerformanceTests -dTEST_COLLECTION_PRODUCT=ECObjects-PerformanceTests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="ECObjects-PerformanceTests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ECObjectsPerformanceTests/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ECObjectsPerformanceTests/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="ECObjects-PerformanceGtest" >
+        <SubPart PartName="PerformanceGtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunPerformanceGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ECObjects-PerformanceGtest/ECObjectsPerformanceTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ECObjects" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="ECObjects-PerformanceGtest" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    </Part>
+
+    <Product Name="ECObjectsStatic"> <!-- Only here to avoid putting directory list on ECObjectsTested -->
       <SubPart PartName="ECObjectsNative"  LibType="Static"/>
       <Directories DirectoryListName="ECObjects" />
   </Product>
-  <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+
+<!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 
@@ -191,48 +246,13 @@
         <Directories DirectoryListName="ECObjects"/>
     </Product>
 
-    <ProductDirectoryList ListName="ECObjectsTest">
-        <ProductDirectory Name="VendorAPI"                          Deliver="false"/>
-        <ProductDirectory Name="VendorNotices"                      Deliver="false"/>
-        <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
-        <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
-        <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
-        <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
-        <ProductDirectory Name="mergemodules"                       Deliver="false"/>
-        <ProductDirectory Name="libs"                               Deliver="false"/>
-
-        <ProductDirectory Name="PublicAPI"      LibType="Static"    Deliver="false"/>
-        <ProductDirectory Name="VendorAPI"      LibType="Static"    Deliver="false"/>
-        <ProductDirectory Name="VendorNotices"  LibType="Static"    Deliver="false"/>
-        <ProductDirectory Name="libs"           LibType="Static"    Deliver="false"/>
-
-        <ProductDirectory Name="ECObjectsTestSeedData"              Path="SeedData"/>
-        <ProductDirectory Name="ECObjectsTestSeedDataPK"            Path="SeedData/ur-PK"/>
-        <ProductDirectory Name="ECObjectsTestSeedDataGB"            Path="SeedData/en-GB"/>
-        <ProductDirectory Name="ECObjectsTestSeedDataIT"            Path="SeedData/it"/>
-        <ProductDirectory Name="ECObjectsTestLoggingConfig"         Path=""/>
-
-        <ProductDirectory Name="geomnativeassemblies"               Path=""/>
-        <ProductDirectory Name="loggingnativeassemblies"            Path=""/>
-        <ProductDirectory Name="LoggingOptionalNativeAssemblies"    Path="" />
-        <ProductDirectory Name="BentleyNativeAssemblies"            Path=""/>
-        <ProductDirectory Name="ECObjectsNativeAssemblies"          Path=""/>
-        <ProductDirectory Name="ECObjectsTestExe"                   Path=""/>
-        <ProductDirectory Name="ecschemas"                          Path=""/>
-    </ProductDirectoryList>
-
-    <Product Name="ECObjectsTests" SaveProduct="true">
-        <SubPart PartName="Tests"/>
-        <Directories DirectoryListName="ECObjectsTest"/>
-    </Product>
-
     <ProductDirectoryList ListName="ECObjectsTested">
     </ProductDirectoryList>
     <Product Name="ECObjectsTested" PrgOutputDir="ECObjects" SaveProduct="true" AddIn="true">
         <SubProduct ProductName="ECObjects" />
         <!-- SubProduct ProductName="ECObjectsStatic" /-->
-        <SubProduct ProductName="ECObjectsTests" />
-        <SubPart PartName="RunECObjectsTests" />
+        <SubProduct ProductName="ECObjects-Tests" />
+        <SubPart PartName="RunGtest" />
         <Directories DirectoryListName="ECObjectsTested"/>
     </Product>
 

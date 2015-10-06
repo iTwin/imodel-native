@@ -1,14 +1,13 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: test/NonPublishedTests.mke $
+#  $Source: test/prewire.mke $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
-PolicyFile = $(SrcRoot)/ecobjects/test/ECObjectsTestPolicy.mki
-baseDir =   $(_MakeFilePath)
+%include mdl.mki
 
-programName = ECObjectsTest_NonPublished
-BEGTEST_INPUT=$(baseDir)NonPublished\/
+baseDir = $(_MakeFilePath)
 
-%include buildTestFixture.mki
+$(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)
