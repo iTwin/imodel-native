@@ -3893,7 +3893,37 @@ TEST_F(SchemaImportTestFixture, AmbiguousQuery)
 
     ASSERT_EQ(ExpectedValueOfStructP2, ActualValueOfStructP2);
     stmt.Finalize();
-
     }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Maha Nasir                 10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECSqlTestFixture, BindNegECInstanceId)
+    {
+    const auto perClassRowCount = 0;
+    auto& ecdb = SetUp ("BindNegECInstanceId.ecdb", BeFileName (L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams (Db::OpenMode::ReadWrite), perClassRowCount);
+
+    ECSqlStatement stmt;
+
+    //Inserting Values for a negative ECInstanceId.
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "INSERT INTO ecsql.P (ECInstanceId,B,D,S) VALUES(?,?,?,?)"));
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt64 (1, (int64_t)(-1)));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.BindBoolean (2, true));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.BindDouble (3, 100.54));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.BindText (4, "Foo", IECSqlBinder::MakeCopy::No));
+
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, stmt.Step ());
+    stmt.Finalize ();
+
+    //Retrieving Values.
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "Select B,D,S FROM ecsql.P WHERE ECInstanceId=-1"));
+    ASSERT_EQ (DbResult::BE_SQLITE_ROW, stmt.Step ());
+    ASSERT_EQ (true, stmt.GetValueBoolean (0));
+    ASSERT_EQ (100.54, stmt.GetValueDouble (1));
+    ASSERT_STREQ ("Foo", stmt.GetValueText (2));
+    stmt.Finalize ();
+    }
+
 
 END_ECDBUNITTESTS_NAMESPACE
