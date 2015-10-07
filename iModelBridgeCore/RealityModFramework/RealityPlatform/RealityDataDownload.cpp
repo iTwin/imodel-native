@@ -134,7 +134,8 @@ bool RealityDataDownload::Perform()
 
         if (mc != CURLM_OK)
             {
-              m_pStatusFunc(-1, NULL, mc, "curl_multi_wait() failed");
+            if (m_pStatusFunc)
+                m_pStatusFunc(-1, NULL, mc, "curl_multi_wait() failed");
 //              fprintf(stderr, "curl_multi_wait() failed, code %d.\n", mc);
             break;
             }
@@ -162,8 +163,8 @@ bool RealityDataDownload::Perform()
                 char *pClient;
                 curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &pClient);
                 struct FileTransfer *pFileTrans = (struct FileTransfer *)pClient;
-
-                m_pStatusFunc((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+                if (m_pStatusFunc)
+                    m_pStatusFunc((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
 //                fprintf(stderr, "R: %d - %s <%ls>\n", msg->data.result, curl_easy_strerror(msg->data.result), pFileTrans->filename.c_str());
 
                 if (pFileTrans->fileStream.IsOpen())
@@ -174,7 +175,8 @@ bool RealityDataDownload::Perform()
                 }
             else
                 {
-                  m_pStatusFunc(-1, NULL, msg->msg, "CurlMsg failed");
+                if (m_pStatusFunc)
+                    m_pStatusFunc(-1, NULL, msg->msg, "CurlMsg failed");
 //                  fprintf(stderr, "E: CURLMsg (%d)\n", msg->msg);
                 }
 

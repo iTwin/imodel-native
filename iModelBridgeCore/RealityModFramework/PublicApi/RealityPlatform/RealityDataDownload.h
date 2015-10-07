@@ -43,7 +43,7 @@ public:
         RealityDataDownload_ProgressCallBack pProgressFunc;
         };
 
-    typedef std::vector<std::pair<AString, WString>>    UrlLink_UrlFile;
+    typedef bvector<std::pair<AString, WString>>    UrlLink_UrlFile;
 
     //! Create an instance of RealityDataDownload
     //! @param[in]  pi_Link_FileName A list of (Url link, url file)
