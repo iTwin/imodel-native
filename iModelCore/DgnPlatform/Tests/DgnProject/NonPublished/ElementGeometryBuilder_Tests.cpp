@@ -67,8 +67,8 @@ TEST_F(ElementGeometryBuilderTests, CreateElement3d)
     Utf8CP sub_code = "Test SubCategory";
     Utf8CP sub_desc = "This is a test subcategory";
     Utf8CP sub_label = "TestSubCategory";
-    DgnCategories::SubCategory subCategory(m_defaultCategoryId, (DgnSubCategoryId)3, sub_code, appearence, sub_desc, sub_label);
-    EXPECT_TRUE(builder->Append(subCategory.GetCategoryId()));
+    DgnCategories::SubCategory subCategory(m_defaultCategoryId, DgnCategories::DefaultSubCategoryId(m_defaultCategoryId), sub_code, appearence, sub_desc, sub_label);
+    EXPECT_TRUE(builder->Append(subCategory.GetSubCategoryId()));
 
     // MSBsplineSurface
     //
@@ -90,7 +90,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElement3d)
     // TextString
     //
     
-    TextStringPtr text = CreateTextString();
+    TextStringPtr text = GeomHelper::CreateTextString();
     EXPECT_TRUE(builder->Append(*text));
 
     EXPECT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
