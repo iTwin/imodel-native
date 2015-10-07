@@ -72,6 +72,7 @@ protected:
 public:
     TestElement(CreateParams const& params) : T_Super(params) {}
     static TestElementPtr Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Code elementCode);
+    static TestElementPtr CreateWithoutGeometry(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId);
     static TestElementPtr Create(DgnDbR db, ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, Code elementCode);
     static ECN::ECClassCP GetTestElementECClass(DgnDbR db) { return db.Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_CLASS_NAME); }
     void SetTestItemProperty(Utf8CP value) { m_testItemProperty.AssignOrClear(value); }

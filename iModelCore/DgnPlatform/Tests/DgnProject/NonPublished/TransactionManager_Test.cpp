@@ -176,7 +176,8 @@ TransactionManagerTests::TransactionManagerTests()
 +---------------+---------------+---------------+---------------+---------------+------*/
 TransactionManagerTests::~TransactionManagerTests()
     {
-    m_db->SaveChanges();
+    if (m_db.IsValid())
+        m_db->SaveChanges();
     }
 
 /*---------------------------------------------------------------------------------**//**

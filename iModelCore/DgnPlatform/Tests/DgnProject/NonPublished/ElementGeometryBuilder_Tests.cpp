@@ -111,6 +111,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElement2d)
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, m_defaultCategoryId, DPoint2d::From(0.0, 0.0));
     TextString textStringElem;
+    textStringElem.SetText("If we have no text we have no range and insert fails");
     EXPECT_TRUE(builder->Append(textStringElem));
 
     // 3d should not be appended
