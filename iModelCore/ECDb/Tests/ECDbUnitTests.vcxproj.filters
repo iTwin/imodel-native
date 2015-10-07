@@ -127,9 +127,6 @@
     <ClCompile Include="Published\SchemaImportTestFixture.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECDbMapCA_Tests.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Performance\PerformanceECDbMapCATests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
@@ -177,6 +174,9 @@
     </ClCompile>
     <ClCompile Include="Performance\PerformanceECDbReferentialIntegrityTests.cpp">
       <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbMapping_Tests.cpp">
+      <Filter>Published</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

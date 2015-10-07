@@ -23,7 +23,7 @@ ECDbSchemas.UpdatingExistingECSchema
 ECDbSchemas.Verify_TFS_14829_A
 
 #TFS268976 will address this (Affan)
-ECDbMapCATestFixture.MismatchDataTypesInExistingTable
+ECDbMappingTestFixture.MismatchDataTypesInExistingTable
 
 #TFS293050 will address this (Hassan)
 ECDbSchemaManager.SupplementWithLatestCompatibleSupplementalSchema

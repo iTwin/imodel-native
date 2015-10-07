@@ -32,7 +32,7 @@
     <ClCompile Include="Performance\QueryTests.cpp" />
     <ClCompile Include="Published\ECDbFileInfoTests.cpp" />
     <ClCompile Include="Published\ECDbInstances_Test.cpp" />
-    <ClCompile Include="Published\ECDbMapCA_Tests.cpp" />
+    <ClCompile Include="Published\ECDbMapping_Tests.cpp" />
     <ClCompile Include="Published\ECDbProfile_Test.cpp" />
     <ClCompile Include="Published\ECDbReadTests.cpp" />
     <ClCompile Include="Published\ECDbRelationshipStrength_Test.cpp" />

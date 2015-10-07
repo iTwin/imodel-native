@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Published/ECDbMapCA_Tests.cpp $
+|  $Source: Tests/Published/ECDbMapping_Tests.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -15,7 +15,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //=======================================================================================    
 // @bsiclass                                   Krischan.Eberle                  10/15
 //=======================================================================================    
-struct ECDbMapCATestFixture : SchemaImportTestFixture
+struct ECDbMappingTestFixture : SchemaImportTestFixture
     {
 protected:
     //This is a mirror of the internal MapStrategy used by ECDb and persisted in the DB.
@@ -71,13 +71,13 @@ protected:
         }
 
 public:
-    virtual ~ECDbMapCATestFixture() {}
+    virtual ~ECDbMappingTestFixture() {}
     };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMapCATestFixture, Test)
+TEST_F(ECDbMappingTestFixture, ECDbMapCATests)
     {
     std::vector<TestItem> testItems {
 
@@ -1277,7 +1277,7 @@ TEST_F(SchemaImportTestFixture, ECDbMap_TablePrefix)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMapCATestFixture, AbstractClassWithSharedTable)
+TEST_F(ECDbMappingTestFixture, AbstractClassWithSharedTable)
     {
     TestItem testItem ("<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestAbstractClasses' nameSpacePrefix='tac' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -1358,7 +1358,7 @@ TEST_F(ECDbMapCATestFixture, AbstractClassWithSharedTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMapCATestFixture, ForeignKeyMapCreateIndex)
+TEST_F(ECDbMappingTestFixture, ForeignKeyMapCreateIndex)
     {
     TestItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
@@ -1434,7 +1434,7 @@ TEST_F(ECDbMapCATestFixture, ForeignKeyMapCreateIndex)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbMapCATestFixture, InstanceInsertionInExistingTable)
+TEST_F (ECDbMappingTestFixture, InstanceInsertionInExistingTable)
     {
     ECDb ecdb;
     EXPECT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb (ecdb, nullptr, L"Test.ecdb"));
@@ -1506,7 +1506,7 @@ TEST_F (ECDbMapCATestFixture, InstanceInsertionInExistingTable)
 //*Test to verify the CRUD operations for a schema having similar Class and Property name
 // @bsimethod                                   Maha Nasir                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbMapCATestFixture, ClassAndPropertyWithSameName)
+TEST_F (ECDbMappingTestFixture, ClassAndPropertyWithSameName)
     {
     TestItem testItem (
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1564,7 +1564,7 @@ TEST_F (ECDbMapCATestFixture, ClassAndPropertyWithSameName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbMapCATestFixture, MismatchDataTypesInExistingTable)
+TEST_F (ECDbMappingTestFixture, MismatchDataTypesInExistingTable)
     {
     ECDb ecdb;
     ASSERT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb (ecdb, nullptr, L"Test.ecdb"));
@@ -1600,7 +1600,7 @@ TEST_F (ECDbMapCATestFixture, MismatchDataTypesInExistingTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbMapCATestFixture, InvalidPrimaryKeyInExistingTable)
+TEST_F (ECDbMappingTestFixture, InvalidPrimaryKeyInExistingTable)
     {
     ECDb ecdb;
     ASSERT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb (ecdb, nullptr, L"InvalidPrimaryKeyInExistingTable.ecdb"));
@@ -1707,7 +1707,7 @@ TEST_F (SchemaImportTestFixture, InstanceInsertionInArray)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbMapCATestFixture, SharedTableInstanceInsertionAndDeletion)
+TEST_F (ECDbMappingTestFixture, SharedTableInstanceInsertionAndDeletion)
     {
     TestItem testItem ("<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' description='Handles the insertion and deletion from standalone classes.' displayLabel='Table Per Hierarchy' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -1792,7 +1792,7 @@ TEST_F (ECDbMapCATestFixture, SharedTableInstanceInsertionAndDeletion)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMapCATestFixture, SharedTableAppliesToSubclasses_SharedColumns)
+TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_SharedColumns)
     {
     TestItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1874,7 +1874,7 @@ TEST_F(ECDbMapCATestFixture, SharedTableAppliesToSubclasses_SharedColumns)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMapCATestFixture, SharedTableAppliesToSubclasses_SharedColumns_DisableSharedColumns)
+TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_SharedColumns_DisableSharedColumns)
     {
     TestItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1970,7 +1970,7 @@ TEST_F(ECDbMapCATestFixture, SharedTableAppliesToSubclasses_SharedColumns_Disabl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMapCATestFixture, SharedTableAppliesToSubclasses_JoinedTableForSubclasses)
+TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_JoinedTableForSubclasses)
     {
     TestItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2054,7 +2054,7 @@ TEST_F(ECDbMapCATestFixture, SharedTableAppliesToSubclasses_JoinedTableForSubcla
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMapCATestFixture, NotMappedWithinClassHierarchy)
+TEST_F(ECDbMappingTestFixture, NotMappedWithinClassHierarchy)
     {
     TestItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2130,7 +2130,7 @@ TEST_F(ECDbMapCATestFixture, NotMappedWithinClassHierarchy)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMapCATestFixture, EnforceLinkTableMapping)
+TEST_F(ECDbMappingTestFixture, EnforceLinkTableMapping)
     {
     TestItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2180,7 +2180,7 @@ TEST_F(ECDbMapCATestFixture, EnforceLinkTableMapping)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbMapCATestFixture, UserDefinedIndexTest)
+TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
     {
         {
         TestItem testItem (
@@ -2551,7 +2551,7 @@ TEST_F (ECDbMapCATestFixture, UserDefinedIndexTest)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMapCATestFixture, NotNullablePropertyTest)
+TEST_F(ECDbMappingTestFixture, NotNullablePropertyTest)
     {
         {
         TestItem testItem(
@@ -2760,7 +2760,7 @@ TEST_F(ECDbMapCATestFixture, NotNullablePropertyTest)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMapCATestFixture, ForeignKeyMapWhereLinkTableIsRequired)
+TEST_F(ECDbMappingTestFixture, ForeignKeyMapWhereLinkTableIsRequired)
     {
     TestItem testItem ("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
@@ -2796,7 +2796,7 @@ TEST_F(ECDbMapCATestFixture, ForeignKeyMapWhereLinkTableIsRequired)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMapCATestFixture, ForeignKeyMapWithKeyProperty)
+TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
     {
     Utf8CP ecdbName = "ForeignKeyMapWithKeyProp.ecdb";
 
@@ -3118,7 +3118,7 @@ TEST_F(ECDbMapCATestFixture, ForeignKeyMapWithKeyProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMapCATestFixture, ForeignKeyMapWithECInstanceIdKeyProperty)
+TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithECInstanceIdKeyProperty)
     {
     Utf8CP ecdbName = "ForeignKeyMapWithECInstanceIdKeyProp.ecdb";
 
@@ -3329,7 +3329,7 @@ TEST_F(ECDbMapCATestFixture, ForeignKeyMapWithECInstanceIdKeyProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMapCATestFixture, ForeignKeyMapWithoutKeyProperty)
+TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
     {
     Utf8CP ecdbName = "ForeignKeyMapWithoutKeyProp.ecdb";
     Utf8CP childTableName = "ts_Child";
@@ -3600,7 +3600,7 @@ TEST_F(ECDbMapCATestFixture, ForeignKeyMapWithoutKeyProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  04/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMapCATestFixture, RelationshipMapCAOnSubclasses)
+TEST_F(ECDbMappingTestFixture, RelationshipMapCAOnSubclasses)
     {
     TestItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                         "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
@@ -3659,7 +3659,7 @@ TEST_F(ECDbMapCATestFixture, RelationshipMapCAOnSubclasses)
 //=======================================================================================    
 // @bsiclass                                   Muhammad Hassan                     05/15
 //=======================================================================================    
-struct RelationshipsAndSharedTablesTestFixture : ECDbMapCATestFixture
+struct RelationshipsAndSharedTablesTestFixture : ECDbMappingTestFixture
     {
 protected:
     static Utf8CP const SCHEMA_XML;
@@ -4036,7 +4036,7 @@ Utf8CP const RelationshipsAndSharedTablesTestFixture::SCHEMA_XML =
 //=======================================================================================    
 // @bsiclass                                   Muhammad Hassan                     05/15
 //=======================================================================================    
-struct ReferentialIntegrityTestFixture : ECDbMapCATestFixture
+struct ReferentialIntegrityTestFixture : ECDbMappingTestFixture
     {
 private:
     void VerifyRelationshipInsertionIntegrity(ECDbCR ecdb, Utf8CP relationshipClass, std::vector<ECInstanceKey> const& sourceKeys, std::vector<ECInstanceKey>const& targetKeys, std::vector<DbResult> const& expected, size_t& rowInserted) const;
