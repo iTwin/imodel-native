@@ -147,6 +147,11 @@ public:
 
     IClassMap const& GetView (View classView) const;
 
+    bool IsJoinedTable() const;
+    bool IsParentOfJoinedTable() const;
+    IClassMap const* FindRootOfJoinedTable() const;
+    const std::set<ECDbSqlTable const*> GetJoinedTables() const;
+
     PropertyMapCP GetPropertyMap (Utf8CP propertyName) const;
 
     //! Returns a collection of this class map's property maps.
@@ -177,27 +182,6 @@ public:
     bool IsAbstractECClass () const;
 
     Utf8String ToString () const;
-    const std::set<ECDbSqlTable const*> GetSecondaryTables () const
-        {
-        std::set<ECDbSqlTable const*> secondaryTables;
-        GetPropertyMaps ().Traverse ([&secondaryTables,this] (TraversalFeedback& feedback, PropertyMapCP propMap)
-            {
-            if (!propMap->IsVirtual ())
-                {
-                if (auto column = propMap->GetFirstColumn ())
-                    {
-                    if (&column->GetTable () != &GetTable ())
-                        {
-                        if (secondaryTables.find (&column->GetTable ()) == secondaryTables.end ())
-                            secondaryTables.insert (&column->GetTable ());
-                        }
-                    }
-                }
-            feedback = TraversalFeedback::Next;
-            }, true);
-
-        return secondaryTables;
-        }
 
     static bool IsMapToSecondaryTableStrategy (ECN::ECClassCR ecClass);
     static bool IsAbstractECClass (ECN::ECClassCR ecClass);

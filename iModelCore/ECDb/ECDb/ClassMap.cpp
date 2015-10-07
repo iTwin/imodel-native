@@ -229,6 +229,71 @@ bool IClassMap::IsMapToSecondaryTableStrategy(ECN::ECClassCR ecClass)
     return ecClass.GetIsStruct();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                         Affan.Khan  10/2015
+//---------------------------------------------------------------------------------------
+bool IClassMap::IsJoinedTable() const
+    {
+    return Enum::Contains(GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                         Affan.Khan  10/2015
+//---------------------------------------------------------------------------------------
+bool IClassMap::IsParentOfJoinedTable() const
+    {
+    return Enum::Contains(GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::ParentOfJoinedTable);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                         Affan.Khan  10/2015
+//---------------------------------------------------------------------------------------
+IClassMap const* IClassMap::FindRootOfJoinedTable() const
+    {
+    auto current = this;
+    if (!current->IsJoinedTable())
+        return nullptr;
+
+    do
+        {
+        if (current->IsParentOfJoinedTable())
+            return current;
+
+        auto nextParentId = current->GetParentMapClassId();
+        if (nextParentId == ECClass::UNSET_ECCLASSID)
+            return nullptr;
+
+        current = GetECDbMap().GetClassMapCP(nextParentId);
+        BeAssert(current != nullptr && "Failed to find parent classmap. This should not happen");
+        } while (current != nullptr);
+
+        return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                         Affan.Khan  10/2015
+//---------------------------------------------------------------------------------------
+const std::set<ECDbSqlTable const*> IClassMap::GetJoinedTables() const
+    {
+    std::set<ECDbSqlTable const*> secondaryTables;
+    GetPropertyMaps().Traverse([&secondaryTables, this] (TraversalFeedback& feedback, PropertyMapCP propMap)
+        {
+        if (!propMap->IsVirtual())
+            {
+            if (auto column = propMap->GetFirstColumn())
+                {
+                if (&column->GetTable() != &GetTable())
+                    {
+                    if (secondaryTables.find(&column->GetTable()) == secondaryTables.end())
+                        secondaryTables.insert(&column->GetTable());
+                    }
+                }
+            }
+        feedback = TraversalFeedback::Next;
+        }, true);
+
+    return secondaryTables;
+    }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -441,11 +506,16 @@ MapStatus ClassMap::_OnInitialized()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::AddPropertyMaps(IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo,ClassMapInfo const* classMapInfo)
+MapStatus ClassMap::AddPropertyMaps(IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo, ClassMapInfo const* classMapInfo)
     {
+
+    bool isJoinedTable = isJoinedTable = Enum::Contains(GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable);
+    bool isMappingPhase = classMapInfo != nullptr && loadInfo == nullptr;
+    if (!isMappingPhase && isJoinedTable)
+        parentClassMap = nullptr;
+
     std::vector<ECPropertyP> propertiesToMap;
     PropertyMapPtr propMap = nullptr;
-
     for (auto property : m_ecClass.GetProperties(true))
         {
         Utf8CP propertyAccessString = property->GetName().c_str();
@@ -456,11 +526,16 @@ MapStatus ClassMap::AddPropertyMaps(IClassMap const* parentClassMap, ECDbClassMa
         if (propMap == nullptr)
             propertiesToMap.push_back(property);
         else
-            GetPropertyMapsR ().AddPropertyMap(propMap);
+            {
+            if (!isJoinedTable)
+                GetPropertyMapsR().AddPropertyMap(propMap);
+            else
+                GetPropertyMapsR().AddPropertyMap(propMap->Clone(&GetTable()));
+            }
         }
-    
+
     if (loadInfo == nullptr)
-        GetColumnFactoryR ().Update();
+        GetColumnFactoryR().Update();
 
     for (auto property : propertiesToMap)
         {
@@ -478,12 +553,12 @@ MapStatus ClassMap::AddPropertyMaps(IClassMap const* parentClassMap, ECDbClassMa
         if (loadInfo == nullptr)
             {
             if (SUCCESS == propMap->FindOrCreateColumnsInTable(*this, classMapInfo))
-                GetPropertyMapsR ().AddPropertyMap(propMap);
+                GetPropertyMapsR().AddPropertyMap(propMap);
             }
         else
             {
             if (propMap->Load(*loadInfo) == SUCCESS)
-                GetPropertyMapsR ().AddPropertyMap(propMap);
+                GetPropertyMapsR().AddPropertyMap(propMap);
             }
         }
 

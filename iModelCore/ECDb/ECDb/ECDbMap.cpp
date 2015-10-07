@@ -1012,9 +1012,40 @@ void ECDbMap::LightweightCache::LoadRelationshipCache () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-void ECDbMap::LightweightCache::LoadDerivedClasses ()  const
+void ECDbMap::LightweightCache::LoadVerticalPartitions()  const
     {
-    if (m_loadedFlags.m_tablesPerClassIdIsLoaded)
+    if (m_loadedFlags.m_verticalPartitionsIsLoaded)
+        return;
+
+    Utf8CP sql0 =
+        "SELECT  ec_Class.Id ClassId, ec_Table.Name "
+        "    FROM ec_PropertyMap "
+        "       JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND ec_Column.KnownColumn != 2 "
+        "       JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+        "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+        "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
+        "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+        "    WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) "
+        "    GROUP BY ec_Class.Id, ec_Table.Name ";
+
+    CachedStatementPtr stmt = m_map.GetECDbR().GetCachedStatement(sql0);
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        auto classId = stmt->GetValueInt64(0);
+        Utf8CP tableName = stmt->GetValueText(1);
+        auto table = m_map.GetSQLManager().GetDbSchema().FindTable(tableName);
+        BeAssert(table != nullptr);
+        m_verticalPartitions[classId].insert(table);
+        }
+
+    m_loadedFlags.m_verticalPartitionsIsLoaded = true;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+void ECDbMap::LightweightCache::LoadHorizontalPartitions ()  const
+    {
+    if (m_loadedFlags.m_horizontalPartitionsIsLoaded)
         return;
 
     auto anyClassId = GetAnyClassId ();
@@ -1037,7 +1068,7 @@ void ECDbMap::LightweightCache::LoadDerivedClasses ()  const
         "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
         "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
         "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "   WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) "
+        "   WHERE ec_ClassMap.MapStrategy NOT IN (100, 101)  AND ec_Table.Name NOT LIKE '%_joinedTable'"
         "  GROUP BY  ec_Class.Id , ec_Table.Name "
         "   )  "
         "SELECT  DCL.RootClassId, DCL.DerivedClassId, TMI.TableName FROM DerivedClassList DCL  "
@@ -1054,7 +1085,7 @@ void ECDbMap::LightweightCache::LoadDerivedClasses ()  const
         Utf8CP tableName = stmt->GetValueText (2);
         auto table = m_map.GetSQLManager ().GetDbSchema ().FindTable (tableName);
         BeAssert (table != nullptr);
-        auto& ids = m_tablesPerClassId[rootClassId][table];
+        auto& ids = m_horizontalPartitions[rootClassId][table];
         if (derivedClassId == rootClassId)
             {
             ids.insert (ids.begin (), derivedClassId);
@@ -1063,7 +1094,7 @@ void ECDbMap::LightweightCache::LoadDerivedClasses ()  const
             ids.push_back (derivedClassId);
         }
 
-    m_loadedFlags.m_tablesPerClassIdIsLoaded = true;
+    m_loadedFlags.m_horizontalPartitionsIsLoaded = true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1190,12 +1221,20 @@ std::vector<ECClassId> const& ECDbMap::LightweightCache::GetAnyClassReplacements
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-ECDbMap::LightweightCache::ClassIdsPerTableMap const& ECDbMap::LightweightCache::GetTablesForClass (ECN::ECClassId classId) const
+bset<ECDbSqlTable const*> const& ECDbMap::LightweightCache::GetVerticalPartitionsForClass(ECN::ECClassId classId) const
     {
-    LoadDerivedClasses ();
-    return m_tablesPerClassId[classId];
+    LoadVerticalPartitions();
+    return m_verticalPartitions[classId];
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      10/2015
+//---------------------------------------------------------------------------------------
+ECDbMap::LightweightCache::ClassIdsPerTableMap const& ECDbMap::LightweightCache::GetHorizontalPartitionsForClass(ECN::ECClassId classId) const
+    {
+    LoadHorizontalPartitions();
+    return m_horizontalPartitions[classId];
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
@@ -1208,8 +1247,9 @@ void ECDbMap::LightweightCache::Load(bool forceReload)
     LoadAnyClassRelationships();
     LoadRelationshipCache();
     LoadClassIdsPerTable();
-    LoadDerivedClasses();
+    LoadHorizontalPartitions();
     LoadAnyClassReplacements();
+    LoadVerticalPartitions();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1219,14 +1259,15 @@ void ECDbMap::LightweightCache::Reset ()
     {
     m_loadedFlags.m_classIdsPerTableIsLoaded = 
         m_loadedFlags.m_relationshipPerTableLoaded =
-        m_loadedFlags.m_tablesPerClassIdIsLoaded =
+        m_loadedFlags.m_horizontalPartitionsIsLoaded =
+        m_loadedFlags.m_verticalPartitionsIsLoaded =
         m_loadedFlags.m_relationshipCacheIsLoaded =
         m_loadedFlags.m_anyClassReplacementsLoaded = 
         m_loadedFlags.m_anyClassRelationshipsIsLoaded = false;
 
     m_anyClassId = ECClass::UNSET_ECCLASSID;
     m_relationshipEndsByClassIdRev.clear ();
-    m_tablesPerClassId.clear();
+    m_horizontalPartitions.clear();
     m_classIdsPerTable.clear();
     m_relationshipClassIdsPerConstraintClassIds.clear();
     m_nonAnyClassConstraintClassIdsPerRelClassIds.clear();
@@ -1234,6 +1275,7 @@ void ECDbMap::LightweightCache::Reset ()
     m_anyClassReplacements.clear ();
     m_storageDescriptions.clear ();
     m_relationshipPerTable.clear ();   
+    m_verticalPartitions.clear();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1320,7 +1362,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(IClassMap const& 
         }
     else
         {
-        for (auto& kp : lwmc.GetTablesForClass(classId))
+        for (auto& kp : lwmc.GetHorizontalPartitionsForClass(classId))
             {
             auto table = kp.first;
 
@@ -1336,6 +1378,11 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(IClassMap const& 
 
             hp->GenerateClassIdFilter(lwmc.GetClassesForTable(*table));
             }
+        }
+    //add vertical partitions
+    for (auto verticalPartitionTable : lwmc.GetVerticalPartitionsForClass(classId))
+        {
+        storageDescription->m_verticalPartitions.push_back(VerticalPartition(*verticalPartitionTable));
         }
 
     return std::move(storageDescription);
@@ -1373,6 +1420,38 @@ HorizontalPartition* StorageDescription::AddHorizontalPartition(ECDbSqlTable con
     return &m_horizontalPartitions[indexOfAddedPartition];
     }
 
+//****************************************************************************************
+// VerticalPartition
+//****************************************************************************************
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    05 / 2015
+//------------------------------------------------------------------------------------------
+VerticalPartition::VerticalPartition(VerticalPartition&& rhs)
+    : m_table(std::move(rhs.m_table))    
+    {
+    //nulling out the RHS m_table pointer is defensive, even if the destructor doesn't
+    //free the table (as it is now owned by HorizontalPartition). If the ownership ever changes,
+    //this method is safe.
+    rhs.m_table = nullptr;
+    }
+
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    05 / 2015
+//------------------------------------------------------------------------------------------
+VerticalPartition& VerticalPartition::operator=(VerticalPartition&& rhs)
+    {
+    if (this != &rhs)
+        {
+        m_table = std::move(rhs.m_table);
+        //nulling out the RHS m_table pointer is defensive, even if the destructor doesn't
+        //free the table (as it is now owned by HorizontalPartition). If the ownership ever changes,
+        //this method is safe.
+        rhs.m_table = nullptr;
+        }
+
+    return *this;
+    }
 
 //****************************************************************************************
 // HorizontalPartition

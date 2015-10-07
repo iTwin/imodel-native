@@ -493,7 +493,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassLinkTableMap (NativeS
     viewSql.Append (" FROM ").AppendEscaped (relationMap.GetTable ().GetName ().c_str ());
    
     //Append secondary table JOIN
-    auto const secondaryTables = relationMap.GetSecondaryTables ();
+    auto const secondaryTables = relationMap.GetJoinedTables ();
     auto primaryTable = &relationMap.GetTable ();
     auto primaryECInstanceIdColumn = primaryTable->GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
     BeAssert (primaryECInstanceIdColumn != nullptr);
@@ -517,7 +517,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassEndTableMap (NativeSq
     viewSql.Append (" FROM ").AppendEscaped (relationMap.GetTable ().GetName ().c_str ());
 
     //Append secondary table JOIN
-    auto const secondaryTables = relationMap.GetSecondaryTables ();
+    auto const secondaryTables = relationMap.GetJoinedTables ();
     auto primaryTable = &relationMap.GetTable ();
     auto primaryECInstanceIdColumn = primaryTable->GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
     BeAssert (primaryECInstanceIdColumn != nullptr);
