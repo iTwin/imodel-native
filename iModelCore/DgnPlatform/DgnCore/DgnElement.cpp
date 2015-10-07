@@ -243,6 +243,16 @@ DgnDbStatus DgnElement::_OnInsert()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DictionaryElement::_OnInsert()
+    {
+    // dictionary elements can reside *only* in the dictionary model.
+    auto status = GetModel()->IsDictionaryModel() ? T_Super::_OnInsert() : DgnDbStatus::WrongModel;
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement::_OnInsert()
@@ -2309,3 +2319,13 @@ DgnDbStatus DgnElement::ExternalKey::Delete(DgnElementCR element, DgnAuthorityId
 
     return DgnDbStatus::Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DictionaryElement::CreateParams::CreateParams(DgnDbR db, DgnClassId classId, Code const& code, DgnElementId parentId)
+    : T_Super(db, DgnModel::DictionaryId(), classId, code, DgnElementId(), parentId) 
+    {
+    //
+    }
+

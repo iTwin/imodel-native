@@ -791,6 +791,11 @@ public:
 //=======================================================================================
 //! A resource model which holds resources like materials and styles which are used
 //! throughout a DgnDb. Each DgnDb has exactly one DictionaryModel.
+//! A DictionaryModel can contain @em only DictionaryElements; and likewise, a
+//! DictionaryElement can @em only reside in a DictionaryModel.
+//! The dictionary model cannot be copied or deleted. In general, dictionary elements
+//! are copied from one dictionary model to another, often indirectly as the result of
+//! copying another element which depends upon them.
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Paul.Connelly   10/15
 //=======================================================================================
@@ -800,6 +805,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DictionaryModel : ResourceModel
 protected:
     virtual DgnDbStatus _OnDelete() override { return DgnDbStatus::WrongModel; }
     virtual void _OnDeleted() override { BeAssert(false && "The dictionary model cannot be deleted"); }
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
     DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const override;
 public:
     explicit DictionaryModel(CreateParams const& params) : T_Super(params) { }

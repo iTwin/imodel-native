@@ -335,6 +335,16 @@ DgnDbStatus ResourceModel::_OnInsertElement(DgnElementR el)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DictionaryModel::_OnInsertElement(DgnElementR el)
+    {
+    // dictionary model can contain *only* dictionary elements
+    auto status = el.IsDictionaryElement() ? T_Super::_OnInsertElement(el) : DgnDbStatus::WrongModel;
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::ReadProperties()

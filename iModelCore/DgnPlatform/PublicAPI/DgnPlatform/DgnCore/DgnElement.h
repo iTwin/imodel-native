@@ -845,6 +845,7 @@ protected:
     virtual PhysicalElementCP _ToPhysicalElement() const {return nullptr;}
     virtual DrawingElementCP _ToDrawingElement() const {return nullptr;}
     virtual ElementGroupCP _ToElementGroup() const {return nullptr;}
+    virtual DictionaryElementCP _ToDictionaryElement() const {return nullptr;}
 
     //! Construct a DgnElement from its params
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
@@ -871,12 +872,14 @@ public:
     //! @name Dynamic casting to DgnElement subclasses
     //! @{
     GeometricElementCP ToGeometricElement() const {return _ToGeometricElement();} //!< more efficient substitute for dynamic_cast<GeometricElementCP>(el)
+    DictionaryElementCP ToDictionaryElement() const {return _ToDictionaryElement();} //!< more efficient substitute for dynamic_cast<DictionaryElementCP>(el)
     DgnElement3dCP ToElement3d() const {return _ToElement3d();}                   //!< more efficient substitute for dynamic_cast<DgnElement3dCP>(el)
     DgnElement2dCP ToElement2d() const {return _ToElement2d();}                   //!< more efficient substitute for dynamic_cast<DgnElement2dCP>(el)
     PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}    //!< more efficient substitute for dynamic_cast<PhysicalElementCP>(el)
     DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}       //!< more efficient substitute for dynamic_cast<DrawingElementCP>(el)
     ElementGroupCP ToElementGroup() const {return _ToElementGroup();}             //!< more efficient substitute for dynamic_cast<ElementGroupCP>(el)
     GeometricElementP ToGeometricElementP() {return const_cast<GeometricElementP>(_ToGeometricElement());} //!< more efficient substitute for dynamic_cast<GeometricElementP>(el)
+    DictionaryElementP ToDictionaryElementP() {return const_cast<DictionaryElementP>(_ToDictionaryElement());} //!< more efficient substitute for dynamic_cast<DictionaryElementP>(el)
     DgnElement3dP ToElement3dP() {return const_cast<DgnElement3dP>(_ToElement3d());}                       //!< more efficient substitute for dynamic_cast<DgnElement3dP>(el)
     DgnElement2dP ToElement2dP() {return const_cast<DgnElement2dP>(_ToElement2d());}                       //!< more efficient substitute for dynamic_cast<DgnElement2dP>(el)
     PhysicalElementP ToPhysicalElementP() {return const_cast<PhysicalElementP>(_ToPhysicalElement());}     //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
@@ -886,6 +889,7 @@ public:
 
     bool Is3d() const {return nullptr != _ToElement3d();} //!< Determine whether this element is 3d or not
     bool IsGeometricElement() const {return nullptr != ToGeometricElement();}
+    bool IsDictionaryElement() const {return nullptr != ToDictionaryElement();}
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}//!< Determine whether this element is the same type (has the same DgnClassId) as another element.
 
     Hilited IsHilited() const {return (Hilited) m_flags.m_hilited;} //!< Get the current Hilited state of this element
@@ -1453,6 +1457,43 @@ public:
     //! @return the DgnElementId of the ElementGroup.  Will be invalid if not found.
     //! @see QueryMembers
     DGNPLATFORM_EXPORT static DgnElementId QueryFromMember(DgnDbR db, DgnClassId groupClassId, DgnElementId memberElementId);
+};
+
+//=======================================================================================
+//! A resource element which resides in (and only in) the dictionary model.
+//! Typically represents a style or similar resource used by other elements throughout
+//! the DgnDb.
+//! @ingroup DgnElementGroup
+// @bsiclass                                                    Shaun.Sewall    05/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DictionaryElement : DgnElement
+{
+    DEFINE_T_SUPER(DgnElement);
+public:
+    //! Parameters used to construct a DictionaryElement
+    struct CreateParams : T_Super::CreateParams
+    {
+        DEFINE_T_SUPER(DictionaryElement::T_Super::CreateParams);
+
+        //! Constructs parameters for a dictionary element.
+        //! @param[in]      db       The DgnDb in which the element is to reside.
+        //! @param[in]      classId  The ID of the ECClass representing this element.
+        //! @param[in]      code     The element's unique code.
+        //! @param[in]      parentId The ID of the element's parent element.
+        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, DgnClassId classId, Code const& code, DgnElementId parentId=DgnElementId());
+
+        //! Constructor from base class. Primarily for internal use.
+        explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) { }
+
+        //! Constructs parameters for a dictionary element with the specified values. Chiefly for internal use.
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code code, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId())
+            : T_Super(db, modelId, classId, code, id, parent) { }
+    };
+protected:
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    virtual DictionaryElementCP _ToDictionaryElement() const override { return this; }
+
+    explicit DictionaryElement(CreateParams const& params) : T_Super(params) { }
 };
 
 struct ECSqlClassInfo;

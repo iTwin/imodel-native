@@ -23,14 +23,14 @@ DGNPLATFORM_REF_COUNTED_PTR(DgnMaterial);
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
-//! Defines a material. Material elements are stored in resource models and identified
+//! Defines a material. Material elements are stored in the dictionary model and identified
 //! by a palette name and material name. Each material's name must be unique within its
 //! palette, and each palette name unique within its DgnDb.
 //! @bsistruct                                                  Paul.Connelly   09/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnMaterial : DgnElement
+struct EXPORT_VTABLE_ATTRIBUTE DgnMaterial : DictionaryElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_MaterialElement, DgnElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_MaterialElement, DictionaryElement);
 public:
     //! Holds the data which describe a material
     struct Data
@@ -65,11 +65,10 @@ public:
         //! @param[in]      paletteName      The name of the material's palette. This becomes the namespace of the material's Code.
         //! @param[in]      materialName     The name of the material. This becomes the value of the material's Code.
         //! @param[in]      value            A JSON string describing the material data.
-        //! @param[in]      modelId          The ID of the model in which the material will reside. Must be a ResourceModel. Defaults to the dictionary model of the DgnDb.
         //! @param[in]      parentMaterialId Optional ID of the parent material. If specified, this material inherits and can override the parent's material data.
         //! @param[in]      descr            Optional description of the material.
         //! @note The combination of palette and material name must be unique within the DgnDb.
-        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName, Utf8StringCR value="", DgnModelId modelId=DgnModel::DictionaryId(),
+        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName, Utf8StringCR value="",
                     DgnMaterialId parentMaterialId=DgnMaterialId(), Utf8StringCR descr="");
 
         Utf8String GetPaletteName() const { return m_code.GetNameSpace(); } //!< Return the palette name

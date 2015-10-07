@@ -251,6 +251,9 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="GeometricElement" isDomainClass="False">
         <BaseClass>Element</BaseClass>
     </ECClass>
+    <ECClass typeName="DictionaryElement" isDomainClass="False">
+        <BaseClass>Element</BaseClass>
+    </ECClass>
     <ECClass typeName="Element3d" isDomainClass="False">
         <BaseClass>GeometricElement</BaseClass>
     </ECClass>
@@ -664,13 +667,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECClass>
 
     <ECClass typeName="MaterialElement" isDomainClass="True">
-        <!-- WIP: Rename to Material after current Material class is deprecated? -->
-        <BaseClass>Element</BaseClass>
+        <BaseClass>DictionaryElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
         <ECProperty propertyName="Data" displayLabel="" typeName="string" />
     </ECClass>
 
-        <!-- WIP: Deprecated?  Replaced by MaterialElement? -->
     <ECClass typeName="Texture" isDomainClass="True">
         <!-- WIP: convert to subclass of Element -->
         <ECCustomAttributes>

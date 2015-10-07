@@ -43,19 +43,12 @@ protected:
 
     DgnDbR GetDb() const { return *m_db; }
 
-    DgnModelId CreateModel(Utf8CP name)
-        {
-        auto model = ResourceModel::Create(ResourceModel::CreateParams(*m_db, DgnClassId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ResourceModel)), name));
-        EXPECT_EQ(DgnDbStatus::Success, model->Insert());
-        return model->GetModelId();
-        }
-
-    DgnMaterial::CreateParams MakeParams(DgnModelId modelId, Utf8StringCR palette, Utf8StringCR name, DgnMaterialId parent=DgnMaterialId(), Utf8StringCR descr="", DgnDbP pDb=nullptr)
+    DgnMaterial::CreateParams MakeParams(Utf8StringCR palette, Utf8StringCR name, DgnMaterialId parent=DgnMaterialId(), Utf8StringCR descr="", DgnDbP pDb=nullptr)
         {
         static int32_t s_jsonDummy = 0;
         Utf8PrintfString value("value:%d", ++s_jsonDummy);
         DgnDbR db = nullptr != pDb ? *pDb : *m_db;
-        return DgnMaterial::CreateParams(db, palette, name, value, modelId, parent, descr);
+        return DgnMaterial::CreateParams(db, palette, name, value, parent, descr);
         }
 
     template<typename T, typename U>
@@ -70,7 +63,7 @@ protected:
 
     DgnMaterialCPtr CreateMaterial(Utf8StringCR palette, Utf8StringCR name, DgnMaterialId parentId = DgnMaterialId(), DgnDbP pDb = nullptr)
         {
-        DgnMaterial material(MakeParams(DgnModel::DictionaryId(), palette, name, parentId, "", pDb));
+        DgnMaterial material(MakeParams(palette, name, parentId, "", pDb));
         return material.Insert();
         }
 };
@@ -81,8 +74,7 @@ protected:
 TEST_F(MaterialTest, CRUD)
     {
     SetupProject();
-    DgnModelId mid = CreateModel("MaterialModel");
-    auto params = MakeParams(mid, "Palette1", "Material1");
+    auto params = MakeParams("Palette1", "Material1");
     DgnMaterialPtr mat = new DgnMaterial(params);
     ASSERT_TRUE(mat.IsValid());
     DgnMaterialCPtr persistent = mat->Insert();
@@ -106,8 +98,7 @@ TEST_F(MaterialTest, CRUD)
 TEST_F(MaterialTest, ParentChildCycles)
     {
     SetupProject();
-    DgnModelId mid = CreateModel("MaterialModel");
-    auto params = MakeParams(mid, "Palette", "Parent");
+    auto params = MakeParams("Palette", "Parent");
     DgnMaterialPtr parent = new DgnMaterial(params);
     parent->Insert();
 
@@ -120,7 +111,7 @@ TEST_F(MaterialTest, ParentChildCycles)
     parent->Update(&status);
     EXPECT_EQ(DgnDbStatus::InvalidParent, status);
 
-    auto childParams = MakeParams(mid, "Palette", "Child");
+    auto childParams = MakeParams("Palette", "Child");
     DgnMaterialPtr child = new DgnMaterial(childParams);
     child->Insert();
 

@@ -120,8 +120,9 @@ DgnAuthority::Code DgnMaterial::CreateMaterialCode(Utf8StringCR palette, Utf8Str
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnMaterial::CreateParams::CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName, Utf8StringCR value, DgnModelId modelId, DgnMaterialId parentMaterialId, Utf8StringCR descr)
-    : DgnMaterial::CreateParams(db, modelId, DgnMaterial::QueryDgnClassId(db), CreateMaterialCode(paletteName, materialName, db), DgnElementId(), parentMaterialId, value, descr)
+DgnMaterial::CreateParams::CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName, Utf8StringCR value, DgnMaterialId parentMaterialId, Utf8StringCR descr)
+  : T_Super(db, DgnMaterial::QueryDgnClassId(db), CreateMaterialCode(paletteName, materialName, db), parentMaterialId),
+    m_data(value, descr)
     {
     //
     }

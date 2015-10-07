@@ -684,4 +684,99 @@
         <Directories DirectoryListName="WinRTCppUnitTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
+    <!-- ********************************************************************************************** -->
+    <!-- DgnPlatform-only tests                                                                         -->
+    <!-- ********************************************************************************************** -->
+
+    <Part Name="DgnPlatformOnlyTested">
+        <SubPart PartName="RunGtest-TestCollection-DgnPlatformOnly" />
+        <SubProduct ProductName="iOSXCTest-DgnPlatform-TestCollection-DgnPlatformOnly"/>
+        <SubProduct ProductName="AndroidJUnit-DgnPlatform-TestCollection-DgnPlatformOnly"/>
+    </Part>
+
+    <Part Name="TestCollection-DgnPlatformOnly">
+        <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest" />
+        <SubPart PartName="UnitTests-Published" />
+        <SubPart PartName="UnitTests-NonPublished" />
+        <SubPart PartName="DgnPlatformSqlang" />
+    </Part>
+
+    <Part Name="TestCollection-DgnPlatformOnly-Dynamic" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
+        <SubPart PartName="TestCollection-DgnPlatformOnly" />
+    </Part>
+
+    <Part Name="TestCollection-DgnPlatformOnly-Static" ExcludePlatforms="x86,x64,Linux*,MacOS*,WinRT*">
+        <SubPart PartName="TestCollection-DgnPlatformOnly" LibType="static" />
+    </Part>
+
+    <!--                *************** -->
+    <!--                **** gtest **** -->
+    <!--                *************** -->
+    <Product Name="GTest-DgnPlatform-TestCollection-DgnPlatformOnly">
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest" />
+        <SubPart PartName="Gtest-TestCollection-DgnPlatformOnly" />
+    </Product>
+
+    <Part Name="Gtest-TestCollection-DgnPlatformOnly" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatformOnly -dTEST_COLLECTION_PRODUCT=DgnPlatform-TestCollection-DgnPlatformOnly -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="TestCollection-DgnPlatformOnly"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/DgnPlatformOnly/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/DgnPlatformOnly/Assets" />
+        </Bindings>
+    </Part>
+
+    <Part Name="RunGtest-TestCollection-DgnPlatformOnly" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Gtest-DgnPlatform-TestCollection-DgnPlatformOnly/DgnPlatformOnly -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/DgnPlatformOnly" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="Gtest-DgnPlatform-TestCollection-DgnPlatformOnly" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    </Part>
+
+    <!--                ********************** -->
+    <!--                **** AndroidJUnit **** -->
+    <!--                ********************** -->
+    <Part Name="AndroidJUnit-TestCollection-DgnPlatformOnly" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatformOnly -dTEST_COLLECTION_PRODUCT=DgnPlatform-TestCollection-DgnPlatformOnly -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="Android*">
+        <SubProduct ProductName="TestCollection-DgnPlatformOnly"/>
+        <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJU/DgnPlatformOnly/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="AndroidJUnit-DgnPlatform-TestCollection-DgnPlatformOnly" >
+        <SubPart PartName="AndroidJUnit-TestCollection-DgnPlatformOnly" LibType="static"/>
+        <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <!--                ********************** -->
+    <!--                **** iOSXCTest **** -->
+    <!--                ********************** -->
+    <Part Name="iOSXCTest-TestCollection-DgnPlatformOnly" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatformOnly -dTEST_COLLECTION_PRODUCT=DgnPlatform-TestCollection-DgnPlatformOnly -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="TestCollection-DgnPlatformOnly"/>
+        <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/DgnPlatformOnly/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="iOSXCTest-DgnPlatform-TestCollection-DgnPlatformOnly" >
+        <SubPart PartName="iOSXCTest-TestCollection-DgnPlatformOnly" LibType="static"/>
+        <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <!--                ************************** -->
+    <!--                **** WinRTCppUnitTest **** -->
+    <!--                ************************** -->
+    <Part Name="WinRTCppUnitTest-TestCollection-DgnPlatformOnly" BentleyBuildMakeFile="${SrcRoot}BeGTest/WinRT/MakeCppUnitProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatformOnly -dTEST_COLLECTION_PRODUCT=DgnPlatform-TestCollection-DgnPlatformOnly -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="WinRT*">
+        <SubProduct ProductName="TestCollection-DgnPlatformOnly"/>
+        <SubPart PartName="WinRTCppUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="WinRTCppUnitTestProject" SourceName="Delivery/WnRTCpU/DgnPlatformOnly/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="WinRTCppUnitTest-DgnPlatform-TestCollection-DgnPlatformOnly" >
+        <SubPart PartName="WinRTCppUnitTest-TestCollection-DgnPlatformOnly" LibType="static"/>
+        <Directories DirectoryListName="WinRTCppUnitTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
 </BuildContext>
