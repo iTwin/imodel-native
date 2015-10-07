@@ -22,21 +22,21 @@ double      RenderMaterial::_GetDouble (char const* key, BentleyStatus* status) 
     if (NULL != status)
         *status = SUCCESS;
 
-    if (0 == strcmpi (key, RENDER_MATERIAL_Finish))
+    if (0 == BeStringUtilities::Stricmp(key, RENDER_MATERIAL_Finish))
         return DEFAULT_Finish;
 
-    if (0 == strcmpi (key, RENDER_MATERIAL_Diffuse))
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Diffuse))
         return DEFAULT_Diffuse;
 
-    if (0 == strcmpi (key, RENDER_MATERIAL_Specular))
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Specular))
         return DEFAULT_Specular;
 
-    if (0 == strcmpi (key, RENDER_MATERIAL_Reflect) ||
-        0 == strcmpi (key, RENDER_MATERIAL_Transmit))
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Reflect) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Transmit))
         return 0.0;
 
-    if (0 == strcmpi (key, RENDER_MATERIAL_Glow) ||
-        0 == strcmpi (key, RENDER_MATERIAL_Refract))
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Glow) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_Refract))
         return 1.0;
 
     BeAssert (false);
@@ -54,10 +54,10 @@ bool        RenderMaterial::_GetBool (char const* key, BentleyStatus* status) co
     if (NULL != status)
         *status = SUCCESS;
 
-    if (0 == strcmpi (key, RENDER_MATERIAL_FlagHasBaseColor) ||
-        0 == strcmpi (key, RENDER_MATERIAL_FlagHasSpecularColor) ||
-        0 == strcmpi (key, RENDER_MATERIAL_FlagHasFinish) ||
-        0 == strcmpi (key, RENDER_MATERIAL_FlagNoShadows))
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_FlagHasBaseColor) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_FlagHasSpecularColor) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_FlagHasFinish) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_FlagNoShadows))
         return false;
 
     BeAssert (false);
@@ -92,7 +92,7 @@ double      RenderMaterialMap::_GetDouble (char const* key, BentleyStatus* statu
     if (NULL != status)
         *status = SUCCESS;
 
-    if (0 == strcmpi (key, RENDER_MATERIAL_PatternAngle))
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_PatternAngle))
         return 0.0;
 
     BeAssert (false);
@@ -110,8 +110,8 @@ bool        RenderMaterialMap::_GetBool (char const* key, BentleyStatus* status)
     if (NULL != status)
         *status = SUCCESS;
 
-    if (0 == strcmpi (key, RENDER_MATERIAL_PatternFlipU) ||
-        0 == strcmpi (key, RENDER_MATERIAL_PatternFlipV))
+    if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_PatternFlipU) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_PatternFlipV))
         return false;
 
     
@@ -158,7 +158,7 @@ RenderMaterialPtr    JsonRenderMaterial::Create (DgnDbCR dgnDb, DgnMaterialId ma
 +---------------+---------------+---------------+---------------+---------------+------*/
 static double  getDoubleValue (Json::Value const& rootValue, char const* key, BentleyStatus* status)
     {
-    Json::Value     value = rootValue[key];
+    Json::Value const&     value = rootValue[key];
 
     if (!value.isDouble())
         {
@@ -177,7 +177,7 @@ static double  getDoubleValue (Json::Value const& rootValue, char const* key, Be
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool  getBoolValue (Json::Value const& rootValue, char const* key, BentleyStatus* status)
     {
-    Json::Value     value = rootValue[key];
+    Json::Value const&     value = rootValue[key];
 
     if (!value.isBool())
         {
@@ -198,7 +198,7 @@ static bool  getBoolValue (Json::Value const& rootValue, char const* key, Bentle
 //---------------------------------------------------------------------------------------
 static RgbFactor getColorValue (Json::Value const& rootValue, const char* key, BentleyStatus* status)
     {
-    Json::Value     value = rootValue[key];
+    Json::Value const&     value = rootValue[key];
     RgbFactor       rgb = {0.0, 0.0, 0.0};
 
     if (value.size() < 3)
@@ -224,7 +224,7 @@ static RgbFactor getColorValue (Json::Value const& rootValue, const char* key, B
 //---------------------------------------------------------------------------------------
 static DPoint2d getDPoint2dValue (Json::Value const& rootValue, const char* key, BentleyStatus* status)
     {
-    Json::Value     value = rootValue[key];
+    Json::Value const&     value = rootValue[key];
     DPoint2d        point = { 0.0, 0.0 };
 
     if (value.size() < 2)
@@ -258,10 +258,14 @@ RgbFactor   JsonRenderMaterial::_GetColor (char const* key, BentleyStatus* statu
 +---------------+---------------+---------------+---------------+---------------+------*/
 RenderMaterialMapPtr   JsonRenderMaterial::_GetMap (char const* key) const
     {
-    Json::Value     mapsMap, patternMap;
+    Json::Value const&      mapsMap = m_value[RENDER_MATERIAL_Map];
+    
+    if (mapsMap.isNull())
+        return nullptr;
 
-    if ((mapsMap = m_value[RENDER_MATERIAL_Map]).isNull() ||
-        (patternMap = mapsMap[key]).isNull())
+     Json::Value const&     patternMap = mapsMap[key];
+
+    if (patternMap.isNull())
         return nullptr;
 
     return JsonRenderMaterialMap::Create (patternMap);
@@ -301,7 +305,7 @@ DPoint2d    JsonRenderMaterialMap::_GetOffset(BentleyStatus* status) const      
 +---------------+---------------+---------------+---------------+---------------+------*/
 RenderMaterialMap::Mode JsonRenderMaterialMap::_GetMode () const 
     {
-    Json::Value     value = m_value[RENDER_MATERIAL_PatternMapping];
+    Json::Value const&     value = m_value[RENDER_MATERIAL_PatternMapping];
 
     if (!value.isInt())
         {
@@ -316,7 +320,7 @@ RenderMaterialMap::Mode JsonRenderMaterialMap::_GetMode () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 RenderMaterialMap::Units JsonRenderMaterialMap::_GetUnits () const 
     {
-    Json::Value     value = m_value[RENDER_MATERIAL_PatternScaleMode];
+    Json::Value const&     value = m_value[RENDER_MATERIAL_PatternScaleMode];
 
     if (!value.isInt())
         {
@@ -331,7 +335,7 @@ RenderMaterialMap::Units JsonRenderMaterialMap::_GetUnits () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   JsonRenderMaterialMap::_GetImage (bvector<Byte>& data, Point2dR imageSize, DgnDbR dgnDb) const
     {
-    Json::Value     textureIdValue = m_value[RENDER_MATERIAL_TextureId];
+    Json::Value const&     textureIdValue = m_value[RENDER_MATERIAL_TextureId];
 
     if (textureIdValue.isNull())     
         return ERROR;                 // No external file support for now.
@@ -345,6 +349,8 @@ BentleyStatus   JsonRenderMaterialMap::_GetImage (bvector<Byte>& data, Point2dR 
         return ERROR;
         }
 
+    imageSize.Init(texture.GetData().GetWidth(), texture.GetData().GetHeight());
+
     return texture.GetImage (data);
     }
 
@@ -353,7 +359,7 @@ BentleyStatus   JsonRenderMaterialMap::_GetImage (bvector<Byte>& data, Point2dR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 uintptr_t  JsonRenderMaterialMap::_GetQvTextureId (DgnDbR dgnDb, bool createIfNotFound) const 
     {
-    Json::Value     textureIdValue = m_value[RENDER_MATERIAL_TextureId];
+    Json::Value const&     textureIdValue = m_value[RENDER_MATERIAL_TextureId];
 
     if (textureIdValue.isNull())     
         return ERROR;                 // No external file support for now.
@@ -385,8 +391,9 @@ SimpleBufferPatternMap::SimpleBufferPatternMap (Byte const* imageData, Point2dCR
 * @bsimethod                                                    RayBentley      09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 SimpleBufferPatternMap::~SimpleBufferPatternMap ()
-    {
-    // Needs work.   Free QVision texture.
+    {    
+    if (0 != m_qvTextureId)
+        T_HOST.GetGraphicsAdmin()._DeleteTexture (m_qvTextureId);
     }
 
 /*---------------------------------------------------------------------------------**//**
