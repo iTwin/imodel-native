@@ -681,7 +681,7 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
 
     BeFileName schemaPathname;
     BeTest::GetHost().GetDocumentsRoot(schemaPathname);
-    schemaPathname.AppendToPath(L"ECDb\\Schemas\\StartupCompany.02.00.ecschema.xml");
+    schemaPathname.AppendToPath(L"DgnDb\\ECDb\\Schemas\\StartupCompany.02.00.ecschema.xml");
 
     ECSchemaPtr startupSchema = ReadECSchemaFromDisk(schemaPathname);
     ASSERT_TRUE(startupSchema.IsValid());
@@ -821,7 +821,7 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
 
     BeFileName schemaPathname;
     BeTest::GetHost().GetDocumentsRoot(schemaPathname);
-    schemaPathname.AppendToPath(L"ECDb\\Schemas\\StartupCompany.02.00.ecschema.xml");
+    schemaPathname.AppendToPath(L"DgnDb\\ECDb\\Schemas\\StartupCompany.02.00.ecschema.xml");
 
     ECSchemaPtr startupSchema = ReadECSchemaFromDisk(schemaPathname);
     ASSERT_TRUE(startupSchema.IsValid());
@@ -967,7 +967,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
 
     BeFileName schemaPathname;
     BeTest::GetHost().GetDocumentsRoot(schemaPathname);
-    schemaPathname.AppendToPath(L"ECDb\\Schemas\\StartupCompany.02.00.ecschema.xml");
+    schemaPathname.AppendToPath(L"DgnDb\\ECDb\\Schemas\\StartupCompany.02.00.ecschema.xml");
 
     ECSchemaPtr startupSchema = ReadECSchemaFromDisk(schemaPathname);
     ASSERT_TRUE(startupSchema.IsValid());
@@ -1168,7 +1168,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
 
     BeFileName schemaPathname;
     BeTest::GetHost().GetDocumentsRoot(schemaPathname);
-    schemaPathname.AppendToPath(L"ECDb\\Schemas\\StartupCompany.02.00.ecschema.xml");
+    schemaPathname.AppendToPath(L"DgnDb\\ECDb\\Schemas\\StartupCompany.02.00.ecschema.xml");
 
     ECSchemaPtr startupSchema = ReadECSchemaFromDisk(schemaPathname);
     ASSERT_TRUE(startupSchema.IsValid());

@@ -228,7 +228,7 @@ TEST(DgnDb, InvalidFileFormat)
     ScopedDgnHost           autoDgnHost;
     DgnDbPtr      dgnProj;
     BeFileName path;
-    StatusInt testDataFound = TestDataManager::FindTestData(path, L"ECSqlTest.01.00.ecschema.xml", BeFileName(L"ECDb\\Schemas"));
+    StatusInt testDataFound = TestDataManager::FindTestData(path, L"ECSqlTest.01.00.ecschema.xml", BeFileName(L"DgnDb\\ECDb\\Schemas"));
     ASSERT_TRUE (SUCCESS == testDataFound);
 
     DbResult status;
@@ -625,6 +625,7 @@ TEST_F (DgnProjectPackageTest, EnforceLinkTableFor11Relationship)
 
     BeFileName ecSchemaPath;
     BeTest::GetHost ().GetDocumentsRoot (ecSchemaPath);
+    ecSchemaPath.AppendToPath (L"DgnDb");
     ecSchemaPath.AppendToPath (L"ECDb");
     ecSchemaPath.AppendToPath (L"Schemas");
     ecSchemaPath.AppendToPath (L"SampleDgnDbEditor.01.00.ecschema.xml");
