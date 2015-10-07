@@ -45,6 +45,64 @@ static void importDgnSchema(DgnDbR db, bool updateExisting)
 #define GEOM_IN_PHYSICAL_SPACE_CLAUSE " 1 = new.InPhysicalSpace "
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static DbResult insertAuthority(DgnDbR db, Statement& stmt, DgnAuthorityId id, Utf8CP name, AuthorityHandlerR handler)
+    {
+    stmt.BindId(1, id);
+    stmt.BindText(2, name, Statement::MakeCopy::No);
+    stmt.BindId(3, db.Domains().GetClassId(handler));
+
+    DbResult result = stmt.Step();
+    BeAssert(BE_SQLITE_DONE == result);
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::CreateAuthorities()
+    {
+    Json::Value authorityProps(Json::objectValue);
+    authorityProps["uri"] = "";
+    Utf8String authorityJson = Json::FastWriter::ToString(authorityProps);
+
+    Statement statement(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Authority) " (Id,Name,ECClassId,Props) VALUES (?,?,?,?)");
+    statement.BindText(4, authorityJson, Statement::MakeCopy::No);
+
+    DbResult result = insertAuthority(*this, statement, DgnAuthority::LocalId(), "Local", dgn_AuthorityHandler::Local::GetHandler());
+    if (BE_SQLITE_DONE == result)
+        {
+        statement.Reset();
+        result = insertAuthority(*this, statement, DgnAuthority::MaterialId(), "DgnMaterials", dgn_AuthorityHandler::Namespace::GetHandler());
+        }
+
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::CreateDictionaryModel()
+    {
+    Utf8String dictionaryName = DgnCoreL10N::GetString(DgnCoreL10N::MODELNAME_Dictionary());
+    DgnModel::Properties props;
+    Json::Value propsValue;
+    props.ToJson(propsValue);
+    Utf8String propsJson = Json::FastWriter::ToString(propsValue);
+
+    Statement stmt(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) " (Id,Name,Descr,ECClassId,Visibility,Props) VALUES(?,?,'',?,0,?)");
+    stmt.BindId(1, DgnModel::DictionaryId());
+    stmt.BindText(2, dictionaryName.c_str(), Statement::MakeCopy::No);
+    stmt.BindId(3, Domains().GetClassId(dgn_ModelHandler::Dictionary::GetHandler()));
+    stmt.BindText(4, propsJson.c_str(), Statement::MakeCopy::No);
+
+    auto result = stmt.Step();
+    BeAssert(BE_SQLITE_DONE == result && "Failed to create dictionary model");
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreateDgnDbTables()
@@ -72,21 +130,12 @@ DbResult DgnDb::CreateDgnDbTables()
 
     importDgnSchema(*this, false);
 
-    // Every DgnDb has a "local" authority for element codes
-        {
-        Json::Value authorityProps(Json::objectValue);
-        authorityProps["uri"] = "";
-        Utf8String authorityJson = Json::FastWriter::ToString(authorityProps);
+    // Every DgnDb has a few built-in authorities for element codes
+    CreateAuthorities();
 
-        Statement statement(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Authority) " (Id,Name,ECClassId,Props) VALUES (1,'Local',?,?)"); // WIP: use Authority API when it exists
-        statement.BindId(1, Domains().GetClassId(dgn_AuthorityHandler::Local::GetHandler()));
-        statement.BindText(2, authorityJson, Statement::MakeCopy::No);
+    // Every DgnDb has a dictionary model
+    CreateDictionaryModel();
 
-        DbResult result = statement.Step();
-        BeAssert(BE_SQLITE_DONE == result);
-        UNUSED_VARIABLE(result);
-        }
-    
     ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_ElementGeom)
                " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=old.ElementId;END");
 

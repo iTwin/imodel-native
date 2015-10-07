@@ -765,6 +765,19 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnChildDeleted.
     virtual void _OnChildDeleted(DgnElementCR child) const {}
 
+    //! Called when a child element of this element is about to be imported into another DgnDb or model
+    //! Subclasses may override this method to block control import of their children.
+    //! @param[in] child The original element which is being imported
+    //! @param[in] destModel The model into which the child is being imported
+    //! @param[in] importer Enables the element to copy the resources that it needs (if copying between DgnDbs) and to remap any references that it holds to things outside itself to the copies of those things.
+    virtual DgnDbStatus _OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const { return DgnDbStatus::Success; }
+
+    //! Called after an element, with this element as its parent, was successfully imported
+    //! @param[in] original The original element which was cloned for import, which is @em not necessarily a child of this element.
+    //! @param[in] imported The clone which was imported, which is a child of this element.
+    //! @param[in] importer Enables the element to copy the resources that it needs (if copying between DgnDbs) and to remap any references that it holds to things outside itself to the copies of those things.
+    virtual void _OnChildImported(DgnElementCR original, DgnElementCR imported, DgnImportContext& importer) const { }
+
     //! Get the size, in bytes, used by this DgnElement. This is used by the element memory management routines to gauge the "weight" of
     //! each element, so it is not necessary for the value to be 100% accurate.
     //! @note Subclasses of DgnElement that add any member variables should override this method using this template:
@@ -921,7 +934,7 @@ public:
     //! @param[in] importer Enables the element to copy the resources that it needs (if copying between DgnDbs) and to remap any references that it holds to things outside itself to the copies of those things.
     //! @remarks The element's code will \em not be copied to the copied element if the import is being performed within a single DgnDb, as it is never correct for two elements within the same DgnDb to have the same code.
     //! @return The persistent copy of the element
-    DgnElementCPtr Import(DgnDbStatus* stat, DgnModelR destModel, DgnImportContext& importer) const;
+    DGNPLATFORM_EXPORT DgnElementCPtr Import(DgnDbStatus* stat, DgnModelR destModel, DgnImportContext& importer) const;
 
     //! Update the persistent state of a DgnElement in the DgnDb from this modified copy of it.
     //! This is merely a shortcut for el.GetDgnDb().Elements().Update(el, stat);

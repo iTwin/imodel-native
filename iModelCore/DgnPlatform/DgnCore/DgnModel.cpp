@@ -946,7 +946,11 @@ Utf8String DgnModels::GetUniqueModelName(Utf8CP baseName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelId DgnModels::QueryFirstModelId() const
     {
-    return MakeIterator().begin().GetModelId();
+    for (auto const& model : MakeIterator())
+        if (model.GetModelId() != DgnModel::DictionaryId())
+            return model.GetModelId();
+
+    return DgnModelId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2025,3 +2029,17 @@ DgnDbStatus ComponentModel::Solve(ModelSolverDef::ParameterSet const& newParamet
         return DgnDbStatus::ValidationFailed;
     return DgnDbStatus::SQLiteError;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelPtr DictionaryModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const
+    {
+    if (nullptr != stat)
+        *stat = DgnDbStatus::WrongModel;
+
+    BeAssert(false && "The dictionary model cannot be cloned");
+    return nullptr;
+    }
+
+

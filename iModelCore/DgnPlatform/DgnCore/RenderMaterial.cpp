@@ -130,21 +130,21 @@ bool        RenderMaterialMap::_GetBool (char const* key, BentleyStatus* status)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RenderMaterialPtr    JsonRenderMaterial::Create (DgnDbCR dgnDb, DgnMaterialId materialId)
+RenderMaterialPtr    JsonRenderMaterial::Create (DgnDbR dgnDb, DgnMaterialId materialId)
     {
     if (!materialId.IsValid())
         return nullptr;
 
-    DgnMaterials::Material material = dgnDb.Materials().Query (materialId);
-
-    if (!material.IsValid())
+    DgnMaterialCPtr material = DgnMaterial::QueryMaterial(materialId, dgnDb);
+    if (material.IsNull())
         {
-        BeAssert (false);
+        BeAssert(false);
         return nullptr;
         }
+
     Json::Value     renderMaterial;
     
-    if (SUCCESS != material.GetRenderingAsset (renderMaterial))
+    if (SUCCESS != material->GetRenderingAsset (renderMaterial))
         {
         BeAssert (false);
         return nullptr;
@@ -278,8 +278,8 @@ uintptr_t  JsonRenderMaterial::_GetQvMaterialId (DgnDbR dgnDb, bool createIfNotF
     {
     uintptr_t   qvMaterialId;
 
-    if (0 == (qvMaterialId = dgnDb.Materials().GetQvMaterialId (m_materialId)) && createIfNotFound)
-        qvMaterialId = dgnDb.Materials().AddQvMaterialId (m_materialId);
+    if (0 == (qvMaterialId = dgnDb.GetQvMaterialId (m_materialId)) && createIfNotFound)
+        qvMaterialId = dgnDb.AddQvMaterialId (m_materialId);
 
     return qvMaterialId;
     }
