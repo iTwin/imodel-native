@@ -113,10 +113,11 @@ RealityDataDownload::~RealityDataDownload()
 
 bool RealityDataDownload::Perform()
     {
+#define MaxConnection 1
     // we can optionally limit the total amount of connections this multi handle uses 
-    curl_multi_setopt(m_pCurlHandle, CURLMOPT_MAXCONNECTS, 10);
+    curl_multi_setopt(m_pCurlHandle, CURLMOPT_MAXCONNECTS, MaxConnection);  // &&DM 10
 
-    for (m_curEntry = 0; m_curEntry < m_nbEntry; ++m_curEntry)
+    for (m_curEntry = 0; m_curEntry < min(MaxConnection, m_nbEntry); ++m_curEntry)
         SetupCurlandFile(m_curEntry);
 
     int still_running; /* keep number of running handles */
@@ -149,7 +150,7 @@ bool RealityDataDownload::Perform()
             {
             repeats++; /* count number of repeated zero numfds */
             if (repeats > 1)
-                Sleep(100); /* sleep 100 milliseconds */
+                Sleep(300); /* sleep 100 milliseconds */
             }
         else
             repeats = 0;
@@ -172,6 +173,14 @@ bool RealityDataDownload::Perform()
 
                 curl_multi_remove_handle(m_pCurlHandle, msg->easy_handle);
                 curl_easy_cleanup(msg->easy_handle);
+
+                if (msg->data.result == 56)     // Recv failure, try again
+                    {
+                    if (m_pStatusFunc)
+                        m_pStatusFunc((int)pFileTrans->index, pClient, -2, "Trying again...");
+                    SetupCurlandFile(pFileTrans->index);
+                    still_running++;
+                    }
                 }
             else
                 {
@@ -205,7 +214,9 @@ bool RealityDataDownload::SetupCurlandFile(size_t pi_index)
     {
         curl_easy_setopt(pCurl, CURLOPT_URL, m_pEntries[pi_index].url);
 
-        curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, 120L);
+        curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, 0L); //Timeout for the complete download.
+        curl_easy_setopt(pCurl, CURLOPT_FTP_RESPONSE_TIMEOUT, 80L);
+
         curl_easy_setopt(pCurl, CURLOPT_HEADER, 0L);
         curl_easy_setopt(pCurl, CURLOPT_FAILONERROR, 1L);
         curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 1L);
