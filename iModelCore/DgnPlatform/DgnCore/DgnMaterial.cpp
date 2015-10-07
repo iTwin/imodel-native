@@ -57,7 +57,7 @@ DgnDbStatus DgnMaterial::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassPa
     {
     auto status = T_Super::_ExtractSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
-        m_data.Init(stmt.GetValueText(params.GetSelectIndex("Descr")), stmt.GetValueText(params.GetSelectIndex("Data")));
+        m_data.Init(stmt.GetValueText(params.GetSelectIndex("data")), stmt.GetValueText(params.GetSelectIndex("Descr")));
     
     return status;
     }

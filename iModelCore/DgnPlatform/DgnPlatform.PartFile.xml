@@ -710,6 +710,13 @@
         <SubPart PartName="TestCollection-DgnPlatformOnly" LibType="static" />
     </Part>
 
+    <Product Name="DgnPlatform-TestCollection-DgnPlatformOnly">
+        <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest" />
+        <SubPart PartName="TestCollection-DgnPlatformOnly-Dynamic" />
+        <SubPart PartName="TestCollection-DgnPlatformOnly-Static" />
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest" />
+    </Product>
+
     <!--                *************** -->
     <!--                **** gtest **** -->
     <!--                *************** -->
@@ -719,7 +726,7 @@
     </Product>
 
     <Part Name="Gtest-TestCollection-DgnPlatformOnly" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatformOnly -dTEST_COLLECTION_PRODUCT=DgnPlatform-TestCollection-DgnPlatformOnly -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
-        <SubProduct ProductName="TestCollection-DgnPlatformOnly"/>
+        <SubProduct ProductName="DgnPlatform-TestCollection-DgnPlatformOnly"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/DgnPlatformOnly/Assemblies/*</Files>

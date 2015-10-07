@@ -59,6 +59,16 @@ static DbResult insertAuthority(DgnDbR db, Statement& stmt, DgnAuthorityId id, U
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct BuiltinAuthorityInfo
+{
+    Utf8CP name;
+    DgnAuthorityId id;
+    AuthorityHandlerR handler;
+};
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreateAuthorities()
@@ -70,14 +80,23 @@ DbResult DgnDb::CreateAuthorities()
     Statement statement(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Authority) " (Id,Name,ECClassId,Props) VALUES (?,?,?,?)");
     statement.BindText(4, authorityJson, Statement::MakeCopy::No);
 
-    DbResult result = insertAuthority(*this, statement, DgnAuthority::LocalId(), "Local", dgn_AuthorityHandler::Local::GetHandler());
-    if (BE_SQLITE_DONE == result)
+    BuiltinAuthorityInfo infos[] =
         {
+            { "Local", DgnAuthority::LocalId(), dgn_AuthorityHandler::Local::GetHandler() },
+            { "DgnMaterials", DgnAuthority::MaterialId(), dgn_AuthorityHandler::Namespace::GetHandler() },
+            { "DgnLightDefinitions", DgnAuthority::LightDefinitionId(), dgn_AuthorityHandler::Namespace::GetHandler() },
+        };
+
+    for (auto const& info : infos)
+        {
+        DbResult result = insertAuthority(*this, statement, info.id, info.name, info.handler);
+        if (BE_SQLITE_DONE != result)
+            return result;
+
         statement.Reset();
-        result = insertAuthority(*this, statement, DgnAuthority::MaterialId(), "DgnMaterials", dgn_AuthorityHandler::Namespace::GetHandler());
         }
 
-    return result;
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**

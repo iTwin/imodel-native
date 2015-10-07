@@ -12,7 +12,6 @@
 #include "DgnModel.h"
 #include "DgnDomain.h"
 #include "DgnTexture.h"
-#include "DgnLight.h"
 #include "MemoryManager.h"
 #include <Bentley/BeFileName.h>
 
@@ -140,7 +139,6 @@ protected:
     DgnLinks        m_links;
     DgnAuthorities  m_authorities;
     DgnTextures     m_textures;
-    DgnLights       m_lights;
     TxnManagerPtr   m_txnManager;
     MemoryManager   m_memoryManager;
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
@@ -201,7 +199,6 @@ public:
     DgnFonts& Fonts() const {return const_cast<DgnFonts&>(m_fonts); }                    //!< The fonts for this DgnDb
     DgnLinks& Links() const{return const_cast<DgnLinks&>(m_links);}                      //!< The DgnLinks for this DgnDb
     DgnDomains& Domains() const {return const_cast<DgnDomains&>(m_domains);}             //!< The DgnDomains associated with this DgnDb.
-    DgnLights& Lights() const {return const_cast<DgnLights&>(m_lights);}                 //!< The lights for this DgnDb
     DgnTextures& Textures() const { return const_cast<DgnTextures&>(m_textures); }       //!< The textures for this DgnDb.
     DgnAuthorities& Authorities() const { return const_cast<DgnAuthorities&>(m_authorities); }   //!< The authorities associated with this DgnDb
     DGNPLATFORM_EXPORT TxnManagerR Txns();                    //!< The Txns for this DgnDb.

@@ -8,7 +8,6 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/DgnMarkupProject.h>
 #include <DgnPlatform/DgnCore/Annotations/TextAnnotationElement.h>
-#include <DgnPlatform/DgnCore/DgnMaterial.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -103,6 +102,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::TextAnnotationHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::PhysicalTextAnnotationHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::Material::GetHandler());
+    RegisterHandler(dgn_ElementHandler::LightDef::GetHandler());
 
     RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Local::GetHandler());

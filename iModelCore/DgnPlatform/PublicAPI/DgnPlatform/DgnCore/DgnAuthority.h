@@ -122,6 +122,8 @@ public:
     static DgnAuthorityId LocalId() {return DgnAuthorityId((uint64_t)1LL);}
     //! The built-in authority for material codes
     static DgnAuthorityId MaterialId() {return DgnAuthorityId((uint64_t)2LL);}
+    //! The built-in authority for light definition codes
+    static DgnAuthorityId LightDefinitionId() {return DgnAuthorityId((uint64_t)3LL);}
 };
 
 //=======================================================================================
