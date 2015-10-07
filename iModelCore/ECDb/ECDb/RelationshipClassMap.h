@@ -91,6 +91,8 @@ public:
 struct RelationshipClassEndTableMap : RelationshipClassMap
     {
 private:
+    bool m_autogenerateForeignKeyColumns;
+
     RelationshipClassEndTableMap (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
     virtual Type _GetClassMapType () const override { return Type::RelationshipEndTable; };
 

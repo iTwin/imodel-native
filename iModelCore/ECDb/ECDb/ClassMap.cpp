@@ -1016,30 +1016,6 @@ ColumnFactory::Specification::Specification(
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
 //static 
-void  ColumnFactory::SortByLeastUsedColumnFirst(std::vector<ECDbSqlColumn const*>& columns)
-    {
-    std::sort(columns.begin(), columns.end(),
-        [] (ECDbSqlColumn const* a, ECDbSqlColumn const* b)
-        {
-        return a->GetDependentProperties().Count() < b->GetDependentProperties().Count();
-        });
-    }
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       01 / 2015
-//------------------------------------------------------------------------------------------
-//static 
-void  ColumnFactory::SortByMostUsedColumnFirst(std::vector<ECDbSqlColumn const*>& columns)
-    {
-    std::sort(columns.begin(), columns.end(),
-        [] (ECDbSqlColumn const* a, ECDbSqlColumn const* b)
-        {
-        return a->GetDependentProperties().Count() > b->GetDependentProperties().Count();
-        });
-    }
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       01 / 2015
-//------------------------------------------------------------------------------------------
-//static 
 void  ColumnFactory::SortByColumnOrderInTable(std::vector<ECDbSqlColumn const*>& columns)
     {
     std::sort(columns.begin(), columns.end(),
@@ -1115,30 +1091,36 @@ void ColumnFactory::Update()
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-bool ColumnFactory::FindReusableSharedDataColumns(std::vector<ECDbSqlColumn const*>& columns, ECDbSqlTable const& table, ECDbSqlColumn::Constraint::Collation collation, ColumnFactory::SortBy sortby) const
+bool ColumnFactory::TryFindReusableSharedDataColumn(ECDbSqlColumn const*& reusableColumn, ECDbSqlTable const& table, ECDbSqlColumn::Constraint::Collation collation, ColumnFactory::SortBy sortby) const
     {
+    reusableColumn = nullptr;
+    std::vector<ECDbSqlColumn const*> reusableColumns;
     for (auto column : table.GetColumns())
         {
         if (column->GetKnownColumnId() == ECDbKnownColumns::DataColumn && column->GetType() == ECDbSqlColumn::Type::Any && collation == column->GetConstraint().GetCollation())
             {
-            if (IsColumnInUse(*column) == false)
-                columns.push_back(column);
+            if (!IsColumnInUse(*column))
+                reusableColumns.push_back(column);
             }
         }
 
     switch (sortby)
         {
         case SortBy::LeastUsedColumn:
-            SortByLeastUsedColumnFirst(columns); break;
+            //SortByLeastUsedColumnFirst(reusableColumns); break;
         case SortBy::LeftToRightColumnOrderInTable:
-            SortByColumnOrderInTable(columns); break;
+            SortByColumnOrderInTable(reusableColumns); break;
         case SortBy::MostUsedColumn:
-            SortByMostUsedColumnFirst(columns); break;
+            //SortByMostUsedColumnFirst(reusableColumns); break;
         case SortBy::None:
             break;
         }
 
-    return !columns.empty();
+    if (reusableColumns.empty())
+        return false;
+
+    reusableColumn = reusableColumns.front();
+    return true;
     }
 
 //------------------------------------------------------------------------------------------
@@ -1248,7 +1230,6 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateStrategy(ColumnFactory::Specification c
     newColumn->GetConstraintR ().SetIsNotNull(specifications.IsNotNull());
     newColumn->GetConstraintR ().SetIsUnique(specifications.IsUnique());
     newColumn->GetConstraintR ().SetCollation(specifications.GetCollation());
-   // newColumn->GetDependentPropertiesR ().Add (propertyLocalToClassId, specifications.GetAccessString ().c_str ());
 
     if (!canEdit)
         targetTable.GetEditHandleR ().EndEdit();
@@ -1293,28 +1274,22 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseStrategy(Specification const& sp
 //------------------------------------------------------------------------------------------
 ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseSharedColumnStrategy(Specification const& specifications, ECDbSqlTable& targetTable, ECClassId propertyLocalToClassId)
     {
-    std::vector<ECDbSqlColumn const*> avaliableSharedColumns;
-    if (FindReusableSharedDataColumns(avaliableSharedColumns, targetTable, specifications.GetCollation(), SortBy::LeastUsedColumn))
+    ECDbSqlColumn const* reusableColumn = nullptr;
+    if (TryFindReusableSharedDataColumn(reusableColumn, targetTable, specifications.GetCollation(), SortBy::LeastUsedColumn))
         {
-        auto sharedColumn = const_cast<ECDbSqlColumn*>(avaliableSharedColumns.front());
-        //sharedColumn->GetDependentPropertiesR ().Add (propertyLocalToClassId, specifications.GetAccessString ().c_str ());
+        ECDbSqlColumn* sharedColumn = const_cast<ECDbSqlColumn*>(reusableColumn);
+        sharedColumn->SetIsShared(true);
         return sharedColumn;
         }
 
-    auto newColumn = targetTable.CreateColumn(nullptr, ECDbSqlColumn::Type::Any, specifications.GetKnownColumnId(), specifications.GetColumnPersistenceType());
+    ECDbSqlColumn* newColumn = targetTable.CreateColumn(nullptr, ECDbSqlColumn::Type::Any, specifications.GetKnownColumnId(), specifications.GetColumnPersistenceType());
     if (newColumn == nullptr)
         {
         BeAssert(false && "Failed to create column");
         return nullptr;
         }
 
-    //newColumn->GetConstraintR ().SetIsNotNull (specifications.IsNotNull ()); -- NOT NULL IS NOT SUPPORTED ON SHARED COLUMNS
     newColumn->GetConstraintR ().SetCollation(specifications.GetCollation());
-    //auto uniqueIndex = newColumn->GetTableR ().CreateIndex ((newColumn->GetFullName () + "_UNIQUE").c_str ());
-    //uniqueIndex->SetIsUnique (true);
-    //uniqueIndex->SetWhereExpression (SqlPrintfString ("WHERE ECClass == %lld", persistenceClassId));
-
-    //newColumn->GetDependentPropertiesR ().Add (propertyLocalToClassId, specifications.GetAccessString ().c_str ());
     return newColumn;
     }
 
@@ -1324,7 +1299,7 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseSharedColumnStrategy(Specificati
 ECClassId ColumnFactory::GetPersistenceClassId(Specification const& specifications) const
     {
     ECClassId propertyLocalToClassId;
-    auto n = specifications.GetAccessString().find(".");
+    const auto n = specifications.GetAccessString().find(".");
     if (n != Utf8String::npos)
         {
         //! Get root property in given accessString.
@@ -1357,8 +1332,6 @@ ECClassId ColumnFactory::GetPersistenceClassId(Specification const& specificatio
 //------------------------------------------------------------------------------------------
 ECDbSqlColumn* ColumnFactory::Configure(Specification const& specifications, ECDbSqlTable& targetTable)
     {
-
-
     ECClassId persistenceClassId = GetPersistenceClassId(specifications);
     if (persistenceClassId == 0)
         return nullptr;
@@ -1375,7 +1348,7 @@ ECDbSqlColumn* ColumnFactory::Configure(Specification const& specifications, ECD
         }
 
     Utf8String const& className = m_classMap.GetClass().GetName();
-    if (outColumn)
+    if (outColumn != nullptr)
         LOG.tracev("Property -> '%s:%s' mapped to '%s'", className.c_str(), specifications.GetAccessString().c_str(), outColumn->GetName().c_str());
     else
         LOG.tracev("Property -> '%s:%s' mapped to 'NULL'", className.c_str(), specifications.GetAccessString().c_str());
@@ -1440,7 +1413,7 @@ BentleyStatus PropertyMapSet::AddSystemEndPoint (PropertyMapSet& propertySet, IC
     if (column == nullptr)
         column = table.GetFilteredColumnFirst (knownColumnId);
 
-    auto const accessString = ECDbSqlColumn::ToAccessString (knownColumnId);
+    auto const accessString = ECDbSqlColumn::KnownColumnToString (knownColumnId);
     if (value.IsNull ())
         {
         BeAssert (column != nullptr);

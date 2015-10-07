@@ -33,7 +33,7 @@ typedef int64_t ECDbClassMapId;
 //!TODO This should replace int in UserData in column
 enum class ECDbKnownColumns
     {
-    Unknown = 0x0U, //! Not know to ECDb or user define columns
+    Unknown = 0x0U, //! Not known to ECDb or user define columns
     ECInstanceId = 0x1U, //! ECInstanceId system column also primary key of the table
     ECClassId = 0x2U, //! ECClassId system column. Use if more then on classes is mapped to this table
     ParentECInstanceId = 0x4U, //! ParentECInstanceId column used in struct array
@@ -356,41 +356,6 @@ public:
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct DependentPropertyCollection : NonCopyableClass
-    {
-
-    private:
-        std::map<ECN::ECClassId, Utf8CP> m_map;
-        ECDbSqlColumn& m_column;
-
-    public:
-        DependentPropertyCollection (ECDbSqlColumn& column)
-            :m_column (column)
-            {
-            }
-
-        ~DependentPropertyCollection ()
-            {}
-        ECDbSqlColumn& GetColumnR () { return m_column; }
-        ECDbSqlColumn const& GetColumn () const { return m_column; }
-        BentleyStatus Add (ECN::ECClassId ecClassId, Utf8CP accessString);
-        BentleyStatus Remove (ECN::ECClassId ecClassId);
-        Utf8CP Find (ECN::ECClassId ecClassId) const;
-        bool Contains (ECN::ECClassId ecClassId) const;
-        size_t Count () const { return m_map.size (); }
-        std::vector<ECN::ECClassId> GetClasses () const
-            {
-            std::vector<ECN::ECClassId> tmp;
-            for (auto& key : m_map)
-                tmp.push_back (key.first);
-
-            return tmp;
-            }
-    };
-
-//======================================================================================
-// @bsiclass                                                 Affan.Khan         09/2014
-//======================================================================================
 struct ECDbSqlColumn : NonCopyableClass
     {
     enum class Type
@@ -432,27 +397,30 @@ struct ECDbSqlColumn : NonCopyableClass
         };
 
     private:
+        static const std::map<ECDbKnownColumns, Utf8CP> s_knownColumnNames;
+
         Type m_type;
         ECDbSqlTable& m_ownerTable;
         Constraint m_constraints;
         Utf8String m_name;
-        DependentPropertyCollection m_references;
         PersistenceType m_persistenceType;
         ECDbKnownColumns m_knowColumnId;
         ECDbColumnId m_id;
-        static std::map<ECDbKnownColumns, Utf8CP> m_knownColumnNames;
+        bool m_isShared;
+
     public:
         ECDbSqlColumn (Utf8CP name, Type type, ECDbSqlTable& owner, PersistenceType persistenceType, ECDbColumnId id)
-            : m_name (name), m_ownerTable (owner), m_type (type), m_references (*this), m_persistenceType (persistenceType), m_knowColumnId (ECDbKnownColumns::DataColumn), m_id (id){}
+            : m_name (name), m_ownerTable (owner), m_type (type), m_persistenceType (persistenceType), m_knowColumnId (ECDbKnownColumns::DataColumn), m_id (id), m_isShared(false) {}
 
         ECDbColumnId GetId () const { return m_id; }
         void SetId (ECDbColumnId id) { m_id = id; }
         PersistenceType GetPersistenceType () const { return m_persistenceType; }
         Utf8StringCR GetName () const { return m_name; }
         Type GetType () const { return m_type; };
+        bool IsShared() const { return m_isShared; }
+        void SetIsShared(bool isShared) { m_isShared = isShared; }
         ECDbSqlTable const& GetTable () const { return m_ownerTable; }
         ECDbSqlTable&  GetTableR ()  { return m_ownerTable; }
-
         Constraint const& GetConstraint () const { return m_constraints; };
         Constraint& GetConstraintR ()  { return m_constraints; };
         bool IsReusable () const { return m_type == Type::Any; }
@@ -460,22 +428,11 @@ struct ECDbSqlColumn : NonCopyableClass
         static Type StringToType (Utf8CP typeName);
         static Utf8CP TypeToString (Type type);
         BentleyStatus SetKnownColumnId (ECDbKnownColumns knownColumnId);
-        ECDbKnownColumns GetKnownColumnId () const;
-        DependentPropertyCollection const& GetDependentProperties () const{ return m_references; }
-        DependentPropertyCollection & GetDependentPropertiesR (){ return m_references; }
+        ECDbKnownColumns GetKnownColumnId() const { return m_knowColumnId; }
         const Utf8String GetFullName () const;
         std::weak_ptr<ECDbSqlColumn> GetWeakPtr () const;
         static const Utf8String BuildFullName (Utf8CP table, Utf8CP column);
-        static Utf8CP ToAccessString (ECDbKnownColumns columnId)
-            {
-            auto itor = m_knownColumnNames.find (columnId);
-            if (itor != m_knownColumnNames.end ())
-                {
-                return itor->second;
-                }
-
-            return nullptr;
-            }
+        static Utf8CP KnownColumnToString (ECDbKnownColumns columnId);
     };
 
 //======================================================================================
@@ -671,7 +628,6 @@ struct ECDbSqlTable : NonCopyableClass
         BentleyStatus FinishEditing ();
         //! temp method
         void AddColumnEventHandler (std::function<void (ColumnEvent, ECDbSqlColumn&)> columnEventHandler){ m_columnEvents.push_back(columnEventHandler); }
-        std::set<ECN::ECClassId> GetReferences () const;
         PersistenceManager const& GetPersistenceManager () const { return m_persistenceManager; }
         bool IsValid () const { return m_columns.size () > 0; }
         size_t IndexOf (ECDbSqlColumn const& column) const;

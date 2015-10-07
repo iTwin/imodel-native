@@ -119,22 +119,6 @@ EditHandle::~EditHandle (){ /*AssertInEditMode ();*/ }
 //****************************************************************************************
 //ECDbSqlTable
 //****************************************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
-std::set<ECN::ECClassId> ECDbSqlTable::GetReferences () const
-    {
-    std::set<ECN::ECClassId> tmp;
-    for (auto column : m_orderedColumns)
-        {
-        for (auto id : column->GetDependentProperties ().GetClasses ())
-            {
-            tmp.insert (id);
-            }
-        }
-
-    return tmp;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
@@ -1757,6 +1741,62 @@ Utf8String DDLGenerator::GetColumnDDL (ECDbSqlColumn const& o)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
+//static
+const std::map<ECDbKnownColumns, Utf8CP> ECDbSqlColumn::s_knownColumnNames =
+    {
+            {ECDbKnownColumns::ECInstanceId, "ECInstanceId"},
+            {ECDbKnownColumns::ECClassId, "ECClassId"},
+            {ECDbKnownColumns::ECArrayIndex, "ECArrayIndex"},
+            {ECDbKnownColumns::ECPropertyPathId, "ECPropertyPathId"},
+            {ECDbKnownColumns::ParentECInstanceId, "ParentECInstanceId"},
+            {ECDbKnownColumns::SourceECClassId, "SourceECClassId"},
+            {ECDbKnownColumns::SourceECInstanceId, "SourceECInstanceId"},
+            {ECDbKnownColumns::TargetECClassId, "TargetECClassId"},
+            {ECDbKnownColumns::TargetECInstanceId, "TargetECInstanceId"}
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbSqlColumn::SetKnownColumnId(ECDbKnownColumns knownColumnId)
+    {
+    if (GetTableR().GetEditHandleR().AssertNotInEditMode())
+        return BentleyStatus::ERROR;
+
+    m_knowColumnId = knownColumnId;
+    return BentleyStatus::SUCCESS;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
+
+const Utf8String ECDbSqlColumn::GetFullName() const { return BuildFullName(GetTable().GetName().c_str(), GetName().c_str()); }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//--------------------------------------------------------------------------------------
+//static 
+const Utf8String ECDbSqlColumn::BuildFullName(Utf8CP table, Utf8CP column)
+    {
+    Utf8String str;
+    str.append("[").append(table).append("].[").append(column).append("]");
+    return str;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
+std::weak_ptr<ECDbSqlColumn> ECDbSqlColumn::GetWeakPtr() const
+    {
+    return GetTable().GetColumnWeakPtr(GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
 ECDbSqlColumn::Type ECDbSqlColumn::StringToType (Utf8CP typeName)
     {
     static std::map<Utf8CP, ECDbSqlColumn::Type, CompareIUtf8> s_type
@@ -1806,18 +1846,33 @@ Utf8CP ECDbSqlColumn::TypeToString (ECDbSqlColumn::Type type)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
-//static 
-Utf8CP ECDbSqlColumn::Constraint::CollationToString (ECDbSqlColumn::Constraint::Collation collation)
+//static
+Utf8CP ECDbSqlColumn::KnownColumnToString(ECDbKnownColumns columnId)
     {
-    static std::map<Collation ,Utf8CP> s_type
+    auto itor = s_knownColumnNames.find(columnId);
+    if (itor != s_knownColumnNames.end())
         {
-            { Collation::Default, "Default" },
-            { Collation::Binary, "Binary", },
-            { Collation::NoCase, "NoCase" },
-            {Collation::RTrim, "RTrim" }
-    };
+        return itor->second;
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
+//static 
+Utf8CP ECDbSqlColumn::Constraint::CollationToString(ECDbSqlColumn::Constraint::Collation collation)
+    {
+    static std::map<Collation, Utf8CP> s_type
+        {
+                {Collation::Default, "Default"},
+                {Collation::Binary, "Binary",},
+                {Collation::NoCase, "NoCase"},
+                {Collation::RTrim, "RTrim"}
+        };
     auto itor = s_type.find(collation);
-    if (itor == s_type.end ())
+    if (itor == s_type.end())
         return nullptr;
 
     return itor->second;
@@ -1845,131 +1900,6 @@ bool ECDbSqlColumn::Constraint::TryParseCollationString(Collation& collation, Ut
         return false;
 
     return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlColumn::SetKnownColumnId (ECDbKnownColumns knownColumnId)
-    {
-    if (GetTableR ().GetEditHandleR ().AssertNotInEditMode ())
-        return BentleyStatus::ERROR;
-
-    m_knowColumnId = knownColumnId;
-    return BentleyStatus::SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-ECDbKnownColumns ECDbSqlColumn::GetKnownColumnId () const
-    {
-    return m_knowColumnId;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-
-const Utf8String ECDbSqlColumn::GetFullName () const { return BuildFullName (GetTable ().GetName ().c_str (), GetName ().c_str ()); }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//--------------------------------------------------------------------------------------
-//static 
-const Utf8String ECDbSqlColumn::BuildFullName (Utf8CP table, Utf8CP column)
-    {
-    Utf8String str;
-    str.append ("[").append (table).append ("].[").append (column).append ("]");
-    return str;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-std::weak_ptr<ECDbSqlColumn> ECDbSqlColumn::GetWeakPtr () const
-    {
-    return GetTable ().GetColumnWeakPtr (GetName ().c_str ());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-std::map<ECDbKnownColumns, Utf8CP> ECDbSqlColumn::m_knownColumnNames =
-    { 
-        { ECDbKnownColumns::ECInstanceId, "ECInstanceId" },
-        { ECDbKnownColumns::ECClassId, "ECClassId" },
-        { ECDbKnownColumns::ECArrayIndex, "ECArrayIndex" },
-        { ECDbKnownColumns::ECPropertyPathId, "ECPropertyPathId" },
-        { ECDbKnownColumns::ParentECInstanceId, "ParentECInstanceId" },
-        { ECDbKnownColumns::SourceECClassId, "SourceECClassId" },
-        { ECDbKnownColumns::SourceECInstanceId, "SourceECInstanceId" },
-        { ECDbKnownColumns::TargetECClassId, "TargetECClassId" },
-        { ECDbKnownColumns::TargetECInstanceId, "TargetECInstanceId" }
-    };
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-BentleyStatus DependentPropertyCollection::Add (ECClassId ecClassId, Utf8CP accessString)
-    {
-    //if (GetColumnR ().GetTableR ().GetEditHandleR ().AssertNotInEditMode ())
-    //    return BentleyStatus::ERROR;
-
-    if (Utf8String::IsNullOrEmpty (accessString))
-        {
-        BeAssert (false && "accessString should be not null");
-        return BentleyStatus::ERROR;
-        }
-
-    if (Find (ecClassId) != nullptr)
-        {
-        //BeAssert (false && "accessString already exist");
-        return BentleyStatus::SUCCESS;
-        }
-
-    m_map[ecClassId] = GetColumnR ().GetTableR ().GetDbDefR ().GetStringPoolR ().Set (accessString);
-    return BentleyStatus::SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-BentleyStatus DependentPropertyCollection::Remove (ECClassId ecClassId)
-    {
-    if (GetColumnR ().GetTableR ().GetEditHandleR ().AssertNotInEditMode ())
-        return BentleyStatus::ERROR;
-
-    auto itor = m_map.find (ecClassId);
-    if (itor != m_map.end ())
-        {
-        m_map.erase (itor);
-        return BentleyStatus::SUCCESS;
-        }
-
-    return BentleyStatus::ERROR;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-Utf8CP DependentPropertyCollection::Find (ECClassId ecClassId) const
-    {
-    auto itor = m_map.find (ecClassId);
-    if (itor != m_map.end ())
-        {
-        return itor->second;
-        }
-
-    return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-bool DependentPropertyCollection::Contains (ECClassId ecClassId) const
-    {
-    return Find (ecClassId) != nullptr;
     }
    
 //****************************************************************************************

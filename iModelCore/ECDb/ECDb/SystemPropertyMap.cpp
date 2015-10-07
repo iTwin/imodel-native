@@ -283,9 +283,6 @@ PropertyMapPtr PropertyMapRelationshipConstraintECInstanceId::Create (ECRelation
     auto prop = ECDbSystemSchemaHelper::GetSystemProperty (schemaManager, kind);
     PRECONDITION (prop != nullptr, nullptr);
 
-    if (column->GetDependentPropertiesR ().Add (classMap.GetClass ().GetId (), prop->GetName ().c_str ()) != BentleyStatus::SUCCESS)
-        return nullptr;
-
     return new PropertyMapRelationshipConstraintECInstanceId (*prop, column, kind, viewColumnAlias);
     }
 
@@ -370,10 +367,6 @@ ECDbSqlTable* table
     auto kind = constraintEnd == ECN::ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECClassId : ECSqlSystemProperty::TargetECClassId;
     auto prop = ECDbSystemSchemaHelper::GetSystemProperty (schemaManager, kind);
     PRECONDITION (prop != nullptr, nullptr);
-
-    if (column->GetDependentPropertiesR ().Add (classMap.GetClass ().GetId (), prop->GetName ().c_str ()) != BentleyStatus::SUCCESS)
-        return nullptr;
-
     return new PropertyMapRelationshipConstraintClassId (*prop, column, kind, defaultSourceECClassId, &classMap.GetTable(), viewColumnAlias, table);
     }
 
