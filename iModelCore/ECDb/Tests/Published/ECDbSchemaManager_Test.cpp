@@ -9,7 +9,6 @@
 #include "SchemaImportTestFixture.h"
 
 USING_NAMESPACE_BENTLEY_EC
-
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 
@@ -681,7 +680,7 @@ TEST(ECDbSchemaManager, TestGetClassResolver)
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
 // A primary schema should be supplemented with the latest available supplemental schema
-TEST(ECDbSchemaManager, SupplementSchemaWithLatestSupplementalSchema)
+TEST (ECDbSchemaManager, SupplementWithLatestCompatibleSupplementalSchema)
 {
     ECDbTestFixture::Initialize();
     ECDb testecdb;
@@ -728,8 +727,8 @@ TEST(ECDbSchemaManager, SupplementSchemaWithLatestSupplementalSchema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
-//supplemental schema whose primary schema's major version is greater then the major version of current primary schema.
-TEST(ECDbSchemaManager, SupplementSchemaWithGreaterMajorVersionPrimary)
+//supplemental schema whose targeted primary schema's major version is greater then the major version of of Schema to supplement.
+TEST(ECDbSchemaManager, SupplementSchemaWhoseTargetedPrimaryHasGreaterMajorVersion)
 {
     ECDbTestFixture::Initialize();
     ECDb testecdb;
@@ -772,8 +771,8 @@ TEST(ECDbSchemaManager, SupplementSchemaWithGreaterMajorVersionPrimary)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
-//supplement current primary schema with a supplemental schema whose primary schema's minor version is less then the current schema.
-TEST(ECDbSchemaManager, SupplementSchemaWithLessMinorVersionPrimarySchema)
+//supplemental schema whose Targeted primary schema's minor version is less then minor Version of schema to supplement.
+TEST (ECDbSchemaManager, SupplementSchemaWhoseTargetedPrimaryHasLowerMinorVersion)
 {
     ECDbTestFixture::Initialize();
     ECDb testecdb;
@@ -789,6 +788,7 @@ TEST(ECDbSchemaManager, SupplementSchemaWithLessMinorVersionPrimarySchema)
     schemacache->AddSchema (*schemaptr);
 
     ECSchemaPtr supple;
+    //This one will be ignored as it is not targeting the primary schema's exact version
     ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.69.ecschema.xml", nullptr);
     ASSERT_TRUE(supple != NULL);
     schemacache->AddSchema (*supple);
@@ -812,8 +812,8 @@ TEST(ECDbSchemaManager, SupplementSchemaWithLessMinorVersionPrimarySchema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
-//suppelement schema with a supplemental schema whose primary schema's minor version is greater then the current.
-TEST(ECDbSchemaManager, SupplementSchemaWithGreaterMinorVersionPrimarySchema)
+//supplemental schema whose Targeted primary schema's minor version is greater then minor Version of schema to supplement.
+TEST (ECDbSchemaManager, SupplementSchemaWhoseTargetedPrimaryHasGreaterMinorVersion)
 {
     ECDbTestFixture::Initialize();
     ECDb testecdb;
