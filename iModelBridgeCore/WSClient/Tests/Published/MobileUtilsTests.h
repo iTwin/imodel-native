@@ -25,10 +25,17 @@ END_WSCLIENT_UNIT_TESTS_NAMESPACE
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 USING_NAMESPACE_WSCLIENT_UNIT_TESTS
 
+namespace rapidjson
+    {
+    bool operator==(const Value& a, const Value& b);
+    }
+
 BEGIN_WSCLIENT_UNIT_TESTS_NAMESPACE
 
 std::shared_ptr<rapidjson::Document> ToRapidJson(Utf8StringCR jsonString);
 Json::Value ToJson(Utf8StringCR jsonString);
+
+std::string RapidJsonToString(const rapidjson::Value& json);
 
 ECN::ECSchemaPtr ParseSchema(Utf8StringCR schemaXml, ECN::ECSchemaReadContextPtr context = nullptr);
 

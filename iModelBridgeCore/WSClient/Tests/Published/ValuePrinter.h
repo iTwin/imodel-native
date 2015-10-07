@@ -24,6 +24,12 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 std::ostream& operator << (std::ostream &o, WSError::Status status);
 std::ostream& operator << (std::ostream &o, WSError::Id errorId);
 
+namespace rapidjson
+    {
+    void PrintTo(const Value& value, ::std::ostream* os);
+    void PrintTo(const Document& value, ::std::ostream* os);
+    }
+
 // TODO: resolve duplicating symbols with MobileDgnUnitTests
 //// Web
 //std::ostream& operator << (std::ostream &o, CredentialsCR creds);
