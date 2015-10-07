@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ValuePrinter.h"
+#include "MobileUtilsTests.h"
 #include <map>
 
 #define TO_VALUE_STRING_PAIR(value) {value, #value}
@@ -56,6 +57,18 @@ std::ostream& operator << (std::ostream &o, WSError::Id errorId)
     o << name;
 
     return o;
+    }
+
+namespace rapidjson
+    {
+    void PrintTo(const Value& value, ::std::ostream* os)
+        {
+        *os << RapidJsonToString(value);
+        }
+    void PrintTo(const Document& value, ::std::ostream* os)
+        {
+        *os << RapidJsonToString(value);
+        }
     }
 
 //std::ostream& operator << (std::ostream &o, CredentialsCR creds)
