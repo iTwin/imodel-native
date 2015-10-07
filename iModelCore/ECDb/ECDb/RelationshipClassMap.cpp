@@ -646,7 +646,8 @@ void RelationshipClassEndTableMap::AddIndices(ClassMapInfo const& mapInfo)
         {
             case RelationshipMapInfo::Cardinality::OneToOne:
                 //create a unique index to enforce the cardinality.
-                AddIndexToRelationshipEnd(true);
+                //WIP: do not enforce cardinality for now. See how this works out
+                AddIndexToRelationshipEnd(false);
                 break;
             case RelationshipMapInfo::Cardinality::OneToMany:
             case RelationshipMapInfo::Cardinality::ManyToOne:

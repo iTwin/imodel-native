@@ -1290,19 +1290,28 @@ BentleyStatus ECDbSqlIndex::PersistenceManager::Create(ECDbR ecdb) const
     if (!GetIndex().IsValid())
         {
         BeAssert (false && "Index definition is not valid");
-        return BentleyStatus::ERROR;
+        return ERROR;
         }
 
-    auto sql = DDLGenerator::GetCreateIndexDDL(ecdb, GetIndex());
+    for (ECDbSqlColumn const* col : m_index.GetColumns())
+        {
+        if (col->IsShared())
+            {
+            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to create %s on table %s. ECDb does not create indices on columns shared by multiple ECClasses because they would be partial indexes based on the ECClassId which are very slow.", m_index.GetName().c_str(), m_index.GetTable().GetName().c_str());
+            return ERROR;
+            }
+        }
+
+    Utf8String sql = DDLGenerator::GetCreateIndexDDL(ecdb, GetIndex());
     if (ecdb.ExecuteSql (sql.c_str ()) != BE_SQLITE_OK)
         {
         ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to create index %s on table %s. Error: %s", m_index.GetName().c_str(), m_index.GetTable().GetName().c_str(),
                    ecdb.GetLastError());
         BeAssert(false && "Failed to create index");
-        return BentleyStatus::ERROR;
+        return ERROR;
         }
 
-    return BentleyStatus::SUCCESS;
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1389,9 +1398,15 @@ Utf8String DDLGenerator::GetCreateIndexDDL(ECDbCR ecdb, ECDbSqlIndex const& inde
 
     sql.append("INDEX [").append(index.GetName()).append("] ON [").append(index.GetTable().GetName()).append("] (").append(GetColumnList(index.GetColumns())).append(")");
 
-    Utf8String whereClause = index.GenerateWhereClause(ecdb);
+/*    Utf8String whereClause = index.GenerateWhereClause(ecdb);
     if (!whereClause.empty())
+        {
         sql.append(" WHERE ").append(whereClause);
+        }
+        */
+
+    if (!index.GetAdditionalWhereExpression().empty())
+        sql.append(" WHERE ").append(index.GetAdditionalWhereExpression());
 
     return sql;
     }

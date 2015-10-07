@@ -1012,19 +1012,7 @@ ColumnFactory::Specification::Specification(
         m_isUnique = false;
         }
     }
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       01 / 2015
-//------------------------------------------------------------------------------------------
-//static 
-void  ColumnFactory::SortByColumnOrderInTable(std::vector<ECDbSqlColumn const*>& columns)
-    {
-    std::sort(columns.begin(), columns.end(),
-        [] (ECDbSqlColumn const* a, ECDbSqlColumn const* b)
-        {
-        BeAssert(&a->GetTable() == &b->GetTable());
-        return a->GetTable().IndexOf(*a) < b->GetTable().IndexOf(*b);
-        });
-    }
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
@@ -1091,7 +1079,7 @@ void ColumnFactory::Update()
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-bool ColumnFactory::TryFindReusableSharedDataColumn(ECDbSqlColumn const*& reusableColumn, ECDbSqlTable const& table, ECDbSqlColumn::Constraint::Collation collation, ColumnFactory::SortBy sortby) const
+bool ColumnFactory::TryFindReusableSharedDataColumn(ECDbSqlColumn const*& reusableColumn, ECDbSqlTable const& table, ECDbSqlColumn::Constraint::Collation collation) const
     {
     reusableColumn = nullptr;
     std::vector<ECDbSqlColumn const*> reusableColumns;
@@ -1102,18 +1090,6 @@ bool ColumnFactory::TryFindReusableSharedDataColumn(ECDbSqlColumn const*& reusab
             if (!IsColumnInUse(*column))
                 reusableColumns.push_back(column);
             }
-        }
-
-    switch (sortby)
-        {
-        case SortBy::LeastUsedColumn:
-            //SortByLeastUsedColumnFirst(reusableColumns); break;
-        case SortBy::LeftToRightColumnOrderInTable:
-            SortByColumnOrderInTable(reusableColumns); break;
-        case SortBy::MostUsedColumn:
-            //SortByMostUsedColumnFirst(reusableColumns); break;
-        case SortBy::None:
-            break;
         }
 
     if (reusableColumns.empty())
@@ -1275,7 +1251,7 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseStrategy(Specification const& sp
 ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseSharedColumnStrategy(Specification const& specifications, ECDbSqlTable& targetTable, ECClassId propertyLocalToClassId)
     {
     ECDbSqlColumn const* reusableColumn = nullptr;
-    if (TryFindReusableSharedDataColumn(reusableColumn, targetTable, specifications.GetCollation(), SortBy::LeastUsedColumn))
+    if (TryFindReusableSharedDataColumn(reusableColumn, targetTable, specifications.GetCollation()))
         {
         ECDbSqlColumn* sharedColumn = const_cast<ECDbSqlColumn*>(reusableColumn);
         sharedColumn->SetIsShared(true);

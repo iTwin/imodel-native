@@ -1454,36 +1454,33 @@ void HorizontalPartition::AppendECClassIdFilterSql(Utf8CP classIdColName, Native
     BeAssert(!m_partitionClassIds.empty());
 
     std::vector<ECClassId> const* classIds = nullptr;
-    BooleanSqlOperator inOperator;
+    BooleanSqlOperator equalOp, setOp;
     if (m_hasInversedPartitionClassIds)
         {
         classIds = &m_inversedPartitionClassIds;
         if (classIds->empty())
             return; //no filter needed, as all class ids should be considered
 
-        inOperator = BooleanSqlOperator::NotIn;
+        equalOp = BooleanSqlOperator::NotEqualTo;
+        setOp = BooleanSqlOperator::And;
         }
     else
         {
         classIds = &m_partitionClassIds;
-        inOperator = BooleanSqlOperator::In;
+        equalOp = BooleanSqlOperator::EqualTo;
+        setOp = BooleanSqlOperator::Or;
         }
 
-    sqlBuilder.Append(classIdColName, true);
-    sqlBuilder.Append(inOperator);
-    sqlBuilder.AppendParenLeft();
     bool isFirstItem = true;
-    for (ECClassId const& classId : *classIds)
+    for (ECClassId classId : *classIds)
         {
         if (!isFirstItem)
-            sqlBuilder.AppendComma(false);
+            sqlBuilder.AppendSpace().Append(setOp, true);
 
-        sqlBuilder.Append(classId);
+        sqlBuilder.Append(classIdColName).Append(equalOp, false).Append(classId);
 
         isFirstItem = false;
         }
-
-    sqlBuilder.AppendParenRight();
     }
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

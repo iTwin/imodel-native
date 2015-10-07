@@ -209,13 +209,6 @@ public:
 //===============+===============+===============+===============+===============+======
 struct ColumnFactory : NonCopyableClass
     {
-    enum class SortBy
-        {
-        None,
-        LeastUsedColumn,
-        MostUsedColumn,
-        LeftToRightColumnOrderInTable
-        };
     struct Specification
         {
         enum class Strategy
@@ -277,14 +270,12 @@ struct ColumnFactory : NonCopyableClass
         ClassMapCR m_classMap;
         std::set<Utf8String, CompareIUtf8> columnsInUseSet;
 
-        static void  SortByColumnOrderInTable (std::vector<ECDbSqlColumn const*>& columns);
-
         BentleyStatus ResolveColumnName (Utf8StringR resolvedColumName, Specification const& specifications, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId, int retryCount) const;
         ECDbSqlColumn* ApplyCreateStrategy (Specification const& specifications, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId);
         ECDbSqlColumn* ApplyCreateOrReuseStrategy (Specification const& specifications, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId);
         ECDbSqlColumn* ApplyCreateOrReuseSharedColumnStrategy (Specification const& specifications, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId);
         ECN::ECClassId GetPersistenceClassId (Specification const& specifications) const;
-        bool TryFindReusableSharedDataColumn (ECDbSqlColumn const*& reusableColumn, ECDbSqlTable const& table, ECDbSqlColumn::Constraint::Collation collation = ECDbSqlColumn::Constraint::Collation::Default, SortBy sortby = SortBy::None) const;
+        bool TryFindReusableSharedDataColumn (ECDbSqlColumn const*& reusableColumn, ECDbSqlTable const& table, ECDbSqlColumn::Constraint::Collation collation = ECDbSqlColumn::Constraint::Collation::Default) const;
         bool IsColumnInUse (Utf8CP columnFullName) const;
         bool IsColumnInUse (Utf8CP tableName, Utf8CP columnName) const;
         bool IsColumnInUse (ECDbSqlColumn const& column) const;
