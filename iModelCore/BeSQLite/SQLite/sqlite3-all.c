@@ -18,8 +18,8 @@
 ** separate file. This file contains only code for the core SQLite library.
 */
 
-#define SQLITE_OMIT_DEPRECATED
-#define SQLITE_ENABLE_COLUMN_METADATA
+#define SQLITE_OMIT_DEPRECATED 1
+#define SQLITE_ENABLE_COLUMN_METADATA 1
 #define SQLITE_DEFAULT_FOREIGN_KEYS 1
 #define SQLITE_OMIT_AUTOINIT 1
 #define SQLITE_ENABLE_SESSION 1
@@ -29,14 +29,9 @@
 #define SQLITE_USE_URI 1
 
 // include support for full text search
-#define SQLITE_ENABLE_FTS3
-#define SQLITE_ENABLE_FTS3_PARENTHESIS
-#define SQLITE_ENABLE_FTS4_UNICODE61
-
-// include support for full text search
-#define SQLITE_ENABLE_FTS3
-#define SQLITE_ENABLE_FTS3_PARENTHESIS
-#define SQLITE_ENABLE_FTS4_UNICODE61
+#define SQLITE_ENABLE_FTS3 1
+#define SQLITE_ENABLE_FTS3_PARENTHESIS 1
+#define SQLITE_ENABLE_FTS4_UNICODE61 1
 
 #define HAVE_STDINT_H
 
@@ -61,7 +56,7 @@
 #define SQLITE_API
 
 #if defined (__APPLE__)
-    #define SQLITE_HAVE_ISNAN
+    #define SQLITE_HAVE_ISNAN 1
 #endif
 
 #if !defined(NDEBUG)
@@ -74,6 +69,8 @@
 
 //#define SQLITE_ENABLE_SQLLOG 1
 
+#define SQLITE_ENABLE_JSON1
+
 #include "sqlite3-1.c"
 #include "sqlite3-2.c"
 #include "sqlite3-3.c"
@@ -82,8 +79,33 @@
 #include "sqlite3-6.c"
 #include "zipvfs.c"
 #include "closure.c"
+#include "json1.c"
 
 #if defined (SQLITE_ENABLE_SQLLOG)
 #include "test_sqllog.c"
 #endif
 
+#if !defined (NDEBUG)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+int checkNoActiveStatements(sqlite3* db)
+    {
+    Vdbe* stmt;
+    if (0 == db->nVdbeActive)
+        return SQLITE_OK;
+
+    for (stmt = db->pVdbe; stmt != NULL; stmt = stmt->pNext)
+        {
+        if (stmt->magic != VDBE_MAGIC_RUN)
+            {
+            sqlite3_log(SQLITE_BUSY, "Active statement: %s", stmt->zSql);
+            //assert(0);
+            return SQLITE_ERROR;
+            }
+        }
+
+    sqlite3_log(SQLITE_BUSY, "nVdbeActive=%d but no active statements detected?!)", db->nVdbeActive);
+    return SQLITE_ERROR;
+    }
+#endif

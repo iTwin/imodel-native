@@ -8,7 +8,7 @@
 #define ZLIB_INTERNAL
 
 #include <BeSQLite/BeSQLite.h>
-#include <BeSQLite/SQLiteAPI.h>
+#include "SQLite/sqlite3.h"
 #include <Bentley/BeFileName.h>
 #include <Bentley/BeAssert.h>
 #include <Bentley/BeStringUtilities.h>

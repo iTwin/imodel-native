@@ -2,11 +2,11 @@
 |
 |     $Source: SQLite/IntVirtualTable.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/BeSQLite.h>
-#include <BeSQLite/SQLiteAPI.h>
+#include "sqlite3.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 

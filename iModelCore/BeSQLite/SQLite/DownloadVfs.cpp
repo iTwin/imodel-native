@@ -2,11 +2,11 @@
 |
 |     $Source: SQLite/DownloadVfs.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/DownloadAdmin.h>
-#include <BeSQLite/SQLiteAPI.h>
+#include "sqlite3.h"
 #include <Bentley/ScopedArray.h>
 #include <Bentley/BeThread.h>
 #include <Bentley/BeThreadLocalStorage.h>

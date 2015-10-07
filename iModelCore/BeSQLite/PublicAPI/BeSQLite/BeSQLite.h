@@ -437,16 +437,24 @@ struct BeLuid
 
 END_BENTLEY_API_NAMESPACE
 
-BEGIN_BENTLEY_SQLITE_NAMESPACE
-
 #if !defined (DOCUMENTATION_GENERATOR)
 BEGIN_EXTERN_C
 void *sqlite3_malloc(int);
 void *sqlite3_realloc(void*, int);
 void sqlite3_free(void*);
 void sqlite3_randomness(int N, void *P);
+struct sqlite3_blob;
+struct sqlite3;
+struct sqlite3_stmt;
+struct sqlite3_session;
+struct sqlite3_changeset_iter;
+struct Mem;
 END_EXTERN_C
+#endif
 
+BEGIN_BENTLEY_SQLITE_NAMESPACE
+
+#if !defined (DOCUMENTATION_GENERATOR)
 typedef struct sqlite3_blob* SqlDbBlobP;
 typedef struct sqlite3* SqlDbP;
 typedef struct sqlite3& SqlDbR;

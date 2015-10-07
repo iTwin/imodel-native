@@ -44,6 +44,7 @@
 **   *  Definitions of sqlite3_vfs objects for all locking methods
 **      plus implementations of sqlite3_os_init() and sqlite3_os_end().
 */
+/* #include "sqliteInt.h" */
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
 
 /*
@@ -72,18 +73,6 @@
 #endif
 
 /*
-** Define the OS_VXWORKS pre-processor macro to 1 if building on 
-** vxworks, or 0 otherwise.
-*/
-#ifndef OS_VXWORKS
-#  if defined(__RTP__) || defined(_WRS_KERNEL)
-#    define OS_VXWORKS 1
-#  else
-#    define OS_VXWORKS 0
-#  endif
-#endif
-
-/*
 ** standard include files.
 */
 #include <sys/types.h>
@@ -97,18 +86,30 @@
 # include <sys/mman.h>
 #endif
 
-#if SQLITE_ENABLE_LOCKING_STYLE || OS_VXWORKS
+#if SQLITE_ENABLE_LOCKING_STYLE
 # include <sys/ioctl.h>
-# if OS_VXWORKS
-#  include <semaphore.h>
-#  include <limits.h>
-# else
-#  include <sys/file.h>
-#  include <sys/param.h>
-# endif
+# include <sys/file.h>
+# include <sys/param.h>
 #endif /* SQLITE_ENABLE_LOCKING_STYLE */
 
-#if defined(__APPLE__) || (SQLITE_ENABLE_LOCKING_STYLE && !OS_VXWORKS)
+#if defined(__APPLE__) && ((__MAC_OS_X_VERSION_MIN_REQUIRED > 1050) || \
+                           (__IPHONE_OS_VERSION_MIN_REQUIRED > 2000))
+#  if (!defined(TARGET_OS_EMBEDDED) || (TARGET_OS_EMBEDDED==0)) \
+       && (!defined(TARGET_IPHONE_SIMULATOR) || (TARGET_IPHONE_SIMULATOR==0))
+#    define HAVE_GETHOSTUUID 1
+#  else
+#    warning "gethostuuid() is disabled."
+#  endif
+#endif
+
+
+#if OS_VXWORKS
+/* # include <sys/ioctl.h> */
+# include <semaphore.h>
+# include <limits.h>
+#endif /* OS_VXWORKS */
+
+#if defined(__APPLE__) || SQLITE_ENABLE_LOCKING_STYLE
 # include <sys/mount.h>
 #endif
 
@@ -148,6 +149,10 @@
 ** Maximum supported path-length.
 */
 #define MAX_PATHNAME 512
+
+/* Always cast the getpid() return type for compatibility with
+** kernel modules in VxWorks. */
+#define osGetpid(X) (pid_t)getpid()
 
 /*
 ** Only set the lastErrno if the error code is a real error and not 
@@ -237,7 +242,7 @@ struct unixFile {
 ** method was called.  If xOpen() is called from a different process id,
 ** indicating that a fork() has occurred, the PRNG will be reset.
 */
-static int randomnessPid = 0;
+static pid_t randomnessPid = 0;
 
 /*
 ** Allowed values for the unixFile.ctrlFlags bitmask:
@@ -254,7 +259,8 @@ static int randomnessPid = 0;
 #define UNIXFILE_DELETE      0x20     /* Delete on close */
 #define UNIXFILE_URI         0x40     /* Filename might have query parameters */
 #define UNIXFILE_NOLOCK      0x80     /* Do no file locking */
-#define UNIXFILE_WARNED    0x0100     /* verifyDbFile() warnings have been issued */
+#define UNIXFILE_WARNED    0x0100     /* verifyDbFile() warnings issued */
+#define UNIXFILE_BLOCK     0x0200     /* Next SHM lock might block */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -290,16 +296,6 @@ static int randomnessPid = 0;
 */
 #ifdef MEMORY_DEBUG
 # error "The MEMORY_DEBUG macro is obsolete.  Use SQLITE_DEBUG instead."
-#endif
-
-#if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
-# ifndef SQLITE_DEBUG_OS_TRACE
-#   define SQLITE_DEBUG_OS_TRACE 0
-# endif
-  int sqlite3OSTrace = SQLITE_DEBUG_OS_TRACE;
-# define OSTRACE(X)          if( sqlite3OSTrace ) sqlite3DebugPrintf X
-#else
-# define OSTRACE(X)
 #endif
 
 /*
@@ -593,7 +589,7 @@ static struct unix_syscall {
   { "read",         (sqlite3_syscall_ptr)read,       0  },
 #define osRead      ((ssize_t(*)(int,void*,size_t))aSyscall[8].pCurrent)
 
-#if defined(USE_PREAD) || (SQLITE_ENABLE_LOCKING_STYLE && !OS_VXWORKS)
+#if defined(USE_PREAD) || SQLITE_ENABLE_LOCKING_STYLE
   { "pread",        (sqlite3_syscall_ptr)pread,      0  },
 #else
   { "pread",        (sqlite3_syscall_ptr)0,          0  },
@@ -610,7 +606,7 @@ static struct unix_syscall {
   { "write",        (sqlite3_syscall_ptr)write,      0  },
 #define osWrite     ((ssize_t(*)(int,const void*,size_t))aSyscall[11].pCurrent)
 
-#if defined(USE_PREAD) || (SQLITE_ENABLE_LOCKING_STYLE && !OS_VXWORKS)
+#if defined(USE_PREAD) || SQLITE_ENABLE_LOCKING_STYLE
   { "pwrite",       (sqlite3_syscall_ptr)pwrite,     0  },
 #else
   { "pwrite",       (sqlite3_syscall_ptr)0,          0  },
@@ -832,19 +828,19 @@ static int robust_open(const char *z, int f, mode_t m){
 **   unixEnterLeave()
 */
 static void unixEnterMutex(void){
-  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
+  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1));
 }
 static void unixLeaveMutex(void){
-  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
+  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1));
 }
 #ifdef SQLITE_DEBUG
 static int unixMutexHeld(void) {
-  return sqlite3_mutex_held(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
+  return sqlite3_mutex_held(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1));
 }
 #endif
 
 
-#if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
+#ifdef SQLITE_HAVE_OS_TRACE
 /*
 ** Helper function for printing out trace information from debugging
 ** binaries. This returns the string representation of the supplied
@@ -925,9 +921,9 @@ static int lockTrace(int fd, int op, struct flock *p){
 /*
 ** Retry ftruncate() calls that fail due to EINTR
 **
-** All calls to ftruncate() within this file should be made through this wrapper.
-** On the Android platform, bypassing the logic below could lead to a corrupt
-** database.
+** All calls to ftruncate() within this file should be made through
+** this wrapper.  On the Android platform, bypassing the logic below
+** could lead to a corrupt database.
 */
 static int robust_ftruncate(int h, sqlite3_int64 sz){
   int rc;
@@ -1107,7 +1103,7 @@ static struct vxworksFileId *vxworksFindFileId(const char *zAbsoluteName){
 
   assert( zAbsoluteName[0]=='/' );
   n = (int)strlen(zAbsoluteName);
-  pNew = sqlite3_malloc( sizeof(*pNew) + (n+1) );
+  pNew = sqlite3_malloc64( sizeof(*pNew) + (n+1) );
   if( pNew==0 ) return 0;
   pNew->zCanonicalName = (char*)&pNew[1];
   memcpy(pNew->zCanonicalName, zAbsoluteName, n+1);
@@ -1387,6 +1383,14 @@ static void robust_close(unixFile *pFile, int h, int lineno){
 }
 
 /*
+** Set the pFile->lastErrno.  Do this in a subroutine as that provides
+** a convenient place to set a breakpoint.
+*/
+static void storeLastErrno(unixFile *pFile, int error){
+  pFile->lastErrno = error;
+}
+
+/*
 ** Close all file descriptors accumuated in the unixInodeInfo->pUnused list.
 */ 
 static void closePendingFds(unixFile *pFile){
@@ -1459,7 +1463,7 @@ static int findInodeInfo(
   fd = pFile->h;
   rc = osFstat(fd, &statbuf);
   if( rc!=0 ){
-    pFile->lastErrno = errno;
+    storeLastErrno(pFile, errno);
 #ifdef EOVERFLOW
     if( pFile->lastErrno==EOVERFLOW ) return SQLITE_NOLFS;
 #endif
@@ -1480,12 +1484,12 @@ static int findInodeInfo(
   if( statbuf.st_size==0 && (pFile->fsFlags & SQLITE_FSFLAGS_IS_MSDOS)!=0 ){
     do{ rc = osWrite(fd, "S", 1); }while( rc<0 && errno==EINTR );
     if( rc!=1 ){
-      pFile->lastErrno = errno;
+      storeLastErrno(pFile, errno);
       return SQLITE_IOERR;
     }
     rc = osFstat(fd, &statbuf);
     if( rc!=0 ){
-      pFile->lastErrno = errno;
+      storeLastErrno(pFile, errno);
       return SQLITE_IOERR;
     }
   }
@@ -1503,7 +1507,7 @@ static int findInodeInfo(
     pInode = pInode->pNext;
   }
   if( pInode==0 ){
-    pInode = sqlite3_malloc( sizeof(*pInode) );
+    pInode = sqlite3_malloc64( sizeof(*pInode) );
     if( pInode==0 ){
       return SQLITE_NOMEM;
     }
@@ -1608,7 +1612,7 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
     lock.l_type = F_WRLCK;
     if( osFcntl(pFile->h, F_GETLK, &lock) ){
       rc = SQLITE_IOERR_CHECKRESERVEDLOCK;
-      pFile->lastErrno = errno;
+      storeLastErrno(pFile, errno);
     } else if( lock.l_type!=F_UNLCK ){
       reserved = 1;
     }
@@ -1741,7 +1745,8 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   assert( pFile );
   OSTRACE(("LOCK    %d %s was %s(%s,%d) pid=%d (unix)\n", pFile->h,
       azFileLock(eFileLock), azFileLock(pFile->eFileLock),
-      azFileLock(pFile->pInode->eFileLock), pFile->pInode->nShared , getpid()));
+      azFileLock(pFile->pInode->eFileLock), pFile->pInode->nShared,
+      osGetpid(0)));
 
   /* If there is already a lock of this type or more restrictive on the
   ** unixFile, do nothing. Don't use the end_lock: exit path, as
@@ -1808,7 +1813,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
       tErrno = errno;
       rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_LOCK);
       if( rc!=SQLITE_BUSY ){
-        pFile->lastErrno = tErrno;
+        storeLastErrno(pFile, tErrno);
       }
       goto end_lock;
     }
@@ -1843,7 +1848,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
 
     if( rc ){
       if( rc!=SQLITE_BUSY ){
-        pFile->lastErrno = tErrno;
+        storeLastErrno(pFile, tErrno);
       }
       goto end_lock;
     }else{
@@ -1876,7 +1881,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
       tErrno = errno;
       rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_LOCK);
       if( rc!=SQLITE_BUSY ){
-        pFile->lastErrno = tErrno;
+        storeLastErrno(pFile, tErrno);
       }
     }
   }
@@ -1949,7 +1954,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
   assert( pFile );
   OSTRACE(("UNLOCK  %d %d was %d(%d,%d) pid=%d (unix)\n", pFile->h, eFileLock,
       pFile->eFileLock, pFile->pInode->eFileLock, pFile->pInode->nShared,
-      getpid()));
+      osGetpid(0)));
 
   assert( eFileLock<=SHARED_LOCK );
   if( pFile->eFileLock<=eFileLock ){
@@ -1983,7 +1988,6 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
     **  4:   [RRRR.]
     */
     if( eFileLock==SHARED_LOCK ){
-
 #if !defined(__APPLE__) || !SQLITE_ENABLE_LOCKING_STYLE
       (void)handleNFSUnlock;
       assert( handleNFSUnlock==0 );
@@ -2001,7 +2005,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
           tErrno = errno;
           rc = SQLITE_IOERR_UNLOCK;
           if( IS_LOCK_ERROR(rc) ){
-            pFile->lastErrno = tErrno;
+            storeLastErrno(pFile, tErrno);
           }
           goto end_unlock;
         }
@@ -2013,7 +2017,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
           tErrno = errno;
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_RDLOCK);
           if( IS_LOCK_ERROR(rc) ){
-            pFile->lastErrno = tErrno;
+            storeLastErrno(pFile, tErrno);
           }
           goto end_unlock;
         }
@@ -2025,7 +2029,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
           tErrno = errno;
           rc = SQLITE_IOERR_UNLOCK;
           if( IS_LOCK_ERROR(rc) ){
-            pFile->lastErrno = tErrno;
+            storeLastErrno(pFile, tErrno);
           }
           goto end_unlock;
         }
@@ -2044,7 +2048,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
           ** SQLITE_BUSY would confuse the upper layer (in practice it causes 
           ** an assert to fail). */ 
           rc = SQLITE_IOERR_RDLOCK;
-          pFile->lastErrno = errno;
+          storeLastErrno(pFile, errno);
           goto end_unlock;
         }
       }
@@ -2057,7 +2061,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
       pInode->eFileLock = SHARED_LOCK;
     }else{
       rc = SQLITE_IOERR_UNLOCK;
-      pFile->lastErrno = errno;
+      storeLastErrno(pFile, errno);
       goto end_unlock;
     }
   }
@@ -2075,7 +2079,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
         pInode->eFileLock = NO_LOCK;
       }else{
         rc = SQLITE_IOERR_UNLOCK;
-        pFile->lastErrno = errno;
+        storeLastErrno(pFile, errno);
         pInode->eFileLock = NO_LOCK;
         pFile->eFileLock = NO_LOCK;
       }
@@ -2350,7 +2354,7 @@ static int dotlockLock(sqlite3_file *id, int eFileLock) {
     } else {
       rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_LOCK);
       if( IS_LOCK_ERROR(rc) ){
-        pFile->lastErrno = tErrno;
+        storeLastErrno(pFile, tErrno);
       }
     }
     return rc;
@@ -2377,7 +2381,7 @@ static int dotlockUnlock(sqlite3_file *id, int eFileLock) {
 
   assert( pFile );
   OSTRACE(("UNLOCK  %d %d was %d pid=%d (dotlock)\n", pFile->h, eFileLock,
-           pFile->eFileLock, getpid()));
+           pFile->eFileLock, osGetpid(0)));
   assert( eFileLock<=SHARED_LOCK );
   
   /* no-op if possible */
@@ -2404,7 +2408,7 @@ static int dotlockUnlock(sqlite3_file *id, int eFileLock) {
       rc = SQLITE_IOERR_UNLOCK;
     }
     if( IS_LOCK_ERROR(rc) ){
-      pFile->lastErrno = tErrno;
+      storeLastErrno(pFile, tErrno);
     }
     return rc; 
   }
@@ -2440,10 +2444,9 @@ static int dotlockClose(sqlite3_file *id) {
 ** still works when you do this, but concurrency is reduced since
 ** only a single process can be reading the database at a time.
 **
-** Omit this section if SQLITE_ENABLE_LOCKING_STYLE is turned off or if
-** compiling for VXWORKS.
+** Omit this section if SQLITE_ENABLE_LOCKING_STYLE is turned off
 */
-#if SQLITE_ENABLE_LOCKING_STYLE && !OS_VXWORKS
+#if SQLITE_ENABLE_LOCKING_STYLE
 
 /*
 ** Retry flock() calls that fail with EINTR
@@ -2491,7 +2494,7 @@ static int flockCheckReservedLock(sqlite3_file *id, int *pResOut){
         /* unlock failed with an error */
         lrc = SQLITE_IOERR_UNLOCK; 
         if( IS_LOCK_ERROR(lrc) ){
-          pFile->lastErrno = tErrno;
+          storeLastErrno(pFile, tErrno);
           rc = lrc;
         }
       }
@@ -2501,7 +2504,7 @@ static int flockCheckReservedLock(sqlite3_file *id, int *pResOut){
       /* someone else might have it reserved */
       lrc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_LOCK); 
       if( IS_LOCK_ERROR(lrc) ){
-        pFile->lastErrno = tErrno;
+        storeLastErrno(pFile, tErrno);
         rc = lrc;
       }
     }
@@ -2567,7 +2570,7 @@ static int flockLock(sqlite3_file *id, int eFileLock) {
     /* didn't get, must be busy */
     rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_LOCK);
     if( IS_LOCK_ERROR(rc) ){
-      pFile->lastErrno = tErrno;
+      storeLastErrno(pFile, tErrno);
     }
   } else {
     /* got it, set the type and return ok */
@@ -2596,7 +2599,7 @@ static int flockUnlock(sqlite3_file *id, int eFileLock) {
   
   assert( pFile );
   OSTRACE(("UNLOCK  %d %d was %d pid=%d (flock)\n", pFile->h, eFileLock,
-           pFile->eFileLock, getpid()));
+           pFile->eFileLock, osGetpid(0)));
   assert( eFileLock<=SHARED_LOCK );
   
   /* no-op if possible */
@@ -2657,7 +2660,7 @@ static int flockClose(sqlite3_file *id) {
 ** to a non-zero value otherwise *pResOut is set to zero.  The return value
 ** is set to SQLITE_OK unless an I/O error occurs during lock checking.
 */
-static int semCheckReservedLock(sqlite3_file *id, int *pResOut) {
+static int semXCheckReservedLock(sqlite3_file *id, int *pResOut) {
   int rc = SQLITE_OK;
   int reserved = 0;
   unixFile *pFile = (unixFile*)id;
@@ -2679,7 +2682,7 @@ static int semCheckReservedLock(sqlite3_file *id, int *pResOut) {
       int tErrno = errno;
       if( EAGAIN != tErrno ){
         rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_CHECKRESERVEDLOCK);
-        pFile->lastErrno = tErrno;
+        storeLastErrno(pFile, tErrno);
       } else {
         /* someone else has the lock when we are in NO_LOCK */
         reserved = (pFile->eFileLock < SHARED_LOCK);
@@ -2724,7 +2727,7 @@ static int semCheckReservedLock(sqlite3_file *id, int *pResOut) {
 ** This routine will only increase a lock.  Use the sqlite3OsUnlock()
 ** routine to lower a locking level.
 */
-static int semLock(sqlite3_file *id, int eFileLock) {
+static int semXLock(sqlite3_file *id, int eFileLock) {
   unixFile *pFile = (unixFile*)id;
   sem_t *pSem = pFile->pInode->pSem;
   int rc = SQLITE_OK;
@@ -2757,14 +2760,14 @@ static int semLock(sqlite3_file *id, int eFileLock) {
 ** If the locking level of the file descriptor is already at or below
 ** the requested locking level, this routine is a no-op.
 */
-static int semUnlock(sqlite3_file *id, int eFileLock) {
+static int semXUnlock(sqlite3_file *id, int eFileLock) {
   unixFile *pFile = (unixFile*)id;
   sem_t *pSem = pFile->pInode->pSem;
 
   assert( pFile );
   assert( pSem );
   OSTRACE(("UNLOCK  %d %d was %d pid=%d (sem)\n", pFile->h, eFileLock,
-           pFile->eFileLock, getpid()));
+           pFile->eFileLock, osGetpid(0)));
   assert( eFileLock<=SHARED_LOCK );
   
   /* no-op if possible */
@@ -2783,7 +2786,7 @@ static int semUnlock(sqlite3_file *id, int eFileLock) {
     int rc, tErrno = errno;
     rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
     if( IS_LOCK_ERROR(rc) ){
-      pFile->lastErrno = tErrno;
+      storeLastErrno(pFile, tErrno);
     }
     return rc; 
   }
@@ -2794,10 +2797,10 @@ static int semUnlock(sqlite3_file *id, int eFileLock) {
 /*
  ** Close a file.
  */
-static int semClose(sqlite3_file *id) {
+static int semXClose(sqlite3_file *id) {
   if( id ){
     unixFile *pFile = (unixFile*)id;
-    semUnlock(id, NO_LOCK);
+    semXUnlock(id, NO_LOCK);
     assert( pFile );
     unixEnterMutex();
     releaseInodeInfo(pFile);
@@ -2885,7 +2888,7 @@ static int afpSetLock(
                     setLockFlag ? SQLITE_IOERR_LOCK : SQLITE_IOERR_UNLOCK);
 #endif /* SQLITE_IGNORE_AFP_LOCK_ERRORS */
     if( IS_LOCK_ERROR(rc) ){
-      pFile->lastErrno = tErrno;
+      storeLastErrno(pFile, tErrno);
     }
     return rc;
   } else {
@@ -2978,7 +2981,7 @@ static int afpLock(sqlite3_file *id, int eFileLock){
   assert( pFile );
   OSTRACE(("LOCK    %d %s was %s(%s,%d) pid=%d (afp)\n", pFile->h,
            azFileLock(eFileLock), azFileLock(pFile->eFileLock),
-           azFileLock(pInode->eFileLock), pInode->nShared , getpid()));
+           azFileLock(pInode->eFileLock), pInode->nShared , osGetpid(0)));
 
   /* If there is already a lock of this type or more restrictive on the
   ** unixFile, do nothing. Don't use the afp_end_lock: exit path, as
@@ -3068,7 +3071,7 @@ static int afpLock(sqlite3_file *id, int eFileLock){
     lrc2 = afpSetLock(context->dbPath, pFile, PENDING_BYTE, 1, 0);
     
     if( IS_LOCK_ERROR(lrc1) ) {
-      pFile->lastErrno = lrc1Errno;
+      storeLastErrno(pFile, lrc1Errno);
       rc = lrc1;
       goto afp_end_lock;
     } else if( IS_LOCK_ERROR(lrc2) ){
@@ -3164,7 +3167,7 @@ static int afpUnlock(sqlite3_file *id, int eFileLock) {
   assert( pFile );
   OSTRACE(("UNLOCK  %d %d was %d(%d,%d) pid=%d (afp)\n", pFile->h, eFileLock,
            pFile->eFileLock, pFile->pInode->eFileLock, pFile->pInode->nShared,
-           getpid()));
+           osGetpid(0)));
 
   assert( eFileLock<=SHARED_LOCK );
   if( pFile->eFileLock<=eFileLock ){
@@ -3342,7 +3345,6 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
   TIMER_START;
   assert( cnt==(cnt&0x1ffff) );
   assert( id->h>2 );
-  cnt &= 0x1ffff;
   do{
 #if defined(USE_PREAD)
     got = osPread(id->h, pBuf, cnt, offset);
@@ -3355,9 +3357,9 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
     SimulateIOError( newOffset-- );
     if( newOffset!=offset ){
       if( newOffset == -1 ){
-        ((unixFile*)id)->lastErrno = errno;
+        storeLastErrno((unixFile*)id, errno);
       }else{
-        ((unixFile*)id)->lastErrno = 0;
+        storeLastErrno((unixFile*)id, 0);
       }
       return -1;
     }
@@ -3367,7 +3369,7 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
     if( got<0 ){
       if( errno==EINTR ){ got = 1; continue; }
       prior = 0;
-      ((unixFile*)id)->lastErrno = errno;
+      storeLastErrno((unixFile*)id,  errno);
       break;
     }else if( got>0 ){
       cnt -= got;
@@ -3432,7 +3434,7 @@ static int unixRead(
     /* lastErrno set by seekAndRead */
     return SQLITE_IOERR_READ;
   }else{
-    pFile->lastErrno = 0; /* not a system error */
+    storeLastErrno(pFile, 0);   /* not a system error */
     /* Unread parts of the buffer must be zero-filled */
     memset(&((char*)pBuf)[got], 0, amt-got);
     return SQLITE_IOERR_SHORT_READ;
@@ -3461,9 +3463,9 @@ static int seekAndWriteFd(
   TIMER_START;
 
 #if defined(USE_PREAD)
-  do{ rc = osPwrite(fd, pBuf, nBuf, iOff); }while( rc<0 && errno==EINTR );
+  do{ rc = (int)osPwrite(fd, pBuf, nBuf, iOff); }while( rc<0 && errno==EINTR );
 #elif defined(USE_PREAD64)
-  do{ rc = osPwrite64(fd, pBuf, nBuf, iOff);}while( rc<0 && errno==EINTR);
+  do{ rc = (int)osPwrite64(fd, pBuf, nBuf, iOff);}while( rc<0 && errno==EINTR);
 #else
   do{
     i64 iSeek = lseek(fd, iOff, SEEK_SET);
@@ -3559,8 +3561,8 @@ static int unixWrite(
     }
   }
 #endif
-
-  while( amt>0 && (wrote = seekAndWrite(pFile, offset, pBuf, amt))>0 ){
+ 
+  while( (wrote = seekAndWrite(pFile, offset, pBuf, amt))<amt && wrote>0 ){
     amt -= wrote;
     offset += wrote;
     pBuf = &((char*)pBuf)[wrote];
@@ -3568,12 +3570,12 @@ static int unixWrite(
   SimulateIOError(( wrote=(-1), amt=1 ));
   SimulateDiskfullError(( wrote=0, amt=1 ));
 
-  if( amt>0 ){
+  if( amt>wrote ){
     if( wrote<0 && pFile->lastErrno!=ENOSPC ){
       /* lastErrno set by seekAndWrite */
       return SQLITE_IOERR_WRITE;
     }else{
-      pFile->lastErrno = 0; /* not a system error */
+      storeLastErrno(pFile, 0); /* not a system error */
       return SQLITE_FULL;
     }
   }
@@ -3594,9 +3596,9 @@ SQLITE_API int sqlite3_fullsync_count = 0;
 ** We do not trust systems to provide a working fdatasync().  Some do.
 ** Others do no.  To be safe, we will stick with the (slightly slower)
 ** fsync(). If you know that your system does support fdatasync() correctly,
-** then simply compile with -Dfdatasync=fdatasync
+** then simply compile with -Dfdatasync=fdatasync or -DHAVE_FDATASYNC
 */
-#if !defined(fdatasync)
+#if !defined(fdatasync) && !HAVE_FDATASYNC
 # define fdatasync fsync
 #endif
 
@@ -3782,7 +3784,7 @@ static int unixSync(sqlite3_file *id, int flags){
   rc = full_fsync(pFile->h, isFullsync, isDataOnly);
   SimulateIOError( rc=1 );
   if( rc ){
-    pFile->lastErrno = errno;
+    storeLastErrno(pFile, errno);
     return unixLogError(SQLITE_IOERR_FSYNC, "full_fsync", pFile->zPath);
   }
 
@@ -3826,7 +3828,7 @@ static int unixTruncate(sqlite3_file *id, i64 nByte){
 
   rc = robust_ftruncate(pFile->h, nByte);
   if( rc ){
-    pFile->lastErrno = errno;
+    storeLastErrno(pFile, errno);
     return unixLogError(SQLITE_IOERR_TRUNCATE, "ftruncate", pFile->zPath);
   }else{
 #ifdef SQLITE_DEBUG
@@ -3866,7 +3868,7 @@ static int unixFileSize(sqlite3_file *id, i64 *pSize){
   rc = osFstat(((unixFile*)id)->h, &buf);
   SimulateIOError( rc=1 );
   if( rc!=0 ){
-    ((unixFile*)id)->lastErrno = errno;
+    storeLastErrno((unixFile*)id, errno);
     return SQLITE_IOERR_FSTAT;
   }
   *pSize = buf.st_size;
@@ -3902,7 +3904,9 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
     i64 nSize;                    /* Required file size */
     struct stat buf;              /* Used to hold return values of fstat() */
    
-    if( osFstat(pFile->h, &buf) ) return SQLITE_IOERR_FSTAT;
+    if( osFstat(pFile->h, &buf) ){
+      return SQLITE_IOERR_FSTAT;
+    }
 
     nSize = ((nByte+pFile->szChunk-1) / pFile->szChunk) * pFile->szChunk;
     if( nSize>(i64)buf.st_size ){
@@ -3917,24 +3921,28 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
       }while( err==EINTR );
       if( err ) return SQLITE_IOERR_WRITE;
 #else
-      /* If the OS does not have posix_fallocate(), fake it. First use
-      ** ftruncate() to set the file size, then write a single byte to
-      ** the last byte in each block within the extended region. This
-      ** is the same technique used by glibc to implement posix_fallocate()
-      ** on systems that do not have a real fallocate() system call.
+      /* If the OS does not have posix_fallocate(), fake it. Write a 
+      ** single byte to the last byte in each block that falls entirely
+      ** within the extended region. Then, if required, a single byte
+      ** at offset (nSize-1), to set the size of the file correctly.
+      ** This is a similar technique to that used by glibc on systems
+      ** that do not have a real fallocate() call.
       */
       int nBlk = buf.st_blksize;  /* File-system block size */
+      int nWrite = 0;             /* Number of bytes written by seekAndWrite */
       i64 iWrite;                 /* Next offset to write to */
 
-      if( robust_ftruncate(pFile->h, nSize) ){
-        pFile->lastErrno = errno;
-        return unixLogError(SQLITE_IOERR_TRUNCATE, "ftruncate", pFile->zPath);
-      }
       iWrite = ((buf.st_size + 2*nBlk - 1)/nBlk)*nBlk-1;
-      while( iWrite<nSize ){
-        int nWrite = seekAndWrite(pFile, iWrite, "", 1);
+      assert( iWrite>=buf.st_size );
+      assert( (iWrite/nBlk)==((buf.st_size+nBlk-1)/nBlk) );
+      assert( ((iWrite+1)%nBlk)==0 );
+      for(/*no-op*/; iWrite<nSize; iWrite+=nBlk ){
+        nWrite = seekAndWrite(pFile, iWrite, "", 1);
         if( nWrite!=1 ) return SQLITE_IOERR_WRITE;
-        iWrite += nBlk;
+      }
+      if( nWrite==0 || (nSize%nBlk) ){
+        nWrite = seekAndWrite(pFile, nSize-1, "", 1);
+        if( nWrite!=1 ) return SQLITE_IOERR_WRITE;
       }
 #endif
     }
@@ -3945,7 +3953,7 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
     int rc;
     if( pFile->szChunk<=0 ){
       if( robust_ftruncate(pFile->h, nByte) ){
-        pFile->lastErrno = errno;
+        storeLastErrno(pFile, errno);
         return unixLogError(SQLITE_IOERR_TRUNCATE, "ftruncate", pFile->zPath);
       }
     }
@@ -3983,11 +3991,15 @@ static int unixGetTempname(int nBuf, char *zBuf);
 static int unixFileControl(sqlite3_file *id, int op, void *pArg){
   unixFile *pFile = (unixFile*)id;
   switch( op ){
+    case SQLITE_FCNTL_WAL_BLOCK: {
+      /* pFile->ctrlFlags |= UNIXFILE_BLOCK; // Deferred feature */
+      return SQLITE_OK;
+    }
     case SQLITE_FCNTL_LOCKSTATE: {
       *(int*)pArg = pFile->eFileLock;
       return SQLITE_OK;
     }
-    case SQLITE_LAST_ERRNO: {
+    case SQLITE_FCNTL_LAST_ERRNO: {
       *(int*)pArg = pFile->lastErrno;
       return SQLITE_OK;
     }
@@ -4015,7 +4027,7 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_TEMPFILENAME: {
-      char *zTFile = sqlite3_malloc( pFile->pVfs->mxPathname );
+      char *zTFile = sqlite3_malloc64( pFile->pVfs->mxPathname );
       if( zTFile ){
         unixGetTempname(pFile->pVfs->mxPathname, zTFile);
         *(char**)pArg = zTFile;
@@ -4056,8 +4068,8 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
     }
 #endif
 #if SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__)
-    case SQLITE_SET_LOCKPROXYFILE:
-    case SQLITE_GET_LOCKPROXYFILE: {
+    case SQLITE_FCNTL_SET_LOCKPROXYFILE:
+    case SQLITE_FCNTL_GET_LOCKPROXYFILE: {
       return proxyFileControl(id,op,pArg);
     }
 #endif /* SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__) */
@@ -4197,7 +4209,9 @@ static int unixDeviceCharacteristics(sqlite3_file *id){
 ** Instead, it should be called via macro osGetpagesize().
 */
 static int unixGetpagesize(void){
-#if defined(_BSD_SOURCE)
+#if OS_VXWORKS
+  return 1024;
+#elif defined(_BSD_SOURCE)
   return getpagesize();
 #else
   return (int)sysconf(_SC_PAGESIZE);
@@ -4290,15 +4304,17 @@ struct unixShm {
 ** otherwise.
 */
 static int unixShmSystemLock(
-  unixShmNode *pShmNode, /* Apply locks to this open shared-memory segment */
+  unixFile *pFile,       /* Open connection to the WAL file */
   int lockType,          /* F_UNLCK, F_RDLCK, or F_WRLCK */
   int ofst,              /* First byte of the locking range */
   int n                  /* Number of bytes to lock */
 ){
-  struct flock f;       /* The posix advisory locking structure */
-  int rc = SQLITE_OK;   /* Result code form fcntl() */
+  unixShmNode *pShmNode; /* Apply locks to this open shared-memory segment */
+  struct flock f;        /* The posix advisory locking structure */
+  int rc = SQLITE_OK;    /* Result code form fcntl() */
 
   /* Access to the unixShmNode object is serialized by the caller */
+  pShmNode = pFile->pInode->pShmNode;
   assert( sqlite3_mutex_held(pShmNode->mutex) || pShmNode->nRef==0 );
 
   /* Shared locks never span more than one byte */
@@ -4308,6 +4324,7 @@ static int unixShmSystemLock(
   assert( n>=1 && n<SQLITE_SHM_NLOCK );
 
   if( pShmNode->h>=0 ){
+    int lkType;
     /* Initialize the locking parameters */
     memset(&f, 0, sizeof(f));
     f.l_type = lockType;
@@ -4315,8 +4332,10 @@ static int unixShmSystemLock(
     f.l_start = ofst;
     f.l_len = n;
 
-    rc = osFcntl(pShmNode->h, F_SETLK, &f);
+    lkType = (pFile->ctrlFlags & UNIXFILE_BLOCK)!=0 ? F_SETLKW : F_SETLK;
+    rc = osFcntl(pShmNode->h, lkType, &f);
     rc = (rc!=(-1)) ? SQLITE_OK : SQLITE_BUSY;
+    pFile->ctrlFlags &= ~UNIXFILE_BLOCK;
   }
 
   /* Update the global lock state and do debug tracing */
@@ -4449,7 +4468,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
   int nShmFilename;               /* Size of the SHM filename in bytes */
 
   /* Allocate space for the new unixShm object. */
-  p = sqlite3_malloc( sizeof(*p) );
+  p = sqlite3_malloc64( sizeof(*p) );
   if( p==0 ) return SQLITE_NOMEM;
   memset(p, 0, sizeof(*p));
   assert( pDbFd->pShm==0 );
@@ -4462,6 +4481,9 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
   pShmNode = pInode->pShmNode;
   if( pShmNode==0 ){
     struct stat sStat;                 /* fstat() info for database file */
+#ifndef SQLITE_SHM_DIRECTORY
+    const char *zBasePath = pDbFd->zPath;
+#endif
 
     /* Call fstat() to figure out the permissions on the database file. If
     ** a new *-shm file is created, an attempt will be made to create it
@@ -4475,9 +4497,9 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
 #ifdef SQLITE_SHM_DIRECTORY
     nShmFilename = sizeof(SQLITE_SHM_DIRECTORY) + 31;
 #else
-    nShmFilename = 6 + (int)strlen(pDbFd->zPath);
+    nShmFilename = 6 + (int)strlen(zBasePath);
 #endif
-    pShmNode = sqlite3_malloc( sizeof(*pShmNode) + nShmFilename );
+    pShmNode = sqlite3_malloc64( sizeof(*pShmNode) + nShmFilename );
     if( pShmNode==0 ){
       rc = SQLITE_NOMEM;
       goto shm_open_err;
@@ -4489,7 +4511,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
                      SQLITE_SHM_DIRECTORY "/sqlite-shm-%x-%x",
                      (u32)sStat.st_ino, (u32)sStat.st_dev);
 #else
-    sqlite3_snprintf(nShmFilename, zShmFilename, "%s-shm", pDbFd->zPath);
+    sqlite3_snprintf(nShmFilename, zShmFilename, "%s-shm", zBasePath);
     sqlite3FileSuffix3(pDbFd->zPath, zShmFilename);
 #endif
     pShmNode->h = -1;
@@ -4523,13 +4545,13 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       ** If not, truncate the file to zero length. 
       */
       rc = SQLITE_OK;
-      if( unixShmSystemLock(pShmNode, F_WRLCK, UNIX_SHM_DMS, 1)==SQLITE_OK ){
+      if( unixShmSystemLock(pDbFd, F_WRLCK, UNIX_SHM_DMS, 1)==SQLITE_OK ){
         if( robust_ftruncate(pShmNode->h, 0) ){
           rc = unixLogError(SQLITE_IOERR_SHMOPEN, "ftruncate", zShmFilename);
         }
       }
       if( rc==SQLITE_OK ){
-        rc = unixShmSystemLock(pShmNode, F_RDLCK, UNIX_SHM_DMS, 1);
+        rc = unixShmSystemLock(pDbFd, F_RDLCK, UNIX_SHM_DMS, 1);
       }
       if( rc ) goto shm_open_err;
     }
@@ -4687,7 +4709,7 @@ static int unixShmMap(
           goto shmpage_out;
         }
       }else{
-        pMem = sqlite3_malloc(szRegion);
+        pMem = sqlite3_malloc64(szRegion);
         if( pMem==0 ){
           rc = SQLITE_NOMEM;
           goto shmpage_out;
@@ -4761,7 +4783,7 @@ static int unixShmLock(
 
     /* Unlock the system-level locks */
     if( (mask & allMask)==0 ){
-      rc = unixShmSystemLock(pShmNode, F_UNLCK, ofst+UNIX_SHM_BASE, n);
+      rc = unixShmSystemLock(pDbFd, F_UNLCK, ofst+UNIX_SHM_BASE, n);
     }else{
       rc = SQLITE_OK;
     }
@@ -4789,7 +4811,7 @@ static int unixShmLock(
     /* Get shared locks at the system level, if necessary */
     if( rc==SQLITE_OK ){
       if( (allShared & mask)==0 ){
-        rc = unixShmSystemLock(pShmNode, F_RDLCK, ofst+UNIX_SHM_BASE, n);
+        rc = unixShmSystemLock(pDbFd, F_RDLCK, ofst+UNIX_SHM_BASE, n);
       }else{
         rc = SQLITE_OK;
       }
@@ -4814,7 +4836,7 @@ static int unixShmLock(
     ** also mark the local connection as being locked.
     */
     if( rc==SQLITE_OK ){
-      rc = unixShmSystemLock(pShmNode, F_WRLCK, ofst+UNIX_SHM_BASE, n);
+      rc = unixShmSystemLock(pDbFd, F_WRLCK, ofst+UNIX_SHM_BASE, n);
       if( rc==SQLITE_OK ){
         assert( (p->sharedMask & mask)==0 );
         p->exclMask |= mask;
@@ -4823,7 +4845,7 @@ static int unixShmLock(
   }
   sqlite3_mutex_leave(pShmNode->mutex);
   OSTRACE(("SHM-LOCK shmid-%d, pid-%d got %03x,%03x\n",
-           p->id, getpid(), p->sharedMask, p->exclMask));
+           p->id, osGetpid(0), p->sharedMask, p->exclMask));
   return rc;
 }
 
@@ -4837,7 +4859,8 @@ static void unixShmBarrier(
   sqlite3_file *fd                /* Database file holding the shared memory */
 ){
   UNUSED_PARAMETER(fd);
-  unixEnterMutex();
+  sqlite3MemoryBarrier();         /* compiler-defined memory barrier */
+  unixEnterMutex();               /* Also mutex, for redundancy */
   unixLeaveMutex();
 }
 
@@ -4882,7 +4905,9 @@ static int unixShmUnmap(
   assert( pShmNode->nRef>0 );
   pShmNode->nRef--;
   if( pShmNode->nRef==0 ){
-    if( deleteFlag && pShmNode->h>=0 ) osUnlink(pShmNode->zFilename);
+    if( deleteFlag && pShmNode->h>=0 ){
+      osUnlink(pShmNode->zFilename);
+    }
     unixShmPurge(pDbFd);
   }
   unixLeaveMutex();
@@ -5159,7 +5184,7 @@ static int unixUnfetch(sqlite3_file *fd, i64 iOff, void *p){
 **   *  An I/O method finder function called FINDER that returns a pointer
 **      to the METHOD object in the previous bullet.
 */
-#define IOMETHODS(FINDER, METHOD, VERSION, CLOSE, LOCK, UNLOCK, CKLOCK, SHMMAP) \
+#define IOMETHODS(FINDER,METHOD,VERSION,CLOSE,LOCK,UNLOCK,CKLOCK,SHMMAP)     \
 static const sqlite3_io_methods METHOD = {                                   \
    VERSION,                    /* iVersion */                                \
    CLOSE,                      /* xClose */                                  \
@@ -5224,7 +5249,7 @@ IOMETHODS(
   0                         /* xShmMap method */
 )
 
-#if SQLITE_ENABLE_LOCKING_STYLE && !OS_VXWORKS
+#if SQLITE_ENABLE_LOCKING_STYLE
 IOMETHODS(
   flockIoFinder,            /* Finder function name */
   flockIoMethods,           /* sqlite3_io_methods object name */
@@ -5242,10 +5267,10 @@ IOMETHODS(
   semIoFinder,              /* Finder function name */
   semIoMethods,             /* sqlite3_io_methods object name */
   1,                        /* shared memory is disabled */
-  semClose,                 /* xClose method */
-  semLock,                  /* xLock method */
-  semUnlock,                /* xUnlock method */
-  semCheckReservedLock,     /* xCheckReservedLock method */
+  semXClose,                /* xClose method */
+  semXLock,                 /* xLock method */
+  semXUnlock,               /* xUnlock method */
+  semXCheckReservedLock,    /* xCheckReservedLock method */
   0                         /* xShmMap method */
 )
 #endif
@@ -5369,15 +5394,13 @@ static const sqlite3_io_methods
 
 #endif /* defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE */
 
-#if OS_VXWORKS && SQLITE_ENABLE_LOCKING_STYLE
-/* 
-** This "finder" function attempts to determine the best locking strategy 
-** for the database file "filePath".  It then returns the sqlite3_io_methods
-** object that implements that strategy.
-**
-** This is for VXWorks only.
+#if OS_VXWORKS
+/*
+** This "finder" function for VxWorks checks to see if posix advisory
+** locking works.  If it does, then that is what is used.  If it does not
+** work, then fallback to named semaphore locking.
 */
-static const sqlite3_io_methods *autolockIoFinderImpl(
+static const sqlite3_io_methods *vxworksIoFinderImpl(
   const char *filePath,    /* name of the database file */
   unixFile *pNew           /* the open file object */
 ){
@@ -5403,9 +5426,9 @@ static const sqlite3_io_methods *autolockIoFinderImpl(
   }
 }
 static const sqlite3_io_methods 
-  *(*const autolockIoFinder)(const char*,unixFile*) = autolockIoFinderImpl;
+  *(*const vxworksIoFinder)(const char*,unixFile*) = vxworksIoFinderImpl;
 
-#endif /* OS_VXWORKS && SQLITE_ENABLE_LOCKING_STYLE */
+#endif /* OS_VXWORKS */
 
 /*
 ** An abstract type for a pointer to an IO method finder function:
@@ -5524,7 +5547,7 @@ static int fillInUnixFile(
     ** the afpLockingContext.
     */
     afpLockingContext *pCtx;
-    pNew->lockingContext = pCtx = sqlite3_malloc( sizeof(*pCtx) );
+    pNew->lockingContext = pCtx = sqlite3_malloc64( sizeof(*pCtx) );
     if( pCtx==0 ){
       rc = SQLITE_NOMEM;
     }else{
@@ -5554,7 +5577,7 @@ static int fillInUnixFile(
     int nFilename;
     assert( zFilename!=0 );
     nFilename = (int)strlen(zFilename) + 6;
-    zLockFile = (char *)sqlite3_malloc(nFilename);
+    zLockFile = (char *)sqlite3_malloc64(nFilename);
     if( zLockFile==0 ){
       rc = SQLITE_NOMEM;
     }else{
@@ -5587,7 +5610,7 @@ static int fillInUnixFile(
   }
 #endif
   
-  pNew->lastErrno = 0;
+  storeLastErrno(pNew, 0);
 #if OS_VXWORKS
   if( rc!=SQLITE_OK ){
     if( h>=0 ) robust_close(pNew, h, __LINE__);
@@ -5918,8 +5941,8 @@ static int unixOpen(
   ** the same instant might all reset the PRNG.  But multiple resets
   ** are harmless.
   */
-  if( randomnessPid!=getpid() ){
-    randomnessPid = getpid();
+  if( randomnessPid!=osGetpid(0) ){
+    randomnessPid = osGetpid(0);
     sqlite3_randomness(0,0);
   }
 
@@ -5931,7 +5954,7 @@ static int unixOpen(
     if( pUnused ){
       fd = pUnused->fd;
     }else{
-      pUnused = sqlite3_malloc(sizeof(*pUnused));
+      pUnused = sqlite3_malloc64(sizeof(*pUnused));
       if( !pUnused ){
         return SQLITE_NOMEM;
       }
@@ -6035,11 +6058,14 @@ static int unixOpen(
   
 #if defined(__APPLE__) || SQLITE_ENABLE_LOCKING_STYLE
   if( fstatfs(fd, &fsInfo) == -1 ){
-    ((unixFile*)pFile)->lastErrno = errno;
+    storeLastErrno(p, errno);
     robust_close(p, fd, __LINE__);
     return SQLITE_IOERR_ACCESS;
   }
   if (0 == strncmp("msdos", fsInfo.f_fstypename, 5)) {
+    ((unixFile*)pFile)->fsFlags |= SQLITE_FSFLAGS_IS_MSDOS;
+  }
+  if (0 == strncmp("exfat", fsInfo.f_fstypename, 5)) {
     ((unixFile*)pFile)->fsFlags |= SQLITE_FSFLAGS_IS_MSDOS;
   }
 #endif
@@ -6064,19 +6090,6 @@ static int unixOpen(
     if( envforce!=NULL ){
       useProxy = atoi(envforce)>0;
     }else{
-      if( statfs(zPath, &fsInfo) == -1 ){
-        /* In theory, the close(fd) call is sub-optimal. If the file opened
-        ** with fd is a database file, and there are other connections open
-        ** on that file that are currently holding advisory locks on it,
-        ** then the call to close() will cancel those locks. In practice,
-        ** we're assuming that statfs() doesn't fail very often. At least
-        ** not while other file descriptors opened by the same process on
-        ** the same file are working.  */
-        p->lastErrno = errno;
-        robust_close(p, fd, __LINE__);
-        rc = SQLITE_IOERR_ACCESS;
-        goto open_finished;
-      }
       useProxy = !(fsInfo.f_flags&MNT_LOCAL);
     }
     if( useProxy ){
@@ -6320,8 +6333,8 @@ static int unixRandomness(sqlite3_vfs *NotUsed, int nBuf, char *zBuf){
   ** tests repeatable.
   */
   memset(zBuf, 0, nBuf);
-  randomnessPid = getpid();  
-#if !defined(SQLITE_TEST)
+  randomnessPid = osGetpid(0);  
+#if !defined(SQLITE_TEST) && !defined(SQLITE_OMIT_RANDOMNESS)
   {
     int fd, got;
     fd = robust_open("/dev/urandom", O_RDONLY, 0);
@@ -6502,9 +6515,10 @@ static int unixGetLastError(sqlite3_vfs *NotUsed, int NotUsed2, char *NotUsed3){
 **
 ** C APIs
 **
-**  sqlite3_file_control(db, dbname, SQLITE_SET_LOCKPROXYFILE,
+**  sqlite3_file_control(db, dbname, SQLITE_FCNTL_SET_LOCKPROXYFILE,
 **                       <proxy_path> | ":auto:");
-**  sqlite3_file_control(db, dbname, SQLITE_GET_LOCKPROXYFILE, &<proxy_path>);
+**  sqlite3_file_control(db, dbname, SQLITE_FCNTL_GET_LOCKPROXYFILE,
+**                       &<proxy_path>);
 **
 **
 ** SQL pragmas
@@ -6597,7 +6611,7 @@ static int unixGetLastError(sqlite3_vfs *NotUsed, int NotUsed2, char *NotUsed3){
 ** setting the environment variable SQLITE_FORCE_PROXY_LOCKING to 1 will
 ** force proxy locking to be used for every database file opened, and 0
 ** will force automatic proxy locking to be disabled for all database
-** files (explicitly calling the SQLITE_SET_LOCKPROXYFILE pragma or
+** files (explicitly calling the SQLITE_FCNTL_SET_LOCKPROXYFILE pragma or
 ** sqlite_file_control API is not affected by SQLITE_FORCE_PROXY_LOCKING).
 */
 
@@ -6618,6 +6632,7 @@ struct proxyLockingContext {
   char *lockProxyPath;         /* Name of the proxy lock file */
   char *dbPath;                /* Name of the open file */
   int conchHeld;               /* 1 if the conch is held, -1 if lockless */
+  int nFails;                  /* Number of conch taking failures */
   void *oldLockingContext;     /* Original lockingcontext to restore on close */
   sqlite3_io_methods const *pOldMethod;     /* Original I/O methods for close */
 };
@@ -6639,7 +6654,7 @@ static int proxyGetLockPath(const char *dbPath, char *lPath, size_t maxLen){
   {
     if( !confstr(_CS_DARWIN_USER_TEMP_DIR, lPath, maxLen) ){
       OSTRACE(("GETLOCKPATH  failed %s errno=%d pid=%d\n",
-               lPath, errno, getpid()));
+               lPath, errno, osGetpid(0)));
       return SQLITE_IOERR_LOCK;
     }
     len = strlcat(lPath, "sqliteplocks", maxLen);    
@@ -6661,7 +6676,7 @@ static int proxyGetLockPath(const char *dbPath, char *lPath, size_t maxLen){
   }
   lPath[i+len]='\0';
   strlcat(lPath, ":auto:", maxLen);
-  OSTRACE(("GETLOCKPATH  proxy lock path=%s pid=%d\n", lPath, getpid()));
+  OSTRACE(("GETLOCKPATH  proxy lock path=%s pid=%d\n", lPath, osGetpid(0)));
   return SQLITE_OK;
 }
 
@@ -6688,7 +6703,7 @@ static int proxyCreateLockPath(const char *lockPath){
           if( err!=EEXIST ) {
             OSTRACE(("CREATELOCKPATH  FAILED creating %s, "
                      "'%s' proxy lock path=%s pid=%d\n",
-                     buf, strerror(err), lockPath, getpid()));
+                     buf, strerror(err), lockPath, osGetpid(0)));
             return err;
           }
         }
@@ -6697,7 +6712,7 @@ static int proxyCreateLockPath(const char *lockPath){
     }
     buf[i] = lockPath[i];
   }
-  OSTRACE(("CREATELOCKPATH  proxy lock path=%s pid=%d\n", lockPath, getpid()));
+  OSTRACE(("CREATELOCKPATH  proxy lock path=%s pid=%d\n", lockPath, osGetpid(0)));
   return 0;
 }
 
@@ -6731,7 +6746,7 @@ static int proxyCreateUnixFile(
   if( pUnused ){
     fd = pUnused->fd;
   }else{
-    pUnused = sqlite3_malloc(sizeof(*pUnused));
+    pUnused = sqlite3_malloc64(sizeof(*pUnused));
     if( !pUnused ){
       return SQLITE_NOMEM;
     }
@@ -6764,7 +6779,7 @@ static int proxyCreateUnixFile(
     }
   }
   
-  pNew = (unixFile *)sqlite3_malloc(sizeof(*pNew));
+  pNew = (unixFile *)sqlite3_malloc64(sizeof(*pNew));
   if( pNew==NULL ){
     rc = SQLITE_NOMEM;
     goto end_create_proxy;
@@ -6797,8 +6812,10 @@ SQLITE_API int sqlite3_hostid_num = 0;
 
 #define PROXY_HOSTIDLEN    16  /* conch file host id length */
 
+#ifdef HAVE_GETHOSTUUID
 /* Not always defined in the headers as it ought to be */
 extern int gethostuuid(uuid_t id, const struct timespec *wait);
+#endif
 
 /* get the host ID via gethostuuid(), pHostID must point to PROXY_HOSTIDLEN 
 ** bytes of writable memory.
@@ -6806,10 +6823,9 @@ extern int gethostuuid(uuid_t id, const struct timespec *wait);
 static int proxyGetHostID(unsigned char *pHostID, int *pError){
   assert(PROXY_HOSTIDLEN == sizeof(uuid_t));
   memset(pHostID, 0, PROXY_HOSTIDLEN);
-#if defined(__MAX_OS_X_VERSION_MIN_REQUIRED)\
-               && __MAC_OS_X_VERSION_MIN_REQUIRED<1050
+#ifdef HAVE_GETHOSTUUID
   {
-    static const struct timespec timeout = {1, 0}; /* 1 sec timeout */
+    struct timespec timeout = {1, 0}; /* 1 sec timeout */
     if( gethostuuid(pHostID, &timeout) ){
       int err = errno;
       if( pError ){
@@ -6924,7 +6940,7 @@ static int proxyConchLock(unixFile *pFile, uuid_t myHostID, int lockType){
        */
       struct stat buf;
       if( osFstat(conchFile->h, &buf) ){
-        pFile->lastErrno = errno;
+        storeLastErrno(pFile, errno);
         return SQLITE_IOERR_LOCK;
       }
       
@@ -6944,7 +6960,7 @@ static int proxyConchLock(unixFile *pFile, uuid_t myHostID, int lockType){
         char tBuf[PROXY_MAXCONCHLEN];
         int len = osPread(conchFile->h, tBuf, PROXY_MAXCONCHLEN, 0);
         if( len<0 ){
-          pFile->lastErrno = errno;
+          storeLastErrno(pFile, errno);
           return SQLITE_IOERR_LOCK;
         }
         if( len>PROXY_PATHINDEX && tBuf[0]==(char)PROXY_CONCHVERSION){
@@ -6964,7 +6980,7 @@ static int proxyConchLock(unixFile *pFile, uuid_t myHostID, int lockType){
       if( 0==proxyBreakConchLock(pFile, myHostID) ){
         rc = SQLITE_OK;
         if( lockType==EXCLUSIVE_LOCK ){
-          rc = conchFile->pMethod->xLock((sqlite3_file*)conchFile, SHARED_LOCK);          
+          rc = conchFile->pMethod->xLock((sqlite3_file*)conchFile, SHARED_LOCK);
         }
         if( !rc ){
           rc = conchFile->pMethod->xLock((sqlite3_file*)conchFile, lockType);
@@ -7002,11 +7018,12 @@ static int proxyTakeConch(unixFile *pFile){
     int forceNewLockPath = 0;
     
     OSTRACE(("TAKECONCH  %d for %s pid=%d\n", conchFile->h,
-             (pCtx->lockProxyPath ? pCtx->lockProxyPath : ":auto:"), getpid()));
+             (pCtx->lockProxyPath ? pCtx->lockProxyPath : ":auto:"),
+             osGetpid(0)));
 
     rc = proxyGetHostID(myHostID, &pError);
     if( (rc&0xff)==SQLITE_IOERR ){
-      pFile->lastErrno = pError;
+      storeLastErrno(pFile, pError);
       goto end_takeconch;
     }
     rc = proxyConchLock(pFile, myHostID, SHARED_LOCK);
@@ -7017,7 +7034,7 @@ static int proxyTakeConch(unixFile *pFile){
     readLen = seekAndRead((unixFile*)conchFile, 0, readBuf, PROXY_MAXCONCHLEN);
     if( readLen<0 ){
       /* I/O error: lastErrno set by seekAndRead */
-      pFile->lastErrno = conchFile->lastErrno;
+      storeLastErrno(pFile, conchFile->lastErrno);
       rc = SQLITE_IOERR_READ;
       goto end_takeconch;
     }else if( readLen<=(PROXY_HEADERLEN+PROXY_HOSTIDLEN) || 
@@ -7090,7 +7107,7 @@ static int proxyTakeConch(unixFile *pFile){
           rc = proxyConchLock(pFile, myHostID, EXCLUSIVE_LOCK);
         }
       }else{
-        rc = conchFile->pMethod->xLock((sqlite3_file*)conchFile, EXCLUSIVE_LOCK);
+        rc = proxyConchLock(pFile, myHostID, EXCLUSIVE_LOCK);
       }
       if( rc==SQLITE_OK ){
         char writeBuffer[PROXY_MAXCONCHLEN];
@@ -7099,7 +7116,8 @@ static int proxyTakeConch(unixFile *pFile){
         writeBuffer[0] = (char)PROXY_CONCHVERSION;
         memcpy(&writeBuffer[PROXY_HEADERLEN], myHostID, PROXY_HOSTIDLEN);
         if( pCtx->lockProxyPath!=NULL ){
-          strlcpy(&writeBuffer[PROXY_PATHINDEX], pCtx->lockProxyPath, MAXPATHLEN);
+          strlcpy(&writeBuffer[PROXY_PATHINDEX], pCtx->lockProxyPath,
+                  MAXPATHLEN);
         }else{
           strlcpy(&writeBuffer[PROXY_PATHINDEX], tempLockPath, MAXPATHLEN);
         }
@@ -7211,7 +7229,7 @@ static int proxyReleaseConch(unixFile *pFile){
   conchFile = pCtx->conchFile;
   OSTRACE(("RELEASECONCH  %d for %s pid=%d\n", conchFile->h,
            (pCtx->lockProxyPath ? pCtx->lockProxyPath : ":auto:"), 
-           getpid()));
+           osGetpid(0)));
   if( pCtx->conchHeld>0 ){
     rc = conchFile->pMethod->xUnlock((sqlite3_file*)conchFile, NO_LOCK);
   }
@@ -7223,7 +7241,7 @@ static int proxyReleaseConch(unixFile *pFile){
 
 /*
 ** Given the name of a database file, compute the name of its conch file.
-** Store the conch filename in memory obtained from sqlite3_malloc().
+** Store the conch filename in memory obtained from sqlite3_malloc64().
 ** Make *pConchPath point to the new name.  Return SQLITE_OK on success
 ** or SQLITE_NOMEM if unable to obtain memory.
 **
@@ -7239,7 +7257,7 @@ static int proxyCreateConchPathname(char *dbPath, char **pConchPath){
 
   /* Allocate space for the conch filename and initialize the name to
   ** the name of the original database file. */  
-  *pConchPath = conchPath = (char *)sqlite3_malloc(len + 8);
+  *pConchPath = conchPath = (char *)sqlite3_malloc64(len + 8);
   if( conchPath==0 ){
     return SQLITE_NOMEM;
   }
@@ -7311,7 +7329,8 @@ static int proxyGetDbPathForUnixFile(unixFile *pFile, char *dbPath){
     /* afp style keeps a reference to the db path in the filePath field 
     ** of the struct */
     assert( (int)strlen((char*)pFile->lockingContext)<=MAXPATHLEN );
-    strlcpy(dbPath, ((afpLockingContext *)pFile->lockingContext)->dbPath, MAXPATHLEN);
+    strlcpy(dbPath, ((afpLockingContext *)pFile->lockingContext)->dbPath,
+            MAXPATHLEN);
   } else
 #endif
   if( pFile->pMethod == &dotlockIoMethods ){
@@ -7352,9 +7371,9 @@ static int proxyTransformUnixFile(unixFile *pFile, const char *path) {
   }
   
   OSTRACE(("TRANSPROXY  %d for %s pid=%d\n", pFile->h,
-           (lockPath ? lockPath : ":auto:"), getpid()));
+           (lockPath ? lockPath : ":auto:"), osGetpid(0)));
 
-  pCtx = sqlite3_malloc( sizeof(*pCtx) );
+  pCtx = sqlite3_malloc64( sizeof(*pCtx) );
   if( pCtx==0 ){
     return SQLITE_NOMEM;
   }
@@ -7424,7 +7443,7 @@ static int proxyTransformUnixFile(unixFile *pFile, const char *path) {
 */
 static int proxyFileControl(sqlite3_file *id, int op, void *pArg){
   switch( op ){
-    case SQLITE_GET_LOCKPROXYFILE: {
+    case SQLITE_FCNTL_GET_LOCKPROXYFILE: {
       unixFile *pFile = (unixFile*)id;
       if( pFile->pMethod == &proxyIoMethods ){
         proxyLockingContext *pCtx = (proxyLockingContext*)pFile->lockingContext;
@@ -7439,13 +7458,16 @@ static int proxyFileControl(sqlite3_file *id, int op, void *pArg){
       }
       return SQLITE_OK;
     }
-    case SQLITE_SET_LOCKPROXYFILE: {
+    case SQLITE_FCNTL_SET_LOCKPROXYFILE: {
       unixFile *pFile = (unixFile*)id;
       int rc = SQLITE_OK;
       int isProxyStyle = (pFile->pMethod == &proxyIoMethods);
       if( pArg==NULL || (const char *)pArg==0 ){
         if( isProxyStyle ){
-          /* turn off proxy locking - not supported */
+          /* turn off proxy locking - not supported.  If support is added for
+          ** switching proxy locking mode off then it will need to fail if
+          ** the journal mode is WAL mode. 
+          */
           rc = SQLITE_ERROR /*SQLITE_PROTOCOL? SQLITE_MISUSE?*/;
         }else{
           /* turn off proxy locking - already off - NOOP */
@@ -7636,7 +7658,7 @@ static int proxyClose(sqlite3_file *id) {
 ** necessarily been initialized when this routine is called, and so they
 ** should not be used.
 */
-SQLITE_API int sqlite3_os_init(void){ 
+SQLITE_API int SQLITE_STDCALL sqlite3_os_init(void){ 
   /* 
   ** The following macro defines an initializer for an sqlite3_vfs object.
   ** The name of the VFS is NAME.  The pAppData is a pointer to a pointer
@@ -7690,8 +7712,10 @@ SQLITE_API int sqlite3_os_init(void){
   ** array cannot be const.
   */
   static sqlite3_vfs aVfs[] = {
-#if SQLITE_ENABLE_LOCKING_STYLE && (OS_VXWORKS || defined(__APPLE__))
+#if SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__)
     UNIXVFS("unix",          autolockIoFinder ),
+#elif OS_VXWORKS
+    UNIXVFS("unix",          vxworksIoFinder ),
 #else
     UNIXVFS("unix",          posixIoFinder ),
 #endif
@@ -7701,11 +7725,11 @@ SQLITE_API int sqlite3_os_init(void){
 #if OS_VXWORKS
     UNIXVFS("unix-namedsem", semIoFinder ),
 #endif
-#if SQLITE_ENABLE_LOCKING_STYLE
+#if SQLITE_ENABLE_LOCKING_STYLE || OS_VXWORKS
     UNIXVFS("unix-posix",    posixIoFinder ),
-#if !OS_VXWORKS
-    UNIXVFS("unix-flock",    flockIoFinder ),
 #endif
+#if SQLITE_ENABLE_LOCKING_STYLE
+    UNIXVFS("unix-flock",    flockIoFinder ),
 #endif
 #if SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__)
     UNIXVFS("unix-afp",      afpIoFinder ),
@@ -7733,7 +7757,7 @@ SQLITE_API int sqlite3_os_init(void){
 ** to release dynamically allocated objects.  But not on unix.
 ** This routine is a no-op for unix.
 */
-SQLITE_API int sqlite3_os_end(void){ 
+SQLITE_API int SQLITE_STDCALL sqlite3_os_end(void){ 
   return SQLITE_OK; 
 }
  
@@ -7755,6 +7779,7 @@ SQLITE_API int sqlite3_os_end(void){
 **
 ** This file contains code that is specific to Windows.
 */
+/* #include "sqliteInt.h" */
 #if SQLITE_OS_WIN               /* This file is used for Windows only */
 
 /*
@@ -7791,16 +7816,6 @@ SQLITE_API int sqlite3_os_end(void){
 */
 #ifdef MEMORY_DEBUG
 # error "The MEMORY_DEBUG macro is obsolete.  Use SQLITE_DEBUG instead."
-#endif
-
-#if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
-# ifndef SQLITE_DEBUG_OS_TRACE
-#   define SQLITE_DEBUG_OS_TRACE 0
-# endif
-  int sqlite3OSTrace = SQLITE_DEBUG_OS_TRACE;
-# define OSTRACE(X)          if( sqlite3OSTrace ) sqlite3DebugPrintf X
-#else
-# define OSTRACE(X)
 #endif
 
 /*
@@ -7973,6 +7988,7 @@ SQLITE_API int sqlite3_open_file_count = 0;
 /*
 ** Include the header file for the Windows VFS.
 */
+/* #include "os_win.h" */
 
 /*
 ** Compiling and using WAL mode requires several APIs that are only
@@ -8146,8 +8162,10 @@ WINBASEAPI LPVOID WINAPI MapViewOfFile(HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #endif /* SQLITE_OS_WINRT */
 
 /*
-** This file mapping API is common to both Win32 and WinRT.
+** These file mapping APIs are common to both Win32 and WinRT.
 */
+
+WINBASEAPI BOOL WINAPI FlushViewOfFile(LPCVOID, SIZE_T);
 WINBASEAPI BOOL WINAPI UnmapViewOfFile(LPCVOID);
 #endif /* SQLITE_WIN32_FILEMAPPING_API */
 
@@ -9015,6 +9033,32 @@ static struct win_syscall {
         SQLITE_WIN32_VOLATILE*, LONG,LONG))aSyscall[76].pCurrent)
 #endif /* defined(InterlockedCompareExchange) */
 
+#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && SQLITE_WIN32_USE_UUID
+  { "UuidCreate",               (SYSCALL)UuidCreate,             0 },
+#else
+  { "UuidCreate",               (SYSCALL)0,                      0 },
+#endif
+
+#define osUuidCreate ((RPC_STATUS(RPC_ENTRY*)(UUID*))aSyscall[77].pCurrent)
+
+#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && SQLITE_WIN32_USE_UUID
+  { "UuidCreateSequential",     (SYSCALL)UuidCreateSequential,   0 },
+#else
+  { "UuidCreateSequential",     (SYSCALL)0,                      0 },
+#endif
+
+#define osUuidCreateSequential \
+        ((RPC_STATUS(RPC_ENTRY*)(UUID*))aSyscall[78].pCurrent)
+
+#if !defined(SQLITE_NO_SYNC) && SQLITE_MAX_MMAP_SIZE>0
+  { "FlushViewOfFile",          (SYSCALL)FlushViewOfFile,        0 },
+#else
+  { "FlushViewOfFile",          (SYSCALL)0,                      0 },
+#endif
+
+#define osFlushViewOfFile \
+        ((BOOL(WINAPI*)(LPCVOID,SIZE_T))aSyscall[79].pCurrent)
+
 }; /* End of the overrideable system calls */
 
 /*
@@ -9108,7 +9152,7 @@ static const char *winNextSystemCall(sqlite3_vfs *p, const char *zName){
 ** "pnLargest" argument, if non-zero, will be used to return the size of the
 ** largest committed free block in the heap, in bytes.
 */
-SQLITE_API int sqlite3_win32_compact_heap(LPUINT pnLargest){
+SQLITE_API int SQLITE_STDCALL sqlite3_win32_compact_heap(LPUINT pnLargest){
   int rc = SQLITE_OK;
   UINT nLargest = 0;
   HANDLE hHeap;
@@ -9148,7 +9192,7 @@ SQLITE_API int sqlite3_win32_compact_heap(LPUINT pnLargest){
 ** the sqlite3_memory_used() function does not return zero, SQLITE_BUSY will
 ** be returned and no changes will be made to the Win32 native heap.
 */
-SQLITE_API int sqlite3_win32_reset_heap(){
+SQLITE_API int SQLITE_STDCALL sqlite3_win32_reset_heap(){
   int rc;
   MUTEX_LOGIC( sqlite3_mutex *pMaster; ) /* The main static mutex */
   MUTEX_LOGIC( sqlite3_mutex *pMem; )    /* The memsys static mutex */
@@ -9193,7 +9237,7 @@ SQLITE_API int sqlite3_win32_reset_heap(){
 ** (if available).
 */
 
-SQLITE_API void sqlite3_win32_write_debug(const char *zBuf, int nBuf){
+SQLITE_API void SQLITE_STDCALL sqlite3_win32_write_debug(const char *zBuf, int nBuf){
   char zDbgBuf[SQLITE_WIN32_DBG_BUF_SIZE];
   int nMin = MIN(nBuf, (SQLITE_WIN32_DBG_BUF_SIZE - 1)); /* may be negative. */
   if( nMin<-1 ) nMin = -1; /* all negative values become -1. */
@@ -9233,7 +9277,7 @@ SQLITE_API void sqlite3_win32_write_debug(const char *zBuf, int nBuf){
 static HANDLE sleepObj = NULL;
 #endif
 
-SQLITE_API void sqlite3_win32_sleep(DWORD milliseconds){
+SQLITE_API void SQLITE_STDCALL sqlite3_win32_sleep(DWORD milliseconds){
 #if SQLITE_OS_WINRT
   if ( sleepObj==NULL ){
     sleepObj = osCreateEventExW(NULL, NULL, CREATE_EVENT_MANUAL_RESET,
@@ -9282,7 +9326,7 @@ SQLITE_PRIVATE DWORD sqlite3Win32Wait(HANDLE hObject){
 ** This function determines if the machine is running a version of Windows
 ** based on the NT kernel.
 */
-SQLITE_API int sqlite3_win32_is_nt(void){
+SQLITE_API int SQLITE_STDCALL sqlite3_win32_is_nt(void){
 #if SQLITE_OS_WINRT
   /*
   ** NOTE: The WinRT sub-platform is always assumed to be based on the NT
@@ -9636,7 +9680,7 @@ static char *winUnicodeToMbcs(LPCWSTR zWideFilename){
 ** Convert multibyte character string to UTF-8.  Space to hold the
 ** returned string is obtained from sqlite3_malloc().
 */
-SQLITE_API char *sqlite3_win32_mbcs_to_utf8(const char *zFilename){
+SQLITE_API char *SQLITE_STDCALL sqlite3_win32_mbcs_to_utf8(const char *zFilename){
   char *zFilenameUtf8;
   LPWSTR zTmpWide;
 
@@ -9653,7 +9697,7 @@ SQLITE_API char *sqlite3_win32_mbcs_to_utf8(const char *zFilename){
 ** Convert UTF-8 to multibyte character string.  Space to hold the
 ** returned string is obtained from sqlite3_malloc().
 */
-SQLITE_API char *sqlite3_win32_utf8_to_mbcs(const char *zFilename){
+SQLITE_API char *SQLITE_STDCALL sqlite3_win32_utf8_to_mbcs(const char *zFilename){
   char *zFilenameMbcs;
   LPWSTR zTmpWide;
 
@@ -9673,7 +9717,7 @@ SQLITE_API char *sqlite3_win32_utf8_to_mbcs(const char *zFilename){
 ** argument is the name of the directory to use.  The return value will be
 ** SQLITE_OK if successful.
 */
-SQLITE_API int sqlite3_win32_set_directory(DWORD type, LPCWSTR zValue){
+SQLITE_API int SQLITE_STDCALL sqlite3_win32_set_directory(DWORD type, LPCWSTR zValue){
   char **ppDirectory = 0;
 #ifndef SQLITE_OMIT_AUTOINIT
   int rc = sqlite3_initialize();
@@ -9898,11 +9942,11 @@ static int winRetryIoerr(int *pnRetry, DWORD *pError){
 /*
 ** Log a I/O error retry episode.
 */
-static void winLogIoerr(int nRetry){
+static void winLogIoerr(int nRetry, int lineno){
   if( nRetry ){
-    sqlite3_log(SQLITE_IOERR,
-      "delayed %dms for lock/sharing conflict",
-      winIoerrRetryDelay*nRetry*(nRetry+1)/2
+    sqlite3_log(SQLITE_NOTICE,
+      "delayed %dms for lock/sharing conflict at line %d",
+      winIoerrRetryDelay*nRetry*(nRetry+1)/2, lineno
     );
   }
 }
@@ -10382,7 +10426,8 @@ static int winClose(sqlite3_file *id){
   assert( pFile->pShm==0 );
 #endif
   assert( pFile->h!=NULL && pFile->h!=INVALID_HANDLE_VALUE );
-  OSTRACE(("CLOSE file=%p\n", pFile->h));
+  OSTRACE(("CLOSE pid=%lu, pFile=%p, file=%p\n",
+           osGetCurrentProcessId(), pFile, pFile->h));
 
 #if SQLITE_MAX_MMAP_SIZE>0
   winUnmapfile(pFile);
@@ -10411,7 +10456,8 @@ static int winClose(sqlite3_file *id){
     pFile->h = NULL;
   }
   OpenCounter(-1);
-  OSTRACE(("CLOSE file=%p, rc=%s\n", pFile->h, rc ? "ok" : "failed"));
+  OSTRACE(("CLOSE pid=%lu, pFile=%p, file=%p, rc=%s\n",
+           osGetCurrentProcessId(), pFile, pFile->h, rc ? "ok" : "failed"));
   return rc ? SQLITE_OK
             : winLogError(SQLITE_IOERR_CLOSE, osGetLastError(),
                           "winClose", pFile->zPath);
@@ -10439,7 +10485,8 @@ static int winRead(
   assert( amt>0 );
   assert( offset>=0 );
   SimulateIOError(return SQLITE_IOERR_READ);
-  OSTRACE(("READ file=%p, buffer=%p, amount=%d, offset=%lld, lock=%d\n",
+  OSTRACE(("READ pid=%lu, pFile=%p, file=%p, buffer=%p, amount=%d, "
+           "offset=%lld, lock=%d\n", osGetCurrentProcessId(), pFile,
            pFile->h, pBuf, amt, offset, pFile->locktype));
 
 #if SQLITE_MAX_MMAP_SIZE>0
@@ -10448,7 +10495,8 @@ static int winRead(
   if( offset<pFile->mmapSize ){
     if( offset+amt <= pFile->mmapSize ){
       memcpy(pBuf, &((u8 *)(pFile->pMapRegion))[offset], amt);
-      OSTRACE(("READ-MMAP file=%p, rc=SQLITE_OK\n", pFile->h));
+      OSTRACE(("READ-MMAP pid=%lu, pFile=%p, file=%p, rc=SQLITE_OK\n",
+               osGetCurrentProcessId(), pFile, pFile->h));
       return SQLITE_OK;
     }else{
       int nCopy = (int)(pFile->mmapSize - offset);
@@ -10462,7 +10510,8 @@ static int winRead(
 
 #if SQLITE_OS_WINCE || defined(SQLITE_WIN32_NO_OVERLAPPED)
   if( winSeekFile(pFile, offset) ){
-    OSTRACE(("READ file=%p, rc=SQLITE_FULL\n", pFile->h));
+    OSTRACE(("READ pid=%lu, pFile=%p, file=%p, rc=SQLITE_FULL\n",
+             osGetCurrentProcessId(), pFile, pFile->h));
     return SQLITE_FULL;
   }
   while( !osReadFile(pFile->h, pBuf, amt, &nRead, 0) ){
@@ -10476,19 +10525,22 @@ static int winRead(
     DWORD lastErrno;
     if( winRetryIoerr(&nRetry, &lastErrno) ) continue;
     pFile->lastErrno = lastErrno;
-    OSTRACE(("READ file=%p, rc=SQLITE_IOERR_READ\n", pFile->h));
+    OSTRACE(("READ pid=%lu, pFile=%p, file=%p, rc=SQLITE_IOERR_READ\n",
+             osGetCurrentProcessId(), pFile, pFile->h));
     return winLogError(SQLITE_IOERR_READ, pFile->lastErrno,
                        "winRead", pFile->zPath);
   }
-  winLogIoerr(nRetry);
+  winLogIoerr(nRetry, __LINE__);
   if( nRead<(DWORD)amt ){
     /* Unread parts of the buffer must be zero-filled */
     memset(&((char*)pBuf)[nRead], 0, amt-nRead);
-    OSTRACE(("READ file=%p, rc=SQLITE_IOERR_SHORT_READ\n", pFile->h));
+    OSTRACE(("READ pid=%lu, pFile=%p, file=%p, rc=SQLITE_IOERR_SHORT_READ\n",
+             osGetCurrentProcessId(), pFile, pFile->h));
     return SQLITE_IOERR_SHORT_READ;
   }
 
-  OSTRACE(("READ file=%p, rc=SQLITE_OK\n", pFile->h));
+  OSTRACE(("READ pid=%lu, pFile=%p, file=%p, rc=SQLITE_OK\n",
+           osGetCurrentProcessId(), pFile, pFile->h));
   return SQLITE_OK;
 }
 
@@ -10511,7 +10563,8 @@ static int winWrite(
   SimulateIOError(return SQLITE_IOERR_WRITE);
   SimulateDiskfullError(return SQLITE_FULL);
 
-  OSTRACE(("WRITE file=%p, buffer=%p, amount=%d, offset=%lld, lock=%d\n",
+  OSTRACE(("WRITE pid=%lu, pFile=%p, file=%p, buffer=%p, amount=%d, "
+           "offset=%lld, lock=%d\n", osGetCurrentProcessId(), pFile,
            pFile->h, pBuf, amt, offset, pFile->locktype));
 
 #if SQLITE_MAX_MMAP_SIZE>0
@@ -10520,7 +10573,8 @@ static int winWrite(
   if( offset<pFile->mmapSize ){
     if( offset+amt <= pFile->mmapSize ){
       memcpy(&((u8 *)(pFile->pMapRegion))[offset], pBuf, amt);
-      OSTRACE(("WRITE-MMAP file=%p, rc=SQLITE_OK\n", pFile->h));
+      OSTRACE(("WRITE-MMAP pid=%lu, pFile=%p, file=%p, rc=SQLITE_OK\n",
+               osGetCurrentProcessId(), pFile, pFile->h));
       return SQLITE_OK;
     }else{
       int nCopy = (int)(pFile->mmapSize - offset);
@@ -10583,17 +10637,20 @@ static int winWrite(
   if( rc ){
     if(   ( pFile->lastErrno==ERROR_HANDLE_DISK_FULL )
        || ( pFile->lastErrno==ERROR_DISK_FULL )){
-      OSTRACE(("WRITE file=%p, rc=SQLITE_FULL\n", pFile->h));
+      OSTRACE(("WRITE pid=%lu, pFile=%p, file=%p, rc=SQLITE_FULL\n",
+               osGetCurrentProcessId(), pFile, pFile->h));
       return winLogError(SQLITE_FULL, pFile->lastErrno,
                          "winWrite1", pFile->zPath);
     }
-    OSTRACE(("WRITE file=%p, rc=SQLITE_IOERR_WRITE\n", pFile->h));
+    OSTRACE(("WRITE pid=%lu, pFile=%p, file=%p, rc=SQLITE_IOERR_WRITE\n",
+             osGetCurrentProcessId(), pFile, pFile->h));
     return winLogError(SQLITE_IOERR_WRITE, pFile->lastErrno,
                        "winWrite2", pFile->zPath);
   }else{
-    winLogIoerr(nRetry);
+    winLogIoerr(nRetry, __LINE__);
   }
-  OSTRACE(("WRITE file=%p, rc=SQLITE_OK\n", pFile->h));
+  OSTRACE(("WRITE pid=%lu, pFile=%p, file=%p, rc=SQLITE_OK\n",
+           osGetCurrentProcessId(), pFile, pFile->h));
   return SQLITE_OK;
 }
 
@@ -10607,8 +10664,8 @@ static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
 
   assert( pFile );
   SimulateIOError(return SQLITE_IOERR_TRUNCATE);
-  OSTRACE(("TRUNCATE file=%p, size=%lld, lock=%d\n",
-           pFile->h, nByte, pFile->locktype));
+  OSTRACE(("TRUNCATE pid=%lu, pFile=%p, file=%p, size=%lld, lock=%d\n",
+           osGetCurrentProcessId(), pFile, pFile->h, nByte, pFile->locktype));
 
   /* If the user has configured a chunk-size for this file, truncate the
   ** file so that it consists of an integer number of chunks (i.e. the
@@ -10640,7 +10697,8 @@ static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
   }
 #endif
 
-  OSTRACE(("TRUNCATE file=%p, rc=%s\n", pFile->h, sqlite3ErrName(rc)));
+  OSTRACE(("TRUNCATE pid=%lu, pFile=%p, file=%p, rc=%s\n",
+           osGetCurrentProcessId(), pFile, pFile->h, sqlite3ErrName(rc)));
   return rc;
 }
 
@@ -10664,7 +10722,7 @@ static int winSync(sqlite3_file *id, int flags){
   BOOL rc;
 #endif
 #if !defined(NDEBUG) || !defined(SQLITE_NO_SYNC) || \
-    (defined(SQLITE_TEST) && defined(SQLITE_DEBUG))
+    defined(SQLITE_HAVE_OS_TRACE)
   /*
   ** Used when SQLITE_NO_SYNC is not defined and by the assert() and/or
   ** OSTRACE() macros.
@@ -10685,8 +10743,9 @@ static int winSync(sqlite3_file *id, int flags){
   */
   SimulateDiskfullError( return SQLITE_FULL );
 
-  OSTRACE(("SYNC file=%p, flags=%x, lock=%d\n",
-           pFile->h, flags, pFile->locktype));
+  OSTRACE(("SYNC pid=%lu, pFile=%p, file=%p, flags=%x, lock=%d\n",
+           osGetCurrentProcessId(), pFile, pFile->h, flags,
+           pFile->locktype));
 
 #ifndef SQLITE_TEST
   UNUSED_PARAMETER(flags);
@@ -10701,19 +10760,38 @@ static int winSync(sqlite3_file *id, int flags){
   ** no-op
   */
 #ifdef SQLITE_NO_SYNC
-  OSTRACE(("SYNC-NOP file=%p, rc=SQLITE_OK\n", pFile->h));
+  OSTRACE(("SYNC-NOP pid=%lu, pFile=%p, file=%p, rc=SQLITE_OK\n",
+           osGetCurrentProcessId(), pFile, pFile->h));
   return SQLITE_OK;
 #else
+#if SQLITE_MAX_MMAP_SIZE>0
+  if( pFile->pMapRegion ){
+    if( osFlushViewOfFile(pFile->pMapRegion, 0) ){
+      OSTRACE(("SYNC-MMAP pid=%lu, pFile=%p, pMapRegion=%p, "
+               "rc=SQLITE_OK\n", osGetCurrentProcessId(),
+               pFile, pFile->pMapRegion));
+    }else{
+      pFile->lastErrno = osGetLastError();
+      OSTRACE(("SYNC-MMAP pid=%lu, pFile=%p, pMapRegion=%p, "
+               "rc=SQLITE_IOERR_MMAP\n", osGetCurrentProcessId(),
+               pFile, pFile->pMapRegion));
+      return winLogError(SQLITE_IOERR_MMAP, pFile->lastErrno,
+                         "winSync1", pFile->zPath);
+    }
+  }
+#endif
   rc = osFlushFileBuffers(pFile->h);
   SimulateIOError( rc=FALSE );
   if( rc ){
-    OSTRACE(("SYNC file=%p, rc=SQLITE_OK\n", pFile->h));
+    OSTRACE(("SYNC pid=%lu, pFile=%p, file=%p, rc=SQLITE_OK\n",
+             osGetCurrentProcessId(), pFile, pFile->h));
     return SQLITE_OK;
   }else{
     pFile->lastErrno = osGetLastError();
-    OSTRACE(("SYNC file=%p, rc=SQLITE_IOERR_FSYNC\n", pFile->h));
+    OSTRACE(("SYNC pid=%lu, pFile=%p, file=%p, rc=SQLITE_IOERR_FSYNC\n",
+             osGetCurrentProcessId(), pFile, pFile->h));
     return winLogError(SQLITE_IOERR_FSYNC, pFile->lastErrno,
-                       "winSync", pFile->zPath);
+                       "winSync2", pFile->zPath);
   }
 #endif
 }
@@ -10900,6 +10978,12 @@ static int winLock(sqlite3_file *id, int locktype){
   if( pFile->locktype>=locktype ){
     OSTRACE(("LOCK-HELD file=%p, rc=SQLITE_OK\n", pFile->h));
     return SQLITE_OK;
+  }
+
+  /* Do not allow any kind of write-lock on a read-only database
+  */
+  if( (pFile->ctrlFlags & WINFILE_RDONLY)!=0 && locktype>=RESERVED_LOCK ){
+    return SQLITE_IOERR_LOCK;
   }
 
   /* Make sure the locking sequence is correct
@@ -11271,14 +11355,14 @@ static SYSTEM_INFO winSysInfo;
 **   winShmLeaveMutex()
 */
 static void winShmEnterMutex(void){
-  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
+  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1));
 }
 static void winShmLeaveMutex(void){
-  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
+  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1));
 }
 #ifndef NDEBUG
 static int winShmMutexHeld(void) {
-  return sqlite3_mutex_held(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
+  return sqlite3_mutex_held(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1));
 }
 #endif
 
@@ -11321,7 +11405,7 @@ struct winShmNode {
   int nRef;                  /* Number of winShm objects pointing to this */
   winShm *pFirst;            /* All winShm objects pointing to this */
   winShmNode *pNext;         /* Next in list of all winShmNode objects */
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
   u8 nextShmId;              /* Next available winShm.id value */
 #endif
 };
@@ -11352,7 +11436,7 @@ struct winShm {
   u8 hasMutex;               /* True if holding the winShmNode mutex */
   u16 sharedMask;            /* Mask of shared locks held */
   u16 exclMask;              /* Mask of exclusive locks held */
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
   u8 id;                     /* Id of this connection with its winShmNode */
 #endif
 };
@@ -11543,7 +11627,7 @@ static int winOpenSharedMemory(winFile *pDbFd){
 
   /* Make the new connection a child of the winShmNode */
   p->pShmNode = pShmNode;
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
   p->id = pShmNode->nextShmId++;
 #endif
   pShmNode->nRef++;
@@ -11731,8 +11815,8 @@ static void winShmBarrier(
   sqlite3_file *fd          /* Database holding the shared memory */
 ){
   UNUSED_PARAMETER(fd);
-  /* MemoryBarrier(); // does not work -- do not know why not */
-  winShmEnterMutex();
+  sqlite3MemoryBarrier();   /* compiler-defined memory barrier */
+  winShmEnterMutex();       /* Also mutex, for redundancy */
   winShmLeaveMutex();
 }
 
@@ -11763,16 +11847,16 @@ static int winShmMap(
   void volatile **pp              /* OUT: Mapped memory */
 ){
   winFile *pDbFd = (winFile*)fd;
-  winShm *p = pDbFd->pShm;
+  winShm *pShm = pDbFd->pShm;
   winShmNode *pShmNode;
   int rc = SQLITE_OK;
 
-  if( !p ){
+  if( !pShm ){
     rc = winOpenSharedMemory(pDbFd);
     if( rc!=SQLITE_OK ) return rc;
-    p = pDbFd->pShm;
+    pShm = pDbFd->pShm;
   }
-  pShmNode = p->pShmNode;
+  pShmNode = pShm->pShmNode;
 
   sqlite3_mutex_enter(pShmNode->mutex);
   assert( szRegion==pShmNode->szRegion || pShmNode->nRegion==0 );
@@ -11812,7 +11896,7 @@ static int winShmMap(
     }
 
     /* Map the requested memory region into this processes address space. */
-    apNew = (struct ShmRegion *)sqlite3_realloc(
+    apNew = (struct ShmRegion *)sqlite3_realloc64(
         pShmNode->aRegion, (iRegion+1)*sizeof(apNew[0])
     );
     if( !apNew ){
@@ -12684,7 +12768,7 @@ static int winOpen(
     }
   }
 #endif
-  winLogIoerr(cnt);
+  winLogIoerr(cnt, __LINE__);
 
   OSTRACE(("OPEN file=%p, name=%s, access=%lx, rc=%s\n", h, zUtf8Name,
            dwDesiredAccess, (h==INVALID_HANDLE_VALUE) ? "failed" : "ok"));
@@ -12868,7 +12952,7 @@ static int winDelete(
   if( rc && rc!=SQLITE_IOERR_DELETE_NOENT ){
     rc = winLogError(SQLITE_IOERR_DELETE, lastErrno, "winDelete", zFilename);
   }else{
-    winLogIoerr(cnt);
+    winLogIoerr(cnt, __LINE__);
   }
   sqlite3_free(zConverted);
   OSTRACE(("DELETE name=%s, rc=%s\n", zFilename, sqlite3ErrName(rc)));
@@ -12918,7 +13002,7 @@ static int winAccess(
         attr = sAttrData.dwFileAttributes;
       }
     }else{
-      winLogIoerr(cnt);
+      winLogIoerr(cnt, __LINE__);
       if( lastErrno!=ERROR_FILE_NOT_FOUND && lastErrno!=ERROR_PATH_NOT_FOUND ){
         sqlite3_free(zConverted);
         return winLogError(SQLITE_IOERR_ACCESS, lastErrno, "winAccess",
@@ -13259,7 +13343,7 @@ static void winDlClose(sqlite3_vfs *pVfs, void *pHandle){
 static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
   int n = 0;
   UNUSED_PARAMETER(pVfs);
-#if defined(SQLITE_TEST)
+#if defined(SQLITE_TEST) || defined(SQLITE_OMIT_RANDOMNESS)
   n = nBuf;
   memset(zBuf, 0, nBuf);
 #else
@@ -13293,7 +13377,23 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
     memcpy(&zBuf[n], &i, sizeof(i));
     n += sizeof(i);
   }
+#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && SQLITE_WIN32_USE_UUID
+  if( sizeof(UUID)<=nBuf-n ){
+    UUID id;
+    memset(&id, 0, sizeof(UUID));
+    osUuidCreate(&id);
+    memcpy(&zBuf[n], &id, sizeof(UUID));
+    n += sizeof(UUID);
+  }
+  if( sizeof(UUID)<=nBuf-n ){
+    UUID id;
+    memset(&id, 0, sizeof(UUID));
+    osUuidCreateSequential(&id);
+    memcpy(&zBuf[n], &id, sizeof(UUID));
+    n += sizeof(UUID);
+  }
 #endif
+#endif /* defined(SQLITE_TEST) || defined(SQLITE_ZERO_PRNG_SEED) */
   return n;
 }
 
@@ -13417,7 +13517,7 @@ static int winGetLastError(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
 /*
 ** Initialize and deinitialize the operating system interface.
 */
-SQLITE_API int sqlite3_os_init(void){
+SQLITE_API int SQLITE_STDCALL sqlite3_os_init(void){
   static sqlite3_vfs winVfs = {
     3,                   /* iVersion */
     sizeof(winFile),     /* szOsFile */
@@ -13471,7 +13571,7 @@ SQLITE_API int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==77 );
+  assert( ArraySize(aSyscall)==80 );
 
   /* get memory map allocation granularity */
   memset(&winSysInfo, 0, sizeof(SYSTEM_INFO));
@@ -13492,7 +13592,7 @@ SQLITE_API int sqlite3_os_init(void){
   return SQLITE_OK;
 }
 
-SQLITE_API int sqlite3_os_end(void){
+SQLITE_API int SQLITE_STDCALL sqlite3_os_end(void){
 #if SQLITE_OS_WINRT
   if( sleepObj!=NULL ){
     osCloseHandle(sleepObj);
@@ -13542,6 +13642,7 @@ SQLITE_API int sqlite3_os_end(void){
 ** start of a transaction, and is thus usually less than a few thousand,
 ** but can be as large as 2 billion for a really big database.
 */
+/* #include "sqliteInt.h" */
 
 /* Size of the Bitvec structure in bytes. */
 #define BITVEC_SZ        512
@@ -13633,10 +13734,10 @@ SQLITE_PRIVATE Bitvec *sqlite3BitvecCreate(u32 iSize){
 ** If p is NULL (if the bitmap has not been created) or if
 ** i is out of range, then return false.
 */
-SQLITE_PRIVATE int sqlite3BitvecTest(Bitvec *p, u32 i){
-  if( p==0 ) return 0;
-  if( i>p->iSize || i==0 ) return 0;
+SQLITE_PRIVATE int sqlite3BitvecTestNotNull(Bitvec *p, u32 i){
+  assert( p!=0 );
   i--;
+  if( i>=p->iSize ) return 0;
   while( p->iDivisor ){
     u32 bin = i/p->iDivisor;
     i = i%p->iDivisor;
@@ -13655,6 +13756,9 @@ SQLITE_PRIVATE int sqlite3BitvecTest(Bitvec *p, u32 i){
     }
     return 0;
   }
+}
+SQLITE_PRIVATE int sqlite3BitvecTest(Bitvec *p, u32 i){
+  return p!=0 && sqlite3BitvecTestNotNull(p,i);
 }
 
 /*
@@ -13848,7 +13952,7 @@ SQLITE_PRIVATE int sqlite3BitvecBuiltinTest(int sz, int *aOp){
   ** bits to act as the reference */
   pBitvec = sqlite3BitvecCreate( sz );
   pV = sqlite3MallocZero( (sz+7)/8 + 1 );
-  pTmpSpace = sqlite3_malloc(BITVEC_SZ);
+  pTmpSpace = sqlite3_malloc64(BITVEC_SZ);
   if( pBitvec==0 || pV==0 || pTmpSpace==0  ) goto bitvec_end;
 
   /* NULL pBitvec tests */
@@ -13928,6 +14032,7 @@ bitvec_end:
 *************************************************************************
 ** This file implements that page cache.
 */
+/* #include "sqliteInt.h" */
 
 /*
 ** A complete page cache is an instance of this structure.
@@ -13935,7 +14040,7 @@ bitvec_end:
 struct PCache {
   PgHdr *pDirty, *pDirtyTail;         /* List of dirty pages in LRU order */
   PgHdr *pSynced;                     /* Last synced page in dirty page list */
-  int nRef;                           /* Number of referenced pages */
+  int nRefSum;                        /* Sum of ref counts over all pages */
   int szCache;                        /* Configured cache size */
   int szPage;                         /* Size of every page in this cache */
   int szExtra;                        /* Size of extra space for each page */
@@ -13944,20 +14049,7 @@ struct PCache {
   int (*xStress)(void*,PgHdr*);       /* Call to try make a page clean */
   void *pStress;                      /* Argument to xStress */
   sqlite3_pcache *pCache;             /* Pluggable cache module */
-  PgHdr *pPage1;                      /* Reference to page 1 */
 };
-
-/*
-** Some of the assert() macros in this code are too expensive to run
-** even during normal debugging.  Use them only rarely on long-running
-** tests.  Enable the expensive asserts using the
-** -DSQLITE_ENABLE_EXPENSIVE_ASSERT=1 compile-time option.
-*/
-#ifdef SQLITE_ENABLE_EXPENSIVE_ASSERT
-# define expensive_assert(X)  assert(X)
-#else
-# define expensive_assert(X)
-#endif
 
 /********************************** Linked List Management ********************/
 
@@ -14034,20 +14126,25 @@ static void pcacheManageDirtyList(PgHdr *pPage, u8 addRemove){
 */
 static void pcacheUnpin(PgHdr *p){
   if( p->pCache->bPurgeable ){
-    if( p->pgno==1 ){
-      p->pCache->pPage1 = 0;
-    }
     sqlite3GlobalConfig.pcache2.xUnpin(p->pCache->pCache, p->pPage, 0);
   }
 }
 
 /*
-** Compute the number of pages of cache requested.
+** Compute the number of pages of cache requested.  p->szCache is the
+** cache size requested by the "PRAGMA cache_size" statement.
+**
+**
 */
 static int numberOfCachePages(PCache *p){
   if( p->szCache>=0 ){
+    /* IMPLEMENTATION-OF: R-42059-47211 If the argument N is positive then the
+    ** suggested cache size is set to N. */
     return p->szCache;
   }else{
+    /* IMPLEMENTATION-OF: R-61436-13639 If the argument N is negative, then
+    ** the number of cache pages is adjusted to use approximately abs(N*1024)
+    ** bytes of memory. */
     return (int)((-1024*(i64)p->szCache)/(p->szPage+p->szExtra));
   }
 }
@@ -14108,11 +14205,12 @@ SQLITE_PRIVATE int sqlite3PcacheOpen(
 ** are no outstanding page references when this function is called.
 */
 SQLITE_PRIVATE int sqlite3PcacheSetPageSize(PCache *pCache, int szPage){
-  assert( pCache->nRef==0 && pCache->pDirty==0 );
+  assert( pCache->nRefSum==0 && pCache->pDirty==0 );
   if( pCache->szPage ){
     sqlite3_pcache *pNew;
     pNew = sqlite3GlobalConfig.pcache2.xCreate(
-                szPage, pCache->szExtra + sizeof(PgHdr), pCache->bPurgeable
+                szPage, pCache->szExtra + ROUND8(sizeof(PgHdr)),
+                pCache->bPurgeable
     );
     if( pNew==0 ) return SQLITE_NOMEM;
     sqlite3GlobalConfig.pcache2.xCachesize(pNew, numberOfCachePages(pCache));
@@ -14120,7 +14218,6 @@ SQLITE_PRIVATE int sqlite3PcacheSetPageSize(PCache *pCache, int szPage){
       sqlite3GlobalConfig.pcache2.xDestroy(pCache->pCache);
     }
     pCache->pCache = pNew;
-    pCache->pPage1 = 0;
     pCache->szPage = szPage;
   }
   return SQLITE_OK;
@@ -14245,13 +14342,14 @@ static SQLITE_NOINLINE PgHdr *pcacheFetchFinishWithInit(
   assert( pPage!=0 );
   pPgHdr = (PgHdr*)pPage->pExtra;
   assert( pPgHdr->pPage==0 );
- memset(pPgHdr, 0, sizeof(PgHdr));
+  memset(pPgHdr, 0, sizeof(PgHdr));
   pPgHdr->pPage = pPage;
   pPgHdr->pData = pPage->pBuf;
   pPgHdr->pExtra = (void *)&pPgHdr[1];
   memset(pPgHdr->pExtra, 0, pCache->szExtra);
   pPgHdr->pCache = pCache;
   pPgHdr->pgno = pgno;
+  pPgHdr->flags = PGHDR_CLEAN;
   return sqlite3PcacheFetchFinish(pCache,pgno,pPage);
 }
 
@@ -14268,19 +14366,14 @@ SQLITE_PRIVATE PgHdr *sqlite3PcacheFetchFinish(
 ){
   PgHdr *pPgHdr;
 
-  if( pPage==0 ) return 0;
+  assert( pPage!=0 );
   pPgHdr = (PgHdr *)pPage->pExtra;
 
   if( !pPgHdr->pPage ){
     return pcacheFetchFinishWithInit(pCache, pgno, pPage);
   }
-  if( 0==pPgHdr->nRef ){
-    pCache->nRef++;
-  }
+  pCache->nRefSum++;
   pPgHdr->nRef++;
-  if( pgno==1 ){
-    pCache->pPage1 = pPgHdr;
-  }
   return pPgHdr;
 }
 
@@ -14290,10 +14383,9 @@ SQLITE_PRIVATE PgHdr *sqlite3PcacheFetchFinish(
 */
 SQLITE_PRIVATE void SQLITE_NOINLINE sqlite3PcacheRelease(PgHdr *p){
   assert( p->nRef>0 );
-  p->nRef--;
-  if( p->nRef==0 ){
-    p->pCache->nRef--;
-    if( (p->flags&PGHDR_DIRTY)==0 ){
+  p->pCache->nRefSum--;
+  if( (--p->nRef)==0 ){
+    if( p->flags&PGHDR_CLEAN ){
       pcacheUnpin(p);
     }else if( p->pDirtyPrev!=0 ){
       /* Move the page to the head of the dirty list. */
@@ -14308,6 +14400,7 @@ SQLITE_PRIVATE void SQLITE_NOINLINE sqlite3PcacheRelease(PgHdr *p){
 SQLITE_PRIVATE void sqlite3PcacheRef(PgHdr *p){
   assert(p->nRef>0);
   p->nRef++;
+  p->pCache->nRefSum++;
 }
 
 /*
@@ -14320,10 +14413,7 @@ SQLITE_PRIVATE void sqlite3PcacheDrop(PgHdr *p){
   if( p->flags&PGHDR_DIRTY ){
     pcacheManageDirtyList(p, PCACHE_DIRTYLIST_REMOVE);
   }
-  p->pCache->nRef--;
-  if( p->pgno==1 ){
-    p->pCache->pPage1 = 0;
-  }
+  p->pCache->nRefSum--;
   sqlite3GlobalConfig.pcache2.xUnpin(p->pCache->pCache, p->pPage, 1);
 }
 
@@ -14332,11 +14422,14 @@ SQLITE_PRIVATE void sqlite3PcacheDrop(PgHdr *p){
 ** make it so.
 */
 SQLITE_PRIVATE void sqlite3PcacheMakeDirty(PgHdr *p){
-  p->flags &= ~PGHDR_DONT_WRITE;
   assert( p->nRef>0 );
-  if( 0==(p->flags & PGHDR_DIRTY) ){
-    p->flags |= PGHDR_DIRTY;
-    pcacheManageDirtyList(p, PCACHE_DIRTYLIST_ADD);
+  if( p->flags & (PGHDR_CLEAN|PGHDR_DONT_WRITE) ){
+    p->flags &= ~PGHDR_DONT_WRITE;
+    if( p->flags & PGHDR_CLEAN ){
+      p->flags ^= (PGHDR_DIRTY|PGHDR_CLEAN);
+      assert( (p->flags & (PGHDR_DIRTY|PGHDR_CLEAN))==PGHDR_DIRTY );
+      pcacheManageDirtyList(p, PCACHE_DIRTYLIST_ADD);
+    }
   }
 }
 
@@ -14346,8 +14439,10 @@ SQLITE_PRIVATE void sqlite3PcacheMakeDirty(PgHdr *p){
 */
 SQLITE_PRIVATE void sqlite3PcacheMakeClean(PgHdr *p){
   if( (p->flags & PGHDR_DIRTY) ){
+    assert( (p->flags & PGHDR_CLEAN)==0 );
     pcacheManageDirtyList(p, PCACHE_DIRTYLIST_REMOVE);
-    p->flags &= ~(PGHDR_DIRTY|PGHDR_NEED_SYNC);
+    p->flags &= ~(PGHDR_DIRTY|PGHDR_NEED_SYNC|PGHDR_WRITEABLE);
+    p->flags |= PGHDR_CLEAN;
     if( p->nRef==0 ){
       pcacheUnpin(p);
     }
@@ -14414,9 +14509,14 @@ SQLITE_PRIVATE void sqlite3PcacheTruncate(PCache *pCache, Pgno pgno){
         sqlite3PcacheMakeClean(p);
       }
     }
-    if( pgno==0 && pCache->pPage1 ){
-      memset(pCache->pPage1->pData, 0, pCache->szPage);
-      pgno = 1;
+    if( pgno==0 && pCache->nRefSum ){
+      sqlite3_pcache_page *pPage1;
+      pPage1 = sqlite3GlobalConfig.pcache2.xFetch(pCache->pCache,1,0);
+      if( ALWAYS(pPage1) ){  /* Page 1 is always available in cache, because
+                             ** pCache->nRefSum>0 */
+        memset(pPage1->pBuf, 0, pCache->szPage);
+        pgno = 1;
+      }
     }
     sqlite3GlobalConfig.pcache2.xTruncate(pCache->pCache, pgno+1);
   }
@@ -14519,10 +14619,13 @@ SQLITE_PRIVATE PgHdr *sqlite3PcacheDirtyList(PCache *pCache){
 }
 
 /* 
-** Return the total number of referenced pages held by the cache.
+** Return the total number of references to all pages held by the cache.
+**
+** This is not the total number of pages referenced, but the sum of the
+** reference count for all pages.
 */
 SQLITE_PRIVATE int sqlite3PcacheRefCount(PCache *pCache){
-  return pCache->nRef;
+  return pCache->nRefSum;
 }
 
 /*
@@ -14571,7 +14674,7 @@ SQLITE_PRIVATE void sqlite3PcacheShrink(PCache *pCache){
 ** Return the size of the header added by this middleware layer
 ** in the page-cache hierarchy.
 */
-SQLITE_PRIVATE int sqlite3HeaderSizePcache(void){ return sizeof(PgHdr); }
+SQLITE_PRIVATE int sqlite3HeaderSizePcache(void){ return ROUND8(sizeof(PgHdr)); }
 
 
 #if defined(SQLITE_CHECK_PAGES) || defined(SQLITE_DEBUG)
@@ -14607,13 +14710,95 @@ SQLITE_PRIVATE void sqlite3PcacheIterateDirty(PCache *pCache, void (*xIter)(PgHd
 ** of the SQLITE_CONFIG_PAGECACHE and sqlite3_release_memory() features.
 ** If the default page cache implementation is overridden, then neither of
 ** these two features are available.
+**
+** A Page cache line looks like this:
+**
+**  -------------------------------------------------------------
+**  |  database page content   |  PgHdr1  |  MemPage  |  PgHdr  |
+**  -------------------------------------------------------------
+**
+** The database page content is up front (so that buffer overreads tend to
+** flow harmlessly into the PgHdr1, MemPage, and PgHdr extensions).   MemPage
+** is the extension added by the btree.c module containing information such
+** as the database page number and how that database page is used.  PgHdr
+** is added by the pcache.c layer and contains information used to keep track
+** of which pages are "dirty".  PgHdr1 is an extension added by this
+** module (pcache1.c).  The PgHdr1 header is a subclass of sqlite3_pcache_page.
+** PgHdr1 contains information needed to look up a page by its page number.
+** The superclass sqlite3_pcache_page.pBuf points to the start of the
+** database page content and sqlite3_pcache_page.pExtra points to PgHdr.
+**
+** The size of the extension (MemPage+PgHdr+PgHdr1) can be determined at
+** runtime using sqlite3_config(SQLITE_CONFIG_PCACHE_HDRSZ, &size).  The
+** sizes of the extensions sum to 272 bytes on x64 for 3.8.10, but this
+** size can vary according to architecture, compile-time options, and
+** SQLite library version number.
+**
+** If SQLITE_PCACHE_SEPARATE_HEADER is defined, then the extension is obtained
+** using a separate memory allocation from the database page content.  This
+** seeks to overcome the "clownshoe" problem (also called "internal
+** fragmentation" in academic literature) of allocating a few bytes more
+** than a power of two with the memory allocator rounding up to the next
+** power of two, and leaving the rounded-up space unused.
+**
+** This module tracks pointers to PgHdr1 objects.  Only pcache.c communicates
+** with this module.  Information is passed back and forth as PgHdr1 pointers.
+**
+** The pcache.c and pager.c modules deal pointers to PgHdr objects.
+** The btree.c module deals with pointers to MemPage objects.
+**
+** SOURCE OF PAGE CACHE MEMORY:
+**
+** Memory for a page might come from any of three sources:
+**
+**    (1)  The general-purpose memory allocator - sqlite3Malloc()
+**    (2)  Global page-cache memory provided using sqlite3_config() with
+**         SQLITE_CONFIG_PAGECACHE.
+**    (3)  PCache-local bulk allocation.
+**
+** The third case is a chunk of heap memory (defaulting to 100 pages worth)
+** that is allocated when the page cache is created.  The size of the local
+** bulk allocation can be adjusted using 
+**
+**     sqlite3_config(SQLITE_CONFIG_PAGECACHE, 0, 0, N).
+**
+** If N is positive, then N pages worth of memory are allocated using a single
+** sqlite3Malloc() call and that memory is used for the first N pages allocated.
+** Or if N is negative, then -1024*N bytes of memory are allocated and used
+** for as many pages as can be accomodated.
+**
+** Only one of (2) or (3) can be used.  Once the memory available to (2) or
+** (3) is exhausted, subsequent allocations fail over to the general-purpose
+** memory allocator (1).
+**
+** Earlier versions of SQLite used only methods (1) and (2).  But experiments
+** show that method (3) with N==100 provides about a 5% performance boost for
+** common workloads.
 */
-
+/* #include "sqliteInt.h" */
 
 typedef struct PCache1 PCache1;
 typedef struct PgHdr1 PgHdr1;
 typedef struct PgFreeslot PgFreeslot;
 typedef struct PGroup PGroup;
+
+/*
+** Each cache entry is represented by an instance of the following 
+** structure. Unless SQLITE_PCACHE_SEPARATE_HEADER is defined, a buffer of
+** PgHdr1.pCache->szPage bytes is allocated directly before this structure 
+** in memory.
+*/
+struct PgHdr1 {
+  sqlite3_pcache_page page;      /* Base class. Must be first. pBuf & pExtra */
+  unsigned int iKey;             /* Key value (page number) */
+  u8 isPinned;                   /* Page in use, not on the LRU list */
+  u8 isBulkLocal;                /* This page from bulk local storage */
+  u8 isAnchor;                   /* This is the PGroup.lru element */
+  PgHdr1 *pNext;                 /* Next in hash table chain */
+  PCache1 *pCache;               /* Cache that currently owns this page */
+  PgHdr1 *pLruNext;              /* Next in LRU list of unpinned pages */
+  PgHdr1 *pLruPrev;              /* Previous in LRU list of unpinned pages */
+};
 
 /* Each page cache (or PCache) belongs to a PGroup.  A PGroup is a set 
 ** of one or more PCaches that are able to recycle each other's unpinned
@@ -14643,7 +14828,7 @@ struct PGroup {
   unsigned int nMinPage;         /* Sum of nMin for purgeable caches */
   unsigned int mxPinned;         /* nMaxpage + 10 - nMinPage */
   unsigned int nCurrentPage;     /* Number of purgeable pages allocated */
-  PgHdr1 *pLruHead, *pLruTail;   /* LRU list of unpinned pages */
+  PgHdr1 lru;                    /* The beginning and end of the LRU list */
 };
 
 /* Each page cache is an instance of the following object.  Every
@@ -14661,8 +14846,9 @@ struct PCache1 {
   ** The PGroup mutex must be held when accessing nMax.
   */
   PGroup *pGroup;                     /* PGroup this cache belongs to */
-  int szPage;                         /* Size of allocated pages in bytes */
-  int szExtra;                        /* Size of extra space in bytes */
+  int szPage;                         /* Size of database content section */
+  int szExtra;                        /* sizeof(MemPage)+sizeof(PgHdr) */
+  int szAlloc;                        /* Total size of one pcache line */
   int bPurgeable;                     /* True if cache is purgeable */
   unsigned int nMin;                  /* Minimum number of pages reserved */
   unsigned int nMax;                  /* Configured "cache_size" value */
@@ -14676,27 +14862,13 @@ struct PCache1 {
   unsigned int nPage;                 /* Total number of pages in apHash */
   unsigned int nHash;                 /* Number of slots in apHash[] */
   PgHdr1 **apHash;                    /* Hash table for fast lookup by key */
+  PgHdr1 *pFree;                      /* List of unused pcache-local pages */
+  void *pBulk;                        /* Bulk memory used by pcache-local */
 };
 
 /*
-** Each cache entry is represented by an instance of the following 
-** structure. Unless SQLITE_PCACHE_SEPARATE_HEADER is defined, a buffer of
-** PgHdr1.pCache->szPage bytes is allocated directly before this structure 
-** in memory.
-*/
-struct PgHdr1 {
-  sqlite3_pcache_page page;
-  unsigned int iKey;             /* Key value (page number) */
-  u8 isPinned;                   /* Page in use, not on the LRU list */
-  PgHdr1 *pNext;                 /* Next in hash table chain */
-  PCache1 *pCache;               /* Cache that currently owns this page */
-  PgHdr1 *pLruNext;              /* Next in LRU list of unpinned pages */
-  PgHdr1 *pLruPrev;              /* Previous in LRU list of unpinned pages */
-};
-
-/*
-** Free slots in the allocator used to divide up the buffer provided using
-** the SQLITE_CONFIG_PAGECACHE mechanism.
+** Free slots in the allocator used to divide up the global page cache
+** buffer provided using the SQLITE_CONFIG_PAGECACHE mechanism.
 */
 struct PgFreeslot {
   PgFreeslot *pNext;  /* Next free slot */
@@ -14714,10 +14886,12 @@ static SQLITE_WSD struct PCacheGlobal {
   ** The nFreeSlot and pFree values do require mutex protection.
   */
   int isInit;                    /* True if initialized */
+  int separateCache;             /* Use a new PGroup for each PCache */
+  int nInitPage;                 /* Initial bulk allocation size */   
   int szSlot;                    /* Size of each free slot */
   int nSlot;                     /* The number of pcache slots */
   int nReserve;                  /* Try to keep nFreeSlot above this */
-  void *pStart, *pEnd;           /* Bounds of pagecache malloc range */
+  void *pStart, *pEnd;           /* Bounds of global page cache memory */
   /* Above requires no mutex.  Use mutex below for variable that follow. */
   sqlite3_mutex *mutex;          /* Mutex for accessing the following: */
   PgFreeslot *pFree;             /* Free page blocks */
@@ -14739,11 +14913,19 @@ static SQLITE_WSD struct PCacheGlobal {
 /*
 ** Macros to enter and leave the PCache LRU mutex.
 */
-#define pcache1EnterMutex(X) sqlite3_mutex_enter((X)->mutex)
-#define pcache1LeaveMutex(X) sqlite3_mutex_leave((X)->mutex)
+#if !defined(SQLITE_ENABLE_MEMORY_MANAGEMENT) || SQLITE_THREADSAFE==0
+# define pcache1EnterMutex(X)  assert((X)->mutex==0)
+# define pcache1LeaveMutex(X)  assert((X)->mutex==0)
+# define PCACHE1_MIGHT_USE_GROUP_MUTEX 0
+#else
+# define pcache1EnterMutex(X) sqlite3_mutex_enter((X)->mutex)
+# define pcache1LeaveMutex(X) sqlite3_mutex_leave((X)->mutex)
+# define PCACHE1_MIGHT_USE_GROUP_MUTEX 1
+#endif
 
 /******************************************************************************/
 /******** Page Allocation/SQLITE_CONFIG_PCACHE Related Functions **************/
+
 
 /*
 ** This function is called during initialization if a static buffer is 
@@ -14757,6 +14939,7 @@ static SQLITE_WSD struct PCacheGlobal {
 SQLITE_PRIVATE void sqlite3PCacheBufferSetup(void *pBuf, int sz, int n){
   if( pcache1.isInit ){
     PgFreeslot *p;
+    if( pBuf==0 ) sz = n = 0;
     sz = ROUNDDOWN8(sz);
     pcache1.szSlot = sz;
     pcache1.nSlot = pcache1.nFreeSlot = n;
@@ -14775,6 +14958,44 @@ SQLITE_PRIVATE void sqlite3PCacheBufferSetup(void *pBuf, int sz, int n){
 }
 
 /*
+** Try to initialize the pCache->pFree and pCache->pBulk fields.  Return
+** true if pCache->pFree ends up containing one or more free pages.
+*/
+static int pcache1InitBulk(PCache1 *pCache){
+  i64 szBulk;
+  char *zBulk;
+  if( pcache1.nInitPage==0 ) return 0;
+  /* Do not bother with a bulk allocation if the cache size very small */
+  if( pCache->nMax<3 ) return 0;
+  sqlite3BeginBenignMalloc();
+  if( pcache1.nInitPage>0 ){
+    szBulk = pCache->szAlloc * (i64)pcache1.nInitPage;
+  }else{
+    szBulk = -1024 * (i64)pcache1.nInitPage;
+  }
+  if( szBulk > pCache->szAlloc*(i64)pCache->nMax ){
+    szBulk = pCache->szAlloc*pCache->nMax;
+  }
+  zBulk = pCache->pBulk = sqlite3Malloc( szBulk );
+  sqlite3EndBenignMalloc();
+  if( zBulk ){
+    int nBulk = sqlite3MallocSize(zBulk)/pCache->szAlloc;
+    int i;
+    for(i=0; i<nBulk; i++){
+      PgHdr1 *pX = (PgHdr1*)&zBulk[pCache->szPage];
+      pX->page.pBuf = zBulk;
+      pX->page.pExtra = &pX[1];
+      pX->isBulkLocal = 1;
+      pX->isAnchor = 0;
+      pX->pNext = pCache->pFree;
+      pCache->pFree = pX;
+      zBulk += pCache->szAlloc;
+    }
+  }
+  return pCache->pFree!=0;
+}
+
+/*
 ** Malloc function used within this file to allocate space from the buffer
 ** configured using sqlite3_config(SQLITE_CONFIG_PAGECACHE) option. If no 
 ** such buffer exists or there is no space left in it, this function falls 
@@ -14786,7 +15007,6 @@ SQLITE_PRIVATE void sqlite3PCacheBufferSetup(void *pBuf, int sz, int n){
 static void *pcache1Alloc(int nByte){
   void *p = 0;
   assert( sqlite3_mutex_notheld(pcache1.grp.mutex) );
-  sqlite3StatusSet(SQLITE_STATUS_PAGECACHE_SIZE, nByte);
   if( nByte<=pcache1.szSlot ){
     sqlite3_mutex_enter(pcache1.mutex);
     p = (PgHdr1 *)pcache1.pFree;
@@ -14795,7 +15015,8 @@ static void *pcache1Alloc(int nByte){
       pcache1.nFreeSlot--;
       pcache1.bUnderPressure = pcache1.nFreeSlot<pcache1.nReserve;
       assert( pcache1.nFreeSlot>=0 );
-      sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_USED, 1);
+      sqlite3StatusSet(SQLITE_STATUS_PAGECACHE_SIZE, nByte);
+      sqlite3StatusUp(SQLITE_STATUS_PAGECACHE_USED, 1);
     }
     sqlite3_mutex_leave(pcache1.mutex);
   }
@@ -14808,7 +15029,8 @@ static void *pcache1Alloc(int nByte){
     if( p ){
       int sz = sqlite3MallocSize(p);
       sqlite3_mutex_enter(pcache1.mutex);
-      sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_OVERFLOW, sz);
+      sqlite3StatusSet(SQLITE_STATUS_PAGECACHE_SIZE, nByte);
+      sqlite3StatusUp(SQLITE_STATUS_PAGECACHE_OVERFLOW, sz);
       sqlite3_mutex_leave(pcache1.mutex);
     }
 #endif
@@ -14820,13 +15042,13 @@ static void *pcache1Alloc(int nByte){
 /*
 ** Free an allocated buffer obtained from pcache1Alloc().
 */
-static int pcache1Free(void *p){
+static void pcache1Free(void *p){
   int nFreed = 0;
-  if( p==0 ) return 0;
+  if( p==0 ) return;
   if( p>=pcache1.pStart && p<pcache1.pEnd ){
     PgFreeslot *pSlot;
     sqlite3_mutex_enter(pcache1.mutex);
-    sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_USED, -1);
+    sqlite3StatusDown(SQLITE_STATUS_PAGECACHE_USED, 1);
     pSlot = (PgFreeslot*)p;
     pSlot->pNext = pcache1.pFree;
     pcache1.pFree = pSlot;
@@ -14837,15 +15059,14 @@ static int pcache1Free(void *p){
   }else{
     assert( sqlite3MemdebugHasType(p, MEMTYPE_PCACHE) );
     sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
-    nFreed = sqlite3MallocSize(p);
 #ifndef SQLITE_DISABLE_PAGECACHE_OVERFLOW_STATS
+    nFreed = sqlite3MallocSize(p);
     sqlite3_mutex_enter(pcache1.mutex);
-    sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_OVERFLOW, -nFreed);
+    sqlite3StatusDown(SQLITE_STATUS_PAGECACHE_OVERFLOW, nFreed);
     sqlite3_mutex_leave(pcache1.mutex);
 #endif
     sqlite3_free(p);
   }
-  return nFreed;
 }
 
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
@@ -14869,58 +15090,72 @@ static int pcache1MemSize(void *p){
 /*
 ** Allocate a new page object initially associated with cache pCache.
 */
-static PgHdr1 *pcache1AllocPage(PCache1 *pCache){
+static PgHdr1 *pcache1AllocPage(PCache1 *pCache, int benignMalloc){
   PgHdr1 *p = 0;
   void *pPg;
 
-  /* The group mutex must be released before pcache1Alloc() is called. This
-  ** is because it may call sqlite3_release_memory(), which assumes that 
-  ** this mutex is not held. */
   assert( sqlite3_mutex_held(pCache->pGroup->mutex) );
-  pcache1LeaveMutex(pCache->pGroup);
-#ifdef SQLITE_PCACHE_SEPARATE_HEADER
-  pPg = pcache1Alloc(pCache->szPage);
-  p = sqlite3Malloc(sizeof(PgHdr1) + pCache->szExtra);
-  if( !pPg || !p ){
-    pcache1Free(pPg);
-    sqlite3_free(p);
-    pPg = 0;
-  }
-#else
-  pPg = pcache1Alloc(sizeof(PgHdr1) + pCache->szPage + pCache->szExtra);
-  p = (PgHdr1 *)&((u8 *)pPg)[pCache->szPage];
+  if( pCache->pFree || (pCache->nPage==0 && pcache1InitBulk(pCache)) ){
+    p = pCache->pFree;
+    pCache->pFree = p->pNext;
+    p->pNext = 0;
+  }else{
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+    /* The group mutex must be released before pcache1Alloc() is called. This
+    ** is because it might call sqlite3_release_memory(), which assumes that 
+    ** this mutex is not held. */
+    assert( pcache1.separateCache==0 );
+    assert( pCache->pGroup==&pcache1.grp );
+    pcache1LeaveMutex(pCache->pGroup);
 #endif
-  pcache1EnterMutex(pCache->pGroup);
-
-  if( pPg ){
+    if( benignMalloc ){ sqlite3BeginBenignMalloc(); }
+#ifdef SQLITE_PCACHE_SEPARATE_HEADER
+    pPg = pcache1Alloc(pCache->szPage);
+    p = sqlite3Malloc(sizeof(PgHdr1) + pCache->szExtra);
+    if( !pPg || !p ){
+      pcache1Free(pPg);
+      sqlite3_free(p);
+      pPg = 0;
+    }
+#else
+    pPg = pcache1Alloc(pCache->szAlloc);
+    p = (PgHdr1 *)&((u8 *)pPg)[pCache->szPage];
+#endif
+    if( benignMalloc ){ sqlite3EndBenignMalloc(); }
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+    pcache1EnterMutex(pCache->pGroup);
+#endif
+    if( pPg==0 ) return 0;
     p->page.pBuf = pPg;
     p->page.pExtra = &p[1];
-    if( pCache->bPurgeable ){
-      pCache->pGroup->nCurrentPage++;
-    }
-    return p;
+    p->isBulkLocal = 0;
+    p->isAnchor = 0;
   }
-  return 0;
+  if( pCache->bPurgeable ){
+    pCache->pGroup->nCurrentPage++;
+  }
+  return p;
 }
 
 /*
 ** Free a page object allocated by pcache1AllocPage().
-**
-** The pointer is allowed to be NULL, which is prudent.  But it turns out
-** that the current implementation happens to never call this routine
-** with a NULL pointer, so we mark the NULL test with ALWAYS().
 */
 static void pcache1FreePage(PgHdr1 *p){
-  if( ALWAYS(p) ){
-    PCache1 *pCache = p->pCache;
-    assert( sqlite3_mutex_held(p->pCache->pGroup->mutex) );
+  PCache1 *pCache;
+  assert( p!=0 );
+  pCache = p->pCache;
+  assert( sqlite3_mutex_held(p->pCache->pGroup->mutex) );
+  if( p->isBulkLocal ){
+    p->pNext = pCache->pFree;
+    pCache->pFree = p;
+  }else{
     pcache1Free(p->page.pBuf);
 #ifdef SQLITE_PCACHE_SEPARATE_HEADER
     sqlite3_free(p);
 #endif
-    if( pCache->bPurgeable ){
-      pCache->pGroup->nCurrentPage--;
-    }
+  }
+  if( pCache->bPurgeable ){
+    pCache->pGroup->nCurrentPage--;
   }
 }
 
@@ -15015,41 +15250,35 @@ static void pcache1ResizeHash(PCache1 *p){
 **
 ** The PGroup mutex must be held when this function is called.
 */
-static void pcache1PinPage(PgHdr1 *pPage){
+static PgHdr1 *pcache1PinPage(PgHdr1 *pPage){
   PCache1 *pCache;
-  PGroup *pGroup;
 
   assert( pPage!=0 );
   assert( pPage->isPinned==0 );
   pCache = pPage->pCache;
-  pGroup = pCache->pGroup;
-  assert( pPage->pLruNext || pPage==pGroup->pLruTail );
-  assert( pPage->pLruPrev || pPage==pGroup->pLruHead );
-  assert( sqlite3_mutex_held(pGroup->mutex) );
-  if( pPage->pLruPrev ){
-    pPage->pLruPrev->pLruNext = pPage->pLruNext;
-  }else{
-    pGroup->pLruHead = pPage->pLruNext;
-  }
-  if( pPage->pLruNext ){
-    pPage->pLruNext->pLruPrev = pPage->pLruPrev;
-  }else{
-    pGroup->pLruTail = pPage->pLruPrev;
-  }
+  assert( pPage->pLruNext );
+  assert( pPage->pLruPrev );
+  assert( sqlite3_mutex_held(pCache->pGroup->mutex) );
+  pPage->pLruPrev->pLruNext = pPage->pLruNext;
+  pPage->pLruNext->pLruPrev = pPage->pLruPrev;
   pPage->pLruNext = 0;
   pPage->pLruPrev = 0;
   pPage->isPinned = 1;
+  assert( pPage->isAnchor==0 );
+  assert( pCache->pGroup->lru.isAnchor==1 );
   pCache->nRecyclable--;
+  return pPage;
 }
 
 
 /*
 ** Remove the page supplied as an argument from the hash table 
 ** (PCache1.apHash structure) that it is currently stored in.
+** Also free the page if freePage is true.
 **
 ** The PGroup mutex must be held when this function is called.
 */
-static void pcache1RemoveFromHash(PgHdr1 *pPage){
+static void pcache1RemoveFromHash(PgHdr1 *pPage, int freeFlag){
   unsigned int h;
   PCache1 *pCache = pPage->pCache;
   PgHdr1 **pp;
@@ -15060,21 +15289,28 @@ static void pcache1RemoveFromHash(PgHdr1 *pPage){
   *pp = (*pp)->pNext;
 
   pCache->nPage--;
+  if( freeFlag ) pcache1FreePage(pPage);
 }
 
 /*
 ** If there are currently more than nMaxPage pages allocated, try
 ** to recycle pages to reduce the number allocated to nMaxPage.
 */
-static void pcache1EnforceMaxPage(PGroup *pGroup){
+static void pcache1EnforceMaxPage(PCache1 *pCache){
+  PGroup *pGroup = pCache->pGroup;
+  PgHdr1 *p;
   assert( sqlite3_mutex_held(pGroup->mutex) );
-  while( pGroup->nCurrentPage>pGroup->nMaxPage && pGroup->pLruTail ){
-    PgHdr1 *p = pGroup->pLruTail;
+  while( pGroup->nCurrentPage>pGroup->nMaxPage
+      && (p=pGroup->lru.pLruPrev)->isAnchor==0
+  ){
     assert( p->pCache->pGroup==pGroup );
     assert( p->isPinned==0 );
     pcache1PinPage(p);
-    pcache1RemoveFromHash(p);
-    pcache1FreePage(p);
+    pcache1RemoveFromHash(p, 1);
+  }
+  if( pCache->nPage==0 && pCache->pBulk ){
+    sqlite3_free(pCache->pBulk);
+    pCache->pBulk = pCache->pFree = 0;
   }
 }
 
@@ -15120,9 +15356,44 @@ static int pcache1Init(void *NotUsed){
   UNUSED_PARAMETER(NotUsed);
   assert( pcache1.isInit==0 );
   memset(&pcache1, 0, sizeof(pcache1));
+
+
+  /*
+  ** The pcache1.separateCache variable is true if each PCache has its own
+  ** private PGroup (mode-1).  pcache1.separateCache is false if the single
+  ** PGroup in pcache1.grp is used for all page caches (mode-2).
+  **
+  **   *  Always use a unified cache (mode-2) if ENABLE_MEMORY_MANAGEMENT
+  **
+  **   *  Use a unified cache in single-threaded applications that have
+  **      configured a start-time buffer for use as page-cache memory using
+  **      sqlite3_config(SQLITE_CONFIG_PAGECACHE, pBuf, sz, N) with non-NULL 
+  **      pBuf argument.
+  **
+  **   *  Otherwise use separate caches (mode-1)
+  */
+#if defined(SQLITE_ENABLE_MEMORY_MANAGEMENT)
+  pcache1.separateCache = 0;
+#elif SQLITE_THREADSAFE
+  pcache1.separateCache = sqlite3GlobalConfig.pPage==0
+                          || sqlite3GlobalConfig.bCoreMutex>0;
+#else
+  pcache1.separateCache = sqlite3GlobalConfig.pPage==0;
+#endif
+
+#if SQLITE_THREADSAFE
   if( sqlite3GlobalConfig.bCoreMutex ){
     pcache1.grp.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU);
     pcache1.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_PMEM);
+  }
+#endif
+  if( pcache1.separateCache
+   && sqlite3GlobalConfig.nPage!=0
+   && sqlite3GlobalConfig.pPage==0
+  ){
+    pcache1.nInitPage = sqlite3GlobalConfig.nPage;
+  }else{
+    pcache1.nInitPage = 0;
   }
   pcache1.grp.mxPinned = 10;
   pcache1.isInit = 1;
@@ -15153,39 +15424,26 @@ static sqlite3_pcache *pcache1Create(int szPage, int szExtra, int bPurgeable){
   PGroup *pGroup;       /* The group the new page cache will belong to */
   int sz;               /* Bytes of memory required to allocate the new cache */
 
-  /*
-  ** The separateCache variable is true if each PCache has its own private
-  ** PGroup.  In other words, separateCache is true for mode (1) where no
-  ** mutexing is required.
-  **
-  **   *  Always use a unified cache (mode-2) if ENABLE_MEMORY_MANAGEMENT
-  **
-  **   *  Always use a unified cache in single-threaded applications
-  **
-  **   *  Otherwise (if multi-threaded and ENABLE_MEMORY_MANAGEMENT is off)
-  **      use separate caches (mode-1)
-  */
-#if defined(SQLITE_ENABLE_MEMORY_MANAGEMENT) || SQLITE_THREADSAFE==0
-  const int separateCache = 0;
-#else
-  int separateCache = sqlite3GlobalConfig.bCoreMutex>0;
-#endif
-
   assert( (szPage & (szPage-1))==0 && szPage>=512 && szPage<=65536 );
   assert( szExtra < 300 );
 
-  sz = sizeof(PCache1) + sizeof(PGroup)*separateCache;
+  sz = sizeof(PCache1) + sizeof(PGroup)*pcache1.separateCache;
   pCache = (PCache1 *)sqlite3MallocZero(sz);
   if( pCache ){
-    if( separateCache ){
+    if( pcache1.separateCache ){
       pGroup = (PGroup*)&pCache[1];
       pGroup->mxPinned = 10;
     }else{
       pGroup = &pcache1.grp;
     }
+    if( pGroup->lru.isAnchor==0 ){
+      pGroup->lru.isAnchor = 1;
+      pGroup->lru.pLruPrev = pGroup->lru.pLruNext = &pGroup->lru;
+    }
     pCache->pGroup = pGroup;
     pCache->szPage = szPage;
     pCache->szExtra = szExtra;
+    pCache->szAlloc = szPage + szExtra + ROUND8(sizeof(PgHdr1));
     pCache->bPurgeable = (bPurgeable ? 1 : 0);
     pcache1EnterMutex(pGroup);
     pcache1ResizeHash(pCache);
@@ -15217,7 +15475,7 @@ static void pcache1Cachesize(sqlite3_pcache *p, int nMax){
     pGroup->mxPinned = pGroup->nMaxPage + 10 - pGroup->nMinPage;
     pCache->nMax = nMax;
     pCache->n90pct = pCache->nMax*9/10;
-    pcache1EnforceMaxPage(pGroup);
+    pcache1EnforceMaxPage(pCache);
     pcache1LeaveMutex(pGroup);
   }
 }
@@ -15235,7 +15493,7 @@ static void pcache1Shrink(sqlite3_pcache *p){
     pcache1EnterMutex(pGroup);
     savedMaxPage = pGroup->nMaxPage;
     pGroup->nMaxPage = 0;
-    pcache1EnforceMaxPage(pGroup);
+    pcache1EnforceMaxPage(pCache);
     pGroup->nMaxPage = savedMaxPage;
     pcache1LeaveMutex(pGroup);
   }
@@ -15288,26 +15546,17 @@ static SQLITE_NOINLINE PgHdr1 *pcache1FetchStage2(
   assert( pCache->nHash>0 && pCache->apHash );
 
   /* Step 4. Try to recycle a page. */
-  if( pCache->bPurgeable && pGroup->pLruTail && (
-         (pCache->nPage+1>=pCache->nMax)
-      || pGroup->nCurrentPage>=pGroup->nMaxPage
-      || pcache1UnderMemoryPressure(pCache)
-  )){
+  if( pCache->bPurgeable
+   && !pGroup->lru.pLruPrev->isAnchor
+   && ((pCache->nPage+1>=pCache->nMax) || pcache1UnderMemoryPressure(pCache))
+  ){
     PCache1 *pOther;
-    pPage = pGroup->pLruTail;
+    pPage = pGroup->lru.pLruPrev;
     assert( pPage->isPinned==0 );
-    pcache1RemoveFromHash(pPage);
+    pcache1RemoveFromHash(pPage, 0);
     pcache1PinPage(pPage);
     pOther = pPage->pCache;
-
-    /* We want to verify that szPage and szExtra are the same for pOther
-    ** and pCache.  Assert that we can verify this by comparing sums. */
-    assert( (pCache->szPage & (pCache->szPage-1))==0 && pCache->szPage>=512 );
-    assert( pCache->szExtra<512 );
-    assert( (pOther->szPage & (pOther->szPage-1))==0 && pOther->szPage>=512 );
-    assert( pOther->szExtra<512 );
-
-    if( pOther->szPage+pOther->szExtra != pCache->szPage+pCache->szExtra ){
+    if( pOther->szAlloc != pCache->szAlloc ){
       pcache1FreePage(pPage);
       pPage = 0;
     }else{
@@ -15319,9 +15568,7 @@ static SQLITE_NOINLINE PgHdr1 *pcache1FetchStage2(
   ** attempt to allocate a new one. 
   */
   if( !pPage ){
-    if( createFlag==1 ) sqlite3BeginBenignMalloc();
-    pPage = pcache1AllocPage(pCache);
-    if( createFlag==1 ) sqlite3EndBenignMalloc();
+    pPage = pcache1AllocPage(pCache, createFlag==1);
   }
 
   if( pPage ){
@@ -15395,8 +15642,13 @@ static SQLITE_NOINLINE PgHdr1 *pcache1FetchStage2(
 **      proceed to step 5. 
 **
 **   5. Otherwise, allocate and return a new page buffer.
+**
+** There are two versions of this routine.  pcache1FetchWithMutex() is
+** the general case.  pcache1FetchNoMutex() is a faster implementation for
+** the common case where pGroup->mutex is NULL.  The pcache1Fetch() wrapper
+** invokes the appropriate routine.
 */
-static sqlite3_pcache_page *pcache1Fetch(
+static PgHdr1 *pcache1FetchNoMutex(
   sqlite3_pcache *p, 
   unsigned int iKey, 
   int createFlag
@@ -15404,28 +15656,66 @@ static sqlite3_pcache_page *pcache1Fetch(
   PCache1 *pCache = (PCache1 *)p;
   PgHdr1 *pPage = 0;
 
+  /* Step 1: Search the hash table for an existing entry. */
+  pPage = pCache->apHash[iKey % pCache->nHash];
+  while( pPage && pPage->iKey!=iKey ){ pPage = pPage->pNext; }
+
+  /* Step 2: If the page was found in the hash table, then return it.
+  ** If the page was not in the hash table and createFlag is 0, abort.
+  ** Otherwise (page not in hash and createFlag!=0) continue with
+  ** subsequent steps to try to create the page. */
+  if( pPage ){
+    if( !pPage->isPinned ){
+      return pcache1PinPage(pPage);
+    }else{
+      return pPage;
+    }
+  }else if( createFlag ){
+    /* Steps 3, 4, and 5 implemented by this subroutine */
+    return pcache1FetchStage2(pCache, iKey, createFlag);
+  }else{
+    return 0;
+  }
+}
+#if PCACHE1_MIGHT_USE_GROUP_MUTEX
+static PgHdr1 *pcache1FetchWithMutex(
+  sqlite3_pcache *p, 
+  unsigned int iKey, 
+  int createFlag
+){
+  PCache1 *pCache = (PCache1 *)p;
+  PgHdr1 *pPage;
+
+  pcache1EnterMutex(pCache->pGroup);
+  pPage = pcache1FetchNoMutex(p, iKey, createFlag);
+  assert( pPage==0 || pCache->iMaxKey>=iKey );
+  pcache1LeaveMutex(pCache->pGroup);
+  return pPage;
+}
+#endif
+static sqlite3_pcache_page *pcache1Fetch(
+  sqlite3_pcache *p, 
+  unsigned int iKey, 
+  int createFlag
+){
+#if PCACHE1_MIGHT_USE_GROUP_MUTEX || defined(SQLITE_DEBUG)
+  PCache1 *pCache = (PCache1 *)p;
+#endif
+
   assert( offsetof(PgHdr1,page)==0 );
   assert( pCache->bPurgeable || createFlag!=1 );
   assert( pCache->bPurgeable || pCache->nMin==0 );
   assert( pCache->bPurgeable==0 || pCache->nMin==10 );
   assert( pCache->nMin==0 || pCache->bPurgeable );
   assert( pCache->nHash>0 );
-  pcache1EnterMutex(pCache->pGroup);
-
-  /* Step 1: Search the hash table for an existing entry. */
-  pPage = pCache->apHash[iKey % pCache->nHash];
-  while( pPage && pPage->iKey!=iKey ){ pPage = pPage->pNext; }
-
-  /* Step 2: Abort if no existing page is found and createFlag is 0 */
-  if( pPage ){
-    if( !pPage->isPinned ) pcache1PinPage(pPage);
-  }else if( createFlag ){
-    /* Steps 3, 4, and 5 implemented by this subroutine */
-    pPage = pcache1FetchStage2(pCache, iKey, createFlag);
+#if PCACHE1_MIGHT_USE_GROUP_MUTEX
+  if( pCache->pGroup->mutex ){
+    return (sqlite3_pcache_page*)pcache1FetchWithMutex(p, iKey, createFlag);
+  }else
+#endif
+  {
+    return (sqlite3_pcache_page*)pcache1FetchNoMutex(p, iKey, createFlag);
   }
-  assert( pPage==0 || pCache->iMaxKey>=iKey );
-  pcache1LeaveMutex(pCache->pGroup);
-  return (sqlite3_pcache_page*)pPage;
 }
 
 
@@ -15450,22 +15740,16 @@ static void pcache1Unpin(
   ** part of the PGroup LRU list.
   */
   assert( pPage->pLruPrev==0 && pPage->pLruNext==0 );
-  assert( pGroup->pLruHead!=pPage && pGroup->pLruTail!=pPage );
   assert( pPage->isPinned==1 );
 
   if( reuseUnlikely || pGroup->nCurrentPage>pGroup->nMaxPage ){
-    pcache1RemoveFromHash(pPage);
-    pcache1FreePage(pPage);
+    pcache1RemoveFromHash(pPage, 1);
   }else{
     /* Add the page to the PGroup LRU list. */
-    if( pGroup->pLruHead ){
-      pGroup->pLruHead->pLruPrev = pPage;
-      pPage->pLruNext = pGroup->pLruHead;
-      pGroup->pLruHead = pPage;
-    }else{
-      pGroup->pLruTail = pPage;
-      pGroup->pLruHead = pPage;
-    }
+    PgHdr1 **ppFirst = &pGroup->lru.pLruNext;
+    pPage->pLruPrev = &pGroup->lru;
+    (pPage->pLruNext = *ppFirst)->pLruPrev = pPage;
+    *ppFirst = pPage;
     pCache->nRecyclable++;
     pPage->isPinned = 0;
   }
@@ -15542,8 +15826,9 @@ static void pcache1Destroy(sqlite3_pcache *p){
   assert( pGroup->nMinPage >= pCache->nMin );
   pGroup->nMinPage -= pCache->nMin;
   pGroup->mxPinned = pGroup->nMaxPage + 10 - pGroup->nMinPage;
-  pcache1EnforceMaxPage(pGroup);
+  pcache1EnforceMaxPage(pCache);
   pcache1LeaveMutex(pGroup);
+  sqlite3_free(pCache->pBulk);
   sqlite3_free(pCache->apHash);
   sqlite3_free(pCache);
 }
@@ -15575,7 +15860,15 @@ SQLITE_PRIVATE void sqlite3PCacheSetDefault(void){
 /*
 ** Return the size of the header on each page of this PCACHE implementation.
 */
-SQLITE_PRIVATE int sqlite3HeaderSizePcache1(void){ return sizeof(PgHdr1); }
+SQLITE_PRIVATE int sqlite3HeaderSizePcache1(void){ return ROUND8(sizeof(PgHdr1)); }
+
+/*
+** Return the global mutex used by this PCACHE implementation.  The
+** sqlite3_status() routine needs access to this mutex.
+*/
+SQLITE_PRIVATE sqlite3_mutex *sqlite3Pcache1Mutex(void){
+  return pcache1.mutex;
+}
 
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
 /*
@@ -15591,18 +15884,20 @@ SQLITE_PRIVATE int sqlite3PcacheReleaseMemory(int nReq){
   int nFree = 0;
   assert( sqlite3_mutex_notheld(pcache1.grp.mutex) );
   assert( sqlite3_mutex_notheld(pcache1.mutex) );
-  if( pcache1.pStart==0 ){
+  if( sqlite3GlobalConfig.nPage==0 ){
     PgHdr1 *p;
     pcache1EnterMutex(&pcache1.grp);
-    while( (nReq<0 || nFree<nReq) && ((p=pcache1.grp.pLruTail)!=0) ){
+    while( (nReq<0 || nFree<nReq)
+       &&  (p=pcache1.grp.lru.pLruPrev)!=0
+       &&  p->isAnchor==0
+    ){
       nFree += pcache1MemSize(p->page.pBuf);
 #ifdef SQLITE_PCACHE_SEPARATE_HEADER
       nFree += sqlite3MemSize(p);
 #endif
       assert( p->isPinned==0 );
       pcache1PinPage(p);
-      pcache1RemoveFromHash(p);
-      pcache1FreePage(p);
+      pcache1RemoveFromHash(p, 1);
     }
     pcache1LeaveMutex(&pcache1.grp);
   }
@@ -15623,7 +15918,7 @@ SQLITE_PRIVATE void sqlite3PcacheStats(
 ){
   PgHdr1 *p;
   int nRecyclable = 0;
-  for(p=pcache1.grp.pLruHead; p; p=p->pLruNext){
+  for(p=pcache1.grp.lru.pLruNext; p && !p->isAnchor; p=p->pLruNext){
     assert( p->isPinned==0 );
     nRecyclable++;
   }
@@ -15698,6 +15993,7 @@ SQLITE_PRIVATE void sqlite3PcacheStats(
 ** There is an added cost of O(N) when switching between TEST and
 ** SMALLEST primitives.
 */
+/* #include "sqliteInt.h" */
 
 
 /*
@@ -16167,6 +16463,7 @@ SQLITE_PRIVATE int sqlite3RowSetTest(RowSet *pRowSet, int iBatch, sqlite3_int64 
 ** another is writing.
 */
 #ifndef SQLITE_OMIT_DISKIO
+/* #include "sqliteInt.h" */
 /************** Include wal.h in the middle of pager.c ***********************/
 /************** Begin file wal.h *********************************************/
 /*
@@ -16188,6 +16485,7 @@ SQLITE_PRIVATE int sqlite3RowSetTest(RowSet *pRowSet, int iBatch, sqlite3_int64 
 #ifndef _WAL_H_
 #define _WAL_H_
 
+/* #include "sqliteInt.h" */
 
 /* Additional values that can be added to the sync_flags argument of
 ** sqlite3WalFrames():
@@ -16743,9 +17041,9 @@ struct PagerSavepoint {
 /*
 ** Bits of the Pager.doNotSpill flag.  See further description below.
 */
-#define SPILLFLAG_OFF         0x01      /* Never spill cache.  Set via pragma */
-#define SPILLFLAG_ROLLBACK    0x02      /* Current rolling back, so do not spill */
-#define SPILLFLAG_NOSYNC      0x04      /* Spill is ok, but do not sync */
+#define SPILLFLAG_OFF         0x01 /* Never spill cache.  Set via pragma */
+#define SPILLFLAG_ROLLBACK    0x02 /* Current rolling back, so do not spill */
+#define SPILLFLAG_NOSYNC      0x04 /* Spill is ok, but do not sync */
 
 /*
 ** An open page cache is an instance of struct Pager. A description of
@@ -16827,11 +17125,11 @@ struct PagerSavepoint {
 **   while it is being traversed by code in pager_playback().  The SPILLFLAG_OFF
 **   case is a user preference.
 ** 
-**   If the SPILLFLAG_NOSYNC bit is set, writing to the database from pagerStress()
-**   is permitted, but syncing the journal file is not. This flag is set
-**   by sqlite3PagerWrite() when the file-system sector-size is larger than
-**   the database page-size in order to prevent a journal sync from happening 
-**   in between the journalling of two pages on the same sector. 
+**   If the SPILLFLAG_NOSYNC bit is set, writing to the database from
+**   pagerStress() is permitted, but syncing the journal file is not.
+**   This flag is set by sqlite3PagerWrite() when the file-system sector-size
+**   is larger than the database page-size in order to prevent a journal sync
+**   from happening in between the journalling of two pages on the same sector. 
 **
 ** subjInMemory
 **
@@ -16934,6 +17232,7 @@ struct Pager {
   u8 doNotSpill;              /* Do not spill the cache when non-zero */
   u8 subjInMemory;            /* True to use in-memory sub-journals */
   u8 bUseFetch;               /* True to use xFetch() */
+  u8 hasHeldSharedLock;       /* True if a shared lock has ever been held */
   Pgno dbSize;                /* Number of pages in the database */
   Pgno dbOrigSize;            /* dbSize before the current transaction */
   Pgno dbFileSize;            /* Number of pages in the database file */
@@ -17094,7 +17393,7 @@ static const unsigned char aJournalMagic[] = {
 **
 **   if( pPager->jfd->pMethods ){ ...
 */
-#define isOpen(pFd) ((pFd)->pMethods)
+#define isOpen(pFd) ((pFd)->pMethods!=0)
 
 /*
 ** Return true if this pager uses a write-ahead log instead of the usual
@@ -17317,19 +17616,21 @@ static int subjRequiresPage(PgHdr *pPg){
   int i;
   for(i=0; i<pPager->nSavepoint; i++){
     p = &pPager->aSavepoint[i];
-    if( p->nOrig>=pgno && 0==sqlite3BitvecTest(p->pInSavepoint, pgno) ){
+    if( p->nOrig>=pgno && 0==sqlite3BitvecTestNotNull(p->pInSavepoint, pgno) ){
       return 1;
     }
   }
   return 0;
 }
 
+#ifdef SQLITE_DEBUG
 /*
 ** Return true if the page is already in the journal file.
 */
 static int pageInJournal(Pager *pPager, PgHdr *pPg){
   return sqlite3BitvecTest(pPager->pInJournal, pPg->pgno);
 }
+#endif
 
 /*
 ** Read a 32-bit integer from the given file descriptor.  Store the integer
@@ -17941,7 +18242,8 @@ static int writeMasterJournal(Pager *pPager, const char *zMaster){
    || (0 != (rc = sqlite3OsWrite(pPager->jfd, zMaster, nMaster, iHdrOff+4)))
    || (0 != (rc = write32bits(pPager->jfd, iHdrOff+4+nMaster, nMaster)))
    || (0 != (rc = write32bits(pPager->jfd, iHdrOff+4+nMaster+4, cksum)))
-   || (0 != (rc = sqlite3OsWrite(pPager->jfd, aJournalMagic, 8, iHdrOff+4+nMaster+8)))
+   || (0 != (rc = sqlite3OsWrite(pPager->jfd, aJournalMagic, 8,
+                                 iHdrOff+4+nMaster+8)))
   ){
     return rc;
   }
@@ -18399,6 +18701,20 @@ static void pagerReportSize(Pager *pPager){
 # define pagerReportSize(X)     /* No-op if we do not support a codec */
 #endif
 
+#ifdef SQLITE_HAS_CODEC
+/*
+** Make sure the number of reserved bits is the same in the destination
+** pager as it is in the source.  This comes up when a VACUUM changes the
+** number of reserved bits to the "optimal" amount.
+*/
+SQLITE_PRIVATE void sqlite3PagerAlignReserve(Pager *pDest, Pager *pSrc){
+  if( pDest->nReserve!=pSrc->nReserve ){
+    pDest->nReserve = pSrc->nReserve;
+    pagerReportSize(pDest);
+  }
+}
+#endif
+
 /*
 ** Read a single page from either the journal file (if isMainJrnl==1) or
 ** from the sub-journal (if isMainJrnl==0) and playback that page.
@@ -18501,7 +18817,7 @@ static int pager_playback_one_page(
     }
   }
 
-  /* If this page has already been played by before during the current
+  /* If this page has already been played back before during the current
   ** rollback, then don't bother to play it back again.
   */
   if( pDone && (rc = sqlite3BitvecSet(pDone, pgno))!=SQLITE_OK ){
@@ -19330,9 +19646,7 @@ static int pagerWalFrames(
 ){
   int rc;                         /* Return code */
   int nList;                      /* Number of pages in pList */
-#if defined(SQLITE_DEBUG) || defined(SQLITE_CHECK_PAGES)
   PgHdr *p;                       /* For looping over pages */
-#endif
 
   assert( pPager->pWal );
   assert( pList );
@@ -19349,7 +19663,6 @@ static int pagerWalFrames(
     ** any pages with page numbers greater than nTruncate into the WAL file.
     ** They will never be read by any client. So remove them from the pDirty
     ** list here. */
-    PgHdr *p;
     PgHdr **ppNext = &pList;
     nList = 0;
     for(p=pList; (*ppNext = p)!=0; p=p->pDirty){
@@ -19369,7 +19682,6 @@ static int pagerWalFrames(
       pPager->pageSize, pList, nTruncate, isCommit, pPager->walSyncFlags
   );
   if( rc==SQLITE_OK && pPager->pBackup ){
-    PgHdr *p;
     for(p=pList; p; p=p->pDirty){
       sqlite3BackupUpdate(pPager->pBackup, p->pgno, (u8 *)p->pData);
     }
@@ -19439,11 +19751,10 @@ static int pagerPagecount(Pager *pPager, Pgno *pnPage){
   assert( pPager->eLock>=SHARED_LOCK );
   nPage = sqlite3WalDbsize(pPager->pWal);
 
-  /* If the database size was not available from the WAL sub-system,
-  ** determine it based on the size of the database file. If the size
-  ** of the database file is not an integer multiple of the page-size,
-  ** round down to the nearest page. Except, any file larger than 0
-  ** bytes in size is considered to contain at least one page.
+  /* If the number of pages in the database is not available from the
+  ** WAL sub-system, determine the page counte based on the size of
+  ** the database file.  If the size of the database file is not an
+  ** integer multiple of the page-size, round up the result.
   */
   if( nPage==0 ){
     i64 n = 0;                    /* Size of db file in bytes */
@@ -20184,7 +20495,7 @@ static int pagerAcquireMapPage(
   PgHdr **ppPage                  /* OUT: Acquired page object */
 ){
   PgHdr *p;                       /* Memory mapped page to return */
-
+  
   if( pPager->pMmapFreelist ){
     *ppPage = p = pPager->pMmapFreelist;
     pPager->pMmapFreelist = p->pDirty;
@@ -20608,8 +20919,6 @@ static int openSubJournal(Pager *pPager){
 
 /*
 ** Append a record of the current state of page pPg to the sub-journal. 
-** It is the callers responsibility to use subjRequiresPage() to check 
-** that it is really required before calling this function.
 **
 ** If successful, set the bit corresponding to pPg->pgno in the bitvecs
 ** for all open savepoints before returning.
@@ -20655,6 +20964,13 @@ static int subjournalPage(PgHdr *pPg){
     rc = addToSavepointBitvecs(pPager, pPg->pgno);
   }
   return rc;
+}
+static int subjournalPageIfRequired(PgHdr *pPg){
+  if( subjRequiresPage(pPg) ){
+    return subjournalPage(pPg);
+  }else{
+    return SQLITE_OK;
+  }
 }
 
 /*
@@ -20713,9 +21029,7 @@ static int pagerStress(void *p, PgHdr *pPg){
   pPg->pDirty = 0;
   if( pagerUseWal(pPager) ){
     /* Write a single frame for this page to the log. */
-    if( subjRequiresPage(pPg) ){ 
-      rc = subjournalPage(pPg); 
-    }
+    rc = subjournalPageIfRequired(pPg); 
     if( rc==SQLITE_OK ){
       rc = pagerWalFrames(pPager, pPg, 0, 0);
     }
@@ -20726,39 +21040,6 @@ static int pagerStress(void *p, PgHdr *pPg){
      || pPager->eState==PAGER_WRITER_CACHEMOD
     ){
       rc = syncJournal(pPager, 1);
-    }
-  
-    /* If the page number of this page is larger than the current size of
-    ** the database image, it may need to be written to the sub-journal.
-    ** This is because the call to pager_write_pagelist() below will not
-    ** actually write data to the file in this case.
-    **
-    ** Consider the following sequence of events:
-    **
-    **   BEGIN;
-    **     <journal page X>
-    **     <modify page X>
-    **     SAVEPOINT sp;
-    **       <shrink database file to Y pages>
-    **       pagerStress(page X)
-    **     ROLLBACK TO sp;
-    **
-    ** If (X>Y), then when pagerStress is called page X will not be written
-    ** out to the database file, but will be dropped from the cache. Then,
-    ** following the "ROLLBACK TO sp" statement, reading page X will read
-    ** data from the database file. This will be the copy of page X as it
-    ** was when the transaction started, not as it was when "SAVEPOINT sp"
-    ** was executed.
-    **
-    ** The solution is to write the current data for page X into the 
-    ** sub-journal file now (if it is not already there), so that it will
-    ** be restored to its current value when the "ROLLBACK TO sp" is 
-    ** executed.
-    */
-    if( NEVER(
-        rc==SQLITE_OK && pPg->pgno>pPager->dbSize && subjRequiresPage(pPg)
-    ) ){
-      rc = subjournalPage(pPg);
     }
   
     /* Write the contents of the page out to the database file. */
@@ -21016,7 +21297,7 @@ SQLITE_PRIVATE int sqlite3PagerOpen(
 act_like_temp_file:
     tempFile = 1;
     pPager->eState = PAGER_READER;     /* Pretend we already have a lock */
-    pPager->eLock = EXCLUSIVE_LOCK;    /* Pretend we are in EXCLUSIVE locking mode */
+    pPager->eLock = EXCLUSIVE_LOCK;    /* Pretend we are in EXCLUSIVE mode */
     pPager->noLock = 1;                /* Do no locking */
     readOnly = (vfsFlags&SQLITE_OPEN_READONLY);
   }
@@ -21035,7 +21316,7 @@ act_like_temp_file:
     assert( nExtra<1000 );
     nExtra = ROUND8(nExtra);
     rc = sqlite3PcacheOpen(szPageDflt, nExtra, !memDb,
-                           !memDb?pagerStress:0, (void *)pPager, pPager->pPCache);
+                       !memDb?pagerStress:0, (void *)pPager, pPager->pPCache);
   }
 
   /* If an error occurred above, free the  Pager structure and close the file.
@@ -21415,18 +21696,14 @@ SQLITE_PRIVATE int sqlite3PagerSharedLock(Pager *pPager){
       );
     }
 
-    if( !pPager->tempFile && (
-        pPager->pBackup 
-     || sqlite3PcachePagecount(pPager->pPCache)>0 
-     || USEFETCH(pPager)
-    )){
-      /* The shared-lock has just been acquired on the database file
-      ** and there are already pages in the cache (from a previous
-      ** read or write transaction).  Check to see if the database
-      ** has been modified.  If the database has changed, flush the
-      ** cache.
+    if( !pPager->tempFile && pPager->hasHeldSharedLock ){
+      /* The shared-lock has just been acquired then check to
+      ** see if the database has been modified.  If the database has changed,
+      ** flush the cache.  The hasHeldSharedLock flag prevents this from
+      ** occurring on the very first access to a file, in order to save a
+      ** single unnecessary sqlite3OsRead() call at the start-up.
       **
-      ** Database changes is detected by looking at 15 bytes beginning
+      ** Database changes are detected by looking at 15 bytes beginning
       ** at offset 24 into the file.  The first 4 of these 16 bytes are
       ** a 32-bit counter that is incremented with each change.  The
       ** other bytes change randomly with each file change when
@@ -21492,6 +21769,7 @@ SQLITE_PRIVATE int sqlite3PagerSharedLock(Pager *pPager){
     assert( pPager->eState==PAGER_OPEN );
   }else{
     pPager->eState = PAGER_READER;
+    pPager->hasHeldSharedLock = 1;
   }
   return rc;
 }
@@ -21575,20 +21853,25 @@ SQLITE_PRIVATE int sqlite3PagerAcquire(
   ** page 1 if there is no write-transaction open or the ACQUIRE_READONLY
   ** flag was specified by the caller. And so long as the db is not a 
   ** temporary or in-memory database.  */
-  const int bMmapOk = (pgno!=1 && USEFETCH(pPager)
+  const int bMmapOk = (pgno>1 && USEFETCH(pPager)
    && (pPager->eState==PAGER_READER || (flags & PAGER_GET_READONLY))
 #ifdef SQLITE_HAS_CODEC
    && pPager->xCodec==0
 #endif
   );
 
+  /* Optimization note:  Adding the "pgno<=1" term before "pgno==0" here
+  ** allows the compiler optimizer to reuse the results of the "pgno>1"
+  ** test in the previous statement, and avoid testing pgno==0 in the
+  ** common case where pgno is large. */
+  if( pgno<=1 && pgno==0 ){
+    return SQLITE_CORRUPT_BKPT;
+  }
   assert( pPager->eState>=PAGER_READER );
   assert( assert_pager_state(pPager) );
   assert( noContent==0 || bMmapOk==0 );
 
-  if( pgno==0 ){
-    return SQLITE_CORRUPT_BKPT;
-  }
+  assert( pPager->hasHeldSharedLock==1 );
 
   /* If the pager is in the error state, return an error immediately. 
   ** Otherwise, request the page from the PCache layer. */
@@ -21633,9 +21916,14 @@ SQLITE_PRIVATE int sqlite3PagerAcquire(
       if( pBase==0 ){
         rc = sqlite3PcacheFetchStress(pPager->pPCache, pgno, &pBase);
         if( rc!=SQLITE_OK ) goto pager_acquire_err;
+        if( pBase==0 ){
+          pPg = *ppPage = 0;
+          rc = SQLITE_NOMEM;
+          goto pager_acquire_err;
+        }
       }
       pPg = *ppPage = sqlite3PcacheFetchFinish(pPager->pPCache, pgno, pBase);
-      if( pPg==0 ) rc = SQLITE_NOMEM;
+      assert( pPg!=0 );
     }
   }
 
@@ -21646,10 +21934,11 @@ SQLITE_PRIVATE int sqlite3PagerAcquire(
     pPg = 0;
     goto pager_acquire_err;
   }
-  assert( (*ppPage)->pgno==pgno );
-  assert( (*ppPage)->pPager==pPager || (*ppPage)->pPager==0 );
+  assert( pPg==(*ppPage) );
+  assert( pPg->pgno==pgno );
+  assert( pPg->pPager==pPager || pPg->pPager==0 );
 
-  if( (*ppPage)->pPager && !noContent ){
+  if( pPg->pPager && !noContent ){
     /* In this case the pcache already contains an initialized copy of
     ** the page. Return without further ado.  */
     assert( pgno<=PAGER_MAX_PGNO && pgno!=PAGER_MJ_PGNO(pPager) );
@@ -21660,7 +21949,6 @@ SQLITE_PRIVATE int sqlite3PagerAcquire(
     /* The pager cache has created a new page. Its content needs to 
     ** be initialized.  */
 
-    pPg = *ppPage;
     pPg->pPager = pPager;
 
     /* The maximum page number is 2^31. Return SQLITE_CORRUPT if a page
@@ -21738,6 +22026,8 @@ SQLITE_PRIVATE DbPage *sqlite3PagerLookup(Pager *pPager, Pgno pgno){
   assert( pgno!=0 );
   assert( pPager->pPCache!=0 );
   pPage = sqlite3PcacheFetch(pPager->pPCache, pgno, 0);
+  assert( pPage==0 || pPager->hasHeldSharedLock );
+  if( pPage==0 ) return 0;
   return sqlite3PcacheFetchFinish(pPager->pPCache, pgno, pPage);
 }
 
@@ -21942,6 +22232,59 @@ SQLITE_PRIVATE int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory
 }
 
 /*
+** Write page pPg onto the end of the rollback journal.
+*/
+static SQLITE_NOINLINE int pagerAddPageToRollbackJournal(PgHdr *pPg){
+  Pager *pPager = pPg->pPager;
+  int rc;
+  u32 cksum;
+  char *pData2;
+  i64 iOff = pPager->journalOff;
+
+  /* We should never write to the journal file the page that
+  ** contains the database locks.  The following assert verifies
+  ** that we do not. */
+  assert( pPg->pgno!=PAGER_MJ_PGNO(pPager) );
+
+  assert( pPager->journalHdr<=pPager->journalOff );
+  CODEC2(pPager, pPg->pData, pPg->pgno, 7, return SQLITE_NOMEM, pData2);
+  cksum = pager_cksum(pPager, (u8*)pData2);
+
+  /* Even if an IO or diskfull error occurs while journalling the
+  ** page in the block above, set the need-sync flag for the page.
+  ** Otherwise, when the transaction is rolled back, the logic in
+  ** playback_one_page() will think that the page needs to be restored
+  ** in the database file. And if an IO error occurs while doing so,
+  ** then corruption may follow.
+  */
+  pPg->flags |= PGHDR_NEED_SYNC;
+
+  rc = write32bits(pPager->jfd, iOff, pPg->pgno);
+  if( rc!=SQLITE_OK ) return rc;
+  rc = sqlite3OsWrite(pPager->jfd, pData2, pPager->pageSize, iOff+4);
+  if( rc!=SQLITE_OK ) return rc;
+  rc = write32bits(pPager->jfd, iOff+pPager->pageSize+4, cksum);
+  if( rc!=SQLITE_OK ) return rc;
+
+  IOTRACE(("JOUT %p %d %lld %d\n", pPager, pPg->pgno, 
+           pPager->journalOff, pPager->pageSize));
+  PAGER_INCR(sqlite3_pager_writej_count);
+  PAGERTRACE(("JOURNAL %d page %d needSync=%d hash(%08x)\n",
+       PAGERID(pPager), pPg->pgno, 
+       ((pPg->flags&PGHDR_NEED_SYNC)?1:0), pager_pagehash(pPg)));
+
+  pPager->journalOff += 8 + pPager->pageSize;
+  pPager->nRec++;
+  assert( pPager->pInJournal!=0 );
+  rc = sqlite3BitvecSet(pPager->pInJournal, pPg->pgno);
+  testcase( rc==SQLITE_NOMEM );
+  assert( rc==SQLITE_OK || rc==SQLITE_NOMEM );
+  rc |= addToSavepointBitvecs(pPager, pPg->pgno);
+  assert( rc==SQLITE_OK || rc==SQLITE_NOMEM );
+  return rc;
+}
+
+/*
 ** Mark a single data page as writeable. The page is written into the 
 ** main journal or sub-journal as required. If the page is written into
 ** one of the journals, the corresponding bit is set in the 
@@ -21951,7 +22294,6 @@ SQLITE_PRIVATE int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory
 static int pager_write(PgHdr *pPg){
   Pager *pPager = pPg->pPager;
   int rc = SQLITE_OK;
-  int inJournal;
 
   /* This routine is not called unless a write-transaction has already 
   ** been started. The journal file may or may not be open at this point.
@@ -21964,7 +22306,6 @@ static int pager_write(PgHdr *pPg){
   assert( assert_pager_state(pPager) );
   assert( pPager->errCode==0 );
   assert( pPager->readOnly==0 );
-
   CHECK_PAGE(pPg);
 
   /* The journal file needs to be opened. Higher level routines have already
@@ -21983,91 +22324,48 @@ static int pager_write(PgHdr *pPg){
   assert( pPager->eState>=PAGER_WRITER_CACHEMOD );
   assert( assert_pager_state(pPager) );
 
-  /* Mark the page as dirty.  If the page has already been written
-  ** to the journal then we can return right away.
-  */
+  /* Mark the page that is about to be modified as dirty. */
   sqlite3PcacheMakeDirty(pPg);
-  inJournal = pageInJournal(pPager, pPg);
-  if( inJournal && (pPager->nSavepoint==0 || !subjRequiresPage(pPg)) ){
-    assert( !pagerUseWal(pPager) );
-  }else{
-  
-    /* The transaction journal now exists and we have a RESERVED or an
-    ** EXCLUSIVE lock on the main database file.  Write the current page to
-    ** the transaction journal if it is not there already.
-    */
-    if( !inJournal && !pagerUseWal(pPager) ){
-      assert( pagerUseWal(pPager)==0 );
-      if( pPg->pgno<=pPager->dbOrigSize && isOpen(pPager->jfd) ){
-        u32 cksum;
-        char *pData2;
-        i64 iOff = pPager->journalOff;
 
-        /* We should never write to the journal file the page that
-        ** contains the database locks.  The following assert verifies
-        ** that we do not. */
-        assert( pPg->pgno!=PAGER_MJ_PGNO(pPager) );
-
-        assert( pPager->journalHdr<=pPager->journalOff );
-        CODEC2(pPager, pPg->pData, pPg->pgno, 7, return SQLITE_NOMEM, pData2);
-        cksum = pager_cksum(pPager, (u8*)pData2);
-
-        /* Even if an IO or diskfull error occurs while journalling the
-        ** page in the block above, set the need-sync flag for the page.
-        ** Otherwise, when the transaction is rolled back, the logic in
-        ** playback_one_page() will think that the page needs to be restored
-        ** in the database file. And if an IO error occurs while doing so,
-        ** then corruption may follow.
-        */
-        pPg->flags |= PGHDR_NEED_SYNC;
-
-        rc = write32bits(pPager->jfd, iOff, pPg->pgno);
-        if( rc!=SQLITE_OK ) return rc;
-        rc = sqlite3OsWrite(pPager->jfd, pData2, pPager->pageSize, iOff+4);
-        if( rc!=SQLITE_OK ) return rc;
-        rc = write32bits(pPager->jfd, iOff+pPager->pageSize+4, cksum);
-        if( rc!=SQLITE_OK ) return rc;
-
-        IOTRACE(("JOUT %p %d %lld %d\n", pPager, pPg->pgno, 
-                 pPager->journalOff, pPager->pageSize));
-        PAGER_INCR(sqlite3_pager_writej_count);
-        PAGERTRACE(("JOURNAL %d page %d needSync=%d hash(%08x)\n",
-             PAGERID(pPager), pPg->pgno, 
-             ((pPg->flags&PGHDR_NEED_SYNC)?1:0), pager_pagehash(pPg)));
-
-        pPager->journalOff += 8 + pPager->pageSize;
-        pPager->nRec++;
-        assert( pPager->pInJournal!=0 );
-        rc = sqlite3BitvecSet(pPager->pInJournal, pPg->pgno);
-        testcase( rc==SQLITE_NOMEM );
-        assert( rc==SQLITE_OK || rc==SQLITE_NOMEM );
-        rc |= addToSavepointBitvecs(pPager, pPg->pgno);
-        if( rc!=SQLITE_OK ){
-          assert( rc==SQLITE_NOMEM );
-          return rc;
-        }
-      }else{
-        if( pPager->eState!=PAGER_WRITER_DBMOD ){
-          pPg->flags |= PGHDR_NEED_SYNC;
-        }
-        PAGERTRACE(("APPEND %d page %d needSync=%d\n",
-                PAGERID(pPager), pPg->pgno,
-               ((pPg->flags&PGHDR_NEED_SYNC)?1:0)));
+  /* If a rollback journal is in use, them make sure the page that is about
+  ** to change is in the rollback journal, or if the page is a new page off
+  ** then end of the file, make sure it is marked as PGHDR_NEED_SYNC.
+  */
+  assert( (pPager->pInJournal!=0) == isOpen(pPager->jfd) );
+  if( pPager->pInJournal!=0
+   && sqlite3BitvecTestNotNull(pPager->pInJournal, pPg->pgno)==0
+  ){
+    assert( pagerUseWal(pPager)==0 );
+    if( pPg->pgno<=pPager->dbOrigSize ){
+      rc = pagerAddPageToRollbackJournal(pPg);
+      if( rc!=SQLITE_OK ){
+        return rc;
       }
-    }
-  
-    /* If the statement journal is open and the page is not in it,
-    ** then write the current page to the statement journal.  Note that
-    ** the statement journal format differs from the standard journal format
-    ** in that it omits the checksums and the header.
-    */
-    if( pPager->nSavepoint>0 && subjRequiresPage(pPg) ){
-      rc = subjournalPage(pPg);
+    }else{
+      if( pPager->eState!=PAGER_WRITER_DBMOD ){
+        pPg->flags |= PGHDR_NEED_SYNC;
+      }
+      PAGERTRACE(("APPEND %d page %d needSync=%d\n",
+              PAGERID(pPager), pPg->pgno,
+             ((pPg->flags&PGHDR_NEED_SYNC)?1:0)));
     }
   }
 
-  /* Update the database size and return.
+  /* The PGHDR_DIRTY bit is set above when the page was added to the dirty-list
+  ** and before writing the page into the rollback journal.  Wait until now,
+  ** after the page has been successfully journalled, before setting the
+  ** PGHDR_WRITEABLE bit that indicates that the page can be safely modified.
   */
+  pPg->flags |= PGHDR_WRITEABLE;
+  
+  /* If the statement journal is open and the page is not in it,
+  ** then write the page into the statement journal.
+  */
+  if( pPager->nSavepoint>0 ){
+    rc = subjournalPageIfRequired(pPg);
+  }
+
+  /* Update the database size and return. */
   if( pPager->dbSize<pPg->pgno ){
     pPager->dbSize = pPg->pgno;
   }
@@ -22082,17 +22380,17 @@ static int pager_write(PgHdr *pPg){
 ** a write.
 **
 ** Usually, the sector size is less than or equal to the page size, in which
-** case pages can be individually written.  This routine only runs in the exceptional
-** case where the page size is smaller than the sector size.
+** case pages can be individually written.  This routine only runs in the
+** exceptional case where the page size is smaller than the sector size.
 */
 static SQLITE_NOINLINE int pagerWriteLargeSector(PgHdr *pPg){
-  int rc = SQLITE_OK;            /* Return code */
-  Pgno nPageCount;               /* Total number of pages in database file */
-  Pgno pg1;                      /* First page of the sector pPg is located on. */
-  int nPage = 0;                 /* Number of pages starting at pg1 to journal */
-  int ii;                        /* Loop counter */
-  int needSync = 0;              /* True if any page has PGHDR_NEED_SYNC */
-  Pager *pPager = pPg->pPager;   /* The pager that owns pPg */
+  int rc = SQLITE_OK;          /* Return code */
+  Pgno nPageCount;             /* Total number of pages in database file */
+  Pgno pg1;                    /* First page of the sector pPg is located on. */
+  int nPage = 0;               /* Number of pages starting at pg1 to journal */
+  int ii;                      /* Loop counter */
+  int needSync = 0;            /* True if any page has PGHDR_NEED_SYNC */
+  Pager *pPager = pPg->pPager; /* The pager that owns pPg */
   Pgno nPagePerSector = (pPager->sectorSize/pPager->pageSize);
 
   /* Set the doNotSpill NOSYNC bit to 1. This is because we cannot allow
@@ -22180,11 +22478,15 @@ static SQLITE_NOINLINE int pagerWriteLargeSector(PgHdr *pPg){
 ** as appropriate. Otherwise, SQLITE_OK.
 */
 SQLITE_PRIVATE int sqlite3PagerWrite(PgHdr *pPg){
+  Pager *pPager = pPg->pPager;
   assert( (pPg->flags & PGHDR_MMAP)==0 );
-  assert( pPg->pPager->eState>=PAGER_WRITER_LOCKED );
-  assert( pPg->pPager->eState!=PAGER_ERROR );
-  assert( assert_pager_state(pPg->pPager) );
-  if( pPg->pPager->sectorSize > (u32)pPg->pPager->pageSize ){
+  assert( pPager->eState>=PAGER_WRITER_LOCKED );
+  assert( pPager->eState!=PAGER_ERROR );
+  assert( assert_pager_state(pPager) );
+  if( (pPg->flags & PGHDR_WRITEABLE)!=0 && pPager->dbSize>=pPg->pgno ){
+    if( pPager->nSavepoint ) return subjournalPageIfRequired(pPg);
+    return SQLITE_OK;
+  }else if( pPager->sectorSize > (u32)pPager->pageSize ){
     return pagerWriteLargeSector(pPg);
   }else{
     return pager_write(pPg);
@@ -22198,7 +22500,7 @@ SQLITE_PRIVATE int sqlite3PagerWrite(PgHdr *pPg){
 */
 #ifndef NDEBUG
 SQLITE_PRIVATE int sqlite3PagerIswriteable(DbPage *pPg){
-  return pPg->flags&PGHDR_DIRTY;
+  return pPg->flags & PGHDR_WRITEABLE;
 }
 #endif
 
@@ -22222,6 +22524,7 @@ SQLITE_PRIVATE void sqlite3PagerDontWrite(PgHdr *pPg){
     PAGERTRACE(("DONT_WRITE page %d of %d\n", pPg->pgno, PAGERID(pPager)));
     IOTRACE(("CLEAN %p %d\n", pPager, pPg->pgno))
     pPg->flags |= PGHDR_DONT_WRITE;
+    pPg->flags &= ~PGHDR_WRITEABLE;
     pager_set_pagehash(pPg);
   }
 }
@@ -22688,12 +22991,14 @@ SQLITE_PRIVATE u8 sqlite3PagerIsreadonly(Pager *pPager){
   return pPager->readOnly;
 }
 
+#ifdef SQLITE_DEBUG
 /*
-** Return the number of references to the pager.
+** Return the sum of the reference counts for all pages held by pPager.
 */
 SQLITE_PRIVATE int sqlite3PagerRefcount(Pager *pPager){
   return sqlite3PcacheRefCount(pPager->pPCache);
 }
+#endif
 
 /*
 ** Return the approximate number of bytes of memory currently
@@ -22776,54 +23081,62 @@ SQLITE_PRIVATE int sqlite3PagerIsMemdb(Pager *pPager){
 ** occurs while opening the sub-journal file, then an IO error code is
 ** returned. Otherwise, SQLITE_OK.
 */
-SQLITE_PRIVATE int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
+static SQLITE_NOINLINE int pagerOpenSavepoint(Pager *pPager, int nSavepoint){
   int rc = SQLITE_OK;                       /* Return code */
   int nCurrent = pPager->nSavepoint;        /* Current number of savepoints */
+  int ii;                                   /* Iterator variable */
+  PagerSavepoint *aNew;                     /* New Pager.aSavepoint array */
 
   assert( pPager->eState>=PAGER_WRITER_LOCKED );
   assert( assert_pager_state(pPager) );
+  assert( nSavepoint>nCurrent && pPager->useJournal );
 
-  if( nSavepoint>nCurrent && pPager->useJournal ){
-    int ii;                                 /* Iterator variable */
-    PagerSavepoint *aNew;                   /* New Pager.aSavepoint array */
+  /* Grow the Pager.aSavepoint array using realloc(). Return SQLITE_NOMEM
+  ** if the allocation fails. Otherwise, zero the new portion in case a 
+  ** malloc failure occurs while populating it in the for(...) loop below.
+  */
+  aNew = (PagerSavepoint *)sqlite3Realloc(
+      pPager->aSavepoint, sizeof(PagerSavepoint)*nSavepoint
+  );
+  if( !aNew ){
+    return SQLITE_NOMEM;
+  }
+  memset(&aNew[nCurrent], 0, (nSavepoint-nCurrent) * sizeof(PagerSavepoint));
+  pPager->aSavepoint = aNew;
 
-    /* Grow the Pager.aSavepoint array using realloc(). Return SQLITE_NOMEM
-    ** if the allocation fails. Otherwise, zero the new portion in case a 
-    ** malloc failure occurs while populating it in the for(...) loop below.
-    */
-    aNew = (PagerSavepoint *)sqlite3Realloc(
-        pPager->aSavepoint, sizeof(PagerSavepoint)*nSavepoint
-    );
-    if( !aNew ){
+  /* Populate the PagerSavepoint structures just allocated. */
+  for(ii=nCurrent; ii<nSavepoint; ii++){
+    aNew[ii].nOrig = pPager->dbSize;
+    if( isOpen(pPager->jfd) && pPager->journalOff>0 ){
+      aNew[ii].iOffset = pPager->journalOff;
+    }else{
+      aNew[ii].iOffset = JOURNAL_HDR_SZ(pPager);
+    }
+    aNew[ii].iSubRec = pPager->nSubRec;
+    aNew[ii].pInSavepoint = sqlite3BitvecCreate(pPager->dbSize);
+    if( !aNew[ii].pInSavepoint ){
       return SQLITE_NOMEM;
     }
-    memset(&aNew[nCurrent], 0, (nSavepoint-nCurrent) * sizeof(PagerSavepoint));
-    pPager->aSavepoint = aNew;
-
-    /* Populate the PagerSavepoint structures just allocated. */
-    for(ii=nCurrent; ii<nSavepoint; ii++){
-      aNew[ii].nOrig = pPager->dbSize;
-      if( isOpen(pPager->jfd) && pPager->journalOff>0 ){
-        aNew[ii].iOffset = pPager->journalOff;
-      }else{
-        aNew[ii].iOffset = JOURNAL_HDR_SZ(pPager);
-      }
-      aNew[ii].iSubRec = pPager->nSubRec;
-      aNew[ii].pInSavepoint = sqlite3BitvecCreate(pPager->dbSize);
-      if( !aNew[ii].pInSavepoint ){
-        return SQLITE_NOMEM;
-      }
-      if( pagerUseWal(pPager) ){
-        sqlite3WalSavepoint(pPager->pWal, aNew[ii].aWalData);
-      }
-      pPager->nSavepoint = ii+1;
+    if( pagerUseWal(pPager) ){
+      sqlite3WalSavepoint(pPager->pWal, aNew[ii].aWalData);
     }
-    assert( pPager->nSavepoint==nSavepoint );
-    assertTruncateConstraint(pPager);
+    pPager->nSavepoint = ii+1;
   }
-
+  assert( pPager->nSavepoint==nSavepoint );
+  assertTruncateConstraint(pPager);
   return rc;
 }
+SQLITE_PRIVATE int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
+  assert( pPager->eState>=PAGER_WRITER_LOCKED );
+  assert( assert_pager_state(pPager) );
+
+  if( nSavepoint>pPager->nSavepoint && pPager->useJournal ){
+    return pagerOpenSavepoint(pPager, nSavepoint);
+  }else{
+    return SQLITE_OK;
+  }
+}
+
 
 /*
 ** This function is called to rollback or release (commit) a savepoint.
@@ -23054,9 +23367,8 @@ SQLITE_PRIVATE int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, i
   ** one or more savepoint bitvecs. This is the reason this function
   ** may return SQLITE_NOMEM.
   */
-  if( pPg->flags&PGHDR_DIRTY
-   && subjRequiresPage(pPg)
-   && SQLITE_OK!=(rc = subjournalPage(pPg))
+  if( (pPg->flags & PGHDR_DIRTY)!=0
+   && SQLITE_OK!=(rc = subjournalPageIfRequired(pPg))
   ){
     return rc;
   }
@@ -23302,6 +23614,8 @@ SQLITE_PRIVATE int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
         }
         assert( state==pPager->eState );
       }
+    }else if( eMode==PAGER_JOURNALMODE_OFF ){
+      sqlite3OsClose(pPager->jfd);
     }
   }
 
@@ -23805,6 +24119,7 @@ SQLITE_PRIVATE int sqlite3PagerWalFramesize(Pager *pPager){
 */
 #ifndef SQLITE_OMIT_WAL
 
+/* #include "wal.h" */
 
 /*
 ** Trace output macros
@@ -23990,6 +24305,7 @@ struct Wal {
   u8 syncHeader;             /* Fsync the WAL header if true */
   u8 padToSectorBoundary;    /* Pad transactions out to the next sector */
   WalIndexHdr hdr;           /* Wal-index header for current transaction */
+  u32 minFrame;              /* Ignore wal frames before this one */
   const char *zWalName;      /* Name of WAL file */
   u32 nCkpt;                 /* Checkpoint sequence counter in the wal-header */
 #ifdef SQLITE_DEBUG
@@ -24084,7 +24400,7 @@ static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
   if( pWal->nWiData<=iPage ){
     int nByte = sizeof(u32*)*(iPage+1);
     volatile u32 **apNew;
-    apNew = (volatile u32 **)sqlite3_realloc((void *)pWal->apWiData, nByte);
+    apNew = (volatile u32 **)sqlite3_realloc64((void *)pWal->apWiData, nByte);
     if( !apNew ){
       *ppPage = 0;
       return SQLITE_NOMEM;
@@ -24210,9 +24526,9 @@ static void walIndexWriteHdr(Wal *pWal){
   pWal->hdr.isInit = 1;
   pWal->hdr.iVersion = WALINDEX_MAX_VERSION;
   walChecksumBytes(1, (u8*)&pWal->hdr, nCksum, 0, pWal->hdr.aCksum);
-  memcpy((void *)&aHdr[1], (void *)&pWal->hdr, sizeof(WalIndexHdr));
+  memcpy((void*)&aHdr[1], (const void*)&pWal->hdr, sizeof(WalIndexHdr));
   walShmBarrier(pWal);
-  memcpy((void *)&aHdr[0], (void *)&pWal->hdr, sizeof(WalIndexHdr));
+  memcpy((void*)&aHdr[0], (const void*)&pWal->hdr, sizeof(WalIndexHdr));
 }
 
 /*
@@ -24350,9 +24666,10 @@ static void walUnlockShared(Wal *pWal, int lockIdx){
                          SQLITE_SHM_UNLOCK | SQLITE_SHM_SHARED);
   WALTRACE(("WAL%p: release SHARED-%s\n", pWal, walLockName(lockIdx)));
 }
-static int walLockExclusive(Wal *pWal, int lockIdx, int n){
+static int walLockExclusive(Wal *pWal, int lockIdx, int n, int fBlock){
   int rc;
   if( pWal->exclusiveMode ) return SQLITE_OK;
+  if( fBlock ) sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_WAL_BLOCK, 0);
   rc = sqlite3OsShmLock(pWal->pDbFd, lockIdx, n,
                         SQLITE_SHM_LOCK | SQLITE_SHM_EXCLUSIVE);
   WALTRACE(("WAL%p: acquire EXCLUSIVE-%s cnt=%d %s\n", pWal,
@@ -24513,13 +24830,13 @@ static void walCleanupHash(Wal *pWal){
   ** via the hash table even after the cleanup.
   */
   if( iLimit ){
-    int i;           /* Loop counter */
+    int j;           /* Loop counter */
     int iKey;        /* Hash key */
-    for(i=1; i<=iLimit; i++){
-      for(iKey=walHash(aPgno[i]); aHash[iKey]; iKey=walNextHash(iKey)){
-        if( aHash[iKey]==i ) break;
+    for(j=1; j<=iLimit; j++){
+      for(iKey=walHash(aPgno[j]); aHash[iKey]; iKey=walNextHash(iKey)){
+        if( aHash[iKey]==j ) break;
       }
-      assert( aHash[iKey]==i );
+      assert( aHash[iKey]==j );
     }
   }
 #endif /* SQLITE_ENABLE_EXPENSIVE_ASSERT */
@@ -24638,7 +24955,7 @@ static int walIndexRecover(Wal *pWal){
   assert( pWal->writeLock );
   iLock = WAL_ALL_BUT_WRITE + pWal->ckptLock;
   nLock = SQLITE_SHM_NLOCK - iLock;
-  rc = walLockExclusive(pWal, iLock, nLock);
+  rc = walLockExclusive(pWal, iLock, nLock, 0);
   if( rc ){
     return rc;
   }
@@ -24708,7 +25025,7 @@ static int walIndexRecover(Wal *pWal){
 
     /* Malloc a buffer to read frames into. */
     szFrame = szPage + WAL_FRAME_HDRSIZE;
-    aFrame = (u8 *)sqlite3_malloc(szFrame);
+    aFrame = (u8 *)sqlite3_malloc64(szFrame);
     if( !aFrame ){
       rc = SQLITE_NOMEM;
       goto recovery_error;
@@ -25021,7 +25338,7 @@ static void walMergesort(
   int nMerge = 0;                 /* Number of elements in list aMerge */
   ht_slot *aMerge = 0;            /* List to be merged */
   int iList;                      /* Index into input list */
-  int iSub = 0;                   /* Index into aSub array */
+  u32 iSub = 0;                   /* Index into aSub array */
   struct Sublist aSub[13];        /* Array of sub-lists */
 
   memset(aSub, 0, sizeof(aSub));
@@ -25032,7 +25349,9 @@ static void walMergesort(
     nMerge = 1;
     aMerge = &aList[iList];
     for(iSub=0; iList & (1<<iSub); iSub++){
-      struct Sublist *p = &aSub[iSub];
+      struct Sublist *p;
+      assert( iSub<ArraySize(aSub) );
+      p = &aSub[iSub];
       assert( p->aList && p->nList<=(1<<iSub) );
       assert( p->aList==&aList[iList&~((2<<iSub)-1)] );
       walMerge(aContent, p->aList, p->nList, &aMerge, &nMerge, aBuffer);
@@ -25043,7 +25362,9 @@ static void walMergesort(
 
   for(iSub++; iSub<ArraySize(aSub); iSub++){
     if( nList & (1<<iSub) ){
-      struct Sublist *p = &aSub[iSub];
+      struct Sublist *p;
+      assert( iSub<ArraySize(aSub) );
+      p = &aSub[iSub];
       assert( p->nList<=(1<<iSub) );
       assert( p->aList==&aList[nList&~((2<<iSub)-1)] );
       walMerge(aContent, p->aList, p->nList, &aMerge, &nMerge, aBuffer);
@@ -25101,7 +25422,7 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
   nByte = sizeof(WalIterator) 
         + (nSegment-1)*sizeof(struct WalSegment)
         + iLast*sizeof(ht_slot);
-  p = (WalIterator *)sqlite3_malloc(nByte);
+  p = (WalIterator *)sqlite3_malloc64(nByte);
   if( !p ){
     return SQLITE_NOMEM;
   }
@@ -25111,7 +25432,7 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
   /* Allocate temporary space used by the merge-sort routine. This block
   ** of memory will be freed before this function returns.
   */
-  aTmp = (ht_slot *)sqlite3_malloc(
+  aTmp = (ht_slot *)sqlite3_malloc64(
       sizeof(ht_slot) * (iLast>HASHTABLE_NPAGE?HASHTABLE_NPAGE:iLast)
   );
   if( !aTmp ){
@@ -25172,7 +25493,7 @@ static int walBusyLock(
 ){
   int rc;
   do {
-    rc = walLockExclusive(pWal, lockIdx, n);
+    rc = walLockExclusive(pWal, lockIdx, n, 0);
   }while( xBusy && rc==SQLITE_BUSY && xBusy(pBusyArg) );
   return rc;
 }
@@ -25256,7 +25577,7 @@ static int walCheckpoint(
   int sync_flags,                 /* Flags for OsSync() (or 0) */
   u8 *zBuf                        /* Temporary buffer to use */
 ){
-  int rc;                         /* Return code */
+  int rc = SQLITE_OK;             /* Return code */
   int szPage;                     /* Database page-size */
   WalIterator *pIter = 0;         /* Wal iterator context */
   u32 iDbpage = 0;                /* Next database page to write */
@@ -25270,104 +25591,115 @@ static int walCheckpoint(
   testcase( szPage<=32768 );
   testcase( szPage>=65536 );
   pInfo = walCkptInfo(pWal);
-  if( pInfo->nBackfill>=pWal->hdr.mxFrame ) return SQLITE_OK;
+  if( pInfo->nBackfill<pWal->hdr.mxFrame ){
 
-  /* Allocate the iterator */
-  rc = walIteratorInit(pWal, &pIter);
-  if( rc!=SQLITE_OK ){
-    return rc;
-  }
-  assert( pIter );
-
-  /* EVIDENCE-OF: R-62920-47450 The busy-handler callback is never invoked
-  ** in the SQLITE_CHECKPOINT_PASSIVE mode. */
-  assert( eMode!=SQLITE_CHECKPOINT_PASSIVE || xBusy==0 );
-
-  /* Compute in mxSafeFrame the index of the last frame of the WAL that is
-  ** safe to write into the database.  Frames beyond mxSafeFrame might
-  ** overwrite database pages that are in use by active readers and thus
-  ** cannot be backfilled from the WAL.
-  */
-  mxSafeFrame = pWal->hdr.mxFrame;
-  mxPage = pWal->hdr.nPage;
-  for(i=1; i<WAL_NREADER; i++){
-    u32 y = pInfo->aReadMark[i];
-    if( mxSafeFrame>y ){
-      assert( y<=pWal->hdr.mxFrame );
-      rc = walBusyLock(pWal, xBusy, pBusyArg, WAL_READ_LOCK(i), 1);
-      if( rc==SQLITE_OK ){
-        pInfo->aReadMark[i] = (i==1 ? mxSafeFrame : READMARK_NOT_USED);
-        walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
-      }else if( rc==SQLITE_BUSY ){
-        mxSafeFrame = y;
-        xBusy = 0;
-      }else{
-        goto walcheckpoint_out;
-      }
+    /* Allocate the iterator */
+    rc = walIteratorInit(pWal, &pIter);
+    if( rc!=SQLITE_OK ){
+      return rc;
     }
-  }
+    assert( pIter );
 
-  if( pInfo->nBackfill<mxSafeFrame
-   && (rc = walBusyLock(pWal, xBusy, pBusyArg, WAL_READ_LOCK(0), 1))==SQLITE_OK
-  ){
-    i64 nSize;                    /* Current size of database file */
-    u32 nBackfill = pInfo->nBackfill;
+    /* EVIDENCE-OF: R-62920-47450 The busy-handler callback is never invoked
+    ** in the SQLITE_CHECKPOINT_PASSIVE mode. */
+    assert( eMode!=SQLITE_CHECKPOINT_PASSIVE || xBusy==0 );
 
-    /* Sync the WAL to disk */
-    if( sync_flags ){
-      rc = sqlite3OsSync(pWal->pWalFd, sync_flags);
-    }
-
-    /* If the database may grow as a result of this checkpoint, hint
-    ** about the eventual size of the db file to the VFS layer.
+    /* Compute in mxSafeFrame the index of the last frame of the WAL that is
+    ** safe to write into the database.  Frames beyond mxSafeFrame might
+    ** overwrite database pages that are in use by active readers and thus
+    ** cannot be backfilled from the WAL.
     */
-    if( rc==SQLITE_OK ){
-      i64 nReq = ((i64)mxPage * szPage);
-      rc = sqlite3OsFileSize(pWal->pDbFd, &nSize);
-      if( rc==SQLITE_OK && nSize<nReq ){
-        sqlite3OsFileControlHint(pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT, &nReq);
-      }
-    }
-
-
-    /* Iterate through the contents of the WAL, copying data to the db file. */
-    while( rc==SQLITE_OK && 0==walIteratorNext(pIter, &iDbpage, &iFrame) ){
-      i64 iOffset;
-      assert( walFramePgno(pWal, iFrame)==iDbpage );
-      if( iFrame<=nBackfill || iFrame>mxSafeFrame || iDbpage>mxPage ) continue;
-      iOffset = walFrameOffset(iFrame, szPage) + WAL_FRAME_HDRSIZE;
-      /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL file */
-      rc = sqlite3OsRead(pWal->pWalFd, zBuf, szPage, iOffset);
-      if( rc!=SQLITE_OK ) break;
-      iOffset = (iDbpage-1)*(i64)szPage;
-      testcase( IS_BIG_INT(iOffset) );
-      rc = sqlite3OsWrite(pWal->pDbFd, zBuf, szPage, iOffset);
-      if( rc!=SQLITE_OK ) break;
-    }
-
-    /* If work was actually accomplished... */
-    if( rc==SQLITE_OK ){
-      if( mxSafeFrame==walIndexHdr(pWal)->mxFrame ){
-        i64 szDb = pWal->hdr.nPage*(i64)szPage;
-        testcase( IS_BIG_INT(szDb) );
-        rc = sqlite3OsTruncate(pWal->pDbFd, szDb);
-        if( rc==SQLITE_OK && sync_flags ){
-          rc = sqlite3OsSync(pWal->pDbFd, sync_flags);
+    mxSafeFrame = pWal->hdr.mxFrame;
+    mxPage = pWal->hdr.nPage;
+    for(i=1; i<WAL_NREADER; i++){
+      /* Thread-sanitizer reports that the following is an unsafe read,
+      ** as some other thread may be in the process of updating the value
+      ** of the aReadMark[] slot. The assumption here is that if that is
+      ** happening, the other client may only be increasing the value,
+      ** not decreasing it. So assuming either that either the "old" or
+      ** "new" version of the value is read, and not some arbitrary value
+      ** that would never be written by a real client, things are still 
+      ** safe.  */
+      u32 y = pInfo->aReadMark[i];
+      if( mxSafeFrame>y ){
+        assert( y<=pWal->hdr.mxFrame );
+        rc = walBusyLock(pWal, xBusy, pBusyArg, WAL_READ_LOCK(i), 1);
+        if( rc==SQLITE_OK ){
+          pInfo->aReadMark[i] = (i==1 ? mxSafeFrame : READMARK_NOT_USED);
+          walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
+        }else if( rc==SQLITE_BUSY ){
+          mxSafeFrame = y;
+          xBusy = 0;
+        }else{
+          goto walcheckpoint_out;
         }
       }
-      if( rc==SQLITE_OK ){
-        pInfo->nBackfill = mxSafeFrame;
-      }
     }
 
-    /* Release the reader lock held while backfilling */
-    walUnlockExclusive(pWal, WAL_READ_LOCK(0), 1);
-  }
+    if( pInfo->nBackfill<mxSafeFrame
+     && (rc = walBusyLock(pWal, xBusy, pBusyArg, WAL_READ_LOCK(0),1))==SQLITE_OK
+    ){
+      i64 nSize;                    /* Current size of database file */
+      u32 nBackfill = pInfo->nBackfill;
 
-  if( rc==SQLITE_BUSY ){
-    /* Reset the return code so as not to report a checkpoint failure
-    ** just because there are active readers.  */
-    rc = SQLITE_OK;
+      /* Sync the WAL to disk */
+      if( sync_flags ){
+        rc = sqlite3OsSync(pWal->pWalFd, sync_flags);
+      }
+
+      /* If the database may grow as a result of this checkpoint, hint
+      ** about the eventual size of the db file to the VFS layer.
+      */
+      if( rc==SQLITE_OK ){
+        i64 nReq = ((i64)mxPage * szPage);
+        rc = sqlite3OsFileSize(pWal->pDbFd, &nSize);
+        if( rc==SQLITE_OK && nSize<nReq ){
+          sqlite3OsFileControlHint(pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT, &nReq);
+        }
+      }
+
+
+      /* Iterate through the contents of the WAL, copying data to the db file */
+      while( rc==SQLITE_OK && 0==walIteratorNext(pIter, &iDbpage, &iFrame) ){
+        i64 iOffset;
+        assert( walFramePgno(pWal, iFrame)==iDbpage );
+        if( iFrame<=nBackfill || iFrame>mxSafeFrame || iDbpage>mxPage ){
+          continue;
+        }
+        iOffset = walFrameOffset(iFrame, szPage) + WAL_FRAME_HDRSIZE;
+        /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL file */
+        rc = sqlite3OsRead(pWal->pWalFd, zBuf, szPage, iOffset);
+        if( rc!=SQLITE_OK ) break;
+        iOffset = (iDbpage-1)*(i64)szPage;
+        testcase( IS_BIG_INT(iOffset) );
+        rc = sqlite3OsWrite(pWal->pDbFd, zBuf, szPage, iOffset);
+        if( rc!=SQLITE_OK ) break;
+      }
+
+      /* If work was actually accomplished... */
+      if( rc==SQLITE_OK ){
+        if( mxSafeFrame==walIndexHdr(pWal)->mxFrame ){
+          i64 szDb = pWal->hdr.nPage*(i64)szPage;
+          testcase( IS_BIG_INT(szDb) );
+          rc = sqlite3OsTruncate(pWal->pDbFd, szDb);
+          if( rc==SQLITE_OK && sync_flags ){
+            rc = sqlite3OsSync(pWal->pDbFd, sync_flags);
+          }
+        }
+        if( rc==SQLITE_OK ){
+          pInfo->nBackfill = mxSafeFrame;
+        }
+      }
+
+      /* Release the reader lock held while backfilling */
+      walUnlockExclusive(pWal, WAL_READ_LOCK(0), 1);
+    }
+
+    if( rc==SQLITE_BUSY ){
+      /* Reset the return code so as not to report a checkpoint failure
+      ** just because there are active readers.  */
+      rc = SQLITE_OK;
+    }
   }
 
   /* If this is an SQLITE_CHECKPOINT_RESTART or TRUNCATE operation, and the
@@ -25382,7 +25714,7 @@ static int walCheckpoint(
     }else if( eMode>=SQLITE_CHECKPOINT_RESTART ){
       u32 salt1;
       sqlite3_randomness(4, &salt1);
-      assert( mxSafeFrame==pWal->hdr.mxFrame );
+      assert( pInfo->nBackfill==pWal->hdr.mxFrame );
       rc = walBusyLock(pWal, xBusy, pBusyArg, WAL_READ_LOCK(1), WAL_NREADER-1);
       if( rc==SQLITE_OK ){
         if( eMode==SQLITE_CHECKPOINT_TRUNCATE ){
@@ -25602,7 +25934,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
         walUnlockShared(pWal, WAL_WRITE_LOCK);
         rc = SQLITE_READONLY_RECOVERY;
       }
-    }else if( SQLITE_OK==(rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1)) ){
+    }else if( SQLITE_OK==(rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1, 1)) ){
       pWal->writeLock = 1;
       if( SQLITE_OK==(rc = walIndexPage(pWal, 0, &page0)) ){
         badHdr = walIndexTryHdr(pWal, pChanged);
@@ -25808,7 +26140,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
      && (mxReadMark<pWal->hdr.mxFrame || mxI==0)
     ){
       for(i=1; i<WAL_NREADER; i++){
-        rc = walLockExclusive(pWal, WAL_READ_LOCK(i), 1);
+        rc = walLockExclusive(pWal, WAL_READ_LOCK(i), 1, 0);
         if( rc==SQLITE_OK ){
           mxReadMark = pInfo->aReadMark[i] = pWal->hdr.mxFrame;
           mxI = i;
@@ -25842,12 +26174,27 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     ** pWal->hdr.mxFrame risks reading a corrupted snapshot. So, retry
     ** instead.
     **
-    ** This does not guarantee that the copy of the wal-index header is up to
-    ** date before proceeding. That would not be possible without somehow
-    ** blocking writers. It only guarantees that a dangerous checkpoint or 
-    ** log-wrap (either of which would require an exclusive lock on
-    ** WAL_READ_LOCK(mxI)) has not occurred since the snapshot was valid.
+    ** Before checking that the live wal-index header has not changed
+    ** since it was read, set Wal.minFrame to the first frame in the wal
+    ** file that has not yet been checkpointed. This client will not need
+    ** to read any frames earlier than minFrame from the wal file - they
+    ** can be safely read directly from the database file.
+    **
+    ** Because a ShmBarrier() call is made between taking the copy of 
+    ** nBackfill and checking that the wal-header in shared-memory still
+    ** matches the one cached in pWal->hdr, it is guaranteed that the 
+    ** checkpointer that set nBackfill was not working with a wal-index
+    ** header newer than that cached in pWal->hdr. If it were, that could
+    ** cause a problem. The checkpointer could omit to checkpoint
+    ** a version of page X that lies before pWal->minFrame (call that version
+    ** A) on the basis that there is a newer version (version B) of the same
+    ** page later in the wal file. But if version B happens to like past
+    ** frame pWal->hdr.mxFrame - then the client would incorrectly assume
+    ** that it can read version A from the database file. However, since
+    ** we can guarantee that the checkpointer that set nBackfill could not
+    ** see any pages past pWal->hdr.mxFrame, this problem does not come up.
     */
+    pWal->minFrame = pInfo->nBackfill+1;
     walShmBarrier(pWal);
     if( pInfo->aReadMark[mxI]!=mxReadMark
      || memcmp((void *)walIndexHdr(pWal), &pWal->hdr, sizeof(WalIndexHdr))
@@ -25918,6 +26265,7 @@ SQLITE_PRIVATE int sqlite3WalFindFrame(
   u32 iRead = 0;                  /* If !=0, WAL frame to return data from */
   u32 iLast = pWal->hdr.mxFrame;  /* Last page in WAL for this reader */
   int iHash;                      /* Used to loop through N hash tables */
+  int iMinHash;
 
   /* This routine is only be called from within a read transaction. */
   assert( pWal->readLock>=0 || pWal->lockError );
@@ -25958,7 +26306,8 @@ SQLITE_PRIVATE int sqlite3WalFindFrame(
   **     This condition filters out entries that were added to the hash
   **     table after the current read-transaction had started.
   */
-  for(iHash=walFramePage(iLast); iHash>=0 && iRead==0; iHash--){
+  iMinHash = walFramePage(pWal->minFrame);
+  for(iHash=walFramePage(iLast); iHash>=iMinHash && iRead==0; iHash--){
     volatile ht_slot *aHash;      /* Pointer to hash table */
     volatile u32 *aPgno;          /* Pointer to array of page numbers */
     u32 iZero;                    /* Frame number corresponding to aPgno[0] */
@@ -25973,8 +26322,8 @@ SQLITE_PRIVATE int sqlite3WalFindFrame(
     nCollide = HASHTABLE_NSLOT;
     for(iKey=walHash(pgno); aHash[iKey]; iKey=walNextHash(iKey)){
       u32 iFrame = aHash[iKey] + iZero;
-      if( iFrame<=iLast && aPgno[aHash[iKey]]==pgno ){
-        /* assert( iFrame>iRead ); -- not true if there is corruption */
+      if( iFrame<=iLast && iFrame>=pWal->minFrame && aPgno[aHash[iKey]]==pgno ){
+        assert( iFrame>iRead || CORRUPT_DB );
         iRead = iFrame;
       }
       if( (nCollide--)==0 ){
@@ -25990,7 +26339,8 @@ SQLITE_PRIVATE int sqlite3WalFindFrame(
   {
     u32 iRead2 = 0;
     u32 iTest;
-    for(iTest=iLast; iTest>0; iTest--){
+    assert( pWal->minFrame>0 );
+    for(iTest=iLast; iTest>=pWal->minFrame; iTest--){
       if( walFramePgno(pWal, iTest)==pgno ){
         iRead2 = iTest;
         break;
@@ -26064,7 +26414,7 @@ SQLITE_PRIVATE int sqlite3WalBeginWriteTransaction(Wal *pWal){
   /* Only one writer allowed at a time.  Get the write lock.  Return
   ** SQLITE_BUSY if unable.
   */
-  rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1);
+  rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1, 0);
   if( rc ){
     return rc;
   }
@@ -26209,7 +26559,7 @@ static int walRestartLog(Wal *pWal){
     if( pInfo->nBackfill>0 ){
       u32 salt1;
       sqlite3_randomness(4, &salt1);
-      rc = walLockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
+      rc = walLockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1, 0);
       if( rc==SQLITE_OK ){
         /* If all readers are using WAL_READ_LOCK(0) (in other words if no
         ** readers are currently using the WAL), then the transactions
@@ -26534,7 +26884,7 @@ SQLITE_PRIVATE int sqlite3WalCheckpoint(
 
   /* IMPLEMENTATION-OF: R-62028-47212 All calls obtain an exclusive 
   ** "checkpoint" lock on the database file. */
-  rc = walLockExclusive(pWal, WAL_CKPT_LOCK, 1);
+  rc = walLockExclusive(pWal, WAL_CKPT_LOCK, 1, 0);
   if( rc ){
     /* EVIDENCE-OF: R-10421-19736 If any other process is running a
     ** checkpoint operation at the same time, the lock cannot be obtained and
@@ -26943,6 +27293,7 @@ SQLITE_PRIVATE int sqlite3WalFramesize(Wal *pWal){
 **      4     Number of leaf pointers on this page
 **      *     zero or more pages numbers of leaves
 */
+/* #include "sqliteInt.h" */
 
 
 /* The following value is the maximum cell size assuming a maximum page
@@ -26960,6 +27311,7 @@ SQLITE_PRIVATE int sqlite3WalFramesize(Wal *pWal){
 /* Forward declarations */
 typedef struct MemPage MemPage;
 typedef struct BtLock BtLock;
+typedef struct CellInfo CellInfo;
 
 /*
 ** This is a magic string that appears at the beginning of every
@@ -27009,6 +27361,7 @@ struct MemPage {
   u8 hdrOffset;        /* 100 for page 1.  0 otherwise */
   u8 childPtrSize;     /* 0 if leaf==1.  4 if leaf==0 */
   u8 max1bytePayload;  /* min(maxLocal,127) */
+  u8 bBusy;            /* Prevent endless loops on corrupt database files */
   u16 maxLocal;        /* Copy of BtShared.maxLocal or BtShared.maxLeaf */
   u16 minLocal;        /* Copy of BtShared.minLocal or BtShared.minLeaf */
   u16 cellOffset;      /* Index in aData of first cell pointer */
@@ -27022,7 +27375,10 @@ struct MemPage {
   u8 *aData;           /* Pointer to disk image of the page data */
   u8 *aDataEnd;        /* One byte past the end of usable data */
   u8 *aCellIdx;        /* The cell index area */
+  u8 *aDataOfst;       /* Same as aData for leaves.  aData+4 for interior */
   DbPage *pDbPage;     /* Pager page handle */
+  u16 (*xCellSize)(MemPage*,u8*);             /* cellSizePtr method */
+  void (*xParseCell)(MemPage*,u8*,CellInfo*); /* btreeParseCell method */
   Pgno pgno;           /* Page number for this page */
 };
 
@@ -27078,6 +27434,7 @@ struct Btree {
   u8 inTrans;        /* TRANS_NONE, TRANS_READ or TRANS_WRITE */
   u8 sharable;       /* True if we can share pBt with another db */
   u8 locked;         /* True if db currently has pBt locked */
+  u8 hasIncrblobCur; /* True if there are one or more Incrblob cursors */
   int wantToLock;    /* Number of nested calls to sqlite3BtreeEnter() */
   int nBackup;       /* Number of backup operations reading this btree */
   u32 iDataVersion;  /* Combines with pBt->pPager->iDataVersion */
@@ -27147,6 +27504,9 @@ struct BtShared {
 #endif
   u8 inTransaction;     /* Transaction state */
   u8 max1bytePayload;   /* Maximum first byte of cell for a 1-byte payload */
+#ifdef SQLITE_HAS_CODEC
+  u8 optimalReserve;    /* Desired amount of reserved space per page */
+#endif
   u16 btsFlags;         /* Boolean parameters.  See BTS_* macros below */
   u16 maxLocal;         /* Maximum local payload in non-LEAFDATA tables */
   u16 minLocal;         /* Minimum local payload in non-LEAFDATA tables */
@@ -27185,7 +27545,6 @@ struct BtShared {
 ** about a cell.  The parseCellPtr() function fills in this structure
 ** based on information extract from the raw disk page.
 */
-typedef struct CellInfo CellInfo;
 struct CellInfo {
   i64 nKey;      /* The key for INTKEY tables, or nPayload otherwise */
   u8 *pPayload;  /* Pointer to the start of payload */
@@ -27228,8 +27587,7 @@ struct CellInfo {
 struct BtCursor {
   Btree *pBtree;            /* The Btree to which this cursor belongs */
   BtShared *pBt;            /* The BtShared this cursor points to */
-  BtCursor *pNext, *pPrev;  /* Forms a linked list of all cursors */
-  struct KeyInfo *pKeyInfo; /* Argument passed to comparison function */
+  BtCursor *pNext;          /* Forms a linked list of all cursors */
   Pgno *aOverflow;          /* Cache of overflow page locations */
   CellInfo info;            /* A parse of the cell we are pointing at */
   i64 nKey;                 /* Size of pKey, or last integer key */
@@ -27239,9 +27597,16 @@ struct BtCursor {
   int skipNext;    /* Prev() is noop if negative. Next() is noop if positive.
                    ** Error code if eState==CURSOR_FAULT */
   u8 curFlags;              /* zero or more BTCF_* flags defined below */
+  u8 curPagerFlags;         /* Flags to send to sqlite3PagerAcquire() */
   u8 eState;                /* One of the CURSOR_XXX constants (see below) */
-  u8 hints;                             /* As configured by CursorSetHints() */
-  i16 iPage;                            /* Index of current page in apPage */
+  u8 hints;                 /* As configured by CursorSetHints() */
+  /* All fields above are zeroed when the cursor is allocated.  See
+  ** sqlite3BtreeCursorZero().  Fields that follow must be manually
+  ** initialized. */
+  i8 iPage;                 /* Index of current page in apPage */
+  u8 curIntKey;             /* Value of apPage[0]->intKey */
+  struct KeyInfo *pKeyInfo; /* Argument passed to comparison function */
+  void *padding1;           /* Make object size a multiple of 16 */
   u16 aiIdx[BTCURSOR_MAX_DEPTH];        /* Current index in apPage[i] */
   MemPage *apPage[BTCURSOR_MAX_DEPTH];  /* Pages from root to current page */
 };
@@ -27254,6 +27619,7 @@ struct BtCursor {
 #define BTCF_ValidOvfl    0x04   /* True if aOverflow is valid */
 #define BTCF_AtLast       0x08   /* Cursor is pointing ot the last entry */
 #define BTCF_Incrblob     0x10   /* True if an incremental I/O handle */
+#define BTCF_Multiple     0x20   /* Maybe another cursor on the same btree */
 
 /*
 ** Potential values for BtCursor.eState.
@@ -27396,6 +27762,7 @@ struct IntegrityCk {
   const char *zPfx; /* Error message prefix */
   int v1, v2;       /* Values for up to two %d fields in zPfx */
   StrAccum errMsg;  /* Accumulate the error message text here */
+  u32 *heap;        /* Min-heap used for analyzing cell coverage */
 };
 
 /*
@@ -27405,6 +27772,23 @@ struct IntegrityCk {
 #define put2byte(p,v) ((p)[0] = (u8)((v)>>8), (p)[1] = (u8)(v))
 #define get4byte sqlite3Get4byte
 #define put4byte sqlite3Put4byte
+
+/*
+** get2byteAligned(), unlike get2byte(), requires that its argument point to a
+** two-byte aligned address.  get2bytea() is only used for accessing the
+** cell addresses in a btree header.
+*/
+#if SQLITE_BYTEORDER==4321
+# define get2byteAligned(x)  (*(u16*)(x))
+#elif SQLITE_BYTEORDER==1234 && !defined(SQLITE_DISABLE_INTRINSIC) \
+    && GCC_VERSION>=4008000
+# define get2byteAligned(x)  __builtin_bswap16(*(u16*)(x))
+#elif SQLITE_BYTEORDER==1234 && !defined(SQLITE_DISABLE_INTRINSIC) \
+    && defined(_MSC_VER) && _MSC_VER>=1300
+# define get2byteAligned(x)  _byteswap_ushort(*(u16*)(x))
+#else
+# define get2byteAligned(x)  ((x)[0]<<8 | (x)[1])
+#endif
 
 /************** End of btreeInt.h ********************************************/
 /************** Continuing where we left off in btmutex.c ********************/
@@ -27533,6 +27917,7 @@ static void SQLITE_NOINLINE btreeLockCarefully(Btree *p){
 ** Exit the recursive mutex on a Btree.
 */
 SQLITE_PRIVATE void sqlite3BtreeLeave(Btree *p){
+  assert( sqlite3_mutex_held(p->db->mutex) );
   if( p->sharable ){
     assert( p->wantToLock>0 );
     p->wantToLock--;
