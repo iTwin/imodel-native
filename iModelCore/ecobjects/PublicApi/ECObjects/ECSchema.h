@@ -949,7 +949,7 @@ typedef RefCountedPtr<SearchPathSchemaFileLocater> SearchPathSchemaFileLocaterPt
 //! The in-memory representation of an ECClass as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
-struct ECClass : IECCustomAttributeContainer
+struct EXPORT_VTABLE_ATTRIBUTE ECClass : IECCustomAttributeContainer
 {
 /*__PUBLISH_SECTION_END__*/
 
@@ -1508,7 +1508,7 @@ public:
 //! The in-memory representation of a relationship class as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
-struct ECRelationshipClass : public ECClass
+struct EXPORT_VTABLE_ATTRIBUTE ECRelationshipClass : public ECClass
 {
     DEFINE_T_SUPER(ECClass)
 /*__PUBLISH_SECTION_END__*/
