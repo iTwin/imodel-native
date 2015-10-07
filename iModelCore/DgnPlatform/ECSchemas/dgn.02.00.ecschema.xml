@@ -125,6 +125,9 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="ResourceModel" isDomainClass="True">
         <BaseClass>Model</BaseClass>
     </ECClass>
+    <ECClass typeName="DictionaryModel" isDomainClass="True">
+        <BaseClass>ResourceModel</BaseClass>
+    </ECClass>
     <ECClass typeName="WebMercatorModel" isDomainClass="True" >
         <BaseClass>PhysicalModel</BaseClass>
     </ECClass>
@@ -667,52 +670,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="Data" displayLabel="" typeName="string" />
     </ECClass>
 
-    <ECClass typeName="Material" isDomainClass="True" >
         <!-- WIP: Deprecated?  Replaced by MaterialElement? -->
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>
-                    <Strategy>OwnTable</Strategy>
-                </MapStrategy>
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <Indexes>
-                    <DbIndex>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>Name</string>
-                            <string>Palette</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Name" displayLabel="Material" typeName="string" description="Name of material" >
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <Collation>NoCase</Collation>
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
-        <ECProperty propertyName="Palette" displayLabel="" typeName="string" description="Name of Book" >
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <Collation>NoCase</Collation>
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Value" displayLabel="" typeName="string" />
-        <ECProperty propertyName="ParentId" typeName="long">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>True</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECClass>
-
     <ECClass typeName="Texture" isDomainClass="True">
         <!-- WIP: convert to subclass of Element -->
         <ECCustomAttributes>

@@ -8,6 +8,7 @@
 
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <numeric>
+#include <DgnPlatform/DgnCore/DgnMaterial.h>
 
 /*---------------------------------------------------------------------------------**//**
 * Test fixture for testing Element Geometry Builder
@@ -102,12 +103,11 @@ static DgnMaterialId     createTexturedMaterial (DgnDbR dgnDb, Utf8CP materialNa
     mapsMap[RENDER_MATERIAL_MAP_Pattern] = patternMap;
     renderMaterialAsset[RENDER_MATERIAL_Map] = mapsMap;
 
-
-    DgnMaterials::Material material (materialName, "Test Palette");
-
+    DgnMaterial material(DgnMaterial::CreateParams(dgnDb, "Test Palette", materialName));
     material.SetRenderingAsset (renderMaterialAsset);
-
-    return dgnDb.Materials().Insert(material);
+    auto createdMaterial = material.Insert();
+    EXPECT_TRUE(createdMaterial.IsValid());
+    return createdMaterial.IsValid() ? createdMaterial->GetMaterialId() : DgnMaterialId();
     }
 
 /*---------------------------------------------------------------------------------**//**

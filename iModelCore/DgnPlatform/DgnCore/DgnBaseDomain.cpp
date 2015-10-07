@@ -8,7 +8,7 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/DgnMarkupProject.h>
 #include <DgnPlatform/DgnCore/Annotations/TextAnnotationElement.h>
-#include <DgnPlatform/DgnCore/MaterialElement.h>
+#include <DgnPlatform/DgnCore/DgnMaterial.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -36,6 +36,7 @@ HANDLER_DEFINE_MEMBERS(WebMercator)
 HANDLER_DEFINE_MEMBERS(PointCloud)
 HANDLER_DEFINE_MEMBERS(Raster)
 HANDLER_DEFINE_MEMBERS(Resource)
+HANDLER_DEFINE_MEMBERS(Dictionary)
 HANDLER_DEFINE_MEMBERS(Model2d)
 };
 
@@ -93,6 +94,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ModelHandler::PointCloud::GetHandler());
     RegisterHandler(dgn_ModelHandler::Raster::GetHandler());
     RegisterHandler(dgn_ModelHandler::Resource::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Dictionary::GetHandler());
 
     RegisterHandler(dgn_ElementHandler::Element::GetHandler());
     RegisterHandler(dgn_ElementHandler::Physical::GetHandler());
