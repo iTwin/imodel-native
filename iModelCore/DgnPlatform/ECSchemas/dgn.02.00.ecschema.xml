@@ -464,6 +464,64 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </Target>
     </ECRelationshipClass>
 
+    <ECClass typeName="ElementDescription" isDomainClass="True" >
+        <!-- The aspect that holds a descriptions of an element -->
+        <BaseClass>ElementMultiAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <!-- All subclasses of ElementDescription will share the same table -->
+                    <Strategy>SharedTable</Strategy>
+                    <Options>SharedColumnsForSubclasses</Options>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                </MapStrategy>
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                <Indexes>
+                    <DbIndex>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <!-- Only one ElementDescription per Authority per Element -->
+                            <string>ElementId</string>
+                            <string>AuthorityId</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="AuthorityId" typeName="long">
+            <!-- Foreign key relationship to Authority that controls the Description -->
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECRelationshipClass typeName="ElementOwnsDescription" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Cascade</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" polymorphic="True">
+            <Class class="Element" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="ElementDescription">
+                <Key>
+                    <Property name="ElementId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
+
     <ECRelationshipClass typeName="ElementDrivesElement" isDomainClass="True" strength="referencing" strengthDirection="forward">
         <!-- Relationship that indicates that an Element drives (controls the lifecyle or structure of) a dependent Element -->
         <ECCustomAttributes>
