@@ -70,9 +70,6 @@
     <ClCompile Include="Performance\QueryTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECInstanceECSqlSelectAdpaterTests.cpp">
-      <Filter>Published\ECSql</Filter>
-    </ClCompile>
     <ClCompile Include="Performance\PerformanceBisDesignTestFixture.cpp">
       <Filter>Performance\BisDesign</Filter>
     </ClCompile>
@@ -174,6 +171,12 @@
     </ClCompile>
     <ClCompile Include="BackDoor\ECDbTests.cpp">
       <Filter>BackDoor</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceECInstanceECSqlSelectAdapterTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceECDbReferentialIntegrityTests.cpp">
+      <Filter>Performance</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

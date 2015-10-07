@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Published/ECInstanceECSqlSelectAdpaterTests.cpp $
+|  $Source: Tests/Performance/PerformanceECInstanceECSqlSelectAdapterTests.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
