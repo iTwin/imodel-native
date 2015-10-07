@@ -74,18 +74,22 @@
         </Bindings>
     </Part>
 
+    <!-- We do not use a special logging config when running ecobjects tests. We use the default logging config found in begtest/gtest.
     <Part Name="ECObjectsTestLoggingConfig" BentleyBuildMakeFile="test/LoggingConfig.prewire.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <Bindings>
             <Files ProductDirectoryName="ECObjectsTestExe">Delivery/logging.config.xml</Files>
         </Bindings>
     </Part>
+    -->
 
     <Part Name="TestDependencies" BentleyBuildMakeFile="test/prewire.mke">
         <SubPart PartName="GeomlibsSerialization" PartFile="geomlibs" Repository="GeomLibs" />
         <SubPart PartName="ECObjectsTestsBasicDependencies"/>
         <SubPart PartName="ECObjectsTestsSeedData"/>
         <SubPart PartName="Logging" />
+        <!-- 
         <SubPart PartName="ECObjectsTestLoggingConfig"/>
+        -->
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="ECObjects" SubPartDirectory="UnitTests/ECObjects">Delivery/UnitTests/ignore_list.txt</Files>
         </Bindings>
