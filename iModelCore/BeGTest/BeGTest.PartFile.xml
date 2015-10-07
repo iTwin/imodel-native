@@ -146,6 +146,15 @@
         <ProductDirectory Name="StdThemes"                          Path="Assets/std-themes"/>
         <ProductDirectory Name="StdThemes"                          Path="Assets/std-themes" LibType="static"/>
 
+        <ProductDirectory Name="ECObjectsTestSeedData"              Path="Assets/SeedData"/>
+        <ProductDirectory Name="ECObjectsTestSeedData"              Path="Assets/SeedData" LibType="static"/>
+        <ProductDirectory Name="ECObjectsTestSeedDataPK"            Path="Assets/SeedData/ur-PK"/>
+        <ProductDirectory Name="ECObjectsTestSeedDataPK"            Path="Assets/SeedData/ur-PK" LibType="static"/>
+        <ProductDirectory Name="ECObjectsTestSeedDataGB"            Path="Assets/SeedData/en-GB"/>
+        <ProductDirectory Name="ECObjectsTestSeedDataGB"            Path="Assets/SeedData/en-GB" LibType="static"/>
+        <ProductDirectory Name="ECObjectsTestSeedDataIT"            Path="Assets/SeedData/it"/>
+        <ProductDirectory Name="ECObjectsTestSeedDataIT"            Path="Assets/SeedData/it" LibType="static"/>
+
         <ProductDirectory Name="CordovaJavaScript" Deliver="false"/>
         <ProductDirectory Name="CordovaJavaScript" Deliver="false" LibType="static"/>
         <ProductDirectory Name="MobileDgnSdkIncludeDirectory" Deliver="false"/>
