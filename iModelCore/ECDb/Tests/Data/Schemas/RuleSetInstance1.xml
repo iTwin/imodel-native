@@ -1,0 +1,379 @@
+﻿<RuleSet xmlns="ECRules.01.00">
+    <Name>Basic i-model Integrity</Name>
+    <Description>A collection of rules designed to enforce basic i-model integrity.</Description>
+    <ReadOnly>True</ReadOnly>
+    <Rules>
+        <Rule>
+            <Name>i-model Does Not Have Nested Embedded Files</Name>
+            <Description>
+                Confirms that embedded files within an i-model do not themselves contain embedded files.
+            </Description>
+            <Conditions>
+                <Conditions>
+                    <RuleConditionStatement>
+                        <Name>{_0_}</Name>
+                        <CodeSnippet>("{_0_}")</CodeSnippet>
+                        <CombinationOperator>None</CombinationOperator>
+                    </RuleConditionStatement>
+                </Conditions>
+            </Conditions>
+            <ThenActions>
+                <Actions>
+                    <RuleActionStatement>
+                        <Name>execute script {_1_}</Name>
+                        <LeftCodeSnippet>ScriptHelper.ExecuteScript(this, "{_1_}");</LeftCodeSnippet>
+                        <IsAssignment>False</IsAssignment>
+                        <TypeReferences>
+                            <string>Bentley.IModel.Validation.ScriptHelper</string>
+                        </TypeReferences>
+                    </RuleActionStatement>
+                </Actions>
+            </ThenActions>
+            <ElseActions>
+                <Actions />
+            </ElseActions>
+            <CodeReplacements>
+                <CodeReplacementStatement>
+                    <ReplacementId>0</ReplacementId>
+                    <ReplacementType>System.Boolean</ReplacementType>
+                    <ReplacementName>boolean value</ReplacementName>
+                    <SupportsAssignment>False</SupportsAssignment>
+                    <ReplacementLocatorContext>
+                        <ContextType>System.Boolean</ContextType>
+                        <Context> ShowConnectionChangeButton='true' ShowSchemaChangeButton='true' ShowClassChangeButton='true' ReturnFullyQualifiedNames='true'</Context>
+                    </ReplacementLocatorContext>
+                    <CodeSnippet>true</CodeSnippet>
+                    <Name>True</Name>
+                </CodeReplacementStatement>
+                <CodeReplacementStatement>
+                    <ReplacementId>1</ReplacementId>
+                    <ReplacementType>System.String</ReplacementType>
+                    <ReplacementName>file name</ReplacementName>
+                    <SupportsAssignment>False</SupportsAssignment>
+                    <ReplacementLocatorContext>
+                        <ContextType>Script</ContextType>
+                    </ReplacementLocatorContext>
+                    <CodeSnippet>NoNestedAttachments.py</CodeSnippet>
+                    <Name>NoNestedAttachments.py</Name>
+                </CodeReplacementStatement>
+            </CodeReplacements>
+            <Context>
+                <string>RuleContextConnection</string>
+            </Context>
+            <Priority>0</Priority>
+            <Reevaluate>False</Reevaluate>
+            <Active>True</Active>
+            <Validated>True</Validated>
+            <ReadOnly>True</ReadOnly>
+        </Rule>
+        <Rule>
+            <Name>i-model Has Correct File Extension</Name>
+            <Description>Confirms the standard file naming convention for i-models is being followed. (*.i.dgn, *.imodel).</Description>
+            <Conditions>
+                <Conditions>
+                    <RuleConditionStatement>
+                        <Name>{_0_}</Name>
+                        <CodeSnippet>("{_0_}")</CodeSnippet>
+                        <CombinationOperator>None</CombinationOperator>
+                    </RuleConditionStatement>
+                </Conditions>
+            </Conditions>
+            <ThenActions>
+                <Actions>
+                    <RuleActionStatement>
+                        <Name>execute script {_1_}</Name>
+                        <LeftCodeSnippet>ScriptHelper.ExecuteScript(this, "{_1_}");</LeftCodeSnippet>
+                        <IsAssignment>False</IsAssignment>
+                        <TypeReferences>
+                            <string>Bentley.IModel.Validation.ScriptHelper</string>
+                        </TypeReferences>
+                    </RuleActionStatement>
+                </Actions>
+            </ThenActions>
+            <ElseActions>
+                <Actions />
+            </ElseActions>
+            <CodeReplacements>
+                <CodeReplacementStatement>
+                    <ReplacementId>0</ReplacementId>
+                    <ReplacementType>System.Boolean</ReplacementType>
+                    <ReplacementName>boolean value</ReplacementName>
+                    <SupportsAssignment>False</SupportsAssignment>
+                    <ReplacementLocatorContext>
+                        <ContextType>System.Boolean</ContextType>
+                        <Context> ShowConnectionChangeButton='true' ShowSchemaChangeButton='true' ShowClassChangeButton='true' ReturnFullyQualifiedNames='true'</Context>
+                    </ReplacementLocatorContext>
+                    <CodeSnippet>true</CodeSnippet>
+                    <Name>True</Name>
+                </CodeReplacementStatement>
+                <CodeReplacementStatement>
+                    <ReplacementId>1</ReplacementId>
+                    <ReplacementType>System.String</ReplacementType>
+                    <ReplacementName>file name</ReplacementName>
+                    <SupportsAssignment>False</SupportsAssignment>
+                    <ReplacementLocatorContext>
+                        <ContextType>Script</ContextType>
+                    </ReplacementLocatorContext>
+                    <CodeSnippet>HasCorrectFileExtension.py</CodeSnippet>
+                    <Name>HasCorrectFileExtension.py</Name>
+                </CodeReplacementStatement>
+            </CodeReplacements>
+            <Context>
+                <string>RuleContextConnection</string>
+            </Context>
+            <Priority>0</Priority>
+            <Reevaluate>False</Reevaluate>
+            <Active>True</Active>
+            <Validated>True</Validated>
+            <ReadOnly>True</ReadOnly>
+        </Rule>
+        <Rule>
+            <Name>i-model Has Internal i-model Marker</Name>
+            <Description>Confirms the Internal i-model file property/marker is set.</Description>
+            <Conditions>
+                <Conditions>
+                    <RuleConditionStatement>
+                        <Name>{_0_}</Name>
+                        <CodeSnippet>("{_0_}")</CodeSnippet>
+                        <CombinationOperator>None</CombinationOperator>
+                    </RuleConditionStatement>
+                </Conditions>
+            </Conditions>
+            <ThenActions>
+                <Actions>
+                    <RuleActionStatement>
+                        <Name>execute script {_1_}</Name>
+                        <LeftCodeSnippet>ScriptHelper.ExecuteScript(this, "{_1_}");</LeftCodeSnippet>
+                        <IsAssignment>False</IsAssignment>
+                        <TypeReferences>
+                            <string>Bentley.IModel.Validation.ScriptHelper</string>
+                        </TypeReferences>
+                    </RuleActionStatement>
+                </Actions>
+            </ThenActions>
+            <ElseActions>
+                <Actions />
+            </ElseActions>
+            <CodeReplacements>
+                <CodeReplacementStatement>
+                    <ReplacementId>0</ReplacementId>
+                    <ReplacementType>System.Boolean</ReplacementType>
+                    <ReplacementName>boolean value</ReplacementName>
+                    <SupportsAssignment>False</SupportsAssignment>
+                    <ReplacementLocatorContext>
+                        <ContextType>System.Boolean</ContextType>
+                        <Context> ShowConnectionChangeButton='true' ShowSchemaChangeButton='true' ShowClassChangeButton='true' ReturnFullyQualifiedNames='true'</Context>
+                    </ReplacementLocatorContext>
+                    <CodeSnippet>true</CodeSnippet>
+                    <Name>True</Name>
+                </CodeReplacementStatement>
+                <CodeReplacementStatement>
+                    <ReplacementId>1</ReplacementId>
+                    <ReplacementType>System.String</ReplacementType>
+                    <ReplacementName>file name</ReplacementName>
+                    <SupportsAssignment>False</SupportsAssignment>
+                    <ReplacementLocatorContext>
+                        <ContextType>Script</ContextType>
+                    </ReplacementLocatorContext>
+                    <CodeSnippet>HasIModelMarkerSet.py</CodeSnippet>
+                    <Name>HasIModelMarkerSet.py</Name>
+                </CodeReplacementStatement>
+            </CodeReplacements>
+            <Context>
+                <string>RuleContextConnection</string>
+            </Context>
+            <Priority>0</Priority>
+            <Reevaluate>False</Reevaluate>
+            <Active>True</Active>
+            <Validated>True</Validated>
+            <ReadOnly>True</ReadOnly>
+        </Rule>
+        <Rule>
+            <Name>i-model Does Not Have Duplicate Instances</Name>
+            <Description>Confirms that Microstation elements in the i-model do not have duplicate (Identical) ECInstances attached.</Description>
+            <Conditions>
+                <Conditions>
+                    <RuleConditionStatement>
+                        <Name>{_0_}</Name>
+                        <CodeSnippet>("{_0_}")</CodeSnippet>
+                        <CombinationOperator>None</CombinationOperator>
+                    </RuleConditionStatement>
+                </Conditions>
+            </Conditions>
+            <ThenActions>
+                <Actions>
+                    <RuleActionStatement>
+                        <Name>execute script {_1_}</Name>
+                        <LeftCodeSnippet>ScriptHelper.ExecuteScript(this, "{_1_}");</LeftCodeSnippet>
+                        <IsAssignment>False</IsAssignment>
+                        <TypeReferences>
+                            <string>Bentley.IModel.Validation.ScriptHelper</string>
+                        </TypeReferences>
+                    </RuleActionStatement>
+                </Actions>
+            </ThenActions>
+            <ElseActions>
+                <Actions />
+            </ElseActions>
+            <CodeReplacements>
+                <CodeReplacementStatement>
+                    <ReplacementId>0</ReplacementId>
+                    <ReplacementType>System.Boolean</ReplacementType>
+                    <ReplacementName>boolean value</ReplacementName>
+                    <SupportsAssignment>False</SupportsAssignment>
+                    <ReplacementLocatorContext>
+                        <ContextType>System.Boolean</ContextType>
+                        <Context> ShowConnectionChangeButton='true' ShowSchemaChangeButton='true' ShowClassChangeButton='true' ReturnFullyQualifiedNames='true'</Context>
+                    </ReplacementLocatorContext>
+                    <CodeSnippet>true</CodeSnippet>
+                    <Name>True</Name>
+                </CodeReplacementStatement>
+                <CodeReplacementStatement>
+                    <ReplacementId>1</ReplacementId>
+                    <ReplacementType>System.String</ReplacementType>
+                    <ReplacementName>file name</ReplacementName>
+                    <SupportsAssignment>False</SupportsAssignment>
+                    <ReplacementLocatorContext>
+                        <ContextType>Script</ContextType>
+                    </ReplacementLocatorContext>
+                    <CodeSnippet>NoDuplicateInstancesOnElements.py</CodeSnippet>
+                    <Name>NoDuplicateInstancesOnElements.py</Name>
+                </CodeReplacementStatement>
+            </CodeReplacements>
+            <Context>
+                <string>RuleContextConnection</string>
+            </Context>
+            <Priority>0</Priority>
+            <Reevaluate>False</Reevaluate>
+            <Active>True</Active>
+            <Validated>True</Validated>
+            <ReadOnly>True</ReadOnly>
+        </Rule>
+        <Rule>
+            <Name>i-model Has Well-formed Provenance</Name>
+            <Description>Confirms provenance is present in the i-model and conforms to the specification.</Description>
+            <Conditions>
+                <Conditions>
+                    <RuleConditionStatement>
+                        <Name>{_0_}</Name>
+                        <CodeSnippet>("{_0_}")</CodeSnippet>
+                        <CombinationOperator>None</CombinationOperator>
+                    </RuleConditionStatement>
+                </Conditions>
+            </Conditions>
+            <ThenActions>
+                <Actions>
+                    <RuleActionStatement>
+                        <Name>execute script {_1_}</Name>
+                        <LeftCodeSnippet>ScriptHelper.ExecuteScript(this, "{_1_}");</LeftCodeSnippet>
+                        <IsAssignment>False</IsAssignment>
+                        <TypeReferences>
+                            <string>Bentley.IModel.Validation.ScriptHelper</string>
+                        </TypeReferences>
+                    </RuleActionStatement>
+                </Actions>
+            </ThenActions>
+            <ElseActions>
+                <Actions />
+            </ElseActions>
+            <CodeReplacements>
+                <CodeReplacementStatement>
+                    <ReplacementId>0</ReplacementId>
+                    <ReplacementType>System.Boolean</ReplacementType>
+                    <ReplacementName>boolean value</ReplacementName>
+                    <SupportsAssignment>False</SupportsAssignment>
+                    <ReplacementLocatorContext>
+                        <ContextType>System.Boolean</ContextType>
+                        <Context> ShowConnectionChangeButton='true' ShowSchemaChangeButton='true' ShowClassChangeButton='true' ReturnFullyQualifiedNames='true'</Context>
+                    </ReplacementLocatorContext>
+                    <CodeSnippet>true</CodeSnippet>
+                    <Name>True</Name>
+                </CodeReplacementStatement>
+                <CodeReplacementStatement>
+                    <ReplacementId>1</ReplacementId>
+                    <ReplacementType>System.String</ReplacementType>
+                    <ReplacementName>file name</ReplacementName>
+                    <SupportsAssignment>False</SupportsAssignment>
+                    <ReplacementLocatorContext>
+                        <ContextType>Script</ContextType>
+                    </ReplacementLocatorContext>
+                    <CodeSnippet>HasWellformedProvenance.py</CodeSnippet>
+                    <Name>HasWellformedProvenance.py</Name>
+                </CodeReplacementStatement>
+            </CodeReplacements>
+            <Context>
+                <string>RuleContextConnection</string>
+            </Context>
+            <Priority>0</Priority>
+            <Reevaluate>False</Reevaluate>
+            <Active>True</Active>
+            <Validated>True</Validated>
+            <ReadOnly>True</ReadOnly>
+        </Rule>
+        <Rule>
+            <Name>i-model Has ReadOnly Attribute Set</Name>
+            <Description>Confirms the i-model is read-only.</Description>
+            <Conditions>
+                <Conditions>
+                    <RuleConditionStatement>
+                        <Name>{_0_}</Name>
+                        <CodeSnippet>("{_0_}")</CodeSnippet>
+                        <CombinationOperator>None</CombinationOperator>
+                    </RuleConditionStatement>
+                </Conditions>
+            </Conditions>
+            <ThenActions>
+                <Actions>
+                    <RuleActionStatement>
+                        <Name>execute script {_1_}</Name>
+                        <LeftCodeSnippet>ScriptHelper.ExecuteScript(this, "{_1_}");</LeftCodeSnippet>
+                        <IsAssignment>False</IsAssignment>
+                        <TypeReferences>
+                            <string>Bentley.IModel.Validation.ScriptHelper</string>
+                        </TypeReferences>
+                    </RuleActionStatement>
+                </Actions>
+            </ThenActions>
+            <ElseActions>
+                <Actions />
+            </ElseActions>
+            <CodeReplacements>
+                <CodeReplacementStatement>
+                    <ReplacementId>0</ReplacementId>
+                    <ReplacementType>System.Boolean</ReplacementType>
+                    <ReplacementName>boolean value</ReplacementName>
+                    <SupportsAssignment>False</SupportsAssignment>
+                    <ReplacementLocatorContext>
+                        <ContextType>System.Boolean</ContextType>
+                        <Context> ShowConnectionChangeButton='true' ShowSchemaChangeButton='true' ShowClassChangeButton='true' ReturnFullyQualifiedNames='true'</Context>
+                    </ReplacementLocatorContext>
+                    <CodeSnippet>true</CodeSnippet>
+                    <Name>True</Name>
+                </CodeReplacementStatement>
+                <CodeReplacementStatement>
+                    <ReplacementId>1</ReplacementId>
+                    <ReplacementType>System.String</ReplacementType>
+                    <ReplacementName>file name</ReplacementName>
+                    <SupportsAssignment>False</SupportsAssignment>
+                    <ReplacementLocatorContext>
+                        <ContextType>Script</ContextType>
+                    </ReplacementLocatorContext>
+                    <CodeSnippet>HasReadOnlyAttributeSet.py</CodeSnippet>
+                    <Name>HasReadOnlyAttributeSet.py</Name>
+                </CodeReplacementStatement>
+            </CodeReplacements>
+            <Context>
+                <string>RuleContextConnection</string>
+            </Context>
+            <Priority>0</Priority>
+            <Reevaluate>False</Reevaluate>
+            <Active>True</Active>
+            <Validated>True</Validated>
+            <ReadOnly>True</ReadOnly>
+        </Rule>
+    </Rules>
+    <Context>
+        <string>RuleContextAny</string>
+    </Context>
+    <BaseQuery>&lt;ECQuery type="Bentley.EC.Persistence.Query.ECQuery,Bentley.EC.Persistence3" id="01b301b1-4e40-4fb6-8e5a-26e2abd0c66c" maxResults="-1" isCaseSensitive="true" xmlns="http://www.bentley.com/schemas/Bentley.ECQuery.1.0"&gt;&lt;SelectCriteria type="Bentley.EC.Persistence.Query.SelectCriteria,Bentley.EC.Persistence3"&gt;&lt;AbstractSelectCriteria selectAllProperties="false" selectDistinctValues="false" type="Bentley.EC.Persistence.Query.SelectCriteria,Bentley.EC.Persistence3" /&gt;&lt;/SelectCriteria&gt;&lt;WhereCriteria type="Bentley.EC.Persistence.Query.WhereCriteria,Bentley.EC.Persistence3"&gt;&lt;WhereCriterion type="Bentley.EC.Persistence.Query.WhereCriteria,Bentley.EC.Persistence3" /&gt;&lt;/WhereCriteria&gt;&lt;/ECQuery&gt;</BaseQuery>
+</RuleSet>

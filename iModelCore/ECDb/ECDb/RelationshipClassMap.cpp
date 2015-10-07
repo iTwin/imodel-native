@@ -817,12 +817,10 @@ RelationshipEndColumns const& RelationshipClassEndTableMap::GetEndColumnsMapping
 //---------------------------------------------------------------------------------------
 // @bsimethod                      Krischan.Eberle                          06/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-void LogKeyPropertyRetrievalError(Utf8CP errorDetails, ECRelationshipClassCR relClass, ECRelationshipEnd constraintEnd)
+void LogKeyPropertyRetrievalError(IssueReporter const& issueReporter, Utf8CP errorDetails, ECRelationshipClassCR relClass, ECRelationshipEnd constraintEnd)
     {
-    const NativeLogging::SEVERITY sev = NativeLogging::LOG_ERROR;
-    if (LOG.isSeverityEnabled(sev))
-        LOG.messagev(sev, "Invalid Key property on %s constraint in ECRelationshipClass '%s': %s",
-               constraintEnd == ECRelationshipEnd_Source ? "source" : "target", relClass.GetFullName(), errorDetails);
+    issueReporter.Report(ECDbIssueSeverity::Error, "Invalid Key property on %s constraint in ECRelationshipClass '%s': %s",
+                         constraintEnd == ECRelationshipEnd_Source ? "source" : "target", relClass.GetFullName(), errorDetails);
     }
 
 //---------------------------------------------------------------------------------------
@@ -858,7 +856,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(ECDbSqlColum
 
     if (!isMappable)
         {
-        LogKeyPropertyRetrievalError("ECDb only supports Key properties if the constraint consists of a single ECClass and only a single Key property is defined for that ECClass.",
+        LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), "ECDb only supports Key properties if the constraint consists of a single ECClass and only a single Key property is defined for that ECClass.",
                                      relClass, constraintEnd);
         return ERROR;
         }
@@ -875,7 +873,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(ECDbSqlColum
         {
         Utf8String error;
         error.Sprintf("Key property '%s' does not exist or is not mapped.", foundPropName->c_str());
-        LogKeyPropertyRetrievalError(error.c_str(), relClass, constraintEnd);
+        LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), error.c_str(), relClass, constraintEnd);
         return ERROR;
         }
 
@@ -883,8 +881,8 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(ECDbSqlColum
     if (!typeInfo.IsExactNumeric() && !typeInfo.IsString())
         {
         Utf8String error;
-        error.Sprintf("Unsupported data type of Key property '%s'. ECDb only supports integral or string Key properties.", foundPropName->c_str());
-        LogKeyPropertyRetrievalError(error.c_str(), relClass, constraintEnd);
+        error.Sprintf("Unsupported data type of Key property '%s'. ECDb only supports Key properties that have an integral or string data type.", foundPropName->c_str());
+        LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), error.c_str(), relClass, constraintEnd);
         return ERROR;
         }
 
@@ -929,6 +927,13 @@ MapStatus RelationshipClassLinkTableMap::_InitializePart1 (ClassMapInfo const& c
     ECRelationshipClassCR relationshipClass = GetRelationshipClass ();
     auto const& sourceConstraint = relationshipClass.GetSource ();
     auto const& targetConstraint = relationshipClass.GetTarget ();
+
+    if (HasKeyProperties(sourceConstraint) || HasKeyProperties(targetConstraint))
+        {
+        GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "The ECRelationshipClass '%s' is mapped to a link table. One of its constraints has Key properties which is only supported for foreign key type relationships.",
+                                                                         relationshipClass.GetFullName());
+        return MapStatus::Error;
+        }
 
     //**** Constraint columns and prop maps
     bool addSourceECClassIdColumnToTable = false;
@@ -1330,5 +1335,22 @@ BentleyStatus RelationshipClassLinkTableMap::_Load (std::set<ClassMap const*>& l
 
     return BentleyStatus::SUCCESS;
     }
+
+
+//----------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                10/2015
+//+---------------+---------------+---------------+---------------+---------------+-
+//static
+bool RelationshipClassLinkTableMap::HasKeyProperties(ECN::ECRelationshipConstraint const& constraint)
+    {
+    for (ECRelationshipConstraintClassCP constraintClass : constraint.GetConstraintClasses())
+        {
+        if (!constraintClass->GetKeys().empty())
+            return true;
+        }
+
+    return false;
+    }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

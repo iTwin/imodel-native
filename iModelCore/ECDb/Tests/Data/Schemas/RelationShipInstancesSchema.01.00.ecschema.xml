@@ -1,0 +1,109 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="RelationShipInstancesSchema" nameSpacePrefix="RSI" version="1.0" description="It is description of relationship instances schema and will be used for testing purpose." displayLabel="RSInstances" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+            <SchemaFullNameAtEditingStart>RelationShipInstancesSchema.01.00</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECClass typeName="BaseClass" description="Base Class having one derived class" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="BProperty" typeName="string" />
+        <ECArrayProperty propertyName="BSProperty" typeName="string" minOccurs="1" maxOccurs="120" />
+    </ECClass>
+    <ECClass typeName="DerivedClass" isStruct="True" isDomainClass="True">
+        <BaseClass>BaseClass</BaseClass>
+        <ECProperty propertyName="DProperty" typeName="string" />
+    </ECClass>
+    <ECRelationshipClass typeName="BaseDerivedRelation" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="BaseClass" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="True">
+            <Class class="DerivedClass" />
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="OneToManyBase" isDomainClass="True">
+        <ECArrayProperty propertyName="Property" typeName="dateTime" minOccurs="1" maxOccurs="unbounded" />
+    </ECClass>
+    <ECClass typeName="OneToManyDerived" isStruct="True" isDomainClass="True">
+        <BaseClass>OneToManyBase</BaseClass>
+        <ECArrayProperty propertyName="Property1" typeName="BaseClass" minOccurs="1" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+    <ECRelationshipClass typeName="BaseDeriveOneToMany" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="OneToManyBase" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="OneToManyDerived" />
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="Class1" description="Class Having integer in name" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="Property" typeName="string" />
+    </ECClass>
+    <ECClass typeName="ClassA" isStruct="True" isDomainClass="True" />
+    <ECClass typeName="ClassB" isStruct="True" isDomainClass="True">
+        <BaseClass>ClassA</BaseClass>
+        <ECProperty propertyName="Property" typeName="string" />
+    </ECClass>
+    <ECClass typeName="ClassC" isStruct="True" isDomainClass="True" />
+    <ECClass typeName="ClassD" isStruct="True" isDomainClass="True">
+        <BaseClass>ClassC</BaseClass>
+    </ECClass>
+    <ECClass typeName="InstancesBaseClass" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="Property" typeName="string" />
+        <ECProperty propertyName="Property1" typeName="string" />
+        <ECArrayProperty propertyName="Property2" typeName="point3d" minOccurs="1" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="Property3" typeName="point2d" minOccurs="1" maxOccurs="unbounded" />
+    </ECClass>
+    <ECClass typeName="InstancesDerivedClass" isDomainClass="True">
+        <BaseClass>InstancesBaseClass</BaseClass>
+        <ECProperty propertyName="Property" typeName="string" />
+        <ECProperty propertyName="Property1" typeName="string" />
+    </ECClass>
+    <ECRelationshipClass typeName="InsctancesRelationshipClass" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECProperty propertyName="Property" typeName="string" />
+        <ECArrayProperty propertyName="Property1" typeName="point3d" minOccurs="1" maxOccurs="unbounded" />
+        <ECArrayProperty propertyName="Property2" typeName="point2d" minOccurs="1" maxOccurs="unbounded" />
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="InstancesBaseClass" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="InstancesDerivedClass" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="R" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="ClassA" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="True">
+            <Class class="ClassD" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="RBClass1" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="ClassB" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="True">
+            <Class class="Class1" />
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="SimplifidBase" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="Property" typeName="string" />
+    </ECClass>
+    <ECClass typeName="SmplifiedDerived" isStruct="True" isDomainClass="True">
+        <BaseClass>SimplifidBase</BaseClass>
+        <ECProperty propertyName="Property" typeName="string" />
+    </ECClass>
+    <ECRelationshipClass typeName="SimplifiedRelationshipClass" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECProperty propertyName="Property1" typeName="point2d" />
+        <ECProperty propertyName="Property2" typeName="point2d" />
+        <Source cardinality="(0,N)" polymorphic="True">
+            <Class class="SimplifidBase" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="SmplifiedDerived" />
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>

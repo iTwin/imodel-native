@@ -83,7 +83,6 @@ struct PerformanceQueryTests : public ::testing::Test
             {
             BeFileName seedPath;
             BeTest::GetHost().GetDocumentsRoot (seedPath);
-            seedPath.AppendToPath(L"DgnDb");
             seedPath.AppendToPath(L"ECDb");
             seedPath.AppendToPath(L"performanceQueryTests.ecdb");
 

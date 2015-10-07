@@ -1,0 +1,145 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="RSComponents" nameSpacePrefix="rsc" version="1.1" description="RS Compoents Library" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+    
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+            <SchemaFullNameAtEditingStart>RSComponents.01.00</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+            <SchemaFullNameAtEditingStart>RSComponents.01.01</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECClass typeName="PCB" displayLabel="Printed Circut Board" isDomainClass="True">
+        <ECProperty propertyName="NAME" typeName="string" description="Name of PCB" displayLabel="Name" />
+        <ECProperty propertyName="MODEL" typeName="string" description="Model of PCB" displayLabel="Model" />
+        <ECProperty propertyName="PRICE" typeName="string" description="Manufacturing price of the PCB board" displayLabel="price" />
+    </ECClass>
+    <ECClass typeName="Addin" displayLabel="Add-In" isDomainClass="True">
+        <BaseClass>PCB</BaseClass>
+        <ECProperty propertyName="VERSION" typeName="string" />
+        <ECArrayProperty propertyName="SUPPORTED_MODELS" typeName="string" description="List of supported respberry models" displayLabel="Supported Models" minOccurs="0" maxOccurs="unbounded" />
+    </ECClass>
+    <ECClass typeName="CAMERA" description="Camera module plug into a RaspberryPI board" displayLabel="Camera Addin" isDomainClass="True">
+        <BaseClass>Addin</BaseClass>
+        <ECProperty propertyName="RESOLUTION" typeName="string" description="Camera Resolution e.g. 1024x1024" displayLabel="Resolution" />
+        <ECProperty propertyName="SENSOR_TYPE" typeName="string" description="Normally CMOS or CDC" displayLabel="Sensor Type" />
+        <ECProperty propertyName="COLOR_DEPTH" typeName="string" description="Color Depth of the sensor" displayLabel="Color Depth" />
+    </ECClass>
+    <ECClass typeName="RASPBERRYPI" description="Credit card size computer" displayLabel="RaspberryPI" isDomainClass="True">
+        <BaseClass>PCB</BaseClass>
+        <ECCustomAttributes>
+            <BusinessKeySpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertyName>NAME</PropertyName>
+            </BusinessKeySpecification>
+        </ECCustomAttributes>
+        <ECProperty propertyName="RAM_SIZE" typeName="string" description="Random Acces Memory on board PCB" displayLabel="RAM Size">
+            <ECCustomAttributes>
+                <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                    <Hidden>False</Hidden>
+<HideRelated xmlns="Bentley_Standard_CustomAttributes.01.00">False</HideRelated>
+</DisplayOptions>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="PROCESSOR" typeName="string" description="Processor description" displayLabel="Processor" />
+        <ECProperty propertyName="ANALOG_IO_PINS" typeName="string" displayLabel="Analog IO Pins" />
+        <ECProperty propertyName="DIGITAL_IO_PIN" typeName="int" displayLabel="Digital IO Pins" />
+        <ECProperty propertyName="USE_VER" typeName="string" description="usb version supported." displayLabel="USB version" />
+    </ECClass>
+    <ECRelationshipClass typeName="RASBERRYPI_HAS_ADDIN" displayLabel="RasberryPI Has Addin" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="RASPBERRYPI" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="Addin" />
+        </Target>
+    </ECRelationshipClass>
+    <!-- Following is used with ONLY to see if ViewGeneration works for TablePerHierarchy-->
+    <ECClass typeName="SC" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="I" typeName="long" />
+    </ECClass>
+    <ECClass typeName="SONOR" description="Sonor Sensor to detect a obhect at a distance using ultrasonic sound" displayLabel="Sonor Addin" isDomainClass="True">
+        <BaseClass>Addin</BaseClass>
+        <ECProperty propertyName="RESERVER_SENSITIVITY" typeName="string" description="Specified in db" displayLabel="Reserver Sensitivity" />
+        <ECProperty propertyName="MAX_DISTANCE" typeName="int" description="Max distance in cm where objcet can be detected in clear line of sight" displayLabel="Max Distance" />
+    </ECClass>
+    <!-- Following is used with ONLY to see if ViewGeneration works for TablePerClass-->
+    <ECClass typeName="TCBase" isDomainClass="True">
+        <ECProperty propertyName="S" typeName="string" />
+        <ECStructProperty propertyName="SS" typeName="SC" />
+        <ECArrayProperty propertyName="SSA" typeName="SC" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+    <ECClass typeName="TC1" isDomainClass="True">
+        <BaseClass>TCBase</BaseClass>
+        <ECProperty propertyName="S" typeName="string" />
+        <ECProperty propertyName="S1" typeName="string" />
+        <ECProperty propertyName="S1_ToBeDeletedInUpgrade" typeName="string" />
+        <ECArrayProperty propertyName="SA_1_ToBeDeletedInUpgrade" typeName="string" minOccurs="0" maxOccurs="unbounded" />
+        <ECStructProperty propertyName="SS1_ToBeDeletedInUpgrade" typeName="SC" />
+        <ECArrayProperty propertyName="SSA1_ToBeDeletedInUpgrade" typeName="SC" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+    <ECClass typeName="TC2" isDomainClass="True">
+        <BaseClass>TC1</BaseClass>
+        <ECProperty propertyName="S" typeName="string" />
+        <ECProperty propertyName="S2" typeName="string" />
+        <ECProperty propertyName="S2_ToBeDeletedInUpgrade" typeName="string" />
+        <ECArrayProperty propertyName="SA_2_ToBeDeletedInUpgrade" typeName="string" minOccurs="0" maxOccurs="unbounded" />
+        <ECStructProperty propertyName="SS3_ToBeDeletedInUpgrade" typeName="SC" />
+        <ECArrayProperty propertyName="SSA3_ToBeDeletedInUpgrade" typeName="SC" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+    <ECClass typeName="TC3" isDomainClass="True">
+        <BaseClass>TC2</BaseClass>
+        <ECProperty propertyName="S" typeName="string" />
+        <ECProperty propertyName="S3" typeName="string" />
+        <ECProperty propertyName="S3_ToBeDeletedInUpgrade" typeName="string" />
+        <ECArrayProperty propertyName="SA_3_ToBeDeletedInUpgrade" typeName="string" minOccurs="0" maxOccurs="unbounded" />
+        <ECStructProperty propertyName="SS3_ToBeDeletedInUpgrade" typeName="SC" />
+        <ECArrayProperty propertyName="SSA3_ToBeDeletedInUpgrade" typeName="SC" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+    <ECClass typeName="TestClass" isDomainClass="True" />
+    <ECClass typeName="THBase" isDomainClass="True">
+        <ECCustomAttributes>
+           <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                </MapStrategy>
+		    </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="S" typeName="string" />
+        <ECStructProperty propertyName="SS" typeName="SC" />
+        <ECArrayProperty propertyName="SSA" typeName="SC" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+    <ECClass typeName="TH1" isDomainClass="True">
+        <BaseClass>THBase</BaseClass>
+        <ECProperty propertyName="S" typeName="string" />
+        <ECProperty propertyName="S1" typeName="string" />
+        <ECProperty propertyName="S1_ToBeDeletedInUpgrade" typeName="string" />
+        <ECArrayProperty propertyName="SA_1_ToBeDeletedInUpgrade" typeName="string" minOccurs="0" maxOccurs="unbounded" />
+        <ECStructProperty propertyName="SS1_ToBeDeletedInUpgrade" typeName="SC" />
+        <ECArrayProperty propertyName="SSA1_ToBeDeletedInUpgrade" typeName="SC" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+    <ECClass typeName="TH2" isDomainClass="True">
+        <BaseClass>TH1</BaseClass>
+        <ECProperty propertyName="S" typeName="string" />
+        <ECProperty propertyName="S2" typeName="string" />
+        <ECProperty propertyName="S2_ToBeDeletedInUpgrade" typeName="string" />
+        <ECArrayProperty propertyName="SA_2_ToBeDeletedInUpgrade" typeName="string" minOccurs="0" maxOccurs="unbounded" />
+        <ECStructProperty propertyName="SS2_ToBeDeletedInUpgrade" typeName="SC" />
+        <ECArrayProperty propertyName="SSA2_ToBeDeletedInUpgrade" typeName="SC" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+    <ECClass typeName="TH3" isDomainClass="True">
+        <BaseClass>TH2</BaseClass>
+        <ECProperty propertyName="S" typeName="string" />
+        <ECProperty propertyName="S3" typeName="string" />
+        <ECProperty propertyName="S3_ToBeDeletedInUpgrade" typeName="string" />
+        <ECArrayProperty propertyName="SA_3_ToBeDeletedInUpgrade" typeName="string" minOccurs="0" maxOccurs="unbounded" />
+        <ECStructProperty propertyName="SS3_ToBeDeletedInUpgrade" typeName="SC" />
+        <ECArrayProperty propertyName="SSA3_ToBeDeletedInUpgrade" typeName="SC" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+</ECSchema>

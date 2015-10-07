@@ -132,7 +132,6 @@ void ECDbTestUtility::ReadECSchemaFromDisk
     if (ecSchemaSearchPath == nullptr)
         {
         BeTest::GetHost().GetDocumentsRoot(ecSchemaPath);
-        ecSchemaPath.AppendToPath(L"DgnDb");
         ecSchemaPath.AppendToPath(L"ECDb");
         ecSchemaPath.AppendToPath(L"Schemas");
         }

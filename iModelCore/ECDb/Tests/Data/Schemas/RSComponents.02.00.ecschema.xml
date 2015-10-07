@@ -1,0 +1,125 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="RSComponents" nameSpacePrefix="rsc" version="2.0" description="RS Compoents Library 1.0" displayLabel="RS Components Library" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
+    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+    
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+            <SchemaFullNameAtEditingStart>RSComponents.01.00</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECClass typeName="PCB" description="RS Components PCB Board in production" displayLabel="Printed Circut Board" isDomainClass="True">
+        <ECProperty propertyName="NAME" typeName="string" description="Name of PCB" displayLabel="Name" />
+        <ECProperty propertyName="MODEL" typeName="string" description="Model of PCB" displayLabel="Model" />
+        <ECProperty propertyName="PRICE" typeName="string" description="Menufacturing price of the PCB board" displayLabel="Price" />
+    </ECClass>
+    <ECClass typeName="Addin" description="Raspberry PI Addin PCB Board" displayLabel="Add-In" isDomainClass="True">
+        <BaseClass>PCB</BaseClass>
+        <ECProperty propertyName="VERSION" typeName="string" displayLabel="Version" />
+        <ECArrayProperty propertyName="SUPPORTED_MODELS" typeName="string" description="List of supported raspberry models" displayLabel="Supported Models" minOccurs="0" maxOccurs="unbounded" />
+    </ECClass>
+    <ECClass typeName="CAMERA" description="Camera module plug into a RaspberryPI board" displayLabel="Camera Addin" isDomainClass="True">
+        <BaseClass>Addin</BaseClass>
+        <ECProperty propertyName="RESOLUTION" typeName="string" description="Camera Resolution e.g. 3024x3024" displayLabel="Resolution" />
+        <ECProperty propertyName="SENSOR_TYPE" typeName="string" description="Normally its CMOS or CDC" displayLabel="Sensor Type" />
+        <ECProperty propertyName="COLOR_DEPTH" typeName="string" description="Color Depth of the sensor 16bit, 24bit." displayLabel="Color Resolution" />
+    </ECClass>
+    <ECClass typeName="RASPBERRYPI" description="Credit card size computer" displayLabel="Raspberry PI" isDomainClass="True">
+        <BaseClass>PCB</BaseClass>
+        <ECCustomAttributes>
+            <BusinessKeySpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertyName>Name</PropertyName>
+            </BusinessKeySpecification>
+            <Category xmlns="EditorCustomAttributes.01.00">
+                <DisplayLabel>RespBerryPI</DisplayLabel>
+                <Expand>True</Expand>
+            </Category>
+        </ECCustomAttributes>
+        <ECProperty propertyName="RAM_SIZE" typeName="string" description="Random Access Memory on board PCB" displayLabel="RAM Size">
+			<ECCustomAttributes>
+                <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                    <Hidden>False</Hidden>
+                    <HideRelated>False</HideRelated>
+                </DisplayOptions>
+            </ECCustomAttributes>	
+		</ECProperty>
+        <ECProperty propertyName="PROCESSOR" typeName="string" description="Processor description" displayLabel="Processor" />
+        <ECProperty propertyName="ANALOG_IO_PINS" typeName="string" displayLabel="Analog IO Pins" />
+        <ECProperty propertyName="DIGITAL_IO_PIN" typeName="int" displayLabel="Digital IO Pins" />
+        <ECProperty propertyName="USB_VER" typeName="string" description="USB version supported." displayLabel="USB version">
+            <ECCustomAttributes>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>True</TrueString>
+                    <FalseString>False</FalseString>
+                </BooleanDisplay>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECRelationshipClass typeName="RASBERRYPI_HAS_ADDIN" displayLabel="RasberryPI Has Add-in" isDomainClass="True" strength="holding" strengthDirection="backward">
+        <ECProperty propertyName="COMPITABLE" typeName="boolean" displayLabel="Compitable" />
+        <Source cardinality="(0,1)" polymorphic="True" roleLabel="ROLE_LABEL">
+            <Class class="RASPBERRYPI" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True" roleLabel="ROLE_LABEL (REV)">
+            <Class class="Addin" />
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="SONOR" description="Sonor Sensor to detect a object at a distance using ultarsonic sound" displayLabel="Sonor Addin" isDomainClass="True">
+        <BaseClass>Addin</BaseClass>
+        <ECProperty propertyName="RESEVER_SENSITIVITY" typeName="string" description="Specified in +-db" displayLabel="Reseer Sensitivity" />
+        <ECProperty propertyName="MAX_DISTANCE" typeName="int" description="Max distance in cm where object can be detected in clear line of sight" displayLabel="Max Distance" />
+    </ECClass>
+	
+	<!-- Following is used with ONLY to see if ViewGeneration works for TablePerHierarchy-->
+    <ECClass typeName="SC" isDomainClass="True" isStruct="True">
+        <ECProperty propertyName="I" typeName="long" />
+    </ECClass>  
+    
+    <ECClass typeName="THBase" isDomainClass="True">
+		<ECCustomAttributes>
+           <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                </MapStrategy>
+		    </ClassMap>
+	  	</ECCustomAttributes>	
+      <ECProperty propertyName="S" typeName="string" />
+      <ECStructProperty propertyName="SS" typeName="SC" />
+      <ECArrayProperty propertyName="SSA" typeName="SC" minOccurs="0" maxOccurs="unbounded" />       
+    </ECClass>
+    <ECClass typeName="TH1" isDomainClass="True">
+        <BaseClass>THBase</BaseClass>
+        <ECProperty propertyName="S1" typeName="string" />    
+    </ECClass>
+    <ECClass typeName="TH2" isDomainClass="True">
+        <BaseClass>TH1</BaseClass>
+        <ECProperty propertyName="S2" typeName="string" />
+  </ECClass>
+    <ECClass typeName="TH3" isDomainClass="True">
+        <BaseClass>TH2</BaseClass>
+        <ECProperty propertyName="S3" typeName="string" />
+  </ECClass>
+	
+	<!-- Following is used with ONLY to see if ViewGeneration works for TablePerClass-->	
+    <ECClass typeName="TCBase" isDomainClass="True">	
+      <ECProperty propertyName="S" typeName="string" />
+      <ECStructProperty propertyName="SS" typeName="SC" />
+      <ECArrayProperty propertyName="SSA" typeName="SC" minOccurs="0" maxOccurs="unbounded" />    
+    </ECClass>
+    <ECClass typeName="TC1" isDomainClass="True">
+        <BaseClass>TCBase</BaseClass>
+        <ECProperty propertyName="S1" typeName="string" />
+    </ECClass>
+    <ECClass typeName="TC2" isDomainClass="True">
+        <BaseClass>TC1</BaseClass>
+        <ECProperty propertyName="S2" typeName="string" />
+    </ECClass>
+    <ECClass typeName="TC3" isDomainClass="True">
+        <BaseClass>TC2</BaseClass>
+        <ECProperty propertyName="S3" typeName="string" />
+    </ECClass>	
+</ECSchema>

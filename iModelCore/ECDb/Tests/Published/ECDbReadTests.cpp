@@ -11,10 +11,11 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+struct ReadTests : ECDbTestFixture {};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstances, ReadECInstances)
+TEST_F(ReadTests, ReadECInstances)
     {
     // Save a test project
     ECDbTestProject saveTestProject;
@@ -84,16 +85,9 @@ size_t CountInstancesOfClass (ECDbR db, ECClassCR ecClass, bool isPolymorphic)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstances, ReadPolymorphic)
+TEST_F(ReadTests, ReadPolymorphic)
     {
-    // Save a test project
-    ECDbTestProject saveTestProject;
-    saveTestProject.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
-
-    // Reopen the test project
-    ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb (saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly));
-    ASSERT_EQ (BE_SQLITE_OK, stat);
+    ECDb& db = SetupECDb("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
 
     /*
      * Test retrieval when parent and children are all in the same table (TablePerHierarchy)
@@ -176,11 +170,10 @@ IECInstancePtr CreatePerson (ECClassCR ecClass, Utf8CP firstName, Utf8CP lastNam
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                   Ramanujam.Raman                  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstances, OrderBy)
+TEST_F(ReadTests, OrderBy)
     {
     // Create StartupCompany 
-    ECDbTestProject testProject;
-    ECDbR db = testProject.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
+    ECDbR db = SetupECDb("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
 
     // Add some employees
     ECClassCP employeeClass = db.Schemas().GetECClass("StartupCompany", "Employee");
@@ -233,10 +226,9 @@ TEST(ECDbInstances, OrderBy)
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                   Ramanujam.Raman                  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstances, LimitOffset)
+TEST_F(ReadTests, LimitOffset)
     {
-    ECDbTestProject testProject;
-    ECDbR db = testProject.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
+    ECDbR db = SetupECDb ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
 
     // Populate 100 instances
     ECClassCP ecClass = db.Schemas().GetECClass("StartupCompany", "ClassWithPrimitiveProperties");
@@ -279,10 +271,9 @@ TEST(ECDbInstances, LimitOffset)
     ASSERT_EQ (actualValue, expectedValue);
     
     }
-TEST(ECDbInstances, WriteCalculatedECProperty)
+TEST_F(ReadTests, WriteCalculatedECProperty)
 {
-    ECDbTestProject testProject;
-    ECDbR db = testProject.Create("SimpleCompany.ecdb", L"SimpleCompany.01.00.ecschema.xml", false);
+    ECDbR db = SetupECDb("SimpleCompany.ecdb", L"SimpleCompany.01.00.ecschema.xml", false);
     Utf8String instanceXml = "<Manager xmlns = \"SimpleCompany.01.00\" >"
         "<FirstName>StRiNg - 10002</FirstName>"
         "<LastName>StRiNg - 10002</LastName>"
@@ -348,19 +339,18 @@ TEST(ECDbInstances, WriteCalculatedECProperty)
 //---------------------------------------------------------------------------------------
 //                                               Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbTest, createECDbWithArbitraryNumberOfECInstances)
+TEST_F(ReadTests, createECDbWithArbitraryNumberOfECInstances)
 {
-    ECDbTestProject testproject;
-    ECDbR ecdbr = testproject.Create("ecdbWithArbitratyInstances.ecdb", L"SimpleCompany.01.00.ecschema.xml", 1);
+    ECDbR ecdbr = SetupECDb("ecdbWithArbitratyInstances.ecdb", L"SimpleCompany.01.00.ecschema.xml", true);
     ECSchemaCP ecschemap = ecdbr. Schemas ().GetECSchema ("SimpleCompany", true);
     ASSERT_TRUE (ecschemap != nullptr);
     ECClassCP employee = ecschemap->GetClassCP("Employee");
     ASSERT_TRUE(employee != NULL);
     size_t count;
     count = CountInstancesOfClass(ecdbr, *employee, false);
-    ASSERT_EQ(1, count);
+    ASSERT_EQ(3, count);
     count = CountInstancesOfClass(ecdbr, *employee, true);
-    ASSERT_EQ(2, count);
+    ASSERT_EQ(2*3, count);
 }
 
 END_ECDBUNITTESTS_NAMESPACE

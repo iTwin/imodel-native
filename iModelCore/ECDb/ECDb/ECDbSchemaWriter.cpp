@@ -490,13 +490,7 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
 
         for (Utf8StringCR key : constraintClassObj->GetKeys())
             {
-            if (!key.EqualsI(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME) &&
-                constraintClass.GetPropertyP(key.c_str()) == nullptr)
-                {
-                LOG.errorv("ECProperty '%s' is an invalid key property as it does not exist in ECClass '%s'.", key.c_str(), constraintClass.GetFullName());
-                return ERROR;
-                }
-
+            //key validation done later at mapping time
             DbECRelationshipConstraintClassKeyPropertyInfo keyPropertyInfo;
             keyPropertyInfo.ColsInsert =
                 DbECRelationshipConstraintClassKeyPropertyInfo::COL_RelationshipClassId |
@@ -505,7 +499,7 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
             keyPropertyInfo.m_relationECClassId = relClassId;
             keyPropertyInfo.m_ecRelationshipEnd = endpoint;
             keyPropertyInfo.m_constraintClassId = constraintClassId;
-            keyPropertyInfo.m_keyPropertyName.assign(Utf8String(key));
+            keyPropertyInfo.m_keyPropertyName.assign(key);
 
             if (SUCCESS != ECDbSchemaPersistence::InsertECRelationshipConstraintClassKeyProperty(m_ecdb, keyPropertyInfo))
                 return ERROR;

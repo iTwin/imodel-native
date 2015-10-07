@@ -1,0 +1,91 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="SimpleCompany" nameSpacePrefix="sico" version="1.0" description="A Simple Company" displayLabel="A Simple Company"
+             xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0"
+    xmlns:ecschema="http://www.bentley.com/schemas/Bentley.ECXML.2.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="ecschema ECSchema.xsd" >
+
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.05" prefix="bsca" />
+    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
+    <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="unitSpec" />
+    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+
+    <ECCustomAttributes>
+        <SchemaMap xmlns="ECDbMap.01.00">
+            <TablePrefix>sic</TablePrefix>
+        </SchemaMap>
+    </ECCustomAttributes>
+
+    <ECClass typeName="EducationStruct" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="Degree" typeName="string" />
+        <ECProperty propertyName="Year" typeName="int" />
+        <ECProperty propertyName="GPA" typeName="double" />
+    </ECClass>
+
+    <ECClass typeName="Employee" isDomainClass="True">
+        <ECCustomAttributes>
+            <SyncIDSpecification xmlns="Bentley_Standard_CustomAttributes.01.05">
+                <Property>EmployeeId</Property>
+            </SyncIDSpecification>
+            <InstanceLabelSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertyName>FullName</PropertyName>
+            </InstanceLabelSpecification>
+            </ECCustomAttributes>
+        <ECProperty propertyName="FirstName" typeName="string" displayLabel="First Name" />
+        <ECProperty propertyName="LastName" typeName="string" displayLabel="Last Name"/>
+        <ECProperty propertyName="EmployeeId" typeName="int" displayLabel="Employee Id" />
+
+        <ECProperty propertyName="DateJoined" typeName="dateTime" displayLabel="Date Joined" />
+
+        <ECStructProperty propertyName="LatestEducation" typeName="EducationStruct" />
+        <ECArrayProperty propertyName="EducationHistory" typeName="EducationStruct" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+
+        <ECProperty propertyName="FullName" typeName="string" displayLabel="FullName" readOnly="true">
+            <ECCustomAttributes>
+                <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.05">
+                    <ECExpression>this.FirstName &amp; " " &amp; this.LastName</ECExpression>
+                    <FailureValue>Anonymous</FailureValue>
+                    <ParserRegularExpression>^(?&lt;FirstName&gt;[\w]+) (?&lt;LastName&gt;[\w]+)</ParserRegularExpression>
+                </CalculatedECPropertySpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+
+    </ECClass>
+
+    <ECClass typeName="Manager" isDomainClass="True">
+        <BaseClass>Employee</BaseClass>
+    </ECClass>
+
+    <ECClass typeName="SubContractor" isDomainClass="True">
+        <ECCustomAttributes>
+            <SyncIDSpecification xmlns="Bentley_Standard_CustomAttributes.01.05">
+                <Property>SubContractorId</Property>
+            </SyncIDSpecification>
+        </ECCustomAttributes>
+        <ECProperty propertyName="FirstName" typeName="string" displayLabel="First Name" />
+        <ECProperty propertyName="LastName" typeName="string" displayLabel="Last Name"/>
+        <ECProperty propertyName="CompanyName" typeName="string" displayLabel="Company Name"/>
+        <ECProperty propertyName="SubContractorId" typeName="int" displayLabel="Sub Contractor Id" />
+    </ECClass>
+
+    <ECRelationshipClass typeName="ManagerRelationship" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="Manager" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="Employee" />
+            <Class class="SubContractor" />
+            <Class class="Manager" />
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="SubContractorRelationship" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(1,1)" polymorphic="False">
+            <Class class="SubContractor" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="False">
+            <Class class="Employee" />
+        </Target>
+    </ECRelationshipClass>
+
+</ECSchema>

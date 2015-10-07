@@ -103,10 +103,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
                 {
                 auto& partition = storageDesc.GetHorizontalPartitions ().at (storageDesc.GetNonVirtualHorizontalPartitionIndices ().at (0));               
                 if (partition.NeedsClassIdFilter()) 
-                    {
-                    systemWhereClause.AppendEscaped(classIdColumn->GetName().c_str());
-                    partition.AppendECClassIdFilterSql(systemWhereClause);
-                    }
+                    partition.AppendECClassIdFilterSql(classIdColumn->GetName().c_str(), systemWhereClause);
                 }
             }
         }

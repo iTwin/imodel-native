@@ -232,7 +232,6 @@ TEST (ECDbSchemas, DWGRTest)
     db.ClearECDbCache();
     BeFileName sourceDir;
     BeTest::GetHost ().GetDocumentsRoot (sourceDir);
-    sourceDir.AppendToPath (L"DgnDb");
     sourceDir.AppendToPath (L"ECDb");
     sourceDir.AppendToPath (L"Schemas");
 
@@ -1810,6 +1809,7 @@ TEST (ECDbSchemas, ArrayPropertyTest)
     ASSERT_EQ (p123_12345->GetMinOccurs (), 123);
     ASSERT_EQ (p123_12345->GetMaxOccurs (), UINT32_MAX);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                        03/13
 ! This test need to be moved to ECF test suit
@@ -2018,8 +2018,8 @@ TEST(ECDbSchemas, PFLModulePPCS_ECDiffTest)
     VerifyRelationshipConstraint(*mergedSchema, "EQUISUBE",   "EQUI", "SUBE");
     VerifyRelationshipConstraint(*mergedSchema, "FRMWLEVEL5", "FRMW", "LEVEL5");
     VerifyRelationshipConstraint(*mergedSchema, "FRMWSBFR",   "FRMW", "SBFR");
-
     }
+
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Adeel.Shoukat                        05/3
  +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2085,6 +2085,7 @@ TEST(ECDbSchemas, ClassDiff)
     className=classPtr->GetName();
     EXPECT_STREQ(className.c_str(),"StableClass");
     }
+
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Adeel.Shoukat                        05/3
  +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2123,6 +2124,7 @@ TEST(ECDbSchemas, RelationshiClassDiff)
     relationshipClassName=relationshipClassPtr->GetName();
     EXPECT_STREQ(relationshipClassName.c_str(), "TestR");
     }
+
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Adeel.Shoukat                        05/3
  +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2207,6 +2209,7 @@ TEST(ECDbSchemas, PropertiesDiff)
     ecPropertyName=ecPropertyPtr->GetName();
     EXPECT_STREQ(ecPropertyName.c_str(), "PropertyB");
     }
+
 /*---------------------------------------------------------------------------------**//**
  * @bsiclass                                   Adeel.Shoukat                        04/13
  +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2222,6 +2225,7 @@ struct ECDbSchemaFixture:public::testing::Test
         void deleteExistingDgnb(WCharCP);
 
     };
+
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Adeel.Shoukat                        04/13
  +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2236,6 +2240,7 @@ void ECDbSchemaFixture::SetUp()
 
     MappingSchemaContext=nullptr;
     }
+
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Adeel.Shoukat                        04/13
  +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2273,6 +2278,7 @@ TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeOwnTableNonPolymorphic)
     ASSERT_EQ (SUCCESS, status);
     EXPECT_TRUE(db.TableExists("sm_ArrayOfB"));
     }
+
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Adeel.Shoukat                        04/13
  +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2296,6 +2302,7 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeOwnTablePolymorphic)
     ASSERT_EQ (SUCCESS, status);
     EXPECT_TRUE(db.TableExists("sm_ArrayOfB"));
     }
+
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Adeel.Shoukat                        04/13
  +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2318,6 +2325,7 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeNotMapped)
     ASSERT_EQ (SUCCESS, status);
     EXPECT_FALSE(db.TableExists("sm_ArrayOfB"));
     }
+
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Adeel.Shoukat                        04/13
  +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2344,7 +2352,6 @@ TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeSharedTablePolymorphic)
     EXPECT_TRUE(db.TableExists("sm_a"));
     EXPECT_TRUE(db.TableExists("sm_ArrayOfC"));
     }
-
 
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Adeel.Shoukat                        04/13
@@ -2430,9 +2437,9 @@ TEST(ECDbSchemas, Verify_TFS_14829_A)
    }
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                   Affan.Khan                        06/13
+ * @bsimethod                            Muhammad Hassan                        10/15
  +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbSchemas, Verify_TFS_14829_B)
+TEST(ECDbSchemas, ImportECSchemaWithSameVersionAndSameContentTwice)
    {
     ECDbTestProject saveTestProject;
     ECDbR db = saveTestProject.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
@@ -2443,96 +2450,28 @@ TEST(ECDbSchemas, Verify_TFS_14829_B)
     ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, schemaContext, L"StartupCompany.02.00.ecschema.xml");
     auto schemaStatus = db.Schemas().ImportECSchemas (schemaContext->GetCache());
     ASSERT_EQ (SUCCESS, schemaStatus);
-
-    ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, schemaContext, L"SimpleCompany.01.00.ecschema.xml");
-    schemaStatus = db.Schemas().ImportECSchemas (schemaContext->GetCache());
-    ASSERT_EQ (SUCCESS, schemaStatus);
-
-    ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, schemaContext, L"RSComponents.01.00.ecschema.xml");
-    schemaStatus = db.Schemas().ImportECSchemas (schemaContext->GetCache());
-    ASSERT_EQ (SUCCESS, schemaStatus);
-
-    ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, schemaContext, L"RSComponents.02.00.ecschema.xml");
-    schemaStatus = db.Schemas().ImportECSchemas (schemaContext->GetCache());
-    ASSERT_EQ (SUCCESS, schemaStatus);
    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Muhammad Hassan                        10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST (ECDbSchemas, ImportMultipleSchemasInSameECDb)
+    {
+    ECDbTestProject saveTestProject;
+    ECDbR db = saveTestProject.Create ("MultipleSchemas.ecdb", L"BaseSchemaA.01.00.ecschema.xml", false);
 
-//=====Affan/Assert/Test============================================================================================
-//struct ThreadArg
-//    {
-//    enum class AssertType
-//        {
-//        Bentley,
-//        GTest
-//        };
-//    private:
-//        BeConditionVariable m_aConditionVariable;
-//        AssertType m_aAssertType;
-//
-//        static void _GAssert ()
-//            {
-//            ASSERT_TRUE (false && "GTest Assert failed from thread");
-//            }
-//        static void _BeAssert ()
-//            {
-//            BeAssert (false && "BeAssert failed from thread");
-//            }
-//    public:
-//        BeConditionVariable& GetConditionVariable () { return m_aConditionVariable; }
-//        AssertType GetAssertType ()
-//            {
-//            return m_aAssertType;
-//            }
-//        void Wait ()
-//            {
-//            m_aConditionVariable.WaitOnCondition (nullptr, BeConditionVariable::Infinite);
-//            }
-//        ThreadArg (AssertType type)
-//            :m_aAssertType (type)
-//            {
-//            }
-//
-//        static unsigned  RunTest (void* args)
-//            {
-//            ThreadArg* threadArg = static_cast<ThreadArg*>(args);
-//            BeCriticalSectionHolder aGuard (threadArg->GetConditionVariable ().GetCriticalSection ());
-//            BeThreadUtilities::BeSleep (1000);
-//            switch (threadArg->GetAssertType ())
-//                {
-//                    case ThreadArg::AssertType::Bentley:
-//                        {
-//                        _BeAssert ();
-//                        } break;
-//                    case ThreadArg::AssertType::GTest:
-//                        {
-//                        _GAssert ();
-//                        } break;
-//                    default:
-//                        break;
-//                }
-//
-//            threadArg->GetConditionVariable ().Wake (true);
-//            return 0;
-//            }
-//    };
-//
-//
-//
-//TEST (ThreadingTest, BentleyAssert)
-//    {
-//    auto arg = ThreadArg (ThreadArg::AssertType::Bentley);
-//    BeThreadUtilities::StartNewThread (10, ThreadArg::RunTest, &arg);
-//    arg.Wait ();
-//    }
-//
-//TEST (ThreadingTest, GTestAssert)
-//    {
-//    auto arg = ThreadArg (ThreadArg::AssertType::GTest);
-//    BeThreadUtilities::StartNewThread (10, ThreadArg::RunTest, &arg);
-//    arg.Wait ();
-//    }
-//================================================================================================================
+    ECSchemaPtr ecSchema = nullptr;
+    ECSchemaReadContextPtr schemaContext = nullptr;
+
+    ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, schemaContext, L"SchoolSchema.01.00.ecschema.xml");
+    auto schemaStatus = db.Schemas ().ImportECSchemas (schemaContext->GetCache ());
+    ASSERT_EQ (SUCCESS, schemaStatus);
+
+    ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, schemaContext, L"TestSchema.01.00.ecschema.xml");
+    schemaStatus = db.Schemas ().ImportECSchemas (schemaContext->GetCache ());
+    ASSERT_EQ (SUCCESS, schemaStatus);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                         05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2565,6 +2504,7 @@ TEST(ECDbSchemas, IntegrityCheck)
 
     ASSERT_EQ(nRows, expected.size()) << "Number of SQL definitions are not same";
     }
+
 TEST(ECDbSchemas, CheckClassHasCurrentTimeStamp)
     {
     const Utf8CP schema =
@@ -2632,4 +2572,5 @@ TEST(ECDbSchemas, CheckClassHasCurrentTimeStamp)
     ASSERT_TRUE(statement2.Step() == BE_SQLITE_DONE);
     ASSERT_FALSE(dateTime1 == dateTime2);
     }
+
 END_ECDBUNITTESTS_NAMESPACE

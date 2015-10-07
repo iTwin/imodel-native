@@ -1449,7 +1449,7 @@ bool HorizontalPartition::NeedsClassIdFilter() const
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2015
 //------------------------------------------------------------------------------------------
-void HorizontalPartition::AppendECClassIdFilterSql(NativeSqlBuilder& sqlBuilder) const
+void HorizontalPartition::AppendECClassIdFilterSql(Utf8CP classIdColName, NativeSqlBuilder& sqlBuilder) const
     {
     BeAssert(!m_partitionClassIds.empty());
 
@@ -1469,6 +1469,7 @@ void HorizontalPartition::AppendECClassIdFilterSql(NativeSqlBuilder& sqlBuilder)
         inOperator = BooleanSqlOperator::In;
         }
 
+    sqlBuilder.Append(classIdColName, true);
     sqlBuilder.Append(inOperator);
     sqlBuilder.AppendParenLeft();
     bool isFirstItem = true;

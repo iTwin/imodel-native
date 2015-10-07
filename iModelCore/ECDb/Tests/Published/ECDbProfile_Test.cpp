@@ -261,7 +261,6 @@ Utf8String CopyTestFile (Utf8CP fileName)
 
     BeFileName sourceDir;
     BeTest::GetHost ().GetDocumentsRoot (sourceDir);
-    sourceDir.AppendToPath (L"DgnDb");
     sourceDir.AppendToPath (L"ECDb");
 
     BeFileName targetDir;

@@ -1634,6 +1634,77 @@ TEST_F (ECDbMapCATestFixture, InvalidPrimaryKeyInExistingTable)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (SchemaImportTestFixture, InstanceInsertionInArray)
+    {
+    TestItem testItem ("<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='TestClass' isDomainClass='True'>"
+        "        <ECProperty propertyName='P1' typeName='string'/>"
+        "        <ECArrayProperty propertyName = 'P2_Array' typeName = 'string' minOccurs='1' maxOccurs='2'/>"
+        "        <ECArrayProperty propertyName = 'P3_Array' typeName = 'int' minOccurs='1' maxOccurs='2'/>"
+        "    </ECClass>"
+        "</ECSchema>", true, "");
+
+    ECDb db;
+    bool asserted = false;
+    AssertSchemaImport (db, asserted, testItem, "InstanceInsertionInArray.ecdb");
+    ASSERT_FALSE (asserted);
+
+    std::vector<Utf8String> expectedStringArray = { "val1", "val2", "val3" };
+    std::vector<int> expectedIntArray = { 200, 400, 600 };
+
+    ECSqlStatement stmt;
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (db, "INSERT INTO ts.TestClass (P1, P2_Array, P3_Array) VALUES(?, ?, ?)"));
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.BindText (1, "Foo", IECSqlBinder::MakeCopy::No));
+
+    auto& arrayBinderS = stmt.BindArray (2, (int)expectedStringArray.size ());
+    for (Utf8StringCR arrayElement : expectedStringArray)
+        {
+        auto& elementBinder = arrayBinderS.AddArrayElement ();
+        elementBinder.BindText (arrayElement.c_str (), IECSqlBinder::MakeCopy::No);
+        }
+
+    IECSqlArrayBinder& arrayBinderI = stmt.BindArray (3, (int)expectedIntArray.size ());
+    for (int arrayElement : expectedIntArray)
+        {
+        IECSqlBinder& elementBinder = arrayBinderI.AddArrayElement ();
+        elementBinder.BindInt (arrayElement);
+        }
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, stmt.Step ());
+    stmt.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (db, "SELECT P1, P2_Array, P3_Array FROM ts.TestClass"));
+    while (stmt.Step () == DbResult::BE_SQLITE_ROW)
+        {
+        ASSERT_STREQ ("Foo", stmt.GetValueText (0));
+
+        IECSqlArrayValue const& StringArray = stmt.GetValueArray (1);
+        size_t expectedIndex = 0;
+
+        for (IECSqlValue const* arrayElement : StringArray)
+            {
+            Utf8CP actualArrayElement = arrayElement->GetText ();
+            ASSERT_STREQ (expectedStringArray[expectedIndex].c_str (), actualArrayElement);
+            expectedIndex++;
+            }
+
+        IECSqlArrayValue const& IntArray = stmt.GetValueArray (2);
+        expectedIndex = 0;
+        for (IECSqlValue const* arrayElement : IntArray)
+            {
+            int actualArrayElement = arrayElement->GetInt ();
+            ASSERT_EQ (expectedIntArray[expectedIndex], actualArrayElement);
+            expectedIndex++;
+            }
+        }
+    stmt.Finalize ();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECDbMapCATestFixture, SharedTableInstanceInsertionAndDeletion)
@@ -2989,6 +3060,58 @@ TEST_F(ECDbMapCATestFixture, ForeignKeyMapWithKeyProperty)
         ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
 
         AssertForeignKey(true, ecdb, childTableName, "ParentId");
+        }
+
+        {
+        TestItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                          "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+                          "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+                          "  <ECClass typeName='Authority' >"
+                          "    <ECProperty propertyName='Name' typeName='string' />"
+                          "  </ECClass>"
+                          "  <ECClass typeName='ElementCode' isDomainClass='False' isStruct='True'>"
+                          "    <ECProperty propertyName='AuthorityId' typeName='int' />"
+                          "    <ECProperty propertyName='Namespace' typeName='string' />"
+                          "    <ECProperty propertyName='Code' typeName='string' />"
+                          "  </ECClass>"
+                          "  <ECClass typeName='Element' >"
+                          "    <ECProperty propertyName='ModelId' typeName='long' />"
+                          "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
+                          "  </ECClass>"
+                          "  <ECRelationshipClass typeName='AuthorityIssuesCode' isDomainClass='True' strength='referencing'>"
+                          "    <ECCustomAttributes>"
+                          "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+                          "             <OnDeleteAction>NoAction</OnDeleteAction>"
+                          "        </ForeignKeyRelationshipMap>"
+                          "    </ECCustomAttributes>"
+                          "    <Source cardinality='(1,1)' polymorphic='False'>"
+                          "        <Class class='Authority' />"
+                          "     </Source>"
+                          "     <Target cardinality='(0,N)' polymorphic='True'>"
+                          "         <Class class='Element'>"
+                          "             <Key>"
+                          "                 <Property name='Code.AuthorityId'/>"
+                          "             </Key>"
+                          "         </Class>"
+                          "     </Target>"
+                          "  </ECRelationshipClass>"
+                          "</ECSchema>", true, "");
+
+        ECDb ecdb;
+        bool asserted = false;
+        AssertSchemaImport(ecdb, asserted, testItem, ecdbName);
+        ASSERT_FALSE(asserted);
+
+        ASSERT_TRUE(ecdb.ColumnExists("ts_Element", "Code_AuthorityId"));
+        bvector<Utf8String> columns;
+        ASSERT_TRUE(ecdb.GetColumns(columns, "ts_Element"));
+        ASSERT_EQ(5, columns.size()) << " ts_Element table should not contain an extra foreign key column as the relationship specifies a Key property";
+
+        auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
+        auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
+        ASSERT_TRUE(it == columns.end()) << " ts_Element table should not contain an extra foreign key column as the relationship specifies a Key property";
+
+        AssertForeignKey(true, ecdb, "ts_Element", "Code_AuthorityId");
         }
     }
 

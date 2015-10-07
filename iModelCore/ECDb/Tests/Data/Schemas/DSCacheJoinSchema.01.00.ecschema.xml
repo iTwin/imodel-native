@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0"
+schemaName="DSCacheJoinSchema" nameSpacePrefix="DSCJS"
+version="01.00"
+xmlns:ec="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+  <ECSchemaReference name="DSCacheSchema" version="01.00"
+  prefix="DSC" />
+  <ECSchemaReference name="eB_PW_CommonSchema_WSB" version="01.00"
+  prefix="eBPWC" />
+  <ECRelationshipClass typeName="CachedFileInfoRelationship"
+  isStruct="false" isDomainClass="true"
+  isCustomAttributeClass="false" strength="holding"
+  strengthDirection="backward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="DSC:CachedFileInfo" />
+    </Source>
+    <Target cardinality="(0,1)" polymorphic="true">
+      <Class class="eBPWC:Document" />
+      <Class class="eBPWC:File" />
+      <Class class="eBPWC:Folder" />
+      <Class class="eBPWC:GroupedVirtualItem" />
+      <Class class="eBPWC:Project" />
+      <Class class="eBPWC:VirtualItemGroup" />
+    </Target>
+  </ECRelationshipClass>
+  <ECRelationshipClass typeName="CachedInstanceInfoRelationship"
+  isStruct="false" isDomainClass="true"
+  isCustomAttributeClass="false" strength="holding"
+  strengthDirection="backward">
+    <Source cardinality="(0,1)" polymorphic="true">
+      <Class class="DSC:CachedInstanceInfo" />
+    </Source>
+    <Target cardinality="(0,1)" polymorphic="true">
+      <Class class="DSC:Root" />
+      <Class class="eBPWC:Document" />
+      <Class class="eBPWC:File" />
+      <Class class="eBPWC:Folder" />
+      <Class class="eBPWC:GroupedVirtualItem" />
+      <Class class="eBPWC:Project" />
+      <Class class="eBPWC:VirtualItemGroup" />
+    </Target>
+  </ECRelationshipClass>
+  <ECRelationshipClass typeName="RootRelationship" isStruct="false"
+  isDomainClass="true" isCustomAttributeClass="false"
+  strength="holding" strengthDirection="forward">
+    <Source cardinality="(0,N)" polymorphic="true">
+      <Class class="DSC:Root" />
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="eBPWC:Document" />
+      <Class class="eBPWC:File" />
+      <Class class="eBPWC:Folder" />
+      <Class class="eBPWC:GroupedVirtualItem" />
+      <Class class="eBPWC:Project" />
+      <Class class="eBPWC:VirtualItemGroup" />
+    </Target>
+  </ECRelationshipClass>
+</ECSchema>
+
