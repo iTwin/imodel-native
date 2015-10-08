@@ -3925,5 +3925,73 @@ TEST_F (ECSqlTestFixture, BindNegECInstanceId)
     stmt.Finalize ();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaImportTestFixture, InstanceInsertionInArray)
+    {
+    TestItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                      "    <ECClass typeName='TestClass' isDomainClass='True'>"
+                      "        <ECProperty propertyName='P1' typeName='string'/>"
+                      "        <ECArrayProperty propertyName = 'P2_Array' typeName = 'string' minOccurs='1' maxOccurs='2'/>"
+                      "        <ECArrayProperty propertyName = 'P3_Array' typeName = 'int' minOccurs='1' maxOccurs='2'/>"
+                      "    </ECClass>"
+                      "</ECSchema>", true, "");
 
+    ECDb db;
+    bool asserted = false;
+    AssertSchemaImport(db, asserted, testItem, "InstanceInsertionInArray.ecdb");
+    ASSERT_FALSE(asserted);
+
+    std::vector<Utf8String> expectedStringArray = {"val1", "val2", "val3"};
+    std::vector<int> expectedIntArray = {200, 400, 600};
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.TestClass (P1, P2_Array, P3_Array) VALUES(?, ?, ?)"));
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Foo", IECSqlBinder::MakeCopy::No));
+
+    auto& arrayBinderS = stmt.BindArray(2, (int) expectedStringArray.size());
+    for (Utf8StringCR arrayElement : expectedStringArray)
+        {
+        auto& elementBinder = arrayBinderS.AddArrayElement();
+        elementBinder.BindText(arrayElement.c_str(), IECSqlBinder::MakeCopy::No);
+        }
+
+    IECSqlArrayBinder& arrayBinderI = stmt.BindArray(3, (int) expectedIntArray.size());
+    for (int arrayElement : expectedIntArray)
+        {
+        IECSqlBinder& elementBinder = arrayBinderI.AddArrayElement();
+        elementBinder.BindInt(arrayElement);
+        }
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT P1, P2_Array, P3_Array FROM ts.TestClass"));
+    while (stmt.Step() == DbResult::BE_SQLITE_ROW)
+        {
+        ASSERT_STREQ("Foo", stmt.GetValueText(0));
+
+        IECSqlArrayValue const& StringArray = stmt.GetValueArray(1);
+        size_t expectedIndex = 0;
+
+        for (IECSqlValue const* arrayElement : StringArray)
+            {
+            Utf8CP actualArrayElement = arrayElement->GetText();
+            ASSERT_STREQ(expectedStringArray[expectedIndex].c_str(), actualArrayElement);
+            expectedIndex++;
+            }
+
+        IECSqlArrayValue const& IntArray = stmt.GetValueArray(2);
+        expectedIndex = 0;
+        for (IECSqlValue const* arrayElement : IntArray)
+            {
+            int actualArrayElement = arrayElement->GetInt();
+            ASSERT_EQ(expectedIntArray[expectedIndex], actualArrayElement);
+            expectedIndex++;
+            }
+        }
+    stmt.Finalize();
+    }
 END_ECDBUNITTESTS_NAMESPACE

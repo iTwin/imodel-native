@@ -1150,7 +1150,7 @@ BentleyStatus ColumnFactory::ResolveColumnName(Utf8StringR resolvedColumName, Co
             case Specification::GenerateColumnNameOptions::NameBasedOnClassIdAndCaseSaveAccessString:
                 {
                 auto const& prefix = Encode(specifications.GetAccessString());
-                resolvedColumName.Sprintf("C%lld_%s", propertyLocalToClassId, prefix.c_str());
+                resolvedColumName.Sprintf("c%lld_%s", propertyLocalToClassId, prefix.c_str());
                 }
                 break;
             case Specification::GenerateColumnNameOptions::NameBasedOnClassAndPropertyName:

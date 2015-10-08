@@ -41,7 +41,11 @@ ECDbSqlColumn* RelationshipClassMap::CreateConstraintColumn (Utf8CP columnName, 
     {
     ECDbSqlColumn* column = GetTable ().FindColumnP (columnName);
     if (column != nullptr)
+        {
+        BeAssert(column->GetKnownColumnId() == columnId);
+        column->SetIsShared(true);
         return column;
+        }
 
     if (GetTable ().GetOwnerType () == OwnerType::ECDb)
         {

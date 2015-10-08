@@ -1236,27 +1236,65 @@ BentleyStatus ECDbSqlIndex::Drop()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle 08/2015
+// @bsimethod                                                Krischan.Eberle 10/2015
 //---------------------------------------------------------------------------------------
-Utf8String ECDbSqlIndex::GenerateWhereClause(ECDbCR ecdb) const
+BentleyStatus ECDbSqlIndex::BuildCreateDdl(NativeSqlBuilder& ddl, ECDbCR ecdb) const
     {
+    ddl.Append("CREATE ");
+    if (m_isUnique)
+        ddl.Append("UNIQUE ");
+
+    Utf8CP tableName = m_table.GetName().c_str();
+    ddl.Append("INDEX ").AppendEscaped(GetName().c_str()).Append(" ON ").AppendEscaped(tableName).Append(" (");
+
+    bool hasSharedColumns = false;
+    bool isFirstCol = true;
+    for (ECDbSqlColumn const* col : GetColumns())
+        {
+        if (!isFirstCol)
+           ddl.AppendComma(false);
+
+        ddl.AppendEscaped(col->GetName().c_str());
+
+        if (col->IsShared())
+           hasSharedColumns = true;
+
+        isFirstCol = false;
+        }
+
+    ddl.AppendParenRight();
+
+    bool hasWhere = !m_additionalWhereExpression.empty();
+    if (hasWhere)
+        ddl.Append(" WHERE ").AppendParenLeft().Append(m_additionalWhereExpression.c_str()).AppendParenRight();
+
+    //now add ECClassId filter if needed. As ECClassId filters would slow down INSERT/UPDATE a lot
+    //and SQLite doesn't even consider them in many cases in SELECT, the following rules are applied:
+    //* If the index has no shared columns, no class id filter will be added, even if the index is defined
+    //only for a given subclass in the table. The values in that column will all be NULL as it is not shared
+    //and that doesn't matter for the index.
+    //* If the index has shared columns, and a class id filter would be required, it is an error if the index is non-unique,
+    //and only a warning if it is a unique. 
+    //The difference between non-unique and unique indexes is because it is assumed that unique indexes are needed to
+    //enforce uniqueness where as non-unique indexes are only for performance which is spoilt by a class id filter.
     ECDbSqlColumn const* classIdCol = nullptr;
-    if (!HasClassId() || !m_table.TryGetECClassIdColumn(classIdCol))
-        return m_additionalWhereExpression;
+    if (!hasSharedColumns || !HasClassId() || !m_table.TryGetECClassIdColumn(classIdCol))
+        return SUCCESS;
 
     BeAssert(classIdCol != nullptr);
 
-    ECClassId classId = GetClassId();
-    BeAssert(classId != ECClass::UNSET_ECCLASSID);
-
-    ECClassCP ecclass = ecdb.Schemas().GetECClass(classId);
-    BeAssert(ecclass != nullptr);
+    ECClassCP ecclass = ecdb.Schemas().GetECClass(GetClassId());
+    if (ecclass == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
 
     ClassMapCP classMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMapCP(*ecclass);
     if (classMap == nullptr)
         {
         BeAssert(false);
-        return Utf8String();
+        return ERROR;
         }
 
     StorageDescription const& storageDescription = classMap->GetStorageDescription();
@@ -1271,15 +1309,37 @@ Utf8String ECDbSqlIndex::GenerateWhereClause(ECDbCR ecdb) const
         }
 
     if (!horizPartition->NeedsClassIdFilter())
-        return m_additionalWhereExpression;
+        return SUCCESS;
 
-    NativeSqlBuilder whereClauseBuilder;
+    //class id filter is needed -> only allow it for shared columns if unique index
+    if (hasSharedColumns)
+        {
+        if (GetIsUnique())
+            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning, 
+                 "Index '%s' defined for ECClass '%s' includes a column shared by multiple ECClasses. "
+                 "This results in a partial index filtered by ECClassId which might impact performance. "
+                 "Consider changing the ECClass to not share columns.", m_name.c_str(), ecclass->GetFullName());
+        else
+            {
+            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, 
+                 "Failed to create index '%s' for ECClass '%s'. ECDb does not create indices on columns "
+                 "shared by multiple ECClasses because they would be partial indexes filtered by ECClassId which might impact performance. "
+                 "Consider changing the ECClass to not share columns.", m_name.c_str(), ecclass->GetFullName());
+            return ERROR;
+            }
+        }
 
-    if (!m_additionalWhereExpression.empty())
-        whereClauseBuilder.AppendParenLeft().Append(m_additionalWhereExpression.c_str()).AppendParenRight().AppendSpace().Append(BooleanSqlOperator::And);
+    if (hasWhere)
+        ddl.AppendSpace().Append(BooleanSqlOperator::And, true).AppendParenLeft();
+    else
+        ddl.Append(" WHERE ");
 
-    horizPartition->AppendECClassIdFilterSql(classIdCol->GetName().c_str(), whereClauseBuilder);
-    return whereClauseBuilder.ToString();
+    horizPartition->AppendECClassIdFilterSql(classIdCol->GetName().c_str(), ddl);
+
+    if (hasWhere)
+        ddl.AppendParenRight();
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1287,28 +1347,17 @@ Utf8String ECDbSqlIndex::GenerateWhereClause(ECDbCR ecdb) const
 //---------------------------------------------------------------------------------------
 BentleyStatus ECDbSqlIndex::PersistenceManager::Create(ECDbR ecdb) const
     {
-    if (!GetIndex().IsValid())
+    if (!m_index.IsValid())
         {
         BeAssert (false && "Index definition is not valid");
         return ERROR;
         }
+    
+    NativeSqlBuilder ddl;
+    if (SUCCESS != m_index.BuildCreateDdl(ddl, ecdb))
+        return ERROR;
 
-    for (ECDbSqlColumn const* col : m_index.GetColumns())
-        {
-        if (col->IsShared())
-            {
-            if (m_index.GetIsUnique())
-                ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning, "Index %s on table %s includes a column shared by multiple classes. This results in a partial index based on an ECClassId filter which might impact performance. Consider changing the ECClass to not share columns.", m_index.GetName().c_str(), m_index.GetTable().GetName().c_str());
-            else
-                {
-                ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to create %s on table %s. ECDb does not create indices on columns shared by multiple ECClasses because they would be partial indexes based on the ECClassId which are very slow.", m_index.GetName().c_str(), m_index.GetTable().GetName().c_str());
-                return ERROR;
-                }
-            }
-        }
-
-    Utf8String sql = DDLGenerator::GetCreateIndexDDL(ecdb, GetIndex());
-    if (ecdb.ExecuteSql (sql.c_str ()) != BE_SQLITE_OK)
+    if (BE_SQLITE_OK != ecdb.ExecuteSql (ddl.ToString()))
         {
         ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to create index %s on table %s. Error: %s", m_index.GetName().c_str(), m_index.GetTable().GetName().c_str(),
                    ecdb.GetLastError());
@@ -1389,31 +1438,6 @@ bool ECDbSqlTrigger::ExistsInDb(ECDbR ecdb) const
 //****************************************************************************************
 // DDLGenerator
 //****************************************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-//static 
-Utf8String DDLGenerator::GetCreateIndexDDL(ECDbCR ecdb, ECDbSqlIndex const& index)
-    {
-    //CREATE UNIQUE INDEX name ON table () WHERE expr
-    Utf8String sql = "CREATE ";
-
-    if (index.GetIsUnique())
-        sql.append ("UNIQUE ");
-
-    sql.append("INDEX [").append(index.GetName()).append("] ON [").append(index.GetTable().GetName()).append("] (").append(GetColumnList(index.GetColumns())).append(")");
-
-    Utf8String whereClause = index.GenerateWhereClause(ecdb);
-    if (!whereClause.empty())
-        {
-        sql.append(" WHERE ").append(whereClause);
-        }
-
-    if (!index.GetAdditionalWhereExpression().empty())
-        sql.append(" WHERE ").append(index.GetAdditionalWhereExpression());
-
-    return sql;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015

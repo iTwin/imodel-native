@@ -13,6 +13,7 @@
 #include <unordered_set>
 #include "BeRepositoryBasedIdSequence.h"
 #include "MapStrategy.h"
+#include "ECSql/NativeSqlBuilder.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -256,7 +257,7 @@ private:
 
 
 public:
-    explicit ECDbSqlDb(ECDbSQLManager& manager) : m_version(ECDbVersion(1, 0)), m_nameGenerator("ec_%03d"), m_sqlManager(manager) {}
+    explicit ECDbSqlDb(ECDbSQLManager& manager) : m_version(ECDbVersion(1, 0)), m_nameGenerator("ecdb_%03d"), m_sqlManager(manager) {}
     virtual ~ECDbSqlDb() {}
 
     bool HasObject(Utf8CP name);
@@ -326,6 +327,8 @@ private:
     Utf8String m_additionalWhereExpression;
     PersistenceManager m_persistenceManager;
 
+    BentleyStatus BuildCreateDdl(NativeSqlBuilder&, ECDbCR) const;
+
 public:
     ECDbSqlIndex(ECDbIndexId id, ECDbSqlTable& table, Utf8CP name, bool isUnique, ECN::ECClassId classId)
         :m_id(id), m_name(name), m_table(table), m_isUnique(isUnique), m_classId(classId), m_persistenceManager(*this)  {}
@@ -341,9 +344,6 @@ public:
     ECN::ECClassId GetClassId() const { return m_classId; }
     void SetAdditionalWhereExpression (Utf8CP expression) { m_additionalWhereExpression = expression; }
     Utf8StringCR GetAdditionalWhereExpression () const { return m_additionalWhereExpression; }
-
-    Utf8String GenerateWhereClause(ECDbCR) const;
-
     bool Contains (Utf8CP column) const;
     BentleyStatus Add (Utf8CP column);
     BentleyStatus Remove (Utf8CP column);
@@ -588,7 +588,7 @@ struct ECDbSqlTable : NonCopyableClass
         std::vector<std::function<void (ColumnEvent, ECDbSqlColumn&)>> m_columnEvents;
     private:
         ECDbSqlTable (Utf8CP name, ECDbSqlDb& sqlDbDef, ECDbTableId id, PersistenceType type, OwnerType ownerType)
-            : m_dbDef(sqlDbDef), m_id(id), m_name(name), m_nameGeneratorForColumn("x%02x"), m_type(type), m_ownerType(ownerType), 
+            : m_dbDef(sqlDbDef), m_id(id), m_name(name), m_nameGeneratorForColumn("sc%02x"), m_type(type), m_ownerType(ownerType), 
             m_isClassIdColumnCached(false), m_classIdColumn(nullptr), m_persistenceManager(*this)
             {}
 
@@ -686,7 +686,6 @@ private:
     static Utf8String GetColumnsDDL (std::vector<ECDbSqlColumn const*>);
     static Utf8String GetColumnDDL (ECDbSqlColumn const&);
 public:
-    static Utf8String GetCreateIndexDDL(ECDbCR, ECDbSqlIndex const&);
     static Utf8String GetCreateTableDDL(ECDbSqlTable const&, CreateOption);
     static Utf8String GetCreateTriggerDDL(ECDbSqlTrigger const&);
 
