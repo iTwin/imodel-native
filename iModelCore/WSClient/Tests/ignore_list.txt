@@ -11,6 +11,7 @@ ChangeManagerTests.IsSyncActive_SyncSetActiveToTrue_True # notified Vincas
 CachingDataSourceTests.* # notified Vincas
 ChangeManagerTests.* # notified Vincas
 DataSourceCacheTests.* # notified Vincas
+DataSourceCacheUpgradeTests.*
 
 # Fails on Android. Notified Vincas
 FileUtilTests.TruncateFilePath_FileWithNoExtension_TruncatesFileName

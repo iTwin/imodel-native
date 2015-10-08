@@ -35,6 +35,7 @@
     <ClInclude Include="Published\WebServices\Cache\Persistence\ChangeManagerTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\DataReadOptionsTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\DataSourceCacheTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Upgrade\DataSourceCacheUpgradeTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\MockChangeManager.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\MockDataSourceCache.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\MockRepositoryInfoStore.h" />
@@ -167,6 +168,7 @@
     <ClCompile Include="Published\WebServices\Cache\Persistence\DataSourceCacheTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\ServerQueryHelperTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Transactions\BeSQLiteDbTransactionHandlerTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Upgrade\DataSourceCacheUpgradeTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ECDbAdapterTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ECDbHelperTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ECExpressionHelperTests.cpp" />
