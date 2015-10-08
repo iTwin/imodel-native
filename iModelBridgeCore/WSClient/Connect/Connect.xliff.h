@@ -30,8 +30,6 @@ MOBILEDGN_TRANSLATABLE_STRINGS_START(ConnectL10N, Connect)
     FIELDAPPS_EmailAndPasswordRequired,      // =="You must enter an email address and password."==
     FIELDAPPS_Error,                         // =="Error"==
     FIELDAPPS_Warning,                       // =="Warning"==
-    FIELDAPPS_Yes,                           // =="Yes"==
-    FIELDAPPS_No,                            // =="No"==
     FIELDAPPS_SignInFailed,                  // =="Sign In Failed"==
     FIELDAPPS_UnknownError,                  // =="Unknown error."==
     FIELDAPPS_SignInUsername,                // =="Signed in username:"==
