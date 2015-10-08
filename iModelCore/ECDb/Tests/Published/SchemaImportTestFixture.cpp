@@ -85,54 +85,6 @@ void SchemaImportTestFixture::AssertIndexExists(ECDbCR ecdb, Utf8CP indexName, b
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  08/15
-//+---------------+---------------+---------------+---------------+---------------+------
-void SchemaImportTestFixture::AssertIndex(ECDbCR ecdb, Utf8CP indexName, bool isUnique, Utf8CP tableName, std::vector<Utf8CP> const& columns, std::vector<ECN::ECClassId> const& classIdFilter, bool negateClassIdFilter)
-    {
-    AssertIndex(ecdb, indexName, isUnique, tableName, columns, nullptr, classIdFilter, negateClassIdFilter);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  08/15
-//+---------------+---------------+---------------+---------------+---------------+------
-void SchemaImportTestFixture::AssertIndex(ECDbCR ecdb, Utf8CP indexName, bool isUnique, Utf8CP tableName, std::vector<Utf8CP> const& columns, Utf8CP whereExpWithoutClassIdFilter, std::vector<ECN::ECClassId> const& classIdFilter, bool negateClassIdFilter)
-    {
-    Utf8String whereClause;
-    if (classIdFilter.empty())
-        {
-        if (!Utf8String::IsNullOrEmpty(whereExpWithoutClassIdFilter))
-            whereClause.append(whereExpWithoutClassIdFilter);
-        }
-    else
-        {
-        if (!Utf8String::IsNullOrEmpty(whereExpWithoutClassIdFilter))
-            whereClause.append("(").append(whereExpWithoutClassIdFilter).append(") AND ");
-        
-        whereClause.append("ECClassId ");
-
-        if (negateClassIdFilter)
-            whereClause.append("NOT ");
-
-        whereClause.append("IN (");
-
-        bool isFirstClassId = true;
-        for (ECN::ECClassId classId : classIdFilter)
-            {
-            if (!isFirstClassId)
-                whereClause.append(",");
-
-            Utf8String classIdStr;
-            classIdStr.Sprintf("%lld", classId);
-            whereClause.append(classIdStr);
-
-            isFirstClassId = false;
-            }
-        whereClause.append(")");
-        }
-
-    AssertIndex(ecdb, indexName, isUnique, tableName, columns, whereClause.c_str());
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  08/15

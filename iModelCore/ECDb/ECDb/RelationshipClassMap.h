@@ -98,8 +98,7 @@ private:
 
     bool GetRelationshipColumnName (Utf8StringR columnName, ECDbSqlTable const& table, Utf8CP prefix, bool mappingInProgress) const;
 
-    void AddIndices (ClassMapInfo const& mapInfo);
-    void AddIndexToRelationshipEnd (bool isUniqueIndex);
+    void AddIndexToRelationshipEnd (ClassMapInfo const& mapInfo);
 
     RelationshipEndColumns const& GetEndColumnsMapping(RelationshipMapInfo const&) const;
 

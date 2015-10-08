@@ -396,10 +396,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart2 (ClassMapInfo const& cl
     {
     //add non-system property maps
     AddPropertyMaps (parentClassMap, nullptr,&classMapInfo);
-
-    //**** Add indices
-    AddIndices (classMapInfo);
-
+    AddIndexToRelationshipEnd(classMapInfo);
     return MapStatus::Success;
     }
 
@@ -634,39 +631,15 @@ ECClassId defaultOtherEndClassId
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan         9/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassEndTableMap::AddIndices(ClassMapInfo const& mapInfo)
+void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(ClassMapInfo const& mapInfo)
     {
     BeAssert(dynamic_cast<RelationshipMapInfo const*> (&mapInfo) != nullptr);
-    RelationshipMapInfo const& info = static_cast<RelationshipMapInfo const&> (mapInfo);
+    RelationshipMapInfo const& relMapInfo = static_cast<RelationshipMapInfo const&> (mapInfo);
+    const bool isUniqueIndex = relMapInfo.GetCardinality() == RelationshipMapInfo::Cardinality::OneToOne;
+    ECDbSqlTable& persistenceEndTable = GetTable();
 
-    if (!m_autogenerateForeignKeyColumns || !info.CreateIndexOnForeignKey())
-        return;
-
-    switch (info.GetCardinality())
-        {
-            case RelationshipMapInfo::Cardinality::OneToOne:
-                //create a unique index to enforce the cardinality.
-                //WIP: do not enforce cardinality for now. See how this works out
-                AddIndexToRelationshipEnd(false);
-                break;
-            case RelationshipMapInfo::Cardinality::OneToMany:
-            case RelationshipMapInfo::Cardinality::ManyToOne:
-                AddIndexToRelationshipEnd(false);
-                break;
-            case RelationshipMapInfo::Cardinality::ManyToMany:
-                //not supported in EndTableMap
-                break;
-        }
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassEndTableMap::AddIndexToRelationshipEnd (bool isUniqueIndex)
-    {
-    auto& persistenceEndTable = GetTable ();
-
-    if (persistenceEndTable.GetOwnerType () == OwnerType::ExistingTable)
+    if (!relMapInfo.CreateIndexOnForeignKey() || persistenceEndTable.GetOwnerType() == OwnerType::ExistingTable || 
+        (!isUniqueIndex && !m_autogenerateForeignKeyColumns))
         return;
 
     // name of the index
@@ -1130,9 +1103,6 @@ ECDbSqlIndex* RelationshipClassLinkTableMap::CreateIndex (RelationshipIndexSpec 
         name.append("uix_");
     else
         name.append("ix_");
-
-    if (isUniqueIndex)
-        name.append("unique_");
 
     //add class full name as subclasses of the relationship might require different indices
     Utf8StringCR nsPrefix = GetClass().GetSchema().GetNamespacePrefix();

@@ -1297,8 +1297,13 @@ BentleyStatus ECDbSqlIndex::PersistenceManager::Create(ECDbR ecdb) const
         {
         if (col->IsShared())
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to create %s on table %s. ECDb does not create indices on columns shared by multiple ECClasses because they would be partial indexes based on the ECClassId which are very slow.", m_index.GetName().c_str(), m_index.GetTable().GetName().c_str());
-            return ERROR;
+            if (m_index.GetIsUnique())
+                ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning, "Index %s on table %s includes a column shared by multiple classes. This results in a partial index based on an ECClassId filter which might impact performance. Consider changing the ECClass to not share columns.", m_index.GetName().c_str(), m_index.GetTable().GetName().c_str());
+            else
+                {
+                ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to create %s on table %s. ECDb does not create indices on columns shared by multiple ECClasses because they would be partial indexes based on the ECClassId which are very slow.", m_index.GetName().c_str(), m_index.GetTable().GetName().c_str());
+                return ERROR;
+                }
             }
         }
 
@@ -1398,12 +1403,11 @@ Utf8String DDLGenerator::GetCreateIndexDDL(ECDbCR ecdb, ECDbSqlIndex const& inde
 
     sql.append("INDEX [").append(index.GetName()).append("] ON [").append(index.GetTable().GetName()).append("] (").append(GetColumnList(index.GetColumns())).append(")");
 
-/*    Utf8String whereClause = index.GenerateWhereClause(ecdb);
+    Utf8String whereClause = index.GenerateWhereClause(ecdb);
     if (!whereClause.empty())
         {
         sql.append(" WHERE ").append(whereClause);
         }
-        */
 
     if (!index.GetAdditionalWhereExpression().empty())
         sql.append(" WHERE ").append(index.GetAdditionalWhereExpression());
