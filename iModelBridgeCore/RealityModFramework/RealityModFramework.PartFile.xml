@@ -14,6 +14,7 @@
       <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
       <SubPart PartName="PointoolsVortexAPI_VS2012"  PartFile="PointoolsVortexAPI_VS2012" Repository="PointoolsVortexAPI" />
       <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
+      <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>
       <Bindings>
           <Libs>Delivery/$(stlibprefix)RealityPlatform$(stlibext)</Libs>
           <Files ProductDirectoryName="RealityAssemblies">delivery/$(shlibprefix)RealityPlatform$(shlibext)</Files>
