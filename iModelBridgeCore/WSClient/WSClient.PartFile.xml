@@ -282,5 +282,10 @@
         <!-- Needed for published unit tests -->
         <SubPart PartName="WebServicesClient-PublishedAPI" />
         <SubPart PartName="WebServicesCache-PublishedAPI" />
+        <!-- Assets -->
+        <SubPart PartName="WSClientUnitTests-Assets" />
     </Part>
+
+    <Part Name="WSClientUnitTests-Assets" BentleyBuildMakeFile="TestAssetsDelivery.mke" />
+
 </BuildContext>

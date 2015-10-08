@@ -141,6 +141,7 @@
     <ClInclude Include="Published\WebServices\Cache\ServerQueryHelperTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\FileUtilTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\ECExpressionHelperTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Upgrade\DataSourceCacheUpgradeTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\JsonDiffTests.h" />
   </ItemGroup>
   <ItemGroup>
@@ -299,6 +300,7 @@
     <ClCompile Include="Published\WebServices\Cache\ServerQueryHelperTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\FileUtilTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ECExpressionHelperTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Upgrade\DataSourceCacheUpgradeTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\JsonDiffTests.cpp" />
   </ItemGroup>
   <ItemGroup>
