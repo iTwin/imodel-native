@@ -905,7 +905,6 @@ BENTLEYDTM_EXPORT int bcdtmObject_testForInMemoryDtmObject(BC_DTM_OBJ *dtmP)
 */
  if (dtmP == NULL) goto errexit;
      {
-     std::lock_guard<std::mutex> lock (s_dtmMutex);
      /*
 **  Check B Tree Exits
 */
@@ -970,14 +969,11 @@ BENTLEYDTM_EXPORT int bcdtmObject_testForValidDtmObject(BC_DTM_OBJ *dtmP)
  /*
  **  Check B Tree Exits
  */
-     {
-     std::lock_guard<std::mutex> lock (s_dtmMutex);
-     if (glbDtmObjBtreeP == NULL) goto errexit;
-     /*
-     **  Find Entry For Dtm Object In Btree
-     */
-     if (bcdtmBtree_findNode (glbDtmObjBtreeP, dtmP, &node, &priorNode, &nodeFound, &nodeLevel)) goto errexit;
-     }
+ if (glbDtmObjBtreeP == NULL) goto errexit;
+ /*
+ **  Find Entry For Dtm Object In Btree
+ */
+ if (bcdtmBtree_findNode (glbDtmObjBtreeP, dtmP, &node, &priorNode, &nodeFound, &nodeLevel)) goto errexit;
 /*
 **  Check Node Found
 */
@@ -1401,12 +1397,9 @@ BENTLEYDTM_EXPORT int bcdtmObject_destroyDtmObject(BC_DTM_OBJ **dtmPP)
  /*
  ** Find Entry For Dtm Object In Btree
  */
-     {
-     std::lock_guard<std::mutex> lock (s_dtmMutex);
-     if (dbg == 2) bcdtmWrite_message (0, 0, 0, "Finding Btree Entry For Dtm Object");
-     if (bcdtmBtree_findNode (glbDtmObjBtreeP, *dtmPP, &node, &priorNode, &nodeFound, &nodeLevel)) goto errexit;
-     if (dbg == 2) bcdtmWrite_message (0, 0, 0, "nodeFound = %2ld node = %6ld", nodeFound, node);
-     }
+ if (dbg == 2) bcdtmWrite_message (0, 0, 0, "Finding Btree Entry For Dtm Object");
+ if (bcdtmBtree_findNode (glbDtmObjBtreeP, *dtmPP, &node, &priorNode, &nodeFound, &nodeLevel)) goto errexit;
+ if (dbg == 2) bcdtmWrite_message (0, 0, 0, "nodeFound = %2ld node = %6ld", nodeFound, node);
 /*
 ** Tell bcMemory that we are being freed
 */
