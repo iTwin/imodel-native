@@ -364,27 +364,32 @@ DgnClassId DgnImportContext::RemapClassId(DgnClassId source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : m_sourceDb(source), m_destDb(dest) 
+void DgnImportContext::ComputeGcsAdjustment()
     {
-    DgnGCS* sourceGcs = m_sourceDb.Units().GetDgnGCS();
-    DgnGCS* destGcs = m_destDb.Units().GetDgnGCS();
-
+    //  We may need to transform between source and destination GCS.
     m_xyOffset = DPoint2d::FromZero();
     m_yawAdj = AngleInDegrees::FromDegrees(0);
 
-    if (!IsBetweenDbs() || nullptr == sourceGcs || nullptr == destGcs)
+    if (!IsBetweenDbs())
+        return;
+
+    DgnGCS* sourceGcs = m_sourceDb.Units().GetDgnGCS();
+    DgnGCS* destGcs = m_destDb.Units().GetDgnGCS();
+
+    if (nullptr == sourceGcs || nullptr == destGcs)
         {
         m_areCompatibleDbs = true;
         return;
         }
 
-    BeFileName spn, dpn;
-    if (0 != wcscmp(sourceGcs->GetProjectionName(spn), destGcs->GetProjectionName(dpn)))
+    // Check that source and destination are based on equivalent projections.
+    if (!destGcs->IsEquivalent(*sourceGcs))
         {
         m_areCompatibleDbs = false;
         return;
         }
 
+    //  Check that source and destination GCSs are at the same elevation
     GeoPoint sourceOrgLatLng;
     if (REPROJECT_Success != sourceGcs->LatLongFromUors(sourceOrgLatLng, DPoint3d::FromZero()))
         {
@@ -405,8 +410,17 @@ DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : m_sourceDb(sour
         return;
         }
 
+    //  We should be able to transform using a simple offset and rotation.
     m_xyOffset = DPoint2d::From(destCoordinates.x, destCoordinates.y);
     m_yawAdj = AngleInDegrees::FromRadians(destGcs->GetAzimuth() - sourceGcs->GetAzimuth());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : m_sourceDb(source), m_destDb(dest) 
+    {
+    ComputeGcsAdjustment();
     }
 
 static uintptr_t  s_nextQvMaterialId;

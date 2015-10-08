@@ -77,6 +77,8 @@ private:
     DgnDbR          m_destDb;
     DgnRemapTables  m_remap;
 
+    void ComputeGcsAdjustment();
+
 public:
     //! Construct a DgnImportContext object.
     DGNPLATFORM_EXPORT DgnImportContext(DgnDbR source, DgnDbR dest);
