@@ -15,7 +15,7 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct PerformancePropertiesTest   : PerformanceTestFixture 
 {
-    void AddElementsOneAtATime(ECClassP classA, Utf8StringCR propertyName, bmap<Utf8String, double>& results)
+    void AddElementsOneAtATime(ECClassP classA, Utf8StringCR propertyName, bmap<Utf8String, double>& results, Utf8String testcaseName, Utf8String testName)
         {
         Utf8Char timerName[256];
         BeStringUtilities::Snprintf (timerName, "Adding 10000 array elements one at a time to %ls", propertyName.c_str());
@@ -29,7 +29,7 @@ struct PerformancePropertiesTest   : PerformanceTestFixture
         PERFORMANCELOG.infov("%s - %lf", timerName, timer.GetElapsedSeconds());
         results[Utf8String(timerName)] = timer.GetElapsedSeconds();
         }
-    void AddElementsOnce(ECClassP classA, Utf8StringCR propertyName, bmap<Utf8String, double>& results)
+    void AddElementsOnce(ECClassP classA, Utf8StringCR propertyName, bmap<Utf8String, double>& results, Utf8String testcaseName, Utf8String testName)
         {
         Utf8Char timerName[256];
         BeStringUtilities::Snprintf (timerName, "Adding 10000 array elements at once to %ls", propertyName.c_str());
@@ -40,6 +40,8 @@ struct PerformancePropertiesTest   : PerformanceTestFixture
         timer.Stop();
 
         PERFORMANCELOG.infov("ls - %lf", timerName, timer.GetElapsedSeconds());
+        LOGTODB(testcaseName, testName, timer.GetElapsedSeconds(), timerName, 1000);
+        LOGTODB(testcaseName, testName, timer.GetElapsedSeconds(), timerName, 1000);
         results[Utf8String(timerName)] = timer.GetElapsedSeconds();
         }
 };
@@ -64,14 +66,14 @@ TEST_F(PerformancePropertiesTest, AddArrayElements)
 
     classA->CreateArrayProperty (prop, "StructArray", struct1);
     bmap<Utf8String, double> results;
-    AddElementsOneAtATime(classA, "IntArray", results);
-    AddElementsOneAtATime(classA, "StringArray", results);
-    AddElementsOneAtATime(classA, "BoolArray", results);
-    AddElementsOneAtATime(classA, "StructArray", results);
-    AddElementsOnce(classA, "IntArray", results);
-    AddElementsOnce(classA, "StringArray", results);
-    AddElementsOnce(classA, "BoolArray", results);
-    AddElementsOnce(classA, "StructArray", results);
+    AddElementsOneAtATime(classA, "IntArray", results, TEST_DETAILS);
+    AddElementsOneAtATime(classA, "StringArray", results, TEST_DETAILS);
+    AddElementsOneAtATime(classA, "BoolArray", results, TEST_DETAILS);
+    AddElementsOneAtATime(classA, "StructArray", results, TEST_DETAILS);
+    AddElementsOnce(classA, "IntArray", results, TEST_DETAILS);
+    AddElementsOnce(classA, "StringArray", results, TEST_DETAILS);
+    AddElementsOnce(classA, "BoolArray", results, TEST_DETAILS);
+    AddElementsOnce(classA, "StructArray", results, TEST_DETAILS);
 
     LogResultsToFile(results);
     }
