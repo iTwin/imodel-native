@@ -175,22 +175,22 @@ bool RealityDataDownload::Perform()
                 if (pFileTrans->fileStream.IsOpen())
                     pFileTrans->fileStream.Close();
 
-                curl_multi_remove_handle(m_pCurlHandle, msg->easy_handle);
-                curl_easy_cleanup(msg->easy_handle);
-
-
                 // Retry on error
                 if (msg->data.result == 56)     // Recv failure, try again
                     {
                     if (pFileTrans->nbRetry < MAX_RETRY_ON_ERROR)
                         { 
                         ++pFileTrans->nbRetry;
+                        pFileTrans->iAppend = 0;
                         if (m_pStatusFunc)
                             m_pStatusFunc((int)pFileTrans->index, pClient, -2, "Trying again...");
                         SetupCurlandFile(pFileTrans->index);
                         still_running++;
                         }
                     }
+
+                curl_multi_remove_handle(m_pCurlHandle, msg->easy_handle);
+                curl_easy_cleanup(msg->easy_handle);
                 }
             else
                 {
