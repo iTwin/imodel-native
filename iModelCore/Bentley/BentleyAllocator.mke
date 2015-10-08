@@ -33,13 +33,6 @@ appName = BentleyAllocator
 DLM_NAME        =% $(appName)
 CCompPDBName    =% $(appName)
 
-%if ($[@findstring Win, $(TARGET_PLATFORM)] == " ")
-
-    dirToSearch = $(BuildContext)VendorAPI/icu4c/
-    %include cincapnd.mki
-
-%endif
-
 o = $(OutputRootDir)build/$(appName)/
 
 always:
