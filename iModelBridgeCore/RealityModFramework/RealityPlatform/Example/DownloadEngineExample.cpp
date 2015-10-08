@@ -90,7 +90,7 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
         pDownload->Perform();
         }
     else
-        pDownload->SetProgressCallBack(callback_progress_func);
+        pDownload->SetProgressCallBack(callback_progress_func);     
 
     printf("-----Done-----");
     _getch();

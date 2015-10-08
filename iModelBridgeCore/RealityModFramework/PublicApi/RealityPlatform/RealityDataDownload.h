@@ -41,6 +41,7 @@ public:
         BeFile                  fileStream;
         size_t                  iAppend;
         RealityDataDownload_ProgressCallBack pProgressFunc;
+        int                     nbRetry;
         };
 
     typedef bvector<std::pair<AString, WString>>    UrlLink_UrlFile;
