@@ -90,17 +90,10 @@ CCompFpOpts=precise
 
 # Prefer to disable warnings in third-party code vs. editing it.
 %if $(BUILD_TOOLSET) == "CLANG"
-    # We need to ignore these warnings for Apple LLVM 6.1, but they don't even exist prior, so guard.
-    GreaterThan6_1 = $[@readstdout "python $(SrcRoot)bsicommon/build/DetectClangVersion.py 602.0.49"]
-    %if $(GreaterThan6_1) == "YES"
-        LLVMCommonCompOpts + -Wno-error=tautological-pointer-compare
-    %endif
+    OriginalLLVMCommonCompOpts =% $(LLVMCommonCompOpts)
 
-    # We need to ignore these warnings for Apple LLVM 7.0, but they don't even exist prior, so guard.
-    GreaterThan7_0 = $[@readstdout "python $(SrcRoot)bsicommon/build/DetectClangVersion.py 700.0.53"]
-    %if $(GreaterThan7_0) == "YES"
-        LLVMCommonCompOpts + -Wno-error=pointer-bool-conversion
-    %endif    
+    # Disables all warnings (and implicitly warnings as errors)
+    LLVMCommonCompOpts + -w
 %endif
 
 $(o)SQLite$(oext): $(SQLiteDir)sqlite3-all.c $(SQLiteDir)sqlite3-1.c $(SQLiteDir)sqlite3-2.c $(SQLiteDir)sqlite3-3.c $(SQLiteDir)sqlite3-4.c \
