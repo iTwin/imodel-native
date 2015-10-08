@@ -619,7 +619,7 @@ BentleyStatus   MRMeshNode::GetRange (DRange3dR range, TransformCR transform) co
         {
         DRange3d        childRange = DRange3d::NullRange();
 
-        if (SUCCESS == child->GetRange (range, transform))
+        if (SUCCESS == child->GetRange (childRange, transform))
             range.UnionOf (range, childRange);
         }
 
