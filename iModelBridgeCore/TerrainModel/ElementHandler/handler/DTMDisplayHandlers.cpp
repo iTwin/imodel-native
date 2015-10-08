@@ -80,10 +80,15 @@ bool DTMElementSubDisplayHandler::TestLevelIsVisible (LevelId level, DTMDrawingI
     MSElementCR elm = *drawingInfo.GetOriginalElement ().GetElementCP ();
     DgnModelRefP    model = drawingInfo.GetSymbologyElement ().GetModelRef ();
     int     elemLevel = ((level != LEVEL_BYCELL) ? level : elm.ehdr.level);
+
+    if (drawingInfo.GetOriginalElement().GetModelRef() == drawingInfo.GetSymbologyElement().GetModelRef())
+        return context.GetLevelClassMask()->levelBitMaskP->Test(elemLevel - 1);
+
     ViewportP vp = context.GetViewport();
     ViewInfoCP viewInfo = vp ? vp->GetViewInfoCP() : NULL;
     bool isDisplayed = false;
-    viewInfo->GetEffectiveLevelDisplay (isDisplayed, model, elemLevel);
+    if (nullptr != viewInfo)
+        viewInfo->GetEffectiveLevelDisplay(isDisplayed, model, elemLevel);
 
     return isDisplayed;
     }
