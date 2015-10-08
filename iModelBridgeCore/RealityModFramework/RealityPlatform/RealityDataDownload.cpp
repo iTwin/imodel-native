@@ -16,6 +16,9 @@
 #include <stdio.h>
 #include <curl/curl.h>
 
+#define MAX_RETRY_ON_ERROR  25
+#define MAX_NB_CONNECTIONS  10
+
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 //=======================================================================================
@@ -93,6 +96,7 @@ RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName
         m_pEntries[i].url = pi_Link_FileName[i].first;
         m_pEntries[i].filename = pi_Link_FileName[i].second;
         m_pEntries[i].iAppend = 0;
+        m_pEntries[i].nbRetry = 0;
         }
     }
 
@@ -113,11 +117,11 @@ RealityDataDownload::~RealityDataDownload()
 
 bool RealityDataDownload::Perform()
     {
-#define MaxConnection 1
-    // we can optionally limit the total amount of connections this multi handle uses 
-    curl_multi_setopt(m_pCurlHandle, CURLMOPT_MAXCONNECTS, MaxConnection);  // &&DM 10
 
-    for (m_curEntry = 0; m_curEntry < min(MaxConnection, m_nbEntry); ++m_curEntry)
+    // we can optionally limit the total amount of connections this multi handle uses 
+        curl_multi_setopt(m_pCurlHandle, CURLMOPT_MAXCONNECTS, MAX_NB_CONNECTIONS);
+
+        for (m_curEntry = 0; m_curEntry < min(MAX_NB_CONNECTIONS, m_nbEntry); ++m_curEntry)
         SetupCurlandFile(m_curEntry);
 
     int still_running; /* keep number of running handles */
@@ -174,12 +178,18 @@ bool RealityDataDownload::Perform()
                 curl_multi_remove_handle(m_pCurlHandle, msg->easy_handle);
                 curl_easy_cleanup(msg->easy_handle);
 
+
+                // Retry on error
                 if (msg->data.result == 56)     // Recv failure, try again
                     {
-                    if (m_pStatusFunc)
-                        m_pStatusFunc((int)pFileTrans->index, pClient, -2, "Trying again...");
-                    SetupCurlandFile(pFileTrans->index);
-                    still_running++;
+                    if (pFileTrans->nbRetry < MAX_RETRY_ON_ERROR)
+                        { 
+                        ++pFileTrans->nbRetry;
+                        if (m_pStatusFunc)
+                            m_pStatusFunc((int)pFileTrans->index, pClient, -2, "Trying again...");
+                        SetupCurlandFile(pFileTrans->index);
+                        still_running++;
+                        }
                     }
                 }
             else
