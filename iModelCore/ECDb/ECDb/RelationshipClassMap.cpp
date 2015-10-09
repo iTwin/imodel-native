@@ -37,29 +37,29 @@ RelationshipClassMap::RelationshipClassMap (ECRelationshipClassCR ecRelClass, EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    11/2013
 //---------------------------------------------------------------------------------------
-ECDbSqlColumn* RelationshipClassMap::CreateConstraintColumn (Utf8CP columnName, ECDbKnownColumns columnId, bool addToTable)
+ECDbSqlColumn* RelationshipClassMap::CreateConstraintColumn(Utf8CP columnName, ECDbKnownColumns columnId, bool addToTable)
     {
-    ECDbSqlColumn* column = GetTable ().FindColumnP (columnName);
+    ECDbSqlColumn* column = GetTable().FindColumnP(columnName);
     if (column != nullptr)
         {
         //in case of foreign key relationships, the constraint column could be a regular data column
         //in the child table, therefore known column id must not match
-        BeAssert(column->GetKnownColumnId() == ECDbKnownColumns::DataColumn || column->GetKnownColumnId() == ECDbKnownColumns::ECInstanceId || column->GetKnownColumnId() == columnId);
         column->SetIsShared(true);
         return column;
         }
 
-    if (GetTable ().GetOwnerType () == OwnerType::ECDb)
+    if (GetTable().GetOwnerType() == OwnerType::ECDb)
         {
-        column = GetTable ().CreateColumn (columnName, ECDbSqlColumn::Type::Long, columnId,
-            addToTable ? PersistenceType::Persisted : PersistenceType::Virtual);
+        column = GetTable().CreateColumn(columnName, ECDbSqlColumn::Type::Long, columnId,
+                                         addToTable ? PersistenceType::Persisted : PersistenceType::Virtual);
         }
     else
         {
-        GetTable ().GetEditHandleR ().BeginEdit ();
-        column = GetTable ().CreateColumn (columnName, ECDbSqlColumn::Type::Long, columnId, PersistenceType::Virtual);
-        GetTable ().GetEditHandleR ().EndEdit ();
+        GetTable().GetEditHandleR().BeginEdit();
+        column = GetTable().CreateColumn(columnName, ECDbSqlColumn::Type::Long, columnId, PersistenceType::Virtual);
+        GetTable().GetEditHandleR().EndEdit();
         }
+
     return column;
     }
     
@@ -497,28 +497,39 @@ BentleyStatus RelationshipClassEndTableMap::_Load (std::set<ClassMap const*>& lo
 //+---------------+---------------+---------------+---------------+---------------+------
 MapStatus RelationshipClassEndTableMap::CreateConstraintColumns(ECDbSqlColumn*& fkIdColumn, RelationshipMapInfo const& mapInfo, ECRelationshipEnd constraintEnd, ECN::ECRelationshipConstraintCR constraint)
     {
-    ECDbSqlColumn const* keyPropertyCol = nullptr;
-    if (SUCCESS != TryGetKeyPropertyColumn(keyPropertyCol, constraint, *mapInfo.GetECClass().GetRelationshipClassCP(), constraintEnd))
+    fkIdColumn = nullptr;
+
+    ECDbSqlColumn const* keyPropCol = nullptr;
+    if (SUCCESS != TryGetKeyPropertyColumn(keyPropCol, constraint, *mapInfo.GetECClass().GetRelationshipClassCP(), constraintEnd))
         return MapStatus::Error;
 
-    m_autogenerateForeignKeyColumns = keyPropertyCol == nullptr;
+    if (keyPropCol != nullptr)
+        fkIdColumn = const_cast<ECDbSqlColumn*>(keyPropCol);
+    else
+        {
+        RelationshipEndColumns const& constraintColumnMapping = GetEndColumnsMapping(mapInfo);
+        Utf8CP idColName = constraintColumnMapping.GetECInstanceIdColumnName();
+        if (!Utf8String::IsNullOrEmpty(idColName))
+            fkIdColumn = GetTable().FindColumnP(idColName);
+        }
+
+    m_autogenerateForeignKeyColumns = fkIdColumn == nullptr;
     ECDbKnownColumns fkColumnId = GetThisEnd () == ECRelationshipEnd::ECRelationshipEnd_Source ? ECDbKnownColumns::TargetECInstanceId : ECDbKnownColumns::SourceECInstanceId;
     if (m_autogenerateForeignKeyColumns)
         {
-        //** Other End ECInstanceId column
-        RelationshipEndColumns const& constraintColumnMapping = GetEndColumnsMapping(mapInfo);
-        Utf8String fkIdColumnName(constraintColumnMapping.GetECInstanceIdColumnName());
-        if (fkIdColumnName.empty())
-            if (!GetOtherEndKeyColumnName(fkIdColumnName, GetTable(), true))
-                return MapStatus::Error;
+        BeAssert(Utf8String::IsNullOrEmpty(GetEndColumnsMapping(mapInfo).GetECInstanceIdColumnName()));
 
-        fkIdColumn = CreateConstraintColumn(fkIdColumnName.c_str(), fkColumnId, true);
+        //** Other End ECInstanceId column
+        Utf8String colName;
+        if (!GetOtherEndKeyColumnName(colName, GetTable(), true))
+             return MapStatus::Error;
+
+        fkIdColumn = CreateConstraintColumn(colName.c_str(), fkColumnId, true);
         BeAssert(fkIdColumn != nullptr);
         }
     else
         {
-        fkIdColumn = const_cast<ECDbSqlColumn*>(keyPropertyCol);
-        if (keyPropertyCol->GetKnownColumnId () == ECDbKnownColumns::Unknown || keyPropertyCol->GetKnownColumnId () == ECDbKnownColumns::DataColumn)
+        if (fkIdColumn->GetKnownColumnId () == ECDbKnownColumns::Unknown || fkIdColumn->GetKnownColumnId () == ECDbKnownColumns::DataColumn)
             {
             fkIdColumn->SetKnownColumnId (fkColumnId);
             }
