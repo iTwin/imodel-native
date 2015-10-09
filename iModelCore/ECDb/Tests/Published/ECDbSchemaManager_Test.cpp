@@ -721,7 +721,7 @@ TEST (ECDbSchemaManager, SupplementWithLatestCompatibleSupplementalSchema)
     {
         i++;
     }
-    EXPECT_EQ(3, i) << "the number of custom attributes on the Class Base do not match the original";
+    EXPECT_EQ(6, i) << "the number of custom attributes on the Class Base do not match the original";
 }
 
 //---------------------------------------------------------------------------------------
@@ -788,7 +788,7 @@ TEST (ECDbSchemaManager, SupplementSchemaWhoseTargetedPrimaryHasLowerMinorVersio
     schemacache->AddSchema (*schemaptr);
 
     ECSchemaPtr supple;
-    //This one will be ignored as it is not targeting the primary schema's exact version
+    //With new supplementation Behaviour, this one will not be ignored though it is not targeting the primary schema's exact version.
     ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.69.ecschema.xml", nullptr);
     ASSERT_TRUE(supple != NULL);
     schemacache->AddSchema (*supple);
@@ -806,7 +806,7 @@ TEST (ECDbSchemaManager, SupplementSchemaWhoseTargetedPrimaryHasLowerMinorVersio
     {
         i++;
     }
-    EXPECT_EQ(0, i) << "the number of custom attributes on the Class Base do not match the original";
+    EXPECT_EQ(1, i) << "the number of custom attributes on the Class Base do not match the original";
 }
 
 //---------------------------------------------------------------------------------------
@@ -833,7 +833,7 @@ TEST (ECDbSchemaManager, SupplementSchemaWhoseTargetedPrimaryHasGreaterMinorVers
     ASSERT_TRUE(supple != NULL);
     schemacache->AddSchema (*supple);
 
-    //This one will be ignored as it is not targeting the primary schema's exact version
+    //With new supplementation Behaviour, this one will not be ignored though it is not targeting the primary schema's exact version.
     ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.90.ecschema.xml", nullptr);
     ASSERT_TRUE(supple != NULL);
     schemacache->AddSchema (*supple);
@@ -850,7 +850,7 @@ TEST (ECDbSchemaManager, SupplementSchemaWhoseTargetedPrimaryHasGreaterMinorVers
     {
         i++;
     }
-    ASSERT_EQ(1, i) << "the number of custom attributes on the Class Base do not match the original";
+    ASSERT_EQ(4, i) << "the number of custom attributes on the Class Base do not match the original";
 }
 
 //---------------------------------------------------------------------------------------

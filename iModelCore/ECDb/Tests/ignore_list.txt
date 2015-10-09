@@ -7,8 +7,7 @@ InstanceCRUDTests.* 	# No need to run with the build, used by testing after buil
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
 
-#TFS316543
-# ECDb tests should not depend on DgnDb data
+#TFS316543   ECDb tests should not depend on DgnDb data (Hassan)
 ECDbFileInfo.ReplaceExistingEmbeddedFile
 ECDbFileInfo.ReadAddNewEntrySaveEmbeddedFile
 ECSqlSelectTests.SelectQueriesOnDbGeneratedDuringBuild_79Main
@@ -24,11 +23,6 @@ ECDbSchemas.Verify_TFS_14829_A
 
 #TFS268976 will address this (Affan)
 ECDbMapCATestFixture.MismatchDataTypesInExistingTable
-
-#TFS293050 will address this (Hassan)
-ECDbSchemaManager.SupplementWithLatestCompatibleSupplementalSchema
-ECDbSchemaManager.SupplementSchemaWhoseTargetedPrimaryHasLowerMinorVersion
-ECDbSchemaManager.SupplementSchemaWhoseTargetedPrimaryHasGreaterMinorVersion
 
 #TFS315488 to address this (Affan)
 ECSqlTestFixture.PolymorphicUpdateTest
