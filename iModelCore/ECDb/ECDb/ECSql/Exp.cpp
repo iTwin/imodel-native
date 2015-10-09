@@ -17,6 +17,83 @@ using namespace std;
 //+---------------+---------------+---------------+---------------+---------------+--------
 Utf8CP const Exp::ASTERISK_TOKEN = "*";
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                    09/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+std::set<ECDbSqlTable const*> Exp::GetReferencedTables() const
+    {
+    std::set<ECDbSqlTable const*> tmp;
+    if (!this->IsComplete())
+        {
+        BeAssert(false && "This operation is supported on resolved expressions");
+        return std::move(tmp);
+        }
+
+    auto expList = Find(Type::PropertyName, true);
+    for (auto exp : expList)
+        {
+        auto propertyNameExp = static_cast<PropertyNameExp const*>(exp);
+        if (!propertyNameExp->IsPropertyRef())
+            {
+            auto const& table = propertyNameExp->GetTypeInfo().GetPropertyMap()->GetFirstColumn()->GetTable();
+            if (table.GetPersistenceType() == PersistenceType::Persisted)
+                tmp.insert(&table);
+            }
+        }
+
+    return std::move(tmp);
+    }
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                    09/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+void Exp::FindRecusive(std::vector<Exp const*>& expList, Exp::Type ofType) const
+    {
+    if (GetType() == ofType)
+        expList.push_back(this);
+
+    for (auto child : GetChildren())
+        child->FindRecusive(expList, ofType);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                    09/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+void Exp::FindInDirectDecedentOnly(std::vector<Exp const*>& expList, Exp::Type ofType) const
+    {
+    if (GetType() == ofType)
+        expList.push_back(this);
+
+    for (auto child : GetChildren())
+        if (child->GetType() == ofType)
+            expList.push_back(this);
+    }
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                    09/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+Exp const* Exp::FindParent(Exp::Type type) const
+    {
+    Exp const* p = this;
+    do
+        {
+        p = p->GetParent();
+        } while (p != nullptr && p->GetType() != type);
+
+        return p;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                    09/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+std::vector<Exp const*> Exp::Find( Exp::Type ofType, bool recusive) const
+    {
+    std::vector<Exp const*> tmp;
+    if (recusive)
+        FindRecusive(tmp, ofType);
+    else
+        FindInDirectDecedentOnly(tmp, ofType);
+
+    return std::move(tmp);
+    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013

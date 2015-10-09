@@ -207,12 +207,15 @@ bool ensureDerivedClassesAreLoaded
 
     if (isPolymorphic)
         {
-        auto const& derivedClasses = ensureDerivedClassesAreLoaded ? map.GetECDbR ().Schemas ().GetDerivedECClasses (ecClass) : ecClass.GetDerivedClasses ();
-        for (auto derivedClass : derivedClasses)
+        if (!classMap->IsParentOfJoinedTable())
             {
-            auto status = ComputeViewMembers (viewMembers, map, *derivedClass, isPolymorphic, optimizeByIncludingOnlyRealTables, ensureDerivedClassesAreLoaded);
-            if (status != BentleyStatus::SUCCESS)
-                return status;
+            auto const& derivedClasses = ensureDerivedClassesAreLoaded ? map.GetECDbR().Schemas().GetDerivedECClasses(ecClass) : ecClass.GetDerivedClasses();
+            for (auto derivedClass : derivedClasses)
+                {
+                auto status = ComputeViewMembers(viewMembers, map, *derivedClass, isPolymorphic, optimizeByIncludingOnlyRealTables, ensureDerivedClassesAreLoaded);
+                if (status != BentleyStatus::SUCCESS)
+                    return status;
+                }
             }
         }
     return BentleyStatus::SUCCESS;
@@ -272,7 +275,8 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery (NativeSqlBuilder& viewQu
             continue;
 
         auto aliasSqlSnippets = basePropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
-        auto colSqlSnippets = actualPropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
+        bool isInstanceId = actualPropMap->GetFirstColumn()->GetKnownColumnId() == ECDbKnownColumns::ECInstanceId;
+        auto colSqlSnippets = actualPropMap->ToNativeSql(isInstanceId? table.GetName().c_str() : nullptr, ECSqlType::Select, false);
 
         const size_t snippetCount = colSqlSnippets.size ();
         if (aliasSqlSnippets.size () != snippetCount)
@@ -318,7 +322,9 @@ BentleyStatus ViewGenerator::GetViewQueryForChild (NativeSqlBuilder& viewSql, EC
 
     auto classIdColumn = table.FindColumnCP (ECDB_COL_ECClassId);
     if (classIdColumn != nullptr)
-        viewSql.Append (classIdColumn->GetName ().c_str());
+        {
+        viewSql.AppendEscaped(table.GetName().c_str()).AppendDot().Append(classIdColumn->GetName().c_str());
+        }
     else
         viewSql.Append (firstChildClassMap->GetClass ().GetId ()).AppendSpace ().Append (ECCLASSID_COLUMNNAME);
 
@@ -332,8 +338,34 @@ BentleyStatus ViewGenerator::GetViewQueryForChild (NativeSqlBuilder& viewSql, EC
 
     //Append prop map columns to query [col1],[col2], ...
     AppendViewPropMapsToQuery (viewSql, map.GetECDbR (), prepareContext, table, viewPropMaps);
+    
+    //Determine which table to join for split table case
+    std::set<ECDbSqlTable const*> tableToJoinOn;
+    for (auto const& propMapPair : viewPropMaps)
+        {
+        auto actualPropMap = propMapPair.second;
+        if (!prepareContext.GetSelectionOptions().IsSelected(actualPropMap->GetPropertyAccessString()))
+            continue
+            ;
+        tableToJoinOn.insert(actualPropMap->GetTable());
+        }
 
     viewSql.Append (" FROM ").AppendEscaped (table.GetName().c_str());
+    //Join necessary table for table
+    auto primaryKey = table.GetFilteredColumnFirst(ECDbKnownColumns::ECInstanceId);
+    for (auto const& vpart : firstChildClassMap->GetStorageDescription().GetVerticalPartitions())
+        {
+        bool tableReferencedInQuery = tableToJoinOn.find(&vpart.GetTable()) != tableToJoinOn.end();
+        bool notYetReferenced = &vpart.GetTable() != &table;
+        if (tableReferencedInQuery && notYetReferenced)
+            {
+            auto fkKey = vpart.GetTable().GetFilteredColumnFirst(ECDbKnownColumns::ECInstanceId);
+            viewSql.Append(" INNER JOIN ").AppendEscaped(vpart.GetTable().GetName().c_str());
+            viewSql.Append(" ON ").AppendEscaped(table.GetName().c_str()).AppendDot().AppendEscaped(primaryKey->GetName().c_str());
+            viewSql.Append(" = ").AppendEscaped(vpart.GetTable().GetName().c_str()).AppendDot().AppendEscaped(fkKey->GetName().c_str());
+            }
+        }
+
 
     NativeSqlBuilder where;
     if (classIdColumn != nullptr)

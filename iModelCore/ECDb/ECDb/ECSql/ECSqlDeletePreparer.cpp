@@ -99,11 +99,51 @@ ClassNameExp const& classNameExp
     if (!status.IsSuccess())
         return status;
 
-    if (auto whereClauseExp = exp.GetOptWhereClauseExp ())
+   
+    //WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] WHERE (%s))
+    if (auto whereClauseExp = exp.GetOptWhereClauseExp())
         {
-        status = ECSqlExpPreparer::PrepareWhereExp (deleteSqlSnippets.m_whereClauseNativeSqlSnippet, ctx, whereClauseExp);
+        NativeSqlBuilder whereClause;
+        status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereClauseExp);
         if (!status.IsSuccess())
             return status;
+
+        //Following generate optimized WHERE depending on what was accessed in WHERE class of delete. It will avoid uncessary
+        auto const & currentClassMap = classNameExp.GetInfo().GetMap();
+        if (auto rootOfJoinedTable = currentClassMap.FindRootOfJoinedTable())
+            {
+            auto const tableBeenAccessed = whereClauseExp->GetReferencedTables();
+            bool referencedRootOfJoinedTable = (tableBeenAccessed.find(&rootOfJoinedTable->GetTable()) != tableBeenAccessed.end());
+            bool referencedJoinedTable = (tableBeenAccessed.find(&currentClassMap.GetTable()) != tableBeenAccessed.end());
+            if (referencedRootOfJoinedTable && !referencedJoinedTable)
+                {
+                //do not modifiy where
+                deleteSqlSnippets.m_whereClauseNativeSqlSnippet = whereClause;
+                }
+            else
+                {
+                auto joinedTableId = currentClassMap.GetTable().GetFilteredColumnFirst(ECDbKnownColumns::ECInstanceId);
+                auto parentOfjoinedTableId = rootOfJoinedTable->GetTable().GetFilteredColumnFirst(ECDbKnownColumns::ECInstanceId);
+                NativeSqlBuilder snippet;
+                snippet.AppendFormatted(
+                    " WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] %s) ",
+                    parentOfjoinedTableId->GetName().c_str(),
+                    rootOfJoinedTable->GetTable().GetName().c_str(),
+                    parentOfjoinedTableId->GetName().c_str(),
+                    rootOfJoinedTable->GetTable().GetName().c_str(),
+                    currentClassMap.GetTable().GetName().c_str(),
+                    currentClassMap.GetTable().GetName().c_str(),
+                    joinedTableId->GetName().c_str(),
+                    rootOfJoinedTable->GetTable().GetName().c_str(),
+                    parentOfjoinedTableId->GetName().c_str(),
+                    whereClause.ToString()
+                    );
+
+                deleteSqlSnippets.m_whereClauseNativeSqlSnippet = snippet;
+                }
+            }
+        else
+            deleteSqlSnippets.m_whereClauseNativeSqlSnippet = whereClause;
         }
     
     IClassMap const& classMap = classNameExp.GetInfo().GetMap();
@@ -127,7 +167,7 @@ ClassNameExp const& classNameExp
                 auto& partition = storageDesc.GetHorizontalPartitions ().at (storageDesc.GetNonVirtualHorizontalPartitionIndices ().at (0));               
                 if (partition.NeedsClassIdFilter()) 
                     {
-                    deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet.AppendEscaped(classIdColumn->GetName().c_str());
+                    deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet.AppendEscaped(classIdColumn->GetName().c_str()).AppendSpace();
                     partition.AppendECClassIdFilterSql(deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet);
                     }
                 }

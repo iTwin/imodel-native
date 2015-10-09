@@ -217,6 +217,7 @@ public:
             ~VerticalPartition() {}
             VerticalPartition(VerticalPartition&& rhs);
             VerticalPartition& operator=(VerticalPartition&& rhs);
+            ECDbSqlTable const& GetTable() const { return *m_table; }
         };
     //=======================================================================================
     //! Represents storage description for a given class map and its derived classes for polymorphic queries
