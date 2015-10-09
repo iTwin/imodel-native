@@ -1057,6 +1057,12 @@ bool allowAdd
             sd1 = bcdtmMath_pointSideOfDtmObject (dtmP, startPnt, lastPnt, P4);
             if (sd1 == 0)
                 {
+                if (startPnt == P4)
+                    {
+                    if (dbg)
+                        bcdtmWrite_message(0, 0, 0, "Failed same startPnt and lastPnt.");
+                    goto cleanup;
+                    }
                 bcdtmInsert_swapTinLinesThatIntersectInsertLineHelperDtmObject (dtmP, startPnt, P4, crossingLines);
                 startPnt = P1 = P4;
                 if (startPnt != lastPnt) if (bcdtmTin_getSwapTriangleDtmObject (dtmP, P1, lastPnt, &P2, &P3, &P4)) goto errexit;
