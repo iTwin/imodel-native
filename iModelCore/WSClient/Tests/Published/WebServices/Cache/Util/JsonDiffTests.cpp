@@ -12,24 +12,24 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-#define TEST_GET_CHANGES(oldJsonString, newJsonString, expectedDiffString) { \
-    TestGetChanges(oldJsonString, newJsonString, expectedDiffString); \
-    EXPECT_FALSE(HasFailure()); }
+#define TEST_GET_CHANGES_IGNORE_DEL(oldJsonString, newJsonString, expectedDiffString, ignoreDeletedProperties) { \
+    auto oldJson = ToRapidJson(oldJsonString);              \
+    auto newJson = ToRapidJson(newJsonString);              \
+                                                            \
+    rapidjson::Document outJson;                            \
+    JsonDiff jsonDiff(true, ignoreDeletedProperties);       \
+    jsonDiff.GetChanges(*oldJson, *newJson, outJson);       \
+                                                            \
+    auto expectedOutJson = ToRapidJson(expectedDiffString); \
+    EXPECT_EQ(*expectedOutJson, outJson); }
+
+#define TEST_GET_CHANGES(oldJsonString, newJsonString, expectedDiffString) \
+    TEST_GET_CHANGES_IGNORE_DEL(oldJsonString, newJsonString, expectedDiffString, true)
+
+#define TEST_GET_CHANGES_DO_NOT_IGNORE_DEL(oldJsonString, newJsonString, expectedDiffString) \
+    TEST_GET_CHANGES_IGNORE_DEL(oldJsonString, newJsonString, expectedDiffString, false)
 
 using namespace ::testing;
-
-void TestGetChanges(Utf8StringCR oldJsonString, Utf8StringCR newJsonString, Utf8StringCR expectedDiffString)
-    {
-    auto oldJson = ToRapidJson(oldJsonString);
-    auto newJson = ToRapidJson(newJsonString);
-
-    rapidjson::Document outJson;
-    JsonDiff jsonDiff;
-    jsonDiff.GetChanges(*oldJson, *newJson, outJson);
-
-    auto expectedOutJson = ToRapidJson(expectedDiffString);
-    EXPECT_EQ(*expectedOutJson, outJson);
-    }
 
 TEST_F(JsonDiffTests, GetChanges_EmptyJsons_ReturnsEmptyJson)
     {
@@ -56,6 +56,14 @@ TEST_F(JsonDiffTests, GetChanges_StringPropertyDifferent_ReturnsDiff)
 TEST_F(JsonDiffTests, GetChanges_StringPropertyDeleted_ReturnsDiff)
     {
     TEST_GET_CHANGES(R"({ "A" : "1" })",
+                     R"({ })",
+                     R"({ })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_StringPropertyDeletedDoNotIgnoreDeletedProperties_ReturnsDiff)
+    {
+    TEST_GET_CHANGES_DO_NOT_IGNORE_DEL(
+                     R"({ "A" : "1" })",
                      R"({ })",
                      R"({ "A" : null })");
     }
@@ -92,6 +100,14 @@ TEST_F(JsonDiffTests, GetChanges_IntegerPropertyDeleted_ReturnsDiff)
     {
     TEST_GET_CHANGES(R"({ "A" : 1 })",
                      R"({ })",
+                     R"({ })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_IntegerPropertyDeletedDoNotIgnoreDeletedProperties_ReturnsDiff)
+    {
+    TEST_GET_CHANGES_DO_NOT_IGNORE_DEL(
+                     R"({ "A" : "1" })",
+                     R"({ })",
                      R"({ "A" : null })");
     }
 
@@ -100,6 +116,51 @@ TEST_F(JsonDiffTests, GetChanges_IntegerPropertyAdded_ReturnsDiff)
     TEST_GET_CHANGES(R"({ })",
                      R"({ "A" : 1 })",
                      R"({ "A" : 1 })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_NullPropertyDeleted_ReturnsDiff)
+    {
+    TEST_GET_CHANGES(R"({ "A" : null })",
+                     R"({ })",
+                     R"({ })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_NullPropertyDeletedDoNotIgnoreDeletedProperties_ReturnsDiff)
+    {
+    TEST_GET_CHANGES_DO_NOT_IGNORE_DEL(
+                     R"({ "A" : null })",
+                     R"({ })",
+                     R"({ "A" : null })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_TruePropertyDeleted_ReturnsDiff)
+    {
+    TEST_GET_CHANGES(R"({ "A" : true })",
+                     R"({ })",
+                     R"({ "a" :4})");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_TruePropertyDeletedDoNotIgnoreDeletedProperties_ReturnsDiff)
+    {
+    TEST_GET_CHANGES_DO_NOT_IGNORE_DEL(
+                     R"({ "A" : true })",
+                     R"({ })",
+                     R"({ "A" : null })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_FalsePropertyDeleted_ReturnsDiff)
+    {
+    TEST_GET_CHANGES(R"({ "A" : false })",
+                     R"({ })",
+                     R"({ })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_FalsePropertyDeletedDoNotIgnoreDeletedProperties_ReturnsDiff)
+    {
+    TEST_GET_CHANGES_DO_NOT_IGNORE_DEL(
+                     R"({ "A" : false })",
+                     R"({ })",
+                     R"({ "A" : null })");
     }
 
 TEST_F(JsonDiffTests, GetChanges_TypeCangedTrueToFalse_ReturnsDiff)

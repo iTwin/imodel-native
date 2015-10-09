@@ -23,30 +23,32 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 struct JsonDiff
     {
     private:
-        void AddMember(RapidJsonValueR jsonOut, RapidJsonValueCR name, RapidJsonValueCR value, rapidjson::Value::AllocatorType& allocator, bool copyValues);
+        bool m_copyValues;
+        bool m_ignoreDeletedProperties;
+
+    private:
+        void AddMember(RapidJsonValueR jsonOut, RapidJsonValueCR name, RapidJsonValueCR value, rapidjson::Value::AllocatorType& allocator);
 
         bool ValuesShallowEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
         bool StringValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
         bool ArrayValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
 
     public:
-        WSCACHE_EXPORT JsonDiff();  // bool copyVaues = true, bool ignoreDeletedProperties = true
+        WSCACHE_EXPORT JsonDiff(bool copyValues = true, bool ignoreDeletedProperties = true);
         WSCACHE_EXPORT virtual ~JsonDiff();
         
         WSCACHE_EXPORT BentleyStatus GetChanges
             (
             RapidJsonValueCR oldJson,
             RapidJsonValueCR newJson,
-            RapidJsonDocumentR jsonOut,
-            bool copyValues = true
+            RapidJsonDocumentR jsonOut
             );
         WSCACHE_EXPORT BentleyStatus GetChanges
             (
             RapidJsonValueCR oldJson,
             RapidJsonValueCR newJson,
             RapidJsonValueR jsonOut,
-            rapidjson::Value::AllocatorType& allocator,
-            bool copyValues = true
+            rapidjson::Value::AllocatorType& allocator
             );
     };
 
