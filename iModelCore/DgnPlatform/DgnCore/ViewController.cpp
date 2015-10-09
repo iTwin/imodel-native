@@ -1086,7 +1086,7 @@ double PhysicalViewController::CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec)
 //---------------------------------------------------------------------------------------
 static bool convertToWorldPointWithStatus(DPoint3dR worldPoint, GeoLocationEventStatus& status, DgnUnits const& units, GeoPointCR location)
     {
-    if (SUCCESS != units.UorsFromLatLong(worldPoint, location))
+    if (SUCCESS != units.XyzFromLatLong(worldPoint, location))
         {
         BeAssert(false);
         status = GeoLocationEventStatus::EventIgnored;
