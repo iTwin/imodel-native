@@ -1113,6 +1113,8 @@ DgnElementCPtr DgnElement::Import(DgnDbStatus* stat, DgnModelR destModel, DgnImp
     if (parent.IsValid())
         parent->_OnChildImported(*ccp, *this, importer);
 
+    ccp->_OnImported(*this, importer);
+
     return ccp;
     }
 

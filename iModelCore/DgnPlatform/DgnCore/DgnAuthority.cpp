@@ -426,8 +426,16 @@ DgnAuthority::Code DgnCategory::CreateCategoryCode(Utf8StringCR name, DgnDbR db)
 DgnAuthority::Code DgnSubCategory::CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR name, DgnDbR db)
     {
     auto cat = DgnCategory::QueryCategory(categoryId, db);
-    auto auth = cat.IsValid() ? getBuiltinAuthority<NamespaceAuthority>(BuiltinAuthority_Category, db) : nullptr;
-    return auth.IsValid() ? auth->CreateCode(name, cat->GetCategoryName()) : Code();
+    return cat.IsValid() ? CreateSubCategoryCode(*cat, name, db) : Code();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code DgnSubCategory::CreateSubCategoryCode(DgnCategoryCR cat, Utf8StringCR name, DgnDbR db)
+    {
+    auto auth = getBuiltinAuthority<NamespaceAuthority>(BuiltinAuthority_Category, db);
+    return auth.IsValid() ? auth->CreateCode(name, cat.GetCategoryName()) : Code();
     }
 
 /*---------------------------------------------------------------------------------**//**

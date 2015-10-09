@@ -151,9 +151,15 @@ protected:
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetParentId(DgnElementId parentId) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(Code const& code) override;
+    DGNPLATFORM_EXPORT virtual Code _GenerateDefaultCode() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
+//__PUBLISH_SECTION_END__
+public:
+    static DgnSubCategoryId ImportSubCategory(DgnSubCategoryId source, DgnCategoryId destCategoryId, DgnImportContext& importer, DgnRemapTables& remap);
+//__PUBLISH_SECTION_START__
 public:
     //! Constructs a new DgnSubCategory with the specified parameters.
     explicit DgnSubCategory(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }
@@ -173,6 +179,9 @@ public:
 
     //! Create a Code for the name of a sub-category of the specified category
     DGNPLATFORM_EXPORT static Code CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR subCategoryName, DgnDbR db);
+
+    //! Create a Code for the name of a sub-category of the specified category
+    DGNPLATFORM_EXPORT static Code CreateSubCategoryCode(DgnCategoryCR category, Utf8StringCR subCategoryName, DgnDbR db);
 
     //! Looks up a sub-category ID by code.
     DGNPLATFORM_EXPORT static DgnSubCategoryId QuerySubCategoryId(Code const& code, DgnDbR db);
@@ -274,12 +283,19 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(Code const& code) override;
+    DGNPLATFORM_EXPORT virtual Code _GenerateDefaultCode() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildDelete(DgnElementCR child) const override;
     DGNPLATFORM_EXPORT virtual void _OnInserted(DgnElementP copiedFrom) const override;
+    DGNPLATFORM_EXPORT virtual void _OnImported(DgnElementCR original, DgnImportContext& importer) const override;
     
     virtual DgnDbStatus _SetParentId(DgnElementId parentId) override { return DgnDbStatus::InvalidParent; }
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
+//__PUBLISH_SECTION_END__
+public:
+    static DgnCategoryId ImportCategory(DgnCategoryId source, DgnImportContext& importer, DgnRemapTables& remap);
+//__PUBLISH_SECTION_START__
 public:
     DgnCategoryId GetCategoryId() const { return DgnCategoryId(GetElementId().GetValue()); } //!< Returns the ID of this category.
     DgnSubCategoryId GetDefaultSubCategoryId() const { return GetDefaultSubCategoryId(GetCategoryId()); } //!< Returns the ID of this category's default sub-category

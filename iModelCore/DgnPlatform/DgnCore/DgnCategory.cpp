@@ -136,7 +136,8 @@ DgnDbStatus DgnCategory::_OnChildDelete(DgnElementCR child) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnCategory::_OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const
     {
-    return DgnDbStatus::ParentBlockedChange; // ###TODO
+    BeAssert(false && "Import the category before importing subcategories"); // ###TODO?
+    return DgnDbStatus::ParentBlockedChange;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -149,7 +150,7 @@ void DgnCategory::_OnInserted(DgnElementP copiedFrom) const
     BeAssert(defaultSubCatId.IsValid());
     BeAssert(!GetDgnDb().Elements().GetElement(defaultSubCatId).IsValid());
 
-    DgnSubCategory defaultSubCat(DgnSubCategory::CreateParams(GetDgnDb(), GetCategoryId(), "", DgnSubCategory::Appearance()));
+    DgnSubCategory defaultSubCat(DgnSubCategory::CreateParams(GetDgnDb(), GetCategoryId(), GetCategoryName(), DgnSubCategory::Appearance()));
 
     DgnSubCategoryCPtr persistentSubCat = defaultSubCat.Insert();
     BeAssert(persistentSubCat.IsValid());
@@ -247,6 +248,23 @@ DgnCategoryId DgnCategory::QueryElementCategoryId(DgnElementId elemId, DgnDbR db
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnCategory::_SetCode(Code const& code)
+    {
+    return code.GetNameSpace().empty() ? T_Super::_SetCode(code) : DgnDbStatus::BadArg;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code DgnCategory::_GenerateDefaultCode()
+    {
+    BeAssert(false && "Creator of a category must set its code");
+    return Code();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnSubCategory::_BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt)
     {
     auto status = T_Super::_BindInsertParams(stmt);
@@ -296,8 +314,10 @@ DgnDbStatus DgnSubCategory::BindParams(ECSqlStatement& stmt)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnSubCategory::_SetCode(Code const& code)
     {
-    // default sub-category does not have a name
-    if (code.GetValue().empty() != IsDefaultSubCategory())
+    // default sub-category has same name as category
+    // all sub-category codes have namespace = category name
+    DgnCategoryCPtr cat = DgnCategory::QueryCategory(GetCategoryId(), GetDgnDb());
+    if (cat.IsNull() || !code.GetNameSpace().Equals(cat->GetCategoryName()) || (code.GetValue().Equals(cat->GetCategoryName()) != IsDefaultSubCategory()))
         return DgnDbStatus::BadArg;
     else
         return T_Super::_SetCode(code);
@@ -428,6 +448,19 @@ bool DgnSubCategory::IsDefaultSubCategory() const
     return DgnCategory::GetDefaultSubCategoryId(GetCategoryId()) == GetSubCategoryId();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code DgnSubCategory::_GenerateDefaultCode()
+    {
+    DgnCategoryCPtr cat = IsDefaultSubCategory() ? DgnCategory::QueryCategory(GetCategoryId(), GetDgnDb()) : nullptr;
+    if (cat.IsValid())
+        return CreateSubCategoryCode(*cat, cat->GetCategoryName(), GetDgnDb());
+
+    BeAssert(false && "The creator of a sub-category must set its code");
+    return Code();
+    }
+
 static Utf8CP APPEARANCE_Invisible  = "invisible";
 static Utf8CP APPEARANCE_Color      = "color";
 static Utf8CP APPEARANCE_Weight     = "weight";
@@ -542,16 +575,123 @@ void DgnSubCategory::Override::ApplyTo(Appearance& appear) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId DgnImportContext::RemapCategory(DgnCategoryId source)
+void DgnCategory::_OnImported(DgnElementCR original, DgnImportContext& importer) const
     {
-    return DgnCategoryId(); // ###TODO
+    if (importer.IsBetweenDbs())
+        {
+        BeAssert(nullptr != dynamic_cast<DgnCategoryCP>(&original));
+
+        for (auto const& srcSubCatId : DgnSubCategory::QuerySubCategories(importer.GetSourceDb(), DgnCategoryId(original.GetElementId().GetValue())))
+            importer.RemapSubCategory(GetCategoryId(), srcSubCatId);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DgnSubCategory::_RemapIds(DgnImportContext& importer)
+    {
+    // *** WIP_IMPORT: Translate style IDS in sourceAppearance
+    T_Super::_RemapIds(importer);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCategoryId DgnCategory::ImportCategory(DgnCategoryId srcCatId, DgnImportContext& importer, DgnRemapTables& remap)
+    {
+    DgnCategoryId dstCatId = remap.Find(srcCatId);
+    if (dstCatId.IsValid())
+        return dstCatId;
+
+    DgnCategoryCPtr srcCat = DgnCategory::QueryCategory(srcCatId, importer.GetSourceDb());
+    BeAssert(srcCat.IsValid());
+    if (!srcCat.IsValid())
+        return DgnCategoryId();
+
+    dstCatId = QueryCategoryId(srcCat->GetCategoryName(), importer.GetDestinationDb());
+    if (!dstCatId.IsValid())
+        {
+        auto importedElem = srcCat->Import(nullptr, importer.GetDestinationDb().GetDictionaryModel(), importer);
+        if (importedElem.IsValid())
+            dstCatId = DgnCategoryId(importedElem->GetElementId().GetValue());
+        }
+
+    if (dstCatId.IsValid())
+        remap.Add(srcCatId, dstCatId);
+
+    return dstCatId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnSubCategoryId DgnSubCategory::ImportSubCategory(DgnSubCategoryId srcSubCatId, DgnCategoryId dstCatId, DgnImportContext& importer, DgnRemapTables& remap)
+    {
+    DgnSubCategoryId dstSubCatId = remap.Find(srcSubCatId);
+    if (dstSubCatId.IsValid())
+        return dstSubCatId;
+
+    DgnSubCategoryCPtr srcSubCat = DgnSubCategory::QuerySubCategory(srcSubCatId, importer.GetSourceDb());
+    BeAssert(srcSubCat.IsValid());
+    if (srcSubCat.IsNull())
+        return dstSubCatId;
+
+    if (srcSubCat->IsDefaultSubCategory())
+        {
+        dstSubCatId = DgnCategory::GetDefaultSubCategoryId(dstCatId);
+        DgnSubCategoryCPtr dstSubCat = DgnSubCategory::QuerySubCategory(dstSubCatId, importer.GetDestinationDb());
+        BeAssert(dstSubCat.IsValid() && "Importing a category should have created a default sub-category");
+        if (dstSubCat.IsValid())
+            {
+            BeAssert(dstSubCat->IsDefaultSubCategory());
+
+            // Since we must create the default sub-category as soon as the category is inserted, we now need to update its properties to reflect the source sub-category
+
+            // *** WIP_IMPORT: Translate style IDS in sourceAppearance
+            UNUSED_VARIABLE(dstSubCat);
+            }
+        }
+    else
+        {
+        auto dstSubCat = srcSubCat->Import(nullptr, importer.GetDestinationDb().GetDictionaryModel(), importer);
+        if (dstSubCat.IsValid())
+            dstSubCatId = DgnSubCategoryId(dstSubCat->GetElementId().GetValue());
+        }
+
+    if (dstSubCatId.IsValid())
+        remap.Add(srcSubCatId, dstSubCatId);
+
+    return dstSubCatId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCategoryId DgnImportContext::RemapCategory(DgnCategoryId source)
+    {
+    if (!IsBetweenDbs())
+        return source;
+
+    DgnCategoryId dest = m_remap.Find(source);
+    if (dest.IsValid())
+        return dest;
+
+    return DgnCategory::ImportCategory(source, *this, m_remap);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnSubCategoryId DgnImportContext::RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId source)
     {
-    return DgnSubCategoryId(); // ###TODO
+    if (!IsBetweenDbs())
+        return source;
+
+    DgnSubCategoryId dest = m_remap.Find(source);
+    if (dest.IsValid())
+        return dest;
+
+    return DgnSubCategory::ImportSubCategory(source, destCategoryId, *this, m_remap);
     }
 
