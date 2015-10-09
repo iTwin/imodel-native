@@ -2429,7 +2429,7 @@ void HighPriorityOperationSequencer::StartHighPriorityOperation()
 //---------------------------------------------------------------------------------------
 void HighPriorityOperationSequencer::EndHighPriorityOperation()
     {
-//  BeAssert(s_inHighPriorityOperation > 0);
+    BeAssert(s_inHighPriorityOperation > 0);
     s_inHighPriorityOperation--;
     }
 
