@@ -236,6 +236,25 @@ bool ECDbAdapter::DoesConstraintSupportECClass(ECRelationshipConstraintCR constr
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mark.Uvari      10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+int ECDbAdapter::FindDistanceFromBaseClass(ECClassCP ecClass, ECClassCP targetClass, int dist)
+    {
+    if (ecClass->GetName().Equals(targetClass->GetName()))
+        {
+        return dist; //Match found
+        }
+    else if (!ecClass->HasBaseClasses())
+        {
+        return -1; //Error: No match found
+        }
+    else
+        {
+        return FindDistanceFromBaseClass((*ecClass->GetBaseClasses().begin()), targetClass, ++dist);
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClasses(ECClassId sourceClassId, ECClassId targetClassId)
@@ -411,6 +430,41 @@ ECRelationshipClassCP ECDbAdapter::FindRelationshipClassWithTarget(ECClassId sou
                 return nullptr;
                 }
             relClass = candidateRelClass;
+            }
+        }
+
+    return relClass;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mark.Uvari    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipClassCP ECDbAdapter::FindClosestRelationshipClassWithSource(ECClassId sourceClassId, ECClassId targetClassId)
+    {
+    ECRelationshipClassCP relClass = nullptr;
+
+    ECClassCP sourceClass = GetECClass(sourceClassId);
+    ECClassCP targetClass = GetECClass(targetClassId);
+    if (sourceClass == nullptr || targetClass == nullptr)
+        {
+        return nullptr;
+        }
+
+    int relClassDist = INT_MAX;
+    for (ECRelationshipClassCP candidateRelClass : FindRelationshipClasses(sourceClassId, targetClassId))
+        {
+        if (DoesConstraintSupportECClass(candidateRelClass->GetSource(), *sourceClass, false))
+            {
+            for (auto candTargClass : candidateRelClass->GetTarget().GetClasses())
+                {
+                //Find closest distance from inherited class
+                int dist = FindDistanceFromBaseClass(targetClass, candTargClass);
+                if (dist >= 0 && dist < relClassDist)
+                    {
+                    relClass = candidateRelClass;
+                    relClassDist = dist;
+                    }
+                }
             }
         }
 

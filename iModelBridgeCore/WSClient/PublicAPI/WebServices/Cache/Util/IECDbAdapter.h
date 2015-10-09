@@ -77,6 +77,9 @@ struct EXPORT_VTABLE_ATTRIBUTE IECDbAdapter
         //! Find relationship class that matches target exactly and source polymorphically. Will return null if found more or none.
         virtual ECRelationshipClassCP FindRelationshipClassWithTarget(ECClassId sourceClassId, ECClassId targetClassId) = 0;
 
+        //! Find relationship class that matches target exactly and source polymorphically. Will return closest matching if found more
+        virtual ECRelationshipClassCP FindClosestRelationshipClassWithSource(ECClassId sourceClassId, ECClassId targetClassId) = 0;
+
         virtual ECInstanceKey GetInstanceKeyFromJsonInstance(JsonValueCR ecInstanceJson) = 0;
 
         virtual BentleyStatus PrepareStatement(ECSqlStatement& statement, ECSqlBuilderCR builder) = 0;
