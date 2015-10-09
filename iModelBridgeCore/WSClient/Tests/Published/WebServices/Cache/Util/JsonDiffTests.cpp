@@ -137,7 +137,7 @@ TEST_F(JsonDiffTests, GetChanges_TruePropertyDeleted_ReturnsDiff)
     {
     TEST_GET_CHANGES(R"({ "A" : true })",
                      R"({ })",
-                     R"({ "a" :4})");
+                     R"({ })");
     }
 
 TEST_F(JsonDiffTests, GetChanges_TruePropertyDeletedDoNotIgnoreDeletedProperties_ReturnsDiff)
