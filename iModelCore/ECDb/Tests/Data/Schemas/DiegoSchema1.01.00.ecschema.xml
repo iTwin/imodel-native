@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="DiegoSchema1" nameSpacePrefix="ds1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECCustomAttributes> 
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+            <SchemaFullNameAtEditingStart>DiagoSchema1.01.00</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECClass typeName="CivilModel" isDomainClass="True">
+        <ECProperty propertyName="CMId" typeName="string" />
+    </ECClass>
+    <ECClass typeName="DataSetModel" isDomainClass="False">
+        <ECProperty propertyName="MSMId" typeName="string" />
+    </ECClass>
+    <ECRelationshipClass typeName="CivilModelHasDataSetModel" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="CivilModel" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="DataSetModel" />
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>

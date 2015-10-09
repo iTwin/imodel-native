@@ -200,7 +200,7 @@ public:
             void GenerateClassIdFilter (std::vector<ECN::ECClassId> const& tableClassIds);
 
             bool NeedsClassIdFilter () const;
-            void AppendECClassIdFilterSql (NativeSqlBuilder&) const;
+            void AppendECClassIdFilterSql (Utf8CP classIdColName, NativeSqlBuilder&) const;
         };
 
     //=======================================================================================

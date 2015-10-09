@@ -166,10 +166,7 @@ ClassNameExp const& classNameExp
                 {
                 auto& partition = storageDesc.GetHorizontalPartitions ().at (storageDesc.GetNonVirtualHorizontalPartitionIndices ().at (0));               
                 if (partition.NeedsClassIdFilter()) 
-                    {
-                    deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet.AppendEscaped(classIdColumn->GetName().c_str()).AppendSpace();
-                    partition.AppendECClassIdFilterSql(deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet);
-                    }
+                    deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet.AppendEscaped(classIdColumn->GetName().c_str());
                 }
             }
         }

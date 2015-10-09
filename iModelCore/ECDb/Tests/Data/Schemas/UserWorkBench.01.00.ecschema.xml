@@ -1,0 +1,245 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="UserWorkBench" nameSpacePrefix="UWB" version="1.0" description="Schema that contains all the data about a user" displayLabel="User WorkBench" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECSchemaReference name="EditorCustomAttributes" version="01.01" prefix="beca" />
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+            <SchemaFullNameAtEditingStart>UserWorkBench.01.00</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECClass typeName="areas" displayLabel="Areas" isStruct="True" isDomainClass="False">
+        <ECProperty propertyName="area_id" typeName="int" displayLabel="Area Id" />
+        <ECProperty propertyName="name" typeName="string" displayLabel="Name" />
+        <ECProperty propertyName="province_id" typeName="int" displayLabel="Province Id" />
+    </ECClass>
+    <ECClass typeName="towns" displayLabel="Towns" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="area_id" typeName="int" displayLabel="Area Id" />
+        <ECProperty propertyName="name" typeName="string" displayLabel="Name" />
+        <ECProperty propertyName="town_id" typeName="int" displayLabel="Town Id" />
+    </ECClass>
+    <ECRelationshipClass typeName="area_town" displayLabel="Area Town Relationship" isDomainClass="True" strength="holding" strengthDirection="backward">
+        <Source cardinality="(1,1)" polymorphic="True">
+            <Class class="areas"/>
+        </Source>
+        <Target cardinality="(10,10)" polymorphic="True">
+            <Class class="towns">
+                <Key>
+                    <Property name="area_id" />
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="houses" displayLabel="House" isDomainClass="True">
+        <ECProperty propertyName="town_id" typeName="int" displayLabel="Town Id" />
+        <ECProperty propertyName="state_id" typeName="int" displayLabel="State Id" />
+        <ECProperty propertyName="province_id" typeName="int" displayLabel="Province Id" />
+        <ECProperty propertyName="region_id" typeName="int" displayLabel="Region Id" />
+        <ECProperty propertyName="country_id" typeName="int" displayLabel="Country Id" />
+        <ECProperty propertyName="area_id" typeName="int" description="int" displayLabel="Area Id" />
+        <ECProperty propertyName="house_id" typeName="int" displayLabel="House Id" />
+    </ECClass>
+    <ECClass typeName="availabilities" displayLabel="Availabilities" isDomainClass="True">
+        <BaseClass>houses</BaseClass>
+        <ECProperty propertyName="name" typeName="string" displayLabel="Name" />
+        <ECProperty propertyName="house_id" typeName="int" />
+    </ECClass>
+    <ECClass typeName="categories" displayLabel="Categories" isDomainClass="True">
+        <ECProperty propertyName="category_id" typeName="int" displayLabel="Category Id" />
+        <ECProperty propertyName="name" typeName="string" displayLabel="Name" />
+        <ECProperty propertyName="description" typeName="string" displayLabel="Description" />
+    </ECClass>
+    <ECClass typeName="user" description="Information about user" isDomainClass="True">
+        <ECProperty propertyName="userName" typeName="string">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.01">
+                    <Priority>10</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="passWord" typeName="string">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.01">
+                    <Priority>10</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="eMail" typeName="string">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.01">
+                    <Priority>10</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="registrationCode" typeName="string" displayLabel="Registration Code">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.01">
+                    <Priority>10</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="user_id" typeName="int">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.01">
+                    <Priority>10</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="comments" displayLabel="Comments" isDomainClass="True">
+        <BaseClass>user</BaseClass>
+        <ECProperty propertyName="text" typeName="string" displayLabel="Text" />
+        <ECProperty propertyName="house_id" typeName="int" displayLabel="House Id" />
+        <ECProperty propertyName="comment_id" typeName="int" displayLabel="Comment Id" />
+    </ECClass>
+    <ECClass typeName="conditions" displayLabel="Conditions" isDomainClass="True">
+        <BaseClass>houses</BaseClass>
+        <ECProperty propertyName="name" typeName="string" displayLabel="Name" />
+        <ECProperty propertyName="level" typeName="int" displayLabel="Level" />
+        <ECProperty propertyName="house_id" typeName="int" />
+    </ECClass>
+    <ECClass typeName="continent" displayLabel="Continent" isDomainClass="False">
+        <ECProperty propertyName="continent_id" typeName="int" displayLabel="Continent Id" />
+        <ECProperty propertyName="name" typeName="string" displayLabel="Name" />
+    </ECClass>
+    <ECClass typeName="country" displayLabel="Country" isDomainClass="True">
+        <ECProperty propertyName="name" typeName="string" displayLabel="Name" />
+        <ECProperty propertyName="country_id" typeName="int" displayLabel="Country Id" />
+    </ECClass>
+    <ECRelationshipClass typeName="country_continent" displayLabel="Country Continent Relationship" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(1,N)" polymorphic="True">
+            <Class class="country">
+                <Key>
+                    <Property name="country_id" />
+                </Key>
+            </Class>
+        </Source>
+        <Target cardinality="(1,1)" polymorphic="True">
+            <Class class="continent">
+                <Key>
+                    <Property name="continent_id" />
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="region" displayLabel="Region" isDomainClass="True">
+        <BaseClass>country</BaseClass>
+        <ECProperty propertyName="region_id" typeName="int" displayLabel="Region Id" />
+    </ECClass>
+    <ECRelationshipClass typeName="country_region" displayLabel="Country Region Relationship" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <Source cardinality="(1,1)" polymorphic="True">
+            <Class class="country"/>
+        </Source>
+        <Target cardinality="(4,N)" polymorphic="True">
+            <Class class="region">
+                <Key>
+                    <Property name="country_id" />
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="house_user" displayLabel="House User Relationship" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="houses" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="user" />
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="states" displayLabel="States" isDomainClass="True">
+        <ECProperty propertyName="name" typeName="string" displayLabel="Name" />
+        <ECProperty propertyName="state_id" typeName="int" displayLabel="State Id" />
+    </ECClass>
+    <ECClass typeName="links" displayLabel="Links" isDomainClass="True">
+        <BaseClass>states</BaseClass>
+        <ECProperty propertyName="title" typeName="string" displayLabel="Title" />
+        <ECProperty propertyName="description" typeName="string" displayLabel="Description" />
+        <ECProperty propertyName="url" typeName="string" displayLabel="URL" />
+        <ECProperty propertyName="state_id" typeName="int" />
+        <ECProperty propertyName="link_id" typeName="int" displayLabel="Link Id" />
+    </ECClass>
+    <ECClass typeName="options" displayLabel="Options" isDomainClass="True">
+        <ECProperty propertyName="id" typeName="int" displayLabel="Id" />
+        <ECProperty propertyName="name" typeName="string" displayLabel="Name" />
+        <ECProperty propertyName="value" typeName="string" displayLabel="Value" />
+    </ECClass>
+    <ECClass typeName="pages" displayLabel="Pages" isDomainClass="True">
+        <ECProperty propertyName="page_id" typeName="int" displayLabel="Page Id" />
+        <ECProperty propertyName="title" typeName="string" displayLabel="Title" />
+        <ECProperty propertyName="state_id" typeName="int" displayLabel="State Id" />
+        <ECProperty propertyName="category_id" typeName="int" displayLabel="Category Id" />
+    </ECClass>
+    <ECClass typeName="pictures" displayLabel="Pictures" isDomainClass="True">
+        <ECProperty propertyName="picture_id" typeName="int" displayLabel="Picture Id" />
+        <ECProperty propertyName="house_id" typeName="int" displayLabel="House Id" />
+        <ECProperty propertyName="name" typeName="string" displayLabel="Name" />
+        <ECProperty propertyName="caption" typeName="string" displayLabel="Caption" />
+        <ECProperty propertyName="thumbnail_url" typeName="string" displayLabel="Thumbnail Url" />
+    </ECClass>
+    <ECClass typeName="profile" displayLabel="Profile" isDomainClass="True">
+        <ECProperty propertyName="id" typeName="int" />
+        <ECProperty propertyName="first_name" typeName="string" displayLabel="First Name" />
+        <ECProperty propertyName="last_name" typeName="string" displayLabel="Last Name" />
+        <ECProperty propertyName="middle_name" typeName="string" displayLabel="Middle Name" />
+    </ECClass>
+    <ECClass typeName="providers" displayLabel="Providers" isDomainClass="True">
+        <BaseClass>user</BaseClass>
+        <ECProperty propertyName="name" typeName="string" displayLabel="Name" />
+        <ECProperty propertyName="code" typeName="string" displayLabel="Code" />
+        <ECProperty propertyName="provider_id" typeName="int" displayLabel="Provider Id" />
+    </ECClass>
+    <ECClass typeName="province" displayLabel="Province" isDomainClass="True" isCustomAttributeClass="True">
+        <ECProperty propertyName="region_id" typeName="string" displayLabel="Region Id" />
+        <ECProperty propertyName="name" typeName="string" displayLabel="Name" />
+        <ECProperty propertyName="province_id" typeName="int" displayLabel="Province Id" />
+    </ECClass>
+    <ECRelationshipClass typeName="province_area" displayLabel="Province Area Relationship" isDomainClass="True" strength="referencing" strengthDirection="backward">
+        <Source cardinality="(1,1)" polymorphic="True">
+            <Class class="province" />
+        </Source>
+        <Target cardinality="(1,1)" polymorphic="True">
+            <Class class="areas" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="region_province" displayLabel="Region Province Relationship" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="region" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="province" />
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="roles" displayLabel="Roles" isDomainClass="True">
+        <ECProperty propertyName="name" typeName="string" displayLabel="Name" />
+        <ECProperty propertyName="level" typeName="int" displayLabel="Level" />
+        <ECProperty propertyName="roles_id" typeName="int" displayLabel="Roles Id" />
+    </ECClass>
+    <ECClass typeName="sevices" displayLabel="Services" isDomainClass="True">
+        <ECProperty propertyName="id" typeName="int" displayLabel="Id" />
+        <ECProperty propertyName="electricity" typeName="int" displayLabel="Elecrticity" />
+        <ECProperty propertyName="water" typeName="int" displayLabel="Water" />
+        <ECProperty propertyName="garbage" typeName="int" displayLabel="Garbage" />
+        <ECProperty propertyName="gas" typeName="int" displayLabel="Gas" />
+        <ECProperty propertyName="parking" typeName="int" displayLabel="Parking" />
+    </ECClass>
+    <ECClass typeName="status" isDomainClass="True">
+        <BaseClass>user</BaseClass>
+        <ECProperty propertyName="name" typeName="string" />
+        <ECProperty propertyName="level" typeName="int" />
+        <ECProperty propertyName="status_id" typeName="string" displayLabel="Status Id" />
+    </ECClass>
+    <ECRelationshipClass typeName="town_house" displayLabel="Town House Relationship" isDomainClass="True" strength="embedding" strengthDirection="backward">
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="towns" />
+        </Source>
+        <Target cardinality="(0,100)" polymorphic="True">
+            <Class class="houses" />
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="types" displayLabel="Types" isDomainClass="True">
+        <BaseClass>houses</BaseClass>
+        <ECProperty propertyName="name" typeName="string" displayLabel="Name" />
+        <ECProperty propertyName="house_id" typeName="int" />
+    </ECClass>
+</ECSchema>

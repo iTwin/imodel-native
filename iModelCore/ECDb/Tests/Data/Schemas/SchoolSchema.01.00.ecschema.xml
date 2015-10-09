@@ -1,0 +1,71 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="SchoolSchema" nameSpacePrefix="SS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECSchemaReference name="EditorCustomAttributes" version="01.01" prefix="beca" />
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <SchemaFullNameAtEditingStart>SchoolSchema.01.00</SchemaFullNameAtEditingStart>
+            <TrackingEnabled>True</TrackingEnabled>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECClass typeName="Course" isDomainClass="True">
+        <ECCustomAttributes>
+            <TreeColorCustomAttributes xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <NodeBackColor>ActiveBorder</NodeBackColor>
+                <NodeForeColor>ActiveCaption</NodeForeColor>
+            </TreeColorCustomAttributes>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CourseTitle" isDomainClass="True">
+        <BaseClass>Course</BaseClass>
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>False</Hidden>
+                <HideRelated>False</HideRelated>
+            </DisplayOptions>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="Department" isDomainClass="True">
+        <ECCustomAttributes>
+            <CEContentPaneCustomization xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <TabSpecifications />
+            </CEContentPaneCustomization>
+            <ChangeManagement xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Supported>True</Supported>
+            </ChangeManagement>
+        </ECCustomAttributes>
+        <ECProperty propertyName="d_code" typeName="string" />
+        <ECProperty propertyName="school_code" typeName="string" />
+        <ECProperty propertyName="d_name" typeName="string" />
+    </ECClass>
+    <ECClass typeName="School" isDomainClass="True">
+        <ECCustomAttributes>
+            <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="code" typeName="string" />
+        <ECProperty propertyName="name" typeName="string" />
+        <ECProperty propertyName="campus" typeName="string" />
+    </ECClass>
+    <ECRelationshipClass typeName="SchoolDepartmentRelation" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <AlwaysExpand xmlns="EditorCustomAttributes.01.01">
+                <ArrayMembers>False</ArrayMembers>
+            </AlwaysExpand>
+            <BooleanDisplay xmlns="EditorCustomAttributes.01.01">
+                <TrueString>yes</TrueString>
+                <FalseString>no</FalseString>
+            </BooleanDisplay>
+            <TreeColorCustomAttributes xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <NodeBackColor>ActiveBorder</NodeBackColor>
+                <NodeForeColor>ActiveCaption</NodeForeColor>
+            </TreeColorCustomAttributes>
+        </ECCustomAttributes>
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="School" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="Department" />
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>

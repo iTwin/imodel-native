@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="SchemaMapping" nameSpacePrefix="sm" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+            <SchemaFullNameAtEditingStart>SchemaMapping.01.00</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECClass typeName="A" isDomainClass="True">
+        <ECProperty propertyName="PS" typeName="string" />
+        <ECArrayProperty propertyName="PSA" typeName="string" minOccurs="1" maxOccurs="5" />
+        <ECArrayProperty propertyName="PaSA" typeName="bsca:LocalizationData" minOccurs="1" maxOccurs="10" isStruct="True" />
+    </ECClass>
+    <ECClass typeName="B" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="Pb3d" typeName="point3d" />
+        <ECProperty propertyName="Pb2d" typeName="point2d" />
+        <ECArrayProperty propertyName="PBA" typeName="boolean" minOccurs="1" maxOccurs="5" />
+    </ECClass>
+    <ECClass typeName="C" isStruct="True" isDomainClass="False">
+        <ECProperty propertyName="PAC" typeName="binary" />
+    </ECClass>
+</ECSchema>

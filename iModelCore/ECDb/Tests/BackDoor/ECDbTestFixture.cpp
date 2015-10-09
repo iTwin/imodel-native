@@ -30,9 +30,20 @@ void ECDbTestFixture::SetUp()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle     09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount)
+ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount)
     {
-    ASSERT_EQ(BE_SQLITE_OK, CreateECDb(m_ecdb, ecdbFileName, schemaECXmlFileName, openParams, perClassRowCount));
+    EXPECT_EQ(BE_SQLITE_OK, CreateECDb(m_ecdb, ecdbFileName, schemaECXmlFileName, openParams, perClassRowCount));
+    return GetECDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, WCharCP schemaECXmlFileName, bool importArbitraryNumberOfECInstances, ECDb::OpenParams openParams)
+    {
+    BeFileName fileName(schemaECXmlFileName);
+    EXPECT_EQ(BE_SQLITE_OK, CreateECDb(m_ecdb, ecdbFileName, fileName, openParams, importArbitraryNumberOfECInstances ? 3 : 0));
+    return GetECDb();
     }
 
 //---------------------------------------------------------------------------------------
@@ -72,6 +83,37 @@ DbResult ECDbTestFixture::CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName, BeFileName
     }
 
     return ecdb.OpenBeSQLiteDb(ecdbPath, openParams);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Ramanujam.Raman                   05/12
+---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECDbTestFixture::GetInstances (bvector<ECN::IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className)
+    {
+    instances.clear();
+
+    ECN::ECClassCP ecClass = GetECDb().Schemas().GetECClass (schemaName, className);
+    EXPECT_TRUE (ecClass != nullptr) << "ECDbTestFixture::GetInstances> ECClass '" << className << "' not found.";
+    if (ecClass == nullptr)
+        return ERROR;
+
+    SqlPrintfString ecSql ("SELECT * FROM ONLY [%s].[%s]", ecClass->GetSchema().GetName().c_str(), className);
+    ECSqlStatement ecStatement;
+    ECSqlStatus status = ecStatement.Prepare (GetECDb(), ecSql.GetUtf8CP());
+    EXPECT_EQ(ECSqlStatus::Success, status) << "ECDbTestFixture::GetInstances> Preparing ECSQL '" << ecSql.GetUtf8CP () << "' failed.";
+    if (status != ECSqlStatus::Success)
+        return ERROR;
+
+    ECInstanceECSqlSelectAdapter adapter (ecStatement);
+    while (BE_SQLITE_ROW == ecStatement.Step())
+        {
+        ECN::IECInstancePtr instance = adapter.GetInstance();
+        BeAssert (instance.IsValid());
+        if (instance != nullptr)
+            instances.push_back (instance);
+        }
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

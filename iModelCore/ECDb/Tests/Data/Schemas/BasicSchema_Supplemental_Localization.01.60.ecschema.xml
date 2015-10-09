@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="BasicSchema_Supplemental_Localization" nameSpacePrefix="BSS2" version="1.60" displayLabel="Basic Schema Supplemental" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECSchemaReference name="EditorCustomAttributes" version="01.01" prefix="beca" />
+    <ECCustomAttributes>
+        <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.02">
+            <PrimarySchemaName>BasicSchema</PrimarySchemaName>
+            <PrimarySchemaMajorVersion>1</PrimarySchemaMajorVersion>
+            <PrimarySchemaMinorVersion>70</PrimarySchemaMinorVersion>
+            <Precedence>51</Precedence>
+            <Purpose>Localization</Purpose>
+            <IsUserSpecific>False</IsUserSpecific>
+        </SupplementalSchemaMetaData>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <SchemaFullNameAtEditingStart>BasicSchema_Supplemental_Localization.01.60</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECClass typeName="Base" isDomainClass="True">
+        <ECCustomAttributes>
+            <BooleanDisplay xmlns="EditorCustomAttributes.01.01" />
+            <CEContentPaneCustomization xmlns="Bentley_Standard_CustomAttributes.01.02">
+                <TabSpecifications />
+            </CEContentPaneCustomization>
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>

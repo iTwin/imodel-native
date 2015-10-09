@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="BaseSchemaB" nameSpacePrefix="bsb" version="1.0" displayLabel="Base Schema B" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+            <SchemaFullNameAtEditingStart>BaseSchemaB.01.00</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECClass typeName="BaseBClass1" isDomainClass="True" />
+    <ECClass typeName="BaseBClass2" isDomainClass="True" />
+    <ECClass typeName="DataObject" displayLabel="Data Object" isDomainClass="True" />
+</ECSchema>

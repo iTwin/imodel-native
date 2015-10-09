@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="Computers" nameSpacePrefix="TR" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+            <SchemaFullNameAtEditingStart>Computers.01.00</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECClass typeName="Desktop" isDomainClass="True">
+        <ECProperty propertyName="OS" typeName="string" />
+    </ECClass>
+    <ECClass typeName="Laptop" isDomainClass="True">
+        <ECProperty propertyName="OS" typeName="string" />
+    </ECClass>
+    <ECRelationshipClass typeName="LaptopHasLaptop" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="Laptop" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="True">
+            <Class class="Laptop" />
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="RAM" isDomainClass="True">
+        <ECProperty propertyName="Size" typeName="string" />
+    </ECClass>
+    <ECRelationshipClass typeName="LaptopHasRam" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="Laptop" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="True">
+            <Class class="RAM" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="LaptopHaveManyRams" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECProperty propertyName="price" typeName="int" />
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="Laptop" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="RAM" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ManyLaptopsHaveManyRams" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,N)" polymorphic="True">
+            <Class class="Laptop" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="RAM" />
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>

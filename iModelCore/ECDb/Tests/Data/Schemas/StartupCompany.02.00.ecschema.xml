@@ -1,0 +1,1371 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="StartupCompany" nameSpacePrefix="stco" version="2.0" description="My Startup Company" displayLabel="My Startup Company"
+             xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0"
+    xmlns:ecschema="http://www.bentley.com/schemas/Bentley.ECXML.2.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="ecschema ECSchema.xsd" >
+
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.05" prefix="bsca" />
+    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
+    <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="unitSpec" />
+    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+
+    <ECCustomAttributes>
+        <SchemaMap xmlns="ECDbMap.01.00">
+            <TablePrefix>sc</TablePrefix>
+        </SchemaMap>
+    </ECCustomAttributes>
+
+  <!-- ****** Sample classes for test senarios for ECDb ****** -->
+  <ECClass typeName="ArrayTestclass" isDomainClass="True">
+    <ECArrayProperty propertyName="p0_unbounded" typeName="int" minOccurs="0" maxOccurs="unbounded" />
+    <ECArrayProperty propertyName="p1_unbounded" typeName="int" minOccurs="1" maxOccurs="unbounded" />
+    <ECArrayProperty propertyName="p0_1" typeName="int" minOccurs="0" maxOccurs="1" />
+    <ECArrayProperty propertyName="p1_1" typeName="int" minOccurs="1" maxOccurs="1" />
+    <ECArrayProperty propertyName="p1_10000" typeName="int" minOccurs="1" maxOccurs="10000" />
+    <ECArrayProperty propertyName="p100_10000" typeName="int" minOccurs="100" maxOccurs="10000" />
+    <ECArrayProperty propertyName="p123_12345" typeName="int" minOccurs="123" maxOccurs="12345" />
+   </ECClass>
+
+  <ECClass typeName="ClassWithPrimitiveArrayProperties" isDomainClass="True">
+    <ECArrayProperty propertyName="intArrayProp" typeName="int" minOccurs="0" maxOccurs="unbounded" />
+    <ECArrayProperty propertyName="longArrayProp" typeName="long" minOccurs="0" maxOccurs="unbounded" />
+    <ECArrayProperty propertyName="doubleArrayProp" typeName="double" minOccurs="0" maxOccurs="unbounded" />
+    <ECArrayProperty propertyName="stringArrayProp" typeName="string" minOccurs="0" maxOccurs="unbounded" />
+    <ECArrayProperty propertyName="dateTimeArrayProp" typeName="dateTime" minOccurs="0" maxOccurs="unbounded" />
+    <ECArrayProperty propertyName="binaryArrayProp" typeName="binary" minOccurs="0" maxOccurs="unbounded" />
+    <ECArrayProperty propertyName="booleanArrayProp" typeName="boolean" minOccurs="0" maxOccurs="unbounded" />
+    <ECArrayProperty propertyName="point2dArrayProp" typeName="point2d" minOccurs="0" maxOccurs="unbounded" />
+    <ECArrayProperty propertyName="point3dArrayProp" typeName="point3d" minOccurs="0" maxOccurs="unbounded"/>
+  </ECClass>
+
+  <ECClass typeName="ClassWithPrimitiveProperties" isDomainClass="True">
+    <ECCustomAttributes>
+      <ClassMap xmlns="ECDbMap.01.00">
+        <Indexes>
+          <DbIndex>
+            <Name>IDX_ON_intProp_doubleProp_stringProp</Name>
+            <IsUnique>False</IsUnique>
+            <Properties>
+              <string>intProp</string>
+              <string>doubleProp</string>
+              <string>stringProp</string>
+            </Properties>
+          </DbIndex>
+          <DbIndex>
+            <Name>IDX_ON_date_time_and_binary</Name>
+            <IsUnique>False</IsUnique>
+            <Properties>
+              <string>dateTimeProp</string>
+              <string>binaryProp</string>
+            </Properties>
+          </DbIndex>
+          <DbIndex>
+            <Name>IDX_ON_point2d</Name>
+            <IsUnique>False</IsUnique>
+            <Properties>
+              <string>point2dProp</string>
+              <string>point3dProp</string>
+            </Properties>
+          </DbIndex>
+        </Indexes>
+      </ClassMap>
+    </ECCustomAttributes>
+    <ECProperty propertyName="intProp" typeName="int">
+      <ECCustomAttributes>
+        <PropertyMap xmlns="ECDbMap.01.00">
+          <ColumnName>myColumn_intProp</ColumnName>
+        </PropertyMap>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="longProp" typeName="long">
+      <ECCustomAttributes>
+        <PropertyMap xmlns="ECDbMap.01.00">
+          <ColumnName>myColumn_longProp</ColumnName>
+        </PropertyMap>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="doubleProp" typeName="double">
+      <ECCustomAttributes>
+        <PropertyMap xmlns="ECDbMap.01.00">
+          <ColumnName>myColumn_doubleProp</ColumnName>
+        </PropertyMap>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="stringProp" typeName="string">
+      <ECCustomAttributes>
+        <PropertyMap xmlns="ECDbMap.01.00">
+          <ColumnName>myColumn_stringProp</ColumnName>
+          <Collation>NoCase</Collation> 
+        </PropertyMap>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="dateTimeProp" typeName="dateTime">
+      <ECCustomAttributes>
+        <PropertyMap xmlns="ECDbMap.01.00">
+          <ColumnName>myColumn_dateTimeProp</ColumnName>
+        </PropertyMap>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="binaryProp" typeName="binary">
+      <ECCustomAttributes>
+        <PropertyMap xmlns="ECDbMap.01.00">
+          <ColumnName>myColumn_binaryProp</ColumnName>
+        </PropertyMap>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="booleanProp" typeName="boolean">
+      <ECCustomAttributes>
+        <PropertyMap xmlns="ECDbMap.01.00">
+          <ColumnName>myColumn_booleanProp</ColumnName>
+        </PropertyMap>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="point2dProp" typeName="point2d">
+      <ECCustomAttributes>
+        <PropertyMap xmlns="ECDbMap.01.00">
+          <ColumnName>myColumn_point2dProp</ColumnName>
+        </PropertyMap>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="point3dProp" typeName="point3d">
+      <ECCustomAttributes>
+        <PropertyMap xmlns="ECDbMap.01.00">
+          <ColumnName>myColumn_point3dProp</ColumnName>
+        </PropertyMap>
+      </ECCustomAttributes>
+    </ECProperty>
+  </ECClass>
+
+  <ECClass typeName="StructWithPrimitiveArrayProperties" isStruct="true">
+    <ECArrayProperty propertyName="intArrayProp" typeName="int" minOccurs="0" maxOccurs="unbounded" />
+    <ECArrayProperty propertyName="longArrayProp" typeName="long" minOccurs="0" maxOccurs="unbounded" />
+    <ECArrayProperty propertyName="doubleArrayProp" typeName="double" minOccurs="0" maxOccurs="unbounded" />
+    <ECArrayProperty propertyName="stringArrayProp" typeName="string" minOccurs="0" maxOccurs="unbounded" />
+    <ECArrayProperty propertyName="dateTimeArrayProp" typeName="dateTime" minOccurs="0" maxOccurs="unbounded" />
+    <ECArrayProperty propertyName="binaryArrayProp" typeName="binary" minOccurs="0" maxOccurs="unbounded" />
+    <ECArrayProperty propertyName="booleanArrayProp" typeName="boolean" minOccurs="0" maxOccurs="unbounded" />
+    <ECArrayProperty propertyName="point2dArrayProp" typeName="point2d" minOccurs="0" maxOccurs="unbounded" />
+    <ECArrayProperty propertyName="point3dArrayProp" typeName="point3d" minOccurs="0" maxOccurs="unbounded" />
+  </ECClass>
+
+  <ECClass typeName="StructWithPrimitiveProperties" isStruct="true">
+    <ECCustomAttributes>    
+<!-- We support BusinessKeySpecification which create UNIQUE & NOT NULL contraint on the column
+    <BusinessKeySpecification xmlns="Bentley_Standard_CustomAttributes.01.05">
+        <PropertyName>intProp</PropertyName>
+    </BusinessKeySpecification>
+    <GlobalIdSpecification xmlns="Bentley_Standard_CustomAttributes.01.05">
+        <PropertyName>longProp</PropertyName>
+    </GlobalIdSpecification>
+    <SyncIDSpecification xmlns="Bentley_Standard_CustomAttributes.01.05">
+        <Property>doubleProp</Property>
+    </SyncIDSpecification>
+-->
+    </ECCustomAttributes> 
+    <ECProperty propertyName="intProp" typeName="int" /> 
+    <ECProperty propertyName="longProp" typeName="long" />
+    <ECProperty propertyName="doubleProp" typeName="double" />
+    <ECProperty propertyName="stringProp" typeName="string" />
+    <ECProperty propertyName="dateTimeProp" typeName="dateTime"/>
+    <ECProperty propertyName="binaryProp" typeName="binary" />
+    <ECProperty propertyName="booleanProp" typeName="boolean" />
+    <ECProperty propertyName="point2dProp" typeName="point2d" />
+    <ECProperty propertyName="point3dProp" typeName="point3d" />
+  </ECClass>
+
+  <ECClass typeName="AAA" isDomainClass="True" >
+    <ECCustomAttributes>
+      <ClassMap xmlns="ECDbMap.01.00">
+        <MapStrategy>
+            <Strategy>SharedTable</Strategy>
+            <AppliesToSubclasses>True</AppliesToSubclasses>
+        </MapStrategy>
+      </ClassMap>
+<!-- We support BusinessKeySpecification which create UNIQUE & NOT NULL constraint on the column
+      <BusinessKeySpecification xmlns="Bentley_Standard_CustomAttributes.01.05">
+         <PropertyName>s</PropertyName>
+      </BusinessKeySpecification>      
+-->
+    </ECCustomAttributes>
+    <ECProperty propertyName="i"   typeName="int" />
+    <ECProperty propertyName="l"   typeName="long" />
+    <ECProperty propertyName="d"   typeName="double" />
+    <ECProperty propertyName="s"   typeName="string" />
+    <ECProperty propertyName="t"   typeName="dateTime" />
+    <ECProperty propertyName="bi"  typeName="binary" />
+    <ECProperty propertyName="bo"  typeName="boolean" />
+  </ECClass>
+
+  <ECClass typeName="AnglesStruct" isStruct="True">
+    <ECProperty propertyName="Alpha" typeName="double" />
+    <ECProperty propertyName="Beta" typeName="double" />
+    <ECProperty propertyName="Theta" typeName="double" />
+  </ECClass>
+
+  <ECClass typeName="AAFoo"  isDomainClass="True">
+    <ECCustomAttributes>
+      <ClassMap xmlns="ECDbMap.01.00">
+        <MapStrategy>
+            <Strategy>SharedTable</Strategy>
+            <AppliesToSubclasses>True</AppliesToSubclasses>
+        </MapStrategy>
+      </ClassMap>
+    </ECCustomAttributes>
+    <ECProperty propertyName="FooTag"         typeName="string" />
+    <ECProperty propertyName="intAAFoo"       typeName="int" />
+    <ECProperty propertyName="longAAFoo"      typeName="long" />
+    <ECProperty propertyName="stringAAFoo"    typeName="string" />
+    <ECProperty propertyName="doubleAAFoo"    typeName="double" />
+    <ECProperty propertyName="datetimeAAFoo"  typeName="dateTime" />
+    <ECProperty propertyName="binaryAAFoo"    typeName="binary" />
+    <ECProperty propertyName="booleanAAFoo"   typeName="boolean" />
+    <ECProperty propertyName="point2dAAFoo"   typeName="point2d" />
+    <ECProperty propertyName="point3dAAFoo"   typeName="point3d" />
+    <ECStructProperty propertyName="anglesAAFoo"    typeName="AnglesStruct" />
+    <ECProperty propertyName="commonGeometryAAFoo" typeName="Bentley.Geometry.Common.IGeometry" />
+    <ECProperty propertyName="colorAAFoo"     typeName="string" />
+    <ECArrayProperty propertyName="arrayOfIntsAAFoo" typeName="int" minOccurs="1" maxOccurs="unbounded" />
+    <ECArrayProperty propertyName="arrayOfpoint2dAAFoo" typeName="point2d" minOccurs="1" maxOccurs="unbounded" />
+    <ECArrayProperty propertyName="arrayOfpoint3dAAFoo" typeName="point3d" minOccurs="1" maxOccurs="unbounded" />
+
+    <ECArrayProperty propertyName="arrayOfAnglesStructsAAFoo" typeName="AnglesStruct" minOccurs="0" maxOccurs="unbounded" />
+  </ECClass>
+
+  <ECClass typeName="Foo"  isDomainClass="True">
+    <ECCustomAttributes>
+      <ClassMap xmlns="ECDbMap.01.00">
+        <MapStrategy>
+            <Strategy>SharedTable</Strategy>
+            <AppliesToSubclasses>True</AppliesToSubclasses>
+        </MapStrategy>
+      </ClassMap>
+    </ECCustomAttributes>
+    <ECProperty propertyName="intFoo"       typeName="int">
+        <ECCustomAttributes>
+            <Category xmlns="EditorCustomAttributes.01.00">
+                <Name>Primitives</Name>
+                <DisplayLabel>Primitives</DisplayLabel>
+                <Priority>10</Priority>
+                <Expand>True</Expand>
+            </Category>
+            <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                <Priority>94</Priority>
+            </PropertyPriority>
+        </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="longFoo"      typeName="long">
+        <ECCustomAttributes>
+            <Category xmlns="EditorCustomAttributes.01.00">
+                <Name>Primitives</Name>
+                <DisplayLabel>Primitives</DisplayLabel>
+                <Priority>10</Priority>
+                <Expand>True</Expand>
+            </Category>
+            <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                <Priority>93</Priority>
+            </PropertyPriority>
+        </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="stringFoo"    typeName="string">
+        <ECCustomAttributes>
+            <Category xmlns="EditorCustomAttributes.01.00">
+                <Name>Primitives</Name>
+                <DisplayLabel>Primitives</DisplayLabel>
+                <Priority>10</Priority>
+                <Expand>True</Expand>
+            </Category>
+            <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                <Priority>90</Priority>
+            </PropertyPriority>
+        </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="doubleFoo"    typeName="double">
+        <ECCustomAttributes>
+            <Category xmlns="EditorCustomAttributes.01.00">
+                <Name>Primitives</Name>
+                <DisplayLabel>Primitives</DisplayLabel>
+                <Priority>10</Priority>
+                <Expand>True</Expand>
+            </Category>
+            <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                <Priority>95</Priority>
+            </PropertyPriority>
+        </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="datetimeFoo"  typeName="dateTime">
+        <ECCustomAttributes>
+            <Category xmlns="EditorCustomAttributes.01.00">
+                <Name>Primitives</Name>
+                <DisplayLabel>Primitives</DisplayLabel>
+                <Priority>10</Priority>
+                <Expand>True</Expand>
+            </Category>
+            <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                <Priority>96</Priority>
+            </PropertyPriority>
+        </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="binaryFoo"    typeName="binary">
+        <ECCustomAttributes>
+            <Category xmlns="EditorCustomAttributes.01.00">
+                <Name>Primitives</Name>
+                <DisplayLabel>Primitives</DisplayLabel>
+                <Priority>10</Priority>
+                <Expand>True</Expand>
+            </Category>
+            <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                <Priority>98</Priority>
+            </PropertyPriority>
+        </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="booleanFoo"   typeName="boolean">
+        <ECCustomAttributes>
+            <Category xmlns="EditorCustomAttributes.01.00">
+                <Name>Primitives</Name>
+                <DisplayLabel>Primitives</DisplayLabel>
+                <Priority>10</Priority>
+                <Expand>True</Expand>
+            </Category>
+            <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                <Priority>97</Priority>
+            </PropertyPriority>
+        </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="point2dFoo"   typeName="point2d">
+        <ECCustomAttributes>
+            <Category xmlns="EditorCustomAttributes.01.00">
+                <Name>Primitives</Name>
+                <DisplayLabel>Primitives</DisplayLabel>
+                <Priority>10</Priority>
+                <Expand>True</Expand>
+            </Category>
+            <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                <Priority>92</Priority>
+            </PropertyPriority>
+        </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="point3dFoo"   typeName="point3d">
+        <ECCustomAttributes>
+            <Category xmlns="EditorCustomAttributes.01.00">
+                <Name>Primitives</Name>
+                <DisplayLabel>Primitives</DisplayLabel>
+                <Priority>10</Priority>
+                <Expand>True</Expand>
+            </Category>
+            <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                <Priority>91</Priority>
+            </PropertyPriority>
+        </ECCustomAttributes>
+    </ECProperty>
+    <ECStructProperty propertyName="anglesFoo"    typeName="AnglesStruct">
+        <ECCustomAttributes>
+            <Category xmlns="EditorCustomAttributes.01.00">
+                <Name>Structs</Name>
+                <DisplayLabel>Structs</DisplayLabel>
+                <Priority>10</Priority>
+                <Expand>True</Expand>
+            </Category>
+            <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                <Priority>100</Priority>
+            </PropertyPriority>
+        </ECCustomAttributes>
+    </ECStructProperty>
+    <ECProperty propertyName="commonGeometryFoo" typeName="Bentley.Geometry.Common.IGeometry">
+        <ECCustomAttributes>
+            <HideProperty xmlns="EditorCustomAttributes.01.00">
+                <If2D>True</If2D>
+                <If3D>True</If3D>
+            </HideProperty>
+        </ECCustomAttributes>
+    </ECProperty>
+    <ECArrayProperty propertyName="arrayOfIntsFoo" typeName="int" minOccurs="0" maxOccurs="unbounded">
+        <ECCustomAttributes>
+            <Category xmlns="EditorCustomAttributes.01.00">
+                <Name>Arrays</Name>
+                <DisplayLabel>Arrays</DisplayLabel>
+                <Priority>9</Priority>
+                <Expand>True</Expand>
+            </Category>
+            <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                <Priority>99</Priority>
+            </PropertyPriority>
+        </ECCustomAttributes>
+    </ECArrayProperty>
+    <ECArrayProperty propertyName="arrayOfAnglesStructsFoo" typeName="AnglesStruct" minOccurs="0" maxOccurs="unbounded">
+        <ECCustomAttributes>
+            <Category xmlns="EditorCustomAttributes.01.00">
+                <Name>Arrays</Name>
+                <DisplayLabel>Arrays</DisplayLabel>
+                <Priority>9</Priority>
+                <Expand>True</Expand>
+            </Category>
+            <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                <Priority>99</Priority>
+            </PropertyPriority>
+        </ECCustomAttributes>
+    </ECArrayProperty>
+  </ECClass>
+
+  <ECClass typeName="ABFoo" isDomainClass="True">
+    <ECProperty propertyName="stringABFoo" typeName="string" />
+  </ECClass>
+  <ECClass typeName="Bar" isDomainClass="True">
+    <ECProperty propertyName="stringBar" typeName="string" />
+  </ECClass>
+
+  <ECClass typeName="AFooChild" isDomainClass="True">
+    <BaseClass>AAFoo</BaseClass>
+    <BaseClass>ABFoo</BaseClass>
+    <ECProperty propertyName="binaryAFooChild" typeName="binary" />
+  </ECClass>
+
+  <ECClass typeName="Widget" isDomainClass="True">
+    <ECProperty propertyName="stringOfWidget" typeName="string" />
+  </ECClass>
+
+  <ECRelationshipClass typeName="AAFoo_references_Widget_11" isDomainClass="True" strength="referencing" strengthDirection="forward">
+    <Source cardinality="(1,1)" roleLabel="refers to" polymorphic="True">
+      <Class class="AAFoo" />
+    </Source>
+    <Target cardinality="(1,1)" roleLabel="is referred to by" polymorphic="True">
+      <Class class="Widget" />
+    </Target>
+  </ECRelationshipClass>
+
+
+  <ECRelationshipClass typeName="Foo_has_Bars" isDomainClass="True" strength="embedding">
+    <Source cardinality="(1,1)" roleLabel="owns" polymorphic="True">
+      <Class class="Foo" />
+    </Source>
+    <Target cardinality="(1,n)" roleLabel="is owned by" polymorphic="True">
+      <Class class="Bar" />
+    </Target>
+  </ECRelationshipClass>
+
+  <ECRelationshipClass typeName="Foo_has_Bars_hint" isDomainClass="True" strength="embedding">
+  <Source cardinality="(1,1)" roleLabel="owns" polymorphic="True">
+      <Class class="Foo" />
+    </Source>
+    <Target cardinality="(1,n)" roleLabel="is owned by" polymorphic="True">
+      <Class class="Bar" />
+    </Target>
+  </ECRelationshipClass>
+
+  <ECClass typeName="AClassThatDoesNotGetMappedToDb" isDomainClass="True">
+    <ECCustomAttributes>
+      <ClassMap xmlns="ECDbMap.01.00">
+        <MapStrategy>
+            <Strategy>NotMapped</Strategy>
+        </MapStrategy>
+      </ClassMap>
+    </ECCustomAttributes>
+    <ECProperty propertyName="stringFoo" typeName="string" />
+  </ECClass>
+
+  <ECRelationshipClass typeName="Foo_has_SomethingInOneOfManyTables" isDomainClass="True" strength="embedding">
+    <Source cardinality="(1,1)" roleLabel="has" polymorphic="True">
+      <Class class="Foo" />
+    </Source>
+    <Target cardinality="(1,1)" roleLabel="is had by" polymorphic="True">
+      <Class class="Asset" />
+      <Class class="Employee" />
+    </Target>
+  </ECRelationshipClass>
+
+  <ECClass typeName="Asset" isDomainClass="True">
+    <ECCustomAttributes>
+      <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+        <Hidden>True</Hidden>
+      </DisplayOptions>
+    </ECCustomAttributes>
+    <ECProperty propertyName="AssetID" typeName="string" displayLabel="Asset ID" />
+    <ECProperty propertyName="AssetOwner" typeName="string" />
+    <ECProperty propertyName="BarCode" typeName="string" displayLabel="Bar Code" />
+    <ECProperty propertyName="AssetUserID" typeName="string" />
+    <ECProperty propertyName="Cost" typeName="double">
+      <ECCustomAttributes>
+        <Format xmlns="EditorCustomAttributes.01.00">
+          <FormatString>$ {0}</FormatString>
+        </Format>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="Room" typeName="string" displayLabel="Room/Cubicle" />
+    <ECProperty propertyName="AssetRecordKey" typeName="string" displayLabel="Record Key" />
+  </ECClass>
+  <ECRelationshipClass typeName="AssetRelationshipsBase" displayLabel="Asset Relationships Base" isDomainClass="False" strength="referencing" strengthDirection="forward" />
+  <ECClass typeName="Location" isStruct="True">
+    <ECProperty propertyName="Coordinate" typeName="point3d" description="relative the origin of the Kansas State Plane"/>
+    <ECProperty propertyName="Street" typeName="string" />
+    <ECProperty propertyName="City" typeName="string" />
+    <ECProperty propertyName="State" typeName="string" />
+    <ECProperty propertyName="Country" typeName="string" />
+    <ECProperty propertyName="Zip" typeName="string" displayLabel="Zip Code" />
+  </ECClass>
+  <ECClass typeName="Building" displayLabel="Office Building" isDomainClass="True">
+    <ECProperty propertyName="Number" typeName="string" displayLabel="Building Number" />
+    <ECProperty propertyName="Name" typeName="string" displayLabel="Building Name" />
+    <ECProperty propertyName="NumberOfFloors" typeName="int" displayLabel="Number of floors" />
+    <ECStructProperty propertyName="Location" typeName="Location" />
+    <ECProperty propertyName="BuildingCode" typeName="string" />
+    <ECProperty propertyName="RecordKey" typeName="string" displayLabel="Record Key" />
+  </ECClass>
+  <ECClass typeName="BuildingFloor" displayLabel="Building Floor" isDomainClass="True">
+    <ECProperty propertyName="FloorNumber" typeName="int" displayLabel="Floor Number" />
+    <ECProperty propertyName="BuildingCode" typeName="string" displayLabel="Building Code" />
+    <ECProperty propertyName="NumberOfOffices" typeName="int" displayLabel="Number Of Offices" />
+    <ECProperty propertyName="Area" typeName="double">
+      <ECCustomAttributes>
+        <DisplayUnitSpecification xmlns="Unit_Attributes.01.00" />
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="FloorCode" typeName="string" displayLabel="Floor Code" />
+    <ECProperty propertyName="RecordKey" typeName="int" displayLabel="Record Key" />
+  </ECClass>
+  <ECRelationshipClass typeName="BuildingFloorRelationship" isDomainClass="True" strength="referencing" strengthDirection="forward">
+     <ECCustomAttributes>
+        <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+            <ForeignKeyColumn>Building__src_11_Id</ForeignKeyColumn>
+        </ForeignKeyRelationshipMap> 
+     </ECCustomAttributes>
+    <Source cardinality="(1,1)" roleLabel="Floor" polymorphic="True">
+      <Class class="Building" />
+    </Source>
+    <Target cardinality="(1,N)" roleLabel="Building containing floor" polymorphic="True">
+      <Class class="BuildingFloor" />
+    </Target>
+  </ECRelationshipClass>
+  <ECClass typeName="Furniture" isDomainClass="True">
+    <BaseClass>Asset</BaseClass>
+    <ECCustomAttributes>
+      <ClassMap xmlns="ECDbMap.01.00">
+        <MapStrategy>
+            <Strategy>SharedTable</Strategy>
+            <AppliesToSubclasses>True</AppliesToSubclasses>
+        </MapStrategy>
+      </ClassMap>
+      <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+        <Hidden>False</Hidden>
+      </DisplayOptions>
+    </ECCustomAttributes>
+    <ECProperty propertyName="Condition" typeName="int">
+      <ECCustomAttributes>
+        <StandardValues xmlns="EditorCustomAttributes.01.00">
+          <MustBeFromList>True</MustBeFromList>
+          <ValueMap>
+            <ValueMap>
+              <DisplayString>New</DisplayString>
+              <Value>0</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>Broken</DisplayString>
+              <Value>1</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>Good</DisplayString>
+              <Value>2</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>Fair</DisplayString>
+              <Value>3</Value>
+            </ValueMap>
+          </ValueMap>
+        </StandardValues>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="Material" typeName="int" displayLabel="Furniture Made Of">
+      <ECCustomAttributes>
+        <StandardValues xmlns="EditorCustomAttributes.01.00">
+          <MustBeFromList>True</MustBeFromList>
+          <ValueMap>
+            <ValueMap>
+              <DisplayString>Wood</DisplayString>
+              <Value>0</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>Metal</DisplayString>
+              <Value>1</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>Metal/Plastic</DisplayString>
+              <Value>2</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>Metal/Wood</DisplayString>
+              <Value>3</Value>
+            </ValueMap>
+          </ValueMap>
+        </StandardValues>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="Weight" typeName="double">
+      <ECCustomAttributes>
+        <UnitSpecification xmlns="Unit_Attributes.01.00">
+          <DimensionName>M</DimensionName>
+          <KindOfQuantityName>MASS</KindOfQuantityName>
+          <UnitName>POUND</UnitName>
+          <AllowableUnits>
+            <string>POUND</string>
+          </AllowableUnits>
+        </UnitSpecification>
+        <DisplayUnitSpecification xmlns="Unit_Attributes.01.00">
+          <DisplayFormatString />
+          <DisplayFormatKey />
+          <DisplayUnitName>lb</DisplayUnitName>
+        </DisplayUnitSpecification>
+      </ECCustomAttributes>
+    </ECProperty>
+  </ECClass>
+  <ECClass typeName="Chair" displayLabel="Office Chair" isDomainClass="True">
+    <BaseClass>Furniture</BaseClass>
+    <ECCustomAttributes>
+      <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+        <Hidden>False</Hidden>
+      </DisplayOptions>
+      <InstanceLabelSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+        <PropertyName>AssetID</PropertyName>
+      </InstanceLabelSpecification>
+    </ECCustomAttributes>
+    <ECProperty propertyName="ChairFootPrint" typeName="Bentley.Geometry.Common.IGeometry" />
+    <ECProperty propertyName="Type" typeName="string" />
+    <ECProperty propertyName="Color" typeName="string" />
+  </ECClass>
+  <ECClass typeName="Company" isDomainClass="True">
+    <ECCustomAttributes>
+      <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+        <Hidden>False</Hidden>
+      </DisplayOptions>
+      <ArrayBehaviorAttributes xmlns="EditorCustomAttributes.01.00">
+        <ShowEmpty>False</ShowEmpty>
+      </ArrayBehaviorAttributes>
+    </ECCustomAttributes>
+    <ECProperty propertyName="Name" typeName="string" />
+    <ECProperty propertyName="NumberOfEmployees" typeName="int" displayLabel="Number Of Employees" />
+    <ECArrayProperty propertyName="Products" typeName="string" minOccurs="0" maxOccurs="unbounded" />
+    <ECStructProperty propertyName="HeadQuarters" typeName="Location" />
+    <ECArrayProperty propertyName="OfficeLocations" typeName="Location" description="Office Locations" displayLabel="Office Locations" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    <ECProperty propertyName="ContactAddress" typeName="string" displayLabel="Address">
+      <ECCustomAttributes>
+        <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+          <ECExpression>this.Name &amp; ", " &amp; this["HeadQuarters"].Street &amp; ", " &amp; this["HeadQuarters"].City &amp; ", " &amp; this["HeadQuarters"].State &amp; ", " &amp; this["HeadQuarters"].Country &amp; ", " &amp; this["HeadQuarters"].Zip</ECExpression>
+          <FailureValue>-</FailureValue>
+          <RequiredSymbolSets />
+        </CalculatedECPropertySpecification>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="RecordKey" typeName="int" displayLabel="Record Key">
+      <ECCustomAttributes>
+        <StandardValues xmlns="EditorCustomAttributes.01.00">
+          <ValueMap>
+            <ValueMap>
+              <DisplayString>CODE1</DisplayString>
+              <Value>0</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>CODE2</DisplayString>
+              <Value>1</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>CODE3</DisplayString>
+              <Value>2</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>CODE4</DisplayString>
+              <Value>3</Value>
+            </ValueMap>
+          </ValueMap>
+        </StandardValues>
+      </ECCustomAttributes>
+    </ECProperty>
+  </ECClass>
+  <ECClass typeName="Project" description="Project" isDomainClass="True">
+    <ECCustomAttributes>
+      <AlwaysExpand xmlns="EditorCustomAttributes.01.00">
+        <ArrayMembers>True</ArrayMembers>
+      </AlwaysExpand>
+      <DontShowNullProperties xmlns="EditorCustomAttributes.01.00" />
+      <InstanceLabelSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+        <PropertyName>ProjectName</PropertyName>
+      </InstanceLabelSpecification>
+    </ECCustomAttributes>
+    <ECProperty propertyName="CompletionDate" typeName="dateTime" displayLabel="Completion Date" />
+    <ECProperty propertyName="EstimatedCost" typeName="double" displayLabel="Estimated Cost" />
+    <ECProperty propertyName="ProjectName" typeName="string" displayLabel="Project Name" />
+    <ECProperty propertyName="ProjectDescription" typeName="string" displayLabel="Project Description" />
+    <ECProperty propertyName="ProjectState" typeName="int" displayLabel="Project State">
+      <ECCustomAttributes>
+        <StandardValues xmlns="EditorCustomAttributes.01.00">
+          <MustBeFromList>False</MustBeFromList>
+          <ValueMap>
+            <ValueMap>
+              <DisplayString>Start</DisplayString>
+              <Value>0</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>Release</DisplayString>
+              <Value>1</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>Certification</DisplayString>
+              <Value>2</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>Support</DisplayString>
+              <Value>3</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>Development</DisplayString>
+              <Value>4</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>Design</DisplayString>
+              <Value>5</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>Suspended</DisplayString>
+              <Value>6</Value>
+            </ValueMap>
+          </ValueMap>
+        </StandardValues>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="StartDate" typeName="dateTime">
+      <ECCustomAttributes>
+        <Format xmlns="EditorCustomAttributes.01.00">
+          <FormatString>{0:dd/MM/yyyy HH:mm:ss}</FormatString>
+        </Format>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECArrayProperty propertyName="TeamMemberList" typeName="int" displayLabel="Team Member IDs" minOccurs="0" maxOccurs="unbounded">
+      <ECCustomAttributes>
+        <ArrayBehaviorAttributes xmlns="EditorCustomAttributes.01.00">
+          <OneElementAsArray>True</OneElementAsArray>
+          <ShowEmpty>True</ShowEmpty>
+        </ArrayBehaviorAttributes>
+        <ExtendType xmlns="EditorCustomAttributes.01.00">
+          <Name>EditableArray</Name>
+        </ExtendType>
+      </ECCustomAttributes>
+    </ECArrayProperty>
+    <ECProperty propertyName="InProgress" typeName="boolean" displayLabel="In Progress">
+      <ECCustomAttributes>
+        <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+          <TrueString>Yes</TrueString>
+          <FalseString>No</FalseString>
+        </BooleanDisplay>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="TeamSize" typeName="int" displayLabel="Team Size" />
+    <ECProperty propertyName="Logo" typeName="string">
+      <ECCustomAttributes>
+        <HideProperty xmlns="EditorCustomAttributes.01.00">
+          <If2D>True</If2D>
+          <If3D>True</If3D>
+        </HideProperty>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="Manager" typeName="int" displayLabel="Project Manager" />
+    <ECProperty propertyName="ProjectRecordKey" typeName="int" displayLabel="Record Key" />
+  </ECClass>
+  <ECRelationshipClass typeName="CompanyProject" isDomainClass="True" strength="referencing" strengthDirection="forward">
+    <ECCustomAttributes>
+        <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+            <ForeignKeyColumn>Company__src_11_id</ForeignKeyColumn>
+        </ForeignKeyRelationshipMap> 
+    </ECCustomAttributes> 
+    <Source cardinality="(1,1)" polymorphic="True">
+      <Class class="Company" />
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="True">
+      <Class class="Project" />
+    </Target>
+  </ECRelationshipClass>
+  <ECClass typeName="Hardware" isDomainClass="True">
+    <BaseClass>Asset</BaseClass>
+    <ECProperty propertyName="HasTrackingDevice" typeName="boolean" displayLabel="Has Tracking Device">
+      <ECCustomAttributes>
+        <HideProperty xmlns="EditorCustomAttributes.01.00">
+          <If2D>True</If2D>
+          <If3D>True</If3D>
+        </HideProperty>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="HasWarranty" typeName="boolean" displayLabel="Has Warranty" />
+    <ECProperty propertyName="IsCompanyProperty" typeName="boolean" displayLabel="Is Company Property">
+      <ECCustomAttributes>
+        <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+          <TrueString>Yes</TrueString>
+          <FalseString>No</FalseString>
+        </BooleanDisplay>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="Make" typeName="string" />
+    <ECProperty propertyName="Model" typeName="string" />
+    <ECProperty propertyName="WarrantyExpiryDate" typeName="dateTime" displayLabel="Warranty Expiry Date" />
+  </ECClass>
+  <ECClass typeName="Computer" isDomainClass="True">
+    <BaseClass>Hardware</BaseClass>
+    <ECCustomAttributes>
+      <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+        <Hidden>False</Hidden>
+      </DisplayOptions>
+    </ECCustomAttributes>
+    <ECProperty propertyName="Vendor" typeName="string" />
+    <ECProperty propertyName="Weight" typeName="double">
+      <ECCustomAttributes>
+        <UnitSpecification xmlns="Unit_Attributes.01.00">
+          <DimensionName>M</DimensionName>
+          <KindOfQuantityName />
+          <UnitName>POUND</UnitName>
+          <AllowableUnits>
+            <string>POUND</string>
+          </AllowableUnits>
+        </UnitSpecification>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="Type" typeName="int">
+      <ECCustomAttributes>
+        <StandardValues xmlns="EditorCustomAttributes.01.00">
+          <MustBeFromList>True</MustBeFromList>
+          <ValueMap>
+            <ValueMap>
+              <DisplayString>WorkStation</DisplayString>
+              <Value>0</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>Laptop</DisplayString>
+              <Value>1</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>Server</DisplayString>
+              <Value>2</Value>
+            </ValueMap>
+          </ValueMap>
+        </StandardValues>
+      </ECCustomAttributes>
+    </ECProperty>
+  </ECClass>
+  <ECClass typeName="Cubicle" displayLabel="Office Room/Cubicle" isDomainClass="True">
+    <ECProperty propertyName="Bay" typeName="string" />
+    <ECProperty propertyName="IsOccupied" typeName="boolean">
+      <ECCustomAttributes>
+        <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+          <TrueString>Yes</TrueString>
+          <FalseString>No</FalseString>
+        </BooleanDisplay>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="BuildingFloor" typeName="int" />
+    <ECArrayProperty propertyName="OccupiedBy" typeName="int" minOccurs="0" maxOccurs="unbounded">
+      <ECCustomAttributes>
+        <ArrayBehaviorAttributes xmlns="EditorCustomAttributes.01.00">
+          <OneElementAsArray>True</OneElementAsArray>
+          <ShowEmpty>True</ShowEmpty>
+        </ArrayBehaviorAttributes>
+        <ExtendType xmlns="EditorCustomAttributes.01.00">
+          <Name>EditableArray</Name>
+        </ExtendType>
+      </ECCustomAttributes>
+    </ECArrayProperty>
+    <ECProperty propertyName="Length" typeName="double">
+      <ECCustomAttributes>
+        <UnitSpecification xmlns="Unit_Attributes.01.00">
+          <DimensionName>L</DimensionName>
+          <KindOfQuantityName>LENGTH</KindOfQuantityName>
+          <UnitName>FOOT</UnitName>
+          <AllowableUnits>
+            <string>CENTIMETRE</string>
+            <string>INCH</string>
+            <string>METRE</string>
+          </AllowableUnits>
+        </UnitSpecification>
+        <DisplayUnitSpecification xmlns="Unit_Attributes.01.00">
+          <DisplayUnitName>FEET</DisplayUnitName>
+        </DisplayUnitSpecification>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="Breadth" typeName="double">
+      <ECCustomAttributes>
+        <DisplayUnitSpecification xmlns="Unit_Attributes.01.00">
+          <DisplayUnitName>FEET</DisplayUnitName>
+        </DisplayUnitSpecification>
+        <UnitSpecification xmlns="Unit_Attributes.01.00">
+          <DimensionName>L</DimensionName>
+          <KindOfQuantityName>LENGTH</KindOfQuantityName>
+          <UnitName>FOOT</UnitName>
+          <AllowableUnits>
+            <string>CENTIMETRE</string>
+            <string>FOOT</string>
+            <string>INCH</string>
+            <string>METRE</string>
+          </AllowableUnits>
+        </UnitSpecification>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="NumberOfOccupants" typeName="int" />
+    <ECProperty propertyName="BuildingCode" typeName="string" />
+    <ECProperty propertyName="OfficeCode" typeName="string" />
+    <ECProperty propertyName="Area" typeName="double">
+      <ECCustomAttributes>
+        <UnitSpecification xmlns="Unit_Attributes.01.00">
+          <DimensionName>L2</DimensionName>
+          <KindOfQuantityName>AREA</KindOfQuantityName>
+          <UnitName>FOOT_SQUARED</UnitName>
+          <AllowableUnits>
+            <string>FOOT_SQUARED</string>
+          </AllowableUnits>
+        </UnitSpecification>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="RecordKey" typeName="string" displayLabel="Record Key">
+      <ECCustomAttributes>
+        <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+          <RequiredSymbolSets />
+          <ECExpression>this.OfficeCode</ECExpression>
+          <FailureValue>-</FailureValue>
+        </CalculatedECPropertySpecification>
+      </ECCustomAttributes>
+    </ECProperty>
+  </ECClass>
+  <ECClass typeName="Desk" isDomainClass="True">
+    <BaseClass>Furniture</BaseClass>
+    <ECProperty propertyName="DeskFootPrint" typeName="string" />
+    <ECProperty propertyName="NumberOfCabinets" typeName="int" displayLabel="Number Of Cabinets" />
+    <ECProperty propertyName="Size" typeName="string">
+      <ECCustomAttributes>
+        <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+          <ECExpression>"(" &amp; this.Length &amp; ", " &amp; this.Breadth &amp; ")"</ECExpression>
+          <FailureValue>-</FailureValue>
+          <RequiredSymbolSets />
+        </CalculatedECPropertySpecification>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="Type" typeName="string" />
+    <ECProperty propertyName="Length" typeName="double">
+      <ECCustomAttributes>
+        <UnitSpecification xmlns="Unit_Attributes.01.00">
+          <DimensionName>L</DimensionName>
+          <KindOfQuantityName>LENGTH</KindOfQuantityName>
+          <UnitName>FOOT</UnitName>
+          <AllowableUnits>
+            <string>CENTIMETRE</string>
+            <string>INCH</string>
+            <string>METRE</string>
+          </AllowableUnits>
+        </UnitSpecification>
+        <DisplayUnitSpecification xmlns="Unit_Attributes.01.00">
+          <DisplayFormatString />
+          <DisplayFormatKey />
+          <DisplayUnitName>FEET</DisplayUnitName>
+        </DisplayUnitSpecification>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="Breadth" typeName="double">
+      <ECCustomAttributes>
+        <DisplayUnitSpecification xmlns="Unit_Attributes.01.00">
+          <DisplayFormatString />
+          <DisplayFormatKey />
+          <DisplayUnitName>FEET</DisplayUnitName>
+        </DisplayUnitSpecification>
+        <UnitSpecification xmlns="Unit_Attributes.01.00">
+          <DimensionName>L</DimensionName>
+          <KindOfQuantityName>LENGTH</KindOfQuantityName>
+          <UnitName>FOOT</UnitName>
+          <AllowableUnits>
+            <string>CENTIMETRE</string>
+            <string>FOOT</string>
+            <string>INCH</string>
+            <string>METRE</string>
+          </AllowableUnits>
+        </UnitSpecification>
+      </ECCustomAttributes>
+    </ECProperty>
+  </ECClass>
+  <ECClass typeName="EmployeeCertification" displayLabel="Employee Certification" isStruct="True">
+    <ECProperty propertyName="Name" typeName="string" displayLabel="Certification Name" />
+    <ECProperty propertyName="StartDate" typeName="dateTime" displayLabel="Starts On" />
+    <ECProperty propertyName="ExpiryDate" typeName="dateTime" displayLabel="Expires On" />
+    <ECProperty propertyName="Technology" typeName="string" />
+    <ECProperty propertyName="Level" typeName="int">
+      <ECCustomAttributes>
+        <StandardValues xmlns="EditorCustomAttributes.01.00">
+          <ValueMap>
+            <ValueMap>
+              <DisplayString>Beginner</DisplayString>
+              <Value>0</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>Intermediate</DisplayString>
+              <Value>1</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>Advanced</DisplayString>
+              <Value>2</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>Expert</DisplayString>
+              <Value>3</Value>
+            </ValueMap>
+          </ValueMap>
+        </StandardValues>
+      </ECCustomAttributes>
+    </ECProperty>
+  </ECClass>
+  <ECClass typeName="Employee" isDomainClass="True">
+    <ECCustomAttributes>
+      <AlwaysExpand xmlns="EditorCustomAttributes.01.00">
+        <ArrayMembers>True</ArrayMembers>
+      </AlwaysExpand>
+      <TreeColorCustomAttributes xmlns="Bentley_Standard_CustomAttributes.01.00">
+        <NodeBackColor>White</NodeBackColor>
+        <NodeForeColor>Blue</NodeForeColor>
+      </TreeColorCustomAttributes>
+      <InstanceLabelSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+        <PropertyName>FullName</PropertyName>
+      </InstanceLabelSpecification>
+    </ECCustomAttributes>
+    <ECProperty propertyName="EmployeeID" typeName="int" displayLabel="Employee ID" />
+    <ECProperty propertyName="FirstName" typeName="string" displayLabel="First Name">
+      <ECCustomAttributes>
+        <Category xmlns="EditorCustomAttributes.01.00">
+          <Name>PersonalInfo</Name>
+          <DisplayLabel>Personal Info</DisplayLabel>
+          <Description>Personal Info</Description>
+          <Expand>True</Expand>
+        </Category>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="JobTitle" typeName="string" displayLabel="Job Title" />
+    <ECProperty propertyName="LastName" typeName="string" displayLabel="Last Name">
+      <ECCustomAttributes>
+        <Category xmlns="EditorCustomAttributes.01.00">
+          <Name>PersonalInfo</Name>
+          <DisplayLabel>Personal Info</DisplayLabel>
+          <Description>Personal Info</Description>
+        </Category>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="ManagerID" typeName="int" displayLabel="Manager ID" />
+    <ECProperty propertyName="Room" typeName="string" displayLabel="Room/Cubicle" />
+    <ECProperty propertyName="SSN" typeName="int" readOnly="True">
+      <ECCustomAttributes>
+        <Category xmlns="EditorCustomAttributes.01.00">
+          <Name>PersonalInfo</Name>
+          <DisplayLabel>Personal Info</DisplayLabel>
+          <Description>Personal Info</Description>
+        </Category>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="Project" typeName="string" displayLabel="Department/Project" />
+    <ECArrayProperty propertyName="WorkPhone" typeName="string" displayLabel="Work Phone (s)" minOccurs="0" maxOccurs="unbounded">
+      <ECCustomAttributes>
+        <ArrayBehaviorAttributes xmlns="EditorCustomAttributes.01.00">
+          <OneElementAsArray>True</OneElementAsArray>
+          <ShowEmpty>True</ShowEmpty>
+        </ArrayBehaviorAttributes>
+        <ExtendType xmlns="EditorCustomAttributes.01.00">
+          <Name>EditableArray</Name>
+        </ExtendType>
+      </ECCustomAttributes>
+    </ECArrayProperty>
+    <ECArrayProperty propertyName="MobilePhone" typeName="string" displayLabel="Mobile Phone (s)" minOccurs="0" maxOccurs="unbounded">
+      <ECCustomAttributes>
+        <ArrayBehaviorAttributes xmlns="EditorCustomAttributes.01.00">
+          <OneElementAsArray>True</OneElementAsArray>
+          <ShowEmpty>True</ShowEmpty>
+        </ArrayBehaviorAttributes>
+      </ECCustomAttributes>
+    </ECArrayProperty>
+    <ECProperty propertyName="FullName" typeName="string" displayLabel="Full Name">
+      <ECCustomAttributes>
+        <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+          <ECExpression>this.LastName &amp; " " &amp; this.FirstName</ECExpression>
+          <FailureValue> - </FailureValue>
+          <ParserRegularExpression />
+          <RequiredSymbolSets />
+        </CalculatedECPropertySpecification>
+        <Category xmlns="EditorCustomAttributes.01.00">
+          <Name>PersonalInfo</Name>
+          <DisplayLabel>Personal Info</DisplayLabel>
+          <Description>Personal Info</Description>
+        </Category>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECArrayProperty propertyName="Certifications" typeName="EmployeeCertification" minOccurs="0" maxOccurs="unbounded" isStruct="True">
+      <ECCustomAttributes>
+        <Category xmlns="EditorCustomAttributes.01.00">
+          <Name>Certifications</Name>
+          <DisplayLabel>Certifications</DisplayLabel>
+          <Description>Certifications</Description>
+          <Expand>False</Expand>
+        </Category>
+        <ExtendType xmlns="EditorCustomAttributes.01.00">
+          <Name>EditableArray</Name>
+        </ExtendType>
+        <MemberExtendedType xmlns="EditorCustomAttributes.01.00">
+          <Name>EditableStruct</Name>
+        </MemberExtendedType>
+        <ArrayBehaviorAttributes xmlns="EditorCustomAttributes.01.00">
+          <OneElementAsArray>True</OneElementAsArray>
+          <ShowEmpty>True</ShowEmpty>
+        </ArrayBehaviorAttributes>
+      </ECCustomAttributes>
+    </ECArrayProperty>
+    <ECStructProperty propertyName="Location" typeName="Location" displayLabel="Office Location" />
+    <ECProperty propertyName="EmployeeType" typeName="int" displayLabel="Employee Type">
+      <ECCustomAttributes>
+        <StandardValues xmlns="EditorCustomAttributes.01.00">
+          <MustBeFromList>False</MustBeFromList>
+          <ValueMap>
+            <ValueMap>
+              <DisplayString>Full Time / Salaried</DisplayString>
+              <Value>0</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>Part Time</DisplayString>
+              <Value>1</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>Intern</DisplayString>
+              <Value>2</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>Full Time / Hourly</DisplayString>
+              <Value>3</Value>
+            </ValueMap>
+          </ValueMap>
+        </StandardValues>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECStructProperty propertyName="Address" typeName="Location" />
+    <ECProperty propertyName="EmployeeRecordKey" typeName="dateTime" displayLabel="Record Key" />
+  </ECClass>
+  <ECRelationshipClass typeName="EmployeeRelationshipsBase" displayLabel="Employee Relationships Base" isDomainClass="False" strength="referencing" strengthDirection="forward" />
+  <ECRelationshipClass typeName="EmployeeCompany" isDomainClass="True" strength="referencing" strengthDirection="forward">
+    <ECCustomAttributes>
+        <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+            <End>Source</End>
+            <ForeignKeyColumn>Company__trg_11_id</ForeignKeyColumn>
+        </ForeignKeyRelationshipMap>
+    </ECCustomAttributes>
+
+    <BaseClass>EmployeeRelationshipsBase</BaseClass>
+    <Source cardinality="(1,N)" roleLabel="Employee working for the Company" polymorphic="True">
+      <Class class="Employee" />
+    </Source>
+    <Target cardinality="(1,1)" roleLabel="Employee of Company" polymorphic="True">
+      <Class class="Company" />
+    </Target>
+  </ECRelationshipClass>
+  <ECRelationshipClass typeName="EmployeeFurniture" isDomainClass="True" strength="referencing" strengthDirection="forward">
+    <BaseClass>AssetRelationshipsBase</BaseClass>
+    <BaseClass>EmployeeRelationshipsBase</BaseClass>
+     <ECCustomAttributes>
+        <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+            <ForeignKeyColumn>Employee__src_01_id</ForeignKeyColumn>
+        </ForeignKeyRelationshipMap>
+    </ECCustomAttributes>   
+    <Source cardinality="(0,1)" roleLabel="Employee using furniture" polymorphic="True">
+      <Class class="Employee" />
+    </Source>
+    <Target cardinality="(0,N)" roleLabel="Furniture assigned to employee" polymorphic="True">
+      <Class class="Chair" />
+      <Class class="Desk" />
+    </Target>
+  </ECRelationshipClass>
+  <ECRelationshipClass typeName="EmployeeHardware" isDomainClass="True" strength="referencing" strengthDirection="forward">
+   <ECCustomAttributes>
+        <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
+            <SourceECInstanceIdColumn>Employee__src_0N_id</SourceECInstanceIdColumn>
+            <TargetECInstanceIdColumn>Hardware__trg_0N_id</TargetECInstanceIdColumn>
+        </LinkTableRelationshipMap>
+    </ECCustomAttributes>
+   <BaseClass>AssetRelationshipsBase</BaseClass>
+    <BaseClass>EmployeeRelationshipsBase</BaseClass>
+    <Source cardinality="(0,N)" roleLabel="Employee using hardware" polymorphic="True">
+      <Class class="Employee" />
+    </Source>
+    <Target cardinality="(0,N)" roleLabel="Hardware assigned to employee" polymorphic="True">
+      <Class class="Hardware" />
+    </Target>
+  </ECRelationshipClass>
+  <ECRelationshipClass typeName="EmployeeOffice" isDomainClass="True" strength="referencing" strengthDirection="forward">
+     <ECCustomAttributes>
+        <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
+            <SourceECInstanceIdColumn>Employee__src_0N_id</SourceECInstanceIdColumn>
+            <TargetECInstanceIdColumn>Cubicle__trg_0N_id</TargetECInstanceIdColumn>
+        </LinkTableRelationshipMap>
+    </ECCustomAttributes>
+ 
+    <BaseClass>EmployeeRelationshipsBase</BaseClass>
+    <Source cardinality="(0,N)" polymorphic="True">
+      <Class class="Employee" />
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="True">
+      <Class class="Cubicle" />
+    </Target>
+  </ECRelationshipClass>
+  <ECClass typeName="Phone" isDomainClass="True">
+    <BaseClass>Asset</BaseClass>
+    <ECProperty propertyName="Number" typeName="string" />
+    <ECProperty propertyName="Owner" typeName="string" />
+    <ECProperty propertyName="User" typeName="int" />
+  </ECClass>
+  <ECRelationshipClass typeName="EmployeePhone" isDomainClass="True" strength="referencing" strengthDirection="forward">
+   <ECCustomAttributes>
+        <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+            <ForeignKeyColumn>Employee__src_01_id</ForeignKeyColumn>
+        </ForeignKeyRelationshipMap>
+    </ECCustomAttributes>
+    <BaseClass>AssetRelationshipsBase</BaseClass>
+    <BaseClass>EmployeeRelationshipsBase</BaseClass>
+    <Source cardinality="(0,1)" roleLabel="Phone used by employee" polymorphic="True">
+      <Class class="Employee" />
+    </Source>
+    <Target cardinality="(0,1)" roleLabel="Employee that uses the phone" polymorphic="True">
+      <Class class="Phone" />
+    </Target>
+  </ECRelationshipClass>
+  <ECRelationshipClass typeName="EmployeeProject" isDomainClass="True" strength="referencing" strengthDirection="forward">
+      <ECCustomAttributes>
+        <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
+            <SourceECInstanceIdColumn>Employee__src_1N_id</SourceECInstanceIdColumn>
+            <TargetECInstanceIdColumn>Project__trg_1N_id</TargetECInstanceIdColumn>
+        </LinkTableRelationshipMap>
+    </ECCustomAttributes> 
+    <BaseClass>EmployeeRelationshipsBase</BaseClass>
+    <Source cardinality="(1,N)" roleLabel="Employee working on Project" polymorphic="True">
+      <Class class="Employee" />
+    </Source>
+    <Target cardinality="(1,N)" roleLabel="Employee that works on the project" polymorphic="True">
+      <Class class="Project" />
+    </Target>
+  </ECRelationshipClass>
+  <ECRelationshipClass typeName="FloorCubicle" isDomainClass="True" strength="referencing" strengthDirection="forward">
+    <ECCustomAttributes>
+        <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+            <ForeignKeyColumn>BuildingFloor__src_11_id</ForeignKeyColumn>
+        </ForeignKeyRelationshipMap>
+    </ECCustomAttributes>
+    <Source cardinality="(1,1)" polymorphic="True">
+      <Class class="BuildingFloor" />
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="True">
+      <Class class="Cubicle" />
+    </Target>
+  </ECRelationshipClass>
+  <ECClass typeName="Monitor" isDomainClass="True">
+    <BaseClass>Hardware</BaseClass>
+    <ECCustomAttributes>
+      <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+        <Hidden>False</Hidden>
+      </DisplayOptions>
+      <UseBooleanInExpressions xmlns="EditorCustomAttributes.01.00" />
+    </ECCustomAttributes>
+    <ECProperty propertyName="Size" typeName="int">
+      <ECCustomAttributes>
+        <UnitSpecification xmlns="Unit_Attributes.01.00">
+          <DimensionName>L</DimensionName>
+          <KindOfQuantityName>LENGTH</KindOfQuantityName>
+          <UnitName>INCH</UnitName>
+          <AllowableUnits>
+            <string>INCH</string>
+          </AllowableUnits>
+        </UnitSpecification>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="Type" typeName="string">
+      <ECCustomAttributes>
+        <StandardValues xmlns="EditorCustomAttributes.01.00">
+          <MustBeFromList>True</MustBeFromList>
+          <ValueMap>
+            <ValueMap>
+              <DisplayString>CRT</DisplayString>
+              <Value>0</Value>
+            </ValueMap>
+            <ValueMap>
+              <DisplayString>LCD</DisplayString>
+              <Value>1</Value>
+            </ValueMap>
+          </ValueMap>
+        </StandardValues>
+      </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="Vendor" typeName="string" />
+    <ECProperty propertyName="Weight" typeName="double">
+      <ECCustomAttributes>
+        <UnitSpecification xmlns="Unit_Attributes.01.00">
+          <DimensionName>M</DimensionName>
+          <KindOfQuantityName />
+          <UnitName>POUND</UnitName>
+          <AllowableUnits>
+            <string>POUND</string>
+          </AllowableUnits>
+        </UnitSpecification>
+      </ECCustomAttributes>
+    </ECProperty>
+  </ECClass>
+  <ECClass typeName="LikesToShare1" isDomainClass="True">
+      <BaseClass>Hardware</BaseClass>
+      <ECCustomAttributes>
+          <ClassMap xmlns="ECDbMap.01.00">
+            <MapStrategy>
+                <Strategy>SharedTable</Strategy>
+                <AppliesToSubclasses>False</AppliesToSubclasses>
+            </MapStrategy>
+            <TableName>SharedTable</TableName>
+          </ClassMap>
+      </ECCustomAttributes>
+      <ECProperty propertyName="Conflicted" typeName="bool"/>
+      <ECProperty propertyName="Unique1" typeName="string" />
+  </ECClass>
+  <ECClass typeName="LikesToShare2" isDomainClass="True">
+      <ECCustomAttributes>
+          <ClassMap xmlns="ECDbMap.01.00">
+            <MapStrategy>
+                <Strategy>SharedTable</Strategy>
+                <AppliesToSubclasses>False</AppliesToSubclasses>
+            </MapStrategy>
+            <TableName>SharedTable</TableName>
+          </ClassMap>
+      </ECCustomAttributes>
+      <ECProperty propertyName="Conflicted" typeName="bool"/>
+      <ECProperty propertyName="Unique2" typeName="string" />
+  </ECClass>
+  
+  <!-- ************ Relationship mapping tests ********************** -->
+    <ECRelationshipClass typeName="RelationWithLinkTableMapping" isDomainClass="True" strength="referencing">
+        <Source cardinality="(0,N)" polymorphic="True">
+            <Class class="Employee" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="Hardware" />
+        </Target>
+        <ECProperty propertyName="Created" typeName="dateTime"/>
+    </ECRelationshipClass>
+
+ 
+  
+    <ECClass typeName="StructDomainClass" isDomainClass="True" isStruct="true">
+     <ECProperty propertyName="stringProp" typeName="string" />
+    </ECClass>
+    <ECClass typeName="StructNoneDomainClass" isDomainClass="False" isStruct="true">
+     <ECProperty propertyName="stringProp" typeName="string" />
+    </ECClass>
+    <ECClass typeName="StructDomainClassWithNoProperties" isDomainClass="True" isStruct="true">
+    </ECClass>
+    <ECClass typeName="StructNoneDomainClassWithNoProperties" isDomainClass="False" isStruct="true">
+    </ECClass>
+	
+    <ECClass typeName="DomainClass" isDomainClass="True" isStruct="false">
+     <ECProperty propertyName="stringProp" typeName="string" />
+    </ECClass>
+    <ECClass typeName="NoneDomainClass" isDomainClass="False" isStruct="false">
+     <ECProperty propertyName="stringProp" typeName="string" />
+    </ECClass>
+    <ECClass typeName="DomainClassWithNoProperties" isDomainClass="True" isStruct="false">
+    </ECClass>
+    <ECClass typeName="NoneDomainClassWithNoProperties" isDomainClass="False" isStruct="false">
+    </ECClass>	
+  
+</ECSchema>

@@ -24,6 +24,11 @@ struct PerformanceECDbMapCATestFixture : public ECDbTestFixture
         double m_selectTime = 0.0;
         double m_deleteTime = 0.0;
 
+        Utf8String m_insertSql;
+        Utf8String m_updateSql;
+        Utf8String m_selectSql;
+        Utf8String m_deleteSql;
+
         struct ECSqlTestItem
             {
             Utf8String m_insertECSql;
@@ -31,16 +36,21 @@ struct PerformanceECDbMapCATestFixture : public ECDbTestFixture
             Utf8String m_updateECSql;
             Utf8String m_deleteECSql;
             };
-        bmap<ECN::ECClassCP, ECSqlTestItem> m_sqlTestItems;
+        bmap<ECN::ECClassCP, ECSqlTestItem> m_ecsqlTestItems;
         void CreateClassHierarchy (ECN::ECSchemaR testSchema, size_t LevelCount, ECN::ECClassR baseClass);
         void CreatePrimitiveProperties (ECN::ECClassR ecClass);
-        void GenerateECSqlCRUDTestStatements (ECN::ECSchemaR ecSchema);
-        void GenerateSqlCRUDTestStatements (ECN::ECSchemaR ecSchema, ECN::ECClassR ecClass, Utf8StringR insertSql, Utf8StringR selectSql, Utf8StringR updateSql, Utf8StringR deleteSql);
-        void InsertInstances (ECDbR ecdb);
-        void ReadInstances (ECDbR ecdb);
-        void UpdateInstances (ECDbR ecdb);
-        void DeleteInstances (ECDbR ecdb);
-        void GenerateReadUpdateDeleteStatements (ECN::ECSchemaR ecSchema);
+
+        void GenerateECSqlCRUDTestStatements (ECN::ECSchemaR ecSchema, bool hardCodePropertyValues);
+        void ECSqlInsertInstances (ECDbR ecdb, bool bindPropertyValues);
+        void ECSqlReadInstances (ECDbR ecdb, bool iterateResultSet);
+        void ECSqlUpdateInstances (ECDbR ecdb, bool bindPropertyValues);
+        void ECSqlDeleteInstances (ECDbR ecdb);
+
+        void GenerateSqlCRUDTestStatements (ECN::ECSchemaR ecSchema, ECN::ECClassR ecClass, bool hardCodePropertyValues);
+        void SqlInsertInstances (ECDbR ecdb, ECClassR ecClass, bool bindPropertyValues);
+        void SqlReadInstances (ECDbR ecdb, ECClassR ecClass, bool iterateResultSet);
+        void SqlUpdateInstances (ECDbR ecdb, ECClassR ecClass, bool bindPropertyValues);
+        void SqlDeleteInstances (ECDbR ecdb, ECClassR ecClass);
     };
 
 END_ECDBUNITTESTS_NAMESPACE

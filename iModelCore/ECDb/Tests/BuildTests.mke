@@ -34,10 +34,6 @@ o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
 
 %include $(SrcBsiCommon)sharedmki/DetectAndCompileUnitTests.mki
 
-%ifdef IsBackDoor
-    BEGTEST_BACKDOOR =% $(o)UnitTests.list.h
-%endif
-
 # Deliver 
 $(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}
     $(LinkFirstDepToFirstTargetAsDirectory)

@@ -11,6 +11,8 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+struct RelationshipStrength : ECDbTestFixture {};
+
 extern bool InsertInstance (ECDbR db, ECClassCR ecClass, IECInstanceR ecInstance);
 extern IECRelationshipInstancePtr CreateRelationship (ECRelationshipClassCR relationshipClass, IECInstanceR source, IECInstanceR target);
 extern ECInstanceId InstanceToId (IECInstanceCR ecInstance);
@@ -55,10 +57,9 @@ bool HasInstance (IECInstanceCR instance, ECDbR ecDb)
 //---------------------------------------------------------------------------------------
 //                                               Muhammad Hassan                  10/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbInstances, RelationshipStrengthBackwardEmbedding)
+TEST_F(RelationshipStrength, BackwardEmbedding)
     {
-    ECDbTestProject testProject;
-    ECDbR ecdbr = testProject.Create("BackwardRelationshipStrengthTest.ecdb", L"RelationshipStrengthBackwardTest.01.00.ecschema.xml", false);
+    ECDbR ecdbr = SetupECDb("BackwardRelationshipStrengthTest.ecdb", L"RelationshipStrengthBackwardTest.01.00.ecschema.xml", false);
     /*
     *                         SingleParent
     *                             |
@@ -106,10 +107,9 @@ TEST(ECDbInstances, RelationshipStrengthBackwardEmbedding)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstances, RelationshipStrength)
+TEST_F(RelationshipStrength, Test)
     {
-    ECDbTestProject testProject;
-    ECDbR ecDb = testProject.Create ("RelationshipStrengthTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
+    ECDbR ecDb = SetupECDb("RelationshipStrengthTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
 
     /*
      *          Create the following relationship hierarchy
@@ -206,10 +206,9 @@ TEST(ECDbInstances, RelationshipStrength)
 //---------------------------------------------------------------------------------------
 //                                               Muhammad Hassan                  10/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbInstances, RelationshipStrengthBackwardHoldingForwardEmbedding)
+TEST_F(RelationshipStrength, BackwardHoldingForwardEmbedding)
 {
-    ECDbTestProject testProject;
-    ECDbR ecdbr = testProject.Create("BackwardRelationshipStrengthTest.ecdb", L"RelationshipStrengthBackwardTest.01.00.ecschema.xml", false);
+    ECDbR ecdbr = SetupECDb("BackwardRelationshipStrengthTest.ecdb", L"RelationshipStrengthBackwardTest.01.00.ecschema.xml", false);
 
     /*
     *          Create the following relationship hierarchy
@@ -322,10 +321,9 @@ TEST(ECDbInstances, RelationshipStrengthBackwardHoldingForwardEmbedding)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstances, RelationshipStrengthAnyClass)
+TEST_F(RelationshipStrength, AnyClass)
     {
-    ECDbTestProject testProject;
-    ECDbR ecDb = testProject.Create ("RelationshipStrengthAnyClassTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
+    ECDbR ecDb = SetupECDb ("RelationshipStrengthAnyClassTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
 
     /*
      *          Create the following relationship hierarchy
@@ -408,10 +406,9 @@ TEST(ECDbInstances, RelationshipStrengthAnyClass)
 //---------------------------------------------------------------------------------------
 //                                               Muhammad Hassan                  10/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbInstances, RelationshipStrengthAnyClassBackwardHoldingBackwardEmbedding)
+TEST_F(RelationshipStrength, AnyClassBackwardHoldingBackwardEmbedding)
 {
-    ECDbTestProject testProject;
-    ECDbR ecdbr = testProject.Create("RelationshipStrengthAnyClassTest.ecdb", L"RelationshipStrengthBackwardTest.01.00.ecschema.xml", false);
+    ECDbR ecdbr = SetupECDb("RelationshipStrengthAnyClassTest.ecdb", L"RelationshipStrengthBackwardTest.01.00.ecschema.xml", false);
 
     /*
     *          Create the following relationship hierarchy
@@ -480,7 +477,7 @@ TEST(ECDbInstances, RelationshipStrengthAnyClassBackwardHoldingBackwardEmbedding
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Rafay.Muneeb	                     03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstancesRelationshipStrength, ForwardHoldingByMultipleDeleteTest)
+TEST_F(RelationshipStrength, ForwardHoldingByMultipleDeleteTest)
 {
     /*
     Create the following relationship hierarchy
@@ -499,85 +496,84 @@ TEST(ECDbInstancesRelationshipStrength, ForwardHoldingByMultipleDeleteTest)
                                                         GrandParent2
     */
 
-	//int numDeleted = 0;
-	bool InsertionStatus;
-	ECDbTestProject testProject;
-	ECDbR ecDb = testProject.Create("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
+    //int numDeleted = 0;
+    bool InsertionStatus;
+    ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
 
-	//grandParent1
-	ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
-	IECInstancePtr grandParent1 = CreatePerson(*personClass, "First", "GrandParent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent1));
-	//grandParent2
-	IECInstancePtr grandParent2 = CreatePerson(*personClass, "Second", "GrandParent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent2));
-	//Parent1
-	IECInstancePtr Parent1 = CreatePerson(*personClass, "First", "Parent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent1));
-	//Parent2
-	IECInstancePtr Parent2 = CreatePerson(*personClass, "Second", "Parent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent2));
-	//child1    
-	IECInstancePtr child1 = CreatePerson(*personClass, "First", "Child");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child1));
-	//child2
-	IECInstancePtr child2 = CreatePerson(*personClass, "Second", "Child");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child2));
-	//pet1
-	IECInstancePtr pet1 = CreatePerson(*personClass, "First", "pet");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet1));
-	//pet2
-	IECInstancePtr pet2 = CreatePerson(*personClass, "Second", "pet");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet2));
-
-
-	// Holding relationship (GrandParent2 -> Parent2 -> child2 -> pet2 )
-	ECRelationshipClassCP HoldingRelationShipClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentsHaveAnyChildren")->GetRelationshipClassCP();
-
-	//GrandParent1->Parent1
-	IECRelationshipInstancePtr RelationInstanceGP1_P1 = CreateRelationship(*HoldingRelationShipClass, *grandParent1, *Parent1);
-	InsertionStatus = InsertInstance(ecDb, *HoldingRelationShipClass, *RelationInstanceGP1_P1);
-	ASSERT_TRUE(InsertionStatus);
-
-	//Parent1->child1
-	IECRelationshipInstancePtr RelationInstanceC1_P1 = CreateRelationship(*HoldingRelationShipClass, *Parent1, *child1);
-	InsertionStatus = InsertInstance(ecDb, *HoldingRelationShipClass, *RelationInstanceC1_P1);
-	ASSERT_TRUE(InsertionStatus);
-
-	//child1->pet1
-	IECRelationshipInstancePtr RelationInstancePET1_C1 = CreateRelationship(*HoldingRelationShipClass, *child1, *pet1);
-	InsertionStatus = InsertInstance(ecDb, *HoldingRelationShipClass, *RelationInstancePET1_C1);
-	ASSERT_TRUE(InsertionStatus);
-
-	//GrandParent1->pet1
-	IECRelationshipInstancePtr RelationInstanceGP1_PET1 = CreateRelationship(*HoldingRelationShipClass, *grandParent1, *pet1);
-	InsertionStatus = InsertInstance(ecDb, *HoldingRelationShipClass, *RelationInstanceGP1_PET1);
-	ASSERT_TRUE(InsertionStatus);
-
-	//GrandParent1->child1
-	IECRelationshipInstancePtr RelationInstanceGP2_C1 = CreateRelationship(*HoldingRelationShipClass, *grandParent2, *child1);
-	InsertionStatus = InsertInstance(ecDb, *HoldingRelationShipClass, *RelationInstanceGP2_C1);
-	ASSERT_TRUE(InsertionStatus);
+    //grandParent1
+    ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
+    IECInstancePtr grandParent1 = CreatePerson(*personClass, "First", "GrandParent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent1));
+    //grandParent2
+    IECInstancePtr grandParent2 = CreatePerson(*personClass, "Second", "GrandParent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent2));
+    //Parent1
+    IECInstancePtr Parent1 = CreatePerson(*personClass, "First", "Parent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent1));
+    //Parent2
+    IECInstancePtr Parent2 = CreatePerson(*personClass, "Second", "Parent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent2));
+    //child1    
+    IECInstancePtr child1 = CreatePerson(*personClass, "First", "Child");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child1));
+    //child2
+    IECInstancePtr child2 = CreatePerson(*personClass, "Second", "Child");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child2));
+    //pet1
+    IECInstancePtr pet1 = CreatePerson(*personClass, "First", "pet");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet1));
+    //pet2
+    IECInstancePtr pet2 = CreatePerson(*personClass, "Second", "pet");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet2));
 
 
+    // Holding relationship (GrandParent2 -> Parent2 -> child2 -> pet2 )
+    ECRelationshipClassCP HoldingRelationShipClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentsHaveAnyChildren")->GetRelationshipClassCP();
 
-	ecDb.SaveChanges();
-	/*
-	Test 1: Delete grandParent1
-	Validate:Parent1 should exist which has holding relationship from 2 direct path and 1 indirect path
-	*/
-	/*numDeleted =*/ DeleteInstance(*grandParent1, ecDb);
-	//ASSERT_EQ(5, numDeleted);
-	ASSERT_TRUE(HasInstance(*pet1, ecDb));
-	ASSERT_TRUE(HasInstance(*child1, ecDb));
+    //GrandParent1->Parent1
+    IECRelationshipInstancePtr RelationInstanceGP1_P1 = CreateRelationship(*HoldingRelationShipClass, *grandParent1, *Parent1);
+    InsertionStatus = InsertInstance(ecDb, *HoldingRelationShipClass, *RelationInstanceGP1_P1);
+    ASSERT_TRUE(InsertionStatus);
 
-	ASSERT_FALSE(HasInstance(*Parent1, ecDb));
+    //Parent1->child1
+    IECRelationshipInstancePtr RelationInstanceC1_P1 = CreateRelationship(*HoldingRelationShipClass, *Parent1, *child1);
+    InsertionStatus = InsertInstance(ecDb, *HoldingRelationShipClass, *RelationInstanceC1_P1);
+    ASSERT_TRUE(InsertionStatus);
+
+    //child1->pet1
+    IECRelationshipInstancePtr RelationInstancePET1_C1 = CreateRelationship(*HoldingRelationShipClass, *child1, *pet1);
+    InsertionStatus = InsertInstance(ecDb, *HoldingRelationShipClass, *RelationInstancePET1_C1);
+    ASSERT_TRUE(InsertionStatus);
+
+    //GrandParent1->pet1
+    IECRelationshipInstancePtr RelationInstanceGP1_PET1 = CreateRelationship(*HoldingRelationShipClass, *grandParent1, *pet1);
+    InsertionStatus = InsertInstance(ecDb, *HoldingRelationShipClass, *RelationInstanceGP1_PET1);
+    ASSERT_TRUE(InsertionStatus);
+
+    //GrandParent1->child1
+    IECRelationshipInstancePtr RelationInstanceGP2_C1 = CreateRelationship(*HoldingRelationShipClass, *grandParent2, *child1);
+    InsertionStatus = InsertInstance(ecDb, *HoldingRelationShipClass, *RelationInstanceGP2_C1);
+    ASSERT_TRUE(InsertionStatus);
+
+
+
+    ecDb.SaveChanges();
+    /*
+    Test 1: Delete grandParent1
+    Validate:Parent1 should exist which has holding relationship from 2 direct path and 1 indirect path
+    */
+    /*numDeleted =*/ DeleteInstance(*grandParent1, ecDb);
+    //ASSERT_EQ(5, numDeleted);
+    ASSERT_TRUE(HasInstance(*pet1, ecDb));
+    ASSERT_TRUE(HasInstance(*child1, ecDb));
+
+    ASSERT_FALSE(HasInstance(*Parent1, ecDb));
 
 }
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Rafay.Muneeb	                     03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstancesRelationshipStrength, ForwardHoldingMultipleLinkedObjectDeleteTest)
+TEST_F(RelationshipStrength, ForwardHoldingMultipleLinkedObjectDeleteTest)
 {
     /*
     Create the following relationship hierarchy
@@ -596,89 +592,87 @@ TEST(ECDbInstancesRelationshipStrength, ForwardHoldingMultipleLinkedObjectDelete
                                                         GrandParent2
     */
 
-	//int numDeleted = 0;
-	bool InsertionStatus;
-	ECDbTestProject testProject;
-	ECDbR ecDb = testProject.Create("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
+    //int numDeleted = 0;
+    bool InsertionStatus;
+    ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
 
-	//grandParent1
-	ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
-	IECInstancePtr grandParent1 = CreatePerson(*personClass, "First", "GrandParent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent1));
-	//grandParent2
-	IECInstancePtr grandParent2 = CreatePerson(*personClass, "Second", "GrandParent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent2));
-	//Parent1
-	IECInstancePtr Parent1 = CreatePerson(*personClass, "First", "Parent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent1));
-	//Parent2
-	IECInstancePtr Parent2 = CreatePerson(*personClass, "Second", "Parent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent2));
-	//child1    
-	IECInstancePtr child1 = CreatePerson(*personClass, "First", "Child");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child1));
-	//child2
-	IECInstancePtr child2 = CreatePerson(*personClass, "Second", "Child");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child2));
-	//pet1
-	IECInstancePtr pet1 = CreatePerson(*personClass, "First", "pet");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet1));
-	//pet2
-	IECInstancePtr pet2 = CreatePerson(*personClass, "Second", "pet");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet2));
+    //grandParent1
+    ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
+    IECInstancePtr grandParent1 = CreatePerson(*personClass, "First", "GrandParent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent1));
+    //grandParent2
+    IECInstancePtr grandParent2 = CreatePerson(*personClass, "Second", "GrandParent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent2));
+    //Parent1
+    IECInstancePtr Parent1 = CreatePerson(*personClass, "First", "Parent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent1));
+    //Parent2
+    IECInstancePtr Parent2 = CreatePerson(*personClass, "Second", "Parent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent2));
+    //child1    
+    IECInstancePtr child1 = CreatePerson(*personClass, "First", "Child");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child1));
+    //child2
+    IECInstancePtr child2 = CreatePerson(*personClass, "Second", "Child");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child2));
+    //pet1
+    IECInstancePtr pet1 = CreatePerson(*personClass, "First", "pet");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet1));
+    //pet2
+    IECInstancePtr pet2 = CreatePerson(*personClass, "Second", "pet");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet2));
 
 
-	// Holding relationship (GrandParent2 -> Parent2 -> child2 -> pet2 )
-	ECRelationshipClassCP HoldingRelationShipClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentsHaveAnyChildren")->GetRelationshipClassCP();
+    // Holding relationship (GrandParent2 -> Parent2 -> child2 -> pet2 )
+    ECRelationshipClassCP HoldingRelationShipClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentsHaveAnyChildren")->GetRelationshipClassCP();
 
-	//GrandParent1->Parent1
-	IECRelationshipInstancePtr RelationInstanceGP1_P1 = CreateRelationship(*HoldingRelationShipClass, *grandParent1, *Parent1);
-	InsertionStatus = InsertInstance(ecDb, *HoldingRelationShipClass, *RelationInstanceGP1_P1);
-	ASSERT_TRUE(InsertionStatus);
+    //GrandParent1->Parent1
+    IECRelationshipInstancePtr RelationInstanceGP1_P1 = CreateRelationship(*HoldingRelationShipClass, *grandParent1, *Parent1);
+    InsertionStatus = InsertInstance(ecDb, *HoldingRelationShipClass, *RelationInstanceGP1_P1);
+    ASSERT_TRUE(InsertionStatus);
 
-	//Parent1->child1
-	IECRelationshipInstancePtr RelationInstanceC1_P1 = CreateRelationship(*HoldingRelationShipClass, *Parent1, *child1);
-	InsertionStatus = InsertInstance(ecDb, *HoldingRelationShipClass, *RelationInstanceC1_P1);
-	ASSERT_TRUE(InsertionStatus);
+    //Parent1->child1
+    IECRelationshipInstancePtr RelationInstanceC1_P1 = CreateRelationship(*HoldingRelationShipClass, *Parent1, *child1);
+    InsertionStatus = InsertInstance(ecDb, *HoldingRelationShipClass, *RelationInstanceC1_P1);
+    ASSERT_TRUE(InsertionStatus);
 
-	//child1->pet1
-	IECRelationshipInstancePtr RelationInstancePET1_C1 = CreateRelationship(*HoldingRelationShipClass, *child1, *pet1);
-	InsertionStatus = InsertInstance(ecDb, *HoldingRelationShipClass, *RelationInstancePET1_C1);
-	ASSERT_TRUE(InsertionStatus);
+    //child1->pet1
+    IECRelationshipInstancePtr RelationInstancePET1_C1 = CreateRelationship(*HoldingRelationShipClass, *child1, *pet1);
+    InsertionStatus = InsertInstance(ecDb, *HoldingRelationShipClass, *RelationInstancePET1_C1);
+    ASSERT_TRUE(InsertionStatus);
 
-	//GrandParent1->pet1
-	IECRelationshipInstancePtr RelationInstanceGP1_PET1 = CreateRelationship(*HoldingRelationShipClass, *grandParent1, *pet1);
-	InsertionStatus = InsertInstance(ecDb, *HoldingRelationShipClass, *RelationInstanceGP1_PET1);
-	ASSERT_TRUE(InsertionStatus);
+    //GrandParent1->pet1
+    IECRelationshipInstancePtr RelationInstanceGP1_PET1 = CreateRelationship(*HoldingRelationShipClass, *grandParent1, *pet1);
+    InsertionStatus = InsertInstance(ecDb, *HoldingRelationShipClass, *RelationInstanceGP1_PET1);
+    ASSERT_TRUE(InsertionStatus);
 
-	//GrandParent1->child1
-	IECRelationshipInstancePtr RelationInstanceGP2_C1 = CreateRelationship(*HoldingRelationShipClass, *grandParent2, *child1);
-	InsertionStatus = InsertInstance(ecDb, *HoldingRelationShipClass, *RelationInstanceGP2_C1);
-	ASSERT_TRUE(InsertionStatus);
+    //GrandParent1->child1
+    IECRelationshipInstancePtr RelationInstanceGP2_C1 = CreateRelationship(*HoldingRelationShipClass, *grandParent2, *child1);
+    InsertionStatus = InsertInstance(ecDb, *HoldingRelationShipClass, *RelationInstanceGP2_C1);
+    ASSERT_TRUE(InsertionStatus);
 
-	ecDb.SaveChanges();
-	/*
-	Test 1: Delete Pet1
-	Validate:Pet1 should delete
-	*/
-	/*numDeleted =*/ DeleteInstance(*pet1, ecDb);
-	//ASSERT_EQ(3, numDeleted);
+    ecDb.SaveChanges();
+    /*
+    Test 1: Delete Pet1
+    Validate:Pet1 should delete
+    */
+    /*numDeleted =*/ DeleteInstance(*pet1, ecDb);
+    //ASSERT_EQ(3, numDeleted);
 
-	ASSERT_FALSE(HasInstance(*pet1, ecDb));
+    ASSERT_FALSE(HasInstance(*pet1, ecDb));
 
-	ASSERT_TRUE(HasInstance(*child1, ecDb));
-	ASSERT_TRUE(HasInstance(*grandParent1, ecDb));
+    ASSERT_TRUE(HasInstance(*child1, ecDb));
+    ASSERT_TRUE(HasInstance(*grandParent1, ecDb));
 
 }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Rafay.Muneeb	                     03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstancesRelationshipStrength, ForwardEmbeddingByMultiplePathDeleteTest)
+TEST_F(RelationshipStrength, ForwardEmbeddingByMultiplePathDeleteTest)
     {
     //int numDeleted = 0;
     bool InsertionStatus;
-    ECDbTestProject testProject;
-    ECDbR ecDb = testProject.Create("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
+    ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
 
     //grandParent1
     ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
@@ -732,10 +726,11 @@ TEST(ECDbInstancesRelationshipStrength, ForwardEmbeddingByMultiplePathDeleteTest
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Rafay.Muneeb	                     03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstancesRelationshipStrength, ForwardEmbeddingMiddleInstancePathDeleteTest)
+TEST_F(RelationshipStrength, ForwardEmbeddingMiddleInstancePathDeleteTest)
     {
     //int numDeleted = 0;
     bool InsertionStatus;
+    // ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
     ECDbTestProject testProject;
     ECDbR ecDb = testProject.Create("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
 
@@ -795,12 +790,11 @@ TEST(ECDbInstancesRelationshipStrength, ForwardEmbeddingMiddleInstancePathDelete
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Rafay.Muneeb	                     03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstancesRelationshipStrength, ForwardEmbeddingMultipleLinkedObjectPathDeleteTest)
+TEST_F(RelationshipStrength, ForwardEmbeddingMultipleLinkedObjectPathDeleteTest)
     {
     //int numDeleted = 0;
     bool InsertionStatus;
-    ECDbTestProject testProject;
-    ECDbR ecDb = testProject.Create("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
+    ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
 
     //grandParent1
     ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
@@ -874,497 +868,498 @@ TEST(ECDbInstancesRelationshipStrength, ForwardEmbeddingMultipleLinkedObjectPath
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Rafay.Muneeb	                     03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstancesRelationshipStrength, DirectEmbeddedChildDeleteTest)
+TEST_F(RelationshipStrength, DirectEmbeddedChildDeleteTest)
 {
-	//int numDeleted = 0;
-	bool InsertionStatus;
+    //int numDeleted = 0;
+    bool InsertionStatus;
+    // ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
 	ECDbTestProject testProject;
 	ECDbR ecDb = testProject.Create("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
 
-	//grandParent1
-	ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
-	IECInstancePtr grandParent1 = CreatePerson(*personClass, "First", "GrandParent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent1));
-	//grandParent2
-	IECInstancePtr grandParent2 = CreatePerson(*personClass, "Second", "GrandParent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent2));
-	//Parent1
-	IECInstancePtr Parent1 = CreatePerson(*personClass, "First", "Parent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent1));
-	//Parent2
-	IECInstancePtr Parent2 = CreatePerson(*personClass, "Second", "Parent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent2));
-	//child1    
-	IECInstancePtr child1 = CreatePerson(*personClass, "First", "Child");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child1));
-	//child2
-	IECInstancePtr child2 = CreatePerson(*personClass, "Second", "Child");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child2));
-	//pet1
-	IECInstancePtr pet1 = CreatePerson(*personClass, "First", "pet");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet1));
-	//pet2
-	IECInstancePtr pet2 = CreatePerson(*personClass, "Second", "pet");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet2));
+    //grandParent1
+    ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
+    IECInstancePtr grandParent1 = CreatePerson(*personClass, "First", "GrandParent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent1));
+    //grandParent2
+    IECInstancePtr grandParent2 = CreatePerson(*personClass, "Second", "GrandParent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent2));
+    //Parent1
+    IECInstancePtr Parent1 = CreatePerson(*personClass, "First", "Parent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent1));
+    //Parent2
+    IECInstancePtr Parent2 = CreatePerson(*personClass, "Second", "Parent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent2));
+    //child1    
+    IECInstancePtr child1 = CreatePerson(*personClass, "First", "Child");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child1));
+    //child2
+    IECInstancePtr child2 = CreatePerson(*personClass, "Second", "Child");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child2));
+    //pet1
+    IECInstancePtr pet1 = CreatePerson(*personClass, "First", "pet");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet1));
+    //pet2
+    IECInstancePtr pet2 = CreatePerson(*personClass, "Second", "pet");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet2));
 
 
-	// Holding relationship (GrandParent2 -> Parent2 -> child2 -> pet2 )
-	ECRelationshipClassCP parentsHaveAnyChildren = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentsHaveAnyChildren")->GetRelationshipClassCP();
-	IECRelationshipInstancePtr holdingRelationInstance;
+    // Holding relationship (GrandParent2 -> Parent2 -> child2 -> pet2 )
+    ECRelationshipClassCP parentsHaveAnyChildren = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentsHaveAnyChildren")->GetRelationshipClassCP();
+    IECRelationshipInstancePtr holdingRelationInstance;
 
-	IECRelationshipInstancePtr holdingRelationInstanceG2_P2 = CreateRelationship(*parentsHaveAnyChildren, *grandParent2, *Parent2);
-	InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceG2_P2);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr holdingRelationInstanceG2_P2 = CreateRelationship(*parentsHaveAnyChildren, *grandParent2, *Parent2);
+    InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceG2_P2);
+    ASSERT_TRUE(InsertionStatus);
 
-	IECRelationshipInstancePtr holdingRelationInstanceP2_C2 = CreateRelationship(*parentsHaveAnyChildren, *Parent2, *child2);
-	InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceP2_C2);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr holdingRelationInstanceP2_C2 = CreateRelationship(*parentsHaveAnyChildren, *Parent2, *child2);
+    InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceP2_C2);
+    ASSERT_TRUE(InsertionStatus);
 
-	IECRelationshipInstancePtr holdingRelationInstanceC2_Pt2 = CreateRelationship(*parentsHaveAnyChildren, *child2, *pet2);
-	InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceC2_Pt2);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr holdingRelationInstanceC2_Pt2 = CreateRelationship(*parentsHaveAnyChildren, *child2, *pet2);
+    InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceC2_Pt2);
+    ASSERT_TRUE(InsertionStatus);
 
-	// Embedding relationship (GrandParent1 -> Parent1 -> child1 -> pet1 )
-	ECRelationshipClassCP parentHasAnyChild = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentHasAnyChild")->GetRelationshipClassCP();
-	IECRelationshipInstancePtr embeddedRelationInstance;
+    // Embedding relationship (GrandParent1 -> Parent1 -> child1 -> pet1 )
+    ECRelationshipClassCP parentHasAnyChild = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentHasAnyChild")->GetRelationshipClassCP();
+    IECRelationshipInstancePtr embeddedRelationInstance;
 
-	IECRelationshipInstancePtr embeddedRelationInstanceG1_P1 = CreateRelationship(*parentHasAnyChild, *grandParent1, *Parent1);
-	InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceG1_P1);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr embeddedRelationInstanceG1_P1 = CreateRelationship(*parentHasAnyChild, *grandParent1, *Parent1);
+    InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceG1_P1);
+    ASSERT_TRUE(InsertionStatus);
 
-	IECRelationshipInstancePtr embeddedRelationInstanceP1_C1 = CreateRelationship(*parentHasAnyChild, *Parent1, *child1);
-	InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceP1_C1);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr embeddedRelationInstanceP1_C1 = CreateRelationship(*parentHasAnyChild, *Parent1, *child1);
+    InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceP1_C1);
+    ASSERT_TRUE(InsertionStatus);
 
-	IECRelationshipInstancePtr embeddedRelationInstanceC1_Pt1 = CreateRelationship(*parentHasAnyChild, *child1, *pet1);
-	InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceC1_Pt1);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr embeddedRelationInstanceC1_Pt1 = CreateRelationship(*parentHasAnyChild, *child1, *pet1);
+    InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceC1_Pt1);
+    ASSERT_TRUE(InsertionStatus);
 
-	//Parent1 embed Parent 2
-	IECRelationshipInstancePtr embeddedRelationInstanceP1_P2 = CreateRelationship(*parentHasAnyChild, *Parent1, *Parent2);
-	InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceP1_P2);
-	ASSERT_TRUE(InsertionStatus);
+    //Parent1 embed Parent 2
+    IECRelationshipInstancePtr embeddedRelationInstanceP1_P2 = CreateRelationship(*parentHasAnyChild, *Parent1, *Parent2);
+    InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceP1_P2);
+    ASSERT_TRUE(InsertionStatus);
 
-	//Child2 holds Child1
-	IECRelationshipInstancePtr holdingRelationInstanceC2_C1 = CreateRelationship(*parentsHaveAnyChildren, *child2, *child1);
-	InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceC2_C1);
-	ASSERT_TRUE(InsertionStatus);
+    //Child2 holds Child1
+    IECRelationshipInstancePtr holdingRelationInstanceC2_C1 = CreateRelationship(*parentsHaveAnyChildren, *child2, *child1);
+    InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceC2_C1);
+    ASSERT_TRUE(InsertionStatus);
 
-	ecDb.SaveChanges();
-	/*
-	Test 1: Delete GrandParent2
-	Validate: Relation,Pet1 gets deleted
-	*/
-	/*numDeleted =*/ DeleteInstance(*grandParent2, ecDb);
-	//ASSERT_EQ(13, numDeleted);
+    ecDb.SaveChanges();
+    /*
+    Test 1: Delete GrandParent2
+    Validate: Relation,Pet1 gets deleted
+    */
+    /*numDeleted =*/ DeleteInstance(*grandParent2, ecDb);
+    //ASSERT_EQ(13, numDeleted);
 
-	ASSERT_TRUE(HasInstance(*grandParent1, ecDb));
-	ASSERT_TRUE(HasInstance(*Parent1, ecDb));
+    ASSERT_TRUE(HasInstance(*grandParent1, ecDb));
+    ASSERT_TRUE(HasInstance(*Parent1, ecDb));
 
-	ASSERT_FALSE(HasInstance(*holdingRelationInstanceG2_P2, ecDb));
-	ASSERT_FALSE(HasInstance(*holdingRelationInstanceP2_C2, ecDb));
-	ASSERT_FALSE(HasInstance(*holdingRelationInstanceC2_Pt2, ecDb));
+    ASSERT_FALSE(HasInstance(*holdingRelationInstanceG2_P2, ecDb));
+    ASSERT_FALSE(HasInstance(*holdingRelationInstanceP2_C2, ecDb));
+    ASSERT_FALSE(HasInstance(*holdingRelationInstanceC2_Pt2, ecDb));
 
-	ASSERT_FALSE(HasInstance(*embeddedRelationInstanceP1_P2, ecDb));
-	ASSERT_FALSE(HasInstance(*holdingRelationInstanceC2_C1, ecDb));
+    ASSERT_FALSE(HasInstance(*embeddedRelationInstanceP1_P2, ecDb));
+    ASSERT_FALSE(HasInstance(*holdingRelationInstanceC2_C1, ecDb));
 
-	ASSERT_FALSE(HasInstance(*child1, ecDb));
-	ASSERT_FALSE(HasInstance(*pet1, ecDb));
+    ASSERT_FALSE(HasInstance(*child1, ecDb));
+    ASSERT_FALSE(HasInstance(*pet1, ecDb));
 
-	ASSERT_FALSE(HasInstance(*Parent2, ecDb));
-	ASSERT_FALSE(HasInstance(*child2, ecDb));
-	ASSERT_FALSE(HasInstance(*pet2, ecDb));
+    ASSERT_FALSE(HasInstance(*Parent2, ecDb));
+    ASSERT_FALSE(HasInstance(*child2, ecDb));
+    ASSERT_FALSE(HasInstance(*pet2, ecDb));
 
 }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Rafay.Muneeb	                     03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstancesRelationshipStrength, HoldingDeleteRuleTest)
+TEST_F(RelationshipStrength, HoldingDeleteRuleTest)
 {
-	//int numDeleted = 0;
-	bool InsertionStatus;
+    //int numDeleted = 0;
+    bool InsertionStatus;
+    // ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
 	ECDbTestProject testProject;
 	ECDbR ecDb = testProject.Create("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
 
-	//grandParent1
-	ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
-	IECInstancePtr grandParent1 = CreatePerson(*personClass, "First", "GrandParent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent1));
-	//grandParent2
-	IECInstancePtr grandParent2 = CreatePerson(*personClass, "Second", "GrandParent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent2));
-	//Parent1
-	IECInstancePtr Parent1 = CreatePerson(*personClass, "First", "Parent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent1));
-	//Parent2
-	IECInstancePtr Parent2 = CreatePerson(*personClass, "Second", "Parent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent2));
-	//child1    
-	IECInstancePtr child1 = CreatePerson(*personClass, "First", "Child");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child1));
-	//child2
-	IECInstancePtr child2 = CreatePerson(*personClass, "Second", "Child");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child2));
-	//pet1
-	IECInstancePtr pet1 = CreatePerson(*personClass, "First", "pet");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet1));
-	//pet2
-	IECInstancePtr pet2 = CreatePerson(*personClass, "Second", "pet");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet2));
+    //grandParent1
+    ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
+    IECInstancePtr grandParent1 = CreatePerson(*personClass, "First", "GrandParent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent1));
+    //grandParent2
+    IECInstancePtr grandParent2 = CreatePerson(*personClass, "Second", "GrandParent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent2));
+    //Parent1
+    IECInstancePtr Parent1 = CreatePerson(*personClass, "First", "Parent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent1));
+    //Parent2
+    IECInstancePtr Parent2 = CreatePerson(*personClass, "Second", "Parent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent2));
+    //child1    
+    IECInstancePtr child1 = CreatePerson(*personClass, "First", "Child");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child1));
+    //child2
+    IECInstancePtr child2 = CreatePerson(*personClass, "Second", "Child");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child2));
+    //pet1
+    IECInstancePtr pet1 = CreatePerson(*personClass, "First", "pet");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet1));
+    //pet2
+    IECInstancePtr pet2 = CreatePerson(*personClass, "Second", "pet");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet2));
 
 
-	// Holding relationship (GrandParent2 -> Parent2 -> child2 -> pet2 )
-	ECRelationshipClassCP parentsHaveAnyChildren = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentsHaveAnyChildren")->GetRelationshipClassCP();
-	IECRelationshipInstancePtr holdingRelationInstance;
+    // Holding relationship (GrandParent2 -> Parent2 -> child2 -> pet2 )
+    ECRelationshipClassCP parentsHaveAnyChildren = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentsHaveAnyChildren")->GetRelationshipClassCP();
+    IECRelationshipInstancePtr holdingRelationInstance;
 
-	IECRelationshipInstancePtr holdingRelationInstanceG2_P2 = CreateRelationship(*parentsHaveAnyChildren, *grandParent2, *Parent2);
-	InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceG2_P2);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr holdingRelationInstanceG2_P2 = CreateRelationship(*parentsHaveAnyChildren, *grandParent2, *Parent2);
+    InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceG2_P2);
+    ASSERT_TRUE(InsertionStatus);
 
-	IECRelationshipInstancePtr holdingRelationInstanceP2_C2 = CreateRelationship(*parentsHaveAnyChildren, *Parent2, *child2);
-	InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceP2_C2);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr holdingRelationInstanceP2_C2 = CreateRelationship(*parentsHaveAnyChildren, *Parent2, *child2);
+    InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceP2_C2);
+    ASSERT_TRUE(InsertionStatus);
 
-	IECRelationshipInstancePtr holdingRelationInstanceC2_Pt2 = CreateRelationship(*parentsHaveAnyChildren, *child2, *pet2);
-	InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceC2_Pt2);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr holdingRelationInstanceC2_Pt2 = CreateRelationship(*parentsHaveAnyChildren, *child2, *pet2);
+    InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceC2_Pt2);
+    ASSERT_TRUE(InsertionStatus);
 
-	// Embedding relationship (GrandParent1 -> Parent1 -> child1 -> pet1 )
-	ECRelationshipClassCP parentHasAnyChild = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentHasAnyChild")->GetRelationshipClassCP();
-	IECRelationshipInstancePtr embeddedRelationInstance;
+    // Embedding relationship (GrandParent1 -> Parent1 -> child1 -> pet1 )
+    ECRelationshipClassCP parentHasAnyChild = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentHasAnyChild")->GetRelationshipClassCP();
+    IECRelationshipInstancePtr embeddedRelationInstance;
 
-	IECRelationshipInstancePtr embeddedRelationInstanceG1_P1 = CreateRelationship(*parentHasAnyChild, *grandParent1, *Parent1);
-	InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceG1_P1);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr embeddedRelationInstanceG1_P1 = CreateRelationship(*parentHasAnyChild, *grandParent1, *Parent1);
+    InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceG1_P1);
+    ASSERT_TRUE(InsertionStatus);
 
-	IECRelationshipInstancePtr embeddedRelationInstanceP1_C1 = CreateRelationship(*parentHasAnyChild, *Parent1, *child1);
-	InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceP1_C1);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr embeddedRelationInstanceP1_C1 = CreateRelationship(*parentHasAnyChild, *Parent1, *child1);
+    InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceP1_C1);
+    ASSERT_TRUE(InsertionStatus);
 
-	IECRelationshipInstancePtr embeddedRelationInstanceC1_Pt1 = CreateRelationship(*parentHasAnyChild, *child1, *pet1);
-	InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceC1_Pt1);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr embeddedRelationInstanceC1_Pt1 = CreateRelationship(*parentHasAnyChild, *child1, *pet1);
+    InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceC1_Pt1);
+    ASSERT_TRUE(InsertionStatus);
 
-	//Parent1 embed Parent 2
-	IECRelationshipInstancePtr embeddedRelationInstanceP1_P2 = CreateRelationship(*parentHasAnyChild, *Parent1, *Parent2);
-	InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceP1_P2);
-	ASSERT_TRUE(InsertionStatus);
+    //Parent1 embed Parent 2
+    IECRelationshipInstancePtr embeddedRelationInstanceP1_P2 = CreateRelationship(*parentHasAnyChild, *Parent1, *Parent2);
+    InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceP1_P2);
+    ASSERT_TRUE(InsertionStatus);
 
-	//Child2 holds Child1
-	IECRelationshipInstancePtr holdingRelationInstanceC2_C1 = CreateRelationship(*parentsHaveAnyChildren, *child2, *child1);
-	InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceC2_C1);
-	ASSERT_TRUE(InsertionStatus);
+    //Child2 holds Child1
+    IECRelationshipInstancePtr holdingRelationInstanceC2_C1 = CreateRelationship(*parentsHaveAnyChildren, *child2, *child1);
+    InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceC2_C1);
+    ASSERT_TRUE(InsertionStatus);
 
-	ecDb.SaveChanges();
-	/*
-	Test 1: Delete Parent2
-	Validate: (orphaned relationships) child1->pet1
-	Validate: Relation,Pet1 gets deleted
-	*/
-	//this test is valid, as hold relation will follow its delete rule despite child1 still have embedding relation with parent 1
-	/*numDeleted =*/ DeleteInstance(*Parent2, ecDb);
-	//ASSERT_EQ(12, numDeleted);
+    ecDb.SaveChanges();
+    /*
+    Test 1: Delete Parent2
+    Validate: (orphaned relationships) child1->pet1
+    Validate: Relation,Pet1 gets deleted
+    */
+    //this test is valid, as hold relation will follow its delete rule despite child1 still have embedding relation with parent 1
+    /*numDeleted =*/ DeleteInstance(*Parent2, ecDb);
+    //ASSERT_EQ(12, numDeleted);
 
-	ASSERT_TRUE(HasInstance(*grandParent2, ecDb));
-	ASSERT_TRUE(HasInstance(*Parent1, ecDb));
+    ASSERT_TRUE(HasInstance(*grandParent2, ecDb));
+    ASSERT_TRUE(HasInstance(*Parent1, ecDb));
 
 
-	ASSERT_FALSE(HasInstance(*holdingRelationInstanceG2_P2, ecDb));
-	ASSERT_FALSE(HasInstance(*holdingRelationInstanceP2_C2, ecDb));
-	ASSERT_FALSE(HasInstance(*holdingRelationInstanceC2_Pt2, ecDb));
+    ASSERT_FALSE(HasInstance(*holdingRelationInstanceG2_P2, ecDb));
+    ASSERT_FALSE(HasInstance(*holdingRelationInstanceP2_C2, ecDb));
+    ASSERT_FALSE(HasInstance(*holdingRelationInstanceC2_Pt2, ecDb));
 
-	ASSERT_FALSE(HasInstance(*embeddedRelationInstanceP1_P2, ecDb));
-	ASSERT_FALSE(HasInstance(*holdingRelationInstanceC2_C1, ecDb));
+    ASSERT_FALSE(HasInstance(*embeddedRelationInstanceP1_P2, ecDb));
+    ASSERT_FALSE(HasInstance(*holdingRelationInstanceC2_C1, ecDb));
 
-	ASSERT_FALSE(HasInstance(*child1, ecDb));
-	ASSERT_FALSE(HasInstance(*Parent2, ecDb));
-	ASSERT_FALSE(HasInstance(*child2, ecDb));
-	ASSERT_FALSE(HasInstance(*pet2, ecDb));
+    ASSERT_FALSE(HasInstance(*child1, ecDb));
+    ASSERT_FALSE(HasInstance(*Parent2, ecDb));
+    ASSERT_FALSE(HasInstance(*child2, ecDb));
+    ASSERT_FALSE(HasInstance(*pet2, ecDb));
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Rafay.Muneeb	                     03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstancesRelationshipStrength, ForwardEmbedDeleteThirdLevelParentWithTwoLinks)
+TEST_F(RelationshipStrength, ForwardEmbedDeleteThirdLevelParentWithTwoLinks)
 {
-	//int numDeleted = 0;
-	bool InsertionStatus;
-	ECDbTestProject testProject;
-	ECDbR ecDb = testProject.Create("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
+    //int numDeleted = 0;
+    bool InsertionStatus;
+    ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
 
-	//grandParent1
-	ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
-	IECInstancePtr grandParent1 = CreatePerson(*personClass, "First", "GrandParent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent1));
-	//grandParent2
-	IECInstancePtr grandParent2 = CreatePerson(*personClass, "Second", "GrandParent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent2));
-	//Parent1
-	IECInstancePtr Parent1 = CreatePerson(*personClass, "First", "Parent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent1));
-	//Parent2
-	IECInstancePtr Parent2 = CreatePerson(*personClass, "Second", "Parent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent2));
-	//child1    
-	IECInstancePtr child1 = CreatePerson(*personClass, "First", "Child");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child1));
-	//child2
-	IECInstancePtr child2 = CreatePerson(*personClass, "Second", "Child");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child2));
-	//pet1
-	IECInstancePtr pet1 = CreatePerson(*personClass, "First", "pet");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet1));
-	//pet2
-	IECInstancePtr pet2 = CreatePerson(*personClass, "Second", "pet");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet2));
+    //grandParent1
+    ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
+    IECInstancePtr grandParent1 = CreatePerson(*personClass, "First", "GrandParent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent1));
+    //grandParent2
+    IECInstancePtr grandParent2 = CreatePerson(*personClass, "Second", "GrandParent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent2));
+    //Parent1
+    IECInstancePtr Parent1 = CreatePerson(*personClass, "First", "Parent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent1));
+    //Parent2
+    IECInstancePtr Parent2 = CreatePerson(*personClass, "Second", "Parent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent2));
+    //child1    
+    IECInstancePtr child1 = CreatePerson(*personClass, "First", "Child");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child1));
+    //child2
+    IECInstancePtr child2 = CreatePerson(*personClass, "Second", "Child");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child2));
+    //pet1
+    IECInstancePtr pet1 = CreatePerson(*personClass, "First", "pet");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet1));
+    //pet2
+    IECInstancePtr pet2 = CreatePerson(*personClass, "Second", "pet");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet2));
 
 
-	// Holding relationship (GrandParent2 -> Parent2 -> child2 -> pet2 )
-	ECRelationshipClassCP parentsHaveAnyChildren = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentsHaveAnyChildren")->GetRelationshipClassCP();
-	IECRelationshipInstancePtr holdingRelationInstance;
+    // Holding relationship (GrandParent2 -> Parent2 -> child2 -> pet2 )
+    ECRelationshipClassCP parentsHaveAnyChildren = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentsHaveAnyChildren")->GetRelationshipClassCP();
+    IECRelationshipInstancePtr holdingRelationInstance;
 
-	IECRelationshipInstancePtr holdingRelationInstanceG2_P2 = CreateRelationship(*parentsHaveAnyChildren, *grandParent2, *Parent2);
-	InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceG2_P2);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr holdingRelationInstanceG2_P2 = CreateRelationship(*parentsHaveAnyChildren, *grandParent2, *Parent2);
+    InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceG2_P2);
+    ASSERT_TRUE(InsertionStatus);
 
-	IECRelationshipInstancePtr holdingRelationInstanceP2_C2 = CreateRelationship(*parentsHaveAnyChildren, *Parent2, *child2);
-	InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceP2_C2);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr holdingRelationInstanceP2_C2 = CreateRelationship(*parentsHaveAnyChildren, *Parent2, *child2);
+    InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceP2_C2);
+    ASSERT_TRUE(InsertionStatus);
 
-	IECRelationshipInstancePtr holdingRelationInstanceC2_Pt2 = CreateRelationship(*parentsHaveAnyChildren, *child2, *pet2);
-	InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceC2_Pt2);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr holdingRelationInstanceC2_Pt2 = CreateRelationship(*parentsHaveAnyChildren, *child2, *pet2);
+    InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceC2_Pt2);
+    ASSERT_TRUE(InsertionStatus);
 
-	// Embedding relationship (GrandParent1 -> Parent1 -> child1 -> pet1 )
-	ECRelationshipClassCP parentHasAnyChild = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentHasAnyChild")->GetRelationshipClassCP();
-	IECRelationshipInstancePtr embeddedRelationInstance;
+    // Embedding relationship (GrandParent1 -> Parent1 -> child1 -> pet1 )
+    ECRelationshipClassCP parentHasAnyChild = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentHasAnyChild")->GetRelationshipClassCP();
+    IECRelationshipInstancePtr embeddedRelationInstance;
 
-	IECRelationshipInstancePtr embeddedRelationInstanceG1_P1 = CreateRelationship(*parentHasAnyChild, *grandParent1, *Parent1);
-	InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceG1_P1);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr embeddedRelationInstanceG1_P1 = CreateRelationship(*parentHasAnyChild, *grandParent1, *Parent1);
+    InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceG1_P1);
+    ASSERT_TRUE(InsertionStatus);
 
-	IECRelationshipInstancePtr embeddedRelationInstanceP1_C1 = CreateRelationship(*parentHasAnyChild, *Parent1, *child1);
-	InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceP1_C1);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr embeddedRelationInstanceP1_C1 = CreateRelationship(*parentHasAnyChild, *Parent1, *child1);
+    InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceP1_C1);
+    ASSERT_TRUE(InsertionStatus);
 
-	IECRelationshipInstancePtr embeddedRelationInstanceC1_Pt1 = CreateRelationship(*parentHasAnyChild, *child1, *pet1);
-	InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceC1_Pt1);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr embeddedRelationInstanceC1_Pt1 = CreateRelationship(*parentHasAnyChild, *child1, *pet1);
+    InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceC1_Pt1);
+    ASSERT_TRUE(InsertionStatus);
 
-	//Parent1 embed Parent 2
-	IECRelationshipInstancePtr embeddedRelationInstanceP1_P2 = CreateRelationship(*parentHasAnyChild, *Parent1, *Parent2);
-	InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceP1_P2);
-	ASSERT_TRUE(InsertionStatus);
+    //Parent1 embed Parent 2
+    IECRelationshipInstancePtr embeddedRelationInstanceP1_P2 = CreateRelationship(*parentHasAnyChild, *Parent1, *Parent2);
+    InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceP1_P2);
+    ASSERT_TRUE(InsertionStatus);
 
-	//Child2 holds Child1
-	IECRelationshipInstancePtr holdingRelationInstanceC2_C1 = CreateRelationship(*parentsHaveAnyChildren, *child2, *child1);
-	InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceC2_C1);
-	ASSERT_TRUE(InsertionStatus);
+    //Child2 holds Child1
+    IECRelationshipInstancePtr holdingRelationInstanceC2_C1 = CreateRelationship(*parentsHaveAnyChildren, *child2, *child1);
+    InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceC2_C1);
+    ASSERT_TRUE(InsertionStatus);
 
-	ecDb.SaveChanges();
-	/*
-	Test 1: Delete Pet1
-	Validate: (orphaned relationships) child1->pet1
-	Validate: Relation,Pet1 gets deleted
-	*/
-	/*numDeleted = */DeleteInstance(*pet1, ecDb);
-	//ASSERT_EQ(2, numDeleted);
-	ASSERT_FALSE(HasInstance(*embeddedRelationInstanceC1_Pt1, ecDb));
-	ASSERT_FALSE(HasInstance(*pet1, ecDb));
+    ecDb.SaveChanges();
+    /*
+    Test 1: Delete Pet1
+    Validate: (orphaned relationships) child1->pet1
+    Validate: Relation,Pet1 gets deleted
+    */
+    /*numDeleted = */DeleteInstance(*pet1, ecDb);
+    //ASSERT_EQ(2, numDeleted);
+    ASSERT_FALSE(HasInstance(*embeddedRelationInstanceC1_Pt1, ecDb));
+    ASSERT_FALSE(HasInstance(*pet1, ecDb));
 
-	ASSERT_TRUE(HasInstance(*child1, ecDb));
+    ASSERT_TRUE(HasInstance(*child1, ecDb));
 }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Rafay.Muneeb	                     03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstancesRelationshipStrength, DeleteInstanceOfMultipleRelationsPath)
+TEST_F(RelationshipStrength, DeleteInstanceOfMultipleRelationsPath)
 {
-	/*int numDeleted = 0;*/
-	bool InsertionStatus;
-	ECDbTestProject testProject;
-	ECDbR ecDb = testProject.Create("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
+    /*int numDeleted = 0;*/
+    bool InsertionStatus;
+    ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
 
-	//grandParent1
-	ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
-	IECInstancePtr grandParent1 = CreatePerson(*personClass, "First", "GrandParent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent1));
-	//grandParent2
-	IECInstancePtr grandParent2 = CreatePerson(*personClass, "Second", "GrandParent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent2));
-	//Parent1
-	IECInstancePtr Parent1 = CreatePerson(*personClass, "First", "Parent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent1));
-	//Parent2
-	IECInstancePtr Parent2 = CreatePerson(*personClass, "Second", "Parent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent2));
-	//child1    
-	IECInstancePtr child1 = CreatePerson(*personClass, "First", "Child");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child1));
-	//child2
-	IECInstancePtr child2 = CreatePerson(*personClass, "Second", "Child");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child2));
-	//pet1
-	IECInstancePtr pet1 = CreatePerson(*personClass, "First", "pet");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet1));
-	//pet2
-	IECInstancePtr pet2 = CreatePerson(*personClass, "Second", "pet");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet2));
+    //grandParent1
+    ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
+    IECInstancePtr grandParent1 = CreatePerson(*personClass, "First", "GrandParent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent1));
+    //grandParent2
+    IECInstancePtr grandParent2 = CreatePerson(*personClass, "Second", "GrandParent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent2));
+    //Parent1
+    IECInstancePtr Parent1 = CreatePerson(*personClass, "First", "Parent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent1));
+    //Parent2
+    IECInstancePtr Parent2 = CreatePerson(*personClass, "Second", "Parent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent2));
+    //child1    
+    IECInstancePtr child1 = CreatePerson(*personClass, "First", "Child");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child1));
+    //child2
+    IECInstancePtr child2 = CreatePerson(*personClass, "Second", "Child");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child2));
+    //pet1
+    IECInstancePtr pet1 = CreatePerson(*personClass, "First", "pet");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet1));
+    //pet2
+    IECInstancePtr pet2 = CreatePerson(*personClass, "Second", "pet");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet2));
 
 
-	// Holding relationship (GrandParent2 -> Parent2 -> child2 -> pet2 )
-	ECRelationshipClassCP parentsHaveAnyChildren = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentsHaveAnyChildren")->GetRelationshipClassCP();
-	IECRelationshipInstancePtr holdingRelationInstance;
+    // Holding relationship (GrandParent2 -> Parent2 -> child2 -> pet2 )
+    ECRelationshipClassCP parentsHaveAnyChildren = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentsHaveAnyChildren")->GetRelationshipClassCP();
+    IECRelationshipInstancePtr holdingRelationInstance;
 
-	IECRelationshipInstancePtr holdingRelationInstanceG2_P2 = CreateRelationship(*parentsHaveAnyChildren, *grandParent2, *Parent2);
-	InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceG2_P2);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr holdingRelationInstanceG2_P2 = CreateRelationship(*parentsHaveAnyChildren, *grandParent2, *Parent2);
+    InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceG2_P2);
+    ASSERT_TRUE(InsertionStatus);
 
-	IECRelationshipInstancePtr holdingRelationInstanceP2_C2 = CreateRelationship(*parentsHaveAnyChildren, *Parent2, *child2);
-	InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceP2_C2);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr holdingRelationInstanceP2_C2 = CreateRelationship(*parentsHaveAnyChildren, *Parent2, *child2);
+    InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceP2_C2);
+    ASSERT_TRUE(InsertionStatus);
 
-	IECRelationshipInstancePtr holdingRelationInstanceC2_Pt2 = CreateRelationship(*parentsHaveAnyChildren, *child2, *pet2);
-	InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceC2_Pt2);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr holdingRelationInstanceC2_Pt2 = CreateRelationship(*parentsHaveAnyChildren, *child2, *pet2);
+    InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceC2_Pt2);
+    ASSERT_TRUE(InsertionStatus);
 
-	// Embedding relationship (GrandParent1 -> Parent1 -> child1 -> pet1 )
-	ECRelationshipClassCP parentHasAnyChild = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentHasAnyChild")->GetRelationshipClassCP();
-	IECRelationshipInstancePtr embeddedRelationInstance;
+    // Embedding relationship (GrandParent1 -> Parent1 -> child1 -> pet1 )
+    ECRelationshipClassCP parentHasAnyChild = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentHasAnyChild")->GetRelationshipClassCP();
+    IECRelationshipInstancePtr embeddedRelationInstance;
 
-	IECRelationshipInstancePtr embeddedRelationInstanceG1_P1 = CreateRelationship(*parentHasAnyChild, *grandParent1, *Parent1);
-	InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceG1_P1);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr embeddedRelationInstanceG1_P1 = CreateRelationship(*parentHasAnyChild, *grandParent1, *Parent1);
+    InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceG1_P1);
+    ASSERT_TRUE(InsertionStatus);
 
-	IECRelationshipInstancePtr embeddedRelationInstanceP1_C1 = CreateRelationship(*parentHasAnyChild, *Parent1, *child1);
-	InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceP1_C1);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr embeddedRelationInstanceP1_C1 = CreateRelationship(*parentHasAnyChild, *Parent1, *child1);
+    InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceP1_C1);
+    ASSERT_TRUE(InsertionStatus);
 
-	IECRelationshipInstancePtr embeddedRelationInstanceC1_Pt1 = CreateRelationship(*parentHasAnyChild, *child1, *pet1);
-	InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceC1_Pt1);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr embeddedRelationInstanceC1_Pt1 = CreateRelationship(*parentHasAnyChild, *child1, *pet1);
+    InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceC1_Pt1);
+    ASSERT_TRUE(InsertionStatus);
 
-	//Parent1 embed Parent 2
-	IECRelationshipInstancePtr embeddedRelationInstanceP1_P2 = CreateRelationship(*parentHasAnyChild, *Parent1, *Parent2);
-	InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceP1_P2);
-	ASSERT_TRUE(InsertionStatus);
+    //Parent1 embed Parent 2
+    IECRelationshipInstancePtr embeddedRelationInstanceP1_P2 = CreateRelationship(*parentHasAnyChild, *Parent1, *Parent2);
+    InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceP1_P2);
+    ASSERT_TRUE(InsertionStatus);
 
-	//Child2 holds Child1
-	IECRelationshipInstancePtr holdingRelationInstanceC2_C1 = CreateRelationship(*parentsHaveAnyChildren, *child2, *child1);
-	InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceC2_C1);
-	ASSERT_TRUE(InsertionStatus);
+    //Child2 holds Child1
+    IECRelationshipInstancePtr holdingRelationInstanceC2_C1 = CreateRelationship(*parentsHaveAnyChildren, *child2, *child1);
+    InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceC2_C1);
+    ASSERT_TRUE(InsertionStatus);
 
-	ecDb.SaveChanges();
-	/*
-	Test 1: Delete Child1
-	Validate: (orphaned relationships) child1->pet1
-	Validate: Child1,Pet1 gets deleted
-	*/
-	/*numDeleted =*/ DeleteInstance(*child1, ecDb);
-	//ASSERT_EQ(5, numDeleted);
+    ecDb.SaveChanges();
+    /*
+    Test 1: Delete Child1
+    Validate: (orphaned relationships) child1->pet1
+    Validate: Child1,Pet1 gets deleted
+    */
+    /*numDeleted =*/ DeleteInstance(*child1, ecDb);
+    //ASSERT_EQ(5, numDeleted);
 
-	ASSERT_FALSE(HasInstance(*holdingRelationInstanceC2_C1, ecDb));
-	ASSERT_FALSE(HasInstance(*embeddedRelationInstanceP1_C1, ecDb));
-	ASSERT_FALSE(HasInstance(*embeddedRelationInstanceC1_Pt1, ecDb));
-	ASSERT_FALSE(HasInstance(*child1, ecDb));
-	ASSERT_FALSE(HasInstance(*pet1, ecDb));
+    ASSERT_FALSE(HasInstance(*holdingRelationInstanceC2_C1, ecDb));
+    ASSERT_FALSE(HasInstance(*embeddedRelationInstanceP1_C1, ecDb));
+    ASSERT_FALSE(HasInstance(*embeddedRelationInstanceC1_Pt1, ecDb));
+    ASSERT_FALSE(HasInstance(*child1, ecDb));
+    ASSERT_FALSE(HasInstance(*pet1, ecDb));
 
-	ASSERT_TRUE(HasInstance(*Parent1, ecDb));
-	ASSERT_TRUE(HasInstance(*Parent2, ecDb));
+    ASSERT_TRUE(HasInstance(*Parent1, ecDb));
+    ASSERT_TRUE(HasInstance(*Parent2, ecDb));
 }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Rafay.Muneeb	                     03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstancesRelationshipStrength, ForwardEmbeddingWithMultipleLevelChildrens)
+TEST_F(RelationshipStrength, ForwardEmbeddingWithMultipleLevelChildrens)
 {
-	//int numDeleted = 0;
-	bool InsertionStatus;
+    //int numDeleted = 0;
+    bool InsertionStatus;
+    // ECDbR ecDb = SetupECDb("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
 	ECDbTestProject testProject;
 	ECDbR ecDb = testProject.Create("RelationshipStrengthDifferentLevelHierarchyTest.ecdb", L"RelationshipStrengthTest.01.00.ecschema.xml", false);
 
-	//grandParent1
-	ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
-	IECInstancePtr grandParent1 = CreatePerson(*personClass, "First", "GrandParent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent1));
-	//grandParent2
-	IECInstancePtr grandParent2 = CreatePerson(*personClass, "Second", "GrandParent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent2));
-	//Parent1
-	IECInstancePtr Parent1 = CreatePerson(*personClass, "First", "Parent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent1));
-	//Parent2
-	IECInstancePtr Parent2 = CreatePerson(*personClass, "Second", "Parent");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent2));
-	//child1    
-	IECInstancePtr child1 = CreatePerson(*personClass, "First", "Child");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child1));
-	//child2
-	IECInstancePtr child2 = CreatePerson(*personClass, "Second", "Child");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child2));
-	//pet1
-	IECInstancePtr pet1 = CreatePerson(*personClass, "First", "pet");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet1));
-	//pet2
-	IECInstancePtr pet2 = CreatePerson(*personClass, "Second", "pet");
-	ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet2));
+    //grandParent1
+    ECClassCP personClass = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "Person");
+    IECInstancePtr grandParent1 = CreatePerson(*personClass, "First", "GrandParent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent1));
+    //grandParent2
+    IECInstancePtr grandParent2 = CreatePerson(*personClass, "Second", "GrandParent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *grandParent2));
+    //Parent1
+    IECInstancePtr Parent1 = CreatePerson(*personClass, "First", "Parent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent1));
+    //Parent2
+    IECInstancePtr Parent2 = CreatePerson(*personClass, "Second", "Parent");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *Parent2));
+    //child1    
+    IECInstancePtr child1 = CreatePerson(*personClass, "First", "Child");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child1));
+    //child2
+    IECInstancePtr child2 = CreatePerson(*personClass, "Second", "Child");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *child2));
+    //pet1
+    IECInstancePtr pet1 = CreatePerson(*personClass, "First", "pet");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet1));
+    //pet2
+    IECInstancePtr pet2 = CreatePerson(*personClass, "Second", "pet");
+    ASSERT_TRUE(InsertInstance(ecDb, *personClass, *pet2));
 
 
-	// Holding relationship (GrandParent2 -> Parent2 -> child2 -> pet2 )
-	ECRelationshipClassCP parentsHaveAnyChildren = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentsHaveAnyChildren")->GetRelationshipClassCP();
-	IECRelationshipInstancePtr holdingRelationInstance;
+    // Holding relationship (GrandParent2 -> Parent2 -> child2 -> pet2 )
+    ECRelationshipClassCP parentsHaveAnyChildren = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentsHaveAnyChildren")->GetRelationshipClassCP();
+    IECRelationshipInstancePtr holdingRelationInstance;
 
-	IECRelationshipInstancePtr holdingRelationInstanceG2_P2 = CreateRelationship(*parentsHaveAnyChildren, *grandParent2, *Parent2);
-	InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceG2_P2);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr holdingRelationInstanceG2_P2 = CreateRelationship(*parentsHaveAnyChildren, *grandParent2, *Parent2);
+    InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceG2_P2);
+    ASSERT_TRUE(InsertionStatus);
 
-	IECRelationshipInstancePtr holdingRelationInstanceP2_C2 = CreateRelationship(*parentsHaveAnyChildren, *Parent2, *child2);
-	InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceP2_C2);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr holdingRelationInstanceP2_C2 = CreateRelationship(*parentsHaveAnyChildren, *Parent2, *child2);
+    InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceP2_C2);
+    ASSERT_TRUE(InsertionStatus);
 
-	IECRelationshipInstancePtr holdingRelationInstanceC2_Pt2 = CreateRelationship(*parentsHaveAnyChildren, *child2, *pet2);
-	InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceC2_Pt2);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr holdingRelationInstanceC2_Pt2 = CreateRelationship(*parentsHaveAnyChildren, *child2, *pet2);
+    InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceC2_Pt2);
+    ASSERT_TRUE(InsertionStatus);
 
-	// Embedding relationship (GrandParent1 -> Parent1 -> child1 -> pet1 )
-	ECRelationshipClassCP parentHasAnyChild = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentHasAnyChild")->GetRelationshipClassCP();
-	IECRelationshipInstancePtr embeddedRelationInstance;
+    // Embedding relationship (GrandParent1 -> Parent1 -> child1 -> pet1 )
+    ECRelationshipClassCP parentHasAnyChild = ecDb.Schemas().GetECClass("RelationshipStrengthTest", "ParentHasAnyChild")->GetRelationshipClassCP();
+    IECRelationshipInstancePtr embeddedRelationInstance;
 
-	IECRelationshipInstancePtr embeddedRelationInstanceG1_P1 = CreateRelationship(*parentHasAnyChild, *grandParent1, *Parent1);
-	InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceG1_P1);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr embeddedRelationInstanceG1_P1 = CreateRelationship(*parentHasAnyChild, *grandParent1, *Parent1);
+    InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceG1_P1);
+    ASSERT_TRUE(InsertionStatus);
 
-	IECRelationshipInstancePtr embeddedRelationInstanceP1_C1 = CreateRelationship(*parentHasAnyChild, *Parent1, *child1);
-	InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceP1_C1);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr embeddedRelationInstanceP1_C1 = CreateRelationship(*parentHasAnyChild, *Parent1, *child1);
+    InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceP1_C1);
+    ASSERT_TRUE(InsertionStatus);
 
-	IECRelationshipInstancePtr embeddedRelationInstanceC1_Pt1 = CreateRelationship(*parentHasAnyChild, *child1, *pet1);
-	InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceC1_Pt1);
-	ASSERT_TRUE(InsertionStatus);
+    IECRelationshipInstancePtr embeddedRelationInstanceC1_Pt1 = CreateRelationship(*parentHasAnyChild, *child1, *pet1);
+    InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceC1_Pt1);
+    ASSERT_TRUE(InsertionStatus);
 
-	//Parent1 embed Parent 2
-	IECRelationshipInstancePtr embeddedRelationInstanceP1_P2 = CreateRelationship(*parentHasAnyChild, *Parent1, *Parent2);
-	InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceP1_P2);
-	ASSERT_TRUE(InsertionStatus);
+    //Parent1 embed Parent 2
+    IECRelationshipInstancePtr embeddedRelationInstanceP1_P2 = CreateRelationship(*parentHasAnyChild, *Parent1, *Parent2);
+    InsertionStatus = InsertInstance(ecDb, *parentHasAnyChild, *embeddedRelationInstanceP1_P2);
+    ASSERT_TRUE(InsertionStatus);
 
-	//Child2 holds Child1
-	IECRelationshipInstancePtr holdingRelationInstanceC2_C1 = CreateRelationship(*parentsHaveAnyChildren, *child2, *child1);
-	InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceC2_C1);
-	ASSERT_TRUE(InsertionStatus);
+    //Child2 holds Child1
+    IECRelationshipInstancePtr holdingRelationInstanceC2_C1 = CreateRelationship(*parentsHaveAnyChildren, *child2, *child1);
+    InsertionStatus = InsertInstance(ecDb, *parentsHaveAnyChildren, *holdingRelationInstanceC2_C1);
+    ASSERT_TRUE(InsertionStatus);
 
-	ecDb.SaveChanges();
-	/*
-	Test 1: Delete Parent1
-	Validate: (orphaned relationships) Parent1->child1->pet1
-	Validate: Parent1,Child1,Pet1 gets deleted
-	*/
-	/*numDeleted =*/ DeleteInstance(*Parent1, ecDb);
-	//ASSERT_EQ(14, numDeleted);
-	ASSERT_FALSE(HasInstance(*Parent1, ecDb));
-	ASSERT_FALSE(HasInstance(*child1, ecDb));
-	ASSERT_FALSE(HasInstance(*pet1, ecDb));
+    ecDb.SaveChanges();
+    /*
+    Test 1: Delete Parent1
+    Validate: (orphaned relationships) Parent1->child1->pet1
+    Validate: Parent1,Child1,Pet1 gets deleted
+    */
+    /*numDeleted =*/ DeleteInstance(*Parent1, ecDb);
+    //ASSERT_EQ(14, numDeleted);
+    ASSERT_FALSE(HasInstance(*Parent1, ecDb));
+    ASSERT_FALSE(HasInstance(*child1, ecDb));
+    ASSERT_FALSE(HasInstance(*pet1, ecDb));
 
-	ASSERT_FALSE(HasInstance(*Parent1, ecDb));
-	ASSERT_FALSE(HasInstance(*child1, ecDb));
-	ASSERT_FALSE(HasInstance(*pet1, ecDb));
+    ASSERT_FALSE(HasInstance(*Parent1, ecDb));
+    ASSERT_FALSE(HasInstance(*child1, ecDb));
+    ASSERT_FALSE(HasInstance(*pet1, ecDb));
 }
 END_ECDBUNITTESTS_NAMESPACE
 
