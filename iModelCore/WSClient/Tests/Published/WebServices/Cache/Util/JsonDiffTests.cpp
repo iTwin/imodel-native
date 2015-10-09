@@ -101,3 +101,38 @@ TEST_F(JsonDiffTests, GetChanges_IntegerPropertyAdded_ReturnsDiff)
                      R"({ "A" : 1 })",
                      R"({ "A" : 1 })");
     }
+
+TEST_F(JsonDiffTests, GetChanges_TypeCangedTrueToFalse_ReturnsDiff)
+    {
+    TEST_GET_CHANGES(R"({ "A" : true})",
+                     R"({ "A" : false })",
+                     R"({ "A" : false })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_TypeCangedStringToFalse_ReturnsDiff)
+    {
+    TEST_GET_CHANGES(R"({ "A" : "foo" })",
+                     R"({ "A" : false })",
+                     R"({ "A" : false })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_TypeCangedTrueToInteger_ReturnsDiff)
+    {
+    TEST_GET_CHANGES(R"({ "A" : true })",
+                     R"({ "A" : 5 })",
+                     R"({ "A" : 5 })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_TypeCangedTrueToNull_ReturnsDiff)
+    {
+    TEST_GET_CHANGES(R"({ "A" : true })",
+                     R"({ "A" : null })",
+                     R"({ "A" : null })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_TypeCangedNullToString_ReturnsDiff)
+    {
+    TEST_GET_CHANGES(R"({ "A" : null })",
+                     R"({ "A" : "foo" })",
+                     R"({ "A" : "foo" })");
+    }
