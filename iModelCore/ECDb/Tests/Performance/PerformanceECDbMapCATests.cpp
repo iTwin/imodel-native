@@ -596,7 +596,7 @@ void PerformanceECDbMapCATestFixture::SqlInsertInstances (ECDbR ecdb, ECClassR e
     timer.Stop ();
     stmt.Finalize ();
     m_insertTime = timer.GetElapsedSeconds ();
-    LOG.infov ("\n Insert Sql :  %s \n", m_insertSql);
+    LOG.infov ("\n Insert Sql :  %s \n", m_insertSql.c_str());
     LOG.infov ("Scenario - INSERT INTO- 1 class [%d properties each] , %d instances per class took %.4f s.", m_propertiesPerClass, m_instancesPerClass, m_insertTime);
     }
 
@@ -632,7 +632,7 @@ void PerformanceECDbMapCATestFixture::SqlReadInstances (ECDbR ecdb, ECClassR ecC
     timer.Stop ();
     m_selectTime = timer.GetElapsedSeconds ();
     stmt.Finalize ();
-    LOG.infov ("\n READ Sql : %s \n", m_selectSql);
+    LOG.infov ("\n READ Sql : %s \n", m_selectSql.c_str());
     LOG.infov ("Scenario - Read - 1 class [%d properties each] , %d Instances per class took %.4f s.", m_propertiesPerClass, m_instancesPerClass, m_selectTime);
     }
 
@@ -679,7 +679,7 @@ void PerformanceECDbMapCATestFixture::SqlUpdateInstances (ECDbR ecdb, ECClassR e
     timer.Stop ();
     stmt.Finalize ();
     m_updateTime = timer.GetElapsedSeconds ();
-    LOG.infov ("\n Update Sql :  %s \n", m_updateSql);
+    LOG.infov ("\n Update Sql :  %s \n", m_updateSql.c_str());
     LOG.infov ("Scenario - Update - 1 class [%d properties each] , %d Instances per class took %.4f s.", m_propertiesPerClass, m_instancesPerClass, m_updateTime);
     }
 
@@ -700,7 +700,7 @@ void PerformanceECDbMapCATestFixture::SqlDeleteInstances (ECDbR ecdb, ECClassR e
         }
     timer.Stop ();
     m_deleteTime = timer.GetElapsedSeconds ();
-    LOG.infov ("\n Delete Sql :  %s \n", m_deleteSql);
+    LOG.infov ("\n Delete Sql :  %s \n", m_deleteSql.c_str());
     LOG.infov ("Scenario - DELETE - 1 class [%d properties each] , %d instances per class took - %.4f s.", m_propertiesPerClass, m_instancesPerClass, m_deleteTime);
     }
 
