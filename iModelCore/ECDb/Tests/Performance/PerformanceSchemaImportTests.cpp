@@ -10,16 +10,17 @@
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-struct PerformanceTestsSchemaImport : public ::testing::Test
+struct PerformanceSchemaImportTests : public ::testing::Test
     {
     static ECN::ECSchemaPtr CreateTestSchema (size_t noOfClass, size_t propertiesPerClass, bool customAttributeOnSchema, bool customAttributesOnClasses, bool customAttributesOnProperties, size_t NumberOfCustomAttributes);
     static void SetStruct1Val (StandaloneECInstancePtr instance, int intVal, Utf8CP stringVal, bool boolVal);
     static void SetStruct2Val (StandaloneECInstancePtr instance, Utf8CP stringVal, double doubleVal, StandaloneECInstancePtr struct1, StandaloneECInstancePtr struct2, StandaloneECInstancePtr struct3);
     };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                              Muhammad Hassan                         04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceTestsSchemaImport::SetStruct1Val (StandaloneECInstancePtr instance, int intVal, Utf8CP stringVal, bool boolVal)
+void PerformanceSchemaImportTests::SetStruct1Val (StandaloneECInstancePtr instance, int intVal, Utf8CP stringVal, bool boolVal)
     {
     instance->SetValue ("StructClassIntMember", ECValue (intVal));
     instance->SetValue ("StructClassStringMember", ECValue (stringVal));
@@ -29,7 +30,7 @@ void PerformanceTestsSchemaImport::SetStruct1Val (StandaloneECInstancePtr instan
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                              Muhammad Hassan                         04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceTestsSchemaImport::SetStruct2Val (StandaloneECInstancePtr instance, Utf8CP stringVal, double doubleVal, StandaloneECInstancePtr struct1, StandaloneECInstancePtr struct2, StandaloneECInstancePtr struct3)
+void PerformanceSchemaImportTests::SetStruct2Val (StandaloneECInstancePtr instance, Utf8CP stringVal, double doubleVal, StandaloneECInstancePtr struct1, StandaloneECInstancePtr struct2, StandaloneECInstancePtr struct3)
     {
     instance->SetValue ("Struct2StringMember", ECValue (stringVal));
     instance->SetValue ("Struct2DoubleMember", ECValue (doubleVal));
@@ -50,7 +51,7 @@ void PerformanceTestsSchemaImport::SetStruct2Val (StandaloneECInstancePtr instan
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                              Muhammad Hassan                         04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr PerformanceTestsSchemaImport::CreateTestSchema (size_t noOfClasses, size_t propertiesPerClass, bool customAttributeOnSchema, bool customAttributesOnClasses, bool customAttributesOnProperties, size_t NumberOfCustomAttributes)
+ECSchemaPtr PerformanceSchemaImportTests::CreateTestSchema (size_t noOfClasses, size_t propertiesPerClass, bool customAttributeOnSchema, bool customAttributesOnClasses, bool customAttributesOnProperties, size_t NumberOfCustomAttributes)
     {
     ECSchemaPtr testSchema;
     ECClassP testClass = nullptr;
@@ -268,7 +269,7 @@ ECSchemaPtr PerformanceTestsSchemaImport::CreateTestSchema (size_t noOfClasses, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                              Muhammad Hassan                         04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (PerformanceTestsSchemaImport, SchemaWithCustomAttributeImportPerformance)
+TEST_F (PerformanceSchemaImportTests, SchemaWithCustomAttributeImportPerformance)
     {
     ECDb ecdb;
     BeFileName applicationSchemaDir;
@@ -276,35 +277,72 @@ TEST_F (PerformanceTestsSchemaImport, SchemaWithCustomAttributeImportPerformance
     BeFileName temporaryDir;
     BeTest::GetHost ().GetOutputRoot (temporaryDir);
     ECDb::Initialize (temporaryDir, &applicationSchemaDir);
-    auto stat = ECDbTestUtility::CreateECDb (ecdb, nullptr, L"schemaImportPerformance.ecdb");
-    ASSERT_EQ (stat, BE_SQLITE_OK);
+
 
     ECSchemaPtr ecSchema;
-    ecSchema = PerformanceTestsSchemaImport::CreateTestSchema (5000, 100, true, true, true, 4);
-    ASSERT_TRUE (ecSchema.IsValid ());
+    for (int i = 0; i < 5; i++)
+        {
+        double importTime = 0.0;
+        double clearCacheTime = 0.0;
+        double schemaExportTime = 0.0;
+
+        auto stat = ECDbTestUtility::CreateECDb (ecdb, nullptr, L"schemaWithCAImportPerformance.ecdb");
+        ASSERT_EQ (stat, BE_SQLITE_OK);
+        ecSchema = PerformanceSchemaImportTests::CreateTestSchema (5000, 100, true, true, true, i);
+        ASSERT_TRUE (ecSchema.IsValid ());
+        ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
+        ASSERT_EQ (SUCCESS, schemaCache->AddSchema (*ecSchema));
+
+        StopWatch timer (true);
+        ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions ()));
+        timer.Stop ();
+        importTime = timer.GetElapsedSeconds ();
+        ecdb.SaveChanges ();
+
+        timer.Start ();
+        ecdb.ClearECDbCache ();
+        timer.Stop ();
+        clearCacheTime = timer.GetElapsedSeconds ();
+
+        timer.Start ();
+        ECSchemaCP ecschema = ecdb.Schemas ().GetECSchema ("TestSchema", true);
+        timer.Stop ();
+        schemaExportTime = timer.GetElapsedSeconds ();
+        ASSERT_TRUE (ecschema != nullptr);
+
+        Utf8String testDescription;
+        testDescription.Sprintf ("Schema with 5000 Class - 100 properties each - with 1 CA on Schema - %d CA Per Class and %d CA per Property", i, i);
+        LOGTODB (TEST_DETAILS, importTime, testDescription.c_str (), i);
+        testDescription.Sprintf ("Schema with 5000 Class - 100 properties each - with 1 CA on Schema - %d CA Per Class and %d CA per Property (ClearCache Time)", i, i);
+        LOGTODB (TEST_DETAILS, clearCacheTime, testDescription.c_str (), i);
+        testDescription.Sprintf ("Schema with 5000 Class - 100 properties each - with 1 CA on Schema - %d CA Per Class and %d CA per Property (Schema Export Time)", i, i);
+        LOGTODB (TEST_DETAILS, schemaExportTime, testDescription.c_str (), i);
+        ecdb.CloseDb ();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                              Muhammad Hassan                         10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (PerformanceSchemaImportTests, ImportSimpleSchema)
+    {
+    ECDbTestFixture::Initialize ();
+    ECDb testecdb;
+    ASSERT_TRUE(BE_SQLITE_OK == ECDbTestUtility::CreateECDb (testecdb, nullptr, L"ImportSimpleSchema.ecdb"));
+
+    ECSchemaReadContextPtr context = nullptr;
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
-    ASSERT_EQ (SUCCESS, schemaCache->AddSchema (*ecSchema));
+    ECSchemaPtr schemaptr;
+    ECDbTestUtility::ReadECSchemaFromDisk (schemaptr, context, L"BasicSchema.01.70.ecschema.xml", nullptr);
+    ASSERT_TRUE (schemaptr != NULL);
+    schemaCache->AddSchema (*schemaptr);
 
     StopWatch timer (true);
-    ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions ()));
+    auto stat = testecdb.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false, false));
     timer.Stop ();
-    PERFORMANCELOG.infov ("Schema Import took %.4f msecs.", timer.GetElapsedSeconds () * 1000.0);
+    ASSERT_EQ (SUCCESS, stat);
 
-    ecdb.SaveChanges ();
-
-    timer.Start ();
-    ecdb.ClearECDbCache ();
-    timer.Stop ();
-    LOG.infov ("ClearCache took %.4f msecs.", timer.GetElapsedSeconds () * 1000.0);
-
-    timer.Start ();
-    ECSchemaCP ecschema = ecdb.Schemas ().GetECSchema ("TestSchema", true);
-    timer.Stop ();
-    ASSERT_TRUE (ecschema != nullptr);
-
-    PERFORMANCELOG.infov ("Schema Export took %.4f msecs.", timer.GetElapsedSeconds () * 1000.0);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Gets the EC Schema with 10, 000 Custom Attributes", 10000);
-    ecdb.CloseDb ();
+    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), "Simple Schema Import Test with NO CustomAttribute and Reference Schemas");
     }
 
 END_ECDBUNITTESTS_NAMESPACE
