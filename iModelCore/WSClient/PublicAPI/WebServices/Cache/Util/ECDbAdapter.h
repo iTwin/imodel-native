@@ -32,6 +32,7 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
 
     private:
         static bool DoesConstraintSupportECClass(ECRelationshipConstraintCR constraint, ECClassCR ecClass, bool allowPolymorphic);
+        static int FindDistanceFromBaseClass(ECClassCP ecClass, ECClassCP targetClass, int dist = 0);
 
     public:
         WSCACHE_EXPORT ECDbAdapter(ObservableECDb& ecDb);
@@ -65,6 +66,7 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
         WSCACHE_EXPORT bvector<ECRelationshipClassCP> FindRelationshipClassesInSchema(ECClassId sourceClassId, ECClassId targetClassId, Utf8String schemaName) override;
         WSCACHE_EXPORT ECRelationshipClassCP FindRelationshipClassWithSource(ECClassId sourceClassId, ECClassId targetClassId) override;
         WSCACHE_EXPORT ECRelationshipClassCP FindRelationshipClassWithTarget(ECClassId sourceClassId, ECClassId targetClassId) override;
+        WSCACHE_EXPORT ECRelationshipClassCP FindClosestRelationshipClassWithSource(ECClassId sourceClassId, ECClassId targetClassId) override;
 
         WSCACHE_EXPORT ECInstanceKey GetInstanceKeyFromJsonInstance(JsonValueCR ecInstanceJson) override;
 
