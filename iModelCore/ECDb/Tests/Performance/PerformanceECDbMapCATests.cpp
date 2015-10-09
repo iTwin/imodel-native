@@ -782,7 +782,7 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSqlWithIncrementa
         timer.Stop ();
         stmt.Finalize ();
         m_insertTime = timer.GetElapsedSeconds ();
-        LOG.infov ("Insert Sql %s", insertSql);
+        LOG.infov ("Insert Sql %s", insertSql.c_str());
         LOG.infov ("Scenario - INSERT INTO- 1 class [%d properties each] , %d instances per class took %.4f s.", m_propertiesPerClass, m_instancesPerClass, m_insertTime);
 
         //Update Instance using Sql Query.
@@ -804,7 +804,7 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSqlWithIncrementa
         timer.Stop ();
         stmt.Finalize ();
         m_updateTime = timer.GetElapsedSeconds ();
-        LOG.infov ("Update Sql %s", updateSql);
+        LOG.infov ("Update Sql %s", updateSql.c_str());
         LOG.infov ("Scenario - Update - 1 class [%d properties each] , %d Instances per class took %.4f s.", m_propertiesPerClass, m_instancesPerClass, m_updateTime);
 
         //Read Instance using Sql Query.
@@ -820,7 +820,7 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSqlWithIncrementa
         timer.Stop ();
         m_selectTime = timer.GetElapsedSeconds ();
         stmt.Finalize ();
-        LOG.infov ("Select Sql %s", selectSql);
+        LOG.infov ("Select Sql %s", selectSql.c_str());
         LOG.infov ("Scenario - Read - 1 class [%d properties each] , %d Instances per class took %.4f s.", m_propertiesPerClass, m_instancesPerClass, m_selectTime);
 
         //Delete Instance using Sql Query.
@@ -835,7 +835,7 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSqlWithIncrementa
             }
         timer.Stop ();
         m_deleteTime = timer.GetElapsedSeconds ();
-        LOG.infov ("Delete Sql %s", deleteSql);
+        LOG.infov ("Delete Sql %s", deleteSql.c_str());
         LOG.infov ("Scenario - DELETE - 1 class [%d properties each] , %d instances per class took - %.4f s.", m_propertiesPerClass, m_instancesPerClass, m_deleteTime);
 
         testDescription.Sprintf ("SQL INSERT against table of ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
