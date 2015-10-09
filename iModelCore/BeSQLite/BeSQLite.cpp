@@ -228,7 +228,7 @@ BeGuid      Statement::GetValueGuid(int col)    {BeGuid guid; memcpy(&guid, GetV
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbDupValue  Statement::GetDbValue(int col) 
+DbDupValue  Statement::GetDbValue(int col)
     {
     DbDupValue value(sqlite3_column_value(m_stmt, col));
     return std::move(value);
@@ -1997,13 +1997,15 @@ bool Db::OpenParams::_ReopenForSchemaUpgrade(Db& db) const
 DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
     {
     DbResult rc = DoOpenDb(dbName, params);
-    if (rc != BE_SQLITE_OK)
-        {
-        DoCloseDb();
-        return rc;
-        }
 
-    return params.m_skipSchemaCheck ? BE_SQLITE_OK  : _VerifySchemaVersion(params);
+    if (rc == BE_SQLITE_OK && !params.m_skipSchemaCheck)
+        rc = _VerifySchemaVersion(params);
+
+    if (rc == BE_SQLITE_OK)
+        return BE_SQLITE_OK;
+
+    DoCloseDb();
+    return rc;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2042,7 +2044,7 @@ DbResult Db::SaveExpirationDate(DateTime const& expirationDate)
         BeAssert(false); // a valid DateTime generated an empty string?
         return BE_SQLITE_ERROR;
         }
-    
+
     return SavePropertyString(Properties::ExpirationDate(), xdateString);
     }
 
@@ -2369,6 +2371,14 @@ Utf8CP Db::InterpretDbResult(DbResult result)
         case BE_SQLITE_CONSTRAINT_TRIGGER:    return "BE_SQLITE_CONSTRAINT_TRIGGER";
         case BE_SQLITE_CONSTRAINT_UNIQUE:     return "BE_SQLITE_CONSTRAINT_UNIQUE";
         case BE_SQLITE_CONSTRAINT_VTAB:       return "BE_SQLITE_CONSTRAINT_VTAB";
+        case BE_SQLITE_ERROR_BadDbSchema:                            return "BE_SQLITE_ERROR_BadDbSchema";
+        case BE_SQLITE_ERROR_InvalidProfileVersion:                  return "BE_SQLITE_ERROR_InvalidProfileVersion";
+        case BE_SQLITE_ERROR_ProfileUpgradeFailed:                   return "BE_SQLITE_ERROR_ProfileUpgradeFailed";
+        case BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite: return "BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite";
+        case BE_SQLITE_ERROR_ProfileTooOld:                          return "BE_SQLITE_ERROR_ProfileTooOld";
+        case BE_SQLITE_ERROR_ProfileTooNewForReadWrite:              return "BE_SQLITE_ERROR_ProfileTooNewForReadWrite";
+        case BE_SQLITE_ERROR_ProfileTooNew:                          return "BE_SQLITE_ERROR_ProfileTooNew";
+        case BE_SQLITE_ERROR_ChangeTrackError:                       return "BE_SQLITE_ERROR_ChangeTrackError";
         }
 
     return "<unkown result code>";
