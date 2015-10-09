@@ -31,21 +31,21 @@ void TestGetChanges(Utf8StringCR oldJsonString, Utf8StringCR newJsonString, Utf8
     EXPECT_EQ(*expectedOutJson, outJson);
     }
 
-TEST_F(JsonDiffTests, CompareTest_EmptyJsons_ReturnsEmptyJson)
+TEST_F(JsonDiffTests, GetChanges_EmptyJsons_ReturnsEmptyJson)
     {
     TEST_GET_CHANGES(R"({ })",
                      R"({ })",
                      R"({ })");
     }
 
-TEST_F(JsonDiffTests, CompareTest_StringPropertyEqual_ReturnsEmptyJson)
+TEST_F(JsonDiffTests, GetChanges_StringPropertyEqual_ReturnsEmptyJson)
     {
     TEST_GET_CHANGES(R"({ "A" : "1" })",
                      R"({ "A" : "1" })",
                      R"({ })");
     }
 
-TEST_F(JsonDiffTests, CompareTest_StringPropertyDifferent_ReturnsDiff)
+TEST_F(JsonDiffTests, GetChanges_StringPropertyDifferent_ReturnsDiff)
     {
     TEST_GET_CHANGES(R"({ "A" : "1" })",
                      R"({ "A" : "2" })",
@@ -53,49 +53,56 @@ TEST_F(JsonDiffTests, CompareTest_StringPropertyDifferent_ReturnsDiff)
     }
 
 
-TEST_F(JsonDiffTests, CompareTest_StringPropertyDeleted_ReturnsDiff)
+TEST_F(JsonDiffTests, GetChanges_StringPropertyDeleted_ReturnsDiff)
     {
     TEST_GET_CHANGES(R"({ "A" : "1" })",
                      R"({ })",
                      R"({ "A" : null })");
     }
 
-TEST_F(JsonDiffTests, CompareTest_StringPropertyAdded_ReturnsDiff)
+TEST_F(JsonDiffTests, GetChanges_StringPropertyAdded_ReturnsDiff)
     {
     TEST_GET_CHANGES(R"({ })",
                      R"({ "A" : "1" })",
                      R"({ "A" : "1" })");
     }
 
-TEST_F(JsonDiffTests, CompareTest_MultipleStringPropertiesDifferent_ReturnsDiff)
+TEST_F(JsonDiffTests, GetChanges_MultipleStringPropertiesDifferent_ReturnsDiff)
     {
     TEST_GET_CHANGES(R"({ "A" : "1", "B" : "1", "C" : "1" })",
                      R"({ "A" : "2", "B" : "1", "C" : "3" })",
                      R"({ "A" : "2", "C" : "3" })");
     }
 
-TEST_F(JsonDiffTests, CompareTest_IntegerPropertyEqual_ReturnsEmptyJson)
+TEST_F(JsonDiffTests, GetChanges_IntegerPropertyEqual_ReturnsEmptyJson)
     {
     TEST_GET_CHANGES(R"({ "A" : 1 })",
                      R"({ "A" : 1 })",
                      R"({ })");
     }
 
-TEST_F(JsonDiffTests, CompareTest_IntegerPropertyDifferent_ReturnsDiff)
+TEST_F(JsonDiffTests, GetChanges_IntegerPropertyDifferent_ReturnsDiff)
     {
     TEST_GET_CHANGES(R"({ "A" : 1 })",
                      R"({ "A" : 2 })",
                      R"({ "A" : 2 })");
     }
 
-TEST_F(JsonDiffTests, CompareTest_IntegerPropertyDeleted_ReturnsDiff)
+TEST_F(JsonDiffTests, GetChanges_IntegerPropertyDeleted_ReturnsDiff)
     {
     TEST_GET_CHANGES(R"({ "A" : 1 })",
                      R"({ })",
                      R"({ "A" : null })");
     }
 
-TEST_F(JsonDiffTests, CompareTest_IntegerPropertyAdded_ReturnsDiff)
+TEST_F(JsonDiffTests, GetChanges_IntegerPropertyAdded_ReturnsDiff)
+    {
+    TEST_GET_CHANGES(R"({ })",
+                     R"({ "A" : 1 })",
+                     R"({ "A" : 1 })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_IntegerPropertyAdded_ReturnsDiff)
     {
     TEST_GET_CHANGES(R"({ })",
                      R"({ "A" : 1 })",
