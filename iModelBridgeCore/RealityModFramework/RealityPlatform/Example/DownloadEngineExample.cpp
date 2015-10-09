@@ -33,6 +33,12 @@ static void callback_status_func (int index, void *pClient, int ErrorCode, const
     {
     RealityDataDownload::FileTransfer* pEntry = (RealityDataDownload::FileTransfer*)pClient;
     printf("****** Status: (%d) ErrCode: %d - (%s) <%ls>\n", index, ErrorCode, pMsg, pEntry->filename.c_str());
+
+    if (ErrorCode == 0)
+        {
+        WString out(L"k:\\tmp\\data\\unzip\\");
+        RealityDataDownload::UnZipFile(pEntry->filename, out);
+        }
     }
 
 

@@ -60,7 +60,8 @@ public:
     //! @param[in/out] pio_rFileName Could already contain the first part of the path, like "C:\\Data\\"
     //!                              the filename extract from the url, will be concatenated. 
     //! @param[in] pi_Url            Url link string.
-    REALITYDATAPLATFORM_EXPORT static void RealityDataDownload::ExtractFileName(WString& pio_rFileName, const AString& pi_Url);
+    REALITYDATAPLATFORM_EXPORT static void ExtractFileName(WString& pio_rFileName, const AString& pi_Url);
+    REALITYDATAPLATFORM_EXPORT static bool UnZipFile(WString& pi_strSrc, WString& pi_strDest);
 
     //! Set callback to follow progression of the download.
     REALITYDATAPLATFORM_EXPORT void SetProgressCallBack(RealityDataDownload_ProgressCallBack pi_func) {m_pProgressFunc = pi_func;};

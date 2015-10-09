@@ -199,3 +199,16 @@
     </Product>
 
 </BuildContext>
+
+<!--
+To build the tests
+bb –sRealityModFramework.Dev b
+
+To run the tests:
+bb -rRealityModFramework -pRealityModFramework:RunGtest b
+
+To re-run the tests:
+bb -rRealityModFramework -pRealityModFramework:RunGtest re RunGtest
+
+To run under the debugger run the exe that you see in %OutRoot%Winx64\Product\Reality-Gtest
+-->

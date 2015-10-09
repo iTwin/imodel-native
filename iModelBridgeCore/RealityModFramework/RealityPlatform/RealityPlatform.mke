@@ -94,7 +94,9 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)BaseGeoCoord$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeXml$(libext)
-                       
+
+# windows specific for Unzipfile
+LINKER_LIBRARIES   +  $(ntPlatformLib)OleAut32.lib                       
 
 %include dlmlink.mki
 

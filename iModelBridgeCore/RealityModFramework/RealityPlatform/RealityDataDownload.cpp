@@ -181,7 +181,7 @@ bool RealityDataDownload::Perform()
                     if (pFileTrans->nbRetry < MAX_RETRY_ON_ERROR)
                         { 
                         ++pFileTrans->nbRetry;
-                        pFileTrans->iAppend = 0;
+//                        pFileTrans->iAppend = 0;
                         if (m_pStatusFunc)
                             m_pStatusFunc((int)pFileTrans->index, pClient, -2, "Trying again...");
                         SetupCurlandFile(pFileTrans->index);
@@ -274,3 +274,103 @@ void RealityDataDownload::ExtractFileName(WString& pio_rFileName, const AString&
     BeFileName::BuildName(pio_rFileName, NULL, pio_rFileName.c_str(), pathComponents[pathComponents.size() - 1].c_str(), NULL);
 
     }
+
+
+#if defined (_WIN32)
+
+#include <Objbase.h>
+#include <Shldisp.h>
+#include <Shellapi.h>
+
+bool RealityDataDownload::UnZipFile(WString& pi_strSrc, WString& pi_strDest)
+{
+    BSTR lpZipFile = ::SysAllocString(pi_strSrc.c_str());
+    BSTR lpFolder = ::SysAllocString(pi_strDest.c_str());
+
+    IShellDispatch *pISD;
+
+    Folder  *pZippedFile = 0L;
+    Folder  *pDestination = 0L;
+
+    long FilesCount = 0;
+    IDispatch* pItem = 0L;
+    FolderItems *pFilesInside = 0L;
+
+    VARIANT Options, OutFolder, InZipFile, Item;
+    HRESULT res = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+
+    if (res == S_OK || res == S_FALSE || res == RPC_E_CHANGED_MODE)
+        {
+        res = S_OK;
+        __try{
+            if (CoCreateInstance(CLSID_Shell, NULL, CLSCTX_INPROC_SERVER, IID_IShellDispatch, (void **)&pISD) != S_OK)
+                return false;
+
+            InZipFile.vt = VT_BSTR;
+            InZipFile.bstrVal = lpZipFile;
+            pISD->NameSpace(InZipFile, &pZippedFile);
+            if (!pZippedFile)
+                {
+                pISD->Release();
+                return false;
+                }
+
+            OutFolder.vt = VT_BSTR;
+            OutFolder.bstrVal = lpFolder;
+            pISD->NameSpace(OutFolder, &pDestination);
+            if (!pDestination)
+                {
+                pZippedFile->Release();
+                pISD->Release();
+                return false;
+                }
+
+            pZippedFile->Items(&pFilesInside);
+            if (!pFilesInside)
+                {
+                pDestination->Release();
+                pZippedFile->Release();
+                pISD->Release();
+                return false;
+                }
+
+            pFilesInside->get_Count(&FilesCount);
+            if (FilesCount < 1)
+                {
+                pFilesInside->Release();
+                pDestination->Release();
+                pZippedFile->Release();
+                pISD->Release();
+                return false;
+                }
+
+            pFilesInside->QueryInterface(IID_IDispatch, (void**)&pItem);
+
+            Item.vt = VT_DISPATCH;
+            Item.pdispVal = pItem;
+
+            Options.vt = VT_I4;
+            Options.lVal = 1024 | 512 | 16 | 4;//http://msdn.microsoft.com/en-us/library/bb787866(VS.85).aspx
+
+            bool retval = pDestination->CopyHere(Item, Options) == S_OK;
+
+            pItem->Release(); pItem = 0L;
+            pFilesInside->Release(); pFilesInside = 0L;
+            pDestination->Release(); pDestination = 0L;
+            pZippedFile->Release(); pZippedFile = 0L;
+            pISD->Release(); pISD = 0L;
+
+            return retval;
+            }
+        __finally
+            {
+            if (res = S_OK)
+                CoUninitialize();
+            }
+        }
+    return false;
+    }
+
+#else
+#error "Windows specific code function: void UnZipFile(CString strSrc, CString strDest)"
+#endif
