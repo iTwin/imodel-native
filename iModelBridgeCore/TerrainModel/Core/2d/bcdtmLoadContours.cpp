@@ -8,8 +8,8 @@
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
 #include "bcdtminlines.h"
-#include "..\Drainage\PublicAPI\drainage.h"
-#include "..\Drainage\bcdtmDrainagePond.h"
+#include "Drainage\PublicAPI\drainage.h"
+#include "Drainage\bcdtmDrainagePond.h"
 //#pragma optimize( "p", on )
 
 thread_local static DPoint3d  *conPtsP = NULL;               /* DTM Contour Points                                      */

@@ -230,7 +230,7 @@ CoreFileObjectList =% $(MultiCompileObjectList)
 nameToDefine = __BENTLEYTMDRAINAGE_BUILD__
 %include cdefapnd.mki
 
-cuser + -wd4189
+#cuser + -wd4189
 
 %include MultiCppCompileRule.mki
 

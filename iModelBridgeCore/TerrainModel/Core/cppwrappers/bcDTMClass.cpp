@@ -35,10 +35,10 @@
 #include <TerrainModel\Core\TMTransformHelper.h>
 #include <TerrainModel\Drainage\drainage.h>
 
-#include "..\Drainage\bcdtmDrainageFeatures.h"
-#include "..\Drainage\bcdtmDrainagePond.h"
-#include "..\Drainage\bcdtmDrainageTrace.h"
-#include "..\Drainage\bcdtmDrainageCatchment.h"
+#include "Drainage\bcdtmDrainageFeatures.h"
+#include "Drainage\bcdtmDrainagePond.h"
+#include "Drainage\bcdtmDrainageTrace.h"
+#include "Drainage\bcdtmDrainageCatchment.h"
 
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 

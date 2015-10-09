@@ -2,7 +2,7 @@
 #
 #     $Source: Core/core.mki $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 #
@@ -15,8 +15,6 @@ OPTIMIZE_FOR_SPEED=1
 
 MultiCompileIntermediatePdbFile=$(terrainModelCoreObj)$(CCompPDBName).pdb
 IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
-
-ProductIncludes + -I${publishInc}
 
 dirToSearch     = $(TerrainModelCoreDir)CPPWrappers
 %include cincapnd.mki
@@ -31,6 +29,9 @@ dirToSearch     = $(TerrainModelAPISrc)
 %include cincapnd.mki
 
 dirToSearch     = $(TerrainModelCoreAPISrc)
+%include cincapnd.mki
+
+dirToSearch     = $(SrcTerrainModel)
 %include cincapnd.mki
 
 %ifdef DTM_CORE_DEBUG
@@ -80,6 +81,5 @@ cuser + -wd4505 -wd4702 -wd4805
 
 %warn Need to remove 4189 warning local variable is initialized but not referenced.
 cuser + -wd4189
-
 
 %warn Need to remove 4805 warning unsafe mix of bool and long

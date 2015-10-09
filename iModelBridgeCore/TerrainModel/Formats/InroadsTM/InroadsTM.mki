@@ -2,7 +2,7 @@
 #
 #     $Source: Formats/InroadsTM/InroadsTM.mki $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 #
@@ -16,8 +16,6 @@ OPTIMIZE_FOR_SPEED=1
 
 MultiCompileIntermediatePdbFile=$(terrainModelFormatsObj)$(CCompPDBName).pdb
 IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
-
-ProductIncludes + -I${publishInc}
 
 #dirToSearch     = $(BuildContext)
 #%include cincapnd.mki
