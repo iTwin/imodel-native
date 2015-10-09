@@ -2001,10 +2001,9 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
     if (rc == BE_SQLITE_OK && !params.m_skipSchemaCheck)
         rc = _VerifySchemaVersion(params);
 
-    if (rc == BE_SQLITE_OK)
-        return BE_SQLITE_OK;
+    if (rc != BE_SQLITE_OK)
+        DoCloseDb();
 
-    DoCloseDb();
     return rc;
     }
 
@@ -2018,7 +2017,7 @@ DbResult Db::QueryExpirationDate(DateTime& expirationDate) const
     if (BE_SQLITE_ROW != rc)
         return BE_SQLITE_NOTFOUND;   // expiration date is optional
 
-    if (DateTime::FromString(expirationDate, dateStr.c_str()) != BSISUCCESS)
+    if (BSISUCCESS != DateTime::FromString(expirationDate, dateStr.c_str()))
         {
         BeDataAssert(false && "invalid value stored for expiration date property");
         return BE_SQLITE_ERROR;
