@@ -101,10 +101,3 @@ TEST_F(JsonDiffTests, GetChanges_IntegerPropertyAdded_ReturnsDiff)
                      R"({ "A" : 1 })",
                      R"({ "A" : 1 })");
     }
-
-TEST_F(JsonDiffTests, GetChanges_IntegerPropertyAdded_ReturnsDiff)
-    {
-    TEST_GET_CHANGES(R"({ })",
-                     R"({ "A" : 1 })",
-                     R"({ "A" : 1 })");
-    }
