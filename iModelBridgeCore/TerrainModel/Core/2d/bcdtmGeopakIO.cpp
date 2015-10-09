@@ -1166,11 +1166,11 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer501DataObject(DTM_DAT_OBJ
     goto errexit  ;
    }
 /*
-** Set Pointer Values
+** Set Pointer Values Not needed. 
 */
- dataObj.featureCodeP = ( DTM_FEATURE_CODE *) buffer[0] ;
- dataObj.userTagP     = ( DTMUserTag * ) buffer[1] ;
- dataObj.pointsP      = ( struct Dataod * ) buffer[2] ;
+ //dataObj.featureCodeP = ( DTM_FEATURE_CODE *) buffer[0] ;
+ //dataObj.userTagP     = ( DTMUserTag * ) buffer[1] ;
+ //dataObj.pointsP      = ( struct Dataod * ) buffer[2] ;
  #else
 /*
 ** Read Header For 32Bit Version

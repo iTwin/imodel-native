@@ -1863,7 +1863,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_reportDuplicatePointErrorsDtmFile
  bcdtmUtl_getDateAndTime(dateStr,timeStr) ;
  fprintf(rptFP,"**  %s\n",dateStr) ;
  fprintf(rptFP,"**\n") ;
- fprintf(rptFP,"**  Data File : %s\n",dtmFileNameP) ;
+ fprintf(rptFP,"**  Data File : %ls\n",dtmFileNameP) ;
  fprintf(rptFP,"**\n") ;
 /*
 ** Write Data File Statistics
@@ -2014,7 +2014,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_reportCrossingFeaturesDtmFile
  bcdtmUtl_getDateAndTime(dateStr,timeStr) ;
  fprintf(rptFP,"**  %s\n",dateStr) ;
  fprintf(rptFP,"**\n") ;
- fprintf(rptFP,"**  Data File : %s\n",dtmFileNameP) ;
+ fprintf(rptFP,"**  Data File : %ls\n",dtmFileNameP) ;
  fprintf(rptFP,"**\n") ;
 /*
 ** Write Data File Statistics
