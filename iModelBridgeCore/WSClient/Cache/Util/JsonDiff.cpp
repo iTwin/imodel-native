@@ -14,7 +14,9 @@ using namespace rapidjson;
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                      
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonDiff::JsonDiff()
+JsonDiff::JsonDiff(bool copyValues, bool ignoreDeletedProperties) :
+m_copyValues(copyValues),
+m_ignoreDeletedProperties(ignoreDeletedProperties)
     {
     }
 
@@ -28,15 +30,15 @@ JsonDiff::~JsonDiff()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus JsonDiff::GetChanges(RapidJsonValueCR oldJson, RapidJsonValueCR newJson, RapidJsonDocumentR jsonOut, bool copyValues)
+BentleyStatus JsonDiff::GetChanges(RapidJsonValueCR oldJson, RapidJsonValueCR newJson, RapidJsonDocumentR jsonOut)
     {
-    return GetChanges(oldJson, newJson, jsonOut, jsonOut.GetAllocator(), copyValues);
+    return GetChanges(oldJson, newJson, jsonOut, jsonOut.GetAllocator());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus JsonDiff::GetChanges(RapidJsonValueCR oldJson, RapidJsonValueCR newJson, RapidJsonValueR jsonOut, rapidjson::Value::AllocatorType& allocator, bool copyValues)
+BentleyStatus JsonDiff::GetChanges(RapidJsonValueCR oldJson, RapidJsonValueCR newJson, RapidJsonValueR jsonOut, rapidjson::Value::AllocatorType& allocator)
     {
     if (jsonOut.IsNull())
         {
@@ -50,19 +52,22 @@ BentleyStatus JsonDiff::GetChanges(RapidJsonValueCR oldJson, RapidJsonValueCR ne
 
         if (!ValuesShallowEqual(oldValue, newMemberItr->value))
             {
-            AddMember(jsonOut, newMemberItr->name, newMemberItr->value, allocator, copyValues);
+            AddMember(jsonOut, newMemberItr->name, newMemberItr->value, allocator);
             }
         }
 
     // Find deletions
-    if (std::distance(oldJson.MemberBegin(), oldJson.MemberEnd()) != std::distance(newJson.MemberBegin(), newJson.MemberEnd()))
+    if (!m_ignoreDeletedProperties)
         {
-        for (auto oldMemberItr = oldJson.MemberBegin(); oldMemberItr != oldJson.MemberEnd(); ++oldMemberItr)
+        if (std::distance(oldJson.MemberBegin(), oldJson.MemberEnd()) != std::distance(newJson.MemberBegin(), newJson.MemberEnd()))
             {
-            auto& newValue = newJson[oldMemberItr->name.GetString()];
-            if (newValue.IsNull())
+            for (auto oldMemberItr = oldJson.MemberBegin(); oldMemberItr != oldJson.MemberEnd(); ++oldMemberItr)
                 {
-                AddMember(jsonOut, oldMemberItr->name, newValue, allocator, copyValues);
+                auto& newValue = newJson[oldMemberItr->name.GetString()];
+                if (newValue.IsNull())
+                    {
+                    AddMember(jsonOut, oldMemberItr->name, newValue, allocator);
+                    }
                 }
             }
         }
@@ -73,7 +78,7 @@ BentleyStatus JsonDiff::GetChanges(RapidJsonValueCR oldJson, RapidJsonValueCR ne
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonDiff::AddMember(RapidJsonValueR jsonOut, RapidJsonValueCR name, RapidJsonValueCR value, rapidjson::Value::AllocatorType& allocator, bool copyValues)
+void JsonDiff::AddMember(RapidJsonValueR jsonOut, RapidJsonValueCR name, RapidJsonValueCR value, rapidjson::Value::AllocatorType& allocator)
     {
     if (jsonOut.IsNull())
         {
@@ -82,7 +87,7 @@ void JsonDiff::AddMember(RapidJsonValueR jsonOut, RapidJsonValueCR name, RapidJs
 
     Value nameToAdd(kStringType);
 
-    if (copyValues)
+    if (m_copyValues)
         {
         nameToAdd.SetString(name.GetString(), name.GetStringLength(), allocator);
         }
@@ -103,7 +108,7 @@ void JsonDiff::AddMember(RapidJsonValueR jsonOut, RapidJsonValueCR name, RapidJs
             break;
 
         case kStringType:
-            if (copyValues)
+            if (m_copyValues)
                 {
                 valueToAdd.SetString(value.GetString(), value.GetStringLength(), allocator);
                 }
