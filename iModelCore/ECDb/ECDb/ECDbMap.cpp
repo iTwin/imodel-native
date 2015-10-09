@@ -531,7 +531,7 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8
                 //struct array indices don't get a class id
                 Utf8String indexName("uix_");
                 indexName.append(table->GetName()).append("_structarraykey");
-                ECDbSqlIndex* index = table->CreateIndex(indexName.c_str(), true, ECClass::UNSET_ECCLASSID);
+                ECDbSqlIndex* index = table->CreateIndex(indexName.c_str(), true, ECClass::UNSET_ECCLASSID, ECDbSqlIndex::Scope::EnforceTable);
                 index->Add (ECDB_COL_ParentECInstanceId);
                 index->Add (ECDB_COL_ECPropertyPathId);
                 index->Add (ECDB_COL_ECArrayIndex);

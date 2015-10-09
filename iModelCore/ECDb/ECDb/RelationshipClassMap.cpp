@@ -42,7 +42,9 @@ ECDbSqlColumn* RelationshipClassMap::CreateConstraintColumn (Utf8CP columnName, 
     ECDbSqlColumn* column = GetTable ().FindColumnP (columnName);
     if (column != nullptr)
         {
-        BeAssert(column->GetKnownColumnId() == columnId);
+        //in case of foreign key relationships, the constraint column could be a regular data column
+        //in the child table, therefore known column id must not match
+        BeAssert(column->GetKnownColumnId() == ECDbKnownColumns::DataColumn || column->GetKnownColumnId() == ECDbKnownColumns::ECInstanceId || column->GetKnownColumnId() == columnId);
         column->SetIsShared(true);
         return column;
         }
@@ -1061,11 +1063,6 @@ void RelationshipClassLinkTableMap::AddIndices (ClassMapInfo const& mapInfo)
 
     RelationshipMapInfo::Cardinality cardinality = relationshipClassMapInfo.GetCardinality();
     const bool enforceUniqueness = !relationshipClassMapInfo.AllowDuplicateRelationships();
-    // TODO: We need to enforce uniqueness of constraints, but cannot at the moment since we get these 
-    // i-models that don't honor these constraints. For example, ConstructSim has a ComponentHasComponent
-    // 1-M relationship, but ends up having many instances on the source instead of one. There are
-    // SystemComponent-s that include GroupingComponent-s and PartComponent-s, where the GroupingComponent-s
-    // themselves include the SystemComponent-s again. 
 
     // Add indices on the source and target based on cardinality
     bool sourceIsUnique = enforceUniqueness;
@@ -1089,17 +1086,18 @@ void RelationshipClassLinkTableMap::AddIndices (ClassMapInfo const& mapInfo)
                 break;
         }
 
-    AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, sourceIsUnique);
-    AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, targetIsUnique);
+    AddIndex(RelationshipIndexSpec::Source, sourceIsUnique);
+    AddIndex(RelationshipIndexSpec::Target, targetIsUnique);
 
     if (enforceUniqueness)
-        AddIndicesToRelationshipEnds(RelationshipClassLinkTableMap::RelationshipIndexSpec::SourceAndTarget, true);
+        AddIndex(RelationshipClassLinkTableMap::RelationshipIndexSpec::SourceAndTarget, true);
     }
     
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbSqlIndex* RelationshipClassLinkTableMap::CreateIndex (RelationshipIndexSpec spec, bool isUniqueIndex)
+void RelationshipClassLinkTableMap::AddIndex(RelationshipIndexSpec spec, bool isUniqueIndex)
     {
     // Setup name of the index
     Utf8String name;
@@ -1108,38 +1106,59 @@ ECDbSqlIndex* RelationshipClassLinkTableMap::CreateIndex (RelationshipIndexSpec 
     else
         name.append("ix_");
 
-    //add class full name as subclasses of the relationship might require different indices
-    Utf8StringCR nsPrefix = GetClass().GetSchema().GetNamespacePrefix();
-    name.append(!nsPrefix.empty() ? nsPrefix : GetClass().GetSchema().GetName()).append("_").append(GetClass().GetName()).append("_");
-   
-    switch(spec)
-        {
-        case RelationshipIndexSpec::Source:
-            name.append ("Source");
-            break;
-        case RelationshipIndexSpec::Target:
-            name.append ("Target");
-            break;
-        case RelationshipIndexSpec::SourceAndTarget:
-            name.append("SourceTarget");  
-            break;
-        default:
-            BeAssert(false);
-            break;
-        }
-    
-    ECDbSqlIndex* existingIndex = GetTable().GetDbDefR ().FindIndexP (name.c_str ());
-    if (existingIndex != nullptr)
-        {
-        if (&existingIndex->GetTable () == &GetTable ())
-            return existingIndex;
-        else
-            BeAssert (false && "Index with same name exist on a different table");
+    name.append(GetClass().GetSchema().GetNamespacePrefix()).append("_").append(GetClass().GetName()).append("_");
 
-        return nullptr;
+    switch (spec)
+        {
+            case RelationshipIndexSpec::Source:
+                name.append("Source");
+                break;
+            case RelationshipIndexSpec::Target:
+                name.append("Target");
+                break;
+            case RelationshipIndexSpec::SourceAndTarget:
+                name.append("SourceTarget");
+                break;
+            default:
+                BeAssert(false);
+                break;
         }
 
-    return GetTable().CreateIndex(name.c_str(), isUniqueIndex, GetClass().GetId());
+    ECDbSqlIndex* index = GetTable().GetDbDefR().FindIndexP(name.c_str());
+    if (index == nullptr || &index->GetTable() != &GetTable())
+        {
+        BeAssert(index == nullptr || &index->GetTable() == &GetTable() && "Index with same name exist on a different table");
+        index = GetTable().CreateIndex(name.c_str(), isUniqueIndex, GetClass().GetId(), isUniqueIndex ? ECDbSqlIndex::Scope::Auto : ECDbSqlIndex::Scope::EnforceTable);
+        }
+
+    if (index == nullptr)
+        return;
+
+    auto sourceECInstanceIdColumn = GetSourceECInstanceIdPropMap()->GetFirstColumn();
+    auto sourceECClassIdColumn = GetSourceECClassIdPropMap()->IsMappedToPrimaryTable() ? GetSourceECClassIdPropMap()->GetFirstColumn() : nullptr;
+    auto targetECInstanceIdColumn = GetTargetECInstanceIdPropMap()->GetFirstColumn();
+    auto targetECClassIdColumn = GetTargetECClassIdPropMap()->IsMappedToPrimaryTable() ? GetTargetECClassIdPropMap()->GetFirstColumn() : nullptr;
+
+    switch (spec)
+        {
+            case RelationshipIndexSpec::Source:
+                AddColumnsToIndex(*index, sourceECInstanceIdColumn, sourceECClassIdColumn, nullptr, nullptr);
+                break;
+            case RelationshipIndexSpec::Target:
+                AddColumnsToIndex(*index, targetECInstanceIdColumn, targetECClassIdColumn, nullptr, nullptr);
+                break;
+
+            case RelationshipIndexSpec::SourceAndTarget:
+                AddColumnsToIndex(*index, sourceECInstanceIdColumn, sourceECClassIdColumn, targetECInstanceIdColumn, targetECClassIdColumn);
+                break;
+
+            default:
+                BeAssert(false);
+                break;
+        }
+
+    if (!index->IsValid())
+        index->Drop();
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1160,40 +1179,7 @@ void RelationshipClassLinkTableMap::AddColumnsToIndex (ECDbSqlIndex& index, ECDb
         index.Add (col4->GetName ().c_str ());
     }
     
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassLinkTableMap::AddIndicesToRelationshipEnds (RelationshipIndexSpec spec, bool addUniqueIndex)
-    {
-    auto sourceECInstanceIdColumn = GetSourceECInstanceIdPropMap()->GetFirstColumn();
-    auto sourceECClassIdColumn = GetSourceECClassIdPropMap ()->IsMappedToPrimaryTable() ? GetSourceECClassIdPropMap ()->GetFirstColumn () : nullptr;
-    auto targetECInstanceIdColumn = GetTargetECInstanceIdPropMap()->GetFirstColumn();
-    auto targetECClassIdColumn = GetTargetECClassIdPropMap()->IsMappedToPrimaryTable() ? GetTargetECClassIdPropMap ()->GetFirstColumn () : nullptr;
-    auto index = CreateIndex (spec, addUniqueIndex);
-    if (index == nullptr)
-        return;
-   
-    switch(spec)
-        {
-        case RelationshipIndexSpec::Source:
-            AddColumnsToIndex (*index, sourceECInstanceIdColumn, sourceECClassIdColumn, nullptr, nullptr);
-            break;
-        case RelationshipIndexSpec::Target:
-            AddColumnsToIndex (*index, targetECInstanceIdColumn, targetECClassIdColumn, nullptr, nullptr);
-            break;
 
-        case RelationshipIndexSpec::SourceAndTarget:
-            AddColumnsToIndex(*index, sourceECInstanceIdColumn, sourceECClassIdColumn, targetECInstanceIdColumn, targetECClassIdColumn);
-            break;
-
-        default:
-            BeAssert(false);
-            break;
-        }
-
-    if (!index->IsValid())
-        index->Drop();
-    }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   09/12

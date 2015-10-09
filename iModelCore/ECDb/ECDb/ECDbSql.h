@@ -31,7 +31,6 @@ typedef int64_t ECDbConstraintId;
 typedef int64_t ECDbPropertyPathId;
 typedef int64_t ECDbClassMapId;
 
-//!TODO This should replace int in UserData in column
 enum class ECDbKnownColumns
     {
     Unknown = 0x0U, //! Not known to ECDb or user define columns
@@ -273,7 +272,7 @@ public:
     ECDbSqlIndex const* FindIndex (Utf8CP name) const;
     ECDbSqlIndex* FindIndexP (Utf8CP name) ;
 
-    ECDbSqlIndex* AddIndex(std::unique_ptr<ECDbSqlIndex>&);
+    ECDbSqlIndex* AddIndex(std::unique_ptr<ECDbSqlIndex>);
 
     const std::vector<ECDbSqlIndex const*> GetIndexes () const;
     std::vector<ECDbSqlIndex*> GetIndexesR ();
@@ -302,6 +301,13 @@ public:
 struct ECDbSqlIndex : NonCopyableClass
     {
 public:
+    enum class Scope
+        {
+        Auto,
+        EnforceTable,
+        EnforceClassAndSubclasses
+        };
+
     struct PersistenceManager : NonCopyableClass
         {
     private:
@@ -325,13 +331,18 @@ private:
     bool m_isUnique;
     ECN::ECClassId m_classId;
     Utf8String m_additionalWhereExpression;
+    Scope m_scope;
     PersistenceManager m_persistenceManager;
 
     BentleyStatus BuildCreateDdl(NativeSqlBuilder&, ECDbCR) const;
 
 public:
-    ECDbSqlIndex(ECDbIndexId id, ECDbSqlTable& table, Utf8CP name, bool isUnique, ECN::ECClassId classId)
-        :m_id(id), m_name(name), m_table(table), m_isUnique(isUnique), m_classId(classId), m_persistenceManager(*this)  {}
+    ECDbSqlIndex(ECDbIndexId id, ECDbSqlTable& table, Utf8CP name, bool isUnique, ECN::ECClassId classId, Scope scope)
+        :m_id(id), m_name(name), m_table(table), m_isUnique(isUnique), m_classId(classId), m_scope(scope), m_persistenceManager(*this)  
+        {
+        if (isUnique && m_scope == Scope::Auto)
+            m_scope = Scope::EnforceClassAndSubclasses;
+        }
 
     ECDbIndexId GetId() const { BeAssert(m_id != IIdGenerator::UNSET_ID); return m_id; }
 
@@ -344,6 +355,7 @@ public:
     ECN::ECClassId GetClassId() const { return m_classId; }
     void SetAdditionalWhereExpression (Utf8CP expression) { m_additionalWhereExpression = expression; }
     Utf8StringCR GetAdditionalWhereExpression () const { return m_additionalWhereExpression; }
+    Scope GetScope() const { return m_scope; }
     bool Contains (Utf8CP column) const;
     BentleyStatus Add (Utf8CP column);
     BentleyStatus Remove (Utf8CP column);
@@ -404,13 +416,13 @@ struct ECDbSqlColumn : NonCopyableClass
         Constraint m_constraints;
         Utf8String m_name;
         PersistenceType m_persistenceType;
-        ECDbKnownColumns m_knowColumnId;
+        ECDbKnownColumns m_knownColumnId;
         ECDbColumnId m_id;
         bool m_isShared;
 
     public:
         ECDbSqlColumn (Utf8CP name, Type type, ECDbSqlTable& owner, PersistenceType persistenceType, ECDbColumnId id)
-            : m_name (name), m_ownerTable (owner), m_type (type), m_persistenceType (persistenceType), m_knowColumnId (ECDbKnownColumns::DataColumn), m_id (id), m_isShared(false) {}
+            : m_name (name), m_ownerTable (owner), m_type (type), m_persistenceType (persistenceType), m_knownColumnId (ECDbKnownColumns::DataColumn), m_id (id), m_isShared(false) {}
 
         ECDbColumnId GetId () const { return m_id; }
         void SetId (ECDbColumnId id) { m_id = id; }
@@ -428,7 +440,7 @@ struct ECDbSqlColumn : NonCopyableClass
         static Type StringToType (Utf8CP typeName);
         static Utf8CP TypeToString (Type type);
         BentleyStatus SetKnownColumnId (ECDbKnownColumns knownColumnId);
-        ECDbKnownColumns GetKnownColumnId() const { return m_knowColumnId; }
+        ECDbKnownColumns GetKnownColumnId() const { return m_knownColumnId; }
         const Utf8String GetFullName () const;
         std::weak_ptr<ECDbSqlColumn> GetWeakPtr () const;
         static const Utf8String BuildFullName (Utf8CP table, Utf8CP column);
@@ -615,8 +627,7 @@ struct ECDbSqlTable : NonCopyableClass
         std::vector<ECDbSqlColumn const*> const& GetColumns () const;
         EditHandle& GetEditHandleR () { return m_editInfo; }
         EditHandle const& GetEditHandle () const { return m_editInfo; }
-        ECDbSqlIndex* CreateIndex(Utf8CP indexName, bool isUnique, ECN::ECClassId classId);
-        ECDbSqlIndex* CreateIndex(ECDbIndexId id, Utf8CP indexName, bool isUnique, ECN::ECClassId classId);
+        ECDbSqlIndex* CreateIndex(Utf8CP indexName, bool isUnique, ECN::ECClassId, ECDbSqlIndex::Scope = ECDbSqlIndex::Scope::Auto);
         const std::vector<ECDbSqlIndex const*> GetIndexes() const;
         ECDbSqlPrimaryKeyConstraint* GetPrimaryKeyConstraint (bool createIfDonotExist = true);
         ECDbSqlForeignKeyConstraint* CreateForeignKeyConstraint (ECDbSqlTable const& targetTable);

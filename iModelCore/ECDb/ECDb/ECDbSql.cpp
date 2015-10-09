@@ -164,11 +164,11 @@ BentleyStatus ECDbSqlTable::GetFilteredColumnList(std::vector<ECDbSqlColumn cons
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-ECDbSqlColumn const* ECDbSqlTable::GetFilteredColumnFirst (ECDbKnownColumns knowColumn) const
+ECDbSqlColumn const* ECDbSqlTable::GetFilteredColumnFirst (ECDbKnownColumns knownColumn) const
     {
     for (auto column : m_orderedColumns)
         {
-        if (column->GetKnownColumnId () == knowColumn)
+        if (column->GetKnownColumnId () == knownColumn)
             return column;
         }
 
@@ -397,15 +397,7 @@ bool ECDbSqlTable::TryGetECClassIdColumn (ECDbSqlColumn const*& classIdCol) cons
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-ECDbSqlIndex* ECDbSqlTable::CreateIndex(Utf8CP indexName, bool isUnique, ECN::ECClassId classId)
-    {
-    return CreateIndex(IIdGenerator::UNSET_ID, indexName, isUnique, classId);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
-ECDbSqlIndex* ECDbSqlTable::CreateIndex(ECDbIndexId id, Utf8CP indexName, bool isUnique, ECN::ECClassId classId)
+ECDbSqlIndex* ECDbSqlTable::CreateIndex(Utf8CP indexName, bool isUnique, ECN::ECClassId classId, ECDbSqlIndex::Scope scope)
     {
     Utf8String generatedIndexName;
     if (Utf8String::IsNullOrEmpty(indexName))
@@ -426,12 +418,8 @@ ECDbSqlIndex* ECDbSqlTable::CreateIndex(ECDbIndexId id, Utf8CP indexName, bool i
             }
         }
 
-    if (id == IIdGenerator::UNSET_ID)
-        id = m_dbDef.GetManagerR().GetIdGenerator().NextIndexId();
-
-
-    std::unique_ptr<ECDbSqlIndex> index = std::unique_ptr<ECDbSqlIndex>(new ECDbSqlIndex(id, *this, indexName, isUnique, classId));
-    return m_dbDef.AddIndex(index);
+    ECDbIndexId id = m_dbDef.GetManagerR().GetIdGenerator().NextIndexId();
+    return m_dbDef.AddIndex(std::unique_ptr<ECDbSqlIndex>(new ECDbSqlIndex(id, *this, indexName, isUnique, classId, scope)));
     }
 
 //---------------------------------------------------------------------------------------
@@ -807,7 +795,7 @@ bool ECDbSqlDb::HasObject (Utf8CP name)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-ECDbSqlIndex* ECDbSqlDb::AddIndex(std::unique_ptr<ECDbSqlIndex>& index)
+ECDbSqlIndex* ECDbSqlDb::AddIndex(std::unique_ptr<ECDbSqlIndex> index)
     {
     ECDbSqlIndex* indexP = index.get();
     m_indexes[indexP->GetName().c_str()] = std::move(index);
@@ -1278,7 +1266,7 @@ BentleyStatus ECDbSqlIndex::BuildCreateDdl(NativeSqlBuilder& ddl, ECDbCR ecdb) c
     //The difference between non-unique and unique indexes is because it is assumed that unique indexes are needed to
     //enforce uniqueness where as non-unique indexes are only for performance which is spoilt by a class id filter.
     ECDbSqlColumn const* classIdCol = nullptr;
-    if (!hasSharedColumns || !HasClassId() || !m_table.TryGetECClassIdColumn(classIdCol))
+    if (m_scope == Scope::EnforceTable || !hasSharedColumns || !HasClassId() || !m_table.TryGetECClassIdColumn(classIdCol))
         return SUCCESS;
 
     BeAssert(classIdCol != nullptr);
@@ -1311,23 +1299,23 @@ BentleyStatus ECDbSqlIndex::BuildCreateDdl(NativeSqlBuilder& ddl, ECDbCR ecdb) c
     if (!horizPartition->NeedsClassIdFilter())
         return SUCCESS;
 
-    //class id filter is needed -> only allow it for shared columns if unique index
-    if (hasSharedColumns)
+    if (m_scope == ECDbSqlIndex::Scope::Auto)
         {
-        if (GetIsUnique())
-            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning, 
-                 "Index '%s' defined for ECClass '%s' includes a column shared by multiple ECClasses. "
-                 "This results in a partial index filtered by ECClassId which might impact performance. "
-                 "Consider changing the ECClass to not share columns.", m_name.c_str(), ecclass->GetFullName());
-        else
-            {
-            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, 
-                 "Failed to create index '%s' for ECClass '%s'. ECDb does not create indices on columns "
-                 "shared by multiple ECClasses because they would be partial indexes filtered by ECClassId which might impact performance. "
-                 "Consider changing the ECClass to not share columns.", m_name.c_str(), ecclass->GetFullName());
-            return ERROR;
-            }
+        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                        "Failed to create index '%s' for ECClass '%s'. ECDb does not create indices on columns "
+                        "shared by multiple ECClasses because they would be partial indexes filtered by ECClassId which might impact performance. "
+                        "Consider changing the ECClass to not share columns.", m_name.c_str(), ecclass->GetFullName());
+        return ERROR;
         }
+    else if (m_scope == Scope::EnforceClassAndSubclasses)
+        {
+        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning,
+                        "Index '%s' defined for ECClass '%s' includes a column shared by multiple ECClasses. "
+                        "This results in a partial index filtered by ECClassId which might impact performance. "
+                        "Consider changing the ECClass to not share columns.", m_name.c_str(), ecclass->GetFullName());
+        }
+
+    BeAssert(m_scope != Scope::EnforceTable && "should have been caught before");
 
     if (hasWhere)
         ddl.AppendSpace().Append(BooleanSqlOperator::And, true).AppendParenLeft();
@@ -1806,7 +1794,7 @@ BentleyStatus ECDbSqlColumn::SetKnownColumnId(ECDbKnownColumns knownColumnId)
     if (GetTableR().GetEditHandleR().AssertNotInEditMode())
         return BentleyStatus::ERROR;
 
-    m_knowColumnId = knownColumnId;
+    m_knownColumnId = knownColumnId;
     return BentleyStatus::SUCCESS;
     }
 
@@ -2505,11 +2493,11 @@ DbResult ECDbSqlPersistence::ReadIndex (Statement& stmt, ECDbSqlDb& o)
     ECDbSqlTable* table = o.FindTableP(tableName);
     if (table == nullptr)
         {
-        BeAssert(false);
+        BeAssert(false && "Failed to find table");
         return BE_SQLITE_ERROR;
         }
 
-    ECDbSqlIndex* index = table->CreateIndex (id, name, isUnique, classId);
+    ECDbSqlIndex* index = o.AddIndex(std::unique_ptr<ECDbSqlIndex>(new ECDbSqlIndex(id, *table, name, isUnique, classId, ECDbSqlIndex::Scope::Auto)));
     if (index == nullptr)
         {
         BeAssert (false && "Failed to create index definition");

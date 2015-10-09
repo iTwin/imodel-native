@@ -471,10 +471,17 @@ BentleyStatus ClassMap::ProcessStandardKeySpecifications(ClassMapInfo const& map
             }
         doneList.insert(propertyMap);
 
+        Utf8String indexName;
+        indexName.Sprintf("ix_%s_%s_%s_%s", 
+                          mapInfo.GetECClass().GetSchema().GetNamespacePrefix().c_str(),
+                          mapInfo.GetECClass().GetName().c_str(), 
+                          typeString.c_str(), 
+                          propertyName.c_str());
+
         std::vector<ECDbSqlColumn const*> columns;
         propertyMap->GetColumns(columns);
 
-        ECDbSqlIndex* index = m_table->CreateIndex(nullptr, false, GetClass().GetId());
+        ECDbSqlIndex* index = m_table->CreateIndex(indexName.c_str(), false, GetClass().GetId());
         for (auto column : columns)
             index->Add(column->GetName().c_str());
 

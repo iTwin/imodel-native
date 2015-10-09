@@ -159,8 +159,7 @@ private:
     MapStatus           CreateConstraintPropMaps (RelationshipMapInfo const&, bool addSourceECClassIdColumnToTable, ECN::ECClassId defaultSourceECClassid, bool addTargetECClassIdColumnToTable, ECN::ECClassId defaultTargetECClassId);
 
     void                AddIndices (ClassMapInfo const& mapInfo);
-    void                AddIndicesToRelationshipEnds (RelationshipIndexSpec spec, bool addUniqueIndex);
-    ECDbSqlIndex*       CreateIndex (RelationshipIndexSpec spec, bool uniqueIndex);
+    void                AddIndex(RelationshipIndexSpec spec, bool addUniqueIndex);
     static void         AddColumnsToIndex (ECDbSqlIndex& index, ECDbSqlColumn const* col1, ECDbSqlColumn const* col2, ECDbSqlColumn const* col3, ECDbSqlColumn const* col4);
 
     bool                GetConstraintECInstanceIdColumnName (Utf8StringR columnName, ECN::ECRelationshipEnd relationshipEnd, ECDbSqlTable const& table) const;
