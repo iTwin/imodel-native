@@ -223,6 +223,15 @@ DbResult ChangeSet::ConcatenateWith(ChangeSet const& second)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Changes::Changes(struct ChangeSet& changeSet)
+    {
+    m_data = (void*) changeSet.GetData();
+    m_size = changeSet.GetSize();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Changes::Finalize() const
@@ -241,8 +250,11 @@ Changes::Change Changes::begin() const
     {
     Finalize();
 
-    if (m_changeset.IsValid())
-        sqlite3changeset_start(&m_iter, m_changeset.GetSize(),(void*) m_changeset.GetData());
+    if (nullptr != m_data)
+        sqlite3changeset_start(&m_iter, m_size, m_data);
+
+    if (nullptr != m_changeStream)
+        sqlite3changeset_start_strm(&m_iter, ChangeStream::InputCallback, (void*) m_changeStream);
 
     if (nullptr == m_iter)
         return Change(0, false);
@@ -660,5 +672,72 @@ void Changes::Change::OnPropertyUpdateReversed(Db& db) const
     BeAssert(rc==BE_SQLITE_DONE);
 
     db.GetDbFile()->OnSettingsDirtied();    // save the fact that we have data in the temporary settings table
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+int ChangeStream::OutputCallback(void *pOut, const void *pData, int nData)
+    {
+    return (int) ((ChangeStream*) pOut)->_OutputPage(pData, nData);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+int ChangeStream::InputCallback(void *pIn, void *pData, int *pnData)
+    {
+    return (int) ((ChangeStream*) pIn)->_InputPage(pData, pnData);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+int ChangeStream::ConflictCallback(void *pCtx, int cause, SqlChangesetIterP iter)
+    {
+    return (int) ((ChangeStream*) pCtx)->_OnConflict((ChangeSet::ConflictCause) cause, Changes::Change(iter, true));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+int ChangeStream::FilterTableCallback(void *pCtx, Utf8CP tableName)
+    {
+    return (int) ((ChangeStream*) pCtx)->_FilterTable(tableName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeStream::FromChangeTrack(ChangeTracker& session, ChangeSet::SetType setType)
+    {
+    if (ChangeSet::SetType::Full == setType)
+        return (DbResult) sqlite3session_changeset_strm(session.GetSqlSession(), OutputCallback, this);
+    else
+        return (DbResult) sqlite3session_patchset_strm(session.GetSqlSession(), OutputCallback, this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeStream::FromChangeGroup(ChangeGroup const& changeGroup)
+    {
+    return (DbResult) sqlite3changegroup_output_strm((sqlite3_changegroup*) changeGroup.m_changegroup, OutputCallback, this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeStream::ToChangeGroup(ChangeGroup& changeGroup) const
+    {
+    return (DbResult) sqlite3changegroup_add_strm((sqlite3_changegroup*) changeGroup.m_changegroup, InputCallback, (void*) this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeStream::ApplyChanges(DbR db) const
+    {
+    return (DbResult) sqlite3changeset_apply_strm(db.GetSqlDb(), InputCallback, (void*) this, FilterTableCallback, ConflictCallback, (void*) this);
     }
 

@@ -75,6 +75,9 @@ public:
     bool IsTracking() const {return m_isTracking;}
 };
 
+struct ChangeSet;
+struct ChangeStream;
+
 //=======================================================================================
 //! An Iterator for a ChangeSet. This class is used to step through the individual changes within a ChangeSet.
 // @bsiclass                                                    Keith.Bentley   05/11
@@ -82,15 +85,26 @@ public:
 struct Changes
 {
 private:
-    struct ChangeSet& m_changeset;
-    mutable SqlChangesetIterP m_iter;
+    ChangeStream* m_changeStream = nullptr;
+    int    m_size = 0;
+    void*  m_data = nullptr;
+    mutable SqlChangesetIterP m_iter = 0;
+
     void Finalize() const;
 
 public:
-    Changes(Changes const& other) : m_changeset(other.m_changeset) {m_iter=0;}
+    //! Construct an iterator for a ChangeSet
+    BE_SQLITE_EXPORT Changes(ChangeSet& changeSet);
 
-    //! Construct an iterator for a Changeset
-    Changes(ChangeSet& changeset) : m_changeset(changeset) {m_iter=0;};
+    //! Construct an iterator for a ChangeStream
+    Changes(ChangeStream& changeStream) : m_changeStream(&changeStream) {}
+
+    //! Construct an iterator for a page of changes in a ChangeStream
+    Changes(void* data, int size) : m_data(data), m_size(size) {}
+
+    //! Copy constructor
+    Changes(Changes const& other) : m_data(other.m_data), m_size(other.m_size), m_changeStream(other.m_changeStream), m_iter(0) {}
+
     BE_SQLITE_EXPORT ~Changes();
 
     //! A single change to a database row.
@@ -168,7 +182,7 @@ public:
 struct ChangeGroup : NonCopyableClass
 {
     friend struct ChangeSet;
-
+    friend struct ChangeStream;
 private:
     void*  m_changegroup;
     
@@ -236,7 +250,7 @@ public:
     int GetSize() const {return m_size;}
 
     //! Get a pointer to the data for this ChangeSet.
-    void const* GetData() const {return m_changeset;}
+    void const* GetData()   const {return m_changeset;}
 
     //! Determine whether this ChangeSet holds valid data or not.
     bool IsValid() {return 0 != m_changeset;}
@@ -248,4 +262,63 @@ public:
     BE_SQLITE_EXPORT static Utf8String InterpretConflictCause(ChangeSet::ConflictCause);
 };
 
+//=======================================================================================
+//! A base class for a streaming version of the ChangeSet. ChangeSets require that the 
+//! entire contents to be stored in large memory buffers. This streaming version is meant to
+//! be used in low memory environments where it is required to handle very large changesets. 
+// @bsiclass                                                 Ramanujam.Raman   10/15
+//=======================================================================================
+struct ChangeStream : NonCopyableClass
+    {
+    friend struct Changes;
+    private:
+        static int OutputCallback(void *pOut, const void *pData, int nData);
+        static int InputCallback(void *pIn, void *pData, int *pnData);
+        static int ConflictCallback(void *pCtx, int cause, SqlChangesetIterP iter);
+        static int FilterTableCallback(void *pCtx, Utf8CP tableName);
+
+    protected:
+        //! Implement to supply input from the application
+        //! @param[out] pData Buffer used by application to copy data into. 
+        //! @param[out] pnData Set to the number of bytes copied. If the buffer is exhausted set this to 0. 
+        //! @return BE_SQLITE_OK if successfully copied data. Return BE_SQLITE_ERROR otherwise. 
+        virtual DbResult _InputPage(void *pData, int *pnData) { return BE_SQLITE_OK; }
+
+        //! Implement to return data to the application
+        //! @param[in] pData Points to a buffer containing the output data
+        //! @param[in] nData Size of buffer
+        //! @return BE_SQLITE_OK if the data has been successfully processed. Return BE_SQLITE_ERROR otherwise. 
+        virtual DbResult _OutputPage(const void *pData, int nData) { return BE_SQLITE_OK; }
+        
+        //! Implement to handle conflicts when applying changes
+        //! @see ApplyChanges
+        virtual ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause clause, Changes::Change iter) { return ChangeSet::ConflictResolution::Abort; }
+        
+        //! Implement to filter out specific tables when applying changes
+        //! @see ApplyChanges
+        virtual ChangeSet::ApplyChangesForTable _FilterTable(Utf8CP tableName) { return ChangeSet::ApplyChangesForTable::Yes; }
+
+    public:
+        //! Stream changes from a ChangeTracker. 
+        //! @param[in] tracker  ChangeTracker from which to create ChangeSet or PatchSet
+        //! @param[in] setType  whether to create a full ChangeSet or just a PatchSet
+        //! @remarks Implement _OutputPage to receive the stream
+        BE_SQLITE_EXPORT DbResult FromChangeTrack(ChangeTracker& tracker, ChangeSet::SetType setType = ChangeSet::SetType::Full);
+
+        //! Stream changes from a ChangeGroup
+        //! @remarks Implement _OutputPage to receive the stream
+        BE_SQLITE_EXPORT DbResult FromChangeGroup(ChangeGroup const& changeGroup);
+
+        //! Stream changes to a ChangeGroup. 
+        //! @remarks Implement _InputPage to send the stream
+        BE_SQLITE_EXPORT DbResult ToChangeGroup(ChangeGroup& changeGroup) const;
+
+        //! Apply all of the changes in this stream to the supplied database.
+        //! @param[in] db the database to which the changes are applied.
+        //! @remarks Implement _InputPage to send the stream
+        BE_SQLITE_EXPORT DbResult ApplyChanges(DbR db) const;
+    };
+
 END_BENTLEY_SQLITE_NAMESPACE
+
+
