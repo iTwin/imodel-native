@@ -1044,7 +1044,7 @@ public:
     //! @see GetParentId, _SetParentId
     //! @return DgnDbStatus::Success if the parent was set
     //! @note This call can fail if a DgnElement subclass overrides _SetParentId and rejects the parent.
-    DgnDbStatus SetParentId(DgnElementId parentId) {return _SetParentId(parentId);}
+    DgnDbStatus SetParentId(DgnElementId parentId) {return parentId == GetParentId() ? DgnDbStatus::Success : _SetParentId(parentId);}
 
     //! Get the code (business key) of this DgnElement.
     Code GetCode() const {return m_code;}

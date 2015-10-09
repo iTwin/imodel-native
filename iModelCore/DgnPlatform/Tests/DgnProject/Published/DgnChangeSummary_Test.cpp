@@ -160,16 +160,15 @@ void DgnChangeSummaryTestFixture::InsertModel()
 //---------------------------------------------------------------------------------------
 void DgnChangeSummaryTestFixture::InsertCategory()
     {
-    DgnCategories::Category category("ChangeSetTestCategory", DgnCategories::Scope::Physical);
-    category.SetRank(DgnCategories::Rank::Application);
+    DgnCategory cat(DgnCategory::CreateParams(*m_testDb, "ChangeSetTestCategory", DgnCategory::Scope::Physical, DgnCategory::Rank::Application));
 
-    DgnCategories::SubCategory::Appearance appearance;
+    DgnSubCategory::Appearance appearance;
     appearance.SetColor(ColorDef::White());
 
-    DbResult result = m_testDb->Categories().Insert(category, appearance);
-    ASSERT_TRUE(BE_SQLITE_OK == result);
+    cat.Insert(appearance);
+    ASSERT_TRUE(cat.GetCategoryId().IsValid());
 
-    m_testCategoryId = category.GetCategoryId();
+    m_testCategoryId = cat.GetCategoryId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -224,12 +223,10 @@ void DgnChangeSummaryTestFixture::CreateDefaultView()
     PhysicalViewController viewController(dgndb, viewRow.GetId());
     viewController.SetStandardViewRotation(StandardView::Iso);
     viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::SmoothShade);
-    DgnCategories::Iterator catIter = dgndb.Categories().MakeIterator();
-    for (auto& entry : catIter)
-        {
-        DgnCategoryId categoryId = entry.GetCategoryId();
+
+    for (auto const& categoryId : DgnCategory::QueryCategories(dgndb))
         viewController.ChangeCategoryDisplay(categoryId, true);
-        }
+
     DgnModels::Iterator modIter = dgndb.Models().MakeIterator();
     for (auto& entry : modIter)
         {

@@ -110,16 +110,6 @@ DgnDbStatus DgnMaterial::_SetParentId(DgnElementId parentId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthority::Code DgnMaterial::CreateMaterialCode(Utf8StringCR palette, Utf8StringCR material, DgnDbR db)
-    {
-    auto auth = db.Authorities().Get<NamespaceAuthority>(DgnAuthority::MaterialId());
-    BeAssert(auth.IsValid());
-    return auth.IsValid() ? auth->CreateCode(material, palette) : DgnAuthority::Code();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnMaterial::CreateParams::CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName, Utf8StringCR value, DgnMaterialId parentMaterialId, Utf8StringCR descr)
   : T_Super(db, DgnMaterial::QueryDgnClassId(db), CreateMaterialCode(paletteName, materialName, db), parentMaterialId),
     m_data(value, descr)

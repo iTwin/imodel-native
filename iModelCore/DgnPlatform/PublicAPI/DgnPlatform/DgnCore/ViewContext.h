@@ -749,7 +749,7 @@ DGNPLATFORM_EXPORT void CookDisplayParamsOverrides(ElemDisplayParamsR, OvrMatSym
 
 //! Calculate the net display priority value. The net display priority is based on the geometry (element) and sub-category priority.
 //! @return the net display priority. For 3D views, display priority is always 0.
-DGNPLATFORM_EXPORT int32_t ResolveNetDisplayPriority(int32_t geomPriority, DgnSubCategoryId subCategoryId, DgnCategories::SubCategory::Appearance* appearance = nullptr) const;
+DGNPLATFORM_EXPORT int32_t ResolveNetDisplayPriority(int32_t geomPriority, DgnSubCategoryId subCategoryId, DgnSubCategory::Appearance* appearance = nullptr) const;
 
 //! Get the current ElemMatSymb.
 //! @return   the current ElemMatSymb.

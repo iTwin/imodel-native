@@ -43,6 +43,8 @@ public:
 
         //! Initialize this material data with the specified value (as JSON) and description
         void Init(Utf8StringCR value="", Utf8StringCR descr="") { m_value = value; m_descr = descr; }
+
+        uint32_t GetMemSize() const { return static_cast<uint32_t>(sizeof(*this) + m_value.length() + m_descr.length()); }
     };
 
     //! Parameters used to construct a DgnMaterial
@@ -87,7 +89,7 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetParentId(DgnElementId parentId) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const override;
 
-    virtual uint32_t _GetMemSize() const override { return static_cast<uint32_t>(sizeof(*this) + m_data.m_value.length() + m_data.m_descr.length()); }
+    virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
 public:
     //! Construct a new DgnMaterial with the specified parameters
     explicit DgnMaterial(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }

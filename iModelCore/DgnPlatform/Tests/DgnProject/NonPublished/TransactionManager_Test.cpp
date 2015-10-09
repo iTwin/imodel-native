@@ -200,7 +200,7 @@ void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, D
     ASSERT_TRUE(defaultModel.IsValid());
     GetDefaultModel().FillModel();
 
-    m_defaultCategoryId = m_db->Categories().MakeIterator().begin().GetCategoryId();
+    m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1624,7 +1624,7 @@ static void testModelUndoRedo(DgnDbR db)
     auto modelStatus = model->Insert();
     ASSERT_TRUE(DgnDbStatus::Success == modelStatus);
 
-    auto category = db.Categories().MakeIterator().begin().GetCategoryId();
+    auto category = DgnCategory::QueryFirstCategoryId(db);
 
     TestElementPtr templateEl = TestElement::Create(db, model->GetModelId(), category, "");
     DgnElementCPtr el1 = templateEl->Insert();

@@ -122,16 +122,15 @@ void ChangeSummaryTestFixture::InsertModel()
 //---------------------------------------------------------------------------------------
 void ChangeSummaryTestFixture::InsertCategory()
     {
-    DgnCategories::Category category("ChangeSetTestCategory", DgnCategories::Scope::Physical);
-    category.SetRank(DgnCategories::Rank::Application);
+    DgnCategory category(DgnCategory::CreateParams(*m_testDb, "ChangeSetTestCategory", DgnCategory::Scope::Physical, DgnCategory::Rank::Application));
 
-    DgnCategories::SubCategory::Appearance appearance;
+    DgnSubCategory::Appearance appearance;
     appearance.SetColor(ColorDef::White());
 
-    DbResult result = m_testDb->Categories().Insert(category, appearance);
-    ASSERT_TRUE(BE_SQLITE_OK == result);
+    auto persistentCategory = category.Insert(appearance);
+    ASSERT_TRUE(persistentCategory.IsValid());
 
-    m_testCategoryId = category.GetCategoryId();
+    m_testCategoryId = persistentCategory->GetCategoryId();
     }
 
 //---------------------------------------------------------------------------------------
@@ -388,10 +387,10 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
             Type;NULL;0
             Visibility;NULL;1
     */
-    ASSERT_EQ(10, changeSummary.MakeInstanceIterator().QueryCount());
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testModel->GetModelId().GetValueUnchecked()), "dgn", "PhysicalModel", DbOpcode::Insert));
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testCategoryId.GetValueUnchecked()), "dgn", "Category", DbOpcode::Insert));
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Insert));
+    EXPECT_EQ(10, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testModel->GetModelId().GetValueUnchecked()), "dgn", "PhysicalModel", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testCategoryId.GetValueUnchecked()), "dgn", "Category", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Insert));
 
     m_testDb->SaveChanges();
     ModifyElement();
@@ -408,8 +407,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
             Label;"ChangeSetTestElementLabel";"ModifiedElementLabel"
             LastMod;2.45726e+006;2.45726e+006
     */
-    ASSERT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Update));
+    EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Update));
 
     m_testDb->SaveChanges();
     DeleteElement();
