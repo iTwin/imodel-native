@@ -134,6 +134,15 @@ DgnDbStatus DgnCategory::_OnChildDelete(DgnElementCR child) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnCategory::_OnDelete() const
+    {
+    // Categories can only be deleted through a purge operation
+    return DgnDbStatus::DeletionProhibited;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnCategory::_OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const
     {
     BeAssert(false && "Import the category before importing subcategories"); // ###TODO?

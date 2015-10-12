@@ -127,15 +127,23 @@ public:
         uint32_t GetMemSize() const { return static_cast<uint32_t>(sizeof(*this) + m_descr.length()); }
     };
 
+    //! Parameters used to create a sub-category
     struct CreateParams : T_Super::CreateParams
     {
         DEFINE_T_SUPER(DgnSubCategory::T_Super::CreateParams);
 
         Data m_data;
 
+        //! Construction from base class. Chiefly for internal use.
         explicit CreateParams(DgnElement::CreateParams const& params, Appearance const& appearance=Appearance(), Utf8StringCR descr="")
             : T_Super(params), m_data(appearance, descr) { }
 
+        //! Construct parameters for a sub-category
+        //! @param[in]      db         The DgnDb in which the sub-category will reside
+        //! @param[in]      categoryId The ID of the category to which the sub-category belongs
+        //! @param[in]      name       The name of the sub-category. Must be unique within the containing category.
+        //! @param[in]      appearance Describes how the sub-category affects the symbology of elements.
+        //! @param[in]      descr      Optional description
         DGNPLATFORM_EXPORT CreateParams(DgnDbR db, DgnCategoryId categoryId, Utf8StringCR name, Appearance const& appearance, Utf8StringCR descr="");
     };
 private:
@@ -271,7 +279,11 @@ public:
             : T_Super(db, modelId, classId, code, id, parent), m_data(scope, rank, descr) { }
 
         //! Constructs parameters for creating a category.
-        //! @param[in]      db    The DgnDb in which the category is to reside.  //! @param[in]      scope The category's scope.  //! @param[in]      rank  The category's rank.  //! @param[in]      descr The optional category description.
+        //! @param[in]      db    The DgnDb in which the category resides
+        //! @param[in]      name  The name of the category. Must be unique within the DgnDb.
+        //! @param[in]      scope The scope of the category
+        //! @param[in]      rank  The rank of the category
+        //! @param[in]      descr Optional category description
         DGNPLATFORM_EXPORT CreateParams(DgnDbR db, Utf8StringCR name, Scope scope, Rank rank=Rank::User, Utf8StringCR descr="");
     };
 private:
@@ -287,6 +299,7 @@ protected:
     DGNPLATFORM_EXPORT virtual Code _GenerateDefaultCode() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildDelete(DgnElementCR child) const override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT virtual void _OnInserted(DgnElementP copiedFrom) const override;
     DGNPLATFORM_EXPORT virtual void _OnImported(DgnElementCR original, DgnImportContext& importer) const override;
     

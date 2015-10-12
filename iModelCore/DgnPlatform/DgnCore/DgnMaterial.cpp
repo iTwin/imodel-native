@@ -17,6 +17,14 @@ namespace dgn_ElementHandler
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnMaterial::_OnDelete() const
+    {
+    return DgnDbStatus::DeletionProhibited; // can only purge, not delete
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_ElementHandler::Material::_GetClassParams(ECSqlClassParams& params)

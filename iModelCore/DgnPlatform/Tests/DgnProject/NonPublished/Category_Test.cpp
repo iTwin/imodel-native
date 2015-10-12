@@ -196,11 +196,11 @@ TEST_F (CategoryTests, DeleteCategory)
     DgnCategoryId id = DgnCategory::QueryCategoryId(code, *m_db);
     EXPECT_TRUE (id.IsValid ());
 
-    //Deletes category.
+    // Deletion of a category is not supported.
     DgnDbStatus dlt = pCat->Delete();
-    EXPECT_EQ(dlt, DgnDbStatus::Success);
+    EXPECT_EQ(DgnDbStatus::DeletionProhibited, dlt);
     DgnCategoryId id1 = DgnCategory::QueryCategoryId(code, *m_db);
-    EXPECT_FALSE (id1.IsValid ());
+    EXPECT_TRUE (id1.IsValid ());
     }
 
 //=======================================================================================
