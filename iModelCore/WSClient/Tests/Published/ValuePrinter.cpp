@@ -237,6 +237,7 @@ std::ostream& operator << (std::ostream &o, DbResult value)
 
 std::ostream& operator << (std::ostream &o, ECSqlStatus status)
     {
+#ifdef WIP_DGNDB06
     static std::map<ECSqlStatus, Utf8String> names
         {
         TO_VALUE_STRING_PAIR(ECSqlStatus::IndexOutOfBounds),
@@ -250,25 +251,25 @@ std::ostream& operator << (std::ostream &o, ECSqlStatus status)
     Utf8String name = names[status];
     BeAssert(!name.empty() && "Add missing value");
     o << name;
-
+#endif
     return o;
     }
 
-std::ostream& operator << (std::ostream &o, ECSqlStepStatus status)
-    {
-    static std::map<ECSqlStepStatus, Utf8String> names
-        {
-        TO_VALUE_STRING_PAIR(ECSqlStepStatus::Done),
-        TO_VALUE_STRING_PAIR(ECSqlStepStatus::Error),
-        TO_VALUE_STRING_PAIR(ECSqlStepStatus::HasRow)
-        };
+// std::ostream& operator << (std::ostream &o, ECSqlStepStatus status)
+//     {
+//     static std::map<ECSqlStepStatus, Utf8String> names
+//         {
+//         TO_VALUE_STRING_PAIR(ECSqlStepStatus::Done),
+//         TO_VALUE_STRING_PAIR(ECSqlStepStatus::Error),
+//         TO_VALUE_STRING_PAIR(ECSqlStepStatus::HasRow)
+//         };
 
-    Utf8String name = names[status];
-    BeAssert(!name.empty() && "Add missing value");
-    o << name;
+//     Utf8String name = names[status];
+//     BeAssert(!name.empty() && "Add missing value");
+//     o << name;
 
-    return o;
-    }
+//     return o;
+//     }
 
 std::ostream& operator << (std::ostream &o, const ECInstanceKeyMultiMap::value_type& pair)
     {

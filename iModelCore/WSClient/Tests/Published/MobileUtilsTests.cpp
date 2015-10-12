@@ -32,7 +32,7 @@ Json::Value BentleyApi::WSC::UnitTests::ToJson (Utf8StringCR jsonString)
     return json;
     }
 
-std::string Bentley::WSC::UnitTests::RapidJsonToString(const rapidjson::Value& json)
+std::string BentleyApi::WSC::UnitTests::RapidJsonToString(const rapidjson::Value& json)
     {
     if (json.IsNull())
         {

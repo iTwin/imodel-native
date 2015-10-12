@@ -148,7 +148,7 @@ void DataSourceCacheUpgradeTests::ValidateV5SeedData(ICachingDataSourcePtr ds, B
     auto schemas = ds->GetRepositorySchemas(txn);
 
     ASSERT_THAT(schemas, SizeIs(1));
-    EXPECT_THAT(schemas[0]->GetName(), Eq(L"TestSchema"));
+    EXPECT_TRUE(0 == strcmp(schemas[0]->GetName().c_str(), "TestSchema"));
 
     // DataSourceCache
     ValidateV5SeedData(txn.GetCache(), path, environment);
@@ -262,7 +262,7 @@ void DataSourceCacheUpgradeTests::ValidateV5SeedData(IDataSourceCache& cache, Be
         Utf8String ecsql = "SELECT GetECClassId(), ECInstanceId FROM [TS].[TestClass] WHERE [TestProperty] = ? ";
         EXPECT_EQ(SUCCESS, cache.GetAdapter().PrepareStatement(statement, ecsql));
         EXPECT_EQ(ECSqlStatus::Success, statement.BindText(1, testPropertyValue.c_str(), IECSqlBinder::MakeCopy::No));
-        EXPECT_EQ(ECSqlStepStatus::HasRow, statement.Step());
+        EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
         return ECInstanceKey(statement.GetValueInt64(0), statement.GetValueId<ECInstanceId>(1));
         };
 
@@ -306,15 +306,15 @@ void DataSourceCacheUpgradeTests::ValidateV5SeedData(IDataSourceCache& cache, Be
     EXPECT_THAT(changes[0].GetSourceKey(), newInstanceKey1);
     EXPECT_THAT(changes[0].GetTargetKey(), newInstanceKey2);
 
-    EXPECT_THAT(cache.GetAdapter().GetECClass(changes[0].GetInstanceKey())->GetName(), Eq(L"LegacyParentRelationship"));
-    EXPECT_THAT(cache.GetAdapter().GetECClass(changes[1].GetInstanceKey())->GetName(), Eq(L"LegacyParentRelationship"));
+    EXPECT_TRUE(0 == strcmp(cache.GetAdapter().GetECClass(changes[0].GetInstanceKey())->GetName().c_str(), "LegacyParentRelationship"));
+    EXPECT_TRUE(0 == strcmp(cache.GetAdapter().GetECClass(changes[1].GetInstanceKey())->GetName().c_str(), "LegacyParentRelationship"));
 
     changes.clear();
     EXPECT_EQ(SUCCESS, cache.GetChangeManager().GetCreatedRelationships(newInstanceKey2, changes));
     ASSERT_THAT(changes.size(), 1);
     EXPECT_THAT(changes[0].GetSourceKey(), newInstanceKey1);
     EXPECT_THAT(changes[0].GetTargetKey(), newInstanceKey2);
-    EXPECT_THAT(cache.GetAdapter().GetECClass(changes[0].GetInstanceKey())->GetName(), Eq(L"LegacyParentRelationship"));
+    EXPECT_TRUE(0 == strcmp(cache.GetAdapter().GetECClass(changes[0].GetInstanceKey())->GetName().c_str(), "LegacyParentRelationship"));
 
     changes.clear();
     EXPECT_EQ(SUCCESS, cache.GetChangeManager().GetCreatedRelationships(newInstanceKey3, changes));
