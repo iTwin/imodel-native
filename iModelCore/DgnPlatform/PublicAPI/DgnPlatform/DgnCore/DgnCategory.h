@@ -161,6 +161,7 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(Code const& code) override;
     DGNPLATFORM_EXPORT virtual Code _GenerateDefaultCode() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
@@ -300,6 +301,8 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildDelete(DgnElementCR child) const override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT virtual void _OnInserted(DgnElementP copiedFrom) const override;
     DGNPLATFORM_EXPORT virtual void _OnImported(DgnElementCR original, DgnImportContext& importer) const override;
     
@@ -365,6 +368,9 @@ public:
 
     //! Get a string containing the list of characters that may NOT appear in category codes.
     static Utf8CP GetIllegalCharacters() {return "<>\\/.\"?*|,='&\n\t";}
+    
+    //! Determine whether the supplied name is a valid category or sub-category name
+    DGNPLATFORM_EXPORT static bool IsValidName(Utf8StringCR name);
 };
 
 namespace dgn_ElementHandler

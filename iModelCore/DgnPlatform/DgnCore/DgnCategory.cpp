@@ -259,7 +259,7 @@ DgnCategoryId DgnCategory::QueryElementCategoryId(DgnElementId elemId, DgnDbR db
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnCategory::_SetCode(Code const& code)
     {
-    return code.GetNameSpace().empty() ? T_Super::_SetCode(code) : DgnDbStatus::BadArg;
+    return code.GetNameSpace().empty() && IsValidName(code.GetValue()) ? T_Super::_SetCode(code) : DgnDbStatus::InvalidName;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -323,11 +323,14 @@ DgnDbStatus DgnSubCategory::BindParams(ECSqlStatement& stmt)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnSubCategory::_SetCode(Code const& code)
     {
+    if (!DgnCategory::IsValidName(code.GetValue()))
+        return DgnDbStatus::InvalidName;
+
     // default sub-category has same name as category
     // all sub-category codes have namespace = category name
     DgnCategoryCPtr cat = DgnCategory::QueryCategory(GetCategoryId(), GetDgnDb());
     if (cat.IsNull() || !code.GetNameSpace().Equals(cat->GetCategoryName()) || (code.GetValue().Equals(cat->GetCategoryName()) != IsDefaultSubCategory()))
-        return DgnDbStatus::BadArg;
+        return DgnDbStatus::InvalidName;
     else
         return T_Super::_SetCode(code);
     }
@@ -444,6 +447,9 @@ size_t DgnSubCategory::QueryCount(DgnDbR db, DgnCategoryId catId)
 DgnDbStatus DgnSubCategory::_OnInsert()
     {
     // A sub-category requires a parent category.
+    if (!DgnCategory::IsValidName(GetSubCategoryName()))
+        return DgnDbStatus::InvalidName;
+
     DgnCategoryId catId(GetParentId().GetValueUnchecked());
     DgnCategoryCPtr cat = catId.IsValid() ? DgnCategory::QueryCategory(catId, GetDgnDb()) : nullptr;
     return cat.IsValid() ? T_Super::_OnInsert() : DgnDbStatus::InvalidParent;
@@ -703,4 +709,38 @@ DgnSubCategoryId DgnImportContext::RemapSubCategory(DgnCategoryId destCategoryId
 
     return DgnSubCategory::ImportSubCategory(source, destCategoryId, *this, m_remap);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnCategory::IsValidName(Utf8StringCR name)
+    {
+    return DgnDbTable::IsValidName(name, GetIllegalCharacters());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnCategory::_OnInsert()
+    {
+    return IsValidName(GetCategoryName()) ? T_Super::_OnInsert() : DgnDbStatus::InvalidName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnCategory::_OnUpdate(DgnElementCR el)
+    {
+    return IsValidName(GetCategoryName()) ? T_Super::_OnUpdate(el) : DgnDbStatus::InvalidName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnSubCategory::_OnUpdate(DgnElementCR el)
+    {
+    return DgnCategory::IsValidName(GetSubCategoryName()) ? T_Super::_OnUpdate(el) : DgnDbStatus::InvalidName;
+    }
+
+
 

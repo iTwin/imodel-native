@@ -534,8 +534,19 @@ DgnDbStatus DgnElement::_UpdateInDb()
         return DgnDbStatus::WriteError;
 
     DgnDbStatus status = _BindUpdateParams(*stmt);
-    if (DgnDbStatus::Success == status && BE_SQLITE_DONE != stmt->Step())
-        status = DgnDbStatus::WriteError;
+    if (DgnDbStatus::Success == status)
+        {
+        auto stmtResult = stmt->Step();
+        if (BE_SQLITE_DONE != stmtResult)
+            {
+            // SQLite doesn't tell us which constraint failed - check if it's the Code.
+            auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
+            if (existingElemWithCode.IsValid() && existingElemWithCode != GetElementId())
+                status = DgnDbStatus::DuplicateCode;
+            else
+                status = DgnDbStatus::WriteError;
+            }
+        }
 
     return status;
     }
