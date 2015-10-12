@@ -590,6 +590,7 @@ public:
         DGNPLATFORM_EXPORT virtual DropMe _OnInserted(DgnElementCR) override;
 
     public:
+        DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
         DGNPLATFORM_EXPORT static RefCountedPtr<ExternalKey> Create(DgnAuthorityId authorityId, Utf8CP externalKey);
         DGNPLATFORM_EXPORT static DgnDbStatus QueryExternalKey(Utf8StringR, DgnElementCR, DgnAuthorityId);
         DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR, DgnAuthorityId);
@@ -616,6 +617,7 @@ public:
         DGNPLATFORM_EXPORT virtual DropMe _OnInserted(DgnElementCR) override;
 
     public:
+        DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
         DGNPLATFORM_EXPORT static RefCountedPtr<Description> Create(DgnAuthorityId authorityId, Utf8CP description);
         DGNPLATFORM_EXPORT static DgnDbStatus QueryDescription(Utf8StringR, DgnElementCR, DgnAuthorityId);
         DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR, DgnAuthorityId);

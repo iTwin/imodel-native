@@ -230,6 +230,8 @@ void ViewController::_ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff
         m_viewedCategories.insert(categoryId);
     else
         m_viewedCategories.erase(categoryId);
+
+    _OnCategoryChange(onOff);
     }
 
 /*---------------------------------------------------------------------------------**//**
