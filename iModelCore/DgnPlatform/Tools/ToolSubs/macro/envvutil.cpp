@@ -52,7 +52,7 @@ StatusInt util_readRegistry (WStringR, WCharCP) {return ERROR;} // ***WIP_NONPOR
 //---------------------------------------------------------------------------------
 #elif defined (BENTLEY_WINRT)
 // WIP_WINRT
-#include "../../../DgnCore/DgnPlatformInternal.h"
+#include "../../../DgnPlatformInternal.h"
 #include <stdlib.h>
 #include  <DgnPlatform/DesktopTools/envvutil.h>
 BentleyStatus   util_getSysEnv (WStringP envValue, WCharCP pName) 
