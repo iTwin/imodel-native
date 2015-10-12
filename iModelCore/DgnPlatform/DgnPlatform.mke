@@ -20,6 +20,8 @@ DgnCoreDir      = $(baseDir)DgnCore/
 DgnHandlersDir  = $(baseDir)DgnHandlers/
 PrivateAPIDir   = $(baseDir)PrivateApi/
 DgnGeoCoordDir  = $(baseDir)DgnGeoCoord/
+ToolsDir        = $(baseDir)Tools/ToolSubs/
+ConfigToolsDir  = $(baseDir)Tools/ToolSubs/macro/
 
 BaseGeoCoordAPISrc = $(BuildContext)PublicAPI/GeoCoord/
 
@@ -102,6 +104,7 @@ o = $(coreObjs)
 %ifdef dgnScriptGen
 cIncs + -I$(dgnScriptGen)
 %endif
+
 
 #----------------------------------------------------------------------
 #   Make sure that DgnPlatformInternal.pch is up-to-date.
@@ -259,7 +262,7 @@ $(coreObjs)ImageUtilities$(oext): $(DgnCoreDir)ImageUtilities.cpp $(DgnCoreAPISr
 
 $(coreObjs)GeomPart$(oext) : $(DgnCoreDir)GeomPart.cpp $(DgnCoreAPISrc)GeomPart.h ${MultiCompileDepends}
 
-$(coreObjs)stringop$(oext) : $(SrcRoot)DgnPlatform/Tools/ToolSubs/charutil/stringop.cpp ${MultiCompileDepends} 
+$(coreObjs)stringop$(oext) : $(ToolsDir)charutil/stringop.cpp ${MultiCompileDepends} 
 
 $(coreObjs)DgnDb$(oext): $(DgnCoreDir)DgnDb.cpp $(DgnCoreAPISrc)DgnDb.h $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
@@ -340,6 +343,25 @@ $(o)DgnGeoCoord$(oext): $(DgnGeoCoordDir)DgnGeoCoord.cpp $(DgnPlatformAPISrc)Dgn
 $(o)GeoCoordServices$(oext): $(DgnGeoCoordDir)GeoCoordServices.cpp $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h ${MultiCompileDepends}
 
 #$(o)AuxCoordSysProcessor$(oext): $(DgnGeoCoordDir)AuxCoordSysProcessor.cpp $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h ${MultiCompileDepends}
+
+#----------------------------------------------------------------------
+#   Configuration
+#----------------------------------------------------------------------
+
+$(o)findfile$(oext) : $(ToolsDir)fileUtil/findfile.cpp ${MultiCompileDepends}
+
+$(o)ConfigurationManager$(oext): $(ConfigToolsDir)ConfigurationManager.cpp ${MultiCompileDepends}
+
+$(o)MacroConfigurationAdmin$(oext): $(ConfigToolsDir)MacroConfigurationAdmin.cpp ${MultiCompileDepends}
+
+$(o)MacroFileProcessor$(oext): $(ConfigToolsDir)MacroFileProcessor.cpp ${MultiCompileDepends}
+
+$(o)ExpandMacro$(oext): $(ConfigToolsDir)ExpandMacro.cpp ${MultiCompileDepends}
+
+$(o)envvutil$(oext): $(ConfigToolsDir)envvutil.cpp ${MultiCompileDepends}
+
+$(o)evalcnst$(oext): $(ConfigToolsDir)evalcnst.cpp ${MultiCompileDepends}
+
 
 #----------------------------------------------------------------------
 #   DgnScript

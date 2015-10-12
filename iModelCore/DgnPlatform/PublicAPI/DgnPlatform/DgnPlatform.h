@@ -174,6 +174,7 @@ DGNPLATFORM_TYPEDEFS (ISprite)
 DGNPLATFORM_TYPEDEFS (ISubEntity)
 DGNPLATFORM_TYPEDEFS (ITiledRaster)
 DGNPLATFORM_TYPEDEFS (ITransactionHandler)
+DGNPLATFORM_TYPEDEFS (IVariableMonitor)
 DGNPLATFORM_TYPEDEFS (TxnManager)
 DGNPLATFORM_TYPEDEFS (IViewHandlerHitInfo)
 DGNPLATFORM_TYPEDEFS (IViewTransients)
@@ -614,15 +615,17 @@ struct DgnDisplayCoreTypes
 
 //! @private
 enum class ConfigurationVariableLevel
-{
+    {
     Predefined    = -2,        //!< predefined by the host
-    SysEnv        = -1,        //!< defined in the system environment variable table
+    SysEnv        = -1,        //!< defined in the Windows system environment variable table
     System        = 0,         //!< system defined
-    Appl          = 1,         //!< application defined
-    Site          = 2,         //!< site defined
-    Project       = 3,         //!< project defined
-    User          = 4,         //!< user defined
-};
+    Application   = 1,         //!< application defined
+    Organization  = 2,         //!< Organization defined
+    WorkSpace     = 3,         //!< WorkSpace defined
+    WorkSet       = 4,         //!< WorkSet defined
+    Role          = 5,         //!< Role defined.
+    User          = 6,         //!< user defined
+    };
 
 //! @private
 enum DgnPlatformConstants
