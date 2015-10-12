@@ -2277,7 +2277,7 @@ BeFileNameStatus BeFileName::BeGetTempPath (BeFileName& tempPath)
 
 BeFileNameStatus BeFileName::GetCwd (WStringR currentDirectory)
     {
-#if defined (BENTLEY_WIN32)
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
     wchar_t cwdPath[MAX_PATH];
     _wgetcwd (cwdPath, _countof(cwdPath));
     currentDirectory.assign (cwdPath);
@@ -2289,10 +2289,3 @@ BeFileNameStatus BeFileName::GetCwd (WStringR currentDirectory)
     return BeFileNameStatus::Success;
 #endif
     }
-
-
-
-
-
-
-
