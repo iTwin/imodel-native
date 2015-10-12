@@ -191,11 +191,11 @@ void ComponentModelTest::AddToFakeScriptLibrary(Utf8CP jns, Utf8CP jtext)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryId ComponentModelTest::Developer_CreateCategory(Utf8CP code, ColorDef const& color)
     {
-    DgnCategories::Category category(code, DgnCategories::Scope::Any);
-    DgnCategories::SubCategory::Appearance appearance;
+    DgnCategory cat(DgnCategory::CreateParams(*m_componentDb, code, DgnCategory::Scope::Any));
+    DgnSubCategory::Appearance appearance;
     appearance.SetColor(color);
-    m_componentDb->Categories().Insert(category, appearance);
-    return category.GetCategoryId();
+    cat.Insert(appearance);
+    return cat.GetCategoryId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -577,7 +577,7 @@ void ComponentModelTest::Client_InsertNonInstanceElement(Utf8CP modelName, Utf8C
     PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, modelName);
     ASSERT_TRUE( targetModel.IsValid() );
     DgnClassId classid = DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
-    DgnCategoryId catid = m_clientDb->Categories().QueryHighestId();
+    DgnCategoryId catid = DgnCategory::QueryHighestCategoryId(*m_clientDb);
     auto el = PhysicalElement::Create(PhysicalElement::CreateParams(*m_clientDb, targetModel->GetModelId(), classid, catid));
     ASSERT_TRUE( el.IsValid() );
     ASSERT_TRUE( el->Insert().IsValid() );
@@ -797,7 +797,7 @@ TEST_F(ComponentModelTest, Performance_PlaceElements)
     OpenClientDb(Db::OpenMode::ReadWrite);
     Client_CreateTargetModel("Instances");
     PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, "Instances");
-    DgnCategoryId someCat = m_clientDb->Categories().MakeIterator().begin().GetCategoryId();
+    DgnCategoryId someCat = DgnCategory::QueryFirstCategoryId(*m_clientDb);
     StopWatch timer("place components");
     timer.Start();
     for (int i=0; i<ninstances; ++i)

@@ -219,6 +219,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         void SetDomain(DgnDomain& domain) {m_domain = &domain;}
         DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&);
 
+        Handler* GetRootClass();
     public:
         //! To enable version-checking for your handler, override this method to report the
         //! API version that was used to compiler your handler.

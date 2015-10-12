@@ -203,6 +203,16 @@ DgnDbStatus DgnElement::_OnInsert()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DictionaryElement::_OnInsert()
+    {
+    // dictionary elements can reside *only* in the dictionary model.
+    auto status = GetModel()->IsDictionaryModel() ? T_Super::_OnInsert() : DgnDbStatus::WrongModel;
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement::_OnInsert()
@@ -484,8 +494,19 @@ DgnDbStatus DgnElement::_UpdateInDb()
         return DgnDbStatus::WriteError;
 
     DgnDbStatus status = _BindUpdateParams(*stmt);
-    if (DgnDbStatus::Success == status && BE_SQLITE_DONE != stmt->Step())
-        status = DgnDbStatus::WriteError;
+    if (DgnDbStatus::Success == status)
+        {
+        auto stmtResult = stmt->Step();
+        if (BE_SQLITE_DONE != stmtResult)
+            {
+            // SQLite doesn't tell us which constraint failed - check if it's the Code.
+            auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
+            if (existingElemWithCode.IsValid() && existingElemWithCode != GetElementId())
+                status = DgnDbStatus::DuplicateCode;
+            else
+                status = DgnDbStatus::WriteError;
+            }
+        }
 
     return status;
     }
@@ -1085,6 +1106,16 @@ DgnElementCPtr DgnElement::Import(DgnDbStatus* stat, DgnModelR destModel, DgnImp
     if (nullptr != stat)
         *stat = DgnDbStatus::Success;
 
+    auto parent = GetDgnDb().Elements().GetElement(m_parentId);
+    DgnDbStatus parentStatus = DgnDbStatus::Success;
+    if (parent.IsValid() && DgnDbStatus::Success != (parentStatus = parent->_OnChildImport(*this, destModel, importer)))
+        {
+        if (nullptr != stat)
+            *stat = parentStatus;
+
+        return nullptr;
+        }
+
     DgnElementPtr cc = _CloneForImport(stat, destModel, importer); // (also calls _CopyFrom and _RemapIds)
     if (!cc.IsValid())
         return DgnElementCPtr();
@@ -1094,6 +1125,13 @@ DgnElementCPtr DgnElement::Import(DgnDbStatus* stat, DgnModelR destModel, DgnImp
         return ccp;
 
     importer.AddElementId(GetElementId(), ccp->GetElementId());
+
+    parent = ccp->GetDgnDb().Elements().GetElement(ccp->GetParentId());
+    if (parent.IsValid())
+        parent->_OnChildImported(*ccp, *this, importer);
+
+    ccp->_OnImported(*this, importer);
+
     return ccp;
     }
 
@@ -2230,6 +2268,15 @@ void ECSqlClassParams::RemoveAllButSelect()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::AppData::Key const& DgnElement::ExternalKey::GetAppDataKey()
+    {
+    static Key s_appDataKey;
+    return s_appDataKey;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::ExternalKeyPtr DgnElement::ExternalKey::Create(DgnAuthorityId authorityId, Utf8CP externalKey)
@@ -2300,4 +2347,95 @@ DgnDbStatus DgnElement::ExternalKey::Delete(DgnElementCR element, DgnAuthorityId
         return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::AppData::Key const& DgnElement::Description::GetAppDataKey()
+    {
+    static Key s_appDataKey;
+    return s_appDataKey;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::DescriptionPtr DgnElement::Description::Create(DgnAuthorityId authorityId, Utf8CP description)
+    {
+    if (!authorityId.IsValid() || !description || !*description)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return new DgnElement::Description(authorityId, description);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::AppData::DropMe DgnElement::Description::_OnInserted(DgnElementCR element)
+    {
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " DGN_SCHEMA(DGN_CLASSNAME_ElementDescription) " ([ElementId],[AuthorityId],[Descr]) VALUES (?,?,?)");
+    if (!statement.IsValid())
+        return DgnElement::AppData::DropMe::Yes;
+
+    statement->BindId(1, element.GetElementId());
+    statement->BindId(2, GetAuthorityId());
+    statement->BindText(3, GetDescription(), IECSqlBinder::MakeCopy::No);
+
+    ECInstanceKey key;
+    if (BE_SQLITE_DONE != statement->Step(key))
+        {
+        BeAssert(false);
+        }
+
+    return DgnElement::AppData::DropMe::Yes;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::Description::QueryDescription(Utf8StringR description, DgnElementCR element, DgnAuthorityId authorityId)
+    {
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT [Descr] FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementDescription) " WHERE [ElementId]=? AND [AuthorityId]=?");
+    if (!statement.IsValid())
+        return DgnDbStatus::ReadError;
+
+    statement->BindId(1, element.GetElementId());
+    statement->BindId(2, authorityId);
+
+    if (BE_SQLITE_ROW != statement->Step())
+        return DgnDbStatus::ReadError;
+
+    description.AssignOrClear(statement->GetValueText(0));
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::Description::Delete(DgnElementCR element, DgnAuthorityId authorityId)
+    {
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementDescription) " WHERE [ElementId]=? AND [AuthorityId]=?");
+    if (!statement.IsValid())
+        return DgnDbStatus::WriteError;
+
+    statement->BindId(1, element.GetElementId());
+    statement->BindId(2, authorityId);
+
+    if (BE_SQLITE_DONE != statement->Step())
+        return DgnDbStatus::WriteError;
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DictionaryElement::CreateParams::CreateParams(DgnDbR db, DgnClassId classId, Code const& code, DgnElementId parentId)
+    : T_Super(db, DgnModel::DictionaryId(), classId, code, DgnElementId(), parentId) 
+    {
+    //
     }

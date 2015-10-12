@@ -11,9 +11,7 @@
 #include "DgnDbTables.h"
 #include "DgnModel.h"
 #include "DgnDomain.h"
-#include "DgnMaterial.h"
 #include "DgnTexture.h"
-#include "DgnLight.h"
 #include "MemoryManager.h"
 #include <Bentley/BeFileName.h>
 
@@ -132,19 +130,17 @@ protected:
     DgnDomains      m_domains;
     DgnFonts        m_fonts;
     DgnColors       m_colors;
-    DgnCategories   m_categories;
     DgnStyles       m_styles;
     DgnUnits        m_units;
     DgnViews        m_views;
     DgnGeomParts    m_geomParts;
-    DgnMaterials    m_materials;
     DgnLinks        m_links;
     DgnAuthorities  m_authorities;
     DgnTextures     m_textures;
-    DgnLights       m_lights;
     TxnManagerPtr   m_txnManager;
     MemoryManager   m_memoryManager;
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
+    mutable bmap<DgnMaterialId, uintptr_t> m_qvMaterialIds;
 
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
     DGNPLATFORM_EXPORT virtual void _OnDbClose() override;
@@ -152,6 +148,8 @@ protected:
 
     BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params);
     BeSQLite::DbResult CreateDgnDbTables();
+    BeSQLite::DbResult CreateAuthorities();
+    BeSQLite::DbResult CreateDictionaryModel();
     BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params);
     BeSQLite::DbResult SaveDgnDbSchemaVersion(DgnVersion version=DgnVersion(DGNDB_CURRENT_VERSION_Major,DGNDB_CURRENT_VERSION_Minor,DGNDB_CURRENT_VERSION_Sub1,DGNDB_CURRENT_VERSION_Sub2));
     BeSQLite::DbResult DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const&);
@@ -191,7 +189,6 @@ public:
     DgnModels& Models() const {return const_cast<DgnModels&>(m_models);}                 //!< The DgnModels of this DgnDb
     DgnElements& Elements() const{return const_cast<DgnElements&>(m_elements);}          //!< The DgnElements of this DgnDb
     DgnViews& Views() const {return const_cast<DgnViews&>(m_views);}                     //!< The DgnViews for this DgnDb
-    DgnCategories& Categories() const {return const_cast<DgnCategories&>(m_categories);} //!< The DgnCategories for this DgnDb
     DgnUnits& Units() const {return const_cast<DgnUnits&>(m_units);}                     //!< The units for this DgnDb
     DgnColors& Colors() const {return const_cast<DgnColors&>(m_colors);}                 //!< The named colors for this DgnDb
     DgnStyles& Styles() const {return const_cast<DgnStyles&>(m_styles);}                 //!< The styles for this DgnDb
@@ -199,8 +196,6 @@ public:
     DgnFonts& Fonts() const {return const_cast<DgnFonts&>(m_fonts); }                    //!< The fonts for this DgnDb
     DgnLinks& Links() const{return const_cast<DgnLinks&>(m_links);}                      //!< The DgnLinks for this DgnDb
     DgnDomains& Domains() const {return const_cast<DgnDomains&>(m_domains);}             //!< The DgnDomains associated with this DgnDb.
-    DgnMaterials& Materials() const {return const_cast<DgnMaterials&>(m_materials);}     //!< The materials for this DgnDb
-    DgnLights& Lights() const {return const_cast<DgnLights&>(m_lights);}                 //!< The lights for this DgnDb
     DgnTextures& Textures() const {return const_cast<DgnTextures&>(m_textures);}         //!< The textures for this DgnDb.
     DgnAuthorities& Authorities() const {return const_cast<DgnAuthorities&>(m_authorities);} //!< The authorities associated with this DgnDb
     DGNPLATFORM_EXPORT TxnManagerR Txns();                    //!< The Txns for this DgnDb.
@@ -217,6 +212,11 @@ public:
 
     //! Determine whether this DgnDb is a briefcase.
     bool IsBriefcase() const {return !IsMasterCopy();}
+
+    DGNPLATFORM_EXPORT uintptr_t GetQvMaterialId(DgnMaterialId materialId) const; //!< Return nonzero QuickVision material ID for QVision for supplied material ID.
+    DGNPLATFORM_EXPORT uintptr_t AddQvMaterialId(DgnMaterialId materialId) const; //!< set QuickVision material ID for supplied material Id.
+
+    DGNPLATFORM_EXPORT DictionaryModelR GetDictionaryModel(); //!< Return the dictionary model for this DgnDb.
 };
 
 inline BeSQLite::DbResult DgnViews::QueryProperty(void* value, uint32_t size, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id)const {return m_dgndb.QueryProperty(value, size, spec, viewId.GetValue(), id);}

@@ -169,8 +169,8 @@ protected:
     ColorDef       m_backgroundColor;      // used only if bit set in flags
     RotMatrix      m_defaultDeviceOrientation;
     bool           m_defaultDeviceOrientationValid;
-    mutable bmap<DgnSubCategoryId,DgnCategories::SubCategory::Appearance> m_subCategories;
-    bmap<DgnSubCategoryId,DgnCategories::SubCategory::Override> m_subCategoryOverrides;
+    mutable bmap<DgnSubCategoryId,DgnSubCategory::Appearance> m_subCategories;
+    bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
 
 public:
 
@@ -495,7 +495,7 @@ public:
     DGNPLATFORM_EXPORT bool OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point);
     DGNPLATFORM_EXPORT bool OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui);
     DGNPLATFORM_EXPORT void ResetDeviceOrientation();
-    DGNPLATFORM_EXPORT void OverrideSubCategory(DgnSubCategoryId, DgnCategories::SubCategory::Override const&);
+    DGNPLATFORM_EXPORT void OverrideSubCategory(DgnSubCategoryId, DgnSubCategory::Override const&);
     DGNPLATFORM_EXPORT void DropSubCategoryOverride(DgnSubCategoryId);
 //__PUBLISH_SECTION_START__
 
@@ -510,7 +510,7 @@ public:
     //! Get the Appearance of a DgnSubCategory for this view.
     //! @param[in] id the DgnSubCategoryId of interest
     //! @return the appearance of the DgnSubCategory for this view.
-    DGNPLATFORM_EXPORT DgnCategories::SubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const;
+    DGNPLATFORM_EXPORT DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const;
 
     //! Change the background color of the view.
     //! @param[in] color The new background color

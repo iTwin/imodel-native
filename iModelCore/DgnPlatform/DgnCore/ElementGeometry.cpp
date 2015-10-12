@@ -1519,7 +1519,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ISolidKernelEntityPtr& en
         DgnSubCategoryId  subCategoryId = DgnSubCategoryId((uint64_t)fbSymb->subCategoryId());
 
         if (!categoryId.IsValid())
-            categoryId = m_db.Categories().QueryCategoryId(subCategoryId);
+            categoryId = DgnSubCategory::QueryCategoryId(subCategoryId, m_db);
 
         faceParams.SetCategoryId(categoryId);
         faceParams.SetSubCategoryId(subCategoryId);
@@ -2113,7 +2113,7 @@ bool IsGeometryVisible()
     if (nullptr == m_context.GetViewport())
         return true;
 
-    DgnCategories::SubCategory::Appearance appearance = m_context.GetViewport()->GetViewController().GetSubCategoryAppearance(m_context.GetCurrentDisplayParams().GetSubCategoryId());
+    DgnSubCategory::Appearance appearance = m_context.GetViewport()->GetViewController().GetSubCategoryAppearance(m_context.GetCurrentDisplayParams().GetSubCategoryId());
 
     if (appearance.IsInvisible())
         return false;
@@ -2888,7 +2888,7 @@ void ElementGeometryCollection::Iterator::ToNext()
                 DgnCategoryId       category = elParams.GetCategoryId();
 
                 if (!category.IsValid())
-                    category = m_context->GetDgnDb().Categories().QueryCategoryId(subCategory);
+                    category = DgnSubCategory::QueryCategoryId(subCategory, m_context->GetDgnDb());
 
                 elParams = ElemDisplayParams();
                 elParams.SetCategoryId(category);
@@ -3243,7 +3243,7 @@ bool ElementGeometryBuilder::Append(ElemDisplayParamsCR elParams)
     if (elParams.GetCategoryId() != m_elParams.GetCategoryId())
         return false;
 
-    if (elParams.GetCategoryId() != m_dgnDb.Categories().QueryCategoryId(elParams.GetSubCategoryId()))
+    if (elParams.GetCategoryId() != DgnSubCategory::QueryCategoryId(elParams.GetSubCategoryId(), m_dgnDb))
         return false;
 
     if (m_elParams == elParams)
@@ -3307,17 +3307,21 @@ bool ElementGeometryBuilder::Append(DgnGeomPartId geomPartId, TransformCR geomTo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeometryBuilder::OnNewGeom(DRange3dCR localRange, TransformCP geomToElementIn)
+void ElementGeometryBuilder::OnNewGeom(DRange3dCR localRangeIn, TransformCP geomToElementIn)
     {
     if (m_isPartCreate)
         return; // Don't need placement or want ElemDisplayParams...
+
+    Transform geomToElem = (nullptr != geomToElementIn ? *geomToElementIn : Transform::FromIdentity());
+    DRange3d  localRange = localRangeIn;
+
+    if (!geomToElem.IsIdentity())
+        geomToElem.Multiply(localRange, localRange);
 
     if (m_is3d)
         m_placement3d.GetElementBoxR().Extend(localRange);
     else
         m_placement2d.GetElementBoxR().Extend(DRange2d::From(DPoint2d::From(localRange.low), DPoint2d::From(localRange.high)));
-
-    Transform geomToElem = (nullptr != geomToElementIn ? *geomToElementIn : Transform::FromIdentity());
 
     // Establish "geometry group" boundaries at sub-category and transform changes (NEEDSWORK: Other incompatible changes...geometry class?)
     if (!m_prevSubCategory.IsValid() || (m_prevSubCategory != m_elParams.GetSubCategoryId() || !m_prevGeomToElem.IsEqual(geomToElem)))

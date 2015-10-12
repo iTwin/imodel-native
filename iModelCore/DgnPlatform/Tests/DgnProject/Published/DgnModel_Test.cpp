@@ -171,7 +171,7 @@ static int countSheets(DgnDbR db)
 //---------------------------------------------------------------------------------------
 void DgnModelTests::InsertElement(DgnDbR db,   DgnModelId mid, bool is3d, bool expectSuccess)
     {
-    DgnCategoryId cat = db.Categories().QueryHighestId();
+    DgnCategoryId cat = DgnCategory::QueryHighestCategoryId(db);
 
     GeometricElementPtr gelem;
     if (is3d)
@@ -309,7 +309,7 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
     //Iterating through the models
     DgnModels& modelTable = project->Models();
     DgnModels::Iterator iter = modelTable.MakeIterator();
-    ASSERT_EQ(2, iter.QueryCount());
+    ASSERT_EQ(3, iter.QueryCount()); // including dictionary model...
 
     //Set up testmodel properties as we know what the models in this file contain
     TestModelProperties models[3], testModel;
@@ -321,6 +321,9 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
     for (DgnModels::Iterator::Entry const& entry : iter)
     {
         ASSERT_TRUE(entry.GetModelId().IsValid()) << "Model Id is not Valid";
+        if (DgnModel::DictionaryId() == entry.GetModelId())
+            continue;
+
         WString entryNameW(entry.GetName(), true);               // string conversion
         WString entryDescriptionW(entry.GetDescription(), true); // string conversion
         testModel.SetTestModelProperties(entryNameW.c_str(), entryDescriptionW.c_str());
@@ -462,7 +465,7 @@ TEST_F(DgnModelTests, ImportGroups)
         if (true)
             {
             DgnClassId mclassid = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
-            DgnCategoryId mcatid = db->Categories().QueryHighestId();
+            DgnCategoryId mcatid = DgnCategory::QueryHighestCategoryId(*db);
             auto member = PhysicalElement::Create(PhysicalElement::CreateParams(*db, model1->GetModelId(), mclassid, mcatid, Placement3d()))->Insert();
             //auto member = PhysicalElement::Create(*model1, mcatid)->Insert();
             ASSERT_TRUE( member.IsValid() );
@@ -548,7 +551,7 @@ TEST_F(DgnModelTests, ImportElementsWithAuthorities)
     // Put an element with an Item into moddel1
         {
         DgnElement::Code code = auth1->CreateCode("TestElement");
-        DgnCategoryId gcatid = db->Categories().QueryHighestId();
+        DgnCategoryId gcatid = DgnCategory::QueryHighestCategoryId(*db);
         TestElementPtr tempEl = TestElement::Create(*db, model1->GetModelId(), gcatid, code);
         DgnElement::Item::SetItem(*tempEl, *TestItem::Create("Line"));
         ASSERT_TRUE( db->Elements().Insert(*tempEl).IsValid() );
@@ -610,7 +613,7 @@ TEST_F(DgnModelTests, ImportElementsWithItems)
 
     // Put an element with an Item into moddel1
         {
-        DgnCategoryId gcatid = db->Categories().QueryHighestId();
+        DgnCategoryId gcatid = DgnCategory::QueryHighestCategoryId(*db);
         TestElementPtr tempEl = TestElement::Create(*db, model1->GetModelId(), gcatid, "TestElement");
         DgnElement::Item::SetItem(*tempEl, *TestItem::Create("Line"));
         ASSERT_TRUE( db->Elements().Insert(*tempEl).IsValid() );
@@ -675,7 +678,7 @@ TEST_F(DgnModelTests, ImportElementsWithDependencies)
 
     // Create 2 elements and make the first depend on the second
         {
-        DgnCategoryId gcatid = db->Categories().QueryHighestId();
+        DgnCategoryId gcatid = DgnCategory::QueryHighestCategoryId(*db);
 
         TestElementPtr e1 = TestElement::Create(*db, model1->GetModelId(), gcatid, "e1");
         ASSERT_TRUE( db->Elements().Insert(*e1).IsValid() );
@@ -723,6 +726,41 @@ TEST_F(DgnModelTests, ImportElementsWithDependencies)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnModelTests, DictionaryModel)
+    {
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbR db = *tdm.GetDgnProjectP();
+
+    DgnModelPtr model = db.Models().GetModel(DgnModel::DictionaryId());
+    EXPECT_TRUE(model.IsValid());
+
+    DictionaryModelPtr dictModel = db.Models().Get<DictionaryModel>(DgnModel::DictionaryId());
+    EXPECT_TRUE(dictModel.IsValid());
+    EXPECT_EQ(dictModel.get(), model.get());
+
+    DictionaryModelR dictModelR = db.GetDictionaryModel();
+    EXPECT_EQ(&dictModelR, dictModel.get());
+
+    // The dictionary model cannot be copied
+    struct DisableAssertions
+        {
+        DisableAssertions() { BeTest::SetFailOnAssert(false); }
+        ~DisableAssertions() { BeTest::SetFailOnAssert(true); }
+        };
+
+    DisableAssertions _V_V_V;
+    DgnImportContext cc(db, db);
+    EXPECT_TRUE(DgnModel::Import(nullptr, dictModelR, cc).IsNull());
+
+    // The dictionary model cannot be imported
+    DgnDbPtr db2 = openCopyOfDb(L"DgnDb/3dMetricGeneral.idgndb", L"3dMetricGeneralcc.idgndb", DgnDb::OpenMode::ReadWrite);
+    DgnImportContext importer(db, *db2);
+    EXPECT_TRUE(DgnModel::Import(nullptr, dictModelR, importer).IsNull());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Maha Nasir                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, ModelsIterator)
@@ -761,7 +799,7 @@ TEST_F (DgnModelTests, ModelsIterator)
 
     DgnModels& models = db->Models ();
     DgnModels::Iterator iter = models.MakeIterator ();
-    EXPECT_EQ (4, iter.QueryCount ());
+    EXPECT_EQ (5, iter.QueryCount ()); // including the dictionary model...
     DgnModels::Iterator::Entry entry = iter.begin ();
     int i = 0;
     for (auto const& entry : iter)

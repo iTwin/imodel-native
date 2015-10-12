@@ -565,7 +565,7 @@ bool RetrieveStartupCompanyJson (Json::Value& jsonValue, DgnDbR project)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbInstances, JsonValueStructure)
+TEST(JsonTests, JsonValueStructure)
     {
     ScopedDgnHost host;
 
@@ -611,7 +611,7 @@ TEST(ECDbInstances, JsonValueStructure)
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                   Ramanujam.Raman                  02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (ECDbInstances, FieldEngineerStructArray)
+TEST (JsonTests, FieldEngineerStructArray)
     {
     // TODO: This test needs to move to the ECDb layer in Graphite03. 
     ScopedDgnHost host;

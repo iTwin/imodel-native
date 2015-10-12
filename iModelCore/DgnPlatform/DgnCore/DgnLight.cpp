@@ -7,124 +7,110 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
+#define PROPNAME_Descr "Descr"
+#define PROPNAME_Value "Value"
+
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
+namespace dgn_ElementHandler
+{
+    HANDLER_DEFINE_MEMBERS(LightDef);
+}
+
+END_BENTLEY_DGNPLATFORM_NAMESPACE
+
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
+* @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnLightId DgnLights::Insert(Light& light, DgnDbStatus* outResult)
+void dgn_ElementHandler::LightDef::_GetClassParams(ECSqlClassParams& params)
     {
-    DgnDbStatus ALLOW_NULL_OUTPUT(result, outResult);
-    DgnLightId newId;
-
-    auto status = m_dgndb.GetServerIssuedId(newId, DGN_TABLE(DGN_CLASSNAME_Light), "Id");
-    if (status != BE_SQLITE_OK)
-        {
-        result = DgnDbStatus::ForeignKeyConstraint;
-        return DgnLightId();
-        }
-
-    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Light) " (Id,Value,Name,Descr) VALUES(?,?,?,?)");
-    stmt.BindId(1, newId);
-    stmt.BindText(2, light.GetValue(), Statement::MakeCopy::No);
-    stmt.BindText(3, light.GetName(), Statement::MakeCopy::No);
-    stmt.BindText(4, light.GetDescr(), Statement::MakeCopy::No);
-
-    status = stmt.Step();
-    if (BE_SQLITE_DONE != status)
-        {
-        result = DgnDbStatus::DuplicateName;
-        return DgnLightId();
-        }
-
-    result = DgnDbStatus::Success;
-    light.m_id = newId;
-    return newId;
+    T_Super::_GetClassParams(params);
+    params.Add(PROPNAME_Descr);
+    params.Add(PROPNAME_Value);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
+* @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnLights::Update(Light const& light) const
+DgnDbStatus LightDefinition::_BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt)
     {
-    if (!light.IsValid())
-        return DgnDbStatus::InvalidId;
+    auto status = T_Super::_BindInsertParams(stmt);
+    if (DgnDbStatus::Success == status)
+        status = BindParams(stmt);
 
-    Statement stmt(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Light) " SET Value=?,Descr=? WHERE Id=?");
-    stmt.BindText(1, light.GetValue(), Statement::MakeCopy::No);
-    stmt.BindText(2, light.GetDescr(), Statement::MakeCopy::No);
-    stmt.BindId(3, light.GetId());
-
-    DbResult status = stmt.Step();
-    BeDataAssert(BE_SQLITE_DONE == status);
-    return (BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
+* @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnLights::Light DgnLights::Query(DgnLightId id) const
+DgnDbStatus LightDefinition::_BindUpdateParams(ECSqlStatement& stmt)
     {
-    if (!id.IsValid())
-        return Light();
+    auto status = T_Super::_BindUpdateParams(stmt);
+    if (DgnDbStatus::Success == status)
+        status = BindParams(stmt);
 
-    BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock;
-    CachedStatementPtr stmt;
-    m_dgndb.GetCachedStatement(stmt, "SELECT Value,Name,Descr FROM " DGN_TABLE(DGN_CLASSNAME_Light) " WHERE Id=?");
-    stmt->BindId(1, id);
+    return status;
+    }
 
-    Light light;
-    if (BE_SQLITE_ROW == stmt->Step())
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus LightDefinition::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+    {
+    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    if (DgnDbStatus::Success == status)
         {
-        light.m_id = id;
-        light.m_value.AssignOrClear(stmt->GetValueText(0));
-        light.m_name.AssignOrClear(stmt->GetValueText(1));
-        light.m_descr.AssignOrClear(stmt->GetValueText(2));
+        Utf8String descr = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Descr)),
+                   value = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Value));
+        m_data.Init(value, descr);
         }
 
-    return light;
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
+* @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnLightId DgnLights::QueryLightId(Utf8StringCR name) const
+DgnDbStatus LightDefinition::BindParams(ECSqlStatement& stmt)
     {
-    Statement stmt(m_dgndb, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Light) " WHERE Name=?");
-    stmt.BindText(1, name, Statement::MakeCopy::No);
-    return BE_SQLITE_ROW == stmt.Step() ? stmt.GetValueId<DgnLightId>(0) : DgnLightId();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnLights::Iterator::const_iterator DgnLights::Iterator::begin() const
-    {
-    if (!m_stmt.IsValid())
-        {
-        Utf8String sqlString = MakeSqlString("SELECT Id,Name,Descr,Value FROM " DGN_TABLE(DGN_CLASSNAME_Light));
-        m_db->GetCachedStatement(m_stmt, sqlString.c_str());
-        m_params.Bind(*m_stmt);
-        }
+    if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(PROPNAME_Descr), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No)
+        || ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(PROPNAME_Value), m_data.m_value.c_str(), IECSqlBinder::MakeCopy::No))
+        return DgnDbStatus::BadArg;
     else
-        {
-        m_stmt->Reset();
-        }
-
-    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
+        return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
+* @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t DgnLights::Iterator::QueryCount() const
+void LightDefinition::_CopyFrom(DgnElementCR el)
     {
-    Utf8String sqlString = MakeSqlString("SELECT count(*) FROM " DGN_TABLE(DGN_CLASSNAME_Light));
-    Statement sql;
-    sql.Prepare(*m_db, sqlString.c_str());
-    return (BE_SQLITE_ROW == sql.Step()) ? static_cast<size_t>(sql.GetValueInt(0)) : 0;
+    T_Super::_CopyFrom(el);
+    auto other = dynamic_cast<LightDefinitionCP>(&el);
+    BeAssert(nullptr != other);
+    if (nullptr != other)
+        m_data = other->m_data;
     }
 
-DgnLightId DgnLights::Iterator::Entry::GetId() const {Verify(); return m_sql->GetValueId<DgnLightId>(0);}
-Utf8CP DgnLights::Iterator::Entry::GetName() const {Verify(); return m_sql->GetValueText(1);}
-Utf8CP DgnLights::Iterator::Entry::GetDescr() const {Verify(); return m_sql->GetValueText(2);}
-Utf8CP DgnLights::Iterator::Entry::GetValue() const {Verify(); return m_sql->GetValueText(3);}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+LightDefinition::CreateParams::CreateParams(DgnDbR db, Utf8StringCR name, Utf8StringCR value, Utf8StringCR descr)
+  : T_Super(db, QueryDgnClassId(db), CreateLightDefinitionCode(name, db)),
+    m_data(value, descr)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnLightId LightDefinition::QueryLightId(DgnElement::Code const& code, DgnDbR db)
+    {
+    DgnElementId elemId = db.Elements().QueryElementIdByCode(code);
+    return DgnLightId(elemId.GetValueUnchecked());
+    }
+
+
 

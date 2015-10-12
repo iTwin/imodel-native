@@ -425,7 +425,7 @@ void FaceAttachment::ToElemMatSymb (ElemMatSymbR elMatSymb, DgnViewportR vp) con
     if (!m_subCategoryId.IsValid())
         return;
 
-    DgnCategories::SubCategory::Appearance appearance = vp.GetViewController().GetSubCategoryAppearance(m_subCategoryId);
+    DgnSubCategory::Appearance appearance = vp.GetViewController().GetSubCategoryAppearance(m_subCategoryId);
 
     ColorDef  color = (m_useColor ? m_color : appearance.GetColor());
     double    netTransparency = m_transparency;

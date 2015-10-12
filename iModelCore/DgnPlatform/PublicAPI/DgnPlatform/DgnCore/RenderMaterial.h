@@ -26,7 +26,7 @@ protected:
     JsonRenderMaterial (Json::Value const& value, DgnMaterialId materialId) : m_value (value), m_materialId (materialId) { }
 
 public:
-DGNPLATFORM_EXPORT    static RenderMaterialPtr            Create (DgnDbCR dgnDb, DgnMaterialId materialId);
+DGNPLATFORM_EXPORT    static RenderMaterialPtr            Create (DgnDbR dgnDb, DgnMaterialId materialId);
 
 DGNPLATFORM_EXPORT    virtual     RenderMaterialPtr       _Clone () const override { return new JsonRenderMaterial (*this); }
 DGNPLATFORM_EXPORT    virtual     double                  _GetDouble (char const* key, BentleyStatus* status = NULL) const override;

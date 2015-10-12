@@ -125,7 +125,25 @@
         </Bindings>
     </Part>
 
-    <Part Name="BackdoorForUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor -dIsBackDoor">
+    <!-- *** ********************************************************** *** -->
+    <!-- *** WARNING: Numerous BuildStrategies point to this part! *** -->
+    <!-- *** ********************************************************** *** -->
+    <!-- If you move this part, you must fix up the BuildStrategies that point to it. -->
+    <!-- TRICKY: Documents are only actually published for x64,x86 but we must do other processing for other platforms and other cases so no platforms can be excluded! -->
+    <Part Name="UnitTests_Documents" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishDocuments.mke" BMakeOptions="-dUNIT_TESTS_NAME=ECDbUnitTests -dUNIT_TESTS_DOCUMENTS_DIR=${SrcRoot}/DgnPlatformTest/DgnDbUnitTests/ -dUNIT_TESTS_DOCUMENTS_PREBUILTS_SUBDIR=DgnDb -dUNIT_TESTS_PUBLISH_CONFIG=${SrcRoot}/BeGTest/UnitTestPublisherConfiguration.xml">
+        <SubPart PartName="LinkDgnDbPublisherIntoToolContext" PartFile="BeGTest" Repository="BeGTest" />
+        <SubPart PartName="DgnDbUnitTestsData"/>
+        <Bindings>
+            <Directory SourceName="Delivery/UnitTests/Documents" SubPartDirectory="Documents/DgnDb" ProductDirectoryName="UnitTests_Documents_DgnDb" />
+            <!-- Note: for BTest, use pre-published documents -->
+        </Bindings>
+    </Part>
+
+    <Part Name="DgnDbUnitTestsData" OnlyPlatforms="x64,x86">
+        <RequiredRepository>DgnDbUnitTestsData</RequiredRepository>
+    </Part>
+    
+    <Part Name="BackdoorForUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor">
         <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/Backdoor" SourceName="Delivery/UnitTests/Objects/Backdoor"/>
@@ -418,7 +436,42 @@
     <!-- The first part ever built causes the tool context to be generated. This is actually a little intricate and has certain requirements, so explicitly cause it to happen in a controlled way. -->
     <Part Name="BootStrapToolContext" BentleyBuildMakeFile="BootStrapToolContext.mke"/>
 
+    <!-- Define a test collection part-->
+    <Part Name="Tests">
+        <SubPart PartName="UnitTests-NonPublished"/>
+        <SubPart PartName="UnitTests-Published"/>
+    </Part>
+
+    <!-- Define a gtest program to run the tests -->
+    <Product Name="DgnPlatform-Tests">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <SubPart PartName="DgnPlatformSqlang" />
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatformTest -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="DgnPlatform-Tests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/DgnPlatformTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/DgnPlatformTest/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="DgnPlatform-Gtest" >
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/DgnPlatform-Gtest/DgnPlatformTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/DgnPlatform" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="DgnPlatform-Gtest" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    </Part>
+
+    <!-- ******************************************************************************************* -->
     <!-- ******************* "NoView" Tests - all tests up through DgnPlatform ********************* -->
+    <!-- ******************************************************************************************* -->
 
     <Part Name="DgnPlatformNoViewTested">
         <SubPart PartName="RunGtest-TestCollection-NoView" />
@@ -429,18 +482,11 @@
 
     <!-- Define a collection of tests that don't require QV. That excludes, DgnDisplay and MobileDgn -->
     <Part Name="TestCollection-NoView">
-        <SubPart PartName="UnitTests-Published"          Repository="Bentley"   PartFile="Bentley"/>
-        <SubPart PartName="UnitTests-NonPublished"       Repository="Bentley"   PartFile="Bentley"/>
-        <SubPart PartName="UnitTests-StructsTest"        Repository="GeomLibs"  PartFile="geomlibs"/>
-        <SubPart PartName="UnitTests-CurvePrimitiveTest" Repository="GeomLibs"  PartFile="geomlibs"/>
-        <SubPart PartName="UnitTests-bezierTest"         Repository="GeomLibs"  PartFile="geomlibs"/>
-        <SubPart PartName="UnitTests-PolyfaceTest"       Repository="GeomLibs"  PartFile="geomlibs"/>
-        <SubPart PartName="UnitTests-Published"          Repository="BeSQLite"  PartFile="BeSQLite"/>
-        <SubPart PartName="UnitTests-NonPublished"       Repository="BeSQLite"  PartFile="BeSQLite"/>
-        <SubPart PartName="UnitTests-Published"          Repository="ECDb"      PartFile="ECDb"/>
-        <SubPart PartName="UnitTests-NonPublished"       Repository="ECDb"      PartFile="ECDb"/>
-        <SubPart PartName="UnitTests-Published"          Repository="DgnPlatform" PartFile="DgnPlatform"/>
-        <SubPart PartName="UnitTests-NonPublished"       Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart Repository="Bentley"               PartFile="Bentley"          PartName="Tests" />
+        <SubPart Repository="GeomLibs"              PartFile="geomlibs"         PartName="Tests" />
+        <SubPart Repository="BeSQLite"              PartFile="BeSQLite"         PartName="Tests" />
+        <SubPart Repository="ECDb"                  PartFile="ECDb"             PartName="Tests" />
+        <SubPart Repository="DgnPlatform"           PartFile="DgnPlatform"      PartName="Tests" />
         <!-- Pull in the dgnplatform's db3 file to serve as the "framework" sqlang for testing purposes -->
         <SubPart PartName="DgnPlatformSqlang"            Repository="DgnPlatform" PartFile="DgnPlatform"/>
     </Part>
@@ -532,7 +578,7 @@
     </Product>
 
     <!-- ********************************************************************************************** -->
-    <!-- DgnPlatform Performance Tests -->
+    <!-- Performance Tests (up through DgnPlatform) -->
     <!-- ********************************************************************************************** -->
 
     <Part Name="DgnPlatformPerformanceTested">
@@ -549,6 +595,8 @@
         <SubPart PartName="UnitTests-Performance"        Repository="ECDb" PartFile="ECDb"/>
         <SubPart PartName="UnitTests-Performance"        Repository="Bentley" PartFile="Bentley"/>
         <SubPart PartName="UnitTests-Performance"        Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="PerformanceTests"             Repository="ECObjects" PartFile="ECObjects"/>
+        <SubPart PartName="UnitTests-PerformanceTest"        Repository="geomlibs" PartFile="geomlibs"/>
         <!-- Pull in the dgnplatform's db3 file to serve as the "framework" sqlang for testing purposes -->
         <SubPart PartName="DgnPlatformSqlang"            Repository="DgnPlatform" PartFile="DgnPlatform"/>
     </Part>
@@ -581,7 +629,7 @@
         <SubProduct ProductName="DgnPlatform-TestCollection-Performance"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/DgnPlatform-TestCollection-Performance/Assemblies/*</Files>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/DgnPerformance/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/DgnPerformance/Assets" />
         </Bindings>
     </Part>

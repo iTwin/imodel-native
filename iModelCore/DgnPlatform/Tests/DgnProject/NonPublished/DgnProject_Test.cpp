@@ -158,10 +158,10 @@ TEST(DgnDb, ProjectSchemaVersions)
 //=======================================================================================
 struct CategoryTestData
     {
-    DgnCategories& m_categories;
+    DgnDbR m_db;
     DgnCategoryId m_category1;
     DgnCategoryId m_category2;
-    CategoryTestData(DgnCategories& categories, DgnCategoryId category1, DgnCategoryId category2) : m_categories(categories), m_category1(category1), m_category2(category2) {}
+    CategoryTestData(DgnDbR db, DgnCategoryId category1, DgnCategoryId category2) : m_db(db), m_category1(category1), m_category2(category2) {}
     };
 
 static DgnSubCategoryId facetId1, facetId2;
@@ -341,7 +341,7 @@ TEST(DgnDb, GetCoordinateSystemProperties)
     double eps = 0.0001;
     EXPECT_TRUE(fabs(azmthExpected - azmth) < eps )<<"Expected diffrent azimuth ";
     GeoPoint gorigin;
-    dgnProj->Units().LatLongFromUors(gorigin, DPoint3d::FromZero());
+    dgnProj->Units().LatLongFromXyz(gorigin, DPoint3d::FromZero());
     double const latitudeExpected = 42.3413;
     EXPECT_TRUE(fabs(latitudeExpected - gorigin.latitude) < eps)<<"Expected diffrent latitude ";
     double const longitudeExpected = -71.0806;
@@ -430,7 +430,7 @@ struct DgnProjectPackageTest : public testing::Test
                 properties.modelCount++;
                 }
             properties.viewCount = project->Views().MakeIterator().QueryCount();
-            properties.categoryCount = project->Categories().MakeIterator().QueryCount();
+            properties.categoryCount = DgnCategory::QueryCount(*project);
 #ifdef STYLE_REWRITE_06
             DgnStyles& styleTable = project->Styles();
             properties.styleCount = styleTable.LineStyles().MakeIterator().QueryCount();
