@@ -3332,17 +3332,21 @@ bool ElementGeometryBuilder::Append(DgnGeomPartId geomPartId, TransformCR geomTo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeometryBuilder::OnNewGeom(DRange3dCR localRange, TransformCP geomToElementIn)
+void ElementGeometryBuilder::OnNewGeom(DRange3dCR localRangeIn, TransformCP geomToElementIn)
     {
     if (m_isPartCreate)
         return; // Don't need placement or want ElemDisplayParams...
+
+    Transform geomToElem = (nullptr != geomToElementIn ? *geomToElementIn : Transform::FromIdentity());
+    DRange3d  localRange = localRangeIn;
+
+    if (!geomToElem.IsIdentity())
+        geomToElem.Multiply(localRange, localRange);
 
     if (m_is3d)
         m_placement3d.GetElementBoxR().Extend(localRange);
     else
         m_placement2d.GetElementBoxR().Extend(DRange2d::From(DPoint2d::From(localRange.low), DPoint2d::From(localRange.high)));
-
-    Transform geomToElem = (nullptr != geomToElementIn ? *geomToElementIn : Transform::FromIdentity());
 
     // Establish "geometry group" boundaries at sub-category and transform changes (NEEDSWORK: Other incompatible changes...geometry class?)
     if (!m_prevSubCategory.IsValid() || (m_prevSubCategory != m_elParams.GetSubCategoryId() || !m_prevGeomToElem.IsEqual(geomToElem)))
