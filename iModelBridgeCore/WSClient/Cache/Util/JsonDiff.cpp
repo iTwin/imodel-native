@@ -123,6 +123,7 @@ void JsonDiff::AddMember(RapidJsonValueR jsonOut, RapidJsonValueCR name, RapidJs
             break;
         }
 
+    jsonOut.RemoveMember(nameToAdd.GetString());
     jsonOut.AddMember(nameToAdd, valueToAdd, allocator);
     }
 
@@ -149,6 +150,11 @@ bool JsonDiff::ValuesShallowEqual(RapidJsonValueCR value1, RapidJsonValueCR valu
 
         case kNumberType:
             return value1.GetInt() == value2.GetInt();
+
+        case kTrueType:
+        case kFalseType:
+        case kNullType:
+            return true;
         }
 
     return false;
