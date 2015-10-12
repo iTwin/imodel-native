@@ -60,6 +60,8 @@ struct MockECDbAdapter : public IECDbAdapter
             ECRelationshipClassCP (ECClassId sourceClassId, ECClassId targetClassId));
         MOCK_METHOD2 (FindRelationshipClassWithTarget,
             ECRelationshipClassCP (ECClassId sourceClassId, ECClassId targetClassId));
+        MOCK_METHOD2 (FindClosestRelationshipClassWithSource, 
+            ECRelationshipClassCP (ECClassId sourceClassId, ECClassId targetClassId));
         MOCK_METHOD1 (GetInstanceKeyFromJsonInstance,
             ECInstanceKey (JsonValueCR ecInstanceJson));
         MOCK_METHOD2 (PrepareStatement,
