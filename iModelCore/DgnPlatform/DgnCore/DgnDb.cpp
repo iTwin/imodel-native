@@ -372,11 +372,9 @@ DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : m_sourceDb(sour
     m_xyOffset = DPoint2d::FromZero();
     m_yawAdj = AngleInDegrees::FromDegrees(0);
 
+    m_areCompatibleDbs = true;
     if (!IsBetweenDbs() || nullptr == sourceGcs || nullptr == destGcs)
-        {
-        m_areCompatibleDbs = true;
         return;
-        }
 
     BeFileName spn, dpn;
     if (0 != wcscmp(sourceGcs->GetProjectionName(spn), destGcs->GetProjectionName(dpn)))

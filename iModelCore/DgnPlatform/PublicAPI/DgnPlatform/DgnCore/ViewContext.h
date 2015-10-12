@@ -339,7 +339,6 @@ protected:
     DRange3d                m_npcSubRange;
     DMap4d                  m_worldToNpc;
     DMap4d                  m_worldToView;
-    double                  m_cameraFraction;       // ratio of front plane to back plane.
     TransformClipStack      m_transformClipStack;
     DgnViewportP            m_viewport;
     IViewDrawP              m_IViewDraw;

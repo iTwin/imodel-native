@@ -118,7 +118,6 @@
         <SubPart PartName="UnitTests-Documents-DgnDb" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="DgnPlatformDLL"/>
         <SubPart PartName="DgnPlatformUnitTestHelpers"/>
-        <SubPart PartName="DgnPlatformSqlang"            Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <Bindings>
             <Files     ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="DgnPlatform" SubPartDirectory="UnitTests/DgnPlatform">Delivery/UnitTests/ignore_list.txt</Files>
             <Directory ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="Script" SourceName="Delivery/UnitTests/Script" />
@@ -144,7 +143,7 @@
         <RequiredRepository>DgnDbUnitTestsData</RequiredRepository>
     </Part>
     
-    <Part Name="BackdoorForUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor -dIsBackDoor">
+    <Part Name="BackdoorForUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor">
         <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/Backdoor" SourceName="Delivery/UnitTests/Objects/Backdoor"/>
@@ -447,6 +446,7 @@
     <Product Name="DgnPlatform-Tests">
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
         <SubPart PartName="Tests"/>
+        <SubPart PartName="DgnPlatformSqlang" />
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
     </Product>
 
@@ -596,6 +596,7 @@
         <SubPart PartName="UnitTests-Performance"        Repository="Bentley" PartFile="Bentley"/>
         <SubPart PartName="UnitTests-Performance"        Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <SubPart PartName="PerformanceTests"             Repository="ECObjects" PartFile="ECObjects"/>
+        <SubPart PartName="UnitTests-PerformanceTest"        Repository="geomlibs" PartFile="geomlibs"/>
         <!-- Pull in the dgnplatform's db3 file to serve as the "framework" sqlang for testing purposes -->
         <SubPart PartName="DgnPlatformSqlang"            Repository="DgnPlatform" PartFile="DgnPlatform"/>
     </Part>

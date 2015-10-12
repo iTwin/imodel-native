@@ -235,6 +235,8 @@ void ViewController::_ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff
         m_viewedCategories.insert(categoryId);
     else
         m_viewedCategories.erase(categoryId);
+
+    _OnCategoryChange(onOff);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1102,7 +1104,7 @@ double PhysicalViewController::CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec)
 //---------------------------------------------------------------------------------------
 static bool convertToWorldPointWithStatus(DPoint3dR worldPoint, GeoLocationEventStatus& status, DgnUnits const& units, GeoPointCR location)
     {
-    if (SUCCESS != units.UorsFromLatLong(worldPoint, location))
+    if (SUCCESS != units.XyzFromLatLong(worldPoint, location))
         {
         BeAssert(false);
         status = GeoLocationEventStatus::EventIgnored;
