@@ -230,3 +230,81 @@ TEST_F(JsonDiffTests, GetChanges_TypeCangedNullToString_ReturnsDiff)
                      R"({ "A" : "foo" })",
                      R"({ "A" : "foo" })");
     }
+
+TEST_F(JsonDiffTests, GetChanges_EmptyArrays_ReturnsEmptyJson)
+    {
+    TEST_GET_CHANGES(R"({ "A" : [] })",
+                     R"({ "A" : [] })",
+                     R"({ })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_ArrayOfIntsElementRemoved_ReturnsEmptyJson)
+    {
+    TEST_GET_CHANGES(R"({ "A" : [1] })",
+                     R"({ "A" : [] })",
+                     R"({ "A" : [] })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_ArrayOfIntsPropertyEqual_ReturnsEmptyJson)
+    {
+    TEST_GET_CHANGES(R"({ "A" : [1] })",
+                     R"({ "A" : [1] })",
+                     R"({ })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_ArrayOfIntsPropertyDifferent_ReturnsNewArray)
+    {
+    TEST_GET_CHANGES(R"({ "A" : [1] })",
+                     R"({ "A" : [3,4] })",
+                     R"({ "A" : [3,4] })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_ArrayOfIntsPropertyDeleted_ReturnsEmptyJson)
+    {
+    TEST_GET_CHANGES(R"({ "A" : [1] })",
+                     R"({ })",
+                     R"({ })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_ArrayOfIntsPropertyDeletedDoNotIgnoreDeletedProperties_ReturnsDiff)
+    {
+    TEST_GET_CHANGES_DO_NOT_IGNORE_DEL(
+                      R"({ "A" : [1] })",
+                      R"({ })",
+                      R"({ "A" : null })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_ArrayOfIntsPropertyAdded_ReturnsNewArray)
+    {
+    TEST_GET_CHANGES(R"({ })",
+                     R"({ "A" : [1] })",
+                     R"({ "A" : [1] })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_ArrayOfObjectsPropertyEqual_ReturnsEmptyJson)
+    {
+    TEST_GET_CHANGES(R"({ "A" : [{"A":1}] })",
+                     R"({ "A" : [{"A":1}] })",
+                     R"({ })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_ArrayOfObjectsPropertyDifferent_ReturnsEmptyJson)
+    {
+    TEST_GET_CHANGES(R"({ "A" : [ {"A":1} ] })",
+                     R"({ "A" : [ {"A":2} ] })",
+                     R"({ "A" : [ {"A":2} ] })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_ArrayOfDeepObjectsPropertyDifferent_ReturnsEmptyJson)
+    {
+    TEST_GET_CHANGES(R"({ "A" : [ {"A":[ {"A":"eq", "B":true} ]} ] })",
+                     R"({ "A" : [ {"A":[ {"A":"eq", "B":false} ]} ] })",
+                     R"({ "A" : [ {"A":[ {"A":"eq", "B":false} ]} ] })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_ArrayOfDeepObjectsPropertyEqual_ReturnsEmptyJson)
+    {
+    TEST_GET_CHANGES(R"({ "A" : [ {"A":[ {"A":"eq", "B":false} ]} ] })",
+                     R"({ "A" : [ {"A":[ {"A":"eq", "B":false} ]} ] })",
+                     R"({  })");
+    }
