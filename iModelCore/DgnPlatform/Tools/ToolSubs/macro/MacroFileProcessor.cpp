@@ -2,25 +2,25 @@
 |
 |     $Source: Tools/ToolSubs/macro/MacroFileProcessor.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <Bentley/Bentley.h>
-#include <DgnPlatform/ExportMacros.h>
-#include    <stdlib.h>
-#include    <stdio.h>
-#include    <string.h>
-#include    <ctype.h>
-#include    <stdarg.h>
-#include    <locale.h>
-#include    <DgnPlatform/Tools/stringop.h>
-#include    <DgnPlatform/DesktopTools/fileutil.h>
-#include    <DgnPlatform/DesktopTools/envvutil.h>
-#include    <DgnPlatform/DesktopTools/MacroFileProcessor.h>
-#include    <Bentley/BeFileListIterator.h>
-#include    "macro.h"
+#include <DgnPlatformInternal.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdarg.h>
+#include <locale.h>
+#include <DgnPlatform/Tools/stringop.h>
+#include <DgnPlatform/DesktopTools/fileutil.h>
+#include <DgnPlatform/DesktopTools/envvutil.h>
+#include <DgnPlatform/DesktopTools/MacroFileProcessor.h>
+#include <Bentley/BeFileListIterator.h>
+#include "macro.h"
 #undef DGN_PLATFORM_MT
-#include    <RmgrTools/Tools/ToolSubs.h>
+#include <RmgrTools/Tools/ToolSubs.h>
+
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -30,18 +30,28 @@ enum
     MAX_LINE_LEN               = (4*1024),
     };
 
+enum
+    {
+    TAB         = 0x09,
+    LF          = 0x0A,
+    CR          = 0x0D,
+    CNTRL_Z     = 0x1a,
+    };
+
 struct MacroFileEntry
 {
 BeTextFilePtr           m_textFile;
 WString                 m_fileName;
 long                    m_lineNumber;
 int                     m_endOfLineChar;
+MacroFileEntry*         m_parent;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-MacroFileEntry (WCharCP fileName) : m_fileName (fileName)
+MacroFileEntry (WCharCP fileName, MacroFileEntry* parent) : m_fileName (fileName)
     {
+    m_parent        = parent;
     m_lineNumber    = 0;
     m_endOfLineChar = 0;
     }
@@ -52,7 +62,7 @@ MacroFileEntry (WCharCP fileName) : m_fileName (fileName)
 ~MacroFileEntry ()
     {
     // NULL the file, which closes it if necessary.
-    m_textFile = NULL;
+    m_textFile = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -62,7 +72,7 @@ BeFileStatus    OpenFile ()
     {
     BeFileName  tmpName (m_fileName.c_str());
     WString     extension;
-    tmpName.ParseName (NULL, NULL, NULL, &extension);
+    tmpName.ParseName (nullptr, nullptr, nullptr, &extension);
 
     BeFileStatus    openStatus;
 
@@ -122,25 +132,30 @@ END_EXTERN_C
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-MacroFileProcessor::MacroFileProcessor (MacroConfigurationAdmin& macroCfgAdmin) : m_macroCfgAdmin (macroCfgAdmin)
+MacroFileProcessor::MacroFileProcessor (MacroConfigurationAdmin& macroCfgAdmin, MacroReadMonitor* readMonitor, T_LevelWarningList* levelWarningsP) : m_macroCfgAdmin (macroCfgAdmin)
     {
-    m_debugLevel            = 0;
-    m_currentFile           = NULL;
-    m_eofHit                = false;
-    m_lastCharRead          = 0;
-    m_pushedChar            = 0;
-    m_processingLevel       = ConfigurationVariableLevel::Appl;
-    m_lastNonWhiteSpaceChar = LF;
+    m_readMonitor               = readMonitor;
+    m_currentFileStartReported  = false;
+    m_currentFile               = nullptr;
+    m_eofHit                    = false;
+    m_lastCharRead              = 0;
+    m_pushedChar                = 0;
+    m_processingLevel           = ConfigurationVariableLevel::Application;
+    m_lastNonWhiteSpaceChar     = LF;
+    m_debugLevel                = 0;
+    m_debugOutput               = nullptr;
+    m_featureAspectFunc         = nullptr;
+    m_levelWarnings             = levelWarningsP;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    MacroFileProcessor::SetDebugFile (BeTextFileP debugFile, int debugLevel)
-  {
-  m_debugFile           = debugFile; 
-  m_debugLevel          = debugLevel;
-  }
+void    MacroFileProcessor::SetDebugOutput (IMacroDebugOutput* debugOutput, int debugLevel)
+    {
+    m_debugOutput       = debugOutput;
+    m_debugLevel        = debugLevel;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/12
@@ -167,8 +182,8 @@ public:
 void        MacroFileProcessor::FatalError (WCharCP errmsg)
     {
     // skip already processed files and closed files.
-    while ( (NULL != m_currentFile) && (m_currentFile->m_textFile.IsNull()) )
-        PopFile();
+    while ( (nullptr != m_currentFile) && (m_currentFile->m_textFile.IsNull()) )
+        PopFile (nullptr);
 
     WChar   fullErrorMessage[MAX_LINE_LEN];
     if (m_currentFile)
@@ -178,14 +193,76 @@ void        MacroFileProcessor::FatalError (WCharCP errmsg)
         }
 
     // close files that haven't yet been closed.
-    while ( (NULL != m_currentFile) && (m_currentFile->m_textFile.IsValid()) )
+    while ( (nullptr != m_currentFile) && (m_currentFile->m_textFile.IsValid()) )
         {
         // close the file.
-        m_currentFile->m_textFile = NULL;
-        PopFile();
+        m_currentFile->m_textFile = nullptr;
+        PopFile(nullptr);
         }
 
     throw MacroReadError (errmsg);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void        MacroFileProcessor::_GetIncludeFileList (T_WStringVectorR fileList, WStringCR includeFileSpec)
+    {
+    GetFileList (fileList, includeFileSpec);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ConfigurationVariableLevel  MacroFileProcessor::_ReinterpretConfigurationVariableLevel (ConfigurationVariableLevel  inputLevel)
+    {
+    return inputLevel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   02/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static StatusInt    GetConfigurationVariableLevelFromString (ConfigurationVariableLevel& level, WCharCP levelValue)
+    {
+    if (nullptr == levelValue)
+        return BSIERROR;
+
+    size_t  length = wcslen (levelValue);
+    if (length < 2)
+        return BSIERROR;
+
+    WString levelString (levelValue);
+    levelString.Trim();
+    levelString.ToLower();
+    static WCharCP s_levelNames[] =
+        {
+        L"system",
+        L"application",
+        L"organization",
+        L"workspace",
+        L"workset",
+        L"role",
+        L"user"
+        };
+    for (int iLevel=0; iLevel < _countof (s_levelNames); iLevel++)
+        {
+        if (0 == wcsncmp (s_levelNames[iLevel], levelString.c_str(), length))
+            {
+            level = static_cast<ConfigurationVariableLevel>(iLevel);
+            return BSISUCCESS;
+            }
+        }
+    return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+MacroLevelWarning::MacroLevelWarning (WCharCP fileName, ConfigurationVariableLevel newLevel, int lineNumber)
+    {
+    m_fileName.assign (fileName);
+    m_newLevel      = newLevel;
+    m_lineNumber    = lineNumber;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -196,56 +273,79 @@ void        MacroFileProcessor::DoInclude (WStringR includeFile)
     // get rid of leading and trailing spaces.
     includeFile.Trim();
 
-    WString     includeFileCopy (includeFile);
-
+    // Check for an optional level specification
+    WString includeFileCopy (includeFile);
     includeFileCopy.ToUpper();
 
-    // Check for an optional level specification
     ConfigurationVariableLevel newProcessLevel = m_processingLevel;
     size_t                     levelPos;
     if (WString::npos != (levelPos = includeFileCopy.rfind (L" LEVEL")))
         {
         includeFileCopy.erase (0, levelPos + 6);
-
-        // terminate the file name only if a valid level is found.  Otherwise, assume " level" is part of the filename
-        if ( (1 == BE_STRING_UTILITIES_SWSCANF (includeFileCopy.c_str(), L"%d", &newProcessLevel)) && m_macroCfgAdmin.IsValidCfgVarLevelForNewDefinition (newProcessLevel) )
-            includeFile.erase (levelPos);
-        }
-
-    if (!m_macroCfgAdmin.IsValidCfgVarLevelForNewDefinition (newProcessLevel))
-        newProcessLevel = m_processingLevel;
-
-    WString includeName;
-    m_macroCfgAdmin.ExpandMacro (includeName, includeFile.c_str(), MacroExpandOptions (m_processingLevel));
-    m_processingLevel = newProcessLevel;
-
-    T_WStringVector     fileList;
-    GetFileList (fileList, includeName.c_str());
-    T_WStringVector::reverse_iterator iterator;
-    for (iterator = fileList.rbegin(); iterator != fileList.rend(); ++iterator)
-        {
-        WString     fileName = *iterator;
-        WChar       currentName[MAXFILELENGTH*2];
-        BeFileName  fileSpec (fileName.c_str());
-        if (fileSpec.IsAbsolutePath ())
+        ConfigurationVariableLevel  possibleLevel = ConfigurationVariableLevel::Predefined;     // Predefined is an illegal value.
+        if (BSISUCCESS == GetConfigurationVariableLevelFromString (possibleLevel, includeFileCopy.c_str()))
             {
-            wcscpy (currentName, fileName.c_str());
+            // Terminate the file name only if a valid level is found. Otherwise, assume " level" is part of the filename.
+            includeFile.erase (levelPos);
+            newProcessLevel = possibleLevel;
             }
         else
             {
-            WString     path = BeFileName::GetDirectoryName (m_currentFile->m_fileName.c_str());
-            path.append (fileName);
-            wcscpy (currentName, path.c_str());
-            }
+            // See if the configuration level is specifed as a number.
+            ConfigurationVariableLevel readLevel = (ConfigurationVariableLevel) evaluateSymbolAsInt (includeFileCopy.c_str(), ConfigurationVariableLevel::User, m_macroCfgAdmin, *this);
+            // if we read it from as an Integer, allow the reinterpretation logic to change it, and warn.
+            possibleLevel = _ReinterpretConfigurationVariableLevel (readLevel);
+            
+            if (m_macroCfgAdmin.IsValidCfgVarLevelForNewDefinition (possibleLevel))
+                {
+                if (nullptr != m_levelWarnings)
+                    {
+                    MacroLevelWarning thisWarning (m_currentFile->m_fileName.c_str(), readLevel, m_currentFile->m_lineNumber);
+                    m_levelWarnings->push_back (thisWarning);
+                    }
 
-        PushMacroFile (currentName);
+                // Terminate the file name only if a valid level is found. Otherwise, assume " level" is part of the filename.
+                includeFile.erase (levelPos);
+                newProcessLevel = possibleLevel;
+                }
+            }
         }
+
+    WString includeName;
+    // expand the macro at the existing processing level, then switch to processing level specified in the %include statement (if any).
+    m_macroCfgAdmin.ExpandMacro (includeName, includeFile.c_str(), MacroExpandOptions (ConfigurationVariableLevel::User));
+    m_processingLevel = newProcessLevel;
+
+    T_WStringVector fileList;
+    _GetIncludeFileList (fileList, includeName);
+
+    MacroFileEntry* parentFile = m_currentFile;
+    for (T_WStringVector::reverse_iterator iterator = fileList.rbegin(); iterator != fileList.rend(); )
+        {
+        WStringCR fileName = *iterator;
+
+        ++iterator;
+
+        // make the last one the current file.
+        PushMacroFile (fileName.c_str(), parentFile, iterator == fileList.rend());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void        MacroFileProcessor::DoEcho (WStringR stringToEcho)
+    {
+    WString output;
+    // expand the macro at the existing processing level, then switch to processing level specified in the %include statement (if any).
+    m_macroCfgAdmin.ExpandMacro (output, stringToEcho.c_str(), MacroExpandOptions (ConfigurationVariableLevel::User));
+    wprintf (L"%s\n", output.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    kab             07/90
 +---------------+---------------+---------------+---------------+---------------+------*/
-WChar       MacroFileProcessor::GetOneChar ()
+WChar       MacroFileProcessor::GetOneChar (WStringP endFileMsg)
     {
     // do we need to open the current file?
     if (!m_currentFile->m_textFile.IsValid())
@@ -253,7 +353,7 @@ WChar       MacroFileProcessor::GetOneChar ()
         if (BeFileStatus::Success != m_currentFile->OpenFile())
             {
             // if we don't stop, return WEOF which will go to next file.
-            if (ConfigurationManager::IsVariableDefined (L"_USTN_MACRO_OPENFILE_SOFTFAILURE"))
+            if (m_macroCfgAdmin._IsConfigVariableDefined(L"_USTN_MACRO_OPENFILE_SOFTFAILURE", ConfigurationVariableLevel::User))
                 return WEOF;
 
             WChar msg[2*MAXFILELENGTH];
@@ -263,8 +363,13 @@ WChar       MacroFileProcessor::GetOneChar ()
             }
 
         // report progress.
-        if (m_debugFile.IsValid())
-            m_debugFile->PrintfTo (true, L"\nProcessing macro file [%ls]\n", m_currentFile->m_fileName.c_str());
+        if (nullptr != m_debugOutput)
+            {
+            // if we have a pending end message, that has to be displayed before showing the open.
+            ShowEndFileMessage (endFileMsg, false);
+            m_debugOutput->ShowDebugMessage (0, L"\n"); // leave blank line before.
+            m_debugOutput->ShowDebugMessage (GetCurrentDepth(), L"Processing macro file [%ls]\n", m_currentFile->m_fileName.c_str());
+            }
         }
 
     return m_currentFile->GetOneChar ();
@@ -273,33 +378,37 @@ WChar       MacroFileProcessor::GetOneChar ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-WChar       MacroFileProcessor::ReadCharFromCurrentFile (bool doPreprocessor)
+WChar       MacroFileProcessor::ReadCharFromCurrentFile (bool doPreprocessor, bool processEof, WStringP endFileMsg)
     {
     // NOTE: When it runs out of data in the current file, it goes back to the file that %included that file,
     //       or the next file that was %included by the include file, if that specifed a "path" config variable.
     WChar   charRead;
-    while (0 != (charRead = GetOneChar()))
+    while (0 != (charRead = GetOneChar(endFileMsg)))
         {
-        // don't skip to next file or do PreProcess if we are skipping to end of conditional
+        // we processEof when preProcessing or reading the rest of a comment line.
+        if (processEof)
+            {
+            if (WEOF == charRead)
+                {
+                PopFile(endFileMsg);
+
+                if (nullptr == m_currentFile)
+                    break;
+
+                // continue with the previous file.
+                charRead = LF;
+                break;
+                }
+            }
+
+        // we don't preprocess (and don't process eof) if we are looking for the end of a conditional.
         if (!doPreprocessor)
             break;
-
-        if (WEOF == charRead)
-            {
-            PopFile ();
-
-            if (NULL == m_currentFile)
-                break;
-
-            // continue with the previous file.
-            charRead = LF;
-            break;
-            }
 
         // is it a PreProcessor command?
         if ( ('%' == charRead) && (LF == m_lastNonWhiteSpaceChar) )
             {
-            PreProcess ();
+            PreProcess (endFileMsg);
             m_lastNonWhiteSpaceChar = charRead = LF;
             }
         else
@@ -317,7 +426,7 @@ WChar       MacroFileProcessor::ReadCharFromCurrentFile (bool doPreprocessor)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    kab             10/89
 +---------------+---------------+---------------+---------------+---------------+------*/
-WChar       MacroFileProcessor::GetInputChar (bool doPreprocessor)
+WChar       MacroFileProcessor::GetInputChar (bool doPreprocessor, WStringP endFileMsg)
     {
     WChar       previousNonWhiteSpaceChar;
     WChar       charRead;
@@ -327,7 +436,7 @@ WChar       MacroFileProcessor::GetInputChar (bool doPreprocessor)
         if (0 != (charRead = m_pushedChar))
             m_pushedChar = 0;
         else
-            charRead = ReadCharFromCurrentFile (doPreprocessor);
+            charRead = ReadCharFromCurrentFile (doPreprocessor, true, endFileMsg);
 
         switch (charRead)
             {
@@ -341,7 +450,7 @@ WChar       MacroFileProcessor::GetInputChar (bool doPreprocessor)
                 goto done;
 
             case TAB:
-                charRead =' ';  /* fall through */
+                charRead = ' ';  /* fall through */
 
             case ' ':
                 if (LF == m_lastCharRead)
@@ -349,8 +458,6 @@ WChar       MacroFileProcessor::GetInputChar (bool doPreprocessor)
                     charRead = LF;
                     break;
                     }
-                if (' ' == m_lastCharRead)
-                    break;
                 goto done;
 
             case '/':
@@ -360,17 +467,14 @@ WChar       MacroFileProcessor::GetInputChar (bool doPreprocessor)
             case '\\':
                 {
                 WChar   nextChar;
-                switch (nextChar = ReadCharFromCurrentFile(doPreprocessor))
+                switch (nextChar = ReadCharFromCurrentFile(doPreprocessor, true, endFileMsg))
                     {
-                    case '\\':
-                        goto done;
-
                     case '/':
                         charRead = '/';
                         goto done;
 
                     case    LF:
-                        break;
+                        goto done;
 
                     default:
                         m_pushedChar = nextChar;
@@ -384,8 +488,8 @@ WChar       MacroFileProcessor::GetInputChar (bool doPreprocessor)
                 if (LF == previousNonWhiteSpaceChar)
                     {
                     // [ is comment til ] or end-of-line character.
-                    while ( (LF != (charRead = ReadCharFromCurrentFile (doPreprocessor))) && (WEOF != charRead) && ('[' != charRead) )
-                        ;       
+                    while ( (LF != (charRead = ReadCharFromCurrentFile (doPreprocessor, true, endFileMsg))) && (WEOF != charRead) && ('[' != charRead) )
+                        ;
                     charRead = LF;
                     }
                 goto done;
@@ -396,8 +500,8 @@ WChar       MacroFileProcessor::GetInputChar (bool doPreprocessor)
                     goto done;
 
                 // read until we hit end of line or end of file.
-                while ( (LF != (charRead = ReadCharFromCurrentFile (false))) && (WEOF != charRead) )
-                    ;   
+                while ( (LF != (charRead = ReadCharFromCurrentFile (false, true, endFileMsg))) && (WEOF != charRead) )
+                    ;
 
                 // check to see if WEOF hit immediately after comment */
                 if (WEOF == charRead)
@@ -405,6 +509,7 @@ WChar       MacroFileProcessor::GetInputChar (bool doPreprocessor)
                     charRead = LF;
                     m_eofHit = true;
                     }
+
                 goto done;
 
             case CR:
@@ -424,10 +529,28 @@ done:
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Barry.Bentley   02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void            MacroFileProcessor::ShowEndFileMessage (WStringP endFileMsg, bool extraIndent)
+    {
+    if ( (nullptr == endFileMsg) || endFileMsg->empty() )
+        return;
+
+    if (nullptr != m_debugOutput)
+        {
+        m_debugOutput->ShowDebugMessage (GetCurrentDepth() + (extraIndent ? 1 : 0), endFileMsg->c_str());
+        if (extraIndent)
+            m_debugOutput->ShowDebugMessage (0, L"\n");
+        }
+
+    endFileMsg->clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   10/92
 +---------------+---------------+---------------+---------------+---------------+------*/
 #pragma warning(disable:4702)  // unreachable code warning triggered by final return statement in Release build only.
-MacroOperation  MacroFileProcessor::GetMacroNameAndOperation (WStringR macroName)
+MacroOperation  MacroFileProcessor::GetMacroNameAndOperation (WStringR macroName, WStringP endFileMsg)
     {
     macroName.clear();
 
@@ -437,7 +560,7 @@ MacroOperation  MacroFileProcessor::GetMacroNameAndOperation (WStringR macroName
     while ( noNonBlank && !m_eofHit)
         {
         // build up the macro name up to the end of the line or the operator.
-        while (!m_eofHit && ('=' != (charRead = GetInputChar (true)))   // new rule.
+        while (!m_eofHit && ('=' != (charRead = GetInputChar (true, endFileMsg)))   // new rule.
                          && ('+' != charRead)                       // add macro
                          && ('>' != charRead)                       // append path to macro
                          && ('<' != charRead)                       // prepend path to macro
@@ -450,47 +573,50 @@ MacroOperation  MacroFileProcessor::GetMacroNameAndOperation (WStringR macroName
             }
         }
 
+    // if we hit the end of a file while looking for a macro, put it out now.
+    ShowEndFileMessage (endFileMsg, true);
+
     // terminate the macroName and remove white space.
     macroName.Trim ();
 
     if (m_eofHit)
-        return  OPERATION_EOF;
+        return  MacroOperation::EndOfFile;
 
     switch (charRead)
         {
-        case    '=':    
-            return  OPERATION_AddMacro;
+        case    '=':
+            return  MacroOperation::AddMacro;
 
         case    ':':
-            return  OPERATION_NewMacro;
+            return  MacroOperation::NewMacro;
 
-        case    '+':    
-            return  OPERATION_AppendMacro;
+        case    '+':
+            return  MacroOperation::AppendMacro;
 
-        case    '>':    
-            return  OPERATION_AppendPath;
+        case    '>':
+            return  MacroOperation::AppendPath;
 
-        case    '<':    
-            return  OPERATION_PrependPath;
+        case    '<':
+            return  MacroOperation::PrependPath;
         }
 
     FatalError (L"macro syntax error");
 
-    // Without this : warning C4715: ...  : not all control paths return a value    
-    return OPERATION_EOF;
+    // Without this : warning C4715: ...  : not all control paths return a value
+    return MacroOperation::EndOfFile;
     }
 #pragma warning(default:4702)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    kab             10/89
 +---------------+---------------+---------------+---------------+---------------+------*/
-void        MacroFileProcessor::GetRestOfLine (WStringR restOfLine)
+void        MacroFileProcessor::GetRestOfLine (WStringR restOfLine, WStringP endFileMsg)
     {
     restOfLine.clear();
 
     /* read in line */
     WChar   charRead;
-    while ( (LF != (charRead = GetInputChar(true))) && (CR != charRead) )
+    while ( (LF != (charRead = GetInputChar(true, endFileMsg))) && (CR != charRead) )
         restOfLine.append (1, charRead);
 
     restOfLine.Trim();
@@ -501,30 +627,45 @@ void        MacroFileProcessor::GetRestOfLine (WStringR restOfLine)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void        MacroFileProcessor::TraceConditionalLevel (WCharCP explanation, int conditionalLevel)
     {
-    if ( (m_debugLevel > 2) && m_debugFile.IsValid() )
-        m_debugFile->PrintfTo (true, L"%ls, [%ls], line %ld, depth = %d.\n", explanation, m_currentFile->m_fileName.c_str(), m_currentFile->m_lineNumber, conditionalLevel);
+    if ( (m_debugLevel > 2) && (nullptr != m_debugOutput) )
+        m_debugOutput->ShowDebugMessage (1+GetCurrentDepth(), L"%ls, [%ls], line %ld, depth = %d.\n", explanation, m_currentFile->m_fileName.c_str(), m_currentFile->m_lineNumber, conditionalLevel);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void        MacroFileProcessor::SkipToEndOfConditional (bool allowElse)
+void        MacroFileProcessor::SkipToEndOfConditional (bool allowElse, WCharCP fileName, int startLine, WStringP endFileMsg)
     {
     int     conditionalLevel = 0;
     WString line;
 
-    TraceConditionalLevel (L"Starting skip to end", 0);
+    // if there's an End File message cued up, show before the TraceConditionalLevel.
+    ShowEndFileMessage (endFileMsg, true);
+
+    TraceConditionalLevel (L"Starting skip to endif", 0);
     for (;;)
         {
         line.clear();
 
         WChar  charRead;
-        while ( (LF != (charRead = GetInputChar (false))) && (CR != charRead) )
+        while ( (LF != (charRead = GetInputChar (false, endFileMsg))) && (CR != charRead) )
             {
             if ( (WEOF == charRead) || (CNTRL_Z == charRead) )
-                FatalError (L"unexpected end of file");
+                {
+                WString errorMsg;
+                errorMsg.Sprintf (L"unmatched %%endif for conditional at line %d of file %ls", startLine, fileName);
+                FatalError (errorMsg.c_str());
+                }
 
             line.append (1, charRead);
+            }
+
+        // if we hit the of all files while in GetInputChar, fatal error.
+        if (nullptr == m_currentFile)
+            {
+            WString errorMsg;
+            errorMsg.Sprintf (L"unmatched %%endif for conditional at line %d of file %ls", startLine, fileName);
+            FatalError (errorMsg.c_str());
             }
 
         // trim whitespace
@@ -552,12 +693,12 @@ void        MacroFileProcessor::SkipToEndOfConditional (bool allowElse)
         // If we allow else, process it.
         else if (allowElse && (conditionalLevel == 0))
             {
-            if (firstNWAfterPercent == line.find (L"else", firstNWAfterPercent, 4)) 
+            if (firstNWAfterPercent == line.find (L"else", firstNWAfterPercent, 4))
                 return;
             else if (firstNWAfterPercent == line.find (L"elif", firstNWAfterPercent, 4))
                 {
                 line.erase (0, firstNWAfterPercent+4);
-                if (evaluateSymbolAsBoolean (line.c_str(), m_processingLevel, m_macroCfgAdmin, *this))
+                if (evaluateSymbolAsBoolean (line.c_str(), ConfigurationVariableLevel::User, m_macroCfgAdmin, *this))
                     {
                     // if else condition is true, return, else keep looking for endif.
                     TraceConditionalLevel (L"elif", 0);
@@ -586,6 +727,8 @@ PreProcessorCommand     MacroFileProcessor::GetPreprocessorCommand (WCharCP word
         L"error",
         L"undef",
         L"lock",
+        L"iffeature",
+        L"echo",
         };
 
     for (int iCmd = 0; iCmd < _countof (s_preProcessorCmds); iCmd++)
@@ -594,13 +737,35 @@ PreProcessorCommand     MacroFileProcessor::GetPreprocessorCommand (WCharCP word
             return (PreProcessorCommand) (iCmd+1);
         }
 
-    return  PREPROCESSOR_NotKeyword;
+    return  PreProcessorCommand::NotKeyword;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   05/14
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP     MacroFileProcessor::GetCurrentFileName ()
+    {
+    if (nullptr == m_currentFile)
+        return nullptr;
+
+    return m_currentFile->m_fileName.c_str();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   05/14
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP     MacroFileProcessor::GetParentFileName (MacroFileEntry* mfe)
+    {
+    if (nullptr == mfe->m_parent)
+        return nullptr;
+
+    return mfe->m_parent->m_fileName.c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void        MacroFileProcessor::PreProcess ()
+void        MacroFileProcessor::PreProcess (WStringP endFileMsg)
     {
     // start with a string of 80 characters (will resize if necessary).
     WString     line;
@@ -609,10 +774,10 @@ void        MacroFileProcessor::PreProcess ()
 begin:
     // read the rest of the line (on entry to this method, the % PreProcessor leadin character has already been read).
     WChar   previousChar = 0;
-    for (WChar  charRead = 0; LF != (charRead = ReadCharFromCurrentFile (false)); )
+    for (WChar  charRead = 0; LF != (charRead = ReadCharFromCurrentFile (false, false, endFileMsg)); )
         {
         if (WEOF == charRead)
-            FatalError (L"unexpected end of macro file");
+            break;
 
         line.append (1, charRead);
         previousChar = charRead;
@@ -639,62 +804,95 @@ begin:
         line.erase (preprocArgStart);
         }
 
+    // save current file name in case we need to report it in case of error.
+    WString conditionalStartFileName (m_currentFile->m_fileName);
+    long    conditionalStartLine = m_currentFile->m_lineNumber;
+
     // find the preprocessor command, if there is one.
     PreProcessorCommand preProcCmd = GetPreprocessorCommand (line.c_str());
     switch (preProcCmd)
         {
-        case    PREPROCESSOR_Include:
+        case    PreProcessorCommand::Include:
             DoInclude (preprocArgument);
             break;
 
-        case    PREPROCESSOR_IfDefined:
-            if (!m_macroCfgAdmin.IsMacroDefinedFromLevel (preprocArgument.c_str(), m_processingLevel))
-                SkipToEndOfConditional (true);
+        case    PreProcessorCommand::IfDefined:
+            if (!m_macroCfgAdmin.IsMacroDefinedFromLevel (preprocArgument.c_str(), ConfigurationVariableLevel::User))
+                SkipToEndOfConditional (true, conditionalStartFileName.c_str(), conditionalStartLine, endFileMsg);
             break;
 
-        case    PREPROCESSOR_IfNotDefined:
-            if (m_macroCfgAdmin.IsMacroDefinedFromLevel (preprocArgument.c_str(), m_processingLevel))
-                SkipToEndOfConditional (true);
+        case    PreProcessorCommand::IfNotDefined:
+            if (m_macroCfgAdmin.IsMacroDefinedFromLevel (preprocArgument.c_str(), ConfigurationVariableLevel::User))
+                SkipToEndOfConditional (true, conditionalStartFileName.c_str(), conditionalStartLine, endFileMsg);
             break;
 
-        case    PREPROCESSOR_Else:
-        case    PREPROCESSOR_ElseIf:
-            SkipToEndOfConditional (false);
+        case    PreProcessorCommand::Else:
+        case    PreProcessorCommand::ElseIf:
+            SkipToEndOfConditional (false, conditionalStartFileName.c_str(), conditionalStartLine, endFileMsg);
             break;
 
-        case    PREPROCESSOR_EndIf:
+        case    PreProcessorCommand::EndIf:
             break;
 
-        case    PREPROCESSOR_If:
-            if (!evaluateSymbolAsBoolean (preprocArgument.c_str(), m_processingLevel, m_macroCfgAdmin, *this))
-                SkipToEndOfConditional (true);
+        case    PreProcessorCommand::If:
+            if (!evaluateSymbolAsBoolean (preprocArgument.c_str(), ConfigurationVariableLevel::User, m_macroCfgAdmin, *this))
+                SkipToEndOfConditional (true, conditionalStartFileName.c_str(), conditionalStartLine, endFileMsg);
             break;
 
-        case    PREPROCESSOR_Level:
+        case    PreProcessorCommand::Level:
             {
-            ConfigurationVariableLevel level = (ConfigurationVariableLevel) evaluateSymbolAsInt (preprocArgument.c_str(), m_processingLevel, m_macroCfgAdmin, *this);
-            if (level > ConfigurationVariableLevel::User)
-                level = ConfigurationVariableLevel::User;
-            else if (level < ConfigurationVariableLevel::System)
-                level = ConfigurationVariableLevel::System;
-            m_processingLevel = level;
+            ConfigurationVariableLevel newLevel;
+            if (BSISUCCESS != GetConfigurationVariableLevelFromString (newLevel, preprocArgument.c_str()))
+                {
+                ConfigurationVariableLevel  readLevel = (ConfigurationVariableLevel) evaluateSymbolAsInt (preprocArgument.c_str(), ConfigurationVariableLevel::User, m_macroCfgAdmin, *this);
+                newLevel = _ReinterpretConfigurationVariableLevel (readLevel);
+                if (nullptr != m_levelWarnings)
+                    {
+                    MacroLevelWarning thisWarning (m_currentFile->m_fileName.c_str(), readLevel, m_currentFile->m_lineNumber);
+                    m_levelWarnings->push_back (thisWarning);
+                    }
+                }
+
+            if (newLevel > ConfigurationVariableLevel::User)
+                newLevel = ConfigurationVariableLevel::User;
+            else if (newLevel < ConfigurationVariableLevel::System)
+                newLevel = ConfigurationVariableLevel::System;
+            m_processingLevel = newLevel;
+            if (nullptr != m_readMonitor)
+                m_readMonitor->NewProcessingLevel (newLevel, GetCurrentFileName());
+
             break;
             }
 
-        case    PREPROCESSOR_Error:
+        case    PreProcessorCommand::Error:
             {
             WString     errorMsg;
-            m_macroCfgAdmin.ExpandMacro (errorMsg, preprocArgument.c_str(), MacroExpandOptions (m_processingLevel));
+            m_macroCfgAdmin.ExpandMacro (errorMsg, preprocArgument.c_str(), MacroExpandOptions (ConfigurationVariableLevel::User));
             FatalError (errorMsg.c_str());
             break;
             }
 
-        case    PREPROCESSOR_Undef:
-            ConfigurationManager::UndefineVariable (preprocArgument.c_str());
+        case    PreProcessorCommand::Undef:
+            if (nullptr != m_readMonitor)
+                m_readMonitor->MacroUndefine (preprocArgument.c_str(), m_processingLevel, GetCurrentFileName());
+            m_macroCfgAdmin._UndefineConfigVariable (preprocArgument.c_str());
             break;
 
-        case    PREPROCESSOR_Lock:
+        case    PreProcessorCommand::Lock:
+            if (nullptr != m_readMonitor)
+                m_readMonitor->MacroLock (preprocArgument.c_str(), m_processingLevel, GetCurrentFileName());
             m_macroCfgAdmin.LockMacro (preprocArgument.c_str());
+            break;
+
+        case    PreProcessorCommand::IfFeature:
+            {
+            if ( (nullptr == m_featureAspectFunc) ||(!m_featureAspectFunc (preprocArgument.c_str())) )
+                SkipToEndOfConditional (true, conditionalStartFileName.c_str(), conditionalStartLine, endFileMsg);
+            break;
+            }
+
+        case    PreProcessorCommand::Echo:
+            DoEcho (preprocArgument);
             break;
 
         default:
@@ -710,60 +908,65 @@ begin:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    kab             10/89
 +---------------+---------------+---------------+---------------+---------------+------*/
-void        MacroFileProcessor::AddMacro (WCharCP macroName)
+void        MacroFileProcessor::AddMacro (WCharCP macroName, MacroOperation macroOperation, WStringP endFileMsg)
     {
     WString     restOfLine;
     restOfLine.reserve (80);
-    GetRestOfLine (restOfLine);
+    GetRestOfLine (restOfLine, endFileMsg);
 
-    MacroExpandOptions options (m_processingLevel);
+    // we are setting immediate to false, but that is overridden by ${} expansions. We need to do those at the User (highest) level.
+    MacroExpandOptions options (ConfigurationVariableLevel::User);
     options.SetImmediate (false);
     WString     expanded;
     m_macroCfgAdmin.ExpandMacro (expanded, restOfLine.c_str(), options);
-    m_macroCfgAdmin.DefineMacroWithDebugging (macroName, expanded.c_str(), m_processingLevel, m_debugFile.get(), m_debugLevel);
+
+    if (nullptr != m_readMonitor)
+        m_readMonitor->MacroDefine (macroOperation, macroName, expanded.c_str(), m_processingLevel, GetCurrentFileName());
+
+    m_macroCfgAdmin.DefineMacroWithDebugging (macroName, expanded.c_str(), m_processingLevel, 1+GetCurrentDepth(), m_debugOutput, m_debugLevel);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * only add macro if it doesn't already exist
 * @bsimethod                                                    Keith.Bentley   10/92
 +---------------+---------------+---------------+---------------+---------------+------*/
-void        MacroFileProcessor::NewMacro (WCharCP macroName)
+void        MacroFileProcessor::NewMacro (WCharCP macroName, WStringP endFileMsg)
     {
     WString     tmpString;
 
-    // assigns new value to macroName only if that macro does not already exist.
-    if (NULL == m_macroCfgAdmin.GetMacroTranslation (macroName, tmpString, m_processingLevel))
+    // assigns new value to macroName only if that macro does not already exist (at any level).
+    if (nullptr == m_macroCfgAdmin.GetMacroTranslation (macroName, tmpString, ConfigurationVariableLevel::User))
         {
-        AddMacro (macroName);
+        AddMacro (macroName, MacroOperation::NewMacro, endFileMsg);
         }
     else
         {
         // just get the rest of the line and throw it away.
         WString restOfLine;
-        GetRestOfLine (restOfLine);
+        GetRestOfLine (restOfLine, endFileMsg);
 
         // make sure the macro defined (if it came from system env table)
-        m_macroCfgAdmin.EnsureSysEnvDefinition (macroName, m_processingLevel, m_debugFile.get(), m_debugLevel);
+        m_macroCfgAdmin.EnsureSysEnvDefinition (macroName, m_processingLevel, m_debugOutput, m_debugLevel);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   10/92
 +---------------+---------------+---------------+---------------+---------------+------*/
-void        MacroFileProcessor::AppendMacro (WCharCP macroName, WCharCP sepString, bool doAppend)
+void        MacroFileProcessor::AppendMacro (WCharCP macroName, WCharCP sepString, bool doAppend, MacroOperation macroOperation, WStringP endFileMsg)
     {
     WString     tmpString;
     WCharCP     currentMacroValue;
-    if (NULL == (currentMacroValue = m_macroCfgAdmin.GetMacroTranslation (macroName, tmpString, m_processingLevel)))
+    if (nullptr == (currentMacroValue = m_macroCfgAdmin.GetMacroTranslation (macroName, tmpString, m_processingLevel)))
         {
-        AddMacro (macroName);
+        AddMacro (macroName, macroOperation, endFileMsg);
         return;
         }
 
     // get the value we want to append/peprend from the input stream.
     WString     appendValue;
 
-    GetRestOfLine (appendValue);
+    GetRestOfLine (appendValue, endFileMsg);
 
     MacroExpandOptions options (m_processingLevel);
     options.SetImmediate (false);
@@ -797,7 +1000,10 @@ void        MacroFileProcessor::AppendMacro (WCharCP macroName, WCharCP sepStrin
         }
 
     // macroCfgAdmin takes ownership of allocated newValue...
-    m_macroCfgAdmin.DefineMacroWithDebugging (macroName, newValue.c_str(), m_processingLevel, m_debugFile.get(), m_debugLevel);
+    if (nullptr != m_readMonitor)
+        m_readMonitor->MacroDefine (macroOperation, macroName, appendValue.c_str(), m_processingLevel, GetCurrentFileName());
+
+    m_macroCfgAdmin.DefineMacroWithDebugging (macroName, newValue.c_str(), m_processingLevel, 1+GetCurrentDepth(), m_debugOutput, m_debugLevel);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -807,37 +1013,43 @@ void        MacroFileProcessor::ProcessMacroFile (ConfigurationVariableLevel sta
     {
     m_eofHit          = false;
     m_processingLevel = startingProcessLevel;
+    WString             endFileMsg;
+    WStringP            endFileMsgP = (nullptr == m_debugOutput) ? nullptr : &endFileMsg;
+
     for (;;)
         {
         WString             macroName;
-        MacroOperation macroOp = GetMacroNameAndOperation (macroName);
+        MacroOperation macroOp = GetMacroNameAndOperation (macroName, endFileMsgP);
 
         // if we're done, exit the loop.
-        if (OPERATION_EOF == macroOp)
+        if (MacroOperation::EndOfFile == macroOp)
             break;
 
         switch (macroOp)
             {
-            case    OPERATION_AddMacro:          
-                AddMacro (macroName.c_str());                           
+            case    MacroOperation::AddMacro:
+                AddMacro (macroName.c_str(), macroOp, endFileMsgP);
                 break;
 
-            case    OPERATION_NewMacro:       
-                NewMacro (macroName.c_str());                                     
+            case    MacroOperation::NewMacro:
+                NewMacro (macroName.c_str(), endFileMsgP);
                 break;
 
-            case    OPERATION_AppendMacro:    
-                AppendMacro (macroName.c_str(), L" ",    true);          
+            case    MacroOperation::AppendMacro:
+                AppendMacro (macroName.c_str(), L" ", true, macroOp, endFileMsgP);
                 break;
 
-            case    OPERATION_AppendPath:     
-                AppendMacro (macroName.c_str(), WCSPATH_SEPARATOR, true);  
+            case    MacroOperation::AppendPath:
+                AppendMacro (macroName.c_str(), WCSPATH_SEPARATOR, true, macroOp, endFileMsgP);
                 break;
 
-            case    OPERATION_PrependPath:    
-                AppendMacro (macroName.c_str(), WCSPATH_SEPARATOR, false); 
+            case    MacroOperation::PrependPath:
+                AppendMacro (macroName.c_str(), WCSPATH_SEPARATOR, false, macroOp, endFileMsgP);
                 break;
             }
+
+        // we defer this until here, otherwise the end file messages come before we report the result of the last line in the file.
+        ShowEndFileMessage (endFileMsgP, true);
         }
 
     /* After processing file return level to highest (i.e. full translation) */
@@ -847,21 +1059,27 @@ void        MacroFileProcessor::ProcessMacroFile (ConfigurationVariableLevel sta
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dan.East        12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   MacroFileProcessor::ProcessTopLevelFile (WCharCP fileName, ConfigurationVariableLevel level)
+BentleyStatus   MacroFileProcessor::ProcessTopLevelFile (WCharCP fileName, ConfigurationVariableLevel level, FeatureAspectAllowedFunc featureAspectFunc)
     {
     BeFileStatus    openStatus;
     BeTextFilePtr   tempOpen = BeTextFile::Open (openStatus, fileName, TextFileOpenType::Read, TextFileOptions::None, TextFileEncoding::CurrentLocale);
 
     // NULL out the filePtr, which has the effect of closing the temporarily opened file.
-    tempOpen = NULL;
+    tempOpen = nullptr;
 
     if (BeFileStatus::Success != openStatus)
         return (BentleyStatus) openStatus;
 
-    PushMacroFile (fileName);
+    if (_GetSuspendDependencies())
+        m_macroCfgAdmin.SuspendDependencies();
+
+    PushMacroFile (fileName, nullptr, true);
     BentleyStatus status = SUCCESS;
 
-    try 
+    // set the function that tests feature aspects for the %ifFeature conditional
+    m_featureAspectFunc = featureAspectFunc;
+
+    try
         {
         ProcessMacroFile (level);
         }
@@ -871,40 +1089,78 @@ BentleyStatus   MacroFileProcessor::ProcessTopLevelFile (WCharCP fileName, Confi
         status = ERROR;
         }
 
+    if (_GetSuspendDependencies())
+        m_macroCfgAdmin.ResumeDependencies();
+
     return  status;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   10/92
 +---------------+---------------+---------------+---------------+---------------+------*/
-void        MacroFileProcessor::PushMacroFile (WCharCP fileName)
+void        MacroFileProcessor::PushMacroFile (WCharCP fileName, MacroFileEntry* parent, bool report)
     {
-    MacroFileEntry*   mfe = new MacroFileEntry (fileName);
+    MacroFileEntry*   mfe = new MacroFileEntry (fileName, parent);
 
     // put the current file onto the end of the list, and make it current.
-    if (NULL != m_currentFile)
-        m_pendingFiles.push_back (m_currentFile);
+    if (nullptr != m_currentFile)
+        m_pendingFiles.push_back (T_FileEntry (m_currentFile, m_currentFileStartReported));
 
     m_currentFile = mfe;
+    m_currentFileStartReported = report;
+
+    if (report && (nullptr != m_readMonitor))
+        m_readMonitor->StartFile (GetCurrentFileName(), m_processingLevel, GetParentFileName(mfe));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Barry.Bentley   08/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+int         MacroFileProcessor::GetCurrentDepth ()
+    {
+    int depth = -1;
+    for (MacroFileEntry* mfe = m_currentFile; nullptr != mfe; mfe = mfe->m_parent)
+        depth++;
+
+    return depth;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   10/92
 +---------------+---------------+---------------+---------------+---------------+------*/
-void        MacroFileProcessor::PopFile ()
+void        MacroFileProcessor::PopFile (WStringP endFileMessage)
     {
     // get the next file to go to.
-    MacroFileEntry* mfe = NULL;
+    T_FileEntry mfe;
     if (!m_pendingFiles.empty())
         {
-        mfe = *(m_pendingFiles.rbegin());
+        mfe = *(m_pendingFiles.rbegin ());
         m_pendingFiles.pop_back ();
         }
 
-    if (NULL != m_currentFile)
+    if (nullptr != m_readMonitor)
+        m_readMonitor->EndFile (GetCurrentFileName(), m_processingLevel, GetParentFileName(m_currentFile));
+
+    if (nullptr != endFileMessage)
+        {
+        if (endFileMessage->empty())
+            endFileMessage->Sprintf (L"End of macro file [%ls]\n", m_currentFile->m_fileName.c_str());
+        else
+            {
+            WString tmp;
+            tmp.Sprintf (L"End of macro file [%ls]\n", m_currentFile->m_fileName.c_str());
+            endFileMessage->append (tmp.c_str());
+            }
+        }
+
+    if (nullptr != m_currentFile)
         delete m_currentFile;
 
-    m_currentFile = mfe;
+    m_currentFile = mfe.first;
+    m_currentFileStartReported = true; /* It will be reported by the next call */
+
+    if ((nullptr != m_readMonitor) && (nullptr != mfe.first) && !mfe.second)
+        m_readMonitor->StartFile (GetCurrentFileName(), m_processingLevel, GetParentFileName(m_currentFile));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -912,102 +1168,115 @@ void        MacroFileProcessor::PopFile ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            MacroFileProcessor::PrintSummary ()
     {
-    if (!m_debugFile.IsValid())
+    if (nullptr == m_debugOutput)
         return;
 
-    m_debugFile->PrintfTo (true, L"\n\n#########################################\n");
-    m_debugFile->PrintfTo (true, L"# Configuration Variable Summary        #\n");
-    m_debugFile->PrintfTo (true, L"#########################################\n\n");
+    m_debugOutput->ShowDebugMessage (0, L"\n\n#########################################\n");
+    m_debugOutput->ShowDebugMessage (0, L"# Configuration Variable Summary        \n#");
+    m_debugOutput->ShowDebugMessage (0, L"#########################################\n");
+    m_debugOutput->ShowDebugMessage (0, L"");
 
-    m_macroCfgAdmin.PrintAllMacros (*m_debugFile.get(), m_debugLevel);
+    m_macroCfgAdmin.PrintAllMacros (*m_debugOutput, m_debugLevel);
 
-    m_debugFile->PrintfTo (true, L"\n#########################################\n");
-    m_debugFile->PrintfTo (true, L"# End of Configuration Variable Summary #\n");
-    m_debugFile->PrintfTo (true, L"#########################################\n");
+    m_debugOutput->ShowDebugMessage (0, L"");
+    m_debugOutput->ShowDebugMessage (0, L"#########################################\n");
+    m_debugOutput->ShowDebugMessage (0, L"# End of Configuration Variable Summary #\n");
+    m_debugOutput->ShowDebugMessage (0, L"#########################################\n");
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   10/92
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool        fileCompareDescending (WString const& file1, WString const& file2)
     {
-    return  file2.compare (file1) > 0;
+    return  file2.CompareToI (file1) > 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   10/92
+* @bsimethod                                                    Laimis.Vaitkus  10/92
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     appendToFileList (T_WStringVector& fileList, WCharCP fileName)
+static WString makeAbsolutePath (BeFileNameCR fileName, WStringCR currentFilePath)
     {
-    // terminate string at path separator.
-    WCharP  pNextFileName = NULL;
-    WCharP  pPathSep;
-    if (NULL != (pPathSep = (WCharP) ::wcschr (fileName, WCSPATH_SEPARATOR_CHAR)))
+    if (fileName.IsAbsolutePath ())
         {
-        *pPathSep = 0;
-        pPathSep++;
-        pNextFileName = (0 != *pPathSep) ? pPathSep : NULL;
+        return fileName;
         }
 
-    if (NULL != ::wcschr (fileName, '*'))
-        {
-        // iterate files, but not in subdirectories.
-        BeFileListIterator  iterator (fileName, false);
-        BeFileName          foundName;
-        T_WStringVector     subList;
-        while (iterator.GetNextFileName (foundName) == SUCCESS)
-            subList.push_back (WString (foundName.GetName()));
-
-        // sort the sublist in descending order, so when we push them using FOR_EACH they're in ascending order..
-        std::sort (subList.begin(), subList.end(), fileCompareDescending);
-
-        // add the sorted file names to the overall list.
-        FOR_EACH (WString subListFileName, subList)
-            fileList.push_back (subListFileName);
-        }
-    else
-        {
-        fileList.push_back (WString (fileName));
-        }
-
-    // if this was a path separated list, put the next batch in.
-    if (NULL != pNextFileName)
-        appendToFileList (fileList, pNextFileName);
+    return BeFileName::GetDirectoryName (currentFilePath.c_str()).append (fileName);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Nancy.McCall    07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void     MacroFileProcessor::GetFileList (T_WStringVector& fileList, WCharCP fileName)
+void     MacroFileProcessor::GetFileList (T_WStringVectorR fileList, WStringCR fileSpec)
     {
-    if ( (NULL == fileName) || (0 == *fileName) )
+    if (fileSpec.empty())
+        {
         return;
+        }
 
-    return  appendToFileList (fileList, fileName);
+    // terminate string at path separator.
+    size_t separatorPos = fileSpec.find (WCSPATH_SEPARATOR_CHAR);
+    WString specFrontPart (fileSpec, 0, separatorPos);
+
+    if (!specFrontPart.empty())
+        {
+        if (WString::npos != specFrontPart.find (L'*'))
+            {
+            // iterate files, but not in subdirectories.
+            BeFileListIterator iterator (specFrontPart, false);
+            T_WStringVector    subList;
+            BeFileName         foundName;
+            while (iterator.GetNextFileName (foundName) == SUCCESS)
+                {
+                subList.push_back (makeAbsolutePath (foundName, m_currentFile->m_fileName));
+                }
+
+            // sort the sublist in descending order, so when we push them using FOR_EACH they're in ascending order.
+            std::sort (subList.begin(), subList.end(), fileCompareDescending);
+
+            // add the sorted file names to the overall list.
+            for (const auto& subListFileName : subList)
+                {
+                fileList.push_back (subListFileName);
+                }
+            }
+        else
+            {
+            BeFileName fileName (specFrontPart.c_str());
+            fileList.push_back (makeAbsolutePath (fileName, m_currentFile->m_fileName));
+            }
+        }
+
+    if (WString::npos != separatorPos && separatorPos + 1 < fileSpec.length())
+        {
+        // if this was a path separated list, put the next batch in.
+        GetFileList (fileList, fileSpec.substr (separatorPos + 1));
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   10/92
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool        MacroFileProcessor::FileExists (WCharCP testFileSpec, ConfigurationVariableLevel processingLevel)
+bool        MacroFileProcessor::_FileExists (WStringCR testFileSpec)
     {
-    WChar    tmpName[MAX_LINE_LEN];
+    T_WStringVector fileList;
+    GetFileList (fileList, testFileSpec);
 
-    wcscpy (tmpName, testFileSpec);
-    wstripSpace (tmpName);
-    WString expandedName;
-    m_macroCfgAdmin.ExpandMacro (expandedName, tmpName, MacroExpandOptions (processingLevel));
-
-    T_WStringVector   fileList;
-    GetFileList (fileList, expandedName.c_str());
-
-    FOR_EACH (WString fileName, fileList)
+    for (const auto& fileName : fileList)
         {
         if (BeFileName::DoesPathExist (fileName.c_str()))
             return true;
         }
 
-    return  false;
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Laimis.Vaitkus  10/92
++---------------+---------------+---------------+---------------+---------------+------*/
+bool        MacroFileProcessor::FileExists (WStringCR testFileSpec)
+    {
+    return _FileExists (testFileSpec);
     }
 

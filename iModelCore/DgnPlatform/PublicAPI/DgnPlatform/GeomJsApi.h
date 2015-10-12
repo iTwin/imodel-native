@@ -60,6 +60,11 @@ DVec3d GetData (JsDVector3dP);
 DVec2d GetData (JsDVector2dP);
 JsDVector3dP CreateJsVector (DVec3dCR data);
 JsDVector2dP CreateJsVector (DVec2dCR data);
+// Create vector with specfied length -- return nullptr if input vector is zero length
+JsDVector3dP CreateJsVector (DVec3dCR data, double length);
+// Create vector with specfied length -- return nullptr if input vector is zero length
+JsDVector2dP CreateJsVector (DVec2dCR data, double length);
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 // Consistent method names for A.Plus(U) === A+U and similar expressions.
@@ -80,7 +85,9 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
     ATypeP Plus3Scaled (BTypeP vectorA, double scalarA,  BTypeP vectorB, double scalarB, BTypeP vectorC, double scalarC)\
         {return new AType(NativeAType::FromSumOf(m_data, GetData (vectorA), scalarA, GetData(vectorB),scalarB,  GetData(vectorC),scalarC));}\
     BTypeP VectorTo (ATypeP other)\
-        {return CreateJsVector (NativeBType::FromStartEnd(m_data, other->m_data));}
+        {return CreateJsVector (NativeBType::FromStartEnd(m_data, other->m_data));}\
+    BTypeP UnitVectorTo (ATypeP other)\
+        {return CreateJsVector (NativeBType::FromStartEnd(m_data, other->m_data), 1.0);}
 
 // Distance and DistanceSquared methods between instance and other ...
 #define DeclareAndImplementMethods_Distance(JsTypeP) \
@@ -89,10 +96,12 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
     double MaxAbsDiff (JsTypeP other){return m_data.MaxDiff (other->m_data);}\
     double MaxAbs (){return m_data.MaxAbs ();}
 
-// Magnitude and MagnitudeSquared methods for instance
-#define DeclareAndImplementMethods_Magnitude \
+// Magnitude, MagnitudeSquared, and other vector methods for instance
+#define DeclareAndImplementMethods_VectorMagnitudeAndScaling(JsVectorTypeP) \
     double Magnitude (){return m_data.Magnitude ();}\
-    double MagnitudeSquared (){return m_data.MagnitudeSquared ();}
+    double MagnitudeSquared (){return m_data.MagnitudeSquared ();}\
+    JsVectorTypeP Normalize () { return CreateJsVector (Get (), 1.0);}\
+    JsVectorTypeP ScaleToLength (double length) { return CreateJsVector (Get(), length);}
 
  // Methods that have point inputs and vector outputs
  #define DeclareAndImplementMethods_VectorTo(NativeVectorType,PointTypeP,VectorTypeP) \
