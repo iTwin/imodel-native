@@ -286,10 +286,16 @@
         </Bindings>
     </Part>
 
+    <Part Name="WSClientUnitTests-Assets" BentleyBuildMakeFile="TestAssetsDelivery.mke" />
+
     <Part Name="UnitTests-Published" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="WebServicesClient-PublishedAPI" />
         <SubPart PartName="WebServicesCache-PublishedAPI" />
+        
+        <!-- Assets -->
+        <SubPart PartName="WSClientUnitTests-Assets" />
+        
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="WebServices/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
         </Bindings>
