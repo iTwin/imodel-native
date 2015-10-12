@@ -705,314 +705,148 @@ void PerformanceECDbMapCATestFixture::SqlDeleteInstances (ECDbR ecdb, ECClassR e
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void PerformanceECDbMapCATestFixture::SetUpTestDb (ECDbR ecdb, ECN::ECSchemaPtr &ecSchema, ECClassP &baseClass)
+    {
+    m_ecsqlTestItems.clear ();
+
+    ECSchema::CreateSchema (ecSchema, "testSchema", 1, 0);
+    ASSERT_TRUE (ecSchema.IsValid ());
+    ecSchema->SetNamespacePrefix ("ts");
+
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, ecSchema->CreateClass (baseClass, "BaseClass"));
+    CreatePrimitiveProperties (*baseClass);
+
+    ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
+    schemaCache->AddSchema (*ecSchema);
+
+    EXPECT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache));
+    EXPECT_EQ (BE_SQLITE_OK, ecdb.SaveChanges ());
+    }
+
+//---------------------------------------------------------------------------------------
 // Scenario: No of Instances 1000000, No of Properties 4:128
 //           One time Prepare and then Loop through Binding, Step, ReSet and ClearBinding
-//           Bind Properties Values instead of Hardcoding them
-//           No result set iterator
 //           Bind ECInstanceId instead of auto Generating it
 
 // @bsiMethod                                      Muhammad Hassan                  08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql_BindPropertyValues_NoResultSetIterator)
+TEST_F (PerformanceECDbMapCATestFixture, SqlVsECSqlInsertPerformance_BindPropertyValues)
     {
     m_instancesPerClass = 1000000;
+
     for (size_t i = 2; i <= 7; i++)
         {
-        m_ecsqlTestItems.clear ();
         m_propertiesPerClass = (size_t)pow (2, i);
-        m_ecsqlTestItems.clear ();
-        ECDbTestProject test;
-        ECDbR ecdb = test.Create ("CRUDPerformanceSqlVsECSql.ecdb");
-
+        ECDbTestProject testProj;
+        ECDbR ecdb = testProj.Create ("CRUDPerformanceSqlVsECSql.ecdb");
         ECSchemaPtr testSchema;
-        ECSchema::CreateSchema (testSchema, "testSchema", 1, 0);
-        ASSERT_TRUE (testSchema.IsValid ());
-        testSchema->SetNamespacePrefix ("ts");
+        ECClassP baseClass = nullptr;
+        SetUpTestDb (ecdb, testSchema, baseClass);
 
-        ECClassP baseClass;
-        ASSERT_EQ (ECOBJECTS_STATUS_Success, testSchema->CreateClass (baseClass, "BaseClass"));
-        CreatePrimitiveProperties (*baseClass);
-
-        ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
-        schemaCache->AddSchema (*testSchema);
-
-        ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache));
-        ASSERT_EQ (BE_SQLITE_OK, ecdb.SaveChanges ());
-
-        //CRUD Performance using ECSql statements.
         GenerateECSqlCRUDTestStatements (*testSchema, false);
 
         ECSqlInsertInstances (ecdb, true);
         ASSERT_GE (m_insertTime, 0.0) << "ECSQL Insert test failed";
-        ECSqlReadInstances (ecdb, false);
-        ASSERT_GE (m_selectTime, 0.0) << "ECSQL SELECT test failed";
-        ECSqlUpdateInstances (ecdb, true);
-        ASSERT_GE (m_updateTime, 0.0) << "ECSQL UPDATE test failed";
-        ECSqlDeleteInstances (ecdb);
-        ASSERT_GE (m_deleteTime, 0.0) << "ECSQL DELETE test failed";
 
         Utf8String testDescription;
         testDescription.Sprintf ("ECSQL INSERT against ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
         LOGTODB (TEST_DETAILS, m_insertTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        testDescription.Sprintf ("ECSQL SELECT Prop1 Prop2 Prop3... FROM ONLY against ECClass with %d properties and %d Instances. - no result set iteration.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_selectTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        testDescription.Sprintf ("ECSQL UPDATE ONLY against ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_updateTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        testDescription.Sprintf ("ECSQL DELETE FROM ONLY against ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_deleteTime, testDescription.c_str (), (int)m_propertiesPerClass);
+
+        ECSqlDeleteInstances (ecdb);
 
         ASSERT_EQ (BE_SQLITE_OK, ecdb.AbandonChanges ());
 
-        //CRUD Performance using Sql statements.
-        m_insertTime = m_updateTime = m_selectTime = m_deleteTime = 0.0;
+        //Insert Performance using Sql statements.
+        m_insertTime = 0.0;
 
         GenerateSqlCRUDTestStatements (*testSchema, *baseClass, false);
 
         SqlInsertInstances (ecdb, *baseClass, true);
         ASSERT_GE (m_insertTime, 0.0) << "SQL Insert test failed";
-        SqlReadInstances (ecdb, *baseClass, false);
-        ASSERT_GE (m_selectTime, 0.0) << "SQL SELECT test failed";
-        SqlUpdateInstances (ecdb, *baseClass, true);
-        ASSERT_GE (m_updateTime, 0.0) << "SQL UPDATE test failed";
-        SqlDeleteInstances (ecdb, *baseClass);
-        ASSERT_GE (m_deleteTime, 0.0) << "SQL DELETE test failed";
 
         testDescription.Sprintf ("SQL INSERT against table of ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
         LOGTODB (TEST_DETAILS, m_insertTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        testDescription.Sprintf ("SQL SELECT Prop1 Prop2 Prop3... FROM table of ECClass with %d properties and %d Instances. - no result set iteration.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_selectTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        testDescription.Sprintf ("SQL UPDATE against table of ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_updateTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        testDescription.Sprintf ("SQL DELETE against table ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_deleteTime, testDescription.c_str (), (int)m_propertiesPerClass);
         }
     }
 
 //---------------------------------------------------------------------------------------
-// Scenario: No of Instances 1000000, No of Properties 4:128
-//           One time Prepare and then Loop through Binding, Step, ReSet and ClearBinding
-//           Hardcode Properties values
-//           No result set iterator
-//           Bind ECInstanceId instead of auto Generating it 
-
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql_HardCodePropertiesValues_NoResultSetIterator)
+TEST_F (PerformanceECDbMapCATestFixture, SqlVsECSqlInsertPerformance_DoNotBindPropertyValues)
     {
     m_instancesPerClass = 1000000;
 
     for (size_t i = 2; i <= 7; i++)
         {
-        m_ecsqlTestItems.clear ();
         m_propertiesPerClass = (size_t)pow (2, i);
+        ECDbTestProject testProj;
+        ECDbR ecdb = testProj.Create ("CRUDPerformanceSqlVsECSql.ecdb");
         ECSchemaPtr testSchema;
-        ECDbTestProject test;
-        ECDbR ecdb = test.Create ("CRUDPerformanceSqlVsECSql.ecdb");
-        ECSchema::CreateSchema (testSchema, "testSchema", 1, 0);
-        ASSERT_TRUE (testSchema.IsValid ());
-        testSchema->SetNamespacePrefix ("ts");
+        ECClassP baseClass = nullptr;
+        SetUpTestDb (ecdb, testSchema, baseClass);
 
-        ECClassP baseClass;
-        ASSERT_EQ (ECOBJECTS_STATUS_Success, testSchema->CreateClass (baseClass, "BaseClass"));
-        CreatePrimitiveProperties (*baseClass);
-
-        ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
-        schemaCache->AddSchema (*testSchema);
-
-        ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache));
-        ASSERT_EQ (BE_SQLITE_OK, ecdb.SaveChanges ());
-
-        //CRUD Performance using ECSql statements.
+        //Insert Performance using ECSql statement.
         GenerateECSqlCRUDTestStatements (*testSchema, true);
 
         ECSqlInsertInstances (ecdb, false);
         ASSERT_GE (m_insertTime, 0.0) << "ECSQL Insert test failed";
-        ECSqlReadInstances (ecdb, false);
-        ASSERT_GE (m_selectTime, 0.0) << "ECSQL SELECT test failed";
-        ECSqlUpdateInstances (ecdb, false);
-        ASSERT_GE (m_updateTime, 0.0) << "ECSQL UPDATE test failed";
-        ECSqlDeleteInstances (ecdb);
-        ASSERT_GE (m_deleteTime, 0.0) << "ECSQL DELETE test failed";
 
         Utf8String testDescription;
         testDescription.Sprintf ("ECSQL INSERT against ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
         LOGTODB (TEST_DETAILS, m_insertTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        testDescription.Sprintf ("ECSQL SELECT Prop1 Prop2 Prop3... FROM ONLY against ECClass with %d properties and %d Instances. - no result set iteration.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_selectTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        testDescription.Sprintf ("ECSQL UPDATE ONLY against ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_updateTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        testDescription.Sprintf ("ECSQL DELETE FROM ONLY against ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_deleteTime, testDescription.c_str (), (int)m_propertiesPerClass);
+
+        ECSqlDeleteInstances (ecdb);
 
         ASSERT_EQ (BE_SQLITE_OK, ecdb.AbandonChanges ());
 
-        //CRUD Performance using Sql statements.
-        m_insertTime = m_updateTime = m_selectTime = m_deleteTime = 0.0;
+        //Insert Performance using Sql statement.
+        m_insertTime = 0.0;
 
         GenerateSqlCRUDTestStatements (*testSchema, *baseClass, true);
 
         SqlInsertInstances (ecdb, *baseClass, false);
         ASSERT_GE (m_insertTime, 0.0) << "SQL Insert test failed";
-        SqlReadInstances (ecdb, *baseClass, false);
-        ASSERT_GE (m_selectTime, 0.0) << "SQL SELECT test failed";
-        SqlUpdateInstances (ecdb, *baseClass, false);
-        ASSERT_GE (m_updateTime, 0.0) << "SQL UPDATE test failed";
-        SqlDeleteInstances (ecdb, *baseClass);
-        ASSERT_GE (m_deleteTime, 0.0) << "SQL DELETE test failed";
 
         testDescription.Sprintf ("SQL INSERT against table of ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
         LOGTODB (TEST_DETAILS, m_insertTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        testDescription.Sprintf ("SQL SELECT Prop1 Prop2 Prop3... FROM table of ECClass with %d properties and %d Instances. - no result set iteration.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_selectTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        testDescription.Sprintf ("SQL UPDATE against table of ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_updateTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        testDescription.Sprintf ("SQL DELETE against table ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_deleteTime, testDescription.c_str (), (int)m_propertiesPerClass);
         }
     }
 
 //---------------------------------------------------------------------------------------
-// Scenario: No of Instances 1000000, No of Properties 4:128
-//           One time Prepare and then Loop through Binding, Step, ReSet and ClearBinding
-//           Bind Properties Values instead of Hardcoding them
-//           Iterate result set
-//           Bind ECInstanceId instead of auto Generating it
-
-// @bsiMethod                                      Muhammad Hassan                  10/15
+// @bsiMethod                                      Muhammad Hassan                  08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql_BindPropertiesValues_IterateResultSet)
+TEST_F (PerformanceECDbMapCATestFixture, SqlVsECSqlReadPerformance)
     {
     m_instancesPerClass = 1000000;
 
     for (size_t i = 2; i <= 7; i++)
         {
-        m_ecsqlTestItems.clear ();
         m_propertiesPerClass = (size_t)pow (2, i);
+        ECDbTestProject testProj;
+        ECDbR ecdb = testProj.Create ("CRUDPerformanceSqlVsECSql.ecdb");
         ECSchemaPtr testSchema;
-        ECDbTestProject test;
-        ECDbR ecdb = test.Create ("CRUDPerformanceSqlVsECSql.ecdb");
-        ECSchema::CreateSchema (testSchema, "testSchema", 1, 0);
-        ASSERT_TRUE (testSchema.IsValid ());
-        testSchema->SetNamespacePrefix ("ts");
+        ECClassP baseClass = nullptr;
+        SetUpTestDb (ecdb, testSchema, baseClass);
 
-        ECClassP baseClass;
-        ASSERT_EQ (ECOBJECTS_STATUS_Success, testSchema->CreateClass (baseClass, "BaseClass"));
-        CreatePrimitiveProperties (*baseClass);
-
-        ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
-        schemaCache->AddSchema (*testSchema);
-
-        ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache));
-        ASSERT_EQ (BE_SQLITE_OK, ecdb.SaveChanges ());
-
-        GenerateECSqlCRUDTestStatements (*testSchema, false);
-
-        ECSqlInsertInstances (ecdb, true);
-        ASSERT_GE (m_insertTime, 0.0) << "ECSQL Insert test failed";
-        ECSqlReadInstances (ecdb, true);
-        ASSERT_GE (m_selectTime, 0.0) << "ECSQL SELECT test failed";
-        ECSqlUpdateInstances (ecdb, true);
-        ASSERT_GE (m_updateTime, 0.0) << "ECSQL UPDATE test failed";
-        ECSqlDeleteInstances (ecdb);
-        ASSERT_GE (m_deleteTime, 0.0) << "ECSQL DELETE test failed";
-
-        Utf8String testDescription;
-        testDescription.Sprintf ("ECSQL INSERT against ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_insertTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        testDescription.Sprintf ("ECSQL SELECT Prop1 Prop2 Prop3... FROM ONLY against ECClass with %d properties and %d Instances. - with result set iteration.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_selectTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        testDescription.Sprintf ("ECSQL UPDATE ONLY against ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_updateTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        testDescription.Sprintf ("ECSQL DELETE FROM ONLY against ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_deleteTime, testDescription.c_str (), (int)m_propertiesPerClass);
-
-        ASSERT_EQ (BE_SQLITE_OK, ecdb.AbandonChanges ());
-
-        //CRUD Performance using Sql statements.
-        m_insertTime = m_updateTime = m_selectTime = m_deleteTime = 0.0;
-
-        GenerateSqlCRUDTestStatements (*testSchema, *baseClass, false);
-
-        SqlInsertInstances (ecdb, *baseClass, true);
-        ASSERT_GE (m_insertTime, 0.0) << "SQL Insert test failed";
-        SqlReadInstances (ecdb, *baseClass, true);
-        ASSERT_GE (m_selectTime, 0.0) << "SQL SELECT test failed";
-        SqlUpdateInstances (ecdb, *baseClass, true);
-        ASSERT_GE (m_updateTime, 0.0) << "SQL UPDATE test failed";
-        SqlDeleteInstances (ecdb, *baseClass);
-        ASSERT_GE (m_deleteTime, 0.0) << "SQL DELETE test failed";
-
-        testDescription.Sprintf ("SQL INSERT against table of ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_insertTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        testDescription.Sprintf ("SQL SELECT Prop1 Prop2 Prop3... FROM table of ECClass with %d properties and %d Instances. - with result set iteration.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_selectTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        testDescription.Sprintf ("SQL UPDATE against table of ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_updateTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        testDescription.Sprintf ("SQL DELETE against table ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_deleteTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// Scenario: No of Instances 1000000, No of Properties 4:128
-//           One time Prepare and then Loop through Binding, Step, ReSet and ClearBinding
-//           Hardcode Properties values
-//           Iterate result set
-//           Bind ECInstanceId instead of auto Generating it
-
-// @bsiMethod                                      Muhammad Hassan                  10/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql_HardCodePropertiesValues_IterateResultSet)
-    {
-    m_instancesPerClass = 1000000;
-
-    for (size_t i = 2; i <= 7; i++)
-        {
-        m_ecsqlTestItems.clear ();
-        m_propertiesPerClass = (size_t)pow (2, i);
-        ECSchemaPtr testSchema;
-        ECDbTestProject test;
-        ECDbR ecdb = test.Create ("CRUDPerformanceSqlVsECSql.ecdb");
-        ECSchema::CreateSchema (testSchema, "testSchema", 1, 0);
-        ASSERT_TRUE (testSchema.IsValid ());
-        testSchema->SetNamespacePrefix ("ts");
-
-        ECClassP baseClass;
-        ASSERT_EQ (ECOBJECTS_STATUS_Success, testSchema->CreateClass (baseClass, "BaseClass"));
-        CreatePrimitiveProperties (*baseClass);
-
-        ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
-        schemaCache->AddSchema (*testSchema);
-
-        ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache));
-        ASSERT_EQ (BE_SQLITE_OK, ecdb.SaveChanges ());
-
-        //CRUD Performance using ECSql statements.
+        //READ Performance using ECSql statement.
         GenerateECSqlCRUDTestStatements (*testSchema, true);
 
         ECSqlInsertInstances (ecdb, false);
         ASSERT_GE (m_insertTime, 0.0) << "ECSQL Insert test failed";
         ECSqlReadInstances (ecdb, true);
         ASSERT_GE (m_selectTime, 0.0) << "ECSQL SELECT test failed";
-        ECSqlUpdateInstances (ecdb, false);
-        ASSERT_GE (m_updateTime, 0.0) << "ECSQL UPDATE test failed";
-        ECSqlDeleteInstances (ecdb);
-        ASSERT_GE (m_deleteTime, 0.0) << "ECSQL DELETE test failed";
 
         Utf8String testDescription;
-        testDescription.Sprintf ("ECSQL INSERT against ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_insertTime, testDescription.c_str (), (int)m_propertiesPerClass);
         testDescription.Sprintf ("ECSQL SELECT Prop1 Prop2 Prop3... FROM ONLY against ECClass with %d properties and %d Instances. - with result set iteration.", m_propertiesPerClass, m_instancesPerClass);
         LOGTODB (TEST_DETAILS, m_selectTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        testDescription.Sprintf ("ECSQL UPDATE ONLY against ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_updateTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        testDescription.Sprintf ("ECSQL DELETE FROM ONLY against ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_deleteTime, testDescription.c_str (), (int)m_propertiesPerClass);
 
+        ECSqlDeleteInstances (ecdb);
         ASSERT_EQ (BE_SQLITE_OK, ecdb.AbandonChanges ());
 
-        //CRUD Performance using Sql statements.
-        m_insertTime = m_updateTime = m_selectTime = m_deleteTime = 0.0;
+        //READ Performance using Sql statement.
+        m_selectTime = 0.0;
 
         GenerateSqlCRUDTestStatements (*testSchema, *baseClass, true);
 
@@ -1020,17 +854,145 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql_HardCodePrope
         ASSERT_GE (m_insertTime, 0.0) << "SQL Insert test failed";
         SqlReadInstances (ecdb, *baseClass, true);
         ASSERT_GE (m_selectTime, 0.0) << "SQL SELECT test failed";
+        testDescription.Sprintf ("SQL SELECT Prop1 Prop2 Prop3... FROM table of ECClass with %d properties and %d Instances. - with result set iteration.", m_propertiesPerClass, m_instancesPerClass);
+        LOGTODB (TEST_DETAILS, m_selectTime, testDescription.c_str (), (int)m_propertiesPerClass);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (PerformanceECDbMapCATestFixture, SqlVsECSqlUpdatePerformance_DoNotBindPropertyValues)
+    {
+    m_instancesPerClass = 1000000;
+
+    for (size_t i = 2; i <= 7; i++)
+        {
+        m_propertiesPerClass = (size_t)pow (2, i);
+        ECDbTestProject testProj;
+        ECDbR ecdb = testProj.Create ("CRUDPerformanceSqlVsECSql.ecdb");
+        ECSchemaPtr testSchema;
+        ECClassP baseClass = nullptr;
+        SetUpTestDb (ecdb, testSchema, baseClass);
+
+        //UPDATE Performance using ECSql statement.
+        GenerateECSqlCRUDTestStatements (*testSchema, true);
+
+        ECSqlInsertInstances (ecdb, false);
+        ASSERT_GE (m_insertTime, 0.0) << "ECSQL Insert test failed";
+        ECSqlUpdateInstances (ecdb, false);
+        ASSERT_GE (m_updateTime, 0.0) << "ECSQL UPDATE test failed";
+
+        Utf8String testDescription;
+        testDescription.Sprintf ("ECSQL UPDATE ONLY against ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
+        LOGTODB (TEST_DETAILS, m_updateTime, testDescription.c_str (), (int)m_propertiesPerClass);
+
+        ECSqlDeleteInstances (ecdb);
+
+        ASSERT_EQ (BE_SQLITE_OK, ecdb.AbandonChanges ());
+
+        //UPDATE Performance using Sql statement.
+        m_updateTime = 0.0;
+
+        GenerateSqlCRUDTestStatements (*testSchema, *baseClass, true);
+
+        SqlInsertInstances (ecdb, *baseClass, false);
+        ASSERT_GE (m_insertTime, 0.0) << "SQL Insert test failed";
         SqlUpdateInstances (ecdb, *baseClass, false);
         ASSERT_GE (m_updateTime, 0.0) << "SQL UPDATE test failed";
+
+        testDescription.Sprintf ("SQL UPDATE against table of ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
+        LOGTODB (TEST_DETAILS, m_updateTime, testDescription.c_str (), (int)m_propertiesPerClass);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (PerformanceECDbMapCATestFixture, SqlVsECSqlUpdatePerformance_BindPropertyValues)
+    {
+    m_instancesPerClass = 1000000;
+
+    for (size_t i = 2; i <= 7; i++)
+        {
+        m_propertiesPerClass = (size_t)pow (2, i);
+        ECDbTestProject testProj;
+        ECDbR ecdb = testProj.Create ("CRUDPerformanceSqlVsECSql.ecdb");
+        ECSchemaPtr testSchema;
+        ECClassP baseClass = nullptr;
+        SetUpTestDb (ecdb, testSchema, baseClass);
+
+        //UPDATE Performance using ECSql statement.
+        GenerateECSqlCRUDTestStatements (*testSchema, false);
+
+        ECSqlInsertInstances (ecdb, true);
+        ASSERT_GE (m_insertTime, 0.0) << "ECSQL Insert test failed";
+        ECSqlUpdateInstances (ecdb, true);
+        ASSERT_GE (m_updateTime, 0.0) << "ECSQL UPDATE test failed";
+
+        Utf8String testDescription;
+        testDescription.Sprintf ("ECSQL UPDATE ONLY against ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
+        LOGTODB (TEST_DETAILS, m_updateTime, testDescription.c_str (), (int)m_propertiesPerClass);
+
+        ECSqlDeleteInstances (ecdb);
+
+        ASSERT_EQ (BE_SQLITE_OK, ecdb.AbandonChanges ());
+
+        //UPDATE Performance using Sql statement.
+        m_updateTime = 0.0;
+
+        GenerateSqlCRUDTestStatements (*testSchema, *baseClass, false);
+
+        SqlInsertInstances (ecdb, *baseClass, true);
+        ASSERT_GE (m_insertTime, 0.0) << "SQL Insert test failed";
+        SqlUpdateInstances (ecdb, *baseClass, true);
+        ASSERT_GE (m_updateTime, 0.0) << "SQL UPDATE test failed";
+
+        testDescription.Sprintf ("SQL UPDATE against table of ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
+        LOGTODB (TEST_DETAILS, m_updateTime, testDescription.c_str (), (int)m_propertiesPerClass);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (PerformanceECDbMapCATestFixture, SqlVsECSqlDeletePerformance)
+    {
+    m_instancesPerClass = 1000000;
+
+    for (size_t i = 2; i <= 7; i++)
+        {
+        m_propertiesPerClass = (size_t)pow (2, i);
+        ECDbTestProject testProj;
+        ECDbR ecdb = testProj.Create ("CRUDPerformanceSqlVsECSql.ecdb");
+        ECSchemaPtr testSchema;
+        ECClassP baseClass = nullptr;
+        SetUpTestDb (ecdb, testSchema, baseClass);
+
+        //DELETE Performance using ECSql statement.
+        GenerateECSqlCRUDTestStatements (*testSchema, true);
+
+        ECSqlInsertInstances (ecdb, false);
+        ASSERT_GE (m_insertTime, 0.0) << "ECSQL Insert test failed";
+        ECSqlDeleteInstances (ecdb);
+        ASSERT_GE (m_deleteTime, 0.0) << "ECSQL DELETE test failed";
+
+        Utf8String testDescription;
+        testDescription.Sprintf ("ECSQL DELETE FROM ONLY against ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
+        LOGTODB (TEST_DETAILS, m_deleteTime, testDescription.c_str (), (int)m_propertiesPerClass);
+
+        ASSERT_EQ (BE_SQLITE_OK, ecdb.AbandonChanges ());
+
+        //DELETE Performance using Sql statement.
+        m_deleteTime = 0.0;
+
+        GenerateSqlCRUDTestStatements (*testSchema, *baseClass, true);
+
+        SqlInsertInstances (ecdb, *baseClass, false);
+        ASSERT_GE (m_insertTime, 0.0) << "SQL Insert test failed";
         SqlDeleteInstances (ecdb, *baseClass);
         ASSERT_GE (m_deleteTime, 0.0) << "SQL DELETE test failed";
 
-        testDescription.Sprintf ("SQL INSERT against table of ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_insertTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        testDescription.Sprintf ("SQL SELECT Prop1 Prop2 Prop3... FROM table of ECClass with %d properties and %d Instances. - with result set iteration.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_selectTime, testDescription.c_str (), (int)m_propertiesPerClass);
-        testDescription.Sprintf ("SQL UPDATE against table of ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
-        LOGTODB (TEST_DETAILS, m_updateTime, testDescription.c_str (), (int)m_propertiesPerClass);
         testDescription.Sprintf ("SQL DELETE against table ECClass with %d properties and %d Instances.", m_propertiesPerClass, m_instancesPerClass);
         LOGTODB (TEST_DETAILS, m_deleteTime, testDescription.c_str (), (int)m_propertiesPerClass);
         }
