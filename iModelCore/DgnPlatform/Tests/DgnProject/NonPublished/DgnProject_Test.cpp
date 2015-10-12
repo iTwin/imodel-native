@@ -341,7 +341,7 @@ TEST(DgnDb, GetCoordinateSystemProperties)
     double eps = 0.0001;
     EXPECT_TRUE(fabs(azmthExpected - azmth) < eps )<<"Expected diffrent azimuth ";
     GeoPoint gorigin;
-    dgnProj->Units().LatLongFromUors(gorigin, DPoint3d::FromZero());
+    dgnProj->Units().LatLongFromXyz(gorigin, DPoint3d::FromZero());
     double const latitudeExpected = 42.3413;
     EXPECT_TRUE(fabs(latitudeExpected - gorigin.latitude) < eps)<<"Expected diffrent latitude ";
     double const longitudeExpected = -71.0806;

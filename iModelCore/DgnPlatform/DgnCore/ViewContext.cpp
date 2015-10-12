@@ -398,7 +398,6 @@ void ViewContext::_Detach()
     if (nullptr != m_IDrawGeom)
         m_IDrawGeom->ActivateOverrideMatSymb(nullptr);     // clear any overrides
 
-    // _EmptySymbolCache(); not yet in Graphite
     UpdateLogging::RecordDetach();
     }
 

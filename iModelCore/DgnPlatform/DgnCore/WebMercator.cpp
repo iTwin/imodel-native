@@ -408,7 +408,7 @@ GeoPoint WebMercatorUorConverter::ConvertUorsToLatLng (DPoint3dCR dp)
         return i->second;
 
     GeoPoint gp;
-    m_units.LatLongFromUors (gp, dp);
+    m_units.LatLongFromXyz(gp, dp);
 
     m_uorsToLatLng[dp] = gp;
     m_latLngToUors[gp] = dp;
@@ -426,7 +426,7 @@ DPoint3d WebMercatorUorConverter::ConvertLatLngToUors (GeoPoint gp)
         return i->second;
 
     DPoint3d dp;
-    m_units.UorsFromLatLong(dp, gp);
+    m_units.XyzFromLatLong(dp, gp);
 
     m_latLngToUors[gp] = dp;
     m_uorsToLatLng[dp] = gp;

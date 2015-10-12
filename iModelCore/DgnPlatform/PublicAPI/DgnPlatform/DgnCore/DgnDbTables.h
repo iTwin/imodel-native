@@ -1214,16 +1214,16 @@ public:
     DGNPLATFORM_EXPORT AxisAlignedBox3d GetProjectExtents();
 
     //! Convert a GeoPoint to an XYZ point
-    //! @param[out] outUors     The output XYZ point
-    //! @param[in] inLatLong    The input GeoPoint
+    //! @param[out] outXyz The output XYZ point
+    //! @param[in] inLatLong The input GeoPoint
     //! @return non-zero error status if the point cannot be converted or if this DgnDb is not geo-located
-    DGNPLATFORM_EXPORT BentleyStatus UorsFromLatLong(DPoint3dR outUors, GeoPointCR inLatLong) const;
+    DGNPLATFORM_EXPORT BentleyStatus XyzFromLatLong(DPoint3dR outXyz, GeoPointCR inLatLong) const;
 
     //! Convert a an XYZ point to a GeoPoint
     //! @param[out] outLatLong  The output GeoPoint
-    //! @param[in] inUors    The input XYZ point
+    //! @param[in] inXyz The input XYZ point
     //! @return non-zero error status if the point cannot be converted or if this DgnDb is not geo-located
-    DGNPLATFORM_EXPORT BentleyStatus LatLongFromUors(GeoPointR outLatLong, DPoint3dCR inUors) const;
+    DGNPLATFORM_EXPORT BentleyStatus LatLongFromXyz(GeoPointR outLatLong, DPoint3dCR inXyz) const;
 
     //! Query the GCS of this DgnDb, if any.
     //! @return this DgnDb's GCS or nullptr if this DgnDb is not geo-located
