@@ -29,9 +29,13 @@ struct JsonDiff
     private:
         void AddMember(RapidJsonValueR jsonOut, RapidJsonValueCR name, RapidJsonValueCR value, rapidjson::Value::AllocatorType& allocator);
 
-        bool ValuesShallowEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
+        void CopyValues(RapidJsonValueCR from, RapidJsonValueR to, rapidjson::Value::AllocatorType& allocator);
+
+        bool ValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2, bool deep);
+
         bool StringValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
         bool ArrayValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
+        bool ObjectValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2, bool deep);
 
     public:
         WSCACHE_EXPORT JsonDiff(bool copyValues = true, bool ignoreDeletedProperties = true);
