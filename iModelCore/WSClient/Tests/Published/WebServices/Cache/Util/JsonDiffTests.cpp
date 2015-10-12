@@ -45,13 +45,46 @@ TEST_F(JsonDiffTests, GetChanges_StringPropertyEqual_ReturnsEmptyJson)
                      R"({ })");
     }
 
+TEST_F(JsonDiffTests, GetChanges_NullPropertyDidNotChange_ReturnsEmptyJson)
+    {
+    TEST_GET_CHANGES(R"({ "A" : null })",
+                     R"({ "A" : null })",
+                     R"({ })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_FalsePropertyDidNotChange_ReturnsEmptyJson)
+    {
+    TEST_GET_CHANGES(R"({ "A" : false })",
+                     R"({ "A" : false })",
+                     R"({ })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_TruePropertyDidNotChange_ReturnsEmptyJson)
+    {
+    TEST_GET_CHANGES(R"({ "A" : true })",
+                     R"({ "A" : true })",
+                     R"({ })");
+    }
+
+TEST_F(JsonDiffTests, GetChanges_StringPropertyDifferentAndItExistsInOutput_ReturnsDiff)
+    {
+    auto oldJson = ToRapidJson(R"({ "A" : "Old" })");
+    auto newJson = ToRapidJson(R"({ "A" : "New" })");
+    auto outJson = ToRapidJson(R"({ "A" : "Foo" })");
+
+    JsonDiff jsonDiff;
+    jsonDiff.GetChanges(*oldJson, *newJson, *outJson);
+
+    auto expectedOutJson = ToRapidJson(R"({ "A" : "New" })");
+    EXPECT_EQ(*expectedOutJson, *outJson);
+    }
+
 TEST_F(JsonDiffTests, GetChanges_StringPropertyDifferent_ReturnsDiff)
     {
     TEST_GET_CHANGES(R"({ "A" : "1" })",
                      R"({ "A" : "2" })",
                      R"({ "A" : "2" })");
     }
-
 
 TEST_F(JsonDiffTests, GetChanges_StringPropertyDeleted_ReturnsDiff)
     {
