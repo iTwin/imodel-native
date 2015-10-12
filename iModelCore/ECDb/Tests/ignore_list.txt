@@ -8,8 +8,6 @@ InstanceCRUDTests.* 	# No need to run with the build, used by testing after buil
 #----------------------------------------------------------------------------------------
 
 #TFS316543   ECDb tests should not depend on DgnDb data (Hassan)
-ECDbFileInfo.ReplaceExistingEmbeddedFile
-ECDbFileInfo.ReadAddNewEntrySaveEmbeddedFile
 ECSqlSelectTests.SelectQueriesOnDbGeneratedDuringBuild_79Main
 ECSqlSelectTests.SelectQueriesOnDbGeneratedDuringBuild_04Plant
 
