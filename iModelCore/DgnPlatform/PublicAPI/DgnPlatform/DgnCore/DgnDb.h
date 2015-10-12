@@ -131,7 +131,6 @@ protected:
     DgnDomains      m_domains;
     DgnFonts        m_fonts;
     DgnColors       m_colors;
-    DgnCategories   m_categories;
     DgnStyles       m_styles;
     DgnUnits        m_units;
     DgnViews        m_views;
@@ -191,7 +190,6 @@ public:
     DgnModels& Models() const {return const_cast<DgnModels&>(m_models);}                 //!< The DgnModels of this DgnDb
     DgnElements& Elements() const{return const_cast<DgnElements&>(m_elements);}          //!< The DgnElements of this DgnDb
     DgnViews& Views() const {return const_cast<DgnViews&>(m_views);}                     //!< The DgnViews for this DgnDb
-    DgnCategories& Categories() const {return const_cast<DgnCategories&>(m_categories);} //!< The DgnCategories for this DgnDb
     DgnUnits& Units() const {return const_cast<DgnUnits&>(m_units);}                     //!< The units for this DgnDb
     DgnColors& Colors() const {return const_cast<DgnColors&>(m_colors);}                 //!< The named colors for this DgnDb
     DgnStyles& Styles() const {return const_cast<DgnStyles&>(m_styles);}                 //!< The styles for this DgnDb

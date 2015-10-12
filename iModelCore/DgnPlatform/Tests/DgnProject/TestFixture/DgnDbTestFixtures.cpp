@@ -247,7 +247,7 @@ void DgnDbTestFixture::SetupProject(WCharCP baseProjFile, WCharCP testProjFile, 
     ASSERT_TRUE(m_defaultModelP.IsValid());
     m_defaultModelP->FillModel();
 
-    m_defaultCategoryId = m_db->Categories().MakeIterator().begin().GetCategoryId();
+    m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
 }
 
 /*---------------------------------------------------------------------------------**//**

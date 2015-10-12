@@ -1519,7 +1519,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ISolidKernelEntityPtr& en
         DgnSubCategoryId  subCategoryId = DgnSubCategoryId((uint64_t)fbSymb->subCategoryId());
 
         if (!categoryId.IsValid())
-            categoryId = m_db.Categories().QueryCategoryId(subCategoryId);
+            categoryId = DgnSubCategory::QueryCategoryId(subCategoryId, m_db);
 
         faceParams.SetCategoryId(categoryId);
         faceParams.SetSubCategoryId(subCategoryId);
@@ -2113,7 +2113,7 @@ bool IsGeometryVisible()
     if (nullptr == m_context.GetViewport())
         return true;
 
-    DgnCategories::SubCategory::Appearance appearance = m_context.GetViewport()->GetViewController().GetSubCategoryAppearance(m_context.GetCurrentDisplayParams().GetSubCategoryId());
+    DgnSubCategory::Appearance appearance = m_context.GetViewport()->GetViewController().GetSubCategoryAppearance(m_context.GetCurrentDisplayParams().GetSubCategoryId());
 
     if (appearance.IsInvisible())
         return false;
@@ -2912,7 +2912,7 @@ void ElementGeometryCollection::Iterator::ToNext()
                 DgnCategoryId       category = elParams.GetCategoryId();
 
                 if (!category.IsValid())
-                    category = m_context->GetDgnDb().Categories().QueryCategoryId(subCategory);
+                    category = DgnSubCategory::QueryCategoryId(subCategory, m_context->GetDgnDb());
 
                 elParams = ElemDisplayParams();
                 elParams.SetCategoryId(category);
@@ -3268,7 +3268,7 @@ bool ElementGeometryBuilder::Append(ElemDisplayParamsCR elParams)
     if (elParams.GetCategoryId() != m_elParams.GetCategoryId())
         return false;
 
-    if (elParams.GetCategoryId() != m_dgnDb.Categories().QueryCategoryId(elParams.GetSubCategoryId()))
+    if (elParams.GetCategoryId() != DgnSubCategory::QueryCategoryId(elParams.GetSubCategoryId(), m_dgnDb))
         return false;
 
     if (m_elParams == elParams)

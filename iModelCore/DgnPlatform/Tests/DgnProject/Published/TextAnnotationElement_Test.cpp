@@ -59,9 +59,9 @@ TEST(TextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(BE_SQLITE_OK == openStatus);
         ASSERT_TRUE(db.IsValid());
         
-        DgnCategories::Category category("Annotation Category", DgnCategories::Scope::Annotation);
-        DgnCategories::SubCategory::Appearance categoryAppearance;
-        ASSERT_TRUE(BE_SQLITE_OK == db->Categories().Insert(category, categoryAppearance));
+        DgnCategory category(DgnCategory::CreateParams(*db, "Annotation Category", DgnCategory::Scope::Annotation));
+        DgnSubCategory::Appearance categoryAppearance;
+        category.Insert(categoryAppearance);
 
         DgnCategoryId categoryId = category.GetCategoryId();
         ASSERT_TRUE(categoryId.IsValid());
@@ -223,9 +223,9 @@ TEST(PhysicalTextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(BE_SQLITE_OK == openStatus);
         ASSERT_TRUE(db.IsValid());
         
-        DgnCategories::Category category("Physical Category", DgnCategories::Scope::Physical);
-        DgnCategories::SubCategory::Appearance categoryAppearance;
-        ASSERT_TRUE(BE_SQLITE_OK == db->Categories().Insert(category, categoryAppearance));
+        DgnCategory category(DgnCategory::CreateParams(*db, "Physical Category", DgnCategory::Scope::Physical));
+        DgnSubCategory::Appearance categoryAppearance;
+        category.Insert(categoryAppearance);
 
         DgnCategoryId categoryId = category.GetCategoryId();
         ASSERT_TRUE(categoryId.IsValid());

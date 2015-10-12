@@ -199,14 +199,19 @@ void ViewFlags::To3dJson(JsonValueR val) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategories::SubCategory::Appearance ViewController::GetSubCategoryAppearance(DgnSubCategoryId subCategoryId) const
+DgnSubCategory::Appearance ViewController::GetSubCategoryAppearance(DgnSubCategoryId subCategoryId) const
     {
     auto const entry = m_subCategories.find(subCategoryId);
     if (entry != m_subCategories.end())
         return entry->second;
 
-    auto subCategory = m_dgndb.Categories().QuerySubCategory(subCategoryId);
-    auto out = m_subCategories.Insert(subCategoryId, subCategory.GetAppearance());
+    DgnSubCategoryCPtr subCategory = DgnSubCategory::QuerySubCategory(subCategoryId, m_dgndb);
+    BeAssert(subCategory.IsValid());
+    DgnSubCategory::Appearance appearance;
+    if (subCategory.IsValid())
+        appearance = subCategory->GetAppearance();
+
+    auto out = m_subCategories.Insert(subCategoryId, appearance);
     return out.first->second;
     }
 
@@ -260,8 +265,15 @@ void ViewController::LoadCategories(JsonValueCR settings)
         m_viewedCategories.FromJson(settings[VIEW_SETTING_Categories]);
 
     // load all SubCategories (even for categories not currently on)
-    for (auto const& it : DgnCategories::SubCategoryIterator(m_dgndb, DgnCategoryId()))
-        m_subCategories.Insert(it.GetSubCategoryId(), it.GetAppearance());
+    for (auto const& id : DgnSubCategory::QuerySubCategories(m_dgndb))
+        {
+        DgnSubCategory::Appearance appearance;
+        DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(id, m_dgndb);
+        if (subCat.IsValid())
+            appearance = subCat->GetAppearance();
+
+        m_subCategories.Insert(id, appearance);
+        }
 
     if (!settings.isMember(VIEW_SETTING_SubCategories))
         return;
@@ -272,7 +284,7 @@ void ViewController::LoadCategories(JsonValueCR settings)
         JsonValueCR val=facetJson[i];
         DgnSubCategoryId subCategoryId(val[VIEW_SubCategoryId].asUInt64());
         if (subCategoryId.IsValid())
-            OverrideSubCategory(subCategoryId, DgnCategories::SubCategory::Override(val));
+            OverrideSubCategory(subCategoryId, DgnSubCategory::Override(val));
         }
     }
 
@@ -426,17 +438,21 @@ void ViewController::_DrawElementFiltered(ViewContextR context, GeometricElement
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::ReloadSubCategory(DgnSubCategoryId id)
     {
-    auto unmodified = m_dgndb.Categories().QuerySubCategory(id);
-    auto const& result = m_subCategories.Insert(id, unmodified.GetAppearance());
+    auto unmodified = DgnSubCategory::QuerySubCategory(id, m_dgndb);
+    BeAssert(unmodified.IsValid());
+    if (unmodified.IsValid())
+        {
+        auto const& result = m_subCategories.Insert(id, unmodified->GetAppearance());
 
-    if (!result.second)
-        result.first->second = unmodified.GetAppearance(); // we already had this SubCategory; change it.
+        if (!result.second)
+            result.first->second = unmodified->GetAppearance(); // we already had this SubCategory; change it.
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::OverrideSubCategory(DgnSubCategoryId id, DgnCategories::SubCategory::Override const& ovr)
+void ViewController::OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Override const& ovr)
     {
     if (!id.IsValid())
         return;
