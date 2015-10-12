@@ -50,7 +50,7 @@ BentleyStatus JsonDiff::GetChanges(RapidJsonValueCR oldJson, RapidJsonValueCR ne
         {
         auto& oldValue = oldJson[newMemberItr->name.GetString()];
 
-        if (!ValuesShallowEqual(oldValue, newMemberItr->value))
+        if (!ValuesEqual(oldValue, newMemberItr->value, false))
             {
             AddMember(jsonOut, newMemberItr->name, newMemberItr->value, allocator);
             }
@@ -86,15 +86,7 @@ void JsonDiff::AddMember(RapidJsonValueR jsonOut, RapidJsonValueCR name, RapidJs
         }
 
     Value nameToAdd(kStringType);
-
-    if (m_copyValues)
-        {
-        nameToAdd.SetString(name.GetString(), name.GetStringLength(), allocator);
-        }
-    else
-        {
-        nameToAdd.SetString(name.GetString(), name.GetStringLength());
-        }
+    CopyValues(name, nameToAdd, allocator);
 
     Value valueToAdd(value.GetType());
 
@@ -104,7 +96,7 @@ void JsonDiff::AddMember(RapidJsonValueR jsonOut, RapidJsonValueCR name, RapidJs
             break;
 
         case kArrayType:
-            //value.Accept(valueToAdd);
+            CopyValues(value, valueToAdd, allocator);
             break;
 
         case kStringType:
@@ -130,7 +122,55 @@ void JsonDiff::AddMember(RapidJsonValueR jsonOut, RapidJsonValueCR name, RapidJs
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonDiff::ValuesShallowEqual(RapidJsonValueCR value1, RapidJsonValueCR value2)
+void JsonDiff::CopyValues(RapidJsonValueCR from, RapidJsonValueR to, rapidjson::Value::AllocatorType& allocator)
+    {
+    switch (from.GetType())
+        {
+        case kObjectType:
+            for (auto memberFromItr = from.MemberBegin(); memberFromItr != from.MemberEnd(); ++memberFromItr)
+                {
+                Value nameToAdd(kStringType);
+                CopyValues(memberFromItr->name, nameToAdd, allocator);
+
+                Value valueToAdd(memberFromItr->value.GetType());
+                CopyValues(memberFromItr->value, valueToAdd, allocator);
+
+                to.AddMember(nameToAdd, valueToAdd, allocator);
+                }
+            break;
+
+        case kArrayType:
+            for (SizeType i = 0; i < from.Size(); i++)
+                {
+                Value valueToAdd(from[i].GetType());
+
+                CopyValues(from[i], valueToAdd, allocator);
+
+                to.PushBack(valueToAdd, allocator);
+                }
+            break;
+
+        case kStringType:
+            if (m_copyValues)
+                {
+                to.SetString(from.GetString(), from.GetStringLength(), allocator);
+                }
+            else
+                {
+                to.SetString(from.GetString(), from.GetStringLength());
+                }
+            break;
+
+        case kNumberType:
+            to.SetInt(from.GetInt());
+            break;
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool JsonDiff::ValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2, bool deep)
     {
     if (value1.GetType() != value2.GetType())
         {
@@ -140,7 +180,14 @@ bool JsonDiff::ValuesShallowEqual(RapidJsonValueCR value1, RapidJsonValueCR valu
     switch (value1.GetType())
         {
         case kObjectType:
-            return true;
+            if (deep)
+                {
+                return ObjectValuesEqual(value1, value2, true);
+                }
+            else
+                {
+                return true;
+                }
 
         case kArrayType:
             return ArrayValuesEqual(value1, value2);
@@ -163,18 +210,40 @@ bool JsonDiff::ValuesShallowEqual(RapidJsonValueCR value1, RapidJsonValueCR valu
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool JsonDiff::ObjectValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2, bool deep)
+    {
+    if (std::distance(value1.MemberBegin(), value1.MemberEnd()) != 
+        std::distance(value2.MemberBegin(), value2.MemberEnd()))
+        {
+        return false;
+        }
+
+    for (auto member1Itr = value1.MemberBegin(); member1Itr != value1.MemberEnd(); ++member1Itr)
+        {
+        auto& value2Value = value2[member1Itr->name.GetString()];
+
+        if (!ValuesEqual(member1Itr->value, value2Value, deep))
+            {
+            return false;
+            }
+        }
+
+    return true;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 bool JsonDiff::ArrayValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2)
     {
-    // BLI: WIP
-
     if (value1.Size() != value2.Size())
         {
         return false;
         }
 
-    for (SizeType i = 0; i <= value1.Size(); i++)
+    for (SizeType i = 0; i < value1.Size(); i++)
         {
-        if (!ValuesShallowEqual(value1[i], value2[i]))
+        if (!ValuesEqual(value1[i], value2[i], true))
             {
             return false;
             }         
