@@ -25,7 +25,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! @nosubgrouping
 // @bsiclass                                                 Krischan.Eberle    05/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlStatement : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
     {
 public:
     struct Impl;
@@ -398,7 +398,7 @@ typedef ECSqlStatement const& ECSqlStatementCR;
 //! being the desired lifetime of a statement in the cache.
 // @bsiclass                                                    Krischan.Eberle   02/15
 //=======================================================================================
-struct CachedECSqlStatement : ECSqlStatement
+struct EXPORT_VTABLE_ATTRIBUTE CachedECSqlStatement : ECSqlStatement
     {
 private:
     mutable uint32_t m_refCount;
@@ -436,7 +436,7 @@ typedef RefCountedPtr<CachedECSqlStatement> CachedECSqlStatementPtr;
 //! With that enabled, %ECDb logs when a new statement was added to the cache and an existing one was removed from it.
 // @bsiclass                                                    Krischan.Eberle   02/15
 //=======================================================================================
-struct ECSqlStatementCache : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache : NonCopyableClass
     {
 private:
     mutable BeDbMutex m_mutex;
