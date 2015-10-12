@@ -17,6 +17,8 @@
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+#ifdef USE_GTEST
+
 void DataSourceCacheUpgradeTests::SetUp()
     {
     BaseCachingDataSourceTest::SetUp();
@@ -334,3 +336,5 @@ TEST_F(DataSourceCacheUpgradeTests, Open_CurrentVersionDb_Success)
 
     EXPECT_EQ(SUCCESS, DataSourceCache().Open(path, CacheEnvironment()));
     }
+
+#endif

@@ -13,6 +13,7 @@
 #include <WebServices/Cache/Persistence/IDataSourceCache.h>
 #include <WebServices/Cache/ICachingDataSource.h>
 
+#ifdef USE_GTEST
 class DataSourceCacheUpgradeTests : public BaseCachingDataSourceTest
     {
     public:
@@ -20,3 +21,4 @@ class DataSourceCacheUpgradeTests : public BaseCachingDataSourceTest
         void ValidateV5SeedData(IDataSourceCache& cache, BeFileNameCR path, CacheEnvironmentCR environment);
         virtual void SetUp();
     };
+#endif
