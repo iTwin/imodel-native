@@ -98,7 +98,7 @@ PropertyMapPtr PropertyMapECInstanceId::Create (ECDbSchemaManagerCR schemaManage
         return nullptr;
 
     std::vector<ECDbSqlColumn const*> systemColumns;
-    if (classMap.GetTable ().GetFilteredColumnList (systemColumns, ECDbKnownColumns::ECInstanceId) == BentleyStatus::ERROR)
+    if (classMap.GetTable ().GetFilteredColumnList (systemColumns, ColumnKind::ECInstanceId) == BentleyStatus::ERROR)
         {
         BeAssert (false && "PropertyMapECInstanceId::Create> Table is expected to have primary key columns.");
         return nullptr;
@@ -160,7 +160,7 @@ PropertyMapPtr PropertyMapSecondaryTableKey::Create (ECDbSchemaManagerCR schemaM
         return nullptr;
 
     std::vector<ECDbSqlColumn const*> systemColumns;  
-    if (classMap.GetTable ().GetFilteredColumnList (systemColumns, ECDbKnownColumns::GroupSystemColumns) == BentleyStatus::ERROR)
+    if (classMap.GetTable ().GetFilteredColumnList (systemColumns, ColumnKind::NonRelSystemColumn) == BentleyStatus::ERROR)
         {
         BeAssert (false && "PropertyMapECInstanceId::Create> Table is expected to have primary key columns.");
         return nullptr;
@@ -173,33 +173,33 @@ PropertyMapPtr PropertyMapSecondaryTableKey::Create (ECDbSchemaManagerCR schemaM
         switch (kind)
             {
                 case ECSqlSystemProperty::ECInstanceId:
-                    {
-                    if (column->GetKnownColumnId () == ECDbKnownColumns::ECInstanceId)
-                        found = true;
-                       
-                    break;
-                    }
+                {
+                if (column->GetKind() == ColumnKind::ECInstanceId)
+                    found = true;
+
+                break;
+                }
                 case ECSqlSystemProperty::ParentECInstanceId:
-                    {
-                    if (column->GetKnownColumnId () == ECDbKnownColumns::ParentECInstanceId)
-                        found = true;
+                {
+                if (column->GetKind() == ColumnKind::ParentECInstanceId)
+                    found = true;
 
-                    break;
-                    }
+                break;
+                }
                 case ECSqlSystemProperty::ECPropertyPathId:
-                    {
-                    if (column->GetKnownColumnId () == ECDbKnownColumns::ECPropertyPathId)
-                        found = true;
+                {
+                if (column->GetKind() == ColumnKind::ECPropertyPathId)
+                    found = true;
 
-                    break;
-                    }
+                break;
+                }
                 case ECSqlSystemProperty::ECArrayIndex:
-                    {
-                    if (column->GetKnownColumnId () == ECDbKnownColumns::ECArrayIndex)
-                        found = true;
+                {
+                if (column->GetKind() == ColumnKind::ECArrayIndex)
+                    found = true;
 
-                    break;
-                    }
+                break;
+                }
                 default:
                     break;
             }
@@ -339,7 +339,7 @@ m_defaultConstraintClassId (defaultConstraintECClassId)
         {
         table->AddColumnEventHandler ([this, table] (ECDbSqlTable::ColumnEvent evt, ECDbSqlColumn& column)
             {
-            if (evt == ECDbSqlTable::ColumnEvent::Created && column.GetKnownColumnId() == ECDbKnownColumns::ECClassId)
+            if (evt == ECDbSqlTable::ColumnEvent::Created && column.GetKind() == ColumnKind::ECClassId)
                 {
                 if (!GetColumnWeakPtr ().expired ())
                     table->DeleteColumn (GetColumnWeakPtr ().lock()->GetName ().c_str ());

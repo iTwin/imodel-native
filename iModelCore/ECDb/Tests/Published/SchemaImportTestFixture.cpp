@@ -119,6 +119,35 @@ void SchemaImportTestFixture::AssertIndex(ECDbCR ecdb, Utf8CP indexName, bool is
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+std::vector<SchemaImportTestFixture::IndexInfo> SchemaImportTestFixture::RetrieveIndicesForTable(ECDbCR ecdb, Utf8CP tableName)
+    {
+    std::vector<SchemaImportTestFixture::IndexInfo> indices;
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT name, sql FROM sqlite_master WHERE type='index' AND tbl_name=?"))
+        {
+        BeAssert(false && "Preparation failed");
+        return indices;
+        }
+
+    if (BE_SQLITE_OK != stmt.BindText(1, tableName, Statement::MakeCopy::No))
+        {
+        BeAssert(false && "Preparation failed");
+        return indices;
+        }
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        indices.push_back(SchemaImportTestFixture::IndexInfo(stmt.GetValueText(0), tableName, stmt.GetValueText(1)));
+        }
+
+    return std::move(indices);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/15
 //+---------------+---------------+---------------+---------------+---------------+------
 void SchemaImportTestFixture::AssertForeignKey(bool expectedToHaveForeignKey, ECDbCR ecdb, Utf8CP tableName, Utf8CP foreignKeyColumnName)
@@ -147,3 +176,4 @@ void SchemaImportTestFixture::AssertForeignKey(bool expectedToHaveForeignKey, EC
 
 
 END_ECDBUNITTESTS_NAMESPACE
+

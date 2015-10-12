@@ -121,6 +121,19 @@ enum class SqlSetQuantifier
     All,
     };
 
+//=======================================================================================
+//! @bsiclass                                                Affan.Khan      03/2015
+//+===============+===============+===============+===============+===============+======
+enum class ForeignKeyActionType
+    {
+    NotSpecified,
+    Cascade,
+    NoAction,
+    SetNull,
+    SetDefault,
+    Restrict,
+    };
+
 typedef int64_t ECContainerId;
 
 enum class MapStatus 
@@ -182,6 +195,9 @@ public:
         
     template<typename TEnum>
     static bool Contains(TEnum test, TEnum candidate) { return Enum::And(test, candidate) == candidate; }
+
+    template<typename TEnum>
+    static bool Intersects(TEnum lhs, TEnum rhs) { return (ToInt<TEnum>(lhs) & ToInt<TEnum>(rhs)) != 0; }
     };
 
 //=======================================================================================

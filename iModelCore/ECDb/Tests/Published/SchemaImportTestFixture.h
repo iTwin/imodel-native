@@ -31,6 +31,15 @@ public:
         TestItem(Utf8CP schemaXml, bool expectedToSucceeed) : m_schemaXmlList({Utf8String(schemaXml)}), m_expectedToSucceed(expectedToSucceeed) {}
         };
 
+    struct IndexInfo
+        {
+        Utf8String m_name;
+        Utf8String m_tableName;
+        Utf8String m_ddl;
+
+        IndexInfo(Utf8CP name, Utf8CP tableName, Utf8CP ddl) : m_name(name), m_tableName(tableName), m_ddl(ddl) {}
+        };
+
 protected:
     void AssertSchemaImport(TestItem const&, Utf8CP ecdbFileName) const;
     void AssertSchemaImport(std::vector<TestItem> const&, Utf8CP ecdbFileName) const;
@@ -39,8 +48,9 @@ protected:
 
     void AssertIndexExists(ECDbCR, Utf8CP indexName, bool expectedToExist);
     void AssertIndex(ECDbCR, Utf8CP indexName, bool isUnique, Utf8CP tableName, std::vector<Utf8CP> const& columns, Utf8CP whereClause = nullptr);
-
     void AssertForeignKey(bool expectedToHaveForeignKey, ECDbCR ecdb, Utf8CP tableName, Utf8CP foreignKeyColumnName = nullptr);
+
+    static std::vector<IndexInfo> RetrieveIndicesForTable(ECDbCR, Utf8CP tableName);
 
 public:
     SchemaImportTestFixture() {}

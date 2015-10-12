@@ -92,7 +92,7 @@ UnmappedClassMap::UnmappedClassMap (ECClassCR ecClass, ECDbMapCR ecdbMap, ECDbMa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
-MapStatus UnmappedClassMap::_InitializePart1 (ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
+MapStatus UnmappedClassMap::_InitializePart1 (SchemaImportContext const*, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
     {
     m_dbView = std::unique_ptr<ClassDbView> (new ClassDbView (*this));
 
@@ -108,7 +108,7 @@ MapStatus UnmappedClassMap::_InitializePart1 (ClassMapInfo const& classMapInfo, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
-MapStatus UnmappedClassMap::_InitializePart2 (ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
+MapStatus UnmappedClassMap::_InitializePart2 (SchemaImportContext const*, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
     {
     return MapStatus::Success;
     }

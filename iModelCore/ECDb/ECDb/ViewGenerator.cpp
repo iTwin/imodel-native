@@ -495,7 +495,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassLinkTableMap (NativeS
     //Append secondary table JOIN
     auto const secondaryTables = relationMap.GetSecondaryTables ();
     auto primaryTable = &relationMap.GetTable ();
-    auto primaryECInstanceIdColumn = primaryTable->GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
+    auto primaryECInstanceIdColumn = primaryTable->GetFilteredColumnFirst (ColumnKind::ECInstanceId);
     BeAssert (primaryECInstanceIdColumn != nullptr);
     if (BuildRelationshipJoinIfAny (viewSql, relationMap, ECN::ECRelationshipEnd::ECRelationshipEnd_Source) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
@@ -519,7 +519,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassEndTableMap (NativeSq
     //Append secondary table JOIN
     auto const secondaryTables = relationMap.GetSecondaryTables ();
     auto primaryTable = &relationMap.GetTable ();
-    auto primaryECInstanceIdColumn = primaryTable->GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
+    auto primaryECInstanceIdColumn = primaryTable->GetFilteredColumnFirst (ColumnKind::ECInstanceId);
     BeAssert (primaryECInstanceIdColumn != nullptr);
 
     if (BuildRelationshipJoinIfAny (viewSql, relationMap, ECN::ECRelationshipEnd::ECRelationshipEnd_Source) != BentleyStatus::SUCCESS)
@@ -551,7 +551,7 @@ BentleyStatus ViewGenerator::BuildRelationshipJoinIfAny (NativeSqlBuilder& sqlBu
         sqlBuilder.Append (" ON ");
         sqlBuilder.Append (GetECClassIdPrimaryTableAlias (endPoint));
         sqlBuilder.AppendDot ();
-        auto targetECInstanceIdColumn = targetTable.GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
+        auto targetECInstanceIdColumn = targetTable.GetFilteredColumnFirst (ColumnKind::ECInstanceId);
         if (targetECInstanceIdColumn == nullptr)
             {
             BeAssert (false && "Failed to find ECInstanceId column in target table");
@@ -641,7 +641,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
                  if (status != BentleyStatus::SUCCESS)
                      return status;
 
-                 auto column = relationMap.GetTable().GetFilteredColumnFirst(ECDbKnownColumns::ECClassId);
+                 auto column = relationMap.GetTable().GetFilteredColumnFirst(ColumnKind::ECClassId);
                  if (column != nullptr)
                      {
 
@@ -694,7 +694,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
             if (status != SUCCESS)
                 return status;
 
-            auto column = table->GetFilteredColumnFirst (ECDbKnownColumns::ECClassId);
+            auto column = table->GetFilteredColumnFirst (ColumnKind::ECClassId);
             if (column != nullptr)
                 {
 

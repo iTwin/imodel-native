@@ -3098,6 +3098,143 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
         AssertIndex(ecdb, "uix_ts_B_fk_ts_Rel11_target", true, "ts_B", {"sc03"}, indexWhereClause.c_str());
         }
 
+        {
+        TestItem testItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "    <ECClass typeName='A' isDomainClass='True' isStruct='False' isCustomAttribute='False'>"
+            "        <ECProperty propertyName='Id' typeName='string' />"
+            "    </ECClass>"
+            "    <ECClass typeName='B' isDomainClass='True'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Strategy>SharedTable</Strategy>"
+            "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+            "                 </MapStrategy>"
+            "                 <Indexes>"
+            "                 <DbIndex>"
+            "                   <Name>ix_B_AId</Name>"
+            "                   <IsUnique>False</IsUnique>"
+            "                   <Properties>"
+            "                      <string>AId</string>"
+            "                   </Properties>"
+            "                 </DbIndex>"
+            "                 </Indexes>"
+            "             </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='AId' typeName='long' />"
+            "    </ECClass>"
+            "    <ECClass typeName='B1' isDomainClass='True'>"
+            "        <BaseClass>B</BaseClass>"
+            "        <ECProperty propertyName='B1Id' typeName='long' />"
+            "    </ECClass>"
+            "   <ECRelationshipClass typeName='RelBase' isDomainClass='True' strength='referencing'>"
+            "    <Source cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class='A'/>"
+            "    </Source>"
+            "    <Target cardinality='(1,N)' polymorphic='True'>"
+            "      <Class class='B'>"
+            "        <Key><Property name='AId'/></Key>"
+            "      </Class>"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "   <ECRelationshipClass typeName='RelSub1' isDomainClass='True' strength='referencing'>"
+            "    <BaseClass>RelBase</BaseClass>"
+            "    <Source cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class='A' />"
+            "    </Source>"
+            "    <Target cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class='B1'>"
+            "        <Key><Property name='AId'/></Key>"
+            "      </Class>"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>", true, "");
+
+        ECDb ecdb;
+        bool asserted = false;
+        AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships.ecdb");
+        ASSERT_FALSE(asserted);
+
+        ASSERT_EQ(3, (int) RetrieveIndicesForTable(ecdb, "ts_B").size()) << "Expected indices: class id index, user defined index, unique index to enforce cardinality of RelSub1";
+
+        AssertIndex(ecdb, "ix_B_AId", false, "ts_B", {"AId"});
+
+        AssertIndexExists(ecdb, "ix_ts_B_fk_ts_RelBase_target", false);
+
+        ECClassId b1ClassId = ecdb.Schemas().GetECClassId("TestSchema", "B1");
+        Utf8String indexWhereClause;
+        indexWhereClause.Sprintf("([AId] IS NOT NULL) AND (ECClassId=%lld)", b1ClassId);
+
+        AssertIndex(ecdb, "uix_ts_B_fk_ts_RelSub1_target", true, "ts_B", {"Aid"}, indexWhereClause.c_str());
+        }
+
+        {
+        TestItem testItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "    <ECClass typeName='B' isDomainClass='True'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Strategy>SharedTable</Strategy>"
+            "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+            "                 </MapStrategy>"
+            "             </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Id' typeName='long' />"
+            "    </ECClass>"
+            "    <ECClass typeName='B1' isDomainClass='True'>"
+            "        <BaseClass>B</BaseClass>"
+            "        <ECProperty propertyName='B1Id' typeName='long' />"
+            "    </ECClass>"
+            "   <ECRelationshipClass typeName='RelBase' isDomainClass='True' strength='referencing'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Strategy>SharedTable</Strategy>"
+            "                   <Options>SharedColumns</Options>"
+            "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+            "                 </MapStrategy>"
+            "             </ClassMap>"
+            "        </ECCustomAttributes>"
+            "    <Source cardinality='(1,N)' polymorphic='True'>"
+            "      <Class class='B'/>"
+            "    </Source>"
+            "    <Target cardinality='(1,N)' polymorphic='True'>"
+            "      <Class class='B' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "   <ECRelationshipClass typeName='RelSub11' isDomainClass='True' strength='referencing'>"
+            "    <BaseClass>RelBase</BaseClass>"
+            "    <Source cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class='B' />"
+            "    </Source>"
+            "    <Target cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class='B1' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "   <ECRelationshipClass typeName='RelSub1N' isDomainClass='True' strength='referencing'>"
+            "    <BaseClass>RelBase</BaseClass>"
+            "    <Source cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class='B1' />"
+            "    </Source>"
+            "    <Target cardinality='(1,N)' polymorphic='True'>"
+            "      <Class class='B1' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>", true, "");
+
+        ECDb ecdb;
+        bool asserted = false;
+        AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships.ecdb");
+        ASSERT_FALSE(asserted);
+
+        ASSERT_EQ(10, (int) RetrieveIndicesForTable(ecdb, "ts_RelBase").size());
+        }
     }
 
 //---------------------------------------------------------------------------------------

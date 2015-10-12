@@ -23,7 +23,7 @@ private:
     ClassMapFactory ();
     ~ClassMapFactory ();
 
-    static ClassMapPtr CreateInstance(MapStatus&, ClassMapInfo const&, bool setIsDirty);
+    static ClassMapPtr CreateInstance(MapStatus&, SchemaImportContext const*, ClassMapInfo const&, bool setIsDirty);
 
 public:
     static ClassMapPtr Load (MapStatus&, ECN::ECClassCR, ECDbMapCR);

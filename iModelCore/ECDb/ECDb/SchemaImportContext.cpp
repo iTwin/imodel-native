@@ -64,34 +64,51 @@ UserECDbMapStrategy* SchemaImportContext::GetUserStrategyP(ECClassCR ecclass, EC
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   10/2015
+//---------------------------------------------------------------------------------------
+void SchemaImportContext::SetColumnIsShared(ECDbSqlColumn const& col, ColumnKind kind) const
+    {
+    m_sharedColumnCache[&col].insert(kind);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   10/2015
+//---------------------------------------------------------------------------------------
+bool SchemaImportContext::IsColumnShared(ECDbSqlColumn const& col, ColumnKind kind) const
+    {
+    auto it = m_sharedColumnCache.find(&col);
+    if (it == m_sharedColumnCache.end())
+        return false;
+
+    bset<ColumnKind> const& isSharedSet = it->second;
+    return isSharedSet.find(kind) != isSharedSet.end();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   10/2015
+//---------------------------------------------------------------------------------------
+void SchemaImportContext::AddIndexInfo(ECDbSqlIndex const& index, IndexInfo info) const
+    {
+    m_indexInfoCache.insert(std::pair<ECDbSqlIndex const*, IndexInfo> (&index, std::move(info)));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   10/2015
+//---------------------------------------------------------------------------------------
+SchemaImportContext::IndexInfo const* SchemaImportContext::GetIndexInfo(ECDbSqlIndex const& index) const
+    {
+    auto it = m_indexInfoCache.find(&index);
+    if (it == m_indexInfoCache.end())
+        return nullptr;
+
+    return &it->second;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   08/2015
 //---------------------------------------------------------------------------------------
 void SchemaImportContext::CacheClassMapInfo(ClassMap const& classMap, std::unique_ptr<ClassMapInfo>& info) const
     {
-    m_classMapInfoCache.push_back(std::make_pair(&classMap,std::move(info)));
+    m_classMapInfoCache.push_back(std::make_pair(&classMap, std::move(info)));
     }
-/*
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   05/2015
-//---------------------------------------------------------------------------------------
-void SchemaImportContext::AddClassIdFilteredIndex(ECDbSqlIndex const& index, ECClassId classId)
-    {
-    BeAssert(m_classIdFilteredIndices.find(&index) == m_classIdFilteredIndices.end());
-    m_classIdFilteredIndices[&index] = classId;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   05/2015
-//---------------------------------------------------------------------------------------
-bool SchemaImportContext::TryGetClassIdToIndex(ECClassId& classId, ECDbSqlIndex const& index) const
-    {
-    auto it = m_classIdFilteredIndices.find(&index);
-    if (it == m_classIdFilteredIndices.end())
-        return false;
-
-    classId = it->second;
-    return true;
-    }
-    */
-
 END_BENTLEY_SQLITE_EC_NAMESPACE

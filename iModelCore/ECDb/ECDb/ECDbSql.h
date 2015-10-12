@@ -14,6 +14,7 @@
 #include "BeRepositoryBasedIdSequence.h"
 #include "MapStrategy.h"
 #include "ECSql/NativeSqlBuilder.h"
+#include "SchemaImportContext.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -31,7 +32,7 @@ typedef int64_t ECDbConstraintId;
 typedef int64_t ECDbPropertyPathId;
 typedef int64_t ECDbClassMapId;
 
-enum class ECDbKnownColumns
+enum class ColumnKind
     {
     Unknown = 0x0U, //! Not known to ECDb or user define columns
     ECInstanceId = 0x1U, //! ECInstanceId system column also primary key of the table
@@ -45,12 +46,8 @@ enum class ECDbKnownColumns
     TargetECClassId = 0x100U,
     DataColumn = 0x200U, //! Data column defined by none key column in ECClass
     //Following is helper group for search operation. There cannot be a column with OR'ed flags
-    GroupSourceECInstanceKey = SourceECInstanceId | SourceECClassId,
-    GroupTargetECInstanceKey = TargetECInstanceId | TargetECClassId,
-    GroupForeignKeys = GroupSourceECInstanceKey | GroupTargetECInstanceKey,
-    GroupECInstanceKey = ECInstanceId | ECClassId, //! Group key to identify ECInstance
-    GroupECStructKey = GroupECInstanceKey | ParentECInstanceId | ECPropertyPathId | ECArrayIndex, //! Group key to identify ECStruct instance
-    GroupSystemColumns = GroupECStructKey
+    ConstraintECInstanceId = SourceECInstanceId | TargetECInstanceId,
+    NonRelSystemColumn = ECInstanceId | ECClassId | ParentECInstanceId | ECPropertyPathId | ECArrayIndex
     };
 
 
@@ -277,7 +274,7 @@ public:
     const std::vector<ECDbSqlIndex const*> GetIndexes () const;
     std::vector<ECDbSqlIndex*> GetIndexesR ();
 
-    BentleyStatus CreateOrUpdateIndices() const;
+    BentleyStatus CreateOrUpdateIndices(SchemaImportContext const&) const;
 
     const std::vector<ECDbSqlTable const*> GetTables () const;
     const std::vector<ECDbSqlTable*> GetTablesR ();
@@ -301,13 +298,7 @@ public:
 struct ECDbSqlIndex : NonCopyableClass
     {
 public:
-    enum class Scope
-        {
-        Auto,
-        EnforceTable,
-        EnforceClassAndSubclasses
-        };
-
+ 
     struct PersistenceManager : NonCopyableClass
         {
     private:
@@ -318,9 +309,9 @@ public:
         ~PersistenceManager (){}
 
         ECDbSqlIndex const& GetIndex () const { return m_index; }
-        BentleyStatus Create(ECDbR) const;
+        BentleyStatus Create(SchemaImportContext const&, ECDbR) const;
         BentleyStatus Drop(ECDbR) const;
-        bool Exists (ECDbR) const;
+        bool Exists (ECDbCR) const;
         };
 
 private:
@@ -331,18 +322,14 @@ private:
     bool m_isUnique;
     ECN::ECClassId m_classId;
     Utf8String m_additionalWhereExpression;
-    Scope m_scope;
     PersistenceManager m_persistenceManager;
 
-    BentleyStatus BuildCreateDdl(NativeSqlBuilder&, ECDbCR) const;
+    BentleyStatus BuildCreateDdl(NativeSqlBuilder&, SchemaImportContext const&, ECDbCR) const;
 
 public:
-    ECDbSqlIndex(ECDbIndexId id, ECDbSqlTable& table, Utf8CP name, bool isUnique, ECN::ECClassId classId, Scope scope)
-        :m_id(id), m_name(name), m_table(table), m_isUnique(isUnique), m_classId(classId), m_scope(scope), m_persistenceManager(*this)  
-        {
-        if (isUnique && m_scope == Scope::Auto)
-            m_scope = Scope::EnforceClassAndSubclasses;
-        }
+    ECDbSqlIndex(ECDbIndexId id, ECDbSqlTable& table, Utf8CP name, bool isUnique, ECN::ECClassId classId)
+        :m_id(id), m_name(name), m_table(table), m_isUnique(isUnique), m_classId(classId), m_persistenceManager(*this)  
+        {}
 
     ECDbIndexId GetId() const { BeAssert(m_id != IIdGenerator::UNSET_ID); return m_id; }
 
@@ -355,7 +342,6 @@ public:
     ECN::ECClassId GetClassId() const { return m_classId; }
     void SetAdditionalWhereExpression (Utf8CP expression) { m_additionalWhereExpression = expression; }
     Utf8StringCR GetAdditionalWhereExpression () const { return m_additionalWhereExpression; }
-    Scope GetScope() const { return m_scope; }
     bool Contains (Utf8CP column) const;
     BentleyStatus Add (Utf8CP column);
     BentleyStatus Remove (Utf8CP column);
@@ -409,42 +395,42 @@ struct ECDbSqlColumn : NonCopyableClass
         };
 
     private:
-        static const std::map<ECDbKnownColumns, Utf8CP> s_knownColumnNames;
+        static const std::map<ColumnKind, Utf8CP> s_columnKindNames;
 
         Type m_type;
         ECDbSqlTable& m_ownerTable;
         Constraint m_constraints;
         Utf8String m_name;
         PersistenceType m_persistenceType;
-        ECDbKnownColumns m_knownColumnId;
+        ColumnKind m_kind;
         ECDbColumnId m_id;
-        bool m_isShared;
 
     public:
         ECDbSqlColumn (Utf8CP name, Type type, ECDbSqlTable& owner, PersistenceType persistenceType, ECDbColumnId id)
-            : m_name (name), m_ownerTable (owner), m_type (type), m_persistenceType (persistenceType), m_knownColumnId (ECDbKnownColumns::DataColumn), m_id (id), m_isShared(false) {}
+            : m_name (name), m_ownerTable (owner), m_type (type), m_persistenceType (persistenceType), m_kind (ColumnKind::DataColumn), m_id (id) {}
+
+        virtual ~ECDbSqlColumn() {}
 
         ECDbColumnId GetId () const { return m_id; }
         void SetId (ECDbColumnId id) { m_id = id; }
         PersistenceType GetPersistenceType () const { return m_persistenceType; }
         Utf8StringCR GetName () const { return m_name; }
         Type GetType () const { return m_type; };
-        bool IsShared() const { return m_isShared; }
-        void SetIsShared(bool isShared) { m_isShared = isShared; }
         ECDbSqlTable const& GetTable () const { return m_ownerTable; }
         ECDbSqlTable&  GetTableR ()  { return m_ownerTable; }
         Constraint const& GetConstraint () const { return m_constraints; };
         Constraint& GetConstraintR ()  { return m_constraints; };
         bool IsReusable () const { return m_type == Type::Any; }
-        virtual ~ECDbSqlColumn () {}
         static Type StringToType (Utf8CP typeName);
         static Utf8CP TypeToString (Type type);
-        BentleyStatus SetKnownColumnId (ECDbKnownColumns knownColumnId);
-        ECDbKnownColumns GetKnownColumnId() const { return m_knownColumnId; }
+        ColumnKind GetKind() const { return m_kind; }
+        BentleyStatus SetKind(ColumnKind);
+        BentleyStatus AddKind(ColumnKind);
         const Utf8String GetFullName () const;
         std::weak_ptr<ECDbSqlColumn> GetWeakPtr () const;
+
         static const Utf8String BuildFullName (Utf8CP table, Utf8CP column);
-        static Utf8CP KnownColumnToString (ECDbKnownColumns columnId);
+        static Utf8CP KindToString (ColumnKind);
     };
 
 //======================================================================================
@@ -501,38 +487,28 @@ struct ECDbSqlPrimaryKeyConstraint : ECDbSqlConstraint
 //======================================================================================
 struct ECDbSqlForeignKeyConstraint : ECDbSqlConstraint
     {
-    enum class ActionType
-        {
-        NotSpecified,
-        Cascade,
-        NoAction,
-        SetNull,
-        SetDefault,
-        Restrict,
-        };
-
     private:
         ECDbSqlTable const& m_targetTable;
         std::vector<ECDbSqlColumn const*> m_sourceColumns;
         std::vector<ECDbSqlColumn const*> m_targetColumns;
-        ActionType m_onDeleteAction;
-        ActionType m_onUpdateAction;
+        ForeignKeyActionType m_onDeleteAction;
+        ForeignKeyActionType m_onUpdateAction;
         Utf8String m_name;
         ECDbConstraintId m_id;
     public:
         ECDbSqlForeignKeyConstraint (ECDbSqlTable const& sourceTable, ECDbSqlTable const& targetTable, ECDbConstraintId id)
-            :ECDbSqlConstraint (ECDbSqlConstraint::Type::ForeignKey, sourceTable), m_id (id), m_targetTable (targetTable), m_onDeleteAction (ActionType::NotSpecified), m_onUpdateAction (ActionType::NotSpecified)
+            :ECDbSqlConstraint (ECDbSqlConstraint::Type::ForeignKey, sourceTable), m_id (id), m_targetTable (targetTable), m_onDeleteAction (ForeignKeyActionType::NotSpecified), m_onUpdateAction (ForeignKeyActionType::NotSpecified)
             {}
 
         ECDbConstraintId GetId () const { return m_id; }
         void SetId (ECDbConstraintId id) { m_id = id; }
         Utf8StringCR GetName () const { return m_name; }
         void SetName (Utf8CP name) { m_name = name; }
-        void SetOnDeleteAction (ActionType action) { m_onDeleteAction = action; }
-        void SetOnUpdateAction (ActionType action) { m_onUpdateAction = action; }
+        void SetOnDeleteAction (ForeignKeyActionType action) { m_onDeleteAction = action; }
+        void SetOnUpdateAction (ForeignKeyActionType action) { m_onUpdateAction = action; }
 
-        ActionType GetOnDeleteAction () const { return m_onDeleteAction; }
-        ActionType GetOnUpdateAction () const { return m_onUpdateAction; }
+        ForeignKeyActionType GetOnDeleteAction () const { return m_onDeleteAction; }
+        ForeignKeyActionType GetOnUpdateAction () const { return m_onUpdateAction; }
 
         BentleyStatus Add (Utf8CP sourceColumn, Utf8CP targetColumn);
         BentleyStatus Remove (size_t index);
@@ -544,8 +520,8 @@ struct ECDbSqlForeignKeyConstraint : ECDbSqlConstraint
         bool ContainsInTarget (Utf8CP columnName) const;
         BentleyStatus Remove (Utf8CP sourceColumn, Utf8CP targetColumn);
         size_t Count () const { return m_targetColumns.size (); }
-        static ActionType ToActionType(Utf8CP str);
-        static Utf8CP ToSQL(ActionType actionType);
+        static ForeignKeyActionType ToActionType(Utf8CP str);
+        static Utf8CP ToSQL(ForeignKeyActionType actionType);
         virtual ~ECDbSqlForeignKeyConstraint (){}
     };
 
@@ -554,6 +530,7 @@ struct ECDbSqlForeignKeyConstraint : ECDbSqlConstraint
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
 struct ECDbSqlTrigger;
+
 struct ECDbSqlTable : NonCopyableClass
     {
     enum class ColumnEvent
@@ -616,8 +593,8 @@ struct ECDbSqlTable : NonCopyableClass
         ECDbSqlDb const& GetDbDef () const{ return m_dbDef; }
         ECDbSqlDb & GetDbDefR () { return m_dbDef; }
         //! Any type will be mark as reusable column
-        ECDbSqlColumn* CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, ECDbKnownColumns knownColumnId = ECDbKnownColumns::DataColumn, PersistenceType persistenceType = PersistenceType::Persisted);
-        ECDbSqlColumn* CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, size_t position, ECDbKnownColumns knownColumnId = ECDbKnownColumns::DataColumn, PersistenceType persistenceType = PersistenceType::Persisted);
+        ECDbSqlColumn* CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, ColumnKind kind = ColumnKind::DataColumn, PersistenceType persistenceType = PersistenceType::Persisted);
+        ECDbSqlColumn* CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, size_t position, ColumnKind kind = ColumnKind::DataColumn, PersistenceType persistenceType = PersistenceType::Persisted);
 
         BentleyStatus CreateTrigger(Utf8CP triggerName, ECDbSqlTable& table, Utf8CP condition, Utf8CP body, TriggerType ecsqlType,TriggerSubType triggerSubType);
         std::vector<const ECDbSqlTrigger*> GetTriggers()const;
@@ -627,14 +604,14 @@ struct ECDbSqlTable : NonCopyableClass
         std::vector<ECDbSqlColumn const*> const& GetColumns () const;
         EditHandle& GetEditHandleR () { return m_editInfo; }
         EditHandle const& GetEditHandle () const { return m_editInfo; }
-        ECDbSqlIndex* CreateIndex(Utf8CP indexName, bool isUnique, ECN::ECClassId, ECDbSqlIndex::Scope = ECDbSqlIndex::Scope::Auto);
+        ECDbSqlIndex* CreateIndex(SchemaImportContext const*, Utf8CP indexName, bool isUnique, ECN::ECClassId, bool isAutoGenerated, SchemaImportContext::IndexInfo::Scope = SchemaImportContext::IndexInfo::Scope::Auto);
         const std::vector<ECDbSqlIndex const*> GetIndexes() const;
         ECDbSqlPrimaryKeyConstraint* GetPrimaryKeyConstraint (bool createIfDonotExist = true);
         ECDbSqlForeignKeyConstraint* CreateForeignKeyConstraint (ECDbSqlTable const& targetTable);
         std::vector<ECDbSqlConstraint const*> GetConstraints () const;   
         BentleyStatus GetFilteredColumnList (std::vector<ECDbSqlColumn const*>& columns, PersistenceType persistenceType) const;
-        BentleyStatus GetFilteredColumnList (std::vector<ECDbSqlColumn const*>& columns, ECDbKnownColumns knowColumnIds) const;
-        ECDbSqlColumn const* GetFilteredColumnFirst (ECDbKnownColumns knowColumnIds) const;
+        BentleyStatus GetFilteredColumnList (std::vector<ECDbSqlColumn const*>& columns, ColumnKind knowColumnIds) const;
+        ECDbSqlColumn const* GetFilteredColumnFirst (ColumnKind knowColumnIds) const;
         bool DeleteColumn (Utf8CP name);
         BentleyStatus FinishEditing ();
         //! temp method
@@ -930,13 +907,13 @@ struct ECDbSqlPersistence : NonCopyableClass
     {
     private:
         const Utf8CP Sql_InsertTable = "INSERT OR REPLACE INTO ec_Table (Id, Name, IsOwnedByECDb, IsVirtual) VALUES (?, ?, ?, ?)";
-        const Utf8CP Sql_InsertColumn = "INSERT OR REPLACE INTO ec_Column (Id, TableId, Name, Type, IsVirtual, Ordinal, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, KnownColumn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        const Utf8CP Sql_InsertColumn = "INSERT OR REPLACE INTO ec_Column (Id, TableId, Name, Type, IsVirtual, Ordinal, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, ColumnKind) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         const Utf8CP Sql_InsertIndex = "INSERT OR REPLACE INTO ec_Index (Id, TableId, Name, IsUnique, ClassId, AdditionalWhereExpression) VALUES (?, ?, ?, ?, ?, ?)";
         const Utf8CP Sql_InsertIndexColumn = "INSERT OR REPLACE INTO ec_IndexColumn (IndexId, ColumnId, Ordinal) VALUES (?, ?, ?)";
         const Utf8CP Sql_InsertForeignKey = "INSERT OR REPLACE INTO ec_ForeignKey (Id, TableId, ReferencedTableId, Name, OnDelete, OnUpdate) VALUES (?, ?, ?, ?, ?, ?)";
         const Utf8CP Sql_InsertForeignKeyColumn = "INSERT OR REPLACE INTO ec_ForeignKeyColumn (ForeignKeyId, ColumnId, ReferencedColumnId, Ordinal) VALUES (?, ?, ?, ?)";
         const Utf8CP Sql_SelectTable = "SELECT Id, Name, IsOwnedByECDb, IsVirtual FROM ec_Table";
-        const Utf8CP Sql_SelectColumn = "SELECT Id, Name, Type, IsVirtual, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, KnownColumn FROM ec_Column WHERE TableId = ? ORDER BY Ordinal";
+        const Utf8CP Sql_SelectColumn = "SELECT Id, Name, Type, IsVirtual, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, ColumnKind FROM ec_Column WHERE TableId = ? ORDER BY Ordinal";
         const Utf8CP Sql_SelectIndex = "SELECT I.Id, T.Name, I.Name, I.IsUnique, I.ClassId, I.AdditionalWhereExpression FROM ec_Index I INNER JOIN ec_Table T ON T.Id = I.TableId";
         const Utf8CP Sql_SelectIndexColumn = "SELECT C.Name FROM ec_IndexColumn I INNER JOIN ec_Column C ON C.Id = I.ColumnId WHERE I.IndexId = ? ORDER BY I.Ordinal";
         const Utf8CP Sql_SelectForeignKey = "SELECT F.Id, R.Name, F.Name, F.OnDelete, F.OnUpdate FROM ec_ForeignKey F INNER JOIN ec_Table R ON R.Id = F.ReferencedTableId WHERE F.TableId = ?";

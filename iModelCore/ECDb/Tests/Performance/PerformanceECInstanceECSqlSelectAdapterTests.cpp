@@ -13,7 +13,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Carole.MacDonald                 04/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(Performance_ECInstanceECSqlSelectAdapterTests, SelectFromComplexClass)
+TEST(DISABLED_Performance_ECInstanceECSqlSelectAdapterTests, SelectFromComplexClass)
     {
     BeFileName seedPath;
     BeTest::GetHost().GetDocumentsRoot (seedPath);
@@ -57,7 +57,7 @@ TEST(Performance_ECInstanceECSqlSelectAdapterTests, SelectFromComplexClass)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 05/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (Performance_ECInstanceECSqlSelectAdapterTests, SelectFromComplexClass_WithoutAdapter)
+TEST (DISABLED_Performance_ECInstanceECSqlSelectAdapterTests, SelectFromComplexClass_WithoutAdapter)
     {
     BeFileName seedPath;
     BeTest::GetHost ().GetDocumentsRoot (seedPath);
