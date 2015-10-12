@@ -58,6 +58,8 @@ $(o)BeFileListIterator$(oext)   : $(nonportDir)BeFileListIterator.cpp $(BentleyA
 
 $(o)BeDirectoryIterator$(oext)  : $(nonportDir)BeDirectoryIterator.cpp $(BentleyAPISrc)BeDirectoryIterator.h ${MultiCompileDepends}
 
+$(o)BeTextFile$(oext)           : $(nonportDir)BeTextFile.cpp $(BentleyAPISrc)BeTextFile.h ${MultiCompileDepends}
+
 %if defined (BENTLEY_CPP_MISSING_WCHAR_SUPPORT)
 $(o)strfunc$(oext)          : $(nonportDir)strfunc.cpp ${MultiCompileDepends}
 %endif
