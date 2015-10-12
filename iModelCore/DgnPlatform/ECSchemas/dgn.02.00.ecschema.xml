@@ -419,14 +419,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                             <string>AuthorityId</string>
                         </Properties>
                     </DbIndex>
-                    <DbIndex>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <!-- Authority must hand out unique ExternalKeys -->
-                            <string>AuthorityId</string>
-                            <string>ExternalKey</string>
-                        </Properties>
-                    </DbIndex>
                 </Indexes>
             </ClassMap>
         </ECCustomAttributes>

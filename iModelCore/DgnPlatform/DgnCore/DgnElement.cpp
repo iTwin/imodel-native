@@ -2248,6 +2248,15 @@ void ECSqlClassParams::RemoveAllButSelect()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::AppData::Key const& DgnElement::ExternalKey::GetAppDataKey()
+    {
+    static Key s_appDataKey;
+    return s_appDataKey;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::ExternalKeyPtr DgnElement::ExternalKey::Create(DgnAuthorityId authorityId, Utf8CP externalKey)
@@ -2318,6 +2327,15 @@ DgnDbStatus DgnElement::ExternalKey::Delete(DgnElementCR element, DgnAuthorityId
         return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::AppData::Key const& DgnElement::Description::GetAppDataKey()
+    {
+    static Key s_appDataKey;
+    return s_appDataKey;
     }
 
 /*---------------------------------------------------------------------------------**//**
