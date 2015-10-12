@@ -3017,7 +3017,6 @@ ElementGeometryCollectionContext(DgnDbR db)
     m_purpose = DrawPurpose::CaptureGeometry;
     m_wantMaterials = true; // Setup material in ElemDisplayParams...
 
-    SetBlockAsynchs(true);
     m_output->SetViewContext(this);
     _SetupOutputs();
 

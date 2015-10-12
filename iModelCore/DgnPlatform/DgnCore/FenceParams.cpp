@@ -689,7 +689,6 @@ public:
 FenceAcceptContext()
     {
     m_purpose            = DrawPurpose::FenceAccept;
-    m_blockAsyncs        = true;
     m_collectContents    = false;
     m_nonVisibleViewport = NULL;
     m_ignoreViewRange    = true;

@@ -6,16 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include "UpdateLogging.h"
-
-enum FrustCorners
-    {
-    FRUST_Org    = 0,
-    FRUST_X      = 1,
-    FRUST_Y      = 2,
-    FRUST_Z      = 3,
-    FRUST_COUNT  = 4,
-    };
 
 static DRange3d const s_fullNpcRange =
     {
@@ -28,6 +18,8 @@ static DRange3d const s_fullNpcRange =
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewContext::ViewContext()
     {
+    m_dgnDb = nullptr;
+
     m_viewport    = nullptr;
     m_IViewDraw   = nullptr;
     m_IDrawGeom   = nullptr;
@@ -40,7 +32,6 @@ ViewContext::ViewContext()
     m_minLOD        = DEFAULT_MINUMUM_LOD;
 
     m_isAttached                = false;
-    m_blockAsyncs               = false;
     m_blockIntermediatePaints   = false;
     m_is3dView                  = true; // Changed default to 3d...
     m_creatingCacheElem         = false;
@@ -48,11 +39,6 @@ ViewContext::ViewContext()
     m_filterLOD                 = FILTER_LOD_ShowRange;
     m_parentRangeResult         = RangeResult::Overlap;
 
-    m_dgnDb = nullptr;
-
-    m_ignoreScaleForDimensions  = false;
-    m_ignoreScaleForMultilines  = false;
-    m_applyRotationToDimView    = false;
     m_wantMaterials             = false;
     m_useCachedGraphics         = true;
 
@@ -92,7 +78,7 @@ ViewContext::~ViewContext()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelP ViewContext::_GetViewTarget()
     {
-    return nullptr == GetViewport() ? nullptr : GetViewport()->GetViewController().GetTargetModel();
+    return nullptr == m_viewport ? nullptr : m_viewport->GetViewController().GetTargetModel();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -294,7 +280,6 @@ void ViewContext::_SetCurrentElement(GeometricElementCP element)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Prepare this context to work on the given project when getting project from ViewController.
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_SetDgnDb(DgnDbR dgnDb)
@@ -388,9 +373,6 @@ void ViewContext::_Detach()
        to prevent this method from modifying them */
     if (nullptr != m_IDrawGeom)
         m_IDrawGeom->ActivateOverrideMatSymb(nullptr);     // clear any overrides
-
-    // _EmptySymbolCache(); not yet in Graphite
-    UpdateLogging::RecordDetach();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -628,22 +610,6 @@ bool ViewContext::_ScanRangeFromPolyhedron()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* make sure the scan range and range planes are in synch with the polyhedron (if not, calculate them from the
-* current polyhedron.
-* @bsimethod                                                    KeithBentley    08/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::ValidateScanRange()
-    {
-    return m_scanRangeValid ? true : _ScanRangeFromPolyhedron();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* mark the scan range and range planes as invalid (out-of-synch with current polyhedron).
-* @bsimethod                                                    KeithBentley    08/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::InvalidateScanRange()     { m_scanRangeValid = false; }
-
-/*---------------------------------------------------------------------------------**//**
 * Test an element against the current scan range using the range planes.
 * @return true if the element is outside the range and should be ignored.
 * @bsimethod                                                    KeithBentley    04/01
@@ -666,10 +632,7 @@ void ViewContext::_OutputElement(GeometricElementCR element)
     {
     ResetContextOverrides();
 
-    if (m_viewport)
-        return m_viewport->GetViewControllerR()._DrawElement(*this, element);
-
-    element._Draw(*this);
+    m_viewport ? m_viewport->GetViewControllerR()._DrawElement(*this, element) : element._Draw(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1525,10 +1488,6 @@ void ViewContext::ContextMark::Pop()
         m_context->SetCurrParentRangeResult(m_parentRangeResult);
         m_pushedRange = false;
         }
-
-    m_context->SetIgnoreScaleForDimensions(m_ignoreScaleForDimensions);
-    m_context->SetIgnoreScaleForMultilines(m_ignoreScaleForMultilines);
-    m_context->SetApplyRotationToDimView(m_applyRotationToDimView);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1539,10 +1498,6 @@ inline void ViewContext::ContextMark::SetNow()
     m_transClipMark                 = m_context->GetTransClipDepth();
     m_parentRangeResult             = m_context->GetCurrParentRangeResult();
     m_pushedRange                   = false;
-
-    m_ignoreScaleForDimensions      = m_context->GetIgnoreScaleForDimensions();
-    m_ignoreScaleForMultilines      = m_context->GetIgnoreScaleForMultilines();
-    m_applyRotationToDimView        = m_context->GetApplyRotationToDimView();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2082,70 +2037,6 @@ void ViewContext::_DrawSymbol(IDisplaySymbol* symbol, TransformCP trans, ClipPla
     output.DrawQvElem(qvElem); // Display priority for symbols in 2d is incorporated into the transform.
     output._PopTransClip();
 #endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DrawAligned(DVec3dCR axis, DPoint3dCR origin, AlignmentMode alignmentMode, IStrokeAligned& stroker)
-    {
-    DPoint4d            zColumn4d;
-    DVec3d              zColumn;
-    DMatrix4d           toNpc = GetWorldToNpc().M0;
-    Transform           localToWorldTransform;
-
-    if (SUCCESS == GetCurrLocalToWorldTrans(localToWorldTransform))
-        {
-        DMatrix4d       localToWorld = DMatrix4d::From(localToWorldTransform);
-
-        toNpc.InitProduct(toNpc, localToWorld);
-        }
-
-    DVec3d      axisLocal;
-
-    switch (alignmentMode)
-        {
-        case AlignmentMode_AlongLocalInDrawing:
-            axisLocal = axis;
-            break;
-
-        case AlignmentMode_AlongDrawing:
-            axisLocal = axis;
-            break;
-
-        default:
-            BeAssert(false);
-            return;
-        }
-    axisLocal.Normalize();
-
-    toNpc.GetRow(zColumn4d, 2);
-    zColumn.XyzOf(zColumn4d);
-    zColumn.Normalize();
-
-    RotMatrix       rMatrix;
-
-    if (zColumn.IsParallelTo(axisLocal))
-        {
-        rMatrix = RotMatrix::From1Vector(zColumn, 2, true);
-        }
-    else
-        {
-        DVec3d          xColumn, yColumn;
-
-        yColumn.CrossProduct(zColumn, axisLocal);
-        xColumn.CrossProduct(yColumn, zColumn);
-        xColumn.Normalize();
-        yColumn.Normalize();
-        rMatrix = RotMatrix::FromColumnVectors(xColumn, yColumn, zColumn);
-        }
-
-    Transform       alignmentTransform = Transform::From(rMatrix, origin);
-
-    PushTransform(alignmentTransform);
-    m_transformClipStack.SetViewIndependent();
-    stroker._StrokeAligned(*this);
-    PopTransformClip();
     }
 
 /*---------------------------------------------------------------------------------**//**

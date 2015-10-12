@@ -199,7 +199,6 @@ ElementGraphicsContext(IElementGraphicsProcessor* dropObj, ElementGraphicsDrawGe
     m_purpose = dropObj->_GetDrawPurpose();
     m_wantMaterials = true; // Setup material in ElemDisplayParams in case IElementGraphicsProcessor needs it...
 
-    SetBlockAsynchs(true);
     m_output.Init(this, dropObj);
     _SetupOutputs();
 

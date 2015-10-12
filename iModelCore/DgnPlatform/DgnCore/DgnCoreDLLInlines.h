@@ -138,12 +138,6 @@ DG_INLINE OvrMatSymb* ViewContext::GetOverrideMatSymb() {return &m_ovrMatSymb;}
 DG_INLINE bool ViewContext::CheckICachedDraw() {return m_creatingCacheElem;}
 DG_INLINE Byte& ViewContext::GetFilterLODFlag() {return m_filterLOD;}
 DG_INLINE void ViewContext::SetFilterLODFlag(FilterLODFlags flags) { m_filterLOD =(Byte) flags; }
-DG_INLINE bool ViewContext::GetIgnoreScaleForDimensions() {return m_ignoreScaleForDimensions;}
-DG_INLINE bool ViewContext::GetIgnoreScaleForMultilines() {return m_ignoreScaleForMultilines;}
-DG_INLINE bool ViewContext::GetApplyRotationToDimView() {return m_applyRotationToDimView;}
-DG_INLINE void ViewContext::SetIgnoreScaleForDimensions(bool ignore) {m_ignoreScaleForDimensions = ignore;}
-DG_INLINE void ViewContext::SetIgnoreScaleForMultilines(bool ignore) {m_ignoreScaleForMultilines = ignore;}
-DG_INLINE void ViewContext::SetApplyRotationToDimView(bool rotateDimView) {m_applyRotationToDimView = rotateDimView;}
 DG_INLINE size_t ViewContext::GetTransClipDepth() {return m_transformClipStack.GetSize(); }
 DG_INLINE RangeResult ViewContext::GetCurrParentRangeResult() {return m_parentRangeResult; }
 DG_INLINE void ViewContext::SetCurrParentRangeResult(RangeResult val) {m_parentRangeResult = val;}
@@ -172,8 +166,6 @@ DG_INLINE void ViewContext::DrawStyledBSplineCurve3d(MSBsplineCurveCR curve) {_D
 DG_INLINE void ViewContext::PushViewIndependentOrigin(DPoint3dCP origin) {_PushViewIndependentOrigin(origin);}
 DG_INLINE StatusInt ViewContext::VisitElement(GeometricElementCR elem) {return _VisitElement(elem);}
 DG_INLINE void ViewContext::AllocateScanCriteria(){_AllocateScanCriteria();}
-DG_INLINE void ViewContext::VisitDgnModel(DgnModelP modelRef) {_VisitDgnModel(modelRef);}
-DG_INLINE void ViewContext::SetScanReturn() {_SetScanReturn();}
 DG_INLINE void ViewContext::VisitTransientGraphics(bool isPreUpdate) {_VisitTransientGraphics(isPreUpdate);}
 DG_INLINE void ViewContext::CookDisplayParams(ElemDisplayParamsR elParams, ElemMatSymbR elMatSymb) {_CookDisplayParams(elParams, elMatSymb);}
 DG_INLINE void ViewContext::CookDisplayParamsOverrides(ElemDisplayParamsR elParams, OvrMatSymbR ovrMatSymb) {_CookDisplayParamsOverrides(elParams, ovrMatSymb);}

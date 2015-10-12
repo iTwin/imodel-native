@@ -24,7 +24,8 @@ BEGIN_BENTLEY_DGN_NAMESPACE
  @addtogroup ViewContext
  A ViewContext holds the <i>current state</i> of an operation on a DgnViewport. A ViewContext must be first
  \e attached to a DgnViewport to be useful, and must be \e detached from the DgnViewport to free any memory associated with its internal state.
-/** @beginGroup */
+ @beginGroup 
++===============+===============+===============+===============+===============+======*/
 
 enum FilterLODFlags
 {
@@ -148,6 +149,7 @@ public:
     bool AddAbortTest(bool val) {return  m_aborted |= val;}
 
     ICheckStop() {m_aborted=false;}
+
     //! return true to abort the current operation.
     //! @note Overrides MUST call SetAborted or use AddAbortTest since WasAborted may be directly tested!
     virtual bool _CheckStop() {return m_aborted;}
@@ -236,9 +238,6 @@ public:
         size_t       m_dynamicViewStateStackMark;
         size_t       m_displayStyleStackMark;
         bool         m_pushedRange;
-        bool         m_ignoreScaleForDimensions;
-        bool         m_ignoreScaleForMultilines;
-        bool         m_applyRotationToDimView;
         Render::RangeResult  m_parentRangeResult;
         double       m_reservedDouble;
 
@@ -248,7 +247,7 @@ public:
 
         DGNPLATFORM_EXPORT void Pop();
         DGNPLATFORM_EXPORT void SetNow();
-        void Init(ViewContextP context) { m_hdrOvrMark = m_transClipMark = 0; m_context = context; m_parentRangeResult = Render::RangeResult::Overlap; m_pushedRange = m_ignoreScaleForDimensions = m_ignoreScaleForMultilines = m_applyRotationToDimView = false; m_reservedDouble = 0.0;}
+        void Init(ViewContextP context) { m_hdrOvrMark = m_transClipMark = 0; m_context = context; m_parentRangeResult = Render::RangeResult::Overlap; m_pushedRange = false; m_reservedDouble = 0.0;}
         };
 
     friend struct ContextMark;
@@ -280,26 +279,15 @@ public:
         AlignmentMode_Billboard              = 3,
         };
 
-    //=======================================================================================
-    // @bsiclass                                                     Ray.Bentley     10/12
-    //=======================================================================================
-    struct IStrokeAligned 
-        {
-        virtual void _StrokeAligned(ViewContextR viewContext) = 0;
-        };
-
 protected:
+    DgnDbP                  m_dgnDb;
     bool                    m_isAttached;
-    bool                    m_blockAsyncs;
     bool                    m_blockIntermediatePaints;
     bool                    m_is3dView;
     bool                    m_isCameraOn;
     bool                    m_wantMaterials;
     bool                    m_creatingCacheElem;
     bool                    m_useNpcSubRange;
-    bool                    m_ignoreScaleForDimensions;
-    bool                    m_ignoreScaleForMultilines;
-    bool                    m_applyRotationToDimView;
     bool                    m_useCachedGraphics;
     bool                    m_ignoreViewRange;
     Byte                    m_filterLOD;
@@ -307,16 +295,14 @@ protected:
     DRange3d                m_npcSubRange;
     DMap4d                  m_worldToNpc;
     DMap4d                  m_worldToView;
-    double                  m_cameraFraction;       // ratio of front plane to back plane.
+    DgnElementPtr           m_currentElement;
+    ScanCriteriaP           m_scanCriteria;
+    int32_t                 m_displayPriorityRange[2];
     TransformClipStack      m_transformClipStack;
     DgnViewportP            m_viewport;
     Render::ViewDrawP       m_IViewDraw;
     Render::GeomDrawP       m_IDrawGeom;
     Render::CachedDrawP     m_ICachedDraw;
-    DgnDbP                  m_dgnDb;
-    DgnElementPtr           m_currentElement;
-    ScanCriteriaP           m_scanCriteria;
-    int32_t                 m_displayPriorityRange[2];
     Render::ElemDisplayParams m_currDisplayParams;
     Render::ElemMatSymb     m_elemMatSymb;
     Render::OvrMatSymb      m_ovrMatSymb;
@@ -337,7 +323,7 @@ protected:
     double                  m_levelOfDetail;
 
     DGNPLATFORM_EXPORT void PopOneTransformClip();
-    void InvalidateScanRange();
+    void InvalidateScanRange() {m_scanRangeValid = false;}
     DGNPLATFORM_EXPORT void InitDisplayPriorityRange();
     DGNPLATFORM_EXPORT virtual StatusInt _Attach(DgnViewportP, DrawPurpose purpose);
     DGNPLATFORM_EXPORT virtual void _Detach();
@@ -388,7 +374,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _SetCurrentElement(GeometricElementCP);
     DGNPLATFORM_EXPORT virtual void _ClearZ ();
     DGNPLATFORM_EXPORT virtual ScanCriteria::Result _CheckNodeRange(ScanCriteriaCR, DRange3dCR, bool is3d);
-    DGNPLATFORM_EXPORT virtual void _DrawAligned(DVec3dCR axis, DPoint3dCR origin, AlignmentMode type, IStrokeAligned& stroker);
 
     DGNPLATFORM_EXPORT ViewContext();
     DGNPLATFORM_EXPORT virtual ~ViewContext();
@@ -404,8 +389,6 @@ public:
     void SetIViewDraw(Render::ViewDrawR output) { m_IViewDraw = &output; m_IDrawGeom = &output;}
     void SetIDrawGeom(Render::GeomDrawR drawGeom) { m_IDrawGeom = &drawGeom; }
     bool IsAttached() {return m_isAttached;}
-    void SetBlockAsynchs(bool blockAsyncs) {m_blockAsyncs = blockAsyncs;}
-    bool WantAsynchs() {return !m_blockAsyncs;}
     void SetIntermediatePaintsBlocked(bool blockIntermediatePaints) {m_blockIntermediatePaints = blockIntermediatePaints;}
     void SetRasterPlane(uint32_t plane) {m_rasterPlane = plane;}
     void ResetRasterPlane() {m_rasterPlane = RasterPlane_Any;}
@@ -415,7 +398,7 @@ public:
     DGNPLATFORM_EXPORT bool SetWantMaterials(bool wantMaterials);
     DGNPLATFORM_EXPORT DMatrix4d GetLocalToView() const;
     DGNPLATFORM_EXPORT DMatrix4d GetViewToLocal() const;
-    DGNPLATFORM_EXPORT bool ValidateScanRange();
+    bool ValidateScanRange() {return m_scanRangeValid ? true : _ScanRangeFromPolyhedron();}
     DGNPLATFORM_EXPORT StatusInt Attach(DgnViewportP, DrawPurpose purpose);
     DGNPLATFORM_EXPORT void Detach();
     DGNPLATFORM_EXPORT bool VisitAllModelElements(bool includeTransients); // DgnModelListP includeList, bool useUpdateSequence, bool includeRefs, bool includeTransients);
@@ -466,8 +449,8 @@ public:
     DGNPLATFORM_EXPORT uint32_t        GetRasterPlane() const;
     DGNPLATFORM_EXPORT void            InitScanRangeAndPolyhedron();
     DGNPLATFORM_EXPORT void            AllocateScanCriteria();
-    DGNPLATFORM_EXPORT void            VisitDgnModel(DgnModelP modelRef);
-    DGNPLATFORM_EXPORT void            SetScanReturn();
+    void VisitDgnModel(DgnModelP model){_VisitDgnModel(model);}
+    void SetScanReturn() {_SetScanReturn();}
     DGNPLATFORM_EXPORT RasterDisplayParams const& GetRasterDisplayParams() const { return m_rasterDisplayParams; }
 
     //! !!!FOR INTERNAL USE ONLY!!!

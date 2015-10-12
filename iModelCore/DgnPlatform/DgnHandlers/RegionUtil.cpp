@@ -1009,7 +1009,6 @@ void            RegionGraphicsDrawGeom::SetAbortFunction(RGC_AbortFunction abort
 RegionGraphicsContext::RegionGraphicsContext()
     {
     m_purpose           = DrawPurpose::RegionFlood;
-    m_blockAsyncs       = true;
     m_targetModel       = NULL; // Destination for geometry when not using vp target...
 
     m_operation         = RegionType::Flood;
