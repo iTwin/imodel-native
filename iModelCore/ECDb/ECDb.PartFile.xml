@@ -159,11 +159,11 @@
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
     
-    <Part Name="ECDbTested">
+    <Product Name="ECDbTested">
         <SubPart PartName="RunGtest" />
         <!--  *** NEEDS WORK: What's the best way to include all platforms? Redefine this container product as a 'MultiPlatform'? -->
         <Directories DirectoryListName="Empty" />
-    </Part>
+    </Product>
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // ECSqlConsole                                                           // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->

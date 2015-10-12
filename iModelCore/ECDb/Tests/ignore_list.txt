@@ -8,8 +8,6 @@ InstanceCRUDTests.* 	# No need to run with the build, used by testing after buil
 #----------------------------------------------------------------------------------------
 
 #TFS316543   ECDb tests should not depend on DgnDb data (Hassan)
-ECDbFileInfo.ReplaceExistingEmbeddedFile
-ECDbFileInfo.ReadAddNewEntrySaveEmbeddedFile
 ECSqlSelectTests.SelectQueriesOnDbGeneratedDuringBuild_79Main
 ECSqlSelectTests.SelectQueriesOnDbGeneratedDuringBuild_04Plant
 
@@ -26,3 +24,11 @@ ECDbMappingTestFixture.MismatchDataTypesInExistingTable
 
 #TFS315488 to address this (Affan)
 ECSqlTestFixture.PolymorphicUpdateTest
+
+# Performance tests that are being moved. Note that some of these tests will continue to be ignored after the move.
+Performance_ECInstanceECSqlSelectAdapterTests.SelectFromComplexClass
+Performance_ECInstanceECSqlSelectAdapterTests.SelectFromComplexClass_WithoutAdapter
+PerformanceFieldEngineer.DeleteReferentialIntegrityWithTwoRelationshipsWithECSql
+PerformanceFieldEngineer.DeleteReferentialIntegrityWithOneRelationshipWithECSql
+PerformanceFieldEngineer.DeleteReferentialIntegrityWithTwoRelationships
+PerformanceFieldEngineer.DeleteReferentialIntegrityWithOneRelationship

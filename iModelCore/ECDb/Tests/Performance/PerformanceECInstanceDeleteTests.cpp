@@ -62,7 +62,7 @@ TEST_F (PerformanceECInstanceDeleteTestsFixture, DeleteInstancesFromDerivedClass
         {
         Utf8StringCR SchemaPrefix = Class->GetSchema ().GetNamespacePrefix ();
         Utf8String ClassName = Class->GetName ();
-        LOG.infov ("\n Class Name = %s \n", ClassName);
+        LOG.infov ("\n Class Name = %s \n", ClassName.c_str());
 
         Utf8String stat = "Delete FROM ";
         stat.append (SchemaPrefix);
@@ -115,7 +115,7 @@ TEST_F (PerformanceECInstanceDeleteTestsFixture, DeleteInstancesFromDerivedClass
         {
         Utf8StringCR SchemaPrefix = DerivedClass->GetSchema ().GetNamespacePrefix ();
         Utf8String ClassName = DerivedClass->GetName ();
-        LOG.infov ("\n Derived Class Name = %s \n", ClassName);
+        LOG.infov ("\n Derived Class Name = %s \n", ClassName.c_str());
 
         Utf8String stat = "Delete FROM ";
         stat.append (SchemaPrefix);
