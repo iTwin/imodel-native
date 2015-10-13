@@ -74,19 +74,15 @@ declare module BentleyApi.Dgn {
     //Scaled vector by -1
     Negate () : JsDVector3dP;
         
-    UnitVectorTowards (target : JsDPoint3dP) : JsDVector3dP;
+    UnitVectorTo(target: JsDVector3dP) : JsDVector3dP;
 
-    //Returns new vector that begins at start, and ends at end
-    static FromStartEnd (start : JsDPoint3dP, end : JsDPoint3dP) : JsDVector3dP;
-    //Same as start end, but normalizes result (magnitude : makes 1) : the
-    static FromStartEndNormalize (start : JsDPoint3dP, end : JsDPoint3dP) : JsDVector3dP;
     //return a vector same length as source but rotate 90 degrees CCW
     FromCCWPerpendicularXY (source : JsDVector3dP) : JsDVector3dP;  
-    FromRotate90Towards (source : JsDVector3dP, target : JsDVector3dP) : JsDVector3dP;
-    static FromRotate90Around (source : JsDVector3dP, axis : JsDVector3dP) : JsDVector3dP;
+    Rotate90Towards (target : JsDVector3dP) : JsDVector3dP;
+    Rotate90Around (axis : JsDVector3dP) : JsDVector3dP;
 
 
-    static FromXYAngleAndMagnitude(angle: cxx_double, magnitude: cxx_double): JsDVector3dP;
+    static CreateXYAngleAndMagnitude(angle: JsAngleP, magnitude: cxx_double): JsDVector3dP;
     // Adding vectors
     Interpolate(fraction: cxx_double, right: JsDVector3dP): JsDVector3dP;
     Plus(vector: JsDVector3dP): JsDVector3dP;
@@ -100,7 +96,7 @@ declare module BentleyApi.Dgn {
     Scale (scale : cxx_double) : JsDVector3dP;
 
     ScaleToLength(scale: cxx_double): JsDVector3dP;
-    NormalizedCrossProduct(vectorB: JsDVector3dP): JsDVector3dP;
+    UnitCrossProduct(vectorB: JsDVector3dP): JsDVector3dP;
     SizedCrossProduct (vectorA : JsDVector3dP, vectorB : JsDVector3dP, productLength : cxx_double) : JsDVector3dP;
     UnitPerpendicularXY(vector: JsDVector3dP): JsDVector3dP;
     UnitPerpendicular(): JsDVector3dP;

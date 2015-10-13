@@ -525,11 +525,7 @@ bool DgnTrueTypeGlyph::_IsBlank() const
 //---------------------------------------------------------------------------------------
 static FT_Face determineFace(DgnFontStyle& style, bool isBold, bool isItalic, IDgnTrueTypeFontData& data)
     {
-    style = DgnFontStyle::Regular;
-    if (isBold && isItalic) style = DgnFontStyle::BoldItalic;
-    else if (isBold) style = DgnFontStyle::Bold;
-    else if (isItalic) style = DgnFontStyle::Italic;
-
+    style = DgnFont::ComputeFontStyle(isBold, isItalic);
     FT_Face face = data._GetFaceP(style);
     if (nullptr == face)
         face = data._GetFaceP(DgnFontStyle::Regular);

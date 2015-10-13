@@ -67,6 +67,11 @@ public:
     void SetSize(double width, double height) { m_size.x = width; m_size.y = height; }
 };
 
+//__PUBLISH_SECTION_END__
+// So we can friend V8GraphicsCollector within TextString.
+namespace DgnDbSync { namespace DgnV8 { struct V8GraphicsCollector; } }
+//__PUBLISH_SECTION_START__
+
 //=======================================================================================
 //! A light-weight object that represents a run of single-line, single-format characters for display purposes.
 //! Glyph-based computations can be expensive. If you repeatedly need glyph, glyph origin, or range results, you should compute them once and cache them. This object also defers glyph-based computations until actually requested. This allows you to create the object and configure it with no overhead; then, the next glyph-based computation requested will trigger the expensive glyph layout call, and the results are cached in this object until invalidated by a set method.
@@ -89,6 +94,9 @@ struct TextString : public RefCountedBase
 private:
     DEFINE_T_SUPER(RefCountedBase);
     friend struct TextStringPersistence;
+//__PUBLISH_SECTION_END__
+    friend struct DgnDbSync::DgnV8::V8GraphicsCollector;
+//__PUBLISH_SECTION_START__
 
     Utf8String m_text;
     TextStringStyle m_style;
