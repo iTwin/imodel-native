@@ -31,9 +31,6 @@
 # Set common environment variables for the build
 #----------------------------------------------------------------------------------------
 
-PointoolsLibs = $(SrcRoot)Pointools/PointoolsLibs/
-PointoolsLibsVendorAPI = $(OutBuildContexts)PointoolsLibs/VendorAPI/
-PointoolsLibsDelivery = $(OutBuildContexts)PointoolsLibs/Delivery/
 PointoolsIO=$(SrcRoot)Pointools/PointoolsIO/
 PointoolsVortexAPI=$(SrcRoot)Pointools/PointoolsVortexAPI/
 PointoolsVortexAPIInclude = $(PointoolsVortexAPI)include/
