@@ -1608,8 +1608,8 @@ RedlineViewControllerPtr RedlineViewController::InsertView(RedlineModelR rdlMode
         memset(&flags, 0, sizeof(flags));
         controller->GetViewFlagsR() = flags;
 
-        for (auto const& cat : rdlModel.GetDgnDb().Categories().MakeIterator())
-            controller->ChangeCategoryDisplay(cat.GetCategoryId(), true);
+        for (auto const& catId : DgnCategory::QueryCategories(rdlModel.GetDgnDb()))
+            controller->ChangeCategoryDisplay(catId, true);
         }
         
     controller->m_enableViewManipulation = false;

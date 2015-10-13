@@ -541,100 +541,17 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="Priority" typeName="int" description="The priority of this dependency, relative to other EntityDrivesEntity instances. Note that EntityHasChildEntities dependencies always take priority over EntityDrivesEntity dependencies."/>
     </ECRelationshipClass>
 
-    <ECClass typeName="Category" isDomainClass="True" >
-        <ECCustomAttributes>
-             <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>
-                    <Strategy>OwnTable</Strategy>
-                </MapStrategy>
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Code" typeName="string" description="Code for a category" >
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <Collation>NoCase</Collation>
-                    <IsNullable>False</IsNullable>
-                    <IsUnique>True</IsUnique>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Label" displayLabel="Category" typeName="string">
-            <!-- WIP: remove? Use code? -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <Collation>NoCase</Collation>
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
+    <ECClass typeName="Category" isDomainClass="True">
+        <BaseClass>DictionaryElement</BaseClass>
+        <ECProperty propertyName="Descr" DisplayLabel="Description" typeName="string" />
         <ECProperty propertyName="Scope" typeName="int" />
         <ECProperty propertyName="Rank" typeName="int" />
-        <ECProperty propertyName="Props" typeName="string" />
     </ECClass>
-    <ECRelationshipClass typeName="ElementIsInCategory" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(0,N)"  roleLabel="has N elements" polymorphic="True">
-            <Class class="Element">
-                <Key>
-                    <Property name="CategoryId" />
-                </Key>
-            </Class>
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="is in 1 category" polymorphic="False">
-            <Class class="Category" />
-        </Target>
-    </ECRelationshipClass>
-
     <ECClass typeName="SubCategory" isDomainClass="True">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="CategoryId" typeName="long">
-            <!-- Foreign key relationship: CategoryOwnsSubCategories.CategoryId -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Code" typeName="string" description="Code for a subcategory">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <Collation>NoCase</Collation>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Label" displayLabel="SubCategory" typeName="string">
-            <!-- WIP: remove? Use code? -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <Collation>NoCase</Collation>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
+        <BaseClass>DictionaryElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
         <ECProperty propertyName="Props" typeName="string"/>
     </ECClass>
-    <ECRelationshipClass typeName="CategoryOwnsSubCategories" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>Cascade</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(1,1)" polymorphic="False">
-            <Class class="Category" />
-        </Source>
-        <Target cardinality="(0,N)" polymorphic="False">
-            <Class class="SubCategory" >
-                <Key>
-                    <Property name="CategoryId" />
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
 
     <ECClass typeName="View" isDomainClass="True" >
         <ECCustomAttributes>
@@ -723,64 +640,40 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECClass>
 
     <ECClass typeName="Texture" isDomainClass="True">
-        <!-- WIP: convert to subclass of Element -->
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>
-                    <Strategy>OwnTable</Strategy>
-                </MapStrategy>
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <Indexes>
-                    <DbIndex>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>Name</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Name" displayLabel="Texture" typeName="string" description="Name of texture">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <Collation>NoCase</Collation>
-                    <IsNullable>True</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
+        <BaseClass>DictionaryElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
         <ECProperty propertyName="Data" displayLabel="" typeName="binary" description="Encoded texture data">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
+                    <IsNullable>True</IsNullable><!-- actually False, but shared table... -->
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Format" typeName="int" description="Format of the encoded texture data">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
+                    <IsNullable>True</IsNullable><!-- actually False, but shared table... -->
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Width" typeName="int" displayLabel="Width">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
+                    <IsNullable>True</IsNullable><!-- actually False, but shared table... -->
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Height" typeName="int" displayLabel="Height">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
+                    <IsNullable>True</IsNullable><!-- actually False, but shared table... -->
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Flags" typeName="int">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
+                    <IsNullable>True</IsNullable><!-- actually False, but shared table... -->
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>

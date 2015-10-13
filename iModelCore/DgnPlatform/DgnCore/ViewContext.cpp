@@ -1806,7 +1806,7 @@ bool ViewContext::IsMonochromeDisplayStyleActive()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-int32_t ViewContext::ResolveNetDisplayPriority(int32_t geomPriority, DgnSubCategoryId subCategoryId, DgnCategories::SubCategory::Appearance* appearanceIn) const
+int32_t ViewContext::ResolveNetDisplayPriority(int32_t geomPriority, DgnSubCategoryId subCategoryId, DgnSubCategory::Appearance* appearanceIn) const
     {
     if (m_is3dView)
         return 0;
@@ -1819,12 +1819,21 @@ int32_t ViewContext::ResolveNetDisplayPriority(int32_t geomPriority, DgnSubCateg
         if (!subCategoryId.IsValid())
             return netPriority;
 
-        DgnCategories::SubCategory::Appearance appearance;
+        DgnSubCategory::Appearance appearance;
 
         if (nullptr != GetViewport())
+            {
             appearance = GetViewport()->GetViewController().GetSubCategoryAppearance(subCategoryId);
+            }
         else
-            appearance = GetDgnDb().Categories().QuerySubCategory(subCategoryId).GetAppearance();
+            {
+            DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(subCategoryId, GetDgnDb());
+            BeAssert(subCat.IsValid());
+            if (!subCat.IsValid())
+                return netPriority;
+            else
+                appearance = subCat->GetAppearance();
+            }
 
         netPriority += appearance.GetDisplayPriority();
         }
@@ -2244,12 +2253,21 @@ void ElemDisplayParams::Resolve(ViewContextR context)
         return;
 
     // Setup from SubCategory appearance...
-    DgnCategories::SubCategory::Appearance appearance;
+    DgnSubCategory::Appearance appearance;
 
     if (nullptr != context.GetViewport())
+        {
         appearance = context.GetViewport()->GetViewController().GetSubCategoryAppearance(subCategoryId);
+        }
     else
-        appearance = context.GetDgnDb().Categories().QuerySubCategory(subCategoryId).GetAppearance();
+        {
+        DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(subCategoryId, context.GetDgnDb());
+        BeAssert(subCat.IsValid());
+        if (!subCat.IsValid())
+            return;
+
+        appearance = subCat->GetAppearance();
+        }
 
     if (!m_appearanceOverrides.m_color)
         m_lineColor = appearance.GetColor();

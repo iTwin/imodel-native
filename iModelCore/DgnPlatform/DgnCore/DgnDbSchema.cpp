@@ -47,61 +47,6 @@ static void importDgnSchema(DgnDbR db, bool updateExisting)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult insertAuthority(DgnDbR db, Statement& stmt, DgnAuthorityId id, Utf8CP name, AuthorityHandlerR handler)
-    {
-    stmt.BindId(1, id);
-    stmt.BindText(2, name, Statement::MakeCopy::No);
-    stmt.BindId(3, db.Domains().GetClassId(handler));
-
-    DbResult result = stmt.Step();
-    BeAssert(BE_SQLITE_DONE == result);
-    return result;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct BuiltinAuthorityInfo
-{
-    Utf8CP name;
-    DgnAuthorityId id;
-    AuthorityHandlerR handler;
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::CreateAuthorities()
-    {
-    Json::Value authorityProps(Json::objectValue);
-    authorityProps["uri"] = "";
-    Utf8String authorityJson = Json::FastWriter::ToString(authorityProps);
-
-    Statement statement(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Authority) " (Id,Name,ECClassId,Props) VALUES (?,?,?,?)");
-    statement.BindText(4, authorityJson, Statement::MakeCopy::No);
-
-    BuiltinAuthorityInfo infos[] =
-        {
-            { "Local", DgnAuthority::LocalId(), dgn_AuthorityHandler::Local::GetHandler() },
-            { "DgnMaterials", DgnAuthority::MaterialId(), dgn_AuthorityHandler::Namespace::GetHandler() },
-            { "DgnLightDefinitions", DgnAuthority::LightDefinitionId(), dgn_AuthorityHandler::Namespace::GetHandler() },
-        };
-
-    for (auto const& info : infos)
-        {
-        DbResult result = insertAuthority(*this, statement, info.id, info.name, info.handler);
-        if (BE_SQLITE_DONE != result)
-            return result;
-
-        statement.Reset();
-        }
-
-    return BE_SQLITE_OK;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreateDictionaryModel()
     {
     Utf8String dictionaryName = DgnCoreL10N::GetString(DgnCoreL10N::MODELNAME_Dictionary());

@@ -70,16 +70,6 @@ protected:
 TEST_F (DgnAuthoritiesTest, Authorities)
     {
     SetupProject();
-    DgnDbR db = GetDb();
-
-    // Every newly-created DgnDb contains exactly one "local" authority
-    DgnAuthorities& auths = db.Authorities();
-    DgnAuthorityCPtr localAuth = auths.GetAuthority(DgnAuthority::LocalId());
-    ASSERT_TRUE (localAuth.IsValid());
-    ASSERT_EQ (localAuth->GetAuthorityId(), DgnAuthority::LocalId());
-    ASSERT_TRUE (localAuth->GetName().Equals ("Local")) << "Actual: " << localAuth->GetName().c_str();
-    auto localAuthId = auths.QueryAuthorityId ("Local");
-    ASSERT_EQ (localAuthId, DgnAuthority::LocalId()) << localAuthId.GetValueUnchecked();
 
     // Create some new authorities
     auto auth1Id = Create("Auth1")->GetAuthorityId();
@@ -88,7 +78,6 @@ TEST_F (DgnAuthoritiesTest, Authorities)
     // Test persistent
     Compare(auth1Id, "Auth1", nullptr);
     Compare(auth2Id, "Auth2", "auth2:uri");
-    Compare(DgnAuthority::LocalId(), "Local", nullptr);
 
     // Names must be unique
     auto badAuth = Create("Auth1", "This is a duplicate name", false);

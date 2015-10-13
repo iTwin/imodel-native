@@ -103,7 +103,7 @@ JsElementGeometryBuilder::JsElementGeometryBuilder(JsDgnElementP e, JsDPoint3dP 
 //---------------------------------------------------------------------------------------
 JsDgnElement* JsDgnModel::CreateElement(Utf8StringCR ecSqlClassName, Utf8StringCR categoryName)
     {
-    DgnCategoryId catid = m_model->GetDgnDb().Categories().QueryCategoryId(categoryName.c_str());
+    DgnCategoryId catid = DgnCategory::QueryCategoryId(categoryName.c_str(), m_model->GetDgnDb());
     return new JsDgnElement(*createPhysicalElement(*m_model, ecSqlClassName.c_str(), catid));
     }
 

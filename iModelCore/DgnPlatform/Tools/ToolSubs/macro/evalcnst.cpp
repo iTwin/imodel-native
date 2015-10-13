@@ -2,17 +2,16 @@
 |
 |     $Source: Tools/ToolSubs/macro/evalcnst.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <Bentley/Bentley.h>
-#include <DgnPlatform/ExportMacros.h>
-#include    <ctype.h>
-#include    "macro.h"
-#include    <DgnPlatform/Tools/stringop.h>
-#include    <DgnPlatform/DesktopTools/MacroFileProcessor.h>
+#include <DgnPlatformInternal.h>
+#include <ctype.h>
+#include "macro.h"
+#include <DgnPlatform/Tools/stringop.h>
+#include <DgnPlatform/DesktopTools/MacroFileProcessor.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Gray.Yu         03/01
@@ -78,14 +77,15 @@ enum NodeType
     NODETYPE_Boolean    =  4,
     };
 
-typedef struct Node*     NodeP;
-typedef struct Node&     NodeR;
+struct EvaluatorNode;
+typedef struct BentleyApi::Dgn::EvaluatorNode*     EvaluatorNodeP;
+typedef struct BentleyApi::Dgn::EvaluatorNode&     EvaluatorNodeR;
 
 /*=================================================================================**//**
 * Node within a ConstantEvaluator
 * @bsiclass                                                     Barry.Bentley   01/2012
 +===============+===============+===============+===============+===============+======*/
-struct Node
+struct EvaluatorNode
 {
 NodeType            m_type;
 MacroFileProcessor& m_macroFileProc;
@@ -99,7 +99,7 @@ union
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-Node (bool value, MacroFileProcessor& mfp) : m_macroFileProc (mfp)
+EvaluatorNode (bool value, MacroFileProcessor& mfp) : m_macroFileProc (mfp)
     {
     m_type      = NODETYPE_Boolean;
     m_value.i   = value ? 1 : 0;
@@ -108,7 +108,7 @@ Node (bool value, MacroFileProcessor& mfp) : m_macroFileProc (mfp)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-Node (int value, MacroFileProcessor& mfp) : m_macroFileProc (mfp)
+EvaluatorNode (int value, MacroFileProcessor& mfp) : m_macroFileProc (mfp)
     {
     m_type      = NODETYPE_Integer;
     m_value.i   = value;
@@ -117,7 +117,7 @@ Node (int value, MacroFileProcessor& mfp) : m_macroFileProc (mfp)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-Node (WCharCP stringVal, MacroFileProcessor& mfp) : m_macroFileProc (mfp)
+EvaluatorNode (WCharCP stringVal, MacroFileProcessor& mfp) : m_macroFileProc (mfp)
     {
     m_type          = NODETYPE_String;
     m_value.string  = new WString (stringVal);
@@ -126,7 +126,7 @@ Node (WCharCP stringVal, MacroFileProcessor& mfp) : m_macroFileProc (mfp)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-Node (char character, MacroFileProcessor& mfp) : m_macroFileProc (mfp)
+EvaluatorNode (char character, MacroFileProcessor& mfp) : m_macroFileProc (mfp)
     {
     m_type      = NODETYPE_Char;
     m_value.c   = character;
@@ -156,7 +156,7 @@ bool    IsConstant ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    ConvertToInteger ()
+void    ConvertToInteger (bool mustConvert)
     {
     // converts internal value to string.
     int         value = 0;
@@ -172,7 +172,8 @@ void    ConvertToInteger ()
             return;
             }
         }
-    m_macroFileProc.FatalError (L"expect a constant");
+    if (mustConvert)
+        m_macroFileProc.FatalError (L"expect a constant");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -255,7 +256,7 @@ void    FreeString ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-~Node ()
+~EvaluatorNode ()
     {
     FreeString();
     }
@@ -263,11 +264,13 @@ void    FreeString ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool    Equals (NodeR right)
+bool    Equals (EvaluatorNodeR right)
     {
     if ( (NODETYPE_Integer == m_type) || (NODETYPE_Boolean == m_type) || (NODETYPE_Char == m_type))
         {
-        right.ConvertToInteger ();
+        right.ConvertToInteger (false);
+        if (!right.IsArithType())
+            return false;
         return GetIntegerValue() == right.GetIntegerValue();
         }
     else if (NODETYPE_String == m_type)
@@ -277,7 +280,7 @@ bool    Equals (NodeR right)
             // left is string, but right is not. Convert left to integer and then compare.
             if (IsConstant ())
                 {
-                ConvertToInteger ();
+                ConvertToInteger (false);
                 return Equals (right);
                 }
             else
@@ -302,7 +305,7 @@ bool    Equals (NodeR right)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    /*Node::*/Concatenate (NodeR right)
+void    /*EvaluatorNode::*/Concatenate (EvaluatorNodeR right)
     {
     if ( (NODETYPE_String != m_type) && (NODETYPE_Char != m_type) )
         {
@@ -323,9 +326,9 @@ void    /*Node::*/Concatenate (NodeR right)
         concatenated->assign (1, m_value.c);
 
     if (NODETYPE_String == right.m_type)
-        concatenated->append (*m_value.string);
+        concatenated->append (*right.m_value.string);
     else
-        concatenated->append (1, m_value.c);
+        concatenated->append (1, right.m_value.c);
 
     FreeString();
     m_type = NODETYPE_String;
@@ -516,7 +519,7 @@ void    Advance ()
 
             saveChar = *pEndOfWord;
             *pEndOfWord = 0;
-            if (PREPROCESSOR_NotKeyword != m_macroFileProc.GetPreprocessorCommand (m_expression))
+            if (PreProcessorCommand::NotKeyword != m_macroFileProc.GetPreprocessorCommand (m_expression))
                 m_token = TOKEN_PreProcessorCommand;
 
             *pEndOfWord = saveChar;
@@ -597,38 +600,38 @@ void    MustBeTokenType (TokenType checkType)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    kab             06/91
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodeP   CalculateBinaryNode (int type, Node& left, Node& right)
+EvaluatorNodeP   CalculateBinaryNode (int type, EvaluatorNode& left, EvaluatorNode& right)
     {
     // This method Deletes the right node, and returns the value in the left node..
     switch (type)
         {
         case    TOKEN_LogicalOr:
-            left.ConvertToInteger ();
-            right.ConvertToInteger ();
+            left.ConvertToInteger (true);
+            right.ConvertToInteger (true);
             left.SetToBoolean (left.GetBooleanValue() || right.GetBooleanValue()); 
             break;
 
         case    TOKEN_LogicalAnd:
-            left.ConvertToInteger ();
-            right.ConvertToInteger ();
+            left.ConvertToInteger (true);
+            right.ConvertToInteger (true);
             left.SetToBoolean (left.GetBooleanValue() && right.GetBooleanValue());
             break;
 
         case    TOKEN_BinaryOr:
-            left.ConvertToInteger ();
-            right.ConvertToInteger ();
+            left.ConvertToInteger (true);
+            right.ConvertToInteger (true);
             left.SetToBoolean (0 != (left.GetIntegerValue() | right.GetIntegerValue())); 
             break;
 
         case    TOKEN_BinaryXor:
-            left.ConvertToInteger ();
-            right.ConvertToInteger ();
+            left.ConvertToInteger (true);
+            right.ConvertToInteger (true);
             left.SetToBoolean (0 != (left.GetIntegerValue() ^ right.GetIntegerValue())); 
             break;
 
         case    TOKEN_BinaryAnd:
-            left.ConvertToInteger ();
-            right.ConvertToInteger ();
+            left.ConvertToInteger (true);
+            right.ConvertToInteger (true);
             left.SetToBoolean (0 != (left.GetIntegerValue() & right.GetIntegerValue())); 
             break;
 
@@ -641,38 +644,38 @@ NodeP   CalculateBinaryNode (int type, Node& left, Node& right)
             break;
 
         case    TOKEN_GreaterThan:
-            left.ConvertToInteger ();
-            right.ConvertToInteger ();
+            left.ConvertToInteger (true);
+            right.ConvertToInteger (true);
             left.SetToBoolean (left.GetIntegerValue() > right.GetIntegerValue());
             break;
 
         case    TOKEN_LessThan:
-            left.ConvertToInteger ();
-            right.ConvertToInteger ();
+            left.ConvertToInteger (true);
+            right.ConvertToInteger (true);
             left.SetToBoolean (left.GetIntegerValue() < right.GetIntegerValue());
             break;
 
         case    TOKEN_GreaterOrEqual:
-            left.ConvertToInteger ();
-            right.ConvertToInteger ();
+            left.ConvertToInteger (true);
+            right.ConvertToInteger (true);
             left.SetToBoolean (left.GetIntegerValue() >= right.GetIntegerValue());
             break;
 
         case    TOKEN_LessOrEqual:
-            left.ConvertToInteger ();
-            right.ConvertToInteger ();
+            left.ConvertToInteger (true);
+            right.ConvertToInteger (true);
             left.SetToBoolean (left.GetIntegerValue() <= right.GetIntegerValue());
             break;
 
         case    TOKEN_ShiftLeft:
-            left.ConvertToInteger ();
-            right.ConvertToInteger ();
+            left.ConvertToInteger (true);
+            right.ConvertToInteger (true);
             left.SetToInteger (left.GetIntegerValue() << right.GetIntegerValue());
             break;
 
         case    TOKEN_ShiftRight:
-            left.ConvertToInteger ();
-            right.ConvertToInteger ();
+            left.ConvertToInteger (true);
+            right.ConvertToInteger (true);
             left.SetToInteger (left.GetIntegerValue() >> right.GetIntegerValue());
             break;
 
@@ -689,26 +692,26 @@ NodeP   CalculateBinaryNode (int type, Node& left, Node& right)
             break;
 
         case    TOKEN_Subtract:
-            left.ConvertToInteger ();
-            right.ConvertToInteger ();
+            left.ConvertToInteger (true);
+            right.ConvertToInteger (true);
             left.SetToInteger (left.GetIntegerValue() - right.GetIntegerValue());
             break;
 
         case    TOKEN_Multiply:
-            left.ConvertToInteger ();
-            right.ConvertToInteger ();
+            left.ConvertToInteger (true);
+            right.ConvertToInteger (true);
             left.SetToInteger (left.GetIntegerValue() * right.GetIntegerValue());
             break;
 
         case    TOKEN_Divide:
-            left.ConvertToInteger ();
-            right.ConvertToInteger ();
+            left.ConvertToInteger (true);
+            right.ConvertToInteger (true);
             left.SetToInteger (left.GetIntegerValue() / right.GetIntegerValue());
             break;
 
         case    TOKEN_Modulus:
-            left.ConvertToInteger ();
-            right.ConvertToInteger ();
+            left.ConvertToInteger (true);
+            right.ConvertToInteger (true);
             left.SetToInteger (left.GetIntegerValue() % right.GetIntegerValue());
             break;
 
@@ -726,7 +729,7 @@ NodeP   CalculateBinaryNode (int type, Node& left, Node& right)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool    IsSymbolChar (int thisChar)
     {
-    return  (extended_isAlnum (thisChar) || (thisChar=='_') || (thisChar=='"'));
+    return  (isalnum (thisChar) || (thisChar=='_') || (thisChar=='"'));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -776,7 +779,7 @@ void    EliminateQuotesFromString (WStringR string)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    kab             06/91
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool    IsSymbolDefined (NodeP *ppNode)
+bool    IsSymbolDefined (EvaluatorNodeP *ppNode, bool mustBeDefined)
     {
     m_expression = wskipSpace (m_expression);
 
@@ -798,11 +801,12 @@ bool    IsSymbolDefined (NodeP *ppNode)
         // this is the case where the first character in the symbol is not a symbol character.
         if (*m_expression == '$')
             {
-            for (outP=symbol; *m_expression == '$' || *m_expression == '(' || *m_expression == ')' || IsSymbolChar (*m_expression); outP++, m_expression++)
+            for (outP=symbol; *m_expression == '$' || *m_expression == '(' || *m_expression == ')' || *m_expression == '{' || *m_expression == '}' || IsSymbolChar (*m_expression); outP++, m_expression++)
                 {
                 *outP = *m_expression;
                 if (*outP == ')')
                     {
+                    outP++;
                     m_expression++;
                     break;
                     }
@@ -812,24 +816,36 @@ bool    IsSymbolDefined (NodeP *ppNode)
 
             wstripSpace (symbol);
                         
-            // in this case, we got $(MACRONAME). It must exist and expand to something.
+            // in this case, we got $(MACRONAME) or ${MACRONAME}. It must exist and expand to something.
             MacroExpandOptions  options (m_level);
             WString             expansion;
             if ( (BSISUCCESS != m_macroCfgAdmin.ExpandMacro (expansion, symbol, options)) || expansion.empty() )
                 {
-                WChar msg[1024];
-                BeStringUtilities::Snwprintf (msg, L"Symbol '%ls' is undefined", symbol);
-                m_macroFileProc.FatalError (msg);
+                if (mustBeDefined)
+                    {
+                    // don't accept it.
+                    WChar msg[1024];
+                    BeStringUtilities::Snwprintf (msg, L"Symbol '%ls' is undefined", symbol);
+                    m_macroFileProc.FatalError (msg);
+                    }
+                 else
+                    {
+                    // set to empty string.
+                    if (NULL == *ppNode)
+                        *ppNode = new EvaluatorNode (L"", m_macroFileProc);
+                    else
+                        (*ppNode)->SetToString (L"");
+                    }
+                retval = false;
                 }
             else
                 {
                 if (NULL != ppNode)
                     {
                     if (NULL == *ppNode)
-                        *ppNode = new Node (expansion.c_str(), m_macroFileProc);
+                        *ppNode = new EvaluatorNode (expansion.c_str(), m_macroFileProc);
                     else
                         (*ppNode)->SetToString (expansion.c_str());
-
                     }
                 retval = true;
                 }
@@ -844,10 +860,10 @@ bool    IsSymbolDefined (NodeP *ppNode)
             return true;
 
         int intValue = 0;
-        BE_STRING_UTILITIES_SWSCANF (symbol, L"%d", &intValue);
+        swscanf (symbol, L"%d", &intValue);
 
         if (NULL == *ppNode)
-            *ppNode = new Node (intValue, m_macroFileProc);
+            *ppNode = new EvaluatorNode (intValue, m_macroFileProc);
         else
             (*ppNode)->SetToInteger (intValue);
 
@@ -860,7 +876,7 @@ bool    IsSymbolDefined (NodeP *ppNode)
             return true;
 
         if (NULL == *ppNode)
-            *ppNode = new Node (symbol, m_macroFileProc);
+            *ppNode = new EvaluatorNode (symbol, m_macroFileProc);
         else
             (*ppNode)->SetToString (symbol);
 
@@ -879,7 +895,7 @@ bool    IsSymbolDefined (NodeP *ppNode)
     if (IsIntegerConstant (translation, &intValue))
         {
         if (NULL == *ppNode)
-            *ppNode = new Node (intValue, m_macroFileProc);
+            *ppNode = new EvaluatorNode (intValue, m_macroFileProc);
         else
             (*ppNode)->SetToInteger (intValue);
         }
@@ -891,14 +907,14 @@ bool    IsSymbolDefined (NodeP *ppNode)
         EliminateQuotesFromString (tmpString);
 
         if (NULL == *ppNode)
-            *ppNode = new Node (tmpString.c_str(), m_macroFileProc);
+            *ppNode = new EvaluatorNode (tmpString.c_str(), m_macroFileProc);
         else
             (*ppNode)->SetToString (tmpString.c_str());
         }
     else
         {
         if (NULL == *ppNode)
-            *ppNode = new Node (true, m_macroFileProc);
+            *ppNode = new EvaluatorNode (true, m_macroFileProc);
         else
             (*ppNode)->SetToBoolean (true);
         }
@@ -916,7 +932,7 @@ bool    IsFilePresent ()
     m_expression = wskipSpace (m_expression);
 
     memset (symbol, 0, _countof (symbol));
-    for (p=symbol; *m_expression && (inParen || (!isspace(*m_expression) && *m_expression!= ')')); p++, m_expression++)
+    for (p=symbol; *m_expression && (inParen || *m_expression!= ')'); p++, m_expression++)
         {
         *p = *m_expression;
 
@@ -927,13 +943,17 @@ bool    IsFilePresent ()
         }
 
     wstripSpace (symbol);
-    return  (m_macroFileProc.FileExists (symbol, m_level));
+
+    WString expandedFileSpec;
+    m_macroCfgAdmin.ExpandMacro (expandedFileSpec, symbol, MacroExpandOptions (ConfigurationVariableLevel::User));   // ignore expand errors, we want to attempt file existance check anyway.
+
+    return m_macroFileProc.FileExists (expandedFileSpec);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Gray.Yu         03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodeP   ReadStringNode ()
+EvaluatorNodeP   ReadStringNode ()
     {
     WChar    symbol[500], *outP, *endP;
 
@@ -958,13 +978,13 @@ NodeP   ReadStringNode ()
     // skip past the last quote */
     m_expression++; 
 
-    return new Node (symbol, m_macroFileProc);
+    return new EvaluatorNode (symbol, m_macroFileProc);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Gray.Yu         03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodeP   ReadCharNode ()
+EvaluatorNodeP   ReadCharNode ()
     {
     WChar    thisChar;
 
@@ -979,17 +999,17 @@ NodeP   ReadCharNode ()
 
     m_expression++; /* skip over the last quote */
 
-    return new Node ((int)thisChar, m_macroFileProc);
+    return new EvaluatorNode ((int)thisChar, m_macroFileProc);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Gray.Yu         03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodeP   PreProcessCommand()
+EvaluatorNodeP   PreProcessCommand()
     {
     WCharP  pEndOfWord = m_expression;
     WChar   savechar;
-    NodeP   node=NULL;
+    EvaluatorNodeP   node = NULL;
 
     while (!isspace(*pEndOfWord)) 
         pEndOfWord++;
@@ -1006,26 +1026,26 @@ NodeP   PreProcessCommand()
     Advance();
     switch (preProcessorCmd)
         {
-        case    PREPROCESSOR_IfDefined:
-            node = new Node (IsSymbolDefined (NULL), m_macroFileProc);
+        case    PreProcessorCommand::IfDefined:
+            node = new EvaluatorNode (IsSymbolDefined (NULL, true), m_macroFileProc);
             break;
 
-        case    PREPROCESSOR_IfNotDefined:
-            node = new Node (!IsSymbolDefined (NULL), m_macroFileProc);
+        case    PreProcessorCommand::IfNotDefined:
+            node = new EvaluatorNode (!IsSymbolDefined (NULL, true), m_macroFileProc);
             break;
 
-        case    PREPROCESSOR_If:
+        case    PreProcessorCommand::If:
             node = ReadExpressionNode ();
             break;
 
 #if defined (COMMENT_OUT)
         // these could easily be added, but they were not supported in the V8i preprocessor as it was used for cfg files.
-        case   PREPROCESSOR_IfFile:
-            node = new Node (IsFilePresent(), m_macroFileProc);
+        case   PreProcessorCommand::IfFile:
+            node = new EvaluatorNode (IsFilePresent(), m_macroFileProc);
             break;
 
         case   PREPROCESS_IfNoFile:
-            node = new Node (!IsFilePresent(), m_macroFileProc);
+            node = new EvaluatorNode (!IsFilePresent(), m_macroFileProc);
             break;
 #endif
         default:
@@ -1043,9 +1063,9 @@ NodeP   PreProcessCommand()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    kab             06/91
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodeP   ReadUnaryNode ()
+EvaluatorNodeP   ReadUnaryNode ()
     {
-    NodeP node = NULL;
+    EvaluatorNodeP node = NULL;
 
     if (m_token == TOKEN_LogicalNegate)
         {
@@ -1058,7 +1078,7 @@ NodeP   ReadUnaryNode ()
         {
         Advance ();
         MustBeTokenType (TOKEN_LeftParen);
-        node = new Node (IsSymbolDefined (NULL), m_macroFileProc);
+        node = new EvaluatorNode (IsSymbolDefined (NULL, true), m_macroFileProc);
         Advance ();
         MustBeTokenType (TOKEN_RightParen);
         }
@@ -1066,7 +1086,7 @@ NodeP   ReadUnaryNode ()
         {
         Advance ();
         MustBeTokenType (TOKEN_LeftParen);
-        node = new Node (IsFilePresent(), m_macroFileProc);
+        node = new EvaluatorNode (IsFilePresent(), m_macroFileProc);
         Advance ();
         MustBeTokenType (TOKEN_RightParen);
         }
@@ -1085,14 +1105,17 @@ NodeP   ReadUnaryNode ()
     else if (m_token == TOKEN_Hex || m_token == TOKEN_Octal)
         {
         WCharP  pEnd = NULL;
-        node = new Node ((int)BeStringUtilities::Wcstol(m_expression, &pEnd, 0), m_macroFileProc);
+        // WIP_NONPORT - wcstol is probably not supported on Android -- need a BeStringUtilities cover function
+        node = new EvaluatorNode ((int)wcstol(m_expression, &pEnd, 0), m_macroFileProc);
         m_expression = pEnd;
         Advance ();
         }
     else if (m_token == TOKEN_Symbol)
         {
         Advance ();
-        IsSymbolDefined (&node);
+        IsSymbolDefined (&node, false);
+        if (NULL == node)
+            m_macroFileProc.FatalError (L"invalid symbol");   
         Advance ();
         }
     else if (m_token == TOKEN_LeftParen)
@@ -1126,9 +1149,9 @@ NodeP   ReadUnaryNode ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Gray.Yu         03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodeP   ReadMultiplication ()
+EvaluatorNodeP   ReadMultiplication ()
     {
-    NodeP       node;
+    EvaluatorNodeP       node;
     TokenType   op;
 
     node = ReadUnaryNode ();
@@ -1145,9 +1168,9 @@ NodeP   ReadMultiplication ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Gray.Yu         03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodeP   ReadAddition ()
+EvaluatorNodeP   ReadAddition ()
     {
-    NodeP       node;
+    EvaluatorNodeP       node;
     TokenType   op;
 
     node = ReadMultiplication ();
@@ -1164,9 +1187,9 @@ NodeP   ReadAddition ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Gray.Yu         03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodeP   ReadShift ()
+EvaluatorNodeP   ReadShift ()
     {
-    NodeP       node;
+    EvaluatorNodeP       node;
     TokenType   op;
 
     node = ReadAddition ();
@@ -1183,9 +1206,9 @@ NodeP   ReadShift ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Gray.Yu         03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodeP   ReadRelational()
+EvaluatorNodeP   ReadRelational()
     {
-    NodeP       node;
+    EvaluatorNodeP       node;
     TokenType   op;
 
     node = ReadShift ();
@@ -1202,9 +1225,9 @@ NodeP   ReadRelational()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Gray.Yu         03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodeP   ReadEquality()
+EvaluatorNodeP   ReadEquality()
     {
-    NodeP       node;
+    EvaluatorNodeP       node;
     TokenType   op;
 
     node = ReadRelational ();
@@ -1221,9 +1244,9 @@ NodeP   ReadEquality()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Gray.Yu         03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodeP   ReadInclusiveAnd()
+EvaluatorNodeP   ReadInclusiveAnd()
     {
-    NodeP       node;
+    EvaluatorNodeP       node;
     TokenType   op;
 
     node = ReadEquality ();
@@ -1240,9 +1263,9 @@ NodeP   ReadInclusiveAnd()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Gray.Yu         03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodeP   ReadExclusiveOr ()
+EvaluatorNodeP   ReadExclusiveOr ()
     {
-    NodeP       node;
+    EvaluatorNodeP       node;
     TokenType   op;
 
     node = ReadInclusiveAnd ();
@@ -1259,9 +1282,9 @@ NodeP   ReadExclusiveOr ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Gray.Yu         03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodeP   ReadInclusiveOr ()
+EvaluatorNodeP   ReadInclusiveOr ()
     {
-    NodeP       node;
+    EvaluatorNodeP       node;
     TokenType   op;
 
     node = ReadExclusiveOr ();
@@ -1278,9 +1301,9 @@ NodeP   ReadInclusiveOr ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    kab             06/91
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodeP   ReadLogicalAnd ()
+EvaluatorNodeP   ReadLogicalAnd ()
     {
-    NodeP       node;
+    EvaluatorNodeP       node;
     TokenType   op;
 
     node   = ReadInclusiveOr ();
@@ -1297,9 +1320,9 @@ NodeP   ReadLogicalAnd ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    kab             06/91
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodeP   ReadLogicalOr ()
+EvaluatorNodeP   ReadLogicalOr ()
     {
-    NodeP       node;
+    EvaluatorNodeP       node;
     TokenType   op;
 
     node = ReadLogicalAnd();
@@ -1316,9 +1339,9 @@ NodeP   ReadLogicalOr ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Gray.Yu         03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodeP   ReadExpressionNode ()
+EvaluatorNodeP   ReadExpressionNode ()
     {
-    NodeP   node = ReadLogicalOr ();
+    EvaluatorNodeP   node = ReadLogicalOr ();
 
     if  (m_token == TOKEN_BadToken)
         {
@@ -1334,7 +1357,7 @@ NodeP   ReadExpressionNode ()
 bool    EvaluateAsBoolean ()
     {
     Advance ();
-    NodeP   node = ReadExpressionNode ();
+    EvaluatorNodeP   node = ReadExpressionNode ();
 
     if ((NULL == node) || !node->IsArithType())
         m_macroFileProc.FatalError (L"expect boolean expression");
@@ -1352,7 +1375,7 @@ bool    EvaluateAsBoolean ()
 int     EvaluateAsInt ()
     {
     Advance ();
-    NodeP   node = ReadExpressionNode ();
+    EvaluatorNodeP   node = ReadExpressionNode ();
 
     if ((NULL == node) || !node->IsArithType())
         m_macroFileProc.FatalError (L"expect integer expression");
@@ -1395,3 +1418,5 @@ MacroFileProcessor&         mfp
     ConstantEvaluator ce (macros, expressionString, level, mfp);
     return ce.EvaluateAsInt ();
     }
+
+END_BENTLEY_DGNPLATFORM_NAMESPACE

@@ -35,7 +35,7 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement (DgnElementPtr& out, Dgn
     if (nullptr == elementHandler)
         return ERROR;
 
-    DgnCategoryId categoryId = model.GetDgnDb().Categories().MakeIterator().begin().GetCategoryId(); // Do any categories exist? Test probably needs to add one...
+    DgnCategoryId categoryId = DgnCategory::QueryFirstCategoryId(model.GetDgnDb()); // Do any categories exist? Test probably needs to add one...
 
     if (!categoryId.IsValid())
         return ERROR;

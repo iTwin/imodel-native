@@ -27,6 +27,11 @@ DGNPLATFORM_REF_COUNTED_PTR(PhysicalTextAnnotationElement);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+//__PUBLISH_SECTION_END__
+// So we can friend ConvertV8TextToDgnDbExtension within TextAnnotationItem.
+namespace DgnDbSync { namespace DgnV8 { struct ConvertV8TextToDgnDbExtension; } }
+//__PUBLISH_SECTION_START__
+
 //! @addtogroup Annotations
 //! @beginGroup
 
@@ -36,6 +41,14 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct EXPORT_VTABLE_ATTRIBUTE TextAnnotationItem : DgnElement::Item
 {
     DGNASPECT_DECLARE_MEMBERS(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotationItem, Item);
+
+private:
+//__PUBLISH_SECTION_END__
+    // To allow DgnV8 conversion to create first-class text elements, but provide custom WYSIWYG geometry.
+    friend struct DgnDbSync::DgnV8::ConvertV8TextToDgnDbExtension;
+//__PUBLISH_SECTION_START__
+
+    bool m_isGeometrySuppressed;
 
 protected:
     TextAnnotationPtr m_annotation;
@@ -51,6 +64,7 @@ public:
     static TextAnnotationItemCP GetCP(DgnElementCR el) { return Item::Get<TextAnnotationItem>(el); }
     static TextAnnotationItemP GetP(DgnElementR el) { return Item::GetP<TextAnnotationItem>(el); }
 
+    TextAnnotationItem() : m_isGeometrySuppressed(false) {}
     TextAnnotationCP GetAnnotation() const { return m_annotation.get(); }
     void SetAnnotation(TextAnnotationCP value) { m_annotation = value ? value->Clone() : nullptr; }
 };

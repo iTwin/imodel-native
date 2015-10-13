@@ -17,6 +17,14 @@ namespace dgn_ElementHandler
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnMaterial::_OnDelete() const
+    {
+    return DgnDbStatus::DeletionProhibited; // can only purge, not delete
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_ElementHandler::Material::_GetClassParams(ECSqlClassParams& params)
@@ -105,16 +113,6 @@ DgnDbStatus DgnMaterial::_SetParentId(DgnElementId parentId)
 
     // TODO? Base implementation doesn't check for cycles...
     return T_Super::_SetParentId(parentId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthority::Code DgnMaterial::CreateMaterialCode(Utf8StringCR palette, Utf8StringCR material, DgnDbR db)
-    {
-    auto auth = db.Authorities().Get<NamespaceAuthority>(DgnAuthority::MaterialId());
-    BeAssert(auth.IsValid());
-    return auth.IsValid() ? auth->CreateCode(material, palette) : DgnAuthority::Code();
     }
 
 /*---------------------------------------------------------------------------------**//**
