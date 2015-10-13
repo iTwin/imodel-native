@@ -2385,7 +2385,7 @@ void            MacroConfigurationAdmin::RenameMacros (T_ReplacementMap& replace
         m_macroSet.erase (foundEntry);
 
         foundMacroEntry->m_macroName.assign (thisReplacement.c_str());
-        bpair <T_MacroSet::const_iterator, bool> inserted = m_macroSet.insert (foundMacroEntry);
+        m_macroSet.insert (foundMacroEntry);
         }
 
     delete searchEntry;

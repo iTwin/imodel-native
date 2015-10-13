@@ -12,6 +12,11 @@
 #include <DgnPlatform/DesktopTools/MacroConfigurationAdmin.h>
 #include "macro.h"
 
+#ifdef BENTLEYCONFIG_OS_APPLE_IOS
+// Avoids ambiguous resolution of wcs functions.
+#define wcschr ::wcschr
+#endif
+
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 #define DQUOTE                  (0x22)
