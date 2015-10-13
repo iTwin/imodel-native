@@ -90,9 +90,11 @@ static DgnMaterialId     createTexturedMaterial (DgnDbR dgnDb, Utf8CP materialNa
             imageByte = ++value % 0xff;        
         }
 
-
-    DgnTextures::Texture    texture (DgnTextures::TextureData (DgnTextures::Format::RAW, &imageData.front(), imageData.size(), width, height));
-    DgnTextureId            textureId = dgnDb.Textures().Insert (texture);
+    DgnTexture::Data textureData(DgnTexture::Format::RAW, &imageData.front(), imageData.size(), width, height);
+    DgnTexture texture(DgnTexture::CreateParams(dgnDb, materialName/*###TODO unnamed textures*/, textureData));
+    texture.Insert();
+    DgnTextureId textureId = texture.GetTextureId();
+    EXPECT_TRUE(textureId.IsValid());
 
     Json::Value     patternMap, mapsMap;
 
