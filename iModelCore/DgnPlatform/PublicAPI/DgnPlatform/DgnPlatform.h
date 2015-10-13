@@ -294,13 +294,13 @@ BEREPOSITORYBASED_ID_CLASS(DgnViewId)          //!< An Id that is assigned to a 
 BEREPOSITORYBASED_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a DGN link. See DgnLinkTable.
 BEREPOSITORYBASED_ID_SUBCLASS(DgnMaterialId, DgnElementId) //!< An element Id that refers to a material.
 BEREPOSITORYBASED_ID_SUBCLASS(DgnLightId, DgnElementId) //!< An element Id that refers to a light definition.
+BEREPOSITORYBASED_ID_SUBCLASS(DgnCategoryId, DgnElementId) //!< An element Id that refers to a DgnCategory. @ingroup DgnCategoryGroup
+BEREPOSITORYBASED_ID_SUBCLASS(DgnSubCategoryId, DgnElementId) //!< An element Id that refers to a DgnSubCategory. @ingroup DgnCategoryGroup
 
 BESERVER_ISSUED_ID_CLASS(DgnAuthorityId)
-BESERVER_ISSUED_ID_CLASS(DgnCategoryId)      //!< An Id that is assigned to a DgnCategory.  A DgnElement belongs to exactly one DgnCategory. @ingroup DgnCategoryGroup
 BESERVER_ISSUED_ID_CLASS(DgnFontId)
 BESERVER_ISSUED_ID_CLASS(DgnSessionId)       //!< An Id that is assigned to a session. See DgnDb#Sessions.
 BESERVER_ISSUED_ID_CLASS(DgnStyleId)         //!< An Id that is assigned to a style. See DgnDb#Styles.
-BESERVER_ISSUED_ID_CLASS(DgnSubCategoryId)   //!< An Id that is assigned to a SubCategory of a DgnCategory. @ingroup DgnCategoryGroup
 BESERVER_ISSUED_ID_CLASS(DgnTrueColorId)     //!< An Id that is assigned to a true color. See DgnDb#Colors.
 BESERVER_ISSUED_ID_CLASS(DgnTextureId)       //!< An Id that is assigned to a texture. See DgnDb#Textures.
 
@@ -363,10 +363,11 @@ public:
     BeRepositoryBasedIdSet const& GetRepositoryBasedIdSet() const { return m_set; }
 };
 
-typedef IdSet<DgnElementId> DgnElementIdSet;    //!< IdSet with DgnElementId members. @ingroup DgnElementGroup
-typedef IdSet<DgnModelId> DgnModelIdSet;        //!< IdSet with DgnModelId members. @ingroup DgnModelGroup
-typedef IdSet<DgnCategoryId> DgnCategoryIdSet;  //!< IdSet with DgnCategoryId members. @ingroup DgnCategoryGroup
-typedef IdSet<DgnMaterialId> DgnMaterialIdSet;  //!< IdSet with DgnMaterialId members.
+typedef IdSet<DgnElementId> DgnElementIdSet;            //!< IdSet with DgnElementId members. @ingroup DgnElementGroup
+typedef IdSet<DgnModelId> DgnModelIdSet;                //!< IdSet with DgnModelId members. @ingroup DgnModelGroup
+typedef IdSet<DgnCategoryId> DgnCategoryIdSet;          //!< IdSet with DgnCategoryId members. @ingroup DgnCategoryGroup
+typedef IdSet<DgnSubCategoryId> DgnSubCategoryIdSet;    //!< IdSet with DgnSubCategoryId members. @ingroup DgnCategoryGroup
+typedef IdSet<DgnMaterialId> DgnMaterialIdSet;          //!< IdSet with DgnMaterialId members.
 
 //=======================================================================================
 //! A DgnClassId is the local id for an ECClass in a DgnDb.

@@ -68,7 +68,7 @@ void SqlFunctionsTest::SetupProject(WCharCP dgnDbFileName, WCharCP inFileName, B
     ASSERT_TRUE(defaultModel.IsValid());
     GetDefaultModel().FillModel();
     
-    m_defaultCategoryId = m_db->Categories().MakeIterator().begin().GetCategoryId();
+    m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
 
     auto& hdlr = dgn_AuthorityHandler::Namespace::GetHandler();
     DgnAuthority::CreateParams params(*m_db, m_db->Domains().GetClassId(hdlr), "SqlFunctionsTest");

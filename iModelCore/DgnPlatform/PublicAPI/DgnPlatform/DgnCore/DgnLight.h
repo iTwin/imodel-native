@@ -37,6 +37,8 @@ public:
 
         //! Initialize with specified value as JSON and optional description
         void Init(Utf8StringCR value="", Utf8StringCR descr="") { m_value = value; m_descr = descr; }
+
+        uint32_t GetMemSize() const { return static_cast<uint32_t>(sizeof(*this) + m_value.length() + m_descr.length()); }
     };
 
     //! Parameters used to construct a LightDefinition
@@ -74,7 +76,7 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
 
-    virtual uint32_t _GetMemSize() const override { return static_cast<uint32_t>(sizeof(*this) + m_data.m_value.length() + m_data.m_descr.length()); }
+    virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
 public:
     //! Construct a new LightDefinition with the specified parameters
     explicit LightDefinition(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }

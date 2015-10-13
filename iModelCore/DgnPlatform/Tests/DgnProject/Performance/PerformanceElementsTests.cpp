@@ -619,7 +619,7 @@ void PerformanceElementsTestFixture::InitializeProject(WCharCP dbName)
 void PerformanceElementsTestFixture::CreateElements(int numInstances, Utf8CP schemaName, Utf8CP className, bvector<DgnElementPtr>& elements, DgnModelPtr& model)
     {
     model = CreatePhysicalModel();
-    DgnCategoryId catid = m_db->Categories().QueryHighestId();
+    DgnCategoryId catid = DgnCategory::QueryHighestCategoryId(*m_db);
     DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(schemaName, className));
     
     if (0 == strcmp(className, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS))

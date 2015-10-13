@@ -271,9 +271,9 @@ $(coreObjs)DgnIModel$(oext) : $(DgnCoreDir)DgnIModel.cpp $(DgnCoreAPISrc)DgnDb.h
 
 $(coreObjs)DgnUnits$(oext) : $(DgnCoreDir)DgnUnits.cpp $(DgnCoreAPISrc)DgnDb.h $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
-$(coreObjs)DgnCategories$(oext) : $(DgnCoreDir)DgnCategories.cpp $(DgnCoreAPISrc)DgnDb.h $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
+$(coreObjs)DgnCategory$(oext) : $(DgnCoreDir)DgnCategory.cpp $(DgnCoreAPISrc)DgnDb.h $(DgnCoreAPISrc)DgnCategory.h ${MultiCompileDepends}
 
-$(coreObjs)DgnMaterial$(oext) : $(DgnCoreDir)DgnMaterial.cpp $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
+$(coreObjs)DgnMaterial$(oext) : $(DgnCoreDir)DgnMaterial.cpp $(DgnCoreAPISrc)DgnDbTables.h $(DgnCoreAPISrc)DgnMaterial.h ${MultiCompileDepends}
 
 $(coreObjs)DgnLight$(oext) : $(DgnCoreDir)DgnLight.cpp $(DgnCoreAPISrc)DgnDbTables.h $(DgnCoreAPISrc)DgnLight.h ${MultiCompileDepends}
 

@@ -43,7 +43,6 @@ public:
         friend struct DgnAuthority;
         friend struct DgnElements;
         friend struct DgnModel;
-        friend struct DgnCategories;
 
         Code(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) { }
     public:
@@ -117,13 +116,6 @@ public:
     DGNPLATFORM_EXPORT static DgnAuthorityPtr Import(DgnDbStatus* status, DgnAuthorityCR sourceAuthority, DgnImportContext& importer);
 
     DGNPLATFORM_EXPORT static DgnAuthority::Code GenerateDefaultCode(DgnElementCR el);
-
-    //! The built-in "local" code-generating authority
-    static DgnAuthorityId LocalId() {return DgnAuthorityId((uint64_t)1LL);}
-    //! The built-in authority for material codes
-    static DgnAuthorityId MaterialId() {return DgnAuthorityId((uint64_t)2LL);}
-    //! The built-in authority for light definition codes
-    static DgnAuthorityId LightDefinitionId() {return DgnAuthorityId((uint64_t)3LL);}
 };
 
 //=======================================================================================
