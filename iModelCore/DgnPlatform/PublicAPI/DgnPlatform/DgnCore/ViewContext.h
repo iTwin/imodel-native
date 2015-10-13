@@ -339,7 +339,6 @@ protected:
     DRange3d                m_npcSubRange;
     DMap4d                  m_worldToNpc;
     DMap4d                  m_worldToView;
-    double                  m_cameraFraction;       // ratio of front plane to back plane.
     TransformClipStack      m_transformClipStack;
     DgnViewportP            m_viewport;
     IViewDrawP              m_IViewDraw;
@@ -749,7 +748,7 @@ DGNPLATFORM_EXPORT void CookDisplayParamsOverrides(ElemDisplayParamsR, OvrMatSym
 
 //! Calculate the net display priority value. The net display priority is based on the geometry (element) and sub-category priority.
 //! @return the net display priority. For 3D views, display priority is always 0.
-DGNPLATFORM_EXPORT int32_t ResolveNetDisplayPriority(int32_t geomPriority, DgnSubCategoryId subCategoryId, DgnCategories::SubCategory::Appearance* appearance = nullptr) const;
+DGNPLATFORM_EXPORT int32_t ResolveNetDisplayPriority(int32_t geomPriority, DgnSubCategoryId subCategoryId, DgnSubCategory::Appearance* appearance = nullptr) const;
 
 //! Get the current ElemMatSymb.
 //! @return   the current ElemMatSymb.

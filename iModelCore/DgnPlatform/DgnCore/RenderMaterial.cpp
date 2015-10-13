@@ -130,21 +130,21 @@ bool        RenderMaterialMap::_GetBool (char const* key, BentleyStatus* status)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RenderMaterialPtr    JsonRenderMaterial::Create (DgnDbCR dgnDb, DgnMaterialId materialId)
+RenderMaterialPtr    JsonRenderMaterial::Create (DgnDbR dgnDb, DgnMaterialId materialId)
     {
     if (!materialId.IsValid())
         return nullptr;
 
-    DgnMaterials::Material material = dgnDb.Materials().Query (materialId);
-
-    if (!material.IsValid())
+    DgnMaterialCPtr material = DgnMaterial::QueryMaterial(materialId, dgnDb);
+    if (material.IsNull())
         {
-        BeAssert (false);
+        BeAssert(false);
         return nullptr;
         }
+
     Json::Value     renderMaterial;
     
-    if (SUCCESS != material.GetRenderingAsset (renderMaterial))
+    if (SUCCESS != material->GetRenderingAsset (renderMaterial))
         {
         BeAssert (false);
         return nullptr;
@@ -278,8 +278,8 @@ uintptr_t  JsonRenderMaterial::_GetQvMaterialId (DgnDbR dgnDb, bool createIfNotF
     {
     uintptr_t   qvMaterialId;
 
-    if (0 == (qvMaterialId = dgnDb.Materials().GetQvMaterialId (m_materialId)) && createIfNotFound)
-        qvMaterialId = dgnDb.Materials().AddQvMaterialId (m_materialId);
+    if (0 == (qvMaterialId = dgnDb.GetQvMaterialId (m_materialId)) && createIfNotFound)
+        qvMaterialId = dgnDb.AddQvMaterialId (m_materialId);
 
     return qvMaterialId;
     }
@@ -340,8 +340,8 @@ BentleyStatus   JsonRenderMaterialMap::_GetImage (bvector<Byte>& data, Point2dR 
     if (textureIdValue.isNull())     
         return ERROR;                 // No external file support for now.
 
-    DgnTextureId            textureId = (DgnTextureId) textureIdValue.asUInt64();
-    DgnTextures::Texture    texture = dgnDb.Textures().Query (textureId);
+    DgnTextureId textureId = (DgnTextureId) textureIdValue.asUInt64();
+    DgnTextureCPtr texture = DgnTexture::QueryTexture(textureId, dgnDb);
 
     if (!texture.IsValid())
         {
@@ -349,9 +349,9 @@ BentleyStatus   JsonRenderMaterialMap::_GetImage (bvector<Byte>& data, Point2dR 
         return ERROR;
         }
 
-    imageSize.Init(texture.GetData().GetWidth(), texture.GetData().GetHeight());
+    imageSize.Init(texture->GetData().GetWidth(), texture->GetData().GetHeight());
 
-    return texture.GetImage (data);
+    return texture->GetImage (data);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -367,8 +367,8 @@ uintptr_t  JsonRenderMaterialMap::_GetQvTextureId (DgnDbR dgnDb, bool createIfNo
     DgnTextureId    textureId = (DgnTextureId) textureIdValue.asUInt64();
     uintptr_t       qvTextureId;
 
-    if (0 == (qvTextureId = dgnDb.Textures().GetQvTextureId (textureId)) && createIfNotFound)
-        qvTextureId = dgnDb.Textures().AddQvTextureId (textureId);
+    if (0 == (qvTextureId = dgnDb.GetQvTextureId (textureId)) && createIfNotFound)
+        qvTextureId = dgnDb.AddQvTextureId (textureId);
 
     return qvTextureId;
     }

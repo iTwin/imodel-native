@@ -1,8 +1,6 @@
 #----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
-Performance*
-
 DimensionHandler.CreateAngularTypes                     # Josh -- We'll need this for markups in Graphite04 -- On non-Windows - Problem setting range of dimension text
 DimensionHandler.CreateLabelLineDimension               # Josh -- We'll need this for markups in Graphite04 -- On non-Windows - Problem setting range of dimension text
 
@@ -10,7 +8,7 @@ DimensionHandler.CreateLabelLineDimension               # Josh -- We'll need thi
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
 DgnECPersistence.ConstructSimRelationshipsNonGeneric    # Fails on Android
-ECDbInstances.JsonValueStructure                        # Fails after geomlibs/ecobjects merge from topaz
+JsonTests.JsonValueStructure                            # Fails after geomlibs/ecobjects merge from topaz
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***

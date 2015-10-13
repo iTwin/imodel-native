@@ -97,6 +97,10 @@ DgnDbStatus TextAnnotationItem::_LoadProperties(DgnElementCR el)
 //---------------------------------------------------------------------------------------
 DgnDbStatus TextAnnotationItem::_GenerateElementGeometry(GeometricElementR el, GenerateReason reason)
     {
+    // To allow DgnV8 conversion to create first-class text elements, but provide custom WYSIWYG geometry.
+    if (m_isGeometrySuppressed)
+        return DgnDbStatus::Success;
+    
     if (!m_annotation.IsValid())
         return DgnDbStatus::Success;
 

@@ -12,6 +12,10 @@ USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
+// The counts recorded by change summary are quite sensitive to changes in the schema and implementation...
+// Turn this on for debugging.
+#define DUMP_CHANGE_SUMMARY 1
+
 //=======================================================================================
 //! ChangeSummaryTestFixture
 //=======================================================================================
@@ -122,16 +126,15 @@ void ChangeSummaryTestFixture::InsertModel()
 //---------------------------------------------------------------------------------------
 void ChangeSummaryTestFixture::InsertCategory()
     {
-    DgnCategories::Category category("ChangeSetTestCategory", DgnCategories::Scope::Physical);
-    category.SetRank(DgnCategories::Rank::Application);
+    DgnCategory category(DgnCategory::CreateParams(*m_testDb, "ChangeSetTestCategory", DgnCategory::Scope::Physical, DgnCategory::Rank::Application));
 
-    DgnCategories::SubCategory::Appearance appearance;
+    DgnSubCategory::Appearance appearance;
     appearance.SetColor(ColorDef::White());
 
-    DbResult result = m_testDb->Categories().Insert(category, appearance);
-    ASSERT_TRUE(BE_SQLITE_OK == result);
+    auto persistentCategory = category.Insert(appearance);
+    ASSERT_TRUE(persistentCategory.IsValid());
 
-    m_testCategoryId = category.GetCategoryId();
+    m_testCategoryId = persistentCategory->GetCategoryId();
     }
 
 //---------------------------------------------------------------------------------------
@@ -186,8 +189,10 @@ void ChangeSummaryTestFixture::DeleteElement()
 //---------------------------------------------------------------------------------------
 void ChangeSummaryTestFixture::DumpChangeSummary(ChangeSummary const& changeSummary, Utf8CP label)
     {
+#ifdef DUMP_CHANGE_SUMMARY
     printf("%s:\n", label);
     changeSummary.Dump();
+#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -330,76 +335,101 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     InsertElement();
     GetChangeSummaryFromCurrentTransaction(changeSummary);
 
-    /*
     DumpChangeSummary(changeSummary, "ChangeSummary after inserts");
 
-    ChangeSummary after inserts:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    1;152;dgn:ElementGeom;Insert;No
-            ECInstanceId;NULL;1
-            Geom;NULL;...
-            Placement;NULL;...
-    1;164;dgn:ElementOwnsGeom;Insert;No
-            ECInstanceId;NULL;1
-            SourceECInstanceId;NULL;1
-            TargetECInstanceId;NULL;1
-    1;130;dgn:AuthorityIssuesElementCode;Insert;No
-            ECInstanceId;NULL;1
-            SourceECInstanceId;NULL;1
-            TargetECClassId;NULL;174
-            TargetECInstanceId;NULL;1
-    1;160;dgn:ElementIsInCategory;Insert;No
-            ECInstanceId;NULL;1
-            SourceECClassId;NULL;174
-            SourceECInstanceId;NULL;1
-            TargetECInstanceId;NULL;1
-    1;172;dgn:ModelContainsElements;Insert;No
-            ECInstanceId;NULL;1
-            SourceECInstanceId;NULL;1
-            TargetECClassId;NULL;174
-            TargetECInstanceId;NULL;1
-    1;174;dgn:PhysicalElement;Insert;No
-            CategoryId;NULL;1
-            Code;NULL;"ChangeSetTestElementCode - 1"
-            CodeAuthorityId;NULL;1
-            ECInstanceId;NULL;1
-            Label;NULL;"ChangeSetTestElementLabel"
-            LastMod;NULL;2.45726e+006
-            ModelId;NULL;1
-    1;136;dgn:CategoryOwnsSubCategories;Insert;No
-            ECInstanceId;NULL;1
-            SourceECInstanceId;NULL;1
-            TargetECInstanceId;NULL;1
-    1;137;dgn:SubCategory;Insert;No
-            CategoryId;NULL;1
-            ECInstanceId;NULL;1
-            Props;NULL;"{"color":16777215}"
-    1;135;dgn:Category;Insert;No
-            Code;NULL;"ChangeSetTestCategory"
-            ECInstanceId;NULL;1
-            Label;NULL;"ChangeSetTestCategory"
-            Rank;NULL;2
-            Scope;NULL;1
-    1;175;dgn:PhysicalModel;Insert;No
-            ECInstanceId;NULL;1
-            Name;NULL;"ChangeSetModel"
-            Props;NULL;"{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}"
-            Space;NULL;1
-            Type;NULL;0
-            Visibility;NULL;1
+    /*
+ChangeSummary after inserts:
+InstanceId;ClassId;ClassName;DbOpcode;Indirect
+2;184;dgn:PhysicalModel;Insert;No
+	ECInstanceId;NULL;2
+	Name;NULL;"ChangeSetModel"
+	Props;NULL;"{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}"
+	Visibility;NULL;1
+2;131;dgn:AuthorityIssuesElementCode;Insert;No
+	ECInstanceId;NULL;2
+	SourceECInstanceId;NULL;4
+	TargetECClassId;NULL;136
+	TargetECInstanceId;NULL;2
+2;136;dgn:Category;Insert;No
+	Code;NULL;"ChangeSetTestCategory"
+	CodeAuthorityId;NULL;4
+	CodeNameSpace;NULL;""
+	Descr;NULL;""
+	ECInstanceId;NULL;2
+	LastMod;NULL;2.45731e+006
+	ModelId;NULL;1
+	Rank;NULL;2
+	Scope;NULL;1
+2;180;dgn:ModelContainsElements;Insert;No
+	ECInstanceId;NULL;2
+	SourceECInstanceId;NULL;1
+	TargetECClassId;NULL;136
+	TargetECInstanceId;NULL;2
+3;131;dgn:AuthorityIssuesElementCode;Insert;No
+	ECInstanceId;NULL;3
+	SourceECInstanceId;NULL;4
+	TargetECClassId;NULL;197
+	TargetECInstanceId;NULL;3
+3;167;dgn:ElementOwnsChildElements;Insert;No
+	ECInstanceId;NULL;3
+	SourceECClassId;NULL;197
+	SourceECInstanceId;NULL;2
+	TargetECClassId;NULL;197
+	TargetECInstanceId;NULL;3
+3;180;dgn:ModelContainsElements;Insert;No
+	ECInstanceId;NULL;3
+	SourceECInstanceId;NULL;1
+	TargetECClassId;NULL;197
+	TargetECInstanceId;NULL;3
+3;197;dgn:SubCategory;Insert;No
+	Code;NULL;"ChangeSetTestCategory"
+	CodeAuthorityId;NULL;4
+	CodeNameSpace;NULL;"ChangeSetTestCategory"
+	ECInstanceId;NULL;3
+	LastMod;NULL;2.45731e+006
+	ModelId;NULL;1
+	ParentId;NULL;2
+	Props;NULL;"{"color":16777215}"
+4;131;dgn:AuthorityIssuesElementCode;Insert;No
+	ECInstanceId;NULL;4
+	SourceECInstanceId;NULL;1
+	TargetECClassId;NULL;183
+	TargetECInstanceId;NULL;4
+4;180;dgn:ModelContainsElements;Insert;No
+	ECInstanceId;NULL;4
+	SourceECInstanceId;NULL;2
+	TargetECClassId;NULL;183
+	TargetECInstanceId;NULL;4
+4;183;dgn:PhysicalElement;Insert;No
+	CategoryId;NULL;2
+	Code;NULL;"0-4"
+	CodeAuthorityId;NULL;1
+	CodeNameSpace;NULL;"PhysicalElement"
+	ECInstanceId;NULL;4
+	LastMod;NULL;2.45731e+006
+	ModelId;NULL;2
+4;158;dgn:ElementGeom;Insert;No
+	ECInstanceId;NULL;4
+	Geom;NULL;...
+	InPhysicalSpace;NULL;1
+	Placement;NULL;...
+4;170;dgn:ElementOwnsGeom;Insert;No
+	ECInstanceId;NULL;4
+	SourceECInstanceId;NULL;4
+	TargetECInstanceId;NULL;4
     */
-    ASSERT_EQ(10, changeSummary.MakeInstanceIterator().QueryCount());
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testModel->GetModelId().GetValueUnchecked()), "dgn", "PhysicalModel", DbOpcode::Insert));
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testCategoryId.GetValueUnchecked()), "dgn", "Category", DbOpcode::Insert));
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Insert));
+    EXPECT_EQ(13, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testModel->GetModelId().GetValueUnchecked()), "dgn", "PhysicalModel", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testCategoryId.GetValueUnchecked()), "dgn", "Category", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Insert));
 
     m_testDb->SaveChanges();
     ModifyElement();
     GetChangeSummaryFromCurrentTransaction(changeSummary);
     
-    /*
     DumpChangeSummary(changeSummary, "ChangeSummary after updates");
 
+    /*
     ChangeSummary after updates:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;171;dgn:PhysicalElement;Update;No
@@ -408,16 +438,16 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
             Label;"ChangeSetTestElementLabel";"ModifiedElementLabel"
             LastMod;2.45726e+006;2.45726e+006
     */
-    ASSERT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Update));
+    EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Update));
 
     m_testDb->SaveChanges();
     DeleteElement();
     GetChangeSummaryFromCurrentTransaction(changeSummary);
     
-    /*
     DumpChangeSummary(changeSummary, "ChangeSummary after deletes");
 
+    /*
     ChangeSummary after updates:
     InstanceId;ClassId;ClassName;DbOpcode;Indirect
     1;174;dgn:PhysicalElement;Update;No
@@ -459,8 +489,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
             LastMod;2.45726e+006;NULL
             ModelId;1;NULL
     */
-    ASSERT_EQ(6, changeSummary.MakeInstanceIterator().QueryCount());
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Delete));
+    EXPECT_EQ(5, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Delete));
     }
 
 //---------------------------------------------------------------------------------------
@@ -480,65 +510,90 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
 
     GetChangeSummaryFromSavedTransactions(changeSummary);
 
-    /* 
     DumpChangeSummary(changeSummary, "After inserts");
 
-    After inserts:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    1;175;dgn:PhysicalModel;Insert;No
-            ECInstanceId;NULL;1
-            Name;NULL;"ChangeSetModel"
-            Props;NULL;"{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}"
-            Space;NULL;1
-            Type;NULL;0
-            Visibility;NULL;1
-    1;135;dgn:Category;Insert;No
-            Code;NULL;"ChangeSetTestCategory"
-            ECInstanceId;NULL;1
-            Label;NULL;"ChangeSetTestCategory"
-            Rank;NULL;2
-            Scope;NULL;1
-    1;136;dgn:CategoryOwnsSubCategories;Insert;No
-            ECInstanceId;NULL;1
-            SourceECInstanceId;NULL;1
-            TargetECInstanceId;NULL;1
-    1;137;dgn:SubCategory;Insert;No
-            CategoryId;NULL;1
-            ECInstanceId;NULL;1
-            Props;NULL;"{"color":16777215}"
-    1;130;dgn:AuthorityIssuesElementCode;Insert;No
-            ECInstanceId;NULL;1
-            SourceECInstanceId;NULL;1
-            TargetECClassId;NULL;174
-            TargetECInstanceId;NULL;1
-    1;160;dgn:ElementIsInCategory;Insert;No
-            ECInstanceId;NULL;1
-            SourceECClassId;NULL;174
-            SourceECInstanceId;NULL;1
-            TargetECInstanceId;NULL;1
-    1;172;dgn:ModelContainsElements;Insert;No
-            ECInstanceId;NULL;1
-            SourceECInstanceId;NULL;1
-            TargetECClassId;NULL;174
-            TargetECInstanceId;NULL;1
-    1;174;dgn:PhysicalElement;Insert;No
-            CategoryId;NULL;1
-            Code;NULL;"ChangeSetTestElementCode - 1"
-            CodeAuthorityId;NULL;1
-            ECInstanceId;NULL;1
-            Label;NULL;"ChangeSetTestElementLabel"
-            LastMod;NULL;2.45726e+006
-            ModelId;NULL;1
-    1;152;dgn:ElementGeom;Insert;No
-            ECInstanceId;NULL;1
-            Geom;NULL;...
-            Placement;NULL;...
-    1;164;dgn:ElementOwnsGeom;Insert;No
-            ECInstanceId;NULL;1
-            SourceECInstanceId;NULL;1
-            TargetECInstanceId;NULL;1
+    /* 
+After inserts:
+InstanceId;ClassId;ClassName;DbOpcode;Indirect
+2;184;dgn:PhysicalModel;Insert;No
+	ECInstanceId;NULL;2
+	Name;NULL;"ChangeSetModel"
+	Props;NULL;"{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}"
+	Visibility;NULL;1
+2;131;dgn:AuthorityIssuesElementCode;Insert;No
+	ECInstanceId;NULL;2
+	SourceECInstanceId;NULL;4
+	TargetECClassId;NULL;136
+	TargetECInstanceId;NULL;2
+2;136;dgn:Category;Insert;No
+	Code;NULL;"ChangeSetTestCategory"
+	CodeAuthorityId;NULL;4
+	CodeNameSpace;NULL;""
+	Descr;NULL;""
+	ECInstanceId;NULL;2
+	LastMod;NULL;2.45731e+006
+	ModelId;NULL;1
+	Rank;NULL;2
+	Scope;NULL;1
+2;180;dgn:ModelContainsElements;Insert;No
+	ECInstanceId;NULL;2
+	SourceECInstanceId;NULL;1
+	TargetECClassId;NULL;136
+	TargetECInstanceId;NULL;2
+3;131;dgn:AuthorityIssuesElementCode;Insert;No
+	ECInstanceId;NULL;3
+	SourceECInstanceId;NULL;4
+	TargetECClassId;NULL;197
+	TargetECInstanceId;NULL;3
+3;167;dgn:ElementOwnsChildElements;Insert;No
+	ECInstanceId;NULL;3
+	SourceECClassId;NULL;197
+	SourceECInstanceId;NULL;2
+	TargetECClassId;NULL;197
+	TargetECInstanceId;NULL;3
+3;180;dgn:ModelContainsElements;Insert;No
+	ECInstanceId;NULL;3
+	SourceECInstanceId;NULL;1
+	TargetECClassId;NULL;197
+	TargetECInstanceId;NULL;3
+3;197;dgn:SubCategory;Insert;No
+	Code;NULL;"ChangeSetTestCategory"
+	CodeAuthorityId;NULL;4
+	CodeNameSpace;NULL;"ChangeSetTestCategory"
+	ECInstanceId;NULL;3
+	LastMod;NULL;2.45731e+006
+	ModelId;NULL;1
+	ParentId;NULL;2
+	Props;NULL;"{"color":16777215}"
+4;131;dgn:AuthorityIssuesElementCode;Insert;No
+	ECInstanceId;NULL;4
+	SourceECInstanceId;NULL;1
+	TargetECClassId;NULL;183
+	TargetECInstanceId;NULL;4
+4;180;dgn:ModelContainsElements;Insert;No
+	ECInstanceId;NULL;4
+	SourceECInstanceId;NULL;2
+	TargetECClassId;NULL;183
+	TargetECInstanceId;NULL;4
+4;183;dgn:PhysicalElement;Insert;No
+	CategoryId;NULL;2
+	Code;NULL;"0-4"
+	CodeAuthorityId;NULL;1
+	CodeNameSpace;NULL;"PhysicalElement"
+	ECInstanceId;NULL;4
+	LastMod;NULL;2.45731e+006
+	ModelId;NULL;2
+4;158;dgn:ElementGeom;Insert;No
+	ECInstanceId;NULL;4
+	Geom;NULL;...
+	InPhysicalSpace;NULL;1
+	Placement;NULL;...
+4;170;dgn:ElementOwnsGeom;Insert;No
+	ECInstanceId;NULL;4
+	SourceECInstanceId;NULL;4
+	TargetECInstanceId;NULL;4
     */
-    ASSERT_EQ(10, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(13, changeSummary.MakeInstanceIterator().QueryCount());
 
     ModifyElement();
 
@@ -546,9 +601,9 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
 
     GetChangeSummaryFromSavedTransactions(changeSummary);
 
-    /*
     DumpChangeSummary(changeSummary, "After updates");
 
+    /*
     After updates:
     InstanceId;ClassId;ClassName;DbOpcode;Indirect
     1;175;dgn:PhysicalModel;Insert;No
@@ -604,7 +659,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
             SourceECInstanceId;NULL;1
             TargetECInstanceId;NULL;1
     */
-    ASSERT_EQ(10, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(13, changeSummary.MakeInstanceIterator().QueryCount());
 
     DeleteElement();
 
@@ -612,9 +667,9 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
 
     GetChangeSummaryFromSavedTransactions(changeSummary);
 
-    /*
     DumpChangeSummary(changeSummary, "After deletes");
 
+    /*
     After deletes:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;173;dgn:PhysicalModel;Insert;No
@@ -639,7 +694,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
             ECInstanceId;NULL;1
             Props;NULL;"{"color":16777215}"
     */
-    ASSERT_EQ(4, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(8, changeSummary.MakeInstanceIterator().QueryCount());
     }
 
 //---------------------------------------------------------------------------------------
@@ -662,10 +717,10 @@ TEST_F(ChangeSummaryTestFixture, ValidateInstanceIterator)
         countIter++;
         UNUSED_VARIABLE(entry);
         }
-    ASSERT_EQ(countIter, 10);
+    EXPECT_EQ(countIter, 13);
 
     int countQuery = changeSummary.MakeInstanceIterator().QueryCount();
-    ASSERT_EQ(countQuery, 10);
+    EXPECT_EQ(countQuery, 13);
     }
 
 extern ECSchemaPtr ReadECSchemaFromDisk(WCharCP schemaPathname);
@@ -681,7 +736,7 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
 
     BeFileName schemaPathname;
     BeTest::GetHost().GetDocumentsRoot(schemaPathname);
-    schemaPathname.AppendToPath(L"ECDb\\Schemas\\StartupCompany.02.00.ecschema.xml");
+    schemaPathname.AppendToPath(L"DgnDb\\ECDb\\Schemas\\StartupCompany.02.00.ecschema.xml");
 
     ECSchemaPtr startupSchema = ReadECSchemaFromDisk(schemaPathname);
     ASSERT_TRUE(startupSchema.IsValid());
@@ -699,9 +754,9 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
 
     GetChangeSummaryFromCurrentTransaction(changeSummary);
 
-    /*
     DumpChangeSummary(changeSummary, "ChangeSummary after inserting instance with struct array");
 
+    /*
     ChangeSummary after inserting instance with struct array:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;237;StartupCompany:Foo;Insert;No
@@ -712,8 +767,8 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
             doubleFoo;NULL;12.345
             intFoo;NULL;67
     */
-    ASSERT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
+    EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
 
     m_testDb->SaveChanges();
 
@@ -725,15 +780,15 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
 
     GetChangeSummaryFromCurrentTransaction(changeSummary);
 
-    /*
     DumpChangeSummary(changeSummary, "ChangeSummary after updating one row in the struct array table");
 
+    /*
     ChangeSummary after updating one row in the struct array table:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;237;StartupCompany:Foo;Update;No
     */
-    ASSERT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Update));
+    EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Update));
 
     m_testDb->SaveChanges();
 
@@ -745,15 +800,15 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
 
     GetChangeSummaryFromCurrentTransaction(changeSummary);
 
-    /*
     DumpChangeSummary(changeSummary, "ChangeSummary after deleting one row in the struct array table");
 
+    /*
     ChangeSummary after deleting one row in the struct array table:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;237;StartupCompany:Foo;Update;No
     */
-    ASSERT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Update));
+    EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Update));
 
     m_testDb->SaveChanges();
     
@@ -770,9 +825,9 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
 
     GetChangeSummaryFromCurrentTransaction(changeSummary);
 
-    /*
     DumpChangeSummary(changeSummary, "ChangeSummary after deleting instance that contains a struct array");
 
+    /*
     ChangeSummary after deleting instance that contains a struct array:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;237;StartupCompany:Foo;Delete;Yes
@@ -783,8 +838,8 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
             doubleFoo;12.345;NULL
             intFoo;67;NULL
     */
-    ASSERT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Delete));
+    EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Delete));
 
     m_testDb->SaveChanges();
 
@@ -797,9 +852,9 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
 
     GetChangeSummaryFromCurrentTransaction(changeSummary);
 
-    /*
     DumpChangeSummary(changeSummary, "ChangeSummary after inserting a plain struct that gets stored in a struct array table");
 
+    /*
     ChangeSummary after inserting a plain struct that gets stored in a struct array table:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     5;199;StartupCompany:AnglesStruct;Insert;No
@@ -808,8 +863,8 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
             ECInstanceId;NULL;5
             Theta;NULL;3.3
     */
-    ASSERT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, structInstanceKey.GetECInstanceId(), "StartupCompany", "AnglesStruct", DbOpcode::Insert));
+    EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, structInstanceKey.GetECInstanceId(), "StartupCompany", "AnglesStruct", DbOpcode::Insert));
     }
 
 //---------------------------------------------------------------------------------------
@@ -821,7 +876,7 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
 
     BeFileName schemaPathname;
     BeTest::GetHost().GetDocumentsRoot(schemaPathname);
-    schemaPathname.AppendToPath(L"ECDb\\Schemas\\StartupCompany.02.00.ecschema.xml");
+    schemaPathname.AppendToPath(L"DgnDb\\ECDb\\Schemas\\StartupCompany.02.00.ecschema.xml");
 
     ECSchemaPtr startupSchema = ReadECSchemaFromDisk(schemaPathname);
     ASSERT_TRUE(startupSchema.IsValid());
@@ -841,9 +896,9 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
 
     GetChangeSummaryFromSavedTransactions(changeSummary);
 
-    /*
     DumpChangeSummary(changeSummary, "ChangeSummary after inserting instance with struct array");
 
+    /*
     ChangeSummary after inserting instance with struct array:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;237;StartupCompany:Foo;Insert;No
@@ -854,8 +909,8 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
             doubleFoo;NULL;12.345
             intFoo;NULL;67
     */
-    ASSERT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
+    EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
 
     Statement stmt;
     DbResult result = stmt.Prepare(*m_testDb, "UPDATE sc_ArrayOfAnglesStruct SET Alpha=1, Beta=2, Theta=3 WHERE ECArrayIndex=2");
@@ -867,9 +922,9 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
 
     GetChangeSummaryFromSavedTransactions(changeSummary);
 
-    /*
     DumpChangeSummary(changeSummary, "ChangeSummary after updating one row in the struct array table");
 
+    /*
     ChangeSummary after updating one row in the struct array table:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;237;StartupCompany:Foo;Insert;No
@@ -880,8 +935,8 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
             doubleFoo;NULL;12.345
             intFoo;NULL;67
     */
-    ASSERT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
+    EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
 
     stmt.Finalize();
     result = stmt.Prepare(*m_testDb, "DELETE FROM sc_ArrayOfAnglesStruct WHERE ECArrayIndex=2");
@@ -893,9 +948,9 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
 
     GetChangeSummaryFromSavedTransactions(changeSummary);
     
-    /*
     DumpChangeSummary(changeSummary, "ChangeSummary after deleting one row in the struct array table");
 
+    /*
     ChangeSummary after deleting one row in the struct array table:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;237;StartupCompany:Foo;Insert;No
@@ -906,8 +961,8 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
             doubleFoo;NULL;12.345
             intFoo;NULL;67
     */
-    ASSERT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
+    EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
 
     ECClassCP ecClass = m_testDb->Schemas().GetECClass(instanceKey.GetECClassId());
     ASSERT_TRUE(ecClass != nullptr);
@@ -924,13 +979,13 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
 
     GetChangeSummaryFromSavedTransactions(changeSummary);
 
-    /*
     DumpChangeSummary(changeSummary, "ChangeSummary after deleting instance that contains a struct array");
 
+    /*
     ChangeSummary after deleting instance that contains a struct array:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     */
-    ASSERT_EQ(0, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(0, changeSummary.MakeInstanceIterator().QueryCount());
 
     ecSqlStmt.Finalize();
     ecSqlStatus = ecSqlStmt.Prepare(*m_testDb, "INSERT INTO StartupCompany.AnglesStruct (Alpha,Beta,Theta) VALUES(1.1,2.2,3.3)");
@@ -943,9 +998,9 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
 
     GetChangeSummaryFromSavedTransactions(changeSummary);
 
-    /*
     DumpChangeSummary(changeSummary, "ChangeSummary after inserting a plain struct that gets stored in a struct array table");
 
+    /*
     ChangeSummary after inserting a plain struct that gets stored in a struct array table:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     5;199;StartupCompany:AnglesStruct;Insert;No
@@ -954,8 +1009,8 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
             ECInstanceId;NULL;5
             Theta;NULL;3.3
     */
-    ASSERT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, structInstanceKey.GetECInstanceId(), "StartupCompany", "AnglesStruct", DbOpcode::Insert));
+    EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, structInstanceKey.GetECInstanceId(), "StartupCompany", "AnglesStruct", DbOpcode::Insert));
     }
 
 //---------------------------------------------------------------------------------------
@@ -967,7 +1022,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
 
     BeFileName schemaPathname;
     BeTest::GetHost().GetDocumentsRoot(schemaPathname);
-    schemaPathname.AppendToPath(L"ECDb\\Schemas\\StartupCompany.02.00.ecschema.xml");
+    schemaPathname.AppendToPath(L"DgnDb\\ECDb\\Schemas\\StartupCompany.02.00.ecschema.xml");
 
     ECSchemaPtr startupSchema = ReadECSchemaFromDisk(schemaPathname);
     ASSERT_TRUE(startupSchema.IsValid());
@@ -1013,9 +1068,9 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     ChangeSummary changeSummary(*m_testDb);
     GetChangeSummaryFromCurrentTransaction(changeSummary);
 
-    /*
     DumpChangeSummary(changeSummary, "ChangeSummary after inserting instances");
 
+    /*
     ChangeSummary after inserting instances:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     4;221;StartupCompany:Hardware;Insert;No
@@ -1037,12 +1092,12 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
             FirstName;NULL;"John"
             LastName;NULL;"Doe"
     */
-    ASSERT_EQ(5, changeSummary.MakeInstanceIterator().QueryCount());
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(employeeKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Employee", DbOpcode::Insert));
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(companyKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(companyKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(hardwareKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(hardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
+    EXPECT_EQ(5, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(employeeKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Employee", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(companyKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(companyKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(hardwareKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(hardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
 
     m_testDb->SaveChanges();
 
@@ -1071,9 +1126,9 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     changeSummary.Free();
     GetChangeSummaryFromCurrentTransaction(changeSummary);
 
-    /*
     DumpChangeSummary(changeSummary, "ChangeSummary after inserting relationships");
 
+    /*
     ChangeSummary after inserting relationships:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     6;231;StartupCompany:EmployeeHardware;Insert;No
@@ -1086,9 +1141,9 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
             SourceECInstanceId;NULL;1
             TargetECInstanceId;NULL;2
     */
-    ASSERT_EQ(2, changeSummary.MakeInstanceIterator().QueryCount());
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(employeeHardwareKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
+    EXPECT_EQ(2, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(employeeHardwareKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
 
     m_testDb->SaveChanges();
 
@@ -1132,9 +1187,9 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     changeSummary.Free();
     GetChangeSummaryFromCurrentTransaction(changeSummary);
 
-    /*
     DumpChangeSummary(changeSummary, "ChangeSummary after updating (deleting and inserting different) relationships");
 
+    /*
     ChangeSummary after updating (deleting and inserting different) relationships:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;228;StartupCompany:EmployeeCompany;Update;No
@@ -1152,11 +1207,11 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
             TargetECClassId;NULL;221
             TargetECInstanceId;NULL;5
     */
-    ASSERT_EQ(3, changeSummary.MakeInstanceIterator().QueryCount());
-    ASSERT_TRUE(employeeCompanyKey.GetECInstanceId() == employeeCompanyKey2.GetECInstanceId());
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Update));
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(employeeHardwareKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Delete));
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(employeeHardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
+    EXPECT_EQ(3, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(employeeCompanyKey.GetECInstanceId() == employeeCompanyKey2.GetECInstanceId());
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Update));
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(employeeHardwareKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Delete));
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(employeeHardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1168,7 +1223,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
 
     BeFileName schemaPathname;
     BeTest::GetHost().GetDocumentsRoot(schemaPathname);
-    schemaPathname.AppendToPath(L"ECDb\\Schemas\\StartupCompany.02.00.ecschema.xml");
+    schemaPathname.AppendToPath(L"DgnDb\\ECDb\\Schemas\\StartupCompany.02.00.ecschema.xml");
 
     ECSchemaPtr startupSchema = ReadECSchemaFromDisk(schemaPathname);
     ASSERT_TRUE(startupSchema.IsValid());
@@ -1216,9 +1271,9 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
     ChangeSummary changeSummary(*m_testDb);
     GetChangeSummaryFromSavedTransactions(changeSummary);
 
-    /*
     DumpChangeSummary(changeSummary, "ChangeSummary after inserting instances");
 
+    /*
     ChangeSummary after inserting instances:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;226;StartupCompany:Employee;Insert;No
@@ -1240,12 +1295,12 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
             Make;NULL;"Toyota"
             Model;NULL;"Prius"
     */
-    ASSERT_EQ(5, changeSummary.MakeInstanceIterator().QueryCount());
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(employeeKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Employee", DbOpcode::Insert));
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(companyKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(companyKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(hardwareKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(hardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
+    EXPECT_EQ(5, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(employeeKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Employee", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(companyKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(companyKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(hardwareKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(hardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.EmployeeCompany (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
@@ -1274,9 +1329,9 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
     changeSummary.Free();
     GetChangeSummaryFromSavedTransactions(changeSummary);
 
-    /*
     DumpChangeSummary(changeSummary, "ChangeSummary after inserting relationships");
 
+    /*
     ChangeSummary after inserting relationships:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     6;231;StartupCompany:EmployeeHardware;Insert;No
@@ -1307,9 +1362,9 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
             Make;NULL;"Toyota"
             Model;NULL;"Prius"
     */
-    ASSERT_EQ(7, changeSummary.MakeInstanceIterator().QueryCount());
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(employeeHardwareKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
+    EXPECT_EQ(7, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(employeeHardwareKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
 
     /*
     * Note: ECDb doesn't support updates of relationships directly. Can only delete and re-insert relationships
@@ -1353,9 +1408,9 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
     changeSummary.Free();
     GetChangeSummaryFromSavedTransactions(changeSummary);
 
-    /*
     DumpChangeSummary(changeSummary, "ChangeSummary after updating (deleting and inserting different) relationships");
 
+    /*
     ChangeSummary after updating (deleting and inserting different) relationships:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     7;231;StartupCompany:EmployeeHardware;Insert;No
@@ -1386,10 +1441,10 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
             Make;NULL;"Toyota"
             Model;NULL;"Prius"
     */
-    ASSERT_EQ(7, changeSummary.MakeInstanceIterator().QueryCount());
-    ASSERT_TRUE(employeeCompanyKey.GetECInstanceId() == employeeCompanyKey2.GetECInstanceId());
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(employeeHardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
+    EXPECT_EQ(7, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(employeeCompanyKey.GetECInstanceId() == employeeCompanyKey2.GetECInstanceId());
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(employeeHardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1419,9 +1474,9 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     ChangeSummary changeSummary(*m_testDb);
     GetChangeSummaryFromCurrentTransaction(changeSummary);
     
-    /*
     DumpChangeSummary(changeSummary, "ChangeSummary after setting ParentId");
 
+    /*
     ChangeSummary after setting ParentId:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     2;161;dgn:ElementOwnsChildElements;Insert;No
@@ -1435,9 +1490,9 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
         LastMod;2.45726e+006;2.45726e+006
         ParentId;NULL;1
     */
-    ASSERT_EQ(2, changeSummary.MakeInstanceIterator().QueryCount());
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), "dgn", "ElementOwnsChildElements", DbOpcode::Insert)); // Captured due to change of FK relationship (ParentId column)
-    ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Update)); // Captured due to change of ParentId property
+    EXPECT_EQ(2, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), "dgn", "ElementOwnsChildElements", DbOpcode::Insert)); // Captured due to change of FK relationship (ParentId column)
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Update)); // Captured due to change of ParentId property
 
     ECClassId relClassId = m_testDb->Schemas().GetECClassId("dgn", "ElementOwnsChildElements");
     ECClassId elClassId = m_testDb->Schemas().GetECClassId("dgn", "PhysicalElement");
@@ -1452,18 +1507,18 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
 
     value = relInstance.GetNewValue("SourceECClassId");
     ASSERT_TRUE(value.IsValid());
-    ASSERT_EQ(elClassId, value.GetValueInt64());
-    ASSERT_EQ(elClassId, relInstance.GetNewValue("SourceECClassId").GetValueInt64());
+    EXPECT_EQ(elClassId, value.GetValueInt64());
+    EXPECT_EQ(elClassId, relInstance.GetNewValue("SourceECClassId").GetValueInt64());
 
     value = relInstance.GetNewValue("SourceECInstanceId");
     ASSERT_TRUE(value.IsValid());
-    ASSERT_EQ(parentElementId.GetValueUnchecked(), value.GetValueInt64());
-    ASSERT_EQ(parentElementId.GetValueUnchecked(), relInstance.GetNewValue("SourceECInstanceId").GetValueInt64());
+    EXPECT_EQ(parentElementId.GetValueUnchecked(), value.GetValueInt64());
+    EXPECT_EQ(parentElementId.GetValueUnchecked(), relInstance.GetNewValue("SourceECInstanceId").GetValueInt64());
 
     value = relInstance.GetNewValue("TargetECClassId");
     ASSERT_TRUE(value.IsValid());
-    ASSERT_EQ(elClassId, value.GetValueInt64());
-    ASSERT_EQ(elClassId, relInstance.GetNewValue("TargetECClassId").GetValueInt64());
+    EXPECT_EQ(elClassId, value.GetValueInt64());
+    EXPECT_EQ(elClassId, relInstance.GetNewValue("TargetECClassId").GetValueInt64());
 
     value = relInstance.GetNewValue("TargetECInstanceId");
     ASSERT_TRUE(value.IsValid());
@@ -1475,8 +1530,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     ASSERT_EQ(parentElementId.GetValueUnchecked(), value.GetValueInt64());
     ASSERT_EQ(parentElementId.GetValueUnchecked(), instance.GetNewValue("ParentId").GetValueInt64());
 
-    ASSERT_EQ(5, relInstance.MakeValueIterator(changeSummary).QueryCount());
-    ASSERT_EQ(3, instance.MakeValueIterator(changeSummary).QueryCount());
+    EXPECT_EQ(5, relInstance.MakeValueIterator(changeSummary).QueryCount());
+    EXPECT_EQ(3, instance.MakeValueIterator(changeSummary).QueryCount());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1518,7 +1573,7 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
         changedElements.insert(stmt.GetValueId<DgnElementId>(0));
         }
     ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
-    ASSERT_EQ(insertedElements, changedElements);
+    EXPECT_EQ(insertedElements, changedElements);
 
     // Query elements changed due to changes to related geometry using ECSQL
     stmt.Finalize();
@@ -1534,7 +1589,7 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
         changedElements.insert(stmt.GetValueId<DgnElementId>(0));
         }
     ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
-    ASSERT_EQ(insertedElements, changedElements);
+    EXPECT_EQ(insertedElements, changedElements);
     
     // Query changed elements directly using the API
     bmap<ECInstanceId, ChangeSummary::Instance> changes;
@@ -1545,7 +1600,7 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
         {
         changedElements.insert(DgnElementId(iter->first.GetValueUnchecked()));
         }
-    ASSERT_EQ(insertedElements, changedElements);
+    EXPECT_EQ(insertedElements.size()+2, changedElements.size()); // category and sub-category...
     }
 
 //---------------------------------------------------------------------------------------
@@ -1592,6 +1647,6 @@ TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
     ASSERT_TRUE(ecSqlStepStatus == BE_SQLITE_ROW);
 
     int actualChangeCount = stmt.GetValueInt(0);
-    int expectedChangeCount = nSessions * nTransactionsPerSession;
-    ASSERT_EQ(expectedChangeCount, actualChangeCount);
+    int expectedChangeCount = nSessions * nTransactionsPerSession + 2 /*category and subcategory*/;
+    EXPECT_EQ(expectedChangeCount, actualChangeCount);
     }

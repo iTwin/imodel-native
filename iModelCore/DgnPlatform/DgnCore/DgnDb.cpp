@@ -38,10 +38,9 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_colors(*this), m_categories(*this), m_domains(*this), m_styles(*this), m_views(*this),
+DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_colors(*this), m_domains(*this), m_styles(*this), m_views(*this),
                  m_geomParts(*this), m_units(*this), m_models(*this), m_elements(*this), 
-                 m_materials(*this), m_links(*this), m_authorities(*this), m_textures(*this), m_lights(*this),
-                 m_ecsqlCache(50, "DgnDb")
+                 m_links(*this), m_authorities(*this), m_ecsqlCache(50, "DgnDb")
     {
     }
 
@@ -364,27 +363,33 @@ DgnClassId DgnImportContext::RemapClassId(DgnClassId source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : m_sourceDb(source), m_destDb(dest) 
+void DgnImportContext::ComputeGcsAdjustment()
     {
+    //  We may need to transform between source and destination GCS.
+    m_xyOffset = DPoint2d::FromZero();
+    m_yawAdj = AngleInDegrees::FromDegrees(0);
+	m_areCompatibleDbs = true;
+
+    if (!IsBetweenDbs())
+        return;
+
     DgnGCS* sourceGcs = m_sourceDb.Units().GetDgnGCS();
     DgnGCS* destGcs = m_destDb.Units().GetDgnGCS();
 
-    m_xyOffset = DPoint2d::FromZero();
-    m_yawAdj = AngleInDegrees::FromDegrees(0);
-
-    if (!IsBetweenDbs() || nullptr == sourceGcs || nullptr == destGcs)
+    if (nullptr == sourceGcs || nullptr == destGcs)
         {
         m_areCompatibleDbs = true;
         return;
         }
 
-    BeFileName spn, dpn;
-    if (0 != wcscmp(sourceGcs->GetProjectionName(spn), destGcs->GetProjectionName(dpn)))
+    // Check that source and destination are based on equivalent projections.
+    if (!destGcs->IsEquivalent(*sourceGcs))
         {
         m_areCompatibleDbs = false;
         return;
         }
 
+    //  Check that source and destination GCSs are at the same elevation
     GeoPoint sourceOrgLatLng;
     if (REPROJECT_Success != sourceGcs->LatLongFromUors(sourceOrgLatLng, DPoint3d::FromZero()))
         {
@@ -405,6 +410,57 @@ DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : m_sourceDb(sour
         return;
         }
 
+    //  We should be able to transform using a simple offset and rotation.
     m_xyOffset = DPoint2d::From(destCoordinates.x, destCoordinates.y);
     m_yawAdj = AngleInDegrees::FromRadians(destGcs->GetAzimuth() - sourceGcs->GetAzimuth());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : m_sourceDb(source), m_destDb(dest) 
+    {
+    ComputeGcsAdjustment();
+    }
+
+static uintptr_t  s_nextQvMaterialId;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+uintptr_t DgnDb::AddQvMaterialId(DgnMaterialId materialId) const { return (m_qvMaterialIds[materialId] = ++s_nextQvMaterialId); }
+uintptr_t DgnDb::GetQvMaterialId(DgnMaterialId materialId) const
+    {
+    auto const&   found = m_qvMaterialIds.find(materialId);
+
+    return (found == m_qvMaterialIds.end()) ? 0 : found->second; 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+uintptr_t DgnDb::AddQvTextureId(DgnTextureId TextureId) const 
+    { 
+    static uintptr_t s_nextQvTextureId;
+    return (m_qvTextureIds[TextureId] = ++s_nextQvTextureId); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+uintptr_t DgnDb::GetQvTextureId(DgnTextureId TextureId) const
+    {
+    auto const& found = m_qvTextureIds.find(TextureId);
+    return (found == m_qvTextureIds.end()) ? 0 : found->second; 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DictionaryModelR DgnDb::GetDictionaryModel()
+    {
+    // NB: Once loaded, a model is never dropped unless it is deleted (or its creation is undone). This cannot occur for dictionary model so returning a reference is safe
+    DictionaryModelPtr dict = Models().Get<DictionaryModel>(DgnModel::DictionaryId());
+    BeAssert(dict.IsValid() && "A DgnDb always has a dictionary model");
+    return *dict;
+    }
+

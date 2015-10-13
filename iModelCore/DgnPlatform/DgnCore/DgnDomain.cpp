@@ -400,6 +400,15 @@ DbResult DgnDomains::InsertHandler(DgnDomain::Handler& handler)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDomain::Handler* DgnDomain::Handler::GetRootClass()
+    {
+    // "Handler" class itself has no domain...
+    return nullptr != m_superClass && nullptr != m_superClass->m_domain ? m_superClass->GetRootClass() : this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnDomain::Handler::_VerifySchema(DgnDomains& domains)
@@ -429,6 +438,19 @@ DgnDbStatus DgnDomain::Handler::_VerifySchema(DgnDomains& domains)
                 typeid(*this).name(), GetClassName().c_str(), handlerSuperClass->GetClassName().c_str());
 
         BeAssert(false);
+        }
+    else
+        {
+        Handler* rootClass = GetRootClass();
+        ECN::ECClassCP rootEcClass = schemas.GetECClass(domains.GetClassId(*rootClass).GetValue());
+        BeAssert(nullptr != rootEcClass);
+        if (nullptr != rootEcClass && rootEcClass != myEcClass && !myEcClass->IsSingularlyDerivedFrom(*rootEcClass))
+            {
+            printf("ERROR: HANDLER [%s] handles ECClass '%s' which derives more than once from root ECClass '%s'.\n",
+            typeid(*this).name(), GetClassName().c_str(), rootClass->GetClassName().c_str());
+
+            BeAssert(false);
+            }
         }
 #endif
     

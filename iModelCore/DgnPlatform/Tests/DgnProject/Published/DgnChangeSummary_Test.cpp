@@ -160,16 +160,15 @@ void DgnChangeSummaryTestFixture::InsertModel()
 //---------------------------------------------------------------------------------------
 void DgnChangeSummaryTestFixture::InsertCategory()
     {
-    DgnCategories::Category category("ChangeSetTestCategory", DgnCategories::Scope::Physical);
-    category.SetRank(DgnCategories::Rank::Application);
+    DgnCategory cat(DgnCategory::CreateParams(*m_testDb, "ChangeSetTestCategory", DgnCategory::Scope::Physical, DgnCategory::Rank::Application));
 
-    DgnCategories::SubCategory::Appearance appearance;
+    DgnSubCategory::Appearance appearance;
     appearance.SetColor(ColorDef::White());
 
-    DbResult result = m_testDb->Categories().Insert(category, appearance);
-    ASSERT_TRUE(BE_SQLITE_OK == result);
+    cat.Insert(appearance);
+    ASSERT_TRUE(cat.GetCategoryId().IsValid());
 
-    m_testCategoryId = category.GetCategoryId();
+    m_testCategoryId = cat.GetCategoryId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -224,12 +223,10 @@ void DgnChangeSummaryTestFixture::CreateDefaultView()
     PhysicalViewController viewController(dgndb, viewRow.GetId());
     viewController.SetStandardViewRotation(StandardView::Iso);
     viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::SmoothShade);
-    DgnCategories::Iterator catIter = dgndb.Categories().MakeIterator();
-    for (auto& entry : catIter)
-        {
-        DgnCategoryId categoryId = entry.GetCategoryId();
+
+    for (auto const& categoryId : DgnCategory::QueryCategories(dgndb))
         viewController.ChangeCategoryDisplay(categoryId, true);
-        }
+
     DgnModels::Iterator modIter = dgndb.Models().MakeIterator();
     for (auto& entry : modIter)
         {
@@ -520,32 +517,32 @@ TEST_F(DgnChangeSummaryTestFixture, ValidateChangeSummaries)
     DgnChangeSummaryTestFixture::ChangedElements changedElements;
     
     CompareSessions(changedElements, 1, 1); // [1, 1]
-    ASSERT_EQ(changedElements.m_inserts.size(), 0);
-    ASSERT_EQ(changedElements.m_deletes.size(), 0);
-    ASSERT_EQ(changedElements.m_geometryUpdates.size(), 0);
-    ASSERT_EQ(changedElements.m_businessUpdates.size(), 0);
+    EXPECT_EQ(changedElements.m_inserts.size(), 0+2); // category and sub-category...
+    EXPECT_EQ(changedElements.m_deletes.size(), 0);
+    EXPECT_EQ(changedElements.m_geometryUpdates.size(), 0);
+    EXPECT_EQ(changedElements.m_businessUpdates.size(), 0);
 
     CompareSessions(changedElements, 1, 2); // [1, 2]
-    ASSERT_EQ(changedElements.m_inserts.size(), 4);
-    ASSERT_EQ(changedElements.m_deletes.size(), 0);
-    ASSERT_EQ(changedElements.m_geometryUpdates.size(), 4);
-    ASSERT_EQ(changedElements.m_businessUpdates.size(), 0);
+    EXPECT_EQ(changedElements.m_inserts.size(), 4+2); // category and sub-category...
+    EXPECT_EQ(changedElements.m_deletes.size(), 0);
+    EXPECT_EQ(changedElements.m_geometryUpdates.size(), 4);
+    EXPECT_EQ(changedElements.m_businessUpdates.size(), 0);
 
     CompareSessions(changedElements, 1, 6); // [1, 6]
-    ASSERT_EQ(changedElements.m_inserts.size(), 20);
-    ASSERT_EQ(changedElements.m_deletes.size(), 0);
-    ASSERT_EQ(changedElements.m_geometryUpdates.size(), 20);
-    ASSERT_EQ(changedElements.m_businessUpdates.size(), 0);
+    EXPECT_EQ(changedElements.m_inserts.size(), 20+2); // category and sub-category...
+    EXPECT_EQ(changedElements.m_deletes.size(), 0);
+    EXPECT_EQ(changedElements.m_geometryUpdates.size(), 20);
+    EXPECT_EQ(changedElements.m_businessUpdates.size(), 0);
 
     CompareSessions(changedElements, 7, 7); // [7, 7]
-    ASSERT_EQ(changedElements.m_inserts.size(), 0);
-    ASSERT_EQ(changedElements.m_deletes.size(), 0);
-    ASSERT_EQ(changedElements.m_geometryUpdates.size(), 4);
-    ASSERT_EQ(changedElements.m_businessUpdates.size(), 4); // TODO: Updates due to LastMod change. Needs a fix. 
+    EXPECT_EQ(changedElements.m_inserts.size(), 0);
+    EXPECT_EQ(changedElements.m_deletes.size(), 0);
+    EXPECT_EQ(changedElements.m_geometryUpdates.size(), 4);
+    EXPECT_EQ(changedElements.m_businessUpdates.size(), 4); // TODO: Updates due to LastMod change. Needs a fix. 
 
     CompareSessions(changedElements, 8, 8); // [8, 8]
-    ASSERT_EQ(changedElements.m_inserts.size(), 0);
-    ASSERT_EQ(changedElements.m_deletes.size(), 4);
-    ASSERT_EQ(changedElements.m_geometryUpdates.size(), 0);
-    ASSERT_EQ(changedElements.m_businessUpdates.size(), 0);
+    EXPECT_EQ(changedElements.m_inserts.size(), 0);
+    EXPECT_EQ(changedElements.m_deletes.size(), 4);
+    EXPECT_EQ(changedElements.m_geometryUpdates.size(), 0);
+    EXPECT_EQ(changedElements.m_businessUpdates.size(), 0);
     }
