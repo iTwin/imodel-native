@@ -80,6 +80,7 @@
 #include <DgnPlatform/DgnCore/RenderMaterial.h>
 #include <DgnPlatform/DgnCore/DgnLight.h>
 #include <DgnPlatform/DgnCore/DgnCategory.h>
+#include <DgnPlatform/DgnCore/DgnTexture.h>
 // #include <DgnPlatform/DgnCore/SolarUtility.h>
 
 #include "DgnCore/DgnCoreLog.h"

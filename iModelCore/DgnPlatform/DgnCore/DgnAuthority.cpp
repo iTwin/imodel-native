@@ -344,6 +344,7 @@ enum BuiltinAuthority : uint64_t
     BuiltinAuthority_Material = 2LL,
     BuiltinAuthority_LightDefinition = 3LL,
     BuiltinAuthority_Category = 4LL,
+    BuiltinAuthority_Texture = 5LL,
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -388,6 +389,7 @@ DbResult DgnDb::CreateAuthorities()
             { "DgnMaterials", BuiltinAuthority_Material, dgn_AuthorityHandler::Namespace::GetHandler() },
             { "DgnLightDefinitions", BuiltinAuthority_LightDefinition, dgn_AuthorityHandler::Namespace::GetHandler() },
             { "DgnCategories", BuiltinAuthority_Category, dgn_AuthorityHandler::Namespace::GetHandler() },
+            { "DgnTextures", BuiltinAuthority_Texture, dgn_AuthorityHandler::Namespace::GetHandler() },
         };
 
     for (auto const& builtin : builtins)
@@ -454,6 +456,16 @@ DgnAuthority::Code DgnMaterial::CreateMaterialCode(Utf8StringCR palette, Utf8Str
 DgnAuthority::Code LightDefinition::CreateLightDefinitionCode(Utf8StringCR name, DgnDbR db)
     {
     auto auth = getBuiltinAuthority<NamespaceAuthority>(BuiltinAuthority_LightDefinition, db);
+    BeAssert(auth.IsValid());
+    return auth.IsValid() ? auth->CreateCode(name) : DgnAuthority::Code();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code DgnTexture::CreateTextureCode(Utf8StringCR name, DgnDbR db)
+    {
+    auto auth = getBuiltinAuthority<NamespaceAuthority>(BuiltinAuthority_Texture, db);
     BeAssert(auth.IsValid());
     return auth.IsValid() ? auth->CreateCode(name) : DgnAuthority::Code();
     }

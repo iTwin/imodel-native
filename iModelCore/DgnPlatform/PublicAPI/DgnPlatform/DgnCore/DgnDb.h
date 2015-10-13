@@ -11,7 +11,6 @@
 #include "DgnDbTables.h"
 #include "DgnModel.h"
 #include "DgnDomain.h"
-#include "DgnTexture.h"
 #include "MemoryManager.h"
 #include <Bentley/BeFileName.h>
 
@@ -137,11 +136,11 @@ protected:
     DgnGeomParts    m_geomParts;
     DgnLinks        m_links;
     DgnAuthorities  m_authorities;
-    DgnTextures     m_textures;
     TxnManagerPtr   m_txnManager;
     MemoryManager   m_memoryManager;
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
     mutable bmap<DgnMaterialId, uintptr_t> m_qvMaterialIds;
+    mutable bmap<DgnTextureId, uintptr_t> m_qvTextureIds;
 
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
     DGNPLATFORM_EXPORT virtual void _OnDbClose() override;
@@ -197,7 +196,6 @@ public:
     DgnFonts& Fonts() const {return const_cast<DgnFonts&>(m_fonts); }                    //!< The fonts for this DgnDb
     DgnLinks& Links() const{return const_cast<DgnLinks&>(m_links);}                      //!< The DgnLinks for this DgnDb
     DgnDomains& Domains() const {return const_cast<DgnDomains&>(m_domains);}             //!< The DgnDomains associated with this DgnDb.
-    DgnTextures& Textures() const { return const_cast<DgnTextures&>(m_textures); }       //!< The textures for this DgnDb.
     DgnAuthorities& Authorities() const { return const_cast<DgnAuthorities&>(m_authorities); }   //!< The authorities associated with this DgnDb
     DGNPLATFORM_EXPORT TxnManagerR Txns();                    //!< The Txns for this DgnDb.
     MemoryManager& Memory() const { return const_cast<MemoryManager&>(m_memoryManager);}
@@ -216,6 +214,9 @@ public:
 
     DGNPLATFORM_EXPORT uintptr_t GetQvMaterialId(DgnMaterialId materialId) const; //!< Return nonzero QuickVision material ID for QVision for supplied material ID.
     DGNPLATFORM_EXPORT uintptr_t AddQvMaterialId(DgnMaterialId materialId) const; //!< set QuickVision material ID for supplied material Id.
+
+    DGNPLATFORM_EXPORT uintptr_t GetQvTextureId(DgnTextureId TextureId) const; //!< Return nonzero QuickVision material ID for QVision for supplied material ID.
+    DGNPLATFORM_EXPORT uintptr_t AddQvTextureId(DgnTextureId TextureId) const; //!< set QuickVision material ID for supplied material Id.
 
     DGNPLATFORM_EXPORT DictionaryModelR GetDictionaryModel(); //!< Return the dictionary model for this DgnDb.
 };
