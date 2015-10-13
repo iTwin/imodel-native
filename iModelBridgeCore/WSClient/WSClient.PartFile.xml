@@ -9,8 +9,7 @@
     <Part Name="WebServicesClient">
         <SubPart PartName="WebServicesClient-PublicAPI" />
         <SubPart PartName="WebServicesClient-Library" />
-        <SubPart PartName="WebServicesClient-Bindings" />
-        <SubPart PartName="WebServicesClient-Bindings-Android" />
+        <SubPart PartName="WebServicesClient-Library-Android" />
         <SubPart PartName="WSClient-Xliffs" />
     </Part>
 
@@ -29,23 +28,19 @@
         </Bindings>
     </Part>
 
-    <Part Name="WebServicesClient-Library" BentleyBuildMakeFile="ClientLib.mke">
+    <Part Name="WebServicesClient-Library" BentleyBuildMakeFile="ClientLib.mke" ExcludePlatforms="Android*">
         <SubPart PartName="WebServicesClient-PublicAPI" />
         <SubPart PartName="MobileDgnLibrary"            PartFile="MobileDgn" Repository="MobileDgn" />
-        <SubPart PartName="MobileDgnLibrary-Android"    PartFile="MobileDgn" Repository="MobileDgn" />
         <SubPart PartName="MobileDgnLibrary-WinRT"      PartFile="MobileDgn" Repository="MobileDgn" />
-    </Part>
-
-    <Part Name="WebServicesClient-Bindings" ExcludePlatforms="Android*">
-        <SubPart PartName="WebServicesClient-Library" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesClient$(libext)</Libs>
             <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesClient$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
-    <Part Name="WebServicesClient-Bindings-Android" OnlyPlatforms="Android*">
-        <SubPart PartName="WebServicesClient-Library" />
+    <Part Name="WebServicesClient-Library-Android" BentleyBuildMakeFile="ClientLib.mke" OnlyPlatforms="Android*">
+        <SubPart PartName="WebServicesClient-PublicAPI" />
+        <SubPart PartName="MobileDgnLibrary-Android"    PartFile="MobileDgn" Repository="MobileDgn" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesClient.so</Libs>
             <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesClient.so</Assemblies>
@@ -59,8 +54,7 @@
     <Part Name="WebServicesCache">
         <SubPart PartName="WebServicesCache-PublicAPI" />
         <SubPart PartName="WebServicesCache-Library" />
-        <SubPart PartName="WebServicesCache-Bindings" />
-        <SubPart PartName="WebServicesCache-Bindings-Android" />
+        <SubPart PartName="WebServicesCache-Library-Android" />
         <SubPart PartName="WebServicesCache-Schemas" />
         <SubPart PartName="WSClient-Xliffs" />
     </Part>
@@ -79,22 +73,19 @@
         </Bindings>
     </Part>
 
-    <Part Name="WebServicesCache-Library" BentleyBuildMakeFile="CacheLib.mke">
+    <Part Name="WebServicesCache-Library" BentleyBuildMakeFile="CacheLib.mke" ExcludePlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="MobileDgnLibrary"            PartFile="MobileDgn" Repository="MobileDgn" />
-        <SubPart PartName="MobileDgnLibrary-Android"    PartFile="MobileDgn" Repository="MobileDgn" />
         <SubPart PartName="MobileDgnLibrary-WinRT"      PartFile="MobileDgn" Repository="MobileDgn" />
-    </Part>
-
-    <Part Name="WebServicesCache-Bindings" ExcludePlatforms="Android*">
-        <SubPart PartName="WebServicesCache-Library" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesCache$(libext)</Libs>
             <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesCache$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
-    <Part Name="WebServicesCache-Bindings-Android" OnlyPlatforms="Android*">
+    <Part Name="WebServicesCache-Library-Android" BentleyBuildMakeFile="CacheLib.mke" OnlyPlatforms="Android*">
+        <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="MobileDgnLibrary-Android"    PartFile="MobileDgn" Repository="MobileDgn" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesCache.so</Libs>
             <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesCache.so</Assemblies>
