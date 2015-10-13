@@ -46,14 +46,14 @@ TEST(BasicTextAnnotationSeedTest, PropertyBagTypes)
     Utf8String description = "MySeedDescription";                                                   STYLE_PTR->SetDescription(description.c_str());\
     AnnotationFrameStylePtr frameStyle = createAnnotationFrameStyle(project , "TestFrameStyle" );         STYLE_PTR->SetFrameStyleId(frameStyle->GetId());\
     AnnotationLeaderStylePtr leaderStyle = createAnnotationLeaderStyle(project, "TestLeaderStyle");       STYLE_PTR->SetLeaderStyleId(leaderStyle->GetId());\
-    AnnotationTextStylePtr textStyle = createAnnotationTextStyle(project, "TestTextStyle");         STYLE_PTR->SetTextStyleId(textStyle->GetId());
+    AnnotationTextStylePtr textStyle = createAnnotationTextStyle(project, "TestTextStyle");         STYLE_PTR->SetTextStyleId(textStyle->GetStyleId());
 
 #define VERIFY_DATA_1(STYLE_PTR)\
     EXPECT_TRUE(name.Equals(STYLE_PTR->GetName()));\
     EXPECT_TRUE(description.Equals(STYLE_PTR->GetDescription()));\
     EXPECT_TRUE(frameStyle->GetId() == STYLE_PTR->GetFrameStyleId());\
     EXPECT_TRUE(leaderStyle->GetId() == STYLE_PTR->GetLeaderStyleId());\
-    EXPECT_TRUE(textStyle->GetId() == STYLE_PTR->GetTextStyleId());
+    EXPECT_TRUE(textStyle->GetStyleId() == STYLE_PTR->GetTextStyleId());
 
 #define INVALIDSTYLEID DgnStyleId((uint64_t)-1)
 

@@ -297,6 +297,10 @@ BEREPOSITORYBASED_ID_SUBCLASS(DgnTextureId, DgnElementId) //!< An element Id tha
 BEREPOSITORYBASED_ID_SUBCLASS(DgnLightId, DgnElementId) //!< An element Id that refers to a light definition.
 BEREPOSITORYBASED_ID_SUBCLASS(DgnCategoryId, DgnElementId) //!< An element Id that refers to a DgnCategory. @ingroup DgnCategoryGroup
 BEREPOSITORYBASED_ID_SUBCLASS(DgnSubCategoryId, DgnElementId) //!< An element Id that refers to a DgnSubCategory. @ingroup DgnCategoryGroup
+BEREPOSITORYBASED_ID_SUBCLASS(AnnotationTextStyleId, DgnElementId) //!< An element Id that refers to an AnnotationTextStyle. @ingroup Annotations
+BEREPOSITORYBASED_ID_SUBCLASS(AnnotationFrameStyleId, DgnElementId) //!< An element Id that refers to an AnnotationFrameStyle. @ingroup Annotations
+BEREPOSITORYBASED_ID_SUBCLASS(AnnotationLeaderStyleId, DgnElementId) //!< An element Id that refers to an AnnotationLeaderStyle. @ingroup Annotations
+BEREPOSITORYBASED_ID_SUBCLASS(TextAnnotationSeedId, DgnElementId) //!< An element Id that refers to an TextAnnotationSeed. @ingroup Annotations
 
 BESERVER_ISSUED_ID_CLASS(DgnAuthorityId)
 BESERVER_ISSUED_ID_CLASS(DgnFontId)

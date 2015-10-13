@@ -107,8 +107,8 @@ public:
     DGNPLATFORM_EXPORT void SetFrameStyleId(DgnStyleId);
     DGNPLATFORM_EXPORT DgnStyleId GetLeaderStyleId() const;
     DGNPLATFORM_EXPORT void SetLeaderStyleId(DgnStyleId);
-    DGNPLATFORM_EXPORT DgnStyleId GetTextStyleId() const;
-    DGNPLATFORM_EXPORT void SetTextStyleId(DgnStyleId);
+    DGNPLATFORM_EXPORT AnnotationTextStyleId GetTextStyleId() const;
+    DGNPLATFORM_EXPORT void SetTextStyleId(AnnotationTextStyleId);
 };
 
 //=======================================================================================

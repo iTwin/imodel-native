@@ -8,7 +8,7 @@
 #pragma once
 
 //__PUBLISH_SECTION_START__
-#include "PlanningDefinitions.h"
+#include <ECDb/ECDbApi.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
