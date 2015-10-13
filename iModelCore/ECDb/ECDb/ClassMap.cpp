@@ -375,7 +375,11 @@ MapStatus ClassMap::_InitializePart2(SchemaImportContext const* schemaImportCont
             }
         }
 
-    return ProcessStandardKeySpecifications(schemaImportContext, mapInfo) == SUCCESS ? MapStatus::Success : MapStatus::Error;
+    //only done during schema import
+    if (schemaImportContext != nullptr)
+        ProcessStandardKeySpecifications(*schemaImportContext, mapInfo) == SUCCESS ? MapStatus::Success : MapStatus::Error;
+
+    return MapStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -441,7 +445,7 @@ MapStatus ClassMap::AddPropertyMaps(SchemaImportContext const* schemaImportConte
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan.Khan                           09/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClassMap::ProcessStandardKeySpecifications(SchemaImportContext const* schemaImportContext, ClassMapInfo const& mapInfo)
+BentleyStatus ClassMap::ProcessStandardKeySpecifications(SchemaImportContext const& schemaImportContext, ClassMapInfo const& mapInfo)
     {
     std::set<PropertyMapCP> doneList;
     std::set<Utf8String> specList;
@@ -508,7 +512,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext const& sch
     for (ClassIndexInfoPtr indexInfo : classMapInfo.GetIndexInfo())
         {
         i++;
-        auto index = m_table->CreateIndex(&schemaImportContext, indexInfo->GetName(), indexInfo->GetIsUnique(), GetClass().GetId(), false);
+        auto index = m_table->CreateIndex(schemaImportContext, indexInfo->GetName(), indexInfo->GetIsUnique(), GetClass().GetId(), false);
         if (index == nullptr)
             return ERROR;
 
@@ -837,7 +841,7 @@ BentleyStatus MappedTable::FinishTableDefinition(SchemaImportContext const& sche
                     //whenever we create a class id column, we index it to speed up the frequent class id look ups
                     Utf8String indexName("ix_");
                     indexName.append(m_table.GetName()).append("_ecclassid");
-                    ECDbSqlIndex* index = m_table.CreateIndex(&schemaImportContext, indexName.c_str(), false, ECClass::UNSET_ECCLASSID, true);
+                    ECDbSqlIndex* index = m_table.CreateIndex(schemaImportContext, indexName.c_str(), false, ECClass::UNSET_ECCLASSID, true);
                     index->Add(ecClassIdColumn->GetName().c_str());
                     }
 

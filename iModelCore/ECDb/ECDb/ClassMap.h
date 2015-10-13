@@ -310,7 +310,7 @@ struct ClassMap : public IClassMap, RefCountedBase
         std::unique_ptr<ClassDbView> m_dbView;
         ColumnFactory               m_columnFactory;
     private:
-        BentleyStatus ProcessStandardKeySpecifications(SchemaImportContext const*, ClassMapInfo const&);
+        BentleyStatus ProcessStandardKeySpecifications(SchemaImportContext const&, ClassMapInfo const&);
 
         //! Used to find an ECProperty from a propertyAccessString
         //! @param propertyAccessString (as used here) does not support access "inside" arrays, e.g. you can access a struct member inside an array of structs

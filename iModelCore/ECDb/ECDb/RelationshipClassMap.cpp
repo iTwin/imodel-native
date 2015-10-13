@@ -407,7 +407,11 @@ MapStatus RelationshipClassEndTableMap::_InitializePart2(SchemaImportContext con
     {
     //add non-system property maps
     AddPropertyMaps(schemaImportContext, parentClassMap, nullptr, &classMapInfo);
-    AddIndexToRelationshipEnd(schemaImportContext, classMapInfo);
+    
+    //only during schema import:
+    if (schemaImportContext != nullptr)
+        AddIndexToRelationshipEnd(*schemaImportContext, classMapInfo);
+
     return MapStatus::Success;
     }
 
@@ -664,7 +668,7 @@ ECClassId defaultOtherEndClassId
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan         9/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext const* schemaImportContext, ClassMapInfo const& mapInfo)
+void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext const& schemaImportContext, ClassMapInfo const& mapInfo)
     {
     BeAssert(dynamic_cast<RelationshipMapInfo const*> (&mapInfo) != nullptr);
     RelationshipMapInfo const& relMapInfo = static_cast<RelationshipMapInfo const&> (mapInfo);
@@ -993,15 +997,13 @@ ECDbSqlColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(Schem
 //---------------------------------------------------------------------------------------
 MapStatus RelationshipClassLinkTableMap::_InitializePart2 (SchemaImportContext const* context, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
     {
-    auto stat = RelationshipClassMap::_InitializePart2 (context, classMapInfo, parentClassMap);
+    MapStatus stat = RelationshipClassMap::_InitializePart2 (context, classMapInfo, parentClassMap);
     if (stat != MapStatus::Success)
         return stat;
 
-    BeAssert(dynamic_cast<RelationshipMapInfo const*> (&classMapInfo) != nullptr);
-    RelationshipMapInfo const& relationClassMapInfo = static_cast<RelationshipMapInfo const&> (classMapInfo);
-
-    //**** Add relationship indices
-    AddIndices (context, relationClassMapInfo);
+    //**** Add relationship indices (only during schema import)
+    if (context != nullptr)
+        AddIndices (*context, classMapInfo);
 
     return MapStatus::Success;
     }
@@ -1081,7 +1083,7 @@ ECClassId defaultTargetECClassId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                            09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassLinkTableMap::AddIndices (SchemaImportContext const* schemaImportContext, ClassMapInfo const& mapInfo)
+void RelationshipClassLinkTableMap::AddIndices (SchemaImportContext const& schemaImportContext, ClassMapInfo const& mapInfo)
     {
     if (GetTable ().GetOwnerType () == OwnerType::ExistingTable)
         return;
@@ -1125,7 +1127,7 @@ void RelationshipClassLinkTableMap::AddIndices (SchemaImportContext const* schem
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext const* schemaImportContext, RelationshipIndexSpec spec, bool isUniqueIndex)
+void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext const& schemaImportContext, RelationshipIndexSpec spec, bool isUniqueIndex)
     {
     // Setup name of the index
     Utf8String name;
