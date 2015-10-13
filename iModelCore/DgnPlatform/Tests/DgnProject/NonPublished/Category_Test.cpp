@@ -15,7 +15,48 @@ USING_NAMESPACE_BENTLEY_SQLITE
 +===============+===============+===============+===============+===============+======*/
 struct CategoryTests : public DgnDbTestFixture
     {
+    void CompareCategories(DgnCategoryId catId, Utf8CP code, DgnCategory::Scope scope, DgnCategory::Rank rank, Utf8CP descr)
+        {
+        DgnCategoryCPtr cat = DgnCategory::QueryCategory(catId, *m_db);
+        EXPECT_TRUE(cat.IsValid());
+        if (cat.IsValid())
+            CompareCategories(*cat, code, scope, rank, descr);
+        }
 
+    void CompareCategories(DgnCategoryId catId, DgnCategoryCR other)
+        {
+        DgnCategoryCPtr cat = DgnCategory::QueryCategory(catId, *m_db);
+        EXPECT_TRUE(cat.IsValid());
+        if (cat.IsValid())
+            CompareCategories(*cat, other);
+        }
+
+    void CompareCategories(DgnCategoryCR cat, DgnCategoryCR other)
+        {
+        CompareCategories(cat, other.GetCategoryName().c_str(), other.GetScope(), other.GetRank(), other.GetDescription());
+        }
+
+    void CompareCategories(DgnCategoryCR cat, Utf8CP code, DgnCategory::Scope scope, DgnCategory::Rank rank, Utf8CP descr)
+        {
+        EXPECT_STREQ(code, cat.GetCategoryName().c_str());
+        EXPECT_EQ(scope, cat.GetScope());
+        EXPECT_EQ(rank, cat.GetRank());
+        EXPECT_STREQ(descr, cat.GetDescription());
+        }
+
+    void CompareSubCategories(DgnSubCategoryId subcatId, DgnSubCategoryCR other)
+        {
+        DgnSubCategoryCPtr subcat = DgnSubCategory::QuerySubCategory(subcatId, *m_db);
+        EXPECT_TRUE(subcat.IsValid());
+        if (subcat.IsValid())
+            {
+            EXPECT_STREQ(subcat->GetSubCategoryName().c_str(), other.GetSubCategoryName().c_str());
+            EXPECT_EQ(subcat->GetCategoryId(), other.GetCategoryId());
+            EXPECT_EQ(subcat->GetCode().GetNameSpace(), other.GetCode().GetNameSpace());
+            EXPECT_EQ(subcat->GetDescription(), other.GetDescription());
+            EXPECT_TRUE(subcat->GetAppearance().IsEqual(other.GetAppearance()));
+            }
+        }
     };
 
 //=======================================================================================
@@ -29,123 +70,100 @@ TEST_F (CategoryTests, InsertCategory)
     //Category properties.
     Utf8CP cat_code = "Test Category";
     Utf8CP cat_desc = "This is a test category.";
-    Utf8CP cat_label = "TestCategory";
 
-    DgnCategories::Category category (cat_code, DgnCategories::Scope::Physical, cat_desc, cat_label, DgnCategories::Rank::Domain);
-    category.SetCode (cat_code);
-    category.SetDescription (cat_desc);
-    category.SetLabel (cat_label);
-    category.SetRank (DgnCategories::Rank::Domain);
-    category.SetScope (DgnCategories::Scope::Physical);
+    DgnCategory category(DgnCategory::CreateParams(*m_db, cat_code, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, cat_desc));
 
     //Appearence properties.
     uint32_t weight = 10;
     double trans = 0.5;
     uint32_t dp = 1;
 
-    DgnCategories::SubCategory::Appearance appearence;
+    DgnSubCategory::Appearance appearence;
     appearence.SetInvisible (false);
     appearence.SetColor (ColorDef::DarkRed ());
     appearence.SetWeight (weight);
     appearence.SetTransparency (trans);
     appearence.SetDisplayPriority (dp);
 
-    BeSQLite::DbResult insert = m_db->Categories ().Insert (category, appearence);
-    EXPECT_EQ (BE_SQLITE_OK, insert);
+    DgnCategoryCPtr pCategory = category.Insert(appearence);
+    ASSERT_TRUE(pCategory.IsValid());
 
     //Verifying category properties
+    CompareCategories(category, cat_code, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, cat_desc);
     EXPECT_TRUE (category.GetCategoryId ().IsValid ());
-    EXPECT_FALSE (category.IsSystemCategory ());
-    EXPECT_FALSE (category.IsUserCategory ());
+    EXPECT_FALSE (pCategory->IsSystemCategory ());
+    EXPECT_FALSE (pCategory->IsUserCategory ());
+    CompareCategories(*pCategory, category);
 
-    DgnCategoryId id = m_db->Categories ().QueryCategoryId (cat_code);
+    DgnCategoryId id = DgnCategory::QueryCategoryId(cat_code, *m_db);
     EXPECT_TRUE (id.IsValid ());
+    EXPECT_EQ(id, category.GetCategoryId());
+    EXPECT_EQ(id, pCategory->GetCategoryId());
 
-    DgnCategories::Category query = m_db->Categories ().Query (id);
+    DgnCategoryCPtr query = DgnCategory::QueryCategory(id, *m_db);
     EXPECT_TRUE (query.IsValid ());
 
-    DgnCategories::Category query_byCode = m_db->Categories ().QueryCategoryByCode (cat_code);
+    DgnCategoryCPtr query_byCode = DgnCategory::QueryCategory(cat_code, *m_db);
     EXPECT_TRUE (query_byCode.IsValid ());
 
     //Inserts Category 2
     Utf8CP cat2_code = "Test Category 2";
     Utf8CP cat2_desc = "This is test category 2.";
-    Utf8CP cat2_label = "TestCategory2";
 
-    DgnCategories::Category category2 (cat2_code, DgnCategories::Scope::Any, cat2_desc, cat2_label, DgnCategories::Rank::System);
-    BeSQLite::DbResult insert_cat2 = m_db->Categories ().Insert (category2, appearence);
-    EXPECT_EQ (BE_SQLITE_OK, insert_cat2);
+    DgnCategory category2(DgnCategory::CreateParams(*m_db, cat2_code, DgnCategory::Scope::Any, DgnCategory::Rank::System, cat2_desc));
+    DgnCategoryCPtr pCategory2 = category2.Insert(appearence);
+    ASSERT_TRUE(pCategory2.IsValid());
 
     //Inserts Category 3
     Utf8CP cat3_code = "Test Category 3";
     Utf8CP cat3_desc = "This is test category 3.";
-    Utf8CP cat3_label = "TestCategory3";
 
-    DgnCategories::Category category3 (cat3_code, DgnCategories::Scope::Analytical, cat3_desc, cat3_label, DgnCategories::Rank::User);
-    BeSQLite::DbResult insert_cat3 = m_db->Categories ().Insert (category3, appearence);
-    EXPECT_EQ(BE_SQLITE_OK, insert_cat3);
+    DgnCategory category3(DgnCategory::CreateParams(*m_db, cat3_code, DgnCategory::Scope::Analytical, DgnCategory::Rank::User, cat3_desc));
+    DgnCategoryCPtr pCategory3 = category3.Insert(appearence);
+    ASSERT_TRUE(pCategory3.IsValid());
 
     //Inserts Category 4
     Utf8CP cat4_code = "Test Category 4";
     Utf8CP cat4_desc = "This is test category 4.";
-    Utf8CP cat4_label = "TestCategory4";
 
-    DgnCategories::Category category4(cat4_code, DgnCategories::Scope::Annotation, cat4_desc, cat4_label, DgnCategories::Rank::User);
-    BeSQLite::DbResult insert_cat4 = m_db->Categories().Insert(category4, appearence);
-    EXPECT_EQ(BE_SQLITE_OK, insert_cat4);
+    DgnCategory category4(DgnCategory::CreateParams(*m_db, cat4_code, DgnCategory::Scope::Annotation, DgnCategory::Rank::User, cat4_desc));
+    DgnCategoryCPtr pCategory4 = category4.Insert(appearence);
+    ASSERT_TRUE(pCategory4.IsValid());
 
-    DgnCategoryId highest_id = m_db->Categories ().QueryHighestId ();
-    EXPECT_EQ (5, highest_id.GetValue ());
+    DgnCategoryId highest_id = DgnCategory::QueryHighestCategoryId(*m_db);
+    EXPECT_EQ (category4.GetCategoryId().GetValue(), highest_id.GetValue ());
 
     //Iterator for categories.
-    DgnCategories& cat = m_db->Categories ();
-    DgnCategories::Iterator iter = cat.MakeIterator ();
-
-    EXPECT_EQ (5, iter.QueryCount ());
-    DgnCategories::Iterator::Entry entry = iter.begin ();
-    int i = 0;
-    for (auto const& entry : iter)
+    EXPECT_EQ(5, DgnCategory::QueryCount(*m_db));
+    DgnCategoryIdSet catIds = DgnCategory::QueryCategories(*m_db);
+    EXPECT_EQ(5, catIds.size());
+    int nCompared = 0;
+    int nNotCompared = 0;
+    for (auto const& catId : catIds)
         {
-        if (entry.GetCategoryId ().GetValue () == 2)
+        DgnCategory const* pCompareTo = nullptr;
+        if (category.GetCategoryId() == catId)
+            pCompareTo = &category;
+        else if (category2.GetCategoryId() == catId)
+            pCompareTo = &category2;
+        else if (category3.GetCategoryId() == catId)
+            pCompareTo = &category3;
+        else if (category4.GetCategoryId() == catId)
+            pCompareTo = &category4;
+
+        if (nullptr != pCompareTo)
             {
-            EXPECT_TRUE (entry.GetCategoryId ().IsValid ());
-            EXPECT_STREQ ("Test Category", entry.GetCode ());
-            EXPECT_STREQ ("This is a test category.", entry.GetDescription ());
-            EXPECT_STREQ ("TestCategory", entry.GetLabel ());
-            EXPECT_EQ (DgnCategories::Rank::Domain, entry.GetRank ());
-            EXPECT_EQ (DgnCategories::Scope::Physical, entry.GetScope ());
+            CompareCategories(catId, *pCompareTo);
+            ++nCompared;
             }
-        else if (entry.GetCategoryId ().GetValue () == 3)
+        else
             {
-            EXPECT_TRUE (entry.GetCategoryId ().IsValid ());
-            EXPECT_STREQ ("Test Category 2", entry.GetCode ());
-            EXPECT_STREQ ("This is test category 2.", entry.GetDescription ());
-            EXPECT_STREQ ("TestCategory2", entry.GetLabel ());
-            EXPECT_EQ (DgnCategories::Rank::System, entry.GetRank ());
-            EXPECT_EQ (DgnCategories::Scope::Any, entry.GetScope ());
+            ++nNotCompared;
             }
-        else if (entry.GetCategoryId ().GetValue () == 4)
-            {
-            EXPECT_TRUE (entry.GetCategoryId ().IsValid ());
-            EXPECT_STREQ ("Test Category 3", entry.GetCode ());
-            EXPECT_STREQ ("This is test category 3.", entry.GetDescription ());
-            EXPECT_STREQ ("TestCategory3", entry.GetLabel ());
-            EXPECT_EQ (DgnCategories::Rank::User, entry.GetRank ());
-            EXPECT_EQ (DgnCategories::Scope::Analytical, entry.GetScope ());
-            }
-        else if (entry.GetCategoryId ().GetValue () == 5)
-            {
-            EXPECT_TRUE (entry.GetCategoryId ().IsValid ());
-            EXPECT_STREQ ("Test Category 4", entry.GetCode ());
-            EXPECT_STREQ ("This is test category 4.", entry.GetDescription ());
-            EXPECT_STREQ ("TestCategory4", entry.GetLabel ());
-            EXPECT_EQ (DgnCategories::Rank::User, entry.GetRank ());
-            EXPECT_EQ(DgnCategories::Scope::Annotation, entry.GetScope());
-            }
-        i++;
         }
-    iter.end ();
-    EXPECT_TRUE(5 == i);
+
+    EXPECT_EQ(1, nNotCompared);
+    EXPECT_EQ(4, nCompared);
     }
 
 //=======================================================================================
@@ -158,21 +176,15 @@ TEST_F (CategoryTests, DeleteCategory)
 
     Utf8CP code = "TestCategory";
     Utf8CP desc = "This is a test category.";
-    Utf8CP label = "TestCategory";
 
-    DgnCategories::Category category (code, DgnCategories::Scope::Physical, desc, label, DgnCategories::Rank::Domain);
-    category.SetCode (code);
-    category.SetDescription (desc);
-    category.SetLabel (label);
-    category.SetRank (DgnCategories::Rank::Domain);
-    category.SetScope (DgnCategories::Scope::Physical);
+    DgnCategory category(DgnCategory::CreateParams(*m_db, code, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, desc));
 
     //Appearence properties.
     uint32_t weight = 10;
     double trans = 0.5;
     uint32_t dp = 1;
 
-    DgnCategories::SubCategory::Appearance appearence;
+    DgnSubCategory::Appearance appearence;
     appearence.SetInvisible (false);
     appearence.SetColor (ColorDef::DarkRed ());
     appearence.SetWeight (weight);
@@ -180,16 +192,16 @@ TEST_F (CategoryTests, DeleteCategory)
     appearence.SetDisplayPriority (dp);
 
     //Inserts a category
-    BeSQLite::DbResult insert = m_db->Categories ().Insert (category, appearence);
-    EXPECT_EQ (BE_SQLITE_OK, insert);
-    DgnCategoryId id = m_db->Categories ().QueryCategoryId (code);
+    DgnCategoryCPtr pCat = category.Insert(appearence);
+    ASSERT_TRUE(pCat.IsValid());
+    DgnCategoryId id = DgnCategory::QueryCategoryId(code, *m_db);
     EXPECT_TRUE (id.IsValid ());
 
-    //Deletes category.
-    BeSQLite::DbResult dlt = m_db->Categories ().Delete (id);
-    EXPECT_EQ (BE_SQLITE_OK, dlt);
-    DgnCategoryId id1 = m_db->Categories ().QueryCategoryId (code);
-    EXPECT_FALSE (id1.IsValid ());
+    // Deletion of a category is not supported.
+    DgnDbStatus dlt = pCat->Delete();
+    EXPECT_EQ(DgnDbStatus::DeletionProhibited, dlt);
+    DgnCategoryId id1 = DgnCategory::QueryCategoryId(code, *m_db);
+    EXPECT_TRUE (id1.IsValid ());
     }
 
 //=======================================================================================
@@ -203,21 +215,15 @@ TEST_F (CategoryTests, UpdateCategory)
     //Category properties.
     Utf8CP code = "TestCategory";
     Utf8CP desc = "This is a test category.";
-    Utf8CP label = "TestCategory";
 
-    DgnCategories::Category category (code, DgnCategories::Scope::Physical, desc, label, DgnCategories::Rank::Domain);
-    category.SetCode (code);
-    category.SetDescription (desc);
-    category.SetLabel (label);
-    category.SetRank (DgnCategories::Rank::Domain);
-    category.SetScope (DgnCategories::Scope::Physical);
+    DgnCategory category(DgnCategory::CreateParams(*m_db, code, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, desc));
 
     //Appearence properties.
     uint32_t weight = 10;
     double trans = 0.5;
     uint32_t dp = 1;
 
-    DgnCategories::SubCategory::Appearance appearence;
+    DgnSubCategory::Appearance appearence;
     appearence.SetInvisible (false);
     appearence.SetColor (ColorDef::DarkRed ());
     appearence.SetWeight (weight);
@@ -225,14 +231,13 @@ TEST_F (CategoryTests, UpdateCategory)
     appearence.SetDisplayPriority (dp);
 
     //Inserts a category
-    BeSQLite::DbResult insert = m_db->Categories ().Insert (category, appearence);
-    EXPECT_EQ (BE_SQLITE_OK, insert);
-    DgnCategoryId id = m_db->Categories ().QueryCategoryId (code);
+    EXPECT_TRUE(category.Insert(appearence).IsValid());
+    DgnCategoryId id = DgnCategory::QueryCategoryId (code, *m_db);
     EXPECT_TRUE (id.IsValid ());
 
+#ifdef NEEDSWORK_THIS_CODE_DOESNT_EVEN_TEST_UPDATE
     Utf8CP u_code = "UpdatedTestCategory";
     Utf8CP u_desc = "This is the updated test category.";
-    Utf8CP u_label = "UpdatedTestCategory";
 
     //Updates category.
     DgnCategories::Category Updated_category (u_code, DgnCategories::Scope::Any, u_desc, u_label, DgnCategories::Rank::Application);
@@ -244,6 +249,7 @@ TEST_F (CategoryTests, UpdateCategory)
     EXPECT_STREQ ("UpdatedTestCategory", Updated_category.GetCode ());
     EXPECT_STREQ ("This is the updated test category.", Updated_category.GetDescription ());
     EXPECT_STREQ ("UpdatedTestCategory", Updated_category.GetLabel ());
+#endif
     }
 
 //=======================================================================================
@@ -256,21 +262,16 @@ TEST_F (CategoryTests, InsertSubCategory)
 
     Utf8CP code = "TestCategory";
     Utf8CP desc = "This is a test category.";
-    Utf8CP label = "TestCategory";
 
-    DgnCategories::Category category (code, DgnCategories::Scope::Physical, desc, label, DgnCategories::Rank::Domain);
-    category.SetCode (code);
-    category.SetDescription (desc);
-    category.SetLabel (label);
-    category.SetRank (DgnCategories::Rank::Domain);
-    category.SetScope (DgnCategories::Scope::Physical);
-    uint32_t weight = 10;
+    DgnCategory category(DgnCategory::CreateParams(*m_db, code, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, desc));
+
 
     //Appearence properties.
+    uint32_t weight = 10;
     double trans = 0.5;
     uint32_t dp = 1;
 
-    DgnCategories::SubCategory::Appearance appearence;
+    DgnSubCategory::Appearance appearence;
     appearence.SetInvisible (false);
     appearence.SetColor (ColorDef::DarkRed ());
     appearence.SetWeight (weight);
@@ -278,98 +279,175 @@ TEST_F (CategoryTests, InsertSubCategory)
     appearence.SetDisplayPriority (dp);
 
     //Inserts a category
-    BeSQLite::DbResult insert = m_db->Categories ().Insert (category, appearence);
-    EXPECT_EQ (BE_SQLITE_OK, insert);
-    DgnCategoryId id = m_db->Categories ().QueryCategoryId (code);
+    EXPECT_TRUE(category.Insert(appearence).IsValid());
+    DgnCategoryId id = DgnCategory::QueryCategoryId(code, *m_db);
     EXPECT_TRUE (id.IsValid ());
 
     Utf8CP sub_code = "Test SubCategory";
     Utf8CP sub_desc = "This is a test subcategory";
-    Utf8CP sub_label = "TestSubCategory";
-    uint64_t sub = 3;
-    DgnCategories::SubCategory subcategory (id, (DgnSubCategoryId)sub, sub_code, appearence, sub_desc, sub_label);
+    DgnSubCategory subcategory(DgnSubCategory::CreateParams(*m_db, id, sub_code, appearence, sub_desc));
 
     //Inserts a subcategory
-    BeSQLite::DbResult insert_sub = m_db->Categories ().InsertSubCategory (subcategory);
-    EXPECT_EQ (BE_SQLITE_OK, insert_sub);
+    EXPECT_TRUE(subcategory.Insert().IsValid());
 
     //Verifying appearence properties
-    DgnCategories::SubCategory::Appearance app = subcategory.GetAppearance ();
+    DgnSubCategory::Appearance app = subcategory.GetAppearance ();
     EXPECT_EQ (ColorDef::DarkRed (), app.GetColor ());
     EXPECT_EQ (dp, app.GetDisplayPriority ());
     EXPECT_EQ (trans, app.GetTransparency ());
     EXPECT_EQ (weight, app.GetWeight ());
     EXPECT_FALSE (app.IsInvisible ());
+    EXPECT_TRUE(app.IsEqual(appearence));
 
     //Verifying subcategory properties
-    DgnSubCategoryId subcat_id = m_db->Categories ().QuerySubCategoryId (id, sub_code);
+    DgnSubCategoryId subcat_id = DgnSubCategory::QuerySubCategoryId(id, sub_code, *m_db);
     EXPECT_TRUE (subcat_id.IsValid ());
 
-    DgnCategories::SubCategory query_sub = m_db->Categories ().QuerySubCategory (subcat_id);
+    DgnSubCategoryCPtr query_sub = DgnSubCategory::QuerySubCategory(subcat_id, *m_db);
     EXPECT_TRUE (query_sub.IsValid ());
 
-    DgnCategories::SubCategory query_sub_bycode = m_db->Categories ().QuerySubCategoryByCode (id, sub_code);
-    EXPECT_TRUE (query_sub_bycode.IsValid ());
-    
-    /*TODO: Unused local. Should it verified or not? Utf8CP illegal_char = */ m_db->Categories ().GetIllegalCharacters ();
-    EXPECT_TRUE (m_db->Categories ().IsValidCode (sub_code) == true);
-
-    DgnSubCategoryId default_subId = m_db->Categories ().DefaultSubCategoryId (id);
-    EXPECT_EQ (2, default_subId.GetValue ());
+    DgnSubCategoryId default_subId = DgnCategory::GetDefaultSubCategoryId(id);
+    EXPECT_EQ(id.GetValue()+1, default_subId.GetValue());
 
     //Inserts sub category 2
     Utf8CP sub2_code = "Test SubCategory 2";
     Utf8CP sub2_desc = "This is a test subcategory 2";
-    Utf8CP sub2_label = "TestSubCategory2";
-    uint64_t sub2 = 4;
 
-    DgnCategories::SubCategory subcategory2 (id, (DgnSubCategoryId)sub2, sub2_code, appearence, sub2_desc, sub2_label);
-    BeSQLite::DbResult insert_sub2 = m_db->Categories ().InsertSubCategory (subcategory2);
-    EXPECT_EQ (BE_SQLITE_OK, insert_sub2);
+    DgnSubCategory subcategory2(DgnSubCategory::CreateParams(*m_db, id, sub2_code, appearence, sub2_desc));
+    EXPECT_TRUE(subcategory2.Insert().IsValid());
 
     //Inserts sub category 3
     Utf8CP sub3_code = "Test SubCategory 3";
     Utf8CP sub3_desc = "This is a test subcategory 3";
-    Utf8CP sub3_label = "TestSubCategory3";
-    uint64_t sub3 = 5;
 
-    DgnCategories::SubCategory subcategory3 (id, (DgnSubCategoryId)sub3, sub3_code, appearence, sub3_desc, sub3_label);
-    BeSQLite::DbResult insert_sub3 = m_db->Categories ().InsertSubCategory (subcategory3);
-    EXPECT_EQ (BE_SQLITE_OK, insert_sub3);
+    DgnSubCategory subcategory3(DgnSubCategory::CreateParams(*m_db, id, sub3_code, appearence, sub3_desc));
+    EXPECT_TRUE(subcategory3.Insert().IsValid());
 
     //Iterator for subcategories.
-    DgnCategories& sub_cat = m_db->Categories ();
-    DgnCategories::SubCategoryIterator iter = sub_cat.MakeSubCategoryIterator ();
-    DgnCategories::SubCategoryIterator::Entry entry = iter.begin ();
+    DgnSubCategoryIdSet subcatIds = DgnSubCategory::QuerySubCategories(*m_db, id);
+    EXPECT_EQ(4, subcatIds.size());
+    EXPECT_EQ(subcatIds.size()+1, DgnSubCategory::QueryCount(*m_db)); // + default sub-category of category created by v8 converter
+    EXPECT_EQ(subcatIds.size()+1, DgnSubCategory::QuerySubCategories(*m_db).size()); // + default sub-category of category created by v8 converter
+    EXPECT_EQ(subcatIds.size(), DgnSubCategory::QueryCount(*m_db, id));
 
-    int i = 0;
-    for (auto const& entry : iter)
+    int nCompared = 0;
+    int nNotCompared = 0;
+    for (auto const& subcatId : subcatIds)
         {
-        if (entry.GetSubCategoryId ().GetValue () == 3)
-            {
-            EXPECT_TRUE (entry.GetSubCategoryId ().IsValid ());
-            EXPECT_STREQ ("Test SubCategory", entry.GetCode ());
-            EXPECT_STREQ ("This is a test subcategory", entry.GetDescription ());
-            EXPECT_EQ ("TestSubCategory", (Utf8String)entry.GetLabel ());
+        DgnSubCategoryCP pCompareTo = nullptr;
+        if (subcategory.GetSubCategoryId() == subcatId)
+            pCompareTo = &subcategory;
+        else if (subcategory2.GetSubCategoryId() == subcatId)
+            pCompareTo = &subcategory2;
+        else if (subcategory3.GetSubCategoryId() == subcatId)
+            pCompareTo = &subcategory3;
 
-            }
-        else if (entry.GetSubCategoryId ().GetValue () == 4)
+        if (nullptr != pCompareTo)
             {
-            EXPECT_TRUE (entry.GetSubCategoryId ().IsValid ());
-            EXPECT_STREQ ("Test SubCategory 2", entry.GetCode ());
-            EXPECT_STREQ ("This is a test subcategory 2", entry.GetDescription ());
-            EXPECT_EQ ("TestSubCategory2", (Utf8String)entry.GetLabel ());
+            ++nCompared;
+            CompareSubCategories(subcatId, *pCompareTo);
             }
-        else if (entry.GetSubCategoryId ().GetValue () == 5)
+        else
             {
-            EXPECT_TRUE (entry.GetSubCategoryId ().IsValid ());
-            EXPECT_STREQ ("Test SubCategory 3", entry.GetCode ());
-            EXPECT_STREQ ("This is a test subcategory 3", entry.GetDescription ());
-            EXPECT_EQ ("TestSubCategory3", (Utf8String)entry.GetLabel ());
+            ++nNotCompared;
             }
-        i++;
         }
-    iter.end ();
+
+    EXPECT_EQ(3, nCompared);
+    EXPECT_EQ(1, nNotCompared); // default sub-category
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CategoryTests, SubCategoryInvariants)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"SubCategoryInvaraints.idgndb", Db::OpenMode::ReadWrite);
+    DgnDbR db = *m_db;
+
+    DgnSubCategory::Appearance app;
+    DgnCategory cat1(DgnCategory::CreateParams(db, "Cat1", DgnCategory::Scope::Physical, DgnCategory::Rank::Domain));
+    ASSERT_TRUE(cat1.Insert(app).IsValid());
+    DgnCategory cat2(DgnCategory::CreateParams(db, "Cat2", DgnCategory::Scope::Physical, DgnCategory::Rank::Domain));
+    ASSERT_TRUE(cat2.Insert(app).IsValid());
+    DgnCategoryId cat1Id = cat1.GetCategoryId(),
+                  cat2Id = cat2.GetCategoryId();
+
+    // default sub-category exists with expected Code + ID
+    DgnSubCategoryCPtr defaultSubCat1 = DgnSubCategory::QuerySubCategory(DgnCategory::GetDefaultSubCategoryId(cat1Id), db);
+    ASSERT_TRUE(defaultSubCat1.IsValid());
+    EXPECT_EQ(defaultSubCat1->GetCode().GetNameSpace(), "Cat1");
+    EXPECT_EQ(defaultSubCat1->GetCode().GetValue(), "Cat1");
+    EXPECT_EQ(defaultSubCat1->GetSubCategoryId(), DgnCategory::GetDefaultSubCategoryId(cat1Id));
+
+    // Code validation
+    DgnSubCategoryPtr defaultSubCat1Edit = defaultSubCat1->MakeCopy<DgnSubCategory>();
+    DgnAuthority::Code code;    // invalid code
+    EXPECT_EQ(DgnDbStatus::InvalidName, defaultSubCat1Edit->SetCode(code));
+    code = DgnSubCategory::CreateSubCategoryCode(cat2Id, "Cat1", db); // wrong category
+    EXPECT_EQ(DgnDbStatus::InvalidName, defaultSubCat1Edit->SetCode(code));
+    code = DgnSubCategory::CreateSubCategoryCode(cat2Id, "Cat2", db); // wrong category
+    EXPECT_EQ(DgnDbStatus::InvalidName, defaultSubCat1Edit->SetCode(code));
+    code = DgnSubCategory::CreateSubCategoryCode(cat1Id, "NewName", db); // sub-category name must equal category name
+    EXPECT_EQ(DgnDbStatus::InvalidName, defaultSubCat1Edit->SetCode(code));
+
+    // Cannot delete default sub-category
+    EXPECT_EQ(DgnDbStatus::ParentBlockedChange, defaultSubCat1->Delete());
+
+    // Cannot change parent category
+    EXPECT_EQ(DgnDbStatus::InvalidParent, defaultSubCat1Edit->SetParentId(cat2Id));
+
+    // require valid parent category
+    DgnSubCategory noParent(DgnSubCategory::CreateParams(db, DgnCategoryId(), "NoParent", app, "Sub-category requires valid parent category"));
+    DgnDbStatus status;
+    EXPECT_TRUE(noParent.Insert(&status).IsNull());
+    EXPECT_EQ(status, DgnDbStatus::InvalidName); // InvalidName because parent ID used to generate code.
+
+    DgnSubCategory subcat2A(DgnSubCategory::CreateParams(db, cat2Id, "2A", app));
+    DgnSubCategoryCPtr cpSubcat2A = subcat2A.Insert();
+    EXPECT_TRUE(cpSubcat2A.IsValid());
+
+    // name collisions
+    DgnSubCategory subcat2A_2(DgnSubCategory::CreateParams(db, cat2Id, "2A", app));
+    EXPECT_FALSE(subcat2A_2.Insert().IsValid());
+
+    DgnSubCategory subcat2B(DgnSubCategory::CreateParams(db, cat2Id, "2B", app));
+    DgnSubCategoryCPtr cpSubcat2B = subcat2B.Insert();
+    ASSERT_TRUE(cpSubcat2B.IsValid());
+
+    DgnSubCategoryPtr pSubcat2B = cpSubcat2B->MakeCopy<DgnSubCategory>();
+    pSubcat2B->SetCode(DgnSubCategory::CreateSubCategoryCode(cat2Id, "2A", db));
+    EXPECT_TRUE(pSubcat2B->Update(&status).IsNull());
+    EXPECT_EQ(DgnDbStatus::DuplicateCode, status);
+
+    // Cannot change parent category
+    EXPECT_EQ(DgnDbStatus::InvalidParent, pSubcat2B->SetParentId(cat1Id));
+
+    // Code validation
+    code = DgnSubCategory::CreateSubCategoryCode(cat1Id, "2B", db); // wrong category
+    EXPECT_EQ(DgnDbStatus::InvalidName, pSubcat2B->SetCode(code));
+    code = DgnSubCategory::CreateSubCategoryCode(cat2Id, "NewName", db);
+    EXPECT_EQ(DgnDbStatus::Success, pSubcat2B->SetCode(code));
+
+    // Can rename non-default sub-category if no name collisions
+    cpSubcat2B = pSubcat2B->Update(&status);
+    EXPECT_EQ(DgnDbStatus::Success, status);
+    EXPECT_EQ(cpSubcat2B->GetCode().GetValue(), "NewName");
+
+    // Illegal characters in names
+    pSubcat2B = cpSubcat2B->MakeCopy<DgnSubCategory>();
+    Utf8String invalidChars = DgnCategory::GetIllegalCharacters();
+    for (auto const& invalidChar : invalidChars)
+        {
+        Utf8String newName("SubCat");
+        newName.append(1, invalidChar);
+        code = DgnSubCategory::CreateSubCategoryCode(cat2Id, newName, db);
+        EXPECT_EQ(DgnDbStatus::InvalidName, pSubcat2B->SetCode(code));
+        }
+
+    DgnSubCategory subcatWithInvalidName(DgnSubCategory::CreateParams(db, cat2Id, invalidChars, app));
+    EXPECT_TRUE(subcatWithInvalidName.Insert(&status).IsNull());
+    EXPECT_EQ(DgnDbStatus::InvalidName, status);
     }
 
 //=======================================================================================
@@ -382,54 +460,33 @@ TEST_F (CategoryTests, DeleteSubCategory)
 
     Utf8CP code = "TestCategory";
     Utf8CP desc = "This is a test category.";
-    Utf8CP label = "TestCategory";
 
-    DgnCategories::Category category (code, DgnCategories::Scope::Physical, desc, label, DgnCategories::Rank::Domain);
-    category.SetCode (code);
-    category.SetDescription (desc);
-    category.SetLabel (label);
-    category.SetRank (DgnCategories::Rank::Domain);
-    category.SetScope (DgnCategories::Scope::Physical);
-
-    //Appearence properties.
-    uint32_t weight = 10;
-    double trans = 0.5;
-    uint32_t dp = 1;
-
-    DgnCategories::SubCategory::Appearance appearence;
-    appearence.SetInvisible (false);
-    appearence.SetColor (ColorDef::DarkRed ());
-    appearence.SetWeight (weight);
-    appearence.SetTransparency (trans);
-    appearence.SetDisplayPriority (dp);
+    DgnCategory category(DgnCategory::CreateParams(*m_db, code, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, desc));
 
     //Inserts a category.
-    BeSQLite::DbResult insert = m_db->Categories ().Insert (category, appearence);
-    EXPECT_EQ (BE_SQLITE_OK, insert);
-    DgnCategoryId id = m_db->Categories ().QueryCategoryId (code);
+    DgnSubCategory::Appearance appearence;
+    EXPECT_TRUE(category.Insert(appearence).IsValid());
+    DgnCategoryId id = DgnCategory::QueryCategoryId(code, *m_db);
     EXPECT_TRUE (id.IsValid ());
 
     Utf8CP sub_code = "TestSubCategory";
     Utf8CP sub_desc = "This is a test subcategory";
-    Utf8CP sub_label = "TestSubCategory";
-    uint64_t sub = 3;
-    DgnCategories::SubCategory subcategory (id, (DgnSubCategoryId)sub, sub_code, appearence, sub_desc, sub_label);
+    DgnSubCategory subcategory(DgnSubCategory::CreateParams(*m_db, id, sub_code, appearence, sub_desc));
 
     //Inserts subcategory.
-    BeSQLite::DbResult insert_sub = m_db->Categories ().InsertSubCategory (subcategory);
-    EXPECT_EQ (BE_SQLITE_OK, insert_sub);
+    DgnSubCategoryCPtr pSubCat = subcategory.Insert();
+    ASSERT_TRUE(pSubCat.IsValid());
 
     //Verifying subcategory properties
-    EXPECT_STREQ ("TestSubCategory", subcategory.GetCode ());
+    EXPECT_STREQ ("TestSubCategory", subcategory.GetSubCategoryName().c_str());
     EXPECT_STREQ ("This is a test subcategory", subcategory.GetDescription ());
-    EXPECT_STREQ ("TestSubCategory", subcategory.GetLabel ());
 
-    BeSQLite::DbResult delete_sub = m_db->Categories ().DeleteSubCategory ((DgnSubCategoryId)sub);
-    EXPECT_EQ (BE_SQLITE_OK, delete_sub);
-    DgnSubCategoryId sub_id = m_db->Categories ().QuerySubCategoryId (id, sub_code);
+    EXPECT_EQ(DgnDbStatus::Success, pSubCat->Delete());
+    DgnSubCategoryId sub_id = DgnSubCategory::QuerySubCategoryId(id, sub_code, *m_db);
     EXPECT_FALSE (sub_id.IsValid ());
     }
 
+#ifdef NEEDSWORK_THIS_CODE_DOESNT_EVEN_TEST_UPDATE
 //=======================================================================================
 //! Test for Updating a subcategory.
 // @bsiclass                                                     Maha Nasir      07/15
@@ -484,6 +541,8 @@ TEST_F (CategoryTests, UpdateSubCategory)
     EXPECT_STREQ ("This is the updated sub category.", Updated_subcategory.GetDescription ());
     EXPECT_STREQ ("UpdatedSubCategory", Updated_subcategory.GetLabel ());
     }
+#endif
+
 //=======================================================================================
 //! Test for Quering a category.using elementID
 // @bsiclass                                                     Umar.Hayat      09/15
@@ -495,31 +554,13 @@ TEST_F (CategoryTests, QueryByElementId)
     //Category properties.
     Utf8CP code = "TestCategory";
     Utf8CP desc = "This is a test category.";
-    Utf8CP label = "TestCategory";
 
-    DgnCategories::Category category (code, DgnCategories::Scope::Physical, desc, label, DgnCategories::Rank::Domain);
-    category.SetCode (code);
-    category.SetDescription (desc);
-    category.SetLabel (label);
-    category.SetRank (DgnCategories::Rank::Domain);
-    category.SetScope (DgnCategories::Scope::Physical);
-
-    //Appearence properties.
-    uint32_t weight = 10;
-    double trans = 0.5;
-    uint32_t dp = 1;
-
-    DgnCategories::SubCategory::Appearance appearence;
-    appearence.SetInvisible (false);
-    appearence.SetColor (ColorDef::DarkRed ());
-    appearence.SetWeight (weight);  
-    appearence.SetTransparency (trans);
-    appearence.SetDisplayPriority (dp);
+    DgnCategory category(DgnCategory::CreateParams(*m_db, code, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, desc));
+    DgnSubCategory::Appearance appearence;
 
     //Inserts a category
-    BeSQLite::DbResult insert = m_db->Categories ().Insert (category, appearence);
-    EXPECT_EQ (BE_SQLITE_OK, insert);
-    DgnCategoryId categoryId = m_db->Categories ().QueryCategoryId (code);
+    EXPECT_TRUE(category.Insert(appearence).IsValid());
+    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(code, *m_db);
     EXPECT_TRUE(categoryId.IsValid());
 
     DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, categoryId, DgnElement::Code());
@@ -537,9 +578,8 @@ TEST_F (CategoryTests, QueryByElementId)
     EXPECT_TRUE(elem.IsValid());
 
     // Search category by element Id
-    DgnCategoryId tofind = m_db->Categories().QueryCategoryId(el->GetElementId());
+    DgnCategoryId tofind = DgnCategory::QueryElementCategoryId(el->GetElementId(), *m_db);
     EXPECT_TRUE(tofind.IsValid());
     EXPECT_TRUE(tofind == categoryId);
-
-
     }
+

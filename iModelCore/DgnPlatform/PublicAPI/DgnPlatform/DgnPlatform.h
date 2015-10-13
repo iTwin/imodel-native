@@ -175,6 +175,7 @@ DGNPLATFORM_TYPEDEFS (ISprite)
 DGNPLATFORM_TYPEDEFS (ISubEntity)
 DGNPLATFORM_TYPEDEFS (ITiledRaster)
 DGNPLATFORM_TYPEDEFS (ITransactionHandler)
+DGNPLATFORM_TYPEDEFS (IVariableMonitor)
 DGNPLATFORM_TYPEDEFS (TxnManager)
 DGNPLATFORM_TYPEDEFS (IViewHandlerHitInfo)
 DGNPLATFORM_TYPEDEFS (IViewTransients)
@@ -219,7 +220,6 @@ DGNPLATFORM_TYPEDEFS (UpdateContext)
 DGNPLATFORM_TYPEDEFS (ViewHandler)
 DGNPLATFORM_TYPEDEFS (ViewManager)
 DGNPLATFORM_TYPEDEFS (VisibleEdgeCache)
-DGNPLATFORM_TYPEDEFS (DgnTextures)
 DGNPLATFORM_TYPEDEFS (RenderMaterial)
 DGNPLATFORM_TYPEDEFS (RenderMaterialMap)
 
@@ -293,16 +293,16 @@ BEREPOSITORYBASED_ID_CLASS(DgnModelId)         //!< An Id that is assigned to a 
 BEREPOSITORYBASED_ID_CLASS(DgnViewId)          //!< An Id that is assigned to a view. See DgnDb#Views, ViewController. @ingroup DgnViewGroup
 BEREPOSITORYBASED_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a DGN link. See DgnLinkTable.
 BEREPOSITORYBASED_ID_SUBCLASS(DgnMaterialId, DgnElementId) //!< An element Id that refers to a material.
+BEREPOSITORYBASED_ID_SUBCLASS(DgnTextureId, DgnElementId) //!< An element Id that refers to a named texture.
 BEREPOSITORYBASED_ID_SUBCLASS(DgnLightId, DgnElementId) //!< An element Id that refers to a light definition.
+BEREPOSITORYBASED_ID_SUBCLASS(DgnCategoryId, DgnElementId) //!< An element Id that refers to a DgnCategory. @ingroup DgnCategoryGroup
+BEREPOSITORYBASED_ID_SUBCLASS(DgnSubCategoryId, DgnElementId) //!< An element Id that refers to a DgnSubCategory. @ingroup DgnCategoryGroup
 
 BESERVER_ISSUED_ID_CLASS(DgnAuthorityId)
-BESERVER_ISSUED_ID_CLASS(DgnCategoryId)      //!< An Id that is assigned to a DgnCategory.  A DgnElement belongs to exactly one DgnCategory. @ingroup DgnCategoryGroup
 BESERVER_ISSUED_ID_CLASS(DgnFontId)
 BESERVER_ISSUED_ID_CLASS(DgnSessionId)       //!< An Id that is assigned to a session. See DgnDb#Sessions.
 BESERVER_ISSUED_ID_CLASS(DgnStyleId)         //!< An Id that is assigned to a style. See DgnDb#Styles.
-BESERVER_ISSUED_ID_CLASS(DgnSubCategoryId)   //!< An Id that is assigned to a SubCategory of a DgnCategory. @ingroup DgnCategoryGroup
 BESERVER_ISSUED_ID_CLASS(DgnTrueColorId)     //!< An Id that is assigned to a true color. See DgnDb#Colors.
-BESERVER_ISSUED_ID_CLASS(DgnTextureId)       //!< An Id that is assigned to a texture. See DgnDb#Textures.
 
 namespace dgn_ElementHandler{struct Element;};
 namespace dgn_ModelHandler  {struct Model;};
@@ -363,10 +363,11 @@ public:
     BeRepositoryBasedIdSet const& GetRepositoryBasedIdSet() const { return m_set; }
 };
 
-typedef IdSet<DgnElementId> DgnElementIdSet;    //!< IdSet with DgnElementId members. @ingroup DgnElementGroup
-typedef IdSet<DgnModelId> DgnModelIdSet;        //!< IdSet with DgnModelId members. @ingroup DgnModelGroup
-typedef IdSet<DgnCategoryId> DgnCategoryIdSet;  //!< IdSet with DgnCategoryId members. @ingroup DgnCategoryGroup
-typedef IdSet<DgnMaterialId> DgnMaterialIdSet;  //!< IdSet with DgnMaterialId members.
+typedef IdSet<DgnElementId> DgnElementIdSet;            //!< IdSet with DgnElementId members. @ingroup DgnElementGroup
+typedef IdSet<DgnModelId> DgnModelIdSet;                //!< IdSet with DgnModelId members. @ingroup DgnModelGroup
+typedef IdSet<DgnCategoryId> DgnCategoryIdSet;          //!< IdSet with DgnCategoryId members. @ingroup DgnCategoryGroup
+typedef IdSet<DgnSubCategoryId> DgnSubCategoryIdSet;    //!< IdSet with DgnSubCategoryId members. @ingroup DgnCategoryGroup
+typedef IdSet<DgnMaterialId> DgnMaterialIdSet;          //!< IdSet with DgnMaterialId members.
 
 //=======================================================================================
 //! A DgnClassId is the local id for an ECClass in a DgnDb.
@@ -616,15 +617,17 @@ struct DgnDisplayCoreTypes
 
 //! @private
 enum class ConfigurationVariableLevel
-{
+    {
     Predefined    = -2,        //!< predefined by the host
-    SysEnv        = -1,        //!< defined in the system environment variable table
+    SysEnv        = -1,        //!< defined in the Windows system environment variable table
     System        = 0,         //!< system defined
-    Appl          = 1,         //!< application defined
-    Site          = 2,         //!< site defined
-    Project       = 3,         //!< project defined
-    User          = 4,         //!< user defined
-};
+    Application   = 1,         //!< application defined
+    Organization  = 2,         //!< Organization defined
+    WorkSpace     = 3,         //!< WorkSpace defined
+    WorkSet       = 4,         //!< WorkSet defined
+    Role          = 5,         //!< Role defined.
+    User          = 6,         //!< user defined
+    };
 
 //! @private
 enum DgnPlatformConstants

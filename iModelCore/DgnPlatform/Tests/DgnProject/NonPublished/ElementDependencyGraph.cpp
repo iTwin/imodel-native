@@ -191,7 +191,7 @@ void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, D
     ASSERT_TRUE(defaultModel.IsValid());
     GetDefaultModel().FillModel();
 
-    m_defaultCategoryId = m_db->Categories().MakeIterator().begin().GetCategoryId();
+    m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
     }
 
 /*---------------------------------------------------------------------------------**//**

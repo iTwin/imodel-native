@@ -340,13 +340,28 @@ void TextString::ApplyTransform(TransformCR transform)
     DPoint2d scaleFactor;
     TextString::TransformOrientationAndExtractScale(scaleFactor, newOrientation, transform);
 
-    DPoint2d newSize = GetStyleR().GetSize();
+    SetOrigin(newOrigin);
+    SetOrientation(newOrientation);
+    
+    // We used to just call 'GetStyleR().SetSize(newSize)', which would invalidate the layout and cause a new layout pass with the new size when asked later.
+    // (1) This is expensive for little good reason
+    // (2) During DgnV8 convert, we go to great lengths to hack up a WYSIWYG DB TextString from a DgnV8 TextString, and cannot tolerate a DB-based layout pass due to this.
+    // As such, I am going to try to adjust size directly without going through a layout pass.
+    // I believe this is "good enough". Using the real size when doing text layout may result in slightly different results due to precision and layout intricacies.
+    
+    DPoint2d newSize = GetStyle().GetSize();
     newSize.x *= scaleFactor.x;
     newSize.y *= scaleFactor.y;
 
-    SetOrigin(newOrigin);
-    SetOrientation(newOrientation);
-    GetStyleR().SetSize(newSize);
+    m_style.SetSize(newSize); // Do NOT call GetStyleR, which calls Invalidate for you; set size directly.
+    
+    if (m_isValid)
+        {
+        m_range.high.x *= scaleFactor.y;
+        m_range.high.y *= scaleFactor.y;
+        for (DPoint3dR glyphOrigin : m_glyphOrigins)
+            glyphOrigin.x *= scaleFactor.x;
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -553,13 +568,7 @@ BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, FB::Tex
         text.m_range = *reinterpret_cast<DRange2dCP>(fbText.range());
 
         DgnFontCR font = text.m_style.GetFont();
-        DgnFontStyle fontStyle = DgnFontStyle::Regular;
-        if (text.m_style.m_isBold && text.m_style.m_isItalic)
-            fontStyle = DgnFontStyle::BoldItalic;
-        else if (text.m_style.m_isBold)
-            fontStyle = DgnFontStyle::Bold;
-        if (text.m_style.m_isItalic)
-            fontStyle = DgnFontStyle::Italic;
+        DgnFontStyle fontStyle = DgnFont::ComputeFontStyle(text.m_style.m_isBold, text.m_style.m_isItalic);
         
         // See comments in TextStringPersistence::EncodeAsFlatBuf as to why these transforms occur.
         for (uoffset_t iGlyph = 0; iGlyph < fbText.glyphIds()->size(); ++iGlyph)

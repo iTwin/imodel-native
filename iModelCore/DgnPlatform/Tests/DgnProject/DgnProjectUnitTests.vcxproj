@@ -40,6 +40,7 @@
     <ClCompile Include="NonPublished\DgnViews_Test.cpp" />
     <ClCompile Include="NonPublished\ECDbInstances_Test.cpp" />
     <ClCompile Include="NonPublished\ECExpressionTests.cpp" />
+    <ClCompile Include="NonPublished\ECInstanceSelect_Tests.cpp" />
     <ClCompile Include="NonPublished\ElementAspect_Test.cpp" />
     <ClCompile Include="NonPublished\ElementGeometryBuilder_Tests.cpp" />
     <ClCompile Include="NonPublished\ElementGeomPart_Tests.cpp" />
@@ -53,6 +54,7 @@
     <ClCompile Include="NonPublished\ValidatePublishing_Test.cpp" />
     <ClCompile Include="Performance\DgnECPerformanceTests.cpp" />
     <ClCompile Include="Performance\ElementInsertPerformance.cpp" />
+    <ClCompile Include="Performance\PerformanceECInstanceDeleteTests.cpp" />
     <ClCompile Include="Performance\PerformanceElementsTests.cpp" />
     <ClCompile Include="Performance\PerformanceTestFixture.cpp" />
     <ClCompile Include="Performance\RelationshipPerformance_Test.cpp" />

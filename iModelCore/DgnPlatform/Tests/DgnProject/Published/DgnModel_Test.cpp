@@ -171,7 +171,7 @@ static int countSheets(DgnDbR db)
 //---------------------------------------------------------------------------------------
 void DgnModelTests::InsertElement(DgnDbR db,   DgnModelId mid, bool is3d, bool expectSuccess)
     {
-    DgnCategoryId cat = db.Categories().QueryHighestId();
+    DgnCategoryId cat = DgnCategory::QueryHighestCategoryId(db);
 
     GeometricElementPtr gelem;
     if (is3d)
@@ -465,7 +465,7 @@ TEST_F(DgnModelTests, ImportGroups)
         if (true)
             {
             DgnClassId mclassid = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
-            DgnCategoryId mcatid = db->Categories().QueryHighestId();
+            DgnCategoryId mcatid = DgnCategory::QueryHighestCategoryId(*db);
             auto member = PhysicalElement::Create(PhysicalElement::CreateParams(*db, model1->GetModelId(), mclassid, mcatid, Placement3d()))->Insert();
             //auto member = PhysicalElement::Create(*model1, mcatid)->Insert();
             ASSERT_TRUE( member.IsValid() );
@@ -551,7 +551,7 @@ TEST_F(DgnModelTests, ImportElementsWithAuthorities)
     // Put an element with an Item into moddel1
         {
         DgnElement::Code code = auth1->CreateCode("TestElement");
-        DgnCategoryId gcatid = db->Categories().QueryHighestId();
+        DgnCategoryId gcatid = DgnCategory::QueryHighestCategoryId(*db);
         TestElementPtr tempEl = TestElement::Create(*db, model1->GetModelId(), gcatid, code);
         DgnElement::Item::SetItem(*tempEl, *TestItem::Create("Line"));
         ASSERT_TRUE( db->Elements().Insert(*tempEl).IsValid() );
@@ -613,7 +613,7 @@ TEST_F(DgnModelTests, ImportElementsWithItems)
 
     // Put an element with an Item into moddel1
         {
-        DgnCategoryId gcatid = db->Categories().QueryHighestId();
+        DgnCategoryId gcatid = DgnCategory::QueryHighestCategoryId(*db);
         TestElementPtr tempEl = TestElement::Create(*db, model1->GetModelId(), gcatid, "TestElement");
         DgnElement::Item::SetItem(*tempEl, *TestItem::Create("Line"));
         ASSERT_TRUE( db->Elements().Insert(*tempEl).IsValid() );
@@ -678,7 +678,7 @@ TEST_F(DgnModelTests, ImportElementsWithDependencies)
 
     // Create 2 elements and make the first depend on the second
         {
-        DgnCategoryId gcatid = db->Categories().QueryHighestId();
+        DgnCategoryId gcatid = DgnCategory::QueryHighestCategoryId(*db);
 
         TestElementPtr e1 = TestElement::Create(*db, model1->GetModelId(), gcatid, "e1");
         ASSERT_TRUE( db->Elements().Insert(*e1).IsValid() );

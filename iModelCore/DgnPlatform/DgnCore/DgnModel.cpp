@@ -1180,7 +1180,7 @@ ComponentSolution::SolutionId ComponentSolution::CaptureSolution(ComponentModelR
     if (DgnDbStatus::Success == Query(sln, sid)) // see if this solution is already cached.
         return sid;
 
-    DgnCategoryId componentCategoryId = GetDgnDb().Categories().QueryCategoryId(componentModel.GetElementCategoryName().c_str());
+    DgnCategoryId componentCategoryId = DgnCategory::QueryCategoryId(componentModel.GetElementCategoryName().c_str(), GetDgnDb());
     if (!componentCategoryId.IsValid())
         {
         BeAssert(false && "component category not found -- you must import the component model before you can capture a solution");
@@ -1317,7 +1317,7 @@ DgnElementPtr ComponentSolution::CreateSolutionInstanceElement(DgnModelR destina
     Utf8String schemaname, classname;
     std::tie(schemaname, classname) = parseFullECClassName(cm->GetElementECClassName().c_str());
     DgnClassId cmClassId = DgnClassId(GetDgnDb().Schemas().GetECClassId(schemaname.c_str(), classname.c_str()));
-    DgnCategoryId cmCategoryId = GetDgnDb().Categories().QueryCategoryId(cm->GetElementCategoryName().c_str());
+    DgnCategoryId cmCategoryId = DgnCategory::QueryCategoryId(cm->GetElementCategoryName().c_str(), GetDgnDb());
     
     auto geomDestModel = destinationModel.ToGeometricModel();
     BeAssert (nullptr != geomDestModel);
@@ -1791,7 +1791,7 @@ void ComponentModel::_GetSolverOptions(Json::Value& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ComponentModel::IsValid() const
     {
-    if (m_elementCategoryName.empty() || !GetDgnDb().Categories().QueryCategoryId(m_elementCategoryName.c_str()).IsValid())
+    if (m_elementCategoryName.empty() || !DgnCategory::QueryCategoryId(m_elementCategoryName.c_str(), GetDgnDb()).IsValid())
         return false;
     if (m_elementECClassName.empty())
         return false;
