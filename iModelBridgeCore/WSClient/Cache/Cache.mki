@@ -37,6 +37,7 @@ ClientMkiHeaders =                                                          \
     $(CacheMkiPublicApiDir)Transactions/Transaction.h                       \
     $(CacheMkiPublicApiDir)Util/ECCustomAttributeHelper.h                   \
     $(CacheMkiPublicApiDir)Util/ECDbAdapter.h                               \
+    $(CacheMkiPublicApiDir)Util/JsonDiff.h                                  \
     $(CacheMkiPublicApiDir)Util/ECDbDebugInfo.h                             \
     $(CacheMkiPublicApiDir)Util/ECDbHelper.h                                \
     $(CacheMkiPublicApiDir)Util/ECExpressionHelper.h                        \
@@ -213,6 +214,8 @@ $(o)Transaction$(oext)                          : $(CacheMkiSourceDir)Transactio
 $(o)ECCustomAttributeHelper$(oext)              : $(CacheMkiSourceDir)Util/ECCustomAttributeHelper.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ECDbAdapter$(oext)                          : $(CacheMkiSourceDir)Util/ECDbAdapter.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)JsonDiff$(oext)                             : $(CacheMkiSourceDir)Util/JsonDiff.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ECDbDebugInfo$(oext)                        : $(CacheMkiSourceDir)Util/ECDbDebugInfo.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 

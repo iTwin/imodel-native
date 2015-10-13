@@ -1,0 +1,21 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: TestAssetsDelivery.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+SeedsSourcePath = $(_MakeFilePath)Tests/Published/WebServices/Cache/Upgrade/UpgradeSeeds/
+SeedsOutputPath = $(OutputRootDir)build/UnitTests/WSClientTestAssets/Cache/UpgradeSeeds/
+
+$(SeedsOutputPath)5 : $(SeedsSourcePath)5.zip
+    @python $(UpgradePath)UnZip.py $< $@
+    
+$(SeedsOutputPath)7 : $(SeedsSourcePath)7.zip
+    @python $(UpgradePath)UnZip.py $< $@
+
+$(BuildContext)WSClientTestAssets/Cache/UpgradeSeeds/ : $(SeedsOutputPath)
+    $(LinkFirstDepToFirstTargetAsDirectory)

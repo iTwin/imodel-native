@@ -35,6 +35,7 @@
     <ClInclude Include="Published\WebServices\Cache\Persistence\ChangeManagerTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\DataReadOptionsTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\DataSourceCacheTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Upgrade\DataSourceCacheUpgradeTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\MockChangeManager.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\MockDataSourceCache.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\MockRepositoryInfoStore.h" />
@@ -49,6 +50,7 @@
     <ClInclude Include="Published\WebServices\Cache\Util\ExtendedDataAdapterTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\FileUtilTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\ISelectProviderTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\JsonDiffTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\MockECDbAdapter.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\MockECDbSchemaChangeListener.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\MockExtendedDataAdapter.h" />
@@ -166,12 +168,14 @@
     <ClCompile Include="Published\WebServices\Cache\Persistence\DataSourceCacheTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\ServerQueryHelperTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Transactions\BeSQLiteDbTransactionHandlerTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Upgrade\DataSourceCacheUpgradeTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ECDbAdapterTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ECDbHelperTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ECExpressionHelperTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ExtendedDataAdapterTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\FileUtilTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ISelectProviderTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\JsonDiffTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ClientInfoTests.cpp" />
     <ClCompile Include="Published\WebServices\Configuration\BuddiClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Configuration\UrlProviderTests.cpp" />
@@ -304,7 +308,7 @@
     <NMakeBuildCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI WebServicesCache-Library WebServicesCache-PublishedAPI WSClientUnitTests BeGTestExe</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>bb -ax64 reb WSClientUnitTests BeGTestExe -s</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI WebServicesCache-Library WebServicesCache-PublishedAPI WSClientUnitTests BeGTestExe -c</NMakeCleanCommandLine>
-    <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions);WSCLIENT_ENABLE_DUPLICATING_SYMBOLS</NMakePreprocessorDefinitions>
     <NMakeOutput>$(OutRoot)Winx64\Product\BeGTest\bin\begtest.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(SrcRoot)WSClient\PublicAPI;$(OutRoot)Winx64\build\WSClient\PublishedApi\;$(OutRoot)Winx64\BuildContexts\WSClient\VendorAPI;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI;$(OutRoot)Winx64\BuildContexts\BeGTest\VendorAPI;$(IncludePath)</IncludePath>
