@@ -22,6 +22,8 @@ DGNPLATFORM_REF_COUNTED_PTR(DgnSubCategory);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+typedef bvector<DgnCategoryId> DgnCategoryIdList;
+
 //! A sub-category of a category.
 //! @ingroup DgnCategoryGroup
 struct EXPORT_VTABLE_ATTRIBUTE DgnSubCategory : DictionaryElement
@@ -352,8 +354,11 @@ public:
     //! Returns the IDs of all categories in the specified DgnDb
     DGNPLATFORM_EXPORT static DgnCategoryIdSet QueryCategories(DgnDbR db);
 
+    //! Returns the IDs of all categories in the specified DgnDb, in ascending order by name
+    DGNPLATFORM_EXPORT static DgnCategoryIdList QueryOrderedCategories(DgnDbR db);
+
     //! Returns the IDs of all sub-categories of this category
-    DgnSubCategoryIdSet QuerySubCategories(DgnDbR db) { return DgnSubCategory::QuerySubCategories(db, GetCategoryId()); }
+    DgnSubCategoryIdSet QuerySubCategories() const { return DgnSubCategory::QuerySubCategories(GetDgnDb(), GetCategoryId()); }
 
     DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR db); //! Returns the number of categories in the DgnDb
     size_t QuerySubCategoryCount() const { return DgnSubCategory::QueryCount(GetDgnDb(), GetCategoryId()); } //! Returns the number of sub-categories belonging to this category

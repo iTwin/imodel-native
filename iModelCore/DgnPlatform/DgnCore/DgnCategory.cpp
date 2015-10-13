@@ -219,6 +219,23 @@ DgnCategoryIdSet DgnCategory::QueryCategories(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnCategoryIdList DgnCategory::QueryOrderedCategories(DgnDbR db)
+    {
+    DgnCategoryIdList ids;
+
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId, Code FROM " DGN_SCHEMA(DGN_CLASSNAME_Category) " ORDER BY Code");
+    if (stmt.IsValid())
+        {
+        while (BE_SQLITE_ROW == stmt->Step())
+            ids.push_back(stmt->GetValueId<DgnCategoryId>(0));
+        }
+
+    return ids;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 size_t DgnCategory::QueryCount(DgnDbR db)
     {
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_Category));
@@ -378,7 +395,8 @@ DgnDbStatus DgnSubCategory::_SetParentId(DgnElementId parentId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryId DgnSubCategory::QueryCategoryId(DgnSubCategoryId subCatId, DgnDbR db)
     {
-    BeAssert(subCatId.IsValid());
+    if (!subCatId.IsValid())
+        return DgnCategoryId();
 
     BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock; // See comments on HighPriorityOperationBlock
 
