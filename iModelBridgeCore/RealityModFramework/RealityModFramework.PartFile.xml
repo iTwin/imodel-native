@@ -17,7 +17,7 @@
       <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>
       <Bindings>
           <Libs>Delivery/$(stlibprefix)RealityPlatform$(stlibext)</Libs>
-          <Files ProductDirectoryName="RealityAssemblies">delivery/$(shlibprefix)RealityPlatform$(shlibext)</Files>
+          <Assemblies ProductDirectoryName="RealityAssemblies">delivery/$(shlibprefix)RealityPlatform$(shlibext)</Assemblies>
       </Bindings>
     </Part>
 
@@ -29,7 +29,7 @@
     <Part Name="RealityDataHandlerTester" BentleyBuildMakeFile="RealityPlatform\Tests\RealityDataHandlerTester\RealityDataHandlerTester.mke" OnlyPlatforms="x86,x64">
         <SubPart PartName="RealityPlatform"/>
         <Bindings>
-            <Files ProductDirectoryName="RealityAssemblies">Delivery/RealityDataHandlerTester.exe</Files>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/RealityDataHandlerTester.exe</Assemblies>
         </Bindings>
     </Part>
 
@@ -58,7 +58,7 @@
     <Part Name="CrawlerLibExample" BMakeFile="CrawlerLib/Example/CrawlerLibExample.mke">
         <SubPart PartName="CrawlerLib" />
         <Bindings>
-            <Files ProductDirectoryName="RealityAssemblies">Delivery/CrawlerLibExample.exe</Files>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/CrawlerLibExample.exe</Assemblies>
         </Bindings>
     </Part>
 
@@ -67,7 +67,7 @@
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatform"/>
         <Bindings>
-            <Files ProductDirectoryName="RealityAssemblies">Delivery/DownloadEngineExample.exe</Files>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/DownloadEngineExample.exe</Assemblies>
         </Bindings>
     </Part>    
     
