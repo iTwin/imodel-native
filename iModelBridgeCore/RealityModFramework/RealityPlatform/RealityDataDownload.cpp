@@ -16,6 +16,9 @@
 #include <stdio.h>
 #include <curl/curl.h>
 
+#define MAX_RETRY_ON_ERROR  25
+#define MAX_NB_CONNECTIONS  10
+
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 //=======================================================================================
@@ -93,6 +96,7 @@ RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName
         m_pEntries[i].url = pi_Link_FileName[i].first;
         m_pEntries[i].filename = pi_Link_FileName[i].second;
         m_pEntries[i].iAppend = 0;
+        m_pEntries[i].nbRetry = 0;
         }
     }
 
@@ -113,10 +117,11 @@ RealityDataDownload::~RealityDataDownload()
 
 bool RealityDataDownload::Perform()
     {
-    // we can optionally limit the total amount of connections this multi handle uses 
-    curl_multi_setopt(m_pCurlHandle, CURLMOPT_MAXCONNECTS, 10);
 
-    for (m_curEntry = 0; m_curEntry < m_nbEntry; ++m_curEntry)
+    // we can optionally limit the total amount of connections this multi handle uses 
+        curl_multi_setopt(m_pCurlHandle, CURLMOPT_MAXCONNECTS, MAX_NB_CONNECTIONS);
+
+        for (m_curEntry = 0; m_curEntry < min(MAX_NB_CONNECTIONS, m_nbEntry); ++m_curEntry)
         SetupCurlandFile(m_curEntry);
 
     int still_running; /* keep number of running handles */
@@ -134,7 +139,8 @@ bool RealityDataDownload::Perform()
 
         if (mc != CURLM_OK)
             {
-              m_pStatusFunc(-1, NULL, mc, "curl_multi_wait() failed");
+            if (m_pStatusFunc)
+                m_pStatusFunc(-1, NULL, mc, "curl_multi_wait() failed");
 //              fprintf(stderr, "curl_multi_wait() failed, code %d.\n", mc);
             break;
             }
@@ -148,7 +154,7 @@ bool RealityDataDownload::Perform()
             {
             repeats++; /* count number of repeated zero numfds */
             if (repeats > 1)
-                Sleep(100); /* sleep 100 milliseconds */
+                Sleep(300); /* sleep 100 milliseconds */
             }
         else
             repeats = 0;
@@ -162,19 +168,34 @@ bool RealityDataDownload::Perform()
                 char *pClient;
                 curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &pClient);
                 struct FileTransfer *pFileTrans = (struct FileTransfer *)pClient;
-
-                m_pStatusFunc((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+                if (m_pStatusFunc)
+                    m_pStatusFunc((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
 //                fprintf(stderr, "R: %d - %s <%ls>\n", msg->data.result, curl_easy_strerror(msg->data.result), pFileTrans->filename.c_str());
 
                 if (pFileTrans->fileStream.IsOpen())
                     pFileTrans->fileStream.Close();
+
+                // Retry on error
+                if (msg->data.result == 56)     // Recv failure, try again
+                    {
+                    if (pFileTrans->nbRetry < MAX_RETRY_ON_ERROR)
+                        { 
+                        ++pFileTrans->nbRetry;
+//                        pFileTrans->iAppend = 0;
+                        if (m_pStatusFunc)
+                            m_pStatusFunc((int)pFileTrans->index, pClient, -2, "Trying again...");
+                        SetupCurlandFile(pFileTrans->index);
+                        still_running++;
+                        }
+                    }
 
                 curl_multi_remove_handle(m_pCurlHandle, msg->easy_handle);
                 curl_easy_cleanup(msg->easy_handle);
                 }
             else
                 {
-                  m_pStatusFunc(-1, NULL, msg->msg, "CurlMsg failed");
+                if (m_pStatusFunc)
+                    m_pStatusFunc(-1, NULL, msg->msg, "CurlMsg failed");
 //                  fprintf(stderr, "E: CURLMsg (%d)\n", msg->msg);
                 }
 
@@ -203,7 +224,9 @@ bool RealityDataDownload::SetupCurlandFile(size_t pi_index)
     {
         curl_easy_setopt(pCurl, CURLOPT_URL, m_pEntries[pi_index].url);
 
-        curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, 120L);
+        curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, 0L); //Timeout for the complete download.
+        curl_easy_setopt(pCurl, CURLOPT_FTP_RESPONSE_TIMEOUT, 80L);
+
         curl_easy_setopt(pCurl, CURLOPT_HEADER, 0L);
         curl_easy_setopt(pCurl, CURLOPT_FAILONERROR, 1L);
         curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 1L);
@@ -251,3 +274,103 @@ void RealityDataDownload::ExtractFileName(WString& pio_rFileName, const AString&
     BeFileName::BuildName(pio_rFileName, NULL, pio_rFileName.c_str(), pathComponents[pathComponents.size() - 1].c_str(), NULL);
 
     }
+
+
+#if defined (_WIN32)
+
+#include <Objbase.h>
+#include <Shldisp.h>
+#include <Shellapi.h>
+
+bool RealityDataDownload::UnZipFile(WString& pi_strSrc, WString& pi_strDest)
+{
+    BSTR lpZipFile = ::SysAllocString(pi_strSrc.c_str());
+    BSTR lpFolder = ::SysAllocString(pi_strDest.c_str());
+
+    IShellDispatch *pISD;
+
+    Folder  *pZippedFile = 0L;
+    Folder  *pDestination = 0L;
+
+    long FilesCount = 0;
+    IDispatch* pItem = 0L;
+    FolderItems *pFilesInside = 0L;
+
+    VARIANT Options, OutFolder, InZipFile, Item;
+    HRESULT res = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+
+    if (res == S_OK || res == S_FALSE || res == RPC_E_CHANGED_MODE)
+        {
+        res = S_OK;
+        __try{
+            if (CoCreateInstance(CLSID_Shell, NULL, CLSCTX_INPROC_SERVER, IID_IShellDispatch, (void **)&pISD) != S_OK)
+                return false;
+
+            InZipFile.vt = VT_BSTR;
+            InZipFile.bstrVal = lpZipFile;
+            pISD->NameSpace(InZipFile, &pZippedFile);
+            if (!pZippedFile)
+                {
+                pISD->Release();
+                return false;
+                }
+
+            OutFolder.vt = VT_BSTR;
+            OutFolder.bstrVal = lpFolder;
+            pISD->NameSpace(OutFolder, &pDestination);
+            if (!pDestination)
+                {
+                pZippedFile->Release();
+                pISD->Release();
+                return false;
+                }
+
+            pZippedFile->Items(&pFilesInside);
+            if (!pFilesInside)
+                {
+                pDestination->Release();
+                pZippedFile->Release();
+                pISD->Release();
+                return false;
+                }
+
+            pFilesInside->get_Count(&FilesCount);
+            if (FilesCount < 1)
+                {
+                pFilesInside->Release();
+                pDestination->Release();
+                pZippedFile->Release();
+                pISD->Release();
+                return false;
+                }
+
+            pFilesInside->QueryInterface(IID_IDispatch, (void**)&pItem);
+
+            Item.vt = VT_DISPATCH;
+            Item.pdispVal = pItem;
+
+            Options.vt = VT_I4;
+            Options.lVal = 1024 | 512 | 16 | 4;//http://msdn.microsoft.com/en-us/library/bb787866(VS.85).aspx
+
+            bool retval = pDestination->CopyHere(Item, Options) == S_OK;
+
+            pItem->Release(); pItem = 0L;
+            pFilesInside->Release(); pFilesInside = 0L;
+            pDestination->Release(); pDestination = 0L;
+            pZippedFile->Release(); pZippedFile = 0L;
+            pISD->Release(); pISD = 0L;
+
+            return retval;
+            }
+        __finally
+            {
+            if (res = S_OK)
+                CoUninitialize();
+            }
+        }
+    return false;
+    }
+
+#else
+#error "Windows specific code function: void UnZipFile(CString strSrc, CString strDest)"
+#endif
