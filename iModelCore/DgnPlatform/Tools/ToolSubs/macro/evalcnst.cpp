@@ -49,7 +49,7 @@ static void     StripOutInnerQuote (WCharP pTarget, WCharCP pSource)
     WCharCP pTemp;
 
     *pTarget = 0;
-    if (NULL == (pTemp = ::wcschr (pSource, '"')))
+    if (NULL == (pTemp = ::::wcschr (pSource, '"')))
         {
         wcscpy (pTarget, pStart);
         return;

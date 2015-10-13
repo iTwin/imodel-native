@@ -3172,7 +3172,7 @@ void    GetStupidInstallHashString (WStringR installPathHash, WCharCP installDir
     // get the install directory. If it's not provided, make one up. If it's got the shortName character, get the long name.
     if ( (nullptr == installDirectory) || (0 == *installDirectory))
         installDirectory = L"c:\\Program Files (x86)\\Bentley\\MicroStation V8i (SELECTseries)\\MicroStation\\";
-    else if (nullptr != wcschr (installDirectory, '~'))
+    else if (nullptr != ::wcschr (installDirectory, '~'))
         {
         GetLongPathNameW (installDirectory, longPathName, _countof(longPathName));
         installDirectory = longPathName;
