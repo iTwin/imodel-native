@@ -186,7 +186,7 @@ bool ChangeSummary::TableMap::QueryIdColumnFromMap(Utf8StringR idColumnName, ECD
         "SELECT ec_Column.Name"
         " FROM ec_Column"
         " JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
-        " WHERE ec_Table.Name = ? AND ec_Column.IsVirtual = 0 AND ec_Column.ColumnKind = ?");
+        " WHERE ec_Table.Name = ?1 AND ec_Column.IsVirtual = 0 AND (ec_Column.ColumnKind & ?2 = ?2)");
     BeAssert(statement.IsValid());
 
     statement->BindText(1, tableName, Statement::MakeCopy::No);
@@ -236,7 +236,7 @@ void ChangeSummary::TableMap::Initialize(ECDbR ecdb, Utf8CP tableName)
         " JOIN ec_PropertyMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId"
         " JOIN ec_Column ON ec_PropertyMap.ColumnId = ec_Column.Id"
         " JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
-        " WHERE ec_Table.Name = ? AND ec_Column.IsVirtual = 0 AND ec_Column.ColumnKind = 1");
+        " WHERE ec_Table.Name = ? AND ec_Column.IsVirtual = 0 AND (ec_Column.ColumnKind & " COLUMNKIND_ECINSTANCEID_SQLVAL " = " COLUMNKIND_ECINSTANCEID_SQLVAL")");
     BeAssert(statement.IsValid());
 
     statement->BindText(1, tableName, Statement::MakeCopy::No);
