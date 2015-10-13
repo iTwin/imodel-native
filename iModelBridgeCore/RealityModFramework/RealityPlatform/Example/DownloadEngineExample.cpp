@@ -66,7 +66,7 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
 
     bvector<AString> urlOSMLink =
         {"http://api.openstreetmap.org/api/0.6/map?bbox=-112.132,40.5292,-111.52,40.8019",
-//         "http://overpass-api.de/api/map?bbox=-112.1320,40.5292,-111.5200,40.8019",
+         "http://overpass-api.de/api/map?bbox=-112.1320,40.5292,-111.5200,40.8019",
         };
 
 

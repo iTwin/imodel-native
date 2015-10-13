@@ -114,7 +114,7 @@ RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName
         m_pEntries[i].iAppend = 0;
         m_pEntries[i].nbRetry = 0;
 
-        m_pEntries[i].downloadedSizeStep = 0;
+        m_pEntries[i].downloadedSizeStep = 64*1024;         // default step if file size absent.
         m_pEntries[i].filesize = 0;
         m_pEntries[i].progressStep = 0.01;
         }
