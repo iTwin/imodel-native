@@ -523,19 +523,23 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext const* schemaImpor
 
         if (mapToSecondaryTable)
             {            
-            column = table->CreateColumn (ECDB_COL_ParentECInstanceId, ECDbSqlColumn::Type::Long, ColumnKind::ParentECInstanceId, PersistenceType::Persisted);
-            column = table->CreateColumn (ECDB_COL_ECPropertyPathId, ECDbSqlColumn::Type::Long, ColumnKind::ECPropertyPathId, PersistenceType::Persisted);
-            column = table->CreateColumn (ECDB_COL_ECArrayIndex, ECDbSqlColumn::Type::Long, ColumnKind::ECArrayIndex, PersistenceType::Persisted);
+            table->CreateColumn (ECDB_COL_ParentECInstanceId, ECDbSqlColumn::Type::Long, ColumnKind::ParentECInstanceId, PersistenceType::Persisted);
+            table->CreateColumn (ECDB_COL_ECPropertyPathId, ECDbSqlColumn::Type::Long, ColumnKind::ECPropertyPathId, PersistenceType::Persisted);
+            table->CreateColumn (ECDB_COL_ECArrayIndex, ECDbSqlColumn::Type::Long, ColumnKind::ECArrayIndex, PersistenceType::Persisted);
             if (table->GetPersistenceType() == PersistenceType::Persisted)
                 {
-                //struct array indices don't get a class id
-                Utf8String indexName("uix_");
-                indexName.append(table->GetName()).append("_structarraykey");
-                ECDbSqlIndex* index = table->CreateIndex(schemaImportContext, indexName.c_str(), true, ECClass::UNSET_ECCLASSID, true, SchemaImportContext::IndexInfo::Scope::EnforceTable);
-                index->Add(ECDB_COL_ParentECInstanceId);
-                index->Add(ECDB_COL_ECPropertyPathId);
-                index->Add(ECDB_COL_ECArrayIndex);
-                index->Add(primaryKeyColumnName);
+                if (schemaImportContext != nullptr)
+                    {
+                    //indexes are only required at schema import time
+                    //struct array indices don't get a class id
+                    Utf8String indexName("uix_");
+                    indexName.append(table->GetName()).append("_structarraykey");
+                    ECDbSqlIndex* index = table->CreateIndex(*schemaImportContext, indexName.c_str(), true, ECClass::UNSET_ECCLASSID, true, SchemaImportContext::IndexInfo::Scope::EnforceTable);
+                    index->Add(ECDB_COL_ParentECInstanceId);
+                    index->Add(ECDB_COL_ECPropertyPathId);
+                    index->Add(ECDB_COL_ECArrayIndex);
+                    index->Add(primaryKeyColumnName);
+                    }
                 }
             }
         }

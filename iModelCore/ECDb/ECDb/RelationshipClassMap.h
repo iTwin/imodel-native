@@ -98,7 +98,7 @@ private:
 
     bool GetRelationshipColumnName (Utf8StringR columnName, ECDbSqlTable const& table, Utf8CP prefix, bool mappingInProgress) const;
 
-    void AddIndexToRelationshipEnd (SchemaImportContext const*, ClassMapInfo const& mapInfo);
+    void AddIndexToRelationshipEnd (SchemaImportContext const&, ClassMapInfo const& mapInfo);
 
     RelationshipEndColumns const& GetEndColumnsMapping(RelationshipMapInfo const&) const;
 
@@ -158,8 +158,8 @@ private:
 
     MapStatus           CreateConstraintPropMaps (SchemaImportContext const*, RelationshipMapInfo const&, bool addSourceECClassIdColumnToTable, ECN::ECClassId defaultSourceECClassid, bool addTargetECClassIdColumnToTable, ECN::ECClassId defaultTargetECClassId);
 
-    void                AddIndices (SchemaImportContext const*, ClassMapInfo const& mapInfo);
-    void                AddIndex(SchemaImportContext const*, RelationshipIndexSpec spec, bool addUniqueIndex);
+    void                AddIndices (SchemaImportContext const&, ClassMapInfo const& mapInfo);
+    void                AddIndex(SchemaImportContext const&, RelationshipIndexSpec spec, bool addUniqueIndex);
     static void         AddColumnsToIndex (ECDbSqlIndex& index, ECDbSqlColumn const* col1, ECDbSqlColumn const* col2, ECDbSqlColumn const* col3, ECDbSqlColumn const* col4);
 
     bool                GetConstraintECInstanceIdColumnName (Utf8StringR columnName, ECN::ECRelationshipEnd relationshipEnd, ECDbSqlTable const& table) const;
