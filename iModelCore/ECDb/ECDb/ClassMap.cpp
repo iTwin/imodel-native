@@ -377,7 +377,7 @@ MapStatus ClassMap::_InitializePart2(SchemaImportContext const* schemaImportCont
 
     //only done during schema import
     if (schemaImportContext != nullptr)
-        ProcessStandardKeySpecifications(*schemaImportContext, mapInfo) == SUCCESS ? MapStatus::Success : MapStatus::Error;
+        return ProcessStandardKeySpecifications(*schemaImportContext, mapInfo) == SUCCESS ? MapStatus::Success : MapStatus::Error;
 
     return MapStatus::Success;
     }
