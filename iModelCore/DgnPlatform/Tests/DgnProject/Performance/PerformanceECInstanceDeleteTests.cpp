@@ -10,7 +10,7 @@
 //---------------------------------------------------------------------------------------
 // @bsiClass                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct PerformanceECInstanceDeleteTestsFixture : public DgnDbTestFixture
+struct PerformanceECInstanceDeleteTestsFixture : public ::testing::Test
     {
     void SetUPDgnProj (DgnDbPtr &dgnProj)
         {
