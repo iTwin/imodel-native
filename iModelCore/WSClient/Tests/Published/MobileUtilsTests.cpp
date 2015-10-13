@@ -32,6 +32,28 @@ Json::Value BentleyApi::WSC::UnitTests::ToJson (Utf8StringCR jsonString)
     return json;
     }
 
+std::string BentleyApi::WSC::UnitTests::RapidJsonToString(const rapidjson::Value& json)
+    {
+    if (json.IsNull())
+        {
+        return "null";
+        }
+
+    using namespace rapidjson;
+
+    GenericStringBuffer<UTF8<>> buffer;
+    Writer<GenericStringBuffer<UTF8<>>> writer(buffer);
+
+    json.Accept(writer);
+
+    return buffer.GetString();
+    }
+
+bool rapidjson::operator==(const rapidjson::Value& a, const rapidjson::Value& b)
+    {
+    return RapidJsonToString(a) == RapidJsonToString(b);
+    }
+
 ECSchemaPtr BentleyApi::WSC::UnitTests::ParseSchema (Utf8StringCR schemaXml, ECSchemaReadContextPtr context)
     {
     if (context.IsNull())
