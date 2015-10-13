@@ -268,6 +268,8 @@ void ComputeRange(DRange3dR range)
     }
 };
 
+// WIP It should be possible to eliminate this.  This is just used for experimenting.
+static  int TEST_LS_SCALE = 1;
 
 //=======================================================================================
 //! Used to generate a texture based on a line style.
@@ -278,7 +280,6 @@ struct          ComponentToTextureStroker : ComponentStroker
 private:
     LineStyleSymbR      m_lineStyleSymb;
     double              m_multiplier;
-    double              m_length;
     Transform           m_transformForTexture;
 
 public:
@@ -294,12 +295,8 @@ ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb
     //  m_length = m_component->_GetLength() * lineStyleSymb.GetScale(); -- maybe push lineStyleSymb to ComponentStroker
 
     //  NEEDSWORK_LINESTYLES decide how to scale when creating texture.
-#if defined(NOTNOW)
-    m_multiplier = 1024.0 * 1024 * 1024;
+    m_multiplier = TEST_LS_SCALE;
     m_transformForTexture.InitFromScaleFactors(m_multiplier, m_multiplier, m_multiplier);
-#else
-    m_transformForTexture.InitIdentity();
-#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -380,9 +377,9 @@ intptr_t  LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR
     range2d.high.x = std::max(lsRange.high.x, comp->_GetLength());
     range2d.high.y = lsRange.high.y;
 
-    range2d.low.y *= lineStyleSymb.GetScale();
-    range2d.high.y *= lineStyleSymb.GetScale();
-    range2d.high.x *= lineStyleSymb.GetScale();
+    range2d.low.y *= lineStyleSymb.GetScale() * TEST_LS_SCALE;
+    range2d.high.y *= lineStyleSymb.GetScale() * TEST_LS_SCALE;
+    range2d.high.x *= lineStyleSymb.GetScale() * TEST_LS_SCALE;
 
     viewContext.GetIViewDraw ().DefineQVGeometryMap (intptr_t(this), stroker, range2d, false, viewContext, false);
     return intptr_t(this);
