@@ -18,5 +18,3 @@ CGBinarySerializationTests.WriterTest			   # notified Earlin and Carole
 
 ECRelationshipTests.DumpToString
 
-ValueTests.StringToIGeometry					   # Defect 276743
-
