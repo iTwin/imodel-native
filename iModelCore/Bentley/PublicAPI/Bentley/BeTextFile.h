@@ -10,8 +10,8 @@
 
 //! @file BeTextFile.h Provides %Bentley specific text file read/write functions (Bentley/BeAssert.h).
 
-#include    <Bentley\BeFile.h>
-#include    <Bentley\RefCounted.h>
+#include    <Bentley/BeFile.h>
+#include    <Bentley/RefCounted.h>
 
 BEGIN_BENTLEY_NAMESPACE
 
