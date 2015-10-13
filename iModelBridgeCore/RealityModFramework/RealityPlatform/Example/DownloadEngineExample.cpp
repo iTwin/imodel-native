@@ -57,15 +57,16 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
 
 
     bvector<AString> urlUSGSLink =
-    { "ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/Elevation/13/IMG/USGS_NED_13_n41w076_IMG.zip",
-    "ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/Elevation/1/IMG/USGS_NED_1_n41w076_IMG.zip",
+    { 
+//      "ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/Elevation/13/IMG/USGS_NED_13_n41w076_IMG.zip",
+//    "ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/Elevation/1/IMG/USGS_NED_1_n41w076_IMG.zip",
     "ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/19/IMG/ned19_n40x25_w075x75_pa_northeast_2010.zip",
     "ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/19/IMG/ned19_n40x25_w075x75_pa_east_2006.zip"
     };
 
     bvector<AString> urlOSMLink =
         {"http://api.openstreetmap.org/api/0.6/map?bbox=-112.132,40.5292,-111.52,40.8019",
-         "http://overpass-api.de/api/map?bbox=-112.1320,40.5292,-111.5200,40.8019",
+//         "http://overpass-api.de/api/map?bbox=-112.1320,40.5292,-111.5200,40.8019",
         };
 
 
@@ -79,19 +80,19 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
         urlList.push_back(std::make_pair(urlUSGSLink[i], filename));
         }
 
-    //for (size_t i = 0; i < urlOSMLink.size(); ++i)
-    //{
-    //    wchar_t filename[1024];
-    //    swprintf (filename, 1024, L"k:\\tmp\\data\\OsmFile_%2lu.osm", i);
+    for (size_t i = 0; i < urlOSMLink.size(); ++i)
+    {
+        wchar_t filename[1024];
+        swprintf (filename, 1024, L"k:\\tmp\\data\\OsmFile_%2lu.osm", i);
 
-    //    urlList.push_back(std::make_pair(urlOSMLink[i], WString (filename)));
-    //}
+        urlList.push_back(std::make_pair(urlOSMLink[i], WString (filename)));
+    }
 
 
     RealityDataDownloadPtr pDownload = RealityDataDownload::Create(urlList);
     if (pDownload != NULL)
         {
-//        pDownload->SetProgressCallBack(callback_progress_func);
+        pDownload->SetProgressCallBack(callback_progress_func, 0.1);
         pDownload->SetStatusCallBack(callback_status_func);
         pDownload->Perform();
         }

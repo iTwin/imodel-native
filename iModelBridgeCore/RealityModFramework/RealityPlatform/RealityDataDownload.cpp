@@ -64,7 +64,23 @@ static int callback_progress_func(void *pClient,
     struct RealityDataDownload::FileTransfer *pFileTrans = (struct RealityDataDownload::FileTransfer *)pClient;
 
     if (NULL != pFileTrans->pProgressFunc)
-        (pFileTrans->pProgressFunc)((int)pFileTrans->index, pClient, (size_t)dlnow, (size_t)dltotal);
+        {
+        if (dltotal > 0)
+            {
+            if (pFileTrans->filesize == 0)
+                {
+                pFileTrans->filesize = (size_t)dltotal;
+                pFileTrans->downloadedSizeStep = (size_t)(dltotal * pFileTrans->progressStep);
+                }
+            }
+
+        if (dlnow > pFileTrans->downloadedSizeStep)
+            {
+            pFileTrans->downloadedSizeStep += (size_t)(dltotal * pFileTrans->progressStep);
+
+            (pFileTrans->pProgressFunc)((int)pFileTrans->index, pClient, (size_t)dlnow, (size_t)dltotal);
+            }
+        }
 
     return 0;
 }
@@ -97,6 +113,10 @@ RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName
         m_pEntries[i].filename = pi_Link_FileName[i].second;
         m_pEntries[i].iAppend = 0;
         m_pEntries[i].nbRetry = 0;
+
+        m_pEntries[i].downloadedSizeStep = 0;
+        m_pEntries[i].filesize = 0;
+        m_pEntries[i].progressStep = 0.01;
         }
     }
 
@@ -168,9 +188,6 @@ bool RealityDataDownload::Perform()
                 char *pClient;
                 curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &pClient);
                 struct FileTransfer *pFileTrans = (struct FileTransfer *)pClient;
-                if (m_pStatusFunc)
-                    m_pStatusFunc((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
-//                fprintf(stderr, "R: %d - %s <%ls>\n", msg->data.result, curl_easy_strerror(msg->data.result), pFileTrans->filename.c_str());
 
                 if (pFileTrans->fileStream.IsOpen())
                     pFileTrans->fileStream.Close();
@@ -182,11 +199,22 @@ bool RealityDataDownload::Perform()
                         { 
                         ++pFileTrans->nbRetry;
 //                        pFileTrans->iAppend = 0;
-                        if (m_pStatusFunc)
-                            m_pStatusFunc((int)pFileTrans->index, pClient, -2, "Trying again...");
+//                        if (m_pStatusFunc)            // Send status retry ? Application should know or not ?
+//                            m_pStatusFunc((int)pFileTrans->index, pClient, -2, "Trying again...");
                         SetupCurlandFile(pFileTrans->index);
                         still_running++;
                         }
+                    else
+                        {   // Maximun retry done, return error.
+                        if (m_pStatusFunc)
+                            m_pStatusFunc((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+                        }
+                    }
+                else
+                    {
+                    if (m_pStatusFunc)
+                        m_pStatusFunc((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+//                  fprintf(stderr, "R: %d - %s <%ls>\n", msg->data.result, curl_easy_strerror(msg->data.result), pFileTrans->filename.c_str());
                     }
 
                 curl_multi_remove_handle(m_pCurlHandle, msg->easy_handle);
@@ -250,6 +278,7 @@ bool RealityDataDownload::SetupCurlandFile(size_t pi_index)
 
         m_pEntries[pi_index].index = pi_index;
         m_pEntries[pi_index].pProgressFunc = m_pProgressFunc;
+        m_pEntries[pi_index].progressStep = m_progressStep;
 
         curl_multi_add_handle((CURLM*)m_pCurlHandle, pCurl);
     }

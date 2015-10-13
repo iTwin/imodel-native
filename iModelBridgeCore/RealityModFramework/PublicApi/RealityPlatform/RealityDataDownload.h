@@ -41,6 +41,9 @@ public:
         BeFile                  fileStream;
         size_t                  iAppend;
         RealityDataDownload_ProgressCallBack pProgressFunc;
+        size_t                  filesize;
+        size_t                  downloadedSizeStep;
+        float                   progressStep;
         int                     nbRetry;
         };
 
@@ -64,7 +67,8 @@ public:
     REALITYDATAPLATFORM_EXPORT static bool UnZipFile(WString& pi_strSrc, WString& pi_strDest);
 
     //! Set callback to follow progression of the download.
-    REALITYDATAPLATFORM_EXPORT void SetProgressCallBack(RealityDataDownload_ProgressCallBack pi_func) {m_pProgressFunc = pi_func;};
+    REALITYDATAPLATFORM_EXPORT void SetProgressCallBack(RealityDataDownload_ProgressCallBack pi_func, float pi_step = 0.01) 
+                                                                   {m_pProgressFunc = pi_func; m_progressStep = pi_step;};
     //! Set callback to know to status, download done or error.
     REALITYDATAPLATFORM_EXPORT void SetStatusCallBack(RealityDataDownload_StatusCallBack pi_func) { m_pStatusFunc = pi_func; };
 
@@ -85,6 +89,7 @@ private:
     FileTransfer                *m_pEntries;
 
     RealityDataDownload_ProgressCallBack    m_pProgressFunc;
+    float                                   m_progressStep;
     RealityDataDownload_StatusCallBack      m_pStatusFunc;
 
 };
