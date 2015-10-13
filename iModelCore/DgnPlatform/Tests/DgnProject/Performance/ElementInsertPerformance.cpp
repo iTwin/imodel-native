@@ -376,4 +376,3 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
     timer.Stop();
     CommitAndLogTiming(timer, "Single Insert (named parameters)", TEST_DETAILS);
     }
-
