@@ -43,6 +43,7 @@ BentleyStatus   util_putenv (WCharCP varName, WCharCP value)
     formatted.ConvertToLocaleChars (localeString, maxLocaleBytes);
 
     putenv (localeString);
+    return BSISUCCESS;
     }
 
 StatusInt util_readRegistry (WStringR, WCharCP) {return ERROR;} // ***WIP_NONPORT
