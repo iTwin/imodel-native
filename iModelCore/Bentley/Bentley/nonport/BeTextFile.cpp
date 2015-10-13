@@ -12,8 +12,8 @@
 # include    <mbctype.h>
 #endif
 
-#include    <Bentley\BeTextFile.h>
-#include    <Bentley\BeAssert.h>
+#include    <Bentley/BeTextFile.h>
+#include    <Bentley/BeAssert.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   12/11
