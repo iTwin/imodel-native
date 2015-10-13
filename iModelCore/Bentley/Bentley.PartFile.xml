@@ -29,6 +29,7 @@
     <!-- NOTE: BentleyAllocator.dll must have NO VERSION NUMBER! The SAME dll must be used by all products. -->
     <!-- WIP Move BentleyAllocator into its own repository. -->
     <Part Name="BentleyAllocator" BentleyBuildMakeFile="BentleyAllocator.mke" BMakeOptions="+dTMP_BUILD_STATIC">
+        <SubPart PartName="BeIcu4cLibrary" PartFile="BeIcu4cLibrary" Repository="Libsrc-Icu4c" />
         <SubPart PartName="Base"/>
         <Bindings>
             <Libs ProductDirectoryName="BentleyLibs" Required="false">Delivery/$(libprefix)BentleyAllocator$(libext)</Libs>
