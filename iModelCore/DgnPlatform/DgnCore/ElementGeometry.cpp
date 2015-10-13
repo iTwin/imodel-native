@@ -437,18 +437,14 @@ ElementGeometryPtr ElementGeometry::Clone() const
 
         case GeometryType::Polyface:
             {
-            PolyfaceHeaderPtr geom = PolyfaceHeader::New();
-
-            geom->CopyFrom(*GetAsPolyfaceHeader());
+            PolyfaceHeaderPtr geom = GetAsPolyfaceHeader()->Clone();
 
             return new ElementGeometry(geom);
             }
 
         case GeometryType::BsplineSurface:
             {
-            MSBsplineSurfacePtr geom = MSBsplineSurface::CreatePtr();
-
-            geom->CopyFrom(*GetAsMSBsplineSurface());
+            MSBsplineSurfacePtr geom = GetAsMSBsplineSurface()->Clone();
 
             return new ElementGeometry(geom);
             }
@@ -576,8 +572,8 @@ ElementGeometryPtr ElementGeometry::Create(TextStringPtr const& source) {return 
 ElementGeometryPtr ElementGeometry::Create(ICurvePrimitiveCR source) {ICurvePrimitivePtr clone = source.Clone(); return Create(clone);}
 ElementGeometryPtr ElementGeometry::Create(CurveVectorCR source) {CurveVectorPtr clone = source.Clone(); return Create(clone);}
 ElementGeometryPtr ElementGeometry::Create(ISolidPrimitiveCR source) {ISolidPrimitivePtr clone = source.Clone(); return Create(clone);}
-ElementGeometryPtr ElementGeometry::Create(MSBsplineSurfaceCR source) {MSBsplineSurfacePtr clone = MSBsplineSurface::CreatePtr(); clone->CopyFrom(source); return Create(clone);}
-ElementGeometryPtr ElementGeometry::Create(PolyfaceQueryCR source) {PolyfaceHeaderPtr clone = PolyfaceHeader::New(); clone->CopyFrom(source); return Create(clone);}
+ElementGeometryPtr ElementGeometry::Create(MSBsplineSurfaceCR source) {MSBsplineSurfacePtr clone = source.Clone(); return Create(clone);}
+ElementGeometryPtr ElementGeometry::Create(PolyfaceQueryCR source) {PolyfaceHeaderPtr clone = source.Clone(); return Create(clone);}
 ElementGeometryPtr ElementGeometry::Create(ISolidKernelEntityCR source) {ISolidKernelEntityPtr clone = source.Clone(); return Create(clone);}
 ElementGeometryPtr ElementGeometry::Create(TextStringCR source) {TextStringPtr clone = source.Clone(); return Create(clone);}
 
