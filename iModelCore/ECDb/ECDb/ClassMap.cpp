@@ -279,16 +279,16 @@ ClassMap::ClassMap(ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStra
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::Initialize(ClassMapInfo const& mapInfo)
+MapStatus ClassMap::Initialize(SchemaImportContext const* schemaImportContext, ClassMapInfo const& mapInfo)
     {
     ECDbMapStrategy const& mapStrategy = GetMapStrategy();
     IClassMap const* effectiveParentClassMap = (mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && mapStrategy.AppliesToSubclasses()) ? mapInfo.GetParentClassMap() : nullptr;
 
-    auto stat = _InitializePart1(mapInfo, effectiveParentClassMap);
+    auto stat = _InitializePart1(schemaImportContext, mapInfo, effectiveParentClassMap);
     if (stat != MapStatus::Success)
         return stat;
     
-    stat = _InitializePart2(mapInfo, effectiveParentClassMap);
+    stat = _InitializePart2(schemaImportContext, mapInfo, effectiveParentClassMap);
     if (stat != MapStatus::Success)
         return stat;
 
@@ -298,7 +298,7 @@ MapStatus ClassMap::Initialize(ClassMapInfo const& mapInfo)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::_InitializePart1(ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
+MapStatus ClassMap::_InitializePart1(SchemaImportContext const* schemaImportContext, ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
     m_dbView = std::unique_ptr<ClassDbView> (new ClassDbView(*this));
 
@@ -312,6 +312,7 @@ MapStatus ClassMap::_InitializePart1(ClassMapInfo const& mapInfo, IClassMap cons
     else
         {
         auto table = const_cast<ECDbMapR>(m_ecDbMap).FindOrCreateTable(
+            schemaImportContext,
             mapInfo.GetTableName(),
             mapInfo.IsMapToVirtualTable(),
             mapInfo.GetECInstanceIdColumnName(),
@@ -343,9 +344,9 @@ MapStatus ClassMap::_InitializePart1(ClassMapInfo const& mapInfo, IClassMap cons
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::_InitializePart2(ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
+MapStatus ClassMap::_InitializePart2(SchemaImportContext const* schemaImportContext, ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
-    MapStatus stat = AddPropertyMaps(parentClassMap, nullptr,&mapInfo);
+    MapStatus stat = AddPropertyMaps(schemaImportContext, parentClassMap, nullptr,&mapInfo);
     if (stat != MapStatus::Success)
         return stat;
     if (mapInfo.GetClassHasCurrentTimeStampProperty() != NULL)
@@ -374,7 +375,7 @@ MapStatus ClassMap::_InitializePart2(ClassMapInfo const& mapInfo, IClassMap cons
             }
         }
 
-    return ProcessStandardKeySpecifications(mapInfo) == SUCCESS ? MapStatus::Success : MapStatus::Error;
+    return ProcessStandardKeySpecifications(schemaImportContext, mapInfo) == SUCCESS ? MapStatus::Success : MapStatus::Error;
     }
 
 //---------------------------------------------------------------------------------------
@@ -388,7 +389,7 @@ MapStatus ClassMap::_OnInitialized()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::AddPropertyMaps(IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo,ClassMapInfo const* classMapInfo)
+MapStatus ClassMap::AddPropertyMaps(SchemaImportContext const* schemaImportContext, IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo,ClassMapInfo const* classMapInfo)
     {
     std::vector<ECPropertyP> propertiesToMap;
     PropertyMapPtr propMap = nullptr;
@@ -424,7 +425,7 @@ MapStatus ClassMap::AddPropertyMaps(IClassMap const* parentClassMap, ECDbClassMa
 
         if (loadInfo == nullptr)
             {
-            if (SUCCESS == propMap->FindOrCreateColumnsInTable(*this, classMapInfo))
+            if (SUCCESS == propMap->FindOrCreateColumnsInTable(schemaImportContext, *this, classMapInfo))
                 GetPropertyMapsR ().AddPropertyMap(propMap);
             }
         else
@@ -440,7 +441,7 @@ MapStatus ClassMap::AddPropertyMaps(IClassMap const* parentClassMap, ECDbClassMa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan.Khan                           09/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClassMap::ProcessStandardKeySpecifications(ClassMapInfo const& mapInfo)
+BentleyStatus ClassMap::ProcessStandardKeySpecifications(SchemaImportContext const* schemaImportContext, ClassMapInfo const& mapInfo)
     {
     std::set<PropertyMapCP> doneList;
     std::set<Utf8String> specList;
@@ -471,10 +472,17 @@ BentleyStatus ClassMap::ProcessStandardKeySpecifications(ClassMapInfo const& map
             }
         doneList.insert(propertyMap);
 
+        Utf8String indexName;
+        indexName.Sprintf("ix_%s_%s_%s_%s", 
+                          mapInfo.GetECClass().GetSchema().GetNamespacePrefix().c_str(),
+                          mapInfo.GetECClass().GetName().c_str(), 
+                          typeString.c_str(), 
+                          propertyName.c_str());
+
         std::vector<ECDbSqlColumn const*> columns;
         propertyMap->GetColumns(columns);
 
-        ECDbSqlIndex* index = m_table->CreateIndex(nullptr, false, GetClass().GetId());
+        ECDbSqlIndex* index = m_table->CreateIndex(schemaImportContext, indexName.c_str(), false, GetClass().GetId(), true);
         for (auto column : columns)
             index->Add(column->GetName().c_str());
 
@@ -493,178 +501,79 @@ BentleyStatus ClassMap::ProcessStandardKeySpecifications(ClassMapInfo const& map
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan.Khan                           09/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClassMap::CreateUserProvidedIndices(ClassMapInfo const& classMapInfo) const
+BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext const& schemaImportContext, ClassMapInfo const& classMapInfo) const
     {
     int i = 0;
+    IssueReporter const& issues = m_ecDbMap.GetECDbR().GetECDbImplR().GetIssueReporter();
     for (ClassIndexInfoPtr indexInfo : classMapInfo.GetIndexInfo())
         {
         i++;
-        auto index = m_table->CreateIndex(indexInfo->GetName(), indexInfo->GetIsUnique(), GetClass().GetId());
+        auto index = m_table->CreateIndex(&schemaImportContext, indexInfo->GetName(), indexInfo->GetIsUnique(), GetClass().GetId(), false);
         if (index == nullptr)
             return ERROR;
 
         Utf8String whereExpression;
-        bool error = false;
-        for (Utf8StringCR classQualifiedPropertyName : indexInfo->GetProperties())
+
+        for (Utf8StringCR propertyAccessString : indexInfo->GetProperties())
             {
-            Utf8String resolvePropertyName;
-            Utf8String resolveClassName, resolveSchemaName;
-
-            std::vector<Utf8String> parts;
-            auto beginItor = classQualifiedPropertyName.begin();
-            auto itor = beginItor;
-            for (; itor != classQualifiedPropertyName.end(); ++itor)
-                {
-                if (*itor == '.')
-                    {
-                    auto part = Utf8String(beginItor, itor - beginItor);
-                    part.Trim();
-                    if (part.empty())
-                        {
-                        BeDataAssert(false && "Qualified property name provided in ECDbIndex contain invalid format name");
-                        LOG.errorv("Reject user defined index on %s. Fail to find property map for property %s", GetClass().GetFullName(), classQualifiedPropertyName.c_str());
-                        error = true;
-                        }
-
-                    parts.push_back(part);
-                    beginItor = itor + 1;
-                    }
-                }
-
-            if (error)
-                break;
-
-            if (beginItor != itor)
-                {
-                parts.push_back(Utf8String(beginItor, itor - beginItor));
-                }
-
-            resolveSchemaName = GetClass().GetSchema().GetName().c_str();
-            resolveClassName = GetClass().GetName().c_str();
-            switch (parts.size())
-                {
-                    case 1:
-                        resolvePropertyName = Utf8String(parts.at(0).c_str());
-                        break;
-                    case 2:
-                        resolveClassName = parts.at(0);
-                        resolvePropertyName = Utf8String(parts.at(1).c_str());
-                        break;
-                    case 3:
-                        resolveSchemaName = parts.at(0);
-                        resolveClassName = parts.at(1);
-                        resolvePropertyName = Utf8String(parts.at(2).c_str());
-                        break;
-                    default:
-                        {
-                        BeDataAssert(false && "Qualified property name provided in ECDbIndex contain invalid format name");
-                        LOG.errorv("Reject user defined index on %s. Invalid format to describe property qualified name %s", GetClass().GetFullName(), classQualifiedPropertyName.c_str());
-                        error = true;
-                        }
-                }
-
-            if (error)
-                break;
-
-            auto resolveClass = GetECDbMap().GetECDbR().Schemas().GetECClass(resolveSchemaName.c_str(), resolveClassName.c_str());
-            if (resolveClass == nullptr)
-                {
-                LOG.errorv("Reject user defined index on %s. Failed to find class associated with property %s", GetClass().GetFullName(), classQualifiedPropertyName.c_str());
-                break;
-                }
-
-            auto resolveClassMap = GetECDbMap().GetClassMapCP(*resolveClass);
-            if (resolveClassMap == nullptr)
-                {
-                BeAssert(false && "One reason could be that this method is called during mapping. It should be called after every thing is mapped");
-                LOG.errorv("Reject user defined index on %s. Failed to find classMap associated with property %s", GetClass().GetFullName(), classQualifiedPropertyName.c_str());
-                break;
-                }
-
-            if (&resolveClassMap->GetTable() != &GetTable())
-                {
-                BeAssert(false && "User define class qualified property string point to a class that is mapped into a different table then current class");
-                LOG.errorv("Reject user defined index on %s. Property %s belong to a class that is not mapped into table %s", GetClass().GetFullName(), classQualifiedPropertyName.c_str(), GetTable().GetName().c_str());
-                break;
-                }
-
-            auto propertyMap = resolveClassMap->GetPropertyMap(resolvePropertyName.c_str());
+            PropertyMapCP propertyMap = GetPropertyMap(propertyAccessString.c_str());
             if (propertyMap == nullptr)
                 {
-                LOG.errorv("Rejecting index[%d] specified in ClassMap custom attribute on class %s because property specified in index '%s' doesn't exist in class or its not mapped", i, GetClass().GetFullName(), classQualifiedPropertyName.c_str());
-                error = true;
-                break;
+                issues.Report(ECDbIssueSeverity::Error, 
+                   "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "
+                   "The specified ECProperty '%s' does not exist or is not mapped.",
+                              i, GetClass().GetFullName(), propertyAccessString.c_str());
+                return ERROR;
                 }
 
-            if (!propertyMap->GetProperty().GetAsPrimitiveProperty())
+            if (!propertyMap->GetProperty().GetIsPrimitive())
                 {
-                LOG.errorv("Rejecting index[%d] specified in ClassMap custom attribute on class %s because specified property is not primitive.", i, GetClass().GetFullName());
-                error = true; // skip this index and continue with rest
-                break;
-                }
-
-            switch (propertyMap->GetProperty().GetAsPrimitiveProperty()->GetType())
-                {
-                    case PRIMITIVETYPE_String:
-                    case PRIMITIVETYPE_Boolean:
-                    case PRIMITIVETYPE_Integer:
-                    case PRIMITIVETYPE_Long:
-                    case PRIMITIVETYPE_DateTime:
-                    case PRIMITIVETYPE_Double:
-                    case PRIMITIVETYPE_Binary:
-                    case PRIMITIVETYPE_Point2D:
-                    case PRIMITIVETYPE_Point3D:
-                        // allowed index
-                        break;
-                        //not supported for indexing
-                    case PRIMITIVETYPE_IGeometry:
-                        LOG.errorv("Rejecting user specified index[%d] specified in ClassMap custom attribute on class %s because specified property type not supported. Supported types are String, Boolean, Integer, DateTime, Double, Binary, Point2d and Point3d", i, GetClass().GetFullName());
-                        error = true; // skip this index and continue with rest
-                        break;
-
-                    default:
-                        LOG.errorv("Rejecting user specified index[%d] specified in ClassMap custom attribute on class %s because specified property type not supported. Supported types are String, Boolean, Integer, DateTime, Double and Binary", i, GetClass().GetFullName());
-                        error = true; // skip this index and continue with rest
-                        break;
+                issues.Report(ECDbIssueSeverity::Error,
+                              "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "
+                              "The specified ECProperty '%s' is not of a primitive type.",
+                              i, GetClass().GetFullName(), propertyAccessString.c_str());
+                return ERROR;
                 }
 
             std::vector<ECDbSqlColumn const*> columns;
             propertyMap->GetColumns(columns);
             if (0 == columns.size())
                 {
-                LOG.errorv("Reject user defined index on %s. Fail to find column property map for property %s. Something wrong with mapping", GetClass().GetFullName(), classQualifiedPropertyName.c_str());
-                error = true;
-                break;
+                BeAssert(false && "Reject user defined index on %s. Fail to find column property map for property. Something wrong with mapping");
+                return ERROR;
                 }
 
             for (ECDbSqlColumn const* column : columns)
                 {
                 if (column->GetPersistenceType() == PersistenceType::Virtual)
                     {
-                    LOG.errorv("Reject user defined index on %s. One of the column associated with property %s is virtual column.", GetClass().GetFullName(), classQualifiedPropertyName.c_str());
-                    error = true;
-                    break;
+                    issues.Report(ECDbIssueSeverity::Error,
+                                  "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "
+                                  "The specified ECProperty '%s' is mapped to a virtual column.",
+                                  i, GetClass().GetFullName(), propertyAccessString.c_str());
+                    return ERROR;
                     }
+
                 if (index->Add(column->GetName().c_str()) == BentleyStatus::SUCCESS)
                     {
                     switch (indexInfo->GetWhere())
                         {
                             case EC::ClassIndexInfo::WhereConstraint::NotNull:
-                                {
-                                //if column is not nullable, no need to add IS NOT NULL expression to where clause of index
-                                if (column->GetConstraint().IsNotNull())
-                                    break;
-
-                                if (!whereExpression.empty())
-                                    whereExpression.append(" AND ");
-
-                                whereExpression.append("[");
-                                whereExpression.append(column->GetName().c_str());
-                                whereExpression.append("]");
-                                whereExpression.append(" IS NOT NULL");
-
+                            {
+                            //if column is not nullable, no need to add IS NOT NULL expression to where clause of index
+                            if (column->GetConstraint().IsNotNull())
                                 break;
-                                }
+
+                            if (!whereExpression.empty())
+                                whereExpression.append(" AND ");
+
+                            whereExpression.append("[");
+                            whereExpression.append(column->GetName().c_str());
+                            whereExpression.append("]");
+                            whereExpression.append(" IS NOT NULL");
+
+                            break;
+                            }
 
                             default:
                                 break;
@@ -672,8 +581,10 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(ClassMapInfo const& classMapIn
                     }
                 }
             }
+
         index->SetAdditionalWhereExpression(whereExpression.c_str());
-        if (error || !index->IsValid())
+        
+        if (!index->IsValid())
             {
             index->Drop();
             return ERROR;
@@ -687,7 +598,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(ClassMapInfo const& classMapIn
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    casey.mullen      11 / 2011
 //------------------------------------------------------------------------------------------
-ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty(ClassMapCR classMap,ClassMapInfo const* classMapInfo, PropertyMapR propertyMap, Utf8CP requestedColumnName, PrimitiveType columnType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collation collation, Utf8CP accessStringPrefix)
+ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty(SchemaImportContext const* schemaImportContext, ClassMapCR classMap,ClassMapInfo const* classMapInfo, PropertyMapR propertyMap, Utf8CP requestedColumnName, PrimitiveType columnType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collation collation, Utf8CP accessStringPrefix)
     {
     ColumnFactory::Specification::Strategy strategy = ColumnFactory::Specification::Strategy::CreateOrReuse;
     ColumnFactory::Specification::GenerateColumnNameOptions generateColumnNameOpts = ColumnFactory::Specification::GenerateColumnNameOptions::NameBasedOnClassIdAndCaseSaveAccessString;
@@ -708,7 +619,7 @@ ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty(ClassMapCR classMap,Class
         generateColumnNameOpts, 
         requestedColumnName, 
         requestedColumnType, 
-        ECDbKnownColumns::DataColumn, 
+        ColumnKind::DataColumn, 
         PersistenceType::Persisted, 
         accessStringPrefix, 
         !nullable, 
@@ -716,7 +627,7 @@ ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty(ClassMapCR classMap,Class
         collation
         );
 
-    return GetColumnFactoryR().Configure(spec);
+    return GetColumnFactoryR().Configure(schemaImportContext, spec);
     }
 
 //---------------------------------------------------------------------------------------
@@ -840,7 +751,7 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ECDbClassMap
 
     GetPropertyMapsR ().AddPropertyMap(ecInstanceIdPropertyMap);
 
-    return AddPropertyMaps(parentClassMap, &mapInfo,nullptr)  == MapStatus::Success ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
+    return AddPropertyMaps(nullptr, parentClassMap, &mapInfo, nullptr) == MapStatus::Success ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -849,7 +760,7 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ECDbClassMap
 ECPropertyCP ClassMap::GetECProperty(ECN::ECClassCR ecClass, Utf8CP propertyAccessString)
     {
     bvector<Utf8String> tokens;
-    BeStringUtilities::Split(propertyAccessString, ".", NULL, tokens);
+    ECDbMap::ParsePropertyAccessString(tokens, propertyAccessString);
 
     //for recursive lambdas, iOS requires us to efine the lambda variable before assigning the actual function to it.
     std::function<ECPropertyCP (ECClassCR, bvector<Utf8String>&, int)> getECPropertyFromTokens;
@@ -894,7 +805,7 @@ MappedTablePtr MappedTable::Create(ECDbMapR ecDbMap, ClassMapCR classMap)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MappedTable::FinishTableDefinition()
+BentleyStatus MappedTable::FinishTableDefinition(SchemaImportContext const& schemaImportContext)
     {
     if (m_table.GetOwnerType() == OwnerType::ECDb)
         {
@@ -919,14 +830,14 @@ BentleyStatus MappedTable::FinishTableDefinition()
                 if (ecClassIdColumn == nullptr)
                     {
                     const size_t insertPosition = 1;
-                    ecClassIdColumn = m_table.CreateColumn(ECDB_COL_ECClassId, ECDbSqlColumn::Type::Long, insertPosition, ECDbKnownColumns::ECClassId, PersistenceType::Persisted);
+                    ecClassIdColumn = m_table.CreateColumn(ECDB_COL_ECClassId, ECDbSqlColumn::Type::Long, insertPosition, ColumnKind::ECClassId, PersistenceType::Persisted);
                     if (ecClassIdColumn == nullptr)
                         return ERROR;
 
                     //whenever we create a class id column, we index it to speed up the frequent class id look ups
                     Utf8String indexName("ix_");
                     indexName.append(m_table.GetName()).append("_ecclassid");
-                    ECDbSqlIndex* index = m_table.CreateIndex(indexName.c_str(), false, ECClass::UNSET_ECCLASSID);
+                    ECDbSqlIndex* index = m_table.CreateIndex(&schemaImportContext, indexName.c_str(), false, ECClass::UNSET_ECCLASSID, true);
                     index->Add(ecClassIdColumn->GetName().c_str());
                     }
 
@@ -971,7 +882,7 @@ ColumnFactory::Specification::Specification(
     Specification::GenerateColumnNameOptions generateColumnNameOptions,
     Utf8CP columnName,
     ECDbSqlColumn::Type columnType,
-    ECDbKnownColumns knownColumnId,
+    ColumnKind kind,
     PersistenceType persistenceType,
     Utf8CP accessStringPrefix,
     bool isNotNull,
@@ -979,7 +890,7 @@ ColumnFactory::Specification::Specification(
     ECDbSqlColumn::Constraint::Collation collation)
     : m_propertyMap(propertyMap), m_requestedColumnName(columnName), m_columnType(columnType), m_isNotNull(isNotNull),
     m_isUnique(isUnique), m_collation(collation), m_generateColumnNameOptions(generateColumnNameOptions),
-    m_knownColumnId(knownColumnId), m_persistenceType(persistenceType), m_strategy(strategy)
+    m_columnKind(kind), m_persistenceType(persistenceType), m_strategy(strategy)
     {
     m_accessString = propertyMap.GetPropertyAccessString();
     if (!Utf8String::IsNullOrEmpty(accessStringPrefix))
@@ -1000,7 +911,7 @@ ColumnFactory::Specification::Specification(
         // Shared column does not support NOT NULL constraint
         BeAssert(isNotNull == false && "Shared column cannot enforce NOT NULL constraint.");
         BeAssert(persistenceType == PersistenceType::Persisted);
-        BeAssert(knownColumnId == ECDbKnownColumns::DataColumn);
+        BeAssert(Enum::Contains(kind, ColumnKind::DataColumn));
         m_generateColumnNameOptions = GenerateColumnNameOptions::NameBasedOnPropertyNameAndPropertyId;
         m_requestedColumnName.clear();
         m_columnType = ECDbSqlColumn::Type::Any;
@@ -1012,43 +923,7 @@ ColumnFactory::Specification::Specification(
         m_isUnique = false;
         }
     }
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       01 / 2015
-//------------------------------------------------------------------------------------------
-//static 
-void  ColumnFactory::SortByLeastUsedColumnFirst(std::vector<ECDbSqlColumn const*>& columns)
-    {
-    std::sort(columns.begin(), columns.end(),
-        [] (ECDbSqlColumn const* a, ECDbSqlColumn const* b)
-        {
-        return a->GetDependentProperties().Count() < b->GetDependentProperties().Count();
-        });
-    }
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       01 / 2015
-//------------------------------------------------------------------------------------------
-//static 
-void  ColumnFactory::SortByMostUsedColumnFirst(std::vector<ECDbSqlColumn const*>& columns)
-    {
-    std::sort(columns.begin(), columns.end(),
-        [] (ECDbSqlColumn const* a, ECDbSqlColumn const* b)
-        {
-        return a->GetDependentProperties().Count() > b->GetDependentProperties().Count();
-        });
-    }
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       01 / 2015
-//------------------------------------------------------------------------------------------
-//static 
-void  ColumnFactory::SortByColumnOrderInTable(std::vector<ECDbSqlColumn const*>& columns)
-    {
-    std::sort(columns.begin(), columns.end(),
-        [] (ECDbSqlColumn const* a, ECDbSqlColumn const* b)
-        {
-        BeAssert(&a->GetTable() == &b->GetTable());
-        return a->GetTable().IndexOf(*a) < b->GetTable().IndexOf(*b);
-        });
-    }
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
@@ -1115,30 +990,24 @@ void ColumnFactory::Update()
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-bool ColumnFactory::FindReusableSharedDataColumns(std::vector<ECDbSqlColumn const*>& columns, ECDbSqlTable const& table, ECDbSqlColumn::Constraint::Collation collation, ColumnFactory::SortBy sortby) const
+bool ColumnFactory::TryFindReusableSharedDataColumn(ECDbSqlColumn const*& reusableColumn, ECDbSqlTable const& table, ECDbSqlColumn::Constraint::Collation collation) const
     {
+    reusableColumn = nullptr;
+    std::vector<ECDbSqlColumn const*> reusableColumns;
     for (auto column : table.GetColumns())
         {
-        if (column->GetKnownColumnId() == ECDbKnownColumns::DataColumn && column->GetType() == ECDbSqlColumn::Type::Any && collation == column->GetConstraint().GetCollation())
+        if (Enum::Contains(column->GetKind(), ColumnKind::DataColumn) && column->GetType() == ECDbSqlColumn::Type::Any && collation == column->GetConstraint().GetCollation())
             {
-            if (IsColumnInUse(*column) == false)
-                columns.push_back(column);
+            if (!IsColumnInUse(*column))
+                reusableColumns.push_back(column);
             }
         }
 
-    switch (sortby)
-        {
-        case SortBy::LeastUsedColumn:
-            SortByLeastUsedColumnFirst(columns); break;
-        case SortBy::LeftToRightColumnOrderInTable:
-            SortByColumnOrderInTable(columns); break;
-        case SortBy::MostUsedColumn:
-            SortByMostUsedColumnFirst(columns); break;
-        case SortBy::None:
-            break;
-        }
+    if (reusableColumns.empty())
+        return false;
 
-    return !columns.empty();
+    reusableColumn = reusableColumns.front();
+    return true;
     }
 
 //------------------------------------------------------------------------------------------
@@ -1192,7 +1061,7 @@ BentleyStatus ColumnFactory::ResolveColumnName(Utf8StringR resolvedColumName, Co
             case Specification::GenerateColumnNameOptions::NameBasedOnClassIdAndCaseSaveAccessString:
                 {
                 auto const& prefix = Encode(specifications.GetAccessString());
-                resolvedColumName.Sprintf("C%lld_%s", propertyLocalToClassId, prefix.c_str());
+                resolvedColumName.Sprintf("c%lld_%s", propertyLocalToClassId, prefix.c_str());
                 }
                 break;
             case Specification::GenerateColumnNameOptions::NameBasedOnClassAndPropertyName:
@@ -1238,7 +1107,7 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateStrategy(ColumnFactory::Specification c
     if (!canEdit)
         targetTable.GetEditHandleR ().BeginEdit();
 
-    auto newColumn = targetTable.CreateColumn(resolvedColumnName.c_str(), specifications.GetColumnType(), specifications.GetKnownColumnId(), specifications.GetColumnPersistenceType());
+    auto newColumn = targetTable.CreateColumn(resolvedColumnName.c_str(), specifications.GetColumnType(), specifications.GetColumnKind(), specifications.GetColumnPersistenceType());
     if (newColumn == nullptr)
         {
         BeAssert(false && "Failed to create column");
@@ -1248,7 +1117,6 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateStrategy(ColumnFactory::Specification c
     newColumn->GetConstraintR ().SetIsNotNull(specifications.IsNotNull());
     newColumn->GetConstraintR ().SetIsUnique(specifications.IsUnique());
     newColumn->GetConstraintR ().SetCollation(specifications.GetCollation());
-   // newColumn->GetDependentPropertiesR ().Add (propertyLocalToClassId, specifications.GetAccessString ().c_str ());
 
     if (!canEdit)
         targetTable.GetEditHandleR ().EndEdit();
@@ -1291,30 +1159,25 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseStrategy(Specification const& sp
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseSharedColumnStrategy(Specification const& specifications, ECDbSqlTable& targetTable, ECClassId propertyLocalToClassId)
+ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseSharedColumnStrategy(SchemaImportContext const* schemaImportContext, Specification const& specifications, ECDbSqlTable& targetTable, ECClassId propertyLocalToClassId)
     {
-    std::vector<ECDbSqlColumn const*> avaliableSharedColumns;
-    if (FindReusableSharedDataColumns(avaliableSharedColumns, targetTable, specifications.GetCollation(), SortBy::LeastUsedColumn))
+    ECDbSqlColumn const* reusableColumn = nullptr;
+    if (TryFindReusableSharedDataColumn(reusableColumn, targetTable, specifications.GetCollation()))
         {
-        auto sharedColumn = const_cast<ECDbSqlColumn*>(avaliableSharedColumns.front());
-        //sharedColumn->GetDependentPropertiesR ().Add (propertyLocalToClassId, specifications.GetAccessString ().c_str ());
-        return sharedColumn;
+        if (schemaImportContext != nullptr)
+            schemaImportContext->SetColumnIsShared(*reusableColumn, ColumnKind::DataColumn);
+
+        return const_cast<ECDbSqlColumn*>(reusableColumn);
         }
 
-    auto newColumn = targetTable.CreateColumn(nullptr, ECDbSqlColumn::Type::Any, specifications.GetKnownColumnId(), specifications.GetColumnPersistenceType());
+    ECDbSqlColumn* newColumn = targetTable.CreateColumn(nullptr, ECDbSqlColumn::Type::Any, specifications.GetColumnKind(), specifications.GetColumnPersistenceType());
     if (newColumn == nullptr)
         {
         BeAssert(false && "Failed to create column");
         return nullptr;
         }
 
-    //newColumn->GetConstraintR ().SetIsNotNull (specifications.IsNotNull ()); -- NOT NULL IS NOT SUPPORTED ON SHARED COLUMNS
     newColumn->GetConstraintR ().SetCollation(specifications.GetCollation());
-    //auto uniqueIndex = newColumn->GetTableR ().CreateIndex ((newColumn->GetFullName () + "_UNIQUE").c_str ());
-    //uniqueIndex->SetIsUnique (true);
-    //uniqueIndex->SetWhereExpression (SqlPrintfString ("WHERE ECClass == %lld", persistenceClassId));
-
-    //newColumn->GetDependentPropertiesR ().Add (propertyLocalToClassId, specifications.GetAccessString ().c_str ());
     return newColumn;
     }
 
@@ -1324,7 +1187,7 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseSharedColumnStrategy(Specificati
 ECClassId ColumnFactory::GetPersistenceClassId(Specification const& specifications) const
     {
     ECClassId propertyLocalToClassId;
-    auto n = specifications.GetAccessString().find(".");
+    const auto n = specifications.GetAccessString().find(".");
     if (n != Utf8String::npos)
         {
         //! Get root property in given accessString.
@@ -1355,10 +1218,8 @@ ECClassId ColumnFactory::GetPersistenceClassId(Specification const& specificatio
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-ECDbSqlColumn* ColumnFactory::Configure(Specification const& specifications, ECDbSqlTable& targetTable)
+ECDbSqlColumn* ColumnFactory::Configure(SchemaImportContext const* schemaImportContext, Specification const& specifications, ECDbSqlTable& targetTable)
     {
-
-
     ECClassId persistenceClassId = GetPersistenceClassId(specifications);
     if (persistenceClassId == 0)
         return nullptr;
@@ -1371,11 +1232,11 @@ ECDbSqlColumn* ColumnFactory::Configure(Specification const& specifications, ECD
         case Specification::Strategy::CreateOrReuse:
             outColumn = ApplyCreateOrReuseStrategy(specifications, targetTable, persistenceClassId); break;
         case Specification::Strategy::CreateOrReuseSharedColumn:
-            outColumn = ApplyCreateOrReuseSharedColumnStrategy(specifications, targetTable, persistenceClassId); break;
+            outColumn = ApplyCreateOrReuseSharedColumnStrategy(schemaImportContext, specifications, targetTable, persistenceClassId); break;
         }
 
     Utf8String const& className = m_classMap.GetClass().GetName();
-    if (outColumn)
+    if (outColumn != nullptr)
         LOG.tracev("Property -> '%s:%s' mapped to '%s'", className.c_str(), specifications.GetAccessString().c_str(), outColumn->GetName().c_str());
     else
         LOG.tracev("Property -> '%s:%s' mapped to 'NULL'", className.c_str(), specifications.GetAccessString().c_str());
@@ -1387,9 +1248,9 @@ ECDbSqlColumn* ColumnFactory::Configure(Specification const& specifications, ECD
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-ECDbSqlColumn* ColumnFactory::Configure(Specification const& specifications)
+ECDbSqlColumn* ColumnFactory::Configure(SchemaImportContext const* schemaImportContext, Specification const& specifications)
     {
-    return Configure(specifications, m_classMap.GetTable());
+    return Configure(schemaImportContext, specifications, m_classMap.GetTable());
     }
 
 //------------------------------------------------------------------------------------------
@@ -1418,12 +1279,12 @@ const PropertyMapSet::EndPoints  PropertyMapSet::GetEndPoints () const
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       08 / 2015
 //------------------------------------------------------------------------------------------
-const PropertyMapSet::EndPoints PropertyMapSet::FindEndPoints (ECDbKnownColumns filter) const
+const PropertyMapSet::EndPoints PropertyMapSet::FindEndPoints (ColumnKind filter) const
     {
     EndPoints endPoints;
     for (auto const& endPoint : m_orderedEndPoints)
         {
-        if (Enum::Contains(filter, endPoint->GetKnownColumnId()))
+        if (Enum::Contains(filter, endPoint->GetColumnKind()))
             endPoints.push_back(endPoint.get());
         }
 
@@ -1433,29 +1294,29 @@ const PropertyMapSet::EndPoints PropertyMapSet::FindEndPoints (ECDbKnownColumns 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       08 / 2015
 //------------------------------------------------------------------------------------------
-BentleyStatus PropertyMapSet::AddSystemEndPoint (PropertyMapSet& propertySet, IClassMap const& classMap, ECDbKnownColumns knownColumnId, ECValueCR value, ECDbSqlColumn const* column)
+BentleyStatus PropertyMapSet::AddSystemEndPoint(PropertyMapSet& propertySet, IClassMap const& classMap, ColumnKind kind, ECValueCR value, ECDbSqlColumn const* column)
     {
-    auto const& table = classMap.GetTable ();
+    auto const& table = classMap.GetTable();
 
     if (column == nullptr)
-        column = table.GetFilteredColumnFirst (knownColumnId);
+        column = table.GetFilteredColumnFirst(kind);
 
-    auto const accessString = ECDbSqlColumn::ToAccessString (knownColumnId);
-    if (value.IsNull ())
+    auto const accessString = ECDbSqlColumn::KindToString(kind);
+    if (value.IsNull())
         {
-        BeAssert (column != nullptr);
+        BeAssert(column != nullptr);
         if (column == nullptr)
             return BentleyStatus::ERROR;
         }
 
-    BeAssert (accessString != nullptr);
+    BeAssert(accessString != nullptr);
     if (accessString == nullptr)
         return BentleyStatus::ERROR;
 
     if (column == nullptr)
-        propertySet.m_orderedEndPoints.push_back (std::unique_ptr<EndPoint> (new EndPoint (accessString, knownColumnId, value)));
+        propertySet.m_orderedEndPoints.push_back(std::unique_ptr<EndPoint>(new EndPoint(accessString, kind, value)));
     else
-        propertySet.m_orderedEndPoints.push_back (std::unique_ptr<EndPoint> (new EndPoint (accessString, *column, value)));
+        propertySet.m_orderedEndPoints.push_back(std::unique_ptr<EndPoint>(new EndPoint(accessString, *column, value)));
 
     return BentleyStatus::SUCCESS;
     }
@@ -1468,13 +1329,13 @@ PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
     BeAssert (classMap.GetECDbMap ().GetSQLManager ().IsNullTable (classMap.GetTable()) == false);
     Ptr propertySet = Ptr (new PropertyMapSet (classMap));
     ECValue defaultValue;
-    AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::ECInstanceId, defaultValue);
-    AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::ECClassId, ECValue (classMap.GetClass ().GetId ()));
+    AddSystemEndPoint (*propertySet, classMap, ColumnKind::ECInstanceId, defaultValue);
+    AddSystemEndPoint (*propertySet, classMap, ColumnKind::ECClassId, ECValue (classMap.GetClass ().GetId ()));
     if (classMap.GetClass ().GetIsStruct ())
         {
-        AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::ParentECInstanceId, defaultValue);
-        AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::ECPropertyPathId, defaultValue);
-        AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::ECArrayIndex, defaultValue);
+        AddSystemEndPoint (*propertySet, classMap, ColumnKind::ParentECInstanceId, defaultValue);
+        AddSystemEndPoint (*propertySet, classMap, ColumnKind::ECPropertyPathId, defaultValue);
+        AddSystemEndPoint (*propertySet, classMap, ColumnKind::ECArrayIndex, defaultValue);
         }
 
     if (classMap.GetClassMapType () == IClassMap::Type::RelationshipLinkTable ||
@@ -1489,19 +1350,19 @@ PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
         auto targetECClassIdColumn = relationshipMap.GetTargetECClassIdPropMap ()->GetFirstColumn ();
 
 
-        AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::SourceECInstanceId, defaultValue, sourceECInstanceIdColumn);
+        AddSystemEndPoint (*propertySet, classMap, ColumnKind::SourceECInstanceId, defaultValue, sourceECInstanceIdColumn);
         auto sourceConstraintClass = sourceConstraints.at (0);
         if (!IClassMap::IsAnyClass (*sourceConstraintClass) && sourceConstraints.size () == 1)
-            AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::SourceECClassId, ECValue (sourceConstraintClass->GetId ()), sourceECClassIdColumn);
+            AddSystemEndPoint (*propertySet, classMap, ColumnKind::SourceECClassId, ECValue (sourceConstraintClass->GetId ()), sourceECClassIdColumn);
         else
-            AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::SourceECClassId, defaultValue, sourceECClassIdColumn);
+            AddSystemEndPoint (*propertySet, classMap, ColumnKind::SourceECClassId, defaultValue, sourceECClassIdColumn);
 
-        AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::TargetECInstanceId, defaultValue, targetECInstanceIdColumn);
+        AddSystemEndPoint (*propertySet, classMap, ColumnKind::TargetECInstanceId, defaultValue, targetECInstanceIdColumn);
         auto targetConstraintClass = targetConstraints.at (0);
         if (!IClassMap::IsAnyClass (*targetConstraintClass) && targetConstraints.size () == 1)
-            AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::TargetECClassId, ECValue (targetConstraintClass->GetId ()), targetECClassIdColumn);
+            AddSystemEndPoint (*propertySet, classMap, ColumnKind::TargetECClassId, ECValue (targetConstraintClass->GetId ()), targetECClassIdColumn);
         else
-            AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::SourceECClassId, defaultValue, targetECClassIdColumn);
+            AddSystemEndPoint (*propertySet, classMap, ColumnKind::SourceECClassId, defaultValue, targetECClassIdColumn);
         }
 
     classMap.GetPropertyMaps ().Traverse ([&propertySet] (TraversalFeedback& feedback, PropertyMapCP propMap)

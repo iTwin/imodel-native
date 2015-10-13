@@ -102,13 +102,9 @@
         </Bindings>
     </Part>
 
-    <!-- Define a test collection part. This is included in MobileDgn's TestsAggregate -->
-    <!-- Also see DgnPlatform's Performance test aggregator -->
+    <!-- Builds the ECDb tests (except performance tests) -->
     <Part Name="Tests">
         <SubPart PartName="UnitTests-Published" />
-        <!--
-        <SubPart PartName="UnitTests-Performance" />
-        -->
     </Part>
 
     <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in MobileDgn's Gtest-Aggregator and RunGtest-MobileDgnTests parts -->
@@ -137,8 +133,33 @@
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
 
-    <ProductDirectoryList ListName="Empty" />
-    <Product Name="ECDbTested" AddIn="true" PrgOutputDir="ECDb" >
+    <!-- Performance tests -->
+    <Product Name="ECDb-Tests-Performance">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="UnitTests-Performance" />
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="Gtest-Performance" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECDbTestPerformance -dTEST_COLLECTION_PRODUCT=ECDb-Tests-Performance" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="ECDb-Tests-Performance"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ECDbTestPerformance/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ECDbTestPerformance/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="ECDb-Gtest-Performance" >
+        <SubPart PartName="Gtest-Performance"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest-Performance" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ECDb-Gtest-Performance/ECDbTestPerformance -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ECDb" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="ECDb-Gtest-Performance" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    </Part>
+    
+    <Product Name="ECDbTested">
         <SubPart PartName="RunGtest" />
         <!--  *** NEEDS WORK: What's the best way to include all platforms? Redefine this container product as a 'MultiPlatform'? -->
         <Directories DirectoryListName="Empty" />

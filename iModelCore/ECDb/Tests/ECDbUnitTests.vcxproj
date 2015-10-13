@@ -22,6 +22,8 @@
     <ClCompile Include="Performance\PerformanceBisDesignStudies_Test.cpp" />
     <ClCompile Include="Performance\PerformanceBisDesignTestFixture.cpp" />
     <ClCompile Include="Performance\PerformanceECDbMapCATests.cpp" />
+    <ClCompile Include="Performance\PerformanceECDbReferentialIntegrityTests.cpp" />
+    <ClCompile Include="Performance\PerformanceECInstanceECSqlSelectAdapterTests.cpp" />
     <ClCompile Include="Performance\PerformanceECInstanceInserterTests.cpp" />
     <ClCompile Include="Performance\PerformanceECSqlTests.cpp" />
     <ClCompile Include="Performance\PerformanceJsonComparison.cpp" />
@@ -30,7 +32,7 @@
     <ClCompile Include="Performance\QueryTests.cpp" />
     <ClCompile Include="Published\ECDbFileInfoTests.cpp" />
     <ClCompile Include="Published\ECDbInstances_Test.cpp" />
-    <ClCompile Include="Published\ECDbMapCA_Tests.cpp" />
+    <ClCompile Include="Published\ECDbMapping_Tests.cpp" />
     <ClCompile Include="Published\ECDbProfile_Test.cpp" />
     <ClCompile Include="Published\ECDbReadTests.cpp" />
     <ClCompile Include="Published\ECDbRelationshipStrength_Test.cpp" />
@@ -40,7 +42,6 @@
     <ClCompile Include="Published\ECDbSchemas_Test.cpp" />
     <ClCompile Include="Published\ECDbSql_Test.cpp" />
     <ClCompile Include="Published\ECDb_Tests.cpp" />
-    <ClCompile Include="Published\ECInstanceECSqlSelectAdpaterTests.cpp" />
     <ClCompile Include="Published\ECInstanceIdSequence_Tests.cpp" />
     <ClCompile Include="Published\ECInstanceInserterTests.cpp" />
     <ClCompile Include="Published\ECInstanceUpdaterTests.cpp" />
@@ -122,7 +123,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeOutput>$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\product\Gtest-ECDbTest-TestCollection-All\ECDbTest.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\product\ECDb-Gtest\ECDbTest.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;BENTLEY_WIN32</NMakePreprocessorDefinitions>
     <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4  re -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) GUnitTests_*DgnDb BeGTestExe</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild GUnitTests_*DgnDb BeGTestExe -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild GUnitTests_*DgnDb BeGTestExe -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeReBuildCommandLine>

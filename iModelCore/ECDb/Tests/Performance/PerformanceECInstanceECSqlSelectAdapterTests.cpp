@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Published/ECInstanceECSqlSelectAdpaterTests.cpp $
+|  $Source: Tests/Performance/PerformanceECInstanceECSqlSelectAdapterTests.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECDbPublishedTests.h"
+#include "PerformanceTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -13,7 +13,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Carole.MacDonald                 04/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(Performance_ECInstanceECSqlSelectAdapterTests, SelectFromComplexClass)
+TEST(DISABLED_Performance_ECInstanceECSqlSelectAdapterTests, SelectFromComplexClass)
     {
     BeFileName seedPath;
     BeTest::GetHost().GetDocumentsRoot (seedPath);
@@ -57,7 +57,7 @@ TEST(Performance_ECInstanceECSqlSelectAdapterTests, SelectFromComplexClass)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 05/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (Performance_ECInstanceECSqlSelectAdapterTests, SelectFromComplexClass_WithoutAdapter)
+TEST (DISABLED_Performance_ECInstanceECSqlSelectAdapterTests, SelectFromComplexClass_WithoutAdapter)
     {
     BeFileName seedPath;
     BeTest::GetHost ().GetDocumentsRoot (seedPath);

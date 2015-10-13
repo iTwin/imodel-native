@@ -16,7 +16,7 @@ Utf8CP const ECDbProfileManager::PROFILENAME = "ECDb";
 //static
 const PropertySpec ECDbProfileManager::PROFILEVERSION_PROPSPEC = PropertySpec("SchemaVersion", "ec_Db");
 //static
-const SchemaVersion ECDbProfileManager::MINIMUM_SUPPORTED_VERSION = SchemaVersion(2, 1, 0, 0);
+const SchemaVersion ECDbProfileManager::MINIMUM_SUPPORTED_VERSION = SchemaVersion(2, 2, 0, 0);
 
 //static
 std::vector<std::unique_ptr<ECDbProfileUpgrader>> ECDbProfileManager::s_upgraderSequence;
@@ -742,7 +742,7 @@ Db& db
         "DefaultConstraint TEXT,"
         "CollationConstraint INTEGER,"
         "OrdinalInPrimaryKey INTEGER,"
-        "KnownColumn INTEGER"
+        "ColumnKind INTEGER"
         ");");
 
     if (stat != BE_SQLITE_OK)

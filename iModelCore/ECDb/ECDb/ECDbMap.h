@@ -160,7 +160,7 @@ public:
     //! @copydoc ECDbMap::GetClassMap
     ClassMapCP                  GetClassMapCP(ECN::ECClassCR ecClass, bool loadIfNotFound = true) const;
 
-    ECDbSqlTable*               FindOrCreateTable(Utf8CP tableName, bool isVirtual, Utf8CP primaryKeyColumnName, bool mapToSecondaryTable, bool mapToExisitingTable);
+    ECDbSqlTable*               FindOrCreateTable(SchemaImportContext const*, Utf8CP tableName, bool isVirtual, Utf8CP primaryKeyColumnName, bool mapToSecondaryTable, bool mapToExisitingTable);
     MappedTableP                GetMappedTable(ClassMapCR classMap, bool createMappedTableEntryIfNotFound = true);
 
     //!Loads the class maps if they were not loaded yet
@@ -170,6 +170,9 @@ public:
     void                        ClearCache();
     RelationshipClassMapCP GetRelationshipClassMap (ECN::ECClassId ecRelationshipClassId) const;
     ClassMapCP             GetClassMapCP (ECN::ECClassId classId) const;
+
+
+    static void ParsePropertyAccessString(bvector<Utf8String>&, Utf8CP propAccessString);
     };
 
 

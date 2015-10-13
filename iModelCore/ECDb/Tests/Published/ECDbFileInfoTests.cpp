@@ -215,12 +215,13 @@ TEST(ECDbFileInfo, ReplaceExistingEmbeddedFile)
 
     //test file
     //  Using a much larger file so I could check that the embedded blobs were removed from the BE_Prop table.
-    Utf8CP testFileNameOld = "embeddedFile.i.idgndb";
+    Utf8CP testFileNameOld = "TestSchema.01.00.ecschema.xml";
     WString testFileNameOldW(testFileNameOld, BentleyCharEncoding::Utf8);
 
     BeFileName testFilePathOld;
     BeTest::GetHost().GetDocumentsRoot(testFilePathOld);
-    testFilePathOld.AppendToPath(L"DgnDb");
+    testFilePathOld.AppendToPath(L"ECdb");
+    testFilePathOld.AppendToPath (L"Schemas");
     testFilePathOld.AppendToPath(testFileNameOldW.c_str());
 
     //INSERT scenario
@@ -230,14 +231,14 @@ TEST(ECDbFileInfo, ReplaceExistingEmbeddedFile)
     double expectedLastModifiedJd = 0.0;
     ASSERT_EQ(SUCCESS, expectedLastModified.ToJulianDay(expectedLastModifiedJd));
 
-    BeRepositoryBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileNameOld, testFilePathOld.GetNameUtf8().c_str(), "i.idgndb", nullptr, &expectedLastModified);
+    BeRepositoryBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileNameOld, testFilePathOld.GetNameUtf8().c_str(), ".xml", nullptr, &expectedLastModified);
     ASSERT_EQ(BE_SQLITE_OK, stat);
     ASSERT_TRUE(embeddedFileId.IsValid());
 
     BeFileName testFilePath;
     BeTest::GetHost().GetDocumentsRoot(testFilePath);
-    testFilePath.AppendToPath(L"DgnDb");
     testFilePath.AppendToPath(L"ECDb");
+    testFilePath.AppendToPath(L"Schemas");
     testFilePath.AppendToPath(testFileNameOldW.c_str());
     ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Replace(testFileNameOld, testFilePath.GetNameUtf8().c_str()));
 
@@ -272,12 +273,13 @@ TEST(ECDbFileInfo, ReadAddNewEntrySaveEmbeddedFile)
 
     //test file
     //  Used a fairly large file for this to verify that it correctly handles files that are larger than one blob.
-    Utf8CP testFileName = "embeddedFile.i.idgndb";
+    Utf8CP testFileName = "RCP.01.06.ecschema.xml";
     WString testFileNameW(testFileName, BentleyCharEncoding::Utf8);
 
     BeFileName testFilePath;
     BeTest::GetHost().GetDocumentsRoot(testFilePath);
-    testFilePath.AppendToPath(L"DgnDb");
+    testFilePath.AppendToPath(L"ECDb");
+    testFilePath.AppendToPath (L"Schemas");
     testFilePath.AppendToPath(testFileNameW.c_str());
 
     //INSERT scenario
@@ -287,13 +289,13 @@ TEST(ECDbFileInfo, ReadAddNewEntrySaveEmbeddedFile)
     double expectedLastModifiedJd = 0.0;
     ASSERT_EQ(SUCCESS, expectedLastModified.ToJulianDay(expectedLastModifiedJd));
 
-    BeRepositoryBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), ".i.idgndb", nullptr, &expectedLastModified);
+    BeRepositoryBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), ".xml", nullptr, &expectedLastModified);
     ASSERT_EQ(BE_SQLITE_OK, stat);
     ASSERT_TRUE(embeddedFileId.IsValid());
 
-    Utf8CP NewFileName = "Copy_EmbeddedFile.i.idgndb";
+    Utf8CP NewFileName = "Copy_RCP.01.06.ecschema.xml";
     WString NewFileNameW(NewFileName, BentleyCharEncoding::Utf8);
-    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.AddEntry(NewFileName, "i.idgndb"));
+    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.AddEntry(NewFileName, "xml"));
 
     uint64_t size = 0;
     ASSERT_EQ(embeddedFileId, embeddedFileTable.QueryFile(testFileName, &size));

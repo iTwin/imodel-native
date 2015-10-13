@@ -87,7 +87,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
     auto& storageDesc = classMap.GetStorageDescription ();
     if (storageDesc.GetNonVirtualHorizontalPartitionIndices ().empty () || !exp.GetClassNameExp ()->IsPolymorphic ())
         {
-        if (auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId))
+        if (auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ColumnKind::ECClassId))
             {
             if (classIdColumn->GetPersistenceType () == PersistenceType::Persisted)
                 {
@@ -97,7 +97,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
         }
     else if (storageDesc.GetNonVirtualHorizontalPartitionIndices ().size () == 1 && exp.GetClassNameExp ()->IsPolymorphic ())
         {
-        if (auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId))
+        if (auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ColumnKind::ECClassId))
             {
             if (classIdColumn->GetPersistenceType () == PersistenceType::Persisted)
                 {

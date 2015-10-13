@@ -110,7 +110,7 @@ ClassNameExp const& classNameExp
     auto& storageDesc = classMap.GetStorageDescription ();
     if (storageDesc.GetNonVirtualHorizontalPartitionIndices ().empty() || !exp.GetClassNameExp ()->IsPolymorphic ())
         {
-        if (auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId))
+        if (auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ColumnKind::ECClassId))
             {
             if (classIdColumn->GetPersistenceType() == PersistenceType::Persisted)
                 {
@@ -120,7 +120,7 @@ ClassNameExp const& classNameExp
         }
     else if (storageDesc.GetNonVirtualHorizontalPartitionIndices ().size() == 1 && exp.GetClassNameExp ()->IsPolymorphic ())
         {
-        if (auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId))
+        if (auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ColumnKind::ECClassId))
             {
             if (classIdColumn->GetPersistenceType () == PersistenceType::Persisted)
                 {
