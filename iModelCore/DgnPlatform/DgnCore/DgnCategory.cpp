@@ -398,7 +398,7 @@ DgnCategoryId DgnSubCategory::QueryCategoryId(DgnSubCategoryId subCatId, DgnDbR 
     if (!subCatId.IsValid())
         return DgnCategoryId();
 
-    BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock; // See comments on HighPriorityOperationBlock
+    BeSQLite::wt_OperationForGraphics highPriorityOperationBlock; // See comments on wt_OperationForGraphics
 
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ParentId FROM " DGN_SCHEMA(DGN_CLASSNAME_SubCategory) " WHERE ECInstanceId=? LIMIT 1");
     if (stmt.IsValid())
