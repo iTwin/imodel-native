@@ -49,8 +49,8 @@ protected:
     void Compare(DgnTextureCR lhs, DgnTextureCR rhs)
         {
         EXPECT_EQ (lhs.GetTextureId(), rhs.GetTextureId());
-        EXPECT_EQ (lhs.GetTextureName(), rhs.GetTextureName());
-        EXPECT_EQ (lhs.GetDescription(), rhs.GetDescription());
+        EXPECT_STREQ (lhs.GetTextureName().c_str(), rhs.GetTextureName().c_str());
+        EXPECT_STREQ (lhs.GetDescription().c_str(), rhs.GetDescription().c_str());
 
         auto const& lhData = lhs.GetData();
         auto const& rhData = rhs.GetData();
