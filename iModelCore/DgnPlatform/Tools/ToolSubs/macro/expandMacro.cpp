@@ -162,10 +162,10 @@ MacroExpander::MacroExpander (MacroConfigurationAdmin& macroCfgAdmin, MacroConfi
 /* static */ bool       MacroExpander::ContainsExpression (WCharCP textExpression, bool immediate)
     {
     // we conclude it is an expression whenever there is an open parenthesis or brace.
-    if (NULL != wcschr (textExpression, '{'))
+    if (NULL != ::wcschr (textExpression, '{'))
         return true;
     
-    return (immediate && (NULL != wcschr (textExpression, '(')));
+    return (immediate && (NULL != ::wcschr (textExpression, '(')));
     }
 
 /*---------------------------------------------------------------------------------**//**

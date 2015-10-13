@@ -48,13 +48,13 @@ void util_parseFileName (WCharCP string, WStringP dev, WStringP dir, WStringP na
     ---------------------------------------------------------------*/
     WCharCP lastDirSep;
 
-    if ((lastDirSep = wcsrchr (string, WCSDIR_SEPARATOR_CHAR)) == NULL)
-        lastDirSep = wcsrchr (string, WCSALT_DIR_SEPARATOR_CHAR);
+    if ((lastDirSep = ::wcsrchr (string, WCSDIR_SEPARATOR_CHAR)) == NULL)
+        lastDirSep = ::wcsrchr (string, WCSALT_DIR_SEPARATOR_CHAR);
 
     if (NULL == lastDirSep)
         return;
 
-    WCharCP lastDot = wcsrchr (string, L'.');
+    WCharCP lastDot = ::wcsrchr (string, L'.');
 
     if (NULL == lastDot || lastDot < lastDirSep)
         return;
@@ -311,7 +311,7 @@ int             option              /* => */
                 {
                 wchar_t *p;
                 // isolate the first remaining path at the separator.
-                if (NULL != (p = wcschr (tempDirP, WCSPATH_SEPARATOR_CHAR)))
+                if (NULL != (p = ::wcschr (tempDirP, WCSPATH_SEPARATOR_CHAR)))
                     {
                     foundPathSeparator = true;
                     *p = 0;
@@ -399,7 +399,7 @@ int             option
         BeStringUtilities::Wcsncpy (tmpVar, _countof (tmpVar), envvar);
 
         WCharP  separator;
-        if (NULL != (separator = wcschr (tmpVar, WCSPATH_SEPARATOR_CHAR)))
+        if (NULL != (separator = ::wcschr (tmpVar, WCSPATH_SEPARATOR_CHAR)))
             {
             *separator = 0;
             nextVar = (0 != *(separator+1)) ? separator+1 : NULL;
