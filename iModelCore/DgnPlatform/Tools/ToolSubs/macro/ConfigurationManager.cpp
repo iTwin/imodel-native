@@ -11,6 +11,11 @@
 #include <DgnPlatform/DesktopTools/envvutil.h>
 #include "macro.h"
 
+#ifdef BENTLEYCONFIG_OS_APPLE_IOS
+// Avoids ambiguous resolution of wcs functions.
+#define wcsstr ::wcsstr
+#endif
+
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 BentleyStatus IConfigurationAdmin::GetConfigVariable(WStringR cfgValue, WCharCP cfgVarName, ConfigurationVariableLevel level) { return _GetConfigVariable(cfgValue, cfgVarName, level); }
