@@ -66,6 +66,15 @@ public:
         Data(Format format, Byte const* data, size_t dataSize, uint32_t width, uint32_t height, Flags flags = Flags::None)
             : m_bytes(data, data + dataSize), m_width(width), m_height(height), m_format(format), m_flags(flags)  {}
 
+        //! Constructor
+        //! @param[in] format   The format of the raw texture data
+        //! @param[in] data     The texture data encoded according to specified format. Must be non-empty.
+        //! @param[in] width    The width of the texture
+        //! @param[in] height   The height of the texture
+        //! @param[in] flags    Additional texture flags
+        Data(Format format, bvector<Byte> const& data, uint32_t width, uint32_t height, Flags flags = Flags::None)
+            : m_bytes(data), m_width(width), m_height(height), m_format(format), m_flags(flags) { }
+
         Format GetFormat() const { return m_format; }//!< The format of the texture data
         uint32_t GetWidth() const { return m_width; } //!< The texture width
         uint32_t GetHeight() const { return m_height; }//!< The texture height
@@ -126,7 +135,7 @@ public:
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); } //!< Return the class ID used for textures
 
     DgnTextureCPtr Insert(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Insert<DgnTexture>(*this, status); } //!< Inserts the texture into the DgnDb and returns the persistent copy.
-    DgnTextureCPtr Update(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Insert<DgnTexture>(*this, status); } //!< Updates the texture in the DgnDb and returns the persistent copy.
+    DgnTextureCPtr Update(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Update<DgnTexture>(*this, status); } //!< Updates the texture in the DgnDb and returns the persistent copy.
 
     // Creates a Code for a texture with the specified name.
     DGNPLATFORM_EXPORT static Code CreateTextureCode(Utf8StringCR textureName, DgnDbR db);

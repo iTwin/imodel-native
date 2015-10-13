@@ -645,35 +645,35 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="Data" displayLabel="" typeName="binary" description="Encoded texture data">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
+                    <IsNullable>True</IsNullable><!-- actually False, but shared table... -->
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Format" typeName="int" description="Format of the encoded texture data">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
+                    <IsNullable>True</IsNullable><!-- actually False, but shared table... -->
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Width" typeName="int" displayLabel="Width">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
+                    <IsNullable>True</IsNullable><!-- actually False, but shared table... -->
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Height" typeName="int" displayLabel="Height">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
+                    <IsNullable>True</IsNullable><!-- actually False, but shared table... -->
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Flags" typeName="int">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
+                    <IsNullable>True</IsNullable><!-- actually False, but shared table... -->
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
