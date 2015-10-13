@@ -115,11 +115,11 @@ StatusInt util_readRegistry (WStringR value, WCharCP data)
     // Make a copy of the data to work on. Need orig for error msg.
     wcscpy (szFromCfg, data);
     // Crack the string into three parts.
-    pLastPart =  ::::wcsrchr (szFromCfg, L'\\');
+    pLastPart =  ::wcsrchr (szFromCfg, L'\\');
     if (NULL == pLastPart)
         return ERROR;
     szName = pLastPart + 1;
-    pFirstPart =  ::::wcschr (szFromCfg, L'\\');
+    pFirstPart =  ::wcschr (szFromCfg, L'\\');
     szKey = pFirstPart +1;
     // Fire null chars into the string to crack it into three parts.
     *pFirstPart = '\0';

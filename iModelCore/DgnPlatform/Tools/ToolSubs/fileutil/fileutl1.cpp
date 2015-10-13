@@ -41,24 +41,24 @@ size_t      maxLength
     wcscpy (sepName, fileName);
     sep1Name[0] = 0;
 
-    if (NULL == ::::wcschr (sepName, DIR_SEPARATOR_CHAR))
+    if (NULL == ::wcschr (sepName, DIR_SEPARATOR_CHAR))
         dirSeparator = '/';      //  for StartPoint's DocumentManager
 
     if (wcslen (fileName) >= (size_t)maxLength-3)
         {
-        if (pSepFirst = ::::wcschr (sepName, dirSeparator))
+        if (pSepFirst = ::wcschr (sepName, dirSeparator))
             {
-            if (NULL == (pSepSecond = ::::wcschr(pSepFirst+1, dirSeparator)))
+            if (NULL == (pSepSecond = ::wcschr(pSepFirst+1, dirSeparator)))
                 {
                 pSepSecond = pSepFirst;
                 }
             }
 
-        if (::::wcsrchr (sepName, dirSeparator) == &sepName[wcslen(sepName)-1])
+        if (::wcsrchr (sepName, dirSeparator) == &sepName[wcslen(sepName)-1])
             {
             for (p = sepName; (wcslen (p) > (size_t)maxLength-3); p = pSep)
                 {
-                if ((pSep = ::::wcschr (p+1, dirSeparator)) == NULL)
+                if ((pSep = ::wcschr (p+1, dirSeparator)) == NULL)
                     break;
                 }
             if (p > pSepSecond)
@@ -75,7 +75,7 @@ size_t      maxLength
             {
             for (p = sepName; (wcslen (p) > (size_t)maxLength-3); p = pSep)
                 {
-                if ((pSep = ::::wcschr (p+1, dirSeparator)) == NULL)
+                if ((pSep = ::wcschr (p+1, dirSeparator)) == NULL)
                     break;
                 }
 
@@ -112,7 +112,7 @@ size_t      maxLength
     wcscpy (tmpName, fileName);
     for (p = tmpName; (wcslen (p) > maxLength-3); p = pSep)
         {
-        if ((pSep = ::::wcschr (p+1, WCSDIR_SEPARATOR_CHAR)) == NULL)
+        if ((pSep = ::wcschr (p+1, WCSDIR_SEPARATOR_CHAR)) == NULL)
             break;
         }
 
@@ -172,7 +172,7 @@ WCharP    fileName
         for (i=0; i<len; i++) /* Go far enough to pick up \0 */
             fileName[i] = fileName[i+1];
 
-        if (NULL != (pEndQuote = ::::wcsrchr (fileName, L'\"')))
+        if (NULL != (pEndQuote = ::wcsrchr (fileName, L'\"')))
             *pEndQuote = L'\0';
         }
     }
@@ -193,7 +193,7 @@ WCharP    directory
     int         iSep;
 
     // replace all ALT_SEPARATORS with SEPARATORS.
-    for (pAltSep = ::::wcschr (directory, WCSALT_DIR_SEPARATOR_CHAR); NULL != pAltSep;  )
+    for (pAltSep = ::wcschr (directory, WCSALT_DIR_SEPARATOR_CHAR); NULL != pAltSep;  )
         {
         *pAltSep = DIR_SEPARATOR_CHAR;
         pAltSep++;
@@ -207,7 +207,7 @@ WCharP    directory
     for (iSep=0; iSep < (arraySize-1); iSep++)
         {
         pathComponents[iSep] = pPrevSep;
-        if (NULL != (pSep = ::::wcschr (pPrevSep, WCSDIR_SEPARATOR_CHAR)))
+        if (NULL != (pSep = ::wcschr (pPrevSep, WCSDIR_SEPARATOR_CHAR)))
             {
             *pSep = 0;
             pSep++;

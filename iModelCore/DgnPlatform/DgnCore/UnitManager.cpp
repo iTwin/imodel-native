@@ -706,7 +706,7 @@ namespace UnitVisitors
             WString thisLabel;
             while (cur < endOfList)
                 {
-                next = ::::wcschr (cur, ',');
+                next = ::wcschr (cur, ',');
                 if (NULL == next)
                     next = endOfList;
                 
@@ -972,12 +972,12 @@ bool UserUnitTable::ParseLine (WStringR labels, WStringR singularName, WStringR 
     {
     static const WChar separator = ';';
     WCharCP a = input,
-            b = a ? ::::wcschr (a, separator)   : NULL,
-            c = b ? ::::wcschr (b+1, separator) : NULL,
-            d = c ? ::::wcschr (c+1, separator) : NULL,
-            e = d ? ::::wcschr (d+1, separator) : NULL,
-            f = e ? ::::wcschr (e+1, separator) : NULL,
-            g = f ? ::::wcschr (f+1, separator) : NULL;
+            b = a ? ::wcschr (a, separator)   : NULL,
+            c = b ? ::wcschr (b+1, separator) : NULL,
+            d = c ? ::wcschr (c+1, separator) : NULL,
+            e = d ? ::wcschr (d+1, separator) : NULL,
+            f = e ? ::wcschr (e+1, separator) : NULL,
+            g = f ? ::wcschr (f+1, separator) : NULL;
 
     if (NULL == g)
         return false;

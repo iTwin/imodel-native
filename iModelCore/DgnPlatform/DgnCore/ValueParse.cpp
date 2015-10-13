@@ -1079,7 +1079,7 @@ WCharCP         inString            /* => character string */
         if (currPos == endPos)
             break;
 
-        WCharCP commaPos = ::::wcschr(currPos, L',');
+        WCharCP commaPos = ::wcschr(currPos, L',');
         if (NULL == commaPos)
             commaPos = endPos;
 
