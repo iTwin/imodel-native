@@ -777,6 +777,7 @@
     <ClCompile Include="ECSql\ECSqlStepTask.cpp">
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClCompile>
+    <ClCompile Include="ChangeSummary.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="ECSchemas\ECDb_FileInfo.01.00.ecschema.xml">
