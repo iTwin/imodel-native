@@ -2160,6 +2160,123 @@ TEST_F(ECDbMappingTestFixture, EnforceLinkTableMapping)
 TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
     {
         {
+        std::vector<TestItem> testItems {TestItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "    <ECClass typeName='Element' isDomainClass='True' isStruct='False' isCustomAttribute='False'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                 <Indexes>"
+            "                   <DbIndex>"
+            "                       <IsUnique>True</IsUnique>"
+            "                       <Name>uix_element_code</Name>"
+            "                       <Properties>"
+            "                          <string>Bla</string>"
+            "                       </Properties>"
+            "                   </DbIndex>"
+            "                 </Indexes>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Code' typeName='int' />"
+            "    </ECClass>"
+            "</ECSchema>", false, "Property in index does not exist"),
+
+                TestItem(
+                    "<?xml version='1.0' encoding='utf-8'?>"
+                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                    "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                    "    <ECClass typeName='ElementCode' isDomainClass='False' isStruct='True' isCustomAttribute='False'>"
+                    "        <ECProperty propertyName='AuthorityId' typeName='long' />"
+                    "        <ECProperty propertyName='Namespace' typeName='string' />"
+                    "        <ECProperty propertyName='Val' typeName='string' />"
+                    "    </ECClass>"
+                    "    <ECClass typeName='Element' isDomainClass='True' isStruct='False' isCustomAttribute='False'>"
+                    "        <ECCustomAttributes>"
+                    "            <ClassMap xmlns='ECDbMap.01.00'>"
+                    "                <MapStrategy>"
+                    "                   <Strategy>SharedTable</Strategy>"
+                    "                   <Options>SharedColumnsForSubclasses</Options>"
+                    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                    "                 </MapStrategy>"
+                    "                 <Indexes>"
+                    "                   <DbIndex>"
+                    "                       <IsUnique>True</IsUnique>"
+                    "                       <Name>uix_element_code</Name>"
+                    "                       <Properties>"
+                    "                          <string>Code</string>"
+                    "                       </Properties>"
+                    "                   </DbIndex>"
+                    "                 </Indexes>"
+                    "            </ClassMap>"
+                    "        </ECCustomAttributes>"
+                    "        <ECStructProperty propertyName='Code' typeName='ElementCode' />"
+                    "    </ECClass>"
+                    "</ECSchema>", false, "Cannot define index on struct prop"),
+
+                TestItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "    <ECClass typeName='ElementCode' isDomainClass='False' isStruct='True' isCustomAttribute='False'>"
+            "        <ECProperty propertyName='AuthorityId' typeName='long' />"
+            "        <ECProperty propertyName='Namespace' typeName='string' />"
+            "        <ECProperty propertyName='Val' typeName='string' />"
+            "    </ECClass>"
+            "    <ECClass typeName='Element' isDomainClass='True' isStruct='False' isCustomAttribute='False'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Strategy>SharedTable</Strategy>"
+            "                   <Options>SharedColumnsForSubclasses</Options>"
+            "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+            "                 </MapStrategy>"
+            "                 <Indexes>"
+            "                   <DbIndex>"
+            "                       <IsUnique>True</IsUnique>"
+            "                       <Name>uix_element_code</Name>"
+            "                       <Properties>"
+            "                          <string>Codes</string>"
+            "                       </Properties>"
+            "                   </DbIndex>"
+            "                 </Indexes>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECArrayProperty propertyName='Codes' typeName='ElementCode' isStruct='True' minOccurs='0' maxOccurs='unbounded' />"
+            "    </ECClass>"
+            "</ECSchema>", false, "Cannot define index on struct array prop"),
+
+            TestItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "    <ECClass typeName='Element' isDomainClass='True' isStruct='False' isCustomAttribute='False'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Strategy>SharedTable</Strategy>"
+            "                   <Options>SharedColumnsForSubclasses</Options>"
+            "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+            "                 </MapStrategy>"
+            "                 <Indexes>"
+            "                   <DbIndex>"
+            "                       <IsUnique>True</IsUnique>"
+            "                       <Name>uix_element_code</Name>"
+            "                       <Properties>"
+            "                          <string>Codes</string>"
+            "                       </Properties>"
+            "                   </DbIndex>"
+            "                 </Indexes>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECArrayProperty propertyName='Codes' typeName='string' minOccurs='0' maxOccurs='unbounded' />"
+            "    </ECClass>"
+                "</ECSchema>", false, "Cannot define index on primitive array prop")};
+
+        AssertSchemaImport(testItems, "userdefinedindextest.ecdb");
+        }
+
+        {
         TestItem testItem (
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -2610,6 +2727,52 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
         indexWhereClause.Sprintf("ECClassId=%lld OR ECClassId=%lld", sub1ClassId, sub11ClassId);
         //AssertIndex(db, "uix_sub1_aid", true, "ts_Base", {"AId"});
         }
+
+        {
+        TestItem testItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "    <ECClass typeName='ElementCode' isDomainClass='False' isStruct='True' isCustomAttribute='False'>"
+            "        <ECProperty propertyName='AuthorityId' typeName='long' />"
+            "        <ECProperty propertyName='Namespace' typeName='string' />"
+            "        <ECProperty propertyName='Val' typeName='string' />"
+            "    </ECClass>"
+            "    <ECClass typeName='Element' isDomainClass='True' isStruct='False' isCustomAttribute='False'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Strategy>SharedTable</Strategy>"
+            "                   <Options>SharedColumnsForSubclasses</Options>"
+            "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+            "                 </MapStrategy>"
+            "                 <Indexes>"
+            "                   <DbIndex>"
+            "                       <IsUnique>True</IsUnique>"
+            "                       <Name>uix_element_code</Name>"
+            "                       <Properties>"
+            "                          <string>Code.AuthorityId</string>"
+            "                          <string>Code.Namespace</string>"
+            "                          <string>Code.Val</string>"
+            "                       </Properties>"
+            "                   </DbIndex>"
+            "                 </Indexes>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECStructProperty propertyName='Code' typeName='ElementCode' />"
+            "    </ECClass>"
+            "</ECSchema>", true, "");
+
+        ECDb db;
+        bool asserted = false;
+        AssertSchemaImport(db, asserted, testItem, "userdefinedindextest.ecdb");
+        ASSERT_FALSE(asserted);
+
+        AssertIndex(db, "uix_element_code", true, "ts_Element", {"Code_AuthorityId", "Code_Namespace", "Code_Val"});
+        }
+
+  
+
     }
 
 //---------------------------------------------------------------------------------------

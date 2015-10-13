@@ -410,7 +410,7 @@ bool PropertyMapCollection::TryGetPropertyMap (PropertyMapPtr& propertyMap, Utf8
 
     //recurse into access string and look up prop map for first member in access string
     bvector<Utf8String> tokens;
-    BeStringUtilities::Split(propertyAccessString, ".", NULL, tokens);
+    ECDbMap::ParsePropertyAccessString(tokens, propertyAccessString);
 
     bvector<Utf8String>::const_iterator tokenIt = tokens.begin ();
     bvector<Utf8String>::const_iterator tokenEndIt = tokens.end ();

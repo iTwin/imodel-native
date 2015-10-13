@@ -504,6 +504,7 @@ BentleyStatus ClassMap::ProcessStandardKeySpecifications(SchemaImportContext con
 BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext const& schemaImportContext, ClassMapInfo const& classMapInfo) const
     {
     int i = 0;
+    IssueReporter const& issues = m_ecDbMap.GetECDbR().GetECDbImplR().GetIssueReporter();
     for (ClassIndexInfoPtr indexInfo : classMapInfo.GetIndexInfo())
         {
         i++;
@@ -512,167 +513,67 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext const& sch
             return ERROR;
 
         Utf8String whereExpression;
-        bool error = false;
-        for (Utf8StringCR classQualifiedPropertyName : indexInfo->GetProperties())
+
+        for (Utf8StringCR propertyAccessString : indexInfo->GetProperties())
             {
-            Utf8String resolvePropertyName;
-            Utf8String resolveClassName, resolveSchemaName;
-
-            std::vector<Utf8String> parts;
-            auto beginItor = classQualifiedPropertyName.begin();
-            auto itor = beginItor;
-            for (; itor != classQualifiedPropertyName.end(); ++itor)
-                {
-                if (*itor == '.')
-                    {
-                    auto part = Utf8String(beginItor, itor - beginItor);
-                    part.Trim();
-                    if (part.empty())
-                        {
-                        BeDataAssert(false && "Qualified property name provided in ECDbIndex contain invalid format name");
-                        LOG.errorv("Reject user defined index on %s. Fail to find property map for property %s", GetClass().GetFullName(), classQualifiedPropertyName.c_str());
-                        error = true;
-                        }
-
-                    parts.push_back(part);
-                    beginItor = itor + 1;
-                    }
-                }
-
-            if (error)
-                break;
-
-            if (beginItor != itor)
-                {
-                parts.push_back(Utf8String(beginItor, itor - beginItor));
-                }
-
-            resolveSchemaName = GetClass().GetSchema().GetName().c_str();
-            resolveClassName = GetClass().GetName().c_str();
-            switch (parts.size())
-                {
-                    case 1:
-                        resolvePropertyName = Utf8String(parts.at(0).c_str());
-                        break;
-                    case 2:
-                        resolveClassName = parts.at(0);
-                        resolvePropertyName = Utf8String(parts.at(1).c_str());
-                        break;
-                    case 3:
-                        resolveSchemaName = parts.at(0);
-                        resolveClassName = parts.at(1);
-                        resolvePropertyName = Utf8String(parts.at(2).c_str());
-                        break;
-                    default:
-                        {
-                        BeDataAssert(false && "Qualified property name provided in ECDbIndex contain invalid format name");
-                        LOG.errorv("Reject user defined index on %s. Invalid format to describe property qualified name %s", GetClass().GetFullName(), classQualifiedPropertyName.c_str());
-                        error = true;
-                        }
-                }
-
-            if (error)
-                break;
-
-            auto resolveClass = GetECDbMap().GetECDbR().Schemas().GetECClass(resolveSchemaName.c_str(), resolveClassName.c_str());
-            if (resolveClass == nullptr)
-                {
-                LOG.errorv("Reject user defined index on %s. Failed to find class associated with property %s", GetClass().GetFullName(), classQualifiedPropertyName.c_str());
-                break;
-                }
-
-            auto resolveClassMap = GetECDbMap().GetClassMapCP(*resolveClass);
-            if (resolveClassMap == nullptr)
-                {
-                BeAssert(false && "One reason could be that this method is called during mapping. It should be called after every thing is mapped");
-                LOG.errorv("Reject user defined index on %s. Failed to find classMap associated with property %s", GetClass().GetFullName(), classQualifiedPropertyName.c_str());
-                break;
-                }
-
-            if (&resolveClassMap->GetTable() != &GetTable())
-                {
-                BeAssert(false && "User define class qualified property string point to a class that is mapped into a different table then current class");
-                LOG.errorv("Reject user defined index on %s. Property %s belong to a class that is not mapped into table %s", GetClass().GetFullName(), classQualifiedPropertyName.c_str(), GetTable().GetName().c_str());
-                break;
-                }
-
-            auto propertyMap = resolveClassMap->GetPropertyMap(resolvePropertyName.c_str());
+            PropertyMapCP propertyMap = GetPropertyMap(propertyAccessString.c_str());
             if (propertyMap == nullptr)
                 {
-                LOG.errorv("Rejecting index[%d] specified in ClassMap custom attribute on class %s because property specified in index '%s' doesn't exist in class or its not mapped", i, GetClass().GetFullName(), classQualifiedPropertyName.c_str());
-                error = true;
-                break;
+                issues.Report(ECDbIssueSeverity::Error, 
+                   "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "
+                   "The specified ECProperty '%s' does not exist or is not mapped.",
+                              i, GetClass().GetFullName(), propertyAccessString.c_str());
+                return ERROR;
                 }
 
-            if (!propertyMap->GetProperty().GetAsPrimitiveProperty())
+            if (!propertyMap->GetProperty().GetIsPrimitive())
                 {
-                LOG.errorv("Rejecting index[%d] specified in ClassMap custom attribute on class %s because specified property is not primitive.", i, GetClass().GetFullName());
-                error = true; // skip this index and continue with rest
-                break;
-                }
-
-            switch (propertyMap->GetProperty().GetAsPrimitiveProperty()->GetType())
-                {
-                    case PRIMITIVETYPE_String:
-                    case PRIMITIVETYPE_Boolean:
-                    case PRIMITIVETYPE_Integer:
-                    case PRIMITIVETYPE_Long:
-                    case PRIMITIVETYPE_DateTime:
-                    case PRIMITIVETYPE_Double:
-                    case PRIMITIVETYPE_Binary:
-                    case PRIMITIVETYPE_Point2D:
-                    case PRIMITIVETYPE_Point3D:
-                        // allowed index
-                        break;
-                        //not supported for indexing
-                    case PRIMITIVETYPE_IGeometry:
-                        LOG.errorv("Rejecting user specified index[%d] specified in ClassMap custom attribute on class %s because specified property type not supported. Supported types are String, Boolean, Integer, DateTime, Double, Binary, Point2d and Point3d", i, GetClass().GetFullName());
-                        error = true; // skip this index and continue with rest
-                        break;
-
-                    default:
-                        LOG.errorv("Rejecting user specified index[%d] specified in ClassMap custom attribute on class %s because specified property type not supported. Supported types are String, Boolean, Integer, DateTime, Double and Binary", i, GetClass().GetFullName());
-                        error = true; // skip this index and continue with rest
-                        break;
+                issues.Report(ECDbIssueSeverity::Error,
+                              "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "
+                              "The specified ECProperty '%s' is not of a primitive type.",
+                              i, GetClass().GetFullName(), propertyAccessString.c_str());
+                return ERROR;
                 }
 
             std::vector<ECDbSqlColumn const*> columns;
             propertyMap->GetColumns(columns);
             if (0 == columns.size())
                 {
-                LOG.errorv("Reject user defined index on %s. Fail to find column property map for property %s. Something wrong with mapping", GetClass().GetFullName(), classQualifiedPropertyName.c_str());
-                error = true;
-                break;
+                BeAssert(false && "Reject user defined index on %s. Fail to find column property map for property. Something wrong with mapping");
+                return ERROR;
                 }
 
             for (ECDbSqlColumn const* column : columns)
                 {
                 if (column->GetPersistenceType() == PersistenceType::Virtual)
                     {
-                    LOG.errorv("Reject user defined index on %s. One of the column associated with property %s is virtual column.", GetClass().GetFullName(), classQualifiedPropertyName.c_str());
-                    error = true;
-                    break;
+                    issues.Report(ECDbIssueSeverity::Error,
+                                  "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "
+                                  "The specified ECProperty '%s' is mapped to a virtual column.",
+                                  i, GetClass().GetFullName(), propertyAccessString.c_str());
+                    return ERROR;
                     }
+
                 if (index->Add(column->GetName().c_str()) == BentleyStatus::SUCCESS)
                     {
                     switch (indexInfo->GetWhere())
                         {
                             case EC::ClassIndexInfo::WhereConstraint::NotNull:
-                                {
-                                //if column is not nullable, no need to add IS NOT NULL expression to where clause of index
-                                if (column->GetConstraint().IsNotNull())
-                                    break;
-
-                                if (!whereExpression.empty())
-                                    whereExpression.append(" AND ");
-
-                                whereExpression.append("[");
-                                whereExpression.append(column->GetName().c_str());
-                                whereExpression.append("]");
-                                whereExpression.append(" IS NOT NULL");
-
+                            {
+                            //if column is not nullable, no need to add IS NOT NULL expression to where clause of index
+                            if (column->GetConstraint().IsNotNull())
                                 break;
-                                }
+
+                            if (!whereExpression.empty())
+                                whereExpression.append(" AND ");
+
+                            whereExpression.append("[");
+                            whereExpression.append(column->GetName().c_str());
+                            whereExpression.append("]");
+                            whereExpression.append(" IS NOT NULL");
+
+                            break;
+                            }
 
                             default:
                                 break;
@@ -680,8 +581,10 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext const& sch
                     }
                 }
             }
+
         index->SetAdditionalWhereExpression(whereExpression.c_str());
-        if (error || !index->IsValid())
+        
+        if (!index->IsValid())
             {
             index->Drop();
             return ERROR;
@@ -857,7 +760,7 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ECDbClassMap
 ECPropertyCP ClassMap::GetECProperty(ECN::ECClassCR ecClass, Utf8CP propertyAccessString)
     {
     bvector<Utf8String> tokens;
-    BeStringUtilities::Split(propertyAccessString, ".", NULL, tokens);
+    ECDbMap::ParsePropertyAccessString(tokens, propertyAccessString);
 
     //for recursive lambdas, iOS requires us to efine the lambda variable before assigning the actual function to it.
     std::function<ECPropertyCP (ECClassCR, bvector<Utf8String>&, int)> getECPropertyFromTokens;

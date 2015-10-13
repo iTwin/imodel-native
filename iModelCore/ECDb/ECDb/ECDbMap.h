@@ -170,6 +170,9 @@ public:
     void                        ClearCache();
     RelationshipClassMapCP GetRelationshipClassMap (ECN::ECClassId ecRelationshipClassId) const;
     ClassMapCP             GetClassMapCP (ECN::ECClassId classId) const;
+
+
+    static void ParsePropertyAccessString(bvector<Utf8String>&, Utf8CP propAccessString);
     };
 
 

@@ -807,6 +807,14 @@ BentleyStatus ECDbMap::Save()
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    10/2015
+//---------------------------------------------------------------------------------------
+void ECDbMap::ParsePropertyAccessString(bvector<Utf8String>& tokens, Utf8CP propertyAccessString)
+    {
+    BeStringUtilities::Split(propertyAccessString, ".", nullptr, tokens);
+    }
+
 
 
 //************************************************************************************
