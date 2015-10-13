@@ -22,6 +22,30 @@ DVec2d GetData (JsDVector2dP vector) {return vector->Get();}
 JsDVector3dP CreateJsVector (DVec3dCR data) {return new JsDVector3d (data);}
 JsDVector2dP CreateJsVector (DVec2dCR data) {return new JsDVector2d (data);}
 
+
+
+static double SmallDistance ()
+    {
+    return 1.0e-10;
+    }
+
+JsDVector3dP CreateJsVector (DVec3dCR data, double length)
+        {
+        double d = data.Magnitude ();
+        if (d < SmallDistance ())
+            return nullptr;
+        return new JsDVector3d (DVec3d::FromScale (data, length / d));
+        }
+
+JsDVector2dP CreateJsVector (DVec2dCR data, double length)
+        {
+        double d = data.Magnitude ();
+        if (d < SmallDistance ())
+            return nullptr;
+        return new JsDVector2d (DVec2d::FromScale (data, length / d));
+        }
+
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15

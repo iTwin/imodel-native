@@ -41,7 +41,7 @@ public:
         return nullptr;
         }
 
-    bool IsPeriodic (){return false;}
+    bool IsPeriodic (){return m_data->IsClosed ();}
 
 };
 
