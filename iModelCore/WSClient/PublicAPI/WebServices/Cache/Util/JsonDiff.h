@@ -27,33 +27,34 @@ struct JsonDiff
         bool m_ignoreDeletedProperties;
 
     private:
-        void AddMember(RapidJsonValueR jsonOut, RapidJsonValueCR name, RapidJsonValueCR value, rapidjson::Value::AllocatorType& allocator);
+        void AddMember(RapidJsonValueR parent, RapidJsonValueR name, RapidJsonValueR value, rapidjson::Value::AllocatorType& allocator);
+        void AddMember(RapidJsonValueR parent, RapidJsonValueCR name, RapidJsonValueCR value, rapidjson::Value::AllocatorType& allocator);
 
-        void CopyValues(RapidJsonValueCR from, RapidJsonValueR to, rapidjson::Value::AllocatorType& allocator);
+        void CopyValues(RapidJsonValueCR source, RapidJsonValueR target, rapidjson::Value::AllocatorType& allocator);
 
-        bool ValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2, bool deep);
-
-        bool StringValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
-        bool ArrayValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
-        bool ObjectValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2, bool deep);
+        static bool StringValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
+        static bool ArrayValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
+        static bool ObjectValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
 
     public:
         WSCACHE_EXPORT JsonDiff(bool copyValues = true, bool ignoreDeletedProperties = true);
         WSCACHE_EXPORT virtual ~JsonDiff();
         
-        WSCACHE_EXPORT BentleyStatus GetChanges
+        WSCACHE_EXPORT bool GetChanges
             (
             RapidJsonValueCR oldJson,
             RapidJsonValueCR newJson,
             RapidJsonDocumentR jsonOut
             );
-        WSCACHE_EXPORT BentleyStatus GetChanges
+        WSCACHE_EXPORT bool GetChanges
             (
             RapidJsonValueCR oldJson,
             RapidJsonValueCR newJson,
             RapidJsonValueR jsonOut,
             rapidjson::Value::AllocatorType& allocator
             );
+
+        WSCACHE_EXPORT static bool ValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

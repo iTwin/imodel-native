@@ -10,6 +10,7 @@
 #include <MobileDgn/MobileDgnL10N.h>
 #include <MobileDgn/Utils/Http/HttpRequest.h>
 #include "MobileUtilsTests.h"
+#include <WebServices/Cache/Util/JsonDiff.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_EC
@@ -51,7 +52,7 @@ std::string Bentley::WSC::UnitTests::RapidJsonToString(const rapidjson::Value& j
 
 bool rapidjson::operator==(const rapidjson::Value& a, const rapidjson::Value& b)
     {
-    return RapidJsonToString(a) == RapidJsonToString(b);
+    return JsonDiff::ValuesEqual(a, b);
     }
 
 ECSchemaPtr Bentley::WSC::UnitTests::ParseSchema(Utf8StringCR schemaXml, ECSchemaReadContextPtr context)
