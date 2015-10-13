@@ -1,0 +1,31 @@
+#----------------------------------------------------------------------------------------
+#
+#     $Source: DgnDbServerClient/DgnDbServerClient.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+DgnDbServerClientMkiPublicApiDir = $(DgnDbServerClientPublicApiDirectory)
+DgnDbServerClientMkiSourceDir = $(DgnDbServerClientSourceDirectory)DgnDbServerClient/
+
+#----------------------------------------------------------------------------------------
+#   Set up build dependencies for precompiled header and Client.mki
+#----------------------------------------------------------------------------------------
+DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerCommon.h						\
+		                        $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbBriefcase.h                  \
+								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbClient.h                     \
+								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbRepositoryConnection.h       \
+								$(DgnDbServerClientMkiPublicApiDir)Client/FileInfo.h                        \
+		                        $(DgnDbServerClientMkiPublicApiDir)Client/RepositoryInfo.h                  \
+								$(DgnDbServerClientMkiPublicApiDir)Client/RevisionInfo.h
+
+#----------------------------------------------------------------------------------------
+#   Compile
+#----------------------------------------------------------------------------------------
+#$(o)DgnDbBriefcase(oext)                   : $(DgnDbServerClientMkiSourceDir)DgnDbBriefcase.cpp $(DgnDbServerClientMkiHeaders) $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+#$(o)DgnDbClient(oext)                      : $(DgnDbServerClientMkiSourceDir)DgnDbClient.cpp $(DgnDbServerClientMkiHeaders) $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+#$(o)DgnDbRepositoryConnection(oext)        : $(DgnDbServerClientMkiSourceDir)DgnDbRepositoryConnection.cpp $(DgnDbServerClientMkiHeaders) $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+#$(o)FileInfo$(oext)                        : $(DgnDbServerClientMkiSourceDir)FileInfo.cpp $(DgnDbServerClientMkiHeaders) $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+#$(o)RepositoryInfo$(oext)                  : $(DgnDbServerClientMkiSourceDir)RepositoryInfo.cpp $(DgnDbServerClientMkiHeaders) $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+#$(o)RevisionInfo$(oext)                    : $(DgnDbServerClientMkiSourceDir)RevisionInfo.cpp $(DgnDbServerClientMkiHeaders) $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
