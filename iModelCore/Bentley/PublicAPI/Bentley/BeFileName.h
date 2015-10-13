@@ -416,6 +416,9 @@ public:
     //! @param[in] includeSubDirs If true, also clone all subdirectories, recursively.
     //! @return BeFileNameStatus::Success if the directory was successfully cloned.
     BENTLEYDLL_EXPORT static BeFileNameStatus CloneDirectory(WCharCP sourceDir, WCharCP destDir, bool includeSubDirs=true);
+
+    BENTLEYDLL_EXPORT static BeFileNameStatus BeGetTempPath (BeFileNameR tempPath);
+
 /** @} */
 
 /** @name Copy, delete, move a file by name */
@@ -560,6 +563,11 @@ public:
     //! @return BeFileNameStatus::Success, if the query succeeded. Non-zero if the directory is invalid or refers to a storage device that does not exist.
     //! @deprecated Use version of BeFileName::BeGetDiskFreeSpace that takes a BeFileNameCR parameter instead
     BENTLEYDLL_EXPORT static BeFileNameStatus BeGetDiskFreeSpace(uint64_t& freeBytes, WCharCP dirName);
+
+    //! Get the current working directory
+    //! @param[out] currentDirectory The current directory;
+    BENTLEYDLL_EXPORT static BeFileNameStatus GetCwd (WStringR currentDirectory);
+
 /** @} */
 };
 
