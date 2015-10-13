@@ -11,10 +11,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ECObjectsPublishedTests", "
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ECObjectsPerformanceTests", "..\test\PerformanceTests.vcxproj", "{7AC30F13-7E43-4D7C-9BC7-3C7727FAF808}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ECObjectsScenarioTests", "..\test\scenarioTests.vcxproj", "{8DF3DFC7-E31D-4D9E-BE3A-DA479374B827}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ECObjectsNonPublishedScenario", "..\test\NonPublishedScenario\ECObjectsNonPublishedScenario.vcxproj", "{5071DDEE-FDDC-46FA-95FA-1DA86E191646}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -35,14 +31,6 @@ Global
 		{7AC30F13-7E43-4D7C-9BC7-3C7727FAF808}.Debug|Win32.Build.0 = Debug|Win32
 		{7AC30F13-7E43-4D7C-9BC7-3C7727FAF808}.Release|Win32.ActiveCfg = Release|Win32
 		{7AC30F13-7E43-4D7C-9BC7-3C7727FAF808}.Release|Win32.Build.0 = Release|Win32
-		{8DF3DFC7-E31D-4D9E-BE3A-DA479374B827}.Debug|Win32.ActiveCfg = Debug|Win32
-		{8DF3DFC7-E31D-4D9E-BE3A-DA479374B827}.Debug|Win32.Build.0 = Debug|Win32
-		{8DF3DFC7-E31D-4D9E-BE3A-DA479374B827}.Release|Win32.ActiveCfg = Release|Win32
-		{8DF3DFC7-E31D-4D9E-BE3A-DA479374B827}.Release|Win32.Build.0 = Release|Win32
-		{5071DDEE-FDDC-46FA-95FA-1DA86E191646}.Debug|Win32.ActiveCfg = Debug|Win32
-		{5071DDEE-FDDC-46FA-95FA-1DA86E191646}.Debug|Win32.Build.0 = Debug|Win32
-		{5071DDEE-FDDC-46FA-95FA-1DA86E191646}.Release|Win32.ActiveCfg = Release|Win32
-		{5071DDEE-FDDC-46FA-95FA-1DA86E191646}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
