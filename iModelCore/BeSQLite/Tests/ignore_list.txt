@@ -1,5 +1,4 @@
 # Tests that should not be run
-Performance*
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
