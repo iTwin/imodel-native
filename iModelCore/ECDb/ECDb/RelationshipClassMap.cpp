@@ -45,7 +45,7 @@ ECDbSqlColumn* RelationshipClassMap::CreateConstraintColumn(SchemaImportContext*
         if (Enum::Intersects(column->GetKind(), columnId))
             {
             if (schemaImportContext != nullptr)
-                schemaImportContext->GetECDbMapMetadata().SetColumnIsShared(*column, ColumnKind::ConstraintECInstanceId);
+                schemaImportContext->GetECDbMapDb().SetColumnIsShared(*column, ColumnKind::ConstraintECInstanceId);
             }
         else
             column->AddKind(columnId);
@@ -548,7 +548,7 @@ MapStatus RelationshipClassEndTableMap::CreateConstraintColumns(ECDbSqlColumn*& 
         if (Enum::Intersects(fkIdColumn->GetKind(), fkColumnId))
             {
             if (schemaImportContext != nullptr)
-                schemaImportContext->GetECDbMapMetadata().SetColumnIsShared(*fkIdColumn, ColumnKind::ConstraintECInstanceId);
+                schemaImportContext->GetECDbMapDb().SetColumnIsShared(*fkIdColumn, ColumnKind::ConstraintECInstanceId);
             }
         else
             fkIdColumn->AddKind(fkColumnId);
@@ -690,7 +690,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext
     else
         name.append("_target");
     
-    ECDbSqlIndex* index = schemaImportContext.GetECDbMapMetadata().CreateIndex(persistenceEndTable, name.c_str(), isUniqueIndex, {otherEndIdColumn}, GetClass().GetId(), true);
+    ECDbSqlIndex* index = schemaImportContext.GetECDbMapDb().CreateIndex(persistenceEndTable, name.c_str(), isUniqueIndex, {otherEndIdColumn}, GetClass().GetId(), true);
     if (index == nullptr)
         {
         BeAssert (false && "Failed to create index");
@@ -1167,7 +1167,7 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportCo
                 break;
         }
 
-    schemaImportContext.GetECDbMapMetadata().CreateIndex(GetTable(), name.c_str(), isUniqueIndex, columns, GetClass().GetId(), true, isUniqueIndex ? SchemaImportContext::ECDbMapMetadata::NewIndexInfo::Scope::EnforceClass : SchemaImportContext::ECDbMapMetadata::NewIndexInfo::Scope::EnforceTable);
+    schemaImportContext.GetECDbMapDb().CreateIndex(GetTable(), name.c_str(), isUniqueIndex, columns, GetClass().GetId(), true, isUniqueIndex ? SchemaImportECDbMapDb::IndexScope::EnforceClass : SchemaImportECDbMapDb::IndexScope::EnforceTable);
     }
     
 /*---------------------------------------------------------------------------------**//**

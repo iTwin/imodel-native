@@ -486,7 +486,7 @@ BentleyStatus ClassMap::ProcessStandardKeySpecifications(SchemaImportContext& sc
         std::vector<ECDbSqlColumn const*> columns;
         propertyMap->GetColumns(columns);
 
-        ECDbSqlIndex* index = schemaImportContext.GetECDbMapMetadata().CreateIndex(*m_table, indexName.c_str(), false, columns, GetClass().GetId(), true);
+        ECDbSqlIndex* index = schemaImportContext.GetECDbMapDb().CreateIndex(*m_table, indexName.c_str(), false, columns, GetClass().GetId(), true);
         if (index == nullptr)
             {
             BeAssert(false && "Index was not created correctly");
@@ -577,7 +577,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImp
                 }
             }
 
-        ECDbSqlIndex* index = schemaImportContext.GetECDbMapMetadata().CreateIndex(*m_table, indexInfo->GetName(), indexInfo->GetIsUnique(), totalColumns, GetClass().GetId(), false);
+        ECDbSqlIndex* index = schemaImportContext.GetECDbMapDb().CreateIndex(*m_table, indexInfo->GetName(), indexInfo->GetIsUnique(), totalColumns, GetClass().GetId(), false);
         if (index == nullptr)
             return ERROR;
 
@@ -829,7 +829,7 @@ BentleyStatus MappedTable::FinishTableDefinition(SchemaImportContext& schemaImpo
                     //whenever we create a class id column, we index it to speed up the frequent class id look ups
                     Utf8String indexName("ix_");
                     indexName.append(m_table.GetName()).append("_ecclassid");
-                    schemaImportContext.GetECDbMapMetadata().CreateIndex(m_table, indexName.c_str(), false, {ecClassIdColumn}, ECClass::UNSET_ECCLASSID, true);
+                    schemaImportContext.GetECDbMapDb().CreateIndex(m_table, indexName.c_str(), false, {ecClassIdColumn}, ECClass::UNSET_ECCLASSID, true);
                     }
 
                 m_generatedClassIdColumn = true;
@@ -1156,7 +1156,7 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseSharedColumnStrategy(SchemaImpor
     if (TryFindReusableSharedDataColumn(reusableColumn, targetTable, specifications.GetCollation()))
         {
         if (schemaImportContext != nullptr)
-            schemaImportContext->GetECDbMapMetadata().SetColumnIsShared(*reusableColumn, ColumnKind::DataColumn);
+            schemaImportContext->GetECDbMapDb().SetColumnIsShared(*reusableColumn, ColumnKind::DataColumn);
 
         return const_cast<ECDbSqlColumn*>(reusableColumn);
         }

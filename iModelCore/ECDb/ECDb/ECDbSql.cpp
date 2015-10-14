@@ -534,7 +534,7 @@ bool ECDbSqlTable::PersistenceManager::Exist (ECDbR ecdb) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-void ECDbSqlDb::Reset ()
+void ECDbMapDb::Reset ()
     {
     m_tables.clear ();
     }
@@ -542,7 +542,7 @@ void ECDbSqlDb::Reset ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-bool ECDbSqlDb::IsNameInUse(Utf8CP name) const
+bool ECDbMapDb::IsNameInUse(Utf8CP name) const
     {
     return m_tables.find(name) != m_tables.end();
     }
@@ -550,7 +550,7 @@ bool ECDbSqlDb::IsNameInUse(Utf8CP name) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlDb::DropTable (Utf8CP name)
+BentleyStatus ECDbMapDb::DropTable (Utf8CP name)
     {
     auto itor = m_tables.find (name);
     if (itor == m_tables.end ())
@@ -566,7 +566,7 @@ BentleyStatus ECDbSqlDb::DropTable (Utf8CP name)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-ECDbSqlTable* ECDbSqlDb::CreateTable (Utf8CP name, PersistenceType type)
+ECDbSqlTable* ECDbMapDb::CreateTable (Utf8CP name, PersistenceType type)
     {
     ECDbSqlTable* newTableDef;
     if (!Utf8String::IsNullOrEmpty (name))
@@ -597,7 +597,7 @@ ECDbSqlTable* ECDbSqlDb::CreateTable (Utf8CP name, PersistenceType type)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-ECDbSqlTable* ECDbSqlDb::CreateTableForExistingTableMapStrategy (Utf8CP existingTableName)
+ECDbSqlTable* ECDbMapDb::CreateTableForExistingTableMapStrategy (Utf8CP existingTableName)
     {
     if (Utf8String::IsNullOrEmpty (existingTableName))
         {
@@ -620,7 +620,7 @@ ECDbSqlTable* ECDbSqlDb::CreateTableForExistingTableMapStrategy (Utf8CP existing
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-ECDbSqlTable* ECDbSqlDb::CreateTableForExistingTableMapStrategy (ECDbCR ecdb, Utf8CP existingTableName)
+ECDbSqlTable* ECDbMapDb::CreateTableForExistingTableMapStrategy (ECDbCR ecdb, Utf8CP existingTableName)
     {
     if (Utf8String::IsNullOrEmpty (existingTableName))
         {
@@ -704,7 +704,7 @@ ECDbSqlTable* ECDbSqlDb::CreateTableForExistingTableMapStrategy (ECDbCR ecdb, Ut
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-ECDbSqlTable const* ECDbSqlDb::FindTable (Utf8CP name) const
+ECDbSqlTable const* ECDbMapDb::FindTable (Utf8CP name) const
     {
     auto itor = m_tables.find (name);
     if (itor != m_tables.end ())
@@ -716,7 +716,7 @@ ECDbSqlTable const* ECDbSqlDb::FindTable (Utf8CP name) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-ECDbSqlTable* ECDbSqlDb::FindTableP (Utf8CP name) const
+ECDbSqlTable* ECDbMapDb::FindTableP (Utf8CP name) const
     {
     auto itor = m_tables.find (name);
     if (itor != m_tables.end ())
@@ -728,7 +728,7 @@ ECDbSqlTable* ECDbSqlDb::FindTableP (Utf8CP name) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-const std::vector<ECDbSqlTable const*> ECDbSqlDb::GetTables () const
+const std::vector<ECDbSqlTable const*> ECDbMapDb::GetTables () const
     {
     std::vector<ECDbSqlTable const*> tables;
     for (auto const& key : m_tables)
@@ -739,7 +739,7 @@ const std::vector<ECDbSqlTable const*> ECDbSqlDb::GetTables () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-const std::vector<ECDbSqlTable*> ECDbSqlDb::GetTablesR ()
+const std::vector<ECDbSqlTable*> ECDbMapDb::GetTablesR ()
     {
     std::vector<ECDbSqlTable*> tables;
     for (auto const& key : m_tables)
@@ -750,7 +750,7 @@ const std::vector<ECDbSqlTable*> ECDbSqlDb::GetTablesR ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-bool ECDbSqlDb::IsModified () const
+bool ECDbMapDb::IsModified () const
     {
     for (auto& key : m_tables)
         {
@@ -1888,7 +1888,7 @@ CachedStatementPtr ECDbSqlPersistence::GetStatement (StatementType type) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-DbResult ECDbSqlPersistence::Read (ECDbSqlDb& o)
+DbResult ECDbSqlPersistence::Read (ECDbMapDb& o)
     {
     IIdGenerator::DisableGeneratorScope disableIdGenerator (o.GetManagerR().GetIdGenerator());
 
@@ -1898,7 +1898,7 @@ DbResult ECDbSqlPersistence::Read (ECDbSqlDb& o)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-DbResult ECDbSqlPersistence::ReadForeignKeys (ECDbSqlDb& o)
+DbResult ECDbSqlPersistence::ReadForeignKeys (ECDbMapDb& o)
     {
     for (ECDbSqlTable* table : o.GetTablesR())
         {
@@ -1921,7 +1921,7 @@ DbResult ECDbSqlPersistence::ReadForeignKeys (ECDbSqlDb& o)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-DbResult ECDbSqlPersistence::ReadTables (ECDbSqlDb& o)
+DbResult ECDbSqlPersistence::ReadTables (ECDbMapDb& o)
     {
     auto stmt = GetStatement (StatementType::SqlSelectTable);
     if (stmt.IsNull())
@@ -1940,7 +1940,7 @@ DbResult ECDbSqlPersistence::ReadTables (ECDbSqlDb& o)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-DbResult ECDbSqlPersistence::ReadTable(Statement& stmt, ECDbSqlDb& o)
+DbResult ECDbSqlPersistence::ReadTable(Statement& stmt, ECDbMapDb& o)
     {
     auto id = stmt.GetValueInt64(0);
     auto name = stmt.GetValueText(1);
@@ -2133,7 +2133,7 @@ DbResult ECDbSqlPersistence::ReadForeignKey (Statement& stmt, ECDbSqlTable& o)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-DbResult ECDbSqlPersistence::Insert (ECDbSqlDb const& db)
+DbResult ECDbSqlPersistence::Insert (ECDbMapDb const& db)
     {
     auto tables = db.GetTables ();
 

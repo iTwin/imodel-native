@@ -132,7 +132,7 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
 
     m_lightweightCache.Reset();
 
-    if (SUCCESS != m_schemaImportContext->GetECDbMapMetadata().CreateOrUpdateIndicesInDb(m_ecdb))
+    if (SUCCESS != m_schemaImportContext->GetECDbMapDb().CreateOrUpdateIndicesInDb(m_ecdb))
         {
         ClearCache();
         m_schemaImportContext = nullptr;
@@ -534,9 +534,9 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportConte
                     //struct array indices don't get a class id
                     Utf8String indexName("uix_");
                     indexName.append(table->GetName()).append("_structarraykey");
-                    ECDbSqlIndex* index = schemaImportContext->GetECDbMapMetadata().CreateIndex(*table, indexName.c_str(), true, 
+                    ECDbSqlIndex* index = schemaImportContext->GetECDbMapDb().CreateIndex(*table, indexName.c_str(), true, 
                                                         {ECDB_COL_ParentECInstanceId, ECDB_COL_ECPropertyPathId, ECDB_COL_ECArrayIndex, primaryKeyColumnName},
-                                                        ECClass::UNSET_ECCLASSID, true, SchemaImportContext::ECDbMapMetadata::NewIndexInfo::Scope::EnforceTable);
+                                                        ECClass::UNSET_ECCLASSID, true, SchemaImportECDbMapDb::IndexScope::EnforceTable);
                     if (index == nullptr)
                         {
                         BeAssert(false);

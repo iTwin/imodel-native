@@ -210,7 +210,7 @@ struct ECDbSQLManager;
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct ECDbSqlDb : NonCopyableClass
+struct ECDbMapDb : NonCopyableClass
     {
 private:
     BeVersion m_version;
@@ -220,8 +220,8 @@ private:
     ECDbSQLManager& m_sqlManager;
 
 public:
-    explicit ECDbSqlDb(ECDbSQLManager& manager) : m_version(1, 0), m_nameGenerator("ecdb_%03d"), m_sqlManager(manager) {}
-    virtual ~ECDbSqlDb() {}
+    explicit ECDbMapDb(ECDbSQLManager& manager) : m_version(1, 0), m_nameGenerator("ecdb_%03d"), m_sqlManager(manager) {}
+    virtual ~ECDbMapDb() {}
 
     //! Create a table with a given name or if name is null a name will be generated
     ECDbSqlTable* CreateTable (Utf8CP name, PersistenceType type = PersistenceType::Persisted);
@@ -468,9 +468,9 @@ struct ECDbSqlTable : NonCopyableClass
         Created,
         Deleted
         };
-    friend ECDbSqlTable* ECDbSqlDb::CreateTable (Utf8CP name, PersistenceType type);
-    friend ECDbSqlTable* ECDbSqlDb::CreateTableForExistingTableMapStrategy (ECDbCR ecdb, Utf8CP existingTableName);
-    friend ECDbSqlTable* ECDbSqlDb::CreateTableForExistingTableMapStrategy (Utf8CP existingTableName);
+    friend ECDbSqlTable* ECDbMapDb::CreateTable (Utf8CP name, PersistenceType type);
+    friend ECDbSqlTable* ECDbMapDb::CreateTableForExistingTableMapStrategy (ECDbCR ecdb, Utf8CP existingTableName);
+    friend ECDbSqlTable* ECDbMapDb::CreateTableForExistingTableMapStrategy (Utf8CP existingTableName);
     friend std::weak_ptr<ECDbSqlColumn> ECDbSqlColumn::GetWeakPtr () const;
     struct PersistenceManager : NonCopyableClass
         {
@@ -489,7 +489,7 @@ struct ECDbSqlTable : NonCopyableClass
         };
 
     private:
-        ECDbSqlDb& m_dbDef;
+        ECDbMapDb& m_dbDef;
         ECDbTableId m_id;
         Utf8String m_name;
         NameGenerator m_nameGeneratorForColumn;
@@ -505,7 +505,7 @@ struct ECDbSqlTable : NonCopyableClass
         EditHandle m_editInfo;
         std::vector<std::function<void (ColumnEvent, ECDbSqlColumn&)>> m_columnEvents;
     private:
-        ECDbSqlTable (Utf8CP name, ECDbSqlDb& sqlDbDef, ECDbTableId id, PersistenceType type, OwnerType ownerType)
+        ECDbSqlTable (Utf8CP name, ECDbMapDb& sqlDbDef, ECDbTableId id, PersistenceType type, OwnerType ownerType)
             : m_dbDef(sqlDbDef), m_id(id), m_name(name), m_nameGeneratorForColumn("sc%02x"), m_type(type), m_ownerType(ownerType), 
             m_isClassIdColumnCached(false), m_classIdColumn(nullptr), m_persistenceManager(*this)
             {}
@@ -519,8 +519,8 @@ struct ECDbSqlTable : NonCopyableClass
         Utf8StringCR GetName () const { return m_name; }
         PersistenceType GetPersistenceType () const { return m_type; }
         OwnerType GetOwnerType () const { return m_ownerType; }
-        ECDbSqlDb const& GetDbDef () const{ return m_dbDef; }
-        ECDbSqlDb & GetDbDefR () { return m_dbDef; }
+        ECDbMapDb const& GetDbDef () const{ return m_dbDef; }
+        ECDbMapDb & GetDbDefR () { return m_dbDef; }
         //! Any type will be mark as reusable column
         ECDbSqlColumn* CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, ColumnKind kind = ColumnKind::DataColumn, PersistenceType persistenceType = PersistenceType::Persisted);
         ECDbSqlColumn* CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, size_t position, ColumnKind kind = ColumnKind::DataColumn, PersistenceType persistenceType = PersistenceType::Persisted);
@@ -857,10 +857,10 @@ struct ECDbSqlPersistence : NonCopyableClass
 
     private:
 
-        DbResult ReadTables (ECDbSqlDb&);
-        DbResult ReadTable (Statement&, ECDbSqlDb&);
+        DbResult ReadTables (ECDbMapDb&);
+        DbResult ReadTable (Statement&, ECDbMapDb&);
         DbResult ReadColumns (ECDbSqlTable&);
-        DbResult ReadForeignKeys (ECDbSqlDb&);
+        DbResult ReadForeignKeys (ECDbMapDb&);
         DbResult ReadColumn (Statement&, ECDbSqlTable&, std::map<size_t, ECDbSqlColumn const*>& primaryKeys);
         DbResult ReadForeignKeys (ECDbSqlTable&);
         DbResult ReadForeignKey (Statement&, ECDbSqlTable&);
@@ -872,8 +872,8 @@ struct ECDbSqlPersistence : NonCopyableClass
     public:
         explicit ECDbSqlPersistence (ECDbR ecdb):m_ecdb (ecdb) {}
         ~ECDbSqlPersistence (){};
-        DbResult Read (ECDbSqlDb&);
-        DbResult Insert (ECDbSqlDb const&);
+        DbResult Read (ECDbMapDb&);
+        DbResult Insert (ECDbMapDb const&);
 
         CachedStatementPtr GetStatement(StatementType) const;
     };
@@ -884,7 +884,7 @@ struct ECDbSqlPersistence : NonCopyableClass
 struct ECDbSQLManager : public NonCopyableClass
     {
     private:
-        ECDbSqlDb m_defaultDb;
+        ECDbMapDb m_defaultDb;
         ECDbR m_ecdb;
         mutable ECDbSqlTable* m_nullTable;
         ECDbSqlPersistence m_persistence;
@@ -899,8 +899,8 @@ struct ECDbSQLManager : public NonCopyableClass
         ~ECDbSQLManager (){}
         ECDbR GetECDbR () { return m_ecdb; }
         ECDbCR GetECDb () const{ return m_ecdb; }
-        ECDbSqlDb& GetDbSchemaR () { return m_defaultDb; }
-        ECDbSqlDb const& GetDbSchema () const { return m_defaultDb; }
+        ECDbMapDb& GetDbSchemaR () { return m_defaultDb; }
+        ECDbMapDb const& GetDbSchema () const { return m_defaultDb; }
         BentleyStatus Load ();
         BentleyStatus Save ();
         ECDbSqlTable const* GetNullTable () const;
