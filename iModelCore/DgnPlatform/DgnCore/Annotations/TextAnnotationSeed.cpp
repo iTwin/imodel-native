@@ -123,8 +123,8 @@ DgnStyleId TextAnnotationSeed::GetLeaderStyleId() const { return DgnStyleId((uin
 void TextAnnotationSeed::SetLeaderStyleId(DgnStyleId value) { setIntegerValue(m_data, TextAnnotationSeedProperty::LeaderStyleId, DEFAULT_LEADERSTYLEID_VALUE, value.GetValue()); }
     
 static const TextAnnotationSeedPropertyBag::T_Integer DEFAULT_TEXTSTYLEID_VALUE = 0;
-DgnStyleId TextAnnotationSeed::GetTextStyleId() const { return DgnStyleId((uint64_t)getIntegerValue(m_data, TextAnnotationSeedProperty::TextStyleId, DEFAULT_TEXTSTYLEID_VALUE)); }
-void TextAnnotationSeed::SetTextStyleId(DgnStyleId value) { setIntegerValue(m_data, TextAnnotationSeedProperty::TextStyleId, DEFAULT_TEXTSTYLEID_VALUE, value.GetValue()); }
+AnnotationTextStyleId TextAnnotationSeed::GetTextStyleId() const { return AnnotationTextStyleId((uint64_t)getIntegerValue(m_data, TextAnnotationSeedProperty::TextStyleId, DEFAULT_TEXTSTYLEID_VALUE)); }
+void TextAnnotationSeed::SetTextStyleId(AnnotationTextStyleId value) { setIntegerValue(m_data, TextAnnotationSeedProperty::TextStyleId, DEFAULT_TEXTSTYLEID_VALUE, value.GetValue()); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2014
