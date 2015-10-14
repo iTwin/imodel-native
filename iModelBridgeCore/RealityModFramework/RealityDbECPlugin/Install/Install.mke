@@ -1,0 +1,121 @@
+#--------------------------------------------------------------------------------------
+#
+#  $Source: RealityDbECPlugin/Install/Install.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+appName = Setup_RealityDbECPlugin
+PolicyFile=$(_MakeFilePath)../../mki/AssertRealityModFrameworkPolicy.mki
+%include mdl.mki
+%include $(SharedMki)stdversion.mki
+
+
+INSTALLER_TOOLSET_VERSION     = 3.10.2103.0
+%undef __WiXCommon_MKI__
+%include $(SharedMki)wixcommon.mki
+
+INSTALLER_NAME          = $(appName)
+MAIN_INSTALLER_LANGUAGE = English
+INSTALLER_OUT_DIR       = InstallRealityDbECPlugin
+InstallerOutBuild       = $(OutputRootDir)build/RealityModFramework/RealityDbECPlugin/$(INSTALLER_OUT_DIR)/
+OutProduct              = $(OutputRootDir)Product/RealityModFramework/
+
+
+o =% $(InstallerOutBuild)
+obj =% $(InstallerOutBuild)obj/
+ContextDeliveryDir  = $(BuildContext)Delivery/
+
+
+#--------------------------------------------------------------------------------------
+# Create the build directory.
+#--------------------------------------------------------------------------------------
+always:
+        !~@mkdir $(o)
+
+#--------------------------------------------------------------------------------------
+# 
+#--------------------------------------------------------------------------------------
+wxsFilesDir = $(InstallerOutBuild)wix/
+
+$(wxsFilesDir)Defines.wxi : $(_MakeFilePath)Defines.wxi
+        $(LinkFirstDepToFirstTarget)
+
+$(wxsFilesDir)Product.wxs : $(_MakeFilePath)Product.wxs
+        $(LinkFirstDepToFirstTarget)
+
+$(wxsFilesDir)Product_Directories.wxs : $(_MakeFilePath)Product_Directories.wxs
+        $(LinkFirstDepToFirstTarget)
+
+$(wxsFilesDir)Product_Files.wxs : $(_MakeFilePath)Product_Files.wxs
+        $(LinkFirstDepToFirstTarget)
+
+$(wxsFilesDir)Product_SystemSearch.wxs : $(_MakeFilePath)Product_SystemSearch.wxs
+        $(LinkFirstDepToFirstTarget)
+
+$(wxsFilesDir)Product_Registry.wxs : $(_MakeFilePath)Product_Registry.wxs
+        $(LinkFirstDepToFirstTarget)
+
+$(wxsFilesDir)Product_CustomActions.wxs : $(_MakeFilePath)Product_CustomActions.wxs
+        $(LinkFirstDepToFirstTarget)
+
+
+PolicyFile=$(SharedMki)InternalSystemPolicy.mki
+%include $(SrcBsiCommon)PublicSDK/ConfigurePolicy.mki
+
+%ifndef INSTALLER_NAME
+	%error INSTALLER_NAME
+%endif
+
+%ifndef MAIN_INSTALLER_LANGUAGE
+	%error MAIN_INSTALLER_LANGUAGE
+%endif
+
+%include $(SrcRoot)bsicommon\PublicSDK\AssertToolSet.mki
+
+MISCDEV_DIR                   = $(SrcRoot)miscdev/
+
+always:
+!~@mkdir $(o)
+
+LANGUAGE = $(MAIN_INSTALLER_LANGUAGE)
+INSTALLER_OUTPUT_FILENAME     = $(INSTALLER_NAME)
+INSTALLER_OUTPUT_FILEDIR      = $(o)
+INSTALLER_SOURCE_LIST         = $(wxsFilesDir)Product.wxs $(wxsFilesDir)Product_Directories.wxs $(wxsFilesDir)Product_Files.wxs $(wxsFilesDir)Product_SystemSearch.wxs $(wxsFilesDir)Product_Registry.wxs $(wxsFilesDir)Product_CustomActions.wxs
+INSTALLER_OBJECT_LIST         = $(o)Product.wixobj $(o)Product_Directories.wixobj $(o)Product_Files.wixobj $(o)Product_SystemSearch.wixobj $(o)Product_Registry.wixobj $(o)Product_CustomActions.wixobj
+INSTALLER_USE_NETFXEXTENSION  = 1
+INSTALLER_TOOLSET_VERSION     = 3.10.2103.0
+INSTALLER_IMAGE_BANNER        = $(MISCDEV_DIR)eula/winstall/bentleyInstallBannerWithShortLogo.bmp
+INSTALLER_IMAGE_SIDE          = $(MISCDEV_DIR)eula/winstall/bentleyStdInstall.bmp
+INSTALLER_PRODUCT_VERSION     = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
+INSTALLER_CULTURE = en-US
+INSTALLER_VALIDATOR_OPT + -sice:ICE82 
+INSTALLER_VALIDATOR_OPT + -sice:ICE61
+#INSTALLER_VALIDATOR_OPT + -sice:ICE36
+INSTALLER_VALIDATOR_OPT + -sice:ICE03
+INSTALLER_VALIDATOR_OPT + -sice:ICE60
+INSTALLER_ELEMENTS + -ext WixUtilExtension
+INSTALLER_ELEMENTS + -loc $(_MakeFilePath)Localization/LanguageResources.wxl
+
+#    INSTALLER_COMPILER_OPT         - options to the wix compiler
+INSTALLER_COMPILER_OPT + -dSetupExeIconDir=$(_MakeFilePath) -dProductDir=$(OutProduct)
+
+		
+
+INSTALLER_COMPILER_OPT + -arch $(TARGET_PROCESSOR_ARCHITECTURE) -dRel_V=$(REL_V) -dMaj_V=$(MAJ_V) -dMin_V=$(MIN_V) -dSubMin_V=$(SUBMIN_V)
+
+
+%if defined (PRG_BETABUILD)
+	INSTALLER_LICENSE_FILE        = $(MISCDEV_DIR)eula/lang/$(MAIN_INSTALLER_LANGUAGE)/BetaEula.rtf
+	INSTALLER_ELEMENTS + -dProductPackageBuildType=Beta
+%else
+	INSTALLER_LICENSE_FILE        = $(MISCDEV_DIR)eula/lang/$(MAIN_INSTALLER_LANGUAGE)/eula.rtf
+	INSTALLER_ELEMENTS + -dProductPackageBuildType=Release
+%endif
+
+%include $(SharedMki)InternalSystemPolicy.mki
+%include $(SharedMki)CommonCompileLinkPolicy.mki
+%include $(SharedMki)wix.mki
+
+$(ContextDeliveryDir)$(INSTALLER_NAME).msi : $(o)$(INSTALLER_NAME).msi
+        $(LinkFirstDepToFirstTarget)
