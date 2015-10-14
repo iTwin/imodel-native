@@ -549,7 +549,9 @@ void            MacroFileProcessor::ShowEndFileMessage (WStringP endFileMsg, boo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   10/92
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef _MSC_VER
 #pragma warning(disable:4702)  // unreachable code warning triggered by final return statement in Release build only.
+#endif
 MacroOperation  MacroFileProcessor::GetMacroNameAndOperation (WStringR macroName, WStringP endFileMsg)
     {
     macroName.clear();
@@ -605,8 +607,10 @@ MacroOperation  MacroFileProcessor::GetMacroNameAndOperation (WStringR macroName
     // Without this : warning C4715: ...  : not all control paths return a value
     return MacroOperation::EndOfFile;
     }
+#ifdef _MSC_VER
 #pragma warning(default:4702)
-
+#endif
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    kab             10/89
 +---------------+---------------+---------------+---------------+---------------+------*/

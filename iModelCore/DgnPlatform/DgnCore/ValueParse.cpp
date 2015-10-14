@@ -262,7 +262,7 @@ WChar brkchar             /* => break character */
     WChar *p;
 
     *outpntr = *inpntr;
-    if ((p = wcschr (*inpntr, brkchar)) == NULL)
+    if ((p = ::wcschr (*inpntr, brkchar)) == NULL)
         *inpntr += wcslen (*inpntr);
     else
         {
@@ -309,12 +309,12 @@ double          uorPerSub
     if (0 == masterUnitsLabel[0])
         p = NULL;
     else
-        p = wcsstr (str, masterUnitsLabel);
+        p = ::wcsstr (str, masterUnitsLabel);
     bool doMuSu = true; 
     if (NULL != p)
         {
         /* allow units labels, for example 1'-2.0000" format */
-        WChar *pNext = wcschr (p, L'-');
+        WChar *pNext = ::wcschr (p, L'-');
         if (NULL == pNext)
             {
             pNext = p + wcslen (masterUnitsLabel);
@@ -332,19 +332,19 @@ double          uorPerSub
         /* remove sub units label */
         if (0 != *subUnitsLabel)
             {
-            p = wcsstr (str, subUnitsLabel);
+            p = ::wcsstr (str, subUnitsLabel);
             szParsed += wcslen (subUnitsLabel);
 
             if (NULL != p)
                 *p = 0;
             }
         }
-    else if (NULL != (p = wcschr(str, L'E')))
+    else if (NULL != (p = ::wcschr(str, L'E')))
         {
         /* scientific format */
         double  value = BeStringUtilities::Wtof (str);
         doMuSu = false;
-        WCharP space = wcschr (str, L' ');
+        WCharP space = ::wcschr (str, L' ');
         if (NULL != space)
             szParsed += space - str;
         else
