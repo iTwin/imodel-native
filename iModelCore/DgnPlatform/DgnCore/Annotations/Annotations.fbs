@@ -49,9 +49,6 @@ struct AnnotationTextStyleSetter (emitVectorTypedefs) {
 table AnnotationTextStyle {
     majorVersion:ubyte;
     minorVersion:ubyte;
-    id:long;
-    name:string;
-    description:string;
     setters:[AnnotationTextStyleSetter];
 
 } // AnnotationTextStyle

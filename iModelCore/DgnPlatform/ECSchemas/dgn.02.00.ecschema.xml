@@ -639,6 +639,36 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="Data" displayLabel="" typeName="string" />
     </ECClass>
 
+    <ECClass typeName="AnnotationTextStyle" isDomainClass="True">
+        <BaseClass>DictionaryElement</BaseClass>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style" />
+        <ECProperty propertyName="Data" displayLabel="Data" typeName="binary" description="Encoded style properties" />
+    </ECClass>
+
+    <ECClass typeName="AnnotationFrameStyle" isDomainClass="True">
+        <BaseClass>DictionaryElement</BaseClass>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style" />
+        <ECProperty propertyName="Data" displayLabel="Data" typeName="binary" description="Encoded style properties" />
+    </ECClass>
+
+    <ECClass typeName="AnnotationLeaderStyle" isDomainClass="True">
+        <BaseClass>DictionaryElement</BaseClass>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style" />
+        <ECProperty propertyName="Data" displayLabel="Data" typeName="binary" description="Encoded style properties" />
+    </ECClass>
+
+    <ECClass typeName="TextAnnotationSeed" isDomainClass="True">
+        <BaseClass>DictionaryElement</BaseClass>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style" />
+        <ECProperty propertyName="Data" displayLabel="Data" typeName="binary" description="Encoded style properties" />
+    </ECClass>
+
+    <ECClass typeName="LineStyle" isDomainClass="True">
+        <BaseClass>DictionaryElement</BaseClass>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style" />
+        <ECProperty propertyName="Data" displayLabel="Data" typeName="binary" description="Encoded style properties" />
+    </ECClass>
+
     <ECClass typeName="Texture" isDomainClass="True">
         <BaseClass>DictionaryElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
@@ -686,6 +716,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECClass>
 
     <ECClass typeName="Style" description="Styles help define properties and standards shared among many elements, such as formatting peroperties for text.">
+        <!-- WIP convert all to elements. -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>

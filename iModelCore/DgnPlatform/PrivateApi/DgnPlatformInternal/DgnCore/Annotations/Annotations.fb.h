@@ -370,29 +370,18 @@ STRUCT_END(TextAnnotationElementTransform, 96);
 struct AnnotationTextStyle : private flatbuffers::Table {
   uint8_t majorVersion() const { return GetField<uint8_t>(4, 0); }
   uint8_t minorVersion() const { return GetField<uint8_t>(6, 0); }
-  int64_t id() const { return GetField<int64_t>(8, 0); }
-  const flatbuffers::String *name() const { return GetPointer<const flatbuffers::String *>(10); }
-  const flatbuffers::String *description() const { return GetPointer<const flatbuffers::String *>(12); }
-  const flatbuffers::Vector<const AnnotationTextStyleSetter *> *setters() const { return GetPointer<const flatbuffers::Vector<const AnnotationTextStyleSetter *> *>(14); }
+  const flatbuffers::Vector<const AnnotationTextStyleSetter *> *setters() const { return GetPointer<const flatbuffers::Vector<const AnnotationTextStyleSetter *> *>(8); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, 4 /* majorVersion */) &&
            VerifyField<uint8_t>(verifier, 6 /* minorVersion */) &&
-           VerifyField<int64_t>(verifier, 8 /* id */) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 10 /* name */) &&
-           verifier.Verify(name()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 12 /* description */) &&
-           verifier.Verify(description()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 14 /* setters */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, 8 /* setters */) &&
            verifier.Verify(setters()) &&
            verifier.EndTable();
   }
   bool has_majorVersion() const { return CheckField(4); }
   bool has_minorVersion() const { return CheckField(6); }
-  bool has_id() const { return CheckField(8); }
-  bool has_name() const { return CheckField(10); }
-  bool has_description() const { return CheckField(12); }
-  bool has_setters() const { return CheckField(14); }
+  bool has_setters() const { return CheckField(8); }
 };
 
 struct AnnotationTextStyleBuilder {
@@ -400,14 +389,11 @@ struct AnnotationTextStyleBuilder {
   flatbuffers::uoffset_t start_;
   void add_majorVersion(uint8_t majorVersion) { fbb_.AddElement<uint8_t>(4, majorVersion, 0); }
   void add_minorVersion(uint8_t minorVersion) { fbb_.AddElement<uint8_t>(6, minorVersion, 0); }
-  void add_id(int64_t id) { fbb_.AddElement<int64_t>(8, id, 0); }
-  void add_name(flatbuffers::Offset<flatbuffers::String> name) { fbb_.AddOffset(10, name); }
-  void add_description(flatbuffers::Offset<flatbuffers::String> description) { fbb_.AddOffset(12, description); }
-  void add_setters(flatbuffers::Offset<flatbuffers::Vector<const AnnotationTextStyleSetter *>> setters) { fbb_.AddOffset(14, setters); }
+  void add_setters(flatbuffers::Offset<flatbuffers::Vector<const AnnotationTextStyleSetter *>> setters) { fbb_.AddOffset(8, setters); }
   AnnotationTextStyleBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   AnnotationTextStyleBuilder &operator=(const AnnotationTextStyleBuilder &);
   flatbuffers::Offset<AnnotationTextStyle> Finish() {
-    auto o = flatbuffers::Offset<AnnotationTextStyle>(fbb_.EndTable(start_, 6));
+    auto o = flatbuffers::Offset<AnnotationTextStyle>(fbb_.EndTable(start_, 3));
     return o;
   }
 };
@@ -415,15 +401,9 @@ struct AnnotationTextStyleBuilder {
 inline flatbuffers::Offset<AnnotationTextStyle> CreateAnnotationTextStyle(flatbuffers::FlatBufferBuilder &_fbb,
    uint8_t majorVersion = 0,
    uint8_t minorVersion = 0,
-   int64_t id = 0,
-   flatbuffers::Offset<flatbuffers::String> name = 0,
-   flatbuffers::Offset<flatbuffers::String> description = 0,
    flatbuffers::Offset<flatbuffers::Vector<const AnnotationTextStyleSetter *>> setters = 0) {
   AnnotationTextStyleBuilder builder_(_fbb);
-  builder_.add_id(id);
   builder_.add_setters(setters);
-  builder_.add_description(description);
-  builder_.add_name(name);
   builder_.add_minorVersion(minorVersion);
   builder_.add_majorVersion(majorVersion);
   return builder_.Finish();

@@ -16,6 +16,9 @@
 //-----------------------------------------------------------------------------------------
 // ECClass names (combine with DGN_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
+#define DGN_CLASSNAME_AnnotationFrameStyle  "AnnotationFrameStyle"
+#define DGN_CLASSNAME_AnnotationLeaderStyle "AnnotationLeaderStyle"
+#define DGN_CLASSNAME_AnnotationTextStyle   "AnnotationTextStyle"
 #define DGN_CLASSNAME_Authority             "Authority"
 #define DGN_CLASSNAME_Color                 "Color"
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
@@ -46,6 +49,7 @@
 #define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
 #define DGN_CLASSNAME_SheetModel            "SheetModel"
 #define DGN_CLASSNAME_Style                 "Style"
+#define DGN_CLASSNAME_TextAnnotationSeed    "TextAnnotationSeed"
 #define DGN_CLASSNAME_Texture               "Texture"
 #define DGN_CLASSNAME_View                  "View"
 #define DGN_CLASSNAME_CameraView            "CameraView"
@@ -861,7 +865,6 @@ private:
     friend struct DgnDb;
 
     struct DgnLineStyles* m_lineStyles;
-    struct DgnAnnotationTextStyles* m_annotationTextStyles;
     struct DgnAnnotationFrameStyles* m_annotationFrameStyles;
     struct DgnAnnotationLeaderStyles* m_annotationLeaderStyles;
     struct DgnTextAnnotationSeeds* m_textAnnotationSeeds;
@@ -872,9 +875,6 @@ private:
 public:
     //! Provides accessors for line styles.
     DGNPLATFORM_EXPORT struct DgnLineStyles& LineStyles();
-
-    //! Provides accessors for annotation text styles.
-    DGNPLATFORM_EXPORT struct DgnAnnotationTextStyles& AnnotationTextStyles();
 
     //! Provides accessors for annotation frame styles.
     DGNPLATFORM_EXPORT struct DgnAnnotationFrameStyles& AnnotationFrameStyles();
