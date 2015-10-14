@@ -499,6 +499,14 @@ DgnAuthority::Code AnnotationLeaderStyle::CreateStyleCode(Utf8StringCR name, Dgn
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code TextAnnotationSeed::CreateCodeForSeed(Utf8StringCR name, DgnDbR db)
+    {
+    return createResourceCode(name, db, DGN_CLASSNAME_TextAnnotationSeed);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnAuthority::Code DgnAuthority::GenerateDefaultCode(DgnElementCR el)

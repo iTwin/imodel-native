@@ -328,9 +328,6 @@ struct TextAnnotationSeedSetter (emitVectorTypedefs) {
 table TextAnnotationSeed {
     majorVersion:ubyte;
     minorVersion:ubyte;
-    id:long;
-    name:string;
-    description:string;
     setters:[TextAnnotationSeedSetter];
 
 } // TextAnnotationSeed

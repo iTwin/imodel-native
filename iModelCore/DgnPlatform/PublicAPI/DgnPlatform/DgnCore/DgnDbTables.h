@@ -865,7 +865,6 @@ private:
     friend struct DgnDb;
 
     struct DgnLineStyles* m_lineStyles;
-    struct DgnTextAnnotationSeeds* m_textAnnotationSeeds;
 
     explicit DgnStyles(DgnDbR);
     ~DgnStyles();
@@ -873,9 +872,6 @@ private:
 public:
     //! Provides accessors for line styles.
     DGNPLATFORM_EXPORT struct DgnLineStyles& LineStyles();
-
-    //! Provides accessors for text annotation seeds.
-    DGNPLATFORM_EXPORT struct DgnTextAnnotationSeeds& TextAnnotationSeeds();
 };
 
 //=======================================================================================

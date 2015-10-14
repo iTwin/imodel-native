@@ -83,8 +83,6 @@ TEST(BasicAnnotationFrameStyleTest, PropertyBagTypes)
     EXPECT_TRUE(type == STYLE_PTR->GetType());\
     EXPECT_TRUE(verticalPadding == STYLE_PTR->GetVerticalPadding());
 
-#define INVALIDSTYLEID DgnStyleId((uint64_t)-1)
-
 //---------------------------------------------------------------------------------------
 // Creates a style and tests accessors.
 // @bsimethod                                                   Umar.Hayat     07/15
@@ -304,7 +302,6 @@ TEST_F(AnnotationFrameStyleTest, InvalidOperations)
 
         //.............................................................................................
         // Query Invalid
-        // Cannot pass an invalid ID to ExistsById... EXPECT_FALSE(project.Styles().AnnotationFrameStyles().ExistsById(INVALIDSTYLEID));
         EXPECT_FALSE(AnnotationFrameStyle::ExistsByName("InvalidName", project));
 
         //.............................................................................................
