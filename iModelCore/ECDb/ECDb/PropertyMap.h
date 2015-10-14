@@ -98,7 +98,7 @@ protected:
     virtual Utf8CP _GetColumnBaseName() const;
 
     //! Make sure our table has the necessary columns, if any
-    virtual BentleyStatus _FindOrCreateColumnsInTable(SchemaImportContext const*, ClassMap& classMap, ClassMapInfo const* classMapInfo) { return SUCCESS; }
+    virtual BentleyStatus _FindOrCreateColumnsInTable(SchemaImportContext*, ClassMap& classMap, ClassMapInfo const* classMapInfo) { return SUCCESS; }
 
     virtual PropertyMapToColumn const* _GetAsPropertyMapToColumn () const { return nullptr; }
     virtual PropertyMapToTable const* _GetAsPropertyMapToTable () const { return nullptr; }
@@ -191,7 +191,7 @@ public:
     Utf8CP GetPropertyAccessString () const;
 
     //! Make sure our table has the necessary columns, if any
-    BentleyStatus FindOrCreateColumnsInTable(SchemaImportContext const*, ClassMap& classMap, ClassMapInfo const* classMapInfo);
+    BentleyStatus FindOrCreateColumnsInTable(SchemaImportContext*, ClassMap& classMap, ClassMapInfo const* classMapInfo);
 
     //! Returns whether this property map refers to the ECInstanceId system property or not.
     //! @return true if the property map refers to the ECInstanceId system property. false otherwise.
@@ -250,7 +250,7 @@ protected:
     virtual PropertyMapToColumn const* _GetAsPropertyMapToColumn () const override { return this; }
 
     //! Make sure our table has the necessary columns, if any
-    virtual BentleyStatus _FindOrCreateColumnsInTable(SchemaImportContext const*, ClassMap& classMap, ClassMapInfo const* classMapInfo) override;
+    virtual BentleyStatus _FindOrCreateColumnsInTable(SchemaImportContext*, ClassMap& classMap, ClassMapInfo const* classMapInfo) override;
 
     //! @see PropertyMap::GetColumns
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
@@ -281,7 +281,7 @@ protected:
     BentleyStatus Initialize(ECDbMapCR map);
 
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const override;
-    virtual BentleyStatus _FindOrCreateColumnsInTable(SchemaImportContext const*, ClassMap& classMap, ClassMapInfo const* classMapInfo) override;
+    virtual BentleyStatus _FindOrCreateColumnsInTable(SchemaImportContext*, ClassMap& classMap, ClassMapInfo const* classMapInfo) override;
 
 public:
     static PropertyMapToInLineStructPtr Create (ECN::ECPropertyCR prop, ECDbMapCR ecDbMap, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
@@ -358,7 +358,7 @@ private:
     PropertyMapPoint (ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap);
     
     //! Make sure our table has the necessary columns, if any
-    BentleyStatus _FindOrCreateColumnsInTable(SchemaImportContext const*, ClassMap& classMap, ClassMapInfo const* classMapInfo) override;
+    BentleyStatus _FindOrCreateColumnsInTable(SchemaImportContext*, ClassMap& classMap, ClassMapInfo const* classMapInfo) override;
 
     //! @see PropertyMap::GetColumns
     void _GetColumns (std::vector<ECDbSqlColumn const*>& columns) const;

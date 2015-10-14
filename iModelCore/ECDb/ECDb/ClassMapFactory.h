@@ -23,11 +23,11 @@ private:
     ClassMapFactory ();
     ~ClassMapFactory ();
 
-    static ClassMapPtr CreateInstance(MapStatus&, SchemaImportContext const*, ClassMapInfo const&, bool setIsDirty);
+    static ClassMapPtr CreateInstance(MapStatus&, SchemaImportContext*, ClassMapInfo const&, bool setIsDirty);
 
 public:
     static ClassMapPtr Load (MapStatus&, ECN::ECClassCR, ECDbMapCR);
-    static ClassMapPtr Create (MapStatus&, SchemaImportContext const&, ECN::ECClassCR, ECDbMapCR );
+    static ClassMapPtr Create (MapStatus&, SchemaImportContext&, ECN::ECClassCR, ECDbMapCR );
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

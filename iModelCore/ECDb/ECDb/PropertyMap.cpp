@@ -280,7 +280,7 @@ NativeSqlBuilder::List PropertyMap::_ToNativeSql(Utf8CP classIdentifier, ECSqlTy
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PropertyMap::FindOrCreateColumnsInTable(SchemaImportContext const* schemaImportContext, ClassMap& classMap, ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMap::FindOrCreateColumnsInTable(SchemaImportContext* schemaImportContext, ClassMap& classMap, ClassMapInfo const* classMapInfo)
     {
     return _FindOrCreateColumnsInTable(schemaImportContext, classMap, classMapInfo);
     }
@@ -605,7 +605,7 @@ BentleyStatus PropertyMapToInLineStruct::Initialize(ECDbMapCR map)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan     09/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus PropertyMapToInLineStruct::_FindOrCreateColumnsInTable(SchemaImportContext const* schemaImportContext, ClassMap& classMap, ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMapToInLineStruct::_FindOrCreateColumnsInTable(SchemaImportContext* schemaImportContext, ClassMap& classMap, ClassMapInfo const* classMapInfo)
     {
     for(auto childPropMap : m_children)
         {
@@ -765,7 +765,7 @@ bool PropertyMapToColumn::_IsVirtual () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-BentleyStatus PropertyMapToColumn::_FindOrCreateColumnsInTable (SchemaImportContext const* schemaImportContext, ClassMap& classMap , ClassMapInfo const* classMapInfor)
+BentleyStatus PropertyMapToColumn::_FindOrCreateColumnsInTable (SchemaImportContext* schemaImportContext, ClassMap& classMap , ClassMapInfo const* classMapInfor)
     {
     Utf8CP        columnName = m_columnInfo.GetName ();
     PrimitiveType primitiveType = m_columnInfo.GetColumnType ();
@@ -923,7 +923,7 @@ Utf8String PropertyMapPoint::_ToString() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(SchemaImportContext const* schemaImportContext, ClassMap& classMap,  ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(SchemaImportContext* schemaImportContext, ClassMap& classMap,  ClassMapInfo const* classMapInfo)
     {
     PrimitiveType primitiveType = PRIMITIVETYPE_Double;
 

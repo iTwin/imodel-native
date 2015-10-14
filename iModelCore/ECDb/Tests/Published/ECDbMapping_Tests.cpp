@@ -2369,7 +2369,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
         AssertSchemaImport(db, asserted, testItem, "userdefinedindextest.ecdb");
         ASSERT_FALSE(asserted);
 
-        //AssertIndex(db, "ix_sub1_prop", false, "ts_Base", {"Sub1_Prop"});
+        AssertIndex(db, "ix_sub1_prop", false, "ts_Base", {"Sub1_Prop"});
         }
 
             {
@@ -2384,14 +2384,6 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
             "                   <Strategy>SharedTable</Strategy>"
             "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
             "                 </MapStrategy>"
-            "                 <Indexes>"
-            "                   <DbIndex>"
-            "                       <Name>ix_base_code</Name>"
-            "                       <Properties>"
-            "                          <string>Code</string>"
-            "                       </Properties>"
-            "                   </DbIndex>"
-            "                 </Indexes>"
             "            </ClassMap>"
             "        </ECCustomAttributes>"
             "        <ECProperty propertyName='Code' typeName='string' />"
@@ -2401,9 +2393,9 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
             "            <ClassMap xmlns='ECDbMap.01.00'>"
             "                 <Indexes>"
             "                   <DbIndex>"
-            "                       <Name>ix_sub1_prop</Name>"
+            "                       <Name>uix_sub1_code</Name>"
             "                       <Properties>"
-            "                          <string>Sub1_Prop</string>"
+            "                          <string>Code</string>"
             "                       </Properties>"
             "                   </DbIndex>"
             "                 </Indexes>"
@@ -2423,7 +2415,10 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
         AssertSchemaImport(db, asserted, testItem, "userdefinedindextest.ecdb");
         ASSERT_FALSE(asserted);
 
-        //AssertIndex(db, "ix_sub1_prop", false, "ts_Base", {"Sub1_Prop"});
+        ECClassId baseClassId = db.Schemas().GetECClassId("TestSchema", "Base");
+        Utf8String indexWhereClause;
+        indexWhereClause.Sprintf("ECClassId<>%lld", baseClassId);
+        AssertIndex(db, "ix_sub1_prop", false, "ts_Base", {"Sub1_Prop"}, indexWhereClause.c_str());
         }
 
         {
@@ -2492,7 +2487,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
         ASSERT_FALSE(asserted);
 
         AssertIndex(db, "ix_base_code", false, "ts_Base", {"Code"});
-        //AssertIndex(db, "ix_sub3_prop", false, "ts_Base", {"Sub3_Prop"});
+        AssertIndex(db, "ix_sub3_prop", false, "ts_Base", {"Sub3_Prop"});
 
         db.SaveChanges();
         db.ClearECDbCache();
@@ -2502,7 +2497,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
         ASSERT_FALSE(asserted);
 
         AssertIndex(db, "ix_base_code", false, "ts_Base", {"Code"});
-        //AssertIndex(db, "ix_sub3_prop", false, "ts_Base", {"Sub3_Prop"});
+        AssertIndex(db, "ix_sub3_prop", false, "ts_Base", {"Sub3_Prop"});
         }
 
         {
@@ -2546,7 +2541,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
             "        <BaseClass>Sub1</BaseClass>"
             "        <ECProperty propertyName='Cost' typeName='double' />"
             "    </ECClass>"
-            "</ECSchema>", true, "WIP: Future: Indices on shared columns are not supported.");
+            "</ECSchema>", false, "Future: Indices on shared columns are not supported.");
 
         AssertSchemaImport(testItem, "userdefinedindextest.ecdb");
         }
@@ -2662,7 +2657,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
         AssertSchemaImport(db, asserted, testItem, "userdefinedindextest.ecdb");
         ASSERT_FALSE(asserted);
 
-        //AssertIndex(db, "ix_sub1_aid", false, "ts_Base", {"AId"});
+        AssertIndex(db, "ix_sub1_aid", false, "ts_Base", {"AId"});
         }
 
         {
@@ -2725,7 +2720,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
         ECClassId sub11ClassId = db.Schemas().GetECClassId("TestSchema", "Sub11");
         Utf8String indexWhereClause;
         indexWhereClause.Sprintf("ECClassId=%lld OR ECClassId=%lld", sub1ClassId, sub11ClassId);
-        //AssertIndex(db, "uix_sub1_aid", true, "ts_Base", {"AId"});
+        AssertIndex(db, "uix_sub1_aid", true, "ts_Base", {"AId"});
         }
 
         {

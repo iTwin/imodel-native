@@ -37,7 +37,7 @@ RelationshipClassMap::RelationshipClassMap (ECRelationshipClassCR ecRelClass, EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    11/2013
 //---------------------------------------------------------------------------------------
-ECDbSqlColumn* RelationshipClassMap::CreateConstraintColumn(SchemaImportContext const* schemaImportContext, Utf8CP columnName, ColumnKind columnId, bool addToTable)
+ECDbSqlColumn* RelationshipClassMap::CreateConstraintColumn(SchemaImportContext* schemaImportContext, Utf8CP columnName, ColumnKind columnId, bool addToTable)
     {
     ECDbSqlColumn* column = GetTable().FindColumnP(columnName);
     if (column != nullptr)
@@ -45,7 +45,7 @@ ECDbSqlColumn* RelationshipClassMap::CreateConstraintColumn(SchemaImportContext 
         if (Enum::Intersects(column->GetKind(), columnId))
             {
             if (schemaImportContext != nullptr)
-                schemaImportContext->SetColumnIsShared(*column, ColumnKind::ConstraintECInstanceId);
+                schemaImportContext->GetECDbMapMetadata().SetColumnIsShared(*column, ColumnKind::ConstraintECInstanceId);
             }
         else
             column->AddKind(columnId);
@@ -270,7 +270,7 @@ RelationshipClassEndTableMap::RelationshipClassEndTableMap (ECRelationshipClassC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan       02/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDbSqlColumn* RelationshipClassEndTableMap::ConfigureForeignECClassIdKey(SchemaImportContext const* schemaImportContext, RelationshipMapInfo const& mapInfo, ECRelationshipConstraintCR otherEndConstraint, IClassMap const& otheEndClassMap, size_t otherEndTableCount)
+ECDbSqlColumn* RelationshipClassEndTableMap::ConfigureForeignECClassIdKey(SchemaImportContext* schemaImportContext, RelationshipMapInfo const& mapInfo, ECRelationshipConstraintCR otherEndConstraint, IClassMap const& otheEndClassMap, size_t otherEndTableCount)
     {
     RelationshipEndColumns const& constraintColumnsMapping = GetEndColumnsMapping(mapInfo);
     Utf8String classIdColName(constraintColumnsMapping.GetECClassIdColumnName());
@@ -301,7 +301,7 @@ ECDbSqlColumn* RelationshipClassEndTableMap::ConfigureForeignECClassIdKey(Schema
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext const* schemaImportContext, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
+MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* schemaImportContext, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
     {
     //Don't call base class method as end table map requires its own handling
     BeAssert (GetMapStrategy ().IsForeignKeyMapping());
@@ -403,7 +403,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-MapStatus RelationshipClassEndTableMap::_InitializePart2(SchemaImportContext const* schemaImportContext, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
+MapStatus RelationshipClassEndTableMap::_InitializePart2(SchemaImportContext* schemaImportContext, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
     {
     //add non-system property maps
     AddPropertyMaps(schemaImportContext, parentClassMap, nullptr, &classMapInfo);
@@ -504,7 +504,7 @@ BentleyStatus RelationshipClassEndTableMap::_Load (std::set<ClassMap const*>& lo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-MapStatus RelationshipClassEndTableMap::CreateConstraintColumns(ECDbSqlColumn*& fkIdColumn, SchemaImportContext const* schemaImportContext, RelationshipMapInfo const& mapInfo, ECRelationshipEnd constraintEnd, ECN::ECRelationshipConstraintCR constraint)
+MapStatus RelationshipClassEndTableMap::CreateConstraintColumns(ECDbSqlColumn*& fkIdColumn, SchemaImportContext* schemaImportContext, RelationshipMapInfo const& mapInfo, ECRelationshipEnd constraintEnd, ECN::ECRelationshipConstraintCR constraint)
     {
     fkIdColumn = nullptr;
 
@@ -548,7 +548,7 @@ MapStatus RelationshipClassEndTableMap::CreateConstraintColumns(ECDbSqlColumn*& 
         if (Enum::Intersects(fkIdColumn->GetKind(), fkColumnId))
             {
             if (schemaImportContext != nullptr)
-                schemaImportContext->SetColumnIsShared(*fkIdColumn, ColumnKind::ConstraintECInstanceId);
+                schemaImportContext->GetECDbMapMetadata().SetColumnIsShared(*fkIdColumn, ColumnKind::ConstraintECInstanceId);
             }
         else
             fkIdColumn->AddKind(fkColumnId);
@@ -562,7 +562,7 @@ MapStatus RelationshipClassEndTableMap::CreateConstraintColumns(ECDbSqlColumn*& 
 //+---------------+---------------+---------------+---------------+---------------+------
 MapStatus RelationshipClassEndTableMap::CreateConstraintPropMaps 
 (
-SchemaImportContext const* schemaImportContext,
+SchemaImportContext* schemaImportContext,
 ECRelationshipEnd thisEnd,
 ECClassId defaultThisEndClassId,
 ECDbSqlColumn* const& otherEndECInstanceIdColumn, 
@@ -668,7 +668,7 @@ ECClassId defaultOtherEndClassId
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan         9/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext const& schemaImportContext, ClassMapInfo const& mapInfo)
+void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext& schemaImportContext, ClassMapInfo const& mapInfo)
     {
     BeAssert(dynamic_cast<RelationshipMapInfo const*> (&mapInfo) != nullptr);
     RelationshipMapInfo const& relMapInfo = static_cast<RelationshipMapInfo const&> (mapInfo);
@@ -679,6 +679,9 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext
         (!isUniqueIndex && !m_autogenerateForeignKeyColumns))
         return;
 
+    BeAssert(GetOtherEndECInstanceIdPropMap() != nullptr && GetOtherEndECInstanceIdPropMap()->GetFirstColumn() != nullptr);
+    ECDbSqlColumn const* otherEndIdColumn = GetOtherEndECInstanceIdPropMap()->GetFirstColumn();
+
     // name of the index
     Utf8String name(isUniqueIndex ? "uix_" : "ix_");
     name.append(persistenceEndTable.GetName()).append ("_fk_").append(m_ecClass.GetSchema().GetNamespacePrefix() + "_" + m_ecClass.GetName());
@@ -687,31 +690,18 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext
     else
         name.append("_target");
     
-    ECDbSqlIndex const* existingIndex = persistenceEndTable.GetDbDef ().FindIndex (name.c_str ());
-    if (existingIndex != nullptr)
-        {
-        if (&existingIndex->GetTable () == &GetTable ())
-            return;
-
-        BeAssert (false && "Index with same name exist on a different table");
-        return;
-        }
-
-    ECDbSqlIndex* index = persistenceEndTable.CreateIndex (schemaImportContext, name.c_str (), isUniqueIndex, GetClass ().GetId (), true);
+    ECDbSqlIndex* index = schemaImportContext.GetECDbMapMetadata().CreateIndex(persistenceEndTable, name.c_str(), isUniqueIndex, {otherEndIdColumn}, GetClass().GetId(), true);
     if (index == nullptr)
         {
         BeAssert (false && "Failed to create index");
         return;
         }
 
-    BeAssert (GetOtherEndECInstanceIdPropMap() != nullptr && GetOtherEndECInstanceIdPropMap()->GetFirstColumn() != nullptr);
-    ECDbSqlColumn const* otherEndIdColumn = GetOtherEndECInstanceIdPropMap()->GetFirstColumn();
-    index->Add(otherEndIdColumn->GetName().c_str());
     if (!otherEndIdColumn->GetConstraint().IsNotNull())
         {
         NativeSqlBuilder whereClause;
         whereClause.AppendEscaped(otherEndIdColumn->GetName().c_str()).AppendSpace();
-        whereClause.Append(BooleanSqlOperator::IsNot).Append("NULL");
+        whereClause.Append(BooleanSqlOperator::IsNot, true).Append("NULL");
         index->SetAdditionalWhereExpression(whereClause.ToString());
         }
     }
@@ -916,7 +906,7 @@ RelationshipClassLinkTableMap::RelationshipClassLinkTableMap (ECRelationshipClas
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Ramanujam.Raman                   06 / 12
 //---------------------------------------------------------------------------------------
-MapStatus RelationshipClassLinkTableMap::_InitializePart1 (SchemaImportContext const* context, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
+MapStatus RelationshipClassLinkTableMap::_InitializePart1 (SchemaImportContext* context, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
     {
     BeAssert (!GetMapStrategy ().IsForeignKeyMapping() &&
         "RelationshipClassLinkTableMap is not meant to be used with other map strategies.");
@@ -956,7 +946,7 @@ MapStatus RelationshipClassLinkTableMap::_InitializePart1 (SchemaImportContext c
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Affan.Khan                         04 / 15
 //---------------------------------------------------------------------------------------
-ECDbSqlColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(SchemaImportContext const* schemaImportContext, RelationshipMapInfo const& mapInfo, ECRelationshipEnd relationshipEnd)
+ECDbSqlColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(SchemaImportContext* schemaImportContext, RelationshipMapInfo const& mapInfo, ECRelationshipEnd relationshipEnd)
     {
     ECDbSqlColumn* endECClassIdColumn = nullptr;
     auto relationship = mapInfo.GetECClass ().GetRelationshipClassCP ();
@@ -994,7 +984,7 @@ ECDbSqlColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(Schem
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Ramanujam.Raman                   06 / 12
 //---------------------------------------------------------------------------------------
-MapStatus RelationshipClassLinkTableMap::_InitializePart2 (SchemaImportContext const* context, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
+MapStatus RelationshipClassLinkTableMap::_InitializePart2 (SchemaImportContext* context, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
     {
     MapStatus stat = RelationshipClassMap::_InitializePart2 (context, classMapInfo, parentClassMap);
     if (stat != MapStatus::Success)
@@ -1012,7 +1002,7 @@ MapStatus RelationshipClassLinkTableMap::_InitializePart2 (SchemaImportContext c
 //+---------------+---------------+---------------+---------------+---------------+------
 MapStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps 
 (
-SchemaImportContext const* schemaImportContext,
+SchemaImportContext* schemaImportContext,
 RelationshipMapInfo const& mapInfo,
 bool addSourceECClassIdColumnToTable,
 ECClassId defaultSourceECClassId, 
@@ -1082,7 +1072,7 @@ ECClassId defaultTargetECClassId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                            09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassLinkTableMap::AddIndices (SchemaImportContext const& schemaImportContext, ClassMapInfo const& mapInfo)
+void RelationshipClassLinkTableMap::AddIndices (SchemaImportContext& schemaImportContext, ClassMapInfo const& mapInfo)
     {
     if (GetTable ().GetOwnerType () == OwnerType::ExistingTable)
         return;
@@ -1126,7 +1116,7 @@ void RelationshipClassLinkTableMap::AddIndices (SchemaImportContext const& schem
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext const& schemaImportContext, RelationshipIndexSpec spec, bool isUniqueIndex)
+void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportContext, RelationshipIndexSpec spec, bool isUniqueIndex)
     {
     // Setup name of the index
     Utf8String name;
@@ -1153,32 +1143,23 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext const& schemaIm
                 break;
         }
 
-    ECDbSqlIndex* index = GetTable().GetDbDefR().FindIndexP(name.c_str());
-    if (index == nullptr || &index->GetTable() != &GetTable())
-        {
-        BeAssert(index == nullptr || &index->GetTable() == &GetTable() && "Index with same name exist on a different table");
-        index = GetTable().CreateIndex(schemaImportContext, name.c_str(), isUniqueIndex, GetClass().GetId(), true, isUniqueIndex ? SchemaImportContext::IndexInfo::Scope::EnforceClass : SchemaImportContext::IndexInfo::Scope::EnforceTable);
-        }
-
-    if (index == nullptr)
-        return;
-
     auto sourceECInstanceIdColumn = GetSourceECInstanceIdPropMap()->GetFirstColumn();
     auto sourceECClassIdColumn = GetSourceECClassIdPropMap()->IsMappedToPrimaryTable() ? GetSourceECClassIdPropMap()->GetFirstColumn() : nullptr;
     auto targetECInstanceIdColumn = GetTargetECInstanceIdPropMap()->GetFirstColumn();
     auto targetECClassIdColumn = GetTargetECClassIdPropMap()->IsMappedToPrimaryTable() ? GetTargetECClassIdPropMap()->GetFirstColumn() : nullptr;
 
+    std::vector<ECDbSqlColumn const*> columns;
     switch (spec)
         {
             case RelationshipIndexSpec::Source:
-                AddColumnsToIndex(*index, sourceECInstanceIdColumn, sourceECClassIdColumn, nullptr, nullptr);
+                GenerateIndexColumnList(columns, sourceECInstanceIdColumn, sourceECClassIdColumn, nullptr, nullptr);
                 break;
             case RelationshipIndexSpec::Target:
-                AddColumnsToIndex(*index, targetECInstanceIdColumn, targetECClassIdColumn, nullptr, nullptr);
+                GenerateIndexColumnList(columns, targetECInstanceIdColumn, targetECClassIdColumn, nullptr, nullptr);
                 break;
 
             case RelationshipIndexSpec::SourceAndTarget:
-                AddColumnsToIndex(*index, sourceECInstanceIdColumn, sourceECClassIdColumn, targetECInstanceIdColumn, targetECClassIdColumn);
+                GenerateIndexColumnList(columns, sourceECInstanceIdColumn, sourceECClassIdColumn, targetECInstanceIdColumn, targetECClassIdColumn);
                 break;
 
             default:
@@ -1186,26 +1167,25 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext const& schemaIm
                 break;
         }
 
-    if (!index->IsValid())
-        index->Drop();
+    schemaImportContext.GetECDbMapMetadata().CreateIndex(GetTable(), name.c_str(), isUniqueIndex, columns, GetClass().GetId(), true, isUniqueIndex ? SchemaImportContext::ECDbMapMetadata::NewIndexInfo::Scope::EnforceClass : SchemaImportContext::ECDbMapMetadata::NewIndexInfo::Scope::EnforceTable);
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassLinkTableMap::AddColumnsToIndex (ECDbSqlIndex& index, ECDbSqlColumn const* col1, ECDbSqlColumn const* col2, ECDbSqlColumn const* col3, ECDbSqlColumn const* col4)
+void RelationshipClassLinkTableMap::GenerateIndexColumnList(std::vector<ECDbSqlColumn const*>& columns, ECDbSqlColumn const* col1, ECDbSqlColumn const* col2, ECDbSqlColumn const* col3, ECDbSqlColumn const* col4)
     {
     if (nullptr != col1 && col1->GetPersistenceType () == PersistenceType::Persisted)
-        index.Add (col1->GetName().c_str());
+        columns.push_back(col1);
 
     if (nullptr != col2 && col2->GetPersistenceType () == PersistenceType::Persisted)
-        index.Add (col2->GetName ().c_str ());
+        columns.push_back(col2);
 
     if (nullptr != col3 && col3->GetPersistenceType () == PersistenceType::Persisted)
-        index.Add (col3->GetName ().c_str ());
+        columns.push_back(col3);
 
     if (nullptr != col4 && col4->GetPersistenceType () == PersistenceType::Persisted)
-        index.Add (col4->GetName ().c_str ());
+        columns.push_back(col4);
     }
     
 
