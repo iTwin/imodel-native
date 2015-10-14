@@ -235,9 +235,9 @@ ECDbSqlColumn* ECDbSqlTable::CreateColumn (Utf8CP name, ECDbSqlColumn::Type type
 //---------------------------------------------------------------------------------------
 BentleyStatus ECDbSqlTable::CreateTrigger(Utf8CP triggerName, ECDbSqlTable& table, Utf8CP condition, Utf8CP body, TriggerType ecsqlType,TriggerSubType triggerSubType)
     {
-    if (m_trigers.find(triggerName) == m_trigers.end())
+    if (m_triggers.find(triggerName) == m_triggers.end())
         {
-        m_trigers[triggerName] = std::unique_ptr<ECDbSqlTrigger>(new ECDbSqlTrigger(triggerName, table, condition, body, ecsqlType, triggerSubType));
+        m_triggers[triggerName] = std::unique_ptr<ECDbSqlTrigger>(new ECDbSqlTrigger(triggerName, table, condition, body, ecsqlType, triggerSubType));
         return SUCCESS;
         }
     return ERROR;
@@ -249,7 +249,7 @@ BentleyStatus ECDbSqlTable::CreateTrigger(Utf8CP triggerName, ECDbSqlTable& tabl
 std::vector<const ECDbSqlTrigger*> ECDbSqlTable::GetTriggers()const
     {
     std::vector<const ECDbSqlTrigger*> triggers;
-    for (auto &trigger : m_trigers)
+    for (auto &trigger : m_triggers)
         {
         triggers.push_back(trigger.second.get());
         }
@@ -1966,7 +1966,7 @@ BentleyStatus ECDbSQLManager::Load ()
     {
     Reset ();
     auto r = m_persistence.Read (m_defaultDb);
-    if (r != BE_SQLITE_DONE)
+    if (r != BE_SQLITE_OK)
         return BentleyStatus::ERROR;
 
     m_nullTable = nullptr;
@@ -2021,7 +2021,7 @@ BentleyStatus ECDbSQLManager::Save ()
         }
 
     auto r = m_persistence.Insert (m_defaultDb);
-    if (r != BE_SQLITE_DONE)
+    if (r != BE_SQLITE_OK)
         return BentleyStatus::ERROR;
 
     return m_mapStorage.Save();
@@ -2288,103 +2288,91 @@ DbResult ECDbSqlPersistence::Read (ECDbSqlDb& o)
     {
     IIdGenerator::DisableGeneratorScope disableIdGenerator (o.GetManagerR().GetIdGenerator());
 
-    DbResult stat = BE_SQLITE_ERROR;
-    if ((stat = ReadTables (o)) != BE_SQLITE_DONE)
-        {
+    DbResult stat = ReadTables(o);
+    if (BE_SQLITE_OK != stat)
         return stat;
-        }
-
-    if ((stat = ReadIndexes (o)) != BE_SQLITE_DONE)
-        {
-        return stat;
-        }
-
-    return stat;
+    
+    return ReadIndexes(o);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
 DbResult ECDbSqlPersistence::ReadForeignKeys (ECDbSqlDb& o)
     {
-    auto stat = BE_SQLITE_DONE;
-    for (auto table : o.GetTablesR())
+    for (ECDbSqlTable* table : o.GetTablesR())
         {
-        auto canEdit = table->GetEditHandle ().CanEdit ();
+        const bool canEdit = table->GetEditHandle ().CanEdit ();
         if (!canEdit)
             table->GetEditHandleR ().BeginEdit ();
 
         //read foreign key
-        auto stat = ReadForeignKeys (*table);
-        if (stat != BE_SQLITE_DONE)
+        const DbResult stat = ReadForeignKeys (*table);
+        if (stat != BE_SQLITE_OK)
             return stat;
 
         if (!canEdit)
             table->GetEditHandleR ().EndEdit ();
         }
 
-    return stat;
+    return BE_SQLITE_OK;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
 DbResult ECDbSqlPersistence::ReadTables (ECDbSqlDb& o)
     {
-    DbResult stat = BE_SQLITE_DONE;
     auto stmt = GetStatement (StatementType::SqlSelectTable);
     if (stmt.IsNull())
         return BE_SQLITE_ERROR;
 
-    while ((stat = stmt->Step ()) == BE_SQLITE_ROW)
+    while (stmt->Step () == BE_SQLITE_ROW)
         {
-        stat = ReadTable (*stmt, o);
-        if (stat != BE_SQLITE_DONE)
+        const DbResult stat = ReadTable (*stmt, o);
+        if (stat != BE_SQLITE_OK)
             return stat;
         }
 
-    if (stat != BE_SQLITE_DONE)
-        return stat;
-
-
-
-    return stat;
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-DbResult ECDbSqlPersistence::ReadTable (Statement& stmt, ECDbSqlDb& o)
+DbResult ECDbSqlPersistence::ReadTable(Statement& stmt, ECDbSqlDb& o)
     {
-    auto id = stmt.GetValueInt64 (0);
-    auto name = stmt.GetValueText (1);
-    auto ownerType = stmt.GetValueInt (2) == 1 ? OwnerType::ECDb : OwnerType::ExistingTable;
-    auto persistenceType = stmt.GetValueInt (3) == 1 ? PersistenceType::Virtual : PersistenceType::Persisted;
+    auto id = stmt.GetValueInt64(0);
+    auto name = stmt.GetValueText(1);
+    auto ownerType = stmt.GetValueInt(2) == 1 ? OwnerType::ECDb : OwnerType::ExistingTable;
+    auto persistenceType = stmt.GetValueInt(3) == 1 ? PersistenceType::Virtual : PersistenceType::Persisted;
 
-    ECDbSqlTable* n = nullptr;
+    ECDbSqlTable* table = nullptr;
     if (ownerType == OwnerType::ECDb)
-        n = o.CreateTable (name, persistenceType);
+        table = o.CreateTable(name, persistenceType);
     else
-        n = o.CreateTableForExistingTableMapStrategy (name);
+        table = o.CreateTableForExistingTableMapStrategy(name);
 
-    if (!n)
+    if (table == nullptr)
         {
-        BeAssert (false && "Failed to create table definition");
+        BeAssert(false && "Failed to create table definition");
         return BE_SQLITE_ERROR;
         }
-    auto canEdit = n->GetEditHandle ().CanEdit ();
-    if (!canEdit)
-        n->GetEditHandleR ().BeginEdit ();
 
-    n->SetId (id);
+    const bool canEdit = table->GetEditHandle().CanEdit();
+    if (!canEdit)
+        table->GetEditHandleR().BeginEdit();
+
+    table->SetId(id);
     // Read columns
-    DbResult stat = ReadColumns (*n);
-    if (stat != BE_SQLITE_DONE)
+    const DbResult stat = ReadColumns(*table);
+    if (stat != BE_SQLITE_OK)
         return stat;
 
     if (!canEdit)
-        n->GetEditHandleR ().EndEdit ();
+        table->GetEditHandleR().EndEdit();
 
-
-    return BE_SQLITE_DONE;
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2397,17 +2385,17 @@ DbResult ECDbSqlPersistence::ReadColumns (ECDbSqlTable& o)
         return BE_SQLITE_ERROR;
 
     DbResult stat = stmt->BindInt64(1, o.GetId ());
+    if (stat != BE_SQLITE_OK)
+        return stat;
+
     std::map<size_t, ECDbSqlColumn const*> primaryKeys;
-    while ((stat = stmt->Step ()) == BE_SQLITE_ROW)
+    while (stmt->Step () == BE_SQLITE_ROW)
         {
         stat = ReadColumn (*stmt, o, primaryKeys);
-        if (stat != BE_SQLITE_DONE)
+        if (stat != BE_SQLITE_OK)
             return stat;
         }
-
-    if (stat != BE_SQLITE_DONE)
-        return stat;
-  
+ 
     if (!primaryKeys.empty ())
         {
         auto n = o.GetPrimaryKeyConstraint ();
@@ -2422,30 +2410,27 @@ DbResult ECDbSqlPersistence::ReadColumns (ECDbSqlTable& o)
             n->Add (kp.second->GetName ().c_str ());
             }
         }
-    return stat;
+
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-DbResult ECDbSqlPersistence::ReadIndexes (ECDbSqlDb& o)
+DbResult ECDbSqlPersistence::ReadIndexes(ECDbSqlDb& o)
     {
-    DbResult stat = BE_SQLITE_DONE;
-    auto stmt = GetStatement (StatementType::SqlSelectIndex);
+    auto stmt = GetStatement(StatementType::SqlSelectIndex);
     if (stmt.IsNull())
         return BE_SQLITE_ERROR;
 
-    while ((stat = stmt->Step ()) == BE_SQLITE_ROW)
+    while (stmt->Step() == BE_SQLITE_ROW)
         {
-        stat = ReadIndex (*stmt, o);
-        if (stat != BE_SQLITE_DONE)
+        DbResult stat = ReadIndex(*stmt, o);
+        if (stat != BE_SQLITE_OK)
             return stat;
         }
 
-    if (stat != BE_SQLITE_DONE)
-        return stat;
-
-    return stat;
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2488,7 +2473,7 @@ DbResult ECDbSqlPersistence::ReadColumn (Statement& stmt, ECDbSqlTable& o , std:
         primaryKeys[primaryKey_Ordianal] = n;
         }
 
-    return BE_SQLITE_DONE;
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2496,8 +2481,6 @@ DbResult ECDbSqlPersistence::ReadColumn (Statement& stmt, ECDbSqlTable& o , std:
 //---------------------------------------------------------------------------------------
 DbResult ECDbSqlPersistence::ReadIndex (Statement& stmt, ECDbSqlDb& o)
     {
-    DbResult stat = BE_SQLITE_DONE;
-
     int64_t id = stmt.GetValueInt64 (0);
     Utf8CP tableName = stmt.GetValueText (1);
     Utf8CP name = stmt.GetValueText(2);
@@ -2528,17 +2511,14 @@ DbResult ECDbSqlPersistence::ReadIndex (Statement& stmt, ECDbSqlDb& o)
         return BE_SQLITE_ERROR;
 
     indexColStmt->BindInt64(1, id);
-    while ((stat = indexColStmt->Step()) == BE_SQLITE_ROW)
+    while (indexColStmt->Step() == BE_SQLITE_ROW)
         {
         Utf8CP columnName = indexColStmt->GetValueText(0);
         if (index->Add(columnName) != BentleyStatus::SUCCESS)
             return BE_SQLITE_ERROR;
         }
 
-    if (stat != BE_SQLITE_DONE)
-        return stat;
-
-    return BE_SQLITE_DONE;
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2546,23 +2526,19 @@ DbResult ECDbSqlPersistence::ReadIndex (Statement& stmt, ECDbSqlDb& o)
 //---------------------------------------------------------------------------------------
 DbResult ECDbSqlPersistence::ReadForeignKeys (ECDbSqlTable& o)
     {
-    DbResult stat = BE_SQLITE_DONE;
     auto stmt = GetStatement (StatementType::SqlSelectForeignKey);
     if (stmt.IsNull())
         return BE_SQLITE_ERROR;
 
     stmt->BindInt64 (1, o.GetId ());
-    while ((stat = stmt->Step ()) == BE_SQLITE_ROW)
+    while (stmt->Step () == BE_SQLITE_ROW)
         {
-        stat = ReadForeignKey (*stmt, o);
-        if (stat != BE_SQLITE_DONE)
+        const DbResult stat = ReadForeignKey (*stmt, o);
+        if (stat != BE_SQLITE_OK)
             return stat;
         }
 
-    if (stat != BE_SQLITE_DONE)
-        return stat;
-
-    return stat;
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2602,10 +2578,8 @@ DbResult ECDbSqlPersistence::ReadForeignKey (Statement& stmt, ECDbSqlTable& o)
     if (cstmt.IsNull ())
         return BE_SQLITE_ERROR;
 
-    DbResult stat = BE_SQLITE_DONE;
-
     cstmt->BindInt64 (1, id);
-    while ((stat = cstmt->Step ()) == BE_SQLITE_ROW)
+    while (cstmt->Step () == BE_SQLITE_ROW)
         {
         auto columnL = cstmt->GetValueText (0);
         auto columnR = cstmt->GetValueText (1);
@@ -2614,10 +2588,7 @@ DbResult ECDbSqlPersistence::ReadForeignKey (Statement& stmt, ECDbSqlTable& o)
             return BE_SQLITE_ERROR;
         }
 
-    if (stat != BE_SQLITE_DONE)
-        return stat;
-
-    return BE_SQLITE_DONE;
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2630,8 +2601,8 @@ DbResult ECDbSqlPersistence::Insert (ECDbSqlDb const& db)
 
     for (auto table : tables)
         {
-        auto stat = InsertTable (*table);
-        if (stat != BE_SQLITE_DONE)
+        DbResult stat = InsertTable (*table);
+        if (stat != BE_SQLITE_OK)
             return stat;
         }
 
@@ -2639,20 +2610,20 @@ DbResult ECDbSqlPersistence::Insert (ECDbSqlDb const& db)
         {
         for (auto constraint : table->GetConstraints ())
             {
-            auto stat = InsertConstraint (*constraint);
-            if (stat != BE_SQLITE_DONE)
+            DbResult stat = InsertConstraint (*constraint);
+            if (stat != BE_SQLITE_OK)
                 return stat;
             }
         }
 
     for (auto index : indexes)
         {
-        auto stat = InsertIndex (*index);
-        if (stat != BE_SQLITE_DONE)
+        DbResult stat = InsertIndex (*index);
+        if (stat != BE_SQLITE_OK)
             return stat;
         }
 
-    return BE_SQLITE_DONE;
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2686,11 +2657,11 @@ DbResult ECDbSqlPersistence::InsertTable (ECDbSqlTable const& o)
         {
         auto itor = primaryKeys.find (column);
         stat = InsertColumn (*column, (itor == primaryKeys.end() ?  -1 : itor->second));
-        if (stat != BE_SQLITE_DONE)
+        if (stat != BE_SQLITE_OK)
             return stat;
         }
 
-    return BE_SQLITE_DONE;
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2734,13 +2705,13 @@ DbResult ECDbSqlPersistence::InsertIndex (ECDbSqlIndex const& o)
             return stat;
         }
 
-    return BE_SQLITE_DONE;
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-DbResult ECDbSqlPersistence::InsertColumn (ECDbSqlColumn const& o, int primaryKeyOrdianal)
+DbResult ECDbSqlPersistence::InsertColumn (ECDbSqlColumn const& o, int primaryKeyOrdinal)
     {
     auto stmt = GetStatement (StatementType::SqlInsertColumn);
     if (stmt.IsNull())
@@ -2762,11 +2733,12 @@ DbResult ECDbSqlPersistence::InsertColumn (ECDbSqlColumn const& o, int primaryKe
         stmt->BindText (10, o.GetConstraint ().GetDefaultExpression ().c_str (), Statement::MakeCopy::No);
 
     stmt->BindInt (11, static_cast<int>(o.GetConstraint ().GetCollation ()));
-    if (primaryKeyOrdianal > -1)
-        stmt->BindInt (12, primaryKeyOrdianal);
+    if (primaryKeyOrdinal > -1)
+        stmt->BindInt (12, primaryKeyOrdinal);
 
     stmt->BindInt (13, Enum::ToInt(o.GetKind ()));
-    return stmt->Step ();
+    const DbResult stat = stmt->Step ();
+    return stat == BE_SQLITE_DONE ? BE_SQLITE_OK : stat;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2777,8 +2749,8 @@ DbResult ECDbSqlPersistence::InsertConstraint (ECDbSqlConstraint const& o)
     if (auto c = dynamic_cast<ECDbSqlForeignKeyConstraint const*>(&o))
         return InsertForeignKey (*c);
 
-    if (dynamic_cast<ECDbSqlPrimaryKeyConstraint const*>(&o))
-        return BE_SQLITE_DONE;
+    if (dynamic_cast<ECDbSqlPrimaryKeyConstraint const*>(&o) != nullptr)
+        return BE_SQLITE_OK;
 
     return BE_SQLITE_ERROR;
     }
@@ -2832,7 +2804,7 @@ DbResult ECDbSqlPersistence::InsertForeignKey (ECDbSqlForeignKeyConstraint const
             return stat;
         }
 
-    return BE_SQLITE_DONE;
+    return BE_SQLITE_OK;
     }
 
 //****************************************************************************************
@@ -3092,11 +3064,10 @@ CachedStatementPtr ECDbMapStorage::GetStatement (StatementType type)
 //---------------------------------------------------------------------------------------
 DbResult ECDbMapStorage::InsertOrReplace ()
     {
-    DbResult stat = BE_SQLITE_DONE;
     for (auto& propertyPath : m_propertyPaths)
         {
-        stat = InsertPropertyPath (*propertyPath.second);
-        if (stat != BE_SQLITE_DONE)
+        const DbResult stat = InsertPropertyPath (*propertyPath.second);
+        if (stat != BE_SQLITE_OK)
             {
             BeAssert (false && "Failed to insert propertypath");
             return stat;
@@ -3105,8 +3076,8 @@ DbResult ECDbMapStorage::InsertOrReplace ()
 
     for (auto& classMap : m_classMaps)
         {
-        stat = InsertClassMap (*classMap.second);
-        if (stat != BE_SQLITE_DONE)
+        const DbResult stat = InsertClassMap (*classMap.second);
+        if (stat != BE_SQLITE_OK)
             {
             BeAssert (false && "Failed to insert classmap");
             return stat;
@@ -3118,8 +3089,8 @@ DbResult ECDbMapStorage::InsertOrReplace ()
         {
         for (auto propertyMap : classMap.second->GetPropertyMaps (true))
             {
-            stat = InsertPropertyMap (*propertyMap);
-            if (stat != BE_SQLITE_DONE)
+            const DbResult stat = InsertPropertyMap (*propertyMap);
+            if (stat != BE_SQLITE_OK)
                 {
                 BeAssert (false && "Failed to insert property map");
                 return stat;
@@ -3127,7 +3098,7 @@ DbResult ECDbMapStorage::InsertOrReplace ()
             }
         }
 
-    return stat;
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
@@ -3204,7 +3175,7 @@ DbResult ECDbMapStorage::InsertPropertyPath (ECDbPropertyPath const& o)
 DbResult ECDbMapStorage::Read ()
     {
     auto r = ReadPropertyPaths ();
-    if (r != BE_SQLITE_DONE)
+    if (r != BE_SQLITE_OK)
         return r;
 
     return ReadClassMaps ();
@@ -3257,7 +3228,7 @@ DbResult ECDbMapStorage::ReadPropertyMap (ECDbClassMapInfo& o)
             }
         }
 
-    return BE_SQLITE_DONE;
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
@@ -3294,14 +3265,14 @@ DbResult ECDbMapStorage::ReadClassMaps ()
             return BE_SQLITE_ERROR;
             }
 
-        if (ReadPropertyMap (*classMap) != BE_SQLITE_DONE)
+        if (ReadPropertyMap (*classMap) != BE_SQLITE_OK)
             {
             BeAssert (false && "Failed to resolve property map");
             return BE_SQLITE_ERROR;
             }
         }
 
-    return BE_SQLITE_DONE;
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
@@ -3329,7 +3300,7 @@ DbResult ECDbMapStorage::ReadPropertyPaths ()
             }
         }
 
-    return BE_SQLITE_DONE;
+    return BE_SQLITE_OK;
     }
 //****************************************************************************************
 //ECDbMapStorage

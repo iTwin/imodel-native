@@ -567,7 +567,7 @@ struct ECDbSqlTable : NonCopyableClass
         PersistenceType m_type;
         OwnerType m_ownerType;
         std::map<Utf8CP, std::shared_ptr<ECDbSqlColumn>, CompareIUtf8> m_columns;
-        std::map<Utf8CP, std::unique_ptr<ECDbSqlTrigger>, CompareIUtf8> m_trigers;
+        std::map<Utf8CP, std::unique_ptr<ECDbSqlTrigger>, CompareIUtf8> m_triggers;
         std::vector<ECDbSqlColumn const*> m_orderedColumns;
         mutable bool m_isClassIdColumnCached;
         mutable ECDbSqlColumn const* m_classIdColumn;

@@ -722,9 +722,8 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RelationshipClassEndTableMap::GetRelationshipColumnName (Utf8StringR columnName, ECDbSqlTable const& table, Utf8CP prefix, bool mappingInProgress) const
     {
-    Utf8String classNameUtf8 (m_ecClass.GetName());
-    columnName = prefix;
-    columnName.append (classNameUtf8);
+    columnName.assign(prefix);
+    columnName.append(m_ecClass.GetName());
     
     if (table.FindColumnCP (columnName.c_str()) == nullptr)
         return true;
@@ -741,7 +740,7 @@ bool RelationshipClassEndTableMap::GetRelationshipColumnName (Utf8StringR column
     if (mappingInProgress)
         {
         LOG.errorv ("Table %s already contains column named %s. ECRelationship %s has failed to map.", 
-            table.GetName().c_str(), columnName.c_str(), Utf8String (m_ecClass.GetFullName()).c_str ());
+            table.GetName().c_str(), columnName.c_str(), m_ecClass.GetFullName());
         return false;
         }
     return true;
