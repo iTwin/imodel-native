@@ -18,11 +18,6 @@
 #include <DgnPlatform/Tools/stringop.h>
 #include <Bentley/BeFileListIterator.h>
 
-#ifdef BENTLEYCONFIG_OS_APPLE_IOS
-// Avoids ambiguous resolution of wcs functions.
-#define wcsrchr ::wcsrchr
-#endif
-
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 #define UF_INTERNALUSE_RELATIVEPATH 0x40
