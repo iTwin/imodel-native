@@ -15,6 +15,7 @@
 // 
 // index --> Url index set at the create
 // index == -1 --> General error, pClient will be NULL.
+// index == -2 --> Retry the command.
 // ErrorCode --> Curl error code.
 // If RealityDataDownload_ProgressCallBack returns # 0 --> cancel the transfer
 typedef int(__cdecl *RealityDataDownload_ProgressCallBack)(int index, void *pClient, size_t ByteCurrent, size_t ByteTotal);

@@ -16,8 +16,9 @@
 #include <stdio.h>
 #include <curl/curl.h>
 
-#define MAX_RETRY_ON_ERROR  25
-#define MAX_NB_CONNECTIONS  10
+#define MAX_RETRY_ON_ERROR          25
+#define MAX_NB_CONNECTIONS          10
+#define DEFAULT_STEP_PROGRESSCALL   (64*1024)      // default step if filesize is absent.
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -70,15 +71,18 @@ static int callback_progress_func(void *pClient,
             if (pFileTrans->filesize == 0)
                 {
                 pFileTrans->filesize = (size_t)dltotal;
-                pFileTrans->downloadedSizeStep = (size_t)(dltotal * pFileTrans->progressStep);
+                pFileTrans->downloadedSizeStep = (size_t)(pFileTrans->filesize * pFileTrans->progressStep);
                 }
             }
 
         if (dlnow > pFileTrans->downloadedSizeStep)
             {
-            pFileTrans->downloadedSizeStep += (size_t)(dltotal * pFileTrans->progressStep);
+            if (pFileTrans->filesize == 0)
+                pFileTrans->downloadedSizeStep += pFileTrans->downloadedSizeStep;       // predefine step
+            else
+                pFileTrans->downloadedSizeStep += (size_t)(pFileTrans->filesize * pFileTrans->progressStep);
 
-            (pFileTrans->pProgressFunc)((int)pFileTrans->index, pClient, (size_t)dlnow, (size_t)dltotal);
+            return (pFileTrans->pProgressFunc)((int)pFileTrans->index, pClient, (size_t)dlnow, pFileTrans->filesize);
             }
         }
 
@@ -114,7 +118,7 @@ RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName
         m_pEntries[i].iAppend = 0;
         m_pEntries[i].nbRetry = 0;
 
-        m_pEntries[i].downloadedSizeStep = 64*1024;         // default step if file size absent.
+        m_pEntries[i].downloadedSizeStep = DEFAULT_STEP_PROGRESSCALL;   // default step if filesize is absent.
         m_pEntries[i].filesize = 0;
         m_pEntries[i].progressStep = 0.01;
         }

@@ -22,11 +22,13 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 static int callback_progress_func (int index,void *pClient, size_t ByteCurrent,size_t ByteTotal)
     {
+    int ret = 0;
+
     RealityDataDownload::FileTransfer* pEntry = (RealityDataDownload::FileTransfer*)pClient;
 
     printf("* ProgressInfo: (%d) %ls -- %lu of %lu\n", index, pEntry->filename.c_str(), ByteCurrent, ByteTotal);
 
-    return 0;   // # 0 --> will abort the transfer.
+    return ret;   // # 0 --> will abort the transfer.
     }
 
 static void callback_status_func (int index, void *pClient, int ErrorCode, const char* pMsg)
@@ -60,7 +62,7 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
     { 
 //      "ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/Elevation/13/IMG/USGS_NED_13_n41w076_IMG.zip",
 //    "ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/Elevation/1/IMG/USGS_NED_1_n41w076_IMG.zip",
-    "ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/19/IMG/ned19_n40x25_w075x75_pa_northeast_2010.zip",
+//    "ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/19/IMG/ned19_n40x25_w075x75_pa_northeast_2010.zip",
     "ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/19/IMG/ned19_n40x25_w075x75_pa_east_2006.zip"
     };
 
