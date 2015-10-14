@@ -187,9 +187,6 @@ struct AnnotationFrameStyleSetter (emitVectorTypedefs) {
 table AnnotationFrameStyle {
     majorVersion:ubyte;
     minorVersion:ubyte;
-    id:long;
-    name:string;
-    description:string;
     setters:[AnnotationFrameStyleSetter];
 
 } // AnnotationFrameStyle
@@ -247,9 +244,6 @@ struct AnnotationLeaderStyleSetter (emitVectorTypedefs) {
 table AnnotationLeaderStyle {
     majorVersion:ubyte;
     minorVersion:ubyte;
-    id:long;
-    name:string;
-    description:string;
     setters:[AnnotationLeaderStyleSetter];
 
 } // AnnotationLeaderStyle

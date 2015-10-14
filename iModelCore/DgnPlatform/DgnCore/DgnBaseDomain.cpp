@@ -108,6 +108,8 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::SubCategory::GetHandler());
 
     RegisterHandler(dgn_ElementHandler::AnnotationTextStyleHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::AnnotationFrameStyleHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::AnnotationLeaderStyleHandler::GetHandler());
 
     RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Local::GetHandler());

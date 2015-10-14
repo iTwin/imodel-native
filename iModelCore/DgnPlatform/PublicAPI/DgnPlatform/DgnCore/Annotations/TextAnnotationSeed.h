@@ -103,10 +103,10 @@ public:
     Utf8StringCR GetDescription() const { return m_description; }
     void SetDescription(Utf8CP value) { m_description = value; }
 
-    DGNPLATFORM_EXPORT DgnStyleId GetFrameStyleId() const;
-    DGNPLATFORM_EXPORT void SetFrameStyleId(DgnStyleId);
-    DGNPLATFORM_EXPORT DgnStyleId GetLeaderStyleId() const;
-    DGNPLATFORM_EXPORT void SetLeaderStyleId(DgnStyleId);
+    DGNPLATFORM_EXPORT AnnotationFrameStyleId GetFrameStyleId() const;
+    DGNPLATFORM_EXPORT void SetFrameStyleId(AnnotationFrameStyleId);
+    DGNPLATFORM_EXPORT AnnotationLeaderStyleId GetLeaderStyleId() const;
+    DGNPLATFORM_EXPORT void SetLeaderStyleId(AnnotationLeaderStyleId);
     DGNPLATFORM_EXPORT AnnotationTextStyleId GetTextStyleId() const;
     DGNPLATFORM_EXPORT void SetTextStyleId(AnnotationTextStyleId);
 };

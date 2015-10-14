@@ -93,8 +93,6 @@ public:
     void SetIntegerProperty(AnnotationTextStyleProperty key, T_Integer value) { T_Super::SetIntegerProperty((T_Key)key, value); }
     T_Real GetRealProperty(AnnotationTextStyleProperty key) const { return T_Super::GetRealProperty((T_Key)key); }
     void SetRealProperty(AnnotationTextStyleProperty key, T_Real value) { T_Super::SetRealProperty((T_Key)key, value); }
-
-    uint32_t GetMemSize() const;
 };
 
 //=======================================================================================
@@ -203,7 +201,7 @@ public:
     static AnnotationTextStyleCPtr QueryStyle(Utf8StringCR styleName, DgnDbR db) { return QueryStyle(QueryStyleId(styleName, db), db); }
 
     DGNPLATFORM_EXPORT static bool ExistsById(AnnotationTextStyleId id, DgnDbR db);
-    static bool ExistsByName(Utf8CP name, DgnDbR db) { return QueryStyleId(name, db).IsValid(); }
+    static bool ExistsByName(Utf8StringCR name, DgnDbR db) { return QueryStyleId(name, db).IsValid(); }
 
     DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR db);
 

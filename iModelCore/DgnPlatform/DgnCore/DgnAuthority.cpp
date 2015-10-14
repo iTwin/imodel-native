@@ -483,6 +483,22 @@ DgnAuthority::Code AnnotationTextStyle::CreateStyleCode(Utf8StringCR name, DgnDb
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code AnnotationFrameStyle::CreateStyleCode(Utf8StringCR name, DgnDbR db)
+    {
+    return createResourceCode(name, db, DGN_CLASSNAME_AnnotationFrameStyle);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code AnnotationLeaderStyle::CreateStyleCode(Utf8StringCR name, DgnDbR db)
+    {
+    return createResourceCode(name, db, DGN_CLASSNAME_AnnotationLeaderStyle);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnAuthority::Code DgnAuthority::GenerateDefaultCode(DgnElementCR el)
