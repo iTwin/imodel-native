@@ -41,7 +41,7 @@ void PerformanceResultRecorder::writeResults(Utf8String testcaseName, Utf8String
     if (!existingFile)
         fprintf(logFile, "DateTime, TestCaseName, TestName, ExecutionTime, TestDescription, opCount\n");
     Utf8String dateTime = DateTime::GetCurrentTime().ToUtf8String();
-    fprintf(logFile, "%s, %s, %s, %.6lf, \"%s\", %ld\n", dateTime.c_str(), testcaseName.c_str(), testName.c_str(), timeInSeconds, testDescription.c_str(), opCount);
+    fprintf(logFile, "%s, %s, %s, %.6lf, \"%s\", %d\n", dateTime.c_str(), testcaseName.c_str(), testName.c_str(), timeInSeconds, testDescription.c_str(), opCount);
 
     fclose(logFile);
 }
