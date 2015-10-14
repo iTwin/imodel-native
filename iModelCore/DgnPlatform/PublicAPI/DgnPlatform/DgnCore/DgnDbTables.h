@@ -16,8 +16,11 @@
 //-----------------------------------------------------------------------------------------
 // ECClass names (combine with DGN_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
+#define DGN_CLASSNAME_AnnotationFrameStyle  "AnnotationFrameStyle"
+#define DGN_CLASSNAME_AnnotationLeaderStyle "AnnotationLeaderStyle"
+#define DGN_CLASSNAME_AnnotationTextStyle   "AnnotationTextStyle"
 #define DGN_CLASSNAME_Authority             "Authority"
-#define DGN_CLASSNAME_Color                 "Color"
+#define DGN_CLASSNAME_TrueColor             "TrueColor"
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
 #define DGN_CLASSNAME_ComponentSolution     "ComponentSolution"
 #define DGN_CLASSNAME_DictionaryElement     "DictionaryElement"
@@ -46,6 +49,7 @@
 #define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
 #define DGN_CLASSNAME_SheetModel            "SheetModel"
 #define DGN_CLASSNAME_Style                 "Style"
+#define DGN_CLASSNAME_TextAnnotationSeed    "TextAnnotationSeed"
 #define DGN_CLASSNAME_Texture               "Texture"
 #define DGN_CLASSNAME_View                  "View"
 #define DGN_CLASSNAME_CameraView            "CameraView"
@@ -475,91 +479,6 @@ public:
 };
 
 //=======================================================================================
-//! The DgnColors holds the Named Colors for a DgnDb. Named Colors are RGB values (no transparency) that may
-//! be named and from a "color book". The entries in the table are identified by DgnTrueColorId's.
-//! Once a True Color is defined, it may not be changed or deleted. Note that there may be multiple enties in the table with the same RGB value.
-//! However, for a given book name, there may not be two entries with the same name.
-//! @see DgnDb::Colors
-//=======================================================================================
-struct DgnColors : DgnDbTable
-{
-private:
-    friend struct DgnDb;
-
-    explicit DgnColors(DgnDbR db) : DgnDbTable(db){}
-
-public:
-    struct Color
-    {
-    friend struct DgnColors;
-    private:
-        DgnTrueColorId m_id;
-        ColorDef       m_color;
-        Utf8String     m_name;
-        Utf8String     m_book;
-
-    public:
-        Color(ColorDef color, Utf8CP name, Utf8CP book=nullptr) : m_color(color), m_book(book), m_name(name) {}
-        Color() {}
-        bool IsValid() const {return m_id.IsValid();}
-        DgnTrueColorId GetId() const {return m_id;}
-        ColorDef GetColor() const {return m_color;}
-        Utf8StringCR GetName() const {return m_name;}
-        Utf8StringCR GetBook() const {return m_book;}
-    };
-
-    //! Add a new Color to the table.
-    //! @param[in] color    The Color values for the new entry.
-    //! @param[out] result  The result of the operation
-    //! @note For a given bookname, there may not be more than one color with the same name.
-    //! @return colorId The DgnTrueColorId for the newly created entry. Will be invalid if name+bookname is not unique.
-    DGNPLATFORM_EXPORT DgnTrueColorId Insert(Color& color, DgnDbStatus* result = nullptr);
-
-    //! Find the first DgnTrueColorId that has a given ColorDef value.
-    //! @return A DgnTrueColorId for the supplied color value. If no entry in the table has the given value, the DgnTrueColorId will be invalid.
-    //! @note If the table holds more than one entry with the same value, it is undefined which DgnTrueColorId is returned.
-    DGNPLATFORM_EXPORT DgnTrueColorId FindMatchingColor(ColorDef color) const;
-
-    //! Get a color by DgnTrueColorId.
-    //! @param[in] colorId the true color id to query
-    //! @return Color 
-    DGNPLATFORM_EXPORT Color QueryColor(DgnTrueColorId colorId) const;
-
-    //! Get color by name and bookname.
-    //! @param[in] name The name for the colorId.
-    //! @param[in] bookname The bookName for the colorId.
-    DGNPLATFORM_EXPORT Color QueryColorByName(Utf8CP name, Utf8CP bookname) const;
-
-    struct Iterator : BeSQLite::DbTableIterator
-    {
-    public:
-        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) {}
-
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-        {
-        private:
-            friend struct Iterator;
-            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
-        public:
-            DGNPLATFORM_EXPORT DgnTrueColorId GetId() const;
-            DGNPLATFORM_EXPORT ColorDef GetColor() const;
-            DGNPLATFORM_EXPORT Utf8CP GetName() const;
-            DGNPLATFORM_EXPORT Utf8CP GetBook() const;
-            Entry const& operator*() const {return *this;}
-        };
-
-    typedef Entry const_iterator;
-    typedef Entry iterator;
-    DGNPLATFORM_EXPORT size_t QueryCount() const;
-    DGNPLATFORM_EXPORT Entry begin() const;
-    Entry end() const {return Entry(nullptr, false);}
-    };
-
-    //! Make an iterator over the named colors in this DgnDb.
-    Iterator MakeIterator() const {return Iterator(m_dgndb);}
-};
-
-//=======================================================================================
 //! @see DgnDb::Fonts
 // @bsiclass                                                    Jeff.Marker     03/2015
 //=======================================================================================
@@ -861,10 +780,6 @@ private:
     friend struct DgnDb;
 
     struct DgnLineStyles* m_lineStyles;
-    struct DgnAnnotationTextStyles* m_annotationTextStyles;
-    struct DgnAnnotationFrameStyles* m_annotationFrameStyles;
-    struct DgnAnnotationLeaderStyles* m_annotationLeaderStyles;
-    struct DgnTextAnnotationSeeds* m_textAnnotationSeeds;
 
     explicit DgnStyles(DgnDbR);
     ~DgnStyles();
@@ -872,18 +787,6 @@ private:
 public:
     //! Provides accessors for line styles.
     DGNPLATFORM_EXPORT struct DgnLineStyles& LineStyles();
-
-    //! Provides accessors for annotation text styles.
-    DGNPLATFORM_EXPORT struct DgnAnnotationTextStyles& AnnotationTextStyles();
-
-    //! Provides accessors for annotation frame styles.
-    DGNPLATFORM_EXPORT struct DgnAnnotationFrameStyles& AnnotationFrameStyles();
-
-    //! Provides accessors for annotation leader styles.
-    DGNPLATFORM_EXPORT struct DgnAnnotationLeaderStyles& AnnotationLeaderStyles();
-
-    //! Provides accessors for text annotation seeds.
-    DGNPLATFORM_EXPORT struct DgnTextAnnotationSeeds& TextAnnotationSeeds();
 };
 
 //=======================================================================================

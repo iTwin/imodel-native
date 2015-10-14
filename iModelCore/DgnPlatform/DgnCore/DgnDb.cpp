@@ -38,7 +38,7 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_colors(*this), m_domains(*this), m_styles(*this), m_views(*this),
+DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_styles(*this), m_views(*this),
                  m_geomParts(*this), m_units(*this), m_models(*this), m_elements(*this), 
                  m_links(*this), m_authorities(*this), m_ecsqlCache(50, "DgnDb")
     {
@@ -243,8 +243,7 @@ DgnDbStatus DgnDb::CompactFile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnStyles::DgnStyles(DgnDbR project) : DgnDbTable(project), m_lineStyles(nullptr), m_annotationTextStyles(nullptr), m_annotationFrameStyles(nullptr),
-            m_annotationLeaderStyles(nullptr), m_textAnnotationSeeds(nullptr)
+DgnStyles::DgnStyles(DgnDbR project) : DgnDbTable(project), m_lineStyles(nullptr)
     {
     }
 
@@ -254,17 +253,9 @@ DgnStyles::DgnStyles(DgnDbR project) : DgnDbTable(project), m_lineStyles(nullptr
 DgnStyles::~DgnStyles()
     {
     DELETE_AND_CLEAR(m_lineStyles);
-    DELETE_AND_CLEAR(m_annotationTextStyles);
-    DELETE_AND_CLEAR(m_annotationFrameStyles);
-    DELETE_AND_CLEAR(m_annotationLeaderStyles);
-    DELETE_AND_CLEAR(m_textAnnotationSeeds);
     }
 
 DgnLineStyles& DgnStyles::LineStyles() {if (NULL == m_lineStyles) m_lineStyles = new DgnLineStyles(m_dgndb); return *m_lineStyles;}
-DgnAnnotationTextStyles& DgnStyles::AnnotationTextStyles() {if (NULL == m_annotationTextStyles) m_annotationTextStyles = new DgnAnnotationTextStyles(m_dgndb); return *m_annotationTextStyles;}
-DgnAnnotationFrameStyles& DgnStyles::AnnotationFrameStyles() {if (NULL == m_annotationFrameStyles) m_annotationFrameStyles = new DgnAnnotationFrameStyles(m_dgndb); return *m_annotationFrameStyles;}
-DgnAnnotationLeaderStyles& DgnStyles::AnnotationLeaderStyles() {if (NULL == m_annotationLeaderStyles) m_annotationLeaderStyles = new DgnAnnotationLeaderStyles(m_dgndb); return *m_annotationLeaderStyles;}
-DgnTextAnnotationSeeds& DgnStyles::TextAnnotationSeeds() {if (NULL == m_textAnnotationSeeds) m_textAnnotationSeeds = new DgnTextAnnotationSeeds(m_dgndb); return *m_textAnnotationSeeds;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15

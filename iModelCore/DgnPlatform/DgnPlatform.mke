@@ -164,7 +164,7 @@ $(coreObjs)DgnRangeTree$(oext): $(DgnCoreDir)DgnRangeTree.cpp $(DgnCoreAPISrc)Dg
 
 $(coreObjs)VecMathDGNTolerances$(oext):     $(DgnCoreDir)VecMathDGNTolerances.cpp $(DgnPlatformAPISrc)VecMath.h ${MultiCompileDepends}
 
-$(coreObjs)DgnColors$(oext):   $(DgnCoreDir)DgnColors.cpp $(DgnCoreAPISrc)ColorUtil.h ${MultiCompileDepends}
+$(coreObjs)DgnColors$(oext):   $(DgnCoreDir)DgnColors.cpp $(DgnCoreAPISrc)ColorUtil.h $(DgnCoreAPISrc)DgnTrueColor.h ${MultiCompileDepends}
 
 $(coreObjs)ViewController$(oext):    $(DgnCoreDir)ViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends} $(contextDepends)
 

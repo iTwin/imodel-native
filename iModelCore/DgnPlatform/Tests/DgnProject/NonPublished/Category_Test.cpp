@@ -66,7 +66,8 @@ struct CategoryTests : public DgnDbTestFixture
 TEST_F (CategoryTests, InsertCategory)
     {
     SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
-
+    ASSERT_TRUE(m_db.IsValid());
+        
     //Category properties.
     Utf8CP cat_code = "Test Category";
     Utf8CP cat_desc = "This is a test category.";
