@@ -7,6 +7,152 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
+#define PROP_Value "Data"
+
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
+namespace dgn_ElementHandler
+{
+    HANDLER_DEFINE_MEMBERS(TrueColor);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TrueColor::_GetClassParams(ECSqlClassParams& params)
+    {
+    T_Super::_GetClassParams(params);
+    params.Add(PROP_Value, ECSqlClassParams::StatementType::ReadOnly);
+    }
+
+}
+END_BENTLEY_DGNPLATFORM_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnTrueColor::CreateParams::CreateParams(DgnDbR db, ColorDef colorDef, Utf8StringCR name, Utf8StringCR book)
+  : T_Super(db, QueryDgnClassId(db), CreateColorCode(name, book, db)),
+    m_colorDef(colorDef)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnTrueColor::_ExtractSelectParams(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params)
+    {
+    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    if (DgnDbStatus::Success == status)
+        m_colorDef = ColorDef(static_cast<uint32_t>(stmt.GetValueInt(params.GetSelectIndex(PROP_Value))));
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnTrueColor::_BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt)
+    {
+    auto status = T_Super::_BindInsertParams(stmt);
+    if (DgnDbStatus::Success == status)
+        stmt.BindInt(stmt.GetParameterIndex(PROP_Value), static_cast<int32_t>(m_colorDef.GetValue()));
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnTrueColor::_CopyFrom(DgnElementCR src)
+    {
+    T_Super::_CopyFrom(src);
+    auto other = dynamic_cast<DgnTrueColorCP>(&src);
+    BeAssert(nullptr != other);
+    if (nullptr != other)
+        m_colorDef = other->m_colorDef;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnTrueColorId DgnTrueColor::QueryColorId(Code const& code, DgnDbR db)
+    {
+    return DgnTrueColorId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnTrueColorId DgnTrueColor::FindMatchingColor(ColorDef colorDef, DgnDbR db)
+    {
+    DgnTrueColorId colorId;
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_TrueColor) " Where Data=? LIMIT 1");
+    if (stmt.IsValid())
+        {
+        stmt->BindInt(1, static_cast<int32_t>(colorDef.GetValue()));
+        if (BE_SQLITE_ROW == stmt->Step())
+            colorId = stmt->GetValueId<DgnTrueColorId>(0);
+        }
+
+    return colorId;
+    }
+
+#define COUNT_TrueColor "SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_TrueColor)
+#define COUNT_TrueColorByBook COUNT_TrueColor " WHERE CodeNameSpace=?"
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t DgnTrueColor::QueryCount(DgnDbR db, Utf8CP book)
+    {
+    size_t count = 0;
+    Utf8CP ecsql = nullptr != book ? COUNT_TrueColorByBook : COUNT_TrueColor;
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql);
+    if (stmt.IsValid())
+        {
+        if (nullptr != book)
+            stmt->BindText(1, book, IECSqlBinder::MakeCopy::No);
+
+        if (BE_SQLITE_ROW == stmt->Step())
+            count = static_cast<size_t>(stmt->GetValueInt(0));
+        }
+
+    return count;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ColorDef DgnTrueColor::Entry::GetColorDef() const
+    {
+    return ColorDef(static_cast<uint32_t>(m_statement->GetValueInt(3)));
+    }
+
+#define SELECT_TrueColor "SELECT ECInstanceId, Code, CodeNameSpace, Data FROM " DGN_SCHEMA(DGN_CLASSNAME_TrueColor)
+#define SELECT_TrueColorByBook SELECT_TrueColor " WHERE CodeNameSpace=?"
+#define SELECT_ORDERED_TrueColor SELECT_TrueColor " ORDER BY CodeNameSpace, Code"
+#define SELECT_ORDERED_TrueColorByBook SELECT_TrueColorByBook " ORDER BY Code"
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnTrueColor::Iterator DgnTrueColor::MakeIterator(DgnDbR db, Utf8CP book, bool ordered)
+    {
+    Utf8CP ecsql;
+    if (nullptr == book)
+        ecsql = ordered ? SELECT_ORDERED_TrueColor : SELECT_TrueColor;
+    else
+        ecsql = ordered ? SELECT_ORDERED_TrueColorByBook : SELECT_TrueColorByBook;
+
+    Iterator iter;
+    ECSqlStatement* stmt = iter.Prepare(db, ecsql, 0);
+    if (nullptr != stmt && nullptr != book)
+        stmt->BindText(1, book, IECSqlBinder::MakeCopy::Yes);
+
+    return iter;
+    }
+
 #define MAXFACTOR                       100.0
 #define MAXDEGREES                      360.0
 #define DEGREEFACTOR                    60.0
@@ -403,120 +549,3 @@ void ColorUtil::Interpolate (ColorDefP interpolatedColors, size_t nInterpolatedC
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnTrueColorId DgnColors::FindMatchingColor(ColorDef color) const
-    {
-    Statement stmt(m_dgndb, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Color) " WHERE Value=?");
-    stmt.BindInt(1, color.GetValue());
-
-    return (BE_SQLITE_ROW == stmt.Step()) ? stmt.GetValueId<DgnTrueColorId>(0) : DgnTrueColorId();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnColors::Color DgnColors::QueryColor(DgnTrueColorId id) const
-    {
-    DgnColors::Color output;
-    Statement stmt(m_dgndb, "SELECT Value,Name,Book FROM " DGN_TABLE(DGN_CLASSNAME_Color) " WHERE Id=?");
-    stmt.BindId(1, id);
-    if (BE_SQLITE_ROW != stmt.Step())
-        return output;
-
-    output.m_id = id;
-    output.m_color = ColorDef(stmt.GetValueInt(0));
-    output.m_name.AssignOrClear(stmt.GetValueText(1));
-    output.m_book.AssignOrClear(stmt.GetValueText(2));
-    return output;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnColors::Color DgnColors::QueryColorByName(Utf8CP name, Utf8CP book) const
-    {
-    DgnColors::Color output;
-    Statement stmt(m_dgndb, "SELECT Value,Id FROM " DGN_TABLE(DGN_CLASSNAME_Color) " WHERE Name=? AND Book=?");
-    stmt.BindText(1, name, Statement::MakeCopy::No);
-    stmt.BindText(2, book, Statement::MakeCopy::No);
-    if (BE_SQLITE_ROW != stmt.Step())
-        return output;
-
-    output.m_id = stmt.GetValueId<DgnTrueColorId>(1);
-    output.m_color = ColorDef(stmt.GetValueInt(0));
-    output.m_name.AssignOrClear(name);
-    output.m_book.AssignOrClear(book);
-    return output;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnTrueColorId DgnColors::Insert(Color& color, DgnDbStatus* outResult)
-    {
-    DgnDbStatus ALLOW_NULL_OUTPUT(result, outResult);
-    DgnTrueColorId newId;
-
-    auto status = m_dgndb.GetServerIssuedId(newId, DGN_TABLE(DGN_CLASSNAME_Color), "Id");
-    if (status != BE_SQLITE_OK)
-        {
-        BeAssert(false);
-        result = DgnDbStatus::ForeignKeyConstraint;
-        return DgnTrueColorId();
-        }
-
-    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Color) " (Id,Value,Name,Book) VALUES(?,?,?,?)");
-    stmt.BindId(1, newId);
-    stmt.BindInt(2, color.GetColor().GetValue());
-    stmt.BindText(3, color.m_name, Statement::MakeCopy::No);
-    stmt.BindText(4, color.m_book, Statement::MakeCopy::No);
-
-    status = stmt.Step();
-    if (BE_SQLITE_DONE!=status)
-        {
-        result = DgnDbStatus::DuplicateName;
-        return DgnTrueColorId();
-        }
-
-    result = DgnDbStatus::Success;
-    color.m_id = newId;
-    return newId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t DgnColors::Iterator::QueryCount() const
-    {
-    Utf8String sqlString = MakeSqlString("SELECT count(*) FROM " DGN_TABLE(DGN_CLASSNAME_Color));
-    Statement sql(*m_db, sqlString.c_str());
-
-    return BE_SQLITE_ROW != sql.Step() ? 0 : sql.GetValueInt(0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnColors::Iterator::const_iterator DgnColors::Iterator::begin() const
-    {
-    if (!m_stmt.IsValid())
-        {
-        Utf8String sqlString = MakeSqlString("SELECT Id,Value,Name,Book FROM " DGN_TABLE(DGN_CLASSNAME_Color));
-
-        m_db->GetCachedStatement(m_stmt, sqlString.c_str());
-        m_params.Bind(*m_stmt);
-        }
-    else
-        {
-        m_stmt->Reset();
-        }
-
-    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
-    }
-
-DgnTrueColorId DgnColors::Iterator::Entry::GetId() const {Verify(); return m_sql->GetValueId<DgnTrueColorId>(0);}
-ColorDef DgnColors::Iterator::Entry::GetColor() const {Verify(); return ColorDef(m_sql->GetValueInt(1));}
-Utf8CP DgnColors::Iterator::Entry::GetName() const {Verify(); return m_sql->GetValueText(2);}
-Utf8CP DgnColors::Iterator::Entry::GetBook() const {Verify(); return m_sql->GetValueText(3);}

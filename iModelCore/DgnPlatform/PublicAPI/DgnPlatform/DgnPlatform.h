@@ -301,12 +301,12 @@ BEREPOSITORYBASED_ID_SUBCLASS(AnnotationTextStyleId, DgnElementId) //!< An eleme
 BEREPOSITORYBASED_ID_SUBCLASS(AnnotationFrameStyleId, DgnElementId) //!< An element Id that refers to an AnnotationFrameStyle. @ingroup Annotations
 BEREPOSITORYBASED_ID_SUBCLASS(AnnotationLeaderStyleId, DgnElementId) //!< An element Id that refers to an AnnotationLeaderStyle. @ingroup Annotations
 BEREPOSITORYBASED_ID_SUBCLASS(TextAnnotationSeedId, DgnElementId) //!< An element Id that refers to an TextAnnotationSeed. @ingroup Annotations
+BEREPOSITORYBASED_ID_SUBCLASS(DgnTrueColorId, DgnElementId) //!< An element Id that refers a a DgnTrueColor.
 
 BESERVER_ISSUED_ID_CLASS(DgnAuthorityId)
 BESERVER_ISSUED_ID_CLASS(DgnFontId)
 BESERVER_ISSUED_ID_CLASS(DgnSessionId)       //!< An Id that is assigned to a session. See DgnDb#Sessions.
 BESERVER_ISSUED_ID_CLASS(DgnStyleId)         //!< An Id that is assigned to a style. See DgnDb#Styles.
-BESERVER_ISSUED_ID_CLASS(DgnTrueColorId)     //!< An Id that is assigned to a true color. See DgnDb#Colors.
 
 namespace dgn_ElementHandler{struct Element;};
 namespace dgn_ModelHandler  {struct Model;};

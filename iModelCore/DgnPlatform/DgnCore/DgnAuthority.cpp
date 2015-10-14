@@ -344,6 +344,7 @@ enum BuiltinAuthority : uint64_t
     BuiltinAuthority_Material = 2LL,
     BuiltinAuthority_Category = 3LL,
     BuiltinAuthority_Resource = 4LL,    // Resources with a single name unique within a DgnDb, e.g. text styles, light definitions...namespace=resource type
+    BuiltinAuthority_TrueColor = 5LL,
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -446,6 +447,16 @@ DgnAuthority::Code DgnMaterial::CreateMaterialCode(Utf8StringCR palette, Utf8Str
     auto auth = getBuiltinAuthority<NamespaceAuthority>(BuiltinAuthority_Material, db);
     BeAssert(auth.IsValid());
     return auth.IsValid() ? auth->CreateCode(material, palette) : DgnAuthority::Code();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code DgnTrueColor::CreateColorCode(Utf8StringCR name, Utf8StringCR book, DgnDbR db)
+    {
+    auto auth = getBuiltinAuthority<NamespaceAuthority>(BuiltinAuthority_TrueColor, db);
+    BeAssert(auth.IsValid());
+    return auth.IsValid() ? auth->CreateCode(name, book) : Code();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -129,7 +129,6 @@ protected:
     DgnVersion      m_schemaVersion;
     DgnDomains      m_domains;
     DgnFonts        m_fonts;
-    DgnColors       m_colors;
     DgnStyles       m_styles;
     DgnUnits        m_units;
     DgnViews        m_views;
@@ -190,7 +189,6 @@ public:
     DgnElements& Elements() const{return const_cast<DgnElements&>(m_elements);}          //!< The DgnElements of this DgnDb
     DgnViews& Views() const {return const_cast<DgnViews&>(m_views);}                     //!< The DgnViews for this DgnDb
     DgnUnits& Units() const {return const_cast<DgnUnits&>(m_units);}                     //!< The units for this DgnDb
-    DgnColors& Colors() const {return const_cast<DgnColors&>(m_colors);}                 //!< The named colors for this DgnDb
     DgnStyles& Styles() const {return const_cast<DgnStyles&>(m_styles);}                 //!< The styles for this DgnDb
     DgnGeomParts& GeomParts() const {return const_cast<DgnGeomParts&>(m_geomParts);}     //!< The the geometry parts for this DgnDb
     DgnFonts& Fonts() const {return const_cast<DgnFonts&>(m_fonts); }                    //!< The fonts for this DgnDb
