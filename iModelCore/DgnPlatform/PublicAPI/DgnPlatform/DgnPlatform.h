@@ -220,7 +220,6 @@ DGNPLATFORM_TYPEDEFS (UpdateContext)
 DGNPLATFORM_TYPEDEFS (ViewHandler)
 DGNPLATFORM_TYPEDEFS (ViewManager)
 DGNPLATFORM_TYPEDEFS (VisibleEdgeCache)
-DGNPLATFORM_TYPEDEFS (DgnTextures)
 DGNPLATFORM_TYPEDEFS (RenderMaterial)
 DGNPLATFORM_TYPEDEFS (RenderMaterialMap)
 
@@ -294,16 +293,20 @@ BEREPOSITORYBASED_ID_CLASS(DgnModelId)         //!< An Id that is assigned to a 
 BEREPOSITORYBASED_ID_CLASS(DgnViewId)          //!< An Id that is assigned to a view. See DgnDb#Views, ViewController. @ingroup DgnViewGroup
 BEREPOSITORYBASED_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a DGN link. See DgnLinkTable.
 BEREPOSITORYBASED_ID_SUBCLASS(DgnMaterialId, DgnElementId) //!< An element Id that refers to a material.
+BEREPOSITORYBASED_ID_SUBCLASS(DgnTextureId, DgnElementId) //!< An element Id that refers to a named texture.
 BEREPOSITORYBASED_ID_SUBCLASS(DgnLightId, DgnElementId) //!< An element Id that refers to a light definition.
 BEREPOSITORYBASED_ID_SUBCLASS(DgnCategoryId, DgnElementId) //!< An element Id that refers to a DgnCategory. @ingroup DgnCategoryGroup
 BEREPOSITORYBASED_ID_SUBCLASS(DgnSubCategoryId, DgnElementId) //!< An element Id that refers to a DgnSubCategory. @ingroup DgnCategoryGroup
+BEREPOSITORYBASED_ID_SUBCLASS(AnnotationTextStyleId, DgnElementId) //!< An element Id that refers to an AnnotationTextStyle. @ingroup Annotations
+BEREPOSITORYBASED_ID_SUBCLASS(AnnotationFrameStyleId, DgnElementId) //!< An element Id that refers to an AnnotationFrameStyle. @ingroup Annotations
+BEREPOSITORYBASED_ID_SUBCLASS(AnnotationLeaderStyleId, DgnElementId) //!< An element Id that refers to an AnnotationLeaderStyle. @ingroup Annotations
+BEREPOSITORYBASED_ID_SUBCLASS(TextAnnotationSeedId, DgnElementId) //!< An element Id that refers to an TextAnnotationSeed. @ingroup Annotations
+BEREPOSITORYBASED_ID_SUBCLASS(DgnTrueColorId, DgnElementId) //!< An element Id that refers a a DgnTrueColor.
 
 BESERVER_ISSUED_ID_CLASS(DgnAuthorityId)
 BESERVER_ISSUED_ID_CLASS(DgnFontId)
 BESERVER_ISSUED_ID_CLASS(DgnSessionId)       //!< An Id that is assigned to a session. See DgnDb#Sessions.
 BESERVER_ISSUED_ID_CLASS(DgnStyleId)         //!< An Id that is assigned to a style. See DgnDb#Styles.
-BESERVER_ISSUED_ID_CLASS(DgnTrueColorId)     //!< An Id that is assigned to a true color. See DgnDb#Colors.
-BESERVER_ISSUED_ID_CLASS(DgnTextureId)       //!< An Id that is assigned to a texture. See DgnDb#Textures.
 
 namespace dgn_ElementHandler{struct Element;};
 namespace dgn_ModelHandler  {struct Model;};

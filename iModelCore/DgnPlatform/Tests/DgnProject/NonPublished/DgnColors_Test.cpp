@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
+#include <DgnPlatform/DgnCore/DgnTrueColor.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Umar.Hayat   09/15
@@ -31,62 +32,66 @@ public:
 TEST_F(DgnColorTests, TrueColors)
     {
     SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
-    DgnColors& colors = m_project->Colors();
+    DgnDbR db = *m_project;
 
-    DgnColors::Color color1(ColorDef(255, 254, 253), "TestName1", "TestBook1");
-    DgnTrueColorId colorId = colors.Insert(color1);
+    DgnTrueColor color1(DgnTrueColor::CreateParams(db, ColorDef(255, 254, 253), "TestName1", "TestBook1"));
+    EXPECT_TRUE(color1.Insert().IsValid());
+    DgnTrueColorId colorId = color1.GetColorId();
     EXPECT_TRUE(colorId.IsValid());
-    EXPECT_TRUE(colorId == color1.GetId());
 
-    DgnColors::Color color2(ColorDef(2,3,33), "Color2");
-    DgnTrueColorId colorId2 = colors.Insert(color2);
+    DgnTrueColor color2(DgnTrueColor::CreateParams(db, ColorDef(2, 3, 33), "Color2"));
+    EXPECT_TRUE(color2.Insert().IsValid());
+    auto colorId2 = color2.GetColorId();
     EXPECT_TRUE(colorId2.IsValid());
 
-    DgnColors::Color color3(ColorDef(2,3,33), "Color3"); // it is legal to have two colors with the same value
-    DgnTrueColorId colorId3 = colors.Insert(color3); 
+    // It is legal to have two colors with the same RGB value
+    DgnTrueColor color3(DgnTrueColor::CreateParams(db, ColorDef(2,3,33), "Color3"));
+    EXPECT_TRUE(color3.Insert().IsValid());
+    auto colorId3 = color3.GetColorId();
     EXPECT_TRUE(colorId3.IsValid());
 
-    DgnTrueColorId dup3 = colors.Insert(color3); 
-    EXPECT_TRUE(!dup3.IsValid());
+    // It is not legal to have two colors with the same book+color name
+    DgnTrueColor color3_dup(DgnTrueColor::CreateParams(db, ColorDef(2,3,33), "Color3"));
+    EXPECT_FALSE(color3_dup.Insert().IsValid());
 
-    DgnColors::Color color4(ColorDef(4,3,33), "Color4");
-    DgnTrueColorId colorId4 = colors.Insert(color4); 
+    DgnTrueColor color1_dup(DgnTrueColor::CreateParams(db, ColorDef(5,54,3), "TestName1", "TestBook1"));
+    EXPECT_FALSE(color1_dup.Insert().IsValid());
+
+    DgnTrueColor color4(DgnTrueColor::CreateParams(db, ColorDef(4,3,33), "Color4"));
+    EXPECT_TRUE(color4.Insert().IsValid());
+    auto colorId4 = color4.GetColorId();
     EXPECT_TRUE(colorId4.IsValid());
 
-    DgnColors::Color dupColor(ColorDef(5,54,3), "TestName1", "TestBook1");
-    DgnTrueColorId dupColorId = colors.Insert(dupColor);
-    EXPECT_TRUE(!dupColorId.IsValid());
-
-    EXPECT_TRUE(4 == colors.MakeIterator().QueryCount());
+    EXPECT_EQ(4, DgnTrueColor::QueryCount(db));
 
     int i=0;
-    for (auto& it : colors.MakeIterator())
+    for (auto& it : DgnTrueColor::MakeIterator(db))
         {
-        if (it.GetId() == color1.GetId())
+        if (it.GetId() == color1.GetColorId())
             {
             ++i;
-            EXPECT_TRUE(it.GetColor() == color1.GetColor());
+            EXPECT_TRUE(it.GetColorDef() == color1.GetColorDef());
             EXPECT_TRUE(it.GetName() == color1.GetName());
             EXPECT_TRUE(it.GetBook() == color1.GetBook());
             }
-        else if (it.GetId() == color2.GetId())
+        else if (it.GetId() == color2.GetColorId())
             {
             ++i;
-            EXPECT_TRUE(it.GetColor() == color2.GetColor());
+            EXPECT_TRUE(it.GetColorDef() == color2.GetColorDef());
             EXPECT_TRUE(it.GetName() == color2.GetName());
             EXPECT_TRUE(it.GetBook() == color2.GetBook());
             }
-        else if (it.GetId() == color3.GetId())
+        else if (it.GetId() == color3.GetColorId())
             {
             ++i;
-            EXPECT_TRUE(it.GetColor() == color3.GetColor());
+            EXPECT_TRUE(it.GetColorDef() == color3.GetColorDef());
             EXPECT_TRUE(it.GetName() == color3.GetName());
             EXPECT_TRUE(it.GetBook() == color3.GetBook());
             }
-        else if (it.GetId() == color4.GetId())
+        else if (it.GetId() == color4.GetColorId())
             {
             ++i;
-            EXPECT_TRUE(it.GetColor() == color4.GetColor());
+            EXPECT_TRUE(it.GetColorDef() == color4.GetColorDef());
             EXPECT_TRUE(it.GetName() == color4.GetName());
             EXPECT_TRUE(it.GetBook() == color4.GetBook());
             }
@@ -96,25 +101,36 @@ TEST_F(DgnColorTests, TrueColors)
 
     EXPECT_TRUE(4 == i);
 
-    EXPECT_TRUE(colorId == colors.FindMatchingColor(color1.GetColor()));
+    DgnTrueColorId matchingColorId = DgnTrueColor::FindMatchingColor(color1.GetColorDef(), db);
+    EXPECT_TRUE(matchingColorId.IsValid());
+    EXPECT_TRUE(color1.GetColorId() == matchingColorId);
 
-    DgnColors::Color toFind = colors.QueryColor(colorId);
+    DgnTrueColorCPtr toFind = DgnTrueColor::QueryColor(colorId, db);
     EXPECT_TRUE(toFind.IsValid());
-    EXPECT_TRUE(toFind.GetId() == color1.GetId());
-    EXPECT_TRUE(toFind.GetColor() == color1.GetColor());
-    EXPECT_TRUE(toFind.GetName() == color1.GetName());
-    EXPECT_TRUE(toFind.GetBook() == color1.GetBook());
+    EXPECT_TRUE(toFind->GetColorId() == color1.GetColorId());
+    EXPECT_TRUE(toFind->GetColorDef() == color1.GetColorDef());
+    EXPECT_TRUE(toFind->GetName() == color1.GetName());
+    EXPECT_TRUE(toFind->GetBook() == color1.GetBook());
 
-    toFind = colors.QueryColorByName("TestName1", "TestBook1");
+    toFind = DgnTrueColor::QueryColorByName("TestName1", "TestBook1", db);
     EXPECT_TRUE(toFind.IsValid());
-    EXPECT_TRUE(toFind.GetId() == color1.GetId());
-    EXPECT_TRUE(toFind.GetColor() == color1.GetColor());
-    EXPECT_TRUE(toFind.GetName() == color1.GetName());
-    EXPECT_TRUE(toFind.GetBook() == color1.GetBook());
+    EXPECT_TRUE(toFind->GetColorId() == color1.GetColorId());
+    EXPECT_TRUE(toFind->GetColorDef() == color1.GetColorDef());
+    EXPECT_TRUE(toFind->GetName() == color1.GetName());
+    EXPECT_TRUE(toFind->GetBook() == color1.GetBook());
 
     // No match Case
-    EXPECT_FALSE(colors.FindMatchingColor(ColorDef(120, 120, 120)).IsValid());
+    EXPECT_FALSE(DgnTrueColor::FindMatchingColor(ColorDef(120, 120, 120), db).IsValid());
     // Color with same definition
-    EXPECT_TRUE(colors.FindMatchingColor(ColorDef(2, 3, 33)).IsValid());
+    EXPECT_TRUE(DgnTrueColor::FindMatchingColor(ColorDef(2, 3, 33), db).IsValid());
 
+    // Cannot update or delete
+    auto cpColor4 = DgnTrueColor::QueryColor(colorId4, db);
+    ASSERT_TRUE(cpColor4.IsValid());
+    EXPECT_EQ(DgnDbStatus::DeletionProhibited, cpColor4->Delete());
+    auto pColor4 = cpColor4->MakeCopy<DgnTrueColor>();
+    DgnDbStatus updateStat;
+    EXPECT_FALSE(pColor4->Update(&updateStat).IsValid());
+    EXPECT_EQ(DgnDbStatus::WrongElement, updateStat);
     }
+

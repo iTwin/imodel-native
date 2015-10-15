@@ -263,7 +263,7 @@ BentleyStatus ConfigurationManager::UndefineVariable (WCharCP cfgVarName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool    ConfigurationManager::StringContainsMacros (WCharCP string)
     {
-    return (nullptr != wcsstr (string, L"$["));
+    return (nullptr != ::wcsstr (string, L"$["));
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -11,7 +11,6 @@
 #include "DgnDbTables.h"
 #include "DgnModel.h"
 #include "DgnDomain.h"
-#include "DgnTexture.h"
 #include "MemoryManager.h"
 #include <Bentley/BeFileName.h>
 
@@ -130,18 +129,17 @@ protected:
     DgnVersion      m_schemaVersion;
     DgnDomains      m_domains;
     DgnFonts        m_fonts;
-    DgnColors       m_colors;
     DgnStyles       m_styles;
     DgnUnits        m_units;
     DgnViews        m_views;
     DgnGeomParts    m_geomParts;
     DgnLinks        m_links;
     DgnAuthorities  m_authorities;
-    DgnTextures     m_textures;
     TxnManagerPtr   m_txnManager;
     MemoryManager   m_memoryManager;
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
     mutable bmap<DgnMaterialId, uintptr_t> m_qvMaterialIds;
+    mutable bmap<DgnTextureId, uintptr_t> m_qvTextureIds;
 
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
     DGNPLATFORM_EXPORT virtual void _OnDbClose() override;
@@ -191,13 +189,11 @@ public:
     DgnElements& Elements() const{return const_cast<DgnElements&>(m_elements);}          //!< The DgnElements of this DgnDb
     DgnViews& Views() const {return const_cast<DgnViews&>(m_views);}                     //!< The DgnViews for this DgnDb
     DgnUnits& Units() const {return const_cast<DgnUnits&>(m_units);}                     //!< The units for this DgnDb
-    DgnColors& Colors() const {return const_cast<DgnColors&>(m_colors);}                 //!< The named colors for this DgnDb
     DgnStyles& Styles() const {return const_cast<DgnStyles&>(m_styles);}                 //!< The styles for this DgnDb
     DgnGeomParts& GeomParts() const {return const_cast<DgnGeomParts&>(m_geomParts);}     //!< The the geometry parts for this DgnDb
     DgnFonts& Fonts() const {return const_cast<DgnFonts&>(m_fonts); }                    //!< The fonts for this DgnDb
     DgnLinks& Links() const{return const_cast<DgnLinks&>(m_links);}                      //!< The DgnLinks for this DgnDb
     DgnDomains& Domains() const {return const_cast<DgnDomains&>(m_domains);}             //!< The DgnDomains associated with this DgnDb.
-    DgnTextures& Textures() const { return const_cast<DgnTextures&>(m_textures); }       //!< The textures for this DgnDb.
     DgnAuthorities& Authorities() const { return const_cast<DgnAuthorities&>(m_authorities); }   //!< The authorities associated with this DgnDb
     DGNPLATFORM_EXPORT TxnManagerR Txns();                    //!< The Txns for this DgnDb.
     MemoryManager& Memory() const { return const_cast<MemoryManager&>(m_memoryManager);}
@@ -216,6 +212,9 @@ public:
 
     DGNPLATFORM_EXPORT uintptr_t GetQvMaterialId(DgnMaterialId materialId) const; //!< Return nonzero QuickVision material ID for QVision for supplied material ID.
     DGNPLATFORM_EXPORT uintptr_t AddQvMaterialId(DgnMaterialId materialId) const; //!< set QuickVision material ID for supplied material Id.
+
+    DGNPLATFORM_EXPORT uintptr_t GetQvTextureId(DgnTextureId TextureId) const; //!< Return nonzero QuickVision material ID for QVision for supplied material ID.
+    DGNPLATFORM_EXPORT uintptr_t AddQvTextureId(DgnTextureId TextureId) const; //!< set QuickVision material ID for supplied material Id.
 
     DGNPLATFORM_EXPORT DictionaryModelR GetDictionaryModel(); //!< Return the dictionary model for this DgnDb.
 };

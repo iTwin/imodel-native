@@ -36,9 +36,9 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeOutput>$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\Product\MobileDgn-Gtest-Aggregate\MobileDgnTests.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx64\Product\MobileDgn-Gtest-Aggregate\MobileDgnTests.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath>$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\DgnPlatform\PublicAPI\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\DgnPlatform\VendorAPI\;$(ProjectDir)PrivateApi\;$(ProjectDir)\DgnCore\;$(ProjectDir)\DgnHandlers\;$(ProjectDir)\;$(ProjectDir)\PublicAPI\;$(ProjectDir)Tests\DgnProject\NonPublished\;$(ProjectDir)Tests\DgnProject\Performance\;$(ProjectDir)Tests\DgnProject\Published\;$(ProjectDir)Tests\DgnProject\BackDoor\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\DgnPlatform\PublicAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\VendorAPI\;$(ProjectDir)PrivateApi\;$(ProjectDir)\DgnCore\;$(ProjectDir)\DgnHandlers\;$(ProjectDir)\;$(ProjectDir)\PublicAPI\;$(ProjectDir)Tests\DgnProject\NonPublished\;$(ProjectDir)Tests\DgnProject\Performance\;$(ProjectDir)Tests\DgnProject\Published\;$(ProjectDir)Tests\DgnProject\BackDoor\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeOutput>DgnPlatform.exe</NMakeOutput>
