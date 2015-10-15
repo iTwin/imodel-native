@@ -17,11 +17,18 @@ BEGIN_WSCLIENT_UNITTESTS_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct WSClientBaseTest : ::testing::Test
     {
-    TestAppPathProvider m_pathProvider;
-    virtual void SetUp() override;
-    virtual void TearDown() override;
-    static void SetUpTestCase();
-    static void TearDownTestCase();
+    private:
+        TestAppPathProvider m_pathProvider;
+
+    private:
+        void InitLibraries();
+        void InitLogging();
+
+    public:
+        virtual void SetUp() override;
+        virtual void TearDown() override;
+        static void SetUpTestCase();
+        static void TearDownTestCase();
     };
 
 END_WSCLIENT_UNITTESTS_NAMESPACE
