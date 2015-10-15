@@ -285,6 +285,7 @@ TEST_F(AnnotationTextBlockTest, CreateAnnotationTextBlock)
     AnnotationTextBlockPtr doc2 = AnnotationTextBlock::Create(project, testStyle->GetStyleId());
     ASSERT_FALSE(doc2.IsValid());*/
 
+    testStyle->SetName("my style");
     ASSERT_TRUE(testStyle->Insert().IsValid());
     ASSERT_TRUE(testStyle->GetStyleId().IsValid());
 

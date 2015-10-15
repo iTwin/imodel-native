@@ -92,6 +92,7 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
 
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
+    virtual Code _GenerateDefaultCode() override { return Code(); }
 public:
     //! Construct a new DgnMaterial with the specified parameters
     explicit DgnMaterial(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }

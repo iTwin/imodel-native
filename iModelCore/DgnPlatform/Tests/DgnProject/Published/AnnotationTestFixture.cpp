@@ -64,6 +64,7 @@ AnnotationLeaderStylePtr AnnotationTestFixture::createAnnotationLeaderStyle(DgnD
         //.............................................................................................
         AnnotationLeaderStylePtr style = AnnotationLeaderStyle::Create(project);
         EXPECT_TRUE(style.IsValid());
+        style->SetName(styleName);
 
         EXPECT_TRUE(style->Insert().IsValid());
         EXPECT_TRUE(style->GetStyleId().IsValid());
@@ -78,6 +79,7 @@ AnnotationFrameStylePtr AnnotationTestFixture::createAnnotationFrameStyle(DgnDbR
         AnnotationFrameStylePtr style = AnnotationFrameStyle::Create(project);
         EXPECT_TRUE(style.IsValid());
 
+        style->SetName(styleName);
         EXPECT_TRUE(style->Insert().IsValid());
         EXPECT_TRUE(style->GetStyleId().IsValid());
         return style;
