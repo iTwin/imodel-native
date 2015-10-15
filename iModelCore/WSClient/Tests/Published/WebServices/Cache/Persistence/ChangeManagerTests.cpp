@@ -122,11 +122,11 @@ TEST_F(ChangeManagerTests, ModifyFile_SyncSetToActiveAndModifyingModifiedFile_Er
     // Arrange
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, FSTest::StubFile(), false));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile(), false));
     // Act
     cache->GetChangeManager().SetSyncActive(true);
     BeTest::SetFailOnAssert(false);
-    auto status = cache->GetChangeManager().ModifyFile(instance, FSTest::StubFile(), false);
+    auto status = cache->GetChangeManager().ModifyFile(instance, StubFile(), false);
     BeTest::SetFailOnAssert(true);
     cache->GetChangeManager().SetSyncActive(false);
     // Assert
@@ -497,7 +497,7 @@ TEST_F(ChangeManagerTests, ModifyFile_NonExistingObject_Error)
     auto nonExistingInstance = StubNonExistingInstanceKey(*cache);
     // Act
     BeTest::SetFailOnAssert(false);
-    auto status = cache->GetChangeManager().ModifyFile(nonExistingInstance, FSTest::StubFile(), false);
+    auto status = cache->GetChangeManager().ModifyFile(nonExistingInstance, StubFile(), false);
     BeTest::SetFailOnAssert(true);
     // Assert
     ASSERT_EQ(ERROR, status);
@@ -510,13 +510,13 @@ TEST_F(ChangeManagerTests, ModifyFile_ExistingObject_SetsChangeStatusAndCachesFi
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     auto instance = StubInstanceInCache(*cache, fileId);
     // Act
-    auto status = cache->GetChangeManager().ModifyFile(instance, FSTest::StubFile("NewContent"), false);
+    auto status = cache->GetChangeManager().ModifyFile(instance, StubFile("NewContent"), false);
     // Assert
     ASSERT_EQ(SUCCESS, status);
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
     EXPECT_TRUE(cache->ReadFilePath(instance).find(L"test_files_persistent") != BeFileName::npos);
     EXPECT_EQ(1, cache->GetChangeManager().GetFileChange(instance).GetChangeNumber());
-    EXPECT_EQ("NewContent", FSTest::ReadFile(cache->ReadFilePath(instance)));
+    EXPECT_EQ("NewContent", SimpleReadFile(cache->ReadFilePath(instance)));
     }
 
 TEST_F(ChangeManagerTests, ModifyFile_ExistingObjectAndCopyFileTrue_CopiesFileToPersistentLocationAndLeavesOriginal)
@@ -526,13 +526,13 @@ TEST_F(ChangeManagerTests, ModifyFile_ExistingObjectAndCopyFileTrue_CopiesFileTo
     ObjectId fileId {"TestSchema.TestClass", "Foo"};
     auto instance = StubInstanceInCache(*cache, fileId);
     // Act
-    auto filePath = FSTest::StubFile("NewContent");
+    auto filePath = StubFile("NewContent");
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, filePath, true));
     // Assert
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
     EXPECT_TRUE(cache->ReadFilePath(instance).find(L"test_files_persistent") != BeFileName::npos);
     EXPECT_EQ(1, cache->GetChangeManager().GetFileChange(instance).GetChangeNumber());
-    EXPECT_EQ("NewContent", FSTest::ReadFile(cache->ReadFilePath(instance)));
+    EXPECT_EQ("NewContent", SimpleReadFile(cache->ReadFilePath(instance)));
     EXPECT_TRUE(filePath.DoesPathExist());
     }
 
@@ -542,13 +542,13 @@ TEST_F(ChangeManagerTests, ModifyFile_Twice_LeavesChangeNumberAndChangesContent)
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
     // Act
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, FSTest::StubFile("A"), false));
-    auto status = cache->GetChangeManager().ModifyFile(instance, FSTest::StubFile("B"), false);
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile("A"), false));
+    auto status = cache->GetChangeManager().ModifyFile(instance, StubFile("B"), false);
     // Assert
     ASSERT_EQ(SUCCESS, status);
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
     EXPECT_EQ(1, cache->GetChangeManager().GetFileChange(instance).GetChangeNumber());
-    EXPECT_EQ("B", FSTest::ReadFile(cache->ReadFilePath(instance)));
+    EXPECT_EQ("B", SimpleReadFile(cache->ReadFilePath(instance)));
     }
 
 TEST_F(ChangeManagerTests, ModifyFile_ExistingFile_ReplacesFileContentAndSetsChangeStatus)
@@ -556,14 +556,14 @@ TEST_F(ChangeManagerTests, ModifyFile_ExistingFile_ReplacesFileContentAndSetsCha
     // Arrange
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
-    cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(FSTest::StubFile("InitialContent")), FileCache::Persistent);
+    cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile("InitialContent")), FileCache::Persistent);
     // Act
-    auto status = cache->GetChangeManager().ModifyFile(instance, FSTest::StubFile("NewContent"), false);
+    auto status = cache->GetChangeManager().ModifyFile(instance, StubFile("NewContent"), false);
     // Assert
     ASSERT_EQ(SUCCESS, status);
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
     EXPECT_EQ(1, cache->GetChangeManager().GetFileChange(instance).GetChangeNumber());
-    EXPECT_EQ("NewContent", FSTest::ReadFile(cache->ReadFilePath(instance)));
+    EXPECT_EQ("NewContent", SimpleReadFile(cache->ReadFilePath(instance)));
     }
 
 TEST_F(ChangeManagerTests, ChangesIsEmpty_NoChanges_True)
@@ -612,7 +612,7 @@ TEST_F(ChangeManagerTests, HasChanges_ChangedFile_True)
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
     // Act
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, FSTest::StubFile(), false));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile(), false));
     // Assert
     EXPECT_TRUE(cache->GetChangeManager().HasChanges());
     }
@@ -666,7 +666,7 @@ TEST_F(ChangeManagerTests, GetChanges_ModifiedFile_ReturnsChange)
     // Arrange
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, FSTest::StubFile(), false));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile(), false));
     // Act
     ChangeManager::Changes changes;
     auto status = cache->GetChangeManager().GetChanges(changes, true);
@@ -717,7 +717,7 @@ TEST_F(ChangeManagerTests, GetChanges_SpecificInstanceAndModifiedFile_ReturnsCha
     // Arrange
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, FSTest::StubFile(), false));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile(), false));
     // Act
     ChangeManager::Changes changes;
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().GetChanges(instance, changes));
@@ -909,7 +909,7 @@ TEST_F(ChangeManagerTests, GetFileChange_ModifiedFile_ReturnsFileChange)
     // Arrange
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, FSTest::StubFile(), false));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile(), false));
     // Act
     auto change = cache->GetChangeManager().GetFileChange(instance);
     // Assert
@@ -977,7 +977,7 @@ TEST_F(ChangeManagerTests, SetSyncStatus_ModfiedFile_SuccessAndChangesStatus)
     // Arrange
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, FSTest::StubFile(), false, ChangeManager::SyncStatus::NotReady));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile(), false, ChangeManager::SyncStatus::NotReady));
     // Act
     auto status = cache->GetChangeManager().SetSyncStatus(instance, ChangeManager::SyncStatus::Ready);
     // Assert
@@ -1089,7 +1089,7 @@ TEST_F(ChangeManagerTests, CommitCreationChanges_CreatedObjectWithFile_RemovesFi
     auto cache = GetTestCache();
     auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
     auto instance = cache->GetChangeManager().CreateObject(*testClass, Json::objectValue);
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, FSTest::StubFile(), false));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile(), false));
     // Act
     auto status = cache->GetChangeManager().CommitCreationChanges({{instance, "NewId"}});
     // Assert
@@ -1517,7 +1517,7 @@ TEST_F(ChangeManagerTests, CommitFileChange_ModifiedFile_RemovesChangeStatusAndM
     // Arrange
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, FSTest::StubFile(), false));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile(), false));
     // Act
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().CommitFileChanges(instance));
     // Assert

@@ -1,13 +1,16 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/StubInstances.h $
+|     $Source: Tests/Published/Utils/StubInstances.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include "MobileUtilsTests.h"
-#include "WebServices/WebServicesTestsHelper.h"
+
+#include "WebServicesUnitTests.h"
+#include <WebServices/Client/WSRepositoryClient.h>
+
+BEGIN_WSCLIENT_UNITTESTS_NAMESPACE
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
@@ -24,22 +27,22 @@ struct StubInstances
         std::vector<StubInstance> m_instances;
 
     public:
-        Json::Value ConvertStubInstanceToJson (const StubInstance& instance) const;
-        Json::Value ConvertStubRelationshipInstanceToJson (const StubRelationshipInstance& instance) const;
+        Json::Value ConvertStubInstanceToJson(const StubInstance& instance) const;
+        Json::Value ConvertStubRelationshipInstanceToJson(const StubRelationshipInstance& instance) const;
 
     public:
         //! Clear any added instances
-        void Clear ();
+        void Clear();
         //! Add instance with optional properties and eTag
-        StubRelationshipInstances Add (ObjectIdCR objectId, std::map<Utf8String, Json::Value> properties = std::map<Utf8String, Json::Value>(), Utf8StringCR eTag = "");
+        StubRelationshipInstances Add(ObjectIdCR objectId, std::map<Utf8String, Json::Value> properties = std::map<Utf8String, Json::Value>(), Utf8StringCR eTag = "");
         //! Create server objects result to be used in caching
-        WSObjectsResponse ToWSObjectsResponse (Utf8StringCR eTag = "") const;
+        WSObjectsResponse ToWSObjectsResponse(Utf8StringCR eTag = "") const;
         //! Create success WS Client result
-        WSObjectsResult ToWSObjectsResult (Utf8StringCR eTag = "") const;
+        WSObjectsResult ToWSObjectsResult(Utf8StringCR eTag = "") const;
         //! Create WSG 1.3 server response body JSON string
-        Utf8String ToJsonWebApiV1 () const;
+        Utf8String ToJsonWebApiV1() const;
         //! Create WSG 2.0 server response body JSON string
-        Utf8String ToJsonWebApiV2 () const;
+        Utf8String ToJsonWebApiV2() const;
     };
 
 struct StubInstances::StubRelationshipInstances
@@ -48,7 +51,7 @@ struct StubInstances::StubRelationshipInstances
         bvector<std::shared_ptr<StubRelationshipInstance>>& m_relationshipInstances;
 
     public:
-        StubRelationshipInstances (bvector<std::shared_ptr<StubRelationshipInstance>>& relationshipInstances);
+        StubRelationshipInstances(bvector<std::shared_ptr<StubRelationshipInstance>>& relationshipInstances);
 
         StubRelationshipInstances AddRelated
             (
@@ -74,3 +77,5 @@ struct StubInstances::StubRelationshipInstance
     BentleyApi::ECN::ECRelatedInstanceDirection direction;
     StubInstance relatedInstance;
     };
+
+END_WSCLIENT_UNITTESTS_NAMESPACE

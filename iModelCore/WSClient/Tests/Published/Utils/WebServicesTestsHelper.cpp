@@ -1,12 +1,53 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/WebServices/WebServicesTestsHelper.cpp $
+|     $Source: Tests/Published/Utils/WebServicesTestsHelper.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "WebServicesTestsHelper.h"
+#include <WebServices/Cache/Util/JsonDiff.h>
+
+bool rapidjson::operator==(const rapidjson::Value& a, const rapidjson::Value& b)
+    {
+    return JsonDiff::ValuesEqual(a, b);
+    }
+
+BEGIN_WSCLIENT_UNITTESTS_NAMESPACE
+
+std::shared_ptr<rapidjson::Document> ToRapidJson(Utf8StringCR jsonString)
+    {
+    auto json = std::make_shared<rapidjson::Document>();
+    bool fail = json->Parse<0>(jsonString.c_str()).HasParseError();
+    BeAssert(!fail && "Check json string");
+    return json;
+    }
+
+Json::Value ToJson(Utf8StringCR jsonString)
+    {
+    Json::Value json;
+    bool success = Json::Reader::Parse(jsonString, json);
+    BeAssert(success && "Check json string");
+    return json;
+    }
+
+std::string RapidJsonToString(const rapidjson::Value& json)
+    {
+    if (json.IsNull())
+        {
+        return "null";
+        }
+
+    using namespace rapidjson;
+
+    GenericStringBuffer<UTF8<>> buffer;
+    Writer<GenericStringBuffer<UTF8<>>> writer(buffer);
+
+    json.Accept(writer);
+
+    return buffer.GetString();
+    }
 
 HttpResponse StubHttpResponse (ConnectionStatus status)
     {
@@ -192,3 +233,123 @@ ClientInfoPtr StubClientInfo ()
     {
     return std::shared_ptr<ClientInfo> (new ClientInfo ("Bentley-Test", BeVersion (1, 0), "TestAppGUID", "TestDeviceId", "TestSystem"));
     }
+
+ECSchemaPtr ParseSchema(Utf8StringCR schemaXml, ECSchemaReadContextPtr context)
+    {
+    if (context.IsNull())
+        {
+        context = ECSchemaReadContext::CreateContext();
+        context->AddSchemaPath(GetTestsAssetsDir().AppendToPath(L"/MobileUtilsAssets/ECSchemas/CacheSchemas/"));
+        }
+
+    ECSchemaPtr schema;
+    auto status = ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *context);
+
+    EXPECT_EQ(SchemaReadStatus::SCHEMA_READ_STATUS_Success, status);
+    EXPECT_TRUE(schema.IsValid());
+
+    return schema;
+    }
+
+BeFileName GetTestsAssetsDir()
+    {
+    BeFileName path;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(path);
+    return path;
+    }
+
+BeFileName GetTestsTempDir()
+    {
+    BeFileName path;
+    BeTest::GetHost().GetTempDir(path);
+    return path;
+    }
+
+BeFileName StubFilePath(Utf8StringCR customFileName)
+    {
+    BeFileName fileName;
+    if (customFileName.empty())
+        {
+        BeSQLite::BeSQLiteLib::Initialize(GetTestsTempDir());
+        fileName = BeFileName(BeGuid().ToString() + ".txt");
+        }
+    else
+        {
+        fileName = BeFileName(customFileName);
+        }
+
+    BeFileName filePath = GetTestsTempDir().AppendToPath(fileName);
+    return filePath;
+    }
+
+BeFileName StubFile(Utf8StringCR content, Utf8StringCR customFileName)
+    {
+    BeFileName filePath = StubFilePath(customFileName);
+
+    BeFile file;
+    file.Create(filePath);
+    file.Write(nullptr, content.c_str(), static_cast<uint32_t>(content.length()));
+    file.Close();
+
+    return filePath;
+    }
+
+BeFileName StubFileWithSize(uint32_t bytesCount, Utf8StringCR customFileName)
+    {
+    BeFileName filePath = StubFilePath();
+
+    BeFile file;
+    EXPECT_EQ(BeFileStatus::Success, file.Create(filePath));
+
+    uint32_t kbCount = bytesCount / 1024;
+    char kbBuffer[1024];
+    memset(kbBuffer, 'X', 1024);
+
+    while (kbCount--)
+        {
+        EXPECT_EQ(BeFileStatus::Success, file.Write(nullptr, kbBuffer, 1024));
+        }
+    EXPECT_EQ(BeFileStatus::Success, file.Write(nullptr, kbBuffer, bytesCount % 1024));
+    EXPECT_EQ(BeFileStatus::Success, file.Close());
+    return filePath;
+    }
+
+Utf8String SimpleReadFile(BeFileNameCR filePath)
+    {
+    bvector<Byte> fileContents;
+
+    BeFile file;
+    BeFileStatus status;
+
+    status = file.Open(filePath, BeFileAccess::Read);
+    BeAssert(status == BeFileStatus::Success);
+
+    status = file.ReadEntireFile(fileContents);
+    BeAssert(status == BeFileStatus::Success);
+
+    status = file.Close();
+    BeAssert(status == BeFileStatus::Success);
+
+    Utf8String stringContents;
+    stringContents.append(fileContents.begin(), fileContents.end());
+    return stringContents;
+    }
+
+void SimpleWriteToFile(Utf8StringCR content, BeFileNameCR filePath)
+    {
+    uint32_t written = 0;
+
+    BeFile file;
+    BeFileStatus status;
+
+    status = file.Create(filePath, true);
+    BeAssert(status == BeFileStatus::Success);
+
+    status = file.Write(&written, content.c_str(), (uint32_t) content.size());
+    BeAssert(status == BeFileStatus::Success);
+
+    status = file.Close();
+    BeAssert(status == BeFileStatus::Success);
+    }
+
+END_WSCLIENT_UNITTESTS_NAMESPACE

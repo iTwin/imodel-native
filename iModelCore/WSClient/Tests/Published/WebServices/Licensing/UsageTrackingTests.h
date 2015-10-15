@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "../WebServicesTestsHelper.h"
+#include "../../Utils/WebServicesTestsHelper.h"
 
 class UsageTrackingTests : public BaseMockHttpHandlerTest
     {
