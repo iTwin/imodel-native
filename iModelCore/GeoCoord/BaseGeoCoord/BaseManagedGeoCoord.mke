@@ -127,7 +127,7 @@ DLM_NAME                = $(assemblyName)
 RIGHTSCOMPLIANT         = true
 DLM_DEST                = $(o)
 DLM_OBJECT_FILES        = $(objList)
-LINKER_LIBRARIES        = $(ToolsubsExportLib) $(BuildContextSubPartsLib)$(BaseGeocoordLib)
+LINKER_LIBRARIES        = $(BuildContextSubPartsLib)$(BaseGeocoordLib)
 
 DLM_NO_DEF              = 1
 DLM_NO_IMPLIB           = 1

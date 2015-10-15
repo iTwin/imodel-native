@@ -18,7 +18,6 @@
 #include    <csmap/csNameMapperSupport.h>
 #include    <csmap/cs_map.h>
 #include    <csmap/cs_Legacy.h>
-#include    <RmgrTools/Tools/mdlResource.h>
 #include    <sys/types.h>
 #include    <sys/stat.h>
 #include    <stdlib.h>

@@ -14,7 +14,6 @@
         <SubPart PartName="csmapStatic"             PartFile="csmap"                Repository="libsrc-csmap" />
         <SubPart PartName="GeoCoordHeaderFiles" />
         <SubPart PartName="BentleyDll"              PartFile="Bentley"              Repository="Bentley" />
-        <SubPart PartName="ToolsubsDll"             PartFile="RmgrTools"                    Repository="RmgrTools"/>
         <SubPart PartName="GeomDlls"                PartFile="geomlibs"             Repository="GeomLibs" />
         <Bindings>
             <PublicAPI Domain="GeoCoord" />
