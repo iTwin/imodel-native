@@ -39,11 +39,15 @@ always:
 %message See $(LogDir)TestsTestResults.txt for logging output, interleaved with test output. 
 %message .
 
-exeName = $(GTEST_EXE)
 
 %if $(TARGET_PLATFORM)=="Windows"
+    
     RunPrefix=start \/WAIT
+    # Must fix up directory separators
+    exeName = $[@realpath $(GTEST_EXE)]
+
 %elif $(TARGET_PLATFORM) == "Linux" || $(TARGET_PLATFORM) == "MacOS"
+    
     # This is a hack because symlinks wreck havoc when running on Linux... some shells and apps resolve, some resolve partially, some don't... sucks, but this is the most reliable way.
     # See associated code in RunTests.py:GetExeLocation
     appDir = $[@dir $(GTEST_EXE)]
@@ -61,6 +65,7 @@ exeName = $(GTEST_EXE)
     %endif
 
     exeName = $(copyToDirectory)${appDirectory}/$[@basename $(GTEST_EXE)]
+
 %endif
 
 %if defined (BMAKE_DELETE_ALL_TARGETS)
