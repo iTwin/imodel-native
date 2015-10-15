@@ -170,6 +170,7 @@
     </Part>
 
     <Part Name="RealityDbECPlugin" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" OnlyPlatforms="x86,x64">
+        <RequiredRepository>BCC-IdentityModel</RequiredRepository>
         <SubPart PartName="RealityDb"/>
         <SubPart PartName="BentleyWMSPackageNet"/>
         <SubPart PartName="ECServices"          PartFile="ecf"            Repository="ecf" />
