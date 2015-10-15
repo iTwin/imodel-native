@@ -519,11 +519,15 @@ static DgnSubCategoryId importSubCategory(DgnImportContext& context, DgnDbR dest
         return destSubCategoryId;
 
     if (sourceSubCat.GetSubCategoryId() == DgnCategories::DefaultSubCategoryId(sourceSubCat.GetCategoryId()))
+        {
+        //  Default SubCategory: Id == CategoryId
         destSubCategoryId = DgnCategories::DefaultSubCategoryId(destCategoryId);
+        }
     else
         {
+        //  Normal SubCategory: Try to remap to a like-named SubCategory. Otherwise, create a copy.
         destSubCategoryId = destDb.Categories().QuerySubCategoryId(destCategoryId, sourceSubCat.GetCode());
-        if (!destCategoryId.IsValid())
+        if (!destSubCategoryId.IsValid())
             destSubCategoryId = importSubCategory0(context, destDb, destCategoryId, sourceSubCat);
         }
 

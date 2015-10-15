@@ -29,6 +29,70 @@ struct ImportTest : public testing::Test
     void InsertElement(DgnDbR, DgnModelId, bool is3d, bool expectSuccess);
 };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnMaterialId     createTexturedMaterial (DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, RenderMaterialMap::Units unitMode)
+    {
+    Json::Value                     renderMaterialAsset;
+    RgbFactor                       red = { 1.0, 0.0, 0.0};
+    bvector <Byte>                  fileImageData, imageData;
+    uint32_t                        width, height;
+    ImageUtilities::RgbImageInfo    rgbImageInfo;
+    BeFile                          imageFile;
+
+    
+    RenderMaterialUtil::SetColor (renderMaterialAsset, RENDER_MATERIAL_Color, red);
+    renderMaterialAsset[RENDER_MATERIAL_FlagHasBaseColor] = true;
+    
+
+    if (BeFileStatus::Success == imageFile.Open (pngFileName, BeFileAccess::Read) &&
+        SUCCESS == ImageUtilities::ReadImageFromPngFile (fileImageData, rgbImageInfo, imageFile))
+        {
+        width = rgbImageInfo.width;
+        height = rgbImageInfo.height;
+
+        imageData.resize (width * height * 4);
+
+        for (size_t i=0, j=0; i<imageData.size(); )
+            {
+            imageData[i++] = fileImageData[j++];
+            imageData[i++] = fileImageData[j++];
+            imageData[i++] = fileImageData[j++];
+            imageData[i++] = 255;     // Alpha.
+            }
+        }
+    else
+        {
+        width = height = 512;
+        imageData.resize (width * height * 4);
+
+        size_t      value = 0;
+        for (auto& imageByte : imageData)
+            imageByte = ++value % 0xff;        
+        }
+
+
+    DgnTextures::Texture    texture (DgnTextures::TextureData (DgnTextures::Format::RAW, &imageData.front(), imageData.size(), width, height));
+    DgnTextureId            textureId = dgnDb.Textures().Insert (texture);
+
+    Json::Value     patternMap, mapsMap;
+
+    patternMap[RENDER_MATERIAL_TextureId]        = textureId.GetValue();
+    patternMap[RENDER_MATERIAL_PatternScaleMode] = (int) unitMode;
+    patternMap[RENDER_MATERIAL_PatternMapping]   = (int) RenderMaterialMap::Mode::Parametric;
+
+    mapsMap[RENDER_MATERIAL_MAP_Pattern] = patternMap;
+    renderMaterialAsset[RENDER_MATERIAL_Map] = mapsMap;
+
+
+    DgnMaterials::Material material (materialName, "Test Palette");
+
+    material.SetRenderingAsset (renderMaterialAsset);
+
+    return dgnDb.Materials().Insert(material);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
@@ -215,7 +279,7 @@ TEST_F(ImportTest, ImportGroups)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static GeometricElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSubCategoryId subcat)
+static GeometricElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSubCategoryId subcat, ElemDisplayParams* customParms)
     {
     DgnCategoryId cat = db.Categories().QueryCategoryId(subcat);
 
@@ -227,6 +291,8 @@ static GeometricElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, 
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*gelem);
     builder->Append(subcat);
+    if (nullptr != customParms)
+        builder->Append(*customParms);
     builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1,0,0))));
 
     if (SUCCESS != builder->SetGeomStreamAndPlacement(*gelem))
@@ -304,12 +370,23 @@ static bool areDisplayParamsEqual(ElemDisplayParamsCR lhsUnresolved, DgnDbR ldb,
     ElemDisplayParams lhs(lhsUnresolved);
     ElemDisplayParams rhs(rhsUnresolved);
 
+    //  We must "resolve" each ElemDisplayParams object before we can ask for its properties.
     NullContext lcontext(ldb);
     lhs.Resolve(lcontext);
     NullContext rcontext(rdb);
     rhs.Resolve(rcontext);
 
+    //  Use custom logic to compare the complex properties 
+    if (!areMaterialsEqual(lhs.GetMaterial(), ldb, rhs.GetMaterial(), rdb))
+        return false;
+
+    // *** TBD linestyles
+    // *** TBD Gradient
+    // *** TBD PatternParams
+
+    //  Compare the rest of the simple properites
     rhs.SetCategoryId(lhs.GetCategoryId());
+    rhs.SetSubCategoryId(lhs.GetSubCategoryId());
     lhs.SetMaterial(DgnMaterialId());
     rhs.SetMaterial(DgnMaterialId());
     lhs.SetLineStyle(nullptr);
@@ -319,20 +396,48 @@ static bool areDisplayParamsEqual(ElemDisplayParamsCR lhsUnresolved, DgnDbR ldb,
     lhs.SetPatternParams(nullptr);
     rhs.SetPatternParams(nullptr);
 
-    if (!(lhs == rhs))
-        return false;
-
-    if (!areMaterialsEqual(lhs.GetMaterial(), ldb, rhs.GetMaterial(), rdb))
-        return false;
-
-    // *** TBD linestyles
-    // *** TBD Gradient
-    // *** TBD PatternParams
-
-    return true;
+    return lhs == rhs;
     }
 
 //---------------------------------------------------------------------------------------
+// Check that imported element is equivalent to source element
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
+static void checkImportedElement(DgnElementCPtr destElem, GeometricElementCR sourceElem)
+    {
+    GeometricElementCP gdestElem = destElem->ToGeometricElement();
+    ASSERT_TRUE(nullptr != gdestElem);
+    DgnDbR destDb = destElem->GetDgnDb();
+
+    DgnDbR sourceDb = sourceElem.GetDgnDb();
+
+    DgnCategories::Category destcat = destDb.Categories().Query(gdestElem->GetCategoryId());
+    ASSERT_TRUE( destcat.IsValid() );
+    
+    ASSERT_NE( destcat.GetCategoryId() , sourceElem.GetCategoryId() ) << "source element's Category should have been deep-copied and remapped to a new Category in destination DB";
+
+    DgnCategories::Category sourceCat = sourceDb.Categories().Query(sourceElem.GetCategoryId());
+    DgnCategories::Category destCat = destDb.Categories().Query(gdestElem->GetCategoryId());
+
+    ASSERT_STREQ( sourceCat.GetCode(), destcat.GetCode() );
+
+    ElemDisplayParams sourceDisplayParams;
+    getFirstElemDisplayParams(sourceDisplayParams, sourceElem);
+
+    ElemDisplayParams destDisplayParams;
+    getFirstElemDisplayParams(destDisplayParams, *gdestElem);
+    
+    DgnSubCategoryId destSubCategoryId = destDisplayParams.GetSubCategoryId();
+    ASSERT_TRUE( destSubCategoryId.IsValid() );
+    //ASSERT_TRUE( destSubCategoryId != sourceSubCategory1Id );   don't know what Id it was assigned
+    
+    DgnCategories::SubCategory destSubCategory = destDb.Categories().QuerySubCategory(destSubCategoryId);
+    ASSERT_TRUE( destSubCategory.IsValid() );
+    ASSERT_TRUE( areDisplayParamsEqual(sourceDisplayParams, sourceDb, destDisplayParams, destDb) );
+    }
+
+//---------------------------------------------------------------------------------------
+// Check that category, subcategory, and its appearance are deep-copied and remapped
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
 TEST_F(ImportTest, ImportElementAndCategory1)
@@ -344,26 +449,39 @@ TEST_F(ImportTest, ImportElementAndCategory1)
 
     ASSERT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*sourceDb));
 
-    //  Create a Category for the element. 
+    //  Create a Category for the elements. 
     DgnCategories::SubCategory::Appearance sourceAppearanceRequested = createAppearance(ColorDef(1, 2, 3, 0));
+    sourceAppearanceRequested.SetMaterial(createTexturedMaterial(*sourceDb, "Texture1", L"", RenderMaterialMap::Units::Relative));
     DgnCategoryId sourceCategoryId = createCategory(*sourceDb, s_catName, DgnCategories::Scope::Analytical, sourceAppearanceRequested);
     ASSERT_TRUE( sourceCategoryId.IsValid() );
-    DgnSubCategoryId sourceSubCategoryId = sourceDb->Categories().DefaultSubCategoryId(sourceCategoryId);
-    ASSERT_TRUE( sourceSubCategoryId.IsValid() );
+    DgnSubCategoryId sourceSubCategory1Id = sourceDb->Categories().DefaultSubCategoryId(sourceCategoryId);
+    ASSERT_TRUE( sourceSubCategory1Id.IsValid() );
+
+    //  Create a custom SubCategory for one of the elements to use
+    DgnCategories::SubCategory::Appearance sourceAppearance2 = createAppearance(ColorDef(2, 2, 3, 0));
+    sourceAppearance2.SetMaterial(createTexturedMaterial(*sourceDb, "Texture2", L"", RenderMaterialMap::Units::Relative));
+    DgnCategories::SubCategory sourceSubCategory2(sourceCategoryId, DgnSubCategoryId(), "SubCat2", sourceAppearance2);
+    ASSERT_EQ( BE_SQLITE_OK , sourceDb->Categories().InsertSubCategory(sourceSubCategory2) );
+    DgnSubCategoryId sourceSubCategory2Id = sourceSubCategory2.GetSubCategoryId();
 
     //  Create the source model
     PhysicalModelPtr sourcemod = createPhysicalModel(*sourceDb, "sourcemod");
     ASSERT_TRUE( sourcemod.IsValid() );
 
-    // Put an element in this category into the source model
-    GeometricElementCPtr sourceElem = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategoryId);
+    // Put elements in this category into the source model
+    GeometricElementCPtr sourceElem = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory1Id, nullptr);   // 1 is based on default subcat
+    GeometricElementCPtr sourceElem2 = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory2Id, nullptr);  // 2 is based on custom subcat
+    ElemDisplayParams customParams;
+    customParams.SetCategoryId(sourceCategoryId);
+    customParams.SetMaterial(createTexturedMaterial(*sourceDb, "Texture3", L"", RenderMaterialMap::Units::Relative));
+    GeometricElementCPtr sourceElem3 = insertElement(*sourceDb, sourcemod->GetModelId(), true, sourceSubCategory1Id, &customParams); // 3 is based on default subcat with custom display params
     sourceDb->SaveChanges();
 
     ElemDisplayParams sourceDisplayParams;
     getFirstElemDisplayParams(sourceDisplayParams, *sourceElem);
 
     ASSERT_EQ( sourceCategoryId , sourceElem->GetCategoryId() ); // check that the source element really was assigned to the Category that I specified above
-    ASSERT_EQ( sourceSubCategoryId , sourceDisplayParams.GetSubCategoryId() ); // check that the source element's geometry really was assigned to the SubCategory that I specified above
+    ASSERT_EQ( sourceSubCategory1Id , sourceDisplayParams.GetSubCategoryId() ); // check that the source element's geometry really was assigned to the SubCategory that I specified above
 //*** Have to "cook" first    ASSERT_TRUE( sourceDisplayParams.GetLineColor() == sourceAppearanceRequested.GetColor() ); // check that the source element's geometry has the requested appearance
 //*** Have to "cook" first    ASSERT_TRUE( sourceDisplayParams.GetMaterial() == sourceAppearanceRequested.GetMaterial() ); // check that the source element's geometry has the requested appearance
 
@@ -381,32 +499,39 @@ TEST_F(ImportTest, ImportElementAndCategory1)
 
         DgnImportContext importContext(*sourceDb, *destDb);
 
+        // Import the elements one by one
         DgnDbStatus istatus;
-        DgnElementCPtr destElem = sourceElem->Import(&istatus, *destmod, importContext);
-        ASSERT_TRUE( destElem.IsValid() );
-        ASSERT_EQ( DgnDbStatus::Success , istatus );
+        if (true)
+            {
+            //  This is the one that is based on the default subcategory
+            DgnElementCPtr destElem = sourceElem->Import(&istatus, *destmod, importContext);
+            ASSERT_TRUE( destElem.IsValid() );
+            ASSERT_EQ( DgnDbStatus::Success , istatus );
+            checkImportedElement(destElem, *sourceElem);
+            }
 
-        DgnElementCPtr destElemFound = getSingleElementInModel(*destmod);
-        ASSERT_TRUE(destElemFound.IsValid());
-        ASSERT_EQ(destElemFound->GetElementId(), destElem->GetElementId());
+        if (true)
+            {
+            //  This is the one that is based on the custom subcategory
+            DgnElementCPtr destElem = sourceElem2->Import(&istatus, *destmod, importContext);
+            ASSERT_TRUE( destElem.IsValid() );
+            ASSERT_EQ( DgnDbStatus::Success , istatus );
+            checkImportedElement(destElem, *sourceElem2);
+            }
 
-        GeometricElementCP gdestElem = destElem->ToGeometricElement();
-        ASSERT_TRUE(nullptr != gdestElem);
-        DgnCategories::Category destcat = destDb->Categories().Query(gdestElem->GetCategoryId());
-        ASSERT_TRUE( destcat.IsValid() );
-        ASSERT_NE( destcat.GetCategoryId() , sourceCategoryId ) << "source element's Category should have been deep-copied and remapped to a new Category in destination DB";
-        ASSERT_STREQ(s_catName, destcat.GetCode());
-        ElemDisplayParams destDisplayParams;
-        getFirstElemDisplayParams(destDisplayParams, *gdestElem);
-        DgnSubCategoryId destSubCategoryId = destDisplayParams.GetSubCategoryId();
-        ASSERT_TRUE( destSubCategoryId.IsValid() );
-        //ASSERT_TRUE( destSubCategoryId != sourceSubCategoryId );   don't know what Id it was assigned
-        DgnCategories::SubCategory destSubCategory = destDb->Categories().QuerySubCategory(destSubCategoryId);
-        ASSERT_TRUE( destSubCategory.IsValid() );
-        ASSERT_TRUE( areDisplayParamsEqual(sourceDisplayParams, *sourceDb, destDisplayParams, *destDb) );
+        if (true)
+            {
+            //  This is the one that is based on custom elemdisplayparams (and default subcategory)
+            DgnElementCPtr destElem = sourceElem3->Import(&istatus, *destmod, importContext);
+            ASSERT_TRUE( destElem.IsValid() );
+            ASSERT_EQ( DgnDbStatus::Success , istatus );
+            checkImportedElement(destElem, *sourceElem3);
+            }
+
         destDb->SaveChanges();
     }
 }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15

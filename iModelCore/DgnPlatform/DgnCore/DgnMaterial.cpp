@@ -346,9 +346,11 @@ DgnMaterialId DgnMaterials::ImportMaterial(DgnImportContext& context, DgnDbR sou
     if (destMaterialId.IsValid())
         return destMaterialId;
 
-    //  Must create a copy of the source material.
+    //  Must copy and remap the source material.
     Material destMaterial(sourceMaterial);
-    destMaterial.SetParentId(context.RemapMaterialId(sourceMaterial.GetParentId()));  // make sure the parent material is in place.
+    if (sourceMaterial.GetParentId().IsValid())
+        destMaterial.SetParentId(context.RemapMaterialId(sourceMaterial.GetParentId()));
+
     Insert(destMaterial);
     return context.AddMaterialId(source, destMaterial.GetId());
     }

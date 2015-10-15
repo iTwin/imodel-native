@@ -41,6 +41,7 @@ protected:
     bmap<DgnSubCategoryId, DgnSubCategoryId> m_subcategoryId;
     bmap<DgnClassId, DgnClassId> m_classId;
     bmap<DgnAuthorityId, DgnAuthorityId> m_authorityId;
+    bmap<DgnMaterialId, DgnMaterialId> m_materialId;
 
     template<typename T> T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
 
@@ -56,6 +57,8 @@ public:
     DgnGeomPartId Add(DgnGeomPartId sourceId, DgnGeomPartId targetId) {return m_geomPartId[sourceId] = targetId;}
     DgnCategoryId Find(DgnCategoryId sourceId) const {return Find<DgnCategoryId>(m_categoryId, sourceId);}
     DgnCategoryId Add(DgnCategoryId sourceId, DgnCategoryId targetId) {return m_categoryId[sourceId] = targetId;}
+    DgnMaterialId Find(DgnMaterialId sourceId) const {return Find<DgnMaterialId>(m_materialId, sourceId);}
+    DgnMaterialId Add(DgnMaterialId sourceId, DgnMaterialId targetId) {return m_materialId[sourceId] = targetId;}
 
     DgnSubCategoryId Find(DgnSubCategoryId sourceId) const {return Find<DgnSubCategoryId>(m_subcategoryId, sourceId);}
     DgnSubCategoryId Add(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {return m_subcategoryId[sourceId] = targetId;}
@@ -119,9 +122,9 @@ public:
     //! Make sure that an ECClass has been imported
     DGNPLATFORM_EXPORT DgnClassId RemapClassId(DgnClassId sourceId);
     //! Look up a copy of a Category
-    DgnMaterialId FindMaterialId(DgnMaterialId sourceId) const { return DgnMaterialId(m_remap.Find(DgnElementId(sourceId.GetValueUnchecked())).GetValueUnchecked()); }
+    DgnMaterialId FindMaterialId(DgnMaterialId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a Material
-    DgnMaterialId AddMaterialId(DgnMaterialId sourceId, DgnMaterialId targetId) { return DgnMaterialId(m_remap.Add(DgnElementId(sourceId.GetValueUnchecked()), DgnElementId(targetId.GetValueUnchecked())).GetValueUnchecked()); }
+    DgnMaterialId AddMaterialId(DgnMaterialId sourceId, DgnMaterialId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a Material has been imported
     DGNPLATFORM_EXPORT DgnMaterialId RemapMaterialId(DgnMaterialId sourceId);
     //! @}
