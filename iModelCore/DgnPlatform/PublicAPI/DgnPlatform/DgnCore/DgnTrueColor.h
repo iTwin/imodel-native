@@ -11,6 +11,7 @@
 #include "DgnDb.h"
 #include "DgnElement.h"
 #include "ElementHandler.h"
+#include "ECSqlStatementIterator.h"
 
 DGNPLATFORM_TYPEDEFS(DgnTrueColor);
 DGNPLATFORM_REF_COUNTED_PTR(DgnTrueColor);
