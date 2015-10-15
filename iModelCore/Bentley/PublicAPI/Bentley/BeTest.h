@@ -17,7 +17,6 @@
 #include "BeFileName.h"
 #include "BeFileListIterator.h"
 #include "BeStringUtilities.h"
-#include "BeTimeUtilities.h"
 #include "BeAssert.h"
 #include "RefCounted.h"
 #include <Bentley/bvector.h>

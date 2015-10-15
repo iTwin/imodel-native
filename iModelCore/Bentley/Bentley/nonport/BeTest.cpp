@@ -28,6 +28,7 @@
 #include <Bentley/BeAssert.h>
 #include <Bentley/BeThread.h>
 #include <Bentley/BeNumerical.h>
+#include <Bentley/BeTimeUtilities.h>
 #include <Logging/bentleylogging.h>
 
 USING_NAMESPACE_BENTLEY
