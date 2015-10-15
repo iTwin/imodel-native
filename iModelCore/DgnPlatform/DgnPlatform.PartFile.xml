@@ -168,7 +168,6 @@
     <Part Name="UnitTests-Performance" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="TestFixtureForUnitTests" />
-        <SubPart PartName="PerformanceTestingHelpers" PartFile="BeSQLite" Repository="BeSQLite"/>
         <!-- Performance tests use DgnDbTestDgnManager, which is implemented in BackDoor -->
         <SubPart PartName="BackdoorForUnitTests"/>
         <Bindings>
