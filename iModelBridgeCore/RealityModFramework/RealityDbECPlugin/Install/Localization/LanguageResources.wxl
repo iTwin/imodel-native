@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+#  $Source: RealityDbECPlugin/Install/Localization/LanguageResources.wxl $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+-->
+<WixLocalization Culture="en-us" Codepage="1252" xmlns="http://schemas.microsoft.com/wix/2006/localization">
+  <!-- Modify according to the language -->
+  <!-- Code page identifiers: http://msdn.microsoft.com/en-us/library/windows/desktop/dd317756%28v=vs.85%29.aspx -->
+  <!-- Language identifiers: http://msdn.microsoft.com/en-us/goglobal/bb964664 -->
+  <!-- Language three letter ISO identifier: http://www.sql-und-xml.de/server-daten/culture-info/ -->
+  <String Id="SummaryCodepage" Overridable="yes" Localizable="yes">1252</String>
+  <String Id="LanguageID" Overridable="yes" Localizable="yes">1033</String>
+  <String Id="LanguageCode3ccISO" Overridable="yes" Localizable="yes">eng</String>
+
+  <!-- Translatable text -->
+    <String Id="ProductFullName" Overridable="yes" Localizable="yes">Bentley RealityDbECPlugin </String>
+    <String Id="CompanyName" Overridable="yes" Localizable="yes">Bentley Systems, Incorporated</String>
+    <String Id="Copyright_Prefix" Overridable="yes" Localizable="yes">Copyright (C)</String>
+    <String Id="Copyright_Sufix" Overridable="yes" Localizable="yes">. All rights reserved.</String>
+  
+  
+    <String Id="Error_InsufficientPrivileges" Overridable="yes">You don't have sufficient privileges to install [ProductName]. [ProductName] can be installed by the administrator only.</String>
+    <String Id="Error_WindowsVersionRequirements" Overridable="yes">[ProductName] does not support this Operating System.</String>
+    <String Id="Error_NET45Requirements" Overridable="yes">[ProductName] requires .NET Framework 4.5 or greater. Please install a proper .NET Framework, then run this installer again.</String>
+    <!--ToDo: Fill the WSGVERSION variable.-->
+    <String Id="Error_MissignCoreProductVersion" Overridable="yes">[ProductName] requires WSG Version [WSGVERSION] or higher.</String>
+    <String Id="Error_NewerVersionInstalled" Overridable="yes">A newer version of this product is already installed.</String>
+
+  <!-- Product support information -->
+    <String Id="AboutUrl" Overridable="yes" Localizable="yes">http://www.bentley.com</String>
+    <String Id="HelpTelephone" Overridable="yes" Localizable="yes">1-800-236-8539</String>
+    <String Id="HelpUrl" Overridable="yes" Localizable="yes">http://www.bentley.com/support</String>
+    <String Id="UpdateUrl" Overridable="yes" Localizable="yes">http://www.bentley.com/downloads</String>
+  
+  <!--Features-->
+    <String Id="FeatureTitleProductFull" Overridable="yes" Localizable="yes">Bentley RealityDbECPlugin </String>
+    <String Id="FeatureDescriptionProductFull" Overridable="yes" Localizable="yes">These are the main files, needed to run this program.</String>
+</WixLocalization>

@@ -1,0 +1,78 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--
+#  $Source: RealityDbECPlugin/Install/Product_Files.wxs $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+-->
+<?include Defines.wxi?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment>
+    <ComponentGroup Id ="CG_ReadMeFiles">
+      <!--ToDo: Adjust the path of the ReadMe, I suggest have it in the Install folder to not harvest it with Heat.exe.-->
+      <!--<Component Id="readme" Guid="{2E0678D7-0ED4-43BB-AAD8-F25D0795C1C6}" SharedDllRefCount="yes" Directory="INSTALLDIR">
+        
+        <File Id="readme" Name="readme" KeyPath="yes" Source="$(env.ProductDir)\$(var.ReadMeName)" />
+      </Component>-->
+    </ComponentGroup>
+  </Fragment>
+  <Fragment>
+    <ComponentGroup Id ="CG_Extensions">
+      <Component Id="Bentley.RealityDbECPlugin.dll" Directory="Extensions" Guid="{FC6641BC-6377-4C0B-9FB8-35EC334FF0C9}">
+        <File Id="Bentley.RealityDbECPlugin.dll" KeyPath="yes" Source="$(var.ProductDir)Bentley.RealityDbECPlugin.dll" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+  <Fragment>
+    <ComponentGroup Id ="CG_AppFiles">
+      <Component Id="BentleyWMSPackageNet.dll" Directory="bin" Guid="{90718A54-D2CD-474F-BC79-D8AAD2DCE6C3}">
+        <File Id="BentleyWMSPackageNet.dll" KeyPath="yes" Source="$(var.ProductDir)BentleyWMSPackageNet.dll" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+  <Fragment>
+    <ComponentGroup Id ="CG_BentleyFiles">
+      <Component Id="BaseGeoCoordG.dll" Directory="bin" Guid="{31DB8983-F88B-4B33-82CC-B86A0F196C95}">
+        <File Id="BaseGeoCoordG.dll" KeyPath="yes" Source="$(var.ProductDir)BaseGeoCoordG.dll" />
+      </Component>
+      <Component Id="BeCurl.dll" Directory="bin" Guid="{11EB6944-AFF3-4078-A389-DEC290D3AB07}">
+        <File Id="BeCurl.dll" KeyPath="yes" Source="$(var.ProductDir)BeCurl.dll" />
+      </Component>
+      <Component Id="BeIcu4c.dll" Directory="bin" Guid="{3425543D-91A9-4524-849E-1FAE356317F9}">
+        <File Id="BeIcu4c.dll" KeyPath="yes" Source="$(var.ProductDir)BeIcu4c.dll" />
+      </Component>
+      <Component Id="BeLibxml2.dll" Directory="bin" Guid="{A34FE1FE-E8E3-4731-8EAA-493570A6792F}">
+        <File Id="BeLibxml2.dll" KeyPath="yes" Source="$(var.ProductDir)BeLibxml2.dll" />
+      </Component>
+      <Component Id="BentleyAllocator.dll" Directory="bin" Guid="{6F9F3CAA-DD42-466C-8F07-EF1E9E41C1A0}">
+        <File Id="BentleyAllocator.dll" KeyPath="yes" Source="$(var.ProductDir)BentleyAllocator.dll" />
+      </Component>
+      <Component Id="BentleyG.dll" Directory="bin" Guid="{761EFBFA-783D-4641-BFCD-D3BC2F465F4B}">
+        <File Id="BentleyG.dll" KeyPath="yes" Source="$(var.ProductDir)BentleyG.dll" />
+      </Component>
+      <Component Id="BentleyGeomG.dll" Directory="bin" Guid="{328A82AC-A2EA-4040-A7EA-851F2A236611}">
+        <File Id="BentleyGeomG.dll" KeyPath="yes" Source="$(var.ProductDir)BentleyGeomG.dll" />
+      </Component>
+      <Component Id="BeOpenSSL.dll" Directory="bin" Guid="{335ABA3A-4B35-4FC0-82AC-5D3B69E4C5DA}">
+        <File Id="BeOpenSSL.dll" KeyPath="yes" Source="$(var.ProductDir)BeOpenSSL.dll" />
+      </Component>
+      <Component Id="BeSQLiteG.dll" Directory="bin" Guid="{641FED9B-9A14-4CB1-BC22-3DE18562CF44}">
+        <File Id="BeSQLiteG.dll" KeyPath="yes" Source="$(var.ProductDir)BeSQLiteG.dll" />
+      </Component>
+      <Component Id="BeXmlG.dll" Directory="bin" Guid="{3C48BDAE-0D90-4CDA-8993-70CAAB456216}">
+        <File Id="BeXmlG.dll" KeyPath="yes" Source="$(var.ProductDir)BeXmlG.dll" />
+      </Component>
+      <Component Id="ImagePPG.dll" Directory="bin" Guid="{ADB2DF63-BB0F-463C-941A-05A8DC96CF5E}">
+        <File Id="ImagePPG.dll" KeyPath="yes" Source="$(var.ProductDir)ImagePPG.dll" />
+      </Component>
+      <Component Id="NCSEcw.dll" Directory="bin" Guid="{8C63E0AF-7B46-4219-9C97-210F9C9DF68C}">
+        <File Id="NCSEcw.dll" KeyPath="yes" Source="$(var.ProductDir)NCSEcw.dll" />
+      </Component>
+      <Component Id="RealityPackage.dll" Directory="bin" Guid="{D4049E0D-CDD5-4BCE-BBA5-9A74488B4454}">
+        <File Id="RealityPackage.dll" KeyPath="yes" Source="$(var.ProductDir)RealityPackage.dll" />
+      </Component>
+      <Component Id="RealityPlatform.dll" Directory="bin" Guid="{3412A325-0963-4F44-A8DF-03C5F646F62E}">
+        <File Id="RealityPlatform.dll" KeyPath="yes" Source="$(var.ProductDir)RealityPlatform.dll" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

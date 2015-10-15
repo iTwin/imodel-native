@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+#  $Source: RealityDbECPlugin/Install/Defines.wxi $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+-->
+<Include>
+    <?ifndef ProductCodeGUID ?>
+      <?define ProductCodeGUID = "{9D626319-33DE-4996-AAB7-C367A89A9EC0}"?>
+    <?endif?>
+    <?ifndef ProductUpgradeCodeGUID ?>
+      <?define ProductUpgradeCodeGUID = "{83FDF9D1-53BE-4CE3-9895-5F4239D14637}"?>
+    <?endif?>
+    <?define ProductFullName = "!(loc.ProductFullName)"?>
+    <?ifndef ProductName ?>
+      <?define ProductName = "RealityDbECPlugin"?>
+    <?endif?>
+    <?ifndef CompanyName ?>
+        <?define CompanyName = "!(loc.CompanyName)"?>
+    <?endif?>
+    <?ifndef CopyrightYears ?>
+        <?define CopyrightYears = "2015"?>
+    <?endif?>
+    <?ifndef Copyright ?>
+        <?define Copyright = "!(loc.Copyright_Prefix) $(var.CopyrightYears) $(var.CompanyName)!(loc.Copyright_Sufix)"?>
+    <?endif?>
+  <?define ProductExe = "Bentley.RealityDbECPlugin.dll"?>
+  <?ifndef Rel_V ?>
+    <?define Rel_V = "1"?>
+  <?endif?>
+  <?ifndef Maj_V ?>
+    <?define Maj_V = "2"?>
+  <?endif?>
+  <?ifndef Min_V ?>
+    <?define Min_V = "3"?>
+  <?endif?>
+  <?ifndef SubMin_V ?>
+    <?define SubMin_V = "4"?>
+  <?endif?>
+  <?define ProductDisplayVersion = "$(var.Rel_V).$(var.Maj_V).$(var.Min_V).$(var.SubMin_V)"?>
+  <?define ProductVersion = "$(var.Rel_V)$(var.Maj_V)$(var.Min_V)$(var.SubMin_V)"?>
+  <!--ToDo: Set the correct readme file name.-->
+  <?ifndef ReadMeName ?>
+    <?define ReadMeName = "ReadMe.chm"?>
+  <?endif?>
+  <!--ToDo: Need to find how to fill the variable.-->
+  <?ifndef ProductPackageBuildType ?>
+    <?define ProductPackageBuildType = "Beta"?>
+  <?endif?>  
+  <?ifndef WSGVERSION ?>
+    <?define WSGVERSION = "02.00"?>
+  <?endif?>
+  <?ifdef env.IDEENVIRONMENT ?><!--For building in VS 2012-->
+    <?define INSTALLER_PRODUCT_VERSION = "1.2.3.4" ?>
+    <WixVariable Id="WixUILicenseRtf" Value="$(env.SrcRoot)miscdev\eula\lang\English\eula.rtf" />
+    <WixVariable Id="WixUIBannerBmp" Value="$(env.SrcRoot)miscdev\eula\winstall\bentleyInstallBannerWithShortLogo.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value="$(env.SrcRoot)miscdev\eula\winstall\bentleyStdInstall.bmp" />
+  <?endif?>
+
+</Include>

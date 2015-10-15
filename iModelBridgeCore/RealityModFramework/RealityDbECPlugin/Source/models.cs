@@ -143,6 +143,11 @@ namespace IndexECPlugin.Source
         public string SubTitle { get; set; }
 
         /// <summary>
+        /// 
+        /// </summary>
+        public string SbDatasetTag { get; set; }
+
+        /// <summary>
         ///   
         /// </summary>
         public string Format { get; set; }

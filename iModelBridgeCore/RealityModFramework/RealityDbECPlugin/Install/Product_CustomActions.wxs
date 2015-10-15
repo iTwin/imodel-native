@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--
+#  $Source: RealityDbECPlugin/Install/Product_CustomActions.wxs $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+-->
+<?include Defines.wxi?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <!-- Set the readme file in the add/remove program -->
+  <Fragment>
+    <CustomAction Id="SetReadMe" Property="ARPREADME" Value="[$readme]$(var.ReadMeName)" Execute="immediate"/>
+  </Fragment>
+  
+  <!-- Set up ARPINSTALLLOCATION property -->
+  <Fragment>
+    <CustomAction Id="SetARPINSTALLLOCATION" Property="ARPINSTALLLOCATION" Value="[INSTALLDIR]" Execute="immediate"/>
+  </Fragment>
+  
+  <!-- Set up INSTALLDIR directory -->
+  <Fragment>
+    <CustomAction Id="SetInstall" Property="INSTALLDIR" Value="[COREPRODUCTDIR]" Execute="firstSequence"/>
+  </Fragment>
+</Wix>

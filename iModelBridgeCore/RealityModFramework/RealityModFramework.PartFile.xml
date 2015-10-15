@@ -14,9 +14,10 @@
       <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
       <SubPart PartName="PointoolsVortexAPI_VS2012"  PartFile="PointoolsVortexAPI_VS2012" Repository="PointoolsVortexAPI" />
       <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
+      <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>
       <Bindings>
           <Libs>Delivery/$(stlibprefix)RealityPlatform$(stlibext)</Libs>
-          <Files ProductDirectoryName="RealityAssemblies">delivery/$(shlibprefix)RealityPlatform$(shlibext)</Files>
+          <Assemblies ProductDirectoryName="RealityAssemblies">delivery/$(shlibprefix)RealityPlatform$(shlibext)</Assemblies>
       </Bindings>
     </Part>
 
@@ -28,7 +29,7 @@
     <Part Name="RealityDataHandlerTester" BentleyBuildMakeFile="RealityPlatform\Tests\RealityDataHandlerTester\RealityDataHandlerTester.mke" OnlyPlatforms="x86,x64">
         <SubPart PartName="RealityPlatform"/>
         <Bindings>
-            <Files ProductDirectoryName="RealityAssemblies">Delivery/RealityDataHandlerTester.exe</Files>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/RealityDataHandlerTester.exe</Assemblies>
         </Bindings>
     </Part>
 
@@ -57,7 +58,7 @@
     <Part Name="CrawlerLibExample" BMakeFile="CrawlerLib/Example/CrawlerLibExample.mke">
         <SubPart PartName="CrawlerLib" />
         <Bindings>
-            <Files ProductDirectoryName="RealityAssemblies">Delivery/CrawlerLibExample.exe</Files>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/CrawlerLibExample.exe</Assemblies>
         </Bindings>
     </Part>
 
@@ -66,7 +67,7 @@
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatform"/>
         <Bindings>
-            <Files ProductDirectoryName="RealityAssemblies">Delivery/DownloadEngineExample.exe</Files>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/DownloadEngineExample.exe</Assemblies>
         </Bindings>
     </Part>
 
@@ -160,6 +161,7 @@
     <Part Name="Reality-Examples">
         <SubPart PartName="RealityDbECPlugin"/>
         <SubPart PartName="CrawlerLibExample"/>
+        <SubPart PartName="RealityDbECPluginInstaller" />
         <!--<SubPart PartName="RealityCrawler"/>-->
     </Part>
 
@@ -186,11 +188,18 @@
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
-        <SubPart PartName="GeomDlls"    PartFile="geomlibs"     Repository="GeomLibs" />        
+        <SubPart PartName="GeomDlls"    PartFile="geomlibs"     Repository="GeomLibs" />
         <Bindings>
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/BentleyWMSPackageNet$(shlibext)</Assemblies>
         </Bindings>
+    </Part>
 
+    <Part Name="RealityDbECPluginInstaller" BMakeFile="RealityDbECPlugin/Install/Install.mke">
+      <RequiredRepository>bsitools-wix_3.10.2103.0</RequiredRepository>
+      <RequiredRepository>Miscdev-Eula</RequiredRepository>
+      <Bindings>
+        <Files ProductDirectoryName="ApplicationInstallRoot" Required="true" IfNotPresent="Warn">Delivery/Setup_RealityDbECPlugin.msi</Files>
+      </Bindings>
     </Part>
 
     <Part Name="WMSCapabilitiesNET" BentleyBuildMakeFile="WMSCapabilitiesNET\WMSCapabilitiesNET.mke">
@@ -256,6 +265,7 @@
         <ProductDirectory Name="PointoolsAssemblies32Ext"       Path="Pointools32Ext" RelativeTo="PointoolsAssemblies"/>
 
         <ProductDirectory Name="LoggingNativeAssemblies"        Path=""/>
+        <ProductDirectory Name="ApplicationInstallRoot"         Path="InstallRealityDbECPlugin"      RelativeTo="RealityAssemblies"/>
     </ProductDirectoryList>
 
 	
@@ -266,3 +276,16 @@
     </Product>
 
 </BuildContext>
+
+<!--
+To build the tests
+bb –sRealityModFramework.Dev b
+
+To run the tests:
+bb -rRealityModFramework -pRealityModFramework:RunGtest b
+
+To re-run the tests:
+bb -rRealityModFramework -pRealityModFramework:RunGtest re RunGtest
+
+To run under the debugger run the exe that you see in %OutRoot%Winx64\Product\Reality-Gtest
+-->

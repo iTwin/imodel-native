@@ -15,6 +15,7 @@
 // 
 // index --> Url index set at the create
 // index == -1 --> General error, pClient will be NULL.
+// index == -2 --> Retry the command.
 // ErrorCode --> Curl error code.
 // If RealityDataDownload_ProgressCallBack returns # 0 --> cancel the transfer
 typedef int(__cdecl *RealityDataDownload_ProgressCallBack)(int index, void *pClient, size_t ByteCurrent, size_t ByteTotal);
@@ -41,9 +42,13 @@ public:
         BeFile                  fileStream;
         size_t                  iAppend;
         RealityDataDownload_ProgressCallBack pProgressFunc;
+        size_t                  filesize;
+        size_t                  downloadedSizeStep;
+        float                   progressStep;
+        int                     nbRetry;
         };
 
-    typedef std::vector<std::pair<AString, WString>>    UrlLink_UrlFile;
+    typedef bvector<std::pair<AString, WString>>    UrlLink_UrlFile;
 
     //! Create an instance of RealityDataDownload
     //! @param[in]  pi_Link_FileName A list of (Url link, url file)
@@ -59,10 +64,12 @@ public:
     //! @param[in/out] pio_rFileName Could already contain the first part of the path, like "C:\\Data\\"
     //!                              the filename extract from the url, will be concatenated. 
     //! @param[in] pi_Url            Url link string.
-    REALITYDATAPLATFORM_EXPORT static void RealityDataDownload::ExtractFileName(WString& pio_rFileName, const AString& pi_Url);
+    REALITYDATAPLATFORM_EXPORT static void ExtractFileName(WString& pio_rFileName, const AString& pi_Url);
+    REALITYDATAPLATFORM_EXPORT static bool UnZipFile(WString& pi_strSrc, WString& pi_strDest);
 
     //! Set callback to follow progression of the download.
-    REALITYDATAPLATFORM_EXPORT void SetProgressCallBack(RealityDataDownload_ProgressCallBack pi_func) {m_pProgressFunc = pi_func;};
+    REALITYDATAPLATFORM_EXPORT void SetProgressCallBack(RealityDataDownload_ProgressCallBack pi_func, float pi_step = 0.01) 
+                                                                   {m_pProgressFunc = pi_func; m_progressStep = pi_step;};
     //! Set callback to know to status, download done or error.
     REALITYDATAPLATFORM_EXPORT void SetStatusCallBack(RealityDataDownload_StatusCallBack pi_func) { m_pStatusFunc = pi_func; };
 
@@ -83,6 +90,7 @@ private:
     FileTransfer                *m_pEntries;
 
     RealityDataDownload_ProgressCallBack    m_pProgressFunc;
+    float                                   m_progressStep;
     RealityDataDownload_StatusCallBack      m_pStatusFunc;
 
 };

@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+#  $Source: RealityDbECPlugin/Install/Product_SystemSearch.wxs $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+-->
+<?include Defines.wxi ?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <!-- Validate the VBScript presence -->
+        <Property Id="WSH_VERSION" Secure="yes">
+          <DirectorySearch Id="AppFile1" Path="[SystemFolder]" Depth="0">
+            <FileSearch Id="AppFile1" Name="wshom.ocx" MinVersion="5.0.0.0" MaxVersion="9.9.9.9" />
+          </DirectorySearch>
+        </Property>
+        </Fragment>
+
+    <Fragment>
+        <!--ToDo: we don't look for higher version.-->
+        <!-- Validate the CoreProductProgramPath presence -->
+        <Property Id="COREPRODUCTDIR" Value="0" Secure="yes">
+            <RegistrySearch Id="SeachCoreProductDir" Root="HKLM" Key="SOFTWARE\Bentley\WebApi\$(var.WSGVERSION)" Name="InstallLocation" Type="raw"/>
+        </Property>
+    </Fragment>
+</Wix>

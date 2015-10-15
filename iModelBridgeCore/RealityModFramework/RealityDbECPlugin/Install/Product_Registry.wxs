@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--
+#  $Source: RealityDbECPlugin/Install/Product_Registry.wxs $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+-->
+<?include Defines.wxi?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment>
+    <ComponentGroup Id ="CG_Registry">
+      <Component Id="ApplicationRegistry" Guid="*" SharedDllRefCount="yes" Directory="INSTALLDIR">
+        <RegistryKey Id="InstallRegKeysApplication" Root="HKLM" Key="SOFTWARE\Bentley\$(var.ProductName)\$(var.ProductCodeGUID)" Action="createAndRemoveOnUninstall">
+          <RegistryValue Id ="ApplicationApplicationPath" Name ="ApplicationPath" Action ="write" Type ="string" Value="[Extensions]$(var.ProductExe)"/>
+          <RegistryValue Id ="ApplicationDisplayProductName" Name ="DisplayProductName" Action ="write" Type ="string" Value="!(loc.ProductFullName)"/>
+          <RegistryValue Id ="ApplicationVersion" Name ="Version" Action ="write" Type ="string" Value="$(var.ProductDisplayVersion)"/>
+          <!--<RegistryValue Id ="ApplicationLANGUAGE_3ccISO" Name ="LANGUAGE_3ccISO" Action ="write" Type ="string" Value="!(loc.LanguageCode3ccISO)"/>-->
+          <RegistryValue Id ="ApplicationInstallDir" Name ="InstallDir" Action ="write" Type ="string" Value="[INSTALLDIR]"/>
+          <RegistryValue Id ="ApplicationLanguage" Name ="Language" Action ="write" Type ="string" Value="!(loc.LanguageID)"/>
+          <RegistryValue Id ="ApplicationPackageBuildType" Name ="PackageBuildType" Action ="write" Type ="string" Value="$(var.ProductPackageBuildType)"/>
+          <!--<RegistryValue Id ="ApplicationPowerPlatformVersion" Name ="PowerPlatformVersion" Action ="write" Type ="string" Value="$(var.ProductPowerPlatformVersion)"/>-->
+          <RegistryValue Id ="ApplicationProductCode" Name ="ProductCode" Action ="write" Type ="string" Value="$(var.ProductCodeGUID)"/>
+          <RegistryValue Id ="ApplicationProductName" Name ="ProductName" Action ="write" Type ="string" Value="$(var.ProductName)"/>          
+          <RegistryValue Id ="ApplicationProgramPath" Name ="ProgramPath" Action ="write" Type ="string" Value="[Extensions]"/>
+          <RegistryValue Id ="ApplicationUpgradeCode" Name ="UpgradeCode" Action ="write" Type ="string" Value="$(var.ProductUpgradeCodeGUID)"/>
+        </RegistryKey>
+        <RegistryValue Root="HKLM" Key="SOFTWARE\Bentley\$(var.ProductName)" Name="Version" Type="string" Value="$(var.INSTALLER_PRODUCT_VERSION)"/><!--Used by FME License-->
+      </Component>
+      
+      <Component Id="Required_Create_InstallRegKeysBSW" Guid="*" SharedDllRefCount="yes" Directory="INSTALLDIR">
+        <RegistryKey Id="InstallRegKeysBSW" Root="HKLM" Key="SOFTWARE\Bentley\Installed_Products\$(var.ProductCodeGUID)" Action="createAndRemoveOnUninstall">
+          <RegistryValue Id ="BSWApplicationPath" Name ="ApplicationPath" Action ="write" Type ="string" Value="[Extensions]$(var.ProductExe)"/>
+          <RegistryValue Id ="BSWDisplayProductName" Name ="DisplayProductName" Action ="write" Type ="string" Value="!(loc.ProductFullName)"/>
+          <RegistryValue Id ="BSWVersion" Name ="Version" Action ="write" Type ="string" Value="$(var.ProductDisplayVersion)"/>
+          <!--<RegistryValue Id ="BSWLANGUAGE_3ccISO" Name ="LANGUAGE_3ccISO" Action ="write" Type ="string" Value="!(loc.LanguageCode3ccISO)"/>-->
+          <RegistryValue Id ="BSWInstallDir" Name ="InstallDir" Action ="write" Type ="string" Value="[INSTALLDIR]"/>
+          <RegistryValue Id ="BSWLanguage" Name ="Language" Action ="write" Type ="string" Value="!(loc.LanguageID)"/>
+          <RegistryValue Id ="BSWPackageBuildType" Name ="PackageBuildType" Action ="write" Type ="string" Value="$(var.ProductPackageBuildType)"/>
+          <!--<RegistryValue Id ="BSWPowerPlatformVersion" Name ="PowerPlatformVersion" Action ="write" Type ="string" Value="$(var.ProductPowerPlatformVersion)"/>-->
+          <RegistryValue Id ="BSWProductCode" Name ="ProductCode" Action ="write" Type ="string" Value="$(var.ProductCodeGUID)"/>
+          <RegistryValue Id ="BSWProductName" Name ="ProductName" Action ="write" Type ="string" Value="$(var.ProductName)"/>          
+          <RegistryValue Id ="BSWProgramPath" Name ="ProgramPath" Action ="write" Type ="string" Value="[Extensions]"/>
+          <RegistryValue Id ="BSWUpgradeCode" Name ="UpgradeCode" Action ="write" Type ="string" Value="$(var.ProductUpgradeCodeGUID)"/>
+        </RegistryKey>
+      </Component>
+    </ComponentGroup>    
+  </Fragment>
+</Wix>

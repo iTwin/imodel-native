@@ -28,31 +28,31 @@ namespace IndexECPlugin.Source.QueryProviders
         const string WebReq = "http://viewer.nationalmap.gov/tnmaccess/api/searchProducts?bbox=_bbox&q=&start=&end=&dateType=&datasets=_datasets&prodFormats=_prodFormats&prodExtents=&polyCode=&polyType=&max=200&offset=0";
         //const int USGSIdLenght = 24;
         private readonly List<UsgsAPICategory> CategoryTable = new List<UsgsAPICategory> 
-        { //new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "2 arc-second DEM - Alaska", Format = "none", Priority = 0, Type = ""},
-          new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1 meter DEM", Format = "IMG", Priority = 1, Classification = "Terrain"},
-          new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1/9 arc-second DEM", Format = "IMG", Priority = 2, Classification = "Terrain"},
-          new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1/3 arc-second DEM", Format = "IMG", Priority = 3, Classification = "Terrain"},
-          new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1 arc-second DEM", Format = "IMG", Priority = 4, Classification = "Terrain"},
-          //new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1/3 arc-second Contours", Format = "Shapefile", Priority = 6, Classification = "Terrain"},
+        { //new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "2 arc-second DEM - Alaska", Format = "none", Priority = 0, Type = "", SbDatasetTag = "National Elevation Dataset (NED) Alaska 2 arc-second"},
+          new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1 meter DEM", Format = "IMG", Priority = 1, Classification = "Terrain", SbDatasetTag = "Digital Elevation Model (DEM) 1 meter"},
+          new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1/9 arc-second DEM", Format = "IMG", Priority = 2, Classification = "Terrain", SbDatasetTag = "National Elevation Dataset (NED) 1/9 arc-second"},
+          new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1/3 arc-second DEM", Format = "IMG", Priority = 3, Classification = "Terrain", SbDatasetTag = "National Elevation Dataset (NED) 1/3 arc-second"},
+          new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1 arc-second DEM", Format = "IMG", Priority = 4, Classification = "Terrain", SbDatasetTag = "National Elevation Dataset (NED) 1 arc-second"},
+          //new UsgsAPICategory(){Title = "Elevation Products (3DEP)", SubTitle = "1/3 arc-second Contours", Format = "Shapefile", Priority = 6, Classification = "Terrain", SbDatasetTag = "National Elevation Dataset (NED) 1/3 arc-second - Contours"},
           //new UsgsAPICategory(){Title = "Elevation Source Data (3DEP)", SubTitle = "DEM Source (OPR)", Format = "none", Priority = 0, Classification = ""},
           //new UsgsAPICategory(){Title = "Elevation Source Data (3DEP)", SubTitle = "Ifsar Digital Surface Model (DSM)", Format = "none", Priority = 0, Classification = ""},
           //new UsgsAPICategory(){Title = "Elevation Source Data (3DEP)", SubTitle = "Ifsar Orthorectified Radar Image (ORI)", Format = "none", Priority = 0, Classification = ""},
-          //new UsgsAPICategory(){Title = "Elevation Source Data (3DEP)", SubTitle = "Lidar Point Cloud (LPC)", Format = "LAS", Priority = 1, Classification = "PointCloud"},
-          //new UsgsAPICategory(){Title = "Hydrography (NHD) and Watersheds (WBD)", SubTitle = "National Hydrography Dataset (NHD) Best Resolution", Format = "Shapefile", Priority = 1, Classification = "WaterBody"},
-          //new UsgsAPICategory(){Title = "Hydrography (NHD) and Watersheds (WBD)", SubTitle = "National Hydrography Dataset (NHD) Medium Resolution", Format = "Shapefile", Priority = 2, Classification = "WaterBody"},
-          //new UsgsAPICategory(){Title = "National Land Cover Database (NLCD)", SubTitle = "National Land Cover Database (NLCD) - 2011", Format = "GeoTIFF", Priority = 1, Classification = "Imagery"},
-          //new UsgsAPICategory(){Title = "National Land Cover Database (NLCD)", SubTitle = "National Land Cover Database (NLCD) - 2006", Format = "GeoTIFF", Priority = 2, Classification = "Imagery"},
-          //new UsgsAPICategory(){Title = "National Land Cover Database (NLCD)", SubTitle = "National Land Cover Database (NLCD) - 2001", Format = "GeoTIFF", Priority = 3, Classification = "Imagery"},
-          //new UsgsAPICategory(){Title = "Hydrography (NHD) and Watersheds (WBD)", SubTitle = "National Watershed Boundary Dataset (WBD)", Format = "Shapefile", Priority = 1, Classification = "WaterBody"},
+          //new UsgsAPICategory(){Title = "Elevation Source Data (3DEP)", SubTitle = "Lidar Point Cloud (LPC)", Format = "LAS", Priority = 1, Classification = "PointCloud", SbDatasetTag = "Lidar Point Cloud (LPC)"},
+          //new UsgsAPICategory(){Title = "Hydrography (NHD) and Watersheds (WBD)", SubTitle = "National Hydrography Dataset (NHD) Best Resolution", Format = "Shapefile", Priority = 1, Classification = "WaterBody", SbDatasetTag = "National Hydrography Dataset (NHD) Best Resolution"},
+          //new UsgsAPICategory(){Title = "Hydrography (NHD) and Watersheds (WBD)", SubTitle = "National Hydrography Dataset (NHD) Medium Resolution", Format = "Shapefile", Priority = 2, Classification = "WaterBody" SbDatasetTag = "National Hydrography Dataset (NHD) Medium Resolution"},
+          //new UsgsAPICategory(){Title = "National Land Cover Database (NLCD)", SubTitle = "National Land Cover Database (NLCD) - 2011", Format = "GeoTIFF", Priority = 1, Classification = "Imagery", SbDatasetTag = "National Land Cover Database (NLCD) - 2011"},
+          //new UsgsAPICategory(){Title = "National Land Cover Database (NLCD)", SubTitle = "National Land Cover Database (NLCD) - 2006", Format = "GeoTIFF", Priority = 2, Classification = "Imagery", SbDatasetTag = "National Land Cover Database (NLCD) - 2006"},
+          //new UsgsAPICategory(){Title = "National Land Cover Database (NLCD)", SubTitle = "National Land Cover Database (NLCD) - 2001", Format = "GeoTIFF", Priority = 3, Classification = "Imagery", SbDatasetTag = "National Land Cover Database (NLCD) - 2001"},
+          //new UsgsAPICategory(){Title = "Hydrography (NHD) and Watersheds (WBD)", SubTitle = "National Watershed Boundary Dataset (WBD)", Format = "Shapefile", Priority = 1, Classification = "WaterBody", SbDatasetTag = "National Watershed Boundary Dataset (WBD)"},
           //new UsgsAPICategory(){Title = "Boundaries - National Boundary Dataset", SubTitle = "Boundaries - National Boundary Dataset", Format = "none", Priority = 0, Classification = ""},
-          new UsgsAPICategory(){Title = "Imagery - 1 foot (HRO)", SubTitle = "Imagery - 1 foot (HRO)", Format = "JPEG2000", Priority = 1, Classification = "Imagery"},
-          new UsgsAPICategory(){Title = "Imagery - 1 meter (NAIP)", SubTitle = "Imagery - 1 meter (NAIP)", Format = "JPEG2000", Priority = 1, Classification = "Imagery"},
+          new UsgsAPICategory(){Title = "Imagery - 1 foot (HRO)", SubTitle = "Imagery - 1 foot (HRO)", Format = "JPEG2000", Priority = 1, Classification = "Imagery", SbDatasetTag = "High Resolution Orthoimagery"},
+          new UsgsAPICategory(){Title = "Imagery - 1 meter (NAIP)", SubTitle = "Imagery - 1 meter (NAIP)", Format = "JPEG2000", Priority = 1, Classification = "Imagery", SbDatasetTag = "USDA National Agriculture Imagery Program (NAIP)"},
           //new UsgsAPICategory(){Title = "Historical Topographic Maps", SubTitle = "Historical Topographic Maps", Format = "none", Priority = 0, Classification = ""},
           //new UsgsAPICategory(){Title = "Map Indices", SubTitle = "Map Indices", Format = "none", Priority = 0, Classification = ""},
           //new UsgsAPICategory(){Title = "Names - Geographic Names Information System (GNIS)", SubTitle = "Names - Geographic Names Information System (GNIS)", Format = "none", Priority = 0, Classification = ""},
           //new UsgsAPICategory(){Title = "Small-scale Datasets", SubTitle = "Small-scale Datasets", Format = "none", Priority = 0, Classification = ""},
-          //new UsgsAPICategory(){Title = "Structures - National Structures Dataset", SubTitle = "Structures - National Structures Dataset", Format = "Shapefile", Priority = 2, Classification = "Bridge,Building"},
-          //new UsgsAPICategory(){Title = "Transportation - National Transportation Dataset", SubTitle = "Transportation - National Transportation Dataset", Format = "Shapefile", Priority = 1, Classification = "Roadway"},
+          //new UsgsAPICategory(){Title = "Structures - National Structures Dataset", SubTitle = "Structures - National Structures Dataset", Format = "Shapefile", Priority = 2, Classification = "Bridge,Building", SbDatasetTag = "National Structures Dataset (NSD)"},
+          //new UsgsAPICategory(){Title = "Transportation - National Transportation Dataset", SubTitle = "Transportation - National Transportation Dataset", Format = "Shapefile", Priority = 1, Classification = "Roadway", SbDatasetTag = "National Transportation Dataset (NTD)"},
           //new UsgsAPICategory(){Title = "US Topo", SubTitle = "US Topo", Format = "none", Priority = 0, Classification = ""},
           //new UsgsAPICategory(){Title = "Woodland Tint", SubTitle = "Woodland Tint", Format = "none", Priority = 0, Classification = ""}
         };
@@ -746,6 +746,16 @@ namespace IndexECPlugin.Source.QueryProviders
                 if (name != null)
                 {
                     keywords += name + ", ";
+
+                    string scheme = tag.TryToGetString("scheme");
+                    if ((scheme != null) && (scheme == "The National Map Collection Thesaurus"))
+                    {
+                        var cat = CategoryTable.FirstOrDefault(c => c.SbDatasetTag == name);
+                        if (cat != null)
+                        {
+                            instance["Classification"].StringValue = cat.Classification;
+                        }
+                    }
                 }
             }
 
@@ -942,7 +952,8 @@ namespace IndexECPlugin.Source.QueryProviders
                     instance.InstanceId = jtoken.TryToGetString("sourceId");
                     instance["Id"].StringValue = jtoken.TryToGetString("sourceId");
 
-                    instance["Name"].StringValue = jtoken.TryToGetString("title");
+                    //instance["Name"].StringValue = jtoken.TryToGetString("title");
+                    instance["Name"].StringValue = item.Title;
 
                     var bbox = jtoken["boundingBox"];
 
@@ -1066,7 +1077,8 @@ namespace IndexECPlugin.Source.QueryProviders
                                             {
                                                 UsgsRequest req = new UsgsRequest()
                                                 {
-                                                    Dataset = subEntry.Value["sbDatasetTag"].Value<string>(),
+                                                    //Dataset = subEntry.Value["sbDatasetTag"].Value<string>(),
+                                                    Dataset = category.SbDatasetTag,
                                                     DatasetID = subEntry.Value["id"].Value<string>(),
                                                     Format = category.Format,
                                                     Category = category.Title,
@@ -1092,7 +1104,8 @@ namespace IndexECPlugin.Source.QueryProviders
                                         {
                                             UsgsRequest req = new UsgsRequest()
                                             {
-                                                Dataset = entry["sbDatasetTag"].Value<string>(),
+                                                //Dataset = entry["sbDatasetTag"].Value<string>(),
+                                                Dataset = category.SbDatasetTag,
                                                 DatasetID = entry["id"].Value<string>(),
                                                 Format = category.Format,
                                                 Category = category.Title,
@@ -1272,18 +1285,28 @@ namespace IndexECPlugin.Source.QueryProviders
             switch(dataset)
             {
                 case "High Resolution Orthoimagery" :
-                    //Would it be a good idea to create a hierarchy of classes of filters?
-                    //For now, we only go to private functions...
                     return DatasetFilter(tokenList, minDate, maxDate, /*takeMostRecentOnly,*/ new HRODataExtractor());
                 case "USDA National Agriculture Imagery Program (NAIP)":
                     return DatasetFilter(tokenList, minDate, maxDate, /*takeMostRecentOnly,*/ new NAIPDataExtractor());
                 case "Digital Elevation Model (DEM) 1 meter":
-                    return DatasetFilter(tokenList, minDate, maxDate, new NEDDataExtractor(dataset));
+                    //return DatasetFilter(tokenList, minDate, maxDate, new NEDDataExtractor(dataset));
                 case "National Elevation Dataset (NED) 1/9 arc-second":
                 case "National Elevation Dataset (NED) 1/3 arc-second":
                 case "National Elevation Dataset (NED) 1 arc-second":
                     return DatasetFilter(tokenList, minDate, maxDate, new NEDDataExtractor(dataset));
-                default :
+                case "National Elevation Dataset (NED) 1/3 arc-second - Contours":
+                case "National Hydrography Dataset (NHD) Medium Resolution":
+                case "National Hydrography Dataset (NHD) Best Resolution":
+                case "National Watershed Boundary Dataset (WBD)":
+                case "National Structures Dataset (NSD)":
+                case "National Transportation Dataset (NTD)":
+                case "Lidar Point Cloud (LPC)":
+                    return DatasetFilter(tokenList, minDate, maxDate, new DefaultDataExtractor());
+                case "National Land Cover Database (NLCD) - 2001":
+                case "National Land Cover Database (NLCD) - 2006":
+                case "National Land Cover Database (NLCD) - 2011":
+                    return DatasetFilter(tokenList, minDate, maxDate, new NLCDDataExtractor(dataset));
+                default : 
                     return tokenList.Select(token => new USGSExtractedResult { jToken = token, Date = null, Resolution = null});
             }
             
@@ -1311,7 +1334,7 @@ namespace IndexECPlugin.Source.QueryProviders
             foreach(JToken newToken in tokenList)
             {
                 string title;
-                DateTime newTokenDate;
+                DateTime? newTokenDate;
                 string newTokenResolution;
                 string newTokenResolutionInMeters;
 
@@ -1319,12 +1342,12 @@ namespace IndexECPlugin.Source.QueryProviders
                 
                 //Check if date is between the range
 
-                if((minDate.HasValue) && (newTokenDate < minDate.Value))
+                if ((minDate.HasValue) && (newTokenDate.HasValue) && (newTokenDate < minDate.Value))
                 {
                     //It is not in the requested time lapse. We skip this one.
                     continue;
                 }
-                if ((maxDate.HasValue) && (newTokenDate > maxDate.Value))
+                if ((maxDate.HasValue) && (newTokenDate.HasValue) && (newTokenDate > maxDate.Value))
                 {
                     //It is not in the requested time lapse. We skip this one.
                     continue;
@@ -1359,7 +1382,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 //        results.Add(new USGSExtractedResult { jToken = newToken, Title = title, Date = newTokenDate, Resolution = newTokenResolution });
                 //    //}
                 //}
-                if(!results.Any(r => r.Title == title))
+                if((title != null) && (!results.Any(r => r.Title == title)))
                 {
                     //There is no result having the same title
 
