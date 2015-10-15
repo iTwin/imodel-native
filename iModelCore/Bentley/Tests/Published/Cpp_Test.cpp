@@ -69,15 +69,16 @@ using namespace std::placeholders; //for _1, _2, _3...
 //  -------------------------------------------------------------------------------------
 //  std::chrono::high_resolution_clock
 //  -------------------------------------------------------------------------------------
-static void test_high_resolution_clock()
-    {
-    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-    BeThreadUtilities::BeSleep(1);
-    std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
-    ASSERT_GT( t2 , t1 );
-    std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
-    ASSERT_GE( time_span , std::chrono::milliseconds(1) );
-    }
+// Sam: We’ve had too many problems with it to waste any more time.
+// static void test_high_resolution_clock()
+//     {
+//     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+//     BeThreadUtilities::BeSleep(1);
+//     std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+//     ASSERT_GT( t2 , t1 );
+//     std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+//     ASSERT_GE( time_span , std::chrono::milliseconds(1) );
+//     }
 
 //  --------------------------------------------------------------------------------------
 //  hhinnant shared_mutex http://home.roadrunner.com/~hinnant/
