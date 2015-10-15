@@ -65,7 +65,7 @@ public:
 
         //! Get the value for this Code
         Utf8StringCR GetValue() const {return m_value;}
-        Utf8CP GetValueCP() const {return m_value.empty() ? m_value.c_str() : nullptr;}
+        Utf8CP GetValueCP() const {return !m_value.empty() ? m_value.c_str() : nullptr;}
         //! Get the namespace for this Code
         Utf8StringCR GetNameSpace() const {return m_nameSpace;}
         //! Get the DgnAuthorityId of the DgnAuthority that issued this Code.
