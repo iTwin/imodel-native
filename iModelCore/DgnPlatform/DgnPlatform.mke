@@ -527,8 +527,7 @@ DLM_NOMSBUILTINS        = 1
 DLM_NO_DEF              = 1
 DLM_NO_DLS              = 1
 DLM_NOENTRY             = 1
-LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(ToolsubsLib) \
-                            $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
+LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeZlib$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)BePng$(stlibext) \
