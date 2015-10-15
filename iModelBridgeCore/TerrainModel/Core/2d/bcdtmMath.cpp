@@ -758,9 +758,9 @@ BENTLEYDTM_Public int bcdtmMath_interpolatePointOnTrianglePlane(long newTriangle
 ** This routine finds the z value for a point on the triangle plane
 */
 {
- static long   flatTriangle=0 ;
- static double ca=0.0,cb=0.0,cc=0.0,cd=0.0 ;
- static double xmin=0.0,ymin=0.0,zmin=0.0,flatZ=0.0 ;
+static thread_local bool   flatTriangle = false;
+static thread_local double ca = 0.0, cb = 0.0, cc = 0.0, cd = 0.0;
+static thread_local double xmin = 0.0, ymin = 0.0, zmin = 0.0, flatZ = 0.0;
 /*
 ** Normalise Triangle
 */
@@ -775,8 +775,8 @@ BENTLEYDTM_Public int bcdtmMath_interpolatePointOnTrianglePlane(long newTriangle
     if( yt[2] < ymin ) ymin = yt[2] ;
     if( zt[1] < zmin ) zmin = zt[1] ;
     if( zt[2] < zmin ) zmin = zt[2] ;
-    if( zt[0] == zt[1] && zt[0] == zt[2] ) { flatTriangle = 1 ; flatZ = zt[0] ; }
-    else                                     flatTriangle = 0 ;
+    if( zt[0] == zt[1] && zt[0] == zt[2] ) { flatTriangle = true ; flatZ = zt[0] ; }
+    else                                     flatTriangle = false ;
    }
 /*
 ** Calculate Coefficients of Plane
@@ -1025,17 +1025,17 @@ BENTLEYDTM_Public int bcdtmMath_interpolatePointOnPolynomial(long newTriangle,do
 {
  long   i,jpd ;
  double a,b,c,d,dlt,dx,dy,u,v ;
- static double x0,y0,ap,bp,cp,dp ;
+ static thread_local double x0, y0, ap, bp, cp, dp;
  double act2,adbc,bdt2,lu,lv,thxu,thuv ;
  double aa,bb,cc,dd,ab,cd,ac,ad,bc,g1,g2,h1,h2,h3  ;
  double zu[3],zuu[3],zv[3],zvv[3],zuv[3] ;
  double p0,p1,p2,p3,p4,p5 ;
- static double p00,p01,p02,p03,p04,p05 ;
- static double p10,p11,p12,p13,p14 ;
- static double p20,p21,p22,p23 ;
- static double p30,p31,p32 ;
- static double p40,p41 ;
- static double p50 ;
+ static thread_local double p00,p01,p02,p03,p04,p05 ;
+ static thread_local double p10,p11,p12,p13,p14 ;
+ static thread_local double p20,p21,p22,p23 ;
+ static thread_local double p30,p31,p32 ;
+ static thread_local double p40,p41 ;
+ static thread_local double p50 ;
  double csuv,thus,thsv ;
 /*
 ** Determine the Coefficients for the Coordinate System
@@ -1186,9 +1186,9 @@ BENTLEYDTM_Public int bcdtmMath_getTriangleAttributesDtmObject(BC_DTM_OBJ *dtmP,
  double         X1,Y1,Z1,X2,Y2,Z2,X3,Y3,Z3 ;
  double         c,ca=0.0,cb=0.0,cc=0.0,cd=0.0,axy=0.0 ;
  DTM_TIN_POINT  *pntP ;
- static long    lp,lp1=0,lp2=0,lp3=0 ;
- static double  slopeDeg=0.0,slopePer=0.0,aspect=0.0,height=0.0 ;
- static BC_DTM_OBJ  *lastDtmP=NULL ;
+ static thread_local long    lp, lp1 = 0, lp2 = 0, lp3 = 0;
+ static thread_local double  slopeDeg = 0.0, slopePer = 0.0, aspect = 0.0, height = 0.0;
+ static thread_local BC_DTM_OBJ  *lastDtmP = NULL;
 
 /*
 ** Initialise
@@ -1584,7 +1584,7 @@ BENTLEYDTM_EXPORT int bcdtmMath_transformDtmObject
  long   n,point,dtmFeature,priorTinState=FALSE,cubeSet=FALSE ;
  double x,y,z,dx,dy,scaleFactor=1.0 ;
  DPoint3d    *p3dP,*ptsP,scalePts[2] ;
- double xMin,yMin,xMax,yMax,zMin,zMax ;
+ double xMin = 0.0,yMin = 0.0,xMax = 0.0,yMax = 0.0,zMin = 0.0,zMax = 0.0;
  DTM_TIN_POINT *pointP ;
  BC_DTM_FEATURE *dtmFeatureP ;
 /*
@@ -2716,7 +2716,7 @@ BENTLEYDTM_EXPORT double bcdtmMath_distance3D(double X1,double Y1,double Z1,doub
 BENTLEYDTM_Public double bcdtmMath_roundToTolerance(double Value,double Tolerance)
 {
  long  lval ;
- static double mval,dval,Ltolerance=-9999.99 ;
+ static thread_local double mval, dval, Ltolerance = -9999.99;
 /*
 ** If Tolerance Changed Calculate New Values
 */
@@ -2747,8 +2747,8 @@ BENTLEYDTM_Public double bcdtmMath_roundToDecimalPoints(double Value,long Ndd)
 {
  long   lval ;
  double fval,frct ;
- static long  ndd=-99 ;
- static double mval,dval ;
+ static thread_local long  ndd = -99;
+ static thread_local double mval, dval;
 /*
 ** Check Number Of Decimal Points
 */
@@ -3173,16 +3173,16 @@ BENTLEYDTM_EXPORT int bcdtmMath_interpolatePointOnLine(double X1,double Y1,doubl
 +-------------------------------------------------------------------*/
 BENTLEYDTM_Public int bcdtmMath_interpolatePointOnTriangle(double x,double y,double *ZP,double trgX[],double trgY[],double trgZ[])
 {
- long    newTriangle=0 ;
- static  double  sTrgX[3]={3*0.0} ;
- static  double  sTrgY[3]={3*0.0} ;
- static  double  sTrgZ[3]={3*0.0} ;
+ bool    newTriangle=false ;
+ static  thread_local double  sTrgX[3]={3*0.0} ;
+ static  thread_local double  sTrgY[3] = {3 * 0.0};
+ static  thread_local double  sTrgZ[3] = {3 * 0.0};
 /*
 ** Test For New Triangle
 */
- if     ( trgX[0] != sTrgX[0] || trgY[0] != sTrgY[0] || trgZ[0] != sTrgZ[0] ) newTriangle = 1 ;
- else if( trgX[1] != sTrgX[1] || trgY[1] != sTrgY[1] || trgZ[1] != sTrgZ[1] ) newTriangle = 1 ;
- else if( trgX[2] != sTrgX[2] || trgY[2] != sTrgY[2] || trgZ[2] != sTrgZ[2] ) newTriangle = 1 ;
+ if     ( trgX[0] != sTrgX[0] || trgY[0] != sTrgY[0] || trgZ[0] != sTrgZ[0] ) newTriangle = true ;
+ else if( trgX[1] != sTrgX[1] || trgY[1] != sTrgY[1] || trgZ[1] != sTrgZ[1] ) newTriangle = true ;
+ else if( trgX[2] != sTrgX[2] || trgY[2] != sTrgY[2] || trgZ[2] != sTrgZ[2] ) newTriangle = true ;
 /*
 ** Set Up For New Triangle
 */
@@ -3217,9 +3217,9 @@ BENTLEYDTM_Private int bcdtmMath_interpolateLinear(long newTriangle,double x,dou
 ** This routine finds the z value for a point on the triangle plane
 */
 {
- static long   flatTriangle=0 ;
- static double ca=0.0,cb=0.0,cc=0.0,cd=0.0 ;
- static double xmin=0.0,ymin=0.0,zmin=0.0,flatZ=0.0 ;
+ static thread_local bool   flatTriangle=false ;
+ static thread_local double ca=0.0,cb=0.0,cc=0.0,cd=0.0 ;
+ static thread_local double xmin=0.0,ymin=0.0,zmin=0.0,flatZ=0.0 ;
 /*
 ** Normalise Triangle
 */
@@ -3234,8 +3234,8 @@ BENTLEYDTM_Private int bcdtmMath_interpolateLinear(long newTriangle,double x,dou
     if( yt[2] < ymin ) ymin = yt[2] ;
     if( zt[1] < zmin ) zmin = zt[1] ;
     if( zt[2] < zmin ) zmin = zt[2] ;
-    if( zt[0] == zt[1] && zt[0] == zt[2] ) { flatTriangle = 1 ; flatZ = zt[0] ; }
-    else                                     flatTriangle = 0 ;
+    if( zt[0] == zt[1] && zt[0] == zt[2] ) { flatTriangle = true ; flatZ = zt[0] ; }
+    else                                     flatTriangle = false ;
    }
 /*
 ** Calculate Coefficients of Plane
@@ -3850,17 +3850,17 @@ BENTLEYDTM_Public int bcdtmMath_interpolatePoly(long NewTrg,double xp,double yp,
 {
  long   i,jpd ;
  double a,b,c,d,dlt,dx,dy,u,v ;
- static double x0,y0,ap,bp,cp,dp ;
+ static thread_local double x0, y0, ap, bp, cp, dp;
  double act2,adbc,bdt2,lu,lv,thxu,thuv ;
  double aa,bb,cc,dd,ab,cd,ac,ad,bc,g1,g2,h1,h2,h3  ;
  double zu[3],zuu[3],zv[3],zvv[3],zuv[3] ;
  double p0,p1,p2,p3,p4,p5 ;
- static double p00,p01,p02,p03,p04,p05 ;
- static double p10,p11,p12,p13,p14 ;
- static double p20,p21,p22,p23 ;
- static double p30,p31,p32 ;
- static double p40,p41 ;
- static double p50 ;
+ static thread_local double p00,p01,p02,p03,p04,p05 ;
+ static thread_local double p10,p11,p12,p13,p14 ;
+ static thread_local double p20,p21,p22,p23 ;
+ static thread_local double p30,p31,p32 ;
+ static thread_local double p40,p41 ;
+ static thread_local double p50 ;
  double csuv,thus,thsv ;
 /*
 ** Determine the Coefficients for the Coordinate System
