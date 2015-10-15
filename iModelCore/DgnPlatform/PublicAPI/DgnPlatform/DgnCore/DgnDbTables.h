@@ -191,6 +191,7 @@ struct DgnCategories : DgnDbTable
             bool IsEqual(Appearance const& other) const {return *this==other;}
             void FromJson(Utf8StringCR); //!< initialize this appearance from a previously saved json string
             DGNPLATFORM_EXPORT Utf8String ToJson() const;   //!< convert this appearance to a json string
+            DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
         };// Appearance
 
         //! View-specific overrides of the appearance of a SubCategory
@@ -257,6 +258,7 @@ struct DgnCategories : DgnDbTable
         void SetCode(Utf8CP val) {m_code = val;} //!< Set the SubCategory code. @param val the new code for this SubCategory. Must not be nullptr. Must be unique per category. Default SubCategories may not be recoded.
         bool IsValid() const {return m_categoryId.IsValid() && m_subCategoryId.IsValid();} //!< Test if the SubCategory is valid. A failed query will return an invalid SubCategory.
         bool IsDefaultSubCategory() const {return m_categoryId == m_subCategoryId;} //!< Determine if this is the default SubCategory for its category.
+        DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
     }; // SubCategory
 
     //! A Category in the category table
@@ -492,8 +494,8 @@ public:
     //! @return the Id of the SubCategory.
     static DgnSubCategoryId DefaultSubCategoryId(DgnCategoryId categoryId) {return DgnSubCategoryId(categoryId.GetValue());}
 
-    DgnCategoryId Import(struct DgnRemapTables& remap, DgnDbR sourceDb, DgnCategoryId sourceCategoryId);
-    DgnSubCategoryId Import(DgnRemapTables& remap, DgnCategoryId destCategoryId, DgnDbR sourceDb, DgnSubCategoryId sourceSubCategoryId);
+    DgnCategoryId ImportCategory(struct DgnImportContext&, DgnDbR sourceDb, DgnCategoryId sourceCategoryId);
+    DgnSubCategoryId ImportSubCategory(struct DgnImportContext&, DgnCategoryId destCategoryId, DgnDbR sourceDb, DgnSubCategoryId sourceSubCategoryId);
 };
 
 //=======================================================================================

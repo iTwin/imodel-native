@@ -104,14 +104,26 @@ public:
     DgnElementId AddElementId(DgnElementId sourceId, DgnElementId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a GeomPart has been imported
     DGNPLATFORM_EXPORT DgnGeomPartId RemapGeomPartId(DgnGeomPartId sourceId);
+    //! Look up a copy of a Category
+    DgnCategoryId FindCategory(DgnCategoryId sourceId) const { return m_remap.Find(sourceId); }
+    //! Register a copy of a Category
+    DgnCategoryId AddCategory(DgnCategoryId sourceId, DgnCategoryId targetId) { return m_remap.Add(sourceId, targetId); }
     //! Make sure that a Category has been imported
     DGNPLATFORM_EXPORT DgnCategoryId RemapCategory(DgnCategoryId sourceId);
     //! Look up a copy of an subcategory
     DgnSubCategoryId FindSubCategory(DgnSubCategoryId sourceId) const {return m_remap.Find(sourceId);}
+    //! Register a copy of a SubCategory
+    DgnSubCategoryId AddSubCategory(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a SubCategory has been imported
     DGNPLATFORM_EXPORT DgnSubCategoryId RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId sourceId);
     //! Make sure that an ECClass has been imported
     DGNPLATFORM_EXPORT DgnClassId RemapClassId(DgnClassId sourceId);
+    //! Look up a copy of a Category
+    DgnMaterialId FindMaterialId(DgnMaterialId sourceId) const { return DgnMaterialId(m_remap.Find(DgnElementId(sourceId.GetValueUnchecked())).GetValueUnchecked()); }
+    //! Register a copy of a Material
+    DgnMaterialId AddMaterialId(DgnMaterialId sourceId, DgnMaterialId targetId) { return DgnMaterialId(m_remap.Add(DgnElementId(sourceId.GetValueUnchecked()), DgnElementId(targetId.GetValueUnchecked())).GetValueUnchecked()); }
+    //! Make sure that a Material has been imported
+    DGNPLATFORM_EXPORT DgnMaterialId RemapMaterialId(DgnMaterialId sourceId);
     //! @}
 
     //! @name GCS coordinate system shift
@@ -921,7 +933,7 @@ public:
     //! @param[in] importer Enables the element to copy the resources that it needs (if copying between DgnDbs) and to remap any references that it holds to things outside itself to the copies of those things.
     //! @remarks The element's code will \em not be copied to the copied element if the import is being performed within a single DgnDb, as it is never correct for two elements within the same DgnDb to have the same code.
     //! @return The persistent copy of the element
-    DgnElementCPtr Import(DgnDbStatus* stat, DgnModelR destModel, DgnImportContext& importer) const;
+    DGNPLATFORM_EXPORT DgnElementCPtr Import(DgnDbStatus* stat, DgnModelR destModel, DgnImportContext& importer) const;
 
     //! Update the persistent state of a DgnElement in the DgnDb from this modified copy of it.
     //! This is merely a shortcut for el.GetDgnDb().Elements().Update(el, stat);

@@ -150,6 +150,8 @@ public:
 
     DGNPLATFORM_EXPORT uintptr_t GetQvMaterialId(DgnMaterialId materialId) const; //!< Return nonzero QuickVision material ID for QVision for supplied material ID.
     DGNPLATFORM_EXPORT uintptr_t AddQvMaterialId(DgnMaterialId materialId) const; //!< set QuickVision material ID for supplied material Id.
+
+    DgnMaterialId ImportMaterial(struct DgnImportContext&, DgnDbR sourceDb, DgnMaterialId sourceMaterialId);
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

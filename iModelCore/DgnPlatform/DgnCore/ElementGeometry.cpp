@@ -2271,6 +2271,13 @@ DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImpo
                 break;
                 }
 
+            case ElementGeomIO::OpCode::Material:
+                {
+                //auto ppfb = flatbuffers::GetRoot<FB::Material>(egOp.m_data);
+                BeAssert(false && "*** TBD: Detect and remap Material");
+                break;
+                }
+
             default:
                 writer.Append(egOp);
                 break;

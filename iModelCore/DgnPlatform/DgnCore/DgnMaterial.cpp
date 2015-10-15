@@ -329,3 +329,39 @@ DgnMaterial::CreateParams::CreateParams(DgnDbR db, DgnModelId modelId, Utf8Strin
     //
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnMaterialId DgnMaterials::ImportMaterial(DgnImportContext& context, DgnDbR sourceDb, DgnMaterialId source)
+    {
+    Material sourceMaterial = sourceDb.Materials().Query(source);
+    if (!sourceMaterial.IsValid())
+        {
+        BeAssert(!source.IsValid() && "look up should fail only for an invalid materialid");
+        return DgnMaterialId();
+        }
+
+    // If the destination Db already contains a material by this name, then remap to it. Don't create another copy.
+    DgnMaterialId destMaterialId = context.GetDestinationDb().Materials().QueryMaterialId(sourceMaterial.GetName(), sourceMaterial.GetPalette());
+    if (destMaterialId.IsValid())
+        return destMaterialId;
+
+    //  Must create a copy of the source material.
+    Material destMaterial(sourceMaterial);
+    destMaterial.SetParentId(context.RemapMaterialId(sourceMaterial.GetParentId()));  // make sure the parent material is in place.
+    Insert(destMaterial);
+    return context.AddMaterialId(source, destMaterial.GetId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnMaterialId DgnImportContext::RemapMaterialId(DgnMaterialId source)
+    {
+    if (!IsBetweenDbs())
+        return source;
+    DgnMaterialId dest = FindMaterialId(source);
+    if (dest.IsValid())
+        return dest;
+    return GetDestinationDb().Materials().ImportMaterial(*this, GetSourceDb(), source);
+    }
