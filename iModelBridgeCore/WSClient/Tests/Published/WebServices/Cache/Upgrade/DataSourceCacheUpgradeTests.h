@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "../../WebServicesTestsHelper.h"
+#include "../../../Utils/WebServicesTestsHelper.h"
 #include "../BaseCachingDataSourceTest.h"
 #include <WebServices/Cache/Persistence/IDataSourceCache.h>
 #include <WebServices/Cache/ICachingDataSource.h>

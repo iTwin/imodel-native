@@ -15,7 +15,6 @@
 #include <WebServices/Client/WSRepositoryClient.h>
 
 #include "MockWSSchemaProvider.h"
-#include "../../StubInstances.h"
 
 using namespace ::testing;
 using namespace ::std;
@@ -168,7 +167,7 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV11WithSchemaProvi
             </ECSchema>)";
 
     auto schemaProvider = std::make_shared<MockWSSchemaProvider> ();
-    EXPECT_CALL (*schemaProvider, GetSchema (_)).WillOnce (Return (FSTest::StubFile (schemaXml)));
+    EXPECT_CALL (*schemaProvider, GetSchema (_)).WillOnce (Return (StubFile (schemaXml)));
 
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", StubClientInfo (), schemaProvider, GetHandlerPtr ());
 
@@ -915,7 +914,7 @@ TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithFilePath_Ad
     {
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", StubClientInfo (), nullptr, GetHandlerPtr ());
 
-    auto filePath = FSTest::StubFile ();
+    auto filePath = StubFile ();
     auto fileName = Utf8String (filePath.GetFileNameAndExtension ());
 
     GetHandler ().ExpectRequests (2);
@@ -933,7 +932,7 @@ TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithFilePath_Ad
     {
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", StubClientInfo (), nullptr, GetHandlerPtr ());
 
-    auto filePath = FSTest::StubFile ();
+    auto filePath = StubFile ();
     auto fileName = Utf8String (filePath.GetFileNameAndExtension ());
 
     GetHandler ().ExpectRequests (2);
@@ -1125,7 +1124,7 @@ TEST_F (WSRepositoryClientTests, SendUpdateFileRequest_WebApiV1_SendsPutRequest)
         return StubHttpResponse ();
         });
 
-    client->SendUpdateFileRequest ({"TestSchema.TestClass", "TestId"}, FSTest::StubFile ("TestContent"))->Wait ();
+    client->SendUpdateFileRequest ({"TestSchema.TestClass", "TestId"}, StubFile ("TestContent"))->Wait ();
     }
 
 TEST_F (WSRepositoryClientTests, SendUpdateFileRequest_WebApiV2_SendsPutRequest)
@@ -1146,7 +1145,7 @@ TEST_F (WSRepositoryClientTests, SendUpdateFileRequest_WebApiV2_SendsPutRequest)
         return StubHttpResponse ();
         });
 
-    client->SendUpdateFileRequest ({"TestSchema.TestClass", "TestId"}, FSTest::StubFile ("TestContent"))->Wait ();
+    client->SendUpdateFileRequest ({"TestSchema.TestClass", "TestId"}, StubFile ("TestContent"))->Wait ();
     }
 
 TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV11AndNoDefaultSchema_Fails)
@@ -1167,7 +1166,7 @@ TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1WithSchemaProvide
             </ECSchema>)";
 
     auto schemaProvider = std::make_shared<MockWSSchemaProvider> ();
-    EXPECT_CALL (*schemaProvider, GetSchema (_)).WillOnce (Return (FSTest::StubFile (schemaXml)));
+    EXPECT_CALL (*schemaProvider, GetSchema (_)).WillOnce (Return (StubFile (schemaXml)));
 
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", StubClientInfo (), schemaProvider, GetHandlerPtr ());
 
@@ -1193,7 +1192,7 @@ TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1WithSchemaProvide
             </ECSchema>)";
 
     auto schemaProvider = std::make_shared<MockWSSchemaProvider> ();
-    EXPECT_CALL (*schemaProvider, GetSchema (_)).WillOnce (Return (FSTest::StubFile (schemaXml)));
+    EXPECT_CALL (*schemaProvider, GetSchema (_)).WillOnce (Return (StubFile (schemaXml)));
 
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", StubClientInfo (), schemaProvider, GetHandlerPtr ());
 
@@ -1215,7 +1214,7 @@ TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1WithDefaultSchema
             </ECSchema>)";
 
     auto schemaProvider = std::make_shared<MockWSSchemaProvider> ();
-    EXPECT_CALL (*schemaProvider, GetSchema (_)).WillOnce (Return (FSTest::StubFile (schemaXml)));
+    EXPECT_CALL (*schemaProvider, GetSchema (_)).WillOnce (Return (StubFile (schemaXml)));
 
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", StubClientInfo (), schemaProvider, GetHandlerPtr ());
 
@@ -1337,7 +1336,7 @@ TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndDummySchemaObject
         return StubHttpResponse ();
         });
 
-    client->SendGetFileRequest ({"MetaSchema.ECSchemaDef", "DUMMY_SCHEMA_OBJECT..."}, FSTest::StubFilePath (), "TestETag")->Wait ();
+    client->SendGetFileRequest ({"MetaSchema.ECSchemaDef", "DUMMY_SCHEMA_OBJECT..."}, StubFilePath (), "TestETag")->Wait ();
     }
 
 TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1BentleyConnectAndDummySchemaObjectId_SendsGetSchemaRequest)
@@ -1353,7 +1352,7 @@ TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1BentleyConnectAndDum
         return StubHttpResponse ();
         });
 
-    client->SendGetFileRequest ({"MetaSchema.ECSchemaDef", "DUMMY_SCHEMA_OBJECT..."}, FSTest::StubFilePath (), "TestETag")->Wait ();
+    client->SendGetFileRequest ({"MetaSchema.ECSchemaDef", "DUMMY_SCHEMA_OBJECT..."}, StubFilePath (), "TestETag")->Wait ();
     }
 
 #ifdef USE_GTEST
@@ -1364,18 +1363,18 @@ TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndDummySchemaObject
             </ECSchema>)";
 
     auto schemaProvider = std::make_shared<MockWSSchemaProvider> ();
-    EXPECT_CALL (*schemaProvider, GetSchema (_)).WillOnce (Return (FSTest::StubFile (schemaXml)));
+    EXPECT_CALL (*schemaProvider, GetSchema (_)).WillOnce (Return (StubFile (schemaXml)));
 
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", StubClientInfo (), schemaProvider, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (1);
     GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
 
-    auto result = client->SendGetFileRequest ({"MetaSchema.ECSchemaDef", "DUMMY_SCHEMA_OBJECT..."}, FSTest::StubFilePath (), "Foo")->GetResult ();
+    auto result = client->SendGetFileRequest ({"MetaSchema.ECSchemaDef", "DUMMY_SCHEMA_OBJECT..."}, StubFilePath (), "Foo")->GetResult ();
 
     ASSERT_TRUE (result.IsSuccess ());
     EXPECT_TRUE (result.GetValue ().IsModified ());
-    EXPECT_EQ (schemaXml, FSTest::ReadFile (result.GetValue ().GetFilePath ()));
+    EXPECT_EQ (schemaXml, SimpleReadFile (result.GetValue ().GetFilePath ()));
     }
 #endif
 
@@ -1387,7 +1386,7 @@ TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndDummySchemaObject
             </ECSchema>)";
 
     auto schemaProvider = std::make_shared<MockWSSchemaProvider> ();
-    EXPECT_CALL (*schemaProvider, GetSchema (_)).WillOnce (Return (FSTest::StubFile (schemaXml)));
+    EXPECT_CALL (*schemaProvider, GetSchema (_)).WillOnce (Return (StubFile (schemaXml)));
 
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", StubClientInfo (), schemaProvider, GetHandlerPtr ());
 
@@ -1395,7 +1394,7 @@ TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndDummySchemaObject
     GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
 
     auto eTag = "DUMMY_SCHEMA_OBJECT-DefaultSchema.04.02";
-    auto result = client->SendGetFileRequest ({"MetaSchema.ECSchemaDef", "DUMMY_SCHEMA_OBJECT..."}, FSTest::StubFilePath (), eTag)->GetResult ();
+    auto result = client->SendGetFileRequest ({"MetaSchema.ECSchemaDef", "DUMMY_SCHEMA_OBJECT..."}, StubFilePath (), eTag)->GetResult ();
 
     ASSERT_TRUE (result.IsSuccess ());
     EXPECT_FALSE (result.GetValue ().IsModified ());

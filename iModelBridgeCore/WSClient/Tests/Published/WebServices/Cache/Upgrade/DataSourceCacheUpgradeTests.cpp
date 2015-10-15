@@ -23,8 +23,8 @@ void DataSourceCacheUpgradeTests::SetUp()
     {
     BaseCachingDataSourceTest::SetUp();
 
-    BeFileName assetsSeedPath(FSTest::GetAssetsDir() + L"WSClientTestAssets\\Cache\\UpgradeSeeds\\");
-    BeFileName targetSeedPath(FSTest::GetTempDir() + L"DataSourceCacheUpgradeTests\\UpgradeSeeds\\");
+    BeFileName assetsSeedPath(GetTestsAssetsDir() + L"WSClientTestAssets\\Cache\\UpgradeSeeds\\");
+    BeFileName targetSeedPath(GetTestsTempDir() + L"DataSourceCacheUpgradeTests\\UpgradeSeeds\\");
 
     if (targetSeedPath.DoesPathExist())
         {
@@ -37,7 +37,7 @@ void DataSourceCacheUpgradeTests::SetUp()
 BeFileName GetSeedDir(int version, Utf8StringCR subdir)
     {
     BeFileName path =
-        FSTest::GetTempDir()
+        GetTestsTempDir()
         .AppendToPath(L"DataSourceCacheUpgradeTests")
         .AppendToPath(L"UpgradeSeeds")
         .AppendToPath(WPrintfString(L"%d", version))
@@ -237,8 +237,8 @@ void DataSourceCacheUpgradeTests::ValidateV5SeedData(IDataSourceCache& cache, Be
     EXPECT_THAT(filePath2, Not(IsEmpty()));
     EXPECT_THAT(filePath1.GetFileNameAndExtension(), Eq(L"TestFile1.txt"));
     EXPECT_THAT(filePath2.GetFileNameAndExtension(), Eq(L"TestFile2.txt"));
-    EXPECT_THAT(FSTest::ReadFile(filePath1), Eq("CachedFile1"));
-    EXPECT_THAT(FSTest::ReadFile(filePath2), Eq("CachedFile2"));
+    EXPECT_THAT(SimpleReadFile(filePath1), Eq("CachedFile1"));
+    EXPECT_THAT(SimpleReadFile(filePath2), Eq("CachedFile2"));
 
     filePath1.PopDir();
     filePath1.PopDir();
@@ -291,7 +291,7 @@ void DataSourceCacheUpgradeTests::ValidateV5SeedData(IDataSourceCache& cache, Be
 
     auto newFilePath = cache.ReadFilePath(cache.FindInstance(newInstanceKey2));
     EXPECT_THAT(newFilePath, Not(IsEmpty()));
-    EXPECT_THAT(FSTest::ReadFile(newFilePath), Eq("NewFile1"));
+    EXPECT_THAT(SimpleReadFile(newFilePath), Eq("NewFile1"));
     EXPECT_THAT(newFilePath.GetFileNameAndExtension(), Eq(L"TestFile.txt"));
 
     EXPECT_THAT(cache.IsInstanceInRoot("NewInstanceRoot", newInstanceKey3), false);
@@ -327,7 +327,7 @@ void DataSourceCacheUpgradeTests::ValidateV5SeedData(IDataSourceCache& cache, Be
 
 TEST_F(DataSourceCacheUpgradeTests, Open_CurrentVersionDb_Success)
     {
-    BeFileName path = FSTest::StubFilePath();
+    BeFileName path = StubFilePath();
 
     DataSourceCache cache;
     ASSERT_EQ(SUCCESS, cache.Create(path, StubCacheEnvironemnt()));

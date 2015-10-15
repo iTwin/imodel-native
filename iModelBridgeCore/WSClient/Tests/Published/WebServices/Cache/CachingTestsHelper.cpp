@@ -221,8 +221,8 @@ WSCreateObjectResult StubWSCreateObjectResult(ObjectIdCR sourceId, ObjectIdCR re
 CacheEnvironment StubCacheEnvironemnt()
     {
     CacheEnvironment environment;
-    environment.temporaryFileCacheDir = FSTest::GetTempDir().AppendToPath(L"test_files_temporary/");
-    environment.persistentFileCacheDir = FSTest::GetTempDir().AppendToPath(L"test_files_persistent/");
+    environment.temporaryFileCacheDir = GetTestsTempDir().AppendToPath(L"test_files_temporary/");
+    environment.persistentFileCacheDir = GetTestsTempDir().AppendToPath(L"test_files_persistent/");
     return environment;
     }
 
