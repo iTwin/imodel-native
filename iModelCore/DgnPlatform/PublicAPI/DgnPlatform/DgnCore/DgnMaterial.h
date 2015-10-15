@@ -192,7 +192,7 @@ public:
             static Options ByParentId(DgnMaterialId parentId, bool ordered = false) { return Options(nullptr, &parentId, ordered); }
         };
 
-        static Iterator Create(DgnDbR db, Options const& options);
+        static Iterator Create(DgnDbR db, Options const& options); //!< @private
     };
 
     //! Create an iterator over the materials within a DgnDb
