@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmNgp.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -22,7 +22,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_markPointsInternalToPondsDtmObject(BC_DTM_OBJ *d
 */
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long lowPoint,zeroSlopeSumpLine,zeroSlopeTriangle ;
+ long lowPoint,zeroSlopeSumpLine = 0,zeroSlopeTriangle ;
  long ap,cp,p1,p2,p3,node,clptr,lowPnt,sumpPnt1,sumpPnt2,trgPnt1,trgPnt2,trgPnt3,voidLine,voidTriangle ;
  DTM_TIN_NODE *nodeP ;
 /*

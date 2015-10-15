@@ -59,7 +59,7 @@ MSCORE_EXPORT StatusInt        mdlSharedCellDef_getOrCreate
 (
 MSElementDescr      **scDefEdPP,            /* <= shared cell definition element; can be NULL to just ensure existance */
 const DgnModelRefP  destModelRef,           /* => modelRef to use for styles, etc */
-const UInt32        flags,
+const uint32_t        flags,
 PFAddTagPreWrite    preWriteFunc,           /* => Used to modify tag values before writing */
 WCharCP             cellName               /* => name of cell */
 );
@@ -97,8 +97,7 @@ extern "C" __declspec(dllexport) void MdlMain (int , WCharCP  argv[])
 
     mdlSystem_setMdlAppClass (NULL, MdlApplicationClass::MSRequired); // Don't allow handler app to unload!
 
-    Bentley::TerrainModel::Element::DTMElementHandlerManager::SetPowerPlatformExtension (&s_DTMElementPowerPlatformExtension);
-    Bentley::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnDisplay ();
-    registerManagedElementHandler ();
+    BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::Initialize (&s_DTMElementPowerPlatformExtension);
+    registerManagedElementHandler();
     registerSelectionListener ();
     }

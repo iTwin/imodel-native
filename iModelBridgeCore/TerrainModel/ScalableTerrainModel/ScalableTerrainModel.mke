@@ -2,7 +2,7 @@
 #
 #  $Source: ScalableTerrainModel/ScalableTerrainModel.mke $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -47,6 +47,106 @@ PCHHeaderDepends=$(o)ScalableTerrainModelPCH$(oext)
 MultiCompileDepends=$(_MakeFileSpec) 
 #DisableMultiCompile=1
 %include MultiCppCompileRule.mki
+
+#----------------------------------------------------------------------
+#   Build Storage
+#----------------------------------------------------------------------
+dtmDepends= $(STMPrivateAPISrc)STMInternal/Storage/IDTMFile.h \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMTypes.h \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFeatureArray.h \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFileDirectories/IDTMMetadataDir.h \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFileDirectories/IDTMSpatialIndexDir.h \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFileDirectories/IDTMPointDir.h \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFileDirectories/IDTMFilteringDir.h \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFileDirectories/IDTMFeatureDir.h \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFileDirectories/IDTMFeatureDir.hpp \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFileDirectories/IDTMUniformFeatureDir.h \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFileDirectories/IDTMMixedFeatureDir.h \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFileDirectories/IDTMLayerDir.h \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFileDirectories/PointTypes.h \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFileDirectories/PointTypes.hpp \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFileDirectories/SourcesDir.h \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFileDirectories/SourceNodeDir.h \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFileDirectories/SourceSequenceDir.h \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFileDirectories/IDTMPointTileHandler.h \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFileDirectories/IDTMPointTileHandler.hpp \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFileDirectories/IDTMFeatureHeaderTileHandler.h \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFileDirectories/IDTMFeatureHeaderTileHandler.hpp \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFileDirectories/IDTMFeatureTileHandler.h \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFileDirectories/IDTMFeatureTileHandler.hpp \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFileDirectories/IDTMBTreeIndexHandler.h \
+            $(STMPrivateAPISrc)STMInternal/Storage/IDTMFileDirectories/IDTMPointPacketHandler.h \
+            $(STMPrivateAPISrc)STMInternal/Storage/HTGFFDirectory.h \
+            $(STMPrivateAPISrc)STMInternal/Storage/HTGFFFile.h \
+            $(STMPrivateAPISrc)STMInternal/Storage/HTGFFSubDirIter.h
+
+$(o)HPUPacket$(oext) : $(StorageDir)HPUPacket.cpp $(STMPrivateAPISrc)STMInternal/Storage/HPUPacket.h ${MultiCompileDepends}
+
+$(o)HTGFFCompression$(oext) : $(StorageDir)HTGFFCompression.cpp $(STMPrivateAPISrc)STMInternal/Storage/HTGFFCompression.h ${MultiCompileDepends}
+
+$(o)HTGFFDataDescriptor$(oext) : $(StorageDir)HTGFFDataDescriptor.cpp $(STMPrivateAPISrc)STMInternal/Storage/HTGFFDataDescriptor.h ${MultiCompileDepends}
+
+$(o)HTGFFDirectory$(oext) : $(StorageDir)HTGFFDirectory.cpp $(STMPrivateAPISrc)STMInternal/Storage/HTGFFDirectory.h ${MultiCompileDepends}
+
+$(o)HTGFFDirectoryHandler$(oext) : $(StorageDir)HTGFFDirectoryHandler.cpp $(STMPrivateAPISrc)STMInternal/Storage/HTGFFDirectoryHandler.h ${MultiCompileDepends}
+
+$(o)HTGFFFile$(oext) : $(StorageDir)HTGFFFile.cpp $(STMPrivateAPISrc)STMInternal/Storage/HTGFFFile.h ${MultiCompileDepends}
+
+$(o)HTGFFPacketIdIter$(oext) : $(StorageDir)HTGFFPacketIdIter.cpp $(STMPrivateAPISrc)STMInternal/Storage/HTGFFPacketIdIter.h ${MultiCompileDepends}
+
+$(o)HTGFFPacketManager$(oext) : $(StorageDir)HTGFFPacketManager.cpp $(STMPrivateAPISrc)STMInternal/Storage/HTGFFPacketManager.h ${MultiCompileDepends}
+
+$(o)HTGFFSubDirHelpers$(oext) : $(StorageDir)HTGFFSubDirHelpers.cpp $(STMPrivateAPISrc)STMInternal/Storage/HTGFFSubDirHelpers.h ${MultiCompileDepends}
+
+$(o)HTGFFSubDirIdIter$(oext) : $(StorageDir)HTGFFSubDirIdIter.cpp $(STMPrivateAPISrc)STMInternal/Storage/HTGFFSubDirIdIter.h ${MultiCompileDepends}
+
+$(o)HTGFFSubDirManager$(oext) : $(StorageDir)HTGFFSubDirManager.cpp $(STMPrivateAPISrc)STMInternal/Storage/HTGFFSubDirManager.h ${MultiCompileDepends}
+
+$(o)HTGFFTagFile$(oext) : $(StorageDir)HTGFFTagFile.cpp $(STMPrivateAPISrc)STMInternal/Storage/HTGFFTagFile.h ${MultiCompileDepends}
+
+$(o)IDTMFile$(oext) : $(StorageDir)IDTMFile.cpp $(dtmDepends) ${MultiCompileDepends}
+
+$(o)IDTMFileDefinition$(oext) : $(StorageDir)IDTMFileDefinition.cpp $(dtmDepends) ${MultiCompileDepends}
+
+$(o)IDTMTypes$(oext) : $(StorageDir)IDTMTypes.cpp $(dtmDepends) ${MultiCompileDepends}
+
+$(o)FeatureHeaderTypes$(oext) : $(StorageDir)IDTMFileDirectories/FeatureHeaderTypes.cpp $(dtmDepends) ${MultiCompileDepends}
+
+$(o)IDTMFeatureDir$(oext) : $(StorageDir)IDTMFileDirectories/IDTMFeatureDir.cpp $(dtmDepends) ${MultiCompileDepends}
+
+$(o)IDTMFeatureHeaderDir$(oext) : $(StorageDir)IDTMFileDirectories/IDTMFeatureHeaderDir.cpp $(dtmDepends) ${MultiCompileDepends}
+
+$(o)IDTMFeatureHeaderPacketHandler$(oext) : $(StorageDir)IDTMFileDirectories/IDTMFeatureHeaderPacketHandler.cpp $(dtmDepends) ${MultiCompileDepends}
+
+$(o)IDTMFeaturePacketHandler$(oext) : $(StorageDir)IDTMFileDirectories/IDTMFeaturePacketHandler.cpp $(dtmDepends) ${MultiCompileDepends}
+
+$(o)IDTMFilteringDir$(oext) : $(StorageDir)IDTMFileDirectories/IDTMFilteringDir.cpp $(dtmDepends) ${MultiCompileDepends}
+
+$(o)IDTMLayerDir$(oext) : $(StorageDir)IDTMFileDirectories/IDTMLayerDir.cpp $(dtmDepends) ${MultiCompileDepends}
+
+$(o)IDTMMetadataDir$(oext) : $(StorageDir)IDTMFileDirectories/IDTMMetadataDir.cpp $(dtmDepends) ${MultiCompileDepends}
+
+$(o)IDTMMixedFeatureDir$(oext) : $(StorageDir)IDTMFileDirectories/IDTMMixedFeatureDir.cpp $(dtmDepends) ${MultiCompileDepends}
+
+$(o)IDTMPointDir$(oext) : $(StorageDir)IDTMFileDirectories/IDTMPointDir.cpp $(dtmDepends) ${MultiCompileDepends}
+
+$(o)IDTMPointPacketHandler$(oext) : $(StorageDir)IDTMFileDirectories/IDTMPointPacketHandler.cpp $(dtmDepends) ${MultiCompileDepends}
+
+$(o)IDTMBTreeIndexHandler$(oext) : $(StorageDir)IDTMFileDirectories/IDTMBTreeIndexHandler.cpp $(dtmDepends) ${MultiCompileDepends}
+
+$(o)IDTMSpatialIndexDir$(oext) : $(StorageDir)IDTMFileDirectories/IDTMSpatialIndexDir.cpp $(dtmDepends) ${MultiCompileDepends}
+
+$(o)IDTMUniformFeatureDir$(oext) : $(StorageDir)IDTMFileDirectories/IDTMUniformFeatureDir.cpp $(dtmDepends) ${MultiCompileDepends}
+
+$(o)PointTypes$(oext) : $(StorageDir)IDTMFileDirectories/PointTypes.cpp $(dtmDepends) ${MultiCompileDepends}
+
+$(o)SourcesDir$(oext) : $(StorageDir)IDTMFileDirectories/SourcesDir.cpp $(dtmDepends) ${MultiCompileDepends}
+
+$(o)SourceNodeDir$(oext) : $(StorageDir)IDTMFileDirectories/SourceNodeDir.cpp  $(dtmDepends) ${MultiCompileDepends}
+
+$(o)SourceSequenceDir$(oext) : $(StorageDir)IDTMFileDirectories/SourceSequenceDir.cpp $(dtmDepends) ${MultiCompileDepends}
+
+
 
 #----------------------------------------------------------------------
 #   Build Fondations
@@ -244,8 +344,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)$(BaseGeocoordLib)
 
 LINKER_LIBRARIES            = \
-    $(ContextSubpartsLibs)$(IppGraLibsLib) \
-    $(ContextSubpartsLibs)$(IppUtlLibsLib) \
+    $(ContextSubpartsLibs)$(ImagePPLib) \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib)

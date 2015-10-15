@@ -2,16 +2,16 @@
 |
 |     $Source: ElementHandler/handler/DTMTextDrawer.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 BEGIN_BENTLEY_TERRAINMODEL_ELEMENT_NAMESPACE
 
-bool AddDTMTextStyle (EditElementHandle& elem, UInt32 textStyleId, UInt32 key);
-bool GetDTMTextParam (ElementHandleCR elem, TextParamWideR textParamWide, double& fontSizeX, double& fontSizeY, DgnModelRefP model, UInt32 key);
-int GetDTMTextParamId (ElementHandleCR elem, UInt32 key);
+bool AddDTMTextStyle (EditElementHandle& elem, uint32_t textStyleId, uint32_t key);
+bool GetDTMTextParam (ElementHandleCR elem, TextParamWideR textParamWide, double& fontSizeX, double& fontSizeY, DgnModelRefP model, uint32_t key);
+int GetDTMTextParamId (ElementHandleCR elem, uint32_t key);
 
 struct TextDrawer
     {
@@ -41,7 +41,7 @@ private:
     public:
         TextDrawer (const DTMDrawingInfo& drawingInfo, ViewContextR context, int textStyleId);
             
-        void FixBG (bool bgFlag = false, UInt32 bgColor = 0);
+        void FixBG (bool bgFlag = false, uint32_t bgColor = 0);
 
         void SetJustification (TextElementJustification just);
 

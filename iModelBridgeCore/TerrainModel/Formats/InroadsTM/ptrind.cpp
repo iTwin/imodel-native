@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* ptrind.c                                            tmi    10-Apr-1990     */
@@ -52,14 +52,14 @@ void aecDTM_buildPtrIndexTable
     for ( blkP = srfP->pntf[i]->blk; blkP; blkP = blkP->nxt, j++ )
     {
       ptrP[j].ind = tmp;
-      ptrP[j].p = (byte *) blkP->rec.pnt;
+      ptrP[j].p = (unsigned char *) blkP->rec.pnt;
       tmp += blkP->use;
     }
 
   for ( blkP = srfP->rngf->blk; blkP; blkP = blkP->nxt, j++ )
   {
     ptrP[j].ind = tmp;
-    ptrP[j].p = (byte *) blkP->rec.pnt;
+    ptrP[j].p = (unsigned char *) blkP->rec.pnt;
     tmp += blkP->use;
   }
 
@@ -69,14 +69,14 @@ void aecDTM_buildPtrIndexTable
       for ( blkP = srfP->ftrf[i]->blk; blkP; blkP = blkP->nxt, j++ )
       {
         ptrP[j].ind = tmp;
-        ptrP[j].p = (byte *) blkP->rec.ftr;
+        ptrP[j].p = (unsigned char *) blkP->rec.ftr;
         tmp += blkP->use;
       }
 
     for ( blkP = srfP->styf->blk; blkP; blkP = blkP->nxt, j++ )
     {
       ptrP[j].ind = tmp;
-      ptrP[j].p = (byte *) blkP->rec.sty;
+      ptrP[j].p = (unsigned char *) blkP->rec.sty;
       tmp += blkP->use;
     }
 
@@ -85,7 +85,7 @@ void aecDTM_buildPtrIndexTable
       for ( blkP = srfP->payf->blk; blkP; blkP = blkP->nxt, j++ )
       {
         ptrP[j].ind = tmp;
-        ptrP[j].p = (byte *) blkP->rec.pay;
+        ptrP[j].p = (unsigned char *) blkP->rec.pay;
         tmp += blkP->use;
       }
     }
@@ -96,21 +96,21 @@ void aecDTM_buildPtrIndexTable
     for ( blkP = srfP->corf->blk; blkP; blkP = blkP->nxt, j++ )
     {
       ptrP[j].ind = tmp;
-      ptrP[j].p = (byte *) blkP->rec.cor;
+      ptrP[j].p = (unsigned char *) blkP->rec.cor;
       tmp += blkP->use;
     }
 
     for ( blkP = srfP->cmpf->blk; blkP; blkP = blkP->nxt, j++ )
     {
       ptrP[j].ind = tmp;
-      ptrP[j].p = (byte *) blkP->rec.cmp;
+      ptrP[j].p = (unsigned char *) blkP->rec.cmp;
       tmp += blkP->use;
     }
 
     for ( blkP = srfP->cmpMemf->blk; blkP; blkP = blkP->nxt, j++ )
     {
       ptrP[j].ind = tmp;
-      ptrP[j].p = (byte *) blkP->rec.cmpMem;
+      ptrP[j].p = (unsigned char *) blkP->rec.cmpMem;
       tmp += blkP->use;
     }
   }
@@ -120,7 +120,7 @@ void aecDTM_buildPtrIndexTable
   for ( blkP = srfP->tinf->blk; blkP; blkP = blkP->nxt, j++ )
   {
     ptrP[j].ind = tmp;
-    ptrP[j].p = (byte *) blkP->rec.tin;
+    ptrP[j].p = (unsigned char *) blkP->rec.tin;
     tmp += blkP->use;
   }
 }

@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/Commands/transkit/commandsMsg.r $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Mstn\MdlApi\rscdefs.r.h>
@@ -41,9 +41,7 @@ MessageList STRINGID_Message_Main =
     { DIALOGTITLE_SelectLandXML,                "Select LandXML File"},
     { DIALOGTITLE_SelectDTMFile,                "Select DTM File"},
     { DIALOGTITLE_SelectLandXMLConfig,          "Select LandXML import Config File"},
-@localize comment("#FileFilter#");            
     { DIALOGTITLE_LandXMLFileFilter,            "*.xml,LandXML [*.xml]" },
-@localize comment("");
 
     /* Misc */
     { RESULT_ImportDTM,                            "Terrain model %ls imported successfully" },

@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/StdAfx.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -15,15 +15,13 @@
 #include <DgnView\IViewManager.h>
 #include <DgnView\IRedraw.h>
 #include <DgnView\AccuSnap.h>
-#include <DgnView\DgnViewLib.h>
-
 #include <DgnPlatform\DgnECProviderBase.h>
 #include <DgnPlatform\ElementProperties.h>
 
 #include <DgnPlatform\TerrainModel\TMElementHandler.h>
 #include <DgnPlatform\TerrainModel\TMElementSubHandler.h>
 #include <TerrainModel\ElementHandler\TerrainModelElementHandler.h>
-#include <DgnPlatform\TerrainModel\TMSymbologyOverrideManager.h>
+#include <TerrainModel\ElementHandler\DTMSymbologyOverrideManager.h>
 #include <TerrainModel\ElementHandler\TMHandlersResources.h>
 #include <TerrainModel\ElementHandler\TMHandlersResources.r.h>
 #include <TerrainModel\Core\bcDTMClass.h>
@@ -87,7 +85,7 @@
 
 #include <DgnPlatform\TerrainModel\TMElementHandler.h>
 #include <DgnPlatform\TerrainModel\TMPersistentAppIDs.h>   
-#include <DgnPlatform\TerrainModel\TMReferenceXAttributeHandler.h>
+#include <TerrainModel\ElementHandler\DTMReferenceXAttributeHandler.h>
 
 #include "DTMDrawingInfo.h"
 #include "DTMDataRefCachingManager.h"

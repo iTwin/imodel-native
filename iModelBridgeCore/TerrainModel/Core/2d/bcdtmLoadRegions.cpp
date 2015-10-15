@@ -601,7 +601,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_triangleShadeMeshForRegionDtmObject
  double     zAxisFactor,                   // ==> Factor To Exaggerate The z Axis default value 1.0                            
  long       regionOption,                  // ==> Region Option < 1 = Include Internal Regions , 2 = Exclude Internal Regions >
  long       indexOption,                   // ==> Index Option  < 1 = Use User Tag , 2 = Use Feature Id >
- Int64      indexValue,                    // ==> Value For Region Selection
+ int64_t      indexValue,                    // ==> Value For Region Selection
  DTMTriangleShadeMeshCallback loadFunctionP,            // ==> Call Back Function
  void*       userP                         // ==> User Pointer To Pass Back To Calling Function
  )

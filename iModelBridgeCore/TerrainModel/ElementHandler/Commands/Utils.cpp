@@ -72,7 +72,7 @@ DMatrix4d GetMatrixWorldToView(int view)
     if (!mdlView_isValidIndex(view))
         {
         BeAssert(0);
-        bsiDMap4d_initIdentity (&worldToViewMap);
+        bsiDMap4d_InitIdentity (&worldToViewMap);
         }
     else
         mdlView_getHomogeneousMaps(NULL, NULL, &worldToViewMap, NULL, NULL, NULL, NULL, NULL, view);
@@ -81,7 +81,7 @@ DMatrix4d GetMatrixWorldToView(int view)
     }
 
 /// <author>Piotr.Slowinski</author>                            <date>9/2011</date>
-static StatusInt PrepareDimensionElement (EditElementHandleR element, double val, int viewNumber, DgnModelRef* dtmModelRef = nullptr)
+static StatusInt PrepareDimensionElement (EditElementHandleR element, double val, int viewNumber)
     {
     MSElement dimElem;
     StatusInt       status;
@@ -96,11 +96,7 @@ static StatusInt PrepareDimensionElement (EditElementHandleR element, double val
     BeAssert (SUCCESS == status && "mdlDim_create failed");
     if (SUCCESS != status)
         return status;
-
-    if (dtmModelRef == nullptr)
-        dstModelRef = ACTIVEMODEL;
-    else
-        dstModelRef = dtmModelRef;
+    dstModelRef = ACTIVEMODEL;
 
     element.SetModelRef (dstModelRef);
     element.SetElementDescr (EditElementHandle (&dimElem, dstModelRef).ExtractElementDescr(), true, false, dstModelRef);
@@ -209,7 +205,7 @@ static void ConvertToText (WStringR t, double val, ViewportP vp, DgnModelRef* dt
     EditElementHandle  elemHandle;
     bool            /*OWNED = true,*/ /*IS_UNMODIFIED = true,*/ CHECK_RANGE = true, CHECK_SCAN_CRITERIA = true;
 
-    status = PrepareDimensionElement (elemHandle, val, vp->GetViewNumber (), dtmModelRef);
+    status = PrepareDimensionElement (elemHandle, val, vp->GetViewNumber());
     BeAssert (SUCCESS == status && "PrepareDimensionElement failed");
     
     TextExtractorViewContext context;
@@ -239,7 +235,7 @@ void ConvertToTextBlock (TextBlockPtr& tb, double elevation, ViewportP vp, DgnMo
     WString buf;
 
     memset (&tpw, 0, sizeof (tpw));
-    if (!ConvertToTextBlock (buf, elevation, vp, dtmModelRef) || buf.empty () || buf.CompareTo (L"0") == 0)
+    if (!ConvertToTextBlock (buf, elevation, vp, dtmModelRef))
         { return; }
     dstModelRef = ACTIVEMODEL;
     mdlTextStyle_getTextParamWideFromTCB (&tpw, &txtScale.x, &txtScale.y, &lineLength, !IS_TEXT_NODE);
@@ -315,10 +311,17 @@ bool     PrepText (TextBlockPtr& rtb, ElementHandleCR elHandle, DgnButtonEventCR
 
     converter.FullRootUorsToRefMeters (cPt);
 
+    Transform trans;
+    Transform transInv;
+    mdlTMatrix_getIdentity (&trans);
+    DTMElementHandlerManager::GetStorageToUORMatrix (trans, elHandle);
+    transInv.inverseOf(&trans);
     DPoint3d cStoragePt = cPt;
+    transInv.multiply (&cStoragePt);
 
     dtm->GetDTMDraping()->DrapePoint (&elevation, &slope, &aspect, triangle, &drapeType, cStoragePt);
     cStoragePt.z = elevation;
+    trans.multiply (&cStoragePt);
 
     cPt.z = cStoragePt.z;
     // Encode Labels
@@ -525,7 +528,7 @@ struct LabelContoursCollector
 
                     dtm->GetDTMDraping()->DrapePoint (NULL, NULL, &aspect, NULL, NULL, pt) ;
                     angleVec.rotate (-aspect * PI / 180.);
-                    if (angleVec.y > 0.)
+                    if (angleVec.y < 0.)
                         { m_angle -= PI; }
                     }
                 }
@@ -558,16 +561,15 @@ struct ContoursIntersectOutput : public SimplifyViewDrawGeom, public Intersectio
     LazyStorageToUORTransformProvider&  m_stu;
     double                  m_factor;
     DPoint3d                m_globalOrigin;
-    bool                    m_ignore;
 
     public: ContoursIntersectOutput
                 (
                 LabelContoursCollector&             textCollector,
                 LazyStorageToUORTransformProvider&  stu
-                ) : m_textCollector (textCollector), m_stu (stu), m_processFirstIntersection (false), m_ignore(false)
+                ) : m_textCollector (textCollector), m_stu (stu), m_processFirstIntersection (false)
                 {}
 
-   private: ViewportP GetViewport (void)
+    private: ViewportP GetViewport (void)
                  { return GetViewContext()->GetViewport(); }
 
     public: void ContoursIntersectOutput::SetDTMRef (DTMDataRefPtr value, ElementHandleCR elem)
@@ -715,7 +717,6 @@ struct ContoursIntersectContext : public ViewContext
             fencePts[4].y = drange.low.y;
             fencePts[4].z = 0;
 
-            DTMSubElementContext subElementContext;
             DTMElementHandlerManager::GetElementForSymbology (inEl, symbologyElem, ACTIVEMODEL);
             DTMSubElementIter &iter = *DTMSubElementIter::Create (symbologyElem);
             for (; iter.IsValid (); iter.ToNext ())
@@ -725,10 +726,10 @@ struct ContoursIntersectContext : public ViewContext
                     RefCountedPtr<DTMElementContoursHandler::DisplayParams> params = DTMElementContoursHandler::DisplayParams::From (iter);
                     if (params->GetIsMajor () || dtmcommandsInfoP->annotateContoursMode == OPTIONBUTTONIDX_AllContours)
                         {
-                        if (GetLocalToView ().coff[0][2] == 0)
-                            DTMElementDisplayHandler::DrawSubElement (inEl, iter, *this, DTMFenceParams (DTMFenceType::Block, DTMFenceOption::Overlap, fencePts, _countof (fencePts)), subElementContext);
+                        if (GetLocalToView().coff[0][2] == 0)
+                            DTMElementDisplayHandler::DrawSubElement (inEl, iter, *this, DTMFenceParams (DTMFenceType::Block, DTMFenceOption::Overlap, fencePts, _countof(fencePts)));
                         else
-                            DTMElementDisplayHandler::DrawSubElement (inEl, iter, *this, DTMFenceParams (), subElementContext); //FenceType_Block, FenceOption_Overlap, fencePts, 5));
+                            DTMElementDisplayHandler::DrawSubElement (inEl, iter, *this, DTMFenceParams ()); //FenceType_Block, FenceOption_Overlap, fencePts, 5));
                         }
                     }
                 }
@@ -908,7 +909,7 @@ void    DimStyleChangeContours (DgnModelRefP modelRef, ElementId styleId, Dimens
     }
 
 /// <author>Piotr.Slowinski</author>                            <date>09/2011</date>
-void        StartSequence (UInt64 cmdNum)
+void        StartSequence (uint64_t cmdNum)
     {
     StartViewMonitor ();
     switch (cmdNum)
@@ -933,7 +934,7 @@ void        StartSequence (UInt64 cmdNum)
     }
 
 /// <author>Piotr.Slowinski</author>                            <date>09/2011</date>
-void        EndSequence (UInt64 cmdNum)
+void        EndSequence (uint64_t cmdNum)
     {
     switch (cmdNum)
         {

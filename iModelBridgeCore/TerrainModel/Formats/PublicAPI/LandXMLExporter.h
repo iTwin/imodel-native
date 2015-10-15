@@ -22,7 +22,6 @@
 #include <TerrainModel/Formats/LandXMLImporter.h>
 
 TERRAINMODEL_TYPEDEFS (LandXMLExporter)
-ADD_BENTLEY_TYPEDEFS (Bentley::TerrainModel, LandXMLExporter);
 
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
@@ -141,7 +140,7 @@ private:
     private: void WriteFeatureStuff (WStringCR nodeType, const DTMLandXMLFeatureInfo& featureInfo, WStringCR featureStyle);
     private: WString FormatDouble (double const& val);
     private: WString FormatInt (int val);
-    private: WString FormatInt (Int64 const& val);
+    private: WString FormatInt (int64_t const& val);
     private: void WritePoint (DPoint3dCR pt, bool is3d = true);
     private: void WritePoints (DPoint3dCP tPoint, size_t numPts, bool is3d = true);
 

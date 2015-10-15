@@ -73,7 +73,7 @@ private:
     BcDTMP m_dtmElement;
     DTMElementPointsHandler::DisplayParams &m_displayParams;
     DTMDrawingInfo& m_drawingInfo;
-    const UInt32 m_id;
+    const uint32_t m_id;
     double const m_rescaleFactor;
     PointAndTextDrawer* m_drawer;
     ViewContextP m_context;
@@ -94,7 +94,7 @@ public:
         BcDTMP DTMDataRefXAttribute,
         DTMElementPointsHandler::DisplayParams& displayParams,
         DTMDrawingInfo  &drawingInfo,
-        UInt32 id,
+        uint32_t id,
         double rescaleFactor,
         std::function<void (DTMStrokeForPoints& stroker, BcDTMP dtm, const DTMFenceParams& fenceParams, DTMFeatureCallback defaultCallback)> browsePointsFunction = nullptr
         );

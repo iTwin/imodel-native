@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* addftr.c                                     twl    16-Nov-1998            */
@@ -35,7 +35,7 @@
 
 int aecDTM_addFeature        /* <= TRUE if error                   */
 (
-  GUID *guidP,                          /*<=  guid of created feature         */
+  BeSQLite::BeGuid *guidP,                          /*<=  guid of created feature         */
   struct CIVdtmsrf *srfP,               /* => surface to add feature to       */
   long opt,                             /* => DTM_C_APPEND, etc.              */
   wchar_t *name,                        /* => name of feature                 */
@@ -45,13 +45,13 @@ int aecDTM_addFeature        /* <= TRUE if error                   */
   long numPnts,                         /* => # of points being added         */
   CIVdtmpnt *ftrPntsP,                  /* => list of feature points          */
   DPoint3d *pntsP,                      /* => list of point coordinates       */
-  byte *pntFlgsP,                    /* => list of point properties        */
+  unsigned char *pntFlgsP,                    /* => list of point properties        */
   double pntDensity,                    /* => pointDensity                    */
   CIVdtmstynam *stylesP,                /* => feature's styles (or NULL)      */
   long numStyles,                       /* => # of styles                     */
   CIVdtmpaynam *payItemsP,              /* => pay items (or NULL)             */
   long numPayItems,                     /* => # of pay items                  */
-  byte flag,                          /* => feature's flags                 */
+  unsigned char flag,                          /* => feature's flags                 */
   BOOL bRemoveDuplicates, // = TRUE     /* => should almost always be TRUE    */
   BOOL bCloseString // = TRUE           /* => should almost always be TRUE    */
 )

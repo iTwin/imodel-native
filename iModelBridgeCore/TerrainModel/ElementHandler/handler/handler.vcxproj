@@ -97,7 +97,7 @@ xcopy /Y /r $(OutRoot)Winx64\Build\TerrainModelElement\TerrainModelElementHandle
     <ClInclude Include="..\app\handlerApp.h" />
     <ClInclude Include="..\PublicAPI\DTMDataRef.h" />
     <ClInclude Include="..\PublicAPI\DTMElementHandlerManager.h" />
-    <ClInclude Include="..\PublicAPI\TMReferenceXAttributeHandler.h" />
+    <ClInclude Include="..\PublicAPI\DTMReferenceXAttributeHandler.h" />
     <ClInclude Include="..\PublicAPI\DTMSymbologyOverrideManager.h" />
     <ClInclude Include="..\PublicAPI\IMrDTMDataRef.h" />
     <ClInclude Include="..\PublicAPI\IMultiResolutionGridMaterialManager.h" />
@@ -144,6 +144,7 @@ xcopy /Y /r $(OutRoot)Winx64\Build\TerrainModelElement\TerrainModelElementHandle
     <ClCompile Include="DTMLowPointsDisplayHandler.cpp" />
     <ClCompile Include="DTMPointDrawer.cpp" />
     <ClCompile Include="DTMRasterDrapingDisplayHandler.cpp" />
+    <ClCompile Include="DTMReferenceXAttributeHandler.cpp" />
     <ClCompile Include="DTMSpotsDisplayHandler.cpp" />
     <ClCompile Include="DTMSymbologyOverrideManager.cpp" />
     <ClCompile Include="DTMTextDrawer.cpp" />

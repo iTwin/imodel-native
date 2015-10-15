@@ -96,9 +96,14 @@ $(o)DTMPropertyEnabler$(oext)	  	      : $(basedir)DTMPropertyEnabler.cpp $(Depe
 
 $(o)DTMDisplayHandlers$(oext)		      : $(basedir)DTMDisplayHandlers.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
+$(o)DTMSymbologyOverrideManager$(oext)	  : $(basedir)DTMSymbologyOverrideManager.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMReferenceXAttributeHandler$(oext)  : $(basedir)DTMReferenceXAttributeHandler.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
 $(o)MrDTMDataRef$(oext)		        : $(basedir)MrDTMDataRef.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
 $(o)IMrDTMProgressiveDisplay$(oext)	: $(basedir)IMrDTMProgressiveDisplay.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
 
 $(o)MrDTMXAttributeHandler$(oext)	         : $(basedir)MrDTMXAttributeHandler.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
@@ -142,9 +147,7 @@ LINKER_LIBRARIES             = 	$(ContextSubpartsLibs)$(libprefix)DgnView$(libex
                                 $(ContextSubpartsLibs)$(libprefix)RmgrTools$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)RasterCore$(libext) \
-                                $(ContextSubpartsLibs)$(libprefix)IppGraLibs$(libext) \
-                                $(ContextSubpartsLibs)$(libprefix)IppImaging$(libext) \
-                                $(ContextSubpartsLibs)$(libprefix)IppUtlLibs$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)ImagePP$(libext)
                                 
 
 DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
@@ -177,9 +180,21 @@ MuiTranskitDeliveryDir = $(ContextDeliveryDir)Transkit/ElementHandler/
 #----------------------------------------------------------------------
 ECSchemaPath = $(baseDir)ECSchemas/
 ECSchemaResxBaseName = TerrainModel
-ECSchemasResxBuildDir = $(o)SchemaTranskit/
+ECSchemasResxBuildDir = $(o)SchemaTranskit
 ECSchemaTranskitDir = $(baseDir)ECSchemas/
 ECSchemasResxDeliveryDir = $(ContextDeliveryDir)ECSchemas/
-ECSchemaReferences = $(BuildContext)SubParts/Files/
 %include $(SharedMki)CreateAndLinkECSchemaResources.mki 
+
+#----------------------------------------------------------------------
+# Temporary hack... place a link in mdlapps directory.  I can't get
+#                   the app to load from the ExampleApps directory
+#----------------------------------------------------------------------
+#$(OutputRootDir)Product/Mstn/MicroStation/mdlapps/TerrainModelElementHandler.dll : $(terrainModel_bin)$(appName).dll
+#    $(LinkFirstDepToFirstTarget)
+
+#$(OutputRootDir)Product/Mstn/MicroStation/mdlapps/BentleyTerrainModel.dll : $(ContextDeliveryDir)BentleyTerrainModel.dll
+#    $(LinkFirstDepToFirstTarget)
+
+#$(OutputRootDir)Product/Mstn/MicroStation/mdlapps/en/TerrainModelElementHandler.dll.mui : $(o)$(appName).dll.mui
+#    $(LinkFirstDepToFirstTarget)
 

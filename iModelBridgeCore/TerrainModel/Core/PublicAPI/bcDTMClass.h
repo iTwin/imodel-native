@@ -50,7 +50,7 @@ BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 | CLASS definitions                                                     |
 +----------------------------------------------------------------------*/
 
-typedef Bentley::TerrainModel::DTMFenceParams DTMFenceParams;
+typedef BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams DTMFenceParams;
 
 struct BcDTMEdges : RefCountedBase
     {
@@ -147,7 +147,7 @@ class DTMFeatureBuffer
 //__PUBLISH_SECTION_START__
 struct DTMFeatureStatisticsInfo
     {
-    Int64 numPoints;
+    int64_t numPoints;
     long numTinLines;
     long numTriangles;
     long numDtmFeatures;
@@ -175,9 +175,9 @@ struct BcDTMVolumeAreaResult
 * @author   Sylvain Pucci --  15/01/02 -- sylvain.pucci@bentley.com
 * @see
 */
-struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
+struct BcDTM : RefCounted<TerrainModel::IDTM>
 //__PUBLISH_SECTION_END__
-    , Bentley::TerrainModel::IDTMDraping, Bentley::TerrainModel::IDTMDrainage, Bentley::TerrainModel::IDTMContouring
+    , BENTLEY_NAMESPACE_NAME::TerrainModel::IDTMDraping, BENTLEY_NAMESPACE_NAME::TerrainModel::IDTMDrainage, BENTLEY_NAMESPACE_NAME::TerrainModel::IDTMContouring
 //__PUBLISH_SECTION_START__
     {
 //__PUBLISH_SECTION_END__
@@ -237,15 +237,15 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
         virtual ~BcDTM (void);
 
         // IDTM Implementation
-        virtual Int64 _GetPointCount () override;
+        virtual int64_t _GetPointCount () override;
         virtual DTMStatusInt _GetRange (DRange3d& range) override;
         virtual BcDTMP _GetBcDTM () override;
-        virtual Bentley::TerrainModel::IDTMDraping* _GetDTMDraping () override;
-        virtual Bentley::TerrainModel::IDTMContouring* _GetDTMContouring () override;
-        virtual Bentley::TerrainModel::IDTMDrainage* _GetDTMDrainage () override;
-        virtual DTMStatusInt _GetBoundary (Bentley::TerrainModel::DTMPointArray& ret) override;
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTMDraping* _GetDTMDraping () override;
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTMContouring* _GetDTMContouring () override;
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTMDrainage* _GetDTMDrainage () override;
+        virtual DTMStatusInt _GetBoundary (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray& ret) override;
         virtual DTMStatusInt _CalculateSlopeArea (double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints) override;
-        virtual DTMStatusInt _GetTransformDTM (Bentley::TerrainModel::DTMPtr& transformedDTM, TransformCR transformation) override;
+        virtual DTMStatusInt _GetTransformDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& transformedDTM, TransformCR transformation) override;
         virtual bool _GetTransformation (TransformR transformation) override;
         // End IDTM Implementation
 
@@ -259,19 +259,19 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             int         *drapedType,
             const DPoint3d  &point
             ) override;
-        virtual DTMStatusInt _DrapeLinear (Bentley::TerrainModel::DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
+        virtual DTMStatusInt _DrapeLinear (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
 
         // End IDTMDraping Implementation
 
         // IDTMDrainage Implementation
-        virtual DTMStatusInt _GetDescentTrace (Bentley::TerrainModel::DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double maxPondDepth) override;
-        virtual DTMStatusInt _GetAscentTrace (Bentley::TerrainModel::DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double maxPondDepth) override;
-        virtual DTMStatusInt _TraceCatchmentForPoint (Bentley::TerrainModel::DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double maxPondDepth) override;
+        virtual DTMStatusInt _GetDescentTrace (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double maxPondDepth) override;
+        virtual DTMStatusInt _GetAscentTrace (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double maxPondDepth) override;
+        virtual DTMStatusInt _TraceCatchmentForPoint (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double maxPondDepth) override;
         // End IDTMDrainage Implementation
 
         // IDTMContouring Implementation
-        virtual DTMStatusInt _ContourAtPoint (Bentley::TerrainModel::DTMPointArray& ret, DPoint3dCR pt, double contourInterval, DTMContourSmoothing smoothOption, double smoothFactor, int smoothDensity, DTMFenceParamsCR fence) override;
-        virtual DTMStatusInt _ContourAtPoint (Bentley::TerrainModel::DTMPointArray& ret, DPoint3dCR pt, double contourInterval, DTMContourSmoothing smoothOption, double smoothFactor, int smoothDensity) override;
+        virtual DTMStatusInt _ContourAtPoint (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray& ret, DPoint3dCR pt, double contourInterval, DTMContourSmoothing smoothOption, double smoothFactor, int smoothDensity, DTMFenceParamsCR fence) override;
+        virtual DTMStatusInt _ContourAtPoint (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray& ret, DPoint3dCR pt, double contourInterval, DTMContourSmoothing smoothOption, double smoothFactor, int smoothDensity) override;
         // End IDTMContouring Implementation
 
         virtual DTMStatusInt _GetMemoryUsed (size_t& memoryUsed);
@@ -451,6 +451,8 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             double    *endAspectP,
             DPoint3d  endTriangle[3],
             int       *endDrapedTypeP,
+            long      *startFlag,
+            long      *endFlag,
             DPoint3dP endPtP,
             DPoint3dP startPtP,
             double    direction,
@@ -770,9 +772,9 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
 
         virtual DTMStatusInt _SetMemoryAccess (DTMAccessMode accessMode);
 
-        virtual DTMStatusInt _GetLastModifiedTime (Int64& lastModifiedTime);
+        virtual DTMStatusInt _GetLastModifiedTime (int64_t& lastModifiedTime);
 
-        virtual DTMStatusInt _GetReadOnlyDTM (Bentley::TerrainModel::BcDTMPtr& readonlyDTM);
+        virtual DTMStatusInt _GetReadOnlyDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& readonlyDTM);
 
         // Input stuff
         virtual DTMStatusInt _AddPoint (DPoint3dCR spotPoint);
@@ -1002,6 +1004,20 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             double        *endAspectP,
             DPoint3d    endTriangle[3],
             int            *endDrapedTypeP,
+            DPoint3d    *endPtP,
+            DPoint3d    *startPtP,
+            double      direction,
+            double      slope
+            );
+
+        BENTLEYDTM_EXPORT  DTMStatusInt ShotVector
+            (
+            double        *endSlopeP,
+            double        *endAspectP,
+            DPoint3d    endTriangle[3],
+            int            *endDrapedTypeP,
+            long        *startFlag,
+            long        *endFlag,
             DPoint3d    *endPtP,
             DPoint3d    *startPtP,
             double      direction,
@@ -1333,9 +1349,9 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
 
         BENTLEYDTM_EXPORT  DTMStatusInt SetMemoryAccess (DTMAccessMode accessMode);
 
-        BENTLEYDTM_EXPORT DTMStatusInt GetReadOnlyDTM (Bentley::TerrainModel::BcDTMPtr& readonlyDTM);
+        BENTLEYDTM_EXPORT DTMStatusInt GetReadOnlyDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& readonlyDTM);
         //__PUBLISH_SECTION_START__
-        BENTLEYDTM_EXPORT DTMStatusInt GetLastModifiedTime (Int64& lastModifiedTime);
+        BENTLEYDTM_EXPORT DTMStatusInt GetLastModifiedTime (int64_t& lastModifiedTime);
 
         BENTLEYDTM_EXPORT DTMStatusInt AddPoint (DPoint3dCR point);
         BENTLEYDTM_EXPORT DTMStatusInt AddPoints (DPoint3dCP pointsP, int nPoint);
@@ -1373,15 +1389,15 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
 //__PUBLISH_SECTION_START__
     };
 
-//__PUBLISH_SECTION_END__
 /**
 * @memo     class which defines a Digital Terrain Model draped line point handle
 * @doc      class which defines a Digital Terrain Model draped line point handle
 * @author   Sylvain Pucci --  15/01/02 -- sylvain.pucci@bentley.com
 * @see
 */
-struct BcDTMDrapedLinePoint : RefCounted<Bentley::TerrainModel::IDTMDrapedLinePoint>
+struct BcDTMDrapedLinePoint : RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTMDrapedLinePoint>
     {
+    //__PUBLISH_SECTION_END__
     private:
         BcDTMDrapedLinePoint (DPoint3d pt, double distance, DTMDrapedLineCode code) :
             _pt (pt), _distance (distance), _code (code)
@@ -1460,6 +1476,7 @@ struct BcDTMDrapedLinePoint : RefCounted<Bentley::TerrainModel::IDTMDrapedLinePo
             };
         bvector<PtFeature>   _features;
 
+        //__PUBLISH_SECTION_START__
     };
 
 /**
@@ -1468,8 +1485,9 @@ struct BcDTMDrapedLinePoint : RefCounted<Bentley::TerrainModel::IDTMDrapedLinePo
 * @author   Sylvain Pucci --  15/01/02 -- sylvain.pucci@bentley.com
 * @see
 */
-struct BcDTMDrapedLine : public RefCounted<Bentley::TerrainModel::IDTMDrapedLine>
+struct BcDTMDrapedLine : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTMDrapedLine>
     {
+    //__PUBLISH_SECTION_END__
     // => Type of defintion for a draped line
    // ===================================== 
     enum class DTMDrapedLineFlag
@@ -1504,12 +1522,12 @@ struct BcDTMDrapedLine : public RefCounted<Bentley::TerrainModel::IDTMDrapedLine
     protected:
 
         // IDTMDrapedLine
-        virtual DTMStatusInt _GetPointByIndex (Bentley::TerrainModel::DTMDrapedLinePointPtr& ret, unsigned int index) const override;
+        virtual DTMStatusInt _GetPointByIndex (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrapedLinePointPtr& ret, unsigned int index) const override;
         virtual DTMStatusInt _GetPointByIndex (DPoint3dP ptP, double *distanceP, DTMDrapedLineCode *codeP, unsigned int index) const override;
         virtual unsigned int _GetPointCount () const override;
 
         // BcDTMDrapedLine
-        virtual Bentley::TerrainModel::IDTMDrapedLine* _GetIDTMDrapedLine ()
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTMDrapedLine* _GetIDTMDrapedLine ()
             {
             return this;
             }
@@ -1564,7 +1582,7 @@ struct BcDTMDrapedLine : public RefCounted<Bentley::TerrainModel::IDTMDrapedLine
         virtual bool _IsPartiallyOnDTM ();
 
     public:
-        BENTLEYDTM_EXPORT Bentley::TerrainModel::IDTMDrapedLine* GetIDTMDrapedLine();
+        BENTLEYDTM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTMDrapedLine* GetIDTMDrapedLine();
         BENTLEYDTM_EXPORT IRefCounted* GetIRefCounted ();
         BENTLEYDTM_EXPORT void SetIRefCounted (IRefCounted* obj);
 
@@ -1625,12 +1643,14 @@ struct BcDTMDrapedLine : public RefCounted<Bentley::TerrainModel::IDTMDrapedLine
 
     private:
         bvector<RefCountedPtr<BcDTMDrapedLinePoint>>     _drapedPoints;
-        Bentley::RefCountedPtr<Bentley::IRefCounted> _linearElP;
+        RefCountedPtr<IRefCounted> _linearElP;
         int                     _containsVoid;
 
         DTMStatusInt AddPointInTable (int index, bvector<RefCountedPtr<BcDTMDrapedLinePoint>>& selPoint);
         DTMStatusInt AddPointInTableByZInterpolation (int index, double abcissa, bvector<RefCountedPtr<BcDTMDrapedLinePoint>>& selPoint);
+        //__PUBLISH_SECTION_START__
     };
+    //__PUBLISH_SECTION_END__
 
 /**
 * @memo     Pure virtual class which defines a Digital Terrain Feature
@@ -1764,7 +1784,7 @@ struct BcDTMSpot : BcDTMFeature
 * @author   Sylvain Pucci --  15/01/02 -- sylvain.pucci@bentley.com
 * @see
 */
-struct BcDTMFeatureEnumerator : Bentley::RefCountedBase
+struct BcDTMFeatureEnumerator : RefCountedBase
     {
     struct FeatureDescr
         {

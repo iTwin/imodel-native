@@ -129,7 +129,7 @@ void PointDrawer::CreateSymbolFromPointDisplayParams (DTMElementPointsHandler::D
     switch (displayParams.GetPointCellType())
         {
         case DTMElementPointsHandler::DisplayParams::Character:
-            CreateTextSymbol (textStyleId, displayParams.GetPointCellName (), displayParams.GetPointCellSize ().x);
+            CreateTextSymbol (textStyleId, displayParams.GetPointCellName());
             break;
         case DTMElementPointsHandler::DisplayParams::Cell:
             CreateCellSymbol (displayParams.GetPointCellName(), displayParams.GetPointCellSize());
@@ -197,7 +197,7 @@ struct PointAndTextDrawer : public PointDrawer
     double                          cellScaleFactor,
     DTMDrawingInfo&                 drawingInfo,
     DgnModelRefP                    modelRef,
-    UInt32                          textStyleId,
+    uint32_t                          textStyleId,
     DgnModelRefP                    contextModelRef,
     double pixelSize
     ) : PointDrawer (drawingInfo, context, rescaleFactor), m_dp (dp), m_drawingInfo (drawingInfo), m_textDrawer (drawingInfo, context, textStyleId), m_context (context)
@@ -287,7 +287,7 @@ DTMStrokeForPoints::DTMStrokeForPoints
     BcDTMP DTMDataRefXAttribute,
     DTMElementPointsHandler::DisplayParams& displayParams,
     DTMDrawingInfo  &drawingInfo,
-    UInt32 id,
+    uint32_t id,
     double rescaleFactor,
     std::function<void (DTMStrokeForPoints& stroker, BcDTMP dtm, const DTMFenceParams& fenceParams, DTMFeatureCallback defaultCallback)> browsePointsFunction
     ) : m_drawingInfo (drawingInfo), m_rescaleFactor (rescaleFactor), m_displayParams (displayParams), m_id (id), m_context (nullptr), m_dtmElement (DTMDataRefXAttribute), m_browsePointsFunction (browsePointsFunction), m_numberOfPointsDrawn (0)

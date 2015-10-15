@@ -6,7 +6,7 @@
 |       $Date: 2011/11/22 21:28:22 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -38,7 +38,7 @@ private:
                                         ImplPtr;
 
     UInt                                m_layerID;
-    UInt32                              m_flags;
+    uint32_t                              m_flags;
     ImplPtr                             m_implP;
 public:
     typedef ContentConfigComponent      value_type;

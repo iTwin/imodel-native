@@ -83,7 +83,7 @@ ImportedTerrainList TerrainImporter::ImportTerrains (bvector<WString>& names) co
     return _ImportTerrains (names);
     }
 
-Bentley::GeoCoordinates::BaseGCSPtr TerrainImporter::GetGCS () const
+BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr TerrainImporter::GetGCS () const
     {
     return _GetGCS ();
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/Commands/SelectDTMElemTool.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -40,7 +40,7 @@ protected: static DgnPlatform::LocateFilterStatus LocateFilter
 DgnPlatform::LOCATE_Action  action,
 MSElementCP                 pElement,
 DgnModelRefP                modelRef,
-UInt32                      filePosition,
+uint32_t                      filePosition,
 DPoint3dCP                  pPoint,
 int                         viewNumber,
 HitPathCP                   hitPath,
@@ -53,7 +53,7 @@ WStringR                    rejectReason
 struct SequencedTool : DgnElementSetTool
 {
 protected:
-    ::UInt64   m_cmdNumber;
+    uint64_t   m_cmdNumber;
 
     bool m_callEndSequenceOnCleanup;
 
@@ -97,8 +97,8 @@ public:
     virtual void        _OnBeginSequence (void) = 0;
     virtual void        _OnEndSequence (void) = 0;
 
-    void SetCmdNumber (::UInt64 cmdNumber) {m_cmdNumber = cmdNumber;}
-    ::UInt64 GetCmdNumber () {return m_cmdNumber;}
+    void SetCmdNumber (uint64_t cmdNumber) {m_cmdNumber = cmdNumber;}
+    uint64_t GetCmdNumber () {return m_cmdNumber;}
 
 }; // End SequencedTool struct
 
@@ -111,7 +111,7 @@ public:
 /// <author>Piotr.Slowinski</author>                            <date>3/2011</date>
 struct SelectDTMElemTool : SequencedTool
     {
-    typedef void (*MainCommandStarter) (ElementHandleCR dtm, ::UInt64 cmdNumber);
+    typedef void (*MainCommandStarter) (ElementHandleCR dtm, uint64_t cmdNumber);
 
     MainCommandStarter const    m_starter;
     bool m_attemptSS;
@@ -119,7 +119,7 @@ struct SelectDTMElemTool : SequencedTool
 
     SelectDTMElemTool::SelectDTMElemTool
     (
-    ::UInt64    cmdNumber,
+    uint64_t    cmdNumber,
     int         cmdFunctionName,
     int         cmdPrompt,
     MainCommandStarter starter,

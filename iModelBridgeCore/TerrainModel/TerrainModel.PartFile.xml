@@ -8,7 +8,7 @@
 
     <Part Name="HeaderFiles" BMakeFile="TerrainModel.prewire.mke" >
         <SubPart PartName="Base" PartFile="Bentley" Repository="Bentley" />
-        <SubPart PartName="HeaderFiles"  PartFile="geomlibs"                            Repository="GeomLibs" />
+        <SubPart PartName="PublicAPI"  PartFile="geomlibs"                            Repository="GeomLibs" />
         <Bindings>
             <PublicAPI Domain="TerrainModel" />
         </Bindings>
@@ -18,7 +18,7 @@
         <SubPart PartName="HeaderFiles"/>
         <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs" />
         <Bindings>
-            <Files ProductDirectoryName="TerrainModelNativeAssemblies">Delivery/$(shlibprefix)TerrainModelCore$(shlibext)</Files>
+            <Assemblies ProductDirectoryName="TerrainModelNativeAssemblies">Delivery/$(shlibprefix)TerrainModelCore$(shlibext)</Assemblies>
             <Libs ProductDirectoryName="TerrainModelNativeCoreLibs" Required="false"> Delivery/$(libprefix)TerrainModelCore$(libext)</Libs>
         </Bindings>
     </Part>
@@ -35,13 +35,10 @@
         <!--<SubPart PartName="InRoadsTM" LibType="Static" />-->
         <SubPart PartName="Core" />
         <SubPart PartName="BeXmlDll"         PartFile="BeLibxml2"  Repository="libsrc-libxml2" />
-        <SubPart PartName="HeaderFiles"      PartFile="BeLibxml2"  Repository="libsrc-libxml2" />
-        <SubPart PartName="BeLibxml2Dll"     PartFile="BeLibxml2"  Repository="libsrc-libxml2" />
         <SubPart PartName="GeoCoord"   PartFile="GeoCoord"   Repository="GeoCoord" />	
-        <SubPart PartName="IppUtlDll"  PartFile="ImagePP" Repository="ImagePP" />
-        <SubPart PartName="IppGraDll"  PartFile="ImagePP" Repository="ImagePP" />
+        <SubPart PartName="ImagePPDll"  PartFile="ImagePP" Repository="ImagePP" />
         <Bindings>
-            <Files ProductDirectoryName="TerrainModelNativeAssemblies" >Delivery\$(shlibprefix)TerrainModelFormats$(shlibext)</Files>
+            <Assemblies ProductDirectoryName="TerrainModelNativeAssemblies" >Delivery\$(shlibprefix)TerrainModelFormats$(shlibext)</Assemblies>
             <Libs>Delivery\$(libprefix)TerrainModelFormats$(libext)</Libs>
         </Bindings>
     </Part>

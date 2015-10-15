@@ -16,7 +16,7 @@
 #include "time.h"
 
 #include "DTMBinaryData.h"
-#include <DgnPlatform/TerrainModel/TMReferenceXAttributeHandler.h>
+#include <TerrainModel/ElementHandler/DTMReferenceXAttributeHandler.h>
 #include "MrDTMDataRef.h"
 #include <ScalableTerrainModel/MrDTMUtilityFunctions.h>
 
@@ -77,7 +77,7 @@ IXAttributeTransactionHandler* MrDTMXAttributeHandler::_GetIXAttributeTransactio
 //=======================================================================================
 // @bsimethod                                                   Mathieu.St-Pierre 03/11
 //=======================================================================================
-void MrDTMXAttributeHandler::_OnPreReplaceData(XAttributeHandleCR xAttr, void const* newData, UInt32 newSize, TransactionType type)
+void MrDTMXAttributeHandler::_OnPreReplaceData(XAttributeHandleCR xAttr, void const* newData, uint32_t newSize, TransactionType type)
     {
     bool needRedraw = false;
     

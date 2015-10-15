@@ -43,7 +43,7 @@ class DTMXAttributeHandler : public IDTMElementMemoryAllocator
     BC_DTM_OBJ m_originalHeader;
 
 #ifdef COMPLETE_TEMPORARY_CHECK
-        typedef bmap<UInt32, UInt32> checkSumT;
+        typedef bmap<uint32_t, uint32_t> checkSumT;
         checkSumT m_checkSums[NUMPARTITIONTYPES];
 #endif
 
@@ -51,13 +51,13 @@ class DTMXAttributeHandler : public IDTMElementMemoryAllocator
         void StoreSnapShot ();
 
     public:
-        UInt32 m_nextIndex;
+        uint32_t m_nextIndex;
         EditElementHandle m_handle;
 
-        typedef bmap<UInt32, memStateT> memoryMapT;
+        typedef bmap<uint32_t, memStateT> memoryMapT;
         memoryMapT m_memory [NUMPARTITIONTYPES];
 
-        bvector<UInt32> m_extendedMemoryDeleted;
+        bvector<uint32_t> m_extendedMemoryDeleted;
 
         bool m_hasScanned [NUMPARTITIONTYPES];
 
@@ -65,7 +65,6 @@ class DTMXAttributeHandler : public IDTMElementMemoryAllocator
         int m_writeCount;
         bool m_noSchedule;
         bool m_inCreate;
-        bool m_inScheduleReplace = false;
 
         bool IsOpenedForWrite()
             {
@@ -172,7 +171,7 @@ class DTMXAttributeHandler : public IDTMElementMemoryAllocator
             if (!m_hasScanned[(int)type])
                 ScanXAttributes (type);
             }
-        memStateT* GetMemoryMapT (DTMPartition type, UInt32 id)
+        memStateT* GetMemoryMapT (DTMPartition type, uint32_t id)
             {
             memoryMapT::iterator iter = m_memory[(int)type].find (id);
 

@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/Commands/AnnotateContours.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "StdAfx.h"
@@ -106,7 +106,7 @@ struct  AnnotateContoursElemTool : Annotate::DTMHolder, Annotate::SequencedTool
         mdlAccuSnap_enableSnap (_WantAccuSnap ());
         mdlAccuSnap_enableLocate (false);
 
-        ::UInt32    promptId = 0L;
+        ::uint32_t    promptId = 0L;
 
         if ( m_state != 2 )
             ++m_state;
@@ -202,7 +202,7 @@ struct  AnnotateContoursElemTool : Annotate::DTMHolder, Annotate::SequencedTool
         DPoint3d pts[2] = { *m_ev1.GetPoint(), *m_ev2.GetPoint() };
 
 #ifndef DRAWDEBUG
-        UInt32 color = ev.GetViewport()->AdjustColorForContrast (ev.GetViewport()->GetHiliteColor(), ev.GetViewport()->GetBackgroundColor());
+        uint32_t color = ev.GetViewport()->AdjustColorForContrast (ev.GetViewport()->GetHiliteColor(), ev.GetViewport()->GetBackgroundColor());
         ev.GetViewport()->SetSymbologyRgb (color, color, 1, -1);
         ev.GetViewport()->GetIViewDraw()->DrawLineString3d (2, pts, NULL);
 #endif
@@ -361,7 +361,7 @@ DgnPlatform::LocateFilterStatus Annotate::DTMHolder::LocateFilter
     DgnPlatform::LOCATE_Action  action,
     MSElementCP                 pElement,
     DgnModelRefP                modelRef,
-    UInt32                      filePosition,
+    uint32_t                      filePosition,
     DPoint3dCP                  pPoint,
     int                         viewNumber,
     HitPathCP                   hitPath,

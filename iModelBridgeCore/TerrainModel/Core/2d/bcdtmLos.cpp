@@ -4966,7 +4966,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialVisibilityDtmObject
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   *lP,scan,process,drapeFlag,numDrapePts=0 ;
  long   numLoadPts=0,memLoadPts=0,memLoadPtsInc=1000 ;
- double x,y,z,dx,dy,dz,dd,Zs,maxangle,eyeangle,lasteyeangle ;
+ double x,y,z,dx,dy,dz,dd,Zs,maxangle,eyeangle = 0.0,lasteyeangle = 0.0;
  DPoint3d    *p3dP,radialPts[2],*loadPtsP=nullptr ;
  DTM_DRAPE_POINT *drapeP,*drape1P,*drape2P,*drapePtsP=nullptr ;
 /*

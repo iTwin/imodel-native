@@ -132,9 +132,7 @@
     <EmbeddedResource Include="LandXMLImportForm.resx">
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="LocalizableStrings.resx">
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
+    <EmbeddedResource Include="LocalizableStrings.resx" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="transkit\transkit.xml" />

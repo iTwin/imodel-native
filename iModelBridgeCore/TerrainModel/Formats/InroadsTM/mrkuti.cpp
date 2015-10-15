@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* mrkuti.c                                            tmi    22-Oct-1990     */
@@ -30,10 +30,10 @@ struct CIVmrkbnd
     long nvrt;
     DPoint3d *vrtP;
     DPoint3d box[5];
-    byte vld;
-    byte del;
-    byte inside;
-    byte dntExtFtr;
+    unsigned char vld;
+    unsigned char del;
+    unsigned char inside;
+    unsigned char dntExtFtr;
 };
 
 
@@ -241,7 +241,7 @@ static int aecDTM_markBoundaryTrianglesProcessMore
 
   if ( insideBox )
   {
-    mrkP->vld = (byte)aecPolygon_isPointInside ( mrkP->nvrt, mrkP->vrtP, &pnt );
+    mrkP->vld = (unsigned char)aecPolygon_isPointInside ( mrkP->nvrt, mrkP->vrtP, &pnt );
     if ( mrkP->inside == FALSE ) mrkP->vld ^= TRUE;
 
     if ( mrkP->vld == TRUE )

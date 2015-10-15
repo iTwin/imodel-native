@@ -42,9 +42,9 @@ void DTMElementSubDisplayHandler::Register()
     s_subHandlers[GetSubHandlerId()] = this;
     }
 
-void DTMElementSubDisplayHandler::DrawSubElement (ElementHandleCR el, const ElementHandle::XAttributeIter& xAttr, ViewContextR context, const DTMFenceParams& fence, DTMSubElementContext& subElementContext)
+void DTMElementSubDisplayHandler::DrawSubElement (ElementHandleCR el, const ElementHandle::XAttributeIter& xAttr, ViewContextR context, const DTMFenceParams& fence)
     {
-    DTMElementDisplayHandler::DrawSubElement (el, xAttr, context, fence, subElementContext);
+    DTMElementDisplayHandler::DrawSubElement (el, xAttr, context, fence);
     }
 
 bool DTMElementSubDisplayHandler::_CanDraw(DTMDataRef* dtmDataRef, ViewContextCR context) const
@@ -60,7 +60,7 @@ SnapStatus DTMElementSubDisplayHandler::_OnSnap (ElementHandleCR elem, const Ele
     return context->DoDefaultDisplayableSnap (snapPathIndex);
     }
 
-void DTMElementSubDisplayHandler::_GetDescription (ElementHandleCR elem, const ElementHandle::XAttributeIter& xAttr, WString& string, UInt32 desiredLength)
+void DTMElementSubDisplayHandler::_GetDescription (ElementHandleCR elem, const ElementHandle::XAttributeIter& xAttr, WString& string, uint32_t desiredLength)
     {
     DTMElementSubHandler* subHandler = DTMElementSubHandler::FindHandler (xAttr);
     if (subHandler)
@@ -99,5 +99,54 @@ DTMElementSubDisplayHandler* DTMElementSubDisplayHandler::FindHandler (const Ele
         }
     return nullptr;
     }
+
+//=======================================================================================
+// @bsimethod                                                   Daryl.Holmwood 09/11
+//=======================================================================================
+void DTMElementSubDisplayHandler::_EditProperties (EditElementHandleR element, ElementHandle::XAttributeIter iter, DTMSubElementId const &sid, PropertyContextR context)
+    {
+    bool changed = false;
+    DTMElementSubHandler::SymbologyParams params(iter);
+    PropsCallbackFlags propsFlag = params.GetVisible() ?  PROPSCALLBACK_FLAGS_NoFlagsSet : PROPSCALLBACK_FLAGS_UndisplayedID;
+
+    if (0 != (ELEMENT_PROPERTY_Level & context.GetElementPropertiesMask ()))
+        {
+        LevelId levelId = params.GetLevelId();
+        EachLevelArg arg (levelId, propsFlag, context);
+        changed |= context.DoLevelCallback (&levelId, arg);
+        params.SetLevelId (levelId);
+        }
+
+    if (0 != (ELEMENT_PROPERTY_Color & context.GetElementPropertiesMask ()))
+        {
+        EachColorArg arg (params.GetSymbology().color, propsFlag, context);
+        changed |= context.DoColorCallback (&params.GetSymbology().color, arg);
+        }
+
+    if (0 != (ELEMENT_PROPERTY_Weight & context.GetElementPropertiesMask ()))
+        {
+        EachWeightArg arg (params.GetSymbology().weight, propsFlag, context);
+        changed |= context.DoWeightCallback (&params.GetSymbology().weight, arg);
+        }
+
+    if (0 != (ELEMENT_PROPERTY_Linestyle & context.GetElementPropertiesMask ()))
+        {
+        EachLineStyleArg arg (params.GetSymbology().style, NULL, PROPSCALLBACK_FLAGS_NoFlagsSet, context);
+        changed |= context.DoLineStyleCallback (&params.GetSymbology().style, arg);
+        }
+
+    if (0 != (ELEMENT_PROPERTY_Transparency & context.GetElementPropertiesMask ()))
+        {
+        double transparency = params.GetTransparency();
+        EachTransparencyArg arg (transparency, propsFlag, context);
+        changed |= context.DoTransparencyCallback (&transparency, arg);
+        params.SetTransparency (transparency);
+        }
+
+
+    if (changed)
+        params.UpdateElementSymbologyParams (element, sid);
+    }
+
 
 END_BENTLEY_TERRAINMODEL_ELEMENT_NAMESPACE

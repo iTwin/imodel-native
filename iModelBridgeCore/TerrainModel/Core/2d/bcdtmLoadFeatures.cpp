@@ -702,15 +702,15 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_dtmFeatureTypeOccurrencesDtmObject(BC_
  long            pnt1,pnt2,pnt3,fndType,insideFence,fenceLoad,numMask,numMarked=0 ;
  long            findType,trgPnt1,trgPnt2,trgPnt3 ;
  unsigned char   *charP,*pointMaskP=nullptr ;
- DPoint3d             *p3dP,tinPoint,edgePts[10],trgPts[5],*featurePtsP=nullptr ;
+ DPoint3d             *p3dP,tinPoint = DPoint3d::From(0,0,0),edgePts[10],trgPts[5],*featurePtsP=nullptr ;
  DTM_TIN_NODE    *nodeP,*node1P,*node2P,*node3P ;
  BC_DTM_FEATURE  *dtmFeatureP ;
  BC_DTM_OBJ      *clipDtmP=nullptr  ;
  DTM_TIN_POINT   *p1P,*p2P,*p3P,*pntP  ;
  DTM_POINT_ARRAY **clipArraysPP=nullptr ;
  DTM_CIR_LIST    *clistP ;
- DTMUserTag    hullUserTag ;
- DTMFeatureId  hullFeatureId ;
+ DTMUserTag    hullUserTag = 0;
+ DTMFeatureId  hullFeatureId = 0;
  char            dtmFeatureTypeName[50] ;
 /*
 ** Write Entry Message
@@ -2165,7 +2165,7 @@ BENTLEYDTM_EXPORT int bcdtmScanLoad_nextDtmFeatureTypeOccurrenceDtmObject
 */
 {
  int             ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0);
- long            n,p1,p2,p3,clPtr,voidFlag,clipResult;
+ long            n,p1,p2 = 0,p3,clPtr,voidFlag,clipResult;
  long            *ofsP, startTime, dtmFeatureNum, numFeaturePts;
  DTMFenceOption trgExtent;
  long            pnt1,pnt2,pnt3,fndType,insideFence,fenceLoad,numMask,numPts=0,maxPoints=10000 ;
@@ -3235,7 +3235,7 @@ BENTLEYDTM_Private int bcdtmLoad_dtmFeatureTypeOccurrencesFromLatticeObject
 {
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long    i,j,n,pnt1,pnt2,pnt3,fenceLoad,insideFence ;
- long    fndType,numLinePts,numClipArrays,clipResult ;
+ long    fndType,numLinePts,numClipArrays = 0,clipResult ;
  double  x1,y1,x2,y2,z1,z2,z3,z4 ;
  float   nullLatticeValue=(float)0.0 ;
  char    dtmFeatureTypeName[128] ;
@@ -5395,7 +5395,7 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_dtmFeatureUsertagOccurrencesDtmObject
 {
  int             ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0);
  long            pnt,pnt1,pnt2,pnt3,nextPnt,numPts,closeFlag,dtmFeature ;
- long            n,numSpots,numFeatureSpots,numFeaturePts,numClipArrays,clipResult;
+ long            n,numSpots,numFeatureSpots,numFeaturePts,numClipArrays = 0,clipResult;
  long            fndType,insideFence,fenceLoad ;
  DPoint3d             *p3dP,*featurePtsP=nullptr ;
  BC_DTM_FEATURE  *dtmFeatureP ;

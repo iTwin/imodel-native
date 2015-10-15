@@ -6,7 +6,7 @@
 |       $Date: 2012/11/29 17:30:53 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -337,7 +337,7 @@ struct IMrDTMQuery abstract: RefCountedBase
 
     protected: 
                 
-        virtual int _Query(Bentley::TerrainModel::DTMPtr&   dtmPtr, 
+        virtual int _Query(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&   dtmPtr, 
                            const DPoint3d*                  pClipShapePts, 
                            int                              nbClipShapePts, 
                            const IMrDTMQueryParametersPtr&  mrDTMQueryParamsPtr) const = 0;
@@ -366,7 +366,7 @@ struct IMrDTMQuery abstract: RefCountedBase
         
         //! Gets the number of points of the DTM.
         //! @return The number of points of the DTM..
-        BENTLEYSTM_EXPORT int Query(Bentley::TerrainModel::DTMPtr&    dtmPtr,                            
+        BENTLEYSTM_EXPORT int Query(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&    dtmPtr,                            
                                     const DPoint3d*                   pClipShapePts, 
                                     int                               nbClipShapePts, 
                                     const IMrDTMQueryParametersPtr&   mrDTMQueryParamsPtr) const;         

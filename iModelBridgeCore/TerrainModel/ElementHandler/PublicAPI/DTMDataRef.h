@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/PublicAPI/DTMDataRef.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -55,16 +55,16 @@ protected:
 public:
     protected: virtual bool _GetExtents (DRange3dR range) = 0;
 
-    protected: virtual Bentley::TerrainModel::IDTM* _GetDTMStorage (DTMDataRefPurpose purpose, ViewContextR context) = 0;
-    protected: virtual Bentley::TerrainModel::IDTM* _GetDTMStorage (DTMDataRefPurpose purpose) = 0;
-    protected: virtual StatusInt _GetDTMReferenceStorage (Bentley::TerrainModel::DTMPtr& outDtm) = 0;
+    protected: virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* _GetDTMStorage (DTMDataRefPurpose purpose, ViewContextR context) = 0;
+    protected: virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* _GetDTMStorage (DTMDataRefPurpose purpose) = 0;
+    protected: virtual StatusInt _GetDTMReferenceStorage (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& outDtm) = 0;
 
     protected: virtual double _GetLastModified()
                    {
                    return m_element.GetElementCP()->ehdr.lastModified;
                    }
-    public: Bentley::TerrainModel::IDTM* GetDTM (DTMDataRefPurpose purpose, ViewContextR context);
-    public: Bentley::TerrainModel::IDTM* GetDTM (DTMDataRefPurpose purpose);
+    public: BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* GetDTM (DTMDataRefPurpose purpose, ViewContextR context);
+    public: BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* GetDTM (DTMDataRefPurpose purpose);
 
     protected: virtual bool _IsReadOnly()
                 {
@@ -75,7 +75,7 @@ public:
                 return false;
                 }
     
-    public: DTMELEMENT_EXPORT virtual Bentley::TerrainModel::Element::IMultiResolutionGridMaterialManagerPtr _GetMultiResGridMaterialManager()
+    public: DTMELEMENT_EXPORT virtual BENTLEY_NAMESPACE_NAME::TerrainModel::Element::IMultiResolutionGridMaterialManagerPtr _GetMultiResGridMaterialManager()
                 {
                 return 0;
                 }
@@ -107,25 +107,25 @@ public:
     //! @param[in] purpose The reason for the DTM.
     //! @param[in] context The view context for which the DTM is required.
     //! @return The DTM.
-    public: DTMELEMENT_EXPORT Bentley::TerrainModel::IDTM* GetDTMStorage (DTMDataRefPurpose purpose, ViewContextR context);
+    public: DTMELEMENT_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* GetDTMStorage (DTMDataRefPurpose purpose, ViewContextR context);
 
     //! Gets the DTM for the the purpose. The DTM returned is in the original storage units
     //! @param[in] purpose The reason for the DTM.
     //! @return The DTM.
-    public: DTMELEMENT_EXPORT Bentley::TerrainModel::IDTM* GetDTMStorage (DTMDataRefPurpose purpose);
+    public: DTMELEMENT_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* GetDTMStorage (DTMDataRefPurpose purpose);
     //! Gets the the DTM in UORs.
     //! @param [out] outDTM the DTM
     //! @param [in] displayElem The Element Handle of the dtm.
-    public: DTMELEMENT_EXPORT StatusInt GetDTMReferenceDirect (Bentley::TerrainModel::DTMPtr& outDtm);
+    public: DTMELEMENT_EXPORT StatusInt GetDTMReferenceDirect (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& outDtm);
 
     //! Gets the DTM in original storage units
     //! @param [out] outDtm the DTM.
-    public: DTMELEMENT_EXPORT StatusInt GetDTMReferenceStorage (Bentley::TerrainModel::DTMPtr& outDtm);
+    public: DTMELEMENT_EXPORT StatusInt GetDTMReferenceStorage (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& outDtm);
 
     //! Gets the DTM using the current Transformation
     //! @param [out] outDtm the DTM.
     //! @param [in] displayElem The Display Element.
-    public: DTMELEMENT_EXPORT StatusInt GetDTMReference (Bentley::TerrainModel::DTMPtr& outDtm, TransformCR currTrans);
+    public: DTMELEMENT_EXPORT StatusInt GetDTMReference (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& outDtm, TransformCR currTrans);
 
 //__PUBLISH_SECTION_START__
     //! Gets the extents of the DTM.

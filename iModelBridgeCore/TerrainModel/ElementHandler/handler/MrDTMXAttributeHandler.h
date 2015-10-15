@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/MrDTMXAttributeHandler.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -44,7 +44,7 @@ public:
     int RegisterHandlers();
                   
     //Inherited from IXAttributeTransactionHandler
-    virtual void    _OnPreReplaceData (XAttributeHandleCR xAttr, void const* newData, UInt32 newSize, TransactionType type);
+    virtual void    _OnPreReplaceData (XAttributeHandleCR xAttr, void const* newData, uint32_t newSize, TransactionType type);
     };
 
 END_BENTLEY_TERRAINMODEL_ELEMENT_NAMESPACE

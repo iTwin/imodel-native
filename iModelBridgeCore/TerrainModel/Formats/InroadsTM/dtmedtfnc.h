@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmedtfnc.h                                           aec    08-Feb-1994   */
@@ -63,7 +63,7 @@ int aecDTM_addPointsCheck   /*  <= TRUE if error                   */
 
 int aecDTM_addFeature /* <= TRUE if error                  */
 (
-  GUID *guidP,                          /*<=  guid of created feature         */
+  BeSQLite::BeGuid *guidP,                          /*<=  guid of created feature         */
   struct CIVdtmsrf *srfP,               /* => surface to add feature to       */
   long opt,                             /* => DTM_C_APPEND, etc.              */
   wchar_t *name,                        /* => name of feature                 */
@@ -73,13 +73,13 @@ int aecDTM_addFeature /* <= TRUE if error                  */
   long numPnts,                         /* => # of points being added         */
   CIVdtmpnt *ftrPntsP,                  /* => list of feature points          */
   DPoint3d *pntsP,                      /* => list of point coordinates       */
-  byte *pntFlgsP,                    /* => list of point properties        */
+  unsigned char *pntFlgsP,                    /* => list of point properties        */
   double density,                       /* => density interval                */
   CIVdtmstynam *stylesP,                /* => feature's styles (or NULL)      */
   long numStyles,                       /* => # of styles                     */
   CIVdtmpaynam *payItemsP,              /* => pay items (or NULL)             */
   long numPayItems,                     /* => # of pay items                  */
-  byte flag,                          /* => feature's flags                 */
+  unsigned char flag,                          /* => feature's flags                 */
   BOOL bRemoveDuplicates = TRUE,        /* => should almost always be TRUE    */
   BOOL bCloseString = TRUE              /* => should almost always be TRUE    */
 );
@@ -186,7 +186,7 @@ int aecDTM_getPointNeighbors /* <= TRUE if error                   */
 int aecDTM_deleteFeatureByGUID /* <= TRUE if error                 */
 (
   struct CIVdtmsrf *srfP,              /*  => surface with feature (or NULL)  */
-  GUID *guidP                          /*  => guid of feature to delete       */
+  BeSQLite::BeGuid *guidP                          /*  => guid of feature to delete       */
 );
 
 int aecDTM_deleteFeature /* <= TRUE if error                         */

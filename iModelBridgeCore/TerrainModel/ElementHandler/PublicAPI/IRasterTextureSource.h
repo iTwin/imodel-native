@@ -6,7 +6,7 @@
 |       $Date: 2012/01/20 23:30:17 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__BENTLEY_INTERNAL_ONLY__*/
@@ -23,7 +23,7 @@ BEGIN_BENTLEY_TERRAINMODEL_ELEMENT_NAMESPACE
 //
 // Class Declarations
 
-typedef UInt64 SourceID;
+typedef uint64_t SourceID;
 
 /*--------------------------------------------------------------------------------------+
 |class IRasterTextureSourceCacheFile

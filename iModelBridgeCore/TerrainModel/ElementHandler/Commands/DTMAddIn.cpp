@@ -21,8 +21,8 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL_ELEMENT;
 
 void startAnnotateContoursCommand (CommandNumber cmdNumber, int cmdName) ;
 void startAnnotateSpotsCommand (CommandNumber cmdNumber, int cmdName) ;
-void StartMainAnnotateSpotsCommand (ElementHandleCR dtm, ::UInt64 cmdNumer);
-void StartMainAnnotateContoursCommand (ElementHandleCR dtm, ::UInt64 cmdNumer);
+void StartMainAnnotateSpotsCommand (ElementHandleCR dtm, uint64_t cmdNumer);
+void StartMainAnnotateContoursCommand (ElementHandleCR dtm, uint64_t cmdNumer);
 void hook_labelContoursTextHeightWidth (DialogItemMessage* dimP);
 
 void init();
@@ -327,7 +327,7 @@ class LandXMLImporter
                  mdlCurrTrans_scale (uorPerUnit, uorPerUnit, uorPerUnit);
                  mdlCurrTrans_translateOriginWorld (&ptGO);
 
-                 StatusInt status = Bentley::TerrainModel::Element::DTMElementHandlerManager::ScheduleFromDtm(el, bcDtm->GetIDTM(), true);
+                 StatusInt status = BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::ScheduleFromDtm(el, bcDtm->GetIDTM(), true);
                  mdlCurrTrans_end ();
 
                  if (status == SUCCESS)
@@ -335,7 +335,7 @@ class LandXMLImporter
                      el.AddToModel (el.GetModelRef());
 
                      pin_ptr<const wchar_t> p = PtrToStringChars (tempName);
-                     Bentley::TerrainModel::Element::DTMElementHandlerManager::SetName (el.GetElementRef(), WString(p));
+                     BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::SetName (el.GetElementRef(), WString(p));
 
                      System::Collections::Generic::Dictionary<System::String^,System::String^> ^elementTemplates = m_elementTemplates;
                      System::String ^surfName = gcnew String (surfaceName);
@@ -424,7 +424,7 @@ LandXMLImporter* LandXMLImporter::s_instance = nullptr;
 #define WIDE(txt) __WIDE(txt)
 
 /// <author>Piotr.Slowinski</author>                            <date>3/2011</date>
-void SetCurrentCommandName ( ::UInt32 msgList, ::UInt32 msgId, wchar_t const whenNotFound[], RscFileHandle rscf = 0 )
+void SetCurrentCommandName ( ::uint32_t msgList, ::uint32_t msgId, wchar_t const whenNotFound[], RscFileHandle rscf = 0 )
     {
     wchar_t cmd[1024] = WIDE("");
 
@@ -565,7 +565,7 @@ void ImportSurfaces (TerrainImporter& reader, array<LandXMLImportForm::SurfaceDa
                 trf.setTranslation (&ptGO);
                 trf.ScaleMatrixColumns (uorPerUnit, uorPerUnit, uorPerUnit);
 
-                if (Bentley::TerrainModel::Element::DTMElementHandlerManager::ScheduleFromDtm (element, nullptr, *dtm, trf, *element.GetModelRef(), true) == SUCCESS)
+                if (BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::ScheduleFromDtm (element, nullptr, *dtm, trf, *element.GetModelRef(), true) == SUCCESS)
                     {
                     Bentley::MstnPlatform::Element::ElementPropertyUtils::ApplyActiveSettings (element);
                     if (data->ElementTemplate == GET_LOCALIZED ("ITEM_None"))
@@ -587,7 +587,7 @@ void ImportSurfaces (TerrainImporter& reader, array<LandXMLImportForm::SurfaceDa
                         {
                         imported = true;
                         pin_ptr<const wchar_t> p = PtrToStringChars (data->Surface);
-                        Bentley::TerrainModel::Element::DTMElementHandlerManager::SetName (element.GetElementRef(), p);
+                        BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::SetName (element.GetElementRef(), p);
                         }
                     }
                 }
@@ -743,7 +743,7 @@ void AddIn::ImportDTM (WCharCP unparsed)
 
 END_BENTLEY_TERRAINMODEL_COMMANDS_NAMESPACE
 
-namespace BDC = Bentley::TerrainModel::Commands;
+namespace BDC = BENTLEY_NAMESPACE_NAME::TerrainModel::Commands;
 
 /// <author>Piotr.Slowinski</author>                            <date>04/2011</date>
 void ImportCMD (WCharCP unparsed)
@@ -789,9 +789,6 @@ void PrepareLandXMLCfg (WCharCP unparsed)
         return;
 
     TerrainImporterPtr reader = TerrainImporter::CreateImporter (unparsed);
-
-    if (reader.IsNull ())
-        return;
 
     const TerrainInfoList& surfaces = reader->GetTerrains ();
 

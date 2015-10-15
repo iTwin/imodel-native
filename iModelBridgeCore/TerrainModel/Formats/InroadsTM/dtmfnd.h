@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmfnd.h                                            aec    08-Feb-1994     */
@@ -28,7 +28,7 @@ typedef struct CIVlinsrf
 {
     struct AECjoin *seg;
     DPoint3d *p;
-    byte *flg;
+    unsigned char *flg;
     long ndat;
     unsigned long nalc;
 } CIVlinsrf;

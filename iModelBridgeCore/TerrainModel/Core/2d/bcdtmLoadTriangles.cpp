@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmLoadTriangles.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -473,7 +473,7 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_trianglesDtmObject
 * @see None
 *===============================================================================*/
 
-typedef int ( __stdcall *CSharpDtmGenericCallBack)(DTMFeatureType dtmFeatureType,Int64 dtmUserTag , Int64 dtmFeatureId, DPoint3d *featurePtsP , long numFeaturePts,void* userP ) ;
+typedef int ( __stdcall *CSharpDtmGenericCallBack)(DTMFeatureType dtmFeatureType,int64_t dtmUserTag , int64_t dtmFeatureId, DPoint3d *featurePtsP , long numFeaturePts,void* userP ) ;
 typedef int (__stdcall *CSharpDtmTinMeshCallBack)(DTMFeatureType dtmFeatureType, long numTriangles, long numMeshPts, DPoint3d *MeshPtsP, long numMeshFaces, long *meshFacesP, void* userP);
 
 BENTLEYDTM_EXPORT int bcdtmInterruptLoadCSharp_trianglesDtmObject
@@ -582,7 +582,7 @@ BENTLEYDTM_Public int bcdtmInterruptLoadCSharp_trianglesDtmObject
 */
 {
  int             ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
- long            p1,p2,p3,clPtr,voidFlag,numTriangles,loadFence=FALSE;
+ long            p1,p2,p3,clPtr,voidFlag,numTriangles = 0,loadFence=FALSE;
  long            voidsInDtm=FALSE,startPnt,lastPnt,startTime,loadTime,leftMostPnt ;
  DPoint3d             trgPts[4] ;
  DTM_TIN_NODE    *nodeP,*node1P,*node2P,*node3P ;
@@ -1262,7 +1262,7 @@ BENTLEYDTM_Private int bcdtmLoad_markIntersectingTinLinePointsDtmObject
 )
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   p1,p2,p3,np1,np2,np3,fndType,drapeType,processDrape ;
+ long   p1,p2,p3,np1,np2,np3,fndType,drapeType = 0,processDrape ;
  double xls,yls,zls,xle,yle,xi,yi,zi ;
 /*
 **    Write Entry Message
@@ -1705,7 +1705,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_triangleMeshFromDtmObject
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
  long  pnt1,pnt2,pnt3,clPtr,numTriangles,voidTriangle,voidsInDtm ;
- long  node,startPnt,lastPnt,numTrianglesLoaded,startTime ;
+ long  node,startPnt = 0,lastPnt = 0,numTrianglesLoaded = 0,startTime = 0;
  long  fndType,tinPnt1,tinPnt2,tinPnt3,numMeshPts,minTptrPnt,maxTptrPnt ;
  long  *faceP,*meshFacesP=NULL ;
  DPoint3d   *p3dP,*meshPtsP=NULL ;
@@ -2152,7 +2152,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoadCSharp_triangleMeshFromDtmObject
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
  long  pnt1,pnt2,pnt3,clPtr,numTriangles,voidTriangle,voidsInDtm ;
- long  node,startPnt,lastPnt,numTrianglesLoaded,startTime ;
+ long  node,startPnt = 0,lastPnt = 0,numTrianglesLoaded = 0,startTime = 0;
  long  fndType,tinPnt1,tinPnt2,tinPnt3,numMeshPts,minTptrPnt,maxTptrPnt ;
  long  *faceP,*meshFacesP=NULL ;
  DPoint3d   *p3dP,*meshPtsP=NULL ;
@@ -2597,7 +2597,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_triangleShadeMeshFromDtmObjectOld
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
  long  pnt1,pnt2,pnt3,clPtr,numTriangles,voidTriangle,voidsInDtm ;
- long  node,startPnt,lastPnt,numTrianglesLoaded,startTime ;
+ long  node,startPnt = 0,lastPnt = 0,numTrianglesLoaded = 0,startTime = 0;
  long  fndType,tinPnt1,tinPnt2,tinPnt3,numMeshPts,minTptrPnt,maxTptrPnt ;
  long  *faceP,*meshFacesP=NULL ;
  DPoint3d   *p3dP,*vectP,*meshPtsP=NULL,normalVector,*meshVectorsP=NULL ;
@@ -3142,10 +3142,10 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_triangleShadeMeshFromDtmObject
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
  long  pnt1,pnt2,pnt3,clPtr,numTriangles,voidTriangle,voidsInDtm ;
- long  node,startPnt,lastPnt,numTrianglesLoaded,startTime ;
+ long  node,startPnt = 0,lastPnt = 0,numTrianglesLoaded = 0,startTime = 0;
  long  fndType,tinPnt1,tinPnt2,tinPnt3,numMeshPts,minTptrPnt,maxTptrPnt ;
  long  *faceP,*meshFacesP=NULL ;
- long  pointMark,pointMarkOffset=0,leftMostPnt,numMarked=0 ;
+ long  pointMark = 0,pointMarkOffset=0,leftMostPnt,numMarked=0 ;
  DPoint3d   *p3dP,*vectP,*meshPtsP=NULL,normalVector,*meshVectorsP=NULL ;
  long meshVectorsSize = 0, meshPtsSize = 0;
  double dz ;
@@ -3753,7 +3753,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_triangleShadeMeshForQVCacheFromDtmObjec
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
  long  pnt1,pnt2,pnt3,clPtr,numTriangles,voidTriangle,voidsInDtm ;
- long  node,startPnt,lastPnt,numTrianglesLoaded,startTime ;
+ long  node,startPnt = 0,lastPnt = 0,numTrianglesLoaded = 0,startTime = 0;
  long  numMeshPts,minTptrPnt,maxTptrPnt ;
  long  *faceP,*meshFacesP=NULL ;
  DPoint3d   *p3dP,*vectP,*meshPtsP=NULL,normalVector,*meshVectorsP=NULL ;
@@ -4453,7 +4453,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_triangleHillShadeMeshFromDtmObject
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
  long  p1,p2,p3,pnt1,pnt2,pnt3,clPtr,numTriangles,voidTriangle,voidsInDtm ;
- long  node,startPnt,lastPnt,numTrianglesLoaded,startTime ;
+ long  node,startPnt = 0,lastPnt = 0,numTrianglesLoaded = 0,startTime = 0;
  long  fndType,tinPnt1,tinPnt2,tinPnt3,numMeshPts,minTptrPnt,maxTptrPnt ;
  long  *faceP,*meshFacesP=NULL ;
  long  *reflP,*meshReflectanceP=NULL;
@@ -4990,7 +4990,9 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_triangleHillShadeMeshFromDtmObject
 static inline void bcdtmRange_addPointToRange (BC_DTM_OBJ *dtmP, long p, DRange3d& range)
     {
     DTM_TIN_POINT* pt = pointAddrP (dtmP, p);
-    range.extend ( pt);
+    DPoint3d other;
+    other.x = pt->x; other.y = pt->y; other.z = pt->z;
+    range.Extend ( other);
     }
 
 /*-------------------------------------------------------------------+
@@ -5011,7 +5013,7 @@ BENTLEYDTM_EXPORT int bcdtmRange_triangleShadeMeshForQVCacheFromDtmObject
 {
  int   ret=DTM_SUCCESS,dbg=0,tdbg=0 ;
  long  pnt1,pnt2,pnt3,clPtr,numTriangles;
- long  node,startPnt,lastPnt,numTrianglesLoaded,startTime ;
+ long  node,startPnt = 0,lastPnt = 0,numTrianglesLoaded = 0,startTime = 0;
  long minTptrPnt,maxTptrPnt ;
  BC_DTM_OBJ    *clipDtmP=NULL ;
  DTM_CIR_LIST  *clistP ;
@@ -5039,7 +5041,7 @@ BENTLEYDTM_EXPORT int bcdtmRange_triangleShadeMeshForQVCacheFromDtmObject
  lastPnt  = dtmP->numPoints - 1 ;
  numTriangles = 0 ;
  numTrianglesLoaded = 0 ;
- range.init();
+ range.Init();
 /*
 ** Validate Fence
 */

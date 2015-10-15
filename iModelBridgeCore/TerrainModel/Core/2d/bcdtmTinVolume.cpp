@@ -1633,7 +1633,7 @@ BENTLEYDTM_EXPORT int bcdtmTinVolume_surfaceToSurfaceDtmObjects
 {
  int             ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0),tdbg=DTM_TIME_VALUE(0) ; 
  long            intersectFlag,saveTol=FALSE ;
- double          sppTol,splTol ;
+ double          sppTol = 0.0,splTol = 0.0;
  DPoint3d        *p3dP ;
  DTM_POLYGON_OBJ *polyP=NULL ;
  VOLRANGETAB     *vrtP ;

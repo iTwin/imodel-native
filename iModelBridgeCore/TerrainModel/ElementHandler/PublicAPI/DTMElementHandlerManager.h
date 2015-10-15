@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/PublicAPI/DTMElementHandlerManager.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -25,6 +25,10 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 //=======================================================================================
 // @bsistruct                                            Daryl.Holmwood     08/2011
 //=======================================================================================
+struct DTMElm : public ExtendedElm
+    {
+    double dtmLastModified;
+    };
 
 /*__PUBLISH_SECTION_END__*/
 class DTMElementIterator
@@ -62,12 +66,8 @@ This is the handler to manage DTMElement creation and retrieval
 class DTMElementHandlerManager
     {
 /*__PUBLISH_CLASS_VIRTUAL__*/
-    public:
-        struct IDTMIsFriendModelExtension
-            {
-            virtual bool IsFriendModel (ElementHandleCR element, DgnModelRefP modelRef) = 0;
-            };
 /*__PUBLISH_SECTION_END__*/
+    public:
         struct IDTMElementPowerPlatformExtension
             {
             virtual DgnPlatform::DgnTextStylePtr GetActiveStyle (DgnFileR file) = 0;
@@ -76,19 +76,15 @@ class DTMElementHandlerManager
     private:
     static int s_mrDTMactivationRefCount;
     static IDTMElementPowerPlatformExtension* s_DTMElementPowerPlatformExtension;
-    static IDTMIsFriendModelExtension*        s_DTMIsFriendModel;
+
     static IMultiResolutionGridManagerCreatorPtr s_multiResolutionGridManagerCreator;
     static IRasterTextureSourceManager*          s_rasterTextureSourceManagerP;
     static bool                                  s_isDrawForAnimation;
-    static bool                                  s_isInitializedDgnPlatform;
-    static bool                                  s_isInitializedDgnDisplay;
     
     DTMElementHandlerManager() {}
 
 public:
-    DTMELEMENT_EXPORT static void InitializeDgnPlatform ();
-    DTMELEMENT_EXPORT static void InitializeDgnDisplay ();
-    DTMELEMENT_EXPORT static void SetPowerPlatformExtension (DTMElementHandlerManager::IDTMElementPowerPlatformExtension* value);
+    DTMELEMENT_EXPORT static void Initialize (IDTMElementPowerPlatformExtension* value);
 
     DTMELEMENT_EXPORT static IDTMElementPowerPlatformExtension* GetDTMElementPowerPlatformExtension ()
         {
@@ -110,16 +106,8 @@ public:
                 return s_rasterTextureSourceManagerP;
                 }
    
-    static bool IsFriendModel (ElementHandleCR element, DgnModelRefP modelRef)
-        {
-        if (s_DTMIsFriendModel != nullptr)
-            return s_DTMIsFriendModel->IsFriendModel (element, modelRef);
-        return false;
-        }
-
+     
 /*__PUBLISH_SECTION_START__*/
-    DTMELEMENT_EXPORT static void SetIsFriendModelExtension (IDTMIsFriendModelExtension* value);
-
     //! Test if the ElementHandle is a DTMElement
     //! @param[in] element the Element Handle to test
     //! @return if the DTM is an Element
@@ -135,6 +123,7 @@ public:
     public: DTMELEMENT_EXPORT static void ActivateMrDTM();
     public: DTMELEMENT_EXPORT static void DeactivateMrDTM();    
     public: DTMELEMENT_EXPORT static StatusInt ConvertMrDTMtoSingleResDTM(EditElementHandleR outputEh, EditElementHandleCR inputEh, long maxNbPointsInDTM, DgnModelRefP modelRef);    
+
 
     public: DTMELEMENT_EXPORT static void SetMultiResolutionGridManagerCreator(IMultiResolutionGridManagerCreatorPtr multiResolutionGridManagerCreator);   
 

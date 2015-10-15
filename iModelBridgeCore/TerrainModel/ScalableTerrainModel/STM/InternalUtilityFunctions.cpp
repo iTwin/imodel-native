@@ -6,7 +6,7 @@
 |       $Date: 2012/08/20 16:31:58 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1176,7 +1176,7 @@ HFCPtr<HVE2DShape> ReprojectShapeDomainLimited(Bentley::GeoCoordinates::BaseGCSP
 | single simple shape. If a void shape (HVE2DVoidShape) is provided it will work but
 | of course add nothing.
 +----------------------------------------------------------------------------*/ 
-int AddIslandToDTM(Bentley::TerrainModel::DTMPtr&              dtmPtr, 
+int AddIslandToDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&              dtmPtr, 
                    const HVE2DShape&    island)
     {
     assert((dtmPtr != 0) && (dtmPtr->GetBcDTM() != 0) && (dtmPtr->GetBcDTM()->GetTinHandle()));
@@ -1264,7 +1264,7 @@ int AddIslandToDTM(Bentley::TerrainModel::DTMPtr&              dtmPtr,
 | The AddHoles is usually called by the utility method AddShapeToDTM() to add a 
 | list of holes. 
 +----------------------------------------------------------------------------*/ 
-int AddHolesToDTM(Bentley::TerrainModel::DTMPtr&                     dtmPtr, 
+int AddHolesToDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&                     dtmPtr, 
                   const HVE2DShape::HoleList& holeList)
     {
     assert((dtmPtr != 0) && (dtmPtr->GetBcDTM() != 0) && (dtmPtr->GetBcDTM()->GetTinHandle()));
@@ -1356,7 +1356,7 @@ int AddHolesToDTM(Bentley::TerrainModel::DTMPtr&                     dtmPtr,
 | which cannot be supported (and needs not be supported as it represents no
 | shape clipping at all).
 +----------------------------------------------------------------------------*/ 
-int AddClipToDTM (Bentley::TerrainModel::DTMPtr&           dtmPtr,
+int AddClipToDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&           dtmPtr,
                   const HVE2DShape& shape)
     {
     StatusInt status = SUCCESS;
@@ -1409,7 +1409,7 @@ int AddClipToDTM (Bentley::TerrainModel::DTMPtr&           dtmPtr,
     static bool s_intersectWithConvexHull = true;
 #endif
 
-int SetClipToDTM(Bentley::TerrainModel::DTMPtr&              dtmPtr,
+int SetClipToDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&              dtmPtr,
                  const DRange3d&      spatialIndexRange,
                  const HVE2DShape&    shape)
     {

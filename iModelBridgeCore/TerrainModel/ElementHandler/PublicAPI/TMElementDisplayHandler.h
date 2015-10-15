@@ -29,13 +29,6 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 struct DTMDrawingInfo;
 struct DTMDataRef;
 
-struct DTMSubElementContext
-    {
-    DTMDrawingInfo* drawingInfo;
-
-    DTMELEMENT_EXPORT DTMSubElementContext ();
-    DTMELEMENT_EXPORT ~DTMSubElementContext ();
-    };
 
 //=======================================================================================
 // @bsiclass                                            Daryl.Holmwood     04/2010
@@ -85,6 +78,8 @@ struct DTMElementDisplayHandler : public DTMElementHandler,
     DTMELEMENT_EXPORT virtual StatusInt _OnFenceClip (ElementAgendaP inside, ElementAgendaP outside, ElementHandleCR element, FenceParamsP fp, FenceClipFlags options) override;
     DTMELEMENT_EXPORT virtual StatusInt _FenceClip (ElementAgendaP inside, ElementAgendaP outside, ElementHandleCR eh, FenceParamsP fp, FenceClipFlags options) override;
 
+    DTMELEMENT_EXPORT virtual void _EditProperties (EditElementHandleR eeh, PropertyContextR context) override;
+
     DTMELEMENT_EXPORT virtual StatusInt _OnTransform (EditElementHandleR element, TransformInfo const& transform) override;
     DTMELEMENT_EXPORT virtual bool _IsTransformGraphics (ElementHandleCR element, TransformInfoCR tInfo) override;
     DTMELEMENT_EXPORT virtual StatusInt _OnPreprocessCopy (EditElementHandleR element, ElementCopyContextP copyContext) override;
@@ -99,7 +94,7 @@ struct DTMElementDisplayHandler : public DTMElementHandler,
     DTMELEMENT_EXPORT virtual void _OnHistoryRestore (ElementHandleP after, ElementHandleP before, ChangeTrackAction actionStep, BentleyDgnHistoryElementChangeType effectiveChange) override;
 
     DTMELEMENT_EXPORT virtual BentleyStatus _ValidateElementRange (EditElementHandleR element, bool setZ) override;
-    DTMELEMENT_EXPORT virtual void _GetDescription (ElementHandleCR element, WString& string, UInt32 desiredLength) override;
+    DTMELEMENT_EXPORT virtual void _GetDescription (ElementHandleCR element, WString& string, uint32_t desiredLength) override;
 
     DTMELEMENT_EXPORT virtual StatusInt _OnDecorate (ElementHandleCR, ViewContextP) override { return 1; }
     DTMELEMENT_EXPORT virtual IAnnotationHandlerP _GetIAnnotationHandler (ElementHandleCR el) override;
@@ -113,10 +108,10 @@ struct DTMElementDisplayHandler : public DTMElementHandler,
 public:
     // ToDo DGNPLAT    virtual void _ModifyingSubElement (EditElementHandleR element, const DTMSubElementId & xAttrId, const DTMElementSubHandler::SymbologyParams& params) const override;
     DTMELEMENT_EXPORT static bool HasHighlight(ElementRefP element);
-    DTMELEMENT_EXPORT static void SetHighlight(ElementRefP element, UInt32 id, ElementHiliteState hiliteState);
-    DTMELEMENT_EXPORT static ElementHiliteState GetHighlight(ElementRefP element, UInt32 id);
+    DTMELEMENT_EXPORT static void SetHighlight(ElementRefP element, uint32_t id, ElementHiliteState hiliteState);
+    DTMELEMENT_EXPORT static ElementHiliteState GetHighlight(ElementRefP element, uint32_t id);
 
-    DTMELEMENT_EXPORT static void DrawSubElement (ElementHandleCR element, const ElementHandle::XAttributeIter& xAttr, ViewContextR context, const Bentley::TerrainModel::DTMFenceParams& fence, DTMSubElementContext& drawContext);
+    DTMELEMENT_EXPORT static void DrawSubElement (ElementHandleCR element, const ElementHandle::XAttributeIter& xAttr, ViewContextR context, const BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams& fence);
 
     public: DTMELEMENT_EXPORT bool IsDrawForAnimation();
 
@@ -191,7 +186,7 @@ class MrDTMElementDisplayHandler : public DTMElementDisplayHandler
 
     public :
 
-        DTMELEMENT_EXPORT virtual void _GetTypeName (WStringR string, UInt32 desiredLength) override;
+        DTMELEMENT_EXPORT virtual void _GetTypeName (WStringR string, uint32_t desiredLength) override;
 
         DTMELEMENT_EXPORT static ElementHandlerId GetElemHandlerId ();
         

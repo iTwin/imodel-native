@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMRasterDrapingDisplayHandler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <stdafx.h>
@@ -46,6 +46,32 @@ bool DTMElementRasterDrapingDisplayHandler::_Draw (ElementHandleCR el, const Ele
         return __super::_Draw(el, xAttr, drawingInfo, context);
         }
     return false;
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Daryl.Holmwood 09/11
+//=======================================================================================
+void DTMElementRasterDrapingDisplayHandler::_EditProperties (EditElementHandleR element, ElementHandle::XAttributeIter xAttr, DTMSubElementId const &sid, PropertyContextR context)
+    {
+    T_Super::_EditProperties (element, xAttr, sid, context);
+
+    DTMElementRasterDrapingHandler::DisplayParams displayParams (element, sid);
+    PropsCallbackFlags propsFlag = displayParams.GetVisible() ?  PROPSCALLBACK_FLAGS_NoFlagsSet : PROPSCALLBACK_FLAGS_UndisplayedID;
+    bool changed = false;
+
+    if (0 != (ELEMENT_PROPERTY_Material & context.GetElementPropertiesMask ()))
+        {
+        MaterialId materialId (displayParams.GetMaterialElementID());
+        EachMaterialArg arg (materialId, propsFlag, context);
+        if (context.DoMaterialCallback (&materialId, arg))
+            {
+            changed = true;
+            displayParams.SetMaterialElementID (materialId.GetElementId ());
+            }
+        }
+
+    if (changed)
+        displayParams.SetElement (element, sid);
     }
 
 

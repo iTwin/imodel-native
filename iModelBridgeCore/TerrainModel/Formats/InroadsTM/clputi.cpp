@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* clputi.c                                           tmi    28-Feb-1994      */
@@ -121,7 +121,7 @@ struct AECclip *aecClip_create /* <= NULL if error                 */
     if( r )
     {
       r->prvPar = r->noPar;
-      r->noPar = (byte) dontAllowParallelSides;
+      r->noPar = (unsigned char) dontAllowParallelSides;
     }
 
     freply ( p );
@@ -937,7 +937,7 @@ static struct AECclip *newpln
 {
   struct AECclip *p = (struct AECclip *) malloc (sizeof (struct AECclip));
   p->nst = p->nxt = 0;
-  p->noPar = p->prvPar = (byte)0;
+  p->noPar = p->prvPar = (unsigned char)0;
   return ( p );
 }
 

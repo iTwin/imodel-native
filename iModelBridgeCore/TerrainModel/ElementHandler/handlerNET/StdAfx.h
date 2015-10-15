@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handlerNET/StdAfx.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -25,9 +25,9 @@ using namespace std;
 #include <DgnPlatform\TerrainModel\TMElementHandler.h>
 #include <DgnPlatform\TerrainModel\TMElementSubHandler.h>
 #include <DgnPlatform\TerrainModel\TMPersistentAppIDs.h>
-#include <DgnPlatform\TerrainModel\TMReferenceXAttributeHandler.h>
+#include <TerrainModel\ElementHandler\DTMReferenceXAttributeHandler.h>
 #include <TerrainModel\ElementHandler\DTMElementHandlerManager.h>
-#include <DgnPlatform\TerrainModel\TMSymbologyOverrideManager.h>
+#include <TerrainModel\ElementHandler\DTMSymbologyOverrideManager.h>
 #include <TerrainModel\ElementHandler\TMElementDisplayHandler.h>
 #include <TerrainModel\Core\bcDTMClass.h>
 

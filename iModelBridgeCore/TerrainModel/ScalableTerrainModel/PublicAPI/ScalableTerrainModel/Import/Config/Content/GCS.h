@@ -6,7 +6,7 @@
 |       $Date: 2011/11/22 21:58:01 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -72,7 +72,7 @@ private:
         };
 
     GCS                                 m_gcs;
-    UInt32                              m_flags;
+    uint32_t                              m_flags;
     void*                               m_implP; // Reserve some space for further use
 
 
@@ -104,7 +104,7 @@ struct GCSLocalAdjustmentConfig : public ContentConfigComponentMixinBase<GCSLoca
     {
 private:
     LocalTransform                      m_transform;
-    UInt32                              m_flags;
+    uint32_t                              m_flags;
 
     void*                               m_implP; // Reserve some space for further use
 

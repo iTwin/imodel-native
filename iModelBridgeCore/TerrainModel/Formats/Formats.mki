@@ -16,6 +16,9 @@ OPTIMIZE_FOR_SPEED=1
 MultiCompileIntermediatePdbFile=$(terrainModelFormatsObj)$(CCompPDBName).pdb
 IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
 
+dirToSearch     = $(BuildContextPublicApiDir)
+%include cincapnd.mki
+
 dirToSearch     = $(baseDir)PublicAPI
 %include cincapnd.mki
 

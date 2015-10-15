@@ -2,7 +2,7 @@
 |
 |     $Source: FormatsNET/TerrainExporter.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,22 +11,22 @@
 
 BEGIN_BENTLEY_TERRAINMODELNET_FORMATS_NAMESPACE
 
-struct UnmanagedExportCallback : Bentley::TerrainModel::TerrainExporter::IFeatureInfoCallback
+struct UnmanagedExportCallback : BENTLEY_NAMESPACE_NAME::TerrainModel::TerrainExporter::IFeatureInfoCallback
     {
-    private: gcroot<Bentley::TerrainModelNET::Formats::IFeatureInfoCallback^> m_callback;
+    private: gcroot<BENTLEY_NAMESPACE_NAME::TerrainModelNET::Formats::IFeatureInfoCallback^> m_callback;
 
-    public: UnmanagedExportCallback (gcroot<Bentley::TerrainModelNET::Formats::IFeatureInfoCallback^> callback) : m_callback (callback)
+    public: UnmanagedExportCallback (gcroot<BENTLEY_NAMESPACE_NAME::TerrainModelNET::Formats::IFeatureInfoCallback^> callback) : m_callback (callback)
         {
         }
 
-    public: void SetCallback (gcroot<Bentley::TerrainModelNET::Formats::IFeatureInfoCallback^> callback)
+    public: void SetCallback (gcroot<BENTLEY_NAMESPACE_NAME::TerrainModelNET::Formats::IFeatureInfoCallback^> callback)
         {
         m_callback = callback;
         }
 
-    public: virtual void StartTerrain (Bentley::TerrainModel::TerrainExporter::NamedDTM const & dtm)
+    public: virtual void StartTerrain (BENTLEY_NAMESPACE_NAME::TerrainModel::TerrainExporter::NamedDTM const & dtm)
                 {
-//                Bentley::TerrainModelNET::DTM^ managedDTM = dtm ? Bentley::TerrainModelNET::DTM::FromHandle ((System::IntPtr)dtm) : nullptr;
+//                BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM^ managedDTM = dtm ? BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM::FromHandle ((System::IntPtr)dtm) : nullptr;
                 m_callback->StartTerrain (gcnew NamedTerrain (nullptr, gcnew System::String (dtm.GetName ()), gcnew System::String (dtm.GetDescription ())));
                 }
     public: virtual bool GetFeatureInfo (WStringR name, WStringR desc, WStringR featureStyle, ::DTMFeatureType type, ::DTMFeatureId id, ::DTMUserTag userTag)
@@ -84,14 +84,14 @@ System::String^ TerrainExporter::FileUnitString::get()
     return gcnew System::String (m_unmanaged->m_exporter->GetFileUnitString());
     }
 
-Bentley::TerrainModelNET::Formats::FileUnit TerrainExporter::FileUnit::get ()
+BENTLEY_NAMESPACE_NAME::TerrainModelNET::Formats::FileUnit TerrainExporter::FileUnit::get ()
     {
-    return (Bentley::TerrainModelNET::Formats::FileUnit)m_unmanaged->m_exporter->GetFileUnit ();
+    return (BENTLEY_NAMESPACE_NAME::TerrainModelNET::Formats::FileUnit)m_unmanaged->m_exporter->GetFileUnit ();
     }
 
-void TerrainExporter::FileUnit::set (Bentley::TerrainModelNET::Formats::FileUnit value)
+void TerrainExporter::FileUnit::set (BENTLEY_NAMESPACE_NAME::TerrainModelNET::Formats::FileUnit value)
     {
-    m_unmanaged->m_exporter->SetFileUnit ((Bentley::TerrainModel::FileUnit)value);
+    m_unmanaged->m_exporter->SetFileUnit ((BENTLEY_NAMESPACE_NAME::TerrainModel::FileUnit)value);
     }
 
 IFeatureInfoCallback^ TerrainExporter::Callback::get ()

@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 #pragma once
 
@@ -33,7 +33,7 @@ struct FeatureListItem
     wchar_t style[DTM_C_NAMSIZ];
     wchar_t desc[DTM_C_NAMSIZ];
     struct CIVdtmsrf *srfP;
-    GUID  guid;
+    BeSQLite::BeGuid  guid;
     BOOL bStyleExists;
     BOOL bPassFilter;
 };
@@ -80,7 +80,7 @@ int aecFeature_addPoints
     FeatureHandle ftrHndl,
     CFeaturePnt *ftrPntsP,
     DPoint3d *pntsP,
-    byte *flgsP,
+    unsigned char *flgsP,
     long numPnts
 );
 
@@ -94,7 +94,7 @@ int aecFeature_getPoints
     FeatureHandle ftrHndl,
     CFeaturePnt **ftrPntsPP,
     DPoint3d **pntsPP,
-    byte **pntFlgsPP,
+    unsigned char **pntFlgsPP,
     long *numPntsP
 );
 
@@ -109,14 +109,14 @@ int aecFeature_dpnt3dsToFtrpnts
 (
     CFeaturePnt **ftrPntsPP,
     DPoint3d *dpnt3dsP,
-    byte *pntflgsP,
+    unsigned char *pntflgsP,
     long numPnts
 );
 
 int aecFeature_ftrpntsToDpnt3ds
 (
     DPoint3d **dpnt3dsPP,
-    byte **pntflgsPP,
+    unsigned char **pntflgsPP,
     CFeaturePnt *ftrPntsP,
     long numPnts
 );

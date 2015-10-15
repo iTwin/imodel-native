@@ -2,7 +2,7 @@
 |
 |     $Source: FormatsNET/ImagePP.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -14,7 +14,7 @@ BEGIN_BENTLEY_TERRAINMODELNET_FORMATS_NAMESPACE
 
 struct _ImagePPConverter_Unmanaged
     {
-    Bentley::TerrainModel::ImagePPConverterPtr m_converter;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::ImagePPConverterPtr m_converter;
     };
 
 public ref class ImagePPConverter
@@ -25,10 +25,10 @@ public ref class ImagePPConverter
     public: !ImagePPConverter ();
     public: ~ImagePPConverter ();
     public: static ImagePPConverter^ Create (System::String^ filename);
-    public: Bentley::TerrainModelNET::DTM^ ImportAndTriangulateImage (double imageScaleFactor, System::String^ projectionKey, double unitConversionFactor, double elevationScaleFactor);
-    public: property UInt64 Width { UInt64 get (); }
-    public: property UInt64 Height { UInt64 get (); }
-    public: property UInt64 NumberOfPixels { UInt64 get (); }
+    public: BENTLEY_NAMESPACE_NAME::TerrainModelNET::DTM^ ImportAndTriangulateImage (double imageScaleFactor, System::String^ projectionKey, double unitConversionFactor, double elevationScaleFactor);
+    public: property uint64_t Width { uint64_t get (); }
+    public: property uint64_t Height { uint64_t get (); }
+    public: property uint64_t NumberOfPixels { uint64_t get (); }
 
     public: property Bentley::GeoCoordinatesNET::BaseGCS^ GCS
         {

@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* portable.h                                                                 */
@@ -102,12 +102,12 @@
 // MicroStation Header Files
 //-------------------------------------------------------------------
 
-#include <Bentley\Bentley.h>
-#include <Bentley\stg\guid.h>
+#include <Bentley/Bentley.h>
 #include <Geom/GeomApi.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/DateTime.h>
 #include <Bentley/BeFilename.h>
+#include <BeSQLite/BeSQLite.h>
 //#include <DgnPlatform\DgnPlatformAPI.h>
 //#include <Mstn\MstnPlatformAPI.h>
 //
@@ -118,7 +118,7 @@
 //#include <Mstn\MdlApi\msunits.fdf>
 //#include <Mstn\MdlApi\mssheetdef.fdf>
 
-using namespace Bentley;
+using namespace BENTLEY_NAMESPACE_NAME;
 //using namespace Bentley::DgnPlatform;
 
 //-------------------------------------------------------------------
@@ -296,6 +296,11 @@ template <class A> class CArray : public bvector<A>
 class CPtrArray :public CArray<void*>
     { };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      06/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BeGetUserName (WStringR s);
+
 #define _tcscpy wcscpy
 //#define _mbsncmp(a,b,c) strncmp((char*)a, (char*)b, b)
 //#define _mbsncpy(a,b,c) strncpy((char*)a, (char*)b, b)
@@ -311,7 +316,7 @@ inline void GetUserNameW (WCharP l, unsigned long* size)
     }
 inline void GetLocalTime (SYSTEMTIME* pSystemTime)
     {
-    Int64 now = BeTimeUtilities::GetCurrentTimeAsUnixMillis ();
+    int64_t now = BeTimeUtilities::GetCurrentTimeAsUnixMillis ();
     tm nowTM;
     BeTimeUtilities::ConvertUnixMillisToLocalTime (nowTM, now);
     pSystemTime->wYear = (WORD)(nowTM.tm_year + 1900);
@@ -333,9 +338,20 @@ inline void GetTimeFormatW (LCID lcid, DWORD l, const SYSTEMTIME* t, void*, WCha
     tm.tm_hour = t->wHour;
     tm.tm_min = t->wMinute;
     tm.tm_sec = t->wSecond;
-    WString timeString;
-    BeTimeUtilities::UnixMillisToString (&timeString, nullptr, BeTimeUtilities::ConvertTmToUnixMillisDouble (tm));
-    BeStringUtilities::Wcsncpy (cTime, size, timeString.GetWCharCP ());
+
+    time_t tt = (time_t)(BeTimeUtilities::ConvertTmToUnixMillisDouble (tm) / 1000.0);
+
+    struct tm timeinfo;
+#ifdef _WIN32
+    localtime_s (&timeinfo, &tt);
+#else
+    localtime_r (&t, &timeinfo);
+#endif
+
+    char buf[128];
+    strftime (buf, sizeof (buf), "%H:%M:%S", &timeinfo);
+    WString str; str.AssignA (buf);
+    BeStringUtilities::Wcsncpy (cTime, size, str.c_str());
     }
 
 inline void GetDateFormatW (LCID lcid, DWORD l, const SYSTEMTIME* t, void*, WCharP cDate, int size)
@@ -348,9 +364,20 @@ inline void GetDateFormatW (LCID lcid, DWORD l, const SYSTEMTIME* t, void*, WCha
     tm.tm_hour = t->wHour;
     tm.tm_min = t->wMinute;
     tm.tm_sec = t->wSecond;
-    WString dateString;
-    BeTimeUtilities::UnixMillisToString (nullptr, &dateString, BeTimeUtilities::ConvertTmToUnixMillisDouble (tm));
-    BeStringUtilities::Wcsncpy (cDate, size, dateString.GetWCharCP ());
+
+    time_t tt = (time_t)(BeTimeUtilities::ConvertTmToUnixMillisDouble (tm) / 1000.0);
+
+    struct tm timeinfo;
+#ifdef _WIN32
+    localtime_s (&timeinfo, &tt);
+#else
+    localtime_r (&t, &timeinfo);
+#endif
+
+    char buf[128];
+    strftime (buf, sizeof (buf), "%Y/%m/%d", &timeinfo);
+    WString str; str.AssignA (buf);
+    BeStringUtilities::Wcsncpy (cDate, size, str.c_str ());
     }
 
 #define FILE_ATTRIBUTE_READONLY 0
@@ -383,3 +410,5 @@ inline double mdlVec_distance (DPoint3d* v1, DPoint3d* v2)
     {
     return v1->Distance (*v2);
     }
+
+typedef BENTLEY_NAMESPACE_NAME::BeSQLite::BeGuid BeGuid;

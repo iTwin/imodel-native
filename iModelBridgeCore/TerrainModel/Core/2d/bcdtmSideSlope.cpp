@@ -9340,7 +9340,7 @@ int bcdtmSideSlope_removeExternalLoopsFromBoundaryDtmObject( BC_DTM_OBJ *tinP )
  long hullPnt,clPtr,priorPnt,nextPnt,startPnt,breakPnt,savPnt ;
  long process,numBreaks=0,numPts ;
  DTMDirection direction,polyDirection;
- double polyArea,length,markedLength,unMarkedLength,totalLength,clkLength,antLength ;
+ double polyArea,length,markedLength,unMarkedLength,totalLength,clkLength = 0,antLength = 0;
  BC_DTM_OBJ *dataP=nullptr ;
  DPoint3d  *ptsP=nullptr ;
 /*
@@ -9744,7 +9744,7 @@ int bcdtmSideSlope_detectAndFixBreaksInSlopeToes(BC_DTM_OBJ *tinP)
  int    ret=DTM_SUCCESS,dbg=0 ;
  long   sp,np,featureNum,clist,numBreaks,spNum,npNum,dtmFeature ;
  bool first;
- double dd,dmin ;
+ double dd,dmin = 0.0;
  BC_DTM_FEATURE  *fP ;
  DTM_TIN_NODE    *dP ;
 /*
@@ -14282,7 +14282,7 @@ int bcdtmSideSlope_copyParallelSideSlopeElement
 {
  int  ret=DTM_SUCCESS,dbg=0 ;
  long copyMode,numElementPts,numParallelPts ;
- double slope,horOffset ;
+ double slope,horOffset = 0;
  DPoint3d  *p3dP,*elementPtsP=nullptr,*parallelPtsP=nullptr ;
  DTM_SIDE_SLOPE_TABLE *radialP ;
  BC_DTM_OBJ *dataP=nullptr ;
@@ -14372,7 +14372,7 @@ int bcdtmSideSlope_copyParallelSideSlopeElementToPointArray
 {
  int  ret=DTM_SUCCESS,dbg=0 ;
  long copyMode,numElementPts,numParallelPts ;
- double slope,horOffset ;
+ double slope,horOffset = 0;
  DPoint3d  *p3dP,*elementPtsP=nullptr,*parallelPtsP=nullptr ;
  DTM_SIDE_SLOPE_TABLE *radialP ;
 /*

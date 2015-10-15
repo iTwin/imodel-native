@@ -6,7 +6,7 @@
 |       $Date: 2011/08/26 18:47:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableTerrainModelPCH.h>
@@ -48,7 +48,7 @@ namespace {
 DimensionType::Info                 s_typeInfoVoid                 (L"Void",            0);
 DimensionType::Info                 s_typeInfoUInt8                (L"UInt8",           1);
 DimensionType::Info                 s_typeInfoUInt16               (L"UInt16",          2);
-DimensionType::Info                 s_typeInfoUInt32               (L"UInt32",          4);
+DimensionType::Info                 s_typeInfoUInt32               (L"uint32_t",          4);
 DimensionType::Info                 s_typeInfoFloat32              (L"Float32",         4);
 DimensionType::Info                 s_typeInfoFloat64              (L"Float64",         8);
 

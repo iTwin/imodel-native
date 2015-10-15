@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 #include "stdafx.h"
 
@@ -25,15 +25,15 @@ int aecTable_insert         /* <= TRUE if error                    */
     int eSize                            /* =>                                  */
     )
     {
-    byte *baseP = ( byte * )*tblPP;
+    unsigned char *baseP = ( unsigned char * )*tblPP;
     int index = *nTblP;
 
     if( ( index % TBLBUFSZ ) == 0 )
         {
         if( baseP )
-            baseP = (byte *) realloc( baseP, ( index + TBLBUFSZ ) * eSize );
+            baseP = (unsigned char *) realloc( baseP, ( index + TBLBUFSZ ) * eSize );
         else
-            baseP = (byte *) calloc( TBLBUFSZ, eSize );
+            baseP = (unsigned char *) calloc( TBLBUFSZ, eSize );
         }
 
     if( !baseP )

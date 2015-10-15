@@ -582,7 +582,7 @@ WString LandXMLExporter::FormatInt (int val)
     return sVal;
     }
 
-WString LandXMLExporter::FormatInt (Int64 const& val)
+WString LandXMLExporter::FormatInt (int64_t const& val)
     {
     WString sVal;
     sVal.Sprintf (L"%d", val);

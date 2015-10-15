@@ -83,7 +83,7 @@ struct DTMFeatureEnumerator : RefCountedBase
 
     private: bool m_filterByFeatureId;
     private: DTMFeatureId m_featureIdFilter;
-    private: enum class FeatureTypeFilter : UInt8 { Default, Include, Exclude };
+    private: enum class FeatureTypeFilter : uint8_t { Default, Include, Exclude };
     private: bool m_filterByFeatureType;
     private: bvector<FeatureTypeFilter> m_featureTypeFilter;
     private: bool m_excludeFeatureTypeByDefault;

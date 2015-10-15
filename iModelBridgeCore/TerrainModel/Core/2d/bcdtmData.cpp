@@ -2146,9 +2146,9 @@ BENTLEYDTM_EXPORT int bcdtmData_replaceDtmFeaturePointsDtmObject
     {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0);
     long   dtmFeature,featureDeleted=FALSE ;
-    DTMFeatureType featureType, rollBackFeatureType;
+    DTMFeatureType featureType = DTMFeatureType::None, rollBackFeatureType;
     char   dtmFeatureStateName[100],dtmFeatureTypeName[100] ;
-    DTMUserTag    featureTag ;
+    DTMUserTag    featureTag = 0;
     BC_DTM_FEATURE  *dtmFeatureP ;
     /*
     ** Write Entry Message
@@ -2286,7 +2286,7 @@ int bcdtmData_replaceDtmFeaturePointsMultipleDtmObject
     (
     BC_DTM_OBJ     *dtmP,
     DTMFeatureId featureId,
-    const Bentley::TerrainModel::DtmVectorString& features
+    const BENTLEY_NAMESPACE_NAME::TerrainModel::DtmVectorString& features
     )
     /*
     ** Replace DTM Feature Points
@@ -2294,9 +2294,9 @@ int bcdtmData_replaceDtmFeaturePointsMultipleDtmObject
     {
     int    ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE (0);
     long   dtmFeature,featureDeleted=false ;
-    DTMFeatureType featureType, rollBackFeatureType;
+    DTMFeatureType featureType = DTMFeatureType::None, rollBackFeatureType;
     char   dtmFeatureStateName[100],dtmFeatureTypeName[100] ;
-    DTMUserTag    featureTag ;
+    DTMUserTag    featureTag = 0;
     BC_DTM_FEATURE  *dtmFeatureP ;
     /*
     ** Write Entry Message
@@ -3081,7 +3081,7 @@ BENTLEYDTM_Public int bcdtmData_getHullsForIntersectingPolyonalFeaturesDtmObject
     */
     {
  int      ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- long     sp, np, hp, ss, numFeatures;
+ long     sp, np, hp, ss, numFeatures = 0;
   DTMFeatureType compDtmFeatureType;
     long     dtmFeature,numStartFeatures,coincidentVoid ;
     long     firstPoint,knotFound,numFeaturesWithKnots ;
@@ -4363,7 +4363,7 @@ BENTLEYDTM_EXPORT int bcdtmData_bulkFeatureIdDeleteDtmFeaturesDtmObject
             for( featIdP = dtmFeatureIdP ; featIdP < dtmFeatureIdP + numDtmFeatureId ; ++featIdP )
                 {
                 if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Deleting Feature Index = %8I64d",*featIdP) ;
-                if( bcdtmData_findFirstFeatureIndexOccurrence((Int64)*featIdP,dtmFeatureIndexP,numDtmFeatureIndex,&offset)) 
+                if( bcdtmData_findFirstFeatureIndexOccurrence((int64_t)*featIdP,dtmFeatureIndexP,numDtmFeatureIndex,&offset)) 
                     {
                     if( dbg == 1 ) bcdtmWrite_message(0,0,0,"First DTM Feature Offset = %8ld",offset) ;
                     while( offset <  numDtmFeatureIndex && (dtmFeatureIndexP+offset)->index  == *featIdP )
@@ -4484,7 +4484,7 @@ BENTLEYDTM_EXPORT int bcdtmData_bulkUserTagDeleteDtmFeaturesDtmObject
             */
             for( userTagP = dtmUserTagP ; userTagP < dtmUserTagP + numDtmUserTag ; ++userTagP )
                 {
-                if( bcdtmData_findFirstFeatureIndexOccurrence((Int64)*userTagP,dtmFeatureIndexP,numDtmFeatureIndex,&offset)) 
+                if( bcdtmData_findFirstFeatureIndexOccurrence((int64_t)*userTagP,dtmFeatureIndexP,numDtmFeatureIndex,&offset)) 
                     {
                     if( dbg == 2 ) bcdtmWrite_message(0,0,0,"First DTM Feature = %8ld",offset) ;
                     while( offset <  numDtmFeatureIndex && (dtmFeatureIndexP+offset)->index  == *userTagP )
@@ -4647,7 +4647,7 @@ BENTLEYDTM_Private int bcdtmData_createFeatureIdIndexDtmObject
         */
         for( dtmFeature = 0 , indexP = *dtmFeatureIndexPP ; dtmFeature < dtmP->numFeatures ; ++dtmFeature , ++indexP )
             {    
-            indexP->index = (Int64) ftableAddrP(dtmP,dtmFeature)->dtmFeatureId ;
+            indexP->index = (int64_t) ftableAddrP(dtmP,dtmFeature)->dtmFeatureId ;
             indexP->dtmFeature = dtmFeature ;
             }
         /*
@@ -4742,7 +4742,7 @@ BENTLEYDTM_Private int bcdtmData_createUserTagIndexDtmObject
         */
         for( dtmFeature = 0 , indexP = *dtmFeatureIndexPP ; dtmFeature < dtmP->numFeatures ; ++dtmFeature , ++indexP )
             {    
-            indexP->index = (Int64) ftableAddrP(dtmP,dtmFeature)->dtmUserTag ;
+            indexP->index = (int64_t) ftableAddrP(dtmP,dtmFeature)->dtmUserTag ;
             indexP->dtmFeature = dtmFeature ;
             }
         /*
@@ -4774,7 +4774,7 @@ errexit :
 +-------------------------------------------------------------------*/
 BENTLEYDTM_Private int bcdtmData_findFirstFeatureIndexOccurrence
     (
-    Int64           featureValue,
+    int64_t           featureValue,
     DTM_FEATURE_INDEX *dtmFeatureIndexP,
     long              numDtmFeatureIndex,
     long              *offsetP

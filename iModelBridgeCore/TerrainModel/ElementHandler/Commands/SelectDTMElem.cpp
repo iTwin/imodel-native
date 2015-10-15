@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/Commands/SelectDTMElem.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -12,13 +12,13 @@
 #include    "SelectDTMElemTool.h"
 
 extern bool GetDTMLabelOnToolsettings (MSDialogP& db, int& item);
-extern void StartSequence (UInt64 cmdNum);
-extern void EndSequence (UInt64 cmdNum);
+extern void StartSequence (uint64_t cmdNum);
+extern void EndSequence (uint64_t cmdNum);
 
 /// <author>Piotr.Slowinski</author>                            <date>04/2011</date>
 Annotate::SelectDTMElemTool::SelectDTMElemTool
 (
-::UInt64                cmdNumber,
+uint64_t                cmdNumber,
 int                     cmdFunctionName,
 int                     cmdPrompt,
 MainCommandStarter      starter,

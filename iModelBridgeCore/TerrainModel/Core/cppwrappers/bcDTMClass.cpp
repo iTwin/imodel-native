@@ -1107,7 +1107,7 @@ DTMStatusInt BcDTM::_GetFeatureById (BcDTMFeaturePtr& featurePP, DTMFeatureId id
     long		memNbFeaturePts = 0;
    DTMStatusInt status=DTM_SUCCESS;
     DTMFeatureId    dtmFeatureId;
-    DTMUserTag memUserTag;
+    DTMUserTag memUserTag = 0;
     BC_DTM_USER_FEATURE dtmFeature ;
     long        featureFound = 0;
     long        firstCall = TRUE;
@@ -1416,7 +1416,7 @@ DTMStatusInt BcDTM::_DrapePoint
 |   spu.03jul2002   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_DrapeLinear(Bentley::TerrainModel::DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints)
+DTMStatusInt BcDTM::_DrapeLinear(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints)
     {
     // Drape the resulting point array
     BcDTMDrapedLinePtr drapedLineP = nullptr;
@@ -1886,11 +1886,12 @@ DTMStatusInt BcDTM::_OffsetDeltaElevation (double offset)
 |   spu.06nov2003   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_ShotVector (double* endSlopeP, double* endAspectP, DPoint3d endTriangle[3], int* endDrapedTypeP, DPoint3dP endPtP, DPoint3dP startPtP,
+DTMStatusInt BcDTM::_ShotVector(double* endSlopeP, double* endAspectP, DPoint3d endTriangle[3], int* endDrapedTypeP, long* startFlag, long* endFlag, DPoint3dP endPtP, DPoint3dP startPtP,
     double direction, double slope)
     {
     DPoint3d    endPt = {0, 0, 0};
-    long        startFlag = 0, endFlag = 0;
+    *startFlag = 0;
+    *endFlag = 0;
 
     // Call DTMFeatureState::Tin function
     DTMStatusInt status;
@@ -1902,14 +1903,14 @@ DTMStatusInt BcDTM::_ShotVector (double* endSlopeP, double* endAspectP, DPoint3d
         direction = _dtmTransformHelper->convertAspectToDTM (direction);
         slope = _dtmTransformHelper->convertSlopeToDTM (slope);
         status = (DTMStatusInt)bcdtmSideSlope_intersectSurfaceDtmObject (_GetTinHandle (), startPt.x, startPt.y, startPt.z,
-                                                         direction, slope, 1, dc_zero, &endPt.x, &endPt.y, &endPt.z, &startFlag, &endFlag);
+                                                         direction, slope, 1, dc_zero, &endPt.x, &endPt.y, &endPt.z, startFlag, endFlag);
         if (status == DTM_SUCCESS)
             _dtmTransformHelper->convertPointFromDTM (endPt);
         }
     else
         {
         status = (DTMStatusInt)bcdtmSideSlope_intersectSurfaceDtmObject (_GetTinHandle (), startPtP->x, startPtP->y, startPtP->z,
-                                                         direction, slope, 1, dc_zero, &endPt.x, &endPt.y, &endPt.z, &startFlag, &endFlag);
+                                                         direction, slope, 1, dc_zero, &endPt.x, &endPt.y, &endPt.z, startFlag, endFlag);
         }
     if (status != DTM_SUCCESS) return DTM_ERROR;
 
@@ -2568,7 +2569,7 @@ DTMStatusInt BcDTM::_BrowseSinglePointFeatures (DTMFeatureType featureType, doub
     {
     DTMStatusInt status=DTM_SUCCESS;
     bool useFence = false;
-    int nPoints;
+    int nPoints = 0;
     SinglePointFeatureCallbackTransformHelper helper (callBackFunctP, userP, _dtmTransformHelper.get ());
     Dtm_Handler_t dtmHandlerArgs;
     dtmHandlerArgs.featuresSinglePointHandler = helper.GetCallBackFunc();
@@ -2684,7 +2685,7 @@ DTMStatusInt BcDTM::_ContourAtPoint (double x, double y, double contourInterval,
 +---------------+---------------+---------------+---------------+---------------+------*/
 int GetContourPointArray (DTMFeatureType featureType, DTMUserTag featureTag, DTMFeatureId featureId, DPoint3d *tPoint, size_t nPoint, void* userP)
     {
-    Bentley::TerrainModel::DTMPointArray* ret = static_cast<Bentley::TerrainModel::DTMPointArray*>(userP);
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray* ret = static_cast<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray*>(userP);
     // ToDo DHMEM check refcount.
     ret->resize (nPoint);
     memcpy (ret->data (), tPoint, nPoint * sizeof (DPoint3d));
@@ -2694,7 +2695,7 @@ int GetContourPointArray (DTMFeatureType featureType, DTMUserTag featureTag, DTM
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::_ContourAtPoint (Bentley::TerrainModel::DTMPointArray& ret, DPoint3dCR pt, double contourInterval, DTMContourSmoothing smoothOption, double smoothFactor, int smoothDensity, DTMFenceParamsCR fence)
+DTMStatusInt BcDTM::_ContourAtPoint (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray& ret, DPoint3dCR pt, double contourInterval, DTMContourSmoothing smoothOption, double smoothFactor, int smoothDensity, DTMFenceParamsCR fence)
     {
     return _ContourAtPoint (pt.x, pt.y, contourInterval, smoothOption, smoothFactor, smoothDensity, fence, &ret, &GetContourPointArray);
     }
@@ -2702,9 +2703,9 @@ DTMStatusInt BcDTM::_ContourAtPoint (Bentley::TerrainModel::DTMPointArray& ret, 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::_ContourAtPoint (Bentley::TerrainModel::DTMPointArray& ret, DPoint3dCR pt, double contourInterval, DTMContourSmoothing smoothOption, double smoothFactor, int smoothDensity)
+DTMStatusInt BcDTM::_ContourAtPoint (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray& ret, DPoint3dCR pt, double contourInterval, DTMContourSmoothing smoothOption, double smoothFactor, int smoothDensity)
     {
-    return _ContourAtPoint (pt.x, pt.y, contourInterval, smoothOption, smoothFactor, smoothDensity, Bentley::TerrainModel::DTMFenceParams (), &ret, &GetContourPointArray);
+    return _ContourAtPoint (pt.x, pt.y, contourInterval, smoothOption, smoothFactor, smoothDensity, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams (), &ret, &GetContourPointArray);
     }
 
 /*----------------------------------------------------------------------+
@@ -3930,14 +3931,14 @@ DTMStatusInt BcDTM::_SetMemoryAccess (DTMAccessMode accessMode)
 ///*---------------------------------------------------------------------------------------
 //* @bsimethod                                                    Daryl.Holmwood  07/11
 //+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::_GetLastModifiedTime (Int64& lastModifiedTime)
+DTMStatusInt BcDTM::_GetLastModifiedTime (int64_t& lastModifiedTime)
     {
     lastModifiedTime = _GetTinHandle()->lastModifiedTime;
 
     if (lastModifiedTime == 0)
         {
-        const Int64 date1Jan1970 = 116444736000000000;
-        lastModifiedTime = date1Jan1970 + ((Int64)_GetTinHandle()->modifiedTime) * 10000000;
+        const int64_t date1Jan1970 = 116444736000000000;
+        lastModifiedTime = date1Jan1970 + ((int64_t)_GetTinHandle()->modifiedTime) * 10000000;
         }
     return DTM_SUCCESS;
     }
@@ -3945,7 +3946,7 @@ DTMStatusInt BcDTM::_GetLastModifiedTime (Int64& lastModifiedTime)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int64 BcDTM::_GetPointCount ()
+int64_t BcDTM::_GetPointCount ()
     {
     DTMFeatureStatisticsInfo info;
     CalculateFeatureStatistics (info);
@@ -3955,7 +3956,7 @@ Int64 BcDTM::_GetPointCount ()
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::TerrainModel::IDTMDraping* BcDTM::_GetDTMDraping ()
+BENTLEY_NAMESPACE_NAME::TerrainModel::IDTMDraping* BcDTM::_GetDTMDraping ()
     {
     return this;
     }
@@ -3963,7 +3964,7 @@ Bentley::TerrainModel::IDTMDraping* BcDTM::_GetDTMDraping ()
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::TerrainModel::IDTMContouring* BcDTM::_GetDTMContouring ()
+BENTLEY_NAMESPACE_NAME::TerrainModel::IDTMContouring* BcDTM::_GetDTMContouring ()
     {
     return this;
     }
@@ -3971,7 +3972,7 @@ Bentley::TerrainModel::IDTMContouring* BcDTM::_GetDTMContouring ()
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::TerrainModel::IDTMDrainage* BcDTM::_GetDTMDrainage()
+BENTLEY_NAMESPACE_NAME::TerrainModel::IDTMDrainage* BcDTM::_GetDTMDrainage()
     {
     return this;
     }
@@ -3979,22 +3980,22 @@ Bentley::TerrainModel::IDTMDrainage* BcDTM::_GetDTMDrainage()
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::_GetTransformDTM (Bentley::TerrainModel::DTMPtr& transformedDTM, TransformCR transformation)
+DTMStatusInt BcDTM::_GetTransformDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& transformedDTM, TransformCR transformation)
     {
-    if (transformation.isIdentity())
+    if (transformation.IsIdentity())
         transformedDTM = this;
     else
         {
-        Bentley::Transform trfs;
-        Bentley::Transform curTrfs;
+        BENTLEY_NAMESPACE_NAME::Transform trfs;
+        BENTLEY_NAMESPACE_NAME::Transform curTrfs;
 
         if (_dtmTransformHelper.IsValid() && _dtmTransformHelper->GetTransformationFromDTM (curTrfs))
-            trfs.productOf (&curTrfs, &transformation);
+            trfs.InitProduct (curTrfs, transformation);
         else
             trfs = transformation;
 
         TMTransformHelper* transformHelper = nullptr;
-        if (!trfs.isIdentity())
+        if (!trfs.IsIdentity())
             transformHelper = TMTransformHelper::Create (trfs);
 
         BcDTMPtr bcDtm = new BcDTM (_GetTinHandle(), transformHelper);
@@ -4003,7 +4004,7 @@ DTMStatusInt BcDTM::_GetTransformDTM (Bentley::TerrainModel::DTMPtr& transformed
     return DTM_SUCCESS;
     }
 
-DTMStatusInt BcDTM::_GetReadOnlyDTM (Bentley::TerrainModel::BcDTMPtr& readonlyDTM)
+DTMStatusInt BcDTM::_GetReadOnlyDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& readonlyDTM)
     {
     readonlyDTM = new BcDTM (_GetTinHandle (), _dtmTransformHelper.get(), true);
     return DTM_SUCCESS;
@@ -4023,7 +4024,7 @@ bool BcDTM::_GetTransformation (TransformR transformation)
     {
     if (_dtmTransformHelper.IsValid ())
         return _dtmTransformHelper->GetTransformationFromDTM (transformation);
-    transformation.initIdentity();
+    transformation.InitIdentity();
     return true;
     }
 
@@ -4038,7 +4039,7 @@ BcDTMP BcDTM::_GetBcDTM()
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::_GetBoundary(Bentley::TerrainModel::DTMPointArray& ret)
+DTMStatusInt BcDTM::_GetBoundary(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray& ret)
     {
     DPoint3d *verticesP = nullptr;
     long nPts;
@@ -4078,10 +4079,10 @@ DTMStatusInt BcDTM::_CalculateSlopeArea (double& flatArea, double& slopeArea, DP
 /*---------------------------------------------------------------------------------------
 * @bsiclass                                                     Daryl.Holmwood  12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DTMDrainageFeature : public Bentley::TerrainModel::IDTMDrainageFeature
+struct DTMDrainageFeature : public BENTLEY_NAMESPACE_NAME::TerrainModel::IDTMDrainageFeature
     {
     private:
-        bvector<Bentley::TerrainModel::DTMPointArray> m_array;
+        bvector<BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray> m_array;
         bvector<bool> m_pondArray;
         mutable int m_count;
 
@@ -4090,13 +4091,13 @@ struct DTMDrainageFeature : public Bentley::TerrainModel::IDTMDrainageFeature
             {
             m_count = 0;
             }
-        virtual UInt32 AddRef() const
+        virtual uint32_t AddRef() const
             {
             m_count++;
             return m_count;
             }
 
-        virtual UInt32 Release() const
+        virtual uint32_t Release() const
             {
             m_count--;
             if (m_count == 0)
@@ -4116,7 +4117,7 @@ struct DTMDrainageFeature : public Bentley::TerrainModel::IDTMDrainageFeature
                 return false;
             return m_pondArray [index];
             }
-        virtual DTMStatusInt _GetPoints(Bentley::TerrainModel::DTMPointArray& ret, int index)
+        virtual DTMStatusInt _GetPoints(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray& ret, int index)
             {
             if (m_array.size () > index)
                 {
@@ -4126,7 +4127,7 @@ struct DTMDrainageFeature : public Bentley::TerrainModel::IDTMDrainageFeature
             return DTM_ERROR;
             }
 
-        void AddFeature (const Bentley::TerrainModel::DTMPointArray& points, bool isPond)
+        void AddFeature (const BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray& points, bool isPond)
             {
             m_pondArray.push_back (isPond);
             // ToDo DHMEM check refcount.
@@ -4159,7 +4160,7 @@ int DTMDrainageFeatureCallback (
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::_GetDescentTrace (Bentley::TerrainModel::DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double minDepth)
+DTMStatusInt BcDTM::_GetDescentTrace (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double minDepth)
     {
     DTMDrainageFeature* result =  new DTMDrainageFeature();
 
@@ -4175,7 +4176,7 @@ DTMStatusInt BcDTM::_GetDescentTrace (Bentley::TerrainModel::DTMDrainageFeatureP
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::_GetAscentTrace (Bentley::TerrainModel::DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double minDepth)
+DTMStatusInt BcDTM::_GetAscentTrace (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double minDepth)
     {
     DTMDrainageFeature* result =  new DTMDrainageFeature();
 
@@ -4191,7 +4192,7 @@ DTMStatusInt BcDTM::_GetAscentTrace (Bentley::TerrainModel::DTMDrainageFeaturePt
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::_TraceCatchmentForPoint (Bentley::TerrainModel::DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double maxPondDepth)
+DTMStatusInt BcDTM::_TraceCatchmentForPoint (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double maxPondDepth)
     {
     bvector<DPoint3d> catchmentPts;
     DPoint3d sumpPoint;
@@ -4369,7 +4370,8 @@ bool BcDTM::_IntersectVector (DPoint3dR intersectionPoint, DPoint3dCR startPoint
         endPt.x -= startPt.x;
         endPt.y -= startPt.y;
         endPt.z -= startPt.z;
-        if (!range.intersectRay (nullptr, nullptr, &sP, &eP, &startPt, &endPt))
+        double out1, out2;
+        if (!range.IntersectRay (out1, out2, sP, eP, startPt, endPt))
             return false;
 
         // Non Top View
@@ -4495,15 +4497,15 @@ bool BcDTM::_GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, D
     DPoint4d pt4;
     DPoint4d endPt4;
 
-    invW2vMap.qrInverseOf (&w2vMap);
-    w2vMap.multiplyAndRenormalize (&pt, &testPoint, 1);
+    invW2vMap.QrInverseOf (w2vMap);
+    w2vMap.MultiplyAndRenormalize (&pt, &testPoint, 1);
     pt.z -= 100;
-    invW2vMap.multiplyAndRenormalize (&endPt, &pt, 1);
-    pt4.init (&testPoint, 0);
-    w2vMap.multiply (&pt4, &pt4, 1);
+    invW2vMap.MultiplyAndRenormalize (&endPt, &pt, 1);
+    pt4.Init (testPoint, 0);
+    w2vMap.Multiply (&pt4, &pt4, 1);
     pt4.z -= 100;
-    invW2vMap.multiply (&endPt4, &pt4, 1);
-    endPt.init (endPt4.x, endPt4.y, endPt4.z);
+    invW2vMap.Multiply (&endPt4, &pt4, 1);
+    endPt.Init (endPt4.x, endPt4.y, endPt4.z);
 
     if (helper)
         {
@@ -4523,7 +4525,8 @@ bool BcDTM::_GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, D
         endPt.x -= startPt.x;
         endPt.y -= startPt.y;
         endPt.z -= startPt.z;
-        if (!range.intersectRay (NULL, NULL, &sP, &eP, &startPt, &endPt))
+        double p1, p2; // Not Used
+        if (!range.IntersectRay (p1, p2, sP, eP, startPt, endPt))
             return false;
 
         // Non Top View
@@ -5019,7 +5022,16 @@ DTMStatusInt BcDTM::DrapeLinearPoints (BcDTMDrapedLinePtr& drapedLinePP,DPoint3d
 +---------------+---------------+---------------+---------------+---------------+------*/
 DTMStatusInt BcDTM::ShotVector(double *endSlopeP,double *endAspectP,DPoint3d endTriangle[3],int  *endDrapedTypeP,DPoint3d *endPtP,DPoint3d *startPtP,double direction,double slope)
     {
-    return _ShotVector(endSlopeP,endAspectP,endTriangle,endDrapedTypeP,endPtP,startPtP,direction,slope);
+    long startFlag, endFlag;
+    return _ShotVector(endSlopeP,endAspectP,endTriangle,endDrapedTypeP,&startFlag,&endFlag,endPtP,startPtP,direction,slope);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Stephane.Poulin                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+DTMStatusInt BcDTM::ShotVector(double *endSlopeP,double *endAspectP,DPoint3d endTriangle[3],int  *endDrapedTypeP,long *startFlag,long *endFlag, DPoint3d *endPtP,DPoint3d *startPtP,double direction,double slope)
+    {
+    return _ShotVector(endSlopeP,endAspectP,endTriangle,endDrapedTypeP,startFlag,endFlag,endPtP,startPtP,direction,slope);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -5383,7 +5395,7 @@ DTMStatusInt BcDTM::SetMemoryAccess(DTMAccessMode accessMode)
 ///*---------------------------------------------------------------------------------------
 //* @bsimethod                                                    Daryl.Holmwood  07/11
 //+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::GetLastModifiedTime (Int64& lastModifiedTime)
+DTMStatusInt BcDTM::GetLastModifiedTime (int64_t& lastModifiedTime)
     {
     return _GetLastModifiedTime(lastModifiedTime);
     }

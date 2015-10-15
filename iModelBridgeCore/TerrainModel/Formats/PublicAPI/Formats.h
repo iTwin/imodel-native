@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/PublicAPI/Formats.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -23,8 +23,6 @@
 
 TERRAINMODEL_TYPEDEFS (TerrainImporter)
 TERRAINMODEL_TYPEDEFS (TerrainExporter)
-ADD_BENTLEY_TYPEDEFS (Bentley::TerrainModel, TerrainImporter);
-ADD_BENTLEY_TYPEDEFS (Bentley::TerrainModel, TerrainExporter);
 
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 

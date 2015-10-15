@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmStream.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "malloc.h"
@@ -16,7 +16,7 @@
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-struct BcDtmFileStream : public Bentley::TerrainModel::IBcDtmStream
+struct BcDtmFileStream : public BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream
     {
     private:
         FILE* m_fP;
@@ -48,7 +48,7 @@ struct BcDtmFileStream : public Bentley::TerrainModel::IBcDtmStream
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
- BENTLEYDTM_EXPORT        int bcdtmStream_createFromFILE(FILE* fP, Bentley::TerrainModel::IBcDtmStream** dtmStreamPP)
+ BENTLEYDTM_EXPORT        int bcdtmStream_createFromFILE(FILE* fP, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream** dtmStreamPP)
  {
      if(*dtmStreamPP) delete *dtmStreamPP;
      *dtmStreamPP = new BcDtmFileStream(fP);
@@ -61,20 +61,20 @@ struct BcDtmFileStream : public Bentley::TerrainModel::IBcDtmStream
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
- BENTLEYDTM_EXPORT        int bcdtmStream_destroy(Bentley::TerrainModel::IBcDtmStream** dtmStreamPP)
+ BENTLEYDTM_EXPORT        int bcdtmStream_destroy(BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream** dtmStreamPP)
  {
      if(*dtmStreamPP) delete *dtmStreamPP;
      *dtmStreamPP = NULL;
      return DTM_SUCCESS;
  }
 
- // Functions to query Bentley::TerrainModel::IBcDtmStream
+ // Functions to query BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
- BENTLEYDTM_EXPORT        int bcdtmStream_fseek(Bentley::TerrainModel::IBcDtmStream* stream, long offset, int origin)
+ BENTLEYDTM_EXPORT        int bcdtmStream_fseek(BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* stream, long offset, int origin)
      {
      return stream->Seek(offset, origin);
      }
@@ -83,7 +83,7 @@ struct BcDtmFileStream : public Bentley::TerrainModel::IBcDtmStream
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
- BENTLEYDTM_EXPORT  int bcdtmStream_ftell(Bentley::TerrainModel::IBcDtmStream* stream)
+ BENTLEYDTM_EXPORT  int bcdtmStream_ftell(BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* stream)
      {
      return stream->Ftell();
      }
@@ -93,7 +93,7 @@ struct BcDtmFileStream : public Bentley::TerrainModel::IBcDtmStream
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
- BENTLEYDTM_EXPORT     size_t bcdtmStream_fread(void* dest, size_t elementSize, size_t count, Bentley::TerrainModel::IBcDtmStream* stream)
+ BENTLEYDTM_EXPORT     size_t bcdtmStream_fread(void* dest, size_t elementSize, size_t count, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* stream)
      {
      return stream->Read(dest, elementSize, count);
      }
@@ -103,7 +103,7 @@ struct BcDtmFileStream : public Bentley::TerrainModel::IBcDtmStream
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
- BENTLEYDTM_EXPORT     size_t bcdtmStream_fwrite(void* source, size_t elementSize, size_t count, Bentley::TerrainModel::IBcDtmStream* stream)
+ BENTLEYDTM_EXPORT     size_t bcdtmStream_fwrite(void* source, size_t elementSize, size_t count, BENTLEY_NAMESPACE_NAME::TerrainModel::IBcDtmStream* stream)
      {
      return stream->Write(source, elementSize, count);
      }

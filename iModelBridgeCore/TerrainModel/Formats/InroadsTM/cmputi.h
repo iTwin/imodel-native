@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* cmputi.h                                              aec    26-Apr-2002   */
@@ -23,7 +23,7 @@ typedef struct
     wchar_t style[DTM_C_NAMSIZ];
     wchar_t desc[DTM_C_NAMSIZ];
     struct CIVdtmsrf *srfP;
-    GUID *guidsP;
+    BeSQLite::BeGuid *guidsP;
     int numGuids;
     BOOL bStyleExists;
     BOOL bPassFilter;
@@ -36,7 +36,7 @@ typedef struct
 struct CIVdtmcmp *aecDTM_findComponentByGuid /* <= pointer to component       */
 (
     struct CIVdtmsrf *srfP,                 /* => DTM surface (or NULL)       */
-    GUID *guidP                             /* => component guid pointer      */
+    BeSQLite::BeGuid *guidP                             /* => component guid pointer      */
 );
 
 int aecDTM_deleteComponent /* <= TRUE if error                         */

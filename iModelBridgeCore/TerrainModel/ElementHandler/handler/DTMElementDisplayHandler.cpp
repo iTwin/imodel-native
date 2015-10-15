@@ -24,7 +24,7 @@ BEGIN_BENTLEY_TERRAINMODEL_ELEMENT_NAMESPACE
 struct HighlightRefAppData : public ElementRefAppData
 {
 private:
-    bmap<UInt32, ElementHiliteState> m_map;
+    bmap<uint32_t, ElementHiliteState> m_map;
     static ElementRefAppData::Key m_key;
 public:
 
@@ -38,11 +38,11 @@ public:
         delete this;
         }
 
-    void SetHighlight(UInt32 id, ElementHiliteState hiliteState)
+    void SetHighlight(uint32_t id, ElementHiliteState hiliteState)
         {
         if (hiliteState == HILITED_None)
             {
-            bmap<UInt32, ElementHiliteState>::iterator it = m_map.find(id);
+            bmap<uint32_t, ElementHiliteState>::iterator it = m_map.find(id);
             if (it != m_map.end())
                 {
                 m_map.erase(it);
@@ -52,9 +52,9 @@ public:
             m_map[id] = hiliteState;
         }
 
-    ElementHiliteState GetHighlight(UInt32 id)
+    ElementHiliteState GetHighlight(uint32_t id)
         {
-        bmap<UInt32, ElementHiliteState>::const_iterator it = m_map.find(id);
+        bmap<uint32_t, ElementHiliteState>::const_iterator it = m_map.find(id);
 
         if (it != m_map.end())
             {
@@ -83,7 +83,7 @@ void DeleteDTMXAttributes (EditElementHandle& element)
         XAttributeHandlerId id = iter.GetHandlerId();
         if (id.GetMajorId() == TMElementMajorId)
             {
-            UInt32 attrId = iter.GetId();
+            uint32_t attrId = iter.GetId();
             iter.ToNext();
             switch(id.GetMinorId())
                 {
@@ -156,7 +156,7 @@ bool IsValidTransformation (TransformCP transform)
         if (mat.isIdentity ())
             return true;
         
-        if(transform->isUniformScaleAndRotateAroundLine (&fixedPoint, &directionVector, &radians, &scale))
+        if(transform->IsUniformScaleAndRotateAroundLine (&fixedPoint, &directionVector, &radians, &scale))
             {
             DVec3d upV;
             DVec3d matZ;
@@ -429,7 +429,7 @@ struct DTMStrokeForCacheHull : IDTMStrokeForCache
         //=======================================================================================
         static int draw(DTMFeatureType dtmFeatureType,int numTriangles,int numMeshPts,DPoint3d *meshPtsP,DPoint3d *meshVectorsP,int numMeshFaces, long *meshFacesP,void *userP)
             {      
-            UInt32 numPerFace = 3;
+            uint32_t numPerFace = 3;
             bool   twoSided = false;
             size_t indexCount = numMeshFaces - 3;
             size_t pointCount = numMeshPts;
@@ -561,7 +561,7 @@ ReprojectStatus DTMElementDisplayHandler::_OnGeoCoordinateReprojection (EditElem
             element.SetElementRef (nullptr, element.GetModelRef());
             BcDTMPtr dtm = BcDTM::CreateFromDtmHandle (bcdtm->GetTinHandle());
             DTMDataRefXAttribute::ScheduleFromDtm (element, &element, *dtm, mtrx, *element.GetModelRef(), true);
-            TMReferenceXAttributeHandler::RemoveDTMDataReference (element);
+            DTMReferenceXAttributeHandler::RemoveDTMDataReference (element);
             element.SetElementRef (ref, element.GetModelRef());
             }
         else
@@ -745,7 +745,7 @@ bool PushTransformationMatrix (ViewContextP context, ElementHandleCR element, Dg
 
         DMatrix4d refTrans2;
         bsiDMatrix4d_initFromTransform (&refTrans2, &refTrans);
-        localMatToRoot.productOf (&localMatToRoot, &refTrans2);
+        localMatToRoot.InitProduct (&localMatToRoot, &refTrans2);
 
         if (!modelRef->Is3d ()) //context && (!isInViewlet && context->InViewlet()))
             {
@@ -785,12 +785,12 @@ void DTMElementDisplayHandler::GetDTMDrawingInfo (DTMDrawingInfo& info, ElementH
     DgnModelRefP ref = GetActivatedModel (element, context);
     
     originalEl = element;
-    TMSymbologyOverrideManager::GetReferencedElement (element, originalEl);
+    DTMSymbologyOverrideManager::GetReferencedElement (element, originalEl);
 
     Transform trsf;
     DTMElementHandlerManager::GetStorageToUORMatrix (trsf, GetModelRef(originalEl), originalEl);
 
-    TMSymbologyOverrideManager::GetElementForSymbology (originalEl, symbologyEl, ref);
+    DTMSymbologyOverrideManager::GetElementForSymbology (originalEl, symbologyEl, ref);
 
     ElementHandle refElem = originalEl;
     DMatrix4d localMatToRoot;
@@ -803,7 +803,7 @@ void DTMElementDisplayHandler::GetDTMDrawingInfo (DTMDrawingInfo& info, ElementH
         }
     else
         {
-        localMatToRoot.initIdentity();
+        localMatToRoot.InitIdentity();
         PushTransformationMatrix (nullptr, element, GetActivatedModel (element, nullptr), localMatToRoot);
         }
 
@@ -841,7 +841,7 @@ void DTMElementDisplayHandler::GetDTMDrawingInfo (DTMDrawingInfo& info, ElementH
 //=======================================================================================
 // @bsimethod                                                   Daryl.Holmwood 06/11
 //=======================================================================================
-void DTMElementDisplayHandler::DrawSubElement (ElementHandleCR element, const ElementHandle::XAttributeIter& xAttr, ViewContextR context, const DTMFenceParams& fence, DTMSubElementContext& subElementContext)
+void DTMElementDisplayHandler::DrawSubElement (ElementHandleCR element, const ElementHandle::XAttributeIter& xAttr, ViewContextR context, const DTMFenceParams& fence)
     {
     //DontCare    ViewContext::ModelRefMark mark2 (*context);
     //DontCare    ViewContext::ContextMark mark (*context, element);
@@ -891,12 +891,9 @@ void DTMElementDisplayHandler::DrawSubElement (ElementHandleCR element, const El
                 }
             }
 
-        if (nullptr == subElementContext.drawingInfo)
-            {
-            subElementContext.drawingInfo = new DTMDrawingInfo ();
-            GetDTMDrawingInfo (*subElementContext.drawingInfo, element, DTMDataRef.get (), &context);
-            }
-        DTMDrawingInfo& info = *subElementContext.drawingInfo;
+        DTMDrawingInfo info;
+
+        GetDTMDrawingInfo (info, element, DTMDataRef.get(), &context);
 
         if (!info.IsVisible ())
             return;
@@ -1020,6 +1017,50 @@ inline bvector <DTMSubElementId> GetIds (ElementHandleCR element, bool includeIn
         ids.push_back (iter.GetCurrentId());
         }
     return ids;
+    }
+
+//=======================================================================================
+// @bsiclass                                                   Piotr.Slowinski 05/11
+//=======================================================================================
+class PinnedDTMSubElementIter : private bvector<DTMSubElementId>
+{
+private: typedef bvector<DTMSubElementId> Base;
+private: EditElementHandleR m_eh;
+public: explicit PinnedDTMSubElementIter (EditElementHandleR element, bool includeInvisible = true) : m_eh (element)
+        {
+        Base *b = this;
+        (*b) = GetIds (element, includeInvisible);
+        }
+public: template<class _T_> _T_ ForEach (_T_ t) const
+        {
+        for (const_iterator iter = begin(); iter != end(); ++iter)
+            {
+            ElementHandle::XAttributeIter xIter (m_eh, DTMElementSubHandler::GetDisplayInfoXAttributeHandlerId (), iter->GetId ());
+            t (m_eh, xIter, *iter);
+            }
+        return t;
+        }
+}; // End PinnedDTMSubElementIter class
+
+//=======================================================================================
+// @bsiclass                                                   Piotr.Slowinski 05/11
+//=======================================================================================
+struct DTMElementHandlerEditPropertiesOperator
+{
+private: PropertyContextR m_context;
+public: DTMElementHandlerEditPropertiesOperator (PropertyContextR context) : m_context (context) {}
+public: void operator() (EditElementHandleR element, ElementHandle::XAttributeIter iter, DTMSubElementId const &sid)
+    {
+    DTMElementSubDisplayHandler* hand = DTMElementSubDisplayHandler::FindHandler(iter);
+    if (hand)
+        hand->_EditProperties (element, iter, sid, m_context);
+    }
+}; // End DTMElementHandlerEditPropertiesOperator struct
+
+void DTMElementDisplayHandler::_EditProperties (EditElementHandleR element, PropertyContextR context)
+    {
+    T_Super::_EditProperties (element, context);
+    PinnedDTMSubElementIter (element).ForEach (DTMElementHandlerEditPropertiesOperator (context));
     }
 
 //=======================================================================================
@@ -1404,7 +1445,7 @@ void DTMElementDisplayHandler::_Draw (ElementHandleCR element, ViewContextR cont
     else
         {
         ElementHandle original;
-        TMSymbologyOverrideManager::GetReferencedElement (element, original);
+        DTMSymbologyOverrideManager::GetReferencedElement (element, original);
         // Only draw invalid elements for the original element and not for the active symbology.
         if (original.GetElementRef() == element.GetElementRef())
             {
@@ -1470,7 +1511,7 @@ StatusInt DTMElementDisplayHandler::_DrawCut (ElementHandleCR thisElm, ICutPlane
                 
                 trans.InverseOf (trsf);
 
-                dplane.productOf (&trans, &dplane);
+                dplane.InitProduct (&trans, &dplane);
 
                 DRange3d range;
                 DTMDataRef->GetExtents (range);
@@ -1489,7 +1530,7 @@ StatusInt DTMElementDisplayHandler::_DrawCut (ElementHandleCR thisElm, ICutPlane
 
                     if (idtm->GetDTMDraping()->DrapeLinear(result, res, numOut) == DTM_SUCCESS)
                         {
-                        Int64 count = result->GetPointCount();                    
+                        int64_t count = result->GetPointCount();                    
                         BeAssert(count <= INT_MAX);
                         DPoint3d* pts = (DPoint3d*)_alloca((int)count * sizeof (DPoint3d));
                         int ptNum = 0;
@@ -1552,8 +1593,8 @@ void DTMElementDisplayHandler::_GetPathDescription (ElementHandleCR element, WSt
         int id = hitPath->GetGeomDetail().GetElemArg();
 
         ElementHandle original, symbologyEl;
-        TMSymbologyOverrideManager::GetReferencedElement (element, original);
-        TMSymbologyOverrideManager::GetElementForSymbology (original, symbologyEl, GetActivatedModel (element, nullptr));
+        DTMSymbologyOverrideManager::GetReferencedElement (element, original);
+        DTMSymbologyOverrideManager::GetElementForSymbology (original, symbologyEl, GetActivatedModel (element, nullptr));
 
         ElementHandle::XAttributeIter iter(symbologyEl, DTMElementSubHandler::GetDisplayInfoXAttributeHandlerId(), id);
         if (iter.IsValid())
@@ -1635,7 +1676,7 @@ StatusInt DTMElementDisplayHandler::_OnTransform (EditElementHandleR element, Tr
     DTMElementHandlerManager::GetStorageToUORMatrix (mtrx, element.GetModelRef(), element, false);
 
     Transform trfs;
-    trfs.productOf (transform.GetTransform(), &mtrx);
+    trfs.InitProduct (transform.GetTransform(), &mtrx);
     DTMElementHandlerManager::SetStorageToUORMatrix (trfs, element);
 
     UpdateDTMLastModified (element, BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble ());
@@ -1742,7 +1783,7 @@ StatusInt DTMElementDisplayHandler::_OnFenceClip (ElementAgendaP inside, Element
             if (newDTM.IsValid())
                 {
                 DTMDataRefXAttribute::ScheduleFromDtm (insideEl, &element, *newDTM, trsf, *element.GetModelRef(), true);
-                TMReferenceXAttributeHandler::RemoveDTMDataReference (insideEl);
+                DTMReferenceXAttributeHandler::RemoveDTMDataReference (insideEl);
                 CopySymbology (insideEl, element, nullptr, false);
                 insideEl.GetElementDescrP()->h.elementRef = element.GetElementDescrCP()->h.elementRef;
                 inside->Insert (insideEl);
@@ -1764,7 +1805,7 @@ StatusInt DTMElementDisplayHandler::_OnFenceClip (ElementAgendaP inside, Element
             if (newDTM.IsValid())
                 {
                 DTMDataRefXAttribute::ScheduleFromDtm (outsideEl, &element, *newDTM, trsf, *element.GetModelRef (), true);
-                TMReferenceXAttributeHandler::RemoveDTMDataReference (outsideEl);
+                DTMReferenceXAttributeHandler::RemoveDTMDataReference (outsideEl);
                 CopySymbology (outsideEl, element, nullptr, false);
                 outsideEl.GetElementDescrP()->h.elementRef = element.GetElementDescrCP()->h.elementRef;
                 outside->Insert (outsideEl);
@@ -1892,7 +1933,7 @@ ITransactionHandler::PreActionStatus  DTMElementDisplayHandler::_OnAdd (EditElem
             if (moveXAttribute)
                 {
                 const void* data = xAttrHandle.PeekData ();
-                UInt32 size = xAttrHandle.GetSize ();
+                uint32_t size = xAttrHandle.GetSize ();
 
                 ITxnManager::GetCurrentTxn().AddXAttribute (dtmDataEl.GetElementRef(), handId, id, data, size);
                 deleteMap.push_back (XAttributeId (handId, id));
@@ -1902,7 +1943,7 @@ ITransactionHandler::PreActionStatus  DTMElementDisplayHandler::_OnAdd (EditElem
 
         for (bvector<XAttributeId>::iterator it = deleteMap.begin(); it != deleteMap.end(); it++)
             element.CancelWriteXAttribute (it->handId, it->id);
-        TMReferenceXAttributeHandler::SetDTMDataReference (element, dtmDataEl);
+        DTMReferenceXAttributeHandler::SetDTMDataReference (element, dtmDataEl);
         DTMXAttributeHandler::EndTMPersist ();
         }
     ScanLevelsAndAddOrRemove (element, true);
@@ -1921,7 +1962,7 @@ ITransactionHandler::PreActionStatus DTMElementDisplayHandler::_OnReplace (EditE
         Transform trsf;
         EditElementHandle dtmDataEl;
 
-        if (TMReferenceXAttributeHandler::GetDTMDataReference (oldElement, dtmDataEl))
+        if (DTMReferenceXAttributeHandler::GetDTMDataReference (oldElement, dtmDataEl))
             {
             DeleteDTMXAttributes (dtmDataEl);
             dtmDataEl.ReplaceInModel(dtmDataEl.GetElementRef());
@@ -1954,7 +1995,7 @@ ITransactionHandler::PreActionStatus DTMElementDisplayHandler::_OnReplace (EditE
             if (moveXAttribute)
                 {
                 const void* data = xAttrHandle.PeekData ();
-                UInt32 size = xAttrHandle.GetSize ();
+                uint32_t size = xAttrHandle.GetSize ();
 
                 ITxnManager::GetCurrentTxn().AddXAttribute (dtmDataEl.GetElementRef(), handId, id, data, size);
                 deleteMap.push_back (XAttributeId (handId, id));
@@ -1970,7 +2011,7 @@ ITransactionHandler::PreActionStatus DTMElementDisplayHandler::_OnReplace (EditE
                 }
             }
 
-        TMReferenceXAttributeHandler::SetDTMDataReference (element, dtmDataEl);
+        DTMReferenceXAttributeHandler::SetDTMDataReference (element, dtmDataEl);
 
         DTMXAttributeHandler::ReloadData (dtmDataEl.GetElementRef ());
         }
@@ -2026,7 +2067,7 @@ BentleyStatus DTMElementDisplayHandler::_ValidateElementRange (EditElementHandle
     return SUCCESS;
     }
 
-void DTMElementDisplayHandler::_GetDescription (ElementHandleCR element, WString& string, UInt32 desiredLength) 
+void DTMElementDisplayHandler::_GetDescription (ElementHandleCR element, WString& string, uint32_t desiredLength) 
     {
     RefCountedPtr<DTMDataRef> DTMDataRef;
     DTMElementHandlerManager::GetDTMDataRef (DTMDataRef, element); 
@@ -2223,7 +2264,7 @@ bool DTMElementDisplayHandler::HasHighlight(ElementRefP el)
     return data != nullptr;
     }
 
-void DTMElementDisplayHandler::SetHighlight(ElementRefP el, UInt32 id, ElementHiliteState hiliteState)
+void DTMElementDisplayHandler::SetHighlight(ElementRefP el, uint32_t id, ElementHiliteState hiliteState)
     {
     if (!el)
         return;
@@ -2245,7 +2286,7 @@ void DTMElementDisplayHandler::SetHighlight(ElementRefP el, UInt32 id, ElementHi
         }
     }
 
-ElementHiliteState DTMElementDisplayHandler::GetHighlight(ElementRefP el, UInt32 id)
+ElementHiliteState DTMElementDisplayHandler::GetHighlight(ElementRefP el, uint32_t id)
     {
     if (el)
         {
@@ -2345,16 +2386,6 @@ struct TMHandlerDeleteManipulatorExtension : IDeleteManipulatorExtension
         return TMDeleteManipulator::Create ();
         }
     }; // End TMHandlerDeleteManipulatorExtension struct
-
-DTMSubElementContext::DTMSubElementContext ()
-    {
-    drawingInfo = nullptr;
-    }
-DTMSubElementContext::~DTMSubElementContext ()
-    {
-    if (drawingInfo)
-        delete drawingInfo;
-    }
 
 static DTMElementDisplayHandler& s_DTMElementDisplayHandlerSingleton = ELEMENTHANDLER_INSTANCE (DTMElementDisplayHandler);
 static DTMElement107Handler& s_DTMElement107HandlerSingleton = ELEMENTHANDLER_INSTANCE (DTMElement107Handler);

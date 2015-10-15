@@ -2244,7 +2244,7 @@ void  DTM::BrowseContours (ContoursBrowsingCriteria^ criteria, ContoursBrowsingD
     DTMFeatureCache cache (Handle, criteria->CacheSize, &ContoursBrowsingCacheCallbackForwarderDelegate, &forwarder);
     DTMException::CheckForErrorStatus (cache.BrowseContours (criteria->Interval, criteria->BaseElevation, criteria->ZLow, criteria->ZHigh, !criteria->UseOnlyContourValues,
         (::DTMContourSmoothing)criteria->SmoothingOption,smoothingFactor,(int)criteria->SplineDensification,
-        Bentley::TerrainModel::DTMFenceParams ((::DTMFenceType)criteria->FenceType, (::DTMFenceOption)criteria->FenceOption, (DPoint3d*)tPoint, fenceSize), (double*)contourValues, numContourValues,
+        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams ((::DTMFenceType)criteria->FenceType, (::DTMFenceOption)criteria->FenceOption, (DPoint3d*)tPoint, fenceSize), (double*)contourValues, numContourValues,
         maxSlopeOption, maxSlopeValue, criteria->ShowDepressionContours));
     }
 //=======================================================================================
@@ -2276,7 +2276,7 @@ void  DTM::ContourAtPoint (ContoursBrowsingCriteria^ criteria, ContoursBrowsingD
 
     DTMException::CheckForErrorStatus (Handle->ContourAtPoint(X,Y,criteria->Interval,
         (::DTMContourSmoothing)criteria->SmoothingOption,smoothingFactor,(int)criteria->SplineDensification,
-        Bentley::TerrainModel::DTMFenceParams ((::DTMFenceType)criteria->FenceType, (::DTMFenceOption)criteria->FenceOption, (DPoint3d*)tPoint, fenceSize),
+        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams ((::DTMFenceType)criteria->FenceType, (::DTMFenceOption)criteria->FenceOption, (DPoint3d*)tPoint, fenceSize),
         &forwarder, &ContoursBrowsingCallbackForwarderDelegate));
 
     }
@@ -2303,7 +2303,7 @@ void DTM::BrowseDynamicFeatures (DynamicFeaturesBrowsingCriteria^ criteria, DTMD
         tPoint = &criteria->FencePoints[0];
         }
     DTMFeatureCache cache (Handle, criteria ? criteria->CacheSize : 1000, &DynamicFeaturesBrowsingCacheCallbackForwarderDelegate, &forwarder);
-    DTMException::CheckForErrorStatus (cache.BrowseFeatures (featType, Bentley::TerrainModel::DTMFenceParams (criteria ? (::DTMFenceType)criteria->FenceType : ::DTMFenceType::None, criteria ? (::DTMFenceOption)criteria->FenceOption : ::DTMFenceOption::None, (DPoint3d*)tPoint, fenceSize), criteria ? criteria->MaxSpots : 10000));
+    DTMException::CheckForErrorStatus (cache.BrowseFeatures (featType, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams (criteria ? (::DTMFenceType)criteria->FenceType : ::DTMFenceType::None, criteria ? (::DTMFenceOption)criteria->FenceOption : ::DTMFenceOption::None, (DPoint3d*)tPoint, fenceSize), criteria ? criteria->MaxSpots : 10000));
     }
 
 //=======================================================================================
@@ -2330,7 +2330,7 @@ void DTM::BrowseDynamicFeatures (BrowsingCriteria^ criteria, DTMDynamicFeatureTy
         }
 
     DTMFeatureCache cache (Handle, criteria ? criteria->CacheSize : 1000, &DynamicFeaturesBrowsingCacheCallbackForwarderDelegate, &forwarder);
-    DTMException::CheckForErrorStatus (cache.BrowseFeatures (featType, Bentley::TerrainModel::DTMFenceParams (criteria ? (::DTMFenceType)criteria->FenceType : ::DTMFenceType::None, criteria ? (::DTMFenceOption)criteria->FenceOption : ::DTMFenceOption::None, (DPoint3d*)tPoint, fenceSize), 10000));
+    DTMException::CheckForErrorStatus (cache.BrowseFeatures (featType, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams (criteria ? (::DTMFenceType)criteria->FenceType : ::DTMFenceType::None, criteria ? (::DTMFenceOption)criteria->FenceOption : ::DTMFenceOption::None, (DPoint3d*)tPoint, fenceSize), 10000));
     }
 //=======================================================================================
 // @bsimethod                                               Rob.Cormack     6/2009
@@ -2352,7 +2352,7 @@ void  DTM::BrowseTriangleMesh (TriangleMeshBrowsingCriteria^ criteria, TriangleM
         fenceSize = criteria->FencePoints->Length;
         fencePts = &criteria->FencePoints[0];
         }
-    DTMException::CheckForErrorStatus (Handle->BrowseTriangleMesh (criteria->MaxTriangles,Bentley::TerrainModel::DTMFenceParams (criteria ? (::DTMFenceType)criteria->FenceType : ::DTMFenceType::None, criteria ? (::DTMFenceOption)criteria->FenceOption : ::DTMFenceOption::None, (DPoint3d*)fencePts,fenceSize), &forwarder,&TriangleMeshBrowsingCallbackForwarderDelegate)) ;
+    DTMException::CheckForErrorStatus (Handle->BrowseTriangleMesh (criteria->MaxTriangles,BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams (criteria ? (::DTMFenceType)criteria->FenceType : ::DTMFenceType::None, criteria ? (::DTMFenceOption)criteria->FenceOption : ::DTMFenceOption::None, (DPoint3d*)fencePts,fenceSize), &forwarder,&TriangleMeshBrowsingCallbackForwarderDelegate)) ;
     }
 //=======================================================================================
 // @bsimethod                                               Rob.Cormack      5/2009
@@ -2378,7 +2378,7 @@ void DTM::BrowsePoints (PointsBrowsingCriteria^ criteria, PointsBrowsingDelegate
         tPoint = &criteria->FencePoints[0];
         }
 
-    DTMException::CheckForErrorStatus (Handle->BrowseFeatures(featType, Bentley::TerrainModel::DTMFenceParams((::DTMFenceType)criteria->FenceType,(::DTMFenceOption)criteria->FenceOption, (DPoint3d*)tPoint,fenceSize),criteria->MaxPoints,&forwarder,&PointsBrowsingCallbackForwarderDelegate));
+    DTMException::CheckForErrorStatus (Handle->BrowseFeatures(featType, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams((::DTMFenceType)criteria->FenceType,(::DTMFenceOption)criteria->FenceOption, (DPoint3d*)tPoint,fenceSize),criteria->MaxPoints,&forwarder,&PointsBrowsingCallbackForwarderDelegate));
     }
 //=======================================================================================
 // @bsimethod                                               Rob.Cormack      5/2009
@@ -2399,7 +2399,7 @@ void DTM::BrowsePointFeatures (PointFeaturesBrowsingCriteria^ criteria, PointFea
         tPoint = &criteria->FencePoints[0];
         }
 
-    DTMException::CheckForErrorStatus (Handle->BrowseFeatures (featType,Bentley::TerrainModel::DTMFenceParams((::DTMFenceType)criteria->FenceType,(::DTMFenceOption)criteria->FenceOption, (DPoint3d*)tPoint,fenceSize),criteria->MaxPoints,&forwarder,&PointFeaturesBrowsingCallbackForwarderDelegate));
+    DTMException::CheckForErrorStatus (Handle->BrowseFeatures (featType,BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams((::DTMFenceType)criteria->FenceType,(::DTMFenceOption)criteria->FenceOption, (DPoint3d*)tPoint,fenceSize),criteria->MaxPoints,&forwarder,&PointFeaturesBrowsingCallbackForwarderDelegate));
     }
 
 //=======================================================================================
@@ -2424,7 +2424,7 @@ void DTM::BrowseLinearFeatures (LinearFeaturesBrowsingCriteria^ criteria, DTMFea
         }
 
     DTMFeatureCache cache (Handle, criteria ? criteria->CacheSize : 1000, &FeaturesBrowsingCacheCallbackForwarderDelegate, &forwarder);
-    DTMException::CheckForErrorStatus (cache.BrowseFeatures(featType, Bentley::TerrainModel::DTMFenceParams (criteria ? (::DTMFenceType)criteria->FenceType : ::DTMFenceType::None, criteria ? (::DTMFenceOption)criteria->FenceOption : ::DTMFenceOption::None, (DPoint3d*)tPoint, fenceSize), criteria ? criteria->MaxSpots : 10000));
+    DTMException::CheckForErrorStatus (cache.BrowseFeatures(featType, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams (criteria ? (::DTMFenceType)criteria->FenceType : ::DTMFenceType::None, criteria ? (::DTMFenceOption)criteria->FenceOption : ::DTMFenceOption::None, (DPoint3d*)tPoint, fenceSize), criteria ? criteria->MaxSpots : 10000));
     }
 
 //=======================================================================================
@@ -2497,7 +2497,7 @@ void  DTM::BrowseLowPoints (LowPointsBrowsingCriteria^ criteria, double minDepth
         fenceSize = criteria->FencePoints->Length;
         tPoint = &criteria->FencePoints[0];
         }
-    DTMException::CheckForErrorStatus (Handle->BrowseSinglePointFeatures (featType, &minDepth, Bentley::TerrainModel::DTMFenceParams (criteria ? (::DTMFenceType)criteria->FenceType : ::DTMFenceType::None, criteria ? (::DTMFenceOption)criteria->FenceOption : ::DTMFenceOption::None, (DPoint3d*)tPoint, fenceSize), &nPoint,
+    DTMException::CheckForErrorStatus (Handle->BrowseSinglePointFeatures (featType, &minDepth, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams (criteria ? (::DTMFenceType)criteria->FenceType : ::DTMFenceType::None, criteria ? (::DTMFenceOption)criteria->FenceOption : ::DTMFenceOption::None, (DPoint3d*)tPoint, fenceSize), &nPoint,
         &forwarder, &SinglePointFeatureBrowsingDelegateUnsafeCallback));
     }
 
@@ -2525,7 +2525,7 @@ void  DTM::BrowseHighPoints (HighPointsBrowsingCriteria^ criteria,  SinglePointF
         tPoint = &criteria->FencePoints[0];
         }
 
-    DTMException::CheckForErrorStatus (Handle->BrowseSinglePointFeatures (featType, NULL, Bentley::TerrainModel::DTMFenceParams (criteria ? (::DTMFenceType)criteria->FenceType : ::DTMFenceType::None, criteria ? (::DTMFenceOption)criteria->FenceOption : ::DTMFenceOption::None, (DPoint3d*)tPoint, fenceSize), &nPoint,
+    DTMException::CheckForErrorStatus (Handle->BrowseSinglePointFeatures (featType, NULL, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams (criteria ? (::DTMFenceType)criteria->FenceType : ::DTMFenceType::None, criteria ? (::DTMFenceOption)criteria->FenceOption : ::DTMFenceOption::None, (DPoint3d*)tPoint, fenceSize), &nPoint,
         &forwarder, &SinglePointFeatureBrowsingDelegateUnsafeCallback));
     }
 
@@ -2657,7 +2657,7 @@ void DTM::AnalyzeElevation (ElevationAnalyzingBrowsingCriteria^ criteria, Dynami
         }
 
     DTMFeatureCache cache (Handle, criteria ? criteria->CacheSize : 1000, &DynamicFeaturesBrowsingCacheCallbackForwarderDelegate, &forwarder);
-    DTMException::CheckForErrorStatus (cache.AnalyzeElevation (targetP, nInterval, criteria->PolygonizedResult, Bentley::TerrainModel::DTMFenceParams ((::DTMFenceType)criteria->FenceType, (::DTMFenceOption)criteria->FenceOption, (DPoint3d*)tPoint, fenceSize)));
+    DTMException::CheckForErrorStatus (cache.AnalyzeElevation (targetP, nInterval, criteria->PolygonizedResult, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams ((::DTMFenceType)criteria->FenceType, (::DTMFenceOption)criteria->FenceOption, (DPoint3d*)tPoint, fenceSize)));
 
     bcMem_free (targetP);
     }
@@ -2688,7 +2688,7 @@ void  DTM::AnalyzeSlope (SlopeAnalyzingBrowsingCriteria^ criteria, DynamicFeatur
 
     CheckIsTriangulated();
     DTMFeatureCache cache (Handle, criteria ? criteria->CacheSize : 1000, &DynamicFeaturesBrowsingCacheCallbackForwarderDelegate, &forwarder);
-    DTMException::CheckForErrorStatus (cache.AnalyzeSlope(targetP, nInterval, criteria->PolygonizedResult, Bentley::TerrainModel::DTMFenceParams ((::DTMFenceType)criteria->FenceType, (::DTMFenceOption)criteria->FenceOption, (DPoint3d*)tPoint, fenceSize)));
+    DTMException::CheckForErrorStatus (cache.AnalyzeSlope(targetP, nInterval, criteria->PolygonizedResult, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams ((::DTMFenceType)criteria->FenceType, (::DTMFenceOption)criteria->FenceOption, (DPoint3d*)tPoint, fenceSize)));
 
     bcMem_free (targetP);
     }
@@ -2719,7 +2719,7 @@ void  DTM::AnalyzeAspect (AspectAnalyzingBrowsingCriteria^ criteria, DynamicFeat
 
     CheckIsTriangulated();
     DTMFeatureCache cache (Handle, criteria ? criteria->CacheSize : 1000, &DynamicFeaturesBrowsingCacheCallbackForwarderDelegate, &forwarder);
-    DTMException::CheckForErrorStatus (cache.AnalyzeAspect (targetP, nInterval, criteria->PolygonizedResult, Bentley::TerrainModel::DTMFenceParams ((::DTMFenceType)criteria->FenceType, (::DTMFenceOption)criteria->FenceOption, (DPoint3d*)tPoint, fenceSize)));
+    DTMException::CheckForErrorStatus (cache.AnalyzeAspect (targetP, nInterval, criteria->PolygonizedResult, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams ((::DTMFenceType)criteria->FenceType, (::DTMFenceOption)criteria->FenceOption, (DPoint3d*)tPoint, fenceSize)));
 
     bcMem_free (targetP);
     }

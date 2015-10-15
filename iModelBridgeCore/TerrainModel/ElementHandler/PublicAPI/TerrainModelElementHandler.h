@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/PublicAPI/TerrainModelElementHandler.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,7 +11,7 @@
 #if !defined (BEGIN_BENTLEY_TERRAINMODEL_ELEMENT_NAMESPACE)
 #define BEGIN_BENTLEY_TERRAINMODEL_ELEMENT_NAMESPACE namespace Bentley { namespace TerrainModel { namespace Element {
 #define END_BENTLEY_TERRAINMODEL_ELEMENT_NAMESPACE }}}
-#define USING_NAMESPACE_BENTLEY_TERRAINMODEL_ELEMENT using namespace Bentley::TerrainModel::Element;
+#define USING_NAMESPACE_BENTLEY_TERRAINMODEL_ELEMENT using namespace BENTLEY_NAMESPACE_NAME::TerrainModel::Element;
 #endif
 
 #if defined (CREATE_STATIC_LIBRARIES) || defined (TERRAINMODEL_STATICLIB)

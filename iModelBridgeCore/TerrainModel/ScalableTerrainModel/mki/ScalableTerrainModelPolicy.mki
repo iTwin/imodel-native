@@ -2,7 +2,7 @@
 #
 #     $Source: ScalableTerrainModel/mki/ScalableTerrainModelPolicy.mki $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %if defined (__ScalableTerrainModelPolicy_mki__)
@@ -28,6 +28,7 @@ memoryDir               = $(SrcScalableTerrainModel)Memory/
 geocoordsDir            = $(SrcScalableTerrainModel)GeoCoords/
 importDir               = $(SrcScalableTerrainModel)Import/
 stmDir                  = $(SrcScalableTerrainModel)STM/
+StorageDir              = $(SrcScalableTerrainModel)Storage/
 importerPluginsDir      = $(stmDir)ImportPlugins/
 pluginsDir              = $(stmDir)Plugins/
 
@@ -67,8 +68,7 @@ DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
 DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/
 
 # Common library names for linking.  Originally macro-ized when they had numbers in the name of the LIB
-IppGraLibsLib           = $(libprefix)IppGraLibs$(libext)
-IppUtlLibsLib           = $(libprefix)IppUtlLibs$(libext)
+ImagePPLib              = $(libprefix)ImagePP$(libext)
 BaseGeocoordLib         = $(libprefix)basegeocoord$(libext)
 BentleyGeomLib          = $(libprefix)BentleyGeom$(libext)
 TerrainModelCoreLib     = $(libprefix)TerrainModelCore$(libext)

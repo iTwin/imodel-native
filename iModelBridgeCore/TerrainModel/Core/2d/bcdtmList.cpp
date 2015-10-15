@@ -8113,7 +8113,7 @@ BENTLEYDTM_Public int bcdtmList_expandTptrPolygonAtPointDtmObject( BC_DTM_OBJ *d
  long   expandType,pnt,antPoint,nextPnt,cleanPnt,pPoint;
  DTMDirection direction;
  long   point,priorPoint,nextPoint,startPoint,expansionNextPoint,expansionPriorPoint ;
- double beforeArea,afterArea ;
+ double beforeArea = 0.0,afterArea ;
 /*
 ** Write Entry Message
 */

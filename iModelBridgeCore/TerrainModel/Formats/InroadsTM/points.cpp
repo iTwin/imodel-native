@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 
 //---------------------------------------------------------------------------
@@ -43,7 +43,7 @@ int CFeature::AddPoints     // <=  Non-zero status code if error occurred.
 int CFeature::AddPoints     // <=  Non-zero status code if error occurred.
 (
     DPoint3d *pntsP,        //  => 3D points to add to feature.
-    byte *flgsP,         //  => Point properties.
+    unsigned char *flgsP,         //  => Point properties.
     long numPnts            //  => Number of points to add.
 )
 {
@@ -143,7 +143,7 @@ long *numPntsP           // <=  Number of points returned.
 int CFeature::GetPoints // <=  Non-zero status code if error occurred.
 (
 DPoint3d **pntsPP,       // <=  Feature's 3D coordinates. CALLER MUST FREE.
-byte **pntFlgsPP,     // <=  Feature's point properties.  CALLER MUST FREE
+unsigned char **pntFlgsPP,     // <=  Feature's point properties.  CALLER MUST FREE
 long *numPntsP           // <=  Number of points returned.
 )
 {

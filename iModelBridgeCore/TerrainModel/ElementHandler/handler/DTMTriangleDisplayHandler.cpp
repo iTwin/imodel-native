@@ -390,17 +390,9 @@ struct DTMStrokeForCacheShadedTriangles : IDTMStrokeForCache
                 // Push the transformation matrix to transform the coordinates to UORS.
                 DrawSentinel    sentinel (context, m_drawingInfo);
 
-                if ( context.GetDrawPurpose() == DrawPurpose::Measure)
+                if ( context.GetDrawPurpose() == DrawPurpose::Measure )
                     {
-                    DTMFenceParams fence (fenceType, DTMFenceOption::Overlap, (DPoint3d*)fencePts, nbPts);
-                    DTMMeshEnumeratorPtr en = DTMMeshEnumerator::Create (*bcDTM);
-                    en->SetFence (fence);
-                    en->SetMaxTriangles (126000 / 3);
-                    for (PolyfaceQueryP info : *en)
-                        {
-                        context.GetIDrawGeom ().DrawPolyface (*info);
-                        m_nbPointsDrawn += (int)info->GetPointCount ();
-                        }
+                    bcdtmInterruptLoad_triangleShadeMeshFromDtmObject (m_tinP, 65000,2,1,&draw, fencePts != nullptr, fenceType, DTMFenceOption::Overlap, (DPoint3d*)fencePts, nbPts, &userData);
                     }
                 else if (m_doRegions)   //Display all regions
                     {
@@ -410,29 +402,41 @@ struct DTMStrokeForCacheShadedTriangles : IDTMStrokeForCache
                     {
                     if (m_textureRegionFeatureId == m_dtmElement->GetTinHandle()->nullFeatureId)
                         {
-                        DTMFenceParams fence (fenceType, DTMFenceOption::Overlap, (DPoint3d*)fencePts, nbPts);
-                        DTMMeshEnumeratorPtr en = DTMMeshEnumerator::Create(*bcDTM);
-                        en->SetFence (fence);
-                        en->SetMaxTriangles (126000 / 3);
-                        en->SetTilingMode (m_forTiling);
-                        for (PolyfaceQueryP info : *en)
+                        if (m_forTiling)
                             {
-                            context.GetIDrawGeom ().DrawPolyface (*info);
-                            m_nbPointsDrawn += (int)info->GetPointCount ();
+                            //bcdtmInterruptLoad_triangleShadeMeshForQVCacheFromDtmObject (m_tinP, 126000 / 3, 2, 1, &draw, true, fenceType, DTMFenceOption::Overlap, (DPoint3d*)fencePts, nbPts, &userData);
+                                {
+                                DTMFenceParams fence (fenceType, DTMFenceOption::Overlap, (DPoint3d*)fencePts, nbPts);
+                                DTMMeshEnumerator en (*bcDTM);
+                                en.SetFence (fence);
+                                en.SetMaxTriangles (126000 / 3);
+                                for (PolyfaceQueryP info : en)
+                                    {
+                                    context.GetIDrawGeom ().DrawPolyface (*info);
+                                    m_nbPointsDrawn += (int)info->GetPointCount ();
+                                    }
+                                }
                             }
+                        else
+                            bcdtmInterruptLoad_triangleShadeMeshFromDtmObject(m_tinP, 65000,2,1,&draw, fencePts != nullptr, fenceType, DTMFenceOption::Overlap, (DPoint3d*)fencePts, nbPts, &userData);
                         }
                     else
                         {
-                        DTMFenceParams fence (fenceType, DTMFenceOption::Overlap, (DPoint3d*)fencePts, nbPts);
-                        DTMMeshEnumeratorPtr en = DTMMeshEnumerator::Create (*bcDTM);
-                        en->SetFence (fence);
-                        en->SetMaxTriangles (126000 / 3);
-                        en->SetFilterRegionByFeatureId (m_textureRegionFeatureId);
-                        for (PolyfaceQueryP info : *en)
-                            {
-                            context.GetIDrawGeom ().DrawPolyface (*info);
-                            m_nbPointsDrawn += (int)info->GetPointCount ();
-                            }
+                        long maxTriangles = 65000;  // Maximum Triangles To Pass Back
+                        long vectorOption = 2;  // Averaged Triangle Surface Normals
+                        double zAxisFactor = 1.0;  // Am\ount To Exaggerate Z Axis
+                        long regionOption = 1;  // Include Internal Regions Until Fully Tested
+                        long indexOption = 2;  // Use Feature Id
+
+                        bcdtmLoad_triangleShadeMeshForRegionDtmObject(m_tinP,
+                                                                      maxTriangles,
+                                                                      vectorOption,
+                                                                      zAxisFactor,
+                                                                      regionOption,
+                                                                      indexOption,
+                                                                      m_textureRegionFeatureId,
+                                                                      &drawForTexturing,
+                                                                      &userData);
                         }
                     }
                 }
@@ -447,7 +451,7 @@ int DTMStrokeForCacheShadedTriangles::draw(DTMFeatureType dtmFeatureType,int num
     UserDataDuringDTMDataLoad* userDataP = (UserDataDuringDTMDataLoad*)userP;
 
     ViewContextP context = userDataP->m_viewContextP;
-    UInt32 numPerFace = 3;
+    uint32_t numPerFace = 3;
     bool   twoSided = false;
     size_t indexCount = numMeshFaces;
     size_t pointCount = numMeshPts;
@@ -470,7 +474,7 @@ int DTMStrokeForCacheShadedTriangles::drawForTexturing(DTMFeatureType dtmFeature
 
     ViewContextP context = userDataP->m_viewContextP;
 
-    UInt32 numPerFace = 3;
+    uint32_t numPerFace = 3;
     bool   twoSided = false;
     size_t indexCount = numMeshFaces;
     size_t pointCount = numMeshPts;
@@ -513,7 +517,7 @@ int DTMStrokeForCacheShadedTriangles::Load (DTMFeatureType dtmFeatureType, DTMUs
     else
         {
         int meshFacesP[3] = {1,2,3};
-        UInt32 numPerFace = 3;
+        uint32_t numPerFace = 3;
         bool   twoSided = false;
         size_t indexCount = 3;
         size_t pointCount = 3;
@@ -839,7 +843,7 @@ void DTMElementTrianglesDisplayHandler::DrawWithTexture(BcDTMP                  
 
         //TR 352273 - Prioritize STM raster draping over any override.
         OvrMatSymb ovrMatSym(*context.GetOverrideMatSymb());
-        UInt32 flag = ovrMatSym.GetFlags();
+        uint32_t flag = ovrMatSym.GetFlags();
 
         if (flag != MATSYMB_OVERRIDE_None)
             {
@@ -1090,7 +1094,7 @@ bool DTMElementTrianglesDisplayHandler::_Draw (ElementHandleCR element, const El
                         if (pick)
                             {
                             int meshFacesP[3] = {1,2,3};
-                            UInt32 numPerFace = 3;
+                            uint32_t numPerFace = 3;
                             bool   twoSided = false;
                             size_t indexCount = 3;
                             size_t pointCount = 3;
@@ -1103,7 +1107,7 @@ bool DTMElementTrianglesDisplayHandler::_Draw (ElementHandleCR element, const El
                         else
                             {
                             int meshFacesP[3] = {1,2,3};
-                            UInt32 numPerFace = 3;
+                            uint32_t numPerFace = 3;
                             bool   twoSided = false;
                             size_t indexCount = 3;
                             size_t pointCount = 3;
@@ -1356,6 +1360,34 @@ WCharCP                           delimiterStr
     string.append(delim + elevationString + delim + slopeString + delim + aspectString);
     }
 
+//=======================================================================================
+// @bsimethod                                                   Daryl.Holmwood 09/11
+//=======================================================================================
+void DTMElementTrianglesDisplayHandler::_EditProperties (EditElementHandleR element, ElementHandle::XAttributeIter xAttr, DTMSubElementId const &sid, PropertyContextR context)
+    {
+    T_Super::_EditProperties (element, xAttr, sid, context);
+    DTMElementTrianglesHandler::DisplayParams displayParams (element, sid);
+    PropsCallbackFlags propsFlag = displayParams.GetVisible() ?  PROPSCALLBACK_FLAGS_NoFlagsSet : PROPSCALLBACK_FLAGS_UndisplayedID;
+    bool changed = false;
+
+    if (0 != (ELEMENT_PROPERTY_Material & context.GetElementPropertiesMask ()))
+        {
+        MaterialId materialId (displayParams.GetMaterialElementID());
+        EachMaterialArg arg (materialId, propsFlag, context);
+
+        if (context.DoMaterialCallback (&materialId, arg))
+            {
+            changed = true;
+            displayParams.SetMaterialElementID (materialId.GetElementId ());
+            }
+        }
+
+    if (changed)
+        displayParams.SetElement (element, sid);
+    }
+
+
+
 struct RegionDisplayStyleHandler : DisplayStyleHandler
     {
     static RegionDisplayStyleHandler s_instance;
@@ -1385,12 +1417,12 @@ RegionDisplayStyleHandler RegionDisplayStyleHandler::s_instance;
 struct RegionDisplayHandlerKey : public DisplayStyleHandlerKey
 {
 private:
-    Int64 m_region;
+    int64_t m_region;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrandonBohrer   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-    RegionDisplayHandlerKey (Int64 region) : DisplayStyleHandlerKey (RegionDisplayStyleHandler::GetInstance())
+    RegionDisplayHandlerKey (int64_t region) : DisplayStyleHandlerKey (RegionDisplayStyleHandler::GetInstance())
         {
         m_region = region;
         }
@@ -1403,19 +1435,19 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual bool    Matches (DisplayStyleHandlerKey const& other) const override
         {
-        RegionDisplayHandlerKey const *     otherKey = nullptr;
+        RegionDisplayHandlerKey const *     otherKey = NULL;
 
-        if (nullptr == (otherKey = dynamic_cast <RegionDisplayHandlerKey const *> (&other)))
+        if (GetHandlerId() != otherKey->GetHandlerId() || NULL == (otherKey = dynamic_cast <RegionDisplayHandlerKey const *> (&other)))
             return false;
 
-        return  GetHandlerId () == otherKey->GetHandlerId () && m_region == otherKey->m_region;
+        return  m_region == otherKey->m_region;
         }
 
 public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    BrandonBohrer   07/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static  DisplayStyleHandlerKeyPtr  Create (Int64 region)
+    static  DisplayStyleHandlerKeyPtr  Create (int64_t region)
         {
         return new RegionDisplayHandlerKey (region);
         }
@@ -1458,7 +1490,7 @@ bool DTMElementRegionsDisplayHandler::_Draw (ElementHandleCR element, const Elem
                 return false;
 
             DSHandlerKeyStoragePtr ds = GetCommonHandlerKey (RegionDisplayHandlerKey::Create (params.GetTag()));
-            Bentley::TerrainModel::DTMPtr dtmPtr(DTMDataRef->GetDTMStorage(DrawShadedTriangles, context));
+            BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr(DTMDataRef->GetDTMStorage(DrawShadedTriangles, context));
             BcDTMP dtm = 0;
 
             if (dtmPtr != 0)
@@ -1548,7 +1580,7 @@ bool DTMElementRegionsDisplayHandler::_CreateDefaultElements(EditElementHandleR 
 
         if (DTMDataRef.IsValid())
             {
-            Bentley::TerrainModel::DTMPtr dtmPtr(DTMDataRef->GetDTMStorage(None));
+            BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr(DTMDataRef->GetDTMStorage(None));
             BcDTMP dtm = nullptr;
 
             if (dtmPtr != 0)
@@ -1556,12 +1588,12 @@ bool DTMElementRegionsDisplayHandler::_CreateDefaultElements(EditElementHandleR 
                 dtm = dtmPtr->GetBcDTM();
                 }
 
-            bvector<Int64> regions;
+            bvector<int64_t> regions;
             if (dtm)
                 {
                 dtm->BrowseFeatures (DTMFeatureType::Region, DTMFenceParams(), 10000, &regions, LoadRegions);
 
-                for (bvector<Int64>::const_iterator iter = regions.begin(); iter < regions.end(); iter++)
+                for (bvector<int64_t>::const_iterator iter = regions.begin(); iter < regions.end(); iter++)
                     {
                     DTMSubElementId subElement = DTMElementRegionsHandler::GetInstance()->Create (element, visible);
                     DTMElementRegionsHandler::DisplayParams params (element);
@@ -1569,7 +1601,7 @@ bool DTMElementRegionsDisplayHandler::_CreateDefaultElements(EditElementHandleR 
                     params.SetTag (*iter);
                     params.SetDescription (L"");
 
-                    UInt64 tag = params.GetTag();
+                    uint64_t tag = params.GetTag();
                     char* buffer = (char*)&tag;
 
                     bool valid = true;
@@ -1613,6 +1645,33 @@ bool DTMElementRegionsDisplayHandler::_CreateDefaultElements(EditElementHandleR 
         return false;
         }
     return false;
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Daryl.Holmwood 09/11
+//=======================================================================================
+void DTMElementRegionsDisplayHandler::_EditProperties (EditElementHandleR element, ElementHandle::XAttributeIter xAttr, DTMSubElementId const &sid, PropertyContextR context)
+    {
+    T_Super::_EditProperties (element, xAttr, sid, context);
+
+    DTMElementRegionsHandler::DisplayParams displayParams (element, sid);
+    PropsCallbackFlags propsFlag = displayParams.GetVisible() ?  PROPSCALLBACK_FLAGS_NoFlagsSet : PROPSCALLBACK_FLAGS_UndisplayedID;
+    bool changed = false;
+
+    if (0 != (ELEMENT_PROPERTY_Material & context.GetElementPropertiesMask ()))
+        {
+        MaterialId materialId (displayParams.GetMaterialElementID());
+        EachMaterialArg arg (materialId, propsFlag, context);
+
+        if (context.DoMaterialCallback (&materialId, arg))
+            {
+            changed = true;
+            displayParams.SetMaterialElementID (materialId.GetElementId ());
+            }
+        }
+
+    if (changed)
+        displayParams.SetElement (element, sid);
     }
 
 

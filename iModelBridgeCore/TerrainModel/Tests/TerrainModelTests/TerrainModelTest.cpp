@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/TerrainModelTests/TerrainModelTest.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma warning(disable:4505) // unreferenced local function has been removed [in gtest-port.h]
@@ -86,7 +86,7 @@ BcDTMPtr LoadTerrainModel (WCharCP filename, WCharCP name = nullptr)
 
 TEST (TmTest, Triangulate)
     {
-    Bentley::TerrainModel::BcDTMPtr dtm = Bentley::TerrainModel::BcDTM::Create ();
+    BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr dtm = BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTM::Create ();
 
     DPoint3d pts[4];
 
@@ -200,7 +200,7 @@ void DoPondTest (BcDTMR iDtm)
 //    BC_DTM_OBJ* depressionDtmP = NULL;
 //    BC_DTM_OBJ *traceDtmP = NULL;
 //    void  *userP = NULL;
-//    Bentley::TerrainModel::DTMFenceParams  fence;
+//    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams  fence;
 //    DPoint3d  fencePts[10];
 //    DPoint3d  traceStartPoint, sumpPoint;
 //    double    maxPondDepth;
@@ -294,7 +294,7 @@ void DoPondTest (BcDTMR iDtm)
                             {
                             bool pondDetermined = false;
                             double pondElevation, pondDepth, pondVolume, pondArea;
-                            Bentley::TerrainModel::DTMDynamicFeatureArray pondFeatures;
+                            BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDynamicFeatureArray pondFeatures;
                             if (BcDTMDrainage::CalculatePondForPoint (&iDtm, x, y, 0.0, pondDetermined, pondElevation, pondDepth, pondArea, pondVolume, pondFeatures) == DTM_SUCCESS)
                                 if (dbg && pondDetermined)
                                     {
@@ -321,7 +321,7 @@ errexit:
 
 TEST (TmTest, LoadDTM)
     {
-    Bentley::TerrainModel::BcDTMPtr dtm = LoadTerrainModel (L"Data\\TerrainModelNet\\Bentley.Civil.Dtm.Light.NUnit.dll\\groupSpot.tin");
+    BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr dtm = LoadTerrainModel (L"Data\\TerrainModelNet\\Bentley.Civil.Dtm.Light.NUnit.dll\\groupSpot.tin");
     ASSERT_TRUE (dtm->Triangulate () == SUCCESS);
     DoPondTest (*dtm);
     SUCCEED ();
@@ -331,7 +331,7 @@ TEST (TmTest, LoadDTM)
 
 TEST (TmTest, DeterminePonds)
     {
-    Bentley::TerrainModel::BcDTMPtr dtm = Bentley::TerrainModel::BcDTM::CreateFromTinFile (L"Data\\TerrainModelNet\\Bentley.Civil.Dtm.NUnit.dll\\DTMDrainageTests\\DTMDrainageCatchmentTests\\mine.dtm");
+    BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr dtm = BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTM::CreateFromTinFile (L"Data\\TerrainModelNet\\Bentley.Civil.Dtm.NUnit.dll\\DTMDrainageTests\\DTMDrainageCatchmentTests\\mine.dtm");
     ASSERT_TRUE (dtm.IsValid ());
     ASSERT_TRUE (dtm->Triangulate () == SUCCESS);
 
@@ -341,7 +341,7 @@ TEST (TmTest, DeterminePonds)
 
 TEST (TmTest, CreateFromXyz)
     {
-    Bentley::TerrainModel::BcDTMPtr dtm = LoadTerrainModel (L"Data\\TerrainModelNet\\Bentley.Civil.Dtm.NUnit.dll\\DTMTriangulationTest\\DTMTriangulationXyzTest\\1M.xyz");
+    BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr dtm = LoadTerrainModel (L"Data\\TerrainModelNet\\Bentley.Civil.Dtm.NUnit.dll\\DTMTriangulationTest\\DTMTriangulationXyzTest\\1M.xyz");
     ASSERT_TRUE (dtm->Triangulate () == SUCCESS);
     DoPondTest (*dtm);
     SUCCEED ();

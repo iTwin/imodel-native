@@ -6,7 +6,7 @@
 |       $Date: 2011/11/22 21:58:02 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -33,7 +33,7 @@ public:  // OPERATOR_NEW_KLUDGE
 
 private:
     DataType                            m_type;
-    UInt32                              m_flags;
+    uint32_t                              m_flags;
     void*                               m_implP; // Reserve some space for further use
 public:
     IMPORT_DLLE static ClassID          s_GetClassID                       ();

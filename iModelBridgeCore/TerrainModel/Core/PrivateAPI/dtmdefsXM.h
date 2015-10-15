@@ -276,7 +276,7 @@ struct DTM_SCAN_CONTEXT
 
 struct TINOBJLIST { void *Tin  ; long TinIndex ; } ;
 struct DATAOBJLIST { DATAOBJ *Data ; long ListFlag ; } ;
-typedef   Int64        DTM_TAG_VAR ;
+typedef   int64_t        DTM_TAG_VAR ;
 
 struct GpkDtmPointFeatureList{ long dtmFeature; DTMFeatureType dtmFeatureType; long priorPoint,nextPoint ; DTM_TAG_VAR userTag ; } ;
 

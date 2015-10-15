@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMUnitsConverter.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -85,8 +85,8 @@ class DTMUnitsConverter
 //+===============+===============+===============+===============+===============+======
 __forceinline DTMUnitsConverter::DTMUnitsConverter()
     {
-    m_trfs.initIdentity();
-    m_trfsInv.initIdentity();
+    m_trfs.InitIdentity();
+    m_trfsInv.InitIdentity();
     }
 
 //=======================================================================================

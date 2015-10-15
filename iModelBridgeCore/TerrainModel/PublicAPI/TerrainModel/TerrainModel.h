@@ -19,26 +19,25 @@
 
 //__PUBLISH_SECTION_START__
 #define BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE    BEGIN_BENTLEY_NAMESPACE namespace TerrainModel {
-#define END_BENTLEY_TERRAINMODEL_NAMESPACE     }}
-#define USING_NAMESPACE_BENTLEY_TERRAINMODEL    using namespace Bentley::TerrainModel;
+#define END_BENTLEY_TERRAINMODEL_NAMESPACE     } END_BENTLEY_NAMESPACE
+#define USING_NAMESPACE_BENTLEY_TERRAINMODEL    using namespace BENTLEY_NAMESPACE_NAME::TerrainModel;
 
 #define BEGIN_BENTLEY_MRDTM_NAMESPACE    BEGIN_BENTLEY_NAMESPACE namespace MrDTM {
-#define END_BENTLEY_MRDTM_NAMESPACE     }}
-#define USING_NAMESPACE_BENTLEY_MRDTM    using namespace Bentley::MrDTM;
+#define END_BENTLEY_MRDTM_NAMESPACE     } END_BENTLEY_NAMESPACE
+#define USING_NAMESPACE_BENTLEY_MRDTM    using namespace BENTLEY_NAMESPACE_NAME::MrDTM;
 
 #ifndef BEGIN_BENTLEY_MRDTM_IMPORT_NAMESPACE
 #define BEGIN_BENTLEY_MRDTM_IMPORT_NAMESPACE BEGIN_BENTLEY_MRDTM_NAMESPACE namespace Import {
 #define END_BENTLEY_MRDTM_IMPORT_NAMESPACE  END_BENTLEY_MRDTM_NAMESPACE}
-#define USING_NAMESPACE_BENTLEY_MRDTM_IMPORT using namespace Bentley::MrDTM::Import;
+#define USING_NAMESPACE_BENTLEY_MRDTM_IMPORT using namespace BENTLEY_NAMESPACE_NAME::MrDTM::Import;
 #endif //!BEGIN_BENTLEY_MRDTM_IMPORT_NAMESPACE
 
 #define TERRAINMODEL_TYPEDEFS(_name_) \
-    BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE struct _name_; END_BENTLEY_TERRAINMODEL_NAMESPACE \
-    ADD_BENTLEY_TYPEDEFS (Bentley::TerrainModel, _name_)
+    BEGIN_BENTLEY_NAMESPACE namespace TerrainModel { DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) } END_BENTLEY_NAMESPACE
 
 #define TERRAINMODEL_ENUM(t,tEnum) \
     BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE enum t; END_BENTLEY_TERRAINMODEL_NAMESPACE \
-    typedef enum  Bentley :TerrainModel::##t  tEnum;
+    typedef enum  BENTLEY_NAMESPACE_NAME :TerrainModel::##t  tEnum;
 
 //__PUBLISH_SECTION_END__
 #else
@@ -62,13 +61,13 @@
 TERRAINMODEL_TYPEDEFS (BcDTM)
 TERRAINMODEL_TYPEDEFS (DTMFenceParams)
 TERRAINMODEL_TYPEDEFS (DTMContourParams)
+TERRAINMODEL_TYPEDEFS (BcDTMDrapedLine)
+TERRAINMODEL_TYPEDEFS (BcDTMDrapedLinePoint)
 //__PUBLISH_SECTION_END__
 TERRAINMODEL_TYPEDEFS (BcDTMEdges)
 TERRAINMODEL_TYPEDEFS (BcDTMMeshFace)
 TERRAINMODEL_TYPEDEFS (BcDTMMesh)
 TERRAINMODEL_TYPEDEFS (IBcDtmStream)
-TERRAINMODEL_TYPEDEFS (BcDTMDrapedLine)
-TERRAINMODEL_TYPEDEFS (BcDTMDrapedLinePoint)
 TERRAINMODEL_TYPEDEFS (BcDTMFeatureEnumerator)
 TERRAINMODEL_TYPEDEFS (DTMFeatureEnumerator)
 TERRAINMODEL_TYPEDEFS (DTMMeshEnumerator)
@@ -78,10 +77,10 @@ TERRAINMODEL_TYPEDEFS (BcDTMLinearFeature)
 TERRAINMODEL_TYPEDEFS (BcDTMComplexLinearFeature)
 TERRAINMODEL_TYPEDEFS (BcDTMSpot)
 
-//ADD_BENTLEY_TYPEDEFS1 (Bentley::TerrainModel, BcDTM, BcDTM, struct)
-//ADD_BENTLEY_TYPEDEFS1 (Bentley::TerrainModel, IBcDTMFeatureEnumerator, BcDTMFeatureEnumerator, struct)
-//ADD_BENTLEY_TYPEDEFS1 (Bentley::TerrainModel, BcDTMDrapedLine, BcDTMDrapedLine, struct)
-//ADD_BENTLEY_TYPEDEFS1 (Bentley::TerrainModel, BcDTMFeature, BcDTMFeature, struct)
+//ADD_BENTLEY_TYPEDEFS1 (BENTLEY_NAMESPACE_NAME::TerrainModel, BcDTM, BcDTM, struct)
+//ADD_BENTLEY_TYPEDEFS1 (BENTLEY_NAMESPACE_NAME::TerrainModel, IBcDTMFeatureEnumerator, BcDTMFeatureEnumerator, struct)
+//ADD_BENTLEY_TYPEDEFS1 (BENTLEY_NAMESPACE_NAME::TerrainModel, BcDTMDrapedLine, BcDTMDrapedLine, struct)
+//ADD_BENTLEY_TYPEDEFS1 (BENTLEY_NAMESPACE_NAME::TerrainModel, BcDTMFeature, BcDTMFeature, struct)
 
 TERRAINMODEL_TYPEDEFS (TMTransformHelper)
 
@@ -89,13 +88,13 @@ TERRAINMODEL_TYPEDEFS (TMTransformHelper)
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
 typedef RefCountedPtr<BcDTM> BcDTMPtr;
+typedef RefCountedPtr<BcDTMDrapedLine> BcDTMDrapedLinePtr;
+typedef RefCountedPtr<BcDTMDrapedLinePoint> BcDTMDrapedLinePointPtr;
 //__PUBLISH_SECTION_END__
 typedef RefCountedPtr<BcDTMEdges> BcDTMEdgesPtr;
 typedef RefCountedPtr<BcDTMMeshFace> BcDTMMeshFacePtr;
 typedef RefCountedPtr<BcDTMMesh> BcDTMMeshPtr;
 typedef RefCountedPtr<IBcDtmStream> BcDtmStreamPtr;
-typedef RefCountedPtr<BcDTMDrapedLine> BcDTMDrapedLinePtr;
-typedef RefCountedPtr<BcDTMDrapedLinePoint> BcDTMDrapedLinePointPtr;
 typedef RefCountedPtr<BcDTMFeatureEnumerator> BcDTMFeatureEnumeratorPtr;
 typedef RefCountedPtr<DTMFeatureEnumerator> DTMFeatureEnumeratorPtr;
 typedef RefCountedPtr<DTMMeshEnumerator> DTMMeshEnumeratorPtr;
@@ -123,11 +122,11 @@ typedef bvector<DtmString> DtmVectorString;
 END_BENTLEY_TERRAINMODEL_NAMESPACE
 
 TERRAINMODEL_TYPEDEFS (IDTM)
-//__PUBLISH_SECTION_END__
-TERRAINMODEL_TYPEDEFS (IDTMDraping)
+TERRAINMODEL_TYPEDEFS (IDTMDrainageFeature)
 TERRAINMODEL_TYPEDEFS (IDTMDrapedLine)
 TERRAINMODEL_TYPEDEFS (IDTMDrapedLinePoint)
-TERRAINMODEL_TYPEDEFS (IDTMDrainageFeature)
+//__PUBLISH_SECTION_END__
+TERRAINMODEL_TYPEDEFS (IDTMDraping)
 TERRAINMODEL_TYPEDEFS (IDTMDrainage)
 TERRAINMODEL_TYPEDEFS (IDTMContouring)
 TERRAINMODEL_TYPEDEFS (TMTransformHelper)
@@ -136,11 +135,11 @@ TERRAINMODEL_TYPEDEFS (TMTransformHelper)
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
 typedef RefCountedPtr<IDTM>         DTMPtr;
+typedef RefCountedPtr<IDTMDrainageFeature> DTMDrainageFeaturePtr;
+typedef RefCountedPtr<IDTMDrapedLinePoint> DTMDrapedLinePointPtr;
+typedef RefCountedPtr<IDTMDrapedLine>    DTMDrapedLinePtr;
 //__PUBLISH_SECTION_END__
 typedef RefCountedPtr<IDTMDraping>     DTMDrapingPtr;
-typedef RefCountedPtr<IDTMDrapedLine>    DTMDrapedLinePtr;
-typedef RefCountedPtr<IDTMDrapedLinePoint> DTMDrapedLinePointPtr;
-typedef RefCountedPtr<IDTMDrainageFeature> DTMDrainageFeaturePtr;
 
 typedef RefCountedPtr<TMTransformHelper> TMTransformHelperPtr;
 //__PUBLISH_SECTION_START__
@@ -173,8 +172,8 @@ END_BENTLEY_TERRAINMODEL_NAMESPACE
 // public enums this should be put into it's own header file.
 // moved from dtmdefs.h
 // ToDo Replace in Code.
-typedef Int64 DTMUserTag;
-typedef Int64 DTMFeatureId;
+typedef int64_t DTMUserTag;
+typedef int64_t DTMFeatureId;
 
 //__PUBLISH_SECTION_END__
 
@@ -197,7 +196,7 @@ enum class DTMFenceType : unsigned char
 /*
 ** DTM Feature Definitions
 */
-enum class DTMFeatureType : UInt32
+enum class DTMFeatureType : uint32_t
     {
     None = 0,
     RandomSpots = 0,
@@ -286,7 +285,7 @@ enum class DTMCleanupFlags : short
 ENUM_IS_FLAGS (DTMCleanupFlags)
 
 //__PUBLISH_SECTION_START__
-enum class DTMState : UInt32
+enum class DTMState : uint32_t
     {
     Data = 0,
     PointsSorted = 1,
@@ -294,7 +293,6 @@ enum class DTMState : UInt32
     Tin = 3,
     TinError = 4,
     };
-//__PUBLISH_SECTION_END__
 
 
 enum class DTMDrapedLineCode : char
@@ -308,6 +306,7 @@ enum class DTMDrapedLineCode : char
     OnPoint = 5,
     Edge = 6,
     };
+//__PUBLISH_SECTION_END__
 
 // Constants that define the position of a draped point with regards to the DTMFeatureState::Tin
 enum class DTMDrapePointCode
@@ -343,7 +342,6 @@ enum DTMStatusInt
     DTM_SUCCESS = 0,
     DTM_ERROR = 1
     };
-//__PUBLISH_SECTION_END__
 
 enum class DTMContourSmoothing : short
     {
@@ -352,6 +350,7 @@ enum class DTMContourSmoothing : short
     Spline = 2,
     SplineWithoutOverLapDetection = 3,
     };
+//__PUBLISH_SECTION_END__
 
 // Forward Create structures will need to use the TERRAINMODEL_TYPEDEFS
 struct BC_DTM_OBJ;

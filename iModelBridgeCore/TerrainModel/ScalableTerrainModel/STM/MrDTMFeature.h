@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -16,7 +16,7 @@ struct MrDTMFeature : public IMrDTMFeature
     private:
         size_t           m_type;
         vector<DPoint2d> m_points;
-        UInt32           m_refCount;   
+        uint32_t           m_refCount;   
 
     protected:
        

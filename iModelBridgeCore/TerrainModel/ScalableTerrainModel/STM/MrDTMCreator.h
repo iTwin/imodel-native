@@ -6,7 +6,7 @@
 |       $Date: 2011/12/21 17:04:24 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -47,7 +47,7 @@
 #include "MrDTMCoreFns.h"
 
 #include <ScalableTerrainModel/GeoCoords/Reprojection.h>
-#include <ImagePP/all/h/IDTMFile.h>
+#include <STMInternal/Storage/IDTMFile.h>
 #include <ScalableTerrainModel/IMrDTMDocumentEnv.h>
 
 #include "MrDTMEditListener.h"

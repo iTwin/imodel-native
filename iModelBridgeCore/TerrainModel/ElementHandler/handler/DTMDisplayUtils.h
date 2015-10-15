@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMDisplayUtils.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -53,7 +53,7 @@ void LogDebugV(const wchar_t* message ...);
 class LogTimeInfoHelper
     {
     WString m_message;
-    UInt32 m_took;
+    uint32_t m_took;
     public:
     LogTimeInfoHelper(wchar_t* message)
         {
@@ -70,9 +70,9 @@ class LogTimeInfoHelper
 
 #define LogTimeInfo(message) LogTimeInfoHelper helper(message)
 
-void DumpPointsInXYZfile(const DPoint3d* pointsP, int nbPoints, string& fileName, const Int64* indP);
+void DumpPointsInXYZfile(const DPoint3d* pointsP, int nbPoints, string& fileName, const int64_t* indP);
 
-void DumpDTMInTinFile(BcDTMP dtmP, wstring& fileName, const Int64* indP);
+void DumpDTMInTinFile(BcDTMP dtmP, wstring& fileName, const int64_t* indP);
 
 #else
 #define LogInfo(...)

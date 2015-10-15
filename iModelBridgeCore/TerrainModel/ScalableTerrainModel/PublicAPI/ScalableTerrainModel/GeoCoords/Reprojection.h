@@ -6,7 +6,7 @@
 |       $Date: 2011/12/01 18:51:36 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -188,7 +188,7 @@ private:
         FLAG_ALLOW_LCS_TO_GCS = 0x4,
         };
 
-    UInt32                                  m_flags;
+    uint32_t                                  m_flags;
     double                                  m_angularToLinearUnitRatio;
     const void*                             m_implP; // Reserved some space for further use.
 

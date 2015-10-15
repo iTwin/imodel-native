@@ -185,13 +185,6 @@ namespace Bentley.TerrainModel.ElementTemplate
                     properties.Add (propertyValue);
                     }
 
-                propertyValue = tempStruct.ContainedValues[prefix + "_TextLevel"];
-                if (propertyValue != null)
-                    {
-                    propertyValue.StringValue = "Default";
-                    properties.Add (propertyValue);
-                    }
-
                 propertyValue = tempStruct.ContainedValues[prefix + "_TextStyles"];
                 if (propertyValue != null)
                     {
@@ -269,22 +262,6 @@ namespace Bentley.TerrainModel.ElementTemplate
             property = contourStructValue[prefix + "_DisplayText"];
             if (property != null && !property.IsNull)
                 contourElement.DrawTextOption = (Bentley.TerrainModelNET.Element.DTMContourElement.ContourDrawTextOption)(property.IntValue);
-
-            property = contourStructValue[prefix + "_TextLevel"];
-            if (property != null && !property.IsNull)
-                {
-                LevelHandle level;
-
-                if (property.StringValue == "")
-                    level = contourElement.GetElement ().DgnModel.GetFileLevelCache ().GetLevel (64);
-                else
-                    level = contourElement.GetElement ().DgnModel.GetFileLevelCache ().GetLevelByName (property.StringValue, true);
-
-                if (level == null || !level.IsValid)
-                    level = contourElement.GetElement ().DgnModel.GetFileLevelCache ().CreateLevel (property.StringValue);
-                if (level != null && level.IsValid)
-                    contourElement.TextLevelId = level.LevelId;
-                }
 
             // Apply text style.
             property = contourStructValue[prefix + "_TextStyles"];

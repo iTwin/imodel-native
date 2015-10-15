@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:13 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -44,9 +44,9 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 /*__PUBLISH_SECTION_END__*/
 
-#include <ImagePP/all/h/HGFPointIndex.h>
-#include <ImagePP/all/h/HGFPointTileStore.h>
-#include <ImagePP/all/h/HGFFeatureIndex.h>
+#include "HGFPointIndex.h"
+#include "HGFPointTileStore.h"
+#include "HGFFeatureIndex.h"
 #include <ScalableTerrainModel/GeoCoords/Reprojection.h>
 #include <ScalableTerrainModel/GeoCoords/GCS.h>
 
@@ -170,10 +170,10 @@ template <class INDEXPOINT> class MrDTM : public MrDTMBase
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) override;
         virtual BcDTMP           _GetBcDTM() override;
-        virtual DTMStatusInt     _GetBoundary(Bentley::TerrainModel::DTMPointArray& boundary) override;
+        virtual DTMStatusInt     _GetBoundary(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray& boundary) override;
         virtual DTMStatusInt     _CalculateSlopeArea(double&, double&, const DPoint3d*, int) override;
         virtual bool             _GetTransformation(TransformR) override;
-        virtual DTMStatusInt     _GetTransformDTM(Bentley::TerrainModel::DTMPtr& transformedDTM, TransformCR) override;
+        virtual DTMStatusInt     _GetTransformDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& transformedDTM, TransformCR) override;
 
     // Inherited from IMRDTM                   
         virtual Count                  _GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const;
@@ -245,10 +245,10 @@ template <class POINT> class MrDTMSingleResolutionPointIndexView : public RefCou
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) override;
         virtual BcDTMP           _GetBcDTM() override;
-        virtual DTMStatusInt     _GetBoundary(Bentley::TerrainModel::DTMPointArray& boundary) override;
+        virtual DTMStatusInt     _GetBoundary(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray& boundary) override;
         virtual DTMStatusInt     _CalculateSlopeArea(double&, double&, const DPoint3d*, int) override;
         virtual bool             _GetTransformation(TransformR) override;
-        virtual DTMStatusInt     _GetTransformDTM(Bentley::TerrainModel::DTMPtr& transformedDTM, TransformCR) override;
+        virtual DTMStatusInt     _GetTransformDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& transformedDTM, TransformCR) override;
 
         // Inherited from IMRDTM             
         virtual Count                  _GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const override;

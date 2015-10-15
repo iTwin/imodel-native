@@ -6,13 +6,13 @@
 |       $Date: 2011/08/10 15:10:27 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 
-#include <ImagePP/all/h/IDTMFileDirectories/PointTypes.h>
+#include <STMInternal/Storage/IDTMFileDirectories/PointTypes.h>
 
 #include <ScalableTerrainModel/Type/IMrDTMPoint.h>
 #include <ScalableTerrainModel/Type/IMrDTMLinear.h>

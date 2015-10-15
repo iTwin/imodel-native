@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* delftr.c                                         twl    21-Jan-1999        */
@@ -26,13 +26,13 @@ static int aecDTM_deleteAllFeaturesProc(void *,struct CIVdtmsrf *,int,struct CIV
  DESC: Searches for the DTM feature with a given guid and deletes it.
  HIST: Original - twl 1-Jan-1999
  MISC:
- KEYW: DTM FEATURE DELETE BY GUID
+ KEYW: DTM FEATURE DELETE BY BeSQLite::BeGuid
 -----------------------------------------------------------------------------%*/
 
 int aecDTM_deleteFeatureByGUID /* <= TRUE if error                   */
 (
     struct CIVdtmsrf *srfP,         /* => surface with feature (or NULL)          */
-    GUID *guidP                     /* => guid of feature to delete               */
+    BeSQLite::BeGuid *guidP                     /* => guid of feature to delete               */
 )
 {
     CIVdtmsrf *srf;

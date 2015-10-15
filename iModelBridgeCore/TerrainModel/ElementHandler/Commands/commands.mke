@@ -222,15 +222,31 @@ MA_CONTEXT_LOCATION = $(ContextDeliveryDir)
 $(ContextDeliveryDir)TranskitInclude/TerrainModelAppHeaders/commandsDefs.h : $(_MakeFilePath)commandsDefs.h
     $(LinkFirstDepToFirstTarget)
 
-MuiTranskitSourceDir = $(basedir)Transkit/
+MuiTranskitSourceDir = $(basedir)
 MuiBaseName = $(sAppName).ma
 MuiTranskitDeliveryDir = $(ContextDeliveryDir)TransKit/TerrainModelCommands/
 MuiAdditionalIncludes = $(o) $(GensrcInclude)
 
 %include $(SharedMki)CreateAndSymlinkMui.mki
 
-#always:
-#   @SymLinkResxTranskitFiles.py $(baseDir)transkit.xml $(o) $(MuiTranskitDeliveryDir)
+#----------------------------------------------------------------------
+# Temporary hack... place a link in mdlapps directory.  I can't get
+#                   the app to load from the ExampleApps directory
+#----------------------------------------------------------------------
+##$(OutputRootDir)Product/Mstn/MicroStation/mdlapps/TerrainModelApp.dll : $(terrainModel_bin)TerrainModelApp.dll
+##    $(LinkFirstDepToFirstTarget)
+
+##$(OutputRootDir)Product/Mstn/MicroStation/mdlapps/TerrainModelApp.ma : $(terrainModel_bin)TerrainModelApp.ma
+##    $(LinkFirstDepToFirstTarget)
+
+##$(OutputRootDir)Product/Mstn/MicroStation/mdlapps/en/TerrainModelApp.ma.mui : $(terrainModel_bin)TerrainModelApp.ma.mui
+##    $(LinkFirstDepToFirstTarget)
+
+#$(OutputRootDir)Product/Mstn/MicroStation/config/appl/TerrainModel.cfg : $(basedir)TerrainModel.cfg
+#    $(LinkFirstDepToFirstTarget)
+
+#$(OutputRootDir)Product/Mstn/MicroStation/config/appl/TerrainModel.cfg : $(basedir)TerrainModel.cfg
+#    $(LinkFirstDepToFirstTarget)
 
 always:
-   @SymLinkResxTranskitFiles.py $(basedir)Transkit.xml $(o)Managed\ $(MuiTranskitDeliveryDir)Managed\
+   @SymLinkResxTranskitFiles.py $(baseDir)transkit.xml $(o) $(MuiTranskitDeliveryDir)

@@ -173,8 +173,8 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonAndTinHullDtmObject
 /*
 **     Intersect Polygon And Tin Hull
 */ 
+        *intersectFlagP = 0;
        if( bcdtmPolygon_intersectPolygons(hullPtsP,numHullPts,polyPtsP,numPolyPts,intersectFlagP,polyPP,ppTol,plTol)) goto errexit ;
-       *intersectFlagP = 0;
        if( *intersectFlagP == 0 ) 
          { 
           bcdtmWrite_message(1,0,0,"Polygon Does Not Intersect Tin Hull") ;

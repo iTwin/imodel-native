@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* coruti.cpp                                   twl    24-Apr-2002            */
@@ -96,7 +96,7 @@ int aecDTM_isCorridorDeletedFlagSet    /* <= TRUE if set                */
  DESC: Indexes corridors by guid
  HIST: Original - twl 26-Apr-2002
  MISC:
- KEYW: DTM INDEX CORRIDOR BY GUID
+ KEYW: DTM INDEX CORRIDOR BY BeSQLite::BeGuid
 -----------------------------------------------------------------------%*/
 
 int aecDTM_indexCorridorsByGuid
@@ -208,7 +208,7 @@ int aecDTM_destroyCorridorsComponentsMembersIndexes
  DESC: Inserts a corridor into the corridor guid index.
  HIST: Original - twl 26-Apr-2002
  MISC:
- KEYW: DTM INSERT INDEX CORRIDOR BY GUID
+ KEYW: DTM INSERT INDEX CORRIDOR BY BeSQLite::BeGuid
 -----------------------------------------------------------------------%*/
 
 static int aecDTM_insertCorridorIntoGuidIndex
@@ -267,7 +267,7 @@ static int aecDTM_insertCorridorIntoNameIndex
  DESC: Destorys the corridors guid index;
  HIST: Original - twl 26-Apr-2002
  MISC:
- KEYW: DTM DESTROY INDEX CORRIDOR GUID
+ KEYW: DTM DESTROY INDEX CORRIDOR BeSQLite::BeGuid
 -----------------------------------------------------------------------%*/
 
 int aecDTM_destroyCorridorsGuidIndex

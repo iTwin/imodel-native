@@ -6,13 +6,13 @@
 |       $Date: 2011/08/08 19:02:26 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <ImagePP/all/h/IDTMFeatureArray.h>
-#include <ImagePP/all/h/HPUArray.h>
+#include <STMInternal/Storage/IDTMFeatureArray.h>
+#include <STMInternal/Storage/HPUArray.h>
 
 #include <TerrainModel/Core/bcDTMClass.h>
 
@@ -26,7 +26,7 @@ namespace Plugin {
 struct CivilDTMWrapper
     {
 private:
-    Bentley::TerrainModel::BcDTMPtr m_pDTM;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr m_pDTM;
     DTMState m_state;
     // Disable copy
                                     CivilDTMWrapper                    (const CivilDTMWrapper&);
@@ -49,10 +49,10 @@ public:
         Close();
         }
 
-    Bentley::TerrainModel::BcDTM&           Get                                () { return *m_pDTM; }      
+    BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTM&           Get                                () { return *m_pDTM; }      
 
     // NOTE: Return type should be const, but as their API is not const correct it would burden us to return const.
-    Bentley::TerrainModel::BcDTM&           Get                                () const { return *m_pDTM; } 
+    BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTM&           Get                                () const { return *m_pDTM; } 
 
 
     DTMState GetState                           () const
@@ -118,7 +118,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 class PointHandler
     {
-    const Bentley::TerrainModel::BcDTM&     m_rDTM;
+    const BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTM&     m_rDTM;
     const CivilImportedTypes::TypeIdList&   
                                     m_typeIDList;
     bool                            m_initialized;
@@ -130,7 +130,7 @@ public:
     typedef LinearFeatureTypeInfoList::const_iterator
                                     TypeInfoCIter;
 
-    explicit                        PointHandler               (const Bentley::TerrainModel::BcDTM&                 dtm,
+    explicit                        PointHandler               (const BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTM&                 dtm,
                                                                 const CivilImportedTypes::TypeIdList&       typeIDList);
 
     bool                            ComputeCounts              ();
@@ -151,7 +151,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 class LinearHandler
     {
-    const Bentley::TerrainModel::BcDTM&     m_rDTM;
+    const BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTM&     m_rDTM;
     const CivilImportedTypes::TypeIdList&   
                                     m_typeIDList;
 
@@ -166,7 +166,7 @@ public:
     typedef LinearFeatureTypeInfoList::const_iterator
                                     TypeInfoCIter;
 
-    explicit                        LinearHandler              (const Bentley::TerrainModel::BcDTM&                 dtm,
+    explicit                        LinearHandler              (const BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTM&                 dtm,
                                                                 const CivilImportedTypes::TypeIdList&       typeIDList);
 
     bool                            ComputeCounts              ();

@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/MXModelFile.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -696,9 +696,9 @@ class DLL MXModelFile
 
             BeFileStatus status;
             if (strcmp (type, "rb") == 0)
-                status = hand->Open (filename, BeFileAccess::Read, BeFileSharing::ReadWrite);
+                status = hand->Open (filename, BeFileAccess::Read);
             else if(strcmp(type, "r+b") == 0)
-                status = hand->Open (filename, BeFileAccess::ReadWrite, BeFileSharing::Read);
+                status = hand->Open (filename, BeFileAccess::ReadWrite);
             else
                 status = hand->Create (filename, true);
             if(status != BeFileStatus::Success)
@@ -714,7 +714,7 @@ class DLL MXModelFile
             fp = nullptr;
             }
 
-        inline void fseek (BeFile* fp, const UInt64& offset, int origin)
+        inline void fseek (BeFile* fp, const uint64_t& offset, int origin)
             {
             //SEEK_CUR
             //SEEK_END
@@ -723,14 +723,14 @@ class DLL MXModelFile
             _pos = offset;
             }
 
-        inline UInt64 ftell(BeFile* fp)
+        inline uint64_t ftell(BeFile* fp)
             {
             return _pos;
             }
 
         inline void fread(void* data, unsigned long size, long num, BeFile* fp)
             {
-            UInt32 numRead;
+            uint32_t numRead;
 
             fp->Read (data, &numRead, size * num);
             _pos += numRead;
@@ -738,7 +738,7 @@ class DLL MXModelFile
 
         inline void fwrite (void* data, unsigned long size, long num, BeFile* fp)
             {
-            UInt32 numWritten;
+            uint32_t numWritten;
 
             fp->Write (&numWritten, data, size * num);
             _pos += numWritten;
@@ -2389,14 +2389,14 @@ class DLL MXVolumeString : public StringTableRecord
     };
 #endif
 
-typedef Bentley::bmap<long, StringTableRecord*> StringMap;
+typedef bmap<long, StringTableRecord*> StringMap;
 class StringTableIterator;
 class DLL StringTable : public ModelObject
     {
     friend StringTableIterator;
     friend StringTableRecord;
     private:
-        Bentley::bvector<int> _recordNumbers;
+        bvector<int> _recordNumbers;
         //                    ArrayClass<StringTableRecord*> _strings;
         StringMap _strings;
         bool _isReallyLoaded;

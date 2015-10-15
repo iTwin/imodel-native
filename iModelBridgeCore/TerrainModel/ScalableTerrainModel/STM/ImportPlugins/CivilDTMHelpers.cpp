@@ -6,7 +6,7 @@
 |       $Date: 2012/02/23 00:32:43 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableTerrainModelPCH.h>
@@ -140,7 +140,7 @@ static int CopyFeaturesCallback(DTMFeatureType pi_FeatureType, DTMUserTag pi_Fea
     IDTMFeatureArray<DPoint3d>& rFeatureList = *((IDTMFeatureArray<DPoint3d>*)pi_pUserArg);
 
     HPRECONDITION(pi_FeatureTag <= numeric_limits<IDTMFile::FeatureHeader::group_id_type>::max());
-    //Very bad converting int64 to UInt32.... but require to changes the STM file format to fix....
+    //Very bad converting int64 to uint32_t.... but require to changes the STM file format to fix....
     //Was already like that in V8i, probably not quite important since tag doesn`t seem to be used at all??
     rFeatureList.Append((IDTMFile::FeatureType)pi_FeatureType,
                         pi_pPoints,

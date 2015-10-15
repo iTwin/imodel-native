@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMBinaryData.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -91,7 +91,7 @@ void DTMBinaryData::Initialize()
 //=======================================================================================
 // @bsimethod                                                    Sylvain.Pucci   09/05
 //=======================================================================================
-bool DTMBinaryData::HasBinaryData(ElementRefP elRef, UInt16 xAttrSubId, UInt32 xAttrId)
+bool DTMBinaryData::HasBinaryData(ElementRefP elRef, UInt16 xAttrSubId, uint32_t xAttrId)
     {
     XAttributeHandlerId handlerId (TMElementMajorId, xAttrSubId);
     return XAttributeHandle::HasAttribute(elRef, handlerId, xAttrId);
@@ -100,7 +100,7 @@ bool DTMBinaryData::HasBinaryData(ElementRefP elRef, UInt16 xAttrSubId, UInt32 x
 //=======================================================================================
 // @bsimethod                                                    Sylvain.Pucci   09/05
 //=======================================================================================
-bool DTMBinaryData::HasBinaryData(EditElementHandleR element, UInt16 xAttrSubId, UInt32 xAttrId)
+bool DTMBinaryData::HasBinaryData(EditElementHandleR element, UInt16 xAttrSubId, uint32_t xAttrId)
     {
     XAttributeHandlerId handlerId (TMElementMajorId, xAttrSubId);
     EditElementHandle::XAttributeIter xattrIter = element.GetXAttributeIter();
@@ -110,7 +110,7 @@ bool DTMBinaryData::HasBinaryData(EditElementHandleR element, UInt16 xAttrSubId,
 //=======================================================================================
 // @bsimethod                                                    Mathieu.St-Pierre   04/10
 //=======================================================================================
-StatusInt DTMBinaryData::ScheduleReadData(EditElementHandleP element, UInt16 xAttrSubId, UInt32 xAttrId, void* data, UInt32 offset, UInt32 dataSize)
+StatusInt DTMBinaryData::ScheduleReadData(EditElementHandleP element, UInt16 xAttrSubId, uint32_t xAttrId, void* data, uint32_t offset, uint32_t dataSize)
     {
     XAttributeHandlerId handlerId (TMElementMajorId, xAttrSubId);
     ElementRefP elRef = element->GetElementRef();
@@ -134,7 +134,7 @@ StatusInt DTMBinaryData::ScheduleReadData(EditElementHandleP element, UInt16 xAt
 //=======================================================================================
 // @bsimethod                                                    Sylvain.Pucci   09/05
 //=======================================================================================
-void DTMBinaryData::ScheduleWriteData (EditElementHandleP element, UInt16 xAttrSubId, UInt32 xAttrId, void const* data, UInt32 offset, UInt32 dataSize)
+void DTMBinaryData::ScheduleWriteData (EditElementHandleP element, UInt16 xAttrSubId, uint32_t xAttrId, void const* data, uint32_t offset, uint32_t dataSize)
     {
     XAttributeHandlerId handlerId (TMElementMajorId, xAttrSubId);
     ElementRefP elRef = element->GetElementRef();
@@ -166,7 +166,7 @@ void DTMBinaryData::ScheduleWriteData (EditElementHandleP element, UInt16 xAttrS
 //=======================================================================================
 // @bsimethod                                                    Sylvain.Pucci   09/05
 //=======================================================================================
-void DTMBinaryData::ScheduleWriteData (EditElementHandleP element, UInt16 xAttrSubId, UInt32 xAttrId, void const* data, UInt32 dataSize)
+void DTMBinaryData::ScheduleWriteData (EditElementHandleP element, UInt16 xAttrSubId, uint32_t xAttrId, void const* data, uint32_t dataSize)
     {
     XAttributeHandlerId handlerId (TMElementMajorId, xAttrSubId);
     ElementRefP elRef = element->GetElementRef();
@@ -188,7 +188,7 @@ void DTMBinaryData::ScheduleWriteData (EditElementHandleP element, UInt16 xAttrS
 //=======================================================================================
 // @bsimethod                                                    Sylvain.Pucci   09/05
 //=======================================================================================
-void DTMBinaryData::ScheduleDeleteData (EditElementHandleR element, UInt16 xAttrSubId, UInt32 xAttrId)
+void DTMBinaryData::ScheduleDeleteData (EditElementHandleR element, UInt16 xAttrSubId, uint32_t xAttrId)
     {
     XAttributeHandlerId handlerId (TMElementMajorId, xAttrSubId);
     ElementRefP elRef = element.GetElementRef();
@@ -288,7 +288,7 @@ void* DTMBinaryDataIter::GetWritableData()
 //=======================================================================================
 // @bsimethod                                                    Sylvain.Pucci   09/05
 //=======================================================================================
-UInt32 DTMBinaryDataIter::GetCurrentAttrId()
+uint32_t DTMBinaryDataIter::GetCurrentAttrId()
     {
     return m_xAttrIter->GetId();
     }
