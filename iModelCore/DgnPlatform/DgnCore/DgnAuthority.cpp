@@ -298,19 +298,6 @@ Utf8String DgnAuthority::SerializeProperties() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthority::Code DgnAuthority::GenerateDefaultCode(DgnElementCR el)
-    {
-    auto elemId = el.GetElementId();
-    if (!elemId.IsValid())
-        return DgnAuthority::Code();
-
-    Utf8PrintfString val("%" PRIu32 "-%" PRIu64, elemId.GetRepositoryId().GetValue(), (uint64_t)(0xffffffffffLL & elemId.GetValue()));
-    return DgnAuthority::Code(DgnAuthority::LocalId(), val, el.GetElementClass()->GetName());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 AuthorityHandlerP dgn_AuthorityHandler::Authority::FindHandler(DgnDbCR dgndb, DgnClassId classId)
     {
     DgnDomain::Handler* handler = dgndb.Domains().LookupHandler(classId);
@@ -348,4 +335,198 @@ DgnAuthority::Code NamespaceAuthority::CreateCode(Utf8CP authorityName, Utf8Stri
     return auth.IsValid() ? auth->CreateCode(value, nameSpace) : DgnAuthority::Code();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+enum BuiltinAuthority : uint64_t
+{   
+    BuiltinAuthority_Local = 1LL,
+    BuiltinAuthority_Material = 2LL,
+    BuiltinAuthority_Category = 3LL,
+    BuiltinAuthority_Resource = 4LL,    // Resources with a single name unique within a DgnDb, e.g. text styles, light definitions...namespace=resource type
+    BuiltinAuthority_TrueColor = 5LL,
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct BuiltinAuthorityInfo
+{
+    Utf8CP name;
+    BuiltinAuthority which;
+    AuthorityHandlerR handler;
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static DbResult insertAuthority(DgnDbR db, Statement& stmt, DgnAuthorityId id, Utf8CP name, AuthorityHandlerR handler)
+    {
+    stmt.BindId(1, id);
+    stmt.BindText(2, name, Statement::MakeCopy::No);
+    stmt.BindId(3, db.Domains().GetClassId(handler));
+
+    DbResult result = stmt.Step();
+    BeAssert(BE_SQLITE_DONE == result);
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::CreateAuthorities()
+    {
+    Json::Value authorityProps(Json::objectValue);
+    authorityProps["uri"] = "";
+    Utf8String authorityJson = Json::FastWriter::ToString(authorityProps);
+
+    Statement statement(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Authority) " (Id,Name,ECClassId,Props) VALUES (?,?,?,?)");
+    statement.BindText(4, authorityJson, Statement::MakeCopy::No);
+
+    BuiltinAuthorityInfo builtins[] =
+        {
+            { "Local", BuiltinAuthority_Local, dgn_AuthorityHandler::Local::GetHandler() },
+            { "DgnMaterials", BuiltinAuthority_Material, dgn_AuthorityHandler::Namespace::GetHandler() },
+            { "DgnCategories", BuiltinAuthority_Category, dgn_AuthorityHandler::Namespace::GetHandler() },
+            { "DgnResources", BuiltinAuthority_Resource, dgn_AuthorityHandler::Namespace::GetHandler() },
+        };
+
+    for (auto const& builtin : builtins)
+        {
+        DbResult result = insertAuthority(*this, statement, DgnAuthorityId((uint64_t)builtin.which), builtin.name, builtin.handler);
+        if (BE_SQLITE_DONE != result)
+            return result;
+
+        statement.Reset();
+        }
+
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> static RefCountedCPtr<T> getBuiltinAuthority(BuiltinAuthority which, DgnDbR db)
+    {
+    return db.Authorities().Get<T>(DgnAuthorityId((uint64_t)which));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code DgnCategory::CreateCategoryCode(Utf8StringCR name, DgnDbR db)
+    {
+    auto auth = getBuiltinAuthority<NamespaceAuthority>(BuiltinAuthority_Category, db);
+    BeAssert(auth.IsValid());
+    return auth.IsValid() ? auth->CreateCode(name) : Code();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code DgnSubCategory::CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR name, DgnDbR db)
+    {
+    auto cat = DgnCategory::QueryCategory(categoryId, db);
+    return cat.IsValid() ? CreateSubCategoryCode(*cat, name, db) : Code();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code DgnSubCategory::CreateSubCategoryCode(DgnCategoryCR cat, Utf8StringCR name, DgnDbR db)
+    {
+    auto auth = getBuiltinAuthority<NamespaceAuthority>(BuiltinAuthority_Category, db);
+    return auth.IsValid() ? auth->CreateCode(name, cat.GetCategoryName()) : Code();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code DgnMaterial::CreateMaterialCode(Utf8StringCR palette, Utf8StringCR material, DgnDbR db)
+    {
+    auto auth = getBuiltinAuthority<NamespaceAuthority>(BuiltinAuthority_Material, db);
+    BeAssert(auth.IsValid());
+    return auth.IsValid() ? auth->CreateCode(material, palette) : DgnAuthority::Code();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code DgnTrueColor::CreateColorCode(Utf8StringCR name, Utf8StringCR book, DgnDbR db)
+    {
+    auto auth = getBuiltinAuthority<NamespaceAuthority>(BuiltinAuthority_TrueColor, db);
+    BeAssert(auth.IsValid());
+    return auth.IsValid() ? auth->CreateCode(name, book) : Code();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnAuthority::Code createResourceCode(Utf8StringCR name, DgnDbR db, Utf8CP nameSpace)
+    {
+    auto auth = getBuiltinAuthority<NamespaceAuthority>(BuiltinAuthority_Resource, db);
+    BeAssert(auth.IsValid());
+    return auth.IsValid() ? auth->CreateCode(name, nameSpace) : DgnAuthority::Code();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code LightDefinition::CreateLightDefinitionCode(Utf8StringCR name, DgnDbR db)
+    {
+    return createResourceCode(name, db, DGN_CLASSNAME_LightDefinition);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code DgnTexture::CreateTextureCode(Utf8StringCR name, DgnDbR db)
+    {
+    return createResourceCode(name, db, DGN_CLASSNAME_Texture);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code AnnotationTextStyle::CreateStyleCode(Utf8StringCR name, DgnDbR db)
+    {
+    return createResourceCode(name, db, DGN_CLASSNAME_AnnotationTextStyle);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code AnnotationFrameStyle::CreateStyleCode(Utf8StringCR name, DgnDbR db)
+    {
+    return createResourceCode(name, db, DGN_CLASSNAME_AnnotationFrameStyle);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code AnnotationLeaderStyle::CreateStyleCode(Utf8StringCR name, DgnDbR db)
+    {
+    return createResourceCode(name, db, DGN_CLASSNAME_AnnotationLeaderStyle);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code TextAnnotationSeed::CreateCodeForSeed(Utf8StringCR name, DgnDbR db)
+    {
+    return createResourceCode(name, db, DGN_CLASSNAME_TextAnnotationSeed);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code DgnAuthority::GenerateDefaultCode(DgnElementCR el)
+    {
+    auto elemId = el.GetElementId();
+    if (!elemId.IsValid())
+        return DgnAuthority::Code();
+
+    Utf8PrintfString val("%" PRIu32 "-%" PRIu64, elemId.GetRepositoryId().GetValue(), (uint64_t)(0xffffffffffLL & elemId.GetValue()));
+    return DgnAuthority::Code(DgnAuthorityId((uint64_t)BuiltinAuthority_Local), val, el.GetElementClass()->GetName());
+    }
 

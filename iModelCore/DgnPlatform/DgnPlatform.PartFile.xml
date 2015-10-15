@@ -143,7 +143,7 @@
         <RequiredRepository>DgnDbUnitTestsData</RequiredRepository>
     </Part>
     
-    <Part Name="BackdoorForUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor -dIsBackDoor">
+    <Part Name="BackdoorForUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor">
         <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/Backdoor" SourceName="Delivery/UnitTests/Objects/Backdoor"/>
@@ -168,7 +168,6 @@
     <Part Name="UnitTests-Performance" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="TestFixtureForUnitTests" />
-        <SubPart PartName="PerformanceTestingHelpers" PartFile="BeSQLite" Repository="BeSQLite"/>
         <!-- Performance tests use DgnDbTestDgnManager, which is implemented in BackDoor -->
         <SubPart PartName="BackdoorForUnitTests"/>
         <Bindings>
@@ -446,6 +445,7 @@
     <Product Name="DgnPlatform-Tests">
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
         <SubPart PartName="Tests"/>
+        <SubPart PartName="DgnPlatformSqlang" />
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
     </Product>
 
@@ -594,6 +594,8 @@
         <SubPart PartName="UnitTests-Performance"        Repository="ECDb" PartFile="ECDb"/>
         <SubPart PartName="UnitTests-Performance"        Repository="Bentley" PartFile="Bentley"/>
         <SubPart PartName="UnitTests-Performance"        Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="PerformanceTests"             Repository="ecobjects" PartFile="ecobjects"/>
+        <SubPart PartName="UnitTests-PerformanceTest"        Repository="geomlibs" PartFile="geomlibs"/>
         <!-- Pull in the dgnplatform's db3 file to serve as the "framework" sqlang for testing purposes -->
         <SubPart PartName="DgnPlatformSqlang"            Repository="DgnPlatform" PartFile="DgnPlatform"/>
     </Part>

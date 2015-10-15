@@ -8,7 +8,6 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/DgnMarkupProject.h>
 #include <DgnPlatform/DgnCore/Annotations/TextAnnotationElement.h>
-#include <DgnPlatform/DgnCore/MaterialElement.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -36,6 +35,7 @@ HANDLER_DEFINE_MEMBERS(WebMercator)
 HANDLER_DEFINE_MEMBERS(PointCloud)
 HANDLER_DEFINE_MEMBERS(Raster)
 HANDLER_DEFINE_MEMBERS(Resource)
+HANDLER_DEFINE_MEMBERS(Dictionary)
 HANDLER_DEFINE_MEMBERS(Model2d)
 };
 
@@ -93,6 +93,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ModelHandler::PointCloud::GetHandler());
     RegisterHandler(dgn_ModelHandler::Raster::GetHandler());
     RegisterHandler(dgn_ModelHandler::Resource::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Dictionary::GetHandler());
 
     RegisterHandler(dgn_ElementHandler::Element::GetHandler());
     RegisterHandler(dgn_ElementHandler::Physical::GetHandler());
@@ -100,7 +101,18 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::Group::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotationHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::PhysicalTextAnnotationHandler::GetHandler());
+
     RegisterHandler(dgn_ElementHandler::Material::GetHandler());
+    RegisterHandler(dgn_ElementHandler::Texture::GetHandler());
+    RegisterHandler(dgn_ElementHandler::LightDef::GetHandler());
+    RegisterHandler(dgn_ElementHandler::Category::GetHandler());
+    RegisterHandler(dgn_ElementHandler::SubCategory::GetHandler());
+    RegisterHandler(dgn_ElementHandler::TrueColor::GetHandler());
+
+    RegisterHandler(dgn_ElementHandler::AnnotationTextStyleHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::AnnotationFrameStyleHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::AnnotationLeaderStyleHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::TextAnnotationSeedHandler::GetHandler());
 
     RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Local::GetHandler());

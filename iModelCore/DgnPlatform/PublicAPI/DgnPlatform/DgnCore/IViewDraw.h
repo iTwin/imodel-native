@@ -16,6 +16,7 @@
 #include "DgnDb.h"
 #include "DgnModel.h"
 #include "RenderMaterial.h"
+#include "DgnCategory.h"
 
 //__PUBLISH_SECTION_END__
 DGNPLATFORM_TYPEDEFS (QvBaseMatSym)
@@ -436,7 +437,7 @@ public:
     DGNPLATFORM_EXPORT void ResetAppearance(); //!< Like Init, but saves and restores category and sub-category around the call to Init. This is particularly useful when a single element draws objects of different symbology, but its draw code does not have easy access to reset the category.
     DGNPLATFORM_EXPORT void Resolve(ViewContextR); // Resolve effective values
 
-    void SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId; m_subCategoryId = DgnCategories::DefaultSubCategoryId(categoryId); memset(&m_appearanceOverrides, 0, sizeof(m_appearanceOverrides)); m_resolved = false;} // Setting the Category Id also sets the SubCategory to the default.
+    void SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId; m_subCategoryId = DgnCategory::GetDefaultSubCategoryId(categoryId); memset(&m_appearanceOverrides, 0, sizeof(m_appearanceOverrides)); m_resolved = false;} // Setting the Category Id also sets the SubCategory to the default.
     void SetSubCategoryId(DgnSubCategoryId subCategoryId) {m_subCategoryId = subCategoryId; memset(&m_appearanceOverrides, 0, sizeof(m_appearanceOverrides)); m_resolved = false;}
     void SetWeight(uint32_t weight) {m_appearanceOverrides.m_weight = true; m_weight = weight;}
     void SetLineStyle(LineStyleInfoP styleInfo) {m_appearanceOverrides.m_style = true; m_styleInfo = styleInfo;}

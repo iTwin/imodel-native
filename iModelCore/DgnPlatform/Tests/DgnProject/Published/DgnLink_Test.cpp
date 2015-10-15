@@ -38,7 +38,7 @@ TEST_F(DgnLinkTest, RoundTripUrlLink)
     DgnModelPtr modelP = db.Models().GetModel(modelId);
     ASSERT_TRUE(modelP.IsValid());
 
-    DgnCategoryId categoryId = db.Categories().MakeIterator().begin().GetCategoryId();
+    DgnCategoryId categoryId = DgnCategory::QueryFirstCategoryId(db);
     ASSERT_TRUE(categoryId.IsValid());
 
     DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_DrawingElement));
@@ -87,7 +87,7 @@ TEST_F(DgnLinkTest, Iterator)
     DgnModelPtr modelP = db.Models().GetModel(modelId);
     ASSERT_TRUE(modelP.IsValid());
 
-    DgnCategoryId categoryId = db.Categories().MakeIterator().begin().GetCategoryId();
+    DgnCategoryId categoryId = DgnCategory::QueryFirstCategoryId(db);
     ASSERT_TRUE(categoryId.IsValid());
 
     DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_DrawingElement));
@@ -168,7 +168,7 @@ TEST_F(DgnLinkTest, OtherIterators)
     DgnModelPtr modelP = db.Models().GetModel(modelId);
     ASSERT_TRUE(modelP.IsValid());
 
-    DgnCategoryId categoryId = db.Categories().MakeIterator().begin().GetCategoryId();
+    DgnCategoryId categoryId = DgnCategory::QueryFirstCategoryId(db);
     ASSERT_TRUE(categoryId.IsValid());
 
     DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_DrawingElement));

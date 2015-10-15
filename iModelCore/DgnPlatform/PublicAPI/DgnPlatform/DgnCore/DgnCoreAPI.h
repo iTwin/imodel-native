@@ -18,6 +18,7 @@
 #include "ColorUtil.h"
 #include "DgnCustomAttributeHelper.h"
 #include "ElementHandler.h"
+#include "DgnCategory.h"
 #include "ElementGeometry.h"
 #include "ElementGraphics.h"
 #include "FenceParams.h"

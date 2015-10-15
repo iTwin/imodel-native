@@ -196,6 +196,12 @@
     <ClCompile Include="Published\DgnScriptContext_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\ECInstanceSelect_Tests.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceECInstanceDeleteTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
     <ClCompile Include="Published\ElementGeometry_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>

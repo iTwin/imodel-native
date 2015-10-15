@@ -335,6 +335,16 @@ DgnDbStatus ResourceModel::_OnInsertElement(DgnElementR el)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DictionaryModel::_OnInsertElement(DgnElementR el)
+    {
+    // dictionary model can contain *only* dictionary elements
+    auto status = el.IsDictionaryElement() ? T_Super::_OnInsertElement(el) : DgnDbStatus::WrongModel;
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::ReadProperties()
@@ -946,7 +956,11 @@ Utf8String DgnModels::GetUniqueModelName(Utf8CP baseName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelId DgnModels::QueryFirstModelId() const
     {
-    return MakeIterator().begin().GetModelId();
+    for (auto const& model : MakeIterator())
+        if (model.GetModelId() != DgnModel::DictionaryId())
+            return model.GetModelId();
+
+    return DgnModelId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1166,7 +1180,7 @@ ComponentSolution::SolutionId ComponentSolution::CaptureSolution(ComponentModelR
     if (DgnDbStatus::Success == Query(sln, sid)) // see if this solution is already cached.
         return sid;
 
-    DgnCategoryId componentCategoryId = GetDgnDb().Categories().QueryCategoryId(componentModel.GetElementCategoryName().c_str());
+    DgnCategoryId componentCategoryId = DgnCategory::QueryCategoryId(componentModel.GetElementCategoryName().c_str(), GetDgnDb());
     if (!componentCategoryId.IsValid())
         {
         BeAssert(false && "component category not found -- you must import the component model before you can capture a solution");
@@ -1303,7 +1317,7 @@ DgnElementPtr ComponentSolution::CreateSolutionInstanceElement(DgnModelR destina
     Utf8String schemaname, classname;
     std::tie(schemaname, classname) = parseFullECClassName(cm->GetElementECClassName().c_str());
     DgnClassId cmClassId = DgnClassId(GetDgnDb().Schemas().GetECClassId(schemaname.c_str(), classname.c_str()));
-    DgnCategoryId cmCategoryId = GetDgnDb().Categories().QueryCategoryId(cm->GetElementCategoryName().c_str());
+    DgnCategoryId cmCategoryId = DgnCategory::QueryCategoryId(cm->GetElementCategoryName().c_str(), GetDgnDb());
     
     auto geomDestModel = destinationModel.ToGeometricModel();
     BeAssert (nullptr != geomDestModel);
@@ -1777,7 +1791,7 @@ void ComponentModel::_GetSolverOptions(Json::Value& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ComponentModel::IsValid() const
     {
-    if (m_elementCategoryName.empty() || !GetDgnDb().Categories().QueryCategoryId(m_elementCategoryName.c_str()).IsValid())
+    if (m_elementCategoryName.empty() || !DgnCategory::QueryCategoryId(m_elementCategoryName.c_str(), GetDgnDb()).IsValid())
         return false;
     if (m_elementECClassName.empty())
         return false;
@@ -2025,3 +2039,17 @@ DgnDbStatus ComponentModel::Solve(ModelSolverDef::ParameterSet const& newParamet
         return DgnDbStatus::ValidationFailed;
     return DgnDbStatus::SQLiteError;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelPtr DictionaryModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const
+    {
+    if (nullptr != stat)
+        *stat = DgnDbStatus::WrongModel;
+
+    BeAssert(false && "The dictionary model cannot be cloned");
+    return nullptr;
+    }
+
+

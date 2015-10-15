@@ -23,17 +23,19 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 DgnCategoryId createAndInsertCategory(DgnDbR db)
     {
     // configure the Category
-    DgnCategories::Category category;
-    category.SetCode("MyApp_MyCategory");               // Set the code for this category. Codes are unique and not translated
-    category.SetLabel("MyCategory");                    // Friendly label for this category.  Not necessarily unique, may be translated.
-    category.SetScope(DgnCategories::Scope::Physical);  // Set the scope for this category (which will only be valid for physical models)
-    category.SetRank(DgnCategories::Rank::Application); // Indicate that this category was inserted by an application
+    DgnCategory::CreateParams params(db,
+            "MyApp_MyCategory",                         // Set the code for this category.
+            DgnCategory::Scope::Physical,               // Set the scope for this category (which will only be valid for physical models)
+            DgnCategory::Rank::Application,             // Indicate that this category was inserted by an application
+            "MyCategory");                              // Friendly description for this category
+
+    DgnCategory category(params);
 
     // configure the appearance for the Category's default SubCategory
-    DgnCategories::SubCategory::Appearance appearance;
+    DgnSubCategory::Appearance appearance;
     appearance.SetColor(ColorDef::Blue());
 
-    if (BE_SQLITE_OK != db.Categories().Insert(category, appearance))
+    if (!category.Insert(appearance).IsValid())
         return DgnCategoryId(); // return an invalid DgnCategoryId in case of an error
 
     return category.GetCategoryId(); // return the newly inserted category's Id (set by Insert method above)

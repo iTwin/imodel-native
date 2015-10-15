@@ -22,8 +22,10 @@ DGNPLATFORM_TYPEDEFS (DgnRangeTree)
 DGNPLATFORM_TYPEDEFS (ICheckStop)
 DGNPLATFORM_TYPEDEFS (PlanarPhysicalModel)
 DGNPLATFORM_TYPEDEFS (SheetModel)
+DGNPLATFORM_TYPEDEFS (DictionaryModel)
 DGNPLATFORM_REF_COUNTED_PTR(SheetModel)
 DGNPLATFORM_REF_COUNTED_PTR(ResourceModel)
+DGNPLATFORM_REF_COUNTED_PTR(DictionaryModel)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -478,6 +480,7 @@ public:
     bool Is3dModel() const { return nullptr != ToDgnModel3d(); }
     bool IsResourceModel() const { return nullptr != ToResourceModel(); }
     bool IsSheetModel() const { return nullptr != ToSheetModel(); }
+    bool IsDictionaryModel() const { return DictionaryId() == GetModelId(); }
     //@}
 
     //! Get the DgnDb of this DgnModel.
@@ -581,6 +584,9 @@ public:
     //! @see ImportModel
     template<typename T>
     static RefCountedPtr<T> Import(DgnDbStatus* stat, T const& sourceModel, DgnImportContext& importer) {return dynamic_cast<T*>(ImportModel(stat, sourceModel, importer).get());}
+
+    //! Returns the ID used by the unique dictionary model associated with each DgnDb
+    static DgnModelId DictionaryId() { return DgnModelId((uint64_t)1LL); }
 
     //! This method is called when it is time to validate changes that have been made to the model's content during the transaction.
     //! This method is called by the transaction manager after all element-level changes have been validated and all root models have been solved.
@@ -766,7 +772,7 @@ public:
 };
 
 //=======================================================================================
-//! A model which holds non-geometric resources such as styles and materials.
+//! A model which holds only non-geometric resources.
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Paul.Connelly   09/15
 //=======================================================================================
@@ -780,6 +786,29 @@ public:
     explicit ResourceModel(CreateParams const& params) : T_Super(params) { }
 
     static ResourceModelPtr Create(CreateParams const& params) { return new ResourceModel(params); }
+};
+
+//=======================================================================================
+//! A resource model which holds resources like materials and styles which are used
+//! throughout a DgnDb. Each DgnDb has exactly one DictionaryModel.
+//! A DictionaryModel can contain @em only DictionaryElements; and likewise, a
+//! DictionaryElement can @em only reside in a DictionaryModel.
+//! The dictionary model cannot be copied or deleted. In general, dictionary elements
+//! are copied from one dictionary model to another, often indirectly as the result of
+//! copying another element which depends upon them.
+//! @ingroup DgnModelGroup
+// @bsiclass                                                    Paul.Connelly   10/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DictionaryModel : ResourceModel
+{
+    DEFINE_T_SUPER(ResourceModel);
+protected:
+    virtual DgnDbStatus _OnDelete() override { return DgnDbStatus::WrongModel; }
+    virtual void _OnDeleted() override { BeAssert(false && "The dictionary model cannot be deleted"); }
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const override;
+public:
+    explicit DictionaryModel(CreateParams const& params) : T_Super(params) { }
 };
 
 //=======================================================================================
@@ -1296,6 +1325,12 @@ namespace dgn_ModelHandler
     struct EXPORT_VTABLE_ATTRIBUTE Resource : Model
     {
         MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ResourceModel, ResourceModel, Resource, Model, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ModelHandler for DictionaryModel
+    struct EXPORT_VTABLE_ATTRIBUTE Dictionary : Resource
+    {
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DictionaryModel, DictionaryModel, Dictionary, Resource, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for Model2d

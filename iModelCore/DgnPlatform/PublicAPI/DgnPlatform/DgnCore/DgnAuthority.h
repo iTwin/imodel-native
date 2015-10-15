@@ -27,7 +27,7 @@ public:
     //!
     //! The Code is stored as a three-part identifier: DgnAuthorityId, namespace, and value.
     //! The combination of the three must be unique within all objects of a given type
-    //! (e.g., Elements, Categories, Materials) within a DgnDb. None of the three parts may
+    //! (e.g., Elements, Models) within a DgnDb. None of the three parts may
     //! be null, but the namespace may be an empty string.
     //!
     //! To obtain a Code, talk to the relevant DgnAuthority.
@@ -43,8 +43,6 @@ public:
         friend struct DgnAuthority;
         friend struct DgnElements;
         friend struct DgnModel;
-        friend struct DgnCategories;
-        friend struct DgnMaterials;
 
         Code(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) { }
     public:
@@ -118,9 +116,6 @@ public:
     DGNPLATFORM_EXPORT static DgnAuthorityPtr Import(DgnDbStatus* status, DgnAuthorityCR sourceAuthority, DgnImportContext& importer);
 
     DGNPLATFORM_EXPORT static DgnAuthority::Code GenerateDefaultCode(DgnElementCR el);
-
-    //! The built-in "local" code-generating authority
-    static DgnAuthorityId LocalId() {return DgnAuthorityId((uint64_t)1LL);}
 };
 
 //=======================================================================================

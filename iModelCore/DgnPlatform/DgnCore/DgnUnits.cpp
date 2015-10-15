@@ -37,7 +37,7 @@ DgnGCS* DgnUnits::GetDgnGCS() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnUnits::UorsFromLatLong(DPoint3dR outUors, GeoPointCR inLatLong) const
+BentleyStatus DgnUnits::XyzFromLatLong(DPoint3dR outUors, GeoPointCR inLatLong) const
     {
     if (NULL == GetDgnGCS())
         return BSIERROR;
@@ -48,7 +48,7 @@ BentleyStatus DgnUnits::UorsFromLatLong(DPoint3dR outUors, GeoPointCR inLatLong)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnUnits::LatLongFromUors(GeoPointR outLatLong, DPoint3dCR inUors) const
+BentleyStatus DgnUnits::LatLongFromXyz(GeoPointR outLatLong, DPoint3dCR inUors) const
     {
     if (NULL == GetDgnGCS())
         return BSIERROR;
