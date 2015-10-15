@@ -36,6 +36,6 @@ BentleyStatus UpgraderBase::UpgradeCacheSchema(int versionMajor, int versionMino
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
     schemaCache->AddSchema(*cacheSchema);
 
-    BentleyStatus status = m_adapter.GetECDb().GetEC().GetSchemaManager().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions(true, true));
-    return status;
+    return m_adapter.GetECDb().GetEC().GetSchemaManager()
+        .ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions(true, true));
     }

@@ -2379,15 +2379,16 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObjectWithReadOnlyProper
     ds->SyncLocalChanges(nullptr, nullptr)->Wait();
     }
 
-TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObject_SendUpdateObjectRequestWithCorrectParametersAndCommits)
+TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObject_SendUpdateObjectRequestWithOnlyChangedPropertiesAndCommits)
     {
     // Arrange
     auto ds = GetTestDataSourceV1();
-    Json::Value modifiedPropertiesJson = ToJson(R"({ "TestProperty" : "42" })");
 
     auto txn = ds->StartCacheTransaction();
-    auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "Foo"});
-    txn.GetCache().GetChangeManager().ModifyObject(instance, modifiedPropertiesJson);
+    auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "OldA"},{ "TestProperty2", "OldB"}});
+
+    Json::Value newPropertiesJson = ToJson(R"({ "TestProperty" : "NewA", "TestProperty2" : "OldB" })");
+    txn.GetCache().GetChangeManager().ModifyObject(instance, newPropertiesJson);
     txn.Commit();
 
     // Act & Assert
@@ -2396,7 +2397,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObject_SendUpdateObjectR
         .WillOnce(Invoke([&] (ObjectIdCR objectId, JsonValueCR propertiesJson, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(ObjectId("TestSchema.TestClass", "Foo"), objectId);
-        EXPECT_EQ(modifiedPropertiesJson, propertiesJson);
+        EXPECT_EQ(ToJson(R"({ "TestProperty" : "NewA" })"), propertiesJson);
         return CreateCompletedAsyncTask(WSUpdateObjectResult::Success());
         }));
 

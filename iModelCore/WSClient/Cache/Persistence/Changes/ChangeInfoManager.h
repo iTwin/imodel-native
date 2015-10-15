@@ -26,6 +26,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct ChangeInfoManager
     {
     private:
+        IECDbAdapter*                       m_dbAdapter;
         ECSqlStatementCache*                m_statementCache;
         ObjectInfoManager*                  m_objectInfoManager;
         RelationshipInfoManager*            m_relationshipInfoManager;
@@ -38,6 +39,9 @@ struct ChangeInfoManager
         BentleyStatus GetRelationshipChanges(IChangeManager::Changes& changesOut, bool onlyReadyToSync);
         std::shared_ptr<ECSqlStatement> GetPreparedStatementForGetChanges(ECClassCP infoClass, bool onlyReadyToSync);
         int ReadStatusProperty(ECInstanceKeyCR instanceKey, Utf8CP statusPropertyName);
+
+        ECInstanceId FindBackupInstance(ECInstanceKeyCR infoKey);
+        BentleyStatus SaveBackupInstance(ECInstanceKeyCR infoKey, Utf8CP serializedInstance);
 
     public:
         ChangeInfoManager
@@ -64,6 +68,11 @@ struct ChangeInfoManager
         IChangeManager::SyncStatus GetObjectSyncStatus(ECInstanceKeyCR instanceKey);
 
         BentleyStatus SetupChangeNumber(ChangeInfoR info);
+
+        BentleyStatus ReadBackupInstance(ECInstanceKeyCR infoKey, RapidJsonDocumentR instanceOut);
+        BentleyStatus SaveBackupInstance(ECInstanceKeyCR infoKey, RapidJsonValueCR instance);
+        BentleyStatus SaveBackupInstance(ECInstanceKeyCR infoKey, JsonValueR instance);
+        BentleyStatus DeleteBackupInstance(ECInstanceKeyCR infoKey);
     };
 
 typedef ChangeInfoManager& ChangeInfoManagerR;

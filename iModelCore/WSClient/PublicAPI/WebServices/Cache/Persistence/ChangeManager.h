@@ -125,6 +125,8 @@ struct ChangeManager : public IChangeManager
         WSCACHE_EXPORT IChangeManager::ChangeStatus GetObjectChangeStatus(ECInstanceKeyCR instance) override;
         WSCACHE_EXPORT ChangeManager::SyncStatus GetObjectSyncStatus(ECInstanceKeyCR instance) override;
 
+        WSCACHE_EXPORT BentleyStatus ReadModifiedProperties(ECInstanceKeyCR instance, JsonValueR propertiesOut) override;
+
         // -- Commiting changes --
 
         WSCACHE_EXPORT BentleyStatus CommitCreationChanges(const std::map<ECInstanceKey, Utf8String>& newRemoteIds) override;

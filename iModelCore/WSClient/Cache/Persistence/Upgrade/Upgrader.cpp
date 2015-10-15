@@ -17,6 +17,7 @@
 #include "UpgraderFromV3ToV4.h"
 #include "UpgraderFromV4ToV5.h"
 #include "UpgraderFromV5ToCurrent.h"
+#include "UpgraderFromV7ToV8.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -35,21 +36,23 @@ BentleyStatus Upgrader::Upgrade(int oldVersion)
     {
     switch (oldVersion)
         {
-            case 3:
-                if (SUCCESS != UpgraderFromV3ToV4(m_adapter, m_environment).Upgrade()) return ERROR;
-            case 4:
-                if (SUCCESS != UpgraderFromV4ToV5(m_adapter).Upgrade()) return ERROR;
-            case 5:
-                if (SUCCESS != UpgraderFromV5ToCurrent(m_adapter, m_environment).Upgrade()) return ERROR;
-                return SUCCESS;
-            case 6:
-                // Upgrade not supported
-                return ERROR;
-            case 7:
-                // Current version
-                return SUCCESS;
-            default:
-                return ERROR;
+        case 3:
+            if (SUCCESS != UpgraderFromV3ToV4(m_adapter, m_environment).Upgrade()) return ERROR;
+        case 4:
+            if (SUCCESS != UpgraderFromV4ToV5(m_adapter).Upgrade()) return ERROR;
+        case 5:
+            if (SUCCESS != UpgraderFromV5ToCurrent(m_adapter, m_environment).Upgrade()) return ERROR;
+            return SUCCESS; // Upgraded to latest version, done
+        case 6:
+            return ERROR; // 5 to 6 handled in previous case
+        case 7:
+            if (SUCCESS != UpgraderFromV7ToV8(m_adapter).Upgrade()) return ERROR;
+
+            // Current version, return
+            return SUCCESS;
+        default:
+            BeAssert(false && "Upgrade to newer version not implemented");
+            return ERROR;
         }
     }
 

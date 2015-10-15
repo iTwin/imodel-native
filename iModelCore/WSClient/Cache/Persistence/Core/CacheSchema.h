@@ -11,8 +11,11 @@
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 //--------------------------------------------------------------------------------------+
-// Schema definitions for DSCacheSchema.01.04.ecschema.xml
+// Schema definitions for DSCacheSchema ECSchema
 //--------------------------------------------------------------------------------------+
+
+#define SCHEMA_CacheSchema_Major                                    1
+#define SCHEMA_CacheSchema_Minor                                    6
 
 #define SCHEMA_CacheSchema                                          "DSCacheSchema"
 
@@ -61,6 +64,9 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define CLASS_ChangeInfo_PROPERTY_SyncStatus                        "SyncStatus"
 #define CLASS_ChangeInfo_PROPERTY_ChangeNumber                      "ChangeNumber"
 
+#define CLASS_InstanceBackup                                        "InstanceBackup"
+#define CLASS_InstanceBackup_PROPERTY_Instance                      "Instance"
+
 //! Values for property CLASS_CachedObjectInfo_PROPERTY_InstanceState
 enum class CachedInstanceState
     {
@@ -78,6 +84,7 @@ enum class CachedInstanceState
 #define CLASS_REL_CachedResponseInfoToParentRelationship            "CachedResponseInfoToParentRelationship"
 #define CLASS_REL_CachedResponseInfoToHolderRelationship            "CachedResponseInfoToHolderRelationship"
 #define CLASS_REL_CachedResponseInfoToCachedRelationshipInfo        "CachedResponseInfoToCachedRelationshipInfo"
+#define CLASS_REL_ChangeInfoToInstanceBackup                        "ChangeInfoToInstanceBackup"
 
 #define ECSql_RootClass                                             "[DSC].[Root]"
 #define ECSql_CachedObjectInfoClass                                 "[DSC].[CachedObjectInfo]"
@@ -88,6 +95,8 @@ enum class CachedInstanceState
 #define ECSql_CachedFileInfoRelationshipClass                       "[DSC].[CachedFileInfoRelationship]"
 #define ECSql_ChangeInfoClass                                       "[DSC].[ChangeInfo]"
 #define ECSql_NavigationBaseClass                                   "[DSC].[NavigationBase]"
+#define ECSql_InstanceBackup                                        "[DSC].[InstanceBackup]"
+#define ECSql_ChangeInfoToInstanceBackup                            "[DSC].[ChangeInfoToInstanceBackup]"
 
 #define ECSql_CachedResponseInfoToResultRelationshipClass           "[DSC].[CachedResponseInfoToResultRelationship]"
 #define ECSql_CachedResponseInfoToResultWeakRelationshipClass       "[DSC].[CachedResponseInfoToResultWeakRelationship]"

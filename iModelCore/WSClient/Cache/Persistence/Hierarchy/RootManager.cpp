@@ -305,16 +305,14 @@ const rapidjson::Value* instanceJson
             }
 
         info.SetRemoteId(objectId.remoteId);
-
-        Json::Value cachedInstanceInfo;
-        if (SUCCESS != m_instanceHelper.CacheNewInstance(info, *instanceJsonToSave))
+        if (SUCCESS != m_instanceHelper.CacheInstance(info, *instanceJsonToSave))
             {
             return ERROR;
             }
         }
     else if (nullptr != instanceJson)
         {
-        if (SUCCESS != m_instanceHelper.CacheExistingInstance(info, *instanceJson))
+        if (SUCCESS != m_instanceHelper.CacheInstance(info, *instanceJson))
             {
             return ERROR;
             }
