@@ -23,12 +23,6 @@ public:
         m_project = tdm.GetDgnProjectP();
         ASSERT_TRUE(m_project != NULL);
     }
-
-    DgnTrueColor MakeColor(Byte r, Byte g, Byte b, Utf8CP name, Utf8CP book=nullptr)
-        {
-        ColorDef colorDef(r, g, b);
-        return DgnTrueColor(DgnTrueColor::CreateParams(*m_project, colorDef, name, book));
-        }
 };
 
 
@@ -38,36 +32,36 @@ public:
 TEST_F(DgnColorTests, TrueColors)
     {
     SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
+    DgnDbR db = *m_project;
 
-    auto color1 = MakeColor(255, 254, 253, "TestName1", "TestBook1");
+    DgnTrueColor color1(DgnTrueColor::CreateParams(db, ColorDef(255, 254, 253), "TestName1", "TestBook1"));
     EXPECT_TRUE(color1.Insert().IsValid());
     DgnTrueColorId colorId = color1.GetColorId();
     EXPECT_TRUE(colorId.IsValid());
 
-    auto color2 = MakeColor(2, 3, 33, "Color2");
+    DgnTrueColor color2(DgnTrueColor::CreateParams(db, ColorDef(2, 3, 33), "Color2"));
     EXPECT_TRUE(color2.Insert().IsValid());
     auto colorId2 = color2.GetColorId();
     EXPECT_TRUE(colorId2.IsValid());
 
     // It is legal to have two colors with the same RGB value
-    auto color3 = MakeColor(2,3,33, "Color3");
+    DgnTrueColor color3(DgnTrueColor::CreateParams(db, ColorDef(2,3,33), "Color3"));
     EXPECT_TRUE(color3.Insert().IsValid());
     auto colorId3 = color3.GetColorId();
     EXPECT_TRUE(colorId3.IsValid());
 
     // It is not legal to have two colors with the same book+color name
-    auto color3_dup = MakeColor(2,3,33, "Color3");
+    DgnTrueColor color3_dup(DgnTrueColor::CreateParams(db, ColorDef(2,3,33), "Color3"));
     EXPECT_FALSE(color3_dup.Insert().IsValid());
 
-    auto color1_dup = MakeColor(5,54,3, "TestName1", "TestBook1");
+    DgnTrueColor color1_dup(DgnTrueColor::CreateParams(db, ColorDef(5,54,3), "TestName1", "TestBook1"));
     EXPECT_FALSE(color1_dup.Insert().IsValid());
 
-    auto color4 = MakeColor(4,3,33, "Color4");
+    DgnTrueColor color4(DgnTrueColor::CreateParams(db, ColorDef(4,3,33), "Color4"));
     EXPECT_TRUE(color4.Insert().IsValid());
     auto colorId4 = color4.GetColorId();
     EXPECT_TRUE(colorId4.IsValid());
 
-    DgnDbR db = *m_project;
     EXPECT_EQ(4, DgnTrueColor::QueryCount(db));
 
     int i=0;
