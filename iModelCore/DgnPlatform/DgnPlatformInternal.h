@@ -71,7 +71,6 @@
 #include <Logging/bentleylogging.h>
 #include <DgnPlatform/Tools/ostime.fdf>
 #include <DgnPlatform/Tools/stringop.h>
-#include <RmgrTools/Tools/toolsubsStdio.h>
 #include <DgnPlatformInternal/DgnCore/ElemRangeCalc.h>
 #include <DgnPlatform/DgnCore/IGeoCoordServices.h>
 #include <DgnPlatform/DgnCore/PointCloudBaseModel.h>
