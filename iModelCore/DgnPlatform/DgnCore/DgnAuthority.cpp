@@ -482,7 +482,17 @@ DgnAuthority::Code LightDefinition::CreateLightDefinitionCode(Utf8StringCR name,
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnAuthority::Code DgnTexture::CreateTextureCode(Utf8StringCR name, DgnDbR db)
     {
-    return createResourceCode(name, db, DGN_CLASSNAME_Texture);
+    // unnamed textures are supported.
+    return name.empty() ? DgnAuthority::CreateDefaultCode() : createResourceCode(name, db, DGN_CLASSNAME_Texture);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code DgnTexture::_GenerateDefaultCode()
+    {
+    // unnamed textures are supported.
+    return DgnAuthority::CreateDefaultCode();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -520,13 +530,9 @@ DgnAuthority::Code TextAnnotationSeed::CreateCodeForSeed(Utf8StringCR name, DgnD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthority::Code DgnAuthority::GenerateDefaultCode(DgnElementCR el)
+DgnAuthority::Code DgnAuthority::CreateDefaultCode()
     {
-    auto elemId = el.GetElementId();
-    if (!elemId.IsValid())
-        return DgnAuthority::Code();
-
-    Utf8PrintfString val("%" PRIu32 "-%" PRIu64, elemId.GetRepositoryId().GetValue(), (uint64_t)(0xffffffffffLL & elemId.GetValue()));
-    return DgnAuthority::Code(DgnAuthorityId((uint64_t)BuiltinAuthority_Local), val, el.GetElementClass()->GetName());
+    // The default code is not unique and has no special meaning.
+    return DgnAuthority::Code(DgnAuthorityId((uint64_t)BuiltinAuthority_Local), "", "");
     }
 
