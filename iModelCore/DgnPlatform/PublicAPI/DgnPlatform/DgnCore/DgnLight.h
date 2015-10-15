@@ -100,13 +100,13 @@ public:
     LightDefinitionCPtr Update(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Update<LightDefinition>(*this, status); }
 
     //! Creates a Code for a light definition.
-    DGNPLATFORM_EXPORT static DgnElement::Code CreateLightDefinitionCode(Utf8StringCR name, DgnDbR db);
+    DGNPLATFORM_EXPORT static DgnElement::Code CreateLightDefinitionCode(Utf8StringCR name);
 
     //! Looks up the ID of the light definition with the specified code.
     DGNPLATFORM_EXPORT static DgnLightId QueryLightId(DgnElement::Code const& code, DgnDbR db);
 
     //! Looks up the ID of the light definition with the specified name
-    static DgnLightId QueryLightId(Utf8StringCR name, DgnDbR db) { return QueryLightId(CreateLightDefinitionCode(name, db), db); }
+    static DgnLightId QueryLightId(Utf8StringCR name, DgnDbR db) { return QueryLightId(CreateLightDefinitionCode(name), db); }
 
     //! Looks up a light definition by ID
     static LightDefinitionCPtr QueryLightDefinition(DgnLightId lightId, DgnDbR db) { return db.Elements().Get<LightDefinition>(lightId); }

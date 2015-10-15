@@ -12,6 +12,8 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+struct SystemAuthority;
+
 //=======================================================================================
 //! A DgnAuthority serves issues DgnAuthority::Codes when objects are created and cloned.
 // @bsistruct                                                    Paul.Connelly   09/15
@@ -48,6 +50,7 @@ public:
         friend struct DgnAuthority;
         friend struct DgnElements;
         friend struct DgnModel;
+        friend struct SystemAuthority;
 
         Code(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) { }
     public:

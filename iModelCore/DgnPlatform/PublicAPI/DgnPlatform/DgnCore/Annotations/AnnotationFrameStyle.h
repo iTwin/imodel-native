@@ -151,9 +151,9 @@ public:
     Utf8String GetName() const { return GetCode().GetValue(); }
     Utf8StringCR GetDescription() const { return m_descr; }
     void SetDescription(Utf8StringCR value) { m_descr = value; }
-    void SetName(Utf8StringCR value) { SetCode(CreateStyleCode(value, GetDgnDb())); }
+    void SetName(Utf8StringCR value) { SetCode(CreateStyleCode(value)); }
 
-    DGNPLATFORM_EXPORT static Code CreateStyleCode(Utf8StringCR name, DgnDbR db);
+    DGNPLATFORM_EXPORT static Code CreateStyleCode(Utf8StringCR name);
 
     DGNPLATFORM_EXPORT double GetCloudBulgeFactor() const;
     DGNPLATFORM_EXPORT void SetCloudBulgeFactor(double);
@@ -192,7 +192,7 @@ public:
     AnnotationFrameStyleCPtr Update(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Update<AnnotationFrameStyle>(*this, status); }
 
     DGNPLATFORM_EXPORT static AnnotationFrameStyleId QueryStyleId(Code const& code, DgnDbR db);
-    static AnnotationFrameStyleId QueryStyleId(Utf8StringCR styleName, DgnDbR db) { return QueryStyleId(CreateStyleCode(styleName, db), db); }
+    static AnnotationFrameStyleId QueryStyleId(Utf8StringCR styleName, DgnDbR db) { return QueryStyleId(CreateStyleCode(styleName), db); }
     static AnnotationFrameStyleCPtr QueryStyle(AnnotationFrameStyleId styleId, DgnDbR db) { return db.Elements().Get<AnnotationFrameStyle>(styleId); }
     static AnnotationFrameStyleCPtr QueryStyle(Utf8StringCR styleName, DgnDbR db) { return QueryStyle(QueryStyleId(styleName, db), db); }
 

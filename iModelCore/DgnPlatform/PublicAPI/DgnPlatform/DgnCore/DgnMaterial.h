@@ -133,13 +133,13 @@ public:
     BentleyStatus GetRenderingAsset(JsonValueR value) const {return GetAsset(value, MATERIAL_ASSET_Rendering);}
 
     //! Creates a Code for a material. The palette name serves as the namespace, and the material name as the value.
-    DGNPLATFORM_EXPORT static DgnElement::Code CreateMaterialCode(Utf8StringCR paletteName, Utf8StringCR materialName, DgnDbR db);
+    DGNPLATFORM_EXPORT static DgnElement::Code CreateMaterialCode(Utf8StringCR paletteName, Utf8StringCR materialName);
 
     //! Looks up the ID of the material with the specified code.
     DGNPLATFORM_EXPORT static DgnMaterialId QueryMaterialId(DgnElement::Code const& code, DgnDbR db);
 
     //! Looks up the ID of the material with the specified palette + material name.
-    static DgnMaterialId QueryMaterialId(Utf8StringCR paletteName, Utf8StringCR materialName, DgnDbR db) { return QueryMaterialId(CreateMaterialCode(paletteName, materialName, db), db); }
+    static DgnMaterialId QueryMaterialId(Utf8StringCR paletteName, Utf8StringCR materialName, DgnDbR db) { return QueryMaterialId(CreateMaterialCode(paletteName, materialName), db); }
 
     //! Looks up a material by ID.
     static DgnMaterialCPtr QueryMaterial(DgnMaterialId materialId, DgnDbR db) { return db.Elements().Get<DgnMaterial>(materialId); }

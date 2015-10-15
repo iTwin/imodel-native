@@ -596,6 +596,9 @@ public:
     //! To indication a validation error, call TxnManager::ReportError. If the error is marked as fatal, then the transaction will be rolled back.
     //! @note This method must make changes of any kind to any other model. Dependent models will be validated later.
     void OnValidate() { _OnValidate(); }
+
+    //! Creates a Code for a model with the given name, associated with the default DgnAuthority for models.
+    DGNPLATFORM_EXPORT static DgnAuthority::Code CreateModelCode(Utf8StringCR modelName);
 };
 
 //=======================================================================================
