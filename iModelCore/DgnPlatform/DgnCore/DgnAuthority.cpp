@@ -355,7 +355,7 @@ struct SystemAuthority
     struct Info
     {
         Utf8CP name;
-        BuiltinId which;    
+        BuiltinId which;
         AuthorityHandlerR handler;
     };
 
@@ -395,6 +395,7 @@ DbResult DgnDb::CreateAuthorities()
             { "DgnMaterials", SystemAuthority::Material, dgn_AuthorityHandler::Namespace::GetHandler() },
             { "DgnCategories", SystemAuthority::Category, dgn_AuthorityHandler::Namespace::GetHandler() },
             { "DgnResources", SystemAuthority::Resource, dgn_AuthorityHandler::Namespace::GetHandler() },
+            { "DgnColors", SystemAuthority::TrueColor, dgn_AuthorityHandler::Namespace::GetHandler() },
             { "DgnModels", SystemAuthority::Model, dgn_AuthorityHandler::Namespace::GetHandler() },
         };
 
