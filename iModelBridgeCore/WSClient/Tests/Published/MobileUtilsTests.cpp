@@ -20,7 +20,7 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 std::shared_ptr<rapidjson::Document> Bentley::WSC::UnitTests::ToRapidJson(Utf8StringCR jsonString)
     {
     auto json = std::make_shared<rapidjson::Document>();
-    bool fail = json->Parse<rapidjson::kParseDefaultFlags>(jsonString.c_str()).HasParseError();
+    bool fail = json->Parse<0>(jsonString.c_str()).HasParseError();
     BeAssert(!fail && "Check json string");
     return json;
     }

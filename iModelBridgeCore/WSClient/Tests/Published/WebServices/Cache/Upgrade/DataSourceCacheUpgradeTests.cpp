@@ -337,4 +337,98 @@ TEST_F(DataSourceCacheUpgradeTests, Open_CurrentVersionDb_Success)
     EXPECT_EQ(SUCCESS, DataSourceCache().Open(path, CacheEnvironment()));
     }
 
+// Left for referance
+//TEST_F(DataSourceCacheUpgradeTests, SetupV7)
+//    {
+//    DataSourceCache cache;
+//
+//    ASSERT_EQ(SUCCESS, cache.Create(BeFileName("C:/t/data/cache.ecdb"), {BeFileName("C:/t/data/persistent"), BeFileName("C:/t/data/temporary")}));
+//
+//    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema()}));
+//
+//    StubInstances instances;
+//    instances.Add({"TestSchema.TestClass", "Modified"}, {{"TestProperty", "OldValueA"}, {"TestProperty2", "OldValueB"}});
+//    ASSERT_EQ(SUCCESS, cache.CacheInstanceAndLinkToRoot({"TestSchema.TestClass", "Modified"}, instances.ToWSObjectsResponse(), nullptr));
+//
+//    auto instance = cache.FindInstance({"TestSchema.TestClass", "Modified"});
+//
+//    Json::Value instanceJson;
+//    instanceJson["TestProperty"] = "NewValueA";
+//    instanceJson["TestProperty2"] = "OldValueB";
+//
+//    ASSERT_EQ(SUCCESS, cache.GetChangeManager().ModifyObject(instance, instanceJson));
+//
+//    cache.GetECDb().SaveChanges();
+//    cache.Close();
+//    }
+
+TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedInstance_ReadModifiedPropertiesTreatsAllInstancePropertiesAsModified)
+    {
+    auto paths = GetSeedPaths(7, "data");
+
+    DataSourceCache cache;
+    ASSERT_EQ(SUCCESS, cache.Open(paths.first, paths.second));
+
+    Json::Value instanceJson;
+    ASSERT_EQ(CacheStatus::OK, cache.ReadInstance({"TestSchema.TestClass", "Modified"}, instanceJson));
+    EXPECT_EQ("NewValueA", instanceJson["TestProperty"].asString());
+    EXPECT_EQ("OldValueB", instanceJson["TestProperty2"].asString());
+
+    auto instance = cache.FindInstance({"TestSchema.TestClass", "Modified"});
+
+    Json::Value changesJson;
+    ASSERT_EQ(SUCCESS, cache.GetChangeManager().ReadModifiedProperties(instance, changesJson));
+
+    Json::Value expected;
+    expected["TestProperty"] = "NewValueA";
+    expected["TestProperty2"] = "OldValueB";
+    EXPECT_EQ(expected, changesJson);
+    }
+
+TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedInstanceModifiedAgain_ReadModifiedPropertiesTreatsAllInstancePropertiesAsModified)
+    {
+    auto paths = GetSeedPaths(7, "data");
+
+    DataSourceCache cache;
+    ASSERT_EQ(SUCCESS, cache.Open(paths.first, paths.second));
+
+    auto instance = cache.FindInstance({"TestSchema.TestClass", "Modified"});
+
+    Json::Value instanceJson;
+    instanceJson["TestProperty"] = "NewValueA";
+    instanceJson["TestProperty2"] = "LatestValueB";
+    ASSERT_EQ(SUCCESS, cache.GetChangeManager().ModifyObject(instance, instanceJson));
+
+    Json::Value changesJson;
+    ASSERT_EQ(SUCCESS, cache.GetChangeManager().ReadModifiedProperties(instance, changesJson));
+
+    Json::Value expected;
+    expected["TestProperty"] = "NewValueA";
+    expected["TestProperty2"] = "LatestValueB";
+    EXPECT_EQ(expected, changesJson);
+    }
+
+TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedPropertyModifiedAgain_ReadModifiedPropertiesTreatsAllInstancePropertiesAsModified)
+    {
+    auto paths = GetSeedPaths(7, "data");
+
+    DataSourceCache cache;
+    ASSERT_EQ(SUCCESS, cache.Open(paths.first, paths.second));
+
+    auto instance = cache.FindInstance({"TestSchema.TestClass", "Modified"});
+
+    Json::Value instanceJson;
+    instanceJson["TestProperty"] = "LatestValueA";
+    instanceJson["TestProperty2"] = "OldValueB";
+    ASSERT_EQ(SUCCESS, cache.GetChangeManager().ModifyObject(instance, instanceJson));
+
+    Json::Value changesJson;
+    ASSERT_EQ(SUCCESS, cache.GetChangeManager().ReadModifiedProperties(instance, changesJson));
+
+    Json::Value expected;
+    expected["TestProperty"] = "LatestValueA";
+    expected["TestProperty2"] = "OldValueB";
+    EXPECT_EQ(expected, changesJson);
+    }
+
 #endif

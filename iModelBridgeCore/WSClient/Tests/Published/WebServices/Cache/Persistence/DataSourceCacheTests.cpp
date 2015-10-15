@@ -3835,4 +3835,175 @@ TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedData_WorksFine)
     auto extendedData2 = cache->GetExtendedDataAdapter().GetData(instance);
     EXPECT_THAT(extendedData2.GetValue("A"), Eq("B"));
     }
+
+TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsInstanceThatWasLocallyModified_UpdatesPropertiesThatWereNotChanged)
+    {
+    shared_ptr<DataSourceCache> cache = GetTestCache();
+
+    auto key = StubCachedResponseKey(*cache);
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "A"}, {"TestProperty2", "B"}});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+    auto instance = cache->FindInstance({"TestSchema.TestClass", "Foo"});
+
+    auto properties = ToJson(R"({"TestProperty" : "A", "TestProperty2" : "ModifiedValueB"})");
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, properties));
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "NewValueA"}, {"TestProperty2", "NewValueB"}});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    Json::Value instanceJson;
+    ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instanceJson));
+
+    EXPECT_EQ("NewValueA", instanceJson["TestProperty"].asString());
+    EXPECT_EQ("ModifiedValueB", instanceJson["TestProperty2"].asString());
+    }
+
+TEST_F(DataSourceCacheTests, CachePartialResponse_FullResultContainsInstanceThatWasLocallyModified_UpdatesPropertiesThatWereNotChanged)
+    {
+    shared_ptr<DataSourceCache> cache = GetTestCache();
+
+    WSQuery query("TestSchema", "TestClass");
+    query.SetSelect("*");
+
+    bset<ObjectId> rejected;
+    auto key = StubCachedResponseKey(*cache);
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "A"}, {"TestProperty2", "B"}});
+    ASSERT_EQ(SUCCESS, cache->CachePartialResponse(key, instances.ToWSObjectsResponse(), rejected, &query));
+    auto instance = cache->FindInstance({"TestSchema.TestClass", "Foo"});
+    ASSERT_TRUE(rejected.empty());
+
+    auto properties = ToJson(R"({"TestProperty" : "A", "TestProperty2" : "ModifiedValueB"})");
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, properties));
+
+    rejected.clear();
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "NewValueA"}, {"TestProperty2", "NewValueB"}});
+    ASSERT_EQ(SUCCESS, cache->CachePartialResponse(key, instances.ToWSObjectsResponse(), rejected, &query));
+    ASSERT_TRUE(rejected.empty());
+
+    Json::Value instanceJson;
+    ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instanceJson));
+
+    EXPECT_EQ("NewValueA", instanceJson["TestProperty"].asString());
+    EXPECT_EQ("ModifiedValueB", instanceJson["TestProperty2"].asString());
+    }
+
+TEST_F(DataSourceCacheTests, CachePartialResponse_PartialResultsContainInstanceThatWasLocallyModified_RejectsAndDoesNotUpdateInstance)
+    {
+    shared_ptr<DataSourceCache> cache = GetTestCache();
+
+    bset<ObjectId> rejected;
+    auto key = StubCachedResponseKey(*cache);
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "A"}, {"TestProperty2", "B"}});
+    ASSERT_EQ(SUCCESS, cache->CachePartialResponse(key, instances.ToWSObjectsResponse(), rejected, nullptr));
+    auto instance = cache->FindInstance({"TestSchema.TestClass", "Foo"});
+    ASSERT_TRUE(rejected.empty());
+
+    auto properties = ToJson(R"({"TestProperty" : "A", "TestProperty2" : "ModifiedValueB"})");
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, properties));
+
+    rejected.clear();
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "NewValueA"}, {"TestProperty2", "NewValueB"}});
+    ASSERT_EQ(SUCCESS, cache->CachePartialResponse(key, instances.ToWSObjectsResponse(), rejected, nullptr));
+    EXPECT_EQ(1, rejected.size());
+    EXPECT_CONTAINS(rejected, ObjectId("TestSchema.TestClass", "Foo"));
+
+    Json::Value instanceJson;
+    ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instanceJson));
+
+    EXPECT_EQ("A", instanceJson["TestProperty"].asString());
+    EXPECT_EQ("ModifiedValueB", instanceJson["TestProperty2"].asString());
+    }
+
+TEST_F(DataSourceCacheTests, CachePartialResponse_FullResultContainsInstanceThatWasLocallyDeleted_IgnoresInstance)
+    {
+    shared_ptr<DataSourceCache> cache = GetTestCache();
+
+    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DeleteObject(instance));
+
+    WSQuery query("TestSchema", "TestClass");
+    query.SetSelect("*");
+    bset<ObjectId> rejected;
+    auto key = StubCachedResponseKey(*cache);
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "Foo"});
+    ASSERT_EQ(SUCCESS, cache->CachePartialResponse(key, instances.ToWSObjectsResponse(), rejected, &query));
+    ASSERT_TRUE(rejected.empty());
+
+    Json::Value instanceJson;
+    EXPECT_EQ(CacheStatus::DataNotCached, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instanceJson));
+    EXPECT_EQ(Json::Value::null, instanceJson);
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsInstanceThatWasLocallyDeletedAndRelatedInstance_IgnoresDeletedInstanceAndUpdatesRelatedOne)
+    {
+    shared_ptr<DataSourceCache> cache = GetTestCache();
+
+    auto key = StubCachedResponseKey(*cache);
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "OldA"}})
+        .AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"}, {{"TestProperty", "OldB"}});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DeleteObject(cache->FindInstance({"TestSchema.TestClass", "A"})));
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "NewA"}})
+        .AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"}, {{"TestProperty", "NewB"}});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    Json::Value instanceJson;
+    EXPECT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "B"}, instanceJson));
+    EXPECT_EQ("NewB", instanceJson["TestProperty"].asString());
+    }
+
+TEST_F(DataSourceCacheTests, CachePartialResponse_PartialResultsContainsInstanceThatWasLocallyDeleted_IgnoresInstance)
+    {
+    shared_ptr<DataSourceCache> cache = GetTestCache();
+
+    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DeleteObject(instance));
+
+    bset<ObjectId> rejected;
+    auto key = StubCachedResponseKey(*cache);
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "Foo"});
+    ASSERT_EQ(SUCCESS, cache->CachePartialResponse(key, instances.ToWSObjectsResponse(), rejected, nullptr));
+    ASSERT_TRUE(rejected.empty());
+
+    Json::Value instanceJson;
+    EXPECT_EQ(CacheStatus::DataNotCached, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instanceJson));
+    EXPECT_EQ(Json::Value::null, instanceJson);
+    }
+
+TEST_F(DataSourceCacheTests, CachePartialResponse_PartialResultsContainsInstanceThatWasCachedAsPartial_UpdatesInstance)
+    {
+    shared_ptr<DataSourceCache> cache = GetTestCache();
+
+    bset<ObjectId> rejected;
+    auto key = StubCachedResponseKey(*cache);
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "A"}});
+    ASSERT_EQ(SUCCESS, cache->CachePartialResponse(key, instances.ToWSObjectsResponse(), rejected, nullptr));
+    auto instance = cache->FindInstance({"TestSchema.TestClass", "Foo"});
+    ASSERT_TRUE(rejected.empty());
+
+    rejected.clear();
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "NewValueA"}});
+    ASSERT_EQ(SUCCESS, cache->CachePartialResponse(key, instances.ToWSObjectsResponse(), rejected, nullptr));
+    EXPECT_EQ(0, rejected.size());
+
+    Json::Value instanceJson;
+    ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instanceJson));
+
+    EXPECT_EQ("NewValueA", instanceJson["TestProperty"].asString());
+    }
+
 #endif
