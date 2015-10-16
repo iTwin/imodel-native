@@ -41,7 +41,10 @@
   <?define ProductVersion = "$(var.Rel_V)$(var.Maj_V)$(var.Min_V)$(var.SubMin_V)"?>
   <!--ToDo: Set the correct readme file name.-->
   <?ifndef ReadMeName ?>
-    <?define ReadMeName = "ReadMe.chm"?>
+    <?define ReadMeName = "RealityDbECPlugin_Readme.txt"?>
+  <?endif?>
+  <?ifndef EulaName ?>
+    <?define EulaName = "RealityDbECPluginEula.pdf"?>
   <?endif?>
   <!--ToDo: Need to find how to fill the variable.-->
   <?ifndef ProductPackageBuildType ?>

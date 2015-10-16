@@ -5,20 +5,56 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 -->
 <?include Defines.wxi?>
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <Fragment>
     <ComponentGroup Id ="CG_ReadMeFiles">
       <!--ToDo: Adjust the path of the ReadMe, I suggest have it in the Install folder to not harvest it with Heat.exe.-->
-      <!--<Component Id="readme" Guid="{2E0678D7-0ED4-43BB-AAD8-F25D0795C1C6}" SharedDllRefCount="yes" Directory="INSTALLDIR">
-        
-        <File Id="readme" Name="readme" KeyPath="yes" Source="$(env.ProductDir)\$(var.ReadMeName)" />
-      </Component>-->
+      <Component Id="readme" Guid="{2E0678D7-0ED4-43BB-AAD8-F25D0795C1C6}" SharedDllRefCount="yes" Directory="RealityDbECPlugin">        
+        <File Id="readme" KeyPath="yes" Source="$(var.InstallReadMeDir)\$(var.ReadMeName)" />
+      </Component>
+      <Component Id="EulaFile" Directory="RealityDbECPlugin" Guid="{C1169BEB-E2D4-4CA6-A715-C8CFF21E653F}">
+        <File Id="EulaFile" KeyPath="yes" Source="$(var.InstallReadMeDir)$(var.EulaName)" />
+      </Component>
     </ComponentGroup>
   </Fragment>
   <Fragment>
     <ComponentGroup Id ="CG_Extensions">
       <Component Id="Bentley.RealityDbECPlugin.dll" Directory="Extensions" Guid="{FC6641BC-6377-4C0B-9FB8-35EC334FF0C9}">
         <File Id="Bentley.RealityDbECPlugin.dll" KeyPath="yes" Source="$(var.ProductDir)Bentley.RealityDbECPlugin.dll" />
+        <util:XmlConfig Id="SetWebconfigAccessControlAllowOriginValue" Action="create" Node="value" ElementPath="//appSettings/add[\[]@key='AccessControlAllowOrigin'[\]]" Name="value" Value="*" File="[INSTALLDIR]Web.config" On="install" Sequence="1"/>
+
+        <util:XmlConfig Id="CreateElementecomconfig1" Action="create" Node="element" ElementPath="//ECConfiguration/StartupRepositories" Name="Repository" File="[INSTALLDIR]ecom.config" On="install" Sequence="1">
+          <util:XmlConfig Id="CreateElementecomconfig2" ElementId="CreateElementecomconfig1" Name="pluginId" Value="Bentley.RealityDbECPlugin" File="[INSTALLDIR]ecom.config" />
+          <util:XmlConfig Id="CreateElementecomconfig3" ElementId="CreateElementecomconfig1" Name="location" Value="[#newDbLocation.config]" File="[INSTALLDIR]ecom.config" />
+        </util:XmlConfig>
+        <util:XmlConfig Id="RemoveElementecomconfig1" Action="delete" Node="element" ElementPath="//ECConfiguration/StartupRepositories" VerifyPath="//ECConfiguration/StartupRepositories/Repository[\[]@pluginId='Bentley.RealityDbECPlugin'[\]]" File="[INSTALLDIR]ecom.config" On="uninstall" Sequence="2"/>
+
+        <util:XmlConfig Id="CreateElementecomconfig4" Action="create" Node="element" ElementPath="//ECConfiguration/Extensions" Name="Extension" File="[INSTALLDIR]ecom.config" On="install" Sequence="3">
+          <util:XmlConfig Id="CreateElementecomconfig5" ElementId="CreateElementecomconfig4" Name="assemblyPath" Value="bin\Extensions\Bentley.RealityDbECPlugin.dll" File="[INSTALLDIR]ecom.config" />
+        </util:XmlConfig>
+        <util:XmlConfig Id="RemoveElementecomconfig2" Action="delete" Node="element" ElementPath="//ECConfiguration/Extensions" VerifyPath="//ECConfiguration/Extensions/Extension[\[]@assemblyPath='bin\\Extensions\\Bentley.RealityDbECPlugin.dll'[\]]" File="[INSTALLDIR]ecom.config" On="uninstall" Sequence="4"/>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+  <Fragment>
+    <ComponentGroup Id ="CG_Config">
+      <Component Id="ECSchemaNewDB.xml" Directory="INSTALLDIR" Guid="{E9A59A8A-F810-4299-A8C0-963BABA6434E}">
+        <File Id="ECSchemaNewDB.xml" KeyPath="yes" Source="$(var.InstallDataDir)ECSchemaNewDB.xml" />
+      </Component>
+      <Component Id="newDbLocation.config" Directory="INSTALLDIR" Guid="{D3C4425C-BFCE-4D3D-81FE-779EFDED3CC9}">
+        <File Id="newDbLocation.config" KeyPath="yes" Source="$(var.InstallDataDir)newDbLocation.config" />
+        <util:XmlConfig Id="SetnewDbLocationconfigValue1" Action="create" Node="value" ElementPath="//SchemaLocation" Value="[#ECSchemaNewDB.xml]" File="[#newDbLocation.config]" On="install" Sequence="1"/>
+        <util:XmlConfig Id="SetnewDbLocationconfigValue2" Action="create" Node="value" ElementPath="//PackagesLocation" Value="[PackagesCache]" File="[#newDbLocation.config]" On="install" Sequence="2"/>
+      </Component>
+      <Component Id="RMIndexDbScript.sql" Directory="RealityDbECPlugin" Guid="{56481A18-4ABF-441E-9484-D53332B533CD}">
+        <File Id="RMIndexDbScript.sql" KeyPath="yes" Source="$(var.InstallDataDir)RMIndexDbScript.sql" />
+      </Component>
+      <Component Id="CreateOSMEntry.sql" Directory="RealityDbECPlugin" Guid="{9FE912AB-B3A2-40EE-84EE-1CA0DEDE3FF8}">
+        <File Id="CreateOSMEntry.sql" KeyPath="yes" Source="$(var.InstallDataDir)CreateOSMEntry.sql" />
+      </Component>
+      <Component Id="PackagesCache" Directory="PackagesCache" Guid="{27D6F18C-916E-4E25-AFCD-F69ED395BB21}">
+        <CreateFolder/>        
       </Component>
     </ComponentGroup>
   </Fragment>

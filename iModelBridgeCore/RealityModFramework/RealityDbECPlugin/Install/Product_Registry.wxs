@@ -9,7 +9,7 @@
   <Fragment>
     <ComponentGroup Id ="CG_Registry">
       <Component Id="ApplicationRegistry" Guid="*" SharedDllRefCount="yes" Directory="INSTALLDIR">
-        <RegistryKey Id="InstallRegKeysApplication" Root="HKLM" Key="SOFTWARE\Bentley\$(var.ProductName)\$(var.ProductCodeGUID)" Action="createAndRemoveOnUninstall">
+        <RegistryKey Root="HKLM" Key="SOFTWARE\Bentley\$(var.ProductName)\$(var.ProductCodeGUID)">
           <RegistryValue Id ="ApplicationApplicationPath" Name ="ApplicationPath" Action ="write" Type ="string" Value="[Extensions]$(var.ProductExe)"/>
           <RegistryValue Id ="ApplicationDisplayProductName" Name ="DisplayProductName" Action ="write" Type ="string" Value="!(loc.ProductFullName)"/>
           <RegistryValue Id ="ApplicationVersion" Name ="Version" Action ="write" Type ="string" Value="$(var.ProductDisplayVersion)"/>
@@ -27,7 +27,7 @@
       </Component>
       
       <Component Id="Required_Create_InstallRegKeysBSW" Guid="*" SharedDllRefCount="yes" Directory="INSTALLDIR">
-        <RegistryKey Id="InstallRegKeysBSW" Root="HKLM" Key="SOFTWARE\Bentley\Installed_Products\$(var.ProductCodeGUID)" Action="createAndRemoveOnUninstall">
+        <RegistryKey Root="HKLM" Key="SOFTWARE\Bentley\Installed_Products\$(var.ProductCodeGUID)">
           <RegistryValue Id ="BSWApplicationPath" Name ="ApplicationPath" Action ="write" Type ="string" Value="[Extensions]$(var.ProductExe)"/>
           <RegistryValue Id ="BSWDisplayProductName" Name ="DisplayProductName" Action ="write" Type ="string" Value="!(loc.ProductFullName)"/>
           <RegistryValue Id ="BSWVersion" Name ="Version" Action ="write" Type ="string" Value="$(var.ProductDisplayVersion)"/>

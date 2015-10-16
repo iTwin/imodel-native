@@ -7,6 +7,7 @@
 <?include Defines.wxi?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:netfx="http://schemas.microsoft.com/wix/NetFxExtension"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension"
      RequiredVersion="3.10.0.2103">
     
 
@@ -43,7 +44,7 @@
         <Property Id="ARPURLINFOABOUT" Secure="yes" Value="!(loc.AboutUrl)" />
         <Property Id="ARPURLUPDATEINFO" Secure="yes" Value="!(loc.UpdateUrl)" />
         <Property Id="ARPHELPTELEPHONE" Secure="yes" Value="!(loc.HelpTelephone)" />
-        <!--<Property Id="ARPREADME" Secure="yes" Value="[$readme]$(var.ReadMeName)" />-->
+        <Property Id="ARPREADME" Secure="yes" Value="[$readme]$(var.ReadMeName)" />
         <Property Id="ARPPRODUCTICON" Secure="yes" Value="icon.ico" />
       
         <Property Id="WSGVERSION" Secure="yes" Value="$(var.WSGVERSION)" />
@@ -70,16 +71,18 @@
       <!-- * Sequences * -->
       <!-- ************* -->
         <InstallUISequence>
-          <!--*** After CostFinalize ***-->
-          <!--<Custom Action="SetReadMe" After="CostFinalize" />-->
+          <!--*** After AppSearch ***-->
           <Custom Action="SetInstall" After="AppSearch"><![CDATA[Not Installed And COREPRODUCTDIR<>0]]></Custom>
+          <!--*** After CostFinalize ***-->
+          <Custom Action="SetReadMe" After="CostFinalize" />          
           <!--<Custom Action="SetWIXUI_INSTALLDIR" After="SetInstall"><![CDATA[Installed And COREPRODUCTDIR<>0]]></Custom>-->
         </InstallUISequence>
 
         <InstallExecuteSequence>
-          <!--*** After CostFinalize ***-->
-          <!--<Custom Action="SetReadMe" After="CostFinalize"><![CDATA[Installed]]></Custom>-->
+          <!--*** After AppSearch ***-->
           <Custom Action="SetInstall" After="AppSearch"><![CDATA[Not Installed And COREPRODUCTDIR<>0]]></Custom>
+          <!--*** After CostFinalize ***-->
+          <Custom Action="SetReadMe" After="CostFinalize" />          
           <!--<Custom Action="SetWIXUI_INSTALLDIR" After="SetInstall"><![CDATA[Installed And COREPRODUCTDIR<>0]]></Custom>-->
           <!--*** After InstallValidate ***-->
           <Custom Action="SetARPINSTALLLOCATION" After="InstallValidate"></Custom>
@@ -91,6 +94,7 @@
         <Feature Id="ProductFull" Level="1" Title="!(loc.FeatureTitleProductFull)" Description="!(loc.FeatureDescriptionProductFull)" Absent="disallow" AllowAdvertise="no" Display='collapse'>
           <ComponentGroupRef Id="CG_ReadMeFiles" />
           <ComponentGroupRef Id="CG_Extensions" />
+          <ComponentGroupRef Id="CG_Config" />
           <ComponentGroupRef Id="CG_AppFiles" />
           <ComponentGroupRef Id="CG_BentleyFiles" />
           <ComponentGroupRef Id="CG_Registry" />          
