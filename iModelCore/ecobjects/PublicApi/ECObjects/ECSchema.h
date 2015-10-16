@@ -937,6 +937,7 @@ typedef bvector<ECClassP> ECConstraintClassesList;
 /*__PUBLISH_SECTION_END__*/
 typedef bool (*TraversalDelegate) (ECClassCP, const void *);
 struct SchemaXmlReader;
+struct SchemaXmlWriter;
 
 /*__PUBLISH_SECTION_START__*/
 
@@ -957,6 +958,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECClass : IECCustomAttributeContainer
 
 friend struct ECSchema;
 friend struct SchemaXmlReader;
+friend struct SchemaXmlWriter;
 friend struct ECPropertyIterable::IteratorState;
 friend struct SupplementedSchemaBuilder;
 friend struct ECProperty; // for access to InvalidateDefaultStandaloneEnabler() when property is modified
@@ -1517,6 +1519,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECRelationshipClass : public ECClass
 /*__PUBLISH_SECTION_END__*/
 friend struct ECSchema;
 friend struct SchemaXmlReader;
+friend struct SchemaXmlWriter;
 
 private:
     StrengthType     m_strength;
@@ -2075,6 +2078,7 @@ private:
 friend struct SearchPathSchemaFileLocater;
 friend struct SupplementedSchemaBuilder;
 friend struct SchemaXmlReader;
+friend struct SchemaXmlWriter;
 
 // Schemas are RefCounted but none of the constructs held by schemas (classes, properties, etc.) are.
 // They are freed when the schema is freed.
@@ -2103,7 +2107,6 @@ private:
 
     bool                                AddingSchemaCausedCycles () const;
     void                                SetIsSupplemented(bool isSupplemented);
-    SchemaWriteStatus                   WriteXml (BeXmlWriterR xmlWriter) const;
 
     ECObjectsStatus                     AddClass (ECClassP& pClass, bool deleteClassIfDuplicate = true);
     ECObjectsStatus                     SetVersionFromString (Utf8CP versionString);
@@ -2112,16 +2115,6 @@ private:
     void SetSupplementalSchemaInfo(SupplementalSchemaInfo* info);
 
     ECObjectsStatus                     AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR prefix, ECSchemaReadContextR readContext);
-
-    struct  ECSchemaWriteContext
-        {
-        bset<Utf8CP> m_alreadyWrittenClasses;
-        };
-
-    SchemaWriteStatus                   WriteSchemaReferences (BeXmlWriterR xmlWriter) const;
-    SchemaWriteStatus                   WriteClass (BeXmlWriterR xmlWriter, ECClassCR ecClass, ECSchemaWriteContext&) const;
-    SchemaWriteStatus                   WriteCustomAttributeDependencies (BeXmlWriterR xmlWriter, IECCustomAttributeContainerCR container, ECSchemaWriteContext&) const;
-    SchemaWriteStatus                   WritePropertyDependencies (BeXmlWriterR xmlWriter, ECClassCR ecClass, ECSchemaWriteContext&) const;
     void                                CollectAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSchemas,  bool includeRootSchema) const;
 
 protected:

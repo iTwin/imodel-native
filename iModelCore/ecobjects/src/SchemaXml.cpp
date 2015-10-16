@@ -8,8 +8,27 @@
 
 #include "ECObjectsPch.h"
 #include "SchemaXml.h"
+#include <list>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool ClassNameComparer (ECClassP class1, ECClassP class2)
+    {
+    // We should never have a NULL ECClass here.
+    // However we will pretend a NULL ECClass is always less than a non-NULL ECClass
+    BeAssert (NULL != class1 && NULL != class2);
+    if (NULL == class1)
+        return NULL != class2;      // class 1 < class2 if class2 non-null, equal otherwise
+    else if (NULL == class2)
+        return false;               // class1 > class2
+
+    int comparison = class1->GetName().CompareTo (class2->GetName());
+    return comparison < 0;
+    }
+
 
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
 // Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
@@ -310,6 +329,174 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     LOG.debugv("Overall schema de-serialization for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), overallTimer.GetElapsedSeconds());
 
     return SCHEMA_READ_STATUS_Success;
+    }
+
+// =====================================================================================
+// SchemaXmlWriter class
+// =====================================================================================
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaXmlWriter::SchemaXmlWriter(BeXmlWriterR xmlWriter, ECSchemaCR ecSchema) : m_xmlWriter(xmlWriter), m_ecSchema(ecSchema)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaWriteStatus SchemaXmlWriter::WriteSchemaReferences()
+    {
+    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
+    bmap<ECSchemaP, Utf8String>::const_iterator iterator;
+    for (iterator = m_ecSchema.m_referencedSchemaNamespaceMap.begin(); iterator != m_ecSchema.m_referencedSchemaNamespaceMap.end(); iterator++)
+        {
+        bpair<ECSchemaP, const Utf8String> mapPair = *(iterator);
+        ECSchemaP   refSchema           = mapPair.first;
+        m_xmlWriter.WriteElementStart(EC_SCHEMAREFERENCE_ELEMENT);
+        m_xmlWriter.WriteAttribute(SCHEMAREF_NAME_ATTRIBUTE, refSchema->GetName().c_str());
+
+        Utf8Char versionString[8];
+        sprintf(versionString, "%02d.%02d", refSchema->GetVersionMajor(), refSchema->GetVersionMinor());
+        m_xmlWriter.WriteAttribute (SCHEMAREF_VERSION_ATTRIBUTE, versionString);
+
+        const Utf8String prefix = mapPair.second;
+        m_xmlWriter.WriteAttribute(SCHEMAREF_PREFIX_ATTRIBUTE, prefix.c_str());
+        m_xmlWriter.WriteElementEnd();
+        }
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaWriteStatus SchemaXmlWriter::WriteCustomAttributeDependencies (IECCustomAttributeContainerCR container)
+    {
+    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
+
+    for (IECInstancePtr instance: container.GetCustomAttributes(false))
+        {
+        ECClassCR currentClass = instance->GetClass();
+        status = WriteClass (currentClass);
+        if (SCHEMA_WRITE_STATUS_Success != status)
+            return status;
+        }
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaWriteStatus SchemaXmlWriter::WriteClass (ECClassCR ecClass)
+    {
+    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
+    // don't write any classes that aren't in the schema we're writing.
+    if (&(ecClass.GetSchema()) != &m_ecSchema)
+        return status;
+
+    bset<Utf8CP>::const_iterator setIterator;
+    setIterator = m_context.m_alreadyWrittenClasses.find(ecClass.GetName().c_str());
+    // Make sure we don't write any class twice
+    if (setIterator != m_context.m_alreadyWrittenClasses.end())
+        return status;
+    else
+        m_context.m_alreadyWrittenClasses.insert(ecClass.GetName().c_str());
+
+    // write the base classes first.
+    for (ECClassP baseClass: ecClass.GetBaseClasses())
+        WriteClass(*baseClass);
+
+    // Serialize relationship constraint dependencies
+    ECRelationshipClassP relClass = const_cast<ECRelationshipClassP>(ecClass.GetRelationshipClassCP());
+    if (NULL != relClass)
+        {
+        for (auto source : relClass->GetSource().GetConstraintClasses())
+            WriteClass(source->GetClass());
+
+        for (auto target : relClass->GetTarget().GetConstraintClasses())
+            WriteClass(target->GetClass());
+        }
+    WritePropertyDependencies(ecClass);
+    WriteCustomAttributeDependencies(ecClass);
+
+    ecClass._WriteXml (m_xmlWriter);
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaWriteStatus SchemaXmlWriter::WritePropertyDependencies (ECClassCR ecClass)
+    {
+    SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
+
+    for (ECPropertyP prop: ecClass.GetProperties(false))
+        {
+        if (prop->GetIsStruct())
+            {
+            StructECPropertyP structProperty = prop->GetAsStructPropertyP();
+            WriteClass(structProperty->GetType());
+            }
+        else if (prop->GetIsArray())
+            {
+            ArrayECPropertyP arrayProperty = prop->GetAsArrayPropertyP();
+            if (arrayProperty->GetKind() == ARRAYKIND_Struct)
+                {
+                WriteClass(*(arrayProperty->GetStructElementType()));
+                }
+            }
+        WriteCustomAttributeDependencies(*prop);
+        }
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus SchemaXmlWriter::Serialize()
+    {
+    m_xmlWriter.WriteDocumentStart(XML_CHAR_ENCODING_UTF8);
+    m_xmlWriter.WriteElementStart(EC_SCHEMA_ELEMENT, ECXML_URI_2_0);
+
+    Utf8Char versionString[8];
+    BeStringUtilities::Snprintf (versionString, "%02d.%02d", m_ecSchema.m_key.m_versionMajor, m_ecSchema.m_key.m_versionMinor);
+
+    m_xmlWriter.WriteAttribute(SCHEMA_NAME_ATTRIBUTE, m_ecSchema.GetName().c_str());
+    m_xmlWriter.WriteAttribute(SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, m_ecSchema.GetNamespacePrefix().c_str());
+    m_xmlWriter.WriteAttribute(SCHEMA_VERSION_ATTRIBUTE, versionString);
+    m_xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, m_ecSchema.GetInvariantDescription().c_str());
+    if (m_ecSchema.GetIsDisplayLabelDefined())
+        m_xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, m_ecSchema.GetInvariantDisplayLabel().c_str());
+
+    WriteSchemaReferences ();
+
+    WriteCustomAttributeDependencies(m_ecSchema);
+    m_ecSchema.WriteCustomAttributes(m_xmlWriter);
+
+    std::list<ECClassP> sortedClasses;
+    // sort the classes by name so the order in which they are written is predictable.
+    for (ECClassP pClass: m_ecSchema.GetClasses())
+        {
+        if (NULL == pClass)
+            {
+            BeAssert(false);
+            continue;
+            }
+        else
+            sortedClasses.push_back(pClass);
+        }
+
+    sortedClasses.sort (ClassNameComparer);
+
+    for (ECClassP pClass: sortedClasses)
+        {
+        WriteClass (*pClass);
+        }
+
+    m_xmlWriter.WriteElementEnd();
+    return SCHEMA_WRITE_STATUS_Success;
+
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

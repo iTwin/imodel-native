@@ -35,4 +35,31 @@ public:
     static void SetErrorHandling(bool doAssert);
 };
 
+// =====================================================================================
+// SchemaXmlWriter class
+// =====================================================================================
+struct SchemaXmlWriter
+    {
+    private:
+        struct  ECSchemaWriteContext
+            {
+            bset<Utf8CP> m_alreadyWrittenClasses;
+            };
+
+        BeXmlWriterR m_xmlWriter;
+        ECSchemaCR m_ecSchema;
+        ECSchemaWriteContext m_context;
+
+    protected:
+        SchemaWriteStatus                   WriteSchemaReferences ();
+        SchemaWriteStatus                   WriteClass (ECClassCR ecClass);
+        SchemaWriteStatus                   WriteCustomAttributeDependencies (IECCustomAttributeContainerCR container);
+        SchemaWriteStatus                   WritePropertyDependencies (ECClassCR ecClass);
+
+    public:
+        SchemaXmlWriter(BeXmlWriterR xmlWriter, ECSchemaCR ecSchema);
+        virtual SchemaWriteStatus Serialize();
+    };
+
+
 END_BENTLEY_ECOBJECT_NAMESPACE
