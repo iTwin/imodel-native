@@ -224,3 +224,18 @@ DgnMaterial::Iterator DgnMaterial::MakeIterator(DgnDbR db, Iterator::Options opt
     return Iterator::Create(db, options);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnMaterialId DgnImportContext::RemapMaterialId(DgnMaterialId source)
+    {
+    if (!IsBetweenDbs())
+        return source;
+    DgnMaterialId dest = FindMaterialId(source);
+    if (dest.IsValid())
+        return dest;
+#ifdef WIP_IMPORT // *** material
+    return GetDestinationDb().Materials().ImportMaterial(*this, GetSourceDb(), source);
+#endif
+    return DgnMaterialId();
+    }

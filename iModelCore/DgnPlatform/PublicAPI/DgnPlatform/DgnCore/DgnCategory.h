@@ -76,6 +76,7 @@ public:
         bool IsEqual(Appearance const& other) const {return *this==other;}
         void FromJson(Utf8StringCR); //!< initialize this appearance from a previously saved json string
         DGNPLATFORM_EXPORT Utf8String ToJson() const;   //!< convert this appearance to a json string
+        void RelocateToDestinationDb(DgnImportContext&);
     };// Appearance
 
     //! View-specific overrides of the appearance of a SubCategory

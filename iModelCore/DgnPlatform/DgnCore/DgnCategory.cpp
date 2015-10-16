@@ -562,6 +562,23 @@ bool DgnSubCategory::Appearance::operator==(Appearance const& other) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnSubCategory::Appearance::RelocateToDestinationDb(DgnImportContext& context)
+    {
+    if (!context.IsBetweenDbs())
+        return;
+
+    if (m_style.IsValid())
+        {
+        BeAssert(false && "*** TBD: remap style id");
+        }
+
+    if (m_material.IsValid())
+        m_material = context.RemapMaterialId(m_material);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnSubCategory::Override::ToJson(JsonValueR outValue) const
@@ -624,7 +641,7 @@ void DgnCategory::_OnImported(DgnElementCR original, DgnImportContext& importer)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnSubCategory::_RemapIds(DgnImportContext& importer)
     {
-    // *** WIP_IMPORT: Translate style IDS in sourceAppearance
+    m_data.m_appearance.RelocateToDestinationDb(importer);
     T_Super::_RemapIds(importer);
     }
 
@@ -678,11 +695,9 @@ DgnSubCategoryId DgnSubCategory::ImportSubCategory(DgnSubCategoryId srcSubCatId,
         if (dstSubCat.IsValid())
             {
             BeAssert(dstSubCat->IsDefaultSubCategory());
-
-            // Since we must create the default sub-category as soon as the category is inserted, we now need to update its properties to reflect the source sub-category
-
-            // *** WIP_IMPORT: Translate style IDS in sourceAppearance
-            UNUSED_VARIABLE(dstSubCat);
+            DgnSubCategoryPtr dstSubCatEdit = dstSubCat->MakeCopy<DgnSubCategory>();
+            dstSubCatEdit->m_data.m_appearance.RelocateToDestinationDb(importer);
+            dstSubCatEdit->Update();
             }
         }
     else
