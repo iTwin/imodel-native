@@ -116,6 +116,7 @@ struct StandardCustomAttributeHelper : NonCopyableClass
 private:
     static WCharCP const SYSTEMSCHEMA_CA_NAME;
     static WCharCP const DYNAMICSCHEMA_CA_NAME;
+		static WCharCP const SYSTEMSCHEMA_CA_SCHEMA;
 
     //static class
     StandardCustomAttributeHelper ();

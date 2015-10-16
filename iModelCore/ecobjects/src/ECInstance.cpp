@@ -75,7 +75,7 @@ ICustomECStructSerializerP                      CustomStructSerializerManager::G
         return NULL;
 
     // see if the struct has a custom attribute to custom serialize itself
-    IECInstancePtr caInstance = structProperty->GetType().GetCustomAttribute(L"CustomStructSerializer");
+    IECInstancePtr caInstance = structProperty->GetType().GetCustomAttribute(L"Bentley_Standard_CustomAttributes", L"CustomStructSerializer");
     if (caInstance.IsValid())
         {
         ECValue value;
@@ -1875,7 +1875,7 @@ bool  ECInstanceInteropHelper::IsCalculatedECProperty  (IECInstanceCR instance, 
     if (NULL == ecProperty)
         return false;
 
-    return ecProperty->IsDefined (L"CalculatedECPropertySpecification");
+    return ecProperty->IsDefined (L"Bentley_Standard_CustomAttributes", L"CalculatedECPropertySpecification");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2086,7 +2086,7 @@ WString                         IECInstance::ToString (WCharCP indent) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool getInstanceLabelPropertyNameFromClass (WStringR propertyName, ECClassCR ecClass, bool& alwaysUseClassLabel)
     {
-    IECInstancePtr caInstance = ecClass.GetCustomAttribute (L"InstanceLabelSpecification");
+    IECInstancePtr caInstance = ecClass.GetCustomAttribute (L"Bentley_Standard_CustomAttributes", L"InstanceLabelSpecification");
     if (caInstance.IsValid())
         {
         ECValue value;
@@ -2097,7 +2097,7 @@ static bool getInstanceLabelPropertyNameFromClass (WStringR propertyName, ECClas
             }
         }
 
-    if (ecClass.GetCustomAttribute (L"ClassLabelIsInstanceLabel").IsValid())
+    if (ecClass.GetCustomAttribute (L"Bentley_Standard_CustomAttributes", L"ClassLabelIsInstanceLabel").IsValid())
         {
         alwaysUseClassLabel = true;
         return false;

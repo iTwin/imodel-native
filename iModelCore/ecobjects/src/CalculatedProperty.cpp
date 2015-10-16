@@ -258,7 +258,7 @@ CalculatedPropertySpecification::~CalculatedPropertySpecification()
 +---------------+---------------+---------------+---------------+---------------+------*/
 CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (ECPropertyCR ecprop, PrimitiveType primitiveType)
     {
-    IECInstancePtr customAttr = ecprop.GetCustomAttribute (L"CalculatedECPropertySpecification");
+    IECInstancePtr customAttr = ecprop.GetCustomAttribute (L"Bentley_Standard_CustomAttributes", L"CalculatedECPropertySpecification");
     if (customAttr.IsNull())
         return NULL;
 

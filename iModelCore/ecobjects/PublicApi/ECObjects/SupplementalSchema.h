@@ -47,6 +47,7 @@ private:
     bool   m_isUserSpecific;
 
     static WCharCP s_customAttributeAccessor;
+	static WCharCP s_customAttributeSchemaName;
 
 public:
     //! Constructor for SupplementalSchemaMetaData
@@ -132,6 +133,9 @@ public:
 // Statics
     //! Returns the string used to get the SupplementalSchemaMetaData custom attribute.
     ECOBJECTS_EXPORT static WCharCP GetCustomAttributeAccessor();
+
+	//! Returns the string used to get the SupplementalSchemaMetaData custom attribute schema name.
+    ECOBJECTS_EXPORT static WCharCP GetCustomAttributeSchemaName();
 
     //! Returns the string used to access the PrimarySchemaName property on the
     //! SupplementalSchemaMetaData custom attribute.
@@ -383,6 +387,7 @@ private:
     WString     m_supplementedKey;
     SchemaNamePurposeMap  m_supplementalSchemaNamesAndPurpose;
     static WCharCP s_customAttributeAccessor;
+	static WCharCP s_customAttributeSchemaName;
 
 public:
     //! Constructs an instance of the SupplementalSchemaInfo class
@@ -425,6 +430,8 @@ public:
 
     //! Returns the string used to get the SupplementalSchemaMetaData custom attribute.
     static WCharCP GetCustomAttributeAccessor();
+	//! Returns the string used to get the SupplementalSchemaMetaData custom attribute schema.
+	static WCharCP GetCustomAttributeSchemaName();
     //__PUBLISH_SECTION_START__
 
     };

@@ -2,7 +2,7 @@
 |
 |     $Source: src/DateTimeInfoAccessor.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -13,6 +13,8 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 WCharCP const DateTimeInfoAccessor::DATETIMEINFO_CLASSNAME = L"DateTimeInfo";
+//static
+WCharCP const DateTimeInfoAccessor::DATETIMEINFO_SCHEMANAME = L"Bentley_Standard_CustomAttributes";
 
 //static
 WCharCP const DateTimeInfoAccessor::DATETIMEINFO_KIND_PROPERTYNAME = L"DateTimeKind";
@@ -53,7 +55,7 @@ bool DateTimeInfoAccessor::TryGetFrom (DateTimeInfoR dateTimeInfo, ECPropertyCR 
     PRECONDITION ((dateTimeProperty.GetIsPrimitive () && dateTimeProperty.GetAsPrimitiveProperty ()->GetType () == PRIMITIVETYPE_DateTime) || 
                   ((arrayDateTimeProp = dateTimeProperty.GetAsArrayProperty ()) != NULL && arrayDateTimeProp->GetKind () == ARRAYKIND_Primitive && arrayDateTimeProp->GetPrimitiveElementType () == PRIMITIVETYPE_DateTime), false);
 
-    IECInstancePtr caInstance = dateTimeProperty.GetCustomAttribute (DATETIMEINFO_CLASSNAME);
+    IECInstancePtr caInstance = dateTimeProperty.GetCustomAttribute (DATETIMEINFO_SCHEMANAME, DATETIMEINFO_CLASSNAME);
     if (caInstance.IsNull())
         return false;
 

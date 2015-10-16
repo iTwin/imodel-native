@@ -2108,7 +2108,7 @@ ECRelationshipConstraintR toRelationshipConstraint
 ECObjectsStatus ECRelationshipConstraint::GetOrderedRelationshipPropertyName (WString& propertyName)  const
     {
     // see if the custom attribute signifying a Ordered relationship is defined
-    IECInstancePtr caInstance = GetCustomAttribute(L"OrderedRelationshipsConstraint");
+    IECInstancePtr caInstance = GetCustomAttribute(L"Bentley_Standard_CustomAttributes", L"OrderedRelationshipsConstraint");
     if (caInstance.IsValid())
         {
         ECN::ECValue value;
@@ -2128,7 +2128,7 @@ ECObjectsStatus ECRelationshipConstraint::GetOrderedRelationshipPropertyName (WS
 bool ECRelationshipConstraint::GetIsOrdered () const
     {
     // see if the custom attribute signifying a Ordered relationship is defined
-    IECInstancePtr caInstance = GetCustomAttribute(L"OrderedRelationshipsConstraint");
+    IECInstancePtr caInstance = GetCustomAttribute(L"Bentley_Standard_CustomAttributes", L"OrderedRelationshipsConstraint");
     if (caInstance.IsValid())
         return true;
     return false;
@@ -2140,7 +2140,7 @@ bool ECRelationshipConstraint::GetIsOrdered () const
 OrderIdStorageMode ECRelationshipConstraint::GetOrderIdStorageMode () const
     {
     // see if the custom attribute signifying a Ordered relationship is defined
-    IECInstancePtr caInstance = GetCustomAttribute(L"OrderedRelationshipsConstraint");
+    IECInstancePtr caInstance = GetCustomAttribute(L"Bentley_Standard_CustomAttributes", L"OrderedRelationshipsConstraint");
     if (caInstance.IsValid())
         {
         ECN::ECValue value;
@@ -2259,7 +2259,7 @@ ECRelationshipConstraintR ECRelationshipClass::GetTarget () const
 bool ECRelationshipClass::GetIsOrdered () const
     {
     // see if the custom attribute signifying a Ordered relationship is defined
-    IECInstancePtr caInstance = GetCustomAttribute(L"SupportsOrderedRelationships");
+    IECInstancePtr caInstance = GetCustomAttribute(L"Bentley_Standard_CustomAttributes", L"SupportsOrderedRelationships");
     if (caInstance.IsValid())
         return true;
 
@@ -2272,7 +2272,7 @@ bool ECRelationshipClass::GetIsOrdered () const
 ECObjectsStatus ECRelationshipClass::GetOrderedRelationshipPropertyName (WString& propertyName, ECRelationshipEnd end) const
     {
     // see if the struct has a custom attribute to custom persist itself
-    IECInstancePtr caInstance = GetCustomAttribute(L"SupportsOrderedRelationships");
+    IECInstancePtr caInstance = GetCustomAttribute(L"Bentley_Standard_CustomAttributes", L"SupportsOrderedRelationships");
     if (caInstance.IsValid())
         {
         ECN::ECValue value;

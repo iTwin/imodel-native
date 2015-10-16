@@ -644,7 +644,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         void ValidateSystemInfoCustomAttribute(IECCustomAttributeContainerP consolidatedContainer, WCharCP expectedValue1, WCharCP expectedValue2)
             {
-            IECInstancePtr customAttribute = consolidatedContainer->GetCustomAttribute(L"SystemInfo");
+            IECInstancePtr customAttribute = consolidatedContainer->GetCustomAttribute(L"Test_Custom_Attributes", L"SystemInfo");
             EXPECT_TRUE(customAttribute.IsValid());
             ECValue ecValue;
             customAttribute->GetValue(ecValue, L"Data1");
@@ -656,7 +656,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         void ValidateUselessInfoCustomAttribute(IECCustomAttributeContainerP consolidatedContainer, WCharCP expectedValue1, WCharCP expectedValue2)
             {
-            IECInstancePtr customAttribute = consolidatedContainer->GetCustomAttribute(L"UselessInfo");
+            IECInstancePtr customAttribute = consolidatedContainer->GetCustomAttribute(L"Test_Custom_Attributes", L"UselessInfo");
             EXPECT_TRUE(customAttribute.IsValid());
             ECValue ecValue;
             customAttribute->GetValue(ecValue, L"NothingImportant");

@@ -215,12 +215,15 @@ private:
     ECCustomAttributeCollection         m_consolidatedCustomAttributes;
     SchemaWriteStatus                   AddCustomAttributeProperties (BeXmlNodeR oldNode, BeXmlNodeR newNode) const;
 
-    IECInstancePtr                      GetCustomAttributeInternal(WStringCR className, bool includeBaseClasses, bool includeSupplementalAttributes) const;
+    IECInstancePtr                      GetCustomAttributeInternal(WStringCR schemaName, WStringCR className, bool includeBaseClasses, bool includeSupplementalAttributes) const;
     IECInstancePtr                      GetCustomAttributeInternal(ECClassCR ecClass, bool includeBaseClasses, bool includeSupplementalAttributes) const;
 
     ECObjectsStatus                     SetCustomAttributeInternal(ECCustomAttributeCollection& customAttributeCollection, IECInstanceR customAttributeInstance, bool requireSchemaReference = false);
     //! Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
     ECObjectsStatus                     SetPrimaryCustomAttribute(IECInstanceR customAttributeInstance);
+		
+		//! LEGECY METHOD
+		IECInstancePtr                      GetCustomAttributeInternal(WStringCR className, bool includeBaseClasses, bool includeSupplementalAttributes) const;
 
 protected:
     //! Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
@@ -245,13 +248,16 @@ public:
     ECSchemaP                           GetContainerSchema();
     //! Retrieves the local custom attribute matching the class name.  If the attribute is not 
     //! a consolidated attribute it will be copied and added to the consolidated list before it is returned.
-    IECInstancePtr                      GetLocalAttributeAsConsolidated(WStringCR className);
+    IECInstancePtr                      GetLocalAttributeAsConsolidated(WStringCR schemaName, WStringCR className);
+		
+		//! LEGECY METHOD
+		IECInstancePtr                      GetLocalAttributeAsConsolidated(WStringCR className);
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     //! Returns true if the container has a custom attribute of a class of the specified name
-    ECOBJECTS_EXPORT bool               IsDefined(WStringCR className) const;
+    ECOBJECTS_EXPORT bool               IsDefined(WStringCR schemaName, WStringCR className) const;
     //! Returns true if the container has a custom attribute of a class of the specified class definition
     ECOBJECTS_EXPORT bool               IsDefined(ECClassCR classDefinition) const;
 
@@ -260,7 +266,7 @@ public:
     //! @param[in]  className   The name of the CustomAttribute Class to look for an instance of
     //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
     //! the custom attribute was found on the container.
-    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttribute(WStringCR className) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttribute(WStringCR schemaName, WStringCR className) const;
 
     //! Retrieves the custom attribute matching the class definition.  Includes supplemental custom attributes
     //! and custom attributes from the base containers
@@ -274,7 +280,7 @@ public:
     //! @param[in]  className   The name of the CustomAttribute Class to look for an instance of
     //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
     //! the custom attribute was found on the container.
-    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttributeLocal(WStringCR className) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttributeLocal(WStringCR schemaName, WStringCR className) const;
 
     //! Retrieves the custom attribute matching the class definition.  Includes supplemental custom attributes
     //! but not base containers
@@ -288,7 +294,7 @@ public:
     //! @param[in]  className   The name of the CustomAttribute Class to look for an instance of
     //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
     //! the custom attribute was found on the container.
-    ECOBJECTS_EXPORT IECInstancePtr     GetPrimaryCustomAttribute(WStringCR className) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetPrimaryCustomAttribute(WStringCR schemaName, WStringCR className) const;
 
     //! Retrieves the custom attribute matching the class definition.  Includes custom attributes from base containers
     //! but not supplemental custom attributes
@@ -310,11 +316,18 @@ public:
 
     //! Removes a custom attribute from the container
     //! @param[in]  className   Name of the class of the custom attribute to remove
-    ECOBJECTS_EXPORT bool               RemoveCustomAttribute(WStringCR className);
+    ECOBJECTS_EXPORT bool               RemoveCustomAttribute(WStringCR schemaName, WStringCR className);
 
     //! Removes a custom attribute from the container
     //! @param[in]  classDefinition ECClass of the custom attribute to remove
     ECOBJECTS_EXPORT bool               RemoveCustomAttribute(ECClassCR classDefinition);
+		
+		//! LEGECY METHODS
+		ECOBJECTS_EXPORT bool               IsDefined(WStringCR className) const;
+		ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttribute(WStringCR className) const;
+		ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttributeLocal(WStringCR className) const;
+		ECOBJECTS_EXPORT IECInstancePtr     GetPrimaryCustomAttribute(WStringCR className) const;
+		ECOBJECTS_EXPORT bool               RemoveCustomAttribute(WStringCR className);
 };
 
 //=======================================================================================

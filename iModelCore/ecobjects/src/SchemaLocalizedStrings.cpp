@@ -11,6 +11,7 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+static WCharCP const SCHEMANAME         = L"Bentley_Standard_CustomAttributes";
 static WCharCP const LOC_SPEC           = L"LocalizationSpecification";
 static WCharCP const LOCALE             = L"Locale";
 static WCharCP const RESOURCE           = L"Resource";
@@ -235,9 +236,10 @@ SchemaLocalizedStrings::SchemaLocalizedStrings(ECSchemaCP localizationSupplement
     for (auto const& it : caStrings)
         {
         WString containerAccessor;
+        WString caSchemaName;
         WString caClassName;
         WString caPropertyAccessor;
-        if(ECOBJECTS_STATUS_Success != ParseCaKeyString(containerAccessor, caClassName, caPropertyAccessor, it.first, prefixLength, it.second.first))
+        if(ECOBJECTS_STATUS_Success != ParseCaKeyString(containerAccessor, caSchemaName, caClassName, caPropertyAccessor, it.first, prefixLength, it.second.first))
             {
             LOG.errorv(L"Invalid key '%ls' for localized string '%ls' for schema '%ls'", it.first, it.second.second, primarySchema.GetFullSchemaName());
             continue;
@@ -253,12 +255,12 @@ SchemaLocalizedStrings::SchemaLocalizedStrings(ECSchemaCP localizationSupplement
         if (!caClassName.Equals(lastCaClassName))
             {
             lastCaClassName = WString(caClassName);
-            caInstance = caContainer->GetLocalAttributeAsConsolidated(caClassName);
+            caInstance = caContainer->GetLocalAttributeAsConsolidated(caSchemaName, caClassName); // TODO: Check!
             }
         
         if (!caInstance.IsValid())
             {
-            LOG.errorv(L"Cannot apply the localized string '%ls' because the custom attribute or container cannot be found given the key '%ls'", it.second.second, it.first);
+            LOG.errorv(L"Cannot apply the localized string '%ls' because the custom attribute %ls or container cannot be found given the key '%ls' in schema %ls", it.second.second, caClassName, it.first, caSchemaName);
             continue;
             }
 
@@ -273,7 +275,7 @@ SchemaLocalizedStrings::SchemaLocalizedStrings(ECSchemaCP localizationSupplement
 
 bool SchemaLocalizedStrings::TryConstructStringMaps(bmap<WString, bpair<size_t, WString> >& caStrings, ECSchemaCP localizationSupplemental)
     {
-    IECInstancePtr localizationSpec = localizationSupplemental->GetCustomAttribute(LOC_SPEC);
+    IECInstancePtr localizationSpec = localizationSupplemental->GetCustomAttribute(SCHEMANAME, LOC_SPEC);
     if (!localizationSpec.IsValid())
         {
         LOG.errorv(L"Unable to load schema localizations from '%ls' because it does not have a '%ls' Custom Attribute", localizationSupplemental->GetFullSchemaName(), LOC_SPEC);
@@ -413,7 +415,7 @@ IECCustomAttributeContainerP SchemaLocalizedStrings::GetPropertyContainer(WStrin
 * Standard:[PrimarySchemaFullName]:<ClassName>:<PropertyName>@Standard:[CaClassSchemaFullName]:[CaClassName]:[PropertyAccessor]:[Hash]
 * @bsimethod                                    Colin.Kerr                      04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus SchemaLocalizedStrings::ParseCaKeyString(WStringR containerAccessor, WStringR caClassName, WStringR propertyAccessor, WStringCR keyString, size_t prefixLength, size_t atIndex)
+ECObjectsStatus SchemaLocalizedStrings::ParseCaKeyString(WStringR containerAccessor, WStringR caSchemaName, WStringR caClassName, WStringR propertyAccessor, WStringCR keyString, size_t prefixLength, size_t atIndex)
     {
     if (atIndex > prefixLength)
         containerAccessor = keyString.substr(prefixLength, atIndex - prefixLength); // <ClassName>:<PropertyName>
@@ -429,7 +431,8 @@ ECObjectsStatus SchemaLocalizedStrings::ParseCaKeyString(WStringR containerAcces
     size_t accessorHashSepIndex = keyString.rfind(COLON); // index of ':' between PropertyAccessor and Hash
     if (WString::npos == accessorHashSepIndex)
         return ECObjectsStatus::ECOBJECTS_STATUS_ParseError;
-
+				
+		caSchemaName = keyString.substr(beginCaKeyIndex + 1, caSchemaClassSepIndex-1 - beginCaKeyIndex - 6); // substract 6 for schema version
     caClassName = keyString.substr(caSchemaClassSepIndex + 1, propertyAccessorIndex - caSchemaClassSepIndex - 1);
     propertyAccessor = keyString.substr(propertyAccessorIndex + 1, accessorHashSepIndex - propertyAccessorIndex - 1);
 
@@ -481,7 +484,7 @@ ECObjectsStatus SchemaLocalizedStrings::ParseContainerAccessor(WStringR classNam
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SchemaLocalizedStrings::IsLocalizationSupplementalSchema(ECSchemaCP schema)
     {
-    return schema->IsDefined (LOC_SPEC);
+    return schema->IsDefined (SCHEMANAME, LOC_SPEC);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -489,7 +492,7 @@ bool SchemaLocalizedStrings::IsLocalizationSupplementalSchema(ECSchemaCP schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString SchemaLocalizedStrings::GetLocaleFromSupplementalSchema(ECSchemaCP schema)
     {
-    IECInstancePtr caInstance = schema->GetCustomAttribute(LOC_SPEC);
+    IECInstancePtr caInstance = schema->GetCustomAttribute(SCHEMANAME, LOC_SPEC);
     if (!caInstance.IsValid())
         return L"";
     

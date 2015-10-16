@@ -441,7 +441,7 @@ ECObjectsStatus PrimitiveECProperty::SetType (PrimitiveType primitiveType)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PrimitiveECProperty::_IsCalculated() const
     {
-    return m_calculatedSpec.IsValid() || GetCustomAttribute (L"CalculatedECPropertySpecification").IsValid();
+    return m_calculatedSpec.IsValid() || GetCustomAttribute (L"Bentley_Standard_CustomAttributes", L"CalculatedECPropertySpecification").IsValid();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -463,7 +463,7 @@ CalculatedPropertySpecificationCP PrimitiveECProperty::_GetCalculatedPropertySpe
 bool ArrayECProperty::_IsCalculated() const
     {
     if (ARRAYKIND_Primitive == GetKind())
-        return m_calculatedSpec.IsValid() || GetCustomAttribute (L"CalculatedECPropertySpecification").IsValid();
+        return m_calculatedSpec.IsValid() || GetCustomAttribute (L"Bentley_Standard_CustomAttributes", L"CalculatedECPropertySpecification").IsValid();
     else
         return false;
     }
@@ -480,7 +480,7 @@ static bool setCalculatedPropertySpecification (CalculatedPropertySpecificationP
         }
     else
         {
-        IECInstancePtr oldAttr = ecprop.GetCustomAttribute (L"CalculatedECPropertySpecification");
+        IECInstancePtr oldAttr = ecprop.GetCustomAttribute (L"Bentley_Standard_CustomAttributes", L"CalculatedECPropertySpecification");
         ecprop.SetCustomAttribute (*attr);
         CalculatedPropertySpecificationPtr newSpec = CalculatedPropertySpecification::Create (ecprop, primitiveType);
         if (newSpec.IsValid())
@@ -494,7 +494,7 @@ static bool setCalculatedPropertySpecification (CalculatedPropertySpecificationP
             if (oldAttr.IsValid())
                 ecprop.SetCustomAttribute (*oldAttr);
             else
-                ecprop.RemoveCustomAttribute (L"CalculatedECPropertySpecification");
+                ecprop.RemoveCustomAttribute (L"Bentley_Standard_CustomAttributes", L"CalculatedECPropertySpecification");
 
             return false;
             }

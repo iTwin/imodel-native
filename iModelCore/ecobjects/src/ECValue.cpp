@@ -3787,7 +3787,7 @@ bool AdhocPropertyMetadata::Init (ECEnablerCR enabler, uint32_t containerIndex, 
         return false;
 
     // find custom attribute on struct class
-    IECInstancePtr attr = structClass->GetCustomAttribute (L"AdhocPropertyContainerDefinition");
+    IECInstancePtr attr = structClass->GetCustomAttribute (L"Bentley_Standard_CustomAttributes", L"AdhocPropertyContainerDefinition");
     if (attr.IsNull())
         return false;
 

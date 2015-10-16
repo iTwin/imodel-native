@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/CustomAttributeTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -209,11 +209,11 @@ TEST_F(CustomAttributeTest, ExpectIsDefined)
     ECClassP customAttributeClass = schema->GetClassP (L"CustomAttribClass");
 
     IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema);
-    EXPECT_FALSE(containerClass->IsDefined(L"CustomAttribClass"));
+    EXPECT_FALSE(containerClass->IsDefined(L"TestSchema", L"CustomAttribClass"));
     EXPECT_FALSE(containerClass->IsDefined(*customAttributeClass));
 
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
-    EXPECT_TRUE(containerClass->IsDefined(L"CustomAttribClass"));
+    EXPECT_TRUE(containerClass->IsDefined(L"TestSchema", L"CustomAttribClass"));
     EXPECT_TRUE(containerClass->IsDefined(*customAttributeClass));
     }
 
@@ -230,13 +230,13 @@ TEST_F(CustomAttributeTest, ExpectIsDefinedOnBaseClass)
     ASSERT_TRUE (NULL != baseClass);
 
     IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema);
-    EXPECT_FALSE(containerClass->IsDefined(L"CustomAttribClass"));
+    EXPECT_FALSE(containerClass->IsDefined(L"TestSchema", L"CustomAttribClass"));
     EXPECT_FALSE(containerClass->IsDefined(*customAttributeClass));
 
     EXPECT_EQ(ECOBJECTS_STATUS_Success, baseClass->SetCustomAttribute(*instance));
-    EXPECT_TRUE(baseClass->IsDefined(L"CustomAttribClass"));
+    EXPECT_TRUE(baseClass->IsDefined(L"TestSchema", L"CustomAttribClass"));
     EXPECT_TRUE(baseClass->IsDefined(*customAttributeClass));
-    EXPECT_TRUE(containerClass->IsDefined(L"CustomAttribClass"));
+    EXPECT_TRUE(containerClass->IsDefined(L"TestSchema", L"CustomAttribClass"));
     EXPECT_TRUE(containerClass->IsDefined(*customAttributeClass));
     }
 
@@ -251,7 +251,7 @@ TEST_F(CustomAttributeTest, ExpectCanGetCustomAttribute)
     IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
 
-    IECInstancePtr gotInstance = containerClass->GetCustomAttribute(L"CustomAttribClass");
+    IECInstancePtr gotInstance = containerClass->GetCustomAttribute(L"TestSchema", L"CustomAttribClass");
     EXPECT_TRUE(gotInstance.IsValid());
     EXPECT_TRUE(instance.get() == gotInstance.get());
 
@@ -329,12 +329,12 @@ TEST_F(CustomAttributeTest, ExpectCanRemoveCustomAttribute)
     IECInstancePtr instance = GetInstanceForClass(L"CustomAttribClass", *schema);
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
 
-    IECInstancePtr gotInstance = containerClass->GetCustomAttribute(L"CustomAttribClass");
+    IECInstancePtr gotInstance = containerClass->GetCustomAttribute(L"TestSchema", L"CustomAttribClass");
     EXPECT_TRUE(gotInstance.IsValid());
     EXPECT_TRUE(instance.get() == gotInstance.get());
 
-    EXPECT_TRUE(containerClass->RemoveCustomAttribute(L"CustomAttribClass"));
-    IECInstancePtr gotInstance2 = containerClass->GetCustomAttribute(L"CustomAttribClass");
+    EXPECT_TRUE(containerClass->RemoveCustomAttribute(L"TestSchema", L"CustomAttribClass"));
+    IECInstancePtr gotInstance2 = containerClass->GetCustomAttribute(L"TestSchema", L"CustomAttribClass");
     EXPECT_FALSE(gotInstance2.IsValid());
 
     EXPECT_EQ(ECOBJECTS_STATUS_Success, containerClass->SetCustomAttribute(*instance));
@@ -445,38 +445,38 @@ TEST_F (CustomAttributeTest, PresentationMetadataHelper)
     PresentationMetadataHelper meta (*readContext);
 
     EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetHideNullProperties (*ecclass));
-    EXPECT_TRUE (ecclass->IsDefined (L"DontShowNullProperties"));
+    EXPECT_TRUE (ecclass->IsDefined (L"EditorCustomAttributes", L"DontShowNullProperties"));
 
     EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetIgnoreZ (*pointProp));
-    EXPECT_TRUE (pointProp->IsDefined (L"IgnoreZ"));
+    EXPECT_TRUE (pointProp->IsDefined (L"EditorCustomAttributes", L"IgnoreZ"));
 
     EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetMembersIndependent (*arrayProp));
-    EXPECT_TRUE (arrayProp->IsDefined (L"MembersIndependent"));
+    EXPECT_TRUE (arrayProp->IsDefined (L"EditorCustomAttributes", L"MembersIndependent"));
 
     ECValue v;
     EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetPriority (*primProp, 1234));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, primProp->GetCustomAttribute (L"PropertyPriority")->GetValue (v, L"Priority"));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, primProp->GetCustomAttribute (L"EditorCustomAttributes", L"PropertyPriority")->GetValue (v, L"Priority"));
     EXPECT_EQ (1234, v.GetInteger());
 
     EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetAlwaysExpand (*arrayProp, true));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, arrayProp->GetCustomAttribute (L"AlwaysExpand")->GetValue (v, L"ArrayMembers"));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, arrayProp->GetCustomAttribute (L"EditorCustomAttributes", L"AlwaysExpand")->GetValue (v, L"ArrayMembers"));
     EXPECT_TRUE (v.GetBoolean());
 
     EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetExtendedType (*primProp, 1));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, primProp->GetCustomAttribute (L"ExtendType")->GetValue (v, L"Standard"));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, primProp->GetCustomAttribute (L"EditorCustomAttributes", L"ExtendType")->GetValue (v, L"Standard"));
     EXPECT_EQ (1, v.GetInteger());
 
     WString str (L"CustomType");
     EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetExtendedType (*primProp, str.c_str()));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, primProp->GetCustomAttribute (L"ExtendType")->GetValue (v, L"Name"));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, primProp->GetCustomAttribute (L"EditorCustomAttributes", L"ExtendType")->GetValue (v, L"Name"));
     EXPECT_TRUE (str.Equals (v.GetString()));
 
     EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetMemberExtendedType (*arrayProp, 1));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, arrayProp->GetCustomAttribute (L"MemberExtendedType")->GetValue (v, L"Standard"));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, arrayProp->GetCustomAttribute (L"EditorCustomAttributes", L"MemberExtendedType")->GetValue (v, L"Standard"));
     EXPECT_EQ (1, v.GetInteger());
 
     EXPECT_EQ (ECOBJECTS_STATUS_Success, meta.SetMemberExtendedType (*arrayProp, str.c_str()));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, arrayProp->GetCustomAttribute (L"MemberExtendedType")->GetValue (v, L"Name"));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, arrayProp->GetCustomAttribute (L"EditorCustomAttributes", L"MemberExtendedType")->GetValue (v, L"Name"));
     EXPECT_TRUE (str.Equals (v.GetString()));
     }
 

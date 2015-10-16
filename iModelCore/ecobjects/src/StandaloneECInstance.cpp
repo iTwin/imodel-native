@@ -48,7 +48,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, uint32_t 
     m_data = (Byte*)malloc (size);
     m_bytesAllocated = size;
 
-    InitializeMemory (classLayout, m_data, m_bytesAllocated, ecClass.IsDefined (L"PersistStringsAsUtf8"));
+    InitializeMemory (classLayout, m_data, m_bytesAllocated, ecClass.IsDefined (L"Bentley_Standard_CustomAttributes", L"PersistStringsAsUtf8"));
     
     InitializePerPropertyFlags (classLayout, DEFAULT_NUMBITSPERPROPERTY);
     }

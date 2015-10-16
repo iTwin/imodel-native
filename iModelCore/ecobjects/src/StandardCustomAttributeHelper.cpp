@@ -2,7 +2,7 @@
 |
 |     $Source: src/StandardCustomAttributeHelper.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -158,6 +158,8 @@ WString DateTimeInfo::ToString () const
 WCharCP const StandardCustomAttributeHelper::SYSTEMSCHEMA_CA_NAME = L"SystemSchema";
 //static
 WCharCP const StandardCustomAttributeHelper::DYNAMICSCHEMA_CA_NAME = L"DynamicSchema";
+//static
+WCharCP const StandardCustomAttributeHelper::SYSTEMSCHEMA_CA_SCHEMA = L"Bentley_Standard_CustomAttributes";
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
@@ -292,7 +294,7 @@ IECInstancePtr StandardCustomAttributesSchemaHolder::CreateCustomAttributeInstan
 //static
 bool StandardCustomAttributeHelper::IsSystemSchema (ECSchemaCR schema)
     {
-    return schema.IsDefined (SYSTEMSCHEMA_CA_NAME);
+    return schema.IsDefined (SYSTEMSCHEMA_CA_SCHEMA, SYSTEMSCHEMA_CA_NAME);
     }
 
 //---------------------------------------------------------------------------------------
@@ -301,7 +303,7 @@ bool StandardCustomAttributeHelper::IsSystemSchema (ECSchemaCR schema)
 //static
 bool StandardCustomAttributeHelper::IsDynamicSchema (ECSchemaCR schema)
     {
-    return schema.IsDefined (DYNAMICSCHEMA_CA_NAME);
+    return schema.IsDefined (SYSTEMSCHEMA_CA_SCHEMA, DYNAMICSCHEMA_CA_NAME);
     }
 
 //---------------------------------------------------------------------------------------
@@ -329,7 +331,7 @@ ECObjectsStatus StandardCustomAttributeHelper::SetIsDynamicSchema (ECSchemaR sch
     if (!isDynamicExistingValue)
         return ECOBJECTS_STATUS_Success;
 
-    if (schema.RemoveCustomAttribute (DYNAMICSCHEMA_CA_NAME))
+    if (schema.RemoveCustomAttribute (SYSTEMSCHEMA_CA_SCHEMA, DYNAMICSCHEMA_CA_NAME))
         return ECOBJECTS_STATUS_Success;
 
     return ECOBJECTS_STATUS_Error;

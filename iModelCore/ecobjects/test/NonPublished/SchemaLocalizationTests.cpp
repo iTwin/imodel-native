@@ -26,9 +26,9 @@ WString PsudoLocalizeString (WCharCP prePostFix, WCharCP invariantString)
     return psudoLocString;
     }
 
-void VerifyCaString (IECCustomAttributeContainerR caContainer, WCharCP containerId, WCharCP invariantString, WCharCP caClassName, WCharCP propertyAccessor, WCharCP prePostFix = L"")
+void VerifyCaString (IECCustomAttributeContainerR caContainer, WCharCP containerId, WCharCP invariantString, WCharCP caSchemaName, WCharCP caClassName, WCharCP propertyAccessor, WCharCP prePostFix = L"")
     {
-    IECInstancePtr caInstance = caContainer.GetCustomAttribute(caClassName);
+    IECInstancePtr caInstance = caContainer.GetCustomAttribute(caSchemaName, caClassName);
     EXPECT_TRUE(caInstance.IsValid());
 
     ECValue stringValue;
@@ -96,19 +96,19 @@ void VerifyLocalized(ECSchemaPtr testSchema, WCharCP prePostFix)
 
     // Test custom attribute strings
     // Schema
-    VerifyCaString(*testSchema, testSchema->GetFullSchemaName().c_str(), L"A whole House", L"ExtendedInfo", L"Purpose", prePostFix);
+    VerifyCaString(*testSchema, testSchema->GetFullSchemaName().c_str(), L"A whole House", L"House", L"ExtendedInfo", L"Purpose", prePostFix);
     // Class
     ECClassP doorClass = testSchema->GetClassP(L"Door");
-    VerifyCaString(*doorClass, doorClass->GetFullName(), L"squar", L"ExtendedInfo", L"ExtraInfo[1]", prePostFix);
-    VerifyCaString(*doorClass, doorClass->GetFullName(), L"wood", L"ExtendedInfo", L"ContentInfo[0].DisplayName", prePostFix);
+    VerifyCaString(*doorClass, doorClass->GetFullName(), L"squar", L"House", L"ExtendedInfo", L"ExtraInfo[1]", prePostFix);
+    VerifyCaString(*doorClass, doorClass->GetFullName(), L"wood", L"House", L"ExtendedInfo", L"ContentInfo[0].DisplayName", prePostFix);
     // Relationship Constraints
     ECRelationshipClassCP roomHasDoorRelClass = testSchema->GetClassCP(L"RoomHasDoor")->GetRelationshipClassCP();
-    VerifyCaString(roomHasDoorRelClass->GetSource(), roomHasDoorRelClass->GetFullName(), L"This is a room", L"ExtendedInfo", L"Purpose", prePostFix);
-    VerifyCaString(roomHasDoorRelClass->GetTarget(), roomHasDoorRelClass->GetFullName(), L"This is a door", L"ExtendedInfo", L"Purpose", prePostFix);
+    VerifyCaString(roomHasDoorRelClass->GetSource(), roomHasDoorRelClass->GetFullName(), L"This is a room",L"House", L"ExtendedInfo", L"Purpose", prePostFix);
+    VerifyCaString(roomHasDoorRelClass->GetTarget(), roomHasDoorRelClass->GetFullName(), L"This is a door", L"House", L"ExtendedInfo", L"Purpose", prePostFix);
     // Property
     doorLengthProp = testSchema->GetClassCP(L"Door")->GetPropertyP(lengthString, false);
-    VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), L"Length of door", L"ExtendedInfo", L"Purpose", prePostFix);
-    VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), L"Constant", L"StandardValues", L"ValueMap[1].DisplayString", prePostFix);
+    VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), L"Length of door", L"House", L"ExtendedInfo", L"Purpose", prePostFix);
+    VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), L"Constant", L"EditorCustomAttributes", L"StandardValues", L"ValueMap[1].DisplayString", prePostFix);
     }
 
 void VerifyNotLocalized(ECSchemaPtr testSchema)
@@ -160,18 +160,18 @@ void VerifyNotLocalized(ECSchemaPtr testSchema)
     EXPECT_STREQ(lengthString, doorLengthProp->GetDisplayLabel().c_str());
 
     // Test custom attribute strings
-    VerifyCaString(*testSchema, testSchema->GetFullSchemaName().c_str(), L"A whole House", L"ExtendedInfo", L"Purpose");
+    VerifyCaString(*testSchema, testSchema->GetFullSchemaName().c_str(), L"A whole House", L"House", L"ExtendedInfo", L"Purpose");
     // Class
     ECClassP doorClass = testSchema->GetClassP(L"Door");
-    VerifyCaString(*doorClass, doorClass->GetFullName(), L"squar", L"ExtendedInfo", L"ExtraInfo[1]");
-    VerifyCaString(*doorClass, doorClass->GetFullName(), L"wood", L"ExtendedInfo", L"ContentInfo[0].DisplayName");
+    VerifyCaString(*doorClass, doorClass->GetFullName(), L"squar", L"House", L"ExtendedInfo", L"ExtraInfo[1]");
+    VerifyCaString(*doorClass, doorClass->GetFullName(), L"wood", L"House", L"ExtendedInfo", L"ContentInfo[0].DisplayName");
     // Relationship Constraints
     ECRelationshipClassCP roomHasDoorRelClass = testSchema->GetClassCP(L"RoomHasDoor")->GetRelationshipClassCP();
-    VerifyCaString(roomHasDoorRelClass->GetSource(), roomHasDoorRelClass->GetFullName(), L"This is a room", L"ExtendedInfo", L"Purpose");
-    VerifyCaString(roomHasDoorRelClass->GetTarget(), roomHasDoorRelClass->GetFullName(), L"This is a door", L"ExtendedInfo", L"Purpose");
+    VerifyCaString(roomHasDoorRelClass->GetSource(), roomHasDoorRelClass->GetFullName(), L"This is a room", L"House", L"ExtendedInfo", L"Purpose");
+    VerifyCaString(roomHasDoorRelClass->GetTarget(), roomHasDoorRelClass->GetFullName(), L"This is a door", L"House", L"ExtendedInfo", L"Purpose");
     // Property
-    VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), L"Length of door", L"ExtendedInfo", L"Purpose");
-    VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), L"Constant", L"StandardValues", L"ValueMap[1].DisplayString");
+    VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), L"Length of door", L"House", L"ExtendedInfo", L"Purpose");
+    VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), L"Constant", L"EditorCustomAttributes", L"StandardValues", L"ValueMap[1].DisplayString");
     }
 
 //---------------------------------------------------------------------------------------//
