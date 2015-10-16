@@ -936,6 +936,8 @@ typedef bvector<ECClassP> ECDerivedClassesList;
 typedef bvector<ECClassP> ECConstraintClassesList;
 /*__PUBLISH_SECTION_END__*/
 typedef bool (*TraversalDelegate) (ECClassCP, const void *);
+struct SchemaXmlReader;
+
 /*__PUBLISH_SECTION_START__*/
 
 struct StandaloneECEnabler;
@@ -954,6 +956,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECClass : IECCustomAttributeContainer
 /*__PUBLISH_SECTION_END__*/
 
 friend struct ECSchema;
+friend struct SchemaXmlReader;
 friend struct ECPropertyIterable::IteratorState;
 friend struct SupplementedSchemaBuilder;
 friend struct ECProperty; // for access to InvalidateDefaultStandaloneEnabler() when property is modified
@@ -1513,6 +1516,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECRelationshipClass : public ECClass
     DEFINE_T_SUPER(ECClass)
 /*__PUBLISH_SECTION_END__*/
 friend struct ECSchema;
+friend struct SchemaXmlReader;
 
 private:
     StrengthType     m_strength;
@@ -2070,6 +2074,7 @@ private:
 /*__PUBLISH_SECTION_END__*/
 friend struct SearchPathSchemaFileLocater;
 friend struct SupplementedSchemaBuilder;
+friend struct SchemaXmlReader;
 
 // Schemas are RefCounted but none of the constructs held by schemas (classes, properties, etc.) are.
 // They are freed when the schema is freed.
@@ -2098,8 +2103,6 @@ private:
 
     bool                                AddingSchemaCausedCycles () const;
     void                                SetIsSupplemented(bool isSupplemented);
-    bool                                IsOpenPlantPidCircularReferenceSpecialCase(Utf8String& referencedECSchemaName);
-    static SchemaReadStatus             ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, uint32_t checkSum, ECSchemaReadContextR context);
     SchemaWriteStatus                   WriteXml (BeXmlWriterR xmlWriter) const;
 
     ECObjectsStatus                     AddClass (ECClassP& pClass, bool deleteClassIfDuplicate = true);
@@ -2108,10 +2111,6 @@ private:
 
     void SetSupplementalSchemaInfo(SupplementalSchemaInfo* info);
 
-    typedef bvector<bpair<ECClassP, BeXmlNodeP> >  ClassDeserializationVector;
-    SchemaReadStatus                    ReadClassStubsFromXml (BeXmlNodeR schemaNode, ClassDeserializationVector& classes, ECSchemaReadContextR context);
-    SchemaReadStatus                    ReadClassContentsFromXml (ClassDeserializationVector&  classes, ECSchemaReadContextR context);
-    SchemaReadStatus                    ReadSchemaReferencesFromXml (BeXmlNodeR schemaNode, ECSchemaReadContextR context);
     ECObjectsStatus                     AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR prefix, ECSchemaReadContextR readContext);
 
     struct  ECSchemaWriteContext

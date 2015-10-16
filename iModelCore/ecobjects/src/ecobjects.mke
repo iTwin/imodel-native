@@ -113,6 +113,8 @@ $(o)ecxml$(oext)                                           : $(baseDir)ecxml.cpp
 
 $(o)ECSchema$(oext)                                        : $(baseDir)ECSchema.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
+$(o)SchemaXml$(oext)                                       : $(baseDir)SchemaXml.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
 $(o)ECType$(oext)                                          : $(baseDir)ECType.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
 $(o)ECClass$(oext)                                         : $(baseDir)ECClass.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
