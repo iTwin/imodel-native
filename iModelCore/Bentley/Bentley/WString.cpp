@@ -235,6 +235,34 @@ bool WString::ContainsI (WCharCP other) const
     return thisLower.Contains (otherLower.c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  10/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t WString::FindI (WCharCP other) const
+    {
+    WString thisLower (this->c_str());
+    thisLower.ToLower();
+    WString otherLower (other);
+    otherLower.ToLower();
+    return thisLower.find (otherLower.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  10/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+bool WString::ReplaceI (WCharCP findString, WCharCP replaceString)
+    {
+    if (NULL == findString || NULL == replaceString)
+        return false;
+
+    size_t pos = FindI (findString);
+
+    if (std::string::npos == pos)
+        return false;
+
+    replace (pos, wcslen(findString), replaceString);
+    return true;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     01/2014

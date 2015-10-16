@@ -271,6 +271,12 @@ public:
     //! Replace all instances of a sub string. Returns the number of replacements made.
     BENTLEYDLL_EXPORT size_t ReplaceAll (WCharCP subStringToReplace, WCharCP replacement);
 
+    //! Find first occurrence of findString, ignoring case. @param findString The substring to find. @return location of substring or std::string::npos if not found.
+    BENTLEYDLL_EXPORT size_t FindI (WCharCP findString) const;
+
+    //! Replace first occurrence of findString with replaceString, ignoring case. @param findString The substring to find. @param replaceString The replacement string. @return true is a replacement is made.
+    BENTLEYDLL_EXPORT bool ReplaceI (WCharCP findString, WCharCP replaceString);
+
     //! Replace the contents of this string with a formatted result. 
     //! @param format The sprintf-like format string. 
     //! @param argptr The variable-length argument list

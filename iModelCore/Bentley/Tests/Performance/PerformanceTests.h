@@ -8,6 +8,5 @@
 #pragma once
 #include <Bentley/BeTest.h>
 #include <Bentley/BeTimeUtilities.h>
-#include <UnitTests/BackDoor/PerformanceTestingHelper/PerformanceTestingHelpers.h>
 
 

@@ -35,7 +35,7 @@
             #if (_MSC_VER >= 1800)
                 #define HAVE_INTTYPES
             #endif
-            #if (_MSC_VER >= 1600)
+            #if (_MSC_VER >= 1600 && _MSC_VER < 1900)
                 //  Without this definition of INT64_MAX etc. generate an error if intsafe.h was previously included.
                 //  See http://connect.microsoft.com/VisualStudio/feedback/details/621653/including-stdint-after-intsafe-generates-warnings#
                 #undef INT8_MIN

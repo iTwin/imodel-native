@@ -2250,3 +2250,38 @@ BentleyStatus BeFileName::GetTargetOfSymbolicLink(BeFileNameR target, WCharCP pa
     
     return SUCCESS;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileNameStatus BeFileName::BeGetTempPath (BeFileName& tempPath)
+    {
+#if defined (BENTLEY_WIN32) || (defined(BENTLEY_WINRT) && _MSC_VER >= 1900)
+    WChar       tempName[MAX_PATH * 5];
+
+    if (0 == ::GetTempPathW (_countof(tempName), tempName))
+        return BeFileNameStatus::CantCreate;
+
+    tempPath = BeFileName (tempName);
+    return BeFileNameStatus::Success;
+#else
+    return BeFileNameStatus::UnknownError;
+#endif
+    }
+
+BeFileNameStatus BeFileName::GetCwd (WStringR currentDirectory)
+    {
+#if defined (BENTLEY_WIN32) || (defined(BENTLEY_WINRT) && _MSC_VER >= 1900)
+    wchar_t cwdPath[MAX_PATH];
+    _wgetcwd (cwdPath, _countof(cwdPath));
+    currentDirectory.assign (cwdPath);
+    return BeFileNameStatus::Success;
+#elif defined(BENTLEY_WINRT) && _MSC_VER < 1900
+    return BeFileNameStatus::UnknownError;
+#else
+    char cwdPath[MAX_PATH];
+    getcwd (cwdPath, sizeof(cwdPath));
+    currentDirectory.AssignA (cwdPath);
+    return BeFileNameStatus::Success;
+#endif
+    }
