@@ -15,16 +15,8 @@
 #include <unordered_set>
 #include "BeRepositoryBasedIdSequence.h"
 #include "MapStrategy.h"
-#include "ECSql/NativeSqlBuilder.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
-#define ECDBSQL_VERSION_MAJOR 1
-#define ECDBSQL_VERSION_MINOR 0
-#define ECDBSQL_NULLTABLENAME "ECDbNotMapped"
-#define ECDBSQL_PROPERTYNAME "ECDbSqlSchema"
-#define ECDBSQL_NAMESPACE "ECDb"
-#define ECDBSQL_SCHEMA_ID "ECDbPersistence"
 
 typedef int64_t ECDbTableId;
 typedef int64_t ECDbColumnId;
@@ -248,38 +240,7 @@ public:
     void Reset ();
     };
 
-//======================================================================================
-// @bsiclass                                                 Affan.Khan         09/2014
-//======================================================================================
-struct ECDbSqlIndex
-    {
-private:
-    ECDbIndexId m_id;
-    Utf8String m_name;
-    ECDbSqlTable* m_table;
-    std::vector<ECDbSqlColumn const*> m_columns;
-    bool m_isUnique;
-    Utf8String m_additionalWhereExpression;
 
-public:
-    ECDbSqlIndex(ECDbIndexId id, ECDbSqlTable& table, Utf8CP name, bool isUnique)
-        :m_id(id), m_name(name), m_table(&table), m_isUnique(isUnique)
-        {
-        BeAssert(!Utf8String::IsNullOrEmpty(name));
-        }
-
-    ECDbIndexId GetId() const { BeAssert(m_id != IIdGenerator::UNSET_ID); return m_id; }
-
-    Utf8StringCR GetName () const { return m_name; }
-    ECDbSqlTable const& GetTable() const { BeAssert(m_table != nullptr); return *m_table; }
-    bool GetIsUnique () const { return m_isUnique; }
-    std::vector<ECDbSqlColumn const*> const& GetColumns () const { return m_columns; }
-    void SetAdditionalWhereExpression (Utf8CP expression) { m_additionalWhereExpression = expression; }
-    Utf8StringCR GetAdditionalWhereExpression () const { return m_additionalWhereExpression; }
-
-    BentleyStatus AddColumns(std::vector<ECDbSqlColumn const*> const&);
-    BentleyStatus AddColumns(std::vector<Utf8CP> const& columnNames);
-    };
 
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
@@ -533,7 +494,6 @@ struct ECDbSqlTable : NonCopyableClass
         std::vector<ECDbSqlColumn const*> const& GetColumns () const;
         EditHandle& GetEditHandleR () { return m_editInfo; }
         EditHandle const& GetEditHandle () const { return m_editInfo; }
-        const std::vector<ECDbSqlIndex const*> GetIndexes() const;
         ECDbSqlPrimaryKeyConstraint* GetPrimaryKeyConstraint (bool createIfDonotExist = true);
         ECDbSqlForeignKeyConstraint* CreateForeignKeyConstraint (ECDbSqlTable const& targetTable);
         std::vector<ECDbSqlConstraint const*> GetConstraints () const;   
@@ -794,8 +754,8 @@ struct ECDbMapStorage
         ECDbPropertyPath* CreatePropertyPath (ECN::ECPropertyId rootPropertyId, Utf8CP accessString);
         ECDbClassMapInfo* CreateClassMap (ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ECDbClassMapId baseClassMapId = 0LL);
 
-        BentleyStatus Load () { return Read () != BE_SQLITE_DONE ? BentleyStatus::ERROR : BentleyStatus::SUCCESS; }
-        BentleyStatus Save () { return InsertOrReplace () != BE_SQLITE_DONE ? BentleyStatus::ERROR : BentleyStatus::SUCCESS; }
+        BentleyStatus Load () { return Read () != BE_SQLITE_OK ? ERROR : SUCCESS; }
+        BentleyStatus Save () { return InsertOrReplace () != BE_SQLITE_OK ? ERROR : SUCCESS; }
         void Reset ()
             {
             m_propertyPaths.clear ();

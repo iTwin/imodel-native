@@ -42,12 +42,7 @@ ECDbSqlColumn* RelationshipClassMap::CreateConstraintColumn(SchemaImportContext*
     ECDbSqlColumn* column = GetTable().FindColumnP(columnName);
     if (column != nullptr)
         {
-        if (Enum::Intersects(column->GetKind(), columnId))
-            {
-            if (schemaImportContext != nullptr)
-                schemaImportContext->GetECDbMapDb().SetColumnIsShared(*column, ColumnKind::ConstraintECInstanceId);
-            }
-        else
+        if (!Enum::Intersects(column->GetKind(), columnId))
             column->AddKind(columnId);
 
         return column;
@@ -545,12 +540,7 @@ MapStatus RelationshipClassEndTableMap::CreateConstraintColumns(ECDbSqlColumn*& 
     BeAssert(fkIdColumn != nullptr);
     if (!m_autogenerateForeignKeyColumns)
         {
-        if (Enum::Intersects(fkIdColumn->GetKind(), fkColumnId))
-            {
-            if (schemaImportContext != nullptr)
-                schemaImportContext->GetECDbMapDb().SetColumnIsShared(*fkIdColumn, ColumnKind::ConstraintECInstanceId);
-            }
-        else
+        if (!Enum::Intersects(fkIdColumn->GetKind(), fkColumnId))
             fkIdColumn->AddKind(fkColumnId);
         }
 
@@ -690,20 +680,14 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext
     else
         name.append("_target");
     
-    ECDbSqlIndex* index = schemaImportContext.GetECDbMapDb().CreateIndex(persistenceEndTable, name.c_str(), isUniqueIndex, {otherEndIdColumn}, GetClass().GetId(), true);
-    if (index == nullptr)
-        {
-        BeAssert (false && "Failed to create index");
-        return;
-        }
-
+    NativeSqlBuilder whereClause;
     if (!otherEndIdColumn->GetConstraint().IsNotNull())
         {
-        NativeSqlBuilder whereClause;
         whereClause.AppendEscaped(otherEndIdColumn->GetName().c_str()).AppendSpace();
         whereClause.Append(BooleanSqlOperator::IsNot, true).Append("NULL");
-        index->SetAdditionalWhereExpression(whereClause.ToString());
         }
+
+    schemaImportContext.GetECDbMapDb().CreateIndex(persistenceEndTable, name.c_str(), isUniqueIndex, {otherEndIdColumn}, whereClause.ToString(), true, GetClass().GetId());
     }
 
    
@@ -1167,7 +1151,11 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportCo
                 break;
         }
 
-    schemaImportContext.GetECDbMapDb().CreateIndex(GetTable(), name.c_str(), isUniqueIndex, columns, GetClass().GetId(), true, isUniqueIndex ? SchemaImportECDbMapDb::IndexScope::EnforceClass : SchemaImportECDbMapDb::IndexScope::EnforceTable);
+    schemaImportContext.GetECDbMapDb().CreateIndex(GetTable(), name.c_str(), isUniqueIndex, columns, nullptr,
+                                                   true, GetClass().GetId(), 
+                                                   //if a partial index is created, it must only apply to this class,
+                                                   //not to subclasses, as constraints are not inherited by relationships
+                                                   false);
     }
     
 /*---------------------------------------------------------------------------------**//**

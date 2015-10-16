@@ -564,28 +564,6 @@ TEST_F(SchemaImportTestFixture, ECDbSchemaRules_ConsistentClassHierarchy)
                  false, "Non-relationship class with a relationship base class is not expected to be supported."),
 
         TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-                 "  <ECClass typeName=\"A\" >"
-                 "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
-                 "  </ECClass>"
-                 "  <ECClass typeName=\"B\" >"
-                 "    <ECProperty propertyName=\"Id\" typeName=\"long\" />"
-                 "  </ECClass>"
-                 "  <ECRelationshipClass typeName = \"RelBase\" isDomainClass = \"True\" strength = \"holding\" strengthDirection = \"forward\">"
-                 "    <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
-                 "      <Class class = \"A\" />"
-                 "    </Source>"
-                 "    <Target cardinality = \"(0, N)\" polymorphic = \"True\">"
-                 "      <Class class = \"B\" />"
-                 "    </Target>"
-                 "  </ECRelationshipClass>"
-                 "  <ECClass typeName=\"Cl\" >"
-                 "    <BaseClass>RelBase</BaseClass>"
-                 "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
-                 "  </ECClass>"
-                 "</ECSchema>",
-                 false, "Non-relationship class with a relationship base class is not expected to be supported."),
-
-        TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                  "  <ECClass typeName=\"A\" isDomainClass='True'>"
                  "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
                  "  </ECClass>"

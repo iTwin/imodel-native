@@ -486,8 +486,8 @@ BentleyStatus ClassMap::ProcessStandardKeySpecifications(SchemaImportContext& sc
         std::vector<ECDbSqlColumn const*> columns;
         propertyMap->GetColumns(columns);
 
-        ECDbSqlIndex* index = schemaImportContext.GetECDbMapDb().CreateIndex(*m_table, indexName.c_str(), false, columns, GetClass().GetId(), true);
-        if (index == nullptr)
+        if (nullptr == schemaImportContext.GetECDbMapDb().CreateIndex(*m_table, indexName.c_str(), false, columns, nullptr,
+                                            true, GetClass().GetId()))
             {
             BeAssert(false && "Index was not created correctly");
             return ERROR;
@@ -509,7 +509,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImp
         i++;
 
         std::vector<ECDbSqlColumn const*> totalColumns;
-        Utf8String whereExpression;
+        NativeSqlBuilder whereExpression;
 
         for (Utf8StringCR propertyAccessString : indexInfo->GetProperties())
             {
@@ -540,7 +540,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
-            totalColumns.insert(totalColumns.begin(), columns.begin(), columns.end());
+            totalColumns.insert(totalColumns.end(), columns.begin(), columns.end());
             for (ECDbSqlColumn const* column : columns)
                 {
                 if (column->GetPersistenceType() == PersistenceType::Virtual)
@@ -560,13 +560,11 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImp
                         if (column->GetConstraint().IsNotNull())
                             break;
 
-                        if (!whereExpression.empty())
-                            whereExpression.append(" AND ");
+                        if (!whereExpression.IsEmpty())
+                            whereExpression.AppendSpace().Append(BooleanSqlOperator::And, true);
 
-                        whereExpression.append("[");
-                        whereExpression.append(column->GetName().c_str());
-                        whereExpression.append("]");
-                        whereExpression.append(" IS NOT NULL");
+                        whereExpression.AppendEscaped(column->GetName().c_str()).AppendSpace();
+                        whereExpression.Append(BooleanSqlOperator::IsNot).Append("NULL");
 
                         break;
                         }
@@ -577,11 +575,12 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImp
                 }
             }
 
-        ECDbSqlIndex* index = schemaImportContext.GetECDbMapDb().CreateIndex(*m_table, indexInfo->GetName(), indexInfo->GetIsUnique(), totalColumns, GetClass().GetId(), false);
-        if (index == nullptr)
+        if (nullptr == schemaImportContext.GetECDbMapDb().CreateIndex(*m_table, indexInfo->GetName(), indexInfo->GetIsUnique(), 
+                                                                      totalColumns, whereExpression.ToString(),
+                                                                      false, GetClass().GetId()))
+            {
             return ERROR;
-
-        index->SetAdditionalWhereExpression(whereExpression.c_str());
+            }
         }
 
     return SUCCESS;
@@ -829,7 +828,7 @@ BentleyStatus MappedTable::FinishTableDefinition(SchemaImportContext& schemaImpo
                     //whenever we create a class id column, we index it to speed up the frequent class id look ups
                     Utf8String indexName("ix_");
                     indexName.append(m_table.GetName()).append("_ecclassid");
-                    schemaImportContext.GetECDbMapDb().CreateIndex(m_table, indexName.c_str(), false, {ecClassIdColumn}, ECClass::UNSET_ECCLASSID, true);
+                    schemaImportContext.GetECDbMapDb().CreateIndex(m_table, indexName.c_str(), false, {ecClassIdColumn}, nullptr, true, ECClass::UNSET_ECCLASSID);
                     }
 
                 m_generatedClassIdColumn = true;
@@ -1154,12 +1153,7 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseSharedColumnStrategy(SchemaImpor
     {
     ECDbSqlColumn const* reusableColumn = nullptr;
     if (TryFindReusableSharedDataColumn(reusableColumn, targetTable, specifications.GetCollation()))
-        {
-        if (schemaImportContext != nullptr)
-            schemaImportContext->GetECDbMapDb().SetColumnIsShared(*reusableColumn, ColumnKind::DataColumn);
-
         return const_cast<ECDbSqlColumn*>(reusableColumn);
-        }
 
     ECDbSqlColumn* newColumn = targetTable.CreateColumn(nullptr, ECDbSqlColumn::Type::Any, specifications.GetColumnKind(), specifications.GetColumnPersistenceType());
     if (newColumn == nullptr)

@@ -9,6 +9,8 @@
 #include "ECDbSql.h"
 #include "ECDbImpl.h"
 
+#define ECDBSQL_NULLTABLENAME "ECDbNotMapped"
+
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -973,46 +975,6 @@ BentleyStatus ECDbSqlForeignKeyConstraint::Remove (size_t index)
     m_sourceColumns.erase (m_sourceColumns.begin () + index);
     m_targetColumns.erase (m_targetColumns.begin () + index);
     return BentleyStatus::SUCCESS;
-    }
-
-
-//****************************************************************************************
-//ECDbSqlIndex
-//****************************************************************************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlIndex::AddColumns(std::vector<ECDbSqlColumn const*> const& columns)
-    {
-    if (columns.empty() || m_table->GetEditHandleR().AssertNotInEditMode())
-        return BentleyStatus::ERROR;
-
-    m_columns = columns;
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlIndex::AddColumns(std::vector<Utf8CP> const& columnNames)
-    {
-    if (columnNames.empty() || m_table->GetEditHandleR().AssertNotInEditMode())
-        return ERROR;
-
-    for (Utf8CP colName : columnNames)
-        {
-        ECDbSqlColumn const* col = m_table->FindColumnCP(colName);
-        if (col == nullptr)
-            {
-            BeAssert(false && "Failed to find index column");
-            return ERROR;
-            }
-
-        m_columns.push_back(col);
-        }
-
-    return SUCCESS;
     }
 
 
@@ -2605,7 +2567,8 @@ DbResult ECDbMapStorage::InsertPropertyMap (ECDbPropertyMapInfo const& o)
     stmt->BindInt64 (1, o.GetClassMap ().GetId ());
     stmt->BindInt64 (2, o.GetPropertyPath ().GetId ());
     stmt->BindInt64 (3, o.GetColumn ().GetId ());
-    return stmt->Step ();
+    const DbResult stat = stmt->Step();
+    return stat == BE_SQLITE_DONE ? BE_SQLITE_OK : stat;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2637,7 +2600,8 @@ DbResult ECDbMapStorage::InsertClassMap (ECDbClassMapInfo const& o)
     stmt->BindInt(5, (int) o.GetMapStrategy().GetOptions());
     stmt->BindInt(6, o.GetMapStrategy().AppliesToSubclasses() ? 1 : 0);
 
-    return stmt->Step ();
+    const DbResult stat = stmt->Step();
+    return stat == BE_SQLITE_DONE ? BE_SQLITE_OK : stat;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2655,7 +2619,8 @@ DbResult ECDbMapStorage::InsertPropertyPath (ECDbPropertyPath const& o)
     stmt->BindInt64 (1, o.GetId ());
     stmt->BindInt64 (2, o.GetRootPropertyId ());
     stmt->BindText (3, o.GetAccessString ().c_str (), Statement::MakeCopy::No);
-    return stmt->Step ();
+    const DbResult stat = stmt->Step ();
+    return stat == BE_SQLITE_DONE ? BE_SQLITE_OK : stat;
     }
 
 //---------------------------------------------------------------------------------------

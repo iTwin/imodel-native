@@ -207,8 +207,7 @@ MapStatus ECDbMap::DoMapSchemas (bvector<ECSchemaCP>& mapSchemas, bool forceMapS
     int nRelationshipClasses = 0;
     for (ECSchemaCP schema : mapSchemas)
         {
-        SupplementalSchemaMetaDataPtr supplementalSchemaMetaData = nullptr;
-        if (SupplementalSchemaMetaData::TryGetFromSchema (supplementalSchemaMetaData, *schema) && supplementalSchemaMetaData != nullptr)
+        if (schema->IsSupplementalSchema())
             continue; // Don't map any supplemental schemas
 
         for (ECClassCP ecClass : schema->GetClasses ())
@@ -534,10 +533,14 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportConte
                     //struct array indices don't get a class id
                     Utf8String indexName("uix_");
                     indexName.append(table->GetName()).append("_structarraykey");
-                    ECDbSqlIndex* index = schemaImportContext->GetECDbMapDb().CreateIndex(*table, indexName.c_str(), true, 
-                                                        {ECDB_COL_ParentECInstanceId, ECDB_COL_ECPropertyPathId, ECDB_COL_ECArrayIndex, primaryKeyColumnName},
-                                                        ECClass::UNSET_ECCLASSID, true, SchemaImportECDbMapDb::IndexScope::EnforceTable);
-                    if (index == nullptr)
+                    if (nullptr == schemaImportContext->GetECDbMapDb().CreateIndex(*table, indexName.c_str(), true,
+                                                                            {ECDB_COL_ParentECInstanceId, 
+                                                                             ECDB_COL_ECPropertyPathId, 
+                                                                             ECDB_COL_ECArrayIndex, 
+                                                                             primaryKeyColumnName},
+                                                                             nullptr,
+                                                                             true, 
+                                                                             ECClass::UNSET_ECCLASSID))
                         {
                         BeAssert(false);
                         return nullptr;
@@ -949,7 +952,7 @@ void ECDbMap::LightweightCache::LoadRelationshipCache () const
         "            RCC.ClassId "
         "      FROM ec_RelationshipConstraintClass RCC "
         "      INNER JOIN ec_RelationshipConstraint RC "
-        "            ON RC.RelationshipClassId = RCC.RelationshipClassId AND RC.RelationshipEnd = RCC.[RelationshipEnd] "
+        "            ON RC.RelationshipClassId = RCC.RelationshipClassId AND RC.RelationshipEnd = RCC.RelationshipEnd "
         "    UNION "
         "        SELECT DCL.RelationshipClassId, DCL.RelationshipEnd, DCL.IsPolymorphic, BC.BaseClassId, BC.ClassId "
         "            FROM DerivedClassList DCL "
