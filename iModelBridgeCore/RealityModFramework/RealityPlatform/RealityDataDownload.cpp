@@ -120,6 +120,7 @@ RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName
 
         m_pEntries[i].downloadedSizeStep = DEFAULT_STEP_PROGRESSCALL;   // default step if filesize is absent.
         m_pEntries[i].filesize = 0;
+        m_pEntries[i].fromCache = true;                                 // from cache if possible by default
         m_pEntries[i].progressStep = 0.01;
         }
     }
@@ -143,10 +144,20 @@ bool RealityDataDownload::Perform()
     {
 
     // we can optionally limit the total amount of connections this multi handle uses 
-        curl_multi_setopt(m_pCurlHandle, CURLMOPT_MAXCONNECTS, MAX_NB_CONNECTIONS);
+    curl_multi_setopt(m_pCurlHandle, CURLMOPT_MAXCONNECTS, MAX_NB_CONNECTIONS);
 
-        for (m_curEntry = 0; m_curEntry < min(MAX_NB_CONNECTIONS, m_nbEntry); ++m_curEntry)
-        SetupCurlandFile(m_curEntry);
+    bool atLeast1Download = false;
+    for (size_t i = 0; i < min(MAX_NB_CONNECTIONS, m_nbEntry); ++i)
+        {
+        if (SetupNextEntry())
+            atLeast1Download = true;
+        else
+            break;
+        }
+
+    // if everything already downloaded, exit with success.
+    if (atLeast1Download == false)
+        return true;
 
     int still_running; /* keep number of running handles */
     int repeats = 0;    
@@ -234,9 +245,8 @@ bool RealityDataDownload::Perform()
             // Other URL to download ?
             if (m_curEntry < m_nbEntry)
                 {
-                SetupCurlandFile(m_curEntry);
-                m_curEntry++;
-                still_running++;
+                if (SetupNextEntry())
+                    still_running++;
                 }
             }
 
@@ -246,9 +256,18 @@ bool RealityDataDownload::Perform()
     }
     
 
-
+//
+// false --> Curl error or file already there, skip download.
+//
 bool RealityDataDownload::SetupCurlandFile(size_t pi_index)
 {
+    // If file already there, consider the download completed.
+    if (m_pEntries[pi_index].fromCache && BeFileName::DoesPathExist(m_pEntries[pi_index].filename.c_str()))
+        return true;
+
+    // File not in the cache, we will download it
+    m_pEntries[pi_index].fromCache = false;
+
     CURL *pCurl = NULL;
 
     pCurl = curl_easy_init();
@@ -289,6 +308,28 @@ bool RealityDataDownload::SetupCurlandFile(size_t pi_index)
 
     return (pCurl != NULL);
 }
+
+bool RealityDataDownload::SetupNextEntry()
+    {
+    do 
+        {
+        if (m_curEntry < m_nbEntry)
+            {
+            SetupCurlandFile(m_curEntry);
+            if (m_pEntries[m_curEntry].fromCache)
+                {
+                if (m_pStatusFunc)
+                    m_pStatusFunc((int)m_curEntry, &(m_pEntries[m_curEntry]), 0, nullptr);
+                }
+            ++m_curEntry;
+            }
+        else
+            return false;
+
+        } while (m_pEntries[m_curEntry - 1].fromCache);
+
+    return true;
+    }   
 
 
 //----------------------------------------------------------------------------------------
