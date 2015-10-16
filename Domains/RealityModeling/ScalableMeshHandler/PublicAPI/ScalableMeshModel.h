@@ -44,7 +44,6 @@ struct ScalableMeshModel : PhysicalModel
         ScalableMeshProgressiveDisplay* m_display;
 
     protected:
-        DgnModelType _GetModelType() const override { return DgnModelType::Physical; }
         SCALABLEMESH_HANDLERS_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const override;
         virtual DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const override { return DgnModels::Model::CoordinateSpace::World; }
         SCALABLEMESH_HANDLERS_EXPORT virtual void _AddGraphicsToScene(ViewContextR) override;
