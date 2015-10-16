@@ -109,6 +109,7 @@ RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName
     m_pProgressFunc = NULL;
     m_pStatusFunc   = NULL;
 
+    m_curEntry = 0;
     m_nbEntry = pi_Link_FileName.size();
     m_pEntries = new FileTransfer[m_nbEntry];
     for (size_t i=0; i<m_nbEntry; ++i)
