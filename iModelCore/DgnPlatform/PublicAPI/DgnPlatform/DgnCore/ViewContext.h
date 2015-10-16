@@ -24,9 +24,9 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
  @addtogroup ViewContext
  A ViewContext holds the <i>current state</i> of an operation on a DgnViewport. A ViewContext must be first
  \e attached to a DgnViewport to be useful, and must be \e detached from the DgnViewport to free any memory associated with its internal state.
+ @beginGroup
+*/
 
-
-/** @beginGroup */
 
 enum FilterLODFlags
 {
