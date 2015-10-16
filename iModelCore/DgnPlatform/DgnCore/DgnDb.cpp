@@ -359,7 +359,7 @@ void DgnImportContext::ComputeGcsAdjustment()
     //  We may need to transform between source and destination GCS.
     m_xyOffset = DPoint2d::FromZero();
     m_yawAdj = AngleInDegrees::FromDegrees(0);
-	m_areCompatibleDbs = true;
+    m_areCompatibleDbs = true;
 
     if (!IsBetweenDbs())
         return;
