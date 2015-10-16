@@ -8,7 +8,6 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/DgnProgressMeter.h>
 #include <DgnPlatform/DgnCore/DgnMarkupProject.h>
-#include <RmgrTools/RscMgr/rmgrsubs.h>
 #include <ECDb/ECDb.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 

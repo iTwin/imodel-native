@@ -18,8 +18,6 @@
 #include <DgnPlatform/DesktopTools/MacroFileProcessor.h>
 #include <Bentley/BeFileListIterator.h>
 #include "macro.h"
-#undef DGN_PLATFORM_MT
-#include <RmgrTools/Tools/ToolSubs.h>
 
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -122,12 +120,6 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
-
-
-
-BEGIN_EXTERN_C
-extern ToolsFuncs       toolsFunctions;
-END_EXTERN_C
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/12

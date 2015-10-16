@@ -135,6 +135,8 @@ protected:
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT virtual uint32_t _GetMemSize() const override;
+
+    virtual Code _GenerateDefaultCode() override { return Code(); }
 public:
     explicit AnnotationFrameStyle(DgnDbR db) : AnnotationFrameStyle(CreateParams(db)) { }
     explicit AnnotationFrameStyle(CreateParams const& params) : T_Super(params), m_data(params.m_data), m_descr(params.m_descr) { }

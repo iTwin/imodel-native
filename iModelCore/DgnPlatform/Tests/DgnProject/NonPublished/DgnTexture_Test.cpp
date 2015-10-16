@@ -81,8 +81,6 @@ TEST_F (DgnTexturesTest, InsertQueryUpdateDelete)
     DgnTexture tx1_duplicate(DgnTexture::CreateParams(db, "Texture1", MakeTextureData(DgnTexture::Format::JPEG, 4, 8)));
     EXPECT_FALSE(tx1_duplicate.Insert().IsValid());
 
-    // ###TODO: unnamed textures
-
     DgnTexture tx2(DgnTexture::CreateParams(db, "Texture2", MakeTextureData(DgnTexture::Format::TIFF, 5, 5), "this is texture 2"));
     DgnTextureCPtr pTx2 = tx2.Insert();
     ASSERT_TRUE(pTx2.IsValid());
@@ -121,5 +119,24 @@ TEST_F (DgnTexturesTest, InsertQueryUpdateDelete)
 
     // Textures cannot be deleted, only purged
     EXPECT_EQ(DgnDbStatus::DeletionProhibited, pTx1->Delete());
+
+    // Unnamed textures are supported
+    DgnTexture unnamed1(DgnTexture::CreateParams(db, "", MakeTextureData(DgnTexture::Format::JPEG, 2, 2)));
+    EXPECT_TRUE(unnamed1.Insert().IsValid());
+
+    // Multiple unnamed textures can exist
+    DgnTexture unnamed2(DgnTexture::CreateParams(db, "", MakeTextureData(DgnTexture::Format::JPEG, 4, 4)));
+    EXPECT_TRUE(unnamed2.Insert().IsValid());
+
+    // Can't query unnamed texture by name
+    EXPECT_FALSE(DgnTexture::QueryTextureId("", db).IsValid());
+
+    // Can query unnamed textures by ID
+    auto pUnnamed1 = DgnTexture::QueryTexture(unnamed1.GetTextureId(), db),
+         pUnnamed2 = DgnTexture::QueryTexture(unnamed2.GetTextureId(), db);
+    ASSERT_TRUE(pUnnamed1.IsValid());
+    ASSERT_TRUE(pUnnamed2.IsValid());
+    EXPECT_EQ(pUnnamed1->GetTextureId(), unnamed1.GetTextureId());
+    EXPECT_EQ(pUnnamed2->GetTextureId(), unnamed2.GetTextureId());
     }
 

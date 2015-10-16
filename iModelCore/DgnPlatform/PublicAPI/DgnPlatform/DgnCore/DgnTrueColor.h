@@ -11,6 +11,7 @@
 #include "DgnDb.h"
 #include "DgnElement.h"
 #include "ElementHandler.h"
+#include "ECSqlStatementIterator.h"
 
 DGNPLATFORM_TYPEDEFS(DgnTrueColor);
 DGNPLATFORM_REF_COUNTED_PTR(DgnTrueColor);
@@ -56,6 +57,7 @@ protected:
     virtual DgnDbStatus _OnUpdate(DgnElementCR) override { return DgnDbStatus::WrongElement; }
     virtual DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; }
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + static_cast<uint32_t>(sizeof(m_colorDef)); }
+    virtual Code _GenerateDefaultCode() override { return Code(); }
 public:
     //! Construct a new DgnTrueColor with the specified parameters.
     explicit DgnTrueColor(CreateParams const& params) : T_Super(params), m_colorDef(params.m_colorDef) { }
