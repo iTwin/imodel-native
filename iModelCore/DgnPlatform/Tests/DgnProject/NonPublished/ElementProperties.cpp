@@ -32,10 +32,10 @@ TEST_F (ElementDisplayProperties, SetGradient)
     auto seedModelId3 = m_defaultModelId;
 
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
-    DgnModelPtr model3 = seedModel->Clone("model3");
+    DgnModelPtr model3 = seedModel->Clone(DgnModel::CreateModelCode("model3"));
     ASSERT_TRUE (model3 != nullptr);
     model3->Insert();
-    DgnModelId m3id = m_db->Models().QueryModelId("model3");
+    DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
 
     ElemDisplayParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
@@ -130,10 +130,10 @@ TEST_F (ElementDisplayProperties, SetTransparency)
 
     auto seedModelId3 = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
-    DgnModelPtr model3 = seedModel->Clone("model3");
+    DgnModelPtr model3 = seedModel->Clone(DgnModel::CreateModelCode("model3"));
     ASSERT_TRUE (model3 != nullptr);
     model3->Insert();
-    DgnModelId m3id = m_db->Models().QueryModelId("model3");
+    DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
 
     ElemDisplayParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
@@ -163,10 +163,10 @@ TEST_F (ElementDisplayProperties, SetCategory)
 
     auto seedModelId3 = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
-    DgnModelPtr model3 = seedModel->Clone("model3");
+    DgnModelPtr model3 = seedModel->Clone(DgnModel::CreateModelCode("model3"));
     ASSERT_TRUE (model3 != nullptr);
     model3->Insert();
-    DgnModelId m3id = m_db->Models().QueryModelId("model3");
+    DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
 
     ElemDisplayParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
@@ -198,10 +198,10 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
 
     auto seedModelId3 = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
-    DgnModelPtr model3 = seedModel->Clone("model3");
+    DgnModelPtr model3 = seedModel->Clone(DgnModel::CreateModelCode("model3"));
     ASSERT_TRUE (model3 != nullptr);
     model3->Insert();
-    DgnModelId m3id = m_db->Models().QueryModelId("model3");
+    DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
 
     ElemDisplayParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
@@ -234,10 +234,10 @@ TEST_F (ElementDisplayProperties, FillProperties)
 
     auto seedModelId3 = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
-    DgnModelPtr model3 = seedModel->Clone("model3");
+    DgnModelPtr model3 = seedModel->Clone(DgnModel::CreateModelCode("model3"));
     ASSERT_TRUE (model3 != nullptr);
     model3->Insert();
-    DgnModelId m3id = m_db->Models().QueryModelId("model3");
+    DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
 
     ElemDisplayParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
