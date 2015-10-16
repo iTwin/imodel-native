@@ -84,7 +84,7 @@ protected:
     bool    m_setupScan;
 
     void _AllocateScanCriteria() override {if (m_setupScan) T_Super::_AllocateScanCriteria();}
-    virtual Render::GraphicPtr _DrawCached(Render::GraphicStroker& stroker) override {stroker._Stroke(*this); return nullptr;}
+    virtual void _DrawCached(Render::GraphicStroker& stroker) override {stroker._Stroke(*this);}
 
     virtual void _DrawSymbol(Render::IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight) override {}
     virtual bool _FilterRangeIntersection(GeometricElementCR element) override {if (m_setupScan) return T_Super::_FilterRangeIntersection(element); return false;}

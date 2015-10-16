@@ -1253,7 +1253,7 @@ void            PickContext::_OutputElement(GeometricElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    03/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicPtr PickContext::_DrawCached(GraphicStroker& stroker)
+void PickContext::_DrawCached(GraphicStroker& stroker)
     {
     bool    testStroke = stroker._WantLocateByStroker();
 
@@ -1263,14 +1263,12 @@ GraphicPtr PickContext::_DrawCached(GraphicStroker& stroker)
         stroker._Stroke(*this);
 
     if (CheckStop())
-        return nullptr;
+        return ;
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (testCached || m_output.GetLocateSilhouettes())
-        return T_Super::_DrawCached(stroker);
+        T_Super::_DrawCached(stroker);
 #endif
-
-    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

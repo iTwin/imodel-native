@@ -272,7 +272,7 @@ protected:
 
     //! DgnPlatform calls _DrawElementFiltered instead of _DrawElement when it needs to draw an element but decides that the
     //! representation in the view is small enough that it can be simplified.
-    DGNPLATFORM_EXPORT virtual void _DrawElementFiltered(ViewContextR, GeometricElementCR, DPoint3dCP pts, double size);
+    virtual void _DrawElementFiltered(ViewContextR, GeometricElementCR, DPoint3dCP pts, double size) {}
 
     //! Invoked just before the locate tooltip is displayed to retrieve the info text. Allows the ViewController to override the default description.
     //! @param[in]  hit The locate HitDetail whose info is needed.

@@ -631,7 +631,6 @@ bool ViewContext::_FilterRangeIntersection(GeometricElementCR element)
 void ViewContext::_OutputElement(GeometricElementCR element)
     {
     ResetContextOverrides();
-
     m_viewport ? m_viewport->GetViewControllerR()._DrawElement(*this, element) : element._Draw(*this);
     }
 
@@ -983,7 +982,6 @@ StatusInt ViewContext::_ScanDgnModel(DgnModelP model)
         return ERROR;
 
     m_scanCriteria->SetDgnModel(model);
-
     return m_scanCriteria->Scan(this);
     }
 
@@ -1146,20 +1144,13 @@ GraphicPtr ViewContext::GetGraphic(GraphicStroker& stroker)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Output a displayable that uses QvElems and can be cached in QuickVision.
-* Sometimes this function will find that the cached representation already exists, and then it
-* simply draws that cached representation. Otherwise it calls the Draw
-* method on the displayable and draws (and potentially saves) the resultant QvElem.
 * @bsimethod                                                    KeithBentley    07/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicPtr ViewContext::_DrawCached(GraphicStroker& stroker)
+void ViewContext::_DrawCached(GraphicStroker& stroker)
     {
     GraphicPtr qvElem = GetGraphic(stroker);
-
     if (qvElem.IsValid())
         m_IViewDraw->DrawGraphic(qvElem.get());
-
-    return qvElem;
     }
 
 /*---------------------------------------------------------------------------------**//**

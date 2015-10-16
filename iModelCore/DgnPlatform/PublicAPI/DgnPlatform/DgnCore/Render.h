@@ -9,13 +9,14 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnModel.h"
+#include "DgnCategory.h"
 #include "DgnTexture.h"
 #include "ImageUtilities.h"
 #include "AreaPattern.h"
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
-DEFINE_POINTER_SUFFIX_TYPEDEFS(CachedDraw)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(SceneDraw)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ElemDisplayParams)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ElemMatSymb)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeomDraw)
@@ -39,7 +40,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Texture)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ViewDraw)
 
-DEFINE_REF_COUNTED_PTR(CachedDraw)
+DEFINE_REF_COUNTED_PTR(SceneDraw)
 DEFINE_REF_COUNTED_PTR(GradientSymb)
 DEFINE_REF_COUNTED_PTR(Graphic)
 DEFINE_REF_COUNTED_PTR(LineStyleInfo)
@@ -1357,10 +1358,10 @@ public:
 };
 
 //=======================================================================================
-//! Begin/End announcements around cached drawing sequences.
+//! Begin/End announcements around scene-based drawing sequences.
 // @bsiclass
 //=======================================================================================
-struct CachedDraw : IRefCounted, GeomDraw
+struct SceneDraw : IRefCounted, GeomDraw
 {
 protected:
     virtual void _BeginGraphic() = 0;

@@ -426,14 +426,6 @@ void ViewController::_DrawElement(ViewContextR context, GeometricElementCR eleme
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_DrawElementFiltered(ViewContextR context, GeometricElementCR element, DPoint3dCP pts, double size)
-    {
-    // Display nothing...
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::ReloadSubCategory(DgnSubCategoryId id)
@@ -485,12 +477,6 @@ void ViewController::DropSubCategoryOverride(DgnSubCategoryId id)
 bool ViewController::_IsPointAdjustmentRequired(DgnViewportR vp) const {return vp.Is3dView();}
 bool ViewController::_IsSnapAdjustmentRequired(DgnViewportR vp, bool snapLockEnabled) const {return snapLockEnabled && vp.Is3dView();}
 bool ViewController::_IsContextRotationRequired(DgnViewportR vp, bool contextLockEnabled) const {return contextLockEnabled;}
-
-/////////////////////////////////////////////////////////////////////////////////////
-///
-/// Standard Views
-///
-/////////////////////////////////////////////////////////////////////////////////////
 
 static bool equalOne(double r1) {return BeNumerical::Compare(r1, 1.0) == 0;}
 static bool equalMinusOne(double r1) {return BeNumerical::Compare(r1, -1.0) == 0;}
@@ -1615,25 +1601,6 @@ void PhysicalViewController::_SaveToSettings(JsonValueR jsonObj) const
     JsonUtils::DPoint3dToJson(jsonObj[VIEW_SETTING_Delta], m_delta);
     JsonUtils::RotMatrixToJson(jsonObj[VIEW_SETTING_Rotation], m_rotation);
     }
-
-#ifdef DGNV10FORMAT_CHANGES_WIP
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Brien.Bastings                  11/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-IAuxCoordSysP PhysicalViewController::_GetAuxCoordinateSystem() const
-    {
-    // if we don't have an ACS when this is called, try to get one.
-    if (!m_auxCoordSys.IsValid())
-        IACSManager::GetManager().ReadSettings(const_cast <ViewControllerP>(this), GetDgnElement(), GetRootModelP(false));
-
-    IAuxCoordSysP   acs = m_auxCoordSys.get();
-
-     if (nullptr != acs && SUCCESS == acs->CompleteSetupFromViewController(this))
-        return acs;
-
-    return m_auxCoordSys.get();
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Josh.Schifter   08/00

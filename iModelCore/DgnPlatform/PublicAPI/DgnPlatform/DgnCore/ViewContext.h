@@ -340,7 +340,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve3d(MSBsplineCurveCR);
     DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth);
     DGNPLATFORM_EXPORT virtual void _DrawTextString(TextStringCR);
-    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _DrawCached(Render::GraphicStroker&);
+    DGNPLATFORM_EXPORT virtual void _DrawCached(Render::GraphicStroker&);
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(GeometricElementCR);
     DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron();
@@ -525,9 +525,9 @@ public:
 
     //! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
     //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-    //! @param[in]      worldPts    Input array in DgnCoordSystem::World.
+    //! @param[in]      worldPts     Input array in DgnCoordSystem::World.
     //! @param[in]      nPts        Number of points in both arrays.
-    DGNPLATFORM_EXPORT void WorldToView(DPoint3dP viewPts, DPoint3dCP worldPt, int nPts) const;
+    DGNPLATFORM_EXPORT void WorldToView(DPoint3dP viewPts, DPoint3dCP worldPts, int nPts) const;
 
     //! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
     //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
@@ -545,7 +545,7 @@ public:
     //! @param[out]     worldPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
     //! @param[in]      viewPts     Input array in DgnCoordSystem::View.
     //! @param[in]      nPts        Number of points in both arrays.
-    DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP WorldPts, DPoint3dCP viewPts, int nPts) const;
+    DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) const;
 
     //! Retrieve a pointer to the the transform from the current local coordinate system into DgnCoordSystem::World.
     //! @return   NULL if no transform present.
@@ -660,16 +660,6 @@ public:
 
     /// @name Get/Set Current Display Parameters
     //@{
-
-    //! Get the current LineStyleSymb.
-    //! @return the current LineStyleSymb.
-    //DGNPLATFORM_EXPORT ILineStyleCP GetCurrLineStyle (LineStyleSymbP* symb);
-
-    //! Set the linestyle in the current linestyle MatSymb. This method is mainly used to temporarily clear the current
-    //! linestyle, for pieces of geometry that are to be drawn solid. To do that, call GetCurrLineStyle and save the
-    //! current value. Then call this method passing NULL and when you're done, call this method again to restore the saved linestyle.
-    //! @param[in]      lstyle      The new current linestyle. If NULL, no (solid) linestyle is used.
-    //DGNPLATFORM_EXPORT void SetCurrLineStyle (ILineStyleCP lstyle);
 
     bool& GetUseCachedGraphics() {return m_useCachedGraphics;}
     DGNPLATFORM_EXPORT bool GetDisplayPriorityRange(int32_t& low, int32_t& high) const;
@@ -850,7 +840,7 @@ DGNPLATFORM_EXPORT int32_t ResolveNetDisplayPriority(int32_t geomPriority, DgnSu
     //! @param[in] stroker An object to use to create cache representation (if necessary).
     //! @note A single displayable may have many saved cached representations. Draw methods can decide which cached representation is appropriate.
     //! in the current context, and can even draw more than one of the cached representations by having the stroker return different cache indices.
-    Render::GraphicPtr DrawCached(Render::GraphicStroker& stroker) {return _DrawCached(stroker);}
+    void DrawCached(Render::GraphicStroker& stroker) {return _DrawCached(stroker);}
 
     DGNPLATFORM_EXPORT bool CheckStop();
 }; // ViewContext
