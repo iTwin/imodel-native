@@ -95,6 +95,7 @@
         <SubPart PartName="RealityPackageUnitTests"/>
         <SubPart PartName="CrawlerLibUnitTests"/>
         <SubPart PartName="CrawlerLibExample"/>
+        <SubPart PartName="RealityDbECPluginInstaller" />
         <!--<SubPart PartName="RealityCrawler"/>-->
         <!--<SubPart PartName="BeGTestCommon"       PartFile="BeGTest"      Repository="BeGTest" />-->
     </Part>
@@ -121,11 +122,18 @@
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
-        <SubPart PartName="GeomDlls"    PartFile="geomlibs"     Repository="GeomLibs" />        
+        <SubPart PartName="GeomDlls"    PartFile="geomlibs"     Repository="GeomLibs" />
         <Bindings>
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/BentleyWMSPackageNet$(shlibext)</Assemblies>
         </Bindings>
+    </Part>
 
+    <Part Name="RealityDbECPluginInstaller" BMakeFile="RealityDbECPlugin/Install/Install.mke">
+      <RequiredRepository>bsitools-wix_3.10.2103.0</RequiredRepository>
+      <RequiredRepository>Miscdev-Eula</RequiredRepository>
+      <Bindings>
+        <Files ProductDirectoryName="ApplicationInstallRoot" Required="true" IfNotPresent="Warn">Delivery/Setup_RealityDbECPlugin.msi</Files>
+      </Bindings>
     </Part>
 
     <Part Name="WMSCapabilitiesNET" BentleyBuildMakeFile="WMSCapabilitiesNET\WMSCapabilitiesNET.mke">
@@ -191,6 +199,7 @@
         <ProductDirectory Name="PointoolsAssemblies32Ext"       Path="Pointools32Ext" RelativeTo="PointoolsAssemblies"/>
 
         <ProductDirectory Name="LoggingNativeAssemblies"        Path=""/>
+        <ProductDirectory Name="ApplicationInstallRoot"         Path="InstallRealityDbECPlugin"      RelativeTo="RealityAssemblies"/>
     </ProductDirectoryList>
 
 	

@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--
+#  $Source: RealityDbECPlugin/Install/Product.wxs $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+-->
+<?include Defines.wxi?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:netfx="http://schemas.microsoft.com/wix/NetFxExtension"
+     RequiredVersion="3.10.0.2103">
+    
+
+    <Product Id="$(var.ProductCodeGUID)" 
+             Language="!(loc.LanguageID)"
+             Manufacturer="$(var.CompanyName)"
+             Name="$(var.ProductFullName)"
+             UpgradeCode="$(var.ProductUpgradeCodeGUID)"
+             Version="$(var.INSTALLER_PRODUCT_VERSION)">
+
+        <Package Manufacturer="!(loc.CompanyName)"
+                 Comments="$(var.Copyright)" 
+                 Description="$(var.ProductFullName)"
+                 InstallerVersion="405"
+                 Compressed="yes"
+                 SummaryCodepage="!(loc.SummaryCodepage)"                                   
+                 InstallScope="perMachine" />      
+        <Media Id="1" Cabinet="Data1.cab" EmbedCab="yes" />
+
+        <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage="!(loc.Error_NewerVersionInstalled)" />
+      
+      <!-- **************** -->
+      <!-- * Product icon * -->
+      <!-- **************** -->
+        <Icon Id="icon.ico" SourceFile="$(var.SetupExeIconDir)Bentley.ico" />
+
+      <!-- ************** -->
+      <!-- * Properties * -->
+      <!-- ************** -->
+        <!-- Product Add or Remove Programs properties -->
+        <!--<Property Id="ARPCOMMENTS" Secure="yes" Value="!(loc.CommentsText)" />-->
+        <!--<Property Id="ARPCONTACT" Secure="yes" Value="!(loc.SupportContact)" />-->
+        <Property Id="ARPHELPLINK" Secure="yes" Value="!(loc.HelpUrl)" />
+        <Property Id="ARPURLINFOABOUT" Secure="yes" Value="!(loc.AboutUrl)" />
+        <Property Id="ARPURLUPDATEINFO" Secure="yes" Value="!(loc.UpdateUrl)" />
+        <Property Id="ARPHELPTELEPHONE" Secure="yes" Value="!(loc.HelpTelephone)" />
+        <!--<Property Id="ARPREADME" Secure="yes" Value="[$readme]$(var.ReadMeName)" />-->
+        <Property Id="ARPPRODUCTICON" Secure="yes" Value="icon.ico" />
+      
+        <Property Id="WSGVERSION" Secure="yes" Value="$(var.WSGVERSION)" />
+        <PropertyRef Id="COREPRODUCTDIR"/>
+
+      <!-- ************** -->
+      <!-- *     UI     * -->
+      <!-- ************** -->
+        <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
+        <UI>
+            <UIRef Id="WixUI_InstallDir" />
+        </UI>
+
+      <!-- ************** -->
+      <!-- * Conditions * -->
+      <!-- ************** -->
+        <!-- We needs administrative right to install the software. -->
+        <Condition Message="!(loc.Error_InsufficientPrivileges)">Privileged</Condition>
+
+        <!-- Check that a valid core product is installed -->
+        <Condition Message="!(loc.Error_MissignCoreProductVersion)"><![CDATA[Installed OR COREPRODUCTDIR<>0]]></Condition>
+
+      <!-- ************* -->
+      <!-- * Sequences * -->
+      <!-- ************* -->
+        <InstallUISequence>
+          <!--*** After CostFinalize ***-->
+          <!--<Custom Action="SetReadMe" After="CostFinalize" />-->
+          <Custom Action="SetInstall" After="AppSearch"><![CDATA[Not Installed And COREPRODUCTDIR<>0]]></Custom>
+          <!--<Custom Action="SetWIXUI_INSTALLDIR" After="SetInstall"><![CDATA[Installed And COREPRODUCTDIR<>0]]></Custom>-->
+        </InstallUISequence>
+
+        <InstallExecuteSequence>
+          <!--*** After CostFinalize ***-->
+          <!--<Custom Action="SetReadMe" After="CostFinalize"><![CDATA[Installed]]></Custom>-->
+          <Custom Action="SetInstall" After="AppSearch"><![CDATA[Not Installed And COREPRODUCTDIR<>0]]></Custom>
+          <!--<Custom Action="SetWIXUI_INSTALLDIR" After="SetInstall"><![CDATA[Installed And COREPRODUCTDIR<>0]]></Custom>-->
+          <!--*** After InstallValidate ***-->
+          <Custom Action="SetARPINSTALLLOCATION" After="InstallValidate"></Custom>
+        </InstallExecuteSequence>
+
+      <!-- ************ -->
+      <!-- * Features * -->
+      <!-- ************ -->
+        <Feature Id="ProductFull" Level="1" Title="!(loc.FeatureTitleProductFull)" Description="!(loc.FeatureDescriptionProductFull)" Absent="disallow" AllowAdvertise="no" Display='collapse'>
+          <ComponentGroupRef Id="CG_ReadMeFiles" />
+          <ComponentGroupRef Id="CG_Extensions" />
+          <ComponentGroupRef Id="CG_AppFiles" />
+          <ComponentGroupRef Id="CG_BentleyFiles" />
+          <ComponentGroupRef Id="CG_Registry" />          
+
+          
+          <!--<Feature Id="ProductShortcuts" Level="1" Title="!(loc.FeatureTitleProductShortcuts)" Description="!(loc.FeatureDescriptionProductShortcuts)" Absent="allow" AllowAdvertise="no" Display='collapse'>
+            <ComponentGroupRef Id="CSAPP_CreateApplicationStartMenuShortcut" />
+            <ComponentGroupRef Id="CSAPP_CreateApplicationShortcutDesktop" />
+          </Feature>-->
+        </Feature>       
+    </Product>
+</Wix>
