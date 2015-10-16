@@ -187,7 +187,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                     KeithBentley    04/01
 //=======================================================================================
-struct ViewContext : NonCopyableClass, ICheckStop, IRangeNodeCheck
+struct EXPORT_VTABLE_ATTRIBUTE ViewContext : NonCopyableClass, ICheckStop, IRangeNodeCheck
 {
     friend struct ViewController;
     friend struct SimplifyViewDrawGeom;
