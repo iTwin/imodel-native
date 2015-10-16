@@ -462,7 +462,7 @@ protected:
     virtual void _AdjustFencePts(RotMatrixCR viewRot, DPoint3dCR oldOrg, DPoint3dCR newOrg) const {}
     virtual ColorDef _GetHiliteColor() const {return ColorDef::Magenta();}
     virtual void _SynchViewTitle() {}
-    virtual void _DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, Point2dCP fixedRepetitions) {}
+    virtual void _DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid, Point2dCP fixedRepetitions) {}
     virtual BSIRect _GetClientRect() const = 0;
     virtual Point2d _GetScreenOrigin() const  {Point2d pt={0,0}; return pt;}
     virtual DVec2d _GetDpiScale() const {return DVec2d::From(1,1);}
@@ -497,7 +497,7 @@ public:
     DGNPLATFORM_EXPORT void PointToStandardGrid(DPoint3dR point, DPoint3dR gridOrigin, RotMatrixR rMatrix);
     DGNPLATFORM_EXPORT void GetGridRoundingDistance(DPoint2dR roundingDistance);
     DGNPLATFORM_EXPORT void GridFix(DPoint3dR point, RotMatrixCR rMatrixRoot, DPoint3dCR originRoot, DPoint2dCR roundingDistanceRoot, bool isoGrid);
-    DGNPLATFORM_EXPORT void DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, Point2dCP fixedRepetitions = NULL);
+    DGNPLATFORM_EXPORT void DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid, Point2dCP fixedRepetitions = nullptr);
     DGNPLATFORM_EXPORT BSIRect GetClientRect() const;
     DGNPLATFORM_EXPORT Point2d GetScreenOrigin() const;
     DGNPLATFORM_EXPORT void CalcNpcToView(DMap4dR npcToView);

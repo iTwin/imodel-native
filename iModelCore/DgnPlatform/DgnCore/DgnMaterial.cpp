@@ -187,3 +187,40 @@ DgnDbStatus DgnMaterial::_OnChildImport(DgnElementCR child, DgnModelR destModel,
     return status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnMaterial::Iterator DgnMaterial::Iterator::Create(DgnDbR db, Options const& options)
+    {
+    Utf8String ecsql("SELECT ECInstanceId,Code,CodeNameSpace,ParentId,Descr FROM " DGN_SCHEMA(DGN_CLASSNAME_MaterialElement));
+    if (options.m_byPalette)
+        ecsql.append(" WHERE CodeNameSpace=?");
+
+    if (options.m_byParent)
+        ecsql.append(options.m_byPalette ? " AND " : " WHERE ").append("ParentId=?");
+
+    if (options.m_ordered)
+        ecsql.append(" ORDER BY CodeNameSpace,Code");
+
+    Iterator iter;
+    ECSqlStatement* stmt = iter.Prepare(db, ecsql.c_str(), 0);
+    if (nullptr != stmt)
+        {
+        if (options.m_byPalette)
+            stmt->BindText(1, options.m_palette.c_str(), IECSqlBinder::MakeCopy::Yes);
+
+        if (options.m_byParent)
+            stmt->BindId(options.m_byPalette ? 2 : 1, options.m_parent);
+        }
+
+    return iter;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnMaterial::Iterator DgnMaterial::MakeIterator(DgnDbR db, Iterator::Options options)
+    {
+    return Iterator::Create(db, options);
+    }
+

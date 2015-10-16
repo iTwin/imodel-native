@@ -224,7 +224,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <!-- The "business key" for this Element. Typically used to link this Element with a record in an external system (identified by CodeAuthorityId). -->
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
+                    <IsNullable>True</IsNullable><!-- IFF namespace is blank - signifies the code is not meaningful/unique -->
                     <Collation>NoCase</Collation>
                     <!-- Code by itself is not necessarily unique, but CodeAuthorityId+CodeNameSpace+Code is unique.  -->
                     <IsUnique>False</IsUnique>
@@ -596,41 +596,9 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>SheetView</BaseClass>
     </ECClass>
 
-    <ECClass typeName="Color" isDomainClass="True" >
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>
-                    <Strategy>OwnTable</Strategy>
-                </MapStrategy>
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <Indexes>
-                    <DbIndex>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>Name</string>
-                            <string>Book</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Name" displayLabel="" typeName="string" description="Name of Color" >
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <Collation>NoCase</Collation>
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Book" displayLabel="" typeName="string" description="Name of Book" >
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <Collation>NoCase</Collation>
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Value" displayLabel="" typeName="int" />
+    <ECClass typeName="TrueColor" isDomainClass="True" >
+        <BaseClass>DictionaryElement</BaseClass>
+        <ECProperty propertyName="Data" displayLabel="" typeName="int" />
     </ECClass>
 
     <ECClass typeName="MaterialElement" isDomainClass="True">

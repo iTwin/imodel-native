@@ -35,7 +35,6 @@
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
         <SubPart PartName="ECDb"                PartFile="ECDb"         Repository="ECDb" />
-        <SubPart PartName="ToolsubsDll"         PartFile="RmgrTools"    Repository="RmgrTools" />
         <SubPart PartName="GeomDlls"            PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="BeXmlDll"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <SubPart PartName="ECObjectsNative"     PartFile="ecobjects"    Repository="ecobjects" />
@@ -168,7 +167,6 @@
     <Part Name="UnitTests-Performance" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="TestFixtureForUnitTests" />
-        <SubPart PartName="PerformanceTestingHelpers" PartFile="BeSQLite" Repository="BeSQLite"/>
         <!-- Performance tests use DgnDbTestDgnManager, which is implemented in BackDoor -->
         <SubPart PartName="BackdoorForUnitTests"/>
         <Bindings>

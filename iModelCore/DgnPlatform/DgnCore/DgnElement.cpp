@@ -195,7 +195,7 @@ ECClassCP DgnElement::GetElementClass() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::Code DgnElement::_GenerateDefaultCode()
     {
-    return DgnAuthority::GenerateDefaultCode(*this);
+    return DgnAuthority::CreateDefaultCode();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -230,7 +230,11 @@ template<class T> void DgnElement::CallAppData(T const& caller) const
 DgnDbStatus DgnElement::_OnInsert()
     {
     if (!m_code.IsValid())
+        {
         m_code = _GenerateDefaultCode();
+        if (!m_code.IsValid())
+            return DgnDbStatus::InvalidName;
+        }
 
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
@@ -424,18 +428,24 @@ DgnDbStatus DgnElement::BindParams(ECSqlStatement& statement, bool isForUpdate)
     {
     BeAssert(m_code.IsValid());
 
-    if ((ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_CODE), m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No)) ||
-        (ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_CODEAUTHORITYID), m_code.GetAuthority())) ||
-        (ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_CODENAMESPACE), m_code.GetNameSpace().c_str(), IECSqlBinder::MakeCopy::No)) ||
-        (ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_PARENTID), m_parentId)))
+    if (!m_code.IsValid())
+        return DgnDbStatus::InvalidName;
+    else if (m_code.IsEmpty() && ECSqlStatus::Success != statement.BindNull(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_CODE)))
+        return DgnDbStatus::BadArg;
+    else if (!m_code.IsEmpty() && ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_CODE), m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No))
+        return DgnDbStatus::BadArg;
+
+    if (ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_CODEAUTHORITYID), m_code.GetAuthority()) ||
+        ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_CODENAMESPACE), m_code.GetNameSpace().c_str(), IECSqlBinder::MakeCopy::No) ||
+        ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_PARENTID), m_parentId))
         {
         return DgnDbStatus::BadArg;
         }
 
     if (!isForUpdate)
         {
-        if ((ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_ECINSTANCEID), m_elementId)) ||
-            (ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_MODELID), m_modelId)))
+        if (ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_ECINSTANCEID), m_elementId) ||
+            ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_MODELID), m_modelId))
             return DgnDbStatus::BadArg;
         }
 

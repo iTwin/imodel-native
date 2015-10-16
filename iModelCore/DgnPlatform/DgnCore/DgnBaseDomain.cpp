@@ -101,13 +101,18 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::Group::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotationHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::PhysicalTextAnnotationHandler::GetHandler());
+
     RegisterHandler(dgn_ElementHandler::Material::GetHandler());
     RegisterHandler(dgn_ElementHandler::Texture::GetHandler());
     RegisterHandler(dgn_ElementHandler::LightDef::GetHandler());
     RegisterHandler(dgn_ElementHandler::Category::GetHandler());
     RegisterHandler(dgn_ElementHandler::SubCategory::GetHandler());
+    RegisterHandler(dgn_ElementHandler::TrueColor::GetHandler());
 
     RegisterHandler(dgn_ElementHandler::AnnotationTextStyleHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::AnnotationFrameStyleHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::AnnotationLeaderStyleHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::TextAnnotationSeedHandler::GetHandler());
 
     RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Local::GetHandler());

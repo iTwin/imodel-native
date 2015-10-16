@@ -9,8 +9,6 @@
 
 #include <Bentley/Bentley.h>
 
-#include <RmgrTools/ExportMacros.h>
-
 #ifndef DGNPLATFORM_EXPORT
 #if defined (__DGNPLATFORM_BUILD__)
     #define DGNPLATFORM_EXPORT EXPORT_ATTRIBUTE

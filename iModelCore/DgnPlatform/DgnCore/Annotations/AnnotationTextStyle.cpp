@@ -523,7 +523,7 @@ uint32_t AnnotationTextStyle::_GetMemSize() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t AnnotationTextStylePropertyBag::GetMemSize() const
+uint32_t AnnotationPropertyBag::GetMemSize() const
     {
     return sizeof(*this);   // NEEDSWORK accurate mem size
     }
