@@ -10,6 +10,5 @@
 #include <Bentley/BeTimeUtilities.h>
 #include "../BackDoor/PublicApi/BackDoor/ECDb/ECDbTestFixture.h"
 #include "../BackDoor/PublicApi/BackDoor/ECDb/ECDbTestProject.h"
-#include <UnitTests/BackDoor/PerformanceTestingHelper/PerformanceTestingHelpers.h>
 
 
