@@ -3204,17 +3204,50 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
             "      </Class>"
             "    </Target>"
             "  </ECRelationshipClass>"
+            "   <ECRelationshipClass typeName='AnotherRel11' isDomainClass='True' strength='embedding'>"
+            "    <Source cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class='A' />"
+            "    </Source>"
+            "    <Target cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class='B1'>"
+            "        <Key><Property name='B1Id'/></Key>"
+            "      </Class>"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "   <ECRelationshipClass typeName='Rel1N' isDomainClass='True' strength='embedding'>"
+            "    <Source cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class='A' />"
+            "    </Source>"
+            "    <Target cardinality='(1,N)' polymorphic='True'>"
+            "      <Class class='B1'>"
+            "        <Key><Property name='B1Id'/></Key>"
+            "      </Class>"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "   <ECRelationshipClass typeName='Rel1NNoKeyProp' isDomainClass='True' strength='embedding'>"
+            "    <Source cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class='A' />"
+            "    </Source>"
+            "    <Target cardinality='(1,N)' polymorphic='True'>"
+            "      <Class class='B1' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
             "</ECSchema>", true, "");
 
         ECDb ecdb;
         bool asserted = false;
-        AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships.ecdb");
+        AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships1.ecdb");
         ASSERT_FALSE(asserted);
 
         ECClassId b1ClassId = ecdb.Schemas().GetECClassId("TestSchema", "B1");
         Utf8String indexWhereClause;
         indexWhereClause.Sprintf("([sc03] IS NOT NULL) AND (ECClassId=%lld)", b1ClassId);
         AssertIndex(ecdb, "uix_ts_B_fk_ts_Rel11_target", true, "ts_B", {"sc03"}, indexWhereClause.c_str());
+        AssertIndex(ecdb, "uix_ts_B_fk_ts_AnotherRel11_target", true, "ts_B", {"sc03"}, indexWhereClause.c_str());
+        AssertIndexExists(ecdb, "ix_ts_B_fk_ts_Rel1N_target", false);
+        AssertIndex(ecdb, "ix_ts_B_fk_ts_Rel1NNoKeyProp_target", false, "ts_B", {"ForeignECInstanceId_Rel1NNoKeyProp"}, "([ForeignECInstanceId_Rel1NNoKeyProp] IS NOT NULL)");
+        AssertIndex(ecdb, "ix_ts_B_ecclassid", false, "ts_B", {"ECClassId"});
+        ASSERT_EQ(4, (int) RetrieveIndicesForTable(ecdb, "ts_B").size());
         }
 
         {
