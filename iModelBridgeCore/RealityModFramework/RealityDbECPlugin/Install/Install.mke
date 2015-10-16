@@ -36,7 +36,21 @@ always:
 #--------------------------------------------------------------------------------------
 # 
 #--------------------------------------------------------------------------------------
+MISCDEV_DIR                   = $(SrcRoot)miscdev/
+
+%if defined (PRG_BETABUILD)
+	INSTALLER_LICENSE_FILE        = $(MISCDEV_DIR)eula/lang/$(MAIN_INSTALLER_LANGUAGE)/BetaEula.rtf
+	EulaFile = $(MISCDEV_DIR)eula/lang/$(MAIN_INSTALLER_LANGUAGE)/BetaEula.pdf
+	INSTALLER_ELEMENTS + -dProductPackageBuildType=Beta
+%else
+	INSTALLER_LICENSE_FILE        = $(MISCDEV_DIR)eula/lang/$(MAIN_INSTALLER_LANGUAGE)/eula.rtf
+	EulaFile = $(MISCDEV_DIR)eula/lang/$(MAIN_INSTALLER_LANGUAGE)/eula.pdf
+	INSTALLER_ELEMENTS + -dProductPackageBuildType=Release
+%endif
+
 wxsFilesDir = $(InstallerOutBuild)wix/
+InstallDataDir = $(InstallerOutBuild)Data/
+InstallReadMeDir = $(InstallerOutBuild)ReadMe/
 
 $(wxsFilesDir)Defines.wxi : $(_MakeFilePath)Defines.wxi
         $(LinkFirstDepToFirstTarget)
@@ -59,6 +73,26 @@ $(wxsFilesDir)Product_Registry.wxs : $(_MakeFilePath)Product_Registry.wxs
 $(wxsFilesDir)Product_CustomActions.wxs : $(_MakeFilePath)Product_CustomActions.wxs
         $(LinkFirstDepToFirstTarget)
 
+$(wxsFilesDir)Bentley.ico : $(_MakeFilePath)Bentley.ico
+        $(LinkFirstDepToFirstTarget)
+
+$(InstallReadMeDir)RealityDbECPlugin_Readme.txt : $(_MakeFilePath)ReadMe/RealityDbECPlugin_Readme.txt
+        $(LinkFirstDepToFirstTarget)
+
+$(InstallReadMeDir)RealityDbECPluginEula.pdf : $(EulaFile)
+        $(LinkFirstDepToFirstTarget)
+
+$(InstallDataDir)ECSchemaNewDB.xml : $(_MakeFilePath)Data/ECSchemaNewDB.xml
+        $(LinkFirstDepToFirstTarget)
+
+$(InstallDataDir)newDbLocation.config : $(_MakeFilePath)Data/newDbLocation.config
+        $(LinkFirstDepToFirstTarget)
+
+$(InstallDataDir)RMIndexDbScript.sql : $(_MakeFilePath)Data/RMIndexDbScript.sql
+        $(LinkFirstDepToFirstTarget)
+
+$(InstallDataDir)CreateOSMEntry.sql : $(_MakeFilePath)Data/CreateOSMEntry.sql
+        $(LinkFirstDepToFirstTarget)
 
 PolicyFile=$(SharedMki)InternalSystemPolicy.mki
 %include $(SrcBsiCommon)PublicSDK/ConfigurePolicy.mki
@@ -72,8 +106,6 @@ PolicyFile=$(SharedMki)InternalSystemPolicy.mki
 %endif
 
 %include $(SrcRoot)bsicommon\PublicSDK\AssertToolSet.mki
-
-MISCDEV_DIR                   = $(SrcRoot)miscdev/
 
 always:
 !~@mkdir $(o)
@@ -98,20 +130,9 @@ INSTALLER_ELEMENTS + -ext WixUtilExtension
 INSTALLER_ELEMENTS + -loc $(_MakeFilePath)Localization/LanguageResources.wxl
 
 #    INSTALLER_COMPILER_OPT         - options to the wix compiler
-INSTALLER_COMPILER_OPT + -dSetupExeIconDir=$(_MakeFilePath) -dProductDir=$(OutProduct)
-
-		
-
+INSTALLER_COMPILER_OPT + -ext WixUtilExtension
+INSTALLER_COMPILER_OPT + -dSetupExeIconDir=$(wxsFilesDir) -dProductDir=$(OutProduct) -dInstallDataDir=$(InstallDataDir) -dInstallReadMeDir=$(InstallReadMeDir)
 INSTALLER_COMPILER_OPT + -arch $(TARGET_PROCESSOR_ARCHITECTURE) -dRel_V=$(REL_V) -dMaj_V=$(MAJ_V) -dMin_V=$(MIN_V) -dSubMin_V=$(SUBMIN_V)
-
-
-%if defined (PRG_BETABUILD)
-	INSTALLER_LICENSE_FILE        = $(MISCDEV_DIR)eula/lang/$(MAIN_INSTALLER_LANGUAGE)/BetaEula.rtf
-	INSTALLER_ELEMENTS + -dProductPackageBuildType=Beta
-%else
-	INSTALLER_LICENSE_FILE        = $(MISCDEV_DIR)eula/lang/$(MAIN_INSTALLER_LANGUAGE)/eula.rtf
-	INSTALLER_ELEMENTS + -dProductPackageBuildType=Release
-%endif
 
 %include $(SharedMki)InternalSystemPolicy.mki
 %include $(SharedMki)CommonCompileLinkPolicy.mki

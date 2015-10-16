@@ -8,12 +8,16 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <Fragment>
     <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="TempFolder">
+        <Directory Id="PackagesCache" Name ="RealityDbECPlugin"/>
+      </Directory>
       <Directory Id="ProgramFiles64Folder">
         <Directory Id="INSTALLDIR" Name="WSG">
+          <Directory Id="RealityDbECPlugin" Name ="RealityDbECPlugin"/>
           <Directory Id="bin" Name="bin">
             <Directory Id="Extensions" Name ="Extensions"/>
           </Directory>
-        </Directory>
+          </Directory>
       </Directory>
     </Directory>
   </Fragment>
