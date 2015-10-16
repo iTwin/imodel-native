@@ -417,6 +417,7 @@ public:
 
         public:
             DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
+            DGNPLATFORM_EXPORT AuthorityIssuedCode GetCode() const;
             DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const;
             DGNPLATFORM_EXPORT Utf8CP GetCodeNameSpace() const;
             DGNPLATFORM_EXPORT DgnAuthorityId GetCodeAuthorityId() const;
@@ -436,6 +437,7 @@ public:
     };
 
 public:
+    static AuthorityIssuedCode GetModelCode(Iterator::Entry const& entry); //!< @private
     DGNPLATFORM_EXPORT QvCache* GetQvCache(bool createIfNecessary=true);
     void SetQvCache(QvCache* qvCache) {m_qvCache = qvCache;}
 

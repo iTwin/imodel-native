@@ -60,6 +60,14 @@ BentleyStatus DgnModels::GetModelCode(DgnModel::Code& code, DgnModelId id) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModel::Code DgnModels::GetModelCode(Iterator::Entry const& entry)
+    {
+    return DgnModel::Code(entry.GetCodeAuthorityId(), entry.GetCodeValue(), entry.GetCodeNameSpace());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModels::AddLoadedModel(DgnModelR model)
