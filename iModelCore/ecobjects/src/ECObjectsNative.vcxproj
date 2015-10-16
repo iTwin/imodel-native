@@ -110,6 +110,7 @@
     <ClCompile Include="presentation\PresentationRules\StyleOverride.cpp" />
     <ClCompile Include="presentation\PresentationRules\UserSettingsGroup.cpp" />
     <ClCompile Include="SchemaLocalizedStrings.cpp" />
+    <ClCompile Include="SchemaXml.cpp" />
     <ClCompile Include="StandaloneECInstance.cpp" />
     <ClCompile Include="StandaloneECRelationshipInstance.cpp" />
     <ClCompile Include="StandardCustomAttributeHelper.cpp" />
@@ -157,6 +158,7 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECValue.h" />
     <ClInclude Include="ecxml.h" />
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECInstance.h" />
+    <ClInclude Include="SchemaXml.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ecobjects.mke" />

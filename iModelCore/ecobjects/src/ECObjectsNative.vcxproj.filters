@@ -236,6 +236,9 @@
     <ClCompile Include="presentation\PresentationRules\UserSettingsGroup.cpp">
       <Filter>ECPresentation\PresentationRules</Filter>
     </ClCompile>
+    <ClCompile Include="SchemaXml.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsPch.h">
@@ -350,6 +353,9 @@
       <Filter>ECUnits\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\SchemaLocalizedStrings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SchemaXml.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
