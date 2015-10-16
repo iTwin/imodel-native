@@ -312,13 +312,13 @@ TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
     
     Statement stmt;
     stmt.Prepare(*m_db, 
-        "SELECT item.ElementId, item.x01 FROM dgn_Element e,dgn_ElementItem item,dgn_ElementGeom g,dgn_RTree3d rt WHERE"
+        "SELECT item.ElementId, item.sc01 FROM dgn_Element e,dgn_ElementItem item,dgn_ElementGeom g,dgn_RTree3d rt WHERE"
              " rt.ElementId MATCH DGN_rtree_overlap_aabb(:bbox)" //          FROM R-Tree
              " AND g.ElementId=rt.ElementId"
              " AND DGN_point_min_distance_to_bbox(:testPoint, DGN_placement_aabb(g.Placement)) <= :maxDistance"  // select geoms that are within some distance of a specified point
              " AND e.Id=g.ElementId"
              " AND e.ECClassId=:ecClass"       //  select only Obstacles
-             " AND item.ElementId=e.Id AND item.x01=:propertyValue"       //                     ... with certain items
+             " AND item.ElementId=e.Id AND item.sc01=:propertyValue"       //                     ... with certain items
         );
 
     //  Initial placement
@@ -653,13 +653,13 @@ TEST_F(SqlFunctionsTest, spatialQuery)
 
     //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_rtree_overlap_aabb.sampleCode
     // This query uses DGN_rtree_overlap_aabb to find elements whose range overlaps the argument :bbox and are of class :ecClass and have
-    // item property X01 = :propertyValue.
+    // item property sc01 = :propertyValue.
     Statement stmt;
     stmt.Prepare(*m_db, 
-        "SELECT item.ElementId,item.x01 FROM dgn_RTree3d rt,dgn_Element e,dgn_ElementItem item WHERE"
+        "SELECT item.ElementId,item.sc01 FROM dgn_RTree3d rt,dgn_Element e,dgn_ElementItem item WHERE"
            " rt.ElementId MATCH DGN_rtree_overlap_aabb(:bbox)"      // select elements whose range overlaps box
            " AND e.Id=rt.ElementId AND e.ECClassId=:ecClass"        // and are of a specific ecClass 
-           " AND item.ElementId=e.Id AND item.x01=:propertyValue"   // ... with certain item value
+           " AND item.ElementId=e.Id AND item.sc01=:propertyValue"   // ... with certain item value
         );
 
     RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);

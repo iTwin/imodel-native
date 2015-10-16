@@ -93,6 +93,8 @@ private:
     DgnDbR          m_destDb;
     DgnRemapTables  m_remap;
 
+    void ComputeGcsAdjustment();
+
 public:
     //! Construct a DgnImportContext object.
     DGNPLATFORM_EXPORT DgnImportContext(DgnDbR source, DgnDbR dest);
@@ -657,6 +659,8 @@ protected:
     virtual Utf8CP _GetSuperECClassName() const {return nullptr;}
 
     void SetPersistent(bool val) const {m_flags.m_persistent = val;} //!< @private
+    void InvalidateElementId() { m_elementId = DgnElementId(); } //!< @private
+    void InvalidateCode() { m_code = Code(); } //!< @private
     
     //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
     void CopyForCloneFrom(DgnElementCR src);

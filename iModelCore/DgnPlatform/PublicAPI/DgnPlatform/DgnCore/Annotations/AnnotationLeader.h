@@ -66,7 +66,7 @@ private:
 
     DgnDbP m_dgndb;
     
-    DgnStyleId m_styleID;
+    AnnotationLeaderStyleId m_styleID;
     AnnotationLeaderStylePropertyBag m_styleOverrides;
 
     AnnotationLeaderSourceAttachmentType m_sourceAttachmentType;
@@ -83,13 +83,13 @@ public:
     AnnotationLeader(AnnotationLeaderCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     AnnotationLeaderR operator=(AnnotationLeaderCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
     static AnnotationLeaderPtr Create(DgnDbR project) { return new AnnotationLeader(project); }
-    DGNPLATFORM_EXPORT static AnnotationLeaderPtr Create(DgnDbR, DgnStyleId);
+    DGNPLATFORM_EXPORT static AnnotationLeaderPtr Create(DgnDbR, AnnotationLeaderStyleId);
     AnnotationLeaderPtr Clone() const { return new AnnotationLeader(*this); }
 
     DgnDbR GetDbR() const { return *m_dgndb; }
-    DgnStyleId GetStyleId() const { return m_styleID; }
-    DGNPLATFORM_EXPORT void SetStyleId(DgnStyleId, SetAnnotationLeaderStyleOptions);
-    AnnotationLeaderStylePtr CreateEffectiveStyle() const { return m_dgndb->Styles().AnnotationLeaderStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
+    AnnotationLeaderStyleId GetStyleId() const { return m_styleID; }
+    DGNPLATFORM_EXPORT void SetStyleId(AnnotationLeaderStyleId, SetAnnotationLeaderStyleOptions);
+    AnnotationLeaderStylePtr CreateEffectiveStyle() const { return AnnotationLeaderStyle::QueryStyle(m_styleID, *m_dgndb)->CreateEffectiveStyle(m_styleOverrides); }
     AnnotationLeaderStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
     AnnotationLeaderStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }
     AnnotationLeaderSourceAttachmentType GetSourceAttachmentType() const { return m_sourceAttachmentType; }

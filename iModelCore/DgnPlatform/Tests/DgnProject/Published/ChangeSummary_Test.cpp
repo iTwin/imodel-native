@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 // The counts recorded by change summary are quite sensitive to changes in the schema and implementation...
 // Turn this on for debugging.
-#define DUMP_CHANGE_SUMMARY 1
+// #define DUMP_CHANGE_SUMMARY 1
 
 //=======================================================================================
 //! ChangeSummaryTestFixture

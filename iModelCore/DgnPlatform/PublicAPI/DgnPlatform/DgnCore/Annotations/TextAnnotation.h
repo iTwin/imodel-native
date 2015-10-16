@@ -48,7 +48,7 @@ public:
     TextAnnotation(TextAnnotationCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     TextAnnotationR operator=(TextAnnotationCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
     static TextAnnotationPtr Create(DgnDbR project) { return new TextAnnotation(project); }
-    DGNPLATFORM_EXPORT static TextAnnotationPtr Create(DgnDbR, DgnStyleId);
+    DGNPLATFORM_EXPORT static TextAnnotationPtr Create(DgnDbR, TextAnnotationSeedId);
     TextAnnotationPtr Clone() const { return new TextAnnotation(*this); }
 
     DgnDbR GetDbR() const { return *m_dgndb; }                      
@@ -60,7 +60,7 @@ public:
     void SetFrame(AnnotationFrameCP value) { m_frame = const_cast<AnnotationFrameP>(value); }
     AnnotationLeaderCollectionCR GetLeaders() const { return m_leaders; }
     AnnotationLeaderCollectionR GetLeadersR() { return m_leaders; }
-    DGNPLATFORM_EXPORT void ApplySeed(DgnStyleId);
+    DGNPLATFORM_EXPORT void ApplySeed(TextAnnotationSeedId);
 };
 
 //! @endGroup

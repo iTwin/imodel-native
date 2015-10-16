@@ -15,7 +15,6 @@
 //__PUBLISH_SECTION_END__
 #include "ViewContext.h"  // For ILineStyleComponent
 #include "../DgnPlatform.r.h"
-#include <RmgrTools/Tools/msstrlst.h>
 #include <DgnPlatform/Tools/KeyTree.h>
 
 //  These are both used to try different configurations while testing.  They must both be eliminated

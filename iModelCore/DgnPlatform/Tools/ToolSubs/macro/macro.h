@@ -8,10 +8,14 @@
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-#include    <DgnPlatform/DesktopTools/ConfigurationManager.h>
-#include    <DgnPlatform/DesktopTools/MacroConfigurationAdmin.h>
-#include    <DgnPlatform/DesktopTools/MacroFileProcessor.h>
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-// defined in evalcnst, used by MacroFileProcessor
-extern bool evaluateSymbolAsBoolean (WCharCP p, Dgn::ConfigurationVariableLevel level, Dgn::MacroConfigurationAdmin&, Dgn::MacroFileProcessor&);
-extern int  evaluateSymbolAsInt (WCharCP p, Dgn::ConfigurationVariableLevel level, Dgn::MacroConfigurationAdmin&, Dgn::MacroFileProcessor&);
+struct MacroFileProcessor;
+struct MacroConfigurationAdmin;
+
+// implemented in evalcnst, used by MacroFileProcessor
+bool                evaluateSymbolAsBoolean (WCharCP p, Dgn::ConfigurationVariableLevel level, MacroConfigurationAdmin&, MacroFileProcessor&);
+int                 evaluateSymbolAsInt (WCharCP p, Dgn::ConfigurationVariableLevel level, MacroConfigurationAdmin&, MacroFileProcessor&);
+
+END_BENTLEY_DGNPLATFORM_NAMESPACE
+

@@ -5,8 +5,8 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <Bentley/Bentley.h>
-#include <DgnPlatform/ExportMacros.h>
+
+#include <DgnPlatformInternal.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -14,278 +14,61 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <DgnPlatform/DesktopTools/fileutil.h>
-#include <DgnPlatform/DesktopTools/msfilutl.h>
 #include <DgnPlatform/DesktopTools/ConfigurationManager.h>
 #include <DgnPlatform/Tools/stringop.h>
 #include <Bentley/BeFileListIterator.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 
-#define UF_INTERNALUSE_RELATIVEPATH    0x40
-
-static const char    *nullstr = "";  /* linked external - cant use FMTc_nullstring */
-static const WChar *wcsNullStr = L"";  /* linked external - cant use FMTc_nullstring */
-#define     MAXUI4  (4294967295)
-
-#if 0 // WIP_BEFILENAME_PORTABILITY
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    DanEast                         04/2001
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool mdlFile_compactPath (WCharP pwOutStr, WCharCP pwInStr, size_t length)
-    {
-    WString spath;
-    if (BeFileName::BeCompactPath (spath, pwInStr, (uint32_t)length) != SUCCESS)
-        return false;
-    BeStringUtilities::Wcsncpy (pwOutStr, length, spath.c_str());
-    return true;
-    }
-#endif
+#define UF_INTERNALUSE_RELATIVEPATH 0x40
+#define DOUBLEQUOTE                 0x22
 
 /*---------------------------------------------------------------------------------**//**
-* This is the same as mdlFile_parseName, except it allows the input string to have a
-*  directory list, where the directories are separated by semicolons. This behavior is
-*  the same as mdlFile_parseName in versions previous to XM.
-* @bsimethod                                                    barry.bentley   09/05
+* @bsimethod                                                    JoshSchifter    10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void mdlFile_parseNameList (WCharCP string, WCharP dev, WCharP dir, WCharP name, WCharP ext)
+void util_parseFileName (WCharCP string, WStringP dev, WStringP dir, WStringP name, WStringP ext, bool treatAsFolder)
     {
-    WChar     *p1, tmpstg[5*MAXFILELENGTH]; /* allow for MAXDRIVELENGTH\MAXDIRLENGTH\MAXFILELENGTH\MAXEXTENSIONLENGTH */
+    BeFileName::ParseName (dev, dir, name, ext, string);
 
-    if ( (NULL == string) || (0 == *string) )
+    if (NULL == string || ! treatAsFolder || NULL == name)
         return;
 
-    wcscpy (tmpstg, string);
+    /*---------------------------------------------------------------
+    Check if the file name is special directory name: '.' or '..'.
+    Note that other file names ending with '.' are not valid file names
+    on Windows/DOS and are ignored.
 
-    /* Truncate string at path separator */
-    if ((p1 = ::wcschr (tmpstg, WCSPATH_SEPARATOR_CHAR)) != 0)
-        *p1 = 0;
+    BeFileName::ParseName doesn't handle these cases well so we do
+    it here.
+    ---------------------------------------------------------------*/
+    WCharCP lastDirSep;
 
-    mdlFile_parseName (tmpstg, dev, dir, name, ext);
-    }
+    if ((lastDirSep = ::wcsrchr (string, WCSDIR_SEPARATOR_CHAR)) == NULL)
+        lastDirSep = ::wcsrchr (string, WCSALT_DIR_SEPARATOR_CHAR);
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Simon.Normand   03/2003
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void parseName (WCharCP string, WChar *dev, WChar *dir, WChar *name, WChar *ext, bool treatAsFolder)
-    {
-    WChar     *p1, *p2, *p3, tmpstg[5*MAXFILELENGTH]; /* allow for MAXDRIVELENGTH\MAXDIRLENGTH\MAXFILELENGTH\MAXEXTENSIONLENGTH */
-    size_t       index;
-
-    //NOTE: Previous versions of this function did not clear the output if a part of the filename wasn't found. That caused no 
-    //      end of problems, and I simply changed this policy. If this breaks something, fix the caller - DO NOT CHANGE THIS BACK - KAB
-    if (dev)  *dev = 0;
-    if (dir)  *dir = 0;
-    if (name) *name = 0;
-    if (ext)  *ext = 0;
-
-    if ((NULL == string) || (0 == *string))
+    if (NULL == lastDirSep)
         return;
 
-    wcscpy (tmpstg, string);
+    WCharCP lastDot = ::wcsrchr (string, L'.');
 
-    p1 = tmpstg;
+    if (NULL == lastDot || lastDot < lastDirSep)
+        return;
 
-    if ((p2 = ::wcschr (p1, L':')) != 0)  /* get device name if any           */
+    if ( (L'\0' == *(lastDot+1)) ||
+         (DOUBLEQUOTE == *(lastDot+1) && L'\0' == *(lastDot+2)) )
         {
-        *p2 = 0;
-        if (dev)
-            wcscpy (dev, p1);
-        p1 = p2+1;
-        }
-
-    index = wcslen (p1)-1;
-    p2 = ::wcsrchr (p1, WCSDIR_SEPARATOR_CHAR);
-    p3 = ::wcsrchr (p1, WCSALT_DIR_SEPARATOR_CHAR);
-    if ((p2 == NULL || p2 != (p1+index)) && (p3 == NULL || p3 != (p1+index)))
-        {
-        /*---------------------------------------------------------------
-        if string does not end with a path separator assume there is a
-        file name at the end
-        ---------------------------------------------------------------*/
-        if ((p3 = ::wcsrchr (p1, WCSDIR_SEPARATOR_CHAR)) == NULL)
-            p3 = ::wcsrchr (p1, WCSALT_DIR_SEPARATOR_CHAR);
-
-        if (!p3)
-            p3 = p1-1;                   /* get ext if dot after last dirsep  */
-                                         /* For consistency get a pointer to character before p1. As we would get
-                                            a pointer to first character before the filename */
-        if (ext)
-            *ext = 0;
-
-        if ( (p2 = ::wcsrchr (p1, '.')) && p2 >= p3)
+        size_t namelen = lastDot - lastDirSep;
+        switch (namelen)
             {
-            /*---------------------------------------------------------------
-            Check if the file name is special directory name: '.' or '..'.
-            Note that other file names ending with '.' are not valid file names
-            on Windows/DOS and are ignored.
-            ---------------------------------------------------------------*/
-            if ( (true == treatAsFolder) &&
-                 (L'\0' == *(p2+1)) ||
-                 (DOUBLEQUOTE == *(p2+1) && L'\0' == *(p2+2)))
-                {
-                size_t namelen = p2 - p3;
-                switch (namelen)
-                    {
-                    case 1: /* The name is '.'  */
-                        break;
-                    case 2: /* The name can be '..' */
-                        if ('.' != *(p3+1)) /* if name is not '..' it is a normal file name */
-                            *p2 = 0;
-                        break;
-                    default:
-                        *p2 = 0;
-                        break;
-                    }
-                }
-            else
-                *p2 = 0; /* Normal extension */
-
-            if (ext) /* Handle extension only if we have found one */
-                {
-                if (0 != *p2)  /* Extension is not found */
-                    {
-                    *ext = L'\0';
-                    }
-                else
-                    {
-                    size_t extlen;
-
-                    wcscpy (ext, p2+1);
-
-                    extlen = wcslen (ext);
-                    /* if the file name was in a pair of quotes, remove the ending quote now */
-                    if  (extlen > 0 && ext[extlen-1] == DOUBLEQUOTE)
-                        ext[extlen-1] = 0;
-                    }
-                }
-            }
-                                       /* get file name if any              */
-
-        if ((p2 = ::wcsrchr (p1, WCSDIR_SEPARATOR_CHAR)) ||
-            (p2 = ::wcsrchr (p1, WCSALT_DIR_SEPARATOR_CHAR)))
-            {                          /* if directory name exists          */
-            if (name)
-                wcscpy (name, p2+1);
-            * (p2+1) = 0;
-            }
-        else                           /* if no dir name before file name   */
-            {                          /*    use whole string               */
-            if (name)
-                wcscpy (name, p1);
-            *p1 = 0;
+            case 1: /* The name is '.'  */
+                *name = L".";
+                break;
+            case 2: /* The name can be '..' */
+                if (L'.' == *(lastDirSep+1))
+                    *name = L"..";
+                break;
             }
         }
-
-    if (*p1 && dir)                   /* whats left of string is dir name  */
-        wcscpy (dir, p1);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Unicode version of mdlFile_parseNameA
-* @bsimethod                                                    YogeshSajanikar 05/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void mdlFile_parseName (WCharCP string, WCharP dev, WCharP dir, WCharP name, WCharP ext)
-    {
-    parseName (string, dev, dir, name, ext, false /*Always treat as file*/);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Unicode version of mdlFile_buildSeparatedListA returns - pointer to outstg on success or NULL on failure
-* @bsimethod                                                  JVB             03/2003
-+---------------+---------------+---------------+---------------+---------------+------*/
-WChar *mdlFile_buildSeparatedList
-(
-WCharP  outstg,          /* <= Output string                                      */
-WCharCP usersep,         /* => String used to separate strings. If a NULL pointer */
-                   /*    is passed, the system path separator character     */
-                   /*    (patsep) will be used. Pass the null string ("")   */
-                   /*    for no separator                                   */
-...                /* => Variable length list of strings (char *) to be     */
-                   /*    concatenated. The last item must be NULL           */
-)
-    {
-    va_list     arg;
-    WCharP    argstg;
-    WCharCP   sepstg;
-
-    if (outstg)                        /* if outstg is a NULL pointer, fail */
-        *outstg = 0;                   /*   if not, make it a null string   */
-    else
-        return (NULL);
-                                       /* find string separator to use      */
-    sepstg = usersep ? usersep : WCSPATH_SEPARATOR; //PATH_SEPARATOR
-    va_start (arg, usersep);           /* start variable argument list      */
-    argstg = va_arg (arg, WChar*);      /* get pointer to first argument          */
-
-    if (argstg)
-        do
-            {
-            wcscat (outstg, argstg);
-            argstg = va_arg (arg, WChar*);   /* get next argument in list    */
-            if (argstg && *argstg)
-                wcscat (outstg, sepstg);
-            } while (argstg);
-
-    va_end (arg);                      /* reset argument list */
-    return (outstg);
-
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Unicode version of mdlFile_buildNameA
-* @bsimethod                                                  Simon.Normand   03/2003
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public void     mdlFile_buildName
-(
-WCharP    outstg,    /* <= output string                        */
-WCharCP   dev,       /* => input device spec                    */
-WCharCP   dir,       /* => input directory                      */
-WCharCP   name,      /* => input name                           */
-WCharCP   ext        /* => input extension                      */
-)
-    {
-    WCharCP       devP, nameP, extP;
-    WCharCP       dirP;
-    WCharCP       devsepP, dirsepP, namesepP;
-    static WChar  colon[] = L":";
-    static WChar  period[] = L".";
-    WChar         tmpstring[3*MAXFILELENGTH];     /* allow for MAXDRIVELENGTH\MAXDIRLENGTH\MAXFILELENGTH\MAXEXTENSIONLENGTH */
-    WChar         tmpdir[MAXDIRLENGTH];
-    size_t          len;
-    bool            bDirsep = false;
-
-    /*
-    *   If directory ends with a directory separator, get rid of it so
-    *   we can add it later.
-    *   Works great unless just a dirsep is passed in (ie len = 1).
-    *   Must compensate for this below.
-    */
-    if (dir)
-        {
-        wcscpy (tmpdir, dir);
-
-        if ( (len = wcslen (dir)-1) != -1)
-            {
-            if ( (dir[len] == WCSDIR_SEPARATOR_CHAR) || (dir[len] == WCSALT_DIR_SEPARATOR_CHAR) )
-                {
-                if (len == 0)
-                    bDirsep = true;
-                else
-                    tmpdir[len] = '\0';
-                }
-            }
-        }
-
-    devP  = dev  ? dev  :  wcsNullStr;
-    devsepP = (dev && *dev) ? colon :  wcsNullStr;
-    dirP  = dir  ? tmpdir  :  wcsNullStr;
-    dirsepP = (dir && name && *dir && !bDirsep && *name) ? WCSDIR_SEPARATOR :  wcsNullStr;
-    nameP = name ? name :  wcsNullStr;
-    namesepP = (name && ext && *name && *ext) ? period :  wcsNullStr;
-    extP  = ext  ? ext  :  wcsNullStr;
-
-    mdlFile_buildSeparatedList (tmpstring,  wcsNullStr, devP, devsepP, dirP, dirsepP, nameP, namesepP, extP, NULL);
-    wcscpy (outstg, tmpstring);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -301,14 +84,14 @@ static int findFile_tryOpeningFile (BeFile* file, WCharCP filename, int option)
     if ((option & UF_OPEN_WRITE) || (option & UF_TRY_WRITE_THEN_READ))
         {
         existed = BeFileName::DoesPathExist (filename);
-        status  = tmpFile.Open (filename, BeFileAccess::ReadWrite, BeFileSharing::None) == SUCCESS? SUCCESS: ERROR;
+        status  = tmpFile.Open (filename, BeFileAccess::ReadWrite) == BeFileStatus::Success? SUCCESS: ERROR;
 
         if ((status != SUCCESS) && (option & UF_TRY_WRITE_THEN_READ))
             {
             BeFileStatus tmpStatus;
 
-            tmpStatus = tmpFile.Open (filename, BeFileAccess::Read, BeFileSharing::Read);
-            status = (tmpStatus == SUCCESS) ? UF_WTR_SUCCESS : (StatusInt)tmpStatus;
+            tmpStatus = tmpFile.Open (filename, BeFileAccess::Read);
+            status = (tmpStatus == BeFileStatus::Success) ? UF_WTR_SUCCESS : static_cast<StatusInt>(tmpStatus);
             }
 
         if (status == 0 || status == UF_WTR_SUCCESS)
@@ -328,7 +111,7 @@ static int findFile_tryOpeningFile (BeFile* file, WCharCP filename, int option)
         status = 0;
         if (!(option & UF_JUST_BUILD))
             {
-            status = tmpFile.Create (filename) == SUCCESS? SUCCESS: ERROR;
+            status = tmpFile.Create (filename) == BeFileStatus::Success? SUCCESS: ERROR;
             if (status == 0)
                 {
                 if (NULL != file)
@@ -343,7 +126,10 @@ static int findFile_tryOpeningFile (BeFile* file, WCharCP filename, int option)
         }
     else if (NULL != file)
         {
-        status = tmpFile.Open (filename, BeFileAccess::Read, BeFileSharing::Read) == SUCCESS? SUCCESS: ERROR;
+        status = tmpFile.Open (filename, BeFileAccess::Read) == BeFileStatus::Success? SUCCESS: ERROR;
+
+        if (SUCCESS == status)
+            file->Swap (tmpFile);
         }
     else
         {
@@ -357,23 +143,23 @@ static int findFile_tryOpeningFile (BeFile* file, WCharCP filename, int option)
 * fourth step - build file name, check existance, attempt to open.
 * @bsimethod                                                    JVB             02/89
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int     findFile_buildFileNameAndOpen
+static int      findFile_buildFileNameAndOpen
 (
-BeFile          *file,          /* <= File object       (or NULL)      */
-wchar_t         *outName,       /* <= Target file name                 */
-wchar_t const   *dev,           /* => Device            (or NULL)      */
-wchar_t const   *dir,           /* => Directory         (or NULL)      */
-wchar_t const   *name,          /* => Root file name    (or NULL)      */
-wchar_t const   *ext,           /* => File extension    (or NULL)      */
-wchar_t const   *curdev,        /* => Current/default device           */
-wchar_t const   *curdir,        /* => Current/default directory        */
+BeFile*         file,           /* <= File object       (or NULL)      */
+WStringR        outName,        /* <= Target file name                 */
+WCharCP         dev,            /* => Device            (or NULL)      */
+WCharCP         dir,            /* => Directory         (or NULL)      */
+WCharCP         name,           /* => Root file name    (or NULL)      */
+WCharCP         ext,            /* => File extension    (or NULL)      */
+WCharCP         curdev,         /* => Current/default device           */
+WCharCP         curdir,         /* => Current/default directory        */
 int             option          /* => Find file options UF_...         */
 )
     {
     int         status   = ERROR;
     bool        noCurDir = (0 != (option & UF_NO_CUR_DIR));
 
-    *outName = 0;
+    outName.clear();
 
     // if no name and no extension, we won't find a file.
     if ( (NULL == name || 0 == *name) && (NULL == ext || 0 == *ext) )
@@ -397,10 +183,11 @@ int             option          /* => Find file options UF_...         */
                 dev = curdev;
             }
 
-        wcscat (outName, dev);
-        // if there is a device, follow it with a :
-        if (0 != *outName)
-            wcscat (outName, L":");
+        if ( (NULL != dev) && (0 != *dev) )
+            {
+            outName.append (dev);
+            outName.append (L":");
+            }
         }
 #endif
 
@@ -413,34 +200,36 @@ int             option          /* => Find file options UF_...         */
             return ERROR;
 
         /* directory not specified, use current directory */
-        wcscat (outName, curdir);
+        outName.append (curdir);
         }
     else if ((WCSDIR_SEPARATOR_CHAR == *dir) || (WCSALT_DIR_SEPARATOR_CHAR == *dir))
         {
         /* full path to directory specified, use it */
-        wcscat (outName, dir);
+        outName.append (dir);
         }
     else
         {
         /* directory specified as a relative path based on current directory */
         if (!noCurDir)
-            wcscat (outName, curdir);
-        wcscat (outName, dir);
+            outName.append (curdir);
+        outName.append (dir);
         }
 
     if (0 != *name)
-        wcscat (outName, name);
+        outName.append (name);
 
     if (0 != *ext)
         {
-        wcscat (outName, L".");
-        wcscat (outName, ext);
+        outName.append (L".");
+        outName.append (ext);
         }
 
-    if (wcslen (outName) < MAXFILELENGTH)
-        status = findFile_tryOpeningFile (file, outName, option);
+    static bool s_ignoreFileLengthTooLong = true;           // With BeFileName now WString based, we can handle arbitrarily long names (RayB  06/2013).
+
+    if (s_ignoreFileLengthTooLong || outName.length() < MAXFILELENGTH)
+        status = findFile_tryOpeningFile (file, outName.c_str(), option);
     else
-        status = DGNPLATFORMTOOLS_STATUS_NameTooLong;
+        status = FINDFILESTATUS_NameTooLong;
 
     return  status;
     }
@@ -452,7 +241,7 @@ int             option          /* => Find file options UF_...         */
 static int     findFile_searchDirectoryList
 (
 BeFile          *outFileH,          /* <= */
-wchar_t         *outFileNameP,      /* <= */
+WStringR        outFileName,        /* <= */
 wchar_t const   *inFileNameP,       /* => */
 wchar_t const   *dirListP,          /* => */
 wchar_t const   *defaultFileNameP,  /* => */
@@ -462,51 +251,42 @@ int             option              /* => */
 )
     {
     int         returnValue;
-    wchar_t     inDir[MAXDIRLENGTH];
-    wchar_t     inName[MAXNAMELENGTH];
-    wchar_t     inExt[MAXEXTENSIONLENGTH];
-    wchar_t     inDev[MAXDEVICELENGTH];
+    WString     inDev, inDir, inName, inExt;
     bool        treatAsFolder = (option & UF_FIND_FOLDER) ? true : false;
 
     /* get pieces that were passed in */
-    parseName (inFileNameP, inDev, inDir, inName, inExt, treatAsFolder);
+    util_parseFileName (inFileNameP, &inDev, &inDir, &inName, &inExt, treatAsFolder);
 
     /*-----------------------------------------------------------------------------------
     Handle relative path on input name - see comment in util_findFile
     Combine directory and name, zero out directory.
     -----------------------------------------------------------------------------------*/
-    if ((option & UF_INTERNALUSE_RELATIVEPATH) && (0 != *inDir) && (0 != *inName))
+    if ((option & UF_INTERNALUSE_RELATIVEPATH) && ( ! inDir.empty()) && ( ! inName.empty()))
         {
-        wchar_t tmpName[MAXDIRLENGTH];
-        mdlFile_buildName (tmpName, NULL, inDir, inName, NULL);
-        wcscpy (inName, tmpName);
-        inDir[0] = 0;
+        BeFileName::BuildName (inName, NULL, inDir.c_str(), inName.c_str(), NULL);
+        inDir.clear();
         }
 
     /* if all pieces are supplied, no need to go thru list */
-    if (inDev[0] && inDir[0] && inName[0] && inExt[0])
+    if ( ! inDir.empty() && ! inDev.empty() && ! inName.empty() && ! inExt.empty())
         {
-        returnValue = findFile_buildFileNameAndOpen (outFileH, outFileNameP, inDev, inDir, inName, inExt, currDevP, currDirP, option);
+        WString builtFileName;
+        returnValue = findFile_buildFileNameAndOpen (outFileH, builtFileName, inDev.c_str(), inDir.c_str(), inName.c_str(), inExt.c_str(), currDevP, currDirP, option);
+        outFileName = builtFileName;
         }
     else
         {
         wchar_t *tempDirP, *pHead;
-        wchar_t dir[MAXDIRLENGTH];
-        wchar_t name[MAXNAMELENGTH];
-        wchar_t ext[MAXEXTENSIONLENGTH];
-        wchar_t dev[MAXDEVICELENGTH];
-        wchar_t defaultDir[MAXDIRLENGTH];
-        wchar_t defaultName[MAXNAMELENGTH];
-        wchar_t defaultExt[MAXEXTENSIONLENGTH];
-        wchar_t defaultDev[MAXDEVICELENGTH];
-        wchar_t builtFileName[MAXFILELENGTH*2];
+        WString dir, name, ext, dev;
+        WString defaultDir, defaultName, defaultExt, defaultDev;
+        WString builtFileName;
         size_t  dirListLength;
         bool    triedDirListAsPath      = false;
         bool    truncateAtPathSeparator = true;
         bool    foundPathSeparator      = false;
 
         /* get the default pieces */
-        parseName (defaultFileNameP, defaultDev, defaultDir, defaultName, defaultExt, treatAsFolder);
+        util_parseFileName (defaultFileNameP, &defaultDev, &defaultDir, &defaultName, &defaultExt, treatAsFolder);
 
         /* allocate space on the stack for a working copy of the list of directories */
         if (NULL == (pHead = static_cast<wchar_t*>(_alloca (dirListLength = ((wcslen(dirListP)+1) * sizeof (wchar_t))))))
@@ -536,35 +316,33 @@ int             option              /* => */
                 }
 
             /* initialize current working pieces from the input */
-            dev[0] = dir[0] = name[0] = ext[0] = 0;
-            if (0 != inDev[0])
-                wcscpy (dev,  inDev);
-            if (0 != inDir[0])
-                wcscpy (dir,  inDir);
-            if (0 != inName[0])
-                wcscpy (name, inName);
-            if (0 != inExt)
-                wcscpy (ext,  inExt);
+            dev  = inDev;
+            dir  = inDir;
+            name = inName;
+            ext  = inExt;
 
             /* use the current directory from the list, tempDirP, to fill in unsupplied pieces */
-            parseName (tempDirP, (0 != inDev[0]) ? NULL:dev, (0 != inDir[0]) ? NULL:dir, (0 != inName[0]) ? NULL:name, (0 != inExt[0]) ? NULL:ext, treatAsFolder);
+            util_parseFileName (tempDirP, (dev.empty())  ?  &dev  : NULL,
+                                          (dir.empty())  ?  &dir  : NULL,
+                                          (name.empty()) ?  &name : NULL,
+                                          (ext.empty())  ?  &ext  : NULL,      treatAsFolder);
 
             /* use defaults to fill in pieces that are still not supplied */
-            if (0 == dev[0])
-                wcscpy (dev,  defaultDev);
-            if (0 == dir[0])
-                wcscpy (dir,  defaultDir);
-            if (0 == name[0])
-                wcscpy (name, defaultName);
-            if (0 == ext[0])
-                wcscpy (ext,  defaultExt);
+            if (dev.empty())
+                dev = defaultDev;
+            if (dir.empty())
+                dir = defaultDir;
+            if (name.empty())
+                name = defaultName;
+            if (ext.empty())
+                ext = defaultExt;
 
             /* have all the pieces, check for the file */
-            returnValue = findFile_buildFileNameAndOpen (outFileH, builtFileName, dev, dir, name, ext, currDevP, currDirP, option);
+            returnValue = findFile_buildFileNameAndOpen (outFileH, builtFileName, dev.c_str(), dir.c_str(), name.c_str(), ext.c_str(), currDevP, currDirP, option);
 
             // copy to outFileName, unless we couldn't open it and it's the case where we're trying the full dirList as the path.
-            if ( (SUCCESS == returnValue) || (UF_WTR_SUCCESS == returnValue) || ( (DGNPLATFORMTOOLS_STATUS_NameTooLong != returnValue) && truncateAtPathSeparator) )
-                wcscpy (outFileNameP, builtFileName);
+            if ( (SUCCESS == returnValue) || (UF_WTR_SUCCESS == returnValue) || ( (FINDFILESTATUS_NameTooLong != returnValue) && truncateAtPathSeparator) )
+                outFileName = builtFileName;
 
             if (SUCCESS == returnValue)
                 break;
@@ -595,7 +373,7 @@ int             option              /* => */
 static int     findFile_breakUpEnvVar
 (
 BeFile          *pHandle,
-wchar_t         *outName,
+WStringR        outName,
 wchar_t const   *inName,
 wchar_t const   *envvar,
 wchar_t const   *defaultFileName,
@@ -639,6 +417,7 @@ int             option
     return  rtnval;
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * ** util_findFile
 * short *handle <= file handle or -1 if no file was opened. NULL may be passed to only check if operation would succeed
@@ -654,70 +433,99 @@ int             option
 * for read options and last for write options. This option reverses the order Use 0 for default. open for read
 * @bsimethod                                                    JVB             02/89
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public int      util_findFile
+Public int      util_findFileDeprecated
 (
-BeFile          *pHandle,           /* <= File handle                          */
-wchar_t         *outName,           /* <= Output file name                     */
-const wchar_t   *inName,            /* => Input file name                      */
-const wchar_t   *envvar,            /* => List of related names/logicals       */
-const wchar_t   *defaultFileName,   /* => Default name and/or extension        */
+BeFile*         pHandle,            /* <= File handle                          */
+WCharP          outName,            /* <= Output file name                     */
+WCharCP         inName,             /* => Input file name                      */
+WCharCP         envvar,             /* => List of related names/logicals       */
+WCharCP         defaultFileName,    /* => Default name and/or extension        */
 int             option              /* => Open mode / search options           */
 )
     {
-    int         rtnval = 1;
-    wchar_t     localOutputFileName[MAXFILELENGTH];
-    wchar_t     localenv[4096];
-    wchar_t     localIn[MAXFILELENGTH];
-    wchar_t     tempString[MAXFILELENGTH];
+    int         status;
+    BeFileName  outFileName;
 
-    wchar_t     *pchr;
-    Byte read;
-#if 0 // WIP_BEFILENAME_PORTABILITY - can't depend on current working directory
-    wchar_t     cwdDirectory[MAXDIRLENGTH];
-    wchar_t     cwdDevice[MAXDEVICELENGTH];
-    wchar_t     cwdPath[MAXDIRLENGTH];
+    if (SUCCESS == (status = util_findFile (pHandle, ((NULL == outName) ? NULL : &outFileName), inName, envvar, defaultFileName, option)) && NULL != outName)
+        BeStringUtilities::Wcsncpy (outName, MAXFILELENGTH, outFileName.GetName());
 
-    // initialize all directories, etc.
-    cwdDirectory[0] = cwdPath[0] = cwdDevice[0] = 0;
+    return status;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* ** util_findFile
+* short *handle <= file handle or -1 if no file was opened. NULL may be passed to only check if operation would succeed
+* char *outName, <= complete file spec. drive+path+file+extension. must be MAXFILELENGTH chars long or NULL
+* char *inName, => Any portion of full file spec. Always used first. Should be root file name (or NULL)
+* char *envvar, => Any portion of full file spec. Always used second. May contain environment variables and/or multiple parts of file specs
+* separated by sepchar. (or NULL).
+* char *defaultFile, => Any portion of full file spec. Used last. Usually, the defaultfile extension. (or NULL)
+* int option => Option flags. (may be OR'ed togeather) UF_OPEN_WRITE - opens new file, will not delete an existing file UF_OPEN_CREATE - will
+* delete existing file UF_TRY_WRITE_THEN_READ - trys to open the file for write. If that fails it trys to open for read. Returns SUCCESS if
+* opened for write or UF_WTR_SUCCESS if open for read. UF_CUR_DIR_SWAP - by default the current directory will be searched first for read
+* options and last for write options. This option reverses the order UF_CUR_DIR_SWAP - by default the current directory will be searched first
+* for read options and last for write options. This option reverses the order Use 0 for default. open for read
+* @bsimethod                                                    JVB             02/89
++---------------+---------------+---------------+---------------+---------------+------*/
+Public StatusInt      util_findFile
+(
+BeFile*         pHandle,            /* <= File handle                          */
+BeFileNameP     outName,            /* <= Output file name                     */
+WCharCP         inName,             /* => Input file name                      */
+WCharCP         envvar,             /* => List of related names/logicals       */
+WCharCP         defaultFileName,    /* => Default name and/or extension        */
+int             option              /* => Open mode / search options           */
+)
+    {
+    int         rtnval;
+    WString     localenv, localIn, localOutputFileName;;
+    bool        read;
+    WString     cwdDirectory, cwdDevice, cwdPath;
 
     // get the current path and make sure it ends with the directory separator.
-    BeStringUtilities::Wcsncpy (cwdPath, _countof(cwdPath)-1, BeGetCwd ().c_str());
+    BeFileName::GetCwd (cwdPath);
 
-    if ( (0 != cwdPath[0]) && (WCSDIR_SEPARATOR_CHAR != cwdPath[wcslen (cwdPath)-1]) )
-        wcscat (cwdPath, WCSDIR_SEPARATOR);
+    if ( ( ! cwdPath.empty()) && (WCSDIR_SEPARATOR_CHAR != *(cwdPath.end() - 1)) )
+        cwdPath.append (WCSDIR_SEPARATOR);
 
     // parse the current working path into its device and dir
-    parseName (cwdPath, cwdDevice, cwdDirectory, NULL, NULL, true);
-#endif
+    util_parseFileName (cwdPath.c_str(), &cwdDevice, &cwdDirectory, NULL, NULL, true);
 
     if ((NULL != envvar) && (0 != *envvar) )
-        BeStringUtilities::Wcsncpy (localenv, _countof (localenv), envvar);
-    else
-        localenv[0] = 0;
+        localenv = envvar;
 
     read = !((option & UF_OPEN_WRITE) || (option & UF_OPEN_CREATE) || (option & UF_TRY_WRITE_THEN_READ));
 
-    localIn[0] = tempString[0] = 0;
     if ( (NULL != inName) && (0 != *inName) )
         {
-        wchar_t testDev[MAXDEVICELENGTH];
-        wchar_t testDir[MAXDIRLENGTH];
+        WString     tempString = inName, deviceString;
 
-        // if there's a logical name in inName, expand it
-        wcscpy (tempString, inName);
-        if ((pchr = ::wcschr (tempString, L':')) && !(*pchr=0) && BeStringUtilities::Wcsupr (tempString) && ConfigurationManager::IsVariableDefined  (tempString))
+        size_t      colonIndex = tempString.find_first_of (L':');
+
+        if (WString::npos != colonIndex && 
+            colonIndex > 0 &&
+            ! (deviceString = tempString.substr (0, colonIndex)).empty() &&
+            ConfigurationManager::IsVariableDefined  (deviceString.c_str()))
             {
             // prepend the logical that's in inName to
-            mdlFile_buildSeparatedList (localenv, NULL, tempString, envvar, NULL);
+            localenv = deviceString;
+
+            if (NULL != envvar && 0 != envvar[0])
+                {
+                localenv.append (WCSPATH_SEPARATOR);
+                localenv.append (envvar);
+                }
 
             // if opening for read, do current directory last if we have an environment variable.
             if (read)
                 option |= UF_CUR_DIR_SWAP;
 
             // if any part of the specification follows the environment variable, copy it to localIn and parse from there.
-            if (0 != *(pchr+1))
+            size_t      remainingIndex = colonIndex + 1;
+            if (remainingIndex < tempString.size())
                 {
-                wcscpy (localIn, pchr+1);
+                localIn = tempString.substr (remainingIndex, tempString.size() - remainingIndex);
 
                 /*-----------------------------------------------------------------------
                 If there was a logical on the input name and the input name contains a
@@ -725,9 +533,10 @@ int             option              /* => Open mode / search options           *
                 input name as a relative path i.e. don't parse off the directory in later
                 stages of searching.
                 -----------------------------------------------------------------------*/
-                testDev[0] = testDir[0] = 0;
-                parseName (localIn, testDev, testDir, NULL, NULL, TO_BOOL (option & UF_FIND_FOLDER));
-                if ((0 == testDev[0]) && (0 != testDir[0]) && (WCSDIR_SEPARATOR_CHAR != testDir[0]))
+                WString testDev, testDir;
+
+                util_parseFileName (localIn.c_str(), &testDev, &testDir, NULL, NULL, TO_BOOL (option & UF_FIND_FOLDER));
+                if (testDev.empty() && ! testDir.empty() && (WCSDIR_SEPARATOR_CHAR != testDir[0]))
                     option |= UF_INTERNALUSE_RELATIVEPATH;
                 }
             }
@@ -738,55 +547,50 @@ int             option              /* => Open mode / search options           *
                 option |= UF_INTERNALUSE_RELATIVEPATH;
             else
                 {
+                WString testDev, testDir;
+
                 // if no device, and there's a directory that doesn't start with DIR_SEPARATOR_CHAR, treat as a relative path.
-                testDev[0] = testDir[0] = 0;
-                parseName (inName, testDev, testDir, NULL, NULL, TO_BOOL (option & UF_FIND_FOLDER));
-                if ((0 == testDev[0]) && (0 != testDir[0]) && (WCSDIR_SEPARATOR_CHAR != testDir[0]))
+                util_parseFileName (inName, &testDev, &testDir, NULL, NULL, TO_BOOL (option & UF_FIND_FOLDER));
+                if ((testDev.empty()) && ( ! testDir.empty()) && (WCSDIR_SEPARATOR_CHAR != testDir[0]))
                     option |= UF_INTERNALUSE_RELATIVEPATH;
                 }
 
-            wcscpy (localIn, inName);
+            localIn = inName;
             }
         }
 
-#if 0 // WIP_BEFILENAME_PORTABILITY - can't depend on current working directory
+
     // check the current directory first, if appropriate.
     if ( (0 == (option & UF_NO_CUR_DIR)) && ( (read && (! (option & UF_CUR_DIR_SWAP))) || (!read && (option & UF_CUR_DIR_SWAP))))
         {
-        rtnval = findFile_searchDirectoryList (pHandle, localOutputFileName, localIn, cwdPath, defaultFileName, cwdDevice, cwdDirectory, option);
+        rtnval = findFile_searchDirectoryList (pHandle, localOutputFileName, localIn.c_str(), cwdPath.c_str(), defaultFileName, cwdDevice.c_str(), cwdDirectory.c_str(), option);
         }
     else
         {
         rtnval = 1;
         }
-#endif
 
     // didn't find it in the current directory, search the environment variables
     if (SUCCESS != rtnval)
         {
-#if 0 // WIP_BEFILENAME_PORTABILITY - can't depend on current working directory
-        rtnval = findFile_breakUpEnvVar (pHandle, localOutputFileName, localIn, localenv, defaultFileName, cwdDevice, cwdDirectory, option);
-#else
-        rtnval = findFile_breakUpEnvVar (pHandle, localOutputFileName, localIn, localenv, defaultFileName, NULL, NULL, option | UF_NO_CUR_DIR);
-#endif
+        rtnval = findFile_breakUpEnvVar (pHandle, localOutputFileName, localIn.c_str(), localenv.c_str(), defaultFileName, cwdDevice.c_str(), cwdDirectory.c_str(), option);
         }
 
-#if 0 // WIP_BEFILENAME_PORTABILITY - can't depend on current working directory
     // didn't find it in the environment variable list. If we wanted to look in the current directory last, try that now.
     if ( (SUCCESS != rtnval) && (UF_WTR_SUCCESS != rtnval) )
         {
         if ( (0 == (option & UF_NO_CUR_DIR)) && ( (read && (option & UF_CUR_DIR_SWAP)) || (!read && (! (option & UF_CUR_DIR_SWAP))) ) )
             {
-            rtnval = findFile_searchDirectoryList (pHandle, localOutputFileName, localIn, cwdPath, defaultFileName, cwdDevice, cwdDirectory, option);
+            rtnval = findFile_searchDirectoryList (pHandle, localOutputFileName, localIn.c_str(), cwdPath.c_str(), defaultFileName, cwdDevice.c_str(), cwdDirectory.c_str(), option);
             }
         }
-#endif
 
     if (NULL != outName)
         {
-        WString fullName;
-        BeFileName::BeGetFullPathName (fullName, localOutputFileName);
-        BeStringUtilities::Wcsncpy (outName, MAXFILELENGTH, fullName.c_str());
+        WString         fullName;
+
+        BeFileName::BeGetFullPathName (fullName, localOutputFileName.c_str());
+        outName->SetName (fullName.c_str());
         }
 
     return  rtnval;
@@ -797,9 +601,9 @@ int             option              /* => Open mode / search options           *
 +---------------+---------------+---------------+---------------+---------------+------*/
 Public int      util_findFileInPath
 (
-WCharP  expandedNameP,
-WCharCP filenameP,
-WCharCP extensionP
+BeFileNameP     expandedNameP,
+WCharCP         filenameP,
+WCharCP         extensionP
 )
     {
     WString     path;

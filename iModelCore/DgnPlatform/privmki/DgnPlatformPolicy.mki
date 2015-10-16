@@ -99,6 +99,5 @@ DelayLoadByDefault = 1
 # Define these to handle multi-platform.
 DgnPlatformLib      = $(libprefix)DgnPlatform$(libext)
 V8rmgrsubsLib       = $(libprefix)V8RmgrTools$(libext)
-ToolsubsLib         = $(libprefix)Toolsubs$(libext)
 BentleyGeomLib      = $(libprefix)BentleyGeom$(libext)
 ECNativeObjectsLib  = $(libprefix)ECObjects$(libext)

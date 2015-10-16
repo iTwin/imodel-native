@@ -139,6 +139,7 @@ public:
     DGNPLATFORM_EXPORT bool IsResolved() const;
     virtual DgnGlyphCP _FindGlyphCP(DgnGlyph::T_Id, DgnFontStyle) const = 0;
     DgnGlyphCP FindGlyphCP(DgnGlyph::T_Id glyphId, DgnFontStyle fontStyle) const { return _FindGlyphCP(glyphId, fontStyle); }
+    DGNPLATFORM_EXPORT static DgnFontStyle ComputeFontStyle(bool isBold, bool isItalic);
 };
 
 //=======================================================================================

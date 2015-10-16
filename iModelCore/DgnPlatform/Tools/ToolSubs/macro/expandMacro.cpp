@@ -5,14 +5,11 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <Bentley/Bentley.h>
-#include <DgnPlatform/ExportMacros.h>
+#include <DgnPlatformInternal.h>
 #include <DgnPlatform/Tools/stringop.h>
 #include <DgnPlatform/DesktopTools/envvutil.h>
 #include <DgnPlatform/DesktopTools/fileutil.h>
-#include <RmgrTools/Tools/heapsig.h>
-#include <RmgrTools/Tools/memutil.h>
-#include <RmgrTools/Tools/UglyStrings.h>
+#include <DgnPlatform/DesktopTools/MacroConfigurationAdmin.h>
 #include "macro.h"
 
 USING_NAMESPACE_BENTLEY_DGN
@@ -21,7 +18,6 @@ USING_NAMESPACE_BENTLEY_DGN
 #define SQUOTE                  (0x27)
 #define SPACE                   (0x20)
 #define TABCHAR                 (0x9)
-#define CFGVAR_DEFINED_NULL         ((void *)-1) /* defined but no translation */
 
 #define ISSEPARATOR(c)  ((DIR_SEPARATOR_CHAR == (c)) || (ALT_DIR_SEPARATOR_CHAR == (c)))
 #define ISWHITESPACE(c) ((SPACE == (c)) || (TABCHAR == (c)))
@@ -35,32 +31,10 @@ static bool     isDirSeparator (WChar c)
     return (c == '/' || c == '\\' || c == ':');
     }
 
-enum    ExpandStatus
-    {
-    EXPAND_Success          = 0,
-    EXPAND_NullExpression,
-    EXPAND_Circular,
-    EXPAND_DollarNotFollowedByParentheses,
-    EXPAND_NoCloseParentheses,
-    EXPAND_SyntaxErrorAfterDollarSign,
-    EXPAND_SyntaxErrorExpansion,
-    EXPAND_SyntaxErrorUnmatchedQuote,
-    EXPAND_SyntaxErrorUnmatchedParen,
-    EXPAND_SyntaxErrorUnmatchedBrace,
-    EXPAND_SyntaxErrorInOperand,
-    EXPAND_SyntaxErrorBadOperator,
-    };
-
-struct  MacroExpander;
 
 /*=================================================================================**//**
 * @bsiclass                                     Barry.Bentley                   01/2012
 +===============+===============+===============+===============+===============+======*/
-struct      ExpandOperator
-{
-virtual ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) = 0;
-};
-
 struct      PossibleMacroOperator : ExpandOperator
 {
 virtual ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpander, WStringR result, WStringR operandString, bool immediateExpansion) override;
@@ -147,33 +121,20 @@ virtual ExpandStatus Execute (size_t& errorPosition, MacroExpander& macroExpande
 };
 
 
-/*=================================================================================**//**
-* @bsiclass                                     Sam.Wilson                      02/2012
-+===============+===============+===============+===============+===============+======*/
-struct      MacroExpander
-{
 enum
     {
     MAX_EXPAND_RECURSIONS   = 128,
     };
 
-struct  OperatorInfo
-    {
-    WCharCP         m_name;
-    ExpandOperator* m_operator;
-    };
 
-MacroConfigurationAdmin&    m_macroCfgAdmin;
-int                         m_recursionDepth; // this is the recursion level of macro expansions (i.e., macros that reference other macros).
-bool                        m_expandOnlyIfFullyDefined;
-bool                        m_expandAllImmediately;
-bool                        m_formatExpansion;
-ConfigurationVariableLevel  m_cfgLevel;
+// ------------------------------------
+// Start of MacroExpander Implementation
+// ------------------------------------
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-MacroExpander (MacroConfigurationAdmin& macroCfgAdmin, MacroConfigurationAdmin::ExpandOptions const& options) : m_macroCfgAdmin (macroCfgAdmin)
+MacroExpander::MacroExpander (MacroConfigurationAdmin& macroCfgAdmin, MacroConfigurationAdmin::ExpandOptions const& options) : m_macroCfgAdmin (macroCfgAdmin)
     {
     m_recursionDepth                = 0;
     m_expandOnlyIfFullyDefined      = options.m_expandOnlyIfFullyDefined;
@@ -185,7 +146,7 @@ MacroExpander (MacroConfigurationAdmin& macroCfgAdmin, MacroConfigurationAdmin::
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Trefz   06/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool CharIsLeftParen (WChar thisChar, bool immediate) 
+/* static */ bool       MacroExpander::CharIsLeftParen (WChar thisChar, bool immediate)
     {
     return ( (thisChar == '{') || (immediate && (thisChar == '(')) );
     }
@@ -193,27 +154,19 @@ static bool CharIsLeftParen (WChar thisChar, bool immediate)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool         ContainsExpression (WCharCP textExpression, bool immediate)
+/* static */ bool       MacroExpander::ContainsExpression (WCharCP textExpression, bool immediate)
     {
-    WCharCP     dollarSign;
-    if (NULL == (dollarSign = ::wcschr (textExpression, '$')))
-        return false;
-
-    for (WCharCP openParen = dollarSign; 0 != *openParen; openParen++)
-        {
-        // allow whitespace between.
-        if ( ISWHITESPACE (*openParen) )
-            continue;
-        if ( CharIsLeftParen (*openParen, immediate) )
-            return true;
-        }
-    return false;
+    // we conclude it is an expression whenever there is an open parenthesis or brace.
+    if (NULL != ::wcschr (textExpression, '{'))
+        return true;
+    
+    return (immediate && (NULL != ::wcschr (textExpression, '(')));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t          SkipWhiteSpace (WString inputString, size_t position)
+size_t              MacroExpander::SkipWhiteSpace (WString inputString, size_t position)
     {
     size_t  length = inputString.length();
     for ( ; position < length; position++)
@@ -225,46 +178,6 @@ size_t          SkipWhiteSpace (WString inputString, size_t position)
     return WString::npos;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   02/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-ExpandOperator*     FindOperator (WCharCP operatorString)
-    {
-    static OperatorInfo     s_operators[] =
-        {
-        {L"",               new MustBeMacroOperator()               },
-        {L"$",              new PossibleMacroOperator()             },
-        {L"basename",       new BaseNameOperator()                  },
-        {L"build",          new BuildOperator()                     },
-        {L"concat",         new ConcatenateOperator()               },
-        {L"devdir",         new DeviceDirectoryOperator()           },
-        {L"dev",            new DeviceOperator()                    },
-        {L"dir",            new DirectoryOperator()                 },
-        {L"ext",            new ExtensionOperator()                 },
-        {L"filename",       new FileNameOperator()                  },
-        {L"first",          new FirstOperator()                     },
-        {L"firstdirpiece",  new FirstDirectoryPartOperator()        },
-        {L"lastdirpiece",   new LastDirectoryPartOperator()         },
-        {L"noext",          new NoExtensionOperator()               },
-        {L"parentdevdir",   new ParentDirectoryAndDeviceOperator()  },
-        {L"parentdir",      new ParentDirectoryOperator()           },
-        {L"registryread",   new RegistryReadOperator()              },
-        };
-
-    // NULL operatorString means use the evaluate operator.
-    if (NULL == operatorString)
-        return s_operators[0].m_operator;
-
-    for (int iOperator=1; iOperator < _countof(s_operators); iOperator++)
-        {
-        OperatorInfo*   opInfo = &s_operators[iOperator];
-        if (0 == wcscmp (operatorString, opInfo->m_name))
-            return opInfo->m_operator;
-        }
-
-    // didn't find an operator that matches!
-    return NULL;
-    }
 
 enum    ArgParseState
     {
@@ -279,7 +192,7 @@ enum    ArgParseState
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpandStatus    SplitArguments (size_t& errorPosition, T_WStringVectorR arguments, WStringR operandString)
+ExpandStatus    MacroExpander::SplitArguments (size_t& errorPosition, T_WStringVectorR arguments, WStringR operandString)
     {
     // This is called by the two operators (concat and build) that take more than one argument.
     // On entry, operandString contains the contents of all arguments to the operators,
@@ -300,21 +213,21 @@ ExpandStatus    SplitArguments (size_t& errorPosition, T_WStringVectorR argument
         // at end of string, evaluate whether it was successful or not.
         if (operandStringPos > stringLength)
             {
-            if (ARG_Copying == parseState)
+            if ( (ARG_Copying == parseState) || (ARG_Start == parseState) )
                 {
                 if (!argument.empty())
                     arguments.push_back (argument);
-                return EXPAND_Success;
+                return ExpandStatus::Success;
                 }
 
             else if ( (ARG_HaveOpenDoubleQuote == parseState) || (ARG_HaveOpenSingleQuote == parseState) )
-                return EXPAND_SyntaxErrorUnmatchedQuote;
+                return ExpandStatus::SyntaxErrorUnmatchedQuote;
 
-            else if (ARG_HaveOpenParen == parseState) 
-                return EXPAND_SyntaxErrorUnmatchedParen;
+            else if (ARG_HaveOpenParen == parseState)
+                return ExpandStatus::SyntaxErrorUnmatchedParen;
 
-            else if (ARG_HaveOpenBrace == parseState) 
-                return EXPAND_SyntaxErrorUnmatchedParen;
+            else if (ARG_HaveOpenBrace == parseState)
+                return ExpandStatus::SyntaxErrorUnmatchedParen;
             }
 
         errorPosition = operandStringPos;
@@ -339,11 +252,15 @@ ExpandStatus    SplitArguments (size_t& errorPosition, T_WStringVectorR argument
                     // ignore anything inside DoubleQuotes or SingleQutoes.
                     previousParseState = parseState;
                     parseState = ARG_HaveOpenDoubleQuote;
+                    // dont' copy the quote.
+                    break;
                     }
                 else if ('\'' == thisChar)
                     {
                     previousParseState = parseState;
                     parseState = ARG_HaveOpenSingleQuote;
+                    // dont' copy the quote.
+                    break;
                     }
                 else if (',' == thisChar)
                     {
@@ -365,22 +282,24 @@ ExpandStatus    SplitArguments (size_t& errorPosition, T_WStringVectorR argument
                 argument.append (1, thisChar);
                 break;
                 }
-            
+
             case ARG_HaveOpenDoubleQuote:
                 {
                 // we simply copy to the copyDestination until we get the closing double quote.
-                argument.append (1, thisChar);
                 if ('"' == thisChar)
                     parseState = previousParseState;
+                else
+                    argument.append (1, thisChar);
                 break;
                 }
 
             case ARG_HaveOpenSingleQuote:
                 {
                 // we simply copy to the copyDestination until we get the closing single quote.
-                argument.append (1, thisChar);
                 if ('\'' == thisChar)
                     parseState = previousParseState;
+                else
+                    argument.append (1, thisChar);
                 break;
                 }
 
@@ -445,7 +364,7 @@ ExpandStatus    SplitArguments (size_t& errorPosition, T_WStringVectorR argument
         }
 
     // Unreachable code
-    //return EXPAND_Success;
+    //return ExpandStatus::Success;
     }
 
 enum    ExpressionParseState
@@ -457,13 +376,14 @@ enum    ExpressionParseState
     EXP_HaveOpenDoubleQuote,
     EXP_HaveOpenSingleQuote,
     EXP_InParenEnclosedOperand,
+    EXP_InOperand,
     EXP_GetClosingOperandParentheses,
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpandStatus    SplitExpression (size_t& errorPosition, WStringR expansion, ExpandOperator*& thisOperator, bool& immediateExpansion, WStringR operandString, WStringR macroString)
+ExpandStatus    MacroExpander::SplitExpression (size_t& errorPosition, WStringR expansion, ExpandOperator*& thisOperator, bool& immediateExpansion, WStringR operandString, WStringR macroString)
     {
     // The overall idea is that the input is macroString. If there are no expansions or operators, we simply copy it to the expansion and we're done.
     // If there is a ${, that indicates the start of an immediate expansion.
@@ -472,7 +392,7 @@ ExpandStatus    SplitExpression (size_t& errorPosition, WStringR expansion, Expa
     operandString.clear();
     thisOperator = NULL;
 
-    // This method parses macroString into an operator and an operandString. 
+    // This method parses macroString into an operator and an operandString.
     // Everything preceding the start of an operator is appended to expansion as a literal string.
     // At the end, macroString is set to the portion of it that follows the operator.
     errorPosition = 0;
@@ -493,28 +413,31 @@ ExpandStatus    SplitExpression (size_t& errorPosition, WStringR expansion, Expa
         // at end of string, evaluate whether it was successful or not.
         if (macroStringPos >= stringLength)
             {
-            if (EXP_Copying == parseState)
-                return EXPAND_Success;
+            if ( (EXP_Copying == parseState) || (EXP_Start == parseState) )
+                return ExpandStatus::Success;
 
             if (EXP_HaveDollarSign == parseState)
-                return EXPAND_SyntaxErrorAfterDollarSign;
+                return ExpandStatus::SyntaxErrorAfterDollarSign;
 
             else if (EXP_HaveStartExpansionOrOperator == parseState)
-                return EXPAND_SyntaxErrorExpansion;
+                return ExpandStatus::SyntaxErrorExpansion;
 
             else if ( (EXP_HaveOpenDoubleQuote == parseState) || (EXP_HaveOpenSingleQuote == parseState) )
-                return EXPAND_SyntaxErrorUnmatchedQuote;
+                return ExpandStatus::SyntaxErrorUnmatchedQuote;
 
             else if (EXP_InParenEnclosedOperand == parseState)
-                return EXPAND_SyntaxErrorInOperand;
+                return ExpandStatus::SyntaxErrorInOperand;
+
+            else if (EXP_InOperand == parseState)
+                return ExpandStatus::SyntaxErrorInOperand;
 
             else if (EXP_GetClosingOperandParentheses == parseState)
-                return EXPAND_SyntaxErrorInOperand;
+                return ExpandStatus::SyntaxErrorInOperand;
 
             else
                 {
                 BeAssert (false);
-                return EXPAND_Success;
+                return ExpandStatus::Success;
                 }
             }
 
@@ -529,13 +452,7 @@ ExpandStatus    SplitExpression (size_t& errorPosition, WStringR expansion, Expa
             case EXP_Copying:
                 {
                 // we are transferring data from the input to the output until we come across something interesting.
-                if (ISWHITESPACE (thisChar))
-                    {
-                    // leading white space is skipped, but kept if we're already copying.
-                    if (EXP_Start == parseState)
-                        break;
-                    }
-                else if ('$' == thisChar)
+                if ('$' == thisChar)
                     {
                     // should find an open paren or brace next. Don't copy to output yet.
                     parseState = EXP_HaveDollarSign;
@@ -559,11 +476,33 @@ ExpandStatus    SplitExpression (size_t& errorPosition, WStringR expansion, Expa
                     break;
                     }
 
+                else if ('(' == thisChar)
+                    {
+                    // we are copying to the destination and we have encountered an open parentheses.
+                    // If we are copying to the expansion, what we have copied may in fact be an operator instead
+                    if (&expansion == copyDestination)
+                        {
+                        operatorName.assign (expansion);
+                        operatorName.Trim();
+                        if (NULL != (thisOperator = m_macroCfgAdmin.FindExpansionOperator (operatorName.c_str())))
+                            {
+                            parseState = EXP_InOperand;
+                            copyDestination = &operandString;
+                            expansion.clear();
+                            break;
+                            }
+                        else
+                            {
+                            operatorName.clear();
+                            }
+                        }
+                    }
+
                 copyDestination->append (1, thisChar);
                 parseState = EXP_Copying;
                 break;
                 }
-            
+
             case EXP_HaveOpenDoubleQuote:
                 {
                 // copy to the doubleQuotedString until we get the closing double quote, then expand that string and save in copyDestination.
@@ -629,14 +568,14 @@ ExpandStatus    SplitExpression (size_t& errorPosition, WStringR expansion, Expa
                     }
                 else
                     {
-                    return EXPAND_SyntaxErrorAfterDollarSign;
+                    return ExpandStatus::SyntaxErrorAfterDollarSign;
                     }
                 break;
                 }
 
             case EXP_HaveStartExpansionOrOperator:
                 {
-                // This state is only possible when we are in immediate expandsion mode.
+                // This state is only possible when we are in immediate expansion mode.
                 // we have to collect the input until we get either another (, which indicates that what was between ('s should have been an operator, (e.g. $(dir(...))
                 // or a closing ), which indicates that we got a macro name that needs to be expanded, like $(MSDIR).
                 if ( ('(' == thisChar) || ('{' == thisChar) )
@@ -646,8 +585,8 @@ ExpandStatus    SplitExpression (size_t& errorPosition, WStringR expansion, Expa
                     // if we got here, operatorName is either empty or should contain the name of the operator.
                     // The contents of the parentheses is frequently a macro, even though it does not have a $() surrounding it.
                     // For example, you often see stuff like $(devdir (MSDIR)) rather than $(devdir ($(MSDIR)))
-                    if (NULL == (thisOperator = FindOperator (operatorName.empty() ? L"$" : operatorName.c_str())))
-                        return EXPAND_SyntaxErrorBadOperator;
+                    if (NULL == (thisOperator = m_macroCfgAdmin.FindExpansionOperator (operatorName.empty() ? L"$" : operatorName.c_str())))
+                        return ExpandStatus::SyntaxErrorBadOperator;
 
                     parseState = EXP_InParenEnclosedOperand;
                     // we have to pull off both of the last two closing parentheses in an expression like $(first ($(MS_DIR)))
@@ -658,6 +597,7 @@ ExpandStatus    SplitExpression (size_t& errorPosition, WStringR expansion, Expa
                     // ignore anything inside DoubleQuotes or SingleQutoes.
                     previousParseState = parseState;
                     parseState = EXP_HaveOpenDoubleQuote;
+                    doubleQuotedString.clear();
                     copyDestination->append (1, thisChar);
                     break;
                     }
@@ -665,6 +605,7 @@ ExpandStatus    SplitExpression (size_t& errorPosition, WStringR expansion, Expa
                     {
                     previousParseState = parseState;
                     parseState = EXP_HaveOpenSingleQuote;
+                    singleQuotedString.clear();
                     copyDestination->append (1, thisChar);
                     break;
                     }
@@ -672,11 +613,12 @@ ExpandStatus    SplitExpression (size_t& errorPosition, WStringR expansion, Expa
                     {
                     // We got something like $(ABC), so what we thought might be an operator name turned out to be a macroName.
                     operandString.assign (operatorName);
+                    operatorName.clear();
                     // get the "Evaluate operation".
-                    thisOperator = FindOperator (NULL);
+                    thisOperator = m_macroCfgAdmin.FindExpansionOperator (NULL);
                     // erase the portion of the macroString we have processed.
                     macroString.erase (0, macroStringPos+1);
-                    return EXPAND_Success;
+                    return ExpandStatus::Success;
                     }
                 else
                     {
@@ -686,13 +628,19 @@ ExpandStatus    SplitExpression (size_t& errorPosition, WStringR expansion, Expa
                 }
 
             case EXP_InParenEnclosedOperand:
+            case EXP_InOperand:
                 {
-                // This state is only possible when we are in immediate expandsion mode.
+                // This state is only possible when we are in immediate expansion mode.
                 if ( (')' == thisChar) || ('}' == thisChar) )
                     {
                     if (0 == parenthesesDepth--)
                         {
                         // we have the operand, but we need the closing parentheses. We simply throw away everything until we get it.
+                        if (EXP_InOperand == parseState)
+                            {
+                            macroString.erase (0, macroStringPos+1);
+                            return ExpandStatus::Success;
+                            }
                         parseState = EXP_GetClosingOperandParentheses;
                         break;
                         }
@@ -706,11 +654,13 @@ ExpandStatus    SplitExpression (size_t& errorPosition, WStringR expansion, Expa
                     // ignore anything inside DoubleQuotes or SingleQutoes.
                     previousParseState = parseState;
                     parseState = EXP_HaveOpenDoubleQuote;
+                    doubleQuotedString.clear();
                     }
                 else if ('\'' == thisChar)
                     {
                     previousParseState = parseState;
                     parseState = EXP_HaveOpenSingleQuote;
+                    singleQuotedString.clear();
                     }
 
                 copyDestination->append (1, thisChar);
@@ -722,7 +672,7 @@ ExpandStatus    SplitExpression (size_t& errorPosition, WStringR expansion, Expa
                 if ( (')' == thisChar) || ('}' == thisChar) )
                     {
                     macroString.erase (0, macroStringPos+1);
-                    return EXPAND_Success;
+                    return ExpandStatus::Success;
                     }
                 else if (ISWHITESPACE (thisChar))
                     {
@@ -732,7 +682,7 @@ ExpandStatus    SplitExpression (size_t& errorPosition, WStringR expansion, Expa
                 else
                     {
                     // should not get anything else.
-                    return EXPAND_SyntaxErrorInOperand;
+                    return ExpandStatus::SyntaxErrorInOperand;
                     }
                 }
 
@@ -747,22 +697,22 @@ ExpandStatus    SplitExpression (size_t& errorPosition, WStringR expansion, Expa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpandStatus    ExpandMacroExpression (WStringR expansion, WCharCP macroExpression, bool considerToBeMacro, bool immediateExpansion)
+ExpandStatus    MacroExpander::ExpandMacroExpression (WStringR expansion, WCharCP macroExpression, bool considerToBeMacro, bool immediateExpansion)
     {
     expansion.clear();
 
     if (NULL == macroExpression)
-        return EXPAND_NullExpression;
+        return ExpandStatus::NullExpression;
 
     if (0 == *macroExpression)
-        return EXPAND_Success;
+        return ExpandStatus::Success;
 
     // see if it could possible if it's less than three characters, there can be no expressions.
     bool    containsExpression = ContainsExpression (macroExpression, immediateExpansion);
     if ( (wcslen (macroExpression) < 3) || (!considerToBeMacro && !containsExpression))
         {
         expansion.assign (macroExpression);
-        return EXPAND_Success;
+        return ExpandStatus::Success;
         }
 
     if (considerToBeMacro && !containsExpression)
@@ -772,13 +722,13 @@ ExpandStatus    ExpandMacroExpression (WStringR expansion, WCharCP macroExpressi
         if (NULL != translation)
             {
             expansion.assign (translation);
-            return EXPAND_Success;
+            return ExpandStatus::Success;
             }
         }
 
     // if our recursion is too deep, we probably have a circular definition.
     if (++m_recursionDepth > MAX_EXPAND_RECURSIONS)
-        return EXPAND_Circular;
+        return ExpandStatus::Circular;
 
     // get a local copy of the input.
     WString     macroString (macroExpression);
@@ -792,32 +742,32 @@ ExpandStatus    ExpandMacroExpression (WStringR expansion, WCharCP macroExpressi
         bool            innerImmediate = immediateExpansion;
         size_t          errorPosition  = 0;
 
-        if (EXPAND_Success != (status = SplitExpression (errorPosition, expansion, thisOperator, innerImmediate, operandString, macroString)))
+        if (ExpandStatus::Success != (status = SplitExpression (errorPosition, expansion, thisOperator, innerImmediate, operandString, macroString)))
             return status;
 
         // if no operand, we're done.
         if (operandString.empty())
-            return EXPAND_Success;
+            return ExpandStatus::Success;
 
         WString     operandExpansion;
-        if (EXPAND_Success != (status = thisOperator->Execute (errorPosition, *this, operandExpansion, operandString, innerImmediate)))
+        if (ExpandStatus::Success != (status = thisOperator->Execute (errorPosition, *this, operandExpansion, operandString, innerImmediate)))
             return status;
 
         // the operandExpansion might itself be need to be expanded.
         WString     subExpansion;
-        if (EXPAND_Success != (status = ExpandMacroExpression (subExpansion, operandExpansion.c_str(), false, innerImmediate)))
+        if (ExpandStatus::Success != (status = ExpandMacroExpression (subExpansion, operandExpansion.c_str(), false, innerImmediate)))
             return status;
 
         expansion.append (subExpansion);
         }
 
-    return EXPAND_Success;
+    return ExpandStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    05/93
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       FormatExpansion (WStringR expandedString)
+StatusInt       MacroExpander::FormatExpansion (WStringR expandedString)
     {
     // make sure there is something to format.
     if (expandedString.empty())
@@ -944,23 +894,39 @@ StatusInt       FormatExpansion (WStringR expandedString)
     return SUCCESS;
     }
 
-public:
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       Expand (WStringR expansion, WCharCP macroExpression)
+StatusInt       MacroExpander::Expand (WStringR expansion, WCharCP macroExpression)
     {
-    StatusInt status = ExpandMacroExpression (expansion, macroExpression, false, m_expandAllImmediately);
+    ExpandStatus status = ExpandMacroExpression (expansion, macroExpression, false, m_expandAllImmediately);
 
-    if ( (BSISUCCESS == status) && m_formatExpansion)
+    if ( (ExpandStatus::Success == status) && m_formatExpansion)
         return FormatExpansion (expansion);
 
-    return status;
+    return (StatusInt) status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   05/14
++---------------+---------------+---------------+---------------+---------------+------*/
+MacroConfigurationAdmin&    MacroExpander::GetCfgAdmin()
+    {
+    return m_macroCfgAdmin;
+    }
+
+ConfigurationVariableLevel  MacroExpander::GetLevel()
+    {
+    return m_cfgLevel;
     }
 
 
-}; // MacroExpander
+
+// ------------------------------------
+// End of MacroExpander Implementation
+// ------------------------------------
+
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/12
@@ -969,17 +935,17 @@ ExpandStatus    MustBeMacroOperator::Execute (size_t& errorPosition, MacroExpand
     {
     // if it must be a macro, then if there is no translation, return an empty string.
     WString     tmpStorage;
-    WCharCP     translation = macroExpander.m_macroCfgAdmin.GetMacroTranslation (operandString.c_str(), tmpStorage, macroExpander.m_cfgLevel);
+    WCharCP     translation = macroExpander.GetCfgAdmin().GetMacroTranslation (operandString.c_str(), tmpStorage, macroExpander.GetLevel());
     if (NULL == translation)
-        return EXPAND_Success;
+        return ExpandStatus::Success;
 
     WString         expansion;
     ExpandStatus    status;
-    if (EXPAND_Success != (status = macroExpander.ExpandMacroExpression (expansion, translation, false, immediateExpansion)))
+    if (ExpandStatus::Success != (status = macroExpander.ExpandMacroExpression (expansion, translation, false, immediateExpansion)))
         return status;
 
     result.assign (expansion);
-    return EXPAND_Success;
+    return ExpandStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -989,11 +955,11 @@ ExpandStatus    PossibleMacroOperator::Execute (size_t& errorPosition, MacroExpa
     {
     WString         expansion;
     ExpandStatus    status;
-    if (EXPAND_Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
+    if (ExpandStatus::Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
         return status;
 
     result.assign (expansion);
-    return EXPAND_Success;
+    return ExpandStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1004,11 +970,11 @@ ExpandStatus    BaseNameOperator::Execute (size_t& errorPosition, MacroExpander&
     // treat the operandString like a file name and get the base name of it.
     WString         expansion;
     ExpandStatus    status;
-    if (EXPAND_Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
+    if (ExpandStatus::Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
         return status;
 
     result = BeFileName::GetFileNameWithoutExtension (expansion.c_str());
-    return EXPAND_Success;
+    return ExpandStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1019,11 +985,11 @@ ExpandStatus BuildOperator::Execute (size_t& errorPosition,  MacroExpander& macr
     T_WStringVector args;
 
     ExpandStatus    status;
-    if (EXPAND_Success != (status = macroExpander.SplitArguments (errorPosition, args, operandString)))
+    if (ExpandStatus::Success != (status = macroExpander.SplitArguments (errorPosition, args, operandString)))
         return status;
 
     if (0 == args.size())
-        return EXPAND_Success;
+        return ExpandStatus::Success;
 
     // start with empty components.
     WString     device;
@@ -1092,7 +1058,7 @@ ExpandStatus BuildOperator::Execute (size_t& errorPosition,  MacroExpander& macr
             }
         }
     BeFileName::BuildName (result, device.c_str(), directory.c_str(), fileName.c_str(), extension.c_str());
-    return EXPAND_Success;
+    return ExpandStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1108,7 +1074,7 @@ ExpandStatus ConcatenateOperator::Execute (size_t& errorPosition, MacroExpander&
         macroExpander.ExpandMacroExpression (argExpansion, args[iArg].c_str(), true, immediateExpansion);
         result.append (argExpansion);
         }
-    return EXPAND_Success;
+    return ExpandStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1118,11 +1084,11 @@ ExpandStatus DeviceDirectoryOperator::Execute (size_t& errorPosition, MacroExpan
     {
     WString         expansion;
     ExpandStatus    status;
-    if (EXPAND_Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
+    if (ExpandStatus::Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
         return status;
 
     result = BeFileName::GetDirectoryName (expansion.c_str());
-    return EXPAND_Success;
+    return ExpandStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1132,14 +1098,14 @@ ExpandStatus DeviceOperator::Execute (size_t& errorPosition, MacroExpander& macr
     {
     WString         expansion;
     ExpandStatus    status;
-    if (EXPAND_Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
+    if (ExpandStatus::Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
         return status;
 
     result = BeFileName::GetDevice (expansion.c_str());
     if (!result.empty())
         result.append (1, ':');
 
-    return EXPAND_Success;
+    return ExpandStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1149,11 +1115,11 @@ ExpandStatus DirectoryOperator::Execute (size_t& errorPosition, MacroExpander& m
     {
     WString         expansion;
     ExpandStatus    status;
-    if (EXPAND_Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
+    if (ExpandStatus::Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
         return status;
 
     result = BeFileName::GetDirectoryWithoutDevice (expansion.c_str());
-    return EXPAND_Success;
+    return ExpandStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1163,15 +1129,15 @@ ExpandStatus ExtensionOperator::Execute (size_t& errorPosition, MacroExpander& m
     {
     WString         expansion;
     ExpandStatus    status;
-    if (EXPAND_Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
+    if (ExpandStatus::Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
         return status;
 
     result = BeFileName::GetExtension (expansion.c_str());
-    //extension is returned without leading dot, so add it
-    if (! result.empty())
+
+    if ( ! result.empty())
         result.insert (0, L".");
-    
-    return EXPAND_Success;
+
+    return ExpandStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1181,11 +1147,11 @@ ExpandStatus FileNameOperator::Execute (size_t& errorPosition, MacroExpander& ma
     {
     WString         expansion;
     ExpandStatus    status;
-    if (EXPAND_Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
+    if (ExpandStatus::Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
         return status;
 
     result = BeFileName::GetFileNameAndExtension (expansion.c_str());
-    return EXPAND_Success;
+    return ExpandStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1195,7 +1161,7 @@ ExpandStatus FirstOperator::Execute (size_t& errorPosition, MacroExpander& macro
     {
     WString         expansion;
     ExpandStatus    status;
-    if (EXPAND_Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
+    if (ExpandStatus::Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
         return status;
 
     // take everything before first PATH_SEPARATOR_CHAR
@@ -1205,7 +1171,7 @@ ExpandStatus FirstOperator::Execute (size_t& errorPosition, MacroExpander& macro
 
     result.assign (expansion);
 
-    return EXPAND_Success;
+    return ExpandStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1215,13 +1181,13 @@ ExpandStatus FirstDirectoryPartOperator::Execute (size_t& errorPosition, MacroEx
     {
     WString         expansion;
     ExpandStatus    status;
-    if (EXPAND_Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
+    if (ExpandStatus::Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
         return status;
 
     // take everything between the first and second DIR_SEPARATOR_CHAR's
     size_t  firstSepIndex;
     if (WString::npos == (firstSepIndex = expansion.find (DIR_SEPARATOR_CHAR)))
-        return EXPAND_Success;
+        return ExpandStatus::Success;
 
     size_t  secondSepIndex;
     if (WString::npos != (secondSepIndex = expansion.find (DIR_SEPARATOR_CHAR, firstSepIndex+1)))
@@ -1229,7 +1195,7 @@ ExpandStatus FirstDirectoryPartOperator::Execute (size_t& errorPosition, MacroEx
     else
         result.assign (expansion, firstSepIndex+1, expansion.length() - (firstSepIndex+1));
 
-    return EXPAND_Success;
+    return ExpandStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1239,21 +1205,21 @@ ExpandStatus LastDirectoryPartOperator::Execute (size_t& errorPosition, MacroExp
     {
     WString         expansion;
     ExpandStatus    status;
-    if (EXPAND_Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
+    if (ExpandStatus::Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
         return status;
 
     // take everything between the last and second-to-last DIR_SEPARATOR_CHAR's
     size_t  lastSepIndex;
     if (WString::npos == (lastSepIndex = expansion.rfind (DIR_SEPARATOR_CHAR)))
-        return EXPAND_Success;
+        return ExpandStatus::Success;
 
     size_t  secondToLastSepIndex;
     if (WString::npos == (secondToLastSepIndex = expansion.rfind (DIR_SEPARATOR_CHAR, lastSepIndex-1)))
-        return EXPAND_Success;
+        return ExpandStatus::Success;
 
     result.assign (expansion, secondToLastSepIndex+1, lastSepIndex - (secondToLastSepIndex+1));
 
-    return EXPAND_Success;
+    return ExpandStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1263,13 +1229,12 @@ ExpandStatus NoExtensionOperator::Execute (size_t& errorPosition, MacroExpander&
     {
     WString         expansion;
     ExpandStatus    status;
-    if (EXPAND_Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
+    if (ExpandStatus::Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
         return status;
 
     WString extension = BeFileName::GetExtension (expansion.c_str());
     if (!extension.empty())
         {
-		//extension is returned without leading dot, so add it
         extension.insert (0, L".");
 
         size_t  extensionStart;
@@ -1277,7 +1242,7 @@ ExpandStatus NoExtensionOperator::Execute (size_t& errorPosition, MacroExpander&
             expansion.erase (extensionStart);
         }
     result.assign (expansion);
-    return EXPAND_Success;
+    return ExpandStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1287,7 +1252,7 @@ ExpandStatus ParentDirectoryAndDeviceOperator::Execute (size_t& errorPosition, M
     {
     WString         expansion;
     ExpandStatus    status;
-    if (EXPAND_Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
+    if (ExpandStatus::Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
         return status;
 
     expansion = BeFileName::GetDirectoryName (expansion.c_str());
@@ -1295,14 +1260,14 @@ ExpandStatus ParentDirectoryAndDeviceOperator::Execute (size_t& errorPosition, M
     // take everything up to and including the second-to-last DIR_SEPARATOR_CHAR's
     size_t  lastSepIndex;
     if (WString::npos == (lastSepIndex = expansion.rfind (DIR_SEPARATOR_CHAR)))
-        return EXPAND_Success;
+        return ExpandStatus::Success;
 
     size_t  secondToLastSepIndex;
     if (WString::npos == (secondToLastSepIndex = expansion.rfind (DIR_SEPARATOR_CHAR, lastSepIndex-1)))
-        return EXPAND_Success;
+        return ExpandStatus::Success;
 
     result.assign (expansion, 0, secondToLastSepIndex+1);
-    return EXPAND_Success;
+    return ExpandStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1312,7 +1277,7 @@ ExpandStatus ParentDirectoryOperator::Execute (size_t& errorPosition, MacroExpan
     {
     WString         expansion;
     ExpandStatus    status;
-    if (EXPAND_Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
+    if (ExpandStatus::Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), true, immediateExpansion)))
         return status;
 
     expansion = BeFileName::GetDirectoryWithoutDevice (expansion.c_str());
@@ -1320,14 +1285,14 @@ ExpandStatus ParentDirectoryOperator::Execute (size_t& errorPosition, MacroExpan
     // take everything up to and including the second-to-last DIR_SEPARATOR_CHAR's
     size_t  lastSepIndex;
     if (WString::npos == (lastSepIndex = expansion.rfind (DIR_SEPARATOR_CHAR)))
-        return EXPAND_Success;
+        return ExpandStatus::Success;
 
     size_t  secondToLastSepIndex;
     if (WString::npos == (secondToLastSepIndex = expansion.rfind (DIR_SEPARATOR_CHAR, lastSepIndex-1)))
-        return EXPAND_Success;
+        return ExpandStatus::Success;
 
     result.assign (expansion, 0, secondToLastSepIndex+1);
-    return EXPAND_Success;
+    return ExpandStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1337,16 +1302,91 @@ ExpandStatus RegistryReadOperator::Execute (size_t& errorPosition, MacroExpander
     {
     WString         expansion;
     ExpandStatus    status;
-    if (EXPAND_Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), false, immediateExpansion)))
+    if (ExpandStatus::Success != (status = macroExpander.ExpandMacroExpression (expansion, operandString.c_str(), false, immediateExpansion)))
         return status;
 
     expansion.DropQuotes();
     if (BSISUCCESS == util_readRegistry (result, expansion.c_str()))
-        return EXPAND_Success;
+        return ExpandStatus::Success;
     else
         result.assign (expansion);
 
-    return EXPAND_Success;
+    return ExpandStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   05/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void                MacroConfigurationAdmin::SetDefaultExpansionOperators ()
+    {
+    m_operatorMap.clear();
+    m_operatorMap[L""]              =   new MustBeMacroOperator();
+    m_operatorMap[L"$"]             =   new PossibleMacroOperator();
+    m_operatorMap[L"basename"]      =   new BaseNameOperator();
+    m_operatorMap[L"build"]         =   new BuildOperator();
+    m_operatorMap[L"concat"]        =   new ConcatenateOperator();
+    m_operatorMap[L"devdir"]        =   new DeviceDirectoryOperator();
+    m_operatorMap[L"dev"]           =   new DeviceOperator();
+    m_operatorMap[L"dir"]           =   new DirectoryOperator();
+    m_operatorMap[L"ext"]           =   new ExtensionOperator();
+    m_operatorMap[L"filename"]      =   new FileNameOperator();
+    m_operatorMap[L"first"]         =   new FirstOperator();
+    m_operatorMap[L"firstdirpiece"] =   new FirstDirectoryPartOperator();
+    m_operatorMap[L"lastdirpiece"]  =   new LastDirectoryPartOperator();
+    m_operatorMap[L"noext"]         =   new NoExtensionOperator();
+    m_operatorMap[L"parentdevdir"]  =   new ParentDirectoryAndDeviceOperator();
+    m_operatorMap[L"parentdir"]     =   new ParentDirectoryOperator();
+    m_operatorMap[L"registryread"]  =   new RegistryReadOperator();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   05/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpandOperator*     MacroConfigurationAdmin::FindExpansionOperator (WCharCP operatorString)
+    {
+    // NULL operatorString means use the evaluate operator.
+    if (NULL == operatorString)
+        operatorString = L"";
+
+    T_OperatorMap::iterator foundOperator;
+    if (m_operatorMap.end() != (foundOperator = m_operatorMap.find (operatorString)))
+        return foundOperator->second;
+
+    // didn't find an operator that matches!
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   05/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpandOperator*     MacroConfigurationAdmin::GetExpansionOperator (WCharCP operatorString)
+    {
+    T_OperatorMap::iterator foundOperator;
+    if (m_operatorMap.end() != (foundOperator = m_operatorMap.find (operatorString)))
+        return foundOperator->second;
+
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   05/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpandOperator*     MacroConfigurationAdmin::SetExpansionOperator (WCharCP operatorString, ExpandOperator* newOperator)
+    {
+    ExpandOperator* oldOperator = NULL;
+
+    T_OperatorMap::iterator foundOperator;
+    if (m_operatorMap.end() != (foundOperator = m_operatorMap.find (operatorString)))
+        {
+        oldOperator = foundOperator->second;
+        foundOperator->second = newOperator;
+        }
+    else
+        {
+        m_operatorMap[operatorString] = newOperator;
+        }
+
+    return oldOperator;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -157,6 +157,7 @@ DGNPLATFORM_TYPEDEFS (IPickGeom)
 DGNPLATFORM_TYPEDEFS (ISolidKernelEntity)
 DGNPLATFORM_TYPEDEFS (ISubEntity)
 DGNPLATFORM_TYPEDEFS (ITransactionHandler)
+DGNPLATFORM_TYPEDEFS (IVariableMonitor)
 DGNPLATFORM_TYPEDEFS (TxnManager)
 DGNPLATFORM_TYPEDEFS (IViewHandlerHitInfo)
 DGNPLATFORM_TYPEDEFS (IViewTransients)
@@ -194,7 +195,6 @@ DGNPLATFORM_TYPEDEFS (UpdateContext)
 DGNPLATFORM_TYPEDEFS (ViewHandler)
 DGNPLATFORM_TYPEDEFS (ViewManager)
 DGNPLATFORM_TYPEDEFS (VisibleEdgeCache)
-DGNPLATFORM_TYPEDEFS (DgnTextures)
 
 /** @endcond */
 DGNPLATFORM_TYPEDEFS (DgnGCS)
@@ -263,16 +263,20 @@ BEREPOSITORYBASED_ID_CLASS(DgnModelId)         //!< An Id that is assigned to a 
 BEREPOSITORYBASED_ID_CLASS(DgnViewId)          //!< An Id that is assigned to a view. See DgnDb#Views, ViewController. @ingroup DgnViewGroup
 BEREPOSITORYBASED_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a DGN link. See DgnLinkTable.
 BEREPOSITORYBASED_ID_SUBCLASS(DgnMaterialId, DgnElementId) //!< An element Id that refers to a material.
+BEREPOSITORYBASED_ID_SUBCLASS(DgnTextureId, DgnElementId) //!< An element Id that refers to a named texture.
 BEREPOSITORYBASED_ID_SUBCLASS(DgnLightId, DgnElementId) //!< An element Id that refers to a light definition.
 BEREPOSITORYBASED_ID_SUBCLASS(DgnCategoryId, DgnElementId) //!< An element Id that refers to a DgnCategory. @ingroup DgnCategoryGroup
 BEREPOSITORYBASED_ID_SUBCLASS(DgnSubCategoryId, DgnElementId) //!< An element Id that refers to a DgnSubCategory. @ingroup DgnCategoryGroup
+BEREPOSITORYBASED_ID_SUBCLASS(AnnotationTextStyleId, DgnElementId) //!< An element Id that refers to an AnnotationTextStyle. @ingroup Annotations
+BEREPOSITORYBASED_ID_SUBCLASS(AnnotationFrameStyleId, DgnElementId) //!< An element Id that refers to an AnnotationFrameStyle. @ingroup Annotations
+BEREPOSITORYBASED_ID_SUBCLASS(AnnotationLeaderStyleId, DgnElementId) //!< An element Id that refers to an AnnotationLeaderStyle. @ingroup Annotations
+BEREPOSITORYBASED_ID_SUBCLASS(TextAnnotationSeedId, DgnElementId) //!< An element Id that refers to an TextAnnotationSeed. @ingroup Annotations
+BEREPOSITORYBASED_ID_SUBCLASS(DgnTrueColorId, DgnElementId) //!< An element Id that refers a a DgnTrueColor.
 
 BESERVER_ISSUED_ID_CLASS(DgnAuthorityId)
 BESERVER_ISSUED_ID_CLASS(DgnFontId)
 BESERVER_ISSUED_ID_CLASS(DgnSessionId)       //!< An Id that is assigned to a session. See DgnDb#Sessions.
 BESERVER_ISSUED_ID_CLASS(DgnStyleId)         //!< An Id that is assigned to a style. See DgnDb#Styles.
-BESERVER_ISSUED_ID_CLASS(DgnTrueColorId)     //!< An Id that is assigned to a true color. See DgnDb#Colors.
-BESERVER_ISSUED_ID_CLASS(DgnTextureId)       //!< An Id that is assigned to a texture. See DgnDb#Textures.
 
 namespace dgn_ElementHandler{struct Element;};
 namespace dgn_ModelHandler  {struct Model;};
@@ -606,15 +610,17 @@ struct DgnElementCPtrVec : bvector<DgnElementCPtr>
 
 //! @private
 enum class ConfigurationVariableLevel
-{
+    {
     Predefined    = -2,        //!< predefined by the host
-    SysEnv        = -1,        //!< defined in the system environment variable table
+    SysEnv        = -1,        //!< defined in the Windows system environment variable table
     System        = 0,         //!< system defined
-    Appl          = 1,         //!< application defined
-    Site          = 2,         //!< site defined
-    Project       = 3,         //!< project defined
-    User          = 4,         //!< user defined
-};
+    Application   = 1,         //!< application defined
+    Organization  = 2,         //!< Organization defined
+    WorkSpace     = 3,         //!< WorkSpace defined
+    WorkSet       = 4,         //!< WorkSet defined
+    Role          = 5,         //!< Role defined.
+    User          = 6,         //!< user defined
+    };
 
 //! @private
 enum DgnPlatformConstants

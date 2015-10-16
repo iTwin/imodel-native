@@ -26,6 +26,7 @@ using namespace boost::spirit::classic;
 
 struct CfgVarExpressionParser;
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    YogeshSajanikar    01/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -36,6 +37,7 @@ bool CfgVarExpression::Node::Evaluate (CfgVarExpression::Result &result) const
 
     return true;
     }
+
 
 /*=================================================================================**//**
 * @bsiclass
@@ -152,15 +154,15 @@ bool CfgVarExpression::General::Evaluate (CfgVarExpression::Result &result) cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    YogeshSajanikar    01/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-CfgVarExpression::Statement::Statement (CfgVarExpression::NodePtr node)
-    : m_node (node)
+CfgVarExpression::Statement::Statement (CfgVarExpression::Node& node)
+    : m_node (&node)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    YogeshSajanikar    01/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CfgVarExpression::Statement::Push (CfgVarExpression::NodePtr node)
+void CfgVarExpression::Statement::Push (CfgVarExpression::Node& node)
     {
     NodePtr lastNode = NULL;
     NodePtr leftNode = m_node;
@@ -171,7 +173,7 @@ void CfgVarExpression::Statement::Push (CfgVarExpression::NodePtr node)
         }
 
     if (NULL == lastNode.get ())
-        m_node = node;
+        m_node = &node;
     else
         lastNode->SetRightExpression (node);
     }
@@ -206,7 +208,7 @@ void CfgVarExpression::Statements::PushNewStatement ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    YogeshSajanikar    01/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CfgVarExpression::Statements::Push (CfgVarExpression::NodePtr node)
+void CfgVarExpression::Statements::Push (CfgVarExpression::Node& node)
     {
     if (m_statements.empty ())
         PushNewStatement ();
@@ -263,7 +265,7 @@ struct CfgNodePushBackAction
         copy ( first, last, back_insert_iterator<bwstring> (exp));
 
         CfgVarExpression::NodePtr cfgNode = expression->CreateCfgVarExpr (exp.c_str());
-        expression->Push (cfgNode);
+        expression->Push (*cfgNode);
         }
 
     static Actor Do (CfgVarExpression *&expression)
@@ -297,7 +299,7 @@ struct GeneralNodePushBackAction
         bwstring exp;
         copy (first, last, back_insert_iterator<bwstring> (exp));
         CfgVarExpression::NodePtr generalNode = expression->CreateGeneralExpr (exp.c_str());
-        expression->Push (generalNode);
+        expression->Push (*generalNode);
         }
 
     static Actor Do (CfgVarExpression *&expression)
@@ -407,9 +409,10 @@ void CfgVarExpression::CreateNewStatement ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    YogeshSajanikar    01/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CfgVarExpression::Push (CfgVarExpression::NodePtr node)
+void CfgVarExpression::Push (CfgVarExpression::Node& node)
     {
     m_statements.Push (node);
     }
 
 END_BENTLEY_NAMESPACE
+

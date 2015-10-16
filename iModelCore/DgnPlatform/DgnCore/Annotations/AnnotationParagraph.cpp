@@ -22,7 +22,7 @@ AnnotationParagraph::AnnotationParagraph(DgnDbR project) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationParagraphPtr AnnotationParagraph::Create(DgnDbR project, DgnStyleId styleID)
+AnnotationParagraphPtr AnnotationParagraph::Create(DgnDbR project, AnnotationTextStyleId styleID)
     {
     auto par = AnnotationParagraph::Create(project);
     par->SetStyleId(styleID, SetAnnotationTextStyleOptions::Direct);
@@ -33,7 +33,7 @@ AnnotationParagraphPtr AnnotationParagraph::Create(DgnDbR project, DgnStyleId st
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationParagraphPtr AnnotationParagraph::Create(DgnDbR project, DgnStyleId styleID, AnnotationRunBaseR run)
+AnnotationParagraphPtr AnnotationParagraph::Create(DgnDbR project, AnnotationTextStyleId styleID, AnnotationRunBaseR run)
     {
     auto par = AnnotationParagraph::Create(project, styleID);
     par->GetRunsR().push_back(&run);
@@ -59,7 +59,7 @@ void AnnotationParagraph::CopyFrom(AnnotationParagraphCR rhs)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-void AnnotationParagraph::SetStyleId(DgnStyleId value, SetAnnotationTextStyleOptions options)
+void AnnotationParagraph::SetStyleId(AnnotationTextStyleId value, SetAnnotationTextStyleOptions options)
     {
     m_styleID = value;
 

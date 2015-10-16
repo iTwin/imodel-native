@@ -195,7 +195,7 @@ BentleyStatus DgnRscGlyph::_FillGpa(GPArrayR gpa) const
     bvector<Byte> glyphDataBuffer;
     glyphDataBuffer.reserve(m_glyphDataOffset.size);
     if (SUCCESS != m_data->_ReadGlyphData(glyphDataBuffer, (size_t)m_glyphDataOffset.offset, (size_t)m_glyphDataOffset.size))
-        return  ERROR;
+        return ERROR;
 
     RscGlyphData const* glyphData = (RscGlyphData const*)&glyphDataBuffer[0];
     if (0 == glyphData->numElems)

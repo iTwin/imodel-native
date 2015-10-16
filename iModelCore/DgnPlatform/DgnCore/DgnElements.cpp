@@ -984,7 +984,7 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId),
-             m_code(params.m_code), m_parentId(params.m_parentId)
+    m_code(params.m_code), m_parentId(params.m_parentId)
     {
     ++GetDgnDb().Elements().m_tree->m_totals.m_extant;
     }
@@ -1367,7 +1367,10 @@ DgnModelId DgnElements::QueryModelId(DgnElementId elementId) const
 //---------------------------------------------------------------------------------------
 DgnElementId DgnElements::QueryElementIdByCode(DgnElement::Code const& code) const
     {
-    return QueryElementIdByCode(code.GetAuthority(), code.GetValue(), code.GetNameSpace());
+    if (!code.IsValid() || code.IsEmpty())
+        return DgnElementId(); // An invalid code won't be found; an empty code won't be unique. So don't bother.
+    else
+        return QueryElementIdByCode(code.GetAuthority(), code.GetValue(), code.GetNameSpace());
     }
 
 /*---------------------------------------------------------------------------------**//**

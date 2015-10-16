@@ -253,7 +253,7 @@ DGNPLATFORM_EXPORT RotMatrixR           GetRotation                 (RotMatrixR 
 
 // Standard grid settings don't apply to type ACS_TYPE_GeoCoordinate...
 double GetGridScaleFactor (DgnViewportR vp) const;
-StatusInt GetGridSpacing (DPoint2dR spacing, Point2dR gridReps, Point2dR gridOffset, DgnViewportR vp) const;
+StatusInt GetGridSpacing (DPoint2dR spacing, uint32_t& gridPerRef, Point2dR gridReps, Point2dR gridOffset, DgnViewportR vp) const;
 
 DGNPLATFORM_EXPORT StatusInt GetStandardGridParams (Point2dR gridReps, Point2dR gridOffset, double& uorPerGrid, double& gridRatio, uint32_t& gridPerRef) const;
 DGNPLATFORM_EXPORT StatusInt SetStandardGridParams (Point2dCR gridReps, Point2dCR gridOffset, double uorPerGrid, double gridRatio, uint32_t gridPerRef);
