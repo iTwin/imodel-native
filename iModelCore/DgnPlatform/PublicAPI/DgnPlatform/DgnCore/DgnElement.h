@@ -42,6 +42,7 @@ protected:
     bmap<DgnClassId, DgnClassId> m_classId;
     bmap<DgnAuthorityId, DgnAuthorityId> m_authorityId;
     bmap<DgnMaterialId, DgnMaterialId> m_materialId;
+    bmap<DgnTextureId, DgnTextureId> m_textureId;
 
     template<typename T> T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
 
@@ -59,6 +60,9 @@ public:
     DgnCategoryId Add(DgnCategoryId sourceId, DgnCategoryId targetId) {return m_categoryId[sourceId] = targetId;}
     DgnMaterialId Find(DgnMaterialId sourceId) const {return Find<DgnMaterialId>(m_materialId, sourceId);}
     DgnMaterialId Add(DgnMaterialId sourceId, DgnMaterialId targetId) {return m_materialId[sourceId] = targetId;}
+    DgnTextureId Find(DgnTextureId sourceId) const {return Find<DgnTextureId>(m_textureId, sourceId);}
+    DgnTextureId Add(DgnTextureId sourceId, DgnTextureId targetId) {return m_textureId[sourceId] = targetId;}
+
 
     DgnSubCategoryId Find(DgnSubCategoryId sourceId) const {return Find<DgnSubCategoryId>(m_subcategoryId, sourceId);}
     DgnSubCategoryId Add(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {return m_subcategoryId[sourceId] = targetId;}
@@ -121,12 +125,20 @@ public:
     DGNPLATFORM_EXPORT DgnSubCategoryId RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId sourceId);
     //! Make sure that an ECClass has been imported
     DGNPLATFORM_EXPORT DgnClassId RemapClassId(DgnClassId sourceId);
-    //! Look up a copy of a Category
+    //! Look up a copy of a Material
     DgnMaterialId FindMaterialId(DgnMaterialId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a Material
     DgnMaterialId AddMaterialId(DgnMaterialId sourceId, DgnMaterialId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a Material has been imported
     DGNPLATFORM_EXPORT DgnMaterialId RemapMaterialId(DgnMaterialId sourceId);
+    //! Look up a copy of a Material
+    DgnTextureId FindTextureId(DgnTextureId sourceId) const {return m_remap.Find(sourceId);}
+    //! Register a copy of a Texture
+    DgnTextureId AddTextureId(DgnTextureId sourceId, DgnTextureId targetId) {return m_remap.Add(sourceId, targetId);}
+    //! Make sure that a Texture has been imported
+    DGNPLATFORM_EXPORT DgnTextureId RemapTextureId(DgnTextureId sourceId);
+    //! @}
+
     //! @}
 
     //! @name GCS coordinate system shift

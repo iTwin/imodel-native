@@ -175,6 +175,10 @@ public:
 
     DGNPLATFORM_EXPORT uintptr_t GetQvTextureId(DgnTextureId TextureId) const; //!< Return nonzero QuickVision material ID for QVision for supplied material ID.
     DGNPLATFORM_EXPORT uintptr_t AddQvTextureId(DgnTextureId TextureId) const; //!< set QuickVision material ID for supplied material Id.
+
+    DgnTextureId ImportTexture(struct DgnImportContext&, DgnDbR sourceDb, DgnTextureId sourceTextureId);
+
 };
+
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

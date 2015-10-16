@@ -41,6 +41,10 @@ protected:
 
 public:
 DGNPLATFORM_EXPORT    static RenderMaterialPtr            Create (DgnDbCR dgnDb, DgnMaterialId materialId);
+DGNPLATFORM_EXPORT    static RenderMaterialPtr            Create (Json::Value const& value, DgnMaterialId materialId);
+                             Json::Value                  GetValue () { return m_value; }
+DGNPLATFORM_EXPORT           BentleyStatus                DoImport (DgnImportContext& context, DgnDbR sourceDb);
+
 
 DGNPLATFORM_EXPORT    virtual     RenderMaterialPtr       _Clone () const override { return new JsonRenderMaterial (*this); }
 DGNPLATFORM_EXPORT    virtual     double                  _GetDouble (char const* key, BentleyStatus* status = NULL) const override;
@@ -181,7 +185,6 @@ struct RenderMaterialMap : RefCountedBase
     virtual ImageBufferPtr              _GetImage (DgnDbR dgnDb) const = 0;
     virtual uintptr_t                   _GetQvTextureId (DgnDbR dgnDb, bool createIfNotFound) const = 0;
 
-
 };  // RenderMaterialMap.
 
 
@@ -198,6 +201,8 @@ protected:
 public:
 
     static RenderMaterialMapPtr  Create (Json::Value const& value) { return new JsonRenderMaterialMap (value); }
+           Json::Value           GetValue () { return m_value; }
+           BentleyStatus         DoImport (DgnImportContext& context, DgnDbR sourceDb);
 
 
     DGNPLATFORM_EXPORT    virtual Mode                _GetMode () const override;

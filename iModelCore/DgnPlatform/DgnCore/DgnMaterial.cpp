@@ -351,7 +351,20 @@ DgnMaterialId DgnMaterials::ImportMaterial(DgnImportContext& context, DgnDbR sou
     if (sourceMaterial.GetParentId().IsValid())
         destMaterial.SetParentId(context.RemapMaterialId(sourceMaterial.GetParentId()));
 
-    Insert(destMaterial);
+    Json::Value renderingAsset;
+
+    if (SUCCESS == destMaterial.GetRenderingAsset (renderingAsset))
+        {
+        RenderMaterialPtr       renderMaterial = JsonRenderMaterial::Create (renderingAsset, source);
+        JsonRenderMaterial*     jsonRenderMaterial = dynamic_cast <JsonRenderMaterial*> (renderMaterial.get());
+
+        if (nullptr != jsonRenderMaterial &&
+            SUCCESS == jsonRenderMaterial->DoImport (context, sourceDb))
+           destMaterial.SetRenderingAsset (jsonRenderMaterial->GetValue());
+        }
+
+    Insert (destMaterial);
+
     return context.AddMaterialId(source, destMaterial.GetId());
     }
 

@@ -130,6 +130,7 @@ bool        RenderMaterialMap::_GetBool (char const* key, BentleyStatus* status)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+RenderMaterialPtr    JsonRenderMaterial::Create (Json::Value const& value, DgnMaterialId materialId) { return new JsonRenderMaterial (value, materialId); }
 RenderMaterialPtr    JsonRenderMaterial::Create (DgnDbCR dgnDb, DgnMaterialId materialId)
     {
     if (!materialId.IsValid())
@@ -150,7 +151,7 @@ RenderMaterialPtr    JsonRenderMaterial::Create (DgnDbCR dgnDb, DgnMaterialId ma
         return nullptr;
         }
 
-    return new JsonRenderMaterial (renderMaterial, materialId);
+    return Create (renderMaterial, materialId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -284,6 +285,29 @@ uintptr_t  JsonRenderMaterial::_GetQvMaterialId (DgnDbR dgnDb, bool createIfNotF
     return qvMaterialId;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus JsonRenderMaterial::DoImport (DgnImportContext& context, DgnDbR sourceDb) 
+    {
+    Json::Value&      mapsMap = m_value[RENDER_MATERIAL_Map];
+    
+    if (mapsMap.isNull())
+        return ERROR;
+
+    for (auto& map : mapsMap)
+        {
+        RenderMaterialMapPtr    renderMaterialMap = JsonRenderMaterialMap::Create (map);
+        JsonRenderMaterialMap*  jsonRenderMaterialMap = dynamic_cast <JsonRenderMaterialMap*> (renderMaterialMap.get());
+
+        if (NULL != jsonRenderMaterialMap &&
+            SUCCESS == jsonRenderMaterialMap->DoImport (context, sourceDb))
+            map = jsonRenderMaterialMap->GetValue();
+        }
+    
+    return SUCCESS;
+    }
+
 //=======================================================================================
 // ImageBuffer...
 //=======================================================================================
@@ -407,7 +431,7 @@ ImageBufferPtr  JsonRenderMaterialMap::_GetImage (DgnDbR dgnDb) const
 
     if (!texture.IsValid())
         {
-        BeAssert (false);
+//      BeAssert (false);
         return nullptr;
         }
 
@@ -435,6 +459,22 @@ uintptr_t  JsonRenderMaterialMap::_GetQvTextureId (DgnDbR dgnDb, bool createIfNo
         qvTextureId = dgnDb.Textures().AddQvTextureId (textureId);
 
     return qvTextureId;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus JsonRenderMaterialMap::DoImport (DgnImportContext& context, DgnDbR sourceDb) 
+    {
+    Json::Value&     textureIdValue = m_value[RENDER_MATERIAL_TextureId];
+
+    if (textureIdValue.isNull())     
+        return ERROR;                 // No external file support for now.
+
+    textureIdValue = (uint64_t) context.GetDestinationDb().Textures().ImportTexture (context, sourceDb, (DgnTextureId) textureIdValue.asUInt64()).GetValue();
+
+    return SUCCESS;
     }
 
 //=======================================================================================
