@@ -8,8 +8,6 @@
 //#ifdef WIP_DOES_NOT_BUILD_ON_ANDROID_OR_IOS
 
 #include "BeSQLitePerformanceTests.h"
-#include "include/PerformanceTestingHelpers.h"
-
 
 #include <vector>
 

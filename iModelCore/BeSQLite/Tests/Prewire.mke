@@ -9,8 +9,5 @@
 
 baseDir = $(_MakeFilePath)
 
-$(BuildContext)Delivery/UnitTests/PerformanceTestingHelpers.h : $(baseDir)Performance/include/PerformanceTestingHelpers.h
-    $(LinkFirstDepToFirstTarget)
-
 $(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
     $(LinkFirstDepToFirstTarget)

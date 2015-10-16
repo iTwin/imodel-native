@@ -12,7 +12,7 @@
 #endif
 
 #include "BeSQLitePerformanceTests.h"
-#include "include/PerformanceTestingHelpers.h"
+
 #include <Bentley/bvector.h>
 #include <Bentley/WString.h>
 
@@ -420,7 +420,7 @@ struct PerformanceSqlStatementTests : public PerformanceTestFixtureBase
         m_stopwatch.Stop();
         const size_t tableCount = tablesToCheck.size();
         EXPECT_EQ(tableCount * repetitions, executionCount) << "Unexpected execution count.";
-        LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds(), sql);
+        LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds(), sql, repetitions);
         PERFORMANCELOG.infov("%hs%10.4f   %s", logMessageHeader.c_str(), m_stopwatch.GetElapsedSeconds(), sql);
     }
 
@@ -467,7 +467,7 @@ struct PerformanceSqlStatementTests : public PerformanceTestFixtureBase
         m_stopwatch.Stop();
         const size_t tableCount = tablesToCheck.size();
         EXPECT_EQ(tableCount * repetitions, executionCount) << "Unexpected execution count.";
-        LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds(), sql);
+        LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds(), sql, repetitions);
         PERFORMANCELOG.infov("%s%10.4f   %s", logMessageHeader.c_str(), m_stopwatch.GetElapsedSeconds(), sql);
     }
 
@@ -515,7 +515,7 @@ struct PerformanceSqlStatementTests : public PerformanceTestFixtureBase
 
         Utf8String sampleSql;
         sampleSql.Sprintf(sqlTemplate, "Foo");
-        LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds(), sql);
+        LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds(), sql, repetitions);
         PERFORMANCELOG.infov("%s%10.4f   %s", logMessageHeader.c_str(), m_stopwatch.GetElapsedSeconds(), sampleSql.c_str());
     }
 

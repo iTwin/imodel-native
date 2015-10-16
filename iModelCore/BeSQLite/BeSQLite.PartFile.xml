@@ -34,13 +34,6 @@
 
     <!-- ******************************** Unit Tests ************************************** -->
 
-    <!-- Allow dependent tests to #include <UnitTests/BackDoor/PerformanceTestingHelper/PerformanceTestingHelpers.h> -->
-    <Part Name="PerformanceTestingHelpers" BentleyBuildMakeFile="Tests/Prewire.mke">
-        <Bindings>
-            <Files Required="false" SubPartDirectory="UnitTests/include/UnitTests/BackDoor/PerformanceTestingHelper">Delivery/UnitTests/PerformanceTestingHelpers.h</Files>
-        </Bindings>
-    </Part>
-
     <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
         <SubPart PartName="UnitTests-Documents-DgnDb" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="BeSQLite"/>
