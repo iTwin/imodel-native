@@ -583,7 +583,7 @@ DGNPLATFORM_EXPORT void WorldToView(DPoint4dP viewPts, DPoint3dCP worldPts, int 
 //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
 //! @param[in]      worldPts    Input array in DgnCoordSystem::World.
 //! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void WorldToView(DPoint3dP viewPts, DPoint3dCP worldPt, int nPts) const;
+DGNPLATFORM_EXPORT void WorldToView(DPoint3dP viewPts, DPoint3dCP worldPts, int nPts) const;
 
 //! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
 //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
@@ -601,7 +601,7 @@ DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP worldPts, DPoint4dCP viewPts, int 
 //! @param[out]     worldPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
 //! @param[in]      viewPts     Input array in DgnCoordSystem::View.
 //! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP WorldPts, DPoint3dCP viewPts, int nPts) const;
+DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) const;
 
 //! Retrieve a pointer to the the transform from the current local coordinate system into DgnCoordSystem::World.
 //! @return   NULL if no transform present.
