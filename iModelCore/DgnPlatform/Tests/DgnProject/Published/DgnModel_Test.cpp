@@ -651,6 +651,7 @@ TEST_F(DgnModelTests, ImportElementsWithItems)
         ASSERT_EQ( DgnDbStatus::Success , stat );
 
         DgnElementCPtr el = getSingleElementInModel(*model3);
+        ASSERT_TRUE(el.IsValid());
         ASSERT_NE( nullptr , DgnElement::Item::GetItem(*el) );
         db2->SaveChanges();
         }
