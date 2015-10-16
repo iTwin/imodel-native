@@ -30,11 +30,15 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using Microsoft.IdentityModel.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.IdentityModel.Web;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Xml;
+using System.Text;
 
 namespace Bentley.ECPluginExamples
 {
@@ -112,7 +116,7 @@ namespace Bentley.ECPluginExamples
                         },
                     GetRepositoryIdentifier)
                 .SetSchemaSupport(PopulateSchemas)
-                //.SetConnectionSupport(GetConnectionFormat, OpenConnection, CloseConnection)
+                .SetConnectionSupport(GetConnectionFormat, OpenConnection, CloseConnection)
                 .SetQuerySupport((EnumerableBasedQueryHandler)ExecuteQuery)
                 .SetOperationSupport<RetrieveBackingFileOperation>(FileRetrievalOperation)
                 .SetOperationSupport<InsertOperation>(ExecuteInsertOperation);
@@ -657,6 +661,11 @@ namespace Bentley.ECPluginExamples
 
             var queriedSpatialEntities = ExecuteQuery(queryModule, connection, query, null);
 
+            if (queriedSpatialEntities.Count() == 0)
+            {
+                throw new Bentley.EC.Persistence.Operations.OperationFailedException("There is no OSM entry in the database");
+            }
+
             return new RequestedEntity
             {
                 ID = queriedSpatialEntities.First().InstanceId,
@@ -1047,13 +1056,13 @@ namespace Bentley.ECPluginExamples
             //Console.WriteLine("Entering GetConnectionFormat");
             return new List<ConnectionFormatFieldInfo>
                 {
-                new ConnectionFormatFieldInfo() {ID = "username", DisplayName = "username", IsRequired = true },    
+                //new ConnectionFormatFieldInfo() {ID = "username", DisplayName = "username", IsRequired = true },    
                 //new ConnectionFormatFieldInfo() {ID = "Password", DisplayName = "Password", IsRequired = true, Masked = true },
             //    //new ConnectionFormatFieldInfo() {ID = eBECPluginConstants.DomainsKey, DisplayName = "Domain", IsRequired = false, IsAdvanced = true }, unused
             //    new ConnectionFormatFieldInfo() {ID = eBECPluginConstants.DefaultScopeKey, DisplayName = "DefaultScope", IsRequired = false, IsAdvanced = false },
             //    new ConnectionFormatFieldInfo() {ID = eBECPluginConstants.ActiveScopesKey, DisplayName = "ActiveScopes", IsRequired = false, IsAdvanced = false },
             //    //new ConnectionFormatFieldInfo() {ID = eBECPluginConstants.ImsRelyingPartyServiceUrlKey, DisplayName = "ImsRelyingPartyServiceUrl", IsRequired = false, IsAdvanced = true } unused
-            //    new ConnectionFormatFieldInfo() {ID = "Token", DisplayName = "Token", IsRequired = false, IsAdvanced = true, IsCredential = true }
+                new ConnectionFormatFieldInfo() {ID = "Token", DisplayName = "Token", IsRequired = true, IsAdvanced = true, IsCredential = true }
                 }.ToArray();
         }
 
@@ -1068,11 +1077,23 @@ namespace Bentley.ECPluginExamples
             //string password = connection.ConnectionInfo.GetField("Password").Value;
             //... Whatever you need to do with username and password ...
 
-            string username = connection.ConnectionInfo.GetField("username").Value;
+            string token = connection.ConnectionInfo.GetField("Token").Value;
 
-            if (username != "Test")
+            try
             {
-                throw new Bentley.ECSystem.Repository.AccessDeniedException("Invalid username");
+                string serializedToken = Encoding.UTF8.GetString(Convert.FromBase64String(token.Trim()));
+
+                using (var reader = XmlReader.Create(new StringReader(serializedToken)))
+                {
+                    var bootstrapToken = FederatedAuthentication.ServiceConfiguration.SecurityTokenHandlers.ReadToken(reader);
+                    SecurityTokenHandler handler = FederatedAuthentication.ServiceConfiguration.SecurityTokenHandlers[bootstrapToken];
+
+                    var cic = handler.ValidateToken(bootstrapToken);
+                }
+            }
+            catch (Exception)
+            {
+                throw new Bentley.ECSystem.Repository.AccessDeniedException("Invalid token.");
             }
             
         }

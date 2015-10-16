@@ -42,11 +42,15 @@ ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.logging-2.0.dll
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Newtonsoft.Json.dll
 %include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Microsoft.IdentityModel.dll
+%include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.dll
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.ComponentModel.DataAnnotations.dll
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Core.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.IdentityModel.dll
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.IO.Compression.dll
 %include csrefapnd.mki

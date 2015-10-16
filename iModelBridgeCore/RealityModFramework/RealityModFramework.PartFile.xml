@@ -172,11 +172,11 @@
     </Part>
 
     <Part Name="RealityDbECPlugin" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" OnlyPlatforms="x86,x64">
-        <RequiredRepository>BCC-IdentityModel</RequiredRepository>
         <SubPart PartName="RealityDb"/>
         <SubPart PartName="BentleyWMSPackageNet"/>
         <SubPart PartName="ECServices"          PartFile="ecf"            Repository="ecf" />
         <SubPart PartName="JsonNet45"           PartFile="${SrcBsiCommon}CvsPartFiles\bin"    Repository="Bin-JsonNet" />
+        <SubPart PartName="IdentityModel"       PartFile="${SrcBsiCommon}CvsPartFiles\identitymodel"    Repository="BCC-IdentityModel" />
         <Bindings>
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/Bentley.RealityDbECPlugin.dll</Assemblies>
         </Bindings>
@@ -241,6 +241,7 @@
         <ProductDirectory Name="BentleyNativeAssemblies"        Path=""/>
         <ProductDirectory Name="BentleyGeometryNetAssemblies"   Path=""/>
         <ProductDirectory Name="JsonNetAssemblies"              Path=""/>
+        <ProductDirectory Name="IdentityModelAssemblies"        Path=""/>
         <ProductDirectory Name="ImagePPAssemblies"              Path=""/>
         <ProductDirectory Name="PlatformTechAssemblies"         Path=""/>
         <ProductDirectory Name="RmgrToolsNativeAssemblies"      Path=""/>
