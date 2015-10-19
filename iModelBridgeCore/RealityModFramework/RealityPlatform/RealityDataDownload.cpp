@@ -9,11 +9,9 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/WString.h>
 #include <Bentley/BeFileName.h>
-#include <Bentley/RefCounted.h>
 
 #include <RealityPlatform/RealityDataDownload.h>
 
-#include <stdio.h>
 #include <curl/curl.h>
 
 #define MAX_RETRY_ON_ERROR          25
