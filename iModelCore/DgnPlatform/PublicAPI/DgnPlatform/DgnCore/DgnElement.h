@@ -637,7 +637,6 @@ protected:
     struct Flags
     {
         uint32_t m_persistent:1;
-        uint32_t m_editable:1;
         uint32_t m_lockHeld:1;
         uint32_t m_inSelectionSet:1;
         uint32_t m_hilited:3;

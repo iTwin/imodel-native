@@ -401,7 +401,8 @@ protected:
     DGNPLATFORM_EXPORT virtual void _PopTransformClip();
     DGNPLATFORM_EXPORT virtual bool _FilterRangeIntersection(GeometricElementCR);
     DGNPLATFORM_EXPORT virtual DgnModelP _GetViewTarget();
-    virtual IPickGeomP _GetIPickGeom() {return NULL;}
+    virtual IPickGeomP _GetIPickGeom() {return nullptr;}
+    virtual void _OnPreDrawTransient() {m_ovrMatSymb.Clear(); GetIDrawGeom().ActivateOverrideMatSymb(&m_ovrMatSymb);}
     DGNPLATFORM_EXPORT virtual void _VisitTransientGraphics(bool isPreUpdate);
     DGNPLATFORM_EXPORT virtual void _AllocateScanCriteria();
     DGNPLATFORM_EXPORT virtual void _SetupScanCriteria();
@@ -414,7 +415,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _AddContextOverrides(OvrMatSymbR);
     DGNPLATFORM_EXPORT virtual void _ModifyPreCook(ElemDisplayParamsR); 
     DGNPLATFORM_EXPORT virtual void _CookDisplayParams(ElemDisplayParamsR, ElemMatSymbR);
-    DGNPLATFORM_EXPORT virtual void _CookDisplayParamsOverrides(ElemDisplayParamsR, OvrMatSymbR);
     DGNPLATFORM_EXPORT virtual void _SetScanReturn();
     DGNPLATFORM_EXPORT virtual void _PushFrustumClip();
     DGNPLATFORM_EXPORT virtual void _InitScanCriteria();
@@ -449,6 +449,7 @@ public:
     void ResetRasterPlane() {m_rasterPlane = RasterPlane_Any;}
     DgnElement::Hilited GetCurrHiliteState() {return m_hiliteState;}
     void SetSubRectFromViewRect(BSIRectCP viewRect);
+    void OnPreDrawTransient() {_OnPreDrawTransient();} // Initialize per-transient state since _OutputElement may not be called...
     DGNPLATFORM_EXPORT void SetSubRectNpc(DRange3dCR subRect);
     DGNPLATFORM_EXPORT bool SetWantMaterials(bool wantMaterials);
     DGNPLATFORM_EXPORT DMatrix4d GetLocalToView() const;
@@ -719,16 +720,6 @@ DGNPLATFORM_EXPORT ClipPlaneSetCP GetRangePlanes() const;
 
 //__PUBLISH_SECTION_END__
 
-//! Get the current LineStyleSymb.
-//! @return the current LineStyleSymb.
-//DGNPLATFORM_EXPORT ILineStyleCP GetCurrLineStyle (LineStyleSymbP* symb);
-
-//! Set the linestyle in the current linestyle MatSymb. This method is mainly used to temporarily clear the current
-//! linestyle, for pieces of geometry that are to be drawn solid. To do that, call GetCurrLineStyle and save the
-//! current value. Then call this method passing NULL and when you're done, call this method again to restore the saved linestyle.
-//! @param[in]      lstyle      The new current linestyle. If NULL, no (solid) linestyle is used.
-//DGNPLATFORM_EXPORT void SetCurrLineStyle (ILineStyleCP lstyle);
-
 DGNPLATFORM_EXPORT bool& GetUseCachedGraphics();
 DGNPLATFORM_EXPORT bool GetDisplayPriorityRange(int32_t& low, int32_t& high) const;
 
@@ -736,15 +727,7 @@ DGNPLATFORM_EXPORT bool GetDisplayPriorityRange(int32_t& low, int32_t& high) con
 //! @note Does NOT call ActivateMatSymb on the output or change the current ElemDisplayParams/ElemMatSymb of the context.
 DGNPLATFORM_EXPORT void CookDisplayParams(ElemDisplayParamsR, ElemMatSymbR);
 
-//! Change the supplied "natural" ElemDisplayParams. Resolves effective symbology as required by the context and initializes the supplied OvrMatSymb.
-//! @note Does NOT call ActivateOverrideMatSymb on the output or change the current ElemDisplayParams/OvrMatSymb of the context.
-DGNPLATFORM_EXPORT void CookDisplayParamsOverrides(ElemDisplayParamsR, OvrMatSymbR);
-
 //__PUBLISH_SECTION_START__
-
-//DGNPLATFORM_EXPORT ColorDef GetCurrLineColor ();
-//DGNPLATFORM_EXPORT ColorDef GetCurrFillColor ();
-//DGNPLATFORM_EXPORT uint32_t GetCurrWidth ();
 
 //! Calculate the net display priority value. The net display priority is based on the geometry (element) and sub-category priority.
 //! @return the net display priority. For 3D views, display priority is always 0.
@@ -765,10 +748,6 @@ ElemDisplayParams& GetCurrentDisplayParams() {return m_currDisplayParams;}
 //! Change the current "natural" ElemDisplayParams. Resolves effective symbology as required by the context and initializes the current ElemMatSymb.
 //! @note Calls ActivateMatSymb on the output.
 DGNPLATFORM_EXPORT void CookDisplayParams();
-
-//! Change the current ElemDisplayParams for any context overrides. Cooks the modified ElemDisplayParams into the current OvrMatSymb using the current override flags.
-//! @note Calls ActivateOverrideMatSymb on the output.
-DGNPLATFORM_EXPORT void CookDisplayParamsOverrides();
 
 //! Clears current override flags and re-applies context overrides.
 //! @note Calls ActivateOverrideMatSymb on the output.
