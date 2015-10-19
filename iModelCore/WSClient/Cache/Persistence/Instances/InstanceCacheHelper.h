@@ -16,6 +16,7 @@
 
 #include "ObjectInfoManager.h"
 #include "RelationshipInfoManager.h"
+#include "../Changes/ChangeInfoManager.h"
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
@@ -39,6 +40,7 @@ struct InstanceCacheHelper
         HierarchyManager&           m_hierarchyManager;
         ObjectInfoManager&          m_objectInfoManager;
         RelationshipInfoManager&    m_relationshipInfoManager;
+        ChangeInfoManager&          m_changeInfoManager;
 
         ECSqlAdapterCache<JsonInserter> m_inserters;
         ECSqlAdapterCache<JsonUpdater> m_updaters;
@@ -63,7 +65,9 @@ struct InstanceCacheHelper
             CachedInstances& cachedInstancesInOut
             );
 
-        BentleyStatus CacheInstance(ObjectInfoR infoInOut, RapidJsonValueCR properties);
+        BentleyStatus SaveNewInstance(ObjectInfoR infoInOut, ECClassCR ecClass, RapidJsonValueCR properties);
+        BentleyStatus SaveExistingInstance(ObjectInfoCR infoInOut, ECClassCR ecClass, RapidJsonValueCR properties);
+        BentleyStatus MergeAndSaveModifiedInstance(ObjectInfoCR info, ECClassCR ecClass, RapidJsonValueCR properties);
 
     public:
         InstanceCacheHelper
@@ -71,7 +75,8 @@ struct InstanceCacheHelper
             ECDbAdapter& dbAdapter,
             HierarchyManager& hierarchyManager,
             ObjectInfoManager& objectInfoManager,
-            RelationshipInfoManager& relationshipInfoManager
+            RelationshipInfoManager& relationshipInfoManager,
+            ChangeInfoManager& changeInfoManager
             );
 
         //! Caches instances, related instances and information to cache. Will update existing or create new instnaces.
@@ -88,10 +93,11 @@ struct InstanceCacheHelper
             ICancellationTokenPtr cancellationToken = nullptr
             );
 
-        //! Utility for directly saving new instance to cache
-        BentleyStatus CacheNewInstance(ObjectInfoR infoInOut, RapidJsonValueCR properties);
-        //! Utility for directly saving existing instance to cache
-        BentleyStatus CacheExistingInstance(ObjectInfoCR info, RapidJsonValueCR properties);
+        //! Utility for caching new or existing instance to cache and handle modified instance merging
+        BentleyStatus CacheInstance(ObjectInfoR infoInOut, RapidJsonValueCR properties);
+
+        //! Utility for directly updating cached instance data
+        BentleyStatus UpdateExistingInstanceData(ObjectInfoCR info, RapidJsonValueCR properties);
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -132,6 +138,7 @@ struct InstanceCacheHelper::PartialCachingState
     private:
         //! Check if instance is fully persited in cache and needs all properties to be selected
         bool IsFullyPersisted(ObjectInfoCR info);
+        bool DoesRequireAllProperties(ObjectInfoCR info);
 
         static BentleyStatus BuildAllPropertiesSelectedPaths
             (

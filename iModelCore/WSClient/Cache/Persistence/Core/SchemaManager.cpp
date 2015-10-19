@@ -33,7 +33,13 @@ BentleyStatus SchemaManager::ImportCacheSchemas()
     {
     ECSchemaReadContextPtr schemaContext = SchemaContext::CreateReadContext();
 
-    SchemaKey cacheSchemaKey = SchemaKey(SCHEMA_CacheSchema, 1, 5);
+    SchemaKey cacheSchemaKey = SchemaKey
+        (
+        SCHEMA_CacheSchema,
+        SCHEMA_CacheSchema_Major,
+        SCHEMA_CacheSchema_Minor
+        );
+
     ECSchemaPtr cacheSchema = schemaContext->LocateSchema(cacheSchemaKey, SchemaMatchType::SCHEMAMATCHTYPE_Exact);
     BeAssert(cacheSchema.IsValid());
 

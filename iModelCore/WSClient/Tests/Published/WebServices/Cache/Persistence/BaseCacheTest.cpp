@@ -128,7 +128,7 @@ ECSchemaPtr BaseCacheTest::GetTestSchema2()
 
 BeFileName BaseCacheTest::GetTestSchemaPath()
     {
-    BeFileName testSchemaPath(FSTest::GetTempDir().AppendToPath(L"TestSchema"));
+    BeFileName testSchemaPath(GetTestsTempDir().AppendToPath(L"TestSchema"));
 
     if (!testSchemaPath.DoesPathExist())
         {
@@ -152,7 +152,7 @@ std::shared_ptr<DataSourceCache> BaseCacheTest::GetTestCache()
 
     BeFileName cachePath(":memory:");
 
-    cachePath = FSTest::GetTempDir().AppendToPath(L"testCache.ecdb");
+    cachePath = GetTestsTempDir().AppendToPath(L"testCache.ecdb");
     BeFileName::BeDeleteFile(cachePath);
 
     BentleyStatus status = s_reusableCache->Create(cachePath, StubCacheEnvironemnt());

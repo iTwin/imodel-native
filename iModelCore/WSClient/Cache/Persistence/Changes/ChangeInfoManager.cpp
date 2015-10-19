@@ -10,6 +10,7 @@
 
 #include <WebServices/Cache/Util/ECDbHelper.h>
 #include "../Core/CacheSchema.h"
+#include "../../Util/JsonUtil.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -24,6 +25,7 @@ ObjectInfoManager& objectInfoManager,
 RelationshipInfoManager& relationshipInfoManager,
 FileInfoManager& fileInfoManager
 ) :
+m_dbAdapter(&dbAdapter),
 m_statementCache(&statementCache),
 m_objectInfoManager(&objectInfoManager),
 m_relationshipInfoManager(&relationshipInfoManager),
@@ -303,4 +305,137 @@ BentleyStatus ChangeInfoManager::SetupChangeNumber(ChangeInfoR info)
     info.SetChangeNumber(newNumber);
 
     return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeInfoManager::ReadBackupInstance(ECInstanceKeyCR infoKey, RapidJsonDocumentR instanceOut)
+    {
+    auto statement = m_statementCache->GetPreparedStatement("ChangeInfoManager::ReadBackupInstance", [&]
+        {
+        return
+            "SELECT backup.[" CLASS_InstanceBackup_PROPERTY_Instance "] "
+            "FROM ONLY " ECSql_InstanceBackup " backup "
+            "JOIN ONLY " ECSql_ChangeInfoToInstanceBackup " rel ON rel.SourceECInstanceId = ? "
+            "LIMIT 1 ";
+        });
+
+    statement->BindId(1, infoKey.GetECInstanceId());
+    statement->Step();
+    auto backupStr = statement->GetValueText(0);
+
+    instanceOut.SetObject();
+    if (!Utf8String::IsNullOrEmpty(backupStr))
+        {
+        instanceOut.Parse<0>(backupStr);
+        JsonUtil::RemoveECMembers(instanceOut);
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeInfoManager::SaveBackupInstance(ECInstanceKeyCR infoKey, RapidJsonValueCR instance)
+    {
+    using namespace rapidjson;
+    GenericStringBuffer<UTF8<>> buffer;
+    Writer<GenericStringBuffer<UTF8<>>> writer(buffer);
+    instance.Accept(writer);
+    return SaveBackupInstance(infoKey, buffer.GetString());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeInfoManager::SaveBackupInstance(ECInstanceKeyCR infoKey, JsonValueR instance)
+    {
+    JsonUtil::RemoveECMembers(instance);
+    return SaveBackupInstance(infoKey, Json::FastWriter::ToString(instance).c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeInfoManager::SaveBackupInstance(ECInstanceKeyCR infoKey, Utf8CP serializedInstance)
+    {
+    auto backupId = FindBackupInstance(infoKey);
+    if (backupId.IsValid())
+        {
+        auto statement = m_statementCache->GetPreparedStatement("ChangeInfoManager::SaveBackupInstance:Update", [&]
+            {
+            return "UPDATE ONLY " ECSql_InstanceBackup " SET [" CLASS_InstanceBackup_PROPERTY_Instance "] = ? WHERE ECInstanceId = ? ";
+            });
+        statement->BindText(1, serializedInstance, IECSqlBinder::MakeCopy::No);
+        statement->BindId(1, backupId);
+        if (statement->Step() != ECSqlStepStatus::Done)
+            {
+            return ERROR;
+            }
+        }
+    else
+        {
+        auto statement = m_statementCache->GetPreparedStatement("ChangeInfoManager::SaveBackupInstance:Insert", [&]
+            {
+            return "INSERT INTO " ECSql_InstanceBackup " ([" CLASS_InstanceBackup_PROPERTY_Instance "]) VALUES (?) ";
+            });
+        statement->BindText(1, serializedInstance, IECSqlBinder::MakeCopy::No);
+        ECInstanceKey backupKey;
+        if (statement->Step(backupKey) != ECSqlStepStatus::Done)
+            {
+            return ERROR;
+            }
+
+        auto relClass = m_dbAdapter->GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_REL_ChangeInfoToInstanceBackup);
+        if (!m_dbAdapter->RelateInstances(relClass, infoKey, backupKey).IsValid())
+            {
+            return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeInfoManager::DeleteBackupInstance(ECInstanceKeyCR infoKey)
+    {
+    auto backupId = FindBackupInstance(infoKey);
+    if (!backupId.IsValid())
+        {
+        return SUCCESS;
+        }
+
+    auto statement = m_statementCache->GetPreparedStatement("ChangeInfoManager::DeleteBackupInstance", [&]
+        {
+        return "DELETE FROM ONLY " ECSql_InstanceBackup " WHERE ECInstanceId = ? ";
+        });
+    statement->BindId(1, backupId);
+    if (statement->Step() != ECSqlStepStatus::Done)
+        {
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+ECInstanceId ChangeInfoManager::FindBackupInstance(ECInstanceKeyCR infoKey)
+    {
+    auto statement = m_statementCache->GetPreparedStatement("ChangeInfoManager::FindBackupInstance", [&]
+        {
+        return
+            "SELECT backup.ECInstanceId "
+            "FROM ONLY " ECSql_InstanceBackup " backup "
+            "JOIN ONLY " ECSql_ChangeInfoToInstanceBackup " rel ON rel.SourceECInstanceId = ? "
+            "LIMIT 1 ";
+        });
+    statement->BindId(1, infoKey.GetECInstanceId());
+    statement->Step();
+    return statement->GetValueId<ECInstanceId>(0);
     }

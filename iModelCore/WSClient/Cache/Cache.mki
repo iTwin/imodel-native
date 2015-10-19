@@ -88,10 +88,12 @@ ClientMkiHeaders =                                                          \
     $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV3ToV4.h            \
     $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV4ToV5.h            \
     $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV5ToCurrent.h       \
+    $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV7ToV8.h            \
     $(CacheMkiSourceDir)SyncCachedDataTask.h                                \
     $(CacheMkiSourceDir)SyncCachedInstancesSeperatelyTask.h                 \
     $(CacheMkiSourceDir)SyncCachedInstancesTask.h                           \
-    $(CacheMkiSourceDir)SyncLocalChangesTask.h
+    $(CacheMkiSourceDir)SyncLocalChangesTask.h                              \
+    $(CacheMkiSourceDir)Util/JsonUtil.h
     
 #----------------------------------------------------------------------------------------
 #   Compile
@@ -201,6 +203,8 @@ $(o)UpgraderFromV4ToV5$(oext)                   : $(CacheMkiSourceDir)Persistenc
 
 $(o)UpgraderFromV5ToCurrent$(oext)              : $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV5ToCurrent.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
+$(o)UpgraderFromV7ToV8$(oext)                   : $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV7ToV8.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
 
 $(o)BeSQLiteDbTransactionHandler$(oext)         : $(CacheMkiSourceDir)Transactions/BeSQLiteDbTransactionHandler.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
@@ -216,6 +220,8 @@ $(o)ECCustomAttributeHelper$(oext)              : $(CacheMkiSourceDir)Util/ECCus
 $(o)ECDbAdapter$(oext)                          : $(CacheMkiSourceDir)Util/ECDbAdapter.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)JsonDiff$(oext)                             : $(CacheMkiSourceDir)Util/JsonDiff.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)JsonUtil$(oext)                             : $(CacheMkiSourceDir)Util/JsonUtil.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ECDbDebugInfo$(oext)                        : $(CacheMkiSourceDir)Util/ECDbDebugInfo.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 

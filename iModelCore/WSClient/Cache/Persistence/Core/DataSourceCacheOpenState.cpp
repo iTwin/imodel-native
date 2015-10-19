@@ -32,7 +32,7 @@ m_hierarchyManager(m_dbAdapter, m_statementCache, m_changeInfoManager, {&m_fileI
 #else
 m_hierarchyManager(m_dbAdapter, m_statementCache, m_changeInfoManager),
 #endif
-m_instanceHelper(m_dbAdapter, m_hierarchyManager, m_objectInfoManager, m_relationshipInfoManager),
+m_instanceHelper(m_dbAdapter, m_hierarchyManager, m_objectInfoManager, m_relationshipInfoManager, m_changeInfoManager),
 m_rootManager(m_dbAdapter, m_statementCache, m_instanceHelper, m_hierarchyManager, m_objectInfoManager),
 m_cachedQueryManager(m_dbAdapter, m_statementCache, m_hierarchyManager, m_relationshipInfoManager, m_objectInfoManager),
 m_navigationBaseManager(m_dbAdapter, m_statementCache),
