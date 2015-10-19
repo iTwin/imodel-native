@@ -14,6 +14,7 @@ ECDbSchemaManager.UpdateExsitingSchemaDifferntCache
 ECDbSchemas.UpdateExistingECSchemaWithNewProperties
 ECDbSchemas.UpdatingExistingECSchema
 ECDbSchemas.Verify_TFS_14829_A
+ECDbMappingTestFixture.ECInstanceIdAutoGeneration
 
 #TFS268976 will address this (Affan)
 ECDbMappingTestFixture.MismatchDataTypesInExistingTable
