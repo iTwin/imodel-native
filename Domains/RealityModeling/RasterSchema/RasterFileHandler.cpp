@@ -126,7 +126,7 @@ DgnModelId RasterFileModelHandler::CreateRasterFileModel(DgnDbR db, Utf8StringCR
     props.m_boundingBox = rasterRange;
 
     // Create model in DgnDb
-    RasterFileModelPtr model = new RasterFileModel(DgnModel::CreateParams(db, classId, modelName.c_str()), props);
+    RasterFileModelPtr model = new RasterFileModel(DgnModel::CreateParams(db, classId, DgnModel::CreateModelCode(modelName)), props);
     model->Insert();
     return model->GetModelId();
     }
