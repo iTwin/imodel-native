@@ -147,6 +147,7 @@ bool RealityDataDownload::Perform()
     // we can optionally limit the total amount of connections this multi handle uses 
     curl_multi_setopt(m_pCurlHandle, CURLMOPT_MAXCONNECTS, MAX_NB_CONNECTIONS);
 
+    m_curEntry = 0;
     bool atLeast1Download = false;
     for (size_t i = 0; i < min(MAX_NB_CONNECTIONS, m_nbEntry); ++i)
         {
