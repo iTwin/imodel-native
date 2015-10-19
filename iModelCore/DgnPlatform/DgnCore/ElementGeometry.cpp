@@ -2247,13 +2247,21 @@ DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImpo
         {
         switch (egOp.m_opCode)
             {
+            default:
+                writer.Append(egOp);
+                break;
+
             case ElementGeomIO::OpCode::BeginSubCategory:
                 {
                 DgnSubCategoryId subCategory;
                 Transform        geomToElem;
 
                 if (reader.Get(egOp, subCategory, geomToElem))
-                    writer.Append(importer.FindSubCategory(subCategory), geomToElem);   // Must assume that caller already imported the Category and its SubCategories
+                    {
+                    DgnSubCategoryId remappedSubCategoryId = importer.FindSubCategory(subCategory); 
+                    BeAssert(remappedSubCategoryId.IsValid() && "Category and all subcategories should have been remapped by the element that owns this geometry");
+                    writer.Append(remappedSubCategoryId, geomToElem);   
+                    }
                 break;
                 }
 
@@ -2262,14 +2270,31 @@ DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImpo
                 DgnGeomPartId geomPartId;
 
                 if (reader.Get(egOp, geomPartId))
-                    writer.Append(importer.RemapGeomPartId(geomPartId));    // Trigger deep-copy if necessary
-
+                    {
+                    DgnGeomPartId remappedGeomPartId = importer.RemapGeomPartId(geomPartId); //Trigger deep-copy if necessary
+                    BeAssert(remappedGeomPartId.IsValid() && "Unable to deep-copy geompart!");
+                    writer.Append(remappedGeomPartId);
+                    }
                 break;
                 }
 
-            default:
-                writer.Append(egOp);
+            case ElementGeomIO::OpCode::Material:
+                {
+#ifdef WIP_REMAP_MATERIAL // *** Should I always remap materialids in this opcode? 
+                          // *** There two cases: material from subcategory and not from subcategory. Should I handle them differently?
+#endif
+                auto fbSymb = flatbuffers::GetRoot<FB::Material>(egOp.m_data);
+                DgnMaterialId materialId((uint64_t)fbSymb->materialId());
+                DgnMaterialId remappedMaterialId = importer.RemapMaterialId(materialId);
+                BeAssert(remappedMaterialId.IsValid() && "Unable to deep-copy material");
+
+                FlatBufferBuilder remappedfbb;
+                auto mloc = FB::CreateMaterial(remappedfbb, fbSymb->useMaterial(), remappedMaterialId.GetValue(), nullptr, nullptr, 0.0, 0.0, 0.0);
+                remappedfbb.Finish(mloc);
+
+                writer.Append(Operation(OpCode::Material, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
                 break;
+                }
             }
         }
 

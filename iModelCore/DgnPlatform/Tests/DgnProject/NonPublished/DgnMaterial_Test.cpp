@@ -91,44 +91,6 @@ TEST_F(MaterialTest, CRUD)
     Compare(*mat, *updatedMat);
     }
 
-#ifdef CHECK_FOR_PARENT_CHILD_CYCLES
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MaterialTest, ParentChildCycles)
-    {
-    SetupProject();
-    auto params = MakeParams("Palette", "Parent");
-    DgnMaterialPtr parent = new DgnMaterial(params);
-    parent->Insert();
-
-    DgnElementId parentId = parent->GetElementId();
-
-    parent = GetDb().Elements().GetElement(parentId)->MakeCopy<DgnMaterial>();
-    EXPECT_EQ(DgnDbStatus::Success, parent->SetParentId(parentId));
-
-    DgnDbStatus status;
-    parent->Update(&status);
-    EXPECT_EQ(DgnDbStatus::InvalidParent, status);
-
-    auto childParams = MakeParams("Palette", "Child");
-    DgnMaterialPtr child = new DgnMaterial(childParams);
-    child->Insert();
-
-    DgnElementId childId = child->GetElementId();
-
-    child = GetDb().Elements().GetElement(childId)->MakeCopy<DgnMaterial>();
-    EXPECT_EQ(DgnDbStatus::Success, child->SetParentId(parentId));
-    child->Update(&status);
-    EXPECT_EQ(DgnDbStatus::Success, status);
-
-    parent = GetDb().Elements().GetElement(parentId)->MakeCopy<DgnMaterial>();
-    EXPECT_EQ(DgnDbStatus::Success, parent->SetParentId(childId));
-    parent->Update(&status);
-    EXPECT_EQ(DgnDbStatus::InvalidParent, status);
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -145,6 +107,57 @@ void MaterialTest::ExpectParent(DgnDbR db, Utf8StringCR childName, Utf8StringCR 
     EXPECT_TRUE(parent.IsValid());
     if (child.IsValid() && parent.IsValid())
         EXPECT_EQ(child->GetParentMaterialId(), parent->GetMaterialId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MaterialTest, ParentChildCycles)
+    {
+    SetupProject();
+    auto params = MakeParams("Palette", "Parent");
+    DgnMaterialPtr parent = new DgnMaterial(params);
+    parent->Insert();
+
+    DgnElementId parentId = parent->GetElementId();
+
+    // SetParentId() will detect direct cycles (this == this.parent)
+    parent = GetDb().Elements().GetElement(parentId)->MakeCopy<DgnMaterial>();
+    EXPECT_EQ(DgnDbStatus::InvalidParent, parent->SetParentId(parentId));
+
+    auto childParams = MakeParams("Palette", "Child");
+    DgnMaterialPtr child = new DgnMaterial(childParams);
+    child->Insert();
+
+    DgnElementId childId = child->GetElementId();
+
+    DgnDbStatus status;
+    child = GetDb().Elements().GetElement(childId)->MakeCopy<DgnMaterial>();
+    EXPECT_EQ(DgnDbStatus::Success, child->SetParentId(parentId));
+    child->Update(&status);
+    EXPECT_EQ(DgnDbStatus::Success, status);
+    ExpectParent(GetDb(), "Child", "Parent");
+
+    // Child.parent=Parent && Parent.parent=Child:
+    //  Child => Parent => Child => ... - caught in Update()
+    parent = GetDb().Elements().GetElement(parentId)->MakeCopy<DgnMaterial>();
+    EXPECT_EQ(DgnDbStatus::Success, parent->SetParentId(childId));
+    parent->Update(&status);
+    EXPECT_EQ(DgnDbStatus::InvalidParent, status);
+
+    // Grandchild => Child => Parent - OK.
+    parent->SetParentId(DgnElementId());
+    auto grandchildParams = MakeParams("Palette", "Grandchild", child->GetMaterialId());
+    DgnMaterial grandchild(grandchildParams);
+    grandchild.Insert(&status);
+    EXPECT_EQ(DgnDbStatus::Success, status);
+    ExpectParent(GetDb(), "Grandchild", "Child");
+    ExpectParent(GetDb(), "Child", "Parent");
+
+    // Grandchild => Child => Parent => Grandchild - caught in Update()
+    EXPECT_EQ(DgnDbStatus::Success, parent->SetParentId(grandchild.GetElementId()));
+    parent->Update(&status);
+    EXPECT_EQ(DgnDbStatus::InvalidParent, status);
     }
 
 /*---------------------------------------------------------------------------------**//**

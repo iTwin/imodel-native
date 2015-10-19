@@ -139,13 +139,13 @@ public:
     DgnTextureCPtr Update(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Update<DgnTexture>(*this, status); } //!< Updates the texture in the DgnDb and returns the persistent copy.
 
     // Creates a Code for a texture with the specified name.
-    DGNPLATFORM_EXPORT static Code CreateTextureCode(Utf8StringCR textureName, DgnDbR db);
+    DGNPLATFORM_EXPORT static Code CreateTextureCode(Utf8StringCR textureName);
 
     //! Looks up the ID of a texture by Code
     DGNPLATFORM_EXPORT static DgnTextureId QueryTextureId(Code const& code, DgnDbR db);
 
     //! Looks up the ID of a texture by name
-    static DgnTextureId QueryTextureId(Utf8StringCR textureName, DgnDbR db) { return QueryTextureId(CreateTextureCode(textureName, db), db); }
+    static DgnTextureId QueryTextureId(Utf8StringCR textureName, DgnDbR db) { return QueryTextureId(CreateTextureCode(textureName), db); }
 
     //! Looks up a texture by ID
     static DgnTextureCPtr QueryTexture(DgnTextureId textureId, DgnDbR db) { return db.Elements().Get<DgnTexture>(textureId); }

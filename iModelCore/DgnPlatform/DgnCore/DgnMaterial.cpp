@@ -119,7 +119,7 @@ DgnDbStatus DgnMaterial::_SetParentId(DgnElementId parentId)
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnMaterial::CreateParams::CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName, Utf8StringCR value, DgnMaterialId parentMaterialId, Utf8StringCR descr)
-  : T_Super(db, DgnMaterial::QueryDgnClassId(db), CreateMaterialCode(paletteName, materialName, db), parentMaterialId),
+  : T_Super(db, DgnMaterial::QueryDgnClassId(db), CreateMaterialCode(paletteName, materialName), parentMaterialId),
     m_data(value, descr)
     {
     //
@@ -224,3 +224,44 @@ DgnMaterial::Iterator DgnMaterial::MakeIterator(DgnDbR db, Iterator::Options opt
     return Iterator::Create(db, options);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnMaterialId DgnMaterial::ImportMaterial(DgnMaterialId srcMaterialId, DgnImportContext& importer)
+    {
+    //  See if we already have a material with the same palette and code in the destination Db.
+    //  If so, we'll map the source material to it.
+    DgnMaterialCPtr srcMaterial = DgnMaterial::QueryMaterial(srcMaterialId, importer.GetSourceDb());
+    BeAssert(srcMaterial.IsValid());
+    if (!srcMaterial.IsValid())
+        {
+        BeAssert(false && "invalid source material ID");
+        return DgnMaterialId();
+        }
+
+    DgnMaterialId dstMaterialId = QueryMaterialId(srcMaterial->GetPaletteName(), srcMaterial->GetMaterialName(), importer.GetDestinationDb());
+    if (dstMaterialId.IsValid())
+        {
+        //  *** TBD: Check if the material definitions match. If not, rename and remap
+        //  *** TBD: Make sure that child materials are also remapped? Or, wait for someone to ask for them one by one?
+        importer.AddMaterialId(srcMaterialId, dstMaterialId);
+        return dstMaterialId;
+        }
+
+    //  No such material in the destination Db. Ask the source Material to import itself.
+    auto importedElem = srcMaterial->Import(nullptr, importer.GetDestinationDb().GetDictionaryModel(), importer);
+    return importedElem.IsValid()? DgnMaterialId(importedElem->GetElementId().GetValue()): DgnMaterialId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnMaterialId DgnImportContext::RemapMaterialId(DgnMaterialId source)
+    {
+    if (!IsBetweenDbs())
+        return source;
+    DgnMaterialId dest = FindMaterialId(source);
+    if (dest.IsValid())
+        return dest;
+    return DgnMaterial::ImportMaterial(source, *this);
+    }

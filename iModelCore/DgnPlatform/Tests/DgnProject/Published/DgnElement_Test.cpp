@@ -28,12 +28,12 @@ TEST_F (DgnElementTests, ResetStatistics)
     EXPECT_TRUE (seedModel != nullptr);
 
     //Inserts a model
-    DgnModelPtr M1 = seedModel->Clone("Model1");
+    DgnModelPtr M1 = seedModel->Clone(DgnModel::CreateModelCode("Model1"));
     M1->Insert("Test Model 1");
     EXPECT_TRUE (M1 != nullptr);
     m_db->SaveChanges("changeSet1");
 
-    DgnModelId M1id = m_db->Models().QueryModelId("model1");
+    DgnModelId M1id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1"));
     EXPECT_TRUE (M1id.IsValid());
 
     //Inserts 2 elements.
@@ -104,12 +104,12 @@ TEST_F (DgnElementTests, UpdateElement)
     EXPECT_TRUE (seedModel != nullptr);
 
     //Inserts a model
-    DgnModelPtr m1 = seedModel->Clone("Model1");
+    DgnModelPtr m1 = seedModel->Clone(DgnModel::CreateModelCode("Model1"));
     m1->Insert("Test Model 1");
     EXPECT_TRUE(m1 != nullptr);
     m_db->SaveChanges("changeSet1");
 
-    DgnModelId m1id = m_db->Models().QueryModelId("model1");
+    DgnModelId m1id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1"));
     EXPECT_TRUE(m1id.IsValid());
 
     auto keyE1 = InsertElement(DgnElement::Code(), m1id);
