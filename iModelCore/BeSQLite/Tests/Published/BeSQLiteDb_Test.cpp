@@ -272,8 +272,8 @@ TEST_F(BeSQLiteDbTests, SetGuids)
     m_result = db2.CreateNewDb(dbName2.GetNameUtf8().c_str(), dbGuid2);
     dbGuid3 = db2.GetDbGuid();
     EXPECT_TRUE (dbGuid3.IsValid());
-    //get the RepositoryId
-    BeRepositoryId repId = m_db.GetRepositoryId();
+    //get the BriefcaseId
+    BeBriefcaseId repId = m_db.GetBriefcaseId();
     EXPECT_TRUE (repId.IsValid());
     EXPECT_EQ (0, repId.GetValue());
     }
@@ -542,10 +542,10 @@ TEST_F(BeSQLiteDbTests, CachedProperties)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Save and Query RepositoryLocal Values
+* Save and Query BriefcaseLocal Values
 * @bsimethod                                    Majd.Uddin                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(BeSQLiteDbTests, RepositoryLocalValues)
+TEST_F(BeSQLiteDbTests, BriefcaseLocalValues)
     {
     SetupDb(L"local.db");
     
@@ -555,7 +555,7 @@ TEST_F(BeSQLiteDbTests, RepositoryLocalValues)
     size_t rlvIndex = 0;
     ASSERT_EQ (BE_SQLITE_OK, m_db.GetRLVCache().Register(rlvIndex, testPropValueName));
     m_result = m_db.GetRLVCache().SaveValue(rlvIndex, val);
-    EXPECT_EQ (BE_SQLITE_OK, m_result) << "SaveRepositoryLocalValue failed";
+    EXPECT_EQ (BE_SQLITE_OK, m_result) << "SaveBriefcaseLocalValue failed";
 
     uint64_t actualVal = -1LL;
     m_result = m_db.GetRLVCache().QueryValue(actualVal, rlvIndex);
@@ -576,11 +576,11 @@ TEST_F(BeSQLiteDbTests, RepositoryLocalValues)
 
     //Work with RLVs directly
     Utf8CP testProp2 = "TestProp2";
-    m_result = m_db.SaveRepositoryLocalValue(testProp2, "Test Value");
+    m_result = m_db.SaveBriefcaseLocalValue(testProp2, "Test Value");
     EXPECT_EQ(BE_SQLITE_DONE, m_result);
 
     Utf8String val2 = "None";
-    m_result = m_db.QueryRepositoryLocalValue(testProp2, val2);
+    m_result = m_db.QueryBriefcaseLocalValue(testProp2, val2);
     EXPECT_EQ(BE_SQLITE_ROW, m_result);
     EXPECT_STREQ("Test Value", val2.c_str());
     
