@@ -2232,133 +2232,202 @@ TEST_F (ECDbMappingTestFixture, CascadeDeletion)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                               Krischan.Eberle         10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void AssertECInstanceIdAutoGeneration(ECDbCR ecdb, bool expectedToSucceed, Utf8CP fullyQualifiedTestClass, Utf8CP prop, Utf8CP val)
+    {
+    if (!expectedToSucceed)
+        BeTest::SetFailOnAssert(false);
+
+    //different ways to let ECDb auto-generated (if allowed)
+            {
+            Utf8String ecsql;
+            ecsql.Sprintf("INSERT INTO %s (%s) VALUES(%s)", fullyQualifiedTestClass, prop, val);
+            ECSqlStatement stmt;
+
+            ECSqlStatus expectedStat = expectedToSucceed ? ECSqlStatus::Success : ECSqlStatus::InvalidECSql;
+            ASSERT_EQ(expectedStat, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+
+            if (expectedToSucceed)
+                {
+                ECInstanceKey newKey;
+                ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey));
+                ASSERT_TRUE(newKey.IsValid());
+                }
+            }
+
+            {
+            Utf8String ecsql;
+            ecsql.Sprintf("INSERT INTO %s (ECInstanceId, %s) VALUES(NULL, %s)", fullyQualifiedTestClass, prop, val);
+            ECSqlStatement stmt;
+
+            //only fails at step time
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+
+            if (expectedToSucceed)
+                {
+                ECInstanceKey newKey;
+                ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey));
+                ASSERT_TRUE(newKey.IsValid());
+                }
+            }
+
+        ECInstanceId id;
+            {
+            Utf8String ecsql;
+            ecsql.Sprintf("INSERT INTO %s (ECInstanceId, %s) VALUES(?, %s)", fullyQualifiedTestClass, prop, val);
+            ECSqlStatement stmt;
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << "Prepare should always succeed if ECInstanceId is bound via parameters: " << ecsql.c_str();
+
+            DbResult expectedStat = expectedToSucceed ? BE_SQLITE_DONE : BE_SQLITE_ERROR;
+
+            ECInstanceKey newKey;
+            ASSERT_EQ(expectedStat, stmt.Step(newKey));
+            ASSERT_EQ(expectedToSucceed, newKey.IsValid());
+
+            id = newKey.GetECInstanceId();
+            }
+
+        //now test when ECInstanceId is specified
+            {
+            id = ECInstanceId(id.GetValue() + 1);
+            Utf8String ecsql;
+            ecsql.Sprintf("INSERT INTO %s (ECInstanceId, %s) VALUES(%lld, %s)", fullyQualifiedTestClass, prop, id.GetValue() , val);
+            ECSqlStatement stmt;
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+            ECInstanceKey newKey;
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << "Disable flag does not affect case when ECInstanceId is specified";
+            ASSERT_EQ(id.GetValue(), newKey.GetECInstanceId().GetValue());
+            }
+            {
+            Utf8String ecsql;
+            ecsql.Sprintf("INSERT INTO %s (ECInstanceId, %s) VALUES(?, %s)", fullyQualifiedTestClass, prop, val);
+            ECSqlStatement stmt;
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+
+            ECInstanceId id(id.GetValue() + 1);
+            stmt.BindId(1, id);
+            ECInstanceKey newKey;
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << "Disable flag does not affect case when ECInstanceId is specified";
+            ASSERT_EQ(id.GetValue(), newKey.GetECInstanceId().GetValue());
+            }
+
+    BeTest::SetFailOnAssert(true);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbMappingTestFixture, ECInstanceIdAutoGeneration)
-        {
-        //CASE 1
+TEST_F(ECDbMappingTestFixture, ECInstanceIdAutoGeneration)
+    {
+    //CASE 1
             {
             // DisableECInstanceIdAutogeneration CA not present.Should generate Id's automatically.
-            TestItem testItem (
-            "<?xml version='1.0' encoding='utf-8'?>"
-            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-            "    <ECClass typeName='TestClass' isDomainClass='True'>"
-            "    <ECProperty propertyName='P0' typeName='string' />"
-            "    </ECClass>"
-            "</ECSchema>", true);
+            TestItem testItem(
+                "<?xml version='1.0' encoding='utf-8'?>"
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "    <ECClass typeName='TestClass' isDomainClass='True'>"
+                "    <ECProperty propertyName='P0' typeName='string' />"
+                "    </ECClass>"
+                "</ECSchema>", true);
 
             ECDb db;
             bool asserted = false;
-            AssertSchemaImport (db, asserted, testItem, "ECInstanceIdAutoGeneration.ecdb");
-            ASSERT_FALSE (asserted);
+            AssertSchemaImport(db, asserted, testItem, "ECInstanceIdAutoGeneration.ecdb");
+            ASSERT_FALSE(asserted);
 
-            ECSqlStatement stmt;
-            ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (db, "INSERT INTO ts.TestClass(P0) VALUES('Foo')"));
-            ASSERT_EQ (DbResult::BE_SQLITE_DONE, stmt.Step ());
-            stmt.Finalize ();
-                }
+            AssertECInstanceIdAutoGeneration(db, true, "ts.TestClass", "P0", "'val'");
+            }
 
-        //CASE 2
-                {
-                // DisableECInstanceIdAutogeneration custom attribute present on a class. 
-                TestItem testItem (
-                    "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-                    "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                    "    <ECClass typeName='TestClass' isDomainClass='True'>"
-                    "        <ECCustomAttributes>"
-                    "            <DisableECInstanceIdAutogeneration xmlns='ECDbMap.01.00'>"
-                    "            </DisableECInstanceIdAutogeneration>"
-                    "        </ECCustomAttributes>"
-                    "    <ECProperty propertyName='P0' typeName='string' />"
-                    "    </ECClass>"
-                    "</ECSchema>", true);
+            //CASE 2
+            {
+            // DisableECInstanceIdAutogeneration custom attribute present on a class. 
+            TestItem testItem(
+                "<?xml version='1.0' encoding='utf-8'?>"
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "    <ECClass typeName='TestClass' isDomainClass='True'>"
+                "        <ECCustomAttributes>"
+                "            <DisableECInstanceIdAutogeneration xmlns='ECDbMap.01.00'>"
+                "            </DisableECInstanceIdAutogeneration>"
+                "        </ECCustomAttributes>"
+                "    <ECProperty propertyName='P0' typeName='string' />"
+                "    </ECClass>"
+                "</ECSchema>", true);
 
-                ECDb db;
-                bool asserted = false;
-                AssertSchemaImport (db, asserted, testItem, "ECInstanceIdAutoGeneration.ecdb");
-                ASSERT_FALSE (asserted);
+            ECDb db;
+            bool asserted = false;
+            AssertSchemaImport(db, asserted, testItem, "ECInstanceIdAutoGeneration.ecdb");
+            ASSERT_FALSE(asserted);
 
-                ECSqlStatement stmt;
-                ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (db, "INSERT INTO ts.TestClass(P0) VALUES('Foo')"));
-                ASSERT_TRUE (DbResult::BE_SQLITE_ERROR == stmt.Step ());
-                stmt.Finalize ();
-        }
+            AssertECInstanceIdAutoGeneration(db, false, "ts.TestClass", "P0", "'val'");
+            }
 
-        //CASE 3
-                    {
-                    //DisableECInstanceIdAutogenerationCA true for sub classes.
-                    TestItem testItem (
-                        "<?xml version='1.0' encoding='utf-8'?>"
-                        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-                        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                        "    <ECClass typeName='Parent' isDomainClass='True'>"
-                        "        <ECCustomAttributes>"
-                        "            <DisableECInstanceIdAutogeneration xmlns='ECDbMap.01.00'>"
-                        "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
-                        "            </DisableECInstanceIdAutogeneration>"
-                        "        </ECCustomAttributes>"
-                        "        <ECProperty propertyName='P0' typeName='String' />"
-                        "    </ECClass>"
-                        "    <ECClass typeName='Child' isDomainClass='True'>"
-                        "    <BaseClass>Parent</BaseClass>"
-                        "        <ECProperty propertyName='P1' typeName='String' />"
-                        "    </ECClass>"
-                        "</ECSchema>", true);
+            //CASE 3
+            {
+            //DisableECInstanceIdAutogenerationCA true for sub classes.
+            TestItem testItem(
+                "<?xml version='1.0' encoding='utf-8'?>"
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "    <ECClass typeName='Parent' isDomainClass='True'>"
+                "        <ECCustomAttributes>"
+                "            <DisableECInstanceIdAutogeneration xmlns='ECDbMap.01.00'>"
+                "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
+                "            </DisableECInstanceIdAutogeneration>"
+                "        </ECCustomAttributes>"
+                "        <ECProperty propertyName='P0' typeName='String' />"
+                "    </ECClass>"
+                "    <ECClass typeName='Child' isDomainClass='True'>"
+                "    <BaseClass>Parent</BaseClass>"
+                "        <ECProperty propertyName='P1' typeName='String' />"
+                "    </ECClass>"
+                "</ECSchema>", true);
 
-                    ECDb db;
-                    bool asserted = false;
-                    AssertSchemaImport (db, asserted, testItem, "ECInstanceIdAutoGeneration.ecdb");
-                    ASSERT_FALSE (asserted);
+            ECDb db;
+            bool asserted = false;
+            AssertSchemaImport(db, asserted, testItem, "ECInstanceIdAutoGeneration.ecdb");
+            ASSERT_FALSE(asserted);
 
-                    ECSqlStatement stmt;
-                    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (db, "INSERT INTO ts.Parent(P0) VALUES('Foo')"));
-                    ASSERT_EQ (DbResult::BE_SQLITE_DONE, stmt.Step ());
-                    stmt.Finalize ();
+            AssertECInstanceIdAutoGeneration(db, false, "ts.Parent", "P0", "'val'");
+            AssertECInstanceIdAutoGeneration(db, false, "ts.Child", "P1", "'val'");
+            }
 
-                    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (db, "INSERT INTO ts.Child(P0, P1) VALUES('Foo','Hello World')"));
-                    ASSERT_TRUE (DbResult::BE_SQLITE_ERROR == stmt.Step ());
-                    stmt.Finalize ();
-                }
+            //CASE 4
+            {
+            //DisableECInstanceIdAutogenerationCA False for sub classes.
+            TestItem testItem(
+                "<?xml version='1.0' encoding='utf-8'?>"
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "    <ECClass typeName='Parent' isDomainClass='True'>"
+                "        <ECCustomAttributes>"
+                "            <DisableECInstanceIdAutogeneration xmlns='ECDbMap.01.00'>"
+                "                  <AppliesToSubclasses>False</AppliesToSubclasses>"
+                "            </DisableECInstanceIdAutogeneration>"
+                "        </ECCustomAttributes>"
+                "        <ECProperty propertyName='P0' typeName='String' />"
+                "    </ECClass>"
+                "    <ECClass typeName='Child' isDomainClass='True'>"
+                "    <BaseClass>Parent</BaseClass>"
+                "        <ECProperty propertyName='P1' typeName='String' />"
+                "    </ECClass>"
+                "</ECSchema>", true);
 
-        //CASE 4
-                        {
-                        //DisableECInstanceIdAutogenerationCA False for sub classes.
-                        TestItem testItem (
-                            "<?xml version='1.0' encoding='utf-8'?>"
-                            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-                            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                            "    <ECClass typeName='Parent' isDomainClass='True'>"
-                            "        <ECCustomAttributes>"
-                            "            <DisableECInstanceIdAutogeneration xmlns='ECDbMap.01.00'>"
-                            "                  <AppliesToSubclasses>False</AppliesToSubclasses>"
-                            "            </DisableECInstanceIdAutogeneration>"
-                            "        </ECCustomAttributes>"
-                            "        <ECProperty propertyName='P0' typeName='String' />"
-                            "    </ECClass>"
-                            "    <ECClass typeName='Child' isDomainClass='True'>"
-                            "    <BaseClass>Parent</BaseClass>"
-                            "        <ECProperty propertyName='P1' typeName='String' />"
-                            "    </ECClass>"
-                            "</ECSchema>", true);
+            ECDb db;
+            bool asserted = false;
+            AssertSchemaImport(db, asserted, testItem, "ECInstanceIdAutoGeneration.ecdb");
+            ASSERT_FALSE(asserted);
 
-                        ECDb db;
-                        bool asserted = false;
-                        AssertSchemaImport (db, asserted, testItem, "ECInstanceIdAutoGeneration.ecdb");
-                        ASSERT_FALSE (asserted);
+            AssertECInstanceIdAutoGeneration(db, false, "ts.Parent", "P0", "'val'");
+            AssertECInstanceIdAutoGeneration(db, true, "ts.Child", "P1", "'val'");
+            }
+    }
 
-                        ECSqlStatement stmt;
-
-                        ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (db, "INSERT INTO ts.Parent(P0) VALUES('Foo')"));
-                        ASSERT_TRUE (DbResult::BE_SQLITE_ERROR == stmt.Step ());
-                        stmt.Finalize ();
-
-                        ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (db, "INSERT INTO ts.Child(P0, P1) VALUES('Foo1','Hello World')"));
-                        ASSERT_EQ (DbResult::BE_SQLITE_DONE, stmt.Step ());
-                        stmt.Finalize ();
-                    }
-        }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     07/15
 //+---------------+---------------+---------------+---------------+---------------+------

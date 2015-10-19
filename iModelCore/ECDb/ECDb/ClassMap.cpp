@@ -281,6 +281,8 @@ ClassMap::ClassMap(ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStra
 //---------------------------------------------------------------------------------------
 MapStatus ClassMap::Initialize(SchemaImportContext* schemaImportContext, ClassMapInfo const& mapInfo)
     {
+    m_isECInstanceIdAutogenerationDisabled = mapInfo.IsECInstanceIdAutogenerationDisabled();
+
     ECDbMapStrategy const& mapStrategy = GetMapStrategy();
     IClassMap const* effectiveParentClassMap = (mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && mapStrategy.AppliesToSubclasses()) ? mapInfo.GetParentClassMap() : nullptr;
 

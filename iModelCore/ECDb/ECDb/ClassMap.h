@@ -125,10 +125,8 @@ public:
         DomainClass, //!<Class of the mapping is viewed as domain class
         EmbeddedType //!<Class of the mapping is viewed as struct type embedded into another class
         };
-
+  
 private:
-    bool m_isECInstanceIdAutogenerationDisabled;
-
     virtual IClassMap const& _GetView (View classView) const = 0;
     virtual Type _GetClassMapType () const = 0;
     virtual ECN::ECClassCR _GetClass () const = 0;
@@ -140,6 +138,8 @@ private:
     virtual ClassDbView const& _GetDbView () const = 0;
 
 protected:
+    bool m_isECInstanceIdAutogenerationDisabled;
+
     IClassMap() :m_isECInstanceIdAutogenerationDisabled(false) {}
 
 public:
