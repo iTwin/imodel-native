@@ -370,7 +370,7 @@ BentleyStatus ChangeInfoManager::SaveBackupInstance(ECInstanceKeyCR infoKey, Utf
             });
         statement->BindText(1, serializedInstance, IECSqlBinder::MakeCopy::No);
         statement->BindId(1, backupId);
-        if (statement->Step() != ECSqlStepStatus::Done)
+        if (statement->Step() != BE_SQLITE_DONE)
             {
             return ERROR;
             }
@@ -383,7 +383,7 @@ BentleyStatus ChangeInfoManager::SaveBackupInstance(ECInstanceKeyCR infoKey, Utf
             });
         statement->BindText(1, serializedInstance, IECSqlBinder::MakeCopy::No);
         ECInstanceKey backupKey;
-        if (statement->Step(backupKey) != ECSqlStepStatus::Done)
+        if (statement->Step(backupKey) != BE_SQLITE_DONE)
             {
             return ERROR;
             }
@@ -414,7 +414,7 @@ BentleyStatus ChangeInfoManager::DeleteBackupInstance(ECInstanceKeyCR infoKey)
         return "DELETE FROM ONLY " ECSql_InstanceBackup " WHERE ECInstanceId = ? ";
         });
     statement->BindId(1, backupId);
-    if (statement->Step() != ECSqlStepStatus::Done)
+    if (statement->Step() != BE_SQLITE_DONE)
         {
         return ERROR;
         }
