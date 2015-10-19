@@ -1079,6 +1079,11 @@ namespace Bentley.ECPluginExamples
 
             string token = connection.ConnectionInfo.GetField("Token").Value;
 
+#if DEBUG
+            //In debug, we want to bypass this verification.
+            return;
+#else 
+
             try
             {
                 string serializedToken = Encoding.UTF8.GetString(Convert.FromBase64String(token.Trim()));
@@ -1095,7 +1100,7 @@ namespace Bentley.ECPluginExamples
             {
                 throw new Bentley.ECSystem.Repository.AccessDeniedException("Invalid token.");
             }
-            
+#endif      
         }
 
         private void CloseConnection(ConnectionModule sender,
