@@ -302,7 +302,7 @@ protected:
     DgnViewportP            m_viewport;
     Render::ViewDrawP       m_IViewDraw;
     Render::GeomDrawP       m_IDrawGeom;
-    Render::CachedDrawP     m_ICachedDraw;
+    Render::SceneDrawP      m_ICachedDraw;
     Render::ElemDisplayParams m_currDisplayParams;
     Render::ElemMatSymb     m_elemMatSymb;
     Render::OvrMatSymb      m_ovrMatSymb;
@@ -352,7 +352,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _PopTransformClip();
     DGNPLATFORM_EXPORT virtual bool _FilterRangeIntersection(GeometricElementCR);
     DGNPLATFORM_EXPORT virtual DgnModelP _GetViewTarget();
-    virtual IPickGeomP _GetIPickGeom() {return NULL;}
+    virtual IPickGeomP _GetIPickGeom() {return nullptr;}
     DGNPLATFORM_EXPORT virtual void _VisitTransientGraphics(bool isPreUpdate);
     DGNPLATFORM_EXPORT virtual void _AllocateScanCriteria();
     DGNPLATFORM_EXPORT virtual void _SetupScanCriteria();
@@ -428,7 +428,7 @@ public:
     DGNPLATFORM_EXPORT void SetArcTolerance(double tol);
     DGNPLATFORM_EXPORT void SetLinestyleTangents(DPoint3dCP start, DPoint3dCP end);
 
-    DGNPLATFORM_EXPORT Render::GraphicPtr CreateGraphic(Render::GraphicStroker&, Render::CachedDrawP cachedDrawP = nullptr);
+    DGNPLATFORM_EXPORT Render::GraphicPtr CreateGraphic(Render::GraphicStroker&, Render::SceneDrawP sceneDraw=nullptr);
     DGNPLATFORM_EXPORT Render::GraphicPtr GetGraphic(Render::GraphicStroker& stroker);
 
     DGNPLATFORM_EXPORT void DeleteSymbol(Render::IDisplaySymbol*);
@@ -454,7 +454,7 @@ public:
     DGNPLATFORM_EXPORT RasterDisplayParams const& GetRasterDisplayParams() const { return m_rasterDisplayParams; }
 
     //! !!!FOR INTERNAL USE ONLY!!!
-    DGNPLATFORM_EXPORT static void DirectPushTransClipOutput(Render::GeomDrawR, TransformCP trans, ClipPlaneSetCP clip = NULL); //<! @private
+    DGNPLATFORM_EXPORT static void DirectPushTransClipOutput(Render::GeomDrawR, TransformCP trans, ClipPlaneSetCP clip = nullptr); //<! @private
     DGNPLATFORM_EXPORT static void DirectPopTransClipOutput(Render::GeomDrawR); //<! @private
 
 public:
@@ -548,7 +548,7 @@ public:
     DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) const;
 
     //! Retrieve a pointer to the the transform from the current local coordinate system into DgnCoordSystem::World.
-    //! @return   NULL if no transform present.
+    //! @return   nullptr if no transform present.
     DGNPLATFORM_EXPORT TransformCP GetCurrLocalToWorldTransformCP () const;
 
     //! Retrieve a copy of the transform from the current local coordinate system into DgnCoordSystem::World.
@@ -570,7 +570,7 @@ public:
     //! Calculate the size of a "pixel" at a given point in the current local coordinate system. This method can be used to
     //! approximate how large geometry in local coordinates will appear in DgnCoordSystem::View units.
     //! @param[in]      origin      The point at which the pixel size is calculated. This point is only relevant in camera views, where local coordinates
-    //!                             closer to the eye are larger than those further from the eye. May be NULL, in which case the center of the view is used.
+    //!                             closer to the eye are larger than those further from the eye. May be nullptr, in which case the center of the view is used.
     //! @return the length, in the current coordinate system units, of a unit bvector in the x direction in DgnCoordSystem::View, starting at \c origin.
     DGNPLATFORM_EXPORT double GetPixelSizeAtPoint(DPoint3dCP origin) const;
 
@@ -615,7 +615,7 @@ public:
     /// @name Query Methods
     //@{
 
-    //! Get the current state of the ViewFlags for this context's output, can be NULL.
+    //! Get the current state of the ViewFlags for this context's output, can be nullptr.
     //! When a ViewContext is first attached to a DgnViewport, the ViewFlags are initialized
     //! from the DgnViewport's viewflags. However, during the course of an operation,
     //! the viewflags for the output may be different than those on the DgnViewport.
@@ -644,8 +644,8 @@ public:
     DGNPLATFORM_EXPORT DrawPurpose GetDrawPurpose() const;
 
     //! Get the DgnViewport to which this ViewContext is attached. ViewContext's do not always have to be attached to an
-    //! DgnViewport, so therefore callers must always test the result of this call for NULL.
-    //! @return the DgnViewport. NULL if not attached to a DgnViewport.
+    //! DgnViewport, so therefore callers must always test the result of this call for nullptr.
+    //! @return the DgnViewport. nullptr if not attached to a DgnViewport.
     DgnViewportP GetViewport() const {return m_viewport;}
 
     DGNPLATFORM_EXPORT bool Is3dView() const;
@@ -722,24 +722,24 @@ DGNPLATFORM_EXPORT int32_t ResolveNetDisplayPriority(int32_t geomPriority, DgnSu
     //! Get the IViewDraw interface for this ViewContext. Usually, but not always, this will be the IViewDraw from the viewport to which this
     //! context is attached.
     //! @return   the IViewDraw for this context
-    Render::ViewDrawR GetIViewDraw() {BeAssert(NULL != m_IViewDraw); return *m_IViewDraw;}
+    Render::ViewDrawR GetIViewDraw() {BeAssert(nullptr != m_IViewDraw); return *m_IViewDraw;}
 
     //! Get the IDrawGeom interface for this ViewContext. Applications should use this method to draw geometry in Draw methods.
     //! @return   the IDrawGeom for this context
-    Render::GeomDrawR GetIDrawGeom() {BeAssert(NULL != m_IDrawGeom); return *m_IDrawGeom;}
+    Render::GeomDrawR GetIDrawGeom() {BeAssert(nullptr != m_IDrawGeom); return *m_IDrawGeom;}
 
     /** @cond BENTLEY_SDK_Scope1 */
     //! Get the ICachedDraw interface for this ViewContext.
     //! @return   the ICachedDraw for this context.
-    Render::CachedDrawP GetICachedDraw() {return m_ICachedDraw;}
+    Render::SceneDrawP GetICachedDraw() {return m_ICachedDraw;}
 
     //! Check whether we are creating a cached presentation.
     //! @return   true if we're in the process of creating a cache presentation.
     DGNPLATFORM_EXPORT bool CheckICachedDraw();
     /** @endcond */
 
-    //! Get the IPickGeom interface for this ViewContext. Only contexts that are specific to picking will return a non-NULL value.
-    //! @return the IPickGeom interface for this context. May return NULL.
+    //! Get the IPickGeom interface for this ViewContext. Only contexts that are specific to picking will return a non-nullptr value.
+    //! @return the IPickGeom interface for this context. May return nullptr.
     DGNPLATFORM_EXPORT IPickGeomP GetIPickGeom();
 
     //@}
@@ -773,7 +773,7 @@ DGNPLATFORM_EXPORT int32_t ResolveNetDisplayPriority(int32_t geomPriority, DgnSu
     //! @param[in]      pts         Array of points in linestring.
     //! @param[in]      zDepth      Display priority for all vertices.
     //! @param[in]      range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-    //!                                 optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
+    //!                                 optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
     //! @param[in]      closed      Do point represent a shape or linestring.
     DGNPLATFORM_EXPORT void DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false);
 
@@ -781,7 +781,7 @@ DGNPLATFORM_EXPORT int32_t ResolveNetDisplayPriority(int32_t geomPriority, DgnSu
     //! @param[in]      nPts        Number of vertices in \c pts.
     //! @param[in]      pts         Array of points in linestring
     //! @param[in]      range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-    //!                                 optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
+    //!                                 optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
     //! @param[in]      closed      Do point represent a shape or linestring.
     DGNPLATFORM_EXPORT void DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed = false);
 
@@ -790,14 +790,14 @@ DGNPLATFORM_EXPORT int32_t ResolveNetDisplayPriority(int32_t geomPriority, DgnSu
     //! @param[in]      isEllipse   Treat full sweep as ellipse not arc.
     //! @param[in]      zDepth      Z depth value.
     //! @param[in]      range       Array of 2 points with the range (min followed by max) of the arc. This argument is
-    //!                               optional and is only used to speed processing. If you do not already have the range, pass NULL.
+    //!                               optional and is only used to speed processing. If you do not already have the range, pass nullptr.
     DGNPLATFORM_EXPORT void DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double zDepth, DPoint2dCP range);
 
     //! Draw a 3D elliptical arc using the current Linestyle. If there is no current Linestyle, draw a solid arc.
     //! @param[in]      ellipse     The arc data.
     //! @param[in]      isEllipse   Treat full sweep as ellipse not arc.
     //! @param[in]      range       Array of 2 points with the range (min followed by max) of the arc. This argument is
-    //!                               optional and is only used to speed processing. If you do not already have the range, pass NULL.
+    //!                               optional and is only used to speed processing. If you do not already have the range, pass nullptr.
     DGNPLATFORM_EXPORT void DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3dCP range);
 
     //! Draw a 2d BSpline curve using the current Linestyle. If there is no current Linestyle, draw a solid BSpline.
@@ -823,7 +823,7 @@ DGNPLATFORM_EXPORT int32_t ResolveNetDisplayPriority(int32_t geomPriority, DgnSu
     //! instances using that cached representation.
     //! @param[in]      symbolDef        Symbol definition to draw from.
     //! @param[in]      trans            Transform to be applied to the symbol definition to determine location, orientation, size of this instance.
-    //! @param[in]      clip             ClipPlaneSet to be applied to symbol. May be NULL.
+    //! @param[in]      clip             ClipPlaneSet to be applied to symbol. May be nullptr.
     //! @param[in]      ignoreColor      If true, ignore the colors in the symbol definition and use the current color from \c context.
     //! @param[in]      ignoreWeight     If true, ignore line weights in the symbol definition, and use the current line weight from \c context.
     DGNPLATFORM_EXPORT void DrawSymbol(Render::IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight);

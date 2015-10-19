@@ -31,33 +31,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 #define CFGVAR_DEFINED_NULL         ((WStringP)-1) /* defined but no translation */
 #define INVALID_MACRO_LEVEL         (ConfigurationVariableLevel)-99
 
-USING_NAMESPACE_BENTLEY_DGN
-
-#if defined (NEEDSWORK_DESKTOP_PLATFORM)
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct SaveAndSwitchMdlDesc
-{
-private:
-    MdlDescP m_oldDesc;
-
-public:
-    SaveAndSwitchMdlDesc (MdlDescP newDesc)  // switch to new mdl descr
-        {
-        DgnPlatformLib::SessionAdmin&   admin = DgnPlatformLib::GetHost().GetSessionAdmin();
-        if (NULL == newDesc)
-            m_oldDesc = admin._SetCurrentMdlDescr (admin._GetSystemMdlDescr());
-        else
-            m_oldDesc = admin._SetCurrentMdlDescr (newDesc);
-        }
-
-    ~SaveAndSwitchMdlDesc ()
-        {
-        DgnPlatformLib::GetHost().GetSessionAdmin()._SetCurrentMdlDescr (m_oldDesc);
-        }
-};
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   02/2015
@@ -135,11 +108,9 @@ typedef     struct MacroEntry const&   MacroEntryCR;
 struct VariableMonitor
     {
     IVariableMonitorP   m_monitor;
-    MdlDescP            m_mdlDesc;
-    VariableMonitor (IVariableMonitorP monitor, MdlDescP mdlDesc)
+    VariableMonitor (IVariableMonitorP monitor)
         {
         m_monitor = monitor;
-        m_mdlDesc = mdlDesc;
         }
     bool operator==(VariableMonitor const& other) const
         {
@@ -540,7 +511,7 @@ WCharCP     GetTranslationFromLevel (ConfigurationVariableLevel fromLevel) const
     if (nullptr == translation)
         return nullptr;
 
-    return (CFGVAR_DEFINED_NULL != translation) ? translation->c_str() : EMPTY_STRING;
+    return (CFGVAR_DEFINED_NULL != translation) ? translation->c_str() : L"";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1093,11 +1064,7 @@ void            AddMonitor (IVariableMonitorP monitor) const
     if (nullptr == m_monitors)
         m_monitors = new T_VariableMonitors();
 
-#if defined (NEEDSWORK_DESKTOP_PLATFORM)
-    VariableMonitor variableMonitor (monitor, T_HOST.GetSessionAdmin()._GetCurrentMdlDescr());
-#else
-    VariableMonitor variableMonitor (monitor, nullptr);
-#endif
+    VariableMonitor variableMonitor (monitor);
     if (m_monitors->end() == std::find (m_monitors->begin(), m_monitors->end(), variableMonitor))
         m_monitors->push_back (variableMonitor);
 
@@ -1111,14 +1078,10 @@ void            RemoveMonitor (IVariableMonitorR monitor) const
     if (nullptr == m_monitors)
         return;
 
-    VariableMonitor variableMonitor (&monitor, nullptr);
+    VariableMonitor variableMonitor (&monitor);
     T_VariableMonitors::iterator thisMonitor;
     if (m_monitors->end() != (thisMonitor = std::find (m_monitors->begin(), m_monitors->end(), variableMonitor)))
         {
-#if defined (NEEDSWORK_DESKTOP_PLATFORM)
-        SaveAndSwitchMdlDesc _v_v_v ((*thisMonitor).m_mdlDesc);
-#endif
-
         (*thisMonitor).m_monitor->_MonitorStopped (m_macroName.c_str());
         m_monitors->erase (thisMonitor);
         }
@@ -2319,35 +2282,6 @@ void            MacroConfigurationAdmin::_RemoveMonitor (WCharCP macroName, IVar
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   06/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            MacroConfigurationAdmin::_OnUnloadMdlDescr (MdlDescP mdlDesc)
-    {
-    // must search through all the configuration variables and all their monitors to remove those that are getting unloaded.
-    for (MacroEntryCP macroEntry : m_macroSet)
-        {
-        if (nullptr == macroEntry->m_monitors)
-            continue;
-        for (T_VariableMonitors::iterator iterator = macroEntry->m_monitors->begin(); iterator != macroEntry->m_monitors->end(); )
-            {
-            VariableMonitor& monitor = *iterator;
-            if (monitor.m_mdlDesc != mdlDesc)
-                iterator++;
-            else
-                {
-#if defined (NEEDSWORK_DESKTOP_PLATFORM)
-                SaveAndSwitchMdlDesc _v_v_v ((*iterator).m_mdlDesc);
-#endif
-                (*iterator).m_monitor->_MonitorStopped (macroEntry->m_macroName.c_str());
-                iterator = macroEntry->m_monitors->erase (iterator);
-                }
-
-            }
-        }
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            MacroConfigurationAdmin::RenameMacros (T_ReplacementMap& replacementMap)
@@ -2757,19 +2691,7 @@ StatusInt       LoadCONNECTMacros ()
 void    DefineBuiltinMacros ()
     {
     m_macroCfgAdmin.DefineBuiltinMacro(L"_VERSION_10_0", NULL);
-    m_macroCfgAdmin.DefineBuiltinMacro(L"_winNT", NULL);
-    m_macroCfgAdmin.DefineBuiltinMacro(L"_intelNT", NULL);
-    m_macroCfgAdmin.DefineBuiltinMacro(L"_PLATFORMNAME", L"intelnt");
-    m_macroCfgAdmin.DefineBuiltinMacro (L"_ENGINENAME", L"MicroStation");
-    m_macroCfgAdmin.DefineBuiltinMacro(L"MICROSTATION", L"1");
-
-    // Define macro for current working directory when ustn was started.
-    WString workDir;
-    BeFileName::GetCwd (workDir);
-    BeFileName::AppendSeparator (workDir);
-    m_macroCfgAdmin.DefineBuiltinMacro(L"_WORKDIR", workDir.c_str());
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   09/15

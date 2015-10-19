@@ -146,9 +146,6 @@ protected:
     // Remove a configuration variable Monitor
     virtual void          _RemoveMonitor (WCharCP cfgVarName, IVariableMonitorR monitor) = 0;
 
-    // Respond to unloading of an Mdl.
-    virtual void          _OnUnloadMdlDescr (MdlDescP mdlDesc) = 0;
-
 public: 
     // most of the virtual methods of IConfigurationAdmin are accessible only through the ConfigurationManager class.
 
@@ -193,11 +190,6 @@ DGNPLATFORM_EXPORT     static  IConfigurationAdmin& GetAdmin();
 //! Get a singleton instance of an implementation of ConfigurationAdmin that accesses the native OS system environment.
 DGNPLATFORM_EXPORT     static  IConfigurationAdmin& GetEnvAdmin();
 
-//__PUBLISH_SECTION_END__
-
-DGNPLATFORM_EXPORT     static   void                OnUnloadMdlDescr (MdlDescP mdlDescr);
-
-//__PUBLISH_SECTION_START__
 public:
     //! Return the root of the local directory that can be used to store temporary files. This directory must have write access.
     //! @return NULL if no temporary directory available.

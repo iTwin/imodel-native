@@ -235,10 +235,10 @@ virtual StatusInt _SetStandardGridParams (Point2dCR gridReps, Point2dCR gridOffs
 
 // these methods are called only internally, so they don't have corresponding nonvirtual public wrappers.
 DGNPLATFORM_EXPORT virtual bool _IsOriginInView (DPoint3dR drawOrigin, DgnViewportP vp, bool adjustOrigin) const;
-DGNPLATFORM_EXPORT virtual void _DrawZAxis (DgnViewportP vp, Render::CachedDrawP cached, TransformP transformP, ACSDisplayOptions options) const;
+DGNPLATFORM_EXPORT virtual void _DrawZAxis (DgnViewportP vp, Render::SceneDrawP cached, TransformP transformP, ACSDisplayOptions options) const;
 DGNPLATFORM_EXPORT virtual ColorDef _GetColor (DgnViewportP vp, ColorDef menuColor, uint32_t transparency, ACSDisplayOptions options) const;
-DGNPLATFORM_EXPORT virtual void _DrawAxisText (DgnViewportP vp, Render::CachedDrawP cached, WCharCP label, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options) const;
-DGNPLATFORM_EXPORT virtual void _DrawAxisArrow (DgnViewportP vp, Render::CachedDrawP cached, TransformP transformP, ColorDef menuColor, WCharCP label, bool swapAxis, ACSDisplayOptions options, ACSFlags flags) const;
+DGNPLATFORM_EXPORT virtual void _DrawAxisText (DgnViewportP vp, Render::SceneDrawP cached, WCharCP label, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options) const;
+DGNPLATFORM_EXPORT virtual void _DrawAxisArrow (DgnViewportP vp, Render::SceneDrawP cached, TransformP transformP, ColorDef menuColor, WCharCP label, bool swapAxis, ACSDisplayOptions options, ACSFlags flags) const;
 DGNPLATFORM_EXPORT virtual void _DisplayInView (DgnViewportP vp, ACSDisplayOptions options, bool drawName) const;
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 DGNPLATFORM_EXPORT virtual Render::Graphics* _CreateQvElems (DgnViewportP vp, DPoint3dCP drawOrigin, double acsSizePixels, ACSDisplayOptions options, bool drawName) const;

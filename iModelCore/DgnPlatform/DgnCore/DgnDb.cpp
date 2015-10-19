@@ -414,6 +414,7 @@ DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : m_sourceDb(sour
     ComputeGcsAdjustment();
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 static uintptr_t  s_nextQvMaterialId;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                   08/15
@@ -443,6 +444,7 @@ uintptr_t DgnDb::GetQvTextureId(DgnTextureId TextureId) const
     auto const& found = m_qvTextureIds.find(TextureId);
     return (found == m_qvTextureIds.end()) ? 0 : found->second; 
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15

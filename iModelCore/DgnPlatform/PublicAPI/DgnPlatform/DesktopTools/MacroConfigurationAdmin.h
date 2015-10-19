@@ -76,7 +76,6 @@ private:
     DGNPLATFORM_EXPORT    virtual BentleyStatus     _IterateThroughVariables (IConfigVariableIteratorDelegate *delegate) override;
     DGNPLATFORM_EXPORT    virtual BentleyStatus     _MonitorVariable (WCharCP cfgVarName, IVariableMonitorR monitor) override;
     DGNPLATFORM_EXPORT    virtual void              _RemoveMonitor (WCharCP cfgVarName, IVariableMonitorR monitor) override;
-    DGNPLATFORM_EXPORT    virtual void              _OnUnloadMdlDescr (MdlDescP mdlDesc) override;
 
                         MacroEntry const*           GetMacroDefinition (WCharCP macroName);
                         bool                        ContainsExpression (WCharCP expression);

@@ -446,7 +446,7 @@ protected:
     virtual void _CallDecorators(bool& stopFlag) {}
     virtual void _SetNeedsHeal() {m_needsRefresh = true;}
     virtual void _SetNeedsRefresh() {m_needsRefresh = true;}
-    virtual Render::CachedDrawP _GetICachedDraw() = 0;
+    virtual Render::SceneDrawP _GetICachedDraw() = 0;
     virtual Render::ViewDrawP _GetIViewDraw() {return m_output.get();}
     virtual Render::OutputP _GetIViewOutput() {return m_output.get();}
     virtual Render::AntiAliasPref _WantAntiAliasLines() const {return Render::AntiAliasPref::Detect;}
@@ -472,7 +472,7 @@ protected:
     virtual uintptr_t _GetBackDropTextureId() {return 0;}
     DGNPLATFORM_EXPORT virtual ColorDef _GetWindowBgColor() const;
     virtual BentleyStatus _RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) = 0;
-    virtual void _SetICachedDraw(Render::CachedDrawP cachedOutput) = 0;
+    virtual void _SetICachedDraw(Render::SceneDrawP cachedOutput) = 0;
     virtual double _GetMinimumLOD() const {return m_minLOD;}
     DGNPLATFORM_EXPORT virtual Render::Renderer& _GetRenderer() const;
 
@@ -784,7 +784,7 @@ public:
     Render::OutputP GetIViewOutput() {return _GetIViewOutput();}
 
     /** @cond BENTLEY_SDK_Scope1 */
-    Render::CachedDrawP GetICachedDraw() {return _GetICachedDraw();}
+    Render::SceneDrawP GetICachedDraw() {return _GetICachedDraw();}
     /** @endcond */
 
     //! Get the ViewController associated with this DgnViewport.
@@ -887,8 +887,8 @@ struct NonVisibleViewport : DgnViewport
 protected:
     virtual Render::RenderDevice* _GetRenderDevice() const override {return nullptr;}
     virtual void _AllocateOutput() override {}
-    virtual Render::CachedDrawP _GetICachedDraw() override {return nullptr;}
-    virtual void _SetICachedDraw(Render::CachedDrawP cachedOutput) override {}
+    virtual Render::SceneDrawP _GetICachedDraw() override {return nullptr;}
+    virtual void _SetICachedDraw(Render::SceneDrawP cachedOutput) override {}
     virtual ColorDef _GetWindowBgColor() const override {return ColorDef::Black();}
     virtual StatusInt _ConnectToOutput() override { return SUCCESS; }
     virtual void _AdjustZPlanesToModel(DPoint3dR, DVec3dR, ViewControllerCR) const override {}

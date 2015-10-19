@@ -1089,7 +1089,7 @@ StatusInt ViewContext::VisitHit(HitDetailCR hit)
 * create a QvElem using an GraphicStroker stroker.
 * @bsimethod                                                    Keith.Bentley   06/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicPtr ViewContext::CreateGraphic(GraphicStroker& stroker, CachedDrawP cachedDraw)
+GraphicPtr ViewContext::CreateGraphic(GraphicStroker& stroker, SceneDrawP cachedDraw)
     {
     BeAssert(!m_creatingCacheElem || nullptr != cachedDraw);
 
