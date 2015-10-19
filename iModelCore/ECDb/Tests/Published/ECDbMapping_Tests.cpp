@@ -3497,11 +3497,14 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
         ECClassId b1ClassId = ecdb.Schemas().GetECClassId("TestSchema", "B1");
         Utf8String indexWhereClause;
         indexWhereClause.Sprintf("([sc03] IS NOT NULL) AND (ECClassId=%lld)", b1ClassId);
-        AssertIndex(ecdb, "uix_ts_B_fk_ts_Rel11_target", true, "ts_B", {"sc03"}, indexWhereClause.c_str());
-        AssertIndex(ecdb, "uix_ts_B_fk_ts_AnotherRel11_target", true, "ts_B", {"sc03"}, indexWhereClause.c_str());
         AssertIndexExists(ecdb, "ix_ts_B_fk_ts_Rel1N_target", false);
         AssertIndex(ecdb, "ix_ts_B_fk_ts_Rel1NNoKeyProp_target", false, "ts_B", {"ForeignECInstanceId_Rel1NNoKeyProp"}, "([ForeignECInstanceId_Rel1NNoKeyProp] IS NOT NULL)");
         AssertIndex(ecdb, "ix_ts_B_ecclassid", false, "ts_B", {"ECClassId"});
+
+        //These two are redundant and need to be detected by ECDb to only be one
+        AssertIndex(ecdb, "uix_ts_B_fk_ts_Rel11_target", true, "ts_B", {"sc03"}, indexWhereClause.c_str());
+        AssertIndex(ecdb, "uix_ts_B_fk_ts_AnotherRel11_target", true, "ts_B", {"sc03"}, indexWhereClause.c_str());
+
         ASSERT_EQ(4, (int) RetrieveIndicesForTable(ecdb, "ts_B").size());
         }
 
