@@ -1,0 +1,37 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: DgnDbServerClientLibPolicy.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include $(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
+%include $(SharedMki)DefinePublicApiIncludes.mki
+%include $(SharedMki)CommonCompileLinkPolicy.mki
+%include $(SrcRoot)Bentley/PublicMki/BentleyApi.mki 
+%include DefaultToolSet.mki
+
+%if $(TARGET_PLATFORM)=="Windows"
+    # Ignore inheritance via dominance warning
+    cDefs + -wd4250
+%endif
+
+#--------------------------------------------------------------------------------------
+#   Building the WebServicesClient library
+#--------------------------------------------------------------------------------------
+nameToDefine = __DgnDbServerClient_DLL_BUILD__
+%include cdefapnd.mki
+
+#--------------------------------------------------------------------------------------
+#   WinRT-specific
+#--------------------------------------------------------------------------------------
+%if $(TARGET_PLATFORM)=="WinRT"
+    ENABLE_CPP_CX_EXTENSIONS = 1
+%endif
+
+#--------------------------------------------------------------------------------------
+#   iOS-specific
+#--------------------------------------------------------------------------------------
+AppleCppFileTypeControl = $(AppleCppFileTypeControl_ObjCpp)
+# Ignore unknown pragmas
+LLVMCommonCompOpts + -Wno-unknown-pragmas
