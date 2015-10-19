@@ -154,6 +154,11 @@ void LsDefinition::Init(Utf8CP name, Json::Value& lsDefinition, DgnStyleId style
     m_textureHandle = 0;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2015
+//---------------------------------------------------------------------------------------
+void LsDefinition::Destroy(LsDefinitionP def) { delete def; }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -166,7 +171,6 @@ LsDefinition::LsDefinition (Utf8CP name, DgnDbR project, Json::Value& lsDefiniti
     m_location.SetLocation (project, compType, compId);
     SetHWStyle (compType, compId);
     m_componentLookupFailed = false;
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -321,32 +325,6 @@ void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
     context.GetCurrentDisplayParams() = savedParams;
     *context.GetElemMatSymb() = savedMatSymb;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2015
-//---------------------------------------------------------------------------------------
-int32_t _GetQvIndex() const override
-    {
-    return 1;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2015
-//---------------------------------------------------------------------------------------
-QvElemP _GetQvElem(double pixelSize = 0.0) const override
-    {
-    return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2015
-//---------------------------------------------------------------------------------------
-void _SaveQvElem(QvElemP, double pixelSize = 0.0, double sizeDependentRatio = 0.0) const override {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2015
-//---------------------------------------------------------------------------------------
-DgnDbR _GetDgnDb() const override { return m_viewContext.GetDgnDb(); }
 };
 
 //---------------------------------------------------------------------------------------
@@ -555,6 +533,34 @@ LsCache::~LsCache ()
 DgnDbCR    LsCache::GetDgnDb () const
     {
     return m_dgnDb;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2015
+//---------------------------------------------------------------------------------------
+LineStyleStatus DgnLineStyles::LoadStyle(LsDefinitionP&style, DgnStyleId styleId)
+    {
+    style = nullptr;
+    if (!styleId.IsValid())
+        return LINESTYLE_STATUS_BadArgument;
+
+    Statement stmt;
+    PrepareToQueryLineStyle(stmt, styleId);
+
+    DbResult    dbResult = stmt.Step();
+    if (dbResult != BE_SQLITE_ROW)
+        return LINESTYLE_STATUS_StyleNotFound;
+
+    Utf8String name(stmt.GetValueText(2));
+    Utf8String  data ((Utf8CP)stmt.GetValueBlob(4));
+
+    Json::Value  jsonObj (Json::objectValue);
+    if (!Json::Reader::Parse(data, jsonObj))
+        return LINESTYLE_STATUS_Error;
+
+    style = new LsDefinition (name.c_str(), m_dgndb, jsonObj, styleId);
+
+    return LINESTYLE_STATUS_Success;
     }
 
 /*----------------------------------------------------------------------------------*//**

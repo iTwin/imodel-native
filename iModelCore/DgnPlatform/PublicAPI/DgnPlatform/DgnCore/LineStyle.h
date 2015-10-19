@@ -54,6 +54,8 @@ LINESTYLE_TYPEDEFS (LsStrokePatternComponent)
 LINESTYLE_TYPEDEFS (LsSymbolComponent)
 LINESTYLE_TYPEDEFS (LsSymbolReference)
 
+struct DgnLineStyles;
+
 //! @ingroup LineStyleManagerModule
 //! Smart pointer wrapper for LsComponent
 typedef RefCountedPtr <LsComponent> LsComponentPtr;
@@ -295,7 +297,7 @@ struct LsComponentId
 private:
     uint32_t            m_id;              // Component property ID
 public:
-    uint32_t GetValue() { return m_id; }
+    uint32_t GetValue() const { return m_id; }
     LsComponentId() { m_id = 0xFFFFFFFF; }
     explicit LsComponentId(uint32_t value) : m_id(value) {}
 };
@@ -1334,6 +1336,8 @@ struct          LsDefinition
 //__PUBLISH_SECTION_START__
     {
 //__PUBLISH_SECTION_END__
+    friend struct DgnLineStyles;
+    friend struct LsCache;
 private:
     bool                m_isDirty;
     bool                m_componentLookupFailed;
@@ -1355,6 +1359,7 @@ private:
     void SetHWStyle (LsComponentType componentType, LsComponentId componentID);
     int                 GetUnits                () const {return m_attributes & LSATTR_UNITMASK;}
     intptr_t            GenerateTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb);
+    LsDefinition (Utf8CP name, DgnDbR project, Json::Value& lsDefinition, DgnStyleId styleId);
 
 public:
     DGNPLATFORM_EXPORT static double GetUnitDef (Json::Value& lsDefinition);
@@ -1362,7 +1367,7 @@ public:
     DGNPLATFORM_EXPORT static LsComponentType GetComponentType (Json::Value& lsDefinition);
     DGNPLATFORM_EXPORT static LsComponentId GetComponentId (Json::Value& lsDefinition);
 
-    LsDefinition (Utf8CP name, DgnDbR project, Json::Value& lsDefinition, DgnStyleId styleId);
+    DGNPLATFORM_EXPORT static void Destroy (LsDefinitionP);
 
     virtual ~LsDefinition ();
 
@@ -1558,7 +1563,6 @@ struct LsCache : public RefCountedBase
 private:
     T_LsIdTree          m_idTree;
     DgnDbR              m_dgnDb;
-    bmap<LsLocation, LsComponentPtr> m_loadedComponents;
     bool                m_isLoaded;
 
     LsCache(DgnDbR dgnProject) : m_dgnDb(dgnProject), m_isLoaded(false) {}
@@ -1587,8 +1591,6 @@ public:
     BentleyStatus                               Load                     ();
 
     static LsCachePtr Create (DgnDbR project);
-
-    static LsComponent* GetLsComponent(LsLocationCR location);
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
@@ -1642,12 +1644,18 @@ private:
     friend struct DgnStyles;
 
     LsCachePtr m_lineStyleMap;
+    bmap<LsLocation, LsComponentPtr> m_loadedComponents;
+
 
     //! Only the outer class is designed to construct this class.
     DgnLineStyles(DgnDbR db) : T_Super(db) {}
 
 public:
-    DGNPLATFORM_EXPORT void PrepareToQueryAllLineStyles(BeSQLite::Statement & stmt);
+    DGNPLATFORM_EXPORT static LsComponent* GetLsComponent(LsLocationCR location);
+    DGNPLATFORM_EXPORT void PrepareToQueryAllLineStyles(BeSQLite::Statement& stmt);
+    DGNPLATFORM_EXPORT void PrepareToQueryLineStyle(BeSQLite::Statement& stmt, DgnStyleId styleId);
+    DGNPLATFORM_EXPORT LineStyleStatus LoadStyle(LsDefinitionP&style, DgnStyleId styleId);
+
 //__PUBLISH_SECTION_START__
     //! Adds a new line style to the project. If a style already exists by-name, no action is performed.
     DGNPLATFORM_EXPORT BentleyStatus Insert(DgnStyleId& newStyleId, Utf8CP name, LsComponentId id, LsComponentType componentType, uint32_t flags, double unitDefinition);

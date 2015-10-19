@@ -553,7 +553,7 @@ LsComponentReader*    reader
     LsLocation      tmpLocation;
     tmpLocation.GetLineCodeLocation (reader);
 
-    LsComponent*       subComp = LsCache::GetLsComponent (tmpLocation);
+    LsComponent*       subComp = DgnLineStyles::GetLsComponent (tmpLocation);
     if (NULL != subComp)
         {
         pointComp->m_strokeComponent = dynamic_cast <LsStrokePatternComponentP> (subComp);
@@ -570,7 +570,7 @@ LsComponentReader*    reader
         while (pRscInfo < pRscEnd)
             {
             tmpLocation.GetPointSymbolLocation (reader, symNum++);
-            LsSymbolComponentP  symbol = (LsSymbolComponentP)LsCache::GetLsComponent (tmpLocation);
+            LsSymbolComponentP  symbol = (LsSymbolComponentP)DgnLineStyles::GetLsComponent (tmpLocation);
 
             // Apparently we have symbols that don't participate in the line style.  See TR #308324.
             // These should be removed when there is an opportunity like a file format change.

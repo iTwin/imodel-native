@@ -457,7 +457,7 @@ LsComponentReader*    reader
         {
         tmpLocation.GetCompoundComponentLocation (reader, i);
         
-        LsOffsetComponent offsetComp (lsRsc->m_component[i].m_offset, LsCache::GetLsComponent (&tmpLocation));
+        LsOffsetComponent offsetComp (lsRsc->m_component[i].m_offset, DgnLineStyles::GetLsComponent (&tmpLocation));
         
         if (offsetComp.m_subComponent.get () == compound)
             {
@@ -803,7 +803,7 @@ LsComponentP    LsDefinition::GetComponentP(DgnModelP modelRef) const
         }
 
     nonConstThis->m_componentLoadPostProcessed = false;
-    LsComponentP    component = LsCache::GetLsComponent (nonConstThis->m_location);
+    LsComponentP    component = DgnLineStyles::GetLsComponent (nonConstThis->m_location);
     if (nullptr == component)
         {
         nonConstThis->m_componentLookupFailed = true;
@@ -924,21 +924,18 @@ LsCacheP LsLocation::GetCacheP () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2015
 //---------------------------------------------------------------------------------------
-LsComponent* LsCache::GetLsComponent(LsLocationCR location)
+LsComponent* DgnLineStyles::GetLsComponent(LsLocationCR location)
     {
-    LsCacheP lsCache = location.GetCacheP();
-    BeAssert(nullptr != lsCache);
-    if (nullptr == lsCache)
-        return nullptr;
+    DgnLineStyles& dgnLineStyles = location.GetDgnDb()->Styles().LineStyles();
 
-    auto iter = lsCache->m_loadedComponents.find(location);
-    if (iter != lsCache->m_loadedComponents.end())
+    auto iter = dgnLineStyles.m_loadedComponents.find(location);
+    if (iter != dgnLineStyles.m_loadedComponents.end())
         return iter->second.get();
 
     LsComponentPtr comp = cacheLoadComponent (location);
     if (comp.IsNull())
         return nullptr;
 
-    lsCache->m_loadedComponents[location] = comp;
+    dgnLineStyles.m_loadedComponents[location] = comp;
     return comp.get();
     }

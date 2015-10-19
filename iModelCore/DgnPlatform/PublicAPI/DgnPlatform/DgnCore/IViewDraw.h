@@ -580,7 +580,7 @@ public:
     DGNPLATFORM_EXPORT int FromResolvedStyle(LineStyleInfoCP styleInfo, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent);
 
     void               Clear () {m_lStyle = NULL; m_options.orgWidth = m_options.endWidth = false; m_textureHandle = 0; }
-    void               Init(ILineStyleCP);
+    DGNPLATFORM_EXPORT void Init(ILineStyleCP);
 
 public:
     DGNPLATFORM_EXPORT ILineStyleCP  GetILineStyle() const;
