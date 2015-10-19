@@ -177,33 +177,10 @@ BentleyStatus SchemaImportECDbMapDb::CreateInDb(ECDbR ecdb, ECDbSqlIndex const& 
         return ERROR;
         }
 
-    bool exists = false;
-        {
-        CachedStatementPtr stmt = nullptr;
-        if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "select NULL from sqlite_master WHERE type='index' and name=?"))
-            {
-            BeAssert(false);
-            return ERROR;
-            }
-
-        stmt->BindText(1, index.GetName().c_str(), Statement::MakeCopy::No);
-        exists = BE_SQLITE_ROW == stmt->Step();
-        }
-
-    if (exists)
-        {
-        Utf8String ddl("DROP INDEX [");
-        ddl.append(index.GetName()).append("]");
-
-        if (ecdb.ExecuteSql(ddl.c_str()) != BE_SQLITE_OK)
-            {
-            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to drop index %s on table %s. Error: %s", index.GetName().c_str(), index.GetTable().GetName().c_str(),
-                                                          ecdb.GetLastError());
-
-            BeAssert(false && "Failed to create index");
-            return ERROR;
-            }
-        }
+    //drop index first if it exists, as we always have to recreate them to make sure the class id filter is up-to-date
+    Utf8String dropIndexSql("DROP INDEX [");
+    dropIndexSql.append(index.GetName()).append("]");
+    ecdb.TryExecuteSql(dropIndexSql.c_str());
 
     NativeSqlBuilder ddl;
     if (SUCCESS != BuildCreateIndexDdl(ddl, ecdb, index))
