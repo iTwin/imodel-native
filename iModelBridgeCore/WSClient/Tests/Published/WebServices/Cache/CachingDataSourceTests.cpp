@@ -28,7 +28,7 @@ CachedResponseKey CreateTestResponseKey(ICachingDataSourcePtr ds, Utf8StringCR r
 TEST_F(CachingDataSourceTests, OpenOrCreate_CalledSecondTimeAfterCacheWasCreated_OpensAndSucceeds)
 // TODO: fix test - crashes as first cache is still closing when second one is opening.
     {
-    BeFileName path = FSTest::StubFilePath();
+    BeFileName path = StubFilePath();
     auto client = MockWSRepositoryClient::Create();
 
     StubInstances schemaDefs;
@@ -64,7 +64,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_CalledSecondTimeAfterCacheWasCreated
 
 TEST_F(CachingDataSourceTests, OpenOrCreate_NonECDbFileExists_Error)
     {
-    BeFileName path = FSTest::StubFile("NotECDbFileContents");
+    BeFileName path = StubFile("NotECDbFileContents");
 
     auto client = MockWSRepositoryClient::Create();
     auto result = CachingDataSource::OpenOrCreate(client, path, StubCacheEnvironemnt())->GetResult();
@@ -74,7 +74,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_NonECDbFileExists_Error)
 
 TEST_F(CachingDataSourceTests, OpenOrCreate_NonDataSourceCacheDbExists_Error)
     {
-    BeFileName path = FSTest::StubFilePath();
+    BeFileName path = StubFilePath();
 
     ECDb db;
     db.CreateNewDb(path);
@@ -87,7 +87,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_NonDataSourceCacheDbExists_Error)
 
 TEST_F(CachingDataSourceTests, OpenOrCreate_DataSourceCacheDbExists_StartsUpdatingWithRemoteSchemas)
     {
-    BeFileName path = FSTest::StubFilePath();
+    BeFileName path = StubFilePath();
 
     DataSourceCache db;
     ASSERT_EQ(SUCCESS, db.Create(path, StubCacheEnvironemnt()));
@@ -124,7 +124,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_SchemaPathNotPassedAndServerDoesNotR
         Utf8String schemaXml(
             R"(<ECSchema schemaName="UserSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
                </ECSchema>)");
-        FSTest::WriteToFile(schemaXml, filePath);
+        SimpleWriteToFile(schemaXml, filePath);
         return CreateCompletedAsyncTask(WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, "")));
         }));
 
@@ -186,7 +186,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_CacheCreatedWithRemoteSchemas_UsesE
         Utf8String schemaXml(
             R"(<ECSchema schemaName="UserSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
                        </ECSchema>)");
-        FSTest::WriteToFile(schemaXml, filePath);
+        SimpleWriteToFile(schemaXml, filePath);
         return CreateCompletedAsyncTask(WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, "SchemaFileETag")));
         }))
             .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR, Utf8StringCR eTag, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
@@ -226,7 +226,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_CacheCreatedWithLocalSchema_Queries
         EXPECT_EQ(ObjectId("MetaSchema.ECSchemaDef", "SchemaId"), objectId);
         Utf8String schemaXml;
         GetTestSchema()->WriteToXmlString(schemaXml);
-        FSTest::WriteToFile(schemaXml, filePath);
+        SimpleWriteToFile(schemaXml, filePath);
         return CreateCompletedAsyncTask(WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, "SchemaFileETag")));
         }));
 
@@ -257,7 +257,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_SchemaWithReferancedSchema_ImportsB
             R"( <ECSchema schemaName="SchemaWithReferance" nameSpacePrefix="A" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
                     <ECSchemaReference name="ReferancedSchema" version="1.456" prefix="B" />
                 </ECSchema>)";
-        FSTest::WriteToFile(schemaXml, filePath);
+        SimpleWriteToFile(schemaXml, filePath);
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));
         }));
     EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "B"), _, _, _, _))
@@ -266,7 +266,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_SchemaWithReferancedSchema_ImportsB
         Utf8String schemaXml =
             R"( <ECSchema schemaName="ReferancedSchema" nameSpacePrefix="B" version="1.456" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
                 </ECSchema>)";
-        FSTest::WriteToFile(schemaXml, filePath);
+        SimpleWriteToFile(schemaXml, filePath);
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));
         }));
 
@@ -302,7 +302,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_NewSchemaWithExistingReferancedSche
         Utf8String schemaXml =
             R"( <ECSchema schemaName="ReferancedSchema" nameSpacePrefix="B" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
                 </ECSchema>)";
-        FSTest::WriteToFile(schemaXml, filePath);
+        SimpleWriteToFile(schemaXml, filePath);
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));
         }));
 
@@ -323,7 +323,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_NewSchemaWithExistingReferancedSche
             R"( <ECSchema schemaName="SchemaWithReferance" nameSpacePrefix="A" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
                     <ECSchemaReference name="ReferancedSchema" version="01.00" prefix="B" />
                 </ECSchema>)";
-        FSTest::WriteToFile(schemaXml, filePath);
+        SimpleWriteToFile(schemaXml, filePath);
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));
         }));
     EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "B"), _, _, _, _))
@@ -366,7 +366,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_SchemasIncludeStandardSchemas_Skips
         EXPECT_EQ(ObjectId("MetaSchema.ECSchemaDef", "B"), objectId);
         Utf8String schemaXml;
         StubSchema("CustomSchema", "CS")->WriteToXmlString(schemaXml);
-        FSTest::WriteToFile(schemaXml, filePath);
+        SimpleWriteToFile(schemaXml, filePath);
         return CreateCompletedAsyncTask(WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, nullptr)));
         }));
 
@@ -392,14 +392,14 @@ TEST_F(CachingDataSourceTests, GetRepositorySchemas_CacheContainsNonRepositorySc
     EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "A"), _, _, _, _))
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
-        FSTest::WriteToFile(StubSchemaXml("A"), filePath);
+        SimpleWriteToFile(StubSchemaXml("A"), filePath);
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));
         }));
 
     EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "B"), _, _, _, _))
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
-        FSTest::WriteToFile(StubSchemaXml("B"), filePath);
+        SimpleWriteToFile(StubSchemaXml("B"), filePath);
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));
         }));
 
@@ -443,14 +443,14 @@ TEST_F(CachingDataSourceTests, GetRepositorySchemaKeys_CacheContainsNonRepositor
     EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "A"), _, _, _, _))
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
-        FSTest::WriteToFile(StubSchemaXml("A"), filePath);
+        SimpleWriteToFile(StubSchemaXml("A"), filePath);
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));
         }));
 
     EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "B"), _, _, _, _))
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
-        FSTest::WriteToFile(StubSchemaXml("B"), filePath);
+        SimpleWriteToFile(StubSchemaXml("B"), filePath);
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));
         }));
 
@@ -612,13 +612,13 @@ TEST_F(CachingDataSourceTests, GetFile_InstanceHasVeryLongRemoteIdAndNoFileDepen
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR progress, ICancellationTokenPtr)
         {
-        FSTest::WriteToFile("TestContent", filePath);
+        SimpleWriteToFile("TestContent", filePath);
         return CreateCompletedAsyncTask(WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, "")));
         }));
 
     auto result = ds->GetFile(fileId, CachingDataSource::DataOrigin::RemoteData, nullptr, nullptr)->GetResult();
     EXPECT_TRUE(result.IsSuccess());
-    EXPECT_EQ("TestContent", FSTest::ReadFile(result.GetValue().GetFilePath()));
+    EXPECT_EQ("TestContent", SimpleReadFile(result.GetValue().GetFilePath()));
     }
 
 TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCAButHasLabel_ProgressIsCalledWithoutNameAndSizeAndFileHasInstanceLabel)
@@ -667,9 +667,9 @@ TEST_F(CachingDataSourceTests, CacheFiles_BothFilesCachedAndSkipCached_NoFileReq
     ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
     ObjectId file2Id {"TestSchema.TestFileClass", "TestId2"};
     txn.GetCache().LinkInstanceToRoot(nullptr, fileId);
-    txn.GetCache().CacheFile(fileId, StubWSFileResponse(FSTest::StubFile()), FileCache::Persistent);
+    txn.GetCache().CacheFile(fileId, StubWSFileResponse(StubFile()), FileCache::Persistent);
     txn.GetCache().LinkInstanceToRoot(nullptr, file2Id);
-    txn.GetCache().CacheFile(file2Id, StubWSFileResponse(FSTest::StubFile()), FileCache::Persistent);
+    txn.GetCache().CacheFile(file2Id, StubWSFileResponse(StubFile()), FileCache::Persistent);
     txn.Commit();
 
     bvector<ObjectId> files;
@@ -693,7 +693,7 @@ TEST_F(CachingDataSourceTests, CacheFiles_OneFileCachedAndSkipCached_OneFileRequ
     ObjectId file2Id {"TestSchema.TestFileClass", "TestId2"};
     txn.GetCache().LinkInstanceToRoot(nullptr, fileId);
     txn.GetCache().LinkInstanceToRoot(nullptr, file2Id);
-    txn.GetCache().CacheFile(file2Id, StubWSFileResponse(FSTest::StubFile()), FileCache::Persistent);
+    txn.GetCache().CacheFile(file2Id, StubWSFileResponse(StubFile()), FileCache::Persistent);
     txn.Commit();
 
     bvector<ObjectId> files;
@@ -704,7 +704,7 @@ TEST_F(CachingDataSourceTests, CacheFiles_OneFileCachedAndSkipCached_OneFileRequ
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(1)
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR fileName, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
-        FSTest::WriteToFile("", fileName);
+        SimpleWriteToFile("", fileName);
         return CreateCompletedAsyncTask(WSFileResult::Success(StubWSFileResponse(fileName, "")));
         }));
 
@@ -722,7 +722,7 @@ TEST_F(CachingDataSourceTests, CacheFiles_OneFileCachedAndNoSkipCached_TwoFileRe
     ObjectId file2Id {"TestSchema.TestFileClass", "TestId2"};
     txn.GetCache().LinkInstanceToRoot(nullptr, fileId);
     txn.GetCache().LinkInstanceToRoot(nullptr, file2Id);
-    txn.GetCache().CacheFile(file2Id, StubWSFileResponse(FSTest::StubFile()), FileCache::Persistent);
+    txn.GetCache().CacheFile(file2Id, StubWSFileResponse(StubFile()), FileCache::Persistent);
     txn.Commit();
 
     bvector<ObjectId> files;
@@ -733,7 +733,7 @@ TEST_F(CachingDataSourceTests, CacheFiles_OneFileCachedAndNoSkipCached_TwoFileRe
     EXPECT_CALL(GetMockClient(), SendGetFileRequest(_, _, _, _, _)).Times(2)
         .WillRepeatedly(Invoke([&] (ObjectIdCR, BeFileNameCR fileName, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
-        FSTest::WriteToFile("", fileName);
+        SimpleWriteToFile("", fileName);
         return CreateCompletedAsyncTask(WSFileResult::Success(StubWSFileResponse(fileName, "")));
         }));
 
@@ -1975,7 +1975,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V2CreatedRelatedObjectsWithFile_
     auto instanceA = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "A"});
     auto instanceB = txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"( { "TestProperty" : "ValB" } )"));
     auto instanceC = txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"( { "TestProperty" : "ValC" } )"));
-    txn.GetCache().GetChangeManager().ModifyFile(instanceC, FSTest::StubFile(), false);
+    txn.GetCache().GetChangeManager().ModifyFile(instanceC, StubFile(), false);
 
     txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceA, instanceB);
     txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceB, instanceC);
@@ -2086,7 +2086,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V1CreatedRelatedObjectsWithFile_
     auto instanceA = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "A"});
     auto instanceB = txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"( { "TestProperty" : "ValB" } )"));
     auto instanceC = txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"( { "TestProperty" : "ValC" } )"));
-    txn.GetCache().GetChangeManager().ModifyFile(instanceC, FSTest::StubFile(), false);
+    txn.GetCache().GetChangeManager().ModifyFile(instanceC, StubFile(), false);
 
     txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceA, instanceB);
     txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceB, instanceC);
@@ -2379,15 +2379,16 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObjectWithReadOnlyProper
     ds->SyncLocalChanges(nullptr, nullptr)->Wait();
     }
 
-TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObject_SendUpdateObjectRequestWithCorrectParametersAndCommits)
+TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObject_SendUpdateObjectRequestWithOnlyChangedPropertiesAndCommits)
     {
     // Arrange
     auto ds = GetTestDataSourceV1();
-    Json::Value modifiedPropertiesJson = ToJson(R"({ "TestProperty" : "42" })");
 
     auto txn = ds->StartCacheTransaction();
-    auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "Foo"});
-    txn.GetCache().GetChangeManager().ModifyObject(instance, modifiedPropertiesJson);
+    auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "OldA"},{ "TestProperty2", "OldB"}});
+
+    Json::Value newPropertiesJson = ToJson(R"({ "TestProperty" : "NewA", "TestProperty2" : "OldB" })");
+    txn.GetCache().GetChangeManager().ModifyObject(instance, newPropertiesJson);
     txn.Commit();
 
     // Act & Assert
@@ -2396,7 +2397,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObject_SendUpdateObjectR
         .WillOnce(Invoke([&] (ObjectIdCR objectId, JsonValueCR propertiesJson, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
         EXPECT_EQ(ObjectId("TestSchema.TestClass", "Foo"), objectId);
-        EXPECT_EQ(modifiedPropertiesJson, propertiesJson);
+        EXPECT_EQ(ToJson(R"({ "TestProperty" : "NewA" })"), propertiesJson);
         return CreateCompletedAsyncTask(WSUpdateObjectResult::Success());
         }));
 
@@ -2412,7 +2413,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFile_SendUpdateFileReque
 
     auto txn = ds->StartCacheTransaction();
     auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "Foo"});
-    txn.GetCache().GetChangeManager().ModifyFile(instance, FSTest::StubFile(), false);
+    txn.GetCache().GetChangeManager().ModifyFile(instance, StubFile(), false);
     auto cachedFilePath = txn.GetCache().ReadFilePath(instance);
     txn.Commit();
 
@@ -2641,7 +2642,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFileWithLabel_CallsProgr
     auto txn = ds->StartCacheTransaction();
     txn.GetCache().CacheInstanceAndLinkToRoot({"TestSchema.TestLabeledClass", "Foo"}, *ToRapidJson(R"({"Name" : "TestLabel"})"), "", "");
     auto instance = txn.GetCache().FindInstance({"TestSchema.TestLabeledClass", "Foo"});
-    txn.GetCache().GetChangeManager().ModifyFile(instance, FSTest::StubFile("12"), false);
+    txn.GetCache().GetChangeManager().ModifyFile(instance, StubFile("12"), false);
     txn.Commit();
 
     // Act & Assert
@@ -2675,8 +2676,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectsWithFiles_CallsPro
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
     auto instanceA = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
     auto instanceB = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
-    txn.GetCache().GetChangeManager().ModifyFile(instanceA, FSTest::StubFile("12"), false);
-    txn.GetCache().GetChangeManager().ModifyFile(instanceB, FSTest::StubFile("3456"), false);
+    txn.GetCache().GetChangeManager().ModifyFile(instanceA, StubFile("12"), false);
+    txn.GetCache().GetChangeManager().ModifyFile(instanceB, StubFile("3456"), false);
     txn.Commit();
 
     // Act & Assert
@@ -2722,8 +2723,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFiles_CallsProgressWithT
     auto txn = ds->StartCacheTransaction();
     auto instanceA = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "A"});
     auto instanceB = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "B"});
-    txn.GetCache().GetChangeManager().ModifyFile(instanceA, FSTest::StubFile("12"), false);
-    txn.GetCache().GetChangeManager().ModifyFile(instanceB, FSTest::StubFile("3456"), false);
+    txn.GetCache().GetChangeManager().ModifyFile(instanceA, StubFile("12"), false);
+    txn.GetCache().GetChangeManager().ModifyFile(instanceB, StubFile("3456"), false);
     txn.Commit();
 
     // Act & Assert
@@ -2816,7 +2817,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ObjectIdForFileChangePassed_Sync
 
     auto txn = ds->StartCacheTransaction();
     auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "A"});
-    txn.GetCache().GetChangeManager().ModifyFile(instance, FSTest::StubFile("12"), false);
+    txn.GetCache().GetChangeManager().ModifyFile(instance, StubFile("12"), false);
     txn.Commit();
 
     // Act & Assert
@@ -3156,7 +3157,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_QueryProviderReturnsToUpdateFile_D
     EXPECT_CALL(*client, SendGetFileRequest(objectId, _, Utf8String("TestTag"), _, _))
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR fileName, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
-        FSTest::WriteToFile("", fileName);
+        SimpleWriteToFile("", fileName);
         return CreateCompletedAsyncTask(WSFileResult::Success(StubWSFileResponse(fileName, "")));
         }));
     EXPECT_CALL(*cache, CacheFile(objectId, _, _)).WillOnce(Return(SUCCESS));
@@ -3313,7 +3314,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_FilesBeingDownloaded_CallbackCalle
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR fileName, Utf8StringCR, HttpRequest::ProgressCallbackCR onProgress, ICancellationTokenPtr)
         {
         onProgress(5, 42);
-        FSTest::WriteToFile("", fileName);
+        SimpleWriteToFile("", fileName);
         return CreateCompletedAsyncTask(WSFileResult::Success(StubWSFileResponse(fileName, "")));
         }));
 

@@ -11,9 +11,11 @@
 #include <WebServices/Cache/Persistence/DataSourceCacheCommon.h>
 #include <WebServices/Cache/Persistence/CachedObjectInfo.h>
 #include <WebServices/Cache/Util/ECDbHelper.h>
+#include <WebServices/Cache/Util/JsonDiff.h>
 
 #include "../Core/CacheSchema.h"
 #include "../Hierarchy/HierarchyManager.h"
+#include "../../Util/JsonUtil.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -25,12 +27,14 @@ InstanceCacheHelper::InstanceCacheHelper
 ECDbAdapter& dbAdapter,
 HierarchyManager& hierarchyManager,
 ObjectInfoManager& objectInfoManager,
-RelationshipInfoManager& relationshipInfoManager
+RelationshipInfoManager& relationshipInfoManager,
+ChangeInfoManager& changeInfoManager
 ) :
 m_dbAdapter(dbAdapter),
 m_hierarchyManager(hierarchyManager),
 m_objectInfoManager(objectInfoManager),
 m_relationshipInfoManager(relationshipInfoManager),
+m_changeInfoManager(changeInfoManager),
 m_inserters(dbAdapter.GetECDb()),
 m_updaters(dbAdapter.GetECDb())
     {}
@@ -93,7 +97,16 @@ ICancellationTokenPtr cancellationToken
         {
         ObjectInfo info = m_objectInfoManager.ReadInfo(instance.GetObjectId());
 
-        if (nullptr != partialCachingState && partialCachingState->ShouldReject(info, path))
+        auto changeStatus = info.GetChangeStatus();
+        if (IChangeManager::ChangeStatus::Created == changeStatus)
+            {
+            return ERROR; // Instance cannot be cached - its not pushed to server yet
+            }
+        else if (IChangeManager::ChangeStatus::Deleted == changeStatus)
+            {
+            // Nothing to do here
+            }
+        else if (nullptr != partialCachingState && partialCachingState->ShouldReject(info, path))
             {
             partialCachingState->AddRejected(instance.GetObjectId());
             }
@@ -163,9 +176,12 @@ ICancellationTokenPtr cancellationToken
             return ERROR;
             }
 
-        if (SUCCESS != CacheRelationshipInstance(relationshipInstance, cachedInstance, relatedInstance, cachedInstancesInOut))
+        if (cachedInstance.IsValid())
             {
-            return ERROR;
+            if (SUCCESS != CacheRelationshipInstance(relationshipInstance, cachedInstance, relatedInstance, cachedInstancesInOut))
+                {
+                return ERROR;
+                }
             }
         }
 
@@ -230,39 +246,105 @@ CachedInstances& cachedInstancesInOut
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus InstanceCacheHelper::CacheInstance(ObjectInfoR infoInOut, RapidJsonValueCR properties)
     {
-    if (infoInOut.IsInCache())
+    ECClassCP ecClass = m_dbAdapter.GetECClass(infoInOut.GetCachedInstanceKey());
+    if (nullptr == ecClass)
         {
-        return CacheExistingInstance(infoInOut, properties);
+        BeAssert(false && "Unknown instance class");
+        return ERROR;
+        }
+
+    // Save instance properties 
+    BentleyStatus status = ERROR;
+    if (infoInOut.GetChangeStatus() == IChangeManager::ChangeStatus::Modified)
+        {
+        status = MergeAndSaveModifiedInstance(infoInOut, *ecClass, properties);
+        }
+    else if (infoInOut.IsInCache())
+        {
+        status = SaveExistingInstance(infoInOut, *ecClass, properties);
         }
     else
         {
-        return CacheNewInstance(infoInOut, properties);
+        status = SaveNewInstance(infoInOut, *ecClass, properties);
         }
+
+    if (SUCCESS != status)
+        {
+        return ERROR;
+        }
+
+    // Save info
+    if (infoInOut.GetInfoKey().IsValid())
+        {
+        status = m_objectInfoManager.UpdateInfo(infoInOut);
+        }
+    else
+        {
+        status = m_objectInfoManager.InsertInfo(infoInOut);
+        }
+
+    return status;
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2013
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus InstanceCacheHelper::CacheNewInstance(ObjectInfoR infoInOut, RapidJsonValueCR properties)
+BentleyStatus InstanceCacheHelper::SaveNewInstance(ObjectInfoR infoInOut, ECClassCR ecClass, RapidJsonValueCR properties)
     {
-    ECClassCP instanceClass = m_dbAdapter.GetECClass(infoInOut.GetCachedInstanceKey());
-    if (nullptr == instanceClass)
+    ECInstanceKey ecInstanceKey;
+    if (SUCCESS != m_inserters.Get(ecClass).Insert(ecInstanceKey, properties))
         {
-        BeAssert(false && "Unknown class passed to cache");
         return ERROR;
         }
 
-    ECInstanceKey newInstanceKey;
-    JsonInserter inserter(m_dbAdapter.GetECDb(), *instanceClass);
+    infoInOut.SetCachedInstanceId(ecInstanceKey.GetECInstanceId());
+    return SUCCESS;
+    }
 
-    if (SUCCESS != inserter.Insert(newInstanceKey, properties))
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus InstanceCacheHelper::SaveExistingInstance(ObjectInfoCR info, ECClassCR ecClass, RapidJsonValueCR properties)
+    {
+    return m_updaters.Get(ecClass).Update(info.GetCachedInstanceKey().GetECInstanceId(), properties);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus InstanceCacheHelper::MergeAndSaveModifiedInstance(ObjectInfoCR info, ECClassCR ecClass, RapidJsonValueCR newPropertiesJson)
+    {
+    // Read backup instance
+    rapidjson::Document backupJson;
+    if (SUCCESS != m_changeInfoManager.ReadBackupInstance(info.GetInfoKey(), backupJson))
         {
-        BeAssert("Failed to cache instance. Check schema");
         return ERROR;
         }
-    infoInOut.SetCachedInstanceId(newInstanceKey.GetECInstanceId());
 
-    if (SUCCESS != m_objectInfoManager.InsertInfo(infoInOut))
+    // Read current instance
+    Json::Value instanceJsonValue;
+    if (SUCCESS != m_dbAdapter.GetJsonInstance(instanceJsonValue, info.GetCachedInstanceKey()))
+        {
+        return ERROR;
+        }
+
+    rapidjson::Document instanceJson;
+    JsonUtil::ToRapidJson(instanceJsonValue, instanceJson);
+
+    // Merge changes
+    rapidjson::Document mergedJson;
+    JsonUtil::DeepCopy(newPropertiesJson, mergedJson);
+
+    JsonDiff(false).GetChanges(backupJson, instanceJson, mergedJson);
+
+    // Save merged instance
+    if (SUCCESS != m_updaters.Get(ecClass).Update(info.GetCachedInstanceKey().GetECInstanceId(), mergedJson))
+        {
+        return ERROR;
+        }
+
+    // Save latest version as backup
+    if (SUCCESS != m_changeInfoManager.SaveBackupInstance(info.GetInfoKey(), newPropertiesJson))
         {
         return ERROR;
         }
@@ -271,9 +353,9 @@ BentleyStatus InstanceCacheHelper::CacheNewInstance(ObjectInfoR infoInOut, Rapid
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2013
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus InstanceCacheHelper::CacheExistingInstance(ObjectInfoCR info, RapidJsonValueCR properties)
+BentleyStatus InstanceCacheHelper::UpdateExistingInstanceData(ObjectInfoCR info, RapidJsonValueCR properties)
     {
     if (!info.GetCachedInstanceKey().IsValid())
         {
@@ -282,7 +364,7 @@ BentleyStatus InstanceCacheHelper::CacheExistingInstance(ObjectInfoCR info, Rapi
         }
 
     ECClassCP ecClass = m_dbAdapter.GetECClass(info.GetCachedInstanceKey());
-    if (SUCCESS != m_updaters.Get(*ecClass).Update(info.GetCachedInstanceKey().GetECInstanceId(), properties))
+    if (SUCCESS != SaveExistingInstance(info, *ecClass, properties))
         {
         return ERROR;
         }
@@ -576,7 +658,7 @@ void InstanceCacheHelper::PartialCachingState::AddRejected(ObjectIdCR objectId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool InstanceCacheHelper::PartialCachingState::ShouldReject(ObjectInfoCR info, const bvector<SelectPathElement>& path)
     {
-    return IsFullyPersisted(info) && !AreAllPropertiesSelected(path);
+    return DoesRequireAllProperties(info) && !AreAllPropertiesSelected(path);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -590,7 +672,7 @@ bool InstanceCacheHelper::PartialCachingState::AreAllPropertiesSelected(const bv
         }
 
     auto it = std::find_if(m_allPropertiesSelectedPaths.begin(), m_allPropertiesSelectedPaths.end(),
-                           [&] (const bvector<SelectPathElement>& candidatePath)
+        [&] (const bvector<SelectPathElement>& candidatePath)
         {
         if (candidatePath.size() != instancePath.size())
             {
@@ -598,7 +680,7 @@ bool InstanceCacheHelper::PartialCachingState::AreAllPropertiesSelected(const bv
             }
 
         return std::equal(candidatePath.begin(), candidatePath.end(), instancePath.begin(),
-                          [&] (const SelectPathElement& candidateElement, const SelectPathElement& element)
+            [&] (const SelectPathElement& candidateElement, const SelectPathElement& element)
             {
             return
                 candidateElement.direction == element.direction &&
@@ -610,6 +692,16 @@ bool InstanceCacheHelper::PartialCachingState::AreAllPropertiesSelected(const bv
         });
 
     return it != m_allPropertiesSelectedPaths.end();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool InstanceCacheHelper::PartialCachingState::DoesRequireAllProperties(ObjectInfoCR info)
+    {
+    return
+        IChangeManager::ChangeStatus::Modified == info.GetChangeStatus() ||
+        IsFullyPersisted(info);
     }
 
 /*--------------------------------------------------------------------------------------+

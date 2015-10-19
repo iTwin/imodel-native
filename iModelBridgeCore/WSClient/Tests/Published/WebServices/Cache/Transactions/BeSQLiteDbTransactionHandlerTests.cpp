@@ -52,7 +52,7 @@ TEST_F(BeSQLiteDbTransactionHandlerTests, CommitTransaction_TransactionNotStarte
     BeSQLite::Db::CreateParams createParams;
     createParams.SetStartDefaultTxn(BeSQLite::DefaultTxn::No);
     BeSQLite::Db db;
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(FSTest::StubFilePath(), BeSQLite::BeGuid(), createParams));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(StubFilePath(), BeSQLite::BeGuid(), createParams));
 
     BeSQLiteDbTransactionHandler handler(db);
     BeTest::SetFailOnAssert(false);
@@ -65,7 +65,7 @@ TEST_F(BeSQLiteDbTransactionHandlerTests, CommitTransaction_ChangesDone_ChangesS
     BeSQLite::Db::CreateParams createParams;
     createParams.SetStartDefaultTxn(BeSQLite::DefaultTxn::No);
     BeSQLite::Db db;
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(FSTest::StubFilePath(), BeSQLite::BeGuid(), createParams));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(StubFilePath(), BeSQLite::BeGuid(), createParams));
 
     BeSQLiteDbTransactionHandler handler(db);
     EXPECT_EQ(SUCCESS, handler.BeginTransaction());
@@ -86,7 +86,7 @@ TEST_F(BeSQLiteDbTransactionHandlerTests, CommitTransaction_ChangesDoneInSecondT
     BeSQLite::Db::CreateParams createParams;
     createParams.SetStartDefaultTxn(BeSQLite::DefaultTxn::No);
     BeSQLite::Db db;
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(FSTest::StubFilePath(), BeSQLite::BeGuid(), createParams));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(StubFilePath(), BeSQLite::BeGuid(), createParams));
 
     BeSQLiteDbTransactionHandler handler(db);
     EXPECT_EQ(SUCCESS, handler.BeginTransaction());
@@ -110,7 +110,7 @@ TEST_F(BeSQLiteDbTransactionHandlerTests, RollbackTransaction_ChangesDone_Change
     BeSQLite::Db::CreateParams createParams;
     createParams.SetStartDefaultTxn(BeSQLite::DefaultTxn::No);
     BeSQLite::Db db;
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(FSTest::StubFilePath(), BeSQLite::BeGuid(), createParams));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(StubFilePath(), BeSQLite::BeGuid(), createParams));
 
     BeSQLiteDbTransactionHandler handler(db);
     EXPECT_EQ(SUCCESS, handler.BeginTransaction());
@@ -134,7 +134,7 @@ TEST_F(BeSQLiteDbTransactionHandlerTests, StartTransaction_TwoConnections_Second
     BeSQLite::Db::CreateParams params;
     params.SetStartDefaultTxn(BeSQLite::DefaultTxn::No);
 
-    BeFileName path = FSTest::StubFilePath();
+    BeFileName path = StubFilePath();
 
     BeSQLite::Db db;
     ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(path, BeSQLite::BeGuid(), params));

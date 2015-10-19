@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "../../MobileUtilsTests.h"
 #include <WebServices/Client/WSRepositoryClient.h>
 #include "MockWSClient.h"
 

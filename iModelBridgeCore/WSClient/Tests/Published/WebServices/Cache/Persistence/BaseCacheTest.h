@@ -8,11 +8,9 @@
 
 #pragma once
 
-#include "../../WebServicesTestsHelper.h"
+#include "../CachingTestsHelper.h"
 #include <memory>
 #include <ostream>
-
-#include "../CachingTestsHelper.h"
 
 class BaseCacheTest : public WSClientBaseTest
     {

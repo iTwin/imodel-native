@@ -23,6 +23,12 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\MobileDgn\MobileDgnTestApplication.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\MobileDgn\MobileDgnTestEnvironment.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\MobileDgn\MobileDgnViewportHelpers.h" />
+    <ClInclude Include="Published\Utils\BaseMockHttpHandlerTest.h" />
+    <ClInclude Include="Published\Utils\MockHttpHandler.h" />
+    <ClInclude Include="Published\Utils\StubInstances.h" />
+    <ClInclude Include="Published\Utils\ValuePrinter.h" />
+    <ClInclude Include="Published\Utils\WebServicesUnitTests.h" />
+    <ClInclude Include="Published\Utils\WSClientBaseTest.h" />
     <ClInclude Include="Published\WebServices\Cache\BaseCachingDataSourceTest.h" />
     <ClInclude Include="Published\WebServices\Cache\CachingDataSourceErrorTests.h" />
     <ClInclude Include="Published\WebServices\Cache\CachingDataSourceTests.h" />
@@ -72,8 +78,6 @@
     <ClInclude Include="Published\WebServices\Connect\SamlTokenTests.h" />
     <ClInclude Include="Published\Connect\SecureStoreTests.h" />
     <ClInclude Include="Published\WebServices\Connect\StubLocalState.h" />
-    <ClInclude Include="Published\MobileUtilsTests.h" />
-    <ClInclude Include="Published\StubInstances.h" />
     <ClInclude Include="Published\Utils\FSTest.h" />
     <ClInclude Include="Published\Utils\Http\AuthenticationHandlerTests.h" />
     <ClInclude Include="Published\Utils\Http\BaseMockHttpHandlerTest.h" />
@@ -86,7 +90,6 @@
     <ClInclude Include="Published\Utils\Http\MockHttpHandler.h" />
     <ClInclude Include="Published\Utils\Http\WebTestsHelper.h" />
     <ClInclude Include="Published\Utils\MobileUtilsTestHost.h" />
-    <ClInclude Include="Published\Utils\MobileUtilsTests.h" />
     <ClInclude Include="Published\Utils\TestAppPathProvider.h" />
     <ClInclude Include="Published\Utils\TestsHelper.h" />
     <ClInclude Include="Published\Utils\Threading\AsyncResultTests.h" />
@@ -94,7 +97,6 @@
     <ClInclude Include="Published\Utils\Threading\UniqueTaskHolderTests.h" />
     <ClInclude Include="Published\Utils\Threading\UniqueTasksHolderTests.h" />
     <ClInclude Include="Published\Utils\Threading\WorkerThreadTests.h" />
-    <ClInclude Include="Published\Utils\ValuePrinter.h" />
     <ClInclude Include="Published\Utils\Web\Http\AuthenticationHandlerTests.h" />
     <ClInclude Include="Published\Utils\Web\Http\BaseMockHttpHandlerTest.h" />
     <ClInclude Include="Published\Utils\Web\Http\HttpBody\HttpFileBodyTests.h" />
@@ -119,7 +121,6 @@
     <ClInclude Include="Published\Utils\Web\WebServices\WSQueryTests.h" />
     <ClInclude Include="Published\Utils\Web\WebServices\WSRepositoryClientTests.h" />
     <ClInclude Include="Published\Utils\Web\WebTestsHelper.h" />
-    <ClInclude Include="Published\ValuePrinter.h" />
     <ClInclude Include="Published\WebServices\Client\ChunkedUploadRequestTests.h" />
     <ClInclude Include="Published\WebServices\Connect\StubSecureStore.h" />
     <ClInclude Include="Published\WebServices\Licensing\MobileTrackingTests.h" />
@@ -133,7 +134,7 @@
     <ClInclude Include="Published\WebServices\Client\Response\WSObjectsReaderV2Tests.h" />
     <ClInclude Include="Published\WebServices\Client\Response\WSObjectsResponseTests.h" />
     <ClInclude Include="Published\WebServices\Licensing\UsageTrackingTests.h" />
-    <ClInclude Include="Published\WebServices\WebServicesTestsHelper.h" />
+    <ClInclude Include="Published\Utils\WebServicesTestsHelper.h" />
     <ClInclude Include="Published\WebServices\Client\WSClientTests.h" />
     <ClInclude Include="Published\WebServices\Client\WSErrorTests.h" />
     <ClInclude Include="Published\WebServices\Client\WSInfoTests.h" />
@@ -156,6 +157,12 @@
     <ClCompile Include="NonPublished\Win7WindowManagerTests.cpp" />
     <ClCompile Include="Published\ApplicationTests.cpp" />
     <ClCompile Include="Published\BackstageTests.cpp" />
+    <ClCompile Include="Published\Utils\BaseMockHttpHandlerTest.cpp" />
+    <ClCompile Include="Published\Utils\MockHttpHandler.cpp" />
+    <ClCompile Include="Published\Utils\StubInstances.cpp" />
+    <ClCompile Include="Published\Utils\ValuePrinter.cpp" />
+    <ClCompile Include="Published\Utils\WebServicesTestsHelper.cpp" />
+    <ClCompile Include="Published\Utils\WSClientBaseTest.cpp" />
     <ClCompile Include="Published\WebServices\Cache\BaseCachingDataSourceTest.cpp" />
     <ClCompile Include="Published\WebServices\Cache\CachingDataSourceErrorTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\CachingDataSourceTests.cpp" />
@@ -190,8 +197,6 @@
     <ClCompile Include="Published\DgnProjectInfoExportServiceTests.cpp" />
     <ClCompile Include="Published\DgnXfTests.cpp" />
     <ClCompile Include="Published\MarkupTests.cpp" />
-    <ClCompile Include="Published\MobileUtilsTests.cpp" />
-    <ClCompile Include="Published\StubInstances.cpp" />
     <ClCompile Include="Published\TaskManagerTests.cpp" />
     <ClCompile Include="Published\ThreadControllerTests.cpp" />
     <ClCompile Include="Published\UiTests.cpp" />
@@ -214,7 +219,6 @@
     <ClCompile Include="Published\Utils\Threading\UniqueTaskHolderTests.cpp" />
     <ClCompile Include="Published\Utils\Threading\UniqueTasksHolderTests.cpp" />
     <ClCompile Include="Published\Utils\Threading\WorkerThreadTests.cpp" />
-    <ClCompile Include="Published\Utils\ValuePrinter.cpp" />
     <ClCompile Include="Published\Utils\Web\Http\AuthenticationHandlerTests.cpp" />
     <ClCompile Include="Published\Utils\Web\Http\BaseMockHttpHandlerTest.cpp" />
     <ClCompile Include="Published\Utils\Web\Http\HttpBody\HttpFileBodyTests.cpp" />
@@ -235,7 +239,6 @@
     <ClCompile Include="Published\Utils\Web\WebServices\WSQueryTests.cpp" />
     <ClCompile Include="Published\Utils\Web\WebServices\WSRepositoryClientTests.cpp" />
     <ClCompile Include="Published\Utils\Web\WebTestsHelper.cpp" />
-    <ClCompile Include="Published\ValuePrinter.cpp" />
     <ClCompile Include="Published\ViewportTests.cpp" />
     <ClCompile Include="Published\UnitTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ChunkedUploadRequestTests.cpp" />
@@ -246,7 +249,6 @@
     <ClCompile Include="Published\WebServices\Client\Response\WSObjectsReaderV2Tests.cpp" />
     <ClCompile Include="Published\WebServices\Client\Response\WSObjectsResponseTests.cpp" />
     <ClCompile Include="Published\WebServices\Licensing\UsageTrackingTests.cpp" />
-    <ClCompile Include="Published\WebServices\WebServicesTestsHelper.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSErrorTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSInfoTests.cpp" />

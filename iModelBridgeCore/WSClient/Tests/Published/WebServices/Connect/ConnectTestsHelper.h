@@ -7,8 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "../../MobileUtilsTests.h"
-#include "../WebServicesTestsHelper.h"
+#include "../../Utils/WebServicesTestsHelper.h"
 #include <MobileDgn/Utils/Http/HttpClient.h>
 #include <WebServices/Connect/SamlToken.h>
 

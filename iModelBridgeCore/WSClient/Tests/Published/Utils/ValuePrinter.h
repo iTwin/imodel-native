@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/ValuePrinter.h $
+|     $Source: Tests/Published/Utils/ValuePrinter.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -66,12 +66,12 @@ std::ostream& operator << (std::ostream &o, BeVersionCR version);
 BEGIN_BENTLEY_NAMESPACE
 namespace Json
     {
-    void PrintTo (const Value& value, ::std::ostream* os);
+    void PrintTo(const Value& value, ::std::ostream* os);
     }
 
-void PrintTo (const WString& value, ::std::ostream* os);
-void PrintTo (const Utf8String& value, ::std::ostream* os);
-void PrintTo (BentleyStatus value, ::std::ostream* os);
+void PrintTo(const WString& value, ::std::ostream* os);
+void PrintTo(const Utf8String& value, ::std::ostream* os);
+void PrintTo(BentleyStatus value, ::std::ostream* os);
 END_BENTLEY_NAMESPACE
 
 #endif

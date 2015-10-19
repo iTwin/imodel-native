@@ -583,7 +583,7 @@ BentleyStatus SyncLocalChangesTask::ReadObjectPropertiesForCreation(IDataSourceC
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SyncLocalChangesTask::ReadObjectPropertiesForUpdate(IDataSourceCache& cache, ECInstanceKeyCR instanceKey, JsonValueR propertiesJsonOut) const
     {
-    if (SUCCESS != ReadObjectProperties(cache, instanceKey, propertiesJsonOut))
+    if (SUCCESS != cache.GetChangeManager().ReadModifiedProperties(instanceKey, propertiesJsonOut))
         {
         return ERROR;
         }
@@ -640,7 +640,7 @@ void SyncLocalChangesTask::RemoveReadOnlyProperties(JsonValueR propertiesJson, E
     for (Utf8StringCR member : propertiesJson.getMemberNames())
         {
         ECPropertyCP ecProperty = ecClass.GetPropertyP(member.c_str());
-        if (ecProperty->GetIsReadOnly())
+        if (nullptr != ecProperty && ecProperty->GetIsReadOnly())
             {
             propertiesJson.removeMember(member);
             }

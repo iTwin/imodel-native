@@ -98,6 +98,7 @@
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV3ToV4.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV4ToV5.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV5ToCurrent.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV7ToV8.cpp" />
     <ClCompile Include="Cache\ServerQueryHelper.cpp" />
     <ClCompile Include="Cache\SyncCachedDataTask.cpp" />
     <ClCompile Include="Cache\SyncCachedInstancesSeperatelyTask.cpp" />
@@ -117,6 +118,8 @@
     <ClCompile Include="Cache\Util\ExtendedDataAdapter.cpp" />
     <ClCompile Include="Cache\Util\FileUtil.cpp" />
     <ClCompile Include="Cache\Util\ISelectProvider.cpp" />
+    <ClCompile Include="Cache\Util\JsonDiff.cpp" />
+    <ClCompile Include="Cache\Util\JsonUtil.cpp" />
     <ClCompile Include="Cache\Util\ObservableECDb.cpp" />
     <ClCompile Include="Cache\Util\TempFile.cpp" />
     <ClCompile Include="Cache\Util\ValueIncrementor.cpp" />
@@ -198,6 +201,8 @@
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV3ToV4.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV4ToV5.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV5ToCurrent.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV7ToV8.h" />
+    <ClInclude Include="Cache\Util\JsonUtil.h" />
     <ClInclude Include="Cache\Util\StringHelper.h" />
     <ClInclude Include="Cache\SyncCachedDataTask.h" />
     <ClInclude Include="Cache\SyncCachedInstancesSeperatelyTask.h" />
@@ -241,6 +246,7 @@
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\IECDbAdapter.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\IExtendedDataAdapter.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\ISelectProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\JsonDiff.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\ObservableECDb.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\TempFile.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\ValueIncrementor.h" />

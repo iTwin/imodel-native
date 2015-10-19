@@ -9,6 +9,7 @@
 #include <WebServices/Cache/Persistence/ChangeManager.h>
 
 #include <WebServices/Cache/Util/ECDbHelper.h>
+#include <WebServices/Cache/Util/JsonDiff.h>
 
 #include "Changes/ChangeInfoManager.h"
 #include "Core/CacheSchema.h"
@@ -21,6 +22,7 @@
 #include "Instances/ObjectInfoManager.h"
 #include "Instances/RelationshipInfoManager.h"
 #include "Responses/CachedResponseManager.h"
+#include "../Util/JsonUtil.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -130,13 +132,9 @@ ECInstanceKey ChangeManager::CreateObject(ECClassCR ecClass, JsonValueCR propert
     info.SetSyncStatus(syncStatus);
 
     rapidjson::Document propertiesRapidJson;
-    if (propertiesRapidJson.Parse<0>(properties.toStyledString().c_str()).HasParseError())
-        {
-        BeAssert(false && "Invalid JSON properties");
-        return ECInstanceKey();
-        }
+    JsonUtil::ToRapidJson(properties, propertiesRapidJson);
 
-    if (SUCCESS != m_instanceHelper->CacheNewInstance(info, propertiesRapidJson))
+    if (SUCCESS != m_instanceHelper->CacheInstance(info, propertiesRapidJson))
         {
         return ECInstanceKey();
         }
@@ -168,6 +166,16 @@ BentleyStatus ChangeManager::ModifyObject(ECInstanceKeyCR instanceKey, JsonValue
         return ERROR;
         }
 
+    if (info.GetChangeStatus() == ChangeStatus::NoChange)
+        {
+        Json::Value instanceJson;
+        if (SUCCESS != m_dbAdapter->GetJsonInstance(instanceJson, instanceKey) ||
+            SUCCESS != m_changeInfoManager->SaveBackupInstance(info.GetInfoKey(), instanceJson))
+            {
+            return ERROR;
+            }
+        }
+
     if (SUCCESS != m_changeInfoManager->SetupChangeNumber(info))
         {
         return ERROR;
@@ -182,13 +190,9 @@ BentleyStatus ChangeManager::ModifyObject(ECInstanceKeyCR instanceKey, JsonValue
     info.SetSyncStatus(syncStatus);
 
     rapidjson::Document propertiesRapidJson;
-    if (propertiesRapidJson.Parse<0>(properties.toStyledString().c_str()).HasParseError())
-        {
-        BeAssert(false && "Invalid JSON properties");
-        return ERROR;
-        }
+    JsonUtil::ToRapidJson(properties, propertiesRapidJson);
 
-    if (SUCCESS != m_instanceHelper->CacheExistingInstance(info, propertiesRapidJson))
+    if (SUCCESS != m_instanceHelper->UpdateExistingInstanceData(info, propertiesRapidJson))
         {
         return ERROR;
         }
@@ -595,6 +599,44 @@ ChangeManager::SyncStatus ChangeManager::GetObjectSyncStatus(ECInstanceKeyCR ins
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeManager::ReadModifiedProperties(ECInstanceKeyCR instance, JsonValueR propertiesOut)
+    {
+    auto info = m_objectInfoManager->ReadInfo(instance);
+    if (info.GetChangeStatus() != ChangeStatus::Modified)
+        {
+        return ERROR;
+        }
+
+    // Read backup instance
+    rapidjson::Document backupJson;
+    if (SUCCESS != m_changeInfoManager->ReadBackupInstance(info.GetInfoKey(), backupJson))
+        {
+        return ERROR;
+        }
+
+    // Read current instance
+    Json::Value instanceJsonValue;
+    if (SUCCESS != m_dbAdapter->GetJsonInstance(instanceJsonValue, instance))
+        {
+        return ERROR;
+        }
+
+    rapidjson::Document instanceJson;
+    JsonUtil::RemoveECMembers(instanceJsonValue);
+    JsonUtil::ToRapidJson(instanceJsonValue, instanceJson);
+
+    // Detect changes
+    rapidjson::Document changesJson;
+    JsonDiff(false).GetChanges(backupJson, instanceJson, changesJson);
+
+    // Write output value
+    JsonUtil::ToJsonValue(changesJson, propertiesOut);
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ChangeManager::CommitCreationChanges(const std::map<ECInstanceKey, Utf8String>& newRemoteIds)
@@ -750,25 +792,26 @@ BentleyStatus ChangeManager::CommitObjectChange(ECInstanceKeyCR instanceKey)
     ObjectInfo info = m_objectInfoManager->ReadInfo(instanceKey);
     switch (info.GetChangeStatus())
         {
-            case ChangeStatus::Modified:
-                info.ClearChangeInfo();
-                if (SUCCESS != m_objectInfoManager->UpdateInfo(info))
-                    {
-                    return ERROR;
-                    }
-                break;
-            case ChangeStatus::Deleted:
-                if (SUCCESS != m_hierarchyManager->DeleteInstance(info.GetInfoKey()))
-                    {
-                    return ERROR;
-                    }
-                break;
-            case ChangeStatus::NoChange:
-            case ChangeStatus::Created:
-            default:
-                BeAssert(false && "Change status is unsupported for commit");
+        case ChangeStatus::Modified:
+            info.ClearChangeInfo();
+            if (SUCCESS != m_objectInfoManager->UpdateInfo(info) ||
+                SUCCESS != m_changeInfoManager->DeleteBackupInstance(info.GetInfoKey()))
+                {
                 return ERROR;
-                break;
+                }
+            break;
+        case ChangeStatus::Deleted:
+            if (SUCCESS != m_hierarchyManager->DeleteInstance(info.GetInfoKey()))
+                {
+                return ERROR;
+                }
+            break;
+        case ChangeStatus::NoChange:
+        case ChangeStatus::Created:
+        default:
+            BeAssert(false && "Change status is unsupported for commit");
+            return ERROR;
+            break;
         }
     return SUCCESS;
     }
@@ -781,19 +824,19 @@ BentleyStatus ChangeManager::CommitRelationshipChange(ECInstanceKeyCR instanceKe
     RelationshipInfo info = m_relationshipInfoManager->FindInfo(instanceKey);
     switch (info.GetChangeStatus())
         {
-            case ChangeStatus::Deleted:
-                if (SUCCESS != m_hierarchyManager->DeleteInstance(info.GetInfoKey()))
-                    {
-                    return ERROR;
-                    }
-                break;
-            case ChangeStatus::Modified:
-            case ChangeStatus::NoChange:
-            case ChangeStatus::Created:
-            default:
-                BeAssert(false && "Change status is unsupported for commit");
+        case ChangeStatus::Deleted:
+            if (SUCCESS != m_hierarchyManager->DeleteInstance(info.GetInfoKey()))
+                {
                 return ERROR;
-                break;
+                }
+            break;
+        case ChangeStatus::Modified:
+        case ChangeStatus::NoChange:
+        case ChangeStatus::Created:
+        default:
+            BeAssert(false && "Change status is unsupported for commit");
+            return ERROR;
+            break;
         }
     return SUCCESS;
     }
@@ -806,24 +849,24 @@ BentleyStatus ChangeManager::CommitFileChanges(ECInstanceKeyCR instanceKey)
     FileInfo info = m_fileInfoManager->ReadInfo(instanceKey);
     switch (info.GetChangeStatus())
         {
-            case ChangeStatus::Modified:
-                info.ClearChangeInfo();
-                if (SUCCESS != m_fileInfoManager->SaveInfo(info))
-                    {
-                    return ERROR;
-                    }
-                if (SUCCESS != m_fileManager->SetFileCacheLocation(instanceKey, FileCache::Temporary))
-                    {
-                    return ERROR;
-                    }
-                break;
-            case ChangeStatus::NoChange:
-            case ChangeStatus::Created:
-            case ChangeStatus::Deleted:
-            default:
-                BeAssert(false && "Change status is unsupported for commit");
+        case ChangeStatus::Modified:
+            info.ClearChangeInfo();
+            if (SUCCESS != m_fileInfoManager->SaveInfo(info))
+                {
                 return ERROR;
-                break;
+                }
+            if (SUCCESS != m_fileManager->SetFileCacheLocation(instanceKey, FileCache::Temporary))
+                {
+                return ERROR;
+                }
+            break;
+        case ChangeStatus::NoChange:
+        case ChangeStatus::Created:
+        case ChangeStatus::Deleted:
+        default:
+            BeAssert(false && "Change status is unsupported for commit");
+            return ERROR;
+            break;
         }
 
     return SUCCESS;
