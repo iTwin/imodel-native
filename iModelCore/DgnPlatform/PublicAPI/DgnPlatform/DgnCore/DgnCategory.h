@@ -193,7 +193,7 @@ public:
     DGNPLATFORM_EXPORT static Code CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR subCategoryName, DgnDbR db);
 
     //! Create a Code for the name of a sub-category of the specified category
-    DGNPLATFORM_EXPORT static Code CreateSubCategoryCode(DgnCategoryCR category, Utf8StringCR subCategoryName, DgnDbR db);
+    DGNPLATFORM_EXPORT static Code CreateSubCategoryCode(DgnCategoryCR category, Utf8StringCR subCategoryName);
 
     //! Looks up a sub-category ID by code.
     DGNPLATFORM_EXPORT static DgnSubCategoryId QuerySubCategoryId(Code const& code, DgnDbR db);
@@ -343,9 +343,9 @@ public:
     void SetScope(Scope scope) { m_data.m_scope = scope; } //!< Set the category's scope.
     void SetRank(Rank rank) { m_data.m_rank = rank; } //!< Set the category's rank.
 
-    DGNPLATFORM_EXPORT static Code CreateCategoryCode(Utf8StringCR categoryName, DgnDbR db); //!< Creates a Code for a category name.
+    DGNPLATFORM_EXPORT static Code CreateCategoryCode(Utf8StringCR categoryName); //!< Creates a Code for a category name.
     DGNPLATFORM_EXPORT static DgnCategoryId QueryCategoryId(Code const& code, DgnDbR db); //!< Looks up the ID of a category by code.
-    static DgnCategoryId QueryCategoryId(Utf8StringCR categoryName, DgnDbR db) { return QueryCategoryId(CreateCategoryCode(categoryName, db), db); } //!< Looks up the ID of a category by name.
+    static DgnCategoryId QueryCategoryId(Utf8StringCR categoryName, DgnDbR db) { return QueryCategoryId(CreateCategoryCode(categoryName), db); } //!< Looks up the ID of a category by name.
     static DgnCategoryCPtr QueryCategory(DgnCategoryId categoryId, DgnDbR db) { return db.Elements().Get<DgnCategory>(categoryId); } //!< Looks up a category by ID.
     static DgnCategoryCPtr QueryCategory(Utf8StringCR categoryName, DgnDbR db) { return QueryCategory(QueryCategoryId(categoryName, db), db); } //!< Looks up a category by name.
 

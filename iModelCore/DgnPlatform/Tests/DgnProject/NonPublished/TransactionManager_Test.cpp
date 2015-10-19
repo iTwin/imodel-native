@@ -311,7 +311,7 @@ static void testModelUndoRedo(DgnDbR db)
     Utf8String name = db.Models().GetUniqueModelName("testphysical");
 
     ModelHandlerR handler = dgn_ModelHandler::Physical::GetHandler();
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, db.Domains().GetClassId(handler), name.c_str()));
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, db.Domains().GetClassId(handler), DgnModel::CreateModelCode(name)));
     auto modelStatus = model->Insert();
     ASSERT_TRUE(DgnDbStatus::Success == modelStatus);
 
@@ -664,24 +664,24 @@ TEST_F(TransactionManagerTests, ModelInsertReverse)
 
     auto seedModelId = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
-    DgnModelPtr model1 = seedModel->Clone("model1");
+    DgnModelPtr model1 = seedModel->Clone(DgnModel::CreateModelCode("model1"));
     model1->Insert();
     m_db->SaveChanges("changeSet1");
 
     ASSERT_TRUE(model1 != nullptr);
-    EXPECT_TRUE(m_db->Models().QueryModelId("model1").IsValid());
+    EXPECT_TRUE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
 
     //Reverse insertion.Model 1 should'nt be in the Db now.
     auto stat = txns.ReverseTxns(1);
     EXPECT_EQ(DgnDbStatus::Success, stat);
-    EXPECT_FALSE(m_db->Models().QueryModelId("model1").IsValid());
+    EXPECT_FALSE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
 
     //Reinstate Transaction.Model should be back.
     stat = txns.ReinstateTxn();
     EXPECT_EQ(DgnDbStatus::Success, stat);
     m_db->SaveChanges("changeSet2");
 
-    EXPECT_TRUE(m_db->Models().QueryModelId("model1").IsValid());
+    EXPECT_TRUE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -695,29 +695,29 @@ TEST_F(TransactionManagerTests, ModelDeleteReverse)
 
     auto seedModelId = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
-    DgnModelPtr model1 = seedModel->Clone("model1");
+    DgnModelPtr model1 = seedModel->Clone(DgnModel::CreateModelCode("model1"));
     model1->Insert();
     m_db->SaveChanges("changeSet1");
 
     ASSERT_TRUE(model1.IsValid());
-    ASSERT_TRUE(model1->GetModelId() == m_db->Models().QueryModelId("model1"));
+    ASSERT_TRUE(model1->GetModelId() == m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")));
 
     DgnDbStatus modelStatus = model1->Delete();
     EXPECT_EQ(DgnDbStatus::Success, modelStatus);
-    EXPECT_FALSE(m_db->Models().QueryModelId("model1").IsValid());
+    EXPECT_FALSE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
     m_db->SaveChanges("changeSet2");
 
     //Reverse deletion.Model 1 should be in the Db now.
     auto stat = txns.ReverseTxns(1);
     EXPECT_EQ(DgnDbStatus::Success, stat);
-    EXPECT_TRUE(m_db->Models().QueryModelId("model1").IsValid());
+    EXPECT_TRUE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
 
     //Reinstate Transaction.Model should'nt be there anymore.
     stat = txns.ReinstateTxn();
     EXPECT_EQ(DgnDbStatus::Success, stat);
     m_db->SaveChanges("changeSet3");
 
-    EXPECT_FALSE(m_db->Models().QueryModelId("model1").IsValid());
+    EXPECT_FALSE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -731,12 +731,12 @@ TEST_F(TransactionManagerTests, ElementInsertReverse)
 
     auto seedModelId = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
-    DgnModelPtr model1 = seedModel->Clone("model1");
+    DgnModelPtr model1 = seedModel->Clone(DgnModel::CreateModelCode("model1"));
     model1->Insert();
     m_db->SaveChanges("changeSet1");
 
     ASSERT_TRUE(model1 != nullptr);
-    DgnModelId m1id = m_db->Models().QueryModelId("model1");
+    DgnModelId m1id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1"));
     EXPECT_TRUE(m1id.IsValid());
 
     auto keyE1 = InsertElement("E1", m1id);
@@ -773,7 +773,7 @@ TEST_F(TransactionManagerTests, ElementInsertReverse)
 
     //Both the elements and the model shouldn't be in the database.
     txns.ReverseAll(true);
-    EXPECT_FALSE(m_db->Models().QueryModelId("model1").IsValid());
+    EXPECT_FALSE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -788,12 +788,12 @@ TEST_F (TransactionManagerTests, ElementDeleteReverse)
     //Creates a model.
     auto seedModelId = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
-    DgnModelPtr model1 = seedModel->Clone("model1");
+    DgnModelPtr model1 = seedModel->Clone(DgnModel::CreateModelCode("model1"));
     model1->Insert();
     m_db->SaveChanges("changeSet1");
 
     ASSERT_TRUE(model1 != nullptr);
-    DgnModelId m1id = m_db->Models().QueryModelId("model1");
+    DgnModelId m1id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1"));
     EXPECT_TRUE(m1id.IsValid());
 
     auto keyE1 = InsertElement("E1", m1id);
@@ -827,7 +827,7 @@ TEST_F (TransactionManagerTests, ElementDeleteReverse)
 
     //Both the elements and the model should'nt be in the database.
     txns.ReverseAll(true);
-    EXPECT_FALSE(m_db->Models().QueryModelId("model1").IsValid());
+    EXPECT_FALSE(m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -843,17 +843,17 @@ TEST_F (TransactionManagerTests, ReverseToPos)
     //creates model
     DgnModelId seedModelId = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
-    DgnModelPtr model1 = seedModel->Clone("model1");
+    DgnModelPtr model1 = seedModel->Clone(DgnModel::CreateModelCode("model1"));
     model1->Insert();
     m_db->SaveChanges("changeSet1");
 
     ASSERT_TRUE (model1 != nullptr);
-    EXPECT_TRUE (m_db->Models().QueryModelId("model1").IsValid());
+    EXPECT_TRUE (m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
 
     //Reverse insertion.Model 1 should'nt be in the Db now.
     DgnDbStatus stat = txns.ReverseTo(txn_id);
     EXPECT_EQ ((DgnDbStatus)SUCCESS, stat);
-    EXPECT_FALSE (m_db->Models().QueryModelId("model1").IsValid());
+    EXPECT_FALSE (m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -868,24 +868,24 @@ TEST_F (TransactionManagerTests, CancelToPos)
     //creates model
     DgnModelId seedModelId = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
-    DgnModelPtr model1 = seedModel->Clone("model1");
+    DgnModelPtr model1 = seedModel->Clone(DgnModel::CreateModelCode("model1"));
     model1->Insert();
     m_db->SaveChanges("changeSet1");
     auto t1 = txns.GetCurrentTxnId();
 
     ASSERT_TRUE (model1 != nullptr);
-    EXPECT_TRUE (m_db->Models().QueryModelId("model1").IsValid());
+    EXPECT_TRUE (m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
 
     //Deletes the model.
     DgnDbStatus modelStatus = model1->Delete ();
     EXPECT_EQ (DgnDbStatus::Success, modelStatus);
-    EXPECT_FALSE (m_db->Models().QueryModelId("model1").IsValid());
+    EXPECT_FALSE (m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
     m_db->SaveChanges("changeSet2");
 
     //Model should be back in the db.
     DgnDbStatus status = txns.CancelTo(t1);
     EXPECT_EQ ((DgnDbStatus)SUCCESS, status);
-    EXPECT_TRUE (m_db->Models().QueryModelId("model1").IsValid());
+    EXPECT_TRUE (m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1")).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -900,28 +900,28 @@ TEST_F (TransactionManagerTests, MultiTxnOperation)
     //Inserts a  model
     DgnModelId seedModelId = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
-    DgnModelPtr model1 = seedModel->Clone("Model1");
+    DgnModelPtr model1 = seedModel->Clone(DgnModel::CreateModelCode("Model1"));
     model1->Insert("Test Model 1");
     m_db->SaveChanges("changeSet1");
 
     ASSERT_TRUE (model1 != nullptr);
-    EXPECT_TRUE (m_db->Models().QueryModelId("Model1").IsValid());
+    EXPECT_TRUE (m_db->Models().QueryModelId(DgnModel::CreateModelCode("Model1")).IsValid());
 
     txns.BeginMultiTxnOperation();
 
     //Inserts 2 models..
-    DgnModelPtr model2 = seedModel->Clone("Model2");
+    DgnModelPtr model2 = seedModel->Clone(DgnModel::CreateModelCode("Model2"));
     model2->Insert("Test Model 2");
     m_db->SaveChanges("changeSet2");
 
     ASSERT_TRUE (model2 != nullptr);
-    EXPECT_TRUE (m_db->Models().QueryModelId("Model2").IsValid());
+    EXPECT_TRUE (m_db->Models().QueryModelId(DgnModel::CreateModelCode("Model2")).IsValid());
 
     model2->FillModel();
     EXPECT_TRUE (model2->IsFilled());
     m_db->SaveChanges("changeSet3");
 
-    DgnModelPtr model3 = seedModel->Clone("Model3");
+    DgnModelPtr model3 = seedModel->Clone(DgnModel::CreateModelCode("Model3"));
     model3->Insert("Test Model 3");
     auto t3 = txns.GetCurrentTxnId();
     m_db->SaveChanges("changeSet4");
@@ -932,13 +932,13 @@ TEST_F (TransactionManagerTests, MultiTxnOperation)
     EXPECT_EQ ((DgnDbStatus)SUCCESS, status);
 
     //Model2 and Model3 shouldn't be in the db.
-    EXPECT_FALSE (m_db->Models().QueryModelId("Model2").IsValid());
-    EXPECT_FALSE (m_db->Models().QueryModelId("Model3").IsValid());
+    EXPECT_FALSE (m_db->Models().QueryModelId(DgnModel::CreateModelCode("Model2")).IsValid());
+    EXPECT_FALSE (m_db->Models().QueryModelId(DgnModel::CreateModelCode("Model3")).IsValid());
 
     status = txns.ReinstateTxn();
     EXPECT_EQ ((DgnDbStatus)SUCCESS, status);
 
     //Model2 and Model3 shoud be back in the db.
-    EXPECT_TRUE (m_db->Models().QueryModelId("Model2").IsValid());
-    EXPECT_TRUE (m_db->Models().QueryModelId("Model3").IsValid());
+    EXPECT_TRUE (m_db->Models().QueryModelId(DgnModel::CreateModelCode("Model2")).IsValid());
+    EXPECT_TRUE (m_db->Models().QueryModelId(DgnModel::CreateModelCode("Model3")).IsValid());
     }
