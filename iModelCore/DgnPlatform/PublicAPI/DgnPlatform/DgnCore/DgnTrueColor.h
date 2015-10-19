@@ -68,7 +68,7 @@ public:
     ColorDef GetColorDef() const { return m_colorDef; } //!< The value of this color
 
     //! Creates a code for a color with the given name and book name
-    DGNPLATFORM_EXPORT static Code CreateColorCode(Utf8StringCR name, Utf8StringCR book, DgnDbR db);
+    DGNPLATFORM_EXPORT static Code CreateColorCode(Utf8StringCR name, Utf8StringCR book);
 
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TrueColor); } //!< The class ID associated with true colors within the given DgnDb
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); } //!< The class ID associated with true colors within the given DgnDb
@@ -80,7 +80,7 @@ public:
     DGNPLATFORM_EXPORT static DgnTrueColorId QueryColorId(Code const& code, DgnDbR db);
 
     //! Look up a color ID by name + book name
-    static DgnTrueColorId QueryColorId(Utf8StringCR name, Utf8StringCR book, DgnDbR db) { return QueryColorId(CreateColorCode(name, book, db), db); }
+    static DgnTrueColorId QueryColorId(Utf8StringCR name, Utf8StringCR book, DgnDbR db) { return QueryColorId(CreateColorCode(name, book), db); }
 
     //! Find the first DgnTrueColorId that has a given ColorDef value.
     //! @return A DgnTrueColorId for the supplied color value. If no entry in the table has the given value, the DgnTrueColorId will be invalid.

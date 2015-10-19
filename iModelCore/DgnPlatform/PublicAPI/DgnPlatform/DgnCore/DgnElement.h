@@ -861,7 +861,7 @@ protected:
     //! The default implementation sets the parent without doing any checking.
     //! @return DgnDbStatus::Success if the parentId was changed, error status otherwise.
     //! Override to validate the parent/child relationship and return a value other than DgnDbStatus::Success to reject proposed new parent.
-    virtual DgnDbStatus _SetParentId(DgnElementId parentId) {m_parentId = parentId; return DgnDbStatus::Success;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetParentId(DgnElementId parentId);
 
     //! Change the code of this DgnElement.
     //! The default implementation sets the code without doing any checking.

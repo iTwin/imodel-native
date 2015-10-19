@@ -482,7 +482,7 @@ TEST_F(DgnProjectPackageTest, CreatePackageUsingDefaults)
     //Check embedded files table and get file id
     DbEmbeddedFileTable& embeddedFiles = db.EmbeddedFiles();
     ASSERT_EQ(1, embeddedFiles.MakeIterator().QueryCount())<<"There should be only one embeded file";
-    BeRepositoryBasedId fileId = embeddedFiles.QueryFile("ElementsSymbologyByLevel.idgndb");
+    BeBriefcaseBasedId fileId = embeddedFiles.QueryFile("ElementsSymbologyByLevel.idgndb");
     //Verify properties
     Utf8String propertToVerify;
     PropertiesInTable propertiesInTableV;
