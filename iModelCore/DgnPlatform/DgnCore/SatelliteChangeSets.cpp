@@ -784,7 +784,7 @@ void SatelliteChangeSets::Close()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ChangeSetProperties::SaveToDb(Db& db)
     {
-    db.SaveRepositoryLocalValue(LAST_CHANGESET_ID_STR, uint64ToString(m_latestChangeSetId));
+    db.SaveBriefcaseLocalValue(LAST_CHANGESET_ID_STR, uint64ToString(m_latestChangeSetId));
     if (m_expirationDate.IsValid())
         {
         auto saveResult = db.SavePropertyString(Properties::ExpirationDate(), m_expirationDate.ToUtf8String());
@@ -804,7 +804,7 @@ BentleyStatus ChangeSetProperties::SaveToDb(Db& db)
 BentleyStatus ChangeSetProperties::LoadFromDb(Db& db)
     {
     Utf8String str;
-    DbResult rc = db.QueryRepositoryLocalValue(LAST_CHANGESET_ID_STR, str);
+    DbResult rc = db.QueryBriefcaseLocalValue(LAST_CHANGESET_ID_STR, str);
     m_latestChangeSetId = (BE_SQLITE_ROW == rc) ? uint64FromString(str) : 0;
 
     Utf8String expirationDateString;

@@ -205,7 +205,7 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus CompactFile();
 
     //! Determine whether this DgnDb is the master copy.
-    bool IsMasterCopy() const {return GetRepositoryId().IsMasterId();}
+    bool IsMasterCopy() const {return GetBriefcaseId().IsMasterId();}
 
     //! Determine whether this DgnDb is a briefcase.
     bool IsBriefcase() const {return !IsMasterCopy();}
