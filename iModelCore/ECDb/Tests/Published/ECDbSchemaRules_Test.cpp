@@ -10,11 +10,13 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
+struct ECDbSchemaRules : SchemaImportTestFixture
+    {};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaImportTestFixture, ECDbSchemaRules_Casing)
+TEST_F(ECDbSchemaRules, Casing)
     {
     std::vector <TestItem> testItems {
         TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
@@ -94,7 +96,7 @@ TEST_F(SchemaImportTestFixture, ECDbSchemaRules_Casing)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaImportTestFixture, ECDbSchemaRules_SchemaNamespacePrefix)
+TEST_F(ECDbSchemaRules, SchemaNamespacePrefix)
     {
     {
     TestItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='123' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -173,7 +175,7 @@ TEST_F(SchemaImportTestFixture, ECDbSchemaRules_SchemaNamespacePrefix)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaImportTestFixture, ECDbSchemaRules_Instantiability)
+TEST_F(ECDbSchemaRules, Instantiability)
     {
     TestItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                       "<ECClass typeName='AbstractClass' isDomainClass='False' isStruct='False' isCustomAttributeClass='False' >"
@@ -221,7 +223,7 @@ TEST_F(SchemaImportTestFixture, ECDbSchemaRules_Instantiability)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaImportTestFixture, ECDbSchemaRules_PropertyOfSameTypeAsClass)
+TEST_F(ECDbSchemaRules, PropertyOfSameTypeAsClass)
     {
     std::vector <TestItem> testItems {
         TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
@@ -285,7 +287,7 @@ TEST_F(SchemaImportTestFixture, ECDbSchemaRules_PropertyOfSameTypeAsClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaImportTestFixture, ECDbSchemaRules_Relationship)
+TEST_F(ECDbSchemaRules, Relationship)
     {
     std::vector <TestItem> testItems {
         TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -516,7 +518,7 @@ TEST_F(SchemaImportTestFixture, ECDbSchemaRules_Relationship)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaImportTestFixture, ECDbSchemaRules_ConsistentClassHierarchy)
+TEST_F(ECDbSchemaRules, ConsistentClassHierarchy)
     {
     std::vector <TestItem> testItems {
         TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
@@ -636,7 +638,7 @@ TEST_F(SchemaImportTestFixture, ECDbSchemaRules_ConsistentClassHierarchy)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaImportTestFixture, ECDbSchemaRules_RelationshipKeyProperties)
+TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
     {
     std::vector <TestItem> testItems {
         TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -871,4 +873,6 @@ TEST_F(SchemaImportTestFixture, ECDbSchemaRules_RelationshipKeyProperties)
         AssertSchemaImport(testItem, "ecdbschemarules.ecdb");
         }
     }
+
+
 END_ECDBUNITTESTS_NAMESPACE

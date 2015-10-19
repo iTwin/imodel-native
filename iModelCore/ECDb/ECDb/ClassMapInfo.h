@@ -75,8 +75,10 @@ public:
     ClassMapInfo(ECN::ECClassCR, ECDbMapCR);
     virtual ~ClassMapInfo() {}
 
-    ECN::ECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
     MapStatus Initialize();
+
+    ECN::ECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
+    bool IsECInstanceIdAutogenerationDisabled() const { return m_isECInstanceIdAutogenerationDisabled; }
 
     ECDbMapStrategy const& GetMapStrategy () const{ return m_resolvedStrategy; }
 
