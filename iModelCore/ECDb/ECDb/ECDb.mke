@@ -46,7 +46,7 @@ ECDbAllHeaders = \
 				$(baseDir)MapStrategy.h \
                 $(baseDir)ECSchemaComparers.h \
                 $(baseDir)ECDbImpl.h \
-                $(baseDir)BeRepositoryBasedIdSequence.h \
+                $(baseDir)BeBriefcaseBasedIdSequence.h \
                 $(baseDir)ColumnInfo.h \
                 $(baseDir)ECDbMap.h \
                 $(baseDir)ClassMap.h \
@@ -164,7 +164,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 #----------------------------------------------------------------------
 $(o)ECDbLogger$(oext):										$(baseDir)ECDbLogger.cpp                    $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)BeRepositoryBasedIdSequence$(oext):						$(baseDir)BeRepositoryBasedIdSequence.cpp   $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)BeBriefcaseBasedIdSequence$(oext):						$(baseDir)BeBriefcaseBasedIdSequence.cpp   $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbMap$(oext):											$(baseDir)ECDbMap.cpp                       $(ECDbAllHeaders) ${MultiCompileDepends}
 

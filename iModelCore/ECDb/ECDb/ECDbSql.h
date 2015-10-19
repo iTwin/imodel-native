@@ -13,7 +13,7 @@
 
 #include <unordered_map>
 #include <unordered_set>
-#include "BeRepositoryBasedIdSequence.h"
+#include "BeBriefcaseBasedIdSequence.h"
 #include "MapStrategy.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -768,7 +768,7 @@ struct ECDbMapStorage
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         01/2015
 //======================================================================================
-struct ECDbRepositoryBasedId : IIdGenerator
+struct ECDbBriefcaseBasedId : IIdGenerator
     {
 private:
     ECDbR m_ecdb;
@@ -781,8 +781,8 @@ private:
     virtual ECDbPropertyPathId _NextPropertyPathId () override;
 
 public:
-    explicit ECDbRepositoryBasedId (ECDbR ecdb) :IIdGenerator (), m_ecdb (ecdb) {}
-    virtual ~ECDbRepositoryBasedId () {}
+    explicit ECDbBriefcaseBasedId (ECDbR ecdb) :IIdGenerator (), m_ecdb (ecdb) {}
+    virtual ~ECDbBriefcaseBasedId () {}
     };
 
 //======================================================================================
@@ -848,7 +848,7 @@ struct ECDbSQLManager : public NonCopyableClass
         ECDbR m_ecdb;
         mutable ECDbSqlTable* m_nullTable;
         ECDbSqlPersistence m_persistence;
-        ECDbRepositoryBasedId m_idGenerator;
+        ECDbBriefcaseBasedId m_idGenerator;
         ECDbMapStorage m_mapStorage;
         bool m_loaded;
     private:

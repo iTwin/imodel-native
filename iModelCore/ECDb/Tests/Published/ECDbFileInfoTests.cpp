@@ -141,7 +141,7 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
     double expectedLastModifiedJd = 0.0;
     ASSERT_EQ(SUCCESS, expectedLastModified.ToJulianDay(expectedLastModifiedJd));
 
-    BeRepositoryBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), "JSON", nullptr, &expectedLastModified);
+    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), "JSON", nullptr, &expectedLastModified);
     ASSERT_EQ(BE_SQLITE_OK, stat);
     ASSERT_TRUE(embeddedFileId.IsValid());
 
@@ -231,7 +231,7 @@ TEST(ECDbFileInfo, ReplaceExistingEmbeddedFile)
     double expectedLastModifiedJd = 0.0;
     ASSERT_EQ(SUCCESS, expectedLastModified.ToJulianDay(expectedLastModifiedJd));
 
-    BeRepositoryBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileNameOld, testFilePathOld.GetNameUtf8().c_str(), ".xml", nullptr, &expectedLastModified);
+    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileNameOld, testFilePathOld.GetNameUtf8().c_str(), ".xml", nullptr, &expectedLastModified);
     ASSERT_EQ(BE_SQLITE_OK, stat);
     ASSERT_TRUE(embeddedFileId.IsValid());
 
@@ -289,7 +289,7 @@ TEST(ECDbFileInfo, ReadAddNewEntrySaveEmbeddedFile)
     double expectedLastModifiedJd = 0.0;
     ASSERT_EQ(SUCCESS, expectedLastModified.ToJulianDay(expectedLastModifiedJd));
 
-    BeRepositoryBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), ".xml", nullptr, &expectedLastModified);
+    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), ".xml", nullptr, &expectedLastModified);
     ASSERT_EQ(BE_SQLITE_OK, stat);
     ASSERT_TRUE(embeddedFileId.IsValid());
 
@@ -363,7 +363,7 @@ TEST(ECDbFileInfo, ImportExportEmptyFile)
     double expectedLastModifiedJd = 0.0;
     ASSERT_EQ(SUCCESS, expectedLastModified.ToJulianDay(expectedLastModifiedJd));
 
-    BeRepositoryBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), "txt", nullptr, &expectedLastModified);
+    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), "txt", nullptr, &expectedLastModified);
     ASSERT_EQ(BE_SQLITE_OK, stat);
     ASSERT_TRUE(embeddedFileId.IsValid());
 
@@ -397,7 +397,7 @@ TEST(ECDbFileInfo, EmbedFileWithInvalidPath)
     double expectedLastModifiedJd = 0.0;
     ASSERT_EQ(SUCCESS, expectedLastModified.ToJulianDay(expectedLastModifiedJd));
 
-    BeRepositoryBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), "JSON", nullptr, &expectedLastModified);
+    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), "JSON", nullptr, &expectedLastModified);
     ASSERT_EQ(BE_SQLITE_ERROR_FileNotFound, stat);
     ASSERT_FALSE(embeddedFileId.IsValid());
 }

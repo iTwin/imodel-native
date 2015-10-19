@@ -2207,7 +2207,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ParameterInSelectClause)
         ECSqlStatement statement;
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ?, S FROM ecsql.PSA LIMIT 1"));
 
-        BeRepositoryBasedId expectedId(BeRepositoryId(3), 444);
+        BeBriefcaseBasedId expectedId(BeBriefcaseId(3), 444);
         ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, expectedId));
 
         ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
@@ -2225,7 +2225,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ParameterInSelectClause)
         ECSqlStatement statement;
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT -?, S FROM ecsql.PSA LIMIT 1"));
 
-        BeRepositoryBasedId expectedId(BeRepositoryId(3), 444);
+        BeBriefcaseBasedId expectedId(BeBriefcaseId(3), 444);
         ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, expectedId));
 
         ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
@@ -2952,7 +2952,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_IssueListener)
         {
         ECDbIssueListener issueListener(ecdb);
 
-        BeRepositoryBasedId id(BeRepositoryId(111), 111); //an id not used in the current file
+        BeBriefcaseBasedId id(BeBriefcaseId(111), 111); //an id not used in the current file
         ECSqlStatement stmt;
         ECSqlStatus stat = stmt.Prepare(ecdb, "INSERT INTO ecsql.P (ECInstanceId) VALUES (?)");
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation failed unexpectedly";

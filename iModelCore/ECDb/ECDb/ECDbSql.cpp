@@ -2259,14 +2259,14 @@ DbResult ECDbSqlPersistence::InsertForeignKey (ECDbSqlForeignKeyConstraint const
     }
 
 //****************************************************************************************
-//ECDbRepositoryBaseId
+//ECDbBriefcaseBaseId
 //****************************************************************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-ECDbTableId ECDbRepositoryBasedId::_NextTableId ()
+ECDbTableId ECDbBriefcaseBasedId::_NextTableId ()
     {
-    BeRepositoryBasedId id;
+    BeBriefcaseBasedId id;
     if (m_ecdb.GetECDbImplR().GetTableIdSequence ().GetNextValue (id) != BE_SQLITE_OK)
         {
         BeAssert (false && "Failed to generate new tableId");
@@ -2279,9 +2279,9 @@ ECDbTableId ECDbRepositoryBasedId::_NextTableId ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-ECDbColumnId ECDbRepositoryBasedId::_NextColumnId ()
+ECDbColumnId ECDbBriefcaseBasedId::_NextColumnId ()
     {
-    BeRepositoryBasedId id;
+    BeBriefcaseBasedId id;
     if (m_ecdb.GetECDbImplR().GetColumnIdSequence ().GetNextValue (id) != BE_SQLITE_OK)
         {
         BeAssert (false && "Failed to generate new columnid");
@@ -2294,9 +2294,9 @@ ECDbColumnId ECDbRepositoryBasedId::_NextColumnId ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-ECDbIndexId ECDbRepositoryBasedId::_NextIndexId ()
+ECDbIndexId ECDbBriefcaseBasedId::_NextIndexId ()
     {
-    BeRepositoryBasedId id;
+    BeBriefcaseBasedId id;
     if (m_ecdb.GetECDbImplR().GetIndexIdSequence ().GetNextValue (id) != BE_SQLITE_OK)
         {
         BeAssert (false && "Failed to generate new indexid");
@@ -2309,9 +2309,9 @@ ECDbIndexId ECDbRepositoryBasedId::_NextIndexId ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-ECDbConstraintId ECDbRepositoryBasedId::_NextConstraintId ()
+ECDbConstraintId ECDbBriefcaseBasedId::_NextConstraintId ()
     {
-    BeRepositoryBasedId id;
+    BeBriefcaseBasedId id;
     if (m_ecdb.GetECDbImplR().GetConstraintIdSequence ().GetNextValue (id) != BE_SQLITE_OK)
         {
         BeAssert (false && "Failed to generate new constraintid");
@@ -2323,9 +2323,9 @@ ECDbConstraintId ECDbRepositoryBasedId::_NextConstraintId ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-ECDbClassMapId ECDbRepositoryBasedId::_NextClassMapId ()
+ECDbClassMapId ECDbBriefcaseBasedId::_NextClassMapId ()
     {
-    BeRepositoryBasedId id;
+    BeBriefcaseBasedId id;
     if (m_ecdb.GetECDbImplR().GetClassMapIdSequence ().GetNextValue (id) != BE_SQLITE_OK)
         {
         BeAssert (false && "Failed to generate new constraintid");
@@ -2337,9 +2337,9 @@ ECDbClassMapId ECDbRepositoryBasedId::_NextClassMapId ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-ECDbPropertyPathId ECDbRepositoryBasedId::_NextPropertyPathId ()
+ECDbPropertyPathId ECDbBriefcaseBasedId::_NextPropertyPathId ()
     {
-    BeRepositoryBasedId id;
+    BeBriefcaseBasedId id;
     if (m_ecdb.GetECDbImplR().GetPropertyMapIdSequence ().GetNextValue (id) != BE_SQLITE_OK)
         {
         BeAssert (false && "Failed to generate new constraintid");
