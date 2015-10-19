@@ -906,6 +906,19 @@ ICancellationTokenPtr cancellationToken
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+AsyncTaskPtr<WSChangesetResult> WebApiV1::SendChangesetRequest
+(
+HttpBodyPtr changeset,
+HttpRequest::ProgressCallbackCR uploadProgressCallback,
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    return CreateCompletedAsyncTask(WSChangesetResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<WSCreateObjectResult> WebApiV1::SendCreateObjectRequest

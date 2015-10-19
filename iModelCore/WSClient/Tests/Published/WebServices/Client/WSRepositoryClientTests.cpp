@@ -947,6 +947,69 @@ TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithFilePath_Ad
     }
 #endif
 
+TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV13_ErrorNotSupported)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
+
+    auto result = client->SendChangesetRequest(HttpStringBody::Create("TestChangeset"), nullptr, nullptr)->GetResult();
+    EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
+    }
+
+TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV20_ErrorNotSupported)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+
+    auto result = client->SendChangesetRequest(HttpStringBody::Create("TestChangeset"), nullptr, nullptr)->GetResult();
+    EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
+    }
+
+TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV21_SendsRequest)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi21());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("POST", request.GetMethod().c_str());
+        EXPECT_STREQ("https://srv.com/ws/v2.1/Repositories/foo/$changeset", request.GetUrl().c_str());
+        EXPECT_STREQ("TestChangeset", request.GetRequestBody()->AsString().c_str());
+        return StubHttpResponse();
+        });
+
+    client->SendChangesetRequest(HttpStringBody::Create("TestChangeset"), nullptr, nullptr)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV21AndReceives201_Error)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi21());
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::Created, "{}"));
+
+    auto result = client->SendChangesetRequest(HttpStringBody::Create("TestChangeset"), nullptr, nullptr)->GetResult();
+    EXPECT_FALSE(result.IsSuccess());
+    }
+
+TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV21AndReceives200_Success)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi21());
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::OK, "{}"));
+
+    auto result = client->SendChangesetRequest(HttpStringBody::Create("TestChangeset"), nullptr, nullptr)->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+    }
+
 TEST_F (WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV1_SendsPostRequest)
     {
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", StubClientInfo (), nullptr, GetHandlerPtr ());
