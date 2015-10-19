@@ -320,7 +320,7 @@ $(coreObjs)DgnChangeSummary$(oext) : $(DgnHandlersDir)DgnChangeSummary.cpp $(Dgn
 
 $(coreObjs)DgnECSymbolProvider$(oext) : $(DgnHandlersDir)DgnECSymbolProvider.cpp $(DgnHandlersAPISrc)DgnECSymbolProvider.h ${MultiCompileDepends}
 
-
+$(coreObjs)AnnotationTable$(oext) : $(DgnCoreDir)AnnotationTable.cpp $(DgnCoreAPISrc)AnnotationTable.h ${MultiCompileDepends}
 
 
 $(o)ECUtils$(oext) : $(DgnCoreDir)ECUtils.cpp $(DgnPlatformAPISrc)ECUtils.h ${MultiCompileDepends}

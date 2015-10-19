@@ -2363,7 +2363,7 @@ DgnElement::AppData::DropMe DgnElement::ExternalKey::_OnInserted(DgnElementCR el
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::ExternalKey::QueryExternalKey(Utf8StringR externalKey, DgnElementCR element, DgnAuthorityId authorityId)
+DgnDbStatus DgnElement::ExternalKey::Query(Utf8StringR externalKey, DgnElementCR element, DgnAuthorityId authorityId)
     {
     CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT [ExternalKey] FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementExternalKey) " WHERE [ElementId]=? AND [AuthorityId]=?");
     if (!statement.IsValid())
@@ -2409,15 +2409,15 @@ DgnElement::AppData::Key const& DgnElement::Description::GetAppDataKey()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::DescriptionPtr DgnElement::Description::Create(DgnAuthorityId authorityId, Utf8CP description)
+DgnElement::DescriptionPtr DgnElement::Description::Create(DgnAuthorityId authorityId, Utf8CP label, Utf8CP description)
     {
-    if (!authorityId.IsValid() || !description || !*description)
+    if (!authorityId.IsValid())
         {
         BeAssert(false);
         return nullptr;
         }
 
-    return new DgnElement::Description(authorityId, description);
+    return new DgnElement::Description(authorityId, label, description);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2425,13 +2425,14 @@ DgnElement::DescriptionPtr DgnElement::Description::Create(DgnAuthorityId author
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::AppData::DropMe DgnElement::Description::_OnInserted(DgnElementCR element)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " DGN_SCHEMA(DGN_CLASSNAME_ElementDescription) " ([ElementId],[AuthorityId],[Descr]) VALUES (?,?,?)");
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " DGN_SCHEMA(DGN_CLASSNAME_ElementDescription) " ([ElementId],[AuthorityId],[Label],[Descr]) VALUES (?,?,?,?)");
     if (!statement.IsValid())
         return DgnElement::AppData::DropMe::Yes;
 
     statement->BindId(1, element.GetElementId());
     statement->BindId(2, GetAuthorityId());
-    statement->BindText(3, GetDescription(), IECSqlBinder::MakeCopy::No);
+    statement->BindText(3, GetLabel(), IECSqlBinder::MakeCopy::No);
+    statement->BindText(4, GetDescription(), IECSqlBinder::MakeCopy::No);
 
     ECInstanceKey key;
     if (BE_SQLITE_DONE != statement->Step(key))
@@ -2445,9 +2446,9 @@ DgnElement::AppData::DropMe DgnElement::Description::_OnInserted(DgnElementCR el
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::Description::QueryDescription(Utf8StringR description, DgnElementCR element, DgnAuthorityId authorityId)
+DgnDbStatus DgnElement::Description::Query(Utf8StringR label, Utf8StringR description, DgnElementCR element, DgnAuthorityId authorityId)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT [Descr] FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementDescription) " WHERE [ElementId]=? AND [AuthorityId]=?");
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT [Label],[Descr] FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementDescription) " WHERE [ElementId]=? AND [AuthorityId]=?");
     if (!statement.IsValid())
         return DgnDbStatus::ReadError;
 
@@ -2457,7 +2458,8 @@ DgnDbStatus DgnElement::Description::QueryDescription(Utf8StringR description, D
     if (BE_SQLITE_ROW != statement->Step())
         return DgnDbStatus::ReadError;
 
-    description.AssignOrClear(statement->GetValueText(0));
+    label.AssignOrClear(statement->GetValueText(0));
+    description.AssignOrClear(statement->GetValueText(1));
     return DgnDbStatus::Success;
     }
 
