@@ -20,27 +20,27 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-void IncrementRepositoryLocalValue
+void IncrementBriefcaseLocalValue
 (
 Db& db,
-size_t repositoryLocalKeyIndex
+size_t briefcaseLocalKeyIndex
 )
     {
     uint64_t newValue = 0LL;
-    /*auto stat = */db.GetRLVCache().IncrementValue (newValue, repositoryLocalKeyIndex);
-    //ASSERT_EQ (BE_SQLITE_OK, stat) << L"IncrementRepositoryLocalValueInt64 failed.";
+    /*auto stat = */db.GetRLVCache().IncrementValue (newValue, briefcaseLocalKeyIndex);
+    //ASSERT_EQ (BE_SQLITE_OK, stat) << L"IncrementBriefcaseLocalValueInt64 failed.";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-void IncrementRepositoryLocalValueWithSaveChanges
+void IncrementBriefcaseLocalValueWithSaveChanges
 (
 Db& db,
-size_t repositoryLocalKeyIndex
+size_t briefcaseLocalKeyIndex
 )
     {
-    IncrementRepositoryLocalValue (db, repositoryLocalKeyIndex);
+    IncrementBriefcaseLocalValue (db, briefcaseLocalKeyIndex);
     DbResult stat = db.SaveChanges ();
     ASSERT_EQ (BE_SQLITE_OK, stat) << L"SaveChanges failed.";
     }
@@ -48,14 +48,14 @@ size_t repositoryLocalKeyIndex
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-void IncrementRepositoryLocalValueWithinSavepoint
+void IncrementBriefcaseLocalValueWithinSavepoint
 (
 Db& db,
-size_t repositoryLocalKeyIndex
+size_t briefcaseLocalKeyIndex
 )
     {
-    Savepoint savepoint (db, "IncrementRepositoryLocalValue");
-    IncrementRepositoryLocalValue (db, repositoryLocalKeyIndex);
+    Savepoint savepoint (db, "IncrementBriefcaseLocalValue");
+    IncrementBriefcaseLocalValue (db, briefcaseLocalKeyIndex);
     DbResult stat = savepoint.Commit ();
     ASSERT_EQ (BE_SQLITE_OK, stat) << L"Committing savepoint failed.";
     }
@@ -63,10 +63,10 @@ size_t repositoryLocalKeyIndex
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-void SetupIncrementRepositoryLocalValueTestDgnDb
+void SetupIncrementBriefcaseLocalValueTestDgnDb
 (
 Db& testDb,
-Utf8CP repositoryLocalKey
+Utf8CP briefcaseLocalKey
 )
     {
     Utf8String dbPath;
@@ -74,15 +74,15 @@ Utf8CP repositoryLocalKey
     //create test DgnDb file with a mock sequence being set up
         {
         Db db;
-        DbResult stat = SetupDb (db, L"repositorylocalvalueperformance.ecdb");
+        DbResult stat = SetupDb (db, L"briefcaselocalvalueperformance.ecdb");
         dbPath.assign (db.GetDbFileName ());
 
-        size_t repositoryLocalKeyIndex = 0;
-        ASSERT_EQ (BE_SQLITE_OK, db.GetRLVCache().Register(repositoryLocalKeyIndex, repositoryLocalKey));
+        size_t briefcaseLocalKeyIndex = 0;
+        ASSERT_EQ (BE_SQLITE_OK, db.GetRLVCache().Register(briefcaseLocalKeyIndex, briefcaseLocalKey));
         const int64_t zero = 0LL;
-        stat = db.GetRLVCache().SaveValue(repositoryLocalKeyIndex, zero);
-        ASSERT_EQ (BE_SQLITE_OK, stat) << L"Saving initial value of repository local value failed";
-        ASSERT_EQ (BE_SQLITE_OK, db.SaveChanges ()) << L"Committing repository local values failed.";
+        stat = db.GetRLVCache().SaveValue(briefcaseLocalKeyIndex, zero);
+        ASSERT_EQ (BE_SQLITE_OK, stat) << L"Saving initial value of briefcase local value failed";
+        ASSERT_EQ (BE_SQLITE_OK, db.SaveChanges ()) << L"Committing briefcase local values failed.";
         }
 
     //reopen test db
@@ -95,13 +95,13 @@ Utf8CP repositoryLocalKey
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueNoTransaction)
+TEST_F(PerformanceBeSQLiteDbTests, IncrementBriefcaseLocalValueNoTransaction)
     {
     const int64_t iterationCount = 10000000LL;
 
     Utf8CP const mockSequenceKey = "mocksequence";
     Db testDb;
-    SetupIncrementRepositoryLocalValueTestDgnDb ( testDb, mockSequenceKey);
+    SetupIncrementBriefcaseLocalValueTestDgnDb ( testDb, mockSequenceKey);
 
     size_t mockSequenceKeyIndex = 0;
     ASSERT_EQ (BE_SQLITE_OK, testDb.GetRLVCache().Register(mockSequenceKeyIndex, mockSequenceKey));
@@ -109,7 +109,7 @@ TEST_F(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueNoTransaction)
     m_stopwatch.Start();
     for (int64_t i = 0LL; i < iterationCount; i++)
         {
-        IncrementRepositoryLocalValue (testDb, mockSequenceKeyIndex);
+        IncrementBriefcaseLocalValue (testDb, mockSequenceKeyIndex);
         }
 
     const double totalSecs = m_stopwatch.GetCurrentSeconds ();
@@ -118,7 +118,7 @@ TEST_F(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueNoTransaction)
     m_stopwatch.Stop ();
 
     LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds(), "Increment RLV");
-    PERFORMANCELOG.infov ("Incrementing repository local value %d times took: %.4f msecs. %.4f msecs with saving outermost transaction at end.", 
+    PERFORMANCELOG.infov ("Incrementing briefcase local value %d times took: %.4f msecs. %.4f msecs with saving outermost transaction at end.", 
                         iterationCount, 
                         totalSecs * 1000.0,
                         m_stopwatch.GetElapsedSeconds () * 1000.0);
@@ -186,13 +186,13 @@ TEST_F(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueNoTransaction)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueWithoutInMemoryCache)
+TEST_F(PerformanceBeSQLiteDbTests, IncrementBriefcaseLocalValueWithoutInMemoryCache)
     {
     const int iterationCount = 1000000;
 
     Utf8CP const mockSequenceKey = "mocksequence";
     Db testDb;
-    SetupIncrementRepositoryLocalValueTestDgnDb (testDb, mockSequenceKey);
+    SetupIncrementBriefcaseLocalValueTestDgnDb (testDb, mockSequenceKey);
 
     size_t mockSequenceKeyIndex = 0;
     ASSERT_EQ (BE_SQLITE_OK, testDb.GetRLVCache().Register(mockSequenceKeyIndex, mockSequenceKey));
@@ -214,7 +214,7 @@ TEST_F(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueWithoutInMemoryC
         int blobSize = queryStmt.GetColumnBytes (0);
         int64_t lastValue = -1LL;
         memcpy ((Byte*) &lastValue, blob, blobSize);
-        EXPECT_EQ (static_cast<int64_t> (i), lastValue) << L"Retrieved repository local value is wrong.";
+        EXPECT_EQ (static_cast<int64_t> (i), lastValue) << L"Retrieved briefcase local value is wrong.";
 
         lastValue++;
 
@@ -230,7 +230,7 @@ TEST_F(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueWithoutInMemoryC
     m_stopwatch.Stop ();
 
     LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds());
-    PERFORMANCELOG.infov ("Incrementing repository local value %d times took: %.4f msecs. %.4f msecs with saving outermost transaction at end.", 
+    PERFORMANCELOG.infov ("Incrementing briefcase local value %d times took: %.4f msecs. %.4f msecs with saving outermost transaction at end.", 
         iterationCount, 
         totalSecs * 1000.0,
         m_stopwatch.GetElapsedSeconds () * 1000.0);
@@ -239,13 +239,13 @@ TEST_F(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueWithoutInMemoryC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueWrappedInSavepoint)
+TEST_F(PerformanceBeSQLiteDbTests, IncrementBriefcaseLocalValueWrappedInSavepoint)
     {
     const int iterationCount = 1000000;
 
     Utf8CP const mockSequenceKey = "mocksequence";
     Db testDb;
-    SetupIncrementRepositoryLocalValueTestDgnDb (testDb, mockSequenceKey);
+    SetupIncrementBriefcaseLocalValueTestDgnDb (testDb, mockSequenceKey);
 
     size_t mockSequenceKeyIndex = 0;
     ASSERT_EQ (BE_SQLITE_OK, testDb.GetRLVCache().Register(mockSequenceKeyIndex, mockSequenceKey));
@@ -253,7 +253,7 @@ TEST_F(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueWrappedInSavepoi
     m_stopwatch.Start();
     for (int i = 0; i < iterationCount; i++)
         {
-        IncrementRepositoryLocalValueWithinSavepoint (testDb, mockSequenceKeyIndex);
+        IncrementBriefcaseLocalValueWithinSavepoint (testDb, mockSequenceKeyIndex);
         }
 
     const double totalSecs = m_stopwatch.GetCurrentSeconds ();
@@ -261,7 +261,7 @@ TEST_F(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueWrappedInSavepoi
     m_stopwatch.Stop ();
 
     LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds());
-    PERFORMANCELOG.infov ("Incrementing repository local value %d times took: %.4f msecs. %.4f msecs with saving outermost transaction at end.", 
+    PERFORMANCELOG.infov ("Incrementing briefcase local value %d times took: %.4f msecs. %.4f msecs with saving outermost transaction at end.", 
         iterationCount, 
         totalSecs * 1000.0,
         m_stopwatch.GetElapsedSeconds () * 1000.0);
@@ -270,13 +270,13 @@ TEST_F(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueWrappedInSavepoi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueAndCommittingOutermostTransactionInEachIteration)
+TEST_F(PerformanceBeSQLiteDbTests, IncrementBriefcaseLocalValueAndCommittingOutermostTransactionInEachIteration)
     {
     const int iterationCount = 1000;
 
     Utf8CP const mockSequenceKey = "mocksequence";
     Db testDb;
-    SetupIncrementRepositoryLocalValueTestDgnDb (testDb, mockSequenceKey);
+    SetupIncrementBriefcaseLocalValueTestDgnDb (testDb, mockSequenceKey);
 
     size_t mockSequenceKeyIndex = 0;
     ASSERT_EQ (BE_SQLITE_OK, testDb.GetRLVCache().Register(mockSequenceKeyIndex, mockSequenceKey));
@@ -284,7 +284,7 @@ TEST_F(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueAndCommittingOut
     m_stopwatch.Start();
     for (int i = 0; i < iterationCount; i++)
         {
-        IncrementRepositoryLocalValueWithSaveChanges (testDb, mockSequenceKeyIndex);
+        IncrementBriefcaseLocalValueWithSaveChanges (testDb, mockSequenceKeyIndex);
         }
 
     const double totalSecs = m_stopwatch.GetCurrentSeconds ();
@@ -292,7 +292,7 @@ TEST_F(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueAndCommittingOut
     m_stopwatch.Stop ();
     
     LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds());
-    PERFORMANCELOG.infov ("Incrementing repository local value %d times took: %.4f msecs. %.4f msecs with saving outermost transaction at end.", 
+    PERFORMANCELOG.infov ("Incrementing briefcase local value %d times took: %.4f msecs. %.4f msecs with saving outermost transaction at end.", 
         iterationCount, 
         totalSecs * 1000.0,
         m_stopwatch.GetElapsedSeconds () * 1000.0);
@@ -302,13 +302,13 @@ TEST_F(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueAndCommittingOut
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   03/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceBeSQLiteDbTests, SaveRepositoryLocalValueWithSavepointPerIteration)
+TEST_F(PerformanceBeSQLiteDbTests, SaveBriefcaseLocalValueWithSavepointPerIteration)
     {
     const int iterationCount = 10000;
 
     Utf8CP const mockSequenceKey = "mocksequence";
     Db testDb;
-    SetupIncrementRepositoryLocalValueTestDgnDb (testDb, mockSequenceKey);
+    SetupIncrementBriefcaseLocalValueTestDgnDb (testDb, mockSequenceKey);
 
     size_t mockSequenceKeyIndex = 0;
     ASSERT_EQ (BE_SQLITE_OK, testDb.GetRLVCache().Register(mockSequenceKeyIndex, mockSequenceKey));
@@ -320,14 +320,14 @@ TEST_F(PerformanceBeSQLiteDbTests, SaveRepositoryLocalValueWithSavepointPerItera
         
         int64_t val = i * 1000LL;
         DbResult stat = testDb.GetRLVCache().SaveValue(mockSequenceKeyIndex, val);
-        ASSERT_EQ (BE_SQLITE_OK, stat) << "SaveRepositoryLocalValue failed";
+        ASSERT_EQ (BE_SQLITE_OK, stat) << "SaveBriefcaseLocalValue failed";
         savepoint.Commit ();
         }
 
     m_stopwatch.Stop ();
     
     LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds());
-    PERFORMANCELOG.infov ("Calling SaveRepositoryLocalValue %d times took: %.4f msecs.", 
+    PERFORMANCELOG.infov ("Calling SaveBriefcaseLocalValue %d times took: %.4f msecs.", 
         iterationCount, 
         m_stopwatch.GetElapsedSeconds () * 1000.0);
     }
@@ -342,7 +342,7 @@ TEST_F(PerformanceBeSQLiteDbTests, InsertOrReplaceBlobVsIntegerWithSavepointPerI
     //create test DgnDb file with a mock sequence being set up
         {
         Db db;
-        DbResult stat = SetupDb (db, L"repositorylocalvalueperformance.idgndb");
+        DbResult stat = SetupDb (db, L"briefcaselocalvalueperformance.idgndb");
         dbPath.assign (db.GetDbFileName ());
 
         //mimick be_local table
