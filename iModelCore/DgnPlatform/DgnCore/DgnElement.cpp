@@ -294,6 +294,47 @@ void DgnElement::_OnReversedDelete() const
     {
     GetModel()->_OnReversedDeleteElement(*this);
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_SetParentId(DgnElementId parentId)
+    {
+    // Check for direct cycle...will check indirect cycles on update.
+    if (parentId.IsValid() && parentId == GetElementId())
+        return DgnDbStatus::InvalidParent;
+
+    m_parentId = parentId;
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool parentCycleExists(DgnElementId parentId, DgnElementId elemId, DgnDbR db)
+    {
+    // simple checks first...
+    if (!parentId.IsValid() || !elemId.IsValid())
+        return false;
+    else if (parentId == elemId)
+        return true;
+
+    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    do
+        {
+        stmt->BindId(1, parentId);
+        if (BE_SQLITE_ROW != stmt->Step())
+            return false;
+
+        parentId = stmt->GetValueId<DgnElementId>(0);
+        if (parentId == elemId)
+            return true;
+
+        stmt->Reset();
+        }
+    while(parentId.IsValid());
+
+    return false;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
@@ -302,6 +343,10 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
     {
     if (m_classId != original.m_classId)
         return DgnDbStatus::WrongClass;
+
+    auto parentId = GetParentId();
+    if (parentId.IsValid() && parentId != original.GetParentId() && parentCycleExists(parentId, GetElementId(), GetDgnDb()))
+        return DgnDbStatus::InvalidParent;
 
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
