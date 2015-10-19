@@ -2595,7 +2595,45 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
             "        </ECCustomAttributes>"
             "        <ECArrayProperty propertyName='Codes' typeName='string' minOccurs='0' maxOccurs='unbounded' />"
             "    </ECClass>"
-                "</ECSchema>", false, "Cannot define index on primitive array prop")};
+                "</ECSchema>", false, "Cannot define index on primitive array prop"),
+
+                TestItem(
+                    "<?xml version='1.0' encoding='utf-8'?>"
+                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                    "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                    "    <ECClass typeName='A' isDomainClass='True' isStruct='False' isCustomAttribute='False'>"
+                    "        <ECCustomAttributes>"
+                    "            <ClassMap xmlns='ECDbMap.01.00'>"
+                    "                 <Indexes>"
+                    "                   <DbIndex>"
+                    "                       <IsUnique>True</IsUnique>"
+                    "                       <Name>mypoorlynamedindex</Name>"
+                    "                       <Properties>"
+                    "                          <string>Code</string>"
+                    "                       </Properties>"
+                    "                   </DbIndex>"
+                    "                 </Indexes>"
+                    "            </ClassMap>"
+                    "        </ECCustomAttributes>"
+                    "        <ECProperty propertyName='Code' typeName='string'/>"
+                    "    </ECClass>"
+                    "    <ECClass typeName='B' isDomainClass='True' isStruct='False' isCustomAttribute='False'>"
+                    "        <ECCustomAttributes>"
+                    "            <ClassMap xmlns='ECDbMap.01.00'>"
+                    "                 <Indexes>"
+                    "                   <DbIndex>"
+                    "                       <IsUnique>False</IsUnique>"
+                    "                       <Name>mypoorlynamedindex</Name>"
+                    "                       <Properties>"
+                    "                          <string>BB</string>"
+                    "                       </Properties>"
+                    "                   </DbIndex>"
+                    "                 </Indexes>"
+                    "            </ClassMap>"
+                    "        </ECCustomAttributes>"
+                    "        <ECProperty propertyName='BB' typeName='string'/>"
+                    "    </ECClass>"
+                    "</ECSchema>", false, "Duplicate indexes")};
 
         AssertSchemaImport(testItems, "userdefinedindextest.ecdb");
         }

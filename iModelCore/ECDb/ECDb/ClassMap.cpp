@@ -488,7 +488,7 @@ BentleyStatus ClassMap::ProcessStandardKeySpecifications(SchemaImportContext& sc
         std::vector<ECDbSqlColumn const*> columns;
         propertyMap->GetColumns(columns);
 
-        if (nullptr == schemaImportContext.GetECDbMapDb().CreateIndex(*m_table, indexName.c_str(), false, columns, nullptr,
+        if (nullptr == schemaImportContext.GetECDbMapDb().CreateIndex(GetECDbMap().GetECDbR(), *m_table, indexName.c_str(), false, columns, nullptr,
                                             true, GetClass().GetId()))
             {
             BeAssert(false && "Index was not created correctly");
@@ -577,7 +577,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImp
                 }
             }
 
-        if (nullptr == schemaImportContext.GetECDbMapDb().CreateIndex(*m_table, indexInfo->GetName(), indexInfo->GetIsUnique(), 
+        if (nullptr == schemaImportContext.GetECDbMapDb().CreateIndex(m_ecDbMap.GetECDbR(), *m_table, indexInfo->GetName(), indexInfo->GetIsUnique(),
                                                                       totalColumns, whereExpression.ToString(),
                                                                       false, GetClass().GetId()))
             {
@@ -799,7 +799,7 @@ MappedTablePtr MappedTable::Create(ECDbMapR ecDbMap, ClassMapCR classMap)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MappedTable::FinishTableDefinition(SchemaImportContext& schemaImportContext)
+BentleyStatus MappedTable::FinishTableDefinition(ECDbCR ecdb, SchemaImportContext& schemaImportContext)
     {
     if (m_table.GetOwnerType() == OwnerType::ECDb)
         {
@@ -830,7 +830,7 @@ BentleyStatus MappedTable::FinishTableDefinition(SchemaImportContext& schemaImpo
                     //whenever we create a class id column, we index it to speed up the frequent class id look ups
                     Utf8String indexName("ix_");
                     indexName.append(m_table.GetName()).append("_ecclassid");
-                    schemaImportContext.GetECDbMapDb().CreateIndex(m_table, indexName.c_str(), false, {ecClassIdColumn}, nullptr, true, ECClass::UNSET_ECCLASSID);
+                    schemaImportContext.GetECDbMapDb().CreateIndex(ecdb, m_table, indexName.c_str(), false, {ecClassIdColumn}, nullptr, true, ECClass::UNSET_ECCLASSID);
                     }
 
                 m_generatedClassIdColumn = true;

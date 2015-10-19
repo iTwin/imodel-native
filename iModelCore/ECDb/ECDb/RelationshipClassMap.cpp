@@ -687,7 +687,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext
         whereClause.Append(BooleanSqlOperator::IsNot, true).Append("NULL");
         }
 
-    schemaImportContext.GetECDbMapDb().CreateIndex(persistenceEndTable, name.c_str(), isUniqueIndex, {otherEndIdColumn}, whereClause.ToString(), true, GetClass().GetId());
+    schemaImportContext.GetECDbMapDb().CreateIndex(GetECDbMap().GetECDbR(), persistenceEndTable, name.c_str(), isUniqueIndex, {otherEndIdColumn}, whereClause.ToString(), true, GetClass().GetId());
     }
 
    
@@ -1151,7 +1151,7 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportCo
                 break;
         }
 
-    schemaImportContext.GetECDbMapDb().CreateIndex(GetTable(), name.c_str(), isUniqueIndex, columns, nullptr,
+    schemaImportContext.GetECDbMapDb().CreateIndex(GetECDbMap().GetECDbR(), GetTable(), name.c_str(), isUniqueIndex, columns, nullptr,
                                                    true, GetClass().GetId(), 
                                                    //if a partial index is created, it must only apply to this class,
                                                    //not to subclasses, as constraints are not inherited by relationships

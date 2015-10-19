@@ -533,7 +533,7 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportConte
                     //struct array indices don't get a class id
                     Utf8String indexName("uix_");
                     indexName.append(table->GetName()).append("_structarraykey");
-                    if (nullptr == schemaImportContext->GetECDbMapDb().CreateIndex(*table, indexName.c_str(), true,
+                    if (nullptr == schemaImportContext->GetECDbMapDb().CreateIndex(m_ecdb, *table, indexName.c_str(), true,
                                                                             {ECDB_COL_ParentECInstanceId, 
                                                                              ECDB_COL_ECPropertyPathId, 
                                                                              ECDB_COL_ECArrayIndex, 
@@ -639,7 +639,7 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables ()
                 
         if (!mappedTable->IsFinished())
             {
-            if (mappedTable->FinishTableDefinition(*GetSchemaImportContext()) != SUCCESS)
+            if (mappedTable->FinishTableDefinition(m_ecdb, *GetSchemaImportContext()) != SUCCESS)
                 return ERROR;
             }
 
@@ -686,7 +686,7 @@ bool ECDbMap::FinishTableDefinition () const
     for (; it != m_clustersByTable.end(); ++it)
         {
         MappedTablePtr const& mappedTable = it->second;
-        if (!mappedTable->IsFinished() && mappedTable->FinishTableDefinition(*GetSchemaImportContext()) != SUCCESS)
+        if (!mappedTable->IsFinished() && mappedTable->FinishTableDefinition(m_ecdb, *GetSchemaImportContext()) != SUCCESS)
             return false;
 
         }
