@@ -243,6 +243,7 @@ DgnMaterialId DgnMaterial::ImportMaterial(DgnMaterialId srcMaterialId, DgnImport
     if (dstMaterialId.IsValid())
         {
         //  *** TBD: Check if the material definitions match. If not, rename and remap
+        //  *** TBD: Make sure that child materials are also remapped? Or, wait for someone to ask for them one by one?
         importer.AddMaterialId(srcMaterialId, dstMaterialId);
         return dstMaterialId;
         }

@@ -690,6 +690,10 @@ DgnCategoryId DgnCategory::ImportCategory(DgnCategoryId srcCatId, DgnImportConte
     if (dstCatId.IsValid())
         {
         importer.AddCategory(srcCatId, dstCatId);
+
+        for (auto const& srcSubCatId : DgnSubCategory::QuerySubCategories(importer.GetSourceDb(), srcCatId)) // Make sure the subcats are remapped!
+            importer.RemapSubCategory(dstCatId, srcSubCatId);
+
         return dstCatId;
         }
     
