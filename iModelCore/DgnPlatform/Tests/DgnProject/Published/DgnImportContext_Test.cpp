@@ -170,7 +170,7 @@ static void openDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
 //---------------------------------------------------------------------------------------
 static PhysicalModelPtr copyPhysicalModelSameDb(PhysicalModelCR model, Utf8CP newName)
 {
-    return dynamic_cast<PhysicalModel*>(DgnModel::CopyModel(model, newName).get());
+    return dynamic_cast<PhysicalModel*>(DgnModel::CopyModel(model, DgnModel::CreateModelCode(newName)).get());
 }
 
 //---------------------------------------------------------------------------------------
@@ -179,7 +179,7 @@ static PhysicalModelPtr copyPhysicalModelSameDb(PhysicalModelCR model, Utf8CP ne
 static PhysicalModelPtr createPhysicalModel(DgnDbR db, Utf8CP newName)
 {
     DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
-    PhysicalModelPtr model = new PhysicalModel(PhysicalModel::CreateParams(db, mclassId, newName));
+    PhysicalModelPtr model = new PhysicalModel(PhysicalModel::CreateParams(db, mclassId, DgnModel::CreateModelCode(newName)));
     if (!model.IsValid())
         return nullptr;
     if (DgnDbStatus::Success != model->Insert())
@@ -571,7 +571,7 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
     //  Create model1
 
     DgnClassId mclassId = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
-    PhysicalModelPtr model1 = new PhysicalModel(PhysicalModel::CreateParams(*db, mclassId, "Model1"));
+    PhysicalModelPtr model1 = new PhysicalModel(PhysicalModel::CreateParams(*db, mclassId, DgnModel::CreateModelCode("Model1")));
     ASSERT_EQ(DgnDbStatus::Success, model1->Insert());
 
     // Put an element with an Item into moddel1
@@ -634,7 +634,7 @@ TEST_F(ImportTest, ImportElementsWithItems)
     //  Create model1
 
     DgnClassId mclassId = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
-    PhysicalModelPtr model1 = new PhysicalModel(PhysicalModel::CreateParams(*db, mclassId, "Model1"));
+    PhysicalModelPtr model1 = new PhysicalModel(PhysicalModel::CreateParams(*db, mclassId, DgnModel::CreateModelCode("Model1")));
     ASSERT_EQ(DgnDbStatus::Success, model1->Insert());
 
     // Put an element with an Item into moddel1
@@ -699,7 +699,7 @@ TEST_F(ImportTest, ImportElementsWithDependencies)
     //  Create model1
 
     DgnClassId mclassId = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
-    PhysicalModelPtr model1 = new PhysicalModel(PhysicalModel::CreateParams(*db, mclassId, "Model1"));
+    PhysicalModelPtr model1 = new PhysicalModel(PhysicalModel::CreateParams(*db, mclassId, DgnModel::CreateModelCode("Model1")));
     ASSERT_EQ(DgnDbStatus::Success, model1->Insert());
 
     // Create 2 elements and make the first depend on the second
