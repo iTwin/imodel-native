@@ -167,10 +167,11 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     
-    virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
+    uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
+
 //__PUBLISH_SECTION_END__
 public:
-    static DgnSubCategoryId ImportSubCategory(DgnSubCategoryId source, DgnCategoryId destCategoryId, DgnImportContext& importer, DgnRemapTables& remap);
+    static DgnSubCategoryId ImportSubCategory(DgnSubCategoryId source, DgnCategoryId destCategoryId, DgnImportContext& importer);
 //__PUBLISH_SECTION_START__
 public:
     //! Constructs a new DgnSubCategory with the specified parameters.
@@ -311,9 +312,12 @@ protected:
     
     DgnDbStatus _SetParentId(DgnElementId parentId) override { return DgnDbStatus::InvalidParent; }
     uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
+
+    void SetDefaultAppearance(DgnSubCategory::Appearance const&) const;
+
 //__PUBLISH_SECTION_END__
 public:
-    static DgnCategoryId ImportCategory(DgnCategoryId source, DgnImportContext& importer, DgnRemapTables& remap);
+    static DgnCategoryId ImportCategory(DgnCategoryId source, DgnImportContext& importer);
 //__PUBLISH_SECTION_START__
 public:
     DgnCategoryId GetCategoryId() const { return DgnCategoryId(GetElementId().GetValue()); } //!< Returns the ID of this category.

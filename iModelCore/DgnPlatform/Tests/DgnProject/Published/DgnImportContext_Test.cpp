@@ -499,8 +499,11 @@ TEST_F(ImportTest, ImportElementAndCategory1)
         DgnDbPtr destDb = openCopyOfDb(L"DgnDb/3dMetricGeneral.idgndb", L"3dMetricGeneralcc.idgndb", DgnDb::OpenMode::ReadWrite);
         ASSERT_TRUE(destDb.IsValid());
 
-        // Insert another category into the destination DB, just to make sure that IDs don't line up
-        ASSERT_TRUE( createCategory(*destDb, "Unrelated", DgnCategory::Scope::Any, createAppearance(ColorDef(7,8,9,10))).IsValid() );
+        for (int i=0; i<32; ++i)
+            {
+            // Insert another category into the destination DB, just to make sure that IDs don't line up
+            ASSERT_TRUE( createCategory(*destDb, Utf8PrintfString("Unrelated%d",i), DgnCategory::Scope::Any, createAppearance(ColorDef(7,8,9,10))).IsValid() );
+            }
 
         PhysicalModelPtr destmod = createPhysicalModel(*destDb, "destmod");
         ASSERT_TRUE( destmod.IsValid() );
