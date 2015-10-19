@@ -631,13 +631,8 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
+        <ECProperty propertyName="Label" typeName="string" />
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
     </ECClass>
     <ECRelationshipClass typeName="ElementOwnsDescription" isDomainClass="True" strength="embedding" strengthDirection="forward">
         <ECCustomAttributes>
