@@ -12,4 +12,4 @@
 
 #define BEGIN_WSCLIENT_UNITTESTS_NAMESPACE    BEGIN_BENTLEY_NAMESPACE namespace WebServices { namespace UnitTests {
 #define END_WSCLIENT_UNITTESTS_NAMESPACE      } } END_BENTLEY_NAMESPACE
-#define USING_NAMESPACE_WSCLIENT_UNITTESTS    using namespace Bentley::WebServices::UnitTests;
+#define USING_NAMESPACE_WSCLIENT_UNITTESTS    using namespace BentleyApi::WebServices::UnitTests;
