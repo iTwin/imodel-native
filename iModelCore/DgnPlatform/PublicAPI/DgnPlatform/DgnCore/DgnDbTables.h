@@ -505,7 +505,7 @@ struct DgnGeomParts : DgnDbTable
 
 private:
     explicit DgnGeomParts(DgnDbR db) : DgnDbTable(db) {}
-    DgnGeomPartId m_highestGeomPartId; // 0 means not yet valid. Highest DgnGeomPartId (for current repositoryId)
+    DgnGeomPartId m_highestGeomPartId; // 0 means not yet valid. Highest DgnGeomPartId (for current briefcaseId)
 
 public:
     DgnGeomPartId MakeNewGeomPartId();

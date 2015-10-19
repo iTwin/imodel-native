@@ -44,7 +44,7 @@ enum class TxnAction
     Abandon,    //!< abandoning the current Txn. Triggered by a call to DgnDb::AbandonChanges
     Reverse,    //!< reversing a previously committed ChangeSet. Triggered by a call to TxnManager::ReverseActions
     Reinstate,  //!< reinstating a previously reversed ChangeSet. Triggered by a call to TxnManager::ReinstateActions
-    Merge       //!< merging a ChangeSet made by a foreign repository.
+    Merge       //!< merging a ChangeSet made by a foreign briefcase.
 };
 
 //=======================================================================================

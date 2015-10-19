@@ -11,7 +11,7 @@
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    03/2013
 //---------------------------------------------------------------------------------------
-static DgnDbStatus performEmbeddedProjectVersionChecks(DbResult& dbResult, Db& db, BeRepositoryBasedId id)
+static DgnDbStatus performEmbeddedProjectVersionChecks(DbResult& dbResult, Db& db, BeBriefcaseBasedId id)
     {
     Utf8String versionString;
     dbResult = db.QueryProperty(versionString, DgnEmbeddedProjectProperty::SchemaVersion(), id.GetValue());
@@ -96,7 +96,7 @@ DgnDbStatus DgnIModel::ExtractUsingDefaults(DbResult& dbResult, BeFileNameCR dgn
 
     DbEmbeddedFileTable& embeddedFiles = db.EmbeddedFiles();
     Utf8String  fileType;
-    BeRepositoryBasedId id = embeddedFiles.QueryFile(dbName, NULL, NULL, NULL, &fileType);
+    BeBriefcaseBasedId id = embeddedFiles.QueryFile(dbName, NULL, NULL, NULL, &fileType);
 
     if (!id.IsValid())
         {
@@ -185,7 +185,7 @@ DgnDbStatus DgnIModel::Extract(BeSQLite::DbResult& dbResult, Utf8CP outputDirect
 
     DbEmbeddedFileTable& embeddedFiles = db.EmbeddedFiles();
     Utf8String  fileType;
-    BeRepositoryBasedId id = embeddedFiles.QueryFile(dbName, NULL, NULL, NULL, &fileType);
+    BeBriefcaseBasedId id = embeddedFiles.QueryFile(dbName, NULL, NULL, NULL, &fileType);
     if (!id.IsValid() || strcmp("dgndb", fileType.c_str()))
         {
         dbResult = BE_SQLITE_NOTFOUND;
@@ -241,7 +241,7 @@ DgnDbStatus DgnIModel::Extract(BeSQLite::DbResult& dbResult, Utf8CP outputDirect
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    03/2013
 //---------------------------------------------------------------------------------------
-static void copyProjectPropertyToIModel(BeSQLite::Db& package, DgnDb& sourceProject, PropertySpecCR sourceSpec, PropertySpecCR targetSpec, BeRepositoryBasedId&embeddedProjectId)
+static void copyProjectPropertyToIModel(BeSQLite::Db& package, DgnDb& sourceProject, PropertySpecCR sourceSpec, PropertySpecCR targetSpec, BeBriefcaseBasedId&embeddedProjectId)
     {
     Utf8String  propertyStr;
 
@@ -307,7 +307,7 @@ DbResult DgnIModel::Create(BeFileNameCR packageFile, BeFileNameCR dgndbFile, Cre
         }
 
     //  Imported the file into a compressed format.  Now copy properties.
-    BeRepositoryBasedId id = embeddedFiles.QueryFile(embeddedUtf8.c_str(), NULL, NULL, NULL, NULL);
+    BeBriefcaseBasedId id = embeddedFiles.QueryFile(embeddedUtf8.c_str(), NULL, NULL, NULL, NULL);
 
     DgnViewId defaultViewID;
     if (BE_SQLITE_ROW != sourceProject->QueryProperty(&defaultViewID, (uint32_t)sizeof(defaultViewID), DgnViewProperty::DefaultView()))
