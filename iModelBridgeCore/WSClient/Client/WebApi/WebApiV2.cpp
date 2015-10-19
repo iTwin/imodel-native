@@ -414,6 +414,40 @@ ICancellationTokenPtr cancellationToken
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
+AsyncTaskPtr<WSChangesetResult> WebApiV2::SendChangesetRequest
+(
+HttpBodyPtr changeset,
+HttpRequest::ProgressCallbackCR uploadProgressCallback,
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    if (m_info.GetWebApiVersion() < BeVersion(2, 1))
+        {
+        return CreateCompletedAsyncTask(WSChangesetResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+        }
+
+    Utf8String url = GetUrl("$changeset");
+    HttpRequest request = m_configuration->GetHttpClient().CreatePostRequest(url);
+
+    request.GetHeaders().SetContentType("application/json");
+
+    request.SetRequestBody(changeset);
+    request.SetCancellationToken(cancellationToken);
+    request.SetUploadProgressCallback(uploadProgressCallback);
+
+    return request.PerformAsync()->Then<WSChangesetResult>([this] (HttpResponse& response)
+        {
+        if (HttpStatus::OK == response.GetHttpStatus())
+            {
+            return WSChangesetResult::Success();
+            }
+        return WSChangesetResult::Error(response);
+        });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
 AsyncTaskPtr<WSCreateObjectResult> WebApiV2::SendCreateObjectRequest
 (
 JsonValueCR objectCreationJson,
