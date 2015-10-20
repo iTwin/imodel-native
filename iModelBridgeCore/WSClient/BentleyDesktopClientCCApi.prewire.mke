@@ -14,7 +14,7 @@ BDC_LKG = $(SrcRoot)/LastKnownGood/Winx64/BentleyDesktopClient/
 
 always:
     @CreateSymLinks.py "$(Vancouver_BentleyDesktopClient)Libs/CCApi.lib=$(BDC_LKG)Library/CCApi.lib"
-    @CreateSymLinks.py "$(Vancouver_BentleyDesktopClient)PublicAPI/WebServices/Connect/CCPublic.h=$(BDC_LKG)PublicAPI/CCApi/CCPublic.h"
+    @CreateSymLinks.py "$(BuildContext)PublicAPI/WebServices/Connect/CCPublic.h=$(BDC_LKG)PublicAPI/CCApi/CCPublic.h"
     @CreateSymLinks.py "$(Vancouver_BentleyDesktopClient)Files/CCApi.dll=$(BDC_LKG)Delivery/CCApi.dll"
     @CreateSymLinks.py "$(BuildContext)Delivery/CCApi.dll=$(Vancouver_BentleyDesktopClient)Files/CCApi.dll"
 
