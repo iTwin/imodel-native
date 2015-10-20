@@ -54,6 +54,9 @@
     <ClCompile Include="Caching.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DTMMeshEnumerator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bentley.Civil.DTM.h">
@@ -99,6 +102,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Caching.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DTMMeshEnumerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

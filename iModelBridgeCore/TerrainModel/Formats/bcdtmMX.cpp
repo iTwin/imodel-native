@@ -77,16 +77,15 @@ class MXDTM
             +-------------------------------------------------------------------*/
     private: int GetStringCodeBetweenPoints(int pnt1, int pnt2, int& stringCode)
                  {
-                 DTM_TIN_POINT_FEATURES *lineFeaturesP=NULL ;
-                 long numLineFeatures;
+                 bvector<DTM_TIN_POINT_FEATURES> lineFeaturesP;
 
                  stringCode = 0;
-                 if( bcdtmList_getDtmFeaturesForLineDtmObject(m_dtmP,pnt1,pnt2,&lineFeaturesP,&numLineFeatures) == DTM_SUCCESS)
+                 if( bcdtmList_getDtmFeaturesForLineDtmObject(m_dtmP,pnt1,pnt2,lineFeaturesP) == DTM_SUCCESS)
                      {
-                     if(numLineFeatures != 0)
+                     if (lineFeaturesP.size())
                          {
                          long code = -1;
-                         for(int i = 0; i < numLineFeatures; i++)
+                         for (int i = 0; i < (int)lineFeaturesP.size(); i++)
                              {
                              if(lineFeaturesP[i].dtmFeatureType != DTMFeatureType::Hole && 
                                  lineFeaturesP[i].dtmFeatureType != DTMFeatureType::Hull &&
@@ -112,7 +111,6 @@ class MXDTM
                              stringCode = code;
                          }
                      }
-                 if( lineFeaturesP != NULL ) free(lineFeaturesP) ;
 
                  return DTM_SUCCESS;
                  }
@@ -1744,7 +1742,8 @@ BENTLEYDTMFORMATS_EXPORT int bcdtmFormatMX_loadMxTrianglesFromDtmObject
  */
     {
     int  ret=DTM_SUCCESS,dbg=0 ;
-    long p1,p2,p3,clc,numTriangles,voidTriangle ;
+    long p1, p2, p3, clc, numTriangles;
+    bool voidTriangle;
     long trgNum,side1Trg,side2Trg,side3Trg ;
     DTM_CIR_LIST *clistP ;
     DTM_MX_TRG_INDEX *indexP,*trgIndexP=NULL ;
@@ -1871,7 +1870,7 @@ BENTLEYDTMFORMATS_EXPORT int bcdtmFormatMX_loadMxTrianglesFromDtmObject
         /*
         **  Test For Void triangles
         */
-        if( bcdtmList_testForVoidTriangleDtmObject(dtmP,indexP->trgPnt1,indexP->trgPnt2,indexP->trgPnt3,&voidTriangle)) goto errexit ;
+        if( bcdtmList_testForVoidTriangleDtmObject(dtmP,indexP->trgPnt1,indexP->trgPnt2,indexP->trgPnt3,voidTriangle)) goto errexit ;
         /*
         **  Call Load Function
         */

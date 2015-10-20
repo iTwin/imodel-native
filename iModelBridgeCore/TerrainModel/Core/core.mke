@@ -74,7 +74,7 @@ $(o)bcDTMClass$(oext) : $(baseDir)CPPWrappers\bcDTMClass.cpp $(DependsOnHeaders)
 
 $(o)bcDTMDrapedLineClass$(oext) : $(baseDir)CPPWrappers\bcDTMDrapedLineClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcDTMEdges$(oext) : $(baseDir)CPPWrappers\bcDTMEdges.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+#$(o)bcDTMEdges$(oext) : $(baseDir)CPPWrappers\bcDTMEdges.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
 $(o)bcDTMFeatureClass$(oext) : $(baseDir)CPPWrappers\bcDTMFeatureClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
@@ -84,7 +84,7 @@ $(o)bcDTMFeatureMapClass$(oext) : $(baseDir)CPPWrappers\bcDTMFeatureMapClass.cpp
 
 $(o)bcDTMInputClass$(oext) : $(baseDir)CPPWrappers\bcDTMInputClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcDTMMesh$(oext) : $(baseDir)CPPWrappers\bcDTMMesh.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+#$(o)bcDTMMesh$(oext) : $(baseDir)CPPWrappers\bcDTMMesh.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
 $(o)dtmio$(oext) : $(baseDir)2d\dtmio.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 

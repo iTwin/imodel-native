@@ -12,8 +12,8 @@
 #include "DTMHelpers.h"
 #include "DTMTinEditor.h"
 #include "DTMDrapedLinearElement.h"
-#include "dtmmesh.h"
-#include "dtmedges.h"
+//#include "dtmmesh.h"
+//#include "dtmedges.h"
 
 //using namespace Bentley::Civil::BCSystem::Base;
 
@@ -527,7 +527,7 @@ public ref class DTMCrossingFeatureError
 /// Defines values for the Purge flags
 /// </summary>                
 //=======================================================================================
-[Flags]
+[System::Flags]
 public enum class DTMPurgeFlags : unsigned long
     {
     //=======================================================================================
@@ -3431,11 +3431,11 @@ public ref class DTM
         /// <category>DTM Creation</category>
         /// <author>Sylvain.Pucci</author>                              <date>08/2005</date>
         //=======================================================================================
-        property IntPtr ExternalHandle
+        property System::IntPtr ExternalHandle
             {
-            IntPtr get()
+            System::IntPtr get()
                 {
-                return IntPtr(Handle);
+                return System::IntPtr(Handle);
                 }
             }
 
@@ -3563,7 +3563,7 @@ public ref class DTM
         /// <param name="fileName">Name of the file to save the DTM to.</param>
         /// <author>Sylvain.Pucci</author>                              <date>10/2007</date>
         //=======================================================================================
-        void Save (String^ fileName);
+        void Save(System::String^ fileName);
 
         //=======================================================================================
         /// <summary>
@@ -3583,7 +3583,7 @@ public ref class DTM
         /// <param name="fileName">Name of the tin file to populate the DTM from.</param>
         /// <author>Rob.Cormack</author>                              <date>07/2008</date>
         //=======================================================================================
-        void PopulateFromGeopakTinFile (String^ fileName);
+        void PopulateFromGeopakTinFile(System::String^ fileName);
 
         //=======================================================================================
         /// <summary>
@@ -3593,7 +3593,7 @@ public ref class DTM
         /// <param name="fileName">Name of the file to save the DTM to.</param>
         /// <author>Rob.Cormack</author>                              <date>07/2008</date>
         //=======================================================================================
-        void SaveAsGeopakTinFile (String^ fileName);
+        void SaveAsGeopakTinFile(System::String^ fileName);
 
         //=======================================================================================
         /// <summary>
@@ -4494,7 +4494,7 @@ public ref class DTM
         /// <returns>A new DTM instance.</returns>
         /// <author>Sylvain.Pucci</author>                              <date>10/2007</date>
         //=======================================================================================
-        static DTM^ CreateFromFile (String^ fileName);
+        static DTM^ CreateFromFile(System::String^ fileName);
 
         //=======================================================================================
         /// <summary>
@@ -4516,7 +4516,7 @@ public ref class DTM
         /// <returns>A new DTM instance.</returns>
         /// <author>Rob.Cormack</author>                              <date>08/2008</date>
         //=======================================================================================
-        static DTM^ CreateFromGeopakTinFile (String^ fileName);
+        static DTM^ CreateFromGeopakTinFile(System::String^ fileName);
 
         //=======================================================================================
         /// <summary>
@@ -4527,7 +4527,7 @@ public ref class DTM
         /// <returns>A new DTM instance.</returns>
         /// <author>Sylvain.Pucci</author>                              <date>10/2007</date>
         //=======================================================================================
-        static DTM^ CreateFromGeopakDatFile (String^ fileName);
+        static DTM^ CreateFromGeopakDatFile(System::String^ fileName);
 
         //=======================================================================================
         /// <summary>
@@ -4538,7 +4538,7 @@ public ref class DTM
         /// <returns>A new DTM instance.</returns>
         /// <author>Sylvain.Pucci</author>                              <date>10/2007</date>
         //=======================================================================================
-        static DTM^ CreateFromXyzFile (String^ fileName);
+        static DTM^ CreateFromXyzFile(System::String^ fileName);
 
         //=======================================================================================
         /// <summary>
@@ -4679,7 +4679,7 @@ public ref class DTM
         /// <param name="handle">Handle.</param>
         /// <author>Daryl.Holmwood</author>                              <date>01/2008</date>
         //=======================================================================================
-        static DTM^ FromHandle (IntPtr handle);
+        static DTM^ FromHandle (System::IntPtr handle);
 
 
         //=======================================================================================
@@ -4690,7 +4690,7 @@ public ref class DTM
         /// <param name="handle">Handle.</param>
         /// <author>Rob.Cormack</author>                                 <date>07/2009</date>
         //=======================================================================================
-        static DTM^ FromNativeDtmHandle (IntPtr handle);
+        static DTM^ FromNativeDtmHandle (System::IntPtr handle);
 
         //=======================================================================================
         /// <summary>
@@ -4702,7 +4702,7 @@ public ref class DTM
         /// <returns>The mesh representation.</returns>
         /// <author>Sylvain.Pucci</author>                              <date>10/2007</date>
         //=======================================================================================
-        Mesh^ GetMesh (bool firstCall, int maxMeshSize);
+        //Mesh^ GetMesh (bool firstCall, int maxMeshSize);
 
         //=======================================================================================
         /// <summary>
@@ -4712,7 +4712,7 @@ public ref class DTM
         /// <returns>The edge representation.</returns>
         /// <author>Sylvain.Pucci</author>                              <date>10/2007</date>
         //=======================================================================================
-        Edges^ GetEdges ();
+        //Edges^ GetEdges ();
 
         //=======================================================================================
         /// <summary>
@@ -4782,7 +4782,7 @@ public ref class DTM
         /// <category>DTM</category>
         /// <author>Rob.Cormack</author>                              <date>03/2009</date>
         //=======================================================================================
-        static  array<BGEO::DPoint3d>^  DTM::ImportDPoint3DArrayFromXYZFile (String ^fileName) ;
+        static  array<BGEO::DPoint3d>^  DTM::ImportDPoint3DArrayFromXYZFile(System::String ^fileName);
 
 
         //=======================================================================================

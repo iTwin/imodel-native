@@ -710,12 +710,12 @@ void DTMStrokeForCacheContours::DrawContourForPicking (ElementHandleCR el, ViewC
     BC_DTM_OBJ* bcDTM = dtm->GetTinHandle();
     DPoint3d trianglePts[4];
     long drapedType;
-    long voidFlag;
+    bool voidFlag;
     DPoint3d point;
     double snapTol = 1;
 
     // Find the point on the surface to get the tolerance;
-    if (bcdtmDrape_intersectTriangleDtmObject (bcDTM, ((DPoint3d*)&startPt), ((DPoint3d*)&endPt), &drapedType, (DPoint3d*)&point, (DPoint3d*)&trianglePts, &voidFlag) == DTM_SUCCESS && drapedType != 0 && voidFlag == 0)
+    if (bcdtmDrape_intersectTriangleDtmObject (bcDTM, ((DPoint3d*)&startPt), ((DPoint3d*)&endPt), &drapedType, (DPoint3d*)&point, (DPoint3d*)&trianglePts, voidFlag) == DTM_SUCCESS && drapedType != 0 && voidFlag == false)
         {
         startPt = point;
         endPt = point;

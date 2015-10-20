@@ -204,7 +204,10 @@ double Xi,Yi    ;
 /*
 ** Typedefs For Drainage Tools
 */
-struct DTM_TRG_INDEX_TABLE { long index,trgPnt1,trgPnt2,trgPnt3,voidTriangle,flatTriangle ; } ;
+struct DTM_TRG_INDEX_TABLE
+    {
+    long index, trgPnt1, trgPnt2, trgPnt3; bool voidTriangle, flatTriangle;
+    };
 struct DTM_TRG_HYD_TABLE { long flowPnt,flowDir1,flowDir2,flowDir3 ; double ascentAngle,descentAngle,slope ;} ;
 struct DTM_STREAM_TRACE_POINTS : DPoint3d { long P1,P2 ; };
 struct DTM_LOW_POINT_POND_TABLE { long lowPoint,exitPoint,priorPoint,nextPoint ; } ;
@@ -338,7 +341,8 @@ struct BC_DTM_OBJLIST { BC_DTM_OBJ *Tin  ; long TinIndex ; } ;
 |  Typedefs For ImagePP                                              |
 |                                                                    |
 +-------------------------------------------------------------------*/
-typedef        int (__stdcall *ImagePPCallBack)(long numPixels,char *nameP,char *descP,char *projectionP, void *baseCordP, void *userP ) ;
+typedef std::function <int(long numPixels, char *nameP, char *descP, char *projectionP, void *baseCordP, void *userP)> ImagePPCallBack;
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |  Typedefs For 3D Model Applications                                |
@@ -551,11 +555,8 @@ struct DTM_DRAPE_POINT
                                               ==  4  Drape Point In Void
                                               ==  5  Drape Point On Tin Point
                                               ==  6  Drape Point In Tin Line                  */
- long   numDrapeFeatures ;                 /* Number Of Dtm Features At Drape Point           */
- double drapeX ;                           /* x Coordinate Of Drape Point                     */
- double drapeY ;                           /* y Coordinate Of Drape Point                     */
- double drapeZ ;                           /* z Coordinate Of Drape Point                     */
- DTM_TIN_POINT_FEATURES *drapeFeaturesP ;  /* Pointer To DTM Features At Drape Point          */
+ DPoint3d drapePt ;                           /* x Coordinate Of Drape Point                     */
+ bvector<DTM_TIN_POINT_FEATURES> drapeFeatures ;  /* Pointer To DTM Features At Drape Point          */
 } ;
 /*-------------------------------------------------------------------+
 |                                                                    |

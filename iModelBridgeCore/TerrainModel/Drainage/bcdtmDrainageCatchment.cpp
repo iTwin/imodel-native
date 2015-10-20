@@ -2,7 +2,7 @@
 |
 |     $Source: Drainage/bcdtmDrainageCatchment.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcdtmDrainage.h"
@@ -63,7 +63,8 @@ int bcdtmDrainage_traceCatchmentForPointDtmObject
 
     {
     int        ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
-    long       ap,cp,p1,p2,p3,sumpPnt1=0,sumpPnt2=0,fndType,inVoid ;
+    long       ap, cp, p1, p2, p3, sumpPnt1 = 0, sumpPnt2 = 0, fndType;
+    bool inVoid;
     long       flatTriangle,traceStartType=0,numFeatures=0,useTables=0 ;
     double     z,sumpX=0.0,sumpY=0.0,sumpZ=0.0 ;
     DPoint3d   *p3dP ;
@@ -142,15 +143,15 @@ int bcdtmDrainage_traceCatchmentForPointDtmObject
     // Test For Point In Void
 
     if( dbg ) bcdtmWrite_message(0,0,0,"Testing For Point In Void") ;
-    inVoid = 0 ;
-    if( fndType == 1 && bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,p1)->PCWD) ) inVoid = 1 ;
+    inVoid = false ;
+    if( fndType == 1 && bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,p1)->PCWD) ) inVoid = true;
     if( fndType == 2 || fndType == 3 )
         {
-        if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,&inVoid)) goto errexit ;
+        if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,inVoid)) goto errexit ;
         }
     if( fndType == 4 )
         {
-        if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&inVoid)) goto errexit ;
+        if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,inVoid)) goto errexit ;
         }
     if( inVoid )
         {
@@ -258,11 +259,11 @@ int bcdtmDrainage_traceCatchmentForPointDtmObject
         {
         *catchmentDeterminedP = true ;
         if( (*catchmentPtsPP)->x == (*catchmentPtsPP+*numCatchmentPtsP-1)->x && (*catchmentPtsPP)->y == (*catchmentPtsPP+*numCatchmentPtsP-1)->y ) *catchmentClosureP = 1 ;
-	    if( dbg == 2 )
-	        {
+        if( dbg == 2 )
+            {
             if( bcdtmObject_createDtmObject(&dataP)) goto errexit ;
-	        if( bcdtmObject_storeDtmFeatureInDtmObject(dataP,DTMFeatureType::Breakline,dataP->nullUserTag,1,&dataP->nullFeatureId,*catchmentPtsPP,*numCatchmentPtsP)) goto errexit ;
-	        if( bcdtmWrite_toFileDtmObject(dataP,L"catchmentPts.dtm")) goto errexit ;
+            if( bcdtmObject_storeDtmFeatureInDtmObject(dataP,DTMFeatureType::Breakline,dataP->nullUserTag,1,&dataP->nullFeatureId,*catchmentPtsPP,*numCatchmentPtsP)) goto errexit ;
+            if( bcdtmWrite_toFileDtmObject(dataP,L"catchmentPts.dtm")) goto errexit ;
             if( bcdtmWrite_geopakDatFileFromDtmObject(dataP,L"catchmentPts.dat")) goto errexit ;
             }
         if( dbg == 2 )
@@ -2414,10 +2415,10 @@ int bcdtmDrainage_determineCatchmentsDtmObject
             startTime=bcdtmClock() ;
             if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Tracing From %12.5lf %12.5lf %10.4lf",startX,startY,startZ) ;
             if( bcdtmDrainage_traceToLowPointDtmObject(dtmP,drainageTablesP,nullptr,falseLowDepth,zeroSlopeOption,false,trgPnt1,trgPnt3,trgPnt2,startX,startY,startZ,userP,&lowPnt1,&lowPnt2) ) goto errexit ;
-		    if( dbg == 2 )
-		      {
-			   bcdtmWrite_message(0,0,0,"lowPnt1 = %8ld ** %12.5lf %12.5lf %10.4lf",lowPnt1,pointAddrP(dtmP,lowPnt1)->x,pointAddrP(dtmP,lowPnt1)->y,pointAddrP(dtmP,lowPnt1)->z) ;
-			   if( lowPnt2 != dtmP->nullPnt ) bcdtmWrite_message(0,0,0,"lowPnt2 = %8ld ** %12.5lf %12.5lf %10.4lf",lowPnt2,pointAddrP(dtmP,lowPnt2)->x,pointAddrP(dtmP,lowPnt2)->y,pointAddrP(dtmP,lowPnt2)->z) ;
+            if( dbg == 2 )
+              {
+               bcdtmWrite_message(0,0,0,"lowPnt1 = %8ld ** %12.5lf %12.5lf %10.4lf",lowPnt1,pointAddrP(dtmP,lowPnt1)->x,pointAddrP(dtmP,lowPnt1)->y,pointAddrP(dtmP,lowPnt1)->z) ;
+               if( lowPnt2 != dtmP->nullPnt ) bcdtmWrite_message(0,0,0,"lowPnt2 = %8ld ** %12.5lf %12.5lf %10.4lf",lowPnt2,pointAddrP(dtmP,lowPnt2)->x,pointAddrP(dtmP,lowPnt2)->y,pointAddrP(dtmP,lowPnt2)->z) ;
               }
 
 //          Set Triangle Index
@@ -2658,8 +2659,8 @@ int bcdtmDrainage_polygoniseAndLoadTriangleIndexPolygonsDtmObject
              area = area + ( x * y ) / 2.0 + x * sy ;
              sx = pointAddrP(dtmP,pnt3)->x ;
              sy = pointAddrP(dtmP,pnt3)->y ;
-	          pnt4 = pnt2 ; pnt2 = pnt3 ; pnt3 = pnt4 ;
-	         } while ( pnt2 != pnt1 ) ;
+              pnt4 = pnt2 ; pnt2 = pnt3 ; pnt3 = pnt4 ;
+             } while ( pnt2 != pnt1 ) ;
 
 //        If Polygon Is Clockwise Write Polygon If It Is Not A Void
 
@@ -2672,7 +2673,7 @@ int bcdtmDrainage_polygoniseAndLoadTriangleIndexPolygonsDtmObject
 //           Scan Back To First Point
 
              do
-	           {
+               {
                 if( (pnt3 = bcdtmList_nextAntDtmObject(dtmP,pnt2,pnt3)) < 0 ) goto errexit  ;
                 if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&lineOffset1,pnt2,pnt3)) goto errexit  ;
                 if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&lineOffset2,pnt3,pnt2)) goto errexit  ;
@@ -2682,12 +2683,12 @@ int bcdtmDrainage_polygoniseAndLoadTriangleIndexPolygonsDtmObject
                    if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&lineOffset1,pnt2,pnt3)) goto errexit ;
                    if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&lineOffset2,pnt3,pnt2)) goto errexit ;
                   }
-	            *(tinLineP+lineOffset1)  = nullValue ;
+                *(tinLineP+lineOffset1)  = nullValue ;
                 if( pointCache.StorePointInCache(pointAddrP(dtmP,pnt2)->x,pointAddrP(dtmP,pnt2)->y,pointAddrP(dtmP,pnt2)->z)) goto errexit ;
-	            pnt4 = pnt2 ;
+                pnt4 = pnt2 ;
                 pnt2 = pnt3 ;
                 pnt3 = pnt4 ;
-	           } while ( pnt2 != pnt1 ) ;
+               } while ( pnt2 != pnt1 ) ;
                if( pointCache.StorePointInCache(pointAddrP(dtmP,pnt1)->x,pointAddrP(dtmP,pnt1)->y,pointAddrP(dtmP,pnt1)->z)) goto errexit ;
 
 //             Check For Duplicate Polygon Points
@@ -2717,7 +2718,7 @@ int bcdtmDrainage_polygoniseAndLoadTriangleIndexPolygonsDtmObject
                   goto errexit ;
                  }
             }
-	     }
+         }
        clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
       }
    }
@@ -3921,10 +3922,10 @@ int bcdtmDrainage_determineRefinedCatchmentBoundaryDtmObject
                   {
                    if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Tracing To Low Point From %12.5lf %12.5lf %10.4lf",startX,startY,startZ) ;
 //                   if( bcdtmDrainage_traceToLowPointDtmObject(dtmP,NULL,falseLowDepth,traceOverZeroSlope,useTables,FALSE,trgPnt1,trgPnt3,trgPnt2,startX,startY,startZ,userP,&lowPnt1,&lowPnt2) ) goto errexit ;
-		           if( dbg == 2 )
-		             {
-			          bcdtmWrite_message(0,0,0,"lowPnt1 = %8ld ** %12.5lf %12.5lf %10.4lf",lowPnt1,pointAddrP(dtmP,lowPnt1)->x,pointAddrP(dtmP,lowPnt1)->y,pointAddrP(dtmP,lowPnt1)->z) ;
-			          if( lowPnt2 != dtmP->nullPnt ) bcdtmWrite_message(0,0,0,"lowPnt2 = %8ld ** %12.5lf %12.5lf %10.4lf",lowPnt2,pointAddrP(dtmP,lowPnt2)->x,pointAddrP(dtmP,lowPnt2)->y,pointAddrP(dtmP,lowPnt2)->z) ;
+                   if( dbg == 2 )
+                     {
+                      bcdtmWrite_message(0,0,0,"lowPnt1 = %8ld ** %12.5lf %12.5lf %10.4lf",lowPnt1,pointAddrP(dtmP,lowPnt1)->x,pointAddrP(dtmP,lowPnt1)->y,pointAddrP(dtmP,lowPnt1)->z) ;
+                      if( lowPnt2 != dtmP->nullPnt ) bcdtmWrite_message(0,0,0,"lowPnt2 = %8ld ** %12.5lf %12.5lf %10.4lf",lowPnt2,pointAddrP(dtmP,lowPnt2)->x,pointAddrP(dtmP,lowPnt2)->y,pointAddrP(dtmP,lowPnt2)->z) ;
                      }
 /*
 **                 Trace Terminates At A Sump Point
@@ -4090,8 +4091,8 @@ int bcdtmDrainage_determineRefinedCatchmentBoundaryDtmObject
              area = area + ( x * y ) / 2.0 + x * sy ;
              sx = pointAddrP(catchmentDtmP,pnt3)->x ;
              sy = pointAddrP(catchmentDtmP,pnt3)->y ;
-	          pnt4 = pnt2 ; pnt2 = pnt3 ; pnt3 = pnt4 ;
-	         } while ( pnt2 != pnt1 ) ;
+              pnt4 = pnt2 ; pnt2 = pnt3 ; pnt3 = pnt4 ;
+             } while ( pnt2 != pnt1 ) ;
 /*
 **        If Polygon Is Clockwise Write Polygon If It Is Not A Void
 */
@@ -4104,7 +4105,7 @@ int bcdtmDrainage_determineRefinedCatchmentBoundaryDtmObject
 **           Scan Back To First Point
 */
              do
-	           {
+               {
                 if( (pnt3 = bcdtmList_nextAntDtmObject(catchmentDtmP,pnt2,pnt3)) < 0 ) goto errexit  ;
                 if( bcdtmTheme_getLineOffsetDtmObject(catchmentDtmP,&lineOffset1,pnt2,pnt3)) goto errexit  ;
                 if( bcdtmTheme_getLineOffsetDtmObject(catchmentDtmP,&lineOffset2,pnt3,pnt2)) goto errexit  ;
@@ -4114,12 +4115,12 @@ int bcdtmDrainage_determineRefinedCatchmentBoundaryDtmObject
                    if( bcdtmTheme_getLineOffsetDtmObject(catchmentDtmP,&lineOffset1,pnt2,pnt3)) goto errexit ;
                    if( bcdtmTheme_getLineOffsetDtmObject(catchmentDtmP,&lineOffset2,pnt3,pnt2)) goto errexit ;
                   }
-	            *(tinLineP+lineOffset1)  = nullValue ;
+                *(tinLineP+lineOffset1)  = nullValue ;
                 if( bcdtmLoad_storeFeaturePoint(pointAddrP(catchmentDtmP,pnt2)->x,pointAddrP(catchmentDtmP,pnt2)->y,pointAddrP(catchmentDtmP,pnt2)->z,&featurePtsP,&numFeaturePts,&memFeaturePts,memFeaturePtsInc)) goto errexit ;
-	            pnt4 = pnt2 ;
+                pnt4 = pnt2 ;
                 pnt2 = pnt3 ;
                 pnt3 = pnt4 ;
-	           } while ( pnt2 != pnt1 ) ;
+               } while ( pnt2 != pnt1 ) ;
              if( bcdtmLoad_storeFeaturePoint(pointAddrP(catchmentDtmP,pnt1)->x,pointAddrP(catchmentDtmP,pnt1)->y,pointAddrP(catchmentDtmP,pnt1)->z,&featurePtsP,&numFeaturePts,&memFeaturePts,memFeaturePtsInc)) goto errexit ;
 /*
 **           Remove Duplicate Feature Points
@@ -4156,7 +4157,7 @@ int bcdtmDrainage_determineRefinedCatchmentBoundaryDtmObject
              numFeaturePts = 0 ;
              ++numPolygons ;
             }
-	     }
+         }
        clPtr = clistAddrP(catchmentDtmP,clPtr)->nextPtr ;
       }
    }
@@ -4965,7 +4966,8 @@ int bcdtmDrainage_scanBetweenPointsForMaximumAscentTriangleDtmObject
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   scanPnt,nextPnt,voidTrg,trgNum=0 ;
+ long   scanPnt,nextPnt,trgNum=0 ;
+ bool voidTrg;
  double a1,a2,a3,angScanPnt,angNextPnt,slope,descentAngle,ascentAngle  ;
 /*
 ** Write Entry Message
@@ -5000,7 +5002,7 @@ int bcdtmDrainage_scanBetweenPointsForMaximumAscentTriangleDtmObject
 //          if( bcdtmDrainage_getTriangleNumberDtmObject(dtmP,trgIdxTabP,point,scanPnt,nextPnt,&trgNum)) goto errexit ;
 //          voidTrg = ( trgIdxTabP+trgNum)->voidTriangle ;
          }
-       else if( bcdtmList_testForVoidTriangleDtmObject(dtmP,point,scanPnt,nextPnt,&voidTrg)) goto errexit ;
+       else if( bcdtmList_testForVoidTriangleDtmObject(dtmP,point,scanPnt,nextPnt,voidTrg)) goto errexit ;
 /*
 **     Get Descent And Ascent Angles
 */
@@ -5117,7 +5119,7 @@ int bcdtmDrainage_getNextMaximumAscentLineDtmObject
 /*
 **       Determine Ascent Type
 */
-		 ascentType = 0 ;
+         ascentType = 0 ;
          if( ridgePnt != dtmP->nullPnt && trgPnt1 == dtmP->nullPnt ) ascentType = 1 ;
          if( ridgePnt != dtmP->nullPnt && trgPnt1 != dtmP->nullPnt && ridgeSlope >= trgSlope ) ascentType = 1 ;
          if( ridgePnt == dtmP->nullPnt && trgPnt1 != dtmP->nullPnt ) ascentType = 2 ;
@@ -5596,16 +5598,17 @@ int bcdtmDrainage_insertMaximumAscentLineFromPointOnTinLineDtmObject
     (
     BC_DTM_OBJ *dtmP,                       // Pointer To DTM
     int        point1,                      // Point At One End Of Tin Line
-	int        point2,                      // Point At Other End Of Tin Line
-	DPoint3d   point                        // Start Point For Inserting Maximum Ascent Line
+    int        point2,                      // Point At Other End Of Tin Line
+    DPoint3d   point                        // Start Point For Inserting Maximum Ascent Line
     )
 
     // This Function Inserts A Maximum Ascent Line Into The Tin
-	// From A Starting Point On A Tin Line
+    // From A Starting Point On A Tin Line
 
     {
     int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
-    long   dtmPnt=dtmP->nullPnt,antPnt,clkPnt,voidPnt,lineType ;
+    long   dtmPnt=dtmP->nullPnt,antPnt,clkPnt,lineType ;
+    bool voidPnt;
     double d1,d2 ;
 
     // Log Arguments
@@ -5660,31 +5663,31 @@ int bcdtmDrainage_insertMaximumAscentLineFromPointOnTinLineDtmObject
 
         //  Check For Void Line
 
-	    if( bcdtmList_testForVoidLineDtmObject(dtmP,point1,point2,&voidPnt)) goto errexit ;
+        if( bcdtmList_testForVoidLineDtmObject(dtmP,point1,point2,voidPnt)) goto errexit ;
 
         // Add Point To Tin
 
         if( bcdtmInsert_addPointToDtmObject(dtmP,point.x,point.y,point.z,&dtmPnt) ) goto errexit  ;
 
-	    //  Insert Point Into Line
+        //  Insert Point Into Line
 
         switch ( lineType )
             {
 
             case  1 :      /* Coincident With Internal Tin Line  */
 
-                bcdtmList_testForVoidLineDtmObject(dtmP,point1,point2,&voidPnt) ;
-	            if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,point1,point2)) < 0 ) goto errexit ;
-	            if( (clkPnt = bcdtmList_nextClkDtmObject(dtmP,point1,point2)) < 0 ) goto errexit ;
-	            if(bcdtmList_deleteLineDtmObject(dtmP,point1,point2)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point1,dtmPnt,antPnt)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,point1,dtmP->nullPnt)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point2,dtmPnt,clkPnt)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,point2,point1)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,antPnt,dtmPnt,point2)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,antPnt,point1)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,clkPnt,dtmPnt,point1)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,clkPnt,point2)) goto errexit ;
+                bcdtmList_testForVoidLineDtmObject(dtmP,point1,point2,voidPnt) ;
+                if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,point1,point2)) < 0 ) goto errexit ;
+                if( (clkPnt = bcdtmList_nextClkDtmObject(dtmP,point1,point2)) < 0 ) goto errexit ;
+                if(bcdtmList_deleteLineDtmObject(dtmP,point1,point2)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point1,dtmPnt,antPnt)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,point1,dtmP->nullPnt)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point2,dtmPnt,clkPnt)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,point2,point1)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,antPnt,dtmPnt,point2)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,antPnt,point1)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,clkPnt,dtmPnt,point1)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,clkPnt,point2)) goto errexit ;
                 if(bcdtmList_testForDtmFeatureLineDtmObject(dtmP,point1,point2) )
                     {
                     if( bcdtmInsert_pointIntoAllDtmFeaturesDtmObject(dtmP,point1,point2,dtmPnt)) goto errexit ;
@@ -5692,21 +5695,21 @@ int bcdtmDrainage_insertMaximumAscentLineFromPointOnTinLineDtmObject
                 break ;
 
             case  2 :      /* Coincident With External Tin Line  */
-                bcdtmList_testForVoidLineDtmObject(dtmP,point1,point2,&voidPnt) ;
-	            if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,point1,point2))   < 0 ) goto errexit ;
-	            if(bcdtmList_deleteLineDtmObject(dtmP,point1,point2)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point1,dtmPnt,antPnt)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,point1,dtmP->nullPnt)) goto errexit ;
-	            if(bcdtmList_insertLineBeforePointDtmObject(dtmP,point2,dtmPnt,antPnt)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,point2,point1)) goto errexit ;
+                bcdtmList_testForVoidLineDtmObject(dtmP,point1,point2,voidPnt) ;
+                if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,point1,point2))   < 0 ) goto errexit ;
+                if(bcdtmList_deleteLineDtmObject(dtmP,point1,point2)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point1,dtmPnt,antPnt)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,point1,dtmP->nullPnt)) goto errexit ;
+                if(bcdtmList_insertLineBeforePointDtmObject(dtmP,point2,dtmPnt,antPnt)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,point2,point1)) goto errexit ;
                 if(bcdtmList_insertLineAfterPointDtmObject(dtmP,antPnt,dtmPnt,point2)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,antPnt,point1)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,antPnt,point1)) goto errexit ;
                 if(bcdtmList_testForDtmFeatureLineDtmObject(dtmP,point1,point2) )
                     {
                     if( bcdtmInsert_pointIntoAllDtmFeaturesDtmObject(dtmP,point1,point2,dtmPnt)) goto errexit ;
                     }
-	            nodeAddrP(dtmP,point1)->hPtr = dtmPnt ;
-	            nodeAddrP(dtmP,dtmPnt)->hPtr = point2 ;
+                nodeAddrP(dtmP,point1)->hPtr = dtmPnt ;
+                nodeAddrP(dtmP,dtmPnt)->hPtr = point2 ;
                 break ;
 
             default :
@@ -5714,7 +5717,7 @@ int bcdtmDrainage_insertMaximumAscentLineFromPointOnTinLineDtmObject
                goto errexit ;
                break ;
 
-		    }
+            }
 
         //  Check Tin After Inserting Point
 
@@ -5759,8 +5762,8 @@ int bcdtmDrainage_insertMaximumAscentLineFromTriangleBasePointDtmObject
     (
     BC_DTM_OBJ *dtmP,                       // Pointer To DTM
     long       point1,                      // Tin Point Of Triangle Base
-	long       point2,                      // Tin Point Of Triangle Base
-	long       point3                       // Tin Point Of triangle Apex
+    long       point2,                      // Tin Point Of Triangle Base
+    long       point3                       // Tin Point Of triangle Apex
     )
 
     // This Function Inserts A Maximum Line Into The Tin From A Starting Triangle
@@ -5769,7 +5772,8 @@ int bcdtmDrainage_insertMaximumAscentLineFromTriangleBasePointDtmObject
    {
    int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
    int    trgFlow ;
-   long   pnt1,nextPnt,lastPnt,nextPnt1,nextPnt2,nextPnt3,process,insertLine,voidTrg ;
+   long   pnt1, nextPnt, lastPnt, nextPnt1, nextPnt2, nextPnt3, process, insertLine;
+   bool   voidTrg;
    double d1,d2,dx,dy,dz,nextX,nextY,nextZ,lastZ,slope,descentAngle,ascentAngle ;
    bool   voidTriangle=false ;
    DTMDirection triangleDirection ;
@@ -5821,7 +5825,7 @@ int bcdtmDrainage_insertMaximumAscentLineFromTriangleBasePointDtmObject
    if( cdbg )
        {
        if( dbg ) bcdtmWrite_message(0,0,0,"Checking For Void Triangle") ;
-       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,point1,point2,point3,&voidTrg))
+       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,point1,point2,point3,voidTrg))
            {
            bcdtmWrite_message(1,0,0,"Cannot Calculate The Triangle Flow For A Void Triangle") ;
            goto errexit ;
@@ -5886,7 +5890,7 @@ int bcdtmDrainage_insertMaximumAscentLineFromTriangleBasePointDtmObject
              {
              if( dbg == 1 )
                  {
-	             bcdtmWrite_message(0,0,0,"Maximum Ascent From Vertex Does Not Intersect Triangle Base") ;
+                 bcdtmWrite_message(0,0,0,"Maximum Ascent From Vertex Does Not Intersect Triangle Base") ;
                  bcdtmWrite_message(0,0,0,"slope = %10.5lf ** descentAngle = %12.10lf ascentAngle = %12.10lf",slope,descentAngle,ascentAngle) ;
                  bcdtmWrite_message(0,0,0,"point1    = %8ld ** %12.5lf %12.5lf %10.4lf",point1,pointAddrP(dtmP,point1)->x,pointAddrP(dtmP,point1)->y,pointAddrP(dtmP,point1)->z) ;
                  bcdtmWrite_message(0,0,0,"point2    = %8ld ** %12.5lf %12.5lf %10.4lf",point2,pointAddrP(dtmP,point2)->x,pointAddrP(dtmP,point2)->y,pointAddrP(dtmP,point2)->z) ;
@@ -5897,12 +5901,12 @@ int bcdtmDrainage_insertMaximumAscentLineFromTriangleBasePointDtmObject
                  bcdtmWrite_message(0,0,0,"angle(point1,point3) = %12.10lf",bcdtmMath_getPointAngleDtmObject(dtmP,point1,point3));
                  bcdtmWrite_message(0,0,0,"angle(point2,point1) = %12.10lf",bcdtmMath_getPointAngleDtmObject(dtmP,point2,point1));
                  bcdtmWrite_message(0,0,0,"angle(point2,point3) = %12.10lf",bcdtmMath_getPointAngleDtmObject(dtmP,point2,point3));
-	             goto cleanup ;
+                 goto cleanup ;
                  }
             }
             goto cleanup ;  // Maximum Ascent Has been Prior Inserted
             }
-	   }
+       }
 
    // Calculate Intersect Of Triangle Ascent Radial With Triangle Edge
 
@@ -6049,7 +6053,7 @@ int bcdtmDrainage_insertMaximumAscentLineFromTriangleEdgeDtmObject
     (
     BC_DTM_OBJ *dtmP,                       // Pointer To DTM
     long       point1,                      // Tin Point Of Triangle Base
-	long       point2                       // Tin Point Of Triangle Base
+    long       point2                       // Tin Point Of Triangle Base
     )
 
    // This Function Inserts A Maximum Ascent Line Into The Tin From A Triangle Edge
@@ -6223,7 +6227,7 @@ int bcdtmDrainage_checkForMaximumAscentFlowLineDtmObject
     (
     BC_DTM_OBJ *dtmP,                       // ==> Pointer To DTM
     long       point1,                      // ==> Tin Point Of Flow Line
-	long       point2,                      // ==> Tin Point Of Flow Line
+    long       point2,                      // ==> Tin Point Of Flow Line
     bool&      maxAscent                    // <== True If A Maximum Ascent Flow Line Else Flow
     )
 
@@ -6276,13 +6280,13 @@ int bcdtmDrainage_checkForMaximumAscentFlowLineDtmObject
 
        antFlow = bcdtmDrainage_getTriangleFlowDirectionDtmObject(dtmP,point1,point2,antPnt) ;
        clkFlow = bcdtmDrainage_getTriangleFlowDirectionDtmObject(dtmP,point1,point2,clkPnt) ;
-	   if( dbg == 1 ) bcdtmWrite_message(0,0,0,"antFlow = %2d clkFlow = %2d",antFlow,clkFlow) ;
+       if( dbg == 1 ) bcdtmWrite_message(0,0,0,"antFlow = %2d clkFlow = %2d",antFlow,clkFlow) ;
 
-	   // Check For Cross Flow
+       // Check For Cross Flow
 
-	   tstPnt = dtmP->nullPnt ;
+       tstPnt = dtmP->nullPnt ;
        if( clkFlow == 1 && antFlow != 1 )  tstPnt = clkPnt ;
-	   if( clkFlow != 1 && antFlow == 1 )
+       if( clkFlow != 1 && antFlow == 1 )
            {
            tstPnt = antPnt ;
            pnt1   = point1 ;
@@ -6290,17 +6294,17 @@ int bcdtmDrainage_checkForMaximumAscentFlowLineDtmObject
            point2 = pnt1   ;
           }
 
-	   // If Cross Flow Check For Maximum Ascent
+       // If Cross Flow Check For Maximum Ascent
 
-	   if( tstPnt != dtmP->nullPnt )
-	       {
+       if( tstPnt != dtmP->nullPnt )
+           {
 
            //  Get Triangle Ascent Angle
 
            if( bcdtmDrainage_getTriangleSlopeAndSlopeAnglesDtmObject(dtmP,nullptr,point1,point2,tstPnt,voidTriangle,slope,descentAngle,ascentAngle)) goto errexit ;
            if( dbg ) bcdtmWrite_message(0,0,0,"slope = %10.5lf ** descentAngle = %12.10lf ascentAngle = %12.10lf",slope,descentAngle,ascentAngle) ;
 
-		   //  Calculate Ascent Radial
+           //  Calculate Ascent Radial
 
            dx = dtmP->xMax - dtmP->xMin ;
            dy = dtmP->yMax - dtmP->yMin ;
@@ -6326,8 +6330,8 @@ int bcdtmDrainage_checkForMaximumAscentFlowLineDtmObject
                     {
                     if( dbg ) bcdtmWrite_message(0,0,0,"Reversed Intersect Not Found With Edge point2 = %8ld tstPoint = %8ld",point2,tstPnt) ;
                     }
-				else
-				    maxAscent = true ;
+                else
+                    maxAscent = true ;
                 }
              else
                  maxAscent = true ;
@@ -6721,17 +6725,18 @@ int bcdtmDrainage_insertMaximumAscentLinesFromPointOnSumpLineDtmObject
     (
     BC_DTM_OBJ *dtmP,                       // ==> Pointer To DTM
     int        point1,                      // ==> Point At One End Of Tin Line
-	int        point2,                      // ==> Point At Other End Of Tin Line
-	DPoint3d   point,                       // ==> Start Point For Inserting Maximum Ascent Line
+    int        point2,                      // ==> Point At Other End Of Tin Line
+    DPoint3d   point,                       // ==> Start Point For Inserting Maximum Ascent Line
     long&      drainPoint                   // <== Point From Where The Maximum Ascents Were Inserted
     )
 
     // This Function Inserts A Maximum Ascent Line Into The Tin
-	// From A Starting Point On A Tin Line
+    // From A Starting Point On A Tin Line
 
     {
     int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
-    long   dtmPnt=dtmP->nullPnt,antPnt,clkPnt,voidPnt,lineType ;
+    long   dtmPnt=dtmP->nullPnt,antPnt,clkPnt,lineType ;
+    bool voidPnt;
     double d1,d2 ;
 
     int fd1,fd2,sideOf ;
@@ -6826,30 +6831,30 @@ int bcdtmDrainage_insertMaximumAscentLinesFromPointOnSumpLineDtmObject
 
         //  Check For Void Line
 
-	    if( bcdtmList_testForVoidLineDtmObject(dtmP,point1,point2,&voidPnt)) goto errexit ;
+        if( bcdtmList_testForVoidLineDtmObject(dtmP,point1,point2,voidPnt)) goto errexit ;
 
         // Add Point To Tin
 
         newPnt = true ;
         if( bcdtmInsert_addPointToDtmObject(dtmP,point.x,point.y,point.z,&dtmPnt) ) goto errexit  ;
 
-	    //  Insert Point Into Line
+        //  Insert Point Into Line
 
         switch ( lineType )
             {
 
             case  1 :      /* Coincident With Internal Tin Line  */
 
-                bcdtmList_testForVoidLineDtmObject(dtmP,point1,point2,&voidPnt) ;
-	            if(bcdtmList_deleteLineDtmObject(dtmP,point1,point2)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point1,dtmPnt,antPnt)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,point1,dtmP->nullPnt)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point2,dtmPnt,clkPnt)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,point2,point1)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,antPnt,dtmPnt,point2)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,antPnt,point1)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,clkPnt,dtmPnt,point1)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,clkPnt,point2)) goto errexit ;
+                bcdtmList_testForVoidLineDtmObject(dtmP,point1,point2,voidPnt) ;
+                if(bcdtmList_deleteLineDtmObject(dtmP,point1,point2)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point1,dtmPnt,antPnt)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,point1,dtmP->nullPnt)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point2,dtmPnt,clkPnt)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,point2,point1)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,antPnt,dtmPnt,point2)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,antPnt,point1)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,clkPnt,dtmPnt,point1)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,clkPnt,point2)) goto errexit ;
                 if(bcdtmList_testForDtmFeatureLineDtmObject(dtmP,point1,point2) )
                     {
                     if( bcdtmInsert_pointIntoAllDtmFeaturesDtmObject(dtmP,point1,point2,dtmPnt)) goto errexit ;
@@ -6857,21 +6862,21 @@ int bcdtmDrainage_insertMaximumAscentLinesFromPointOnSumpLineDtmObject
                 break ;
 
             case  2 :      /* Coincident With External Tin Line  */
-                bcdtmList_testForVoidLineDtmObject(dtmP,point1,point2,&voidPnt) ;
-	            if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,point1,point2))   < 0 ) goto errexit ;
-	            if(bcdtmList_deleteLineDtmObject(dtmP,point1,point2)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point1,dtmPnt,antPnt)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,point1,dtmP->nullPnt)) goto errexit ;
-	            if(bcdtmList_insertLineBeforePointDtmObject(dtmP,point2,dtmPnt,antPnt)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,point2,point1)) goto errexit ;
+                bcdtmList_testForVoidLineDtmObject(dtmP,point1,point2,voidPnt) ;
+                if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,point1,point2))   < 0 ) goto errexit ;
+                if(bcdtmList_deleteLineDtmObject(dtmP,point1,point2)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point1,dtmPnt,antPnt)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,point1,dtmP->nullPnt)) goto errexit ;
+                if(bcdtmList_insertLineBeforePointDtmObject(dtmP,point2,dtmPnt,antPnt)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,point2,point1)) goto errexit ;
                 if(bcdtmList_insertLineAfterPointDtmObject(dtmP,antPnt,dtmPnt,point2)) goto errexit ;
-	            if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,antPnt,point1)) goto errexit ;
+                if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt,antPnt,point1)) goto errexit ;
                 if(bcdtmList_testForDtmFeatureLineDtmObject(dtmP,point1,point2) )
                     {
                     if( bcdtmInsert_pointIntoAllDtmFeaturesDtmObject(dtmP,point1,point2,dtmPnt)) goto errexit ;
                     }
-	            nodeAddrP(dtmP,point1)->hPtr = dtmPnt ;
-	            nodeAddrP(dtmP,dtmPnt)->hPtr = point2 ;
+                nodeAddrP(dtmP,point1)->hPtr = dtmPnt ;
+                nodeAddrP(dtmP,dtmPnt)->hPtr = point2 ;
                 break ;
 
             default :
@@ -6879,7 +6884,7 @@ int bcdtmDrainage_insertMaximumAscentLinesFromPointOnSumpLineDtmObject
                goto errexit ;
                break ;
 
-		    }
+            }
 
         //  Check Tin After Inserting Point
 

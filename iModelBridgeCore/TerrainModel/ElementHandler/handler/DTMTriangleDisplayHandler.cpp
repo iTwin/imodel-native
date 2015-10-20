@@ -1060,10 +1060,10 @@ bool DTMElementTrianglesDisplayHandler::_Draw (ElementHandleCR element, const El
                         DPoint3d trianglePts[4];
                         long drapedType;
                         BC_DTM_OBJ* bcDTM = dtm->GetTinHandle();
-                        long voidFlag;
+                        bool voidFlag;
                         DPoint3d point;
 
-                        if (bcdtmDrape_intersectTriangleDtmObject (bcDTM, ((DPoint3d*)&startPt), ((DPoint3d*)&endPt), &drapedType, (DPoint3d*)&point, (DPoint3d*)&trianglePts, &voidFlag) != DTM_SUCCESS || drapedType == 0 || voidFlag != 0)
+                        if (bcdtmDrape_intersectTriangleDtmObject (bcDTM, ((DPoint3d*)&startPt), ((DPoint3d*)&endPt), &drapedType, (DPoint3d*)&point, (DPoint3d*)&trianglePts, voidFlag) != DTM_SUCCESS || drapedType == 0 || voidFlag != false)
                             return true;
 
                         startPt = point;
@@ -1075,7 +1075,7 @@ bool DTMElementTrianglesDisplayHandler::_Draw (ElementHandleCR element, const El
                 int drapedType;
 
                 double elevation;
-                if (dtm->DrapePoint (&elevation, nullptr, nullptr, trianglePts, &drapedType, &startPt) == DTM_SUCCESS)
+                if (dtm->DrapePoint (&elevation, nullptr, nullptr, trianglePts, drapedType, startPt) == DTM_SUCCESS)
                     {
                     DrawSentinel sentinel (context, drawingInfo);
 
@@ -1329,7 +1329,8 @@ WCharCP                           delimiterStr
     if (dtm == NULL)
         { return; }
 
-    dtm->GetDTMDraping()->DrapePoint(&elev, &slope, &aspect, tri, nullptr, pt);
+    int drapeCode;
+    dtm->GetDTMDraping()->DrapePoint(&elev, &slope, &aspect, tri, drapeCode, pt);
     WString wElevString;
     WString wSlopeString;
     WString wAspectString;

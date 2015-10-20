@@ -3014,7 +3014,8 @@ BENTLEYDTM_Private int bcdtmTin_checkForIntersectionWithInsertedVoidsAndIslandsD
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long  scanPnt,pointFound,nextPnt,priorPnt,testForTouch=FALSE  ;
  long  featurePriorPnt,featureNextPnt,featurePnt,externalHit,internalHit,numPointFeatures=0 ;
- DTM_TIN_POINT_FEATURES *featP,*pointFeaturesP=NULL ;
+ DTM_TIN_POINT_FEATURES *featP;
+bvector<DTM_TIN_POINT_FEATURES> pointFeaturesP;
 /*
 ** Write Entry Message
 */
@@ -3066,11 +3067,12 @@ BENTLEYDTM_Private int bcdtmTin_checkForIntersectionWithInsertedVoidsAndIslandsD
 /*
 **        Get Features At Point
 */
-          if( bcdtmList_getDtmFeaturesForPointDtmObject(dtmP,scanPnt,&pointFeaturesP,&numPointFeatures)) goto errexit ;
+          if( bcdtmList_getDtmFeaturesForPointDtmObject(dtmP,scanPnt,pointFeaturesP)) goto errexit ;
+          numPointFeatures = (long)pointFeaturesP.size();
 /*
 **        Scan Features And Determine If The Prior And Next Points Are Both External To A Void/Island Feature
 */
-          for( featP = pointFeaturesP ; featP < pointFeaturesP + numPointFeatures && pointFound == FALSE ; ++featP )
+          for( featP = pointFeaturesP.data() ; featP < pointFeaturesP.data() + numPointFeatures && pointFound == FALSE ; ++featP )
             {
              if( featP->dtmFeatureType == DTMFeatureType::Void || featP->dtmFeatureType == DTMFeatureType::Island || featP->dtmFeatureType == DTMFeatureType::Void )
                {
@@ -3107,7 +3109,6 @@ BENTLEYDTM_Private int bcdtmTin_checkForIntersectionWithInsertedVoidsAndIslandsD
 /*
 **        Free Memory
 */
-          if( pointFeaturesP != NULL ) { free(pointFeaturesP) ; pointFeaturesP = NULL ; }
          }
        scanPnt = nodeAddrP(dtmP,scanPnt)->tPtr ;
       } while ( scanPnt != firstPoint && pointFound == FALSE && scanPnt != dtmP->nullPnt ) ;
@@ -3128,7 +3129,6 @@ BENTLEYDTM_Private int bcdtmTin_checkForIntersectionWithInsertedVoidsAndIslandsD
 ** Cleanup
 */
  cleanup :
- if( pointFeaturesP != NULL ) { free(pointFeaturesP) ; pointFeaturesP = NULL ; }
 
 /*
 ** Job Completed
@@ -6175,7 +6175,8 @@ BENTLEYDTM_Public int bcdtmTin_clipVoidLinesFromDtmFeatureDtmObject(BC_DTM_OBJ *
 */
 {
  int            ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long           sp,np,fsp,spnt,tptr,process,voidLine;
+ long           sp, np, fsp, spnt, tptr, process;
+ bool  voidLine;
  DTMFeatureType dtmFeatureType;
  DPoint3d            *featurePtsP=NULL ;
  DTMUserTag   userTag ;
@@ -6206,7 +6207,7 @@ BENTLEYDTM_Public int bcdtmTin_clipVoidLinesFromDtmFeatureDtmObject(BC_DTM_OBJ *
     voidLine= 0 ;
     if( np != dtmP->nullPnt )
       {
-       if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,np,&voidLine) )goto errexit  ;
+       if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,np,voidLine) )goto errexit  ;
       }
     if( ! voidLine) sp = np ;
    } while ( sp != ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint && sp != dtmP->nullPnt && ! voidLine) ;
@@ -6256,7 +6257,7 @@ BENTLEYDTM_Public int bcdtmTin_clipVoidLinesFromDtmFeatureDtmObject(BC_DTM_OBJ *
           if( np != dtmP->nullPnt )
             {
              if( dbg ) bcdtmWrite_message(0,0,0,"sp = %6ld np = %6ld",sp,np) ;
-             if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,np,&voidLine)) goto errexit  ;
+             if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,np,voidLine)) goto errexit  ;
              if( voidLine) { sp = np ; np = nodeAddrP(dtmP,sp)->tPtr ; }
             }
          } while ( np != spnt && np != dtmP->nullPnt && voidLine) ;
@@ -6273,7 +6274,7 @@ BENTLEYDTM_Public int bcdtmTin_clipVoidLinesFromDtmFeatureDtmObject(BC_DTM_OBJ *
             {
              if( np != dtmP->nullPnt )
                {
-                if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,np,&voidLine)) goto errexit  ;
+                if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,np,voidLine)) goto errexit  ;
                 if( ! voidLine) { sp = np ; np = nodeAddrP(dtmP,sp)->tPtr ; }
                }
             } while ( np != spnt && np != dtmP->nullPnt &&  voidLine) ;

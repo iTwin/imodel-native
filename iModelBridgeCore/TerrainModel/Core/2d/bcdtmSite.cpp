@@ -227,7 +227,8 @@ BENTLEYDTM_Public int bcdtmSite_lineBetweenPointsDtmObject(BC_DTM_OBJ *dtmP,long
 */
 {
  int    ret=DTM_SUCCESS,bkp,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- long   p1,p2,p3,p4,startPnt,endPnt,insertLine,voidLine ;
+ long   p1, p2, p3, p4, startPnt, endPnt, insertLine;
+ bool voidLine;
  double xc,yc,zc=0.0 ;
 /*
 ** Initialise
@@ -311,7 +312,7 @@ BENTLEYDTM_Public int bcdtmSite_lineBetweenPointsDtmObject(BC_DTM_OBJ *dtmP,long
 /*
 **   Check For Void Line
 */
-       bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,&voidLine) ;
+       bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,voidLine) ;
        if( bcdtmList_deleteLineDtmObject(dtmP,p1,p2) ) goto errexit  ;
        if( bcdtmInsert_addPointToDtmObject(dtmP,xc,yc,zc,&p4) ) goto errexit  ;
        if( voidLine ) bcdtmFlag_setVoidBitPCWD(&nodeAddrP(dtmP,p4)->PCWD) ; 
@@ -2015,8 +2016,7 @@ BENTLEYDTM_EXPORT int bcdtmSite_snapToClosestBreakLineDtmObject
  double        *dSnapP,                   /* <== Distance To Snap Point                   */
  long          *dtmPnt1P,                 /* <== Tin Point Of Break Line End              */ 
  long          *dtmPnt2P,                 /* <== Tin Point Of Break Line End              */ 
- DTM_TIN_POINT_FEATURES **snapFeaturesPP, /* <== Pointer To Dtm Features At Snap Point    */
- long          *numSnapFeaturesP          /* <== Number Of Dtm Features At Snap Point     */
+ bvector<DTM_TIN_POINT_FEATURES>& snapFeaturesPP
 )
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
@@ -2043,8 +2043,7 @@ BENTLEYDTM_EXPORT int bcdtmSite_snapToClosestBreakLineDtmObject
  *dSnapP     = 0.0 ;
  *dtmPnt1P   = dtmP->nullPnt ;
  *dtmPnt2P   = dtmP->nullPnt ;
- if( *snapFeaturesPP != NULL ) { free(*snapFeaturesPP) ; *snapFeaturesPP = NULL ; }
- *numSnapFeaturesP = 0 ;
+ snapFeaturesPP.clear();
 /*
 ** Validate Tin Object
 */
@@ -2256,11 +2255,17 @@ BENTLEYDTM_EXPORT int bcdtmSite_snapToClosestBreakLineDtmObject
 /*
 ** Get Dtm Features For Snap Point
 */
- if( *snapFoundP == TRUE )
-   {
-    if( *snapTypeP == 1 ) { if( bcdtmList_getDtmFeaturesForPointDtmObject(dtmP,*dtmPnt1P,snapFeaturesPP,numSnapFeaturesP)) goto errexit ; }
-    if( *snapTypeP == 2 ) { if( bcdtmList_getDtmFeaturesForLineDtmObject(dtmP,*dtmPnt1P,*dtmPnt2P,snapFeaturesPP,numSnapFeaturesP)) goto errexit ; } 
-   } 
+ if (*snapFoundP == TRUE)
+     {
+     if (*snapTypeP == 1)
+         {
+         if (bcdtmList_getDtmFeaturesForPointDtmObject(dtmP, *dtmPnt1P, snapFeaturesPP)) goto errexit;
+         }
+     if (*snapTypeP == 2)
+         {
+         if (bcdtmList_getDtmFeaturesForLineDtmObject(dtmP, *dtmPnt1P, *dtmPnt2P, snapFeaturesPP)) goto errexit;
+         }
+     }
 /*
 ** Write Out Results
 */
@@ -2274,10 +2279,10 @@ BENTLEYDTM_EXPORT int bcdtmSite_snapToClosestBreakLineDtmObject
     bcdtmWrite_message(0,0,0,"dSnapP           = %20.15lf",*dSnapP)  ;
     bcdtmWrite_message(0,0,0,"dtmPnt1P         = %9ld",*dtmPnt1P)   ;
     bcdtmWrite_message(0,0,0,"dtmPnt2P         = %9ld",*dtmPnt2P)   ;
-    bcdtmWrite_message(0,0,0,"numSnapFeaturesP = %9ld",*numSnapFeaturesP) ;
-    for( fListP = *snapFeaturesPP ; fListP < *snapFeaturesPP + *numSnapFeaturesP ; ++fListP )
+    bcdtmWrite_message(0, 0, 0, "numSnapFeaturesP = %9ld", snapFeaturesPP.size());
+    for (fListP = snapFeaturesPP.data(); fListP < snapFeaturesPP.data() + snapFeaturesPP.size(); ++fListP)
       {
-       bcdtmWrite_message(0,0,0,"snapFeature[%4ld] ** dtmFeature = %8ld ** Type = %4ld ** userTag = %10I64d ** nextPoint = %9ld priorPoint = %9ld",(long)(fListP-*snapFeaturesPP),fListP->dtmFeature,fListP->dtmFeatureType,fListP->userTag,fListP->nextPoint,fListP->priorPoint) ; 
+       bcdtmWrite_message(0,0,0,"snapFeature[%4ld] ** dtmFeature = %8ld ** Type = %4ld ** userTag = %10I64d ** nextPoint = %9ld priorPoint = %9ld",(long)(fListP-snapFeaturesPP.data()),fListP->dtmFeature,fListP->dtmFeatureType,fListP->userTag,fListP->nextPoint,fListP->priorPoint) ; 
        bcdtmList_writePointsForDtmFeatureDtmObject(dtmP,fListP->dtmFeature) ;
       }
    }
@@ -2318,8 +2323,7 @@ BENTLEYDTM_EXPORT int bcdtmSite_findClosestOrthogonalBreakLineForUserTagsDtmObje
  double       *brkPntYP,                    /* <== Snap Point y Coordinate Value On Break Line         */ 
  double       *brkPntZP,                    /* <== Snap Point z Coordinate Value On Break Line         */
  double       *brkDistanceP,                /* <== Snap Distance To Break Line                         */
- DTM_TIN_POINT_FEATURES **brkFeaturesPP,    /* <== Pointer To Dtm Features For Snap Break Line Segment */
- long          *numBrkFeaturesP             /* <== Number Of Dtm Features For Snap Break Line Segment  */
+ bvector<DTM_TIN_POINT_FEATURES>& brkFeaturesPP    /* <== Pointer To Dtm Features For Snap Break Line Segment */
 ) 
 /*
 ** This Function Finds The Closest User Tag Break Line To pointX,pointY 
@@ -2330,7 +2334,6 @@ BENTLEYDTM_EXPORT int bcdtmSite_findClosestOrthogonalBreakLineForUserTagsDtmObje
  double x,y,distance,brk1Dist,brk2Dist,xMin,xMax,yMin,yMax ;
  DTMUserTag       *tagP ;
  BC_DTM_FEATURE     *fP ;
- DTM_TIN_POINT_FEATURES *fListP ;
 /*
 ** Write Entry Message
 */
@@ -2363,7 +2366,7 @@ BENTLEYDTM_EXPORT int bcdtmSite_findClosestOrthogonalBreakLineForUserTagsDtmObje
  *brkPntYP = 0.0 ;
  *brkPntZP = 0.0 ;
  *brkDistanceP = 0.0 ;
- if( *brkFeaturesPP != NULL ) { free(*brkFeaturesPP) ; *brkFeaturesPP = NULL ; }
+ brkFeaturesPP.clear();
 /*
 ** Scan Break Line Features
 */
@@ -2478,8 +2481,8 @@ BENTLEYDTM_EXPORT int bcdtmSite_findClosestOrthogonalBreakLineForUserTagsDtmObje
 */
  if( *findTypeP )
    {
-    if( *findTypeP == 1 ) { if( bcdtmList_getDtmFeaturesForPointDtmObject(dtmP,*brkPnt1P,brkFeaturesPP,numBrkFeaturesP)) goto errexit ; }
-    if( *findTypeP == 2 ) { if( bcdtmList_getDtmFeaturesForLineDtmObject(dtmP,*brkPnt1P,*brkPnt2P,brkFeaturesPP,numBrkFeaturesP)) goto errexit ; } 
+    if( *findTypeP == 1 ) { if( bcdtmList_getDtmFeaturesForPointDtmObject(dtmP,*brkPnt1P,brkFeaturesPP)) goto errexit ; }
+    if( *findTypeP == 2 ) { if( bcdtmList_getDtmFeaturesForLineDtmObject(dtmP,*brkPnt1P,*brkPnt2P,brkFeaturesPP)) goto errexit ; } 
    } 
 /*
 ** Write Out Results
@@ -2493,11 +2496,12 @@ BENTLEYDTM_EXPORT int bcdtmSite_findClosestOrthogonalBreakLineForUserTagsDtmObje
     bcdtmWrite_message(0,0,0,"brkDistanceP     = %20.15lf",*brkDistanceP)    ;
     bcdtmWrite_message(0,0,0,"brkPnt1P         = %9ld",*brkPnt1P)      ;
     bcdtmWrite_message(0,0,0,"brkPnt2P         = %9ld",*brkPnt2P)      ;
-    bcdtmWrite_message(0,0,0,"numBrkFeaturesP  = %9ld",*numBrkFeaturesP) ;
-    for( fListP = *brkFeaturesPP ; fListP < *brkFeaturesPP + *numBrkFeaturesP ; ++fListP )
+    bcdtmWrite_message(0, 0, 0, "numBrkFeaturesP  = %9ld", brkFeaturesPP.size());
+    int i = 0;
+    for(auto& fListP : brkFeaturesPP )
       {
-       bcdtmWrite_message(0,0,0,"brkFeature[%4ld] ** dtmFeature = %8ld ** Type = %4ld ** userTag = %10I64d ** nextPoint = %9ld priorPoint = %9ld",(long)(fListP-*brkFeaturesPP),fListP->dtmFeature,fListP->dtmFeatureType,fListP->userTag,fListP->nextPoint,fListP->priorPoint) ; 
-       bcdtmList_writePointsForDtmFeatureDtmObject(dtmP,fListP->dtmFeature) ;
+       bcdtmWrite_message(0,0,0,"brkFeature[%4ld] ** dtmFeature = %8ld ** Type = %4ld ** userTag = %10I64d ** nextPoint = %9ld priorPoint = %9ld",(long)i++,fListP.dtmFeature,fListP.dtmFeatureType,fListP.userTag,fListP.nextPoint,fListP.priorPoint) ; 
+       bcdtmList_writePointsForDtmFeatureDtmObject(dtmP,fListP.dtmFeature) ;
       }
    }
 /*
@@ -2539,13 +2543,11 @@ BENTLEYDTM_EXPORT int bcdtmSite_projectAtAngleFromPointToBreakLineDtmObject
  double        *dBreakP,                  /* <== Distance To Break Point                   */
  long          *dtmPnt1P,                 /* <== Tin Point Of Break Line End               */ 
  long          *dtmPnt2P,                 /* <== Tin Point Of Break Line End               */ 
- DTM_TIN_POINT_FEATURES **breakFeaturesPP,/* <== Pointer To Dtm Features At Break Point    */
- long          *numBreakFeaturesP         /* <== Number Of Dtm Features At Break Point     */
+ bvector<DTM_TIN_POINT_FEATURES >& breakFeaturesPP
 )
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
  long   internalFlag=0 ;
- DTM_TIN_POINT_FEATURES *fListP ;
 /*
 ** Write Entry Message
 */
@@ -2570,8 +2572,7 @@ BENTLEYDTM_EXPORT int bcdtmSite_projectAtAngleFromPointToBreakLineDtmObject
  *dBreakP     = 0.0 ;
  *dtmPnt1P   = dtmP->nullPnt ;
  *dtmPnt2P   = dtmP->nullPnt ;
- if( *breakFeaturesPP != NULL ) { free(*breakFeaturesPP) ; *breakFeaturesPP = NULL ; }
- *numBreakFeaturesP = 0 ;
+ breakFeaturesPP.clear();
 /*
 ** Validate Tin Object
 */
@@ -2609,8 +2610,8 @@ BENTLEYDTM_EXPORT int bcdtmSite_projectAtAngleFromPointToBreakLineDtmObject
 */
     if( *breakFoundP == TRUE )
       {
-       if( *breakTypeP == 1 ) { if( bcdtmList_getDtmFeaturesForPointDtmObject(dtmP,*dtmPnt1P,breakFeaturesPP,numBreakFeaturesP)) goto errexit ; }
-       if( *breakTypeP == 2 ) { if( bcdtmList_getDtmFeaturesForLineDtmObject(dtmP,*dtmPnt1P,*dtmPnt2P,breakFeaturesPP,numBreakFeaturesP)) goto errexit ; } 
+       if( *breakTypeP == 1 ) { if( bcdtmList_getDtmFeaturesForPointDtmObject(dtmP,*dtmPnt1P,breakFeaturesPP)) goto errexit ; }
+       if( *breakTypeP == 2 ) { if( bcdtmList_getDtmFeaturesForLineDtmObject(dtmP,*dtmPnt1P,*dtmPnt2P,breakFeaturesPP)) goto errexit ; } 
       }  
    }
 /*
@@ -2627,10 +2628,11 @@ BENTLEYDTM_EXPORT int bcdtmSite_projectAtAngleFromPointToBreakLineDtmObject
     bcdtmWrite_message(0,0,0,"dBreakP           = %20.15lf",*dBreakP)  ;
     bcdtmWrite_message(0,0,0,"dtmPnt1P          = %9ld",*dtmPnt1P)   ;
     bcdtmWrite_message(0,0,0,"dtmPnt2P          = %9ld",*dtmPnt2P)   ;
-    bcdtmWrite_message(0,0,0,"numBreakFeaturesP = %9ld",*numBreakFeaturesP) ;
-    for( fListP = *breakFeaturesPP ; fListP < *breakFeaturesPP + *numBreakFeaturesP ; ++fListP )
+    bcdtmWrite_message(0,0,0,"numBreakFeaturesP = %9ld",breakFeaturesPP.size()) ;
+    int i = 0;
+    for(auto& fListP : breakFeaturesPP )
       {
-       bcdtmWrite_message(0,0,0,"breakFeature[%4ld] ** dtmFeature = %8ld ** Type = %4ld ** userTag = %10I64d ** nextPoint = %9ld priorPoint = %9ld",(long)(fListP-*breakFeaturesPP),fListP->dtmFeature,fListP->dtmFeatureType,fListP->userTag,fListP->nextPoint,fListP->priorPoint) ; 
+       bcdtmWrite_message(0,0,0,"breakFeature[%4ld] ** dtmFeature = %8ld ** Type = %4ld ** userTag = %10I64d ** nextPoint = %9ld priorPoint = %9ld",(long)i++,fListP.dtmFeature,fListP.dtmFeatureType,fListP.userTag,fListP.nextPoint,fListP.priorPoint) ; 
       }
    }
 
@@ -2753,13 +2755,11 @@ BENTLEYDTM_EXPORT int bcdtmSite_projectOrthogonalToBreakLineFromPointDtmObject
  double        *dBreakP,                  /* <== Distance To Break Point                   */
  long          *dtmPnt1P,                 /* <== Tin Point Of Break Line End               */ 
  long          *dtmPnt2P,                 /* <== Tin Point Of Break Line End               */ 
- DTM_TIN_POINT_FEATURES **breakFeaturesPP,/* <== Pointer To Dtm Features At Break Point    */
- long          *numBreakFeaturesP         /* <== Number Of Dtm Features At Break Point     */
+ bvector<DTM_TIN_POINT_FEATURES >& breakFeaturesPP
 )
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
  long   internalFlag=1 ;
- DTM_TIN_POINT_FEATURES *fListP ;
 /*
 ** Write Entry Message
 */
@@ -2785,8 +2785,7 @@ BENTLEYDTM_EXPORT int bcdtmSite_projectOrthogonalToBreakLineFromPointDtmObject
  *dBreakP     = 0.0 ;
  *dtmPnt1P   = dtmP->nullPnt ;
  *dtmPnt2P   = dtmP->nullPnt ;
- if( *breakFeaturesPP != NULL ) { free(*breakFeaturesPP) ; *breakFeaturesPP = NULL ; }
- *numBreakFeaturesP = 0 ;
+ breakFeaturesPP.clear();
 /*
 ** Validate Tin Object
 */
@@ -2817,8 +2816,8 @@ BENTLEYDTM_EXPORT int bcdtmSite_projectOrthogonalToBreakLineFromPointDtmObject
 */
     if( *breakFoundP == TRUE )
       {
-       if( *breakTypeP == 1 ) { if( bcdtmList_getDtmFeaturesForPointDtmObject(dtmP,*dtmPnt1P,breakFeaturesPP,numBreakFeaturesP)) goto errexit ; }
-       if( *breakTypeP == 2 ) { if( bcdtmList_getDtmFeaturesForLineDtmObject(dtmP,*dtmPnt1P,*dtmPnt2P,breakFeaturesPP,numBreakFeaturesP)) goto errexit ; } 
+       if( *breakTypeP == 1 ) { if( bcdtmList_getDtmFeaturesForPointDtmObject(dtmP,*dtmPnt1P,breakFeaturesPP)) goto errexit ; }
+       if( *breakTypeP == 2 ) { if( bcdtmList_getDtmFeaturesForLineDtmObject(dtmP,*dtmPnt1P,*dtmPnt2P,breakFeaturesPP)) goto errexit ; } 
       } 
    }
 /*
@@ -2835,10 +2834,11 @@ BENTLEYDTM_EXPORT int bcdtmSite_projectOrthogonalToBreakLineFromPointDtmObject
     bcdtmWrite_message(0,0,0,"dBreakP           = %20.15lf",*dBreakP)  ;
     bcdtmWrite_message(0,0,0,"dtmPnt1P          = %9ld",*dtmPnt1P)   ;
     bcdtmWrite_message(0,0,0,"dtmPnt2P          = %9ld",*dtmPnt2P)   ;
-    bcdtmWrite_message(0,0,0,"numBreakFeaturesP = %9ld",*numBreakFeaturesP) ;
-    for( fListP = *breakFeaturesPP ; fListP < *breakFeaturesPP + *numBreakFeaturesP ; ++fListP )
+    bcdtmWrite_message(0,0,0,"numBreakFeaturesP = %9ld",breakFeaturesPP.size()) ;
+    int i = 0;
+    for(auto& fListP : breakFeaturesPP )
       {
-       bcdtmWrite_message(0,0,0,"breakFeature[%4ld] ** dtmFeature = %8ld ** Type = %4ld ** userTag = %10I64d ** nextPoint = %9ld priorPoint = %9ld",(long)(fListP-*breakFeaturesPP),fListP->dtmFeature,fListP->dtmFeatureType,fListP->userTag,fListP->nextPoint,fListP->priorPoint) ; 
+       bcdtmWrite_message(0,0,0,"breakFeature[%4ld] ** dtmFeature = %8ld ** Type = %4ld ** userTag = %10I64d ** nextPoint = %9ld priorPoint = %9ld",(long)(i++),fListP.dtmFeature,fListP.dtmFeatureType,fListP.userTag,fListP.nextPoint,fListP.priorPoint) ; 
       }
    }
 /*
@@ -3552,12 +3552,10 @@ BENTLEYDTM_EXPORT int bcdtmSite_snapToClosestBreakLineWithPositiveUserTagDtmObje
  double        *dSnapP,                   /* <== Distance To Snap Point                   */
  long          *dtmPnt1P,                 /* <== Tin Point Of Break Line End              */ 
  long          *dtmPnt2P,                 /* <== Tin Point Of Break Line End              */ 
- DTM_TIN_POINT_FEATURES **snapFeaturesPP, /* <== Pointer To Dtm Features At Snap Point    */
- long          *numSnapFeaturesP          /* <== Number Of Dtm Features At Snap Point     */
+ bvector<DTM_TIN_POINT_FEATURES>& snapFeaturesPP /* <== Pointer To Dtm Features At Snap Point    */
 )
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
- DTM_TIN_POINT_FEATURES *fListP ;
 /*
 ** Write Entry Message
 */
@@ -3578,8 +3576,7 @@ BENTLEYDTM_EXPORT int bcdtmSite_snapToClosestBreakLineWithPositiveUserTagDtmObje
  *dSnapP     = 0.0 ;
  *dtmPnt1P   = dtmP->nullPnt ;
  *dtmPnt2P   = dtmP->nullPnt ;
- if( *snapFeaturesPP != NULL ) { free(*snapFeaturesPP) ; *snapFeaturesPP = NULL ; }
- *numSnapFeaturesP = 0 ;
+ snapFeaturesPP.clear();
 /*
 ** Find Closest Orthogonal Break Line To Point
 */
@@ -3595,8 +3592,8 @@ BENTLEYDTM_EXPORT int bcdtmSite_snapToClosestBreakLineWithPositiveUserTagDtmObje
 */
  if( *snapFoundP == TRUE )
    {
-    if( *snapTypeP == 1 ) { if( bcdtmList_getDtmFeaturesForPointDtmObject(dtmP,*dtmPnt1P,snapFeaturesPP,numSnapFeaturesP)) goto errexit ; }
-    if( *snapTypeP == 2 ) { if( bcdtmList_getDtmFeaturesForLineDtmObject(dtmP,*dtmPnt1P,*dtmPnt2P,snapFeaturesPP,numSnapFeaturesP)) goto errexit ; } 
+    if( *snapTypeP == 1 ) { if( bcdtmList_getDtmFeaturesForPointDtmObject(dtmP,*dtmPnt1P,snapFeaturesPP)) goto errexit ; }
+    if( *snapTypeP == 2 ) { if( bcdtmList_getDtmFeaturesForLineDtmObject(dtmP,*dtmPnt1P,*dtmPnt2P,snapFeaturesPP)) goto errexit ; } 
    } 
 /*
 ** Write Out Results
@@ -3611,11 +3608,12 @@ BENTLEYDTM_EXPORT int bcdtmSite_snapToClosestBreakLineWithPositiveUserTagDtmObje
     bcdtmWrite_message(0,0,0,"dSnapP           = %20.15lf",*dSnapP)  ;
     bcdtmWrite_message(0,0,0,"dtmPnt1P         = %9ld",*dtmPnt1P)   ;
     bcdtmWrite_message(0,0,0,"dtmPnt2P         = %9ld",*dtmPnt2P)   ;
-    bcdtmWrite_message(0,0,0,"numSnapFeaturesP = %9ld",*numSnapFeaturesP) ;
-    for( fListP = *snapFeaturesPP ; fListP < *snapFeaturesPP + *numSnapFeaturesP ; ++fListP )
+    bcdtmWrite_message(0,0,0,"numSnapFeaturesP = %9ld",snapFeaturesPP.size()) ;
+    int i = 0;
+    for (auto& fListP : snapFeaturesPP)
       {
-       bcdtmWrite_message(0,0,0,"snapFeature[%4ld] ** dtmFeature = %8ld ** Type = %4ld ** userTag = %10I64d ** nextPoint = %9ld priorPoint = %9ld",(long)(fListP-*snapFeaturesPP),fListP->dtmFeature,fListP->dtmFeatureType,fListP->userTag,fListP->nextPoint,fListP->priorPoint) ; 
-       bcdtmList_writePointsForDtmFeatureDtmObject(dtmP,fListP->dtmFeature) ;
+       bcdtmWrite_message(0,0,0,"snapFeature[%4ld] ** dtmFeature = %8ld ** Type = %4ld ** userTag = %10I64d ** nextPoint = %9ld priorPoint = %9ld",(long)(i++),fListP.dtmFeature,fListP.dtmFeatureType,fListP.userTag,fListP.nextPoint,fListP.priorPoint) ; 
+       bcdtmList_writePointsForDtmFeatureDtmObject(dtmP,fListP.dtmFeature) ;
       }
    }
 

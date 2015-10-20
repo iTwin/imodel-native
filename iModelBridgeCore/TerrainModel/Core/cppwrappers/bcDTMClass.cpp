@@ -473,9 +473,9 @@ static int digitalTM_createProfile
         {
         // If there is an abcissa table, then go to the next origin point
         DPoint3d    pt;
-        pt.x = drapedPt[0].drapeX;
-        pt.y = drapedPt[0].drapeY;
-        pt.z = drapedPt[0].drapeZ;
+        pt.x = drapedPt[0].drapePt.x;
+        pt.y = drapedPt[0].drapePt.y;
+        pt.z = drapedPt[0].drapePt.z;
         BC_TRY (
             digitalTM_nextOriginPoint (&pt, origStringP, sTabP, nPts, &currPtOrig, &diffSOrig, &distOrig, &distOnCurrentSegment));
         }
@@ -483,13 +483,13 @@ static int digitalTM_createProfile
     for (iPt = 1; iPt < nResPt; iPt++)
         {
         DPoint3d    previousPt;
-        previousPt.x = drapedPt[iPt-1].drapeX;
-        previousPt.y = drapedPt[iPt-1].drapeY;
-        previousPt.z = drapedPt[iPt-1].drapeZ;
+        previousPt.x = drapedPt[iPt - 1].drapePt.x;
+        previousPt.y = drapedPt[iPt - 1].drapePt.y;
+        previousPt.z = drapedPt[iPt - 1].drapePt.z;
         DPoint3d    currentPt;
-        currentPt.x = drapedPt[iPt].drapeX;
-        currentPt.y = drapedPt[iPt].drapeY;
-        currentPt.z = drapedPt[iPt].drapeZ;
+        currentPt.x = drapedPt[iPt].drapePt.x;
+        currentPt.y = drapedPt[iPt].drapePt.y;
+        currentPt.z = drapedPt[iPt].drapePt.z;
         if (sTabP)
             {
             if (distOrig == dc_zero)
@@ -573,20 +573,21 @@ static int digitalTM_convertPrflPointTabToDrapedPoints
         {
         DPoint3d    pt;
 
-        pt.x = pointTab[iPt].bcdtmDrapeData.drapeX;
-        pt.y = pointTab[iPt].bcdtmDrapeData.drapeY;
-        pt.z = pointTab[iPt].bcdtmDrapeData.drapeZ;
+        pt.x = pointTab[iPt].bcdtmDrapeData.drapePt.x;
+        pt.y = pointTab[iPt].bcdtmDrapeData.drapePt.y;
+        pt.z = pointTab[iPt].bcdtmDrapeData.drapePt.z;
 
         RefCountedPtr<BcDTMDrapedLinePoint> drapedPoint = BcDTMDrapedLinePoint::Create (pt, pointTab[iPt].s, pointTab[iPt].bcdtmDrapeData.drapeType);
-        for (int iFeature = 0; iFeature < pointTab[iPt].bcdtmDrapeData.numDrapeFeatures; iFeature++)
+        for (int iFeature = 0; iFeature < pointTab[iPt].bcdtmDrapeData.drapeFeatures.size(); iFeature++)
             {
+            auto& feature = pointTab[iPt].bcdtmDrapeData.drapeFeatures[iFeature];
             drapedPoint->AddFeature (
-                pointTab[iPt].bcdtmDrapeData.drapeFeaturesP[iFeature].dtmFeature,
-                (DTMFeatureType)pointTab[iPt].bcdtmDrapeData.drapeFeaturesP[iFeature].dtmFeatureType,
-                pointTab[iPt].bcdtmDrapeData.drapeFeaturesP[iFeature].userTag,
-                pointTab[iPt].bcdtmDrapeData.drapeFeaturesP[iFeature].userFeatureId,
-                pointTab[iPt].bcdtmDrapeData.drapeFeaturesP[iFeature].priorPoint,
-                pointTab[iPt].bcdtmDrapeData.drapeFeaturesP[iFeature].nextPoint
+                feature.dtmFeature,
+                feature.dtmFeatureType,
+                feature.userTag,
+                feature.userFeatureId,
+                feature.priorPoint,
+                feature.nextPoint
                 );
             }
 
@@ -611,28 +612,24 @@ BENTLEYDTM_EXPORT  int digitalTM_getDrapedPoints
     int                     nPts            /* => Number of points in line string     */
     )
     {
-    long			nResPt = 0;
-    DTM_DRAPE_POINT *drapedPtsP = nullptr;
+    bvector<DTM_DRAPE_POINT> drapedPts;
     PrflPoint_t     *prflPointTabP = nullptr;
     long            nbPtProfile;
-    int			    status = 0;
+    int             status = 0;
 
     BC_START ();
 
-    nResPt = 0;
     if (dtmHandleP == nullptr) BC_RETURN_ERRSTATUS (DTM_ERROR);
-    status = bcdtmDrape_stringDtmObject (dtmHandleP, (DPoint3d*)lineStringP, nPts , TRUE, &drapedPtsP, &nResPt);
-    if (status != DTM_SUCCESS) BC_RETURN_ERRSTATUS (DTM_ERROR) ;
+    status = bcdtmDrape_stringDtmObject (dtmHandleP, (DPoint3d*)lineStringP, nPts , TRUE, drapedPts);
+    if (status != DTM_SUCCESS) BC_RETURN_ERRSTATUS(DTM_ERROR);
 
     // Create a digital TM profile with readjustment of the distances along
-    BC_TRY (digitalTM_createProfile (&prflPointTabP, &nbPtProfile, drapedPtsP, nResPt, lineStringP, absTabP, nPts));
+    BC_TRY(digitalTM_createProfile(&prflPointTabP, &nbPtProfile, drapedPts.data(), (int)drapedPts.size(), lineStringP, absTabP, nPts));
 
     // Drape the points
     BC_TRY (digitalTM_convertPrflPointTabToDrapedPoints (drapedPoints, prflPointTabP, nbPtProfile));
 
 BC_END:;
-
-    if (drapedPtsP != nullptr) bcdtmDrape_freeDrapePointMemory (&drapedPtsP, &nResPt);
 
     if (prflPointTabP != nullptr) bcMem_free (prflPointTabP);
 
@@ -721,7 +718,7 @@ BcDTMPtr BcDTM::Create (int initPoint, int incPoint)
 +----------------------------------------------------------------------*/
 BcDTMPtr BcDTM::CreateFromDtmHandle
     (
-    BC_DTM_OBJ* dtmHandleP
+    BC_DTM_OBJ& dtmHandleP
     )
     {
     // Create a new Digital TM instance
@@ -735,7 +732,7 @@ BcDTMPtr BcDTM::CreateFromDtmHandle
 +----------------------------------------------------------------------*/
 BcDTMPtr BcDTM::CreateFromDtmHandles
     (
-    void *headerP,
+    BC_DTM_OBJ* headerP,
     void *featureArraysP,
     void *pointArraysP,
     void *nodeArraysP,
@@ -769,7 +766,7 @@ BcDTMPtr BcDTM::CreateFromTinFile (WCharCP fileNameP)
         }
 
     // Create a new DTM instance
-    return new BcDTM (dtmObjectP);
+    return new BcDTM (*dtmObjectP);
     }
 
 /*----------------------------------------------------------------------+
@@ -793,7 +790,7 @@ BcDTMPtr BcDTM::CreateFromGeopakDatFile (WCharCP fileNameP)
         }
 
     // Create a new DTM instance
-    return new BcDTM (dtmObjectP);
+    return new BcDTM (*dtmObjectP);
     }
 
 /*----------------------------------------------------------------------+
@@ -819,7 +816,7 @@ BcDTMPtr BcDTM::CreateFromXyzFile (WCharCP fileNameP)
         }
 
     // Create a new DTM instance
-    return new BcDTM (dtmObjectP);
+    return new BcDTM (*dtmObjectP);
     }
 
 /*----------------------------------------------------------------------+
@@ -841,7 +838,7 @@ BcDTMPtr BcDTM::CreateFromStream (IBcDtmStreamR streamP)
         }
 
     // Create a new DTM instance
-    return new BcDTM (dtmObjectP);
+    return new BcDTM (*dtmObjectP);
     }
 
 /*----------------------------------------------------------------------+
@@ -863,7 +860,7 @@ BcDTMPtr BcDTM::CreateFromMemoryBlock (const char *memoryBlockP, unsigned long m
         }
 
     // Create a new DTM instance
-    return new BcDTM (dtmObjectP);
+    return new BcDTM (*dtmObjectP);
     }
 
 
@@ -885,7 +882,7 @@ BcDTMPtr BcDTM::CreateFromTinFile (WCharCP fileNameP, double filePosition)
         }
 
     // Create a new Digital TM instance
-    return new BcDTM (dtmObjectP);
+    return new BcDTM (*dtmObjectP);
     }
 
 BcDTMPtr BcDTM::DesignPondToTargetVolumeOrElevation
@@ -964,14 +961,13 @@ BcDTM::BcDTM (int initPoint, int incPoint)
 |   spu.03jul2002   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-BcDTM::BcDTM (BC_DTM_OBJ* dtmHandleP, TMTransformHelperP transformHelper, bool readonly)
+BcDTM::BcDTM (BC_DTM_OBJ& dtmHandleP, TMTransformHelperP transformHelper, bool readonly)
     {
     // Assign the DTMFeatureState::Tin handle
-    _dtmHandleP = dtmHandleP;
+    _dtmHandleP = &dtmHandleP;
     _dtmTransformHelper = transformHelper;
 
-    if (dtmHandleP != nullptr)
-        (_dtmHandleP)->refCount++;
+    _dtmHandleP->refCount++;
 
     // Initialisations
     _readonly = readonly;
@@ -983,7 +979,7 @@ BcDTM::BcDTM (BC_DTM_OBJ* dtmHandleP, TMTransformHelperP transformHelper, bool r
 |   spu.25aug2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-BcDTM::BcDTM (void* headerP, void* featureArraysP, void* pointArraysP, void* nodeArraysP, void* fListArraysP, void* cListArraysP)
+BcDTM::BcDTM(BC_DTM_OBJ* headerP, void* featureArraysP, void* pointArraysP, void* nodeArraysP, void* fListArraysP, void* cListArraysP)
     {
     int dbg=DTM_TRACE_VALUE(0) ;
 
@@ -1102,9 +1098,9 @@ BC_END:
 DTMStatusInt BcDTM::_GetFeatureById (BcDTMFeaturePtr& featurePP, DTMFeatureId identP)
     {
     DTMFeatureType memFeatureType = DTMFeatureType::None;
-    DPoint3d	*pointsP = nullptr;
-    DPoint3d	*memPointsP = nullptr;
-    long		memNbFeaturePts = 0;
+    DPoint3d    *pointsP = nullptr;
+    DPoint3d    *memPointsP = nullptr;
+    long        memNbFeaturePts = 0;
    DTMStatusInt status=DTM_SUCCESS;
     DTMFeatureId    dtmFeatureId;
     DTMUserTag memUserTag;
@@ -1213,7 +1209,7 @@ DTMStatusInt BcDTM::_GetFeatureByUserTag (BcDTMFeaturePtr& featurePP, DTMUserTag
     {
     WString     featureName;
     WString     featureDescription;
-    DPoint3d	*pointsP = nullptr;
+    DPoint3d    *pointsP = nullptr;
     int         status = 0;
     DTMFeatureId   guId = DTM_NULL_FEATURE_ID;
     long        featureFound = 0;
@@ -1306,7 +1302,7 @@ DTMStatusInt BcDTM::_ClipByPointString
 
     // Return result
     if (resultTinP != nullptr)
-        clippedPP = new BcDTM (resultTinP, _dtmTransformHelper.get());
+        clippedPP = new BcDTM (*resultTinP, _dtmTransformHelper.get());
     else
         clippedPP = nullptr;
 
@@ -1349,29 +1345,25 @@ DTMStatusInt BcDTM::_GetRange (DRange3dR range)
 +----------------------------------------------------------------------*/
 DTMStatusInt BcDTM::_DrapePoint
     (
-    int         *drapeTypeP,
-    DPoint3dP   pointP
+    int&        drapeTypeP,
+    DPoint3d&   pointP
     )
     {
     DTMStatusInt ret=DTM_SUCCESS ;
     long drapeFlag=0 ;
 
-    // Check argument
-    if (pointP == nullptr) goto errexit ;
-
     /* Drape the point on the tin object */
-
     if (_dtmTransformHelper.IsValid ())
         {
-        DPoint3d p = *pointP;
+        DPoint3d p = pointP;
         _dtmTransformHelper->convertPointToDTM (p);
         if (bcdtmDrape_pointDtmObject (_GetTinHandle (), p.x, p.y, &p.z, &drapeFlag) != DTM_SUCCESS) goto errexit;
-        pointP->z = _dtmTransformHelper->convertElevationFromDTM (p.z);
+        pointP.z = _dtmTransformHelper->convertElevationFromDTM (p.z);
         }
     else
-        if (bcdtmDrape_pointDtmObject (_GetTinHandle (), pointP->x, pointP->y, &pointP->z, &drapeFlag) != DTM_SUCCESS) goto errexit;
+        if (bcdtmDrape_pointDtmObject (_GetTinHandle (), pointP.x, pointP.y, &pointP.z, &drapeFlag) != DTM_SUCCESS) goto errexit;
 
-    *drapeTypeP = (int)drapeFlag;
+    drapeTypeP = (int)drapeFlag;
 
     //  Clean Up
 
@@ -1388,27 +1380,6 @@ errexit :
     if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
     goto cleanup ;
 
-    }
-
-/*----------------------------------------------------------------------+
-|                                                                       |
-|   spu.03jul2002   -  Created.                                         |
-|                                                                       |
-+----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_DrapePoint
-    (
-    double          *elevationP,
-    double          *slopeP,
-    double          *aspectP,
-    DPoint3d        triangle[3],
-    int             *drapedTypeP,
-    const DPoint3d& point
-    )
-    {
-    DPoint3d locPt = point;
-
-    DTMStatusInt result = DrapePoint (elevationP, slopeP, aspectP, triangle, drapedTypeP, &locPt);
-    return result;
     }
 
 /*----------------------------------------------------------------------+
@@ -1440,8 +1411,8 @@ DTMStatusInt BcDTM::_DrapePoint
     double      *slopeP,
     double      *aspectP,
     DPoint3d    triangle[3],
-    int         *drapedTypeP,
-    DPoint3d    *pointP
+    int&         drapedTypeP,
+    const DPoint3d&    pointP
     )
     {
     long        drapeFlag = 0;
@@ -1455,10 +1426,6 @@ DTMStatusInt BcDTM::_DrapePoint
 
     BC_START ();
 
-    // Check argument
-    if (pointP == nullptr)
-        BC_RETURN_ERRSTATUS(DTM_ERROR);
-
     // Initialize results
     if (elevationP) *elevationP = dc_zero;
     if (slopeP) *slopeP = dc_zero;
@@ -1469,7 +1436,7 @@ DTMStatusInt BcDTM::_DrapePoint
 
     if (_dtmTransformHelper.IsValid ())
         {
-        DPoint3d p = *pointP;
+        DPoint3d p = pointP;
         _dtmTransformHelper->convertPointToDTM (p);
         status = bcdtmDrape_pointReturnAttributesDtmObject (
             _GetTinHandle (),
@@ -1494,8 +1461,8 @@ DTMStatusInt BcDTM::_DrapePoint
         {
         status = bcdtmDrape_pointReturnAttributesDtmObject (
             _GetTinHandle (),
-            pointP->x,
-            pointP->y,
+            pointP.x,
+            pointP.y,
             &z,
             &drapeFlag,
             (DPoint3d *)&trianglePoints[0],
@@ -1513,7 +1480,7 @@ DTMStatusInt BcDTM::_DrapePoint
         if (aspectP)    *aspectP = aspect;
         if (triangle) memcpy (triangle, &trianglePoints[0], 3*sizeof(DPoint3d));
         }
-    if (drapedTypeP) *drapedTypeP = drapeFlag;
+    if (drapedTypeP) drapedTypeP = drapeFlag;
 
 BC_END:;
 
@@ -1620,7 +1587,7 @@ DTMStatusInt BcDTM::_PopulateFromGeopakTinFile
 +----------------------------------------------------------------------*/
 DTMStatusInt BcDTM::_CalculateSlopeArea
     (
-    double          *areaP,
+    double&         areaP,
     DPoint3dCP      points,
     int             nbPt
     )
@@ -1633,12 +1600,12 @@ DTMStatusInt BcDTM::_CalculateSlopeArea
     SetMemoryAccess(DTMAccessMode::Temporary);
     // Call the core DTM slope area function
     if (_dtmTransformHelper.IsValid())
-        status = (DTMStatusInt)bcdtmSlope_calculateSlopeAreaDtmObject (_GetTinHandle (), (DPoint3d *)_dtmTransformHelper->copyPointsToDTM (points, nbPt), nbPt, nullptr, &flatArea, areaP, &slopePolygonsPP, &numSlopePolygons);
+        status = (DTMStatusInt)bcdtmSlope_calculateSlopeAreaDtmObject (_GetTinHandle (), (DPoint3d *)_dtmTransformHelper->copyPointsToDTM (points, nbPt), nbPt, nullptr, &flatArea, &areaP, &slopePolygonsPP, &numSlopePolygons);
     else
-        status = (DTMStatusInt)bcdtmSlope_calculateSlopeAreaDtmObject (_GetTinHandle (), (DPoint3d *)points, nbPt, nullptr, &flatArea, areaP, &slopePolygonsPP, &numSlopePolygons);
+        status = (DTMStatusInt)bcdtmSlope_calculateSlopeAreaDtmObject (_GetTinHandle (), (DPoint3d *)points, nbPt, nullptr, &flatArea, &areaP, &slopePolygonsPP, &numSlopePolygons);
 
     if (_dtmTransformHelper.IsValid())
-        *areaP = _dtmTransformHelper->convertAreaFromDTM (*areaP);
+        areaP = _dtmTransformHelper->convertAreaFromDTM (areaP);
     // Clean Up
     if( slopePolygonsPP != nullptr )bcdtmMem_freePointerArrayToPointArrayMemory(&slopePolygonsPP,numSlopePolygons) ;
 
@@ -1653,7 +1620,7 @@ DTMStatusInt BcDTM::_CalculateSlopeArea
 +----------------------------------------------------------------------*/
 DTMStatusInt BcDTM::_CalculateSlopeArea
     (
-    double          *areaP
+    double&          areaP
     )
     {
     DTMStatusInt status = DTM_SUCCESS;
@@ -1663,10 +1630,10 @@ DTMStatusInt BcDTM::_CalculateSlopeArea
 
     SetMemoryAccess(DTMAccessMode::Temporary);
     // Call the core DTM slope area function
-    status = (DTMStatusInt)bcdtmSlope_calculateSlopeAreaDtmObject (_GetTinHandle (), nullptr, 0, nullptr, &flatArea, areaP, &slopePolygonsPP, &numSlopePolygons);
+    status = (DTMStatusInt)bcdtmSlope_calculateSlopeAreaDtmObject (_GetTinHandle (), nullptr, 0, nullptr, &flatArea, &areaP, &slopePolygonsPP, &numSlopePolygons);
 
     if (_dtmTransformHelper.IsValid())
-        *areaP = _dtmTransformHelper->convertAreaFromDTM (*areaP);
+        areaP = _dtmTransformHelper->convertAreaFromDTM (areaP);
 
     // Clean Up
     if( slopePolygonsPP != nullptr )bcdtmMem_freePointerArrayToPointArrayMemory(&slopePolygonsPP,numSlopePolygons) ;
@@ -1681,8 +1648,8 @@ DTMStatusInt BcDTM::_CalculateSlopeArea
 +----------------------------------------------------------------------*/
 DTMStatusInt BcDTM::_CalculateSlopeArea
     (
-    double          *flatAreaP ,
-    double          *slopeAreaP,
+    double&         flatAreaP ,
+    double&         slopeAreaP,
     DPoint3dCP      polygonPts,
     int             numPolygonPts
 
@@ -1695,14 +1662,14 @@ DTMStatusInt BcDTM::_CalculateSlopeArea
     SetMemoryAccess(DTMAccessMode::Temporary);
     // Call the core DTM slope area function
     if (_dtmTransformHelper.IsValid())
-        status = (DTMStatusInt)bcdtmSlope_calculateSlopeAreaDtmObject (_GetTinHandle (), (DPoint3d *)_dtmTransformHelper->copyPointsToDTM (polygonPts, numPolygonPts), (long)numPolygonPts, nullptr, flatAreaP, slopeAreaP, &slopePolygonsPP, &numSlopePolygons);
+        status = (DTMStatusInt)bcdtmSlope_calculateSlopeAreaDtmObject (_GetTinHandle (), (DPoint3d *)_dtmTransformHelper->copyPointsToDTM (polygonPts, numPolygonPts), (long)numPolygonPts, nullptr, &flatAreaP, &slopeAreaP, &slopePolygonsPP, &numSlopePolygons);
     else
-        status = (DTMStatusInt)bcdtmSlope_calculateSlopeAreaDtmObject (_GetTinHandle (), (DPoint3d *)polygonPts, (long)numPolygonPts, nullptr, flatAreaP, slopeAreaP, &slopePolygonsPP, &numSlopePolygons);
+        status = (DTMStatusInt)bcdtmSlope_calculateSlopeAreaDtmObject (_GetTinHandle (), (DPoint3d *)polygonPts, (long)numPolygonPts, nullptr, &flatAreaP, &slopeAreaP, &slopePolygonsPP, &numSlopePolygons);
 
     if (_dtmTransformHelper.IsValid())
         {
-        *flatAreaP = _dtmTransformHelper->convertAreaFromDTM (*flatAreaP);
-        *slopeAreaP = _dtmTransformHelper->convertAreaFromDTM (*slopeAreaP);
+        flatAreaP = _dtmTransformHelper->convertAreaFromDTM (flatAreaP);
+        slopeAreaP = _dtmTransformHelper->convertAreaFromDTM (slopeAreaP);
         }
     // Clean Up
     if( slopePolygonsPP != nullptr )bcdtmMem_freePointerArrayToPointArrayMemory(&slopePolygonsPP,numSlopePolygons) ;
@@ -1771,7 +1738,7 @@ BcDTMPtr BcDTM::_Clone()
     bcdtmObject_cloneDtmObject(_GetTinHandle(), (BC_DTM_OBJ **) &dtmHandleP);
 
     // Create a new Digital TM instance
-    return new BcDTM (dtmHandleP, _dtmTransformHelper.get());
+    return new BcDTM (*dtmHandleP, _dtmTransformHelper.get());
     }
 /*----------------------------------------------------------------------+
 |                                                                       |
@@ -1835,7 +1802,7 @@ BcDTMPtr BcDTM::_Delta (BcDTMR toDeltaP, DPoint3dCP points, int numPoints)
         }
 
     // Create a new Digital TM instance
-    return new BcDTM (deltaP, _dtmTransformHelper.get());
+    return new BcDTM (*deltaP, _dtmTransformHelper.get());
     }
 /*----------------------------------------------------------------------+
 |                                                                       |
@@ -1858,7 +1825,7 @@ BcDTMPtr BcDTM::_DeltaElevation (double elevation, DPoint3dCP points, int numPoi
         }
 
     // Create a new Digital TM instance
-    return new BcDTM (deltaP, _dtmTransformHelper.get());
+    return new BcDTM (*deltaP, _dtmTransformHelper.get());
     }
 
 /*----------------------------------------------------------------------+
@@ -1922,7 +1889,8 @@ DTMStatusInt BcDTM::_ShotVector (double* endSlopeP, double* endAspectP, DPoint3d
     if (endSlopeP != nullptr || endAspectP != nullptr || endTriangle != nullptr || endDrapedTypeP != nullptr)
         {
         // If other info about the end point are required return them
-        DTMStatusInt status = DrapePoint (nullptr, endSlopeP, endAspectP, endTriangle, endDrapedTypeP, &endPt);
+        int tmp;
+        DTMStatusInt status = DrapePoint (nullptr, endSlopeP, endAspectP, endTriangle, endDrapedTypeP ? *endDrapedTypeP : tmp, endPt);
         if (status != DTM_SUCCESS)
             return DTM_ERROR;
         }
@@ -2923,17 +2891,14 @@ DTMStatusInt BcDTM::_TraceLine (double pointX, double pointY, double slope, doub
     FeatureCallbackTransformHelper helper (callBackFunctP, userP, _dtmTransformHelper.get ());
     userP = helper.GetUserArg ();
     callBackFunctP = helper.GetCallBackFunc ();
-    // ToDo remove dtmdllloadfunction
-    DTMStatusInt status = (DTMStatusInt)bcdtmLoad_setDtmDllLoadFunction (callBackFunctP);
 
-    status = (DTMStatusInt)bcdtmGrade_getMacaoGradeSlopeStartDirectionsDtmObject (_GetTinHandle (), pointX, pointY,
+    DTMStatusInt status = (DTMStatusInt)bcdtmGrade_getMacaoGradeSlopeStartDirectionsDtmObject(_GetTinHandle(), pointX, pointY,
         slope, dist, &anglesP, &numbOfStartgAng);
 
     for (int iSol = 0; iSol < numbOfStartgAng; iSol++)
         {
         }
 
-    bcdtmLoad_setDtmDllLoadFunction(nullptr);
 
     return status;
     }
@@ -3019,7 +2984,7 @@ void BcDTM::_GetHandles (void** headerPP, int* nHeaderP, void*** featureArraysPP
         *lastFListArraysSize = 0;
         }
     }
-
+#ifdef TODO
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   spu.04sep2005   -  Created.                                         |
@@ -3069,36 +3034,35 @@ BcDTMEdgesPtr BcDTM::_GetEdges (DPoint3dCP fencePts, int numFencePts)
     // Translation is handled in BcDTMEdges.
     return BcDTMEdges::Create (this, edgesP, numEdges);
     }
-
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   spu.04sep2005   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-void BcDTM::_GetMesh (DPoint3dCP fencePts, int numFencePts, DPoint3dP* pointsPP, long *numIndices, long** triangleIndexPP)
+void BcDTM::_GetMesh (DPoint3dCP fencePts, int numFencePts, bvector<DPoint3dP>& points, bvector<long>& triangleIndex)
     {
     BeAssert (false && "Needs Work");
     BC_DTM_OBJ *dtmHandleP = _GetTinHandle();
     DTMFenceType   fenceType=DTMFenceType::Shape ;
     DTM_TIN_POINT **tinPointsPP = nullptr ;
-
+    long numIndices;
     // Call DTMFeatureState::Tin function to get triangle index.
-    DTMStatusInt status = (DTMStatusInt)bcdtmLoad_tinTrianglesFromDtmObject (dtmHandleP, fencePts != nullptr, fenceType, (DPoint3d*)fencePts, numFencePts, numIndices, triangleIndexPP, &tinPointsPP);
+    DTMStatusInt status = (DTMStatusInt)bcdtmLoad_tinTrianglesFromDtmObject (dtmHandleP, fencePts != nullptr, fenceType, (DPoint3d*)fencePts, &numFencePts, numIndices, triangleIndexPP, &tinPointsPP);
 
-    if( status == DTM_ERROR && *numIndices == 0 )
+    if( status == DTM_ERROR && numIndices == 0 )
         {
-        *numIndices = 0 ;
-        *pointsPP = nullptr ; // Temporary Until Fixed
+        points.empty();
+        triangleIndex.empty();
         if( *triangleIndexPP != nullptr ) bcMem_free ((void*)*triangleIndexPP) ;
         }
-
-    // Directly reference the points into the DTMFeatureState::Tin.
     else
         {
+        points.resize(num)
         *pointsPP = nullptr  ; // Temporary Until Fixed
         //     *pointsPPP = (DPoint3d **) tinPointsPP ;
         }
     }
+#endif
 
 /*----------------------------------------------------------------------+
 |                                                                       |
@@ -3266,14 +3230,14 @@ DTMStatusInt BcDTM::_BrowseDuplicatePoints(void* userP, DTMDuplicatePointsCallba
 |   djh.13mar2008   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_BrowseCrossingFeatures (DTMFeatureType* featureList, int numFeaturesList, void* userP, DTMCrossingFeaturesCallback callback)
+DTMStatusInt BcDTM::_BrowseCrossingFeatures (const DTMFeatureType featureList[], int numFeatureTypes, void* userP, DTMCrossingFeaturesCallback callback)
     {
     CrossingFeaturesCallbackTransformHelper helper (callback, userP, _dtmTransformHelper.get ());
     callback = helper.GetCallBackFunc ();
     userP = helper.GetUserArg ();
 
     SetMemoryAccess(DTMAccessMode::Temporary);
-    return (DTMStatusInt)bcdtmReport_crossingFeaturesDtmObject (_GetTinHandle (), featureList, numFeaturesList, callback, userP);
+    return (DTMStatusInt)bcdtmReport_crossingFeaturesDtmObject(_GetTinHandle(), featureList, numFeatureTypes, callback, userP);
     }
 
 /*----------------------------------------------------------------------+
@@ -3406,13 +3370,13 @@ DTMStatusInt BcDTM::_TileFilterSinglePointPointFeatures (long minTilePts, long m
 |   djh.12apr2008   -  Created.                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_EditorSelectDtmTinFeature(DTMFeatureType dtmFeatureType, DPoint3d pt, long* featureFoundP, DPoint3d** featurePtsPP, long* numFeaturePtsP)
+DTMStatusInt BcDTM::_EditorSelectDtmTinFeature(DTMFeatureType dtmFeatureType, DPoint3d pt, bool& featureFoundP, bvector<DPoint3d>& featurePts)
     {
     if (_dtmTransformHelper.IsValid())
         _dtmTransformHelper->convertPointToDTM (pt);
-    DTMStatusInt status = (DTMStatusInt)bcdtmEdit_selectDtmEditFeatureDtmObject (_GetTinHandle (), dtmFeatureType, pt.x, pt.y, featureFoundP, (DPoint3d**)featurePtsPP, numFeaturePtsP);
-    if (status == DTM_SUCCESS && _dtmTransformHelper.IsValid() && featurePtsPP && *featurePtsPP)
-        _dtmTransformHelper->convertPointsFromDTM (*featurePtsPP, *numFeaturePtsP);
+    DTMStatusInt status = (DTMStatusInt)bcdtmEdit_selectDtmEditFeatureDtmObject (_GetTinHandle (), dtmFeatureType, pt.x, pt.y, featureFoundP, featurePts);
+    if (status == DTM_SUCCESS && _dtmTransformHelper.IsValid() && featurePts.empty())
+        _dtmTransformHelper->convertPointsFromDTM (featurePts);
     return status;
     }
 /*----------------------------------------------------------------------+
@@ -3676,7 +3640,7 @@ DTMStatusInt BcDTM::_RemoveNoneFeatureHullLines()
 |   rsc.17Mar2010    -  Created                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_PointVisibility (bool* pointVisibleP, double eyeX, double eyeY, double eyeZ, double pntX, double pntY, double pntZ)
+DTMStatusInt BcDTM::_PointVisibility (bool& pointVisibleP, double eyeX, double eyeY, double eyeZ, double pntX, double pntY, double pntZ)
     {
     DTMStatusInt status = DTM_SUCCESS;
     long isVisible = 0;
@@ -3689,7 +3653,7 @@ DTMStatusInt BcDTM::_PointVisibility (bool* pointVisibleP, double eyeX, double e
     //   Call Core DTM Function
     status = (DTMStatusInt)bcdtmVisibility_determinePointVisibilityDtmObject (_GetTinHandle (), eyeX, eyeY, eyeZ, pntX, pntY, pntZ, &isVisible);
 
-    *pointVisibleP = isVisible != 0;
+    pointVisibleP = isVisible != 0;
     return status;
     }
 
@@ -3698,7 +3662,7 @@ DTMStatusInt BcDTM::_PointVisibility (bool* pointVisibleP, double eyeX, double e
 |   rsc.17Mar2010    -  Created                                         |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_LineVisibility (long* lineVisibleP, double eyeX, double eyeY, double eyeZ, double X1, double Y1, double Z1,
+DTMStatusInt BcDTM::_LineVisibility (bool& lineVisibleP, double eyeX, double eyeY, double eyeZ, double X1, double Y1, double Z1,
                             double X2, double Y2, double Z2, DTMDynamicFeatureArray& visibilityFeatures)
     {
     DTMStatusInt status = DTM_SUCCESS;
@@ -3712,7 +3676,9 @@ DTMStatusInt BcDTM::_LineVisibility (long* lineVisibleP, double eyeX, double eye
         }
 
     //   Call Core DTM Function
-    status = (DTMStatusInt)bcdtmVisibility_determineLineVisibiltyDtmObject (_GetTinHandle (), eyeX, eyeY, eyeZ, X1, Y1, Z1, X2, Y2, Z2, lineVisibleP, AddDtmFeatureToBuffer, &buffer);
+    long lineVisible = false;
+    status = (DTMStatusInt)bcdtmVisibility_determineLineVisibiltyDtmObject (_GetTinHandle (), eyeX, eyeY, eyeZ, X1, Y1, Z1, X2, Y2, Z2, &lineVisible, AddDtmFeatureToBuffer, &buffer);
+    lineVisibleP = lineVisible != false;
 
     if (status == DTM_SUCCESS)
         {
@@ -3997,7 +3963,7 @@ DTMStatusInt BcDTM::_GetTransformDTM (Bentley::TerrainModel::DTMPtr& transformed
         if (!trfs.isIdentity())
             transformHelper = TMTransformHelper::Create (trfs);
 
-        BcDTMPtr bcDtm = new BcDTM (_GetTinHandle(), transformHelper);
+        BcDTMPtr bcDtm = new BcDTM (*_GetTinHandle(), transformHelper);
         transformedDTM = bcDtm;
         }
     return DTM_SUCCESS;
@@ -4005,7 +3971,7 @@ DTMStatusInt BcDTM::_GetTransformDTM (Bentley::TerrainModel::DTMPtr& transformed
 
 DTMStatusInt BcDTM::_GetReadOnlyDTM (Bentley::TerrainModel::BcDTMPtr& readonlyDTM)
     {
-    readonlyDTM = new BcDTM (_GetTinHandle (), _dtmTransformHelper.get(), true);
+    readonlyDTM = new BcDTM (*_GetTinHandle (), _dtmTransformHelper.get(), true);
     return DTM_SUCCESS;
     }
 /*---------------------------------------------------------------------------------------
@@ -4056,24 +4022,6 @@ DTMStatusInt BcDTM::_GetBoundary(Bentley::TerrainModel::DTMPointArray& ret)
         }
     return status;
     }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  12/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::_CalculateSlopeArea (double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints)
-    {
-    if (_dtmTransformHelper.IsValid ())
-        {
-        DTMStatusInt status = (DTMStatusInt)_CalculateSlopeArea (&flatArea, &slopeArea, _dtmTransformHelper->copyPointsToDTM (pts, numPoints), numPoints);
-        if (status == DTM_SUCCESS)
-            {
-            flatArea = _dtmTransformHelper->convertAreaFromDTM (flatArea);
-            slopeArea = _dtmTransformHelper->convertAreaFromDTM (slopeArea);
-            }
-        }
-    return (DTMStatusInt)_CalculateSlopeArea (&flatArea, &slopeArea, const_cast<DPoint3d*>(pts), numPoints);
-    }
-
 
 /*---------------------------------------------------------------------------------------
 * @bsiclass                                                     Daryl.Holmwood  12/10
@@ -4253,10 +4201,10 @@ DTMStatusInt BcDTM::_CreatePointStockPile
     if( status == DTM_SUCCESS )
         {
         stockPileVolume = volume ;
-        *stockPileTmPP = BcDTM::CreateFromDtmHandle (stockPileDtmP);
+        *stockPileTmPP = BcDTM::CreateFromDtmHandle (*stockPileDtmP);
         if( mergeOption )
             {
-            *mergedTmPP = BcDTM::CreateFromDtmHandle (mergedDtmP);
+            *mergedTmPP = BcDTM::CreateFromDtmHandle (*mergedDtmP);
             }
         }
     else
@@ -4312,10 +4260,10 @@ DTMStatusInt BcDTM::_CreateAlignmentStockPile
     if( status == DTM_SUCCESS )
         {
         stockPileVolume = volume ;
-        *stockPileTmPP = BcDTM::CreateFromDtmHandle (stockPileDtmP);
+        *stockPileTmPP = BcDTM::CreateFromDtmHandle (*stockPileDtmP);
         if( mergeOption )
             {
-            *mergedTmPP = BcDTM::CreateFromDtmHandle (mergedDtmP);
+            *mergedTmPP = BcDTM::CreateFromDtmHandle (*mergedDtmP);
             }
         }
     else
@@ -4349,7 +4297,7 @@ bool BcDTM::_IntersectVector (DPoint3dR intersectionPoint, DPoint3dCR startPoint
             {
             _dtmTransformHelper->convertPointToDTM (startPt);
             _dtmTransformHelper->convertPointToDTM (endPt);
-            BcDTMPtr tempDtm = BcDTM::CreateFromDtmHandle (GetTinHandle ());
+            BcDTMPtr tempDtm = BcDTM::CreateFromDtmHandle (*GetTinHandle ());
             if (!tempDtm->IntersectVector (intersectionPoint, startPt, endPt))
                 return false;
             _dtmTransformHelper->convertPointFromDTM (intersectionPoint);
@@ -4376,9 +4324,9 @@ bool BcDTM::_IntersectVector (DPoint3dR intersectionPoint, DPoint3dCR startPoint
         DPoint3d trianglePts[4];
         long drapedType;
         BC_DTM_OBJ* bcDTM = GetTinHandle ();
-        long voidFlag;
+        bool voidFlag;
 
-        if (bcdtmDrape_intersectTriangleDtmObject (bcDTM, &sP, &eP, &drapedType, &point, trianglePts, &voidFlag) != DTM_SUCCESS || drapedType == 0 || voidFlag != 0)
+        if (bcdtmDrape_intersectTriangleDtmObject (bcDTM, &sP, &eP, &drapedType, &point, trianglePts, voidFlag) != DTM_SUCCESS || drapedType == 0 || voidFlag != false)
             return false;
 
         startPt = point;
@@ -4389,7 +4337,7 @@ bool BcDTM::_IntersectVector (DPoint3dR intersectionPoint, DPoint3dCR startPoint
     int drapedType;
     double elevation;
 
-    if (DTM_SUCCESS != DrapePoint (&elevation, nullptr, nullptr, trianglePts, &drapedType, &startPt))
+    if (DTM_SUCCESS != DrapePoint (&elevation, nullptr, nullptr, trianglePts, drapedType, startPt))
         {
         return false;
         }
@@ -4530,9 +4478,9 @@ bool BcDTM::_GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, D
         DPoint3d trianglePts[4];
         long drapedType;
         BC_DTM_OBJ* bcDTM = GetTinHandle ();
-        long voidFlag;
+        bool voidFlag;
 
-        if (bcdtmDrape_intersectTriangleDtmObject (bcDTM, ((DPoint3d*)&sP), ((DPoint3d*)&eP), &drapedType, (DPoint3d*)&point, (DPoint3d*)&trianglePts, &voidFlag) != DTM_SUCCESS || drapedType == 0 || voidFlag != 0)
+        if (bcdtmDrape_intersectTriangleDtmObject (bcDTM, ((DPoint3d*)&sP), ((DPoint3d*)&eP), &drapedType, (DPoint3d*)&point, (DPoint3d*)&trianglePts, voidFlag) != DTM_SUCCESS || drapedType == 0 || voidFlag != 0)
             {
             return false;
             }
@@ -4545,7 +4493,7 @@ bool BcDTM::_GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, D
     int drapedType;
     double elevation;
 
-    if (DTM_SUCCESS != DrapePoint (&elevation, NULL, NULL, trianglePts, &drapedType, &startPt))
+    if (DTM_SUCCESS != DrapePoint (&elevation, NULL, NULL, trianglePts, drapedType, startPt))
         {
         return false;
         }
@@ -4669,9 +4617,9 @@ DTMStatusInt BcDTM::TileFilterSinglePointPointFeatures (long minTilePts, long ma
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::EditorSelectDtmTinFeature(DTMFeatureType dtmFeatureType, DPoint3d pt, long* featureFoundP, DPoint3d** featurePtsPP, long* numFeaturePtsP)
+DTMStatusInt BcDTM::EditorSelectDtmTinFeature(DTMFeatureType dtmFeatureType, DPoint3d pt, bool& featureFound, bvector<DPoint3d>& featurePts)
     {
-    return _EditorSelectDtmTinFeature(dtmFeatureType, pt, featureFoundP, featurePtsPP, numFeaturePtsP);
+    return _EditorSelectDtmTinFeature(dtmFeatureType, pt, featureFound, featurePts);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -4717,7 +4665,7 @@ DTMStatusInt BcDTM::BrowseDuplicatePoints(void* userP, DTMDuplicatePointsCallbac
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::BrowseCrossingFeatures(DTMFeatureType* featureList, int numFeaturesList, void* userP, DTMCrossingFeaturesCallback callback)
+DTMStatusInt BcDTM::BrowseCrossingFeatures(const DTMFeatureType featureList[], int numFeaturesList, void* userP, DTMCrossingFeaturesCallback callback)
     {
     return _BrowseCrossingFeatures(featureList, numFeaturesList, userP, callback);
     }
@@ -4757,19 +4705,17 @@ DTMStatusInt BcDTM::ClipByPointString(BcDTMPtr& clippedPP,DPoint3dCP points,int 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::DrapePoint (int *drapedTypeP,DPoint3dP pointP)
+DTMStatusInt BcDTM::DrapePoint (int& drapedTypeP,DPoint3dR pointP)
     {
     return _DrapePoint(drapedTypeP, pointP) ;
     }
-
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::DrapePoint(double *elevationP,double *slopeP,double *aspectP,DPoint3d triangle[3],int *drapedTypeP,DPoint3dP pointP)
+DTMStatusInt BcDTM::DrapePoint(double* elevation, double* slope, double* aspect, DPoint3d triangle[3], int& drapedType, const DPoint3d& point)
     {
-    return _DrapePoint(elevationP,slopeP,aspectP,triangle,drapedTypeP,pointP);
+    return _DrapePoint(elevation, slope, aspect, triangle, drapedType, point);
     }
-
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -4821,21 +4767,21 @@ DTMStatusInt BcDTM::SaveToStream(IBcDtmStreamR stream)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::CalculateSlopeArea (double *areaP, DPoint3dCP points, int nbPt )
+DTMStatusInt BcDTM::CalculateSlopeArea (double& areaP, DPoint3dCP points, int nbPt )
     {
     return _CalculateSlopeArea (areaP,points,nbPt );
     }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::CalculateSlopeArea(double *areaP)
+DTMStatusInt BcDTM::CalculateSlopeArea(double& areaP)
     {
     return _CalculateSlopeArea(areaP);
     }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Rob.Cormack    09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::CalculateSlopeArea (double *flatAreaP,double *slopeAreaP,DPoint3dCP points,int numPoints)
+DTMStatusInt BcDTM::CalculateSlopeArea (double& flatAreaP,double& slopeAreaP,DPoint3dCP points,int numPoints)
     {
     return _CalculateSlopeArea(flatAreaP,slopeAreaP,points,numPoints);
     }
@@ -4898,7 +4844,7 @@ DTMStatusInt BcDTM::TraceCatchmentForPoint (double x, double y, double maxPondDe
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::PointVisibility( bool *pointVisibleP, double eyeX, double eyeY, double eyeZ, double pntX, double pntY, double pntZ)
+DTMStatusInt BcDTM::PointVisibility( bool& pointVisibleP, double eyeX, double eyeY, double eyeZ, double pntX, double pntY, double pntZ)
     {
     return _PointVisibility( pointVisibleP, eyeX, eyeY, eyeZ, pntX, pntY, pntZ) ;
     }
@@ -4906,7 +4852,7 @@ DTMStatusInt BcDTM::PointVisibility( bool *pointVisibleP, double eyeX, double ey
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::LineVisibility(long *lineVisibleP,double eyeX,double eyeY,double eyeZ,double X1,double Y1,double Z1,double X2,double Y2,double Z2, DTMDynamicFeatureArray& visibilityFeatures)
+DTMStatusInt BcDTM::LineVisibility(bool& lineVisibleP,double eyeX,double eyeY,double eyeZ,double X1,double Y1,double Z1,double X2,double Y2,double Z2, DTMDynamicFeatureArray& visibilityFeatures)
     {
     return _LineVisibility(lineVisibleP,eyeX,eyeY,eyeZ,X1,Y1,Z1,X2,Y2,Z2,visibilityFeatures) ;
     }
@@ -5236,30 +5182,6 @@ DTMStatusInt BcDTM::TraceLine(double pointX,double pointY,double slope,double di
 void BcDTM::GetHandles(void **headerPP,int *nHeaderP,void ***featureArraysPP,int *nFeatureArraysP,int *featureArraysSize,int *lastFeatureArraysSize,void ***pointArraysPP,int *nPointArraysP,int *pointArraysSize,int *lastPointArraysSize,void ***nodeArraysPP,int *nNodeArraysP,int *nodeArraysSize,int *lastNodeArraysSize,void ***cListArraysPP,int *nCListArraysP,int *cListArraysSize,int *lastCListArraysSize,void ***fListArraysPP,int *nFListArraysP,int *fListArraySize,int *lastFListArraySize)
     {
     return _GetHandles(headerPP,nHeaderP,featureArraysPP,nFeatureArraysP,featureArraysSize,lastFeatureArraysSize,pointArraysPP,nPointArraysP,pointArraysSize,lastPointArraysSize,nodeArraysPP,nNodeArraysP,nodeArraysSize,lastNodeArraysSize,cListArraysPP,nCListArraysP,cListArraysSize,lastCListArraysSize,fListArraysPP,nFListArraysP,fListArraySize,lastFListArraySize);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-BcDTMMeshPtr BcDTM::GetMesh (long firstCall, long maxMeshSize, DPoint3dCP fencePts, int numFencePts)
-    {
-    return _GetMesh (firstCall, maxMeshSize, fencePts, numFencePts);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-BcDTMEdgesPtr BcDTM::GetEdges(DPoint3dCP fencePts, int numFencePts )
-    {
-    return _GetEdges(fencePts, numFencePts);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Daryl.Holmwood  09/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BcDTM::GetMesh(DPoint3dCP fencePts, int numFencePts, DPoint3dP* pointsPP, long *numIndices,long** triangleIndexPP )
-    {
-    return _GetMesh(fencePts, numFencePts, pointsPP, numIndices,triangleIndexPP );
     }
 
 /*---------------------------------------------------------------------------------------

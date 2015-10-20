@@ -317,7 +317,7 @@ bool     PrepText (TextBlockPtr& rtb, ElementHandleCR elHandle, DgnButtonEventCR
 
     DPoint3d cStoragePt = cPt;
 
-    dtm->GetDTMDraping()->DrapePoint (&elevation, &slope, &aspect, triangle, &drapeType, cStoragePt);
+    dtm->GetDTMDraping()->DrapePoint (&elevation, &slope, &aspect, triangle, drapeType, cStoragePt);
     cStoragePt.z = elevation;
 
     cPt.z = cStoragePt.z;
@@ -522,8 +522,8 @@ struct LabelContoursCollector
                 if (SUCCESS == ih.GetDtmDataRef()->GetDTMReferenceDirect (dtm))
                     {
                     double aspect;
-
-                    dtm->GetDTMDraping()->DrapePoint (NULL, NULL, &aspect, NULL, NULL, pt) ;
+                    int drapeType;
+                    dtm->GetDTMDraping()->DrapePoint (NULL, NULL, &aspect, NULL, drapeType, pt) ;
                     angleVec.rotate (-aspect * PI / 180.);
                     if (angleVec.y > 0.)
                         { m_angle -= PI; }

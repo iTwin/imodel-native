@@ -81,7 +81,7 @@ void bcdtmEdit_clearCurrentEditDtmObjects(void);
 int bcdtmEdit_checkAndUpdateCurrentDtmObject(wchar_t *EditTinFile);
 int bcdtmEdit_checkTinStructureDtmObject(BC_DTM_OBJ *dtmP);
 int bcdtmEdit_getDtmEditFeaturePoints(long *editPnt1P,long *editPnt2P,long *editPnt3P);
-int bcdtmEdit_selectDtmEditFeatureDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureType dtmFeatureType,double x,double y,long *featureFoundP,DPoint3d **featurePtsPP,long *numFeaturePtsP );
+int bcdtmEdit_selectDtmEditFeatureDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureType dtmFeatureType,double x,double y,bool& featureFound,bvector<DPoint3d>& featurePts);
 int bcdtmEdit_modifyDtmEditFeatureDtmObject(BC_DTM_OBJ *dtmP, long modifyOption, long *modifyResultP);
 int bcdtmEdit_cleanVoidDtmObject(BC_DTM_OBJ *dtmP,long VoidFeature);
 int bcdtmEdit_deleteTriangleDtmObject(BC_DTM_OBJ *dtmP,long tinPnt1,long tinPnt2,long tinPnt3);
@@ -126,10 +126,10 @@ int bcdtmEdit_drawPointPerimeterDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback lo
 int bcdtmEdit_drawDeletedFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long *deletedFeaturesP,long numDeletedFeatures,double contourInterval,void *userP);
 
 
-int bcdtmEdit_selectPointDtmObject(BC_DTM_OBJ *dtmP, double x,double y,long *pointFound,DPoint3d **featurePtsPP,long *numFeaturePtsP,long *editPointP) ;
+int bcdtmEdit_selectPointDtmObject(BC_DTM_OBJ *dtmP, double x, double y, bool &pointFound, bvector<DPoint3d>& featurePts, long& editPoint);
 int bcdtmEdit_findClosestNonVoidPointDtmObject(BC_DTM_OBJ *dtmP,double x,double y,long *editPointP) ;
-int bcdtmEdit_selectLineDtmObject(BC_DTM_OBJ *dtmP,double  x,double y,long *lineFoundP,DPoint3d **linePtsPP,long *numLinePtsP,long*pnt1P,long*pnt2P ) ;
-int bcdtmEdit_selectTriangleDtmObject( BC_DTM_OBJ *dtmP, double x, double y, long *trgFoundP, DPoint3d  **trgPtsPP, long *numTrgPtsP, long *pnt1P, long *pnt2P, long  *pnt3P ) ;
+int bcdtmEdit_selectLineDtmObject(BC_DTM_OBJ *dtmP,double  x,double y,bool& lineFound,bvector<DPoint3d>& linePts,long& pnt1,long& pnt2 ) ;
+int bcdtmEdit_selectTriangleDtmObject( BC_DTM_OBJ *dtmP, double x, double y, bool& trgFound, bvector<DPoint3d>& trgPts, long& pnt1, long& pnt2, long&  pnt3 ) ;
 int bcdtmEdit_findClosestHullLineDtmObject(BC_DTM_OBJ *dtmP,double x,double y,long *hullPnt1P,long *hullPnt2P) ;
 BENTLEYDTM_Public int bcdtmEdit_findClosestHullLineForPointAddDtmObject (BC_DTM_OBJ *dtmP, double x, double y, long *hullPnt1P, long *hullPnt2P);
 int bcdtmEdit_checkForIntersectionWithTinHullDtmObject(BC_DTM_OBJ *dtmP,long point,double x,double y,bool& intersects ) ;

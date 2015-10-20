@@ -52,52 +52,6 @@ BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
 typedef Bentley::TerrainModel::DTMFenceParams DTMFenceParams;
 
-struct BcDTMEdges : RefCountedBase
-    {
-    private: BcDTMPtr m_dtm;
-    private: long m_edgeCount;
-    private: const long* m_edges;
-
-    public: BENTLEYDTM_EXPORT int GetEdgeCount ();
-    public: BENTLEYDTM_EXPORT void GetEdgeStartPoint (int index, DPoint3dR pt);
-    public: BENTLEYDTM_EXPORT void GetEdgeEndPoint (int index, DPoint3dR pt);
-
-    public: BENTLEYDTM_EXPORT static BcDTMEdges* Create (BcDTMP dtm, const long* edges, long numEdges) { return new BcDTMEdges (dtm, edges, numEdges); }
-    protected: BcDTMEdges (BcDTMP dtm, const long* edges, long numEdges);
-    public: virtual ~BcDTMEdges ();
-    };
-
-struct BcDTMMeshFace : RefCountedBase
-    {
-    private: const long* m_points;
-    private: BcDTMMeshPtr m_mesh;
-
-    protected: BcDTMMeshFace (BcDTMMeshP mesh, const long* meshFacesP, long numEdges);
-    public: BENTLEYDTM_EXPORT static BcDTMMeshFacePtr Create (BcDTMMeshP mesh, const long* meshFaces, long numEdges) { return new BcDTMMeshFace (mesh, meshFaces, numEdges); }
-    public: virtual ~BcDTMMeshFace ();
-
-    public: BENTLEYDTM_EXPORT DPoint3d GetCoordinates (int index);
-    public: BENTLEYDTM_EXPORT int GetMeshPointIndex (int index);
-    };
-
-struct BcDTMMesh : RefCountedBase
-    {
-    private: DPoint3dCP m_points;
-    private: int m_pointCount;
-
-    private: const long* m_meshFaceIndices;
-    private: int m_meshFaceIndicesCount;
-
-    public: BENTLEYDTM_EXPORT int GetPointCount ();
-    public: BENTLEYDTM_EXPORT int GetFaceCount ();
-    public: BENTLEYDTM_EXPORT DPoint3d GetPoint (int index);
-    public: BENTLEYDTM_EXPORT BcDTMMeshFacePtr GetFace (int index);
-    public: BENTLEYDTM_EXPORT DPoint3dCP GetPointReference () { return m_points; }
-
-    public: BENTLEYDTM_EXPORT static BcDTMMeshPtr Create (DPoint3dCP meshPts, long numMeshPts, const long* meshFaces, long numMeshFaces) { return new BcDTMMesh (meshPts, numMeshPts, meshFaces, numMeshFaces); }
-    protected : BcDTMMesh (DPoint3dCP meshPts, long numMeshPts, const long* meshFaces, long numMeshFaces);
-    public: virtual ~BcDTMMesh ();
-    };
 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -195,10 +149,10 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
         static BENTLEYDTM_EXPORT BcDTMPtr Create (int iniPoint, int incPoint);
 //__PUBLISH_SECTION_END__
 
-        static BENTLEYDTM_EXPORT BcDTMPtr CreateFromDtmHandle (BC_DTM_OBJ* dtmHandleP);
+        static BENTLEYDTM_EXPORT BcDTMPtr CreateFromDtmHandle (BC_DTM_OBJ& dtmHandleP);
         static BENTLEYDTM_EXPORT BcDTMPtr CreateFromDtmHandles
             (
-            void *headerP,
+            BC_DTM_OBJ* headerP,
             void *featureArraysP,
             void *pointArraysP,
             void *nodeArraysP,
@@ -206,7 +160,7 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             void *cListArraysP
             );
 
-        static BENTLEYDTM_EXPORT BcDTMPtr CreateFromMemoryBlock (const char *memoryBlockP, unsigned long memoryBlockSize) ;
+        static BENTLEYDTM_EXPORT BcDTMPtr CreateFromMemoryBlock (const char* memoryBlockP, unsigned long memoryBlockSize) ;
 
         static BENTLEYDTM_EXPORT BcDTMPtr CreateFromStream (IBcDtmStreamR stream);
 
@@ -232,8 +186,8 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
     protected:
         BcDTM ();
         BcDTM (int initPoint, int incPoint);
-        BcDTM (BC_DTM_OBJ* dtmHandleP, TMTransformHelperP transformHelper = nullptr, bool readonly = false);
-        BcDTM (void *headerP, void *featureArraysP, void *pointArraysP, void *nodeArraysP, void *fListArraysP, void *cListArraysP);
+        BcDTM (BC_DTM_OBJ& dtmHandleP, TMTransformHelperP transformHelper = nullptr, bool readonly = false);
+        BcDTM(BC_DTM_OBJ* headerP, void *featureArraysP, void *pointArraysP, void *nodeArraysP, void *fListArraysP, void *cListArraysP);
         virtual ~BcDTM (void);
 
         // IDTM Implementation
@@ -244,7 +198,7 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
         virtual Bentley::TerrainModel::IDTMContouring* _GetDTMContouring () override;
         virtual Bentley::TerrainModel::IDTMDrainage* _GetDTMDrainage () override;
         virtual DTMStatusInt _GetBoundary (Bentley::TerrainModel::DTMPointArray& ret) override;
-        virtual DTMStatusInt _CalculateSlopeArea (double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints) override;
+        virtual DTMStatusInt _CalculateSlopeArea (double& flatArea, double& slopeArea, const DPoint3d pts[], int numPoints) override;
         virtual DTMStatusInt _GetTransformDTM (Bentley::TerrainModel::DTMPtr& transformedDTM, TransformCR transformation) override;
         virtual bool _GetTransformation (TransformR transformation) override;
         // End IDTM Implementation
@@ -256,7 +210,7 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             double      *slope,
             double      *aspect,
             DPoint3d    triangle[3],
-            int         *drapedType,
+            int&         drapedType,
             const DPoint3d  &point
             ) override;
         virtual DTMStatusInt _DrapeLinear (Bentley::TerrainModel::DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
@@ -288,7 +242,7 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
         virtual DTMStatusInt _TinFilterSinglePointPointFeatures (long filterOption, int reinsertOption, double zTolerance, long* numPointsBefore, long* numPointsAfter, double* filterReduction);
         virtual DTMStatusInt _TileFilterSinglePointPointFeatures (long minTilePts, long maxTileDivide, double tileLength, double zTolerance, long* numPointsBefore, long* numPointsAfter, double* filterReduction);
 
-        virtual DTMStatusInt _EditorSelectDtmTinFeature (DTMFeatureType dtmFeatureType, DPoint3d pt, long* featureFoundP, DPoint3d** featurePtsPP, long* numFeaturePtsP);
+        virtual DTMStatusInt _EditorSelectDtmTinFeature (DTMFeatureType dtmFeatureType, DPoint3d pt, bool& featureFoundP, bvector<DPoint3d>& featurePts);
         virtual DTMStatusInt _EditorDeleteDtmTinFeature (long* result);
 
         virtual DTMStatusInt _BrowseFeaturesWithTinErrors (void* userP, DTMFeatureCallback callback);
@@ -296,7 +250,7 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
         virtual DTMStatusInt _BrowseFeaturesWithFeatureId (DTMFeatureId featureId, void* userP, DTMFeatureCallback callback);
 
         virtual DTMStatusInt _BrowseDuplicatePoints (void* userP, DTMDuplicatePointsCallback callback);
-        virtual DTMStatusInt _BrowseCrossingFeatures (DTMFeatureType* featureList, int numFeaturesList, void* userP, DTMCrossingFeaturesCallback callback);
+        virtual DTMStatusInt _BrowseCrossingFeatures (const DTMFeatureType featureList[], int numFeatureTypes, void* userP, DTMCrossingFeaturesCallback callback);
         // BOTH OF THE METHODS BELOW CAN RETURN MORE THAN ONE INSTANCE OF A FEATURE - FOR EXAMPLE
         // A MERGE OPERATION CAN BREAK A SINGLE GUID FEATURE INTO 2 PIECES EACH RETAINING THEIR
         // ORIGINAL GUIDS
@@ -309,27 +263,12 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
         virtual DTMStatusInt _ClipByPointString
             (
             BcDTMPtr&               clippedPP,
-            DPoint3dCP              points,
+            const DPoint3d          points[],
             int                     nbPt,
             DTMClipOption           clippingMethod
             );
 
-        virtual DTMStatusInt _DrapePoint
-            (
-            int        *drapedTypeP,
-            DPoint3d    *pointP
-            ) ;
-
-
-        virtual DTMStatusInt _DrapePoint
-            (
-            double      *elevationP,
-            double      *slopeP,
-            double      *aspectP,
-            DPoint3d    triangle[3],
-            int         *drapedTypeP,
-            DPoint3d    *pointP
-            );
+        virtual DTMStatusInt _DrapePoint (int& drapedType, DPoint3d& point) ;
 
         virtual DTMStatusInt _SaveAsGeopakTinFile
             (
@@ -362,20 +301,13 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             );
         virtual DTMStatusInt _CalculateSlopeArea
             (
-            double          *areaP,
-            DPoint3dCP      points,
-            int             nbPt
+            double&          area,
+            const DPoint3d points[],
+            int              nbPt
             );
         virtual DTMStatusInt _CalculateSlopeArea
             (
-            double          *areaP
-            );
-        virtual DTMStatusInt _CalculateSlopeArea
-            (
-            double          *flatAreaP,
-            double          *slopeAreaP,
-            DPoint3dCP        points,
-            int             numPoints
+            double& area
             );
         virtual DTMStatusInt _Merge
             (
@@ -406,9 +338,9 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
 
         virtual DTMStatusInt _TraceCatchmentForPoint (double x, double y, double maxPondDepth, bool& catchmentDetermined, DPoint3d& sumpPoint, bvector<DPoint3d>& catchmentPts);
 
-        virtual DTMStatusInt _PointVisibility (bool *pointVisibleP, double eyeX, double eyeY, double eyeZ, double pntX, double pntY, double pntZ);
+        virtual DTMStatusInt _PointVisibility (bool& pointVisibleP, double eyeX, double eyeY, double eyeZ, double pntX, double pntY, double pntZ);
 
-        virtual DTMStatusInt _LineVisibility (long *lineVisibleP, double eyeX, double eyeY, double eyeZ, double X1, double Y1, double Z1, double X2, double Y2, double Z2, DTMDynamicFeatureArray& visibilityFeatures);
+        virtual DTMStatusInt _LineVisibility (bool& lineVisibleP, double eyeX, double eyeY, double eyeZ, double X1, double Y1, double Z1, double X2, double Y2, double Z2, DTMDynamicFeatureArray& visibilityFeatures);
 
         virtual DTMStatusInt _BrowseTinPointsVisibility (double eyeX, double eyeY, double eyeZ, void *userP, DTMFeatureCallback callBackFunctP);
 
@@ -463,7 +395,7 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             double              elevation,
             DPoint3dCP          points,
             int                 nbPt,
-            VOLRANGETAB*        rangeTableP,
+            VOLRANGETAB       rangeTableP[],
             int                 numRanges
             );
 
@@ -473,7 +405,7 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             BcDTMR              otherDtmP,
             DPoint3dCP          points,
             int                 nbPt,
-            VOLRANGETAB*        rangeTableP,
+            VOLRANGETAB       rangeTableP[],
             int                 numRanges
             );
 
@@ -484,7 +416,7 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             double              elevation,
             DPoint3dCP          points,
             int                 nbPt,
-            VOLRANGETAB*        rangeTableP,
+            VOLRANGETAB       rangeTableP[],
             int                 numRanges
             ) ;
 
@@ -495,7 +427,7 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             BcDTMR              otherDtmP,
             DPoint3dCP          points,
             int                 nbPt,
-            VOLRANGETAB*        rangeTableP,
+            VOLRANGETAB       rangeTableP[],
             int                 numRanges
             ) ;
 
@@ -509,7 +441,7 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             double              elevation,
             DPoint3dCP          points,
             int                 nbPt,
-            VOLRANGETAB*        rangeTableP,
+            VOLRANGETAB       rangeTableP[],
             int                 numRanges
             ) ;
 
@@ -523,7 +455,7 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             long                numLatticePoints,
             DPoint3dCP          points,
             int                 nbPt,
-            VOLRANGETAB*        rangeTableP,
+            VOLRANGETAB       rangeTableP[],
             int                 numRanges
             ) ;
 
@@ -534,7 +466,7 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             double              &balanceP,
             DtmVectorString     *volumePolygonsP,
             BcDTMR              otherDtmP,
-            DPoint3dCP          points,
+            const DPoint3d    points[],
             int                 nbPt
             ) ;
 
@@ -710,26 +642,25 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             int  *fListArraySize,
             int  *lastFListArraySize
             );
-        virtual BcDTMMeshPtr _GetMesh
-            (
-            long firstCall,
-            long maxMeshSize,
-            DPoint3dCP fencePtsP,
-            int numFencePts
-            );
-        virtual BcDTMEdgesPtr _GetEdges
-            (
-            DPoint3dCP fencePtsP,
-            int numFencePts
-            );
-        virtual void _GetMesh
-            (
-            DPoint3dCP fencePtsP,
-            int numFencePts,
-            DPoint3dP* pointsPP,
-            long *numIndices,
-            long** triangleIndexPP
-            );
+        //virtual BcDTMMeshPtr _GetMesh
+        //    (
+        //    long firstCall,
+        //    long maxMeshSize,
+        //    const DPoint3d fencePtsP[],
+        //    int numFencePts
+        //    );
+        //virtual BcDTMEdgesPtr _GetEdges
+        //    (
+        //    DPoint3dCP fencePtsP,
+        //    int numFencePts
+        //    );
+        //virtual void _GetMesh
+        //    (
+        //    const DPoint3d fencePtsP[],
+        //    int numFencePts,
+        //    bvector<DPoint3d>& points,
+        //    bvector<long>& triangleIndex
+        //    );
 
         virtual DTMStatusInt _ConvertUnits
             (
@@ -751,14 +682,14 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
 
         virtual DTMStatusInt _GetPoint (long index, DPoint3d& pt);
 
-        virtual DTMStatusInt _Clip (DPoint3dCP clipPolygonPtsP, int numClipPolygonPts, DTMClipOption clippingMethod);
+        virtual DTMStatusInt _Clip (const DPoint3d clipPolygonPtsP[], int numClipPolygonPts, DTMClipOption clippingMethod);
         virtual DTMStatusInt _CopyToMemoryBlock (char **memoryBlockPP, unsigned long *memoryBlockSizeP);
 
         virtual DTMStatusInt _ConvertToDataState (void);
 
         virtual DTMStatusInt _SetPointMemoryAllocationParameters (int iniPointAllocation, int incPointAllocation);
 
-        virtual DTMStatusInt _ReplaceFeaturePoints (DTMFeatureId dtmFeatureId, DPoint3d *pointsP, int numPoints);
+        virtual DTMStatusInt _ReplaceFeaturePoints (DTMFeatureId dtmFeatureId, DPoint3d pointsP[], int numPoints);
 
         virtual DTMStatusInt _BulkDeleteFeaturesByUserTag (DTMUserTag userTagP[], int numUserTag);
 
@@ -781,8 +712,8 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
         virtual DTMStatusInt _AddPointFeature (DPoint3dCR spotPoint, DTMUserTag userTag, DTMFeatureId* idP);
         virtual DTMStatusInt _AddPointFeature (DPoint3dCP sptsP, int numPts, DTMFeatureId* featureIdP);
         virtual DTMStatusInt _AddPointFeature (DPoint3dCP sptsP, int numPts, DTMUserTag userTag, DTMFeatureId* featureIdP);
-        virtual DTMStatusInt _AddLinearFeature (DTMFeatureType dtmFeatureType, DPoint3dCP ptsP, int numPts, DTMFeatureId* featureIdP);
-        virtual DTMStatusInt _AddLinearFeature (DTMFeatureType dtmFeatureType, DPoint3dCP ptsP, int numPts, DTMUserTag userTag, DTMFeatureId* featureIdP);
+        virtual DTMStatusInt _AddLinearFeature (DTMFeatureType dtmFeatureType, const DPoint3d ptsP[], int numPts, DTMFeatureId* featureIdP);
+        virtual DTMStatusInt _AddLinearFeature (DTMFeatureType dtmFeatureType, const DPoint3d ptsP[], int numPts, DTMUserTag userTag, DTMFeatureId* featureIdP);
         virtual DTMStatusInt _DeleteFeatureById (DTMFeatureId guID);
         virtual DTMStatusInt _DeleteFeaturesByUserTag (DTMUserTag userTag);
         virtual DTMStatusInt _DeleteFeaturesByType (DTMFeatureType dtmfeat);
@@ -832,7 +763,7 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
         BENTLEYDTM_EXPORT  DTMStatusInt TinFilterSinglePointPointFeatures (long filterOption, int reinsertOption, double zTolerance, long* numPointsBefore, long* numPointsAfter, double* filterReduction);
         BENTLEYDTM_EXPORT  DTMStatusInt TileFilterSinglePointPointFeatures (long minTilePts, long maxTileDivide, double tileLength, double zTolerance, long* numPointsBefore, long* numPointsAfter, double* filterReduction);
 
-        BENTLEYDTM_EXPORT  DTMStatusInt EditorSelectDtmTinFeature (DTMFeatureType dtmFeatureType, DPoint3d pt, long* featureFoundP, DPoint3d** featurePtsPP, long* numFeaturePtsP);
+        BENTLEYDTM_EXPORT  DTMStatusInt EditorSelectDtmTinFeature (DTMFeatureType dtmFeatureType, DPoint3d pt, bool& featureFoundP, bvector<DPoint3d>& featurePts);
         BENTLEYDTM_EXPORT  DTMStatusInt EditorDeleteDtmTinFeature (long* result);
 
         BENTLEYDTM_EXPORT  DTMStatusInt BrowseFeaturesWithTinErrors (void* userP, DTMFeatureCallback callback);
@@ -840,7 +771,7 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
         BENTLEYDTM_EXPORT  DTMStatusInt BrowseFeaturesWithFeatureId (DTMFeatureId featureId, void* userP, DTMFeatureCallback callback);
 
         BENTLEYDTM_EXPORT  DTMStatusInt BrowseDuplicatePoints (void* userP, DTMDuplicatePointsCallback callback);
-        BENTLEYDTM_EXPORT  DTMStatusInt BrowseCrossingFeatures (DTMFeatureType* featureList, int numFeaturesList, void* userP, DTMCrossingFeaturesCallback callback);
+        BENTLEYDTM_EXPORT  DTMStatusInt BrowseCrossingFeatures (const DTMFeatureType featureList[], int numFeaturesList, void* userP, DTMCrossingFeaturesCallback callback);
         // BOTH OF THE METHODS BELOW CAN RETURN MORE THAN ONE INSTANCE OF A FEATURE - FOR EXAMPLE
         // A MERGE OPERATION CAN BREAK A SINGLE GUID FEATURE INTO 2 PIECES EACH RETAINING THEIR
         // ORIGINAL GUIDS
@@ -859,24 +790,25 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             );
 
         BENTLEYDTM_EXPORT DTMStatusInt CreatePointStockPile (DPoint3d headCoordinates, double stockPileSlope, bool mergeOption, double& stockPileVolume, BcDTMPtr *stockPileTmPP, BcDTMPtr *mergedTmPP);
-        BENTLEYDTM_EXPORT DTMStatusInt CreateAlignmentStockPile (DPoint3d *headCoordinates, long numHeadCoordinates, double stockPileSlope, bool mergeOption, double& stockPileVolume, BcDTMPtr *stockPileTmPP, BcDTMPtr *mergedTmPP);
+        BENTLEYDTM_EXPORT DTMStatusInt CreateAlignmentStockPile (DPoint3d headCoordinates[], long numHeadCoordinates, double stockPileSlope, bool mergeOption, double& stockPileVolume, BcDTMPtr *stockPileTmPP, BcDTMPtr *mergedTmPP);
 
         //__PUBLISH_SECTION_START__
         BENTLEYDTM_EXPORT  DTMStatusInt DrapePoint
             (
-            int        *drapedTypeP,
-            DPoint3d    *pointP
+            int&        drapedTypeP,
+            DPoint3dR    pointP
             ) ;
-
         BENTLEYDTM_EXPORT  DTMStatusInt DrapePoint
             (
-            double      *elevationP,
-            double      *slopeP,
-            double      *aspectP,
+            double      *elevation,
+            double      *slope,
+            double      *aspect,
             DPoint3d    triangle[3],
-            int         *drapedTypeP,
-            DPoint3d    *pointP
+            int&         drapedType,
+            const DPoint3d  &point
             );
+
+
         //__PUBLISH_SECTION_END__
 
         BENTLEYDTM_EXPORT  DTMStatusInt SaveAsGeopakTinFile
@@ -914,18 +846,18 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
 
         BENTLEYDTM_EXPORT  DTMStatusInt CalculateSlopeArea
             (
-            double          *areaP,
+            double          &areaP,
             DPoint3dCP      points,
             int             nbPt
             );
         BENTLEYDTM_EXPORT  DTMStatusInt CalculateSlopeArea
             (
-            double          *areaP
+            double          &areaP
             );
         BENTLEYDTM_EXPORT  DTMStatusInt CalculateSlopeArea
             (
-            double          *flatAreaP,
-            double          *slopeAreaP,
+            double          &flatAreaP,
+            double          &slopeAreaP,
             DPoint3dCP      points,
             int             numPoints
             );
@@ -952,9 +884,9 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
 
         BENTLEYDTM_EXPORT  DTMStatusInt TraceCatchmentForPoint (double x, double y, double maxPondDepth, bool& catchmentDetermined, DPoint3d& sumpPoint, bvector<DPoint3d>& catchmentPts);
 
-        BENTLEYDTM_EXPORT  DTMStatusInt PointVisibility (bool *pointVisibleP, double eyeX, double eyeY, double eyeZ, double pntX, double pntY, double pntZ);
+        BENTLEYDTM_EXPORT  DTMStatusInt PointVisibility (bool& pointVisibleP, double eyeX, double eyeY, double eyeZ, double pntX, double pntY, double pntZ);
 
-        BENTLEYDTM_EXPORT  DTMStatusInt LineVisibility (long *lineVisibleP, double eyeX, double eyeY, double eyeZ, double X1, double Y1, double Z1, double X2, double Y2, double Z2, DTMDynamicFeatureArray& visibilityFeatures);
+        BENTLEYDTM_EXPORT  DTMStatusInt LineVisibility (bool& lineVisibleP, double eyeX, double eyeY, double eyeZ, double X1, double Y1, double Z1, double X2, double Y2, double Z2, DTMDynamicFeatureArray& visibilityFeatures);
 
         BENTLEYDTM_EXPORT  DTMStatusInt BrowseTinPointsVisibility (double eyeX, double eyeY, double eyeZ, void *userP, DTMFeatureCallback callBackFunctP);
 
@@ -1273,26 +1205,26 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             int  *fListArraySize,
             int  *lastFListArraySize
             );
-        BENTLEYDTM_EXPORT  BcDTMMeshPtr GetMesh
-            (
-            long firstCall,
-            long maxMeshSize,
-            DPoint3dCP fencePtsP,
-            int numFencePts
-            );
-        BENTLEYDTM_EXPORT  BcDTMEdgesPtr GetEdges
-            (
-            DPoint3dCP fencePtsP,
-            int numFencePts
-            );
-        BENTLEYDTM_EXPORT  void GetMesh
-            (
-            DPoint3dCP fencePtsP,
-            int numFencePts,
-            DPoint3dP* pointsPP,
-            long *numIndices,
-            long** triangleIndexPP
-            );
+        //BENTLEYDTM_EXPORT  BcDTMMeshPtr GetMesh
+        //    (
+        //    long firstCall,
+        //    long maxMeshSize,
+        //    DPoint3dCP fencePtsP,
+        //    int numFencePts
+        //    );
+        //BENTLEYDTM_EXPORT  BcDTMEdgesPtr GetEdges
+        //    (
+        //    DPoint3dCP fencePtsP,
+        //    int numFencePts
+        //    );
+        //BENTLEYDTM_EXPORT  void GetMesh
+        //    (
+        //    DPoint3dCP fencePtsP,
+        //    int numFencePts,
+        //    DPoint3dP* pointsPP,
+        //    long *numIndices,
+        //    long** triangleIndexPP
+        //    );
 
         BENTLEYDTM_EXPORT  DTMStatusInt ConvertUnits
             (
@@ -1505,7 +1437,7 @@ struct BcDTMDrapedLine : public RefCounted<Bentley::TerrainModel::IDTMDrapedLine
 
         // IDTMDrapedLine
         virtual DTMStatusInt _GetPointByIndex (Bentley::TerrainModel::DTMDrapedLinePointPtr& ret, unsigned int index) const override;
-        virtual DTMStatusInt _GetPointByIndex (DPoint3dP ptP, double *distanceP, DTMDrapedLineCode *codeP, unsigned int index) const override;
+        virtual DTMStatusInt _GetPointByIndex (DPoint3dR ptP, double *distanceP, DTMDrapedLineCode *codeP, unsigned int index) const override;
         virtual unsigned int _GetPointCount () const override;
 
         // BcDTMDrapedLine

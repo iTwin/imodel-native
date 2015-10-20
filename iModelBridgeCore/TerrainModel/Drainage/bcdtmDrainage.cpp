@@ -2,13 +2,12 @@
 |
 |     $Source: Drainage/bcdtmDrainage.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //
 
 #include "bcdtmDrainage.h"
-
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -201,14 +200,14 @@ DTMStatusInt bcdtmDrainage_calculatePondCallBack
     DTMUserTag     userTag, 
     DTMFeatureId   featureId, 
     DPoint3d*      pointsP, 
-    int            numPoints, 
+    size_t         numPoints, 
     void*          userArgP
     )
     {
     if( userArgP != nullptr )
         {
         Bentley::TerrainModel::DTMFeatureBuffer* buffer = (Bentley::TerrainModel::DTMFeatureBuffer*) userArgP ; 
-        buffer->AddDtmFeatureToBuffer(dtmFeatureType,userTag,featureId,pointsP,numPoints);
+        buffer->AddDtmFeatureToBuffer(dtmFeatureType,userTag,featureId,pointsP,(int)numPoints);
         }
 
     //   Return
@@ -676,7 +675,7 @@ DTMStatusInt BcDTMDrainage::CreateRefinedDrainageDtm
 
     if( status == DTM_SUCCESS )
         {
-         *refinedDtmP = Bentley::TerrainModel::BcDTM::CreateFromDtmHandle(drainageDtmP);
+         *refinedDtmP = Bentley::TerrainModel::BcDTM::CreateFromDtmHandle(*drainageDtmP);
         } 
   
     return  ( DTMStatusInt ) status ;
@@ -727,4 +726,4 @@ DTMStatusInt BcDTMDrainage::ReturnCatchments
 
     return  ( DTMStatusInt ) bcdtmDrainage_traceCatchmentsDtmObject(dtmP->GetTinHandle(),loadFunctionP,drainageTablesP,falseLowDepth,refineOption,useFence,fenceType,fenceOption,fencePtsP,numFencePts,userP,numCatchments) ;
     
-	}
+    }

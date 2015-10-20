@@ -2,7 +2,7 @@
 |
 |     $Source: Core/cppwrappers/bcDTMDrapedLineClass.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <math.h>
@@ -196,11 +196,11 @@ DTMStatusInt BcDTMDrapedLine::_GetPointByIndex(Bentley::TerrainModel::DTMDrapedL
     return DTM_SUCCESS;
     }
 
-DTMStatusInt BcDTMDrapedLine::_GetPointByIndex (DPoint3d* ptP, double *distanceP, DTMDrapedLineCode *codeP, unsigned int index) const
+DTMStatusInt BcDTMDrapedLine::_GetPointByIndex (DPoint3dR ptP, double *distanceP, DTMDrapedLineCode *codeP, unsigned int index) const
     {
     if (index > (unsigned int)_drapedPoints.size ())
         return DTM_ERROR;
-    if (ptP) *ptP = _drapedPoints[index]->GetPoint ();
+    ptP = _drapedPoints[index]->GetPoint ();
     if (distanceP) *distanceP = _drapedPoints[index]->GetDistance ();
     if (codeP) *codeP = _drapedPoints[index]->GetCode ();
     return DTM_SUCCESS;

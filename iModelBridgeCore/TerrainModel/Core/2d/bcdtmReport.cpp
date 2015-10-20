@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmReport.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -298,7 +298,7 @@ BENTLEYDTM_EXPORT int bcdtmReport_duplicatePointErrorsDtmObject
 BENTLEYDTM_EXPORT int bcdtmReport_crossingFeaturesDtmObject
 (
  BC_DTM_OBJ *dtmP,           /* ==> Pointer To DTM Object                          */
- DTMFeatureType  *featureListP,        /* ==> Features To Be Included For Crossing detection */
+ const DTMFeatureType featureListP[],        /* ==> Features To Be Included For Crossing detection */
  long  numFeatureList,       /* ==> Number Of Features In List                     */
  DTMCrossingFeaturesCallback browseFunctionP,   /* ==> Pointer To Browse Function                     */
  void *userP                 /* ==> User Call Back Pointer                         */
@@ -312,7 +312,8 @@ BENTLEYDTM_EXPORT int bcdtmReport_crossingFeaturesDtmObject
  long  *featureCntsP=NULL ;
  char  dtmFeatureTypeName[50] ;
  BC_DTM_FEATURE *dtmFeatureP ;
-/*
+ bvector<DTMFeatureType> featureList;
+ /*
 ** Write Entry Message
 */
  if( dbg )
@@ -364,6 +365,9 @@ BENTLEYDTM_EXPORT int bcdtmReport_crossingFeaturesDtmObject
     bcdtmWrite_message(2,0,0,"Null Feature List For Crossing Features") ;
     goto errexit ;
    }
+ featureList.resize(numFeatureList);
+ memcpy(featureList.data(), featureListP, numFeatureList * sizeof(featureListP[0]));
+ featureListP = featureList.data();
 /*
 ** Validate Dtm Feature Types In Feature List
 */
@@ -380,9 +384,9 @@ BENTLEYDTM_EXPORT int bcdtmReport_crossingFeaturesDtmObject
 */
  for( n = n1 = 0 ; n1 < numFeatureList ; ++n1 )
    {
-    if( *(featureListP+n1) != DTMFeatureType::RandomSpots && *(featureListP+n1) != DTMFeatureType::GroupSpots )
+   if (featureList[n1] != DTMFeatureType::RandomSpots && featureList[n1] != DTMFeatureType::GroupSpots)
       {
-       if( n1 != n ) *(featureListP+n) = *(featureListP+n1) ;
+      if (n1 != n) featureList[n] = featureList[n1];
        ++n ;
       } 
    }
@@ -469,7 +473,7 @@ BENTLEYDTM_EXPORT int bcdtmReport_crossingFeaturesDtmObject
 BENTLEYDTM_Private int bcdtmReport_intersectCrossingFeaturesDtmObject
 (
  BC_DTM_OBJ *dtmP,           /* ==> Pointer To DTM Object                          */
- DTMFeatureType  *featureListP,        /* ==> Features To Be Included For Crossing detection */
+ const DTMFeatureType featureListP[],        /* ==> Features To Be Included For Crossing detection */
  long  numFeatureList,       /* ==> Number Of Features In List                     */
  DTMCrossingFeaturesCallback browseFunctionP,   /* ==> Pointer To Browse Function                     */
  void* userP
@@ -598,7 +602,7 @@ BENTLEYDTM_Private int bcdtmReport_intersectCrossingFeaturesDtmObject
 BENTLEYDTM_Private int  bcdtmReport_buildFeatureIntersectionTableDtmObject
 (
  BC_DTM_OBJ *dtmP,
- DTMFeatureType  *featureListP,
+ const DTMFeatureType  featureListP[],
  long  numFeatureList,
  DTM_STRING_INTERSECT_TABLE **intTablePP,
  long *numIntTableP
@@ -606,7 +610,7 @@ BENTLEYDTM_Private int  bcdtmReport_buildFeatureIntersectionTableDtmObject
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   point, dtmFeature;
- DTMFeatureType *featureP;
+ const DTMFeatureType *featureP;
  long   memIntTable=0,memIntTableInc=10000  ;
  double cord ; 
  DTM_TIN_POINT *pnt1P ;

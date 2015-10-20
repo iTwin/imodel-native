@@ -61,17 +61,17 @@ BENTLEYDTM_EXPORT int bcdtmStockPile_createPointStockPileDtmObject
     goto errexit ;
    }
 
-// Check Stock Pile DTM Is NULL - Has Not Yet Been Creted
+// Check Stock Pile DTM Is nullptr - Has Not Yet Been Creted
 
- if( *stockPileDtmPP != NULL )
+ if( *stockPileDtmPP != nullptr )
    {
     bcdtmWrite_message(1,0,0,"Stock Pile DTM Already Exists") ;
     goto errexit ;
    }
 
-// Check Merged Stock Pile And Ground Surface DTM Is NULL - Has Not Yet Been Creted
+// Check Merged Stock Pile And Ground Surface DTM Is nullptr - Has Not Yet Been Creted
 
- if( mergeOption && *mergedDtmPP != NULL )
+ if( mergeOption && *mergedDtmPP != nullptr )
    {
     bcdtmWrite_message(1,0,0,"Merged Stock Pile And Ground Surface DTM Already Exists") ;
     goto errexit ;
@@ -122,7 +122,7 @@ BENTLEYDTM_EXPORT int bcdtmStockPile_createPointStockPileDtmObject
 
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- if( *stockPileDtmPP != NULL ) bcdtmObject_destroyDtmObject(stockPileDtmPP) ;
+ if( *stockPileDtmPP != nullptr ) bcdtmObject_destroyDtmObject(stockPileDtmPP) ;
  goto cleanup ;
 }
 /*-----------------------------------------------------------+
@@ -290,7 +290,7 @@ BENTLEYDTM_Private int bcdtmStockPile_createPointStockPileToGroundSurfaceDtmObje
 
 // Calculate Volume Of Stockpile
 
- if( bcdtmTinVolume_surfaceToSurfaceBalanceDtmObjects(*stockPileDtmPP,dtmP,NULL,0,NULL,NULL,&fromArea,&toArea,volumeP)) goto errexit ;
+ if( bcdtmTinVolume_surfaceToSurfaceBalanceDtmObjects(*stockPileDtmPP,dtmP,nullptr,0,nullptr,nullptr,&fromArea,&toArea,volumeP)) goto errexit ;
 
 // Cleanup
 
@@ -330,8 +330,8 @@ BENTLEYDTM_EXPORT int bcdtmStockPile_createStringStockPileDtmObject
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   numDrapePts ;
- DTM_DRAPE_POINT *drP,*drapePtsP=NULL ;
-
+ DTM_DRAPE_POINT *drP,*drapePtsP=nullptr ;
+ bvector<DTM_DRAPE_POINT> drapePts;
 // Log Entry Arguments
 
  if( dbg )
@@ -363,17 +363,17 @@ BENTLEYDTM_EXPORT int bcdtmStockPile_createStringStockPileDtmObject
     goto errexit ;
    }
 
-// Check Stock Pile DTM Is NULL - Has Not Yet Been Creted
+// Check Stock Pile DTM Is nullptr - Has Not Yet Been Creted
 
- if( *stockPileDtmPP != NULL )
+ if( *stockPileDtmPP != nullptr )
    {
     bcdtmWrite_message(1,0,0,"Stock Pile DTM Already Exists") ;
     goto errexit ;
    }
 
-// Check Merged Stock Pile And Ground Surface DTM Is NULL - Has Not Yet Been Creted
+// Check Merged Stock Pile And Ground Surface DTM Is nullptr - Has Not Yet Been Creted
 
- if( mergeOption && *mergedDtmPP != NULL )
+ if( mergeOption && *mergedDtmPP != nullptr )
    {
     bcdtmWrite_message(1,0,0,"Merged Stock Pile And Ground Surface DTM Already Exists") ;
     goto errexit ;
@@ -381,10 +381,13 @@ BENTLEYDTM_EXPORT int bcdtmStockPile_createStringStockPileDtmObject
 
 // Check Conveyor Head Is Internal To DTM
 
- if( bcdtmDrape_stringDtmObject(dtmP,headCoordinatesP,numHeadCoordinates,false,&drapePtsP,&numDrapePts)) goto errexit ;
+ if( bcdtmDrape_stringDtmObject(dtmP,headCoordinatesP,numHeadCoordinates,false,drapePts)) goto errexit ;
+ drapePtsP = drapePts.data();
+ numDrapePts = (long)drapePts.size();
+
  for( drP = drapePtsP ; drP < drapePtsP + numDrapePts ; ++drP )
    {
-    if( dbg == 2 ) bcdtmWrite_message(0,0,0,"DrapePoint[%8ld] ** drapeType = %2ld ** x = %12.5lf y = %12.5lf z = %10.4lf",(long)(drP-drapePtsP),drP->drapeType,drP->drapeX,drP->drapeY,drP->drapeZ) ;
+    if( dbg == 2 ) bcdtmWrite_message(0,0,0,"DrapePoint[%8ld] ** drapeType = %2ld ** x = %12.5lf y = %12.5lf z = %10.4lf",(long)(drP-drapePtsP),drP->drapeType,drP->drapePt.x,drP->drapePt.y,drP->drapePt.z) ;
     if (drP->drapeType == DTMDrapedLineCode::External || drP->drapeType == DTMDrapedLineCode::Void)
       {
        bcdtmWrite_message(1,0,0,"Conveyor Head Coordinate External To Tin Or In Void") ;
@@ -413,7 +416,6 @@ BENTLEYDTM_EXPORT int bcdtmStockPile_createStringStockPileDtmObject
 // Cleanup
 
  cleanup :
- if( drapePtsP  != NULL ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
 
 // Job Completed
 
@@ -425,7 +427,7 @@ BENTLEYDTM_EXPORT int bcdtmStockPile_createStringStockPileDtmObject
 
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- if( *stockPileDtmPP != NULL ) bcdtmObject_destroyDtmObject(stockPileDtmPP) ;
+ if( *stockPileDtmPP != nullptr ) bcdtmObject_destroyDtmObject(stockPileDtmPP) ;
  goto cleanup ;
 }
 /*-----------------------------------------------------------+
@@ -449,13 +451,13 @@ BENTLEYDTM_Private int bcdtmStockPile_createStringStockPileToGroundSurfaceDtmObj
 
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   startFlag,endFlag,closeFlag,sideSlopeTableSize,numDataObjects,numHullPts,numStrokePts ;
- DPoint3d    *p3dP,*p3d1P,p3dPoint,radial[2],*hullPtsP=NULL,*strokePtsP=NULL ;
+ DPoint3d    *p3dP,*p3d1P,p3dPoint,radial[2],*hullPtsP=nullptr,*strokePtsP=nullptr ;
  double angle,angleInc,startAngle,cornerStrokeTolerance=10.0,linearStrokeTolerance=10.0,fromArea,toArea  ;
  double dx,dy,dz,length,segmentLength ;
  bvector<DPoint3d> slopeToePoints ;
  bvector<DPoint3d>::iterator stp ;
- DTM_SIDE_SLOPE_TABLE *sstP,*sideSlopeTableP=NULL ;
- BC_DTM_OBJ **dataObjectsPP=NULL ;
+ DTM_SIDE_SLOPE_TABLE *sstP,*sideSlopeTableP=nullptr ;
+ BC_DTM_OBJ **dataObjectsPP=nullptr ;
  DTMFeatureId  nullFeatureId=DTM_NULL_FEATURE_ID  ; 
 
 // Log Entry Arguments
@@ -521,7 +523,7 @@ BENTLEYDTM_Private int bcdtmStockPile_createStringStockPileToGroundSurfaceDtmObj
 
  numStrokePts =  ( long ) slopeToePoints.size() ;
  strokePtsP = ( DPoint3d * ) malloc ( numStrokePts * sizeof(DPoint3d)) ;
- if( strokePtsP == NULL )
+ if( strokePtsP == nullptr )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto errexit ;
@@ -535,14 +537,14 @@ BENTLEYDTM_Private int bcdtmStockPile_createStringStockPileToGroundSurfaceDtmObj
 
  sideSlopeTableSize = numStrokePts ;
  sideSlopeTableP = ( DTM_SIDE_SLOPE_TABLE * ) malloc ( sideSlopeTableSize * sizeof(DTM_SIDE_SLOPE_TABLE )) ;
- if( sideSlopeTableP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+ if( sideSlopeTableP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
 
 // Populate Side Slope Table
 
  for( sstP = sideSlopeTableP , p3dP = strokePtsP  ; sstP < sideSlopeTableP + sideSlopeTableSize ; ++sstP , ++p3dP )
    {
     sstP->slopeToTin         = dtmP ;
-    sstP->cutFillTin         = NULL ;
+    sstP->cutFillTin         = nullptr ;
     sstP->radialStartPoint.x = p3dP->x ;
     sstP->radialStartPoint.y = p3dP->y ;
     sstP->radialStartPoint.z = p3dP->z ;
@@ -561,7 +563,7 @@ BENTLEYDTM_Private int bcdtmStockPile_createStringStockPileToGroundSurfaceDtmObj
 //  Create Stock Pile Side Slopes
 
  if( dbg ) bcdtmWrite_message(0,0,0,"Creating Side Slopes For Stock Pile") ;
- if( bcdtmSideSlope_createSideSlopesForSideSlopeTableDtmObject(&sideSlopeTableP,&sideSlopeTableSize,3,NULL,0,1,1,cornerStrokeTolerance,0.00001,NULL,0,DTM_NULL_USER_TAG,-10000,&dataObjectsPP,&numDataObjects) ) goto errexit ;
+ if( bcdtmSideSlope_createSideSlopesForSideSlopeTableDtmObject(&sideSlopeTableP,&sideSlopeTableSize,3,nullptr,0,1,1,cornerStrokeTolerance,0.00001,nullptr,0,DTM_NULL_USER_TAG,-10000,&dataObjectsPP,&numDataObjects) ) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Creating Side Slopes For Stock Pile Completed ** numDataObjects = %4ld",numDataObjects) ;
  *stockPileDtmPP = *dataObjectsPP ;
 
@@ -673,7 +675,7 @@ BENTLEYDTM_Private int bcdtmStockPile_createStringStockPileToGroundSurfaceDtmObj
 
 // Calculate Volume Of Stockpile
 
- if( bcdtmTinVolume_surfaceToSurfaceBalanceDtmObjects(*stockPileDtmPP,dtmP,NULL,0,NULL,NULL,&fromArea,&toArea,volumeP)) goto errexit ;
+ if( bcdtmTinVolume_surfaceToSurfaceBalanceDtmObjects(*stockPileDtmPP,dtmP,nullptr,0,nullptr,nullptr,&fromArea,&toArea,volumeP)) goto errexit ;
 
 // Log Stock Pile DTM
 
@@ -685,10 +687,10 @@ BENTLEYDTM_Private int bcdtmStockPile_createStringStockPileToGroundSurfaceDtmObj
 // Cleanup
 
  cleanup :
- if( hullPtsP        != NULL ) { free(hullPtsP)        ; hullPtsP        = NULL ; }
- if( strokePtsP      != NULL ) { free(strokePtsP)      ; strokePtsP      = NULL ; }
- if( dataObjectsPP   != NULL ) { free(dataObjectsPP)   ; dataObjectsPP   = NULL ; }
- if( sideSlopeTableP != NULL ) { free(sideSlopeTableP) ; sideSlopeTableP = NULL ; }
+ if( hullPtsP        != nullptr ) { free(hullPtsP)        ; hullPtsP        = nullptr ; }
+ if( strokePtsP      != nullptr ) { free(strokePtsP)      ; strokePtsP      = nullptr ; }
+ if( dataObjectsPP   != nullptr ) { free(dataObjectsPP)   ; dataObjectsPP   = nullptr ; }
+ if( sideSlopeTableP != nullptr ) { free(sideSlopeTableP) ; sideSlopeTableP = nullptr ; }
 
 // Job Completed
 

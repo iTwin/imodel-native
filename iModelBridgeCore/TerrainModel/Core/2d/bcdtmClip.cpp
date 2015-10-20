@@ -4381,7 +4381,8 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
  long   memPointArrays=0,memPointArraysInc=10 ;
  double xMin,yMin,xMax,yMax ;
  DPoint3d    *ptsP,*clipPtsP=NULL,*p3dP,*p3d1P,*p3d2P ;
- DTM_DRAPE_POINT *drapeP,*drape1P,*drape2P=NULL,*drapePtsP=NULL ;
+ DTM_DRAPE_POINT *drapeP, *drape1P, *drape2P = NULL;
+ bvector<DTM_DRAPE_POINT> drapePtsP;
  long startTime = bcdtmClock() ;
 
 /*
@@ -4441,23 +4442,24 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
 /*
 **  Drape Feature Points On Clipping Tin
 */
-    if( bcdtmDrape_stringDtmObject(dtmP,featPtsP,numFeatPts,FALSE,&drapePtsP,&numDrapePts)) goto errexit ;
+    if( bcdtmDrape_stringDtmObject(dtmP,featPtsP,numFeatPts,FALSE,drapePtsP)) goto errexit ;
+    numDrapePts = (long)drapePtsP.size();
 /*
 **  Write Drape Points
 */
     if( dbg == 1 )
       {
        bcdtmWrite_message(0,0,0,"Number Of Drape Points = %6ld",numDrapePts) ;
-       for( drapeP = drapePtsP ; drapeP < drapePtsP + numDrapePts ; ++drapeP )  
+       for( drapeP = drapePtsP.data() ; drapeP < drapePtsP.data() + numDrapePts ; ++drapeP )  
          {
-          bcdtmWrite_message(0,0,0,"Drape Point[%6ld]  L = %4ld T = %2ld ** %10.4lf %10.4lf",(long)(drapeP-drapePtsP),drapeP->drapeLine,drapeP->drapeType,drapeP->drapeX,drapeP->drapeY ) ;
+          bcdtmWrite_message(0,0,0,"Drape Point[%6ld]  L = %4ld T = %2ld ** %10.4lf %10.4lf",(long)(drapeP-drapePtsP.data()),drapeP->drapeLine,drapeP->drapeType,drapeP->drapePt.x,drapeP->drapePt.y ) ;
          }
       } 
 /*
 **  Determine Feature Extent
 */
     numPtsOnDrape = 0 ; 
-    for( drapeP = drapePtsP ; drapeP < drapePtsP + numDrapePts ; ++drapeP )  
+    for( drapeP = drapePtsP.data() ; drapeP < drapePtsP.data() + numDrapePts ; ++drapeP )  
       {
        if( drapeP->drapeType != DTMDrapedLineCode::External ) ++numPtsOnDrape ;
       }
@@ -4499,9 +4501,9 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
     if( dbg )
       {
        bcdtmWrite_message(0,0,0,"Number Of Drape Points = %6ld",numDrapePts) ;
-       for( drapeP = drapePtsP ; drapeP < drapePtsP + numDrapePts ; ++drapeP )  
+       for( drapeP = drapePtsP.data() ; drapeP < drapePtsP.data() + numDrapePts ; ++drapeP )  
          {
-          bcdtmWrite_message(0,0,0,"Drape Point[%6ld]  L = %4ld T = %2ld ** %10.4lf %10.4lf",(long)(drapeP-drapePtsP),drapeP->drapeLine-1,drapeP->drapeType,drapeP->drapeX,drapeP->drapeY ) ;
+          bcdtmWrite_message(0,0,0,"Drape Point[%6ld]  L = %4ld T = %2ld ** %10.4lf %10.4lf",(long)(drapeP-drapePtsP.data()),drapeP->drapeLine-1,drapeP->drapeType,drapeP->drapePt.x,drapeP->drapePt.y ) ;
          }
       } 
 /*
@@ -4511,18 +4513,18 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
 /*
 **  Scan Drape Line Points And Write Clipped Feature Sections To Point Arrays
 */
-    drape1P = drapePtsP ;
-    while ( drape1P < drapePtsP + numDrapePts )
+    drape1P = drapePtsP.data();
+    while (drape1P < drapePtsP.data() + numDrapePts)
       {
 /*
 **     Get First And Last Drape Point For Inside Segment
 */
        if( clipOption == DTMFenceOption::Inside )
          {
-          while (  drape1P < drapePtsP + numDrapePts && drape1P->drapeType == DTMDrapedLineCode::External) ++drape1P ;
-          if( drape1P >= drapePtsP + numDrapePts ) --drape1P ;       
+         while (drape1P < drapePtsP.data() + numDrapePts && drape1P->drapeType == DTMDrapedLineCode::External) ++drape1P;
+         if (drape1P >= drapePtsP.data() + numDrapePts) --drape1P;
           drape2P = drape1P + 1 ;  
-          while (drape2P < drapePtsP + numDrapePts &&   drape2P->drapeType != DTMDrapedLineCode::External) ++drape2P;
+          while (drape2P < drapePtsP.data() + numDrapePts &&   drape2P->drapeType != DTMDrapedLineCode::External) ++drape2P;
           --drape2P ;   
          }
 /*
@@ -4530,17 +4532,17 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
 */
        if( clipOption == DTMFenceOption::Outside )
          {
-         while (drape1P < drapePtsP + numDrapePts &&  drape1P->drapeType != DTMDrapedLineCode::External) ++drape1P;
-          if( drape1P >= drapePtsP + numDrapePts ) --drape1P ;       
-          else if( drape1P > drapePtsP ) --drape1P ;
+         while (drape1P < drapePtsP.data() + numDrapePts &&  drape1P->drapeType != DTMDrapedLineCode::External) ++drape1P;
+         if (drape1P >= drapePtsP.data() + numDrapePts) --drape1P;
+         else if (drape1P > drapePtsP.data()) --drape1P;
           drape2P = drape1P + 1 ;  
-          while (drape2P < drapePtsP + numDrapePts &&  drape2P->drapeType == DTMDrapedLineCode::External) ++drape2P;
-          if( drape2P >= drapePtsP + numDrapePts ) --drape2P ;       
+          while (drape2P < drapePtsP.data() + numDrapePts &&  drape2P->drapeType == DTMDrapedLineCode::External) ++drape2P;
+          if (drape2P >= drapePtsP.data() + numDrapePts) --drape2P;
          }
        if( dbg )
          {
-          bcdtmWrite_message(0,0,0,"drape1P = %p ** ofs = %8ld line = %8ld",drape1P,(long)(drape1P-drapePtsP),drape1P->drapeLine) ;
-          bcdtmWrite_message(0,0,0,"drape2P = %p ** ofs = %8ld line = %8ld",drape2P,(long)(drape2P-drapePtsP),drape2P->drapeLine) ;
+         bcdtmWrite_message(0, 0, 0, "drape1P = %p ** ofs = %8ld line = %8ld", drape1P, (long)(drape1P - drapePtsP.data()), drape1P->drapeLine);
+         bcdtmWrite_message(0, 0, 0, "drape2P = %p ** ofs = %8ld line = %8ld", drape2P, (long)(drape2P - drapePtsP.data()), drape2P->drapeLine);
          }
 /*
 **     Get Offsets To Clipped Feature Sections
@@ -4567,12 +4569,12 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
 /*
 **       Copy First Feature Point
 */  
-         if( drape1P != drapePtsP )
+         if (drape1P != drapePtsP.data())
            {  
-            bcdtmMath_interpolatePointOnLine(p3d1P->x,p3d1P->y,p3d1P->z,(p3d1P+1)->x,(p3d1P+1)->y,(p3d1P+1)->z,drape1P->drapeX,drape1P->drapeY,&drape1P->drapeZ) ;
-            ptsP->x = drape1P->drapeX ;
-            ptsP->y = drape1P->drapeY ;
-            ptsP->z = drape1P->drapeZ ;
+            bcdtmMath_interpolatePointOnLine(p3d1P->x,p3d1P->y,p3d1P->z,(p3d1P+1)->x,(p3d1P+1)->y,(p3d1P+1)->z,drape1P->drapePt.x,drape1P->drapePt.y,&drape1P->drapePt.z) ;
+            ptsP->x = drape1P->drapePt.x ;
+            ptsP->y = drape1P->drapePt.y ;
+            ptsP->z = drape1P->drapePt.z ;
            }
          else
            {
@@ -4594,12 +4596,12 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
 /*
 **       Copy Last Feature Point
 */  
-         if( drape2P != drapePtsP + numDrapePts - 1 )
+         if (drape2P != drapePtsP.data() + numDrapePts - 1)
            { 
-            bcdtmMath_interpolatePointOnLine(p3d2P->x,p3d2P->y,p3d2P->z,(p3d2P+1)->x,(p3d2P+1)->y,(p3d2P+1)->z,drape2P->drapeX,drape2P->drapeY,&drape2P->drapeZ) ;
-            ptsP->x = drape2P->drapeX ;
-            ptsP->y = drape2P->drapeY ;
-            ptsP->z = drape2P->drapeZ ;
+            bcdtmMath_interpolatePointOnLine(p3d2P->x,p3d2P->y,p3d2P->z,(p3d2P+1)->x,(p3d2P+1)->y,(p3d2P+1)->z,drape2P->drapePt.x,drape2P->drapePt.y,&drape2P->drapePt.z) ;
+            ptsP->x = drape2P->drapePt.x ;
+            ptsP->y = drape2P->drapePt.y ;
+            ptsP->z = drape2P->drapePt.z ;
            }
          else
            {
@@ -4658,7 +4660,6 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
 */
  cleanup :
  if( clipPtsP  != NULL ) free(clipPtsP) ;
- if( drapePtsP != NULL ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
 /*
 ** Job Completed
 */
@@ -4697,10 +4698,10 @@ BENTLEYDTM_Public int bcdtmClip_determineFeatureExtentWithFenceDtmObject
 */
 {
  int             ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long            trgPnt1,trgPnt2,trgPnt3,pntFnd,numDrapePts,numPtsOnDrape ;
+ long            trgPnt1,trgPnt2,trgPnt3,pntFnd,numPtsOnDrape ;
  double          xMin,xMax,yMin,yMax ; 
  DPoint3d             *p3dP ;
- DTM_DRAPE_POINT *drapeP,*drapePtsP=NULL ;
+ bvector<DTM_DRAPE_POINT> drapePtsP;
 /*
 ** Write Entry Message
 */
@@ -4755,13 +4756,14 @@ BENTLEYDTM_Public int bcdtmClip_determineFeatureExtentWithFenceDtmObject
 */
     else
       {
-       if( bcdtmDrape_stringDtmObject(tinP,featurePtsP,numFeaturePts,FALSE,&drapePtsP,&numDrapePts)) goto errexit ;
+       if( bcdtmDrape_stringDtmObject(tinP,featurePtsP,numFeaturePts,FALSE,drapePtsP)) goto errexit ;
        numPtsOnDrape = 0 ; 
-       for( drapeP = drapePtsP ; drapeP < drapePtsP + numDrapePts ; ++drapeP )  
+
+       for(auto drapeP : drapePtsP )  
          {
-         if (drapeP->drapeType != DTMDrapedLineCode::External) ++numPtsOnDrape;
+         if (drapeP.drapeType != DTMDrapedLineCode::External) ++numPtsOnDrape;
          }
-       if     ( numPtsOnDrape == numDrapePts ) *featureExtentP = DTMFenceOption::Inside  ;
+       if (numPtsOnDrape == drapePtsP.size()) *featureExtentP = DTMFenceOption::Inside;
        else if( numPtsOnDrape == 0           ) *featureExtentP = DTMFenceOption::Outside ;
        else                                    *featureExtentP = DTMFenceOption::Overlap ;
       } 
@@ -4770,7 +4772,6 @@ BENTLEYDTM_Public int bcdtmClip_determineFeatureExtentWithFenceDtmObject
 ** Clean Up
 */
  cleanup :
- if( drapePtsP != NULL )  bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
 /*
 ** Return
 */

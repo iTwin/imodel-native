@@ -292,6 +292,9 @@
     <ClCompile Include="CPPWrappers\DTMIterators.cpp">
       <Filter>Source\CPPWrappers</Filter>
     </ClCompile>
+    <ClCompile Include="cppwrappers\TMEditor.cpp">
+      <Filter>Source\CPPWrappers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PrivateAPI\BcDTMWrapperClass.h">

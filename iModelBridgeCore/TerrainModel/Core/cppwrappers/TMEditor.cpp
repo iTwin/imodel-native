@@ -526,20 +526,19 @@ StatusInt BcDTMEdit::_SelectVertex (const DPoint3d& pt)
     DPoint3d cPt = pt;
     if (helper) helper->convertPointToDTM (cPt);
 
-    long found,numPoints,editPnt2,editPnt3 ;
-    DPoint3d  *pointsP = NULL ;
+    bool found;
+    long editPnt2, editPnt3;
+    bvector<DPoint3d> points;
 
-    if( !bcdtmEdit_selectDtmEditFeatureDtmObject( m_dtm->GetTinHandle(), DTMFeatureType::TinPoint, cPt.x, cPt.y, &found, (DPoint3d**)&pointsP, &numPoints))
+    if( !bcdtmEdit_selectDtmEditFeatureDtmObject( m_dtm->GetTinHandle(), DTMFeatureType::TinPoint, cPt.x, cPt.y, found, points))
         {
-        numPoints = 1;
-        SetSelectedPoints(pointsP, numPoints);
+        SetSelectedPoints(points.data(), 1);
         bcdtmEdit_getDtmEditFeaturePoints(&m_pointNumber,&editPnt2,&editPnt3) ;
         m_selectionState = Point;
         }
     else
         ret = DTM_ERROR;
 
-    if( pointsP != NULL ) free(pointsP) ;
     return(ret) ;
     }
 
@@ -549,23 +548,22 @@ StatusInt BcDTMEdit::_SelectLine (const DPoint3d& pt)
         {
         int ret = DTM_SUCCESS;
         long P3;
-        long found,numPoints;
-        DPoint3d *pointsP = NULL ;
+        bool found;
+        bvector<DPoint3d> points;
         DPoint3d cPt = pt;
         if (helper) helper->convertPointToDTM (cPt);
 
         m_selectionState = None;
 
-        if (!bcdtmEdit_selectDtmEditFeatureDtmObject( m_dtm->GetTinHandle(), DTMFeatureType::TinLine, cPt.x, cPt.y, &found, (DPoint3d**)&pointsP, &numPoints))
+        if (!bcdtmEdit_selectDtmEditFeatureDtmObject( m_dtm->GetTinHandle(), DTMFeatureType::TinLine, cPt.x, cPt.y, found, points))
             {
-            SetSelectedPoints(pointsP, numPoints);
+            SetSelectedPoints(points.data(), (int)points.size());
             bcdtmEdit_getDtmEditFeaturePoints(&m_linePointNumber[0], &m_linePointNumber[1], &P3) ;
             m_selectionState = Line;
             }
         else
             ret = DTM_ERROR;
 
-        if( pointsP != NULL ) free(pointsP) ;
         return(ret) ;
         }
 
@@ -575,26 +573,22 @@ StatusInt BcDTMEdit::_SelectLine (const DPoint3d& pt)
 StatusInt BcDTMEdit::_SelectTriangle (DPoint3dCR pt)
     {
     int ret = DTM_SUCCESS;
-    long found,numPoints;
-    DPoint3d *pointsP = NULL ;
+    bool found;
+    bvector<DPoint3d> points;
     DPoint3d cPt = pt;
     if (helper) helper->convertPointToDTM (cPt);
 
     m_selectionState = None;
 
-    if (bcdtmEdit_selectDtmEditFeatureDtmObject (m_dtm->GetTinHandle(),DTMFeatureType::Triangle, cPt.x, cPt.y, &found, (DPoint3d**)&pointsP, &numPoints))
+    if (bcdtmEdit_selectDtmEditFeatureDtmObject (m_dtm->GetTinHandle(),DTMFeatureType::Triangle, cPt.x, cPt.y, found, points))
         {
-        if (pointsP != NULL)
-            free (pointsP);
         return DTM_ERROR;
         }
 
-    SetSelectedPoints (pointsP, numPoints, numPoints == 3);
+    SetSelectedPoints(points.data(), (int)points.size(), points.size() == 3);
     bcdtmEdit_getDtmEditFeaturePoints (&m_trianglePointNumber[0], &m_trianglePointNumber[1], &m_trianglePointNumber[2]);
     m_selectionState = Triangle;
 
-     if (pointsP != NULL)
-         free(pointsP) ;
     return(ret) ;
     }
 
@@ -645,11 +639,10 @@ StatusInt BcDTMEdit::_SelectTrianglesByLine (const DPoint3d pts[], int numPts, b
     {
     // Need to drape the line and get the boundary of the triangles around it.
     m_selectionState = None;
-    long numDrapePts;
-    DTM_DRAPE_POINT *drapePtsP = NULL;
+    bvector<DTM_DRAPE_POINT> drapePts;
     BC_DTM_OBJ* dtmP = m_dtm->GetTinHandle();
     TMTransformHelper::DPoint3dCopy transformedPoints = helper ? helper->copyPointsToDTM (pts, numPts) : TMTransformHelper::DPoint3dCopy (pts, true);
-    bcdtmDrape_stringDtmObject(dtmP, (DPoint3d*)(DPoint3d*)transformedPoints, numPts, stopAtFeatures, &drapePtsP, &numDrapePts);
+    bcdtmDrape_stringDtmObject(dtmP, (DPoint3d*)(DPoint3d*)transformedPoints, numPts, stopAtFeatures, drapePts);
 
     m_byLineSelection.resize(numPts);
     memcpy (&m_byLineSelection[0], (DPoint3d*)transformedPoints, sizeof (DPoint3d) * numPts);
@@ -657,20 +650,20 @@ StatusInt BcDTMEdit::_SelectTrianglesByLine (const DPoint3d pts[], int numPts, b
     m_selectedPoints.clear();
     m_trianglePointNumbersByLineSelection.clear();
     // Now go for each point and get the triangle.
-    for (long i = 0; i < numDrapePts; i++)
+    for (long i = 0; i < (long)drapePts.size(); i++)
         {
         long fndType;
         long p1,p2,p3;
-        double x = drapePtsP[i].drapeX;
-        double y = drapePtsP[i].drapeY;
+        double x = drapePts[i].drapePt.x;
+        double y = drapePts[i].drapePt.y;
 
-        if (drapePtsP[i].numDrapeFeatures)
+        if (drapePts[i].drapeFeatures.empty())
             break;
 
-        if (i != numDrapePts - 1)
+        if (i != (long)drapePts.size() - 1)
             {
-            x += (drapePtsP[i + 1].drapeX - drapePtsP[i].drapeX) / 2;
-            y += (drapePtsP[i + 1].drapeY - drapePtsP[i].drapeY) / 2;
+            x += (drapePts[i + 1].drapePt.x - drapePts[i].drapePt.x) / 2;
+            y += (drapePts[i + 1].drapePt.y - drapePts[i].drapePt.y) / 2;
             }
         if( bcdtmFind_triangleDtmObject (dtmP, x, y, &fndType, &p1, &p2, &p3) == DTM_SUCCESS && fndType >= 2)
             {
@@ -690,7 +683,6 @@ StatusInt BcDTMEdit::_SelectTrianglesByLine (const DPoint3d pts[], int numPts, b
             }
         }
     m_selectionState = TrianglesByLine;
-    if (drapePtsP != NULL) bcdtmDrape_freeDrapePointMemory (&drapePtsP, &numDrapePts);
 
     if (m_selectedPoints.size())
         {

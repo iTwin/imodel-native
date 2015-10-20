@@ -2,7 +2,7 @@
 |
 |     $Source: Core/cppwrappers/DTM.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TerrainModel/Core/IDTM.h"
@@ -77,7 +77,7 @@ bool IDTM::GetTransformation (TransformR transformation)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt IDTMDraping::DrapePoint (double* elevation, double* slope, double* aspect, DPoint3d triangle[3], int* drapedType, DPoint3dCR point)
+DTMStatusInt IDTMDraping::DrapePoint (double* elevation, double* slope, double* aspect, DPoint3d triangle[3], int& drapedType, DPoint3dCR point)
     {
     return _DrapePoint(elevation, slope, aspect, triangle, drapedType, point);
     }
@@ -182,7 +182,7 @@ DTMStatusInt IDTMDrapedLine::GetPointByIndex(DTMDrapedLinePointPtr& ret, unsigne
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt IDTMDrapedLine::GetPointByIndex(DPoint3d* ptP, double* distanceP, DTMDrapedLineCode *codeP, unsigned int index) const
+DTMStatusInt IDTMDrapedLine::GetPointByIndex(DPoint3dR ptP, double* distanceP, DTMDrapedLineCode *codeP, unsigned int index) const
     {
     return _GetPointByIndex (ptP, distanceP, codeP, index);
     }

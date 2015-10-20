@@ -283,7 +283,8 @@ BENTLEYDTM_Public int bcdtmLattice_populateLatticeDtmObject(BC_DTM_OBJ *dtmP,DTM
 */
 {
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
- long    i,j,p1,p2,p3,xs,xf,ys,yf,iofs,newTriangle,voidTriangle,clPtr ;
+ long    i,j,p1,p2,p3,xs,xf,ys,yf,iofs,clPtr ;
+ bool newTriangle, voidTriangle;
  double  xl,yl,zl,trgXmin,trgXmax,trgYmin,trgYmax,x[3],y[3],z[3],partialDeriv[15] ;
  float   nullValue,*latPointP,latZmin,latZmax ;
  DTM_TIN_POINT *p1P,*p2P,*p3P ;  
@@ -328,7 +329,7 @@ BENTLEYDTM_Public int bcdtmLattice_populateLatticeDtmObject(BC_DTM_OBJ *dtmP,DTM
           clPtr  = clistP->nextPtr ;
           if( p3 > p1 && p2 > p1 && nodeP->hPtr != p2 )
             {
-             if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&voidTriangle)) goto errexit ;
+             if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidTriangle)) goto errexit ;
              if( ! voidTriangle )
                {
                 p2P = pointAddrP(dtmP,p2) ;
@@ -345,7 +346,7 @@ BENTLEYDTM_Public int bcdtmLattice_populateLatticeDtmObject(BC_DTM_OBJ *dtmP,DTM
                 trgYmax = bcdtmUtl_getTrgMax(y) ;
                 if( trgXmin <= latticeP->LXMAX && trgXmax >= latticeP->LXMIN && trgYmin <= latticeP->LYMAX && trgYmax >= latticeP->LYMIN )
                   {
-                   newTriangle = 1 ;
+                   newTriangle = true ;
                    if( polynomialOption ) bcdtmLattice_getPartialDerivatives(p1,p2,p3,partialDerivP,partialDeriv) ;
                    xs = (long)((trgXmin-latticeP->LXMIN) / latticeP->DX) ;
                    xf = (long)((trgXmax-latticeP->LXMIN) / latticeP->DX) ;
@@ -369,7 +370,7 @@ BENTLEYDTM_Public int bcdtmLattice_populateLatticeDtmObject(BC_DTM_OBJ *dtmP,DTM
                                if( ! polynomialOption ) bcdtmMath_interpolatePointOnTriangle(xl,yl,&zl,x,y,z) ;
                                else                     bcdtmMath_interpolatePointOnPolynomial(newTriangle,xl,yl,&zl,x,y,z,partialDeriv) ;
                                *(latticeP->LAT+iofs) = (float) zl   ;
-                               newTriangle = 0 ;
+                               newTriangle = false ;
                               }
                            }
                         }
@@ -949,7 +950,8 @@ BENTLEYDTM_Public int bcdtmLattice_populateIsopachLatticeFromDtmObjects
 )
 {
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long    i,j,p1,p2,p3,xs,xf,ys,yf,iofs,clPtr,numLatPts,newTriangle,voidTriangle ;
+ long    i, j, p1, p2, p3, xs, xf, ys, yf, iofs, clPtr, numLatPts;
+ bool voidTriangle, newTriangle;
  double  xl,yl,zl,trgXmin,trgXmax,trgYmin,trgYmax,x[3],y[3],z[3] ;
  float   *lat,zmin,zmax ;
  unsigned char    *subFlagP=NULL,*cp ;
@@ -999,7 +1001,7 @@ BENTLEYDTM_Public int bcdtmLattice_populateIsopachLatticeFromDtmObjects
           clPtr  = clistP->nextPtr ;
           if( p3 > p1 && p2 > p1 && nodeP->hPtr != p2 )
             {
-             if( bcdtmList_testForVoidTriangleDtmObject(fromDtmP,p1,p2,p3,&voidTriangle)) goto errexit ;
+             if( bcdtmList_testForVoidTriangleDtmObject(fromDtmP,p1,p2,p3,voidTriangle)) goto errexit ;
              if( ! voidTriangle )
                {
                 p2P = pointAddrP(fromDtmP,p2) ;
@@ -1016,7 +1018,7 @@ BENTLEYDTM_Public int bcdtmLattice_populateIsopachLatticeFromDtmObjects
                 trgYmax = bcdtmUtl_getTrgMax(y) ;
                 if( trgXmin <= latticeP->LXMAX && trgXmax >= latticeP->LXMIN && trgYmin <= latticeP->LYMAX && trgYmax >= latticeP->LYMIN )
                   {
-                   newTriangle = 1 ;
+                   newTriangle = true;
                    xs = (long)((trgXmin-latticeP->LXMIN) / latticeP->DX) ;
                    xf = (long)((trgXmax-latticeP->LXMIN) / latticeP->DX) ;
                    ys = (long)((trgYmin-latticeP->LYMIN) / latticeP->DY) ;
@@ -1038,7 +1040,7 @@ BENTLEYDTM_Public int bcdtmLattice_populateIsopachLatticeFromDtmObjects
                               {
                                bcdtmMath_interpolatePointOnTrianglePlane(newTriangle,xl,yl,&zl,x,y,z) ;
                                *(latticeP->LAT+iofs) = (float) zl   ;
-                               newTriangle = 0 ;
+                               newTriangle = false;
                                ++numLatPts ;
                               }
                            }
@@ -1077,7 +1079,7 @@ BENTLEYDTM_Public int bcdtmLattice_populateIsopachLatticeFromDtmObjects
           clPtr  = clistP->nextPtr ;
           if( p3 > p1 && p2 > p1 && nodeP->hPtr != p2 )
             {
-             if( bcdtmList_testForVoidTriangleDtmObject(toDtmP,p1,p2,p3,&voidTriangle)) goto errexit ;
+             if( bcdtmList_testForVoidTriangleDtmObject(toDtmP,p1,p2,p3,voidTriangle)) goto errexit ;
              if( ! voidTriangle )
                {
                 p2P = pointAddrP(toDtmP,p2) ;
@@ -1094,7 +1096,7 @@ BENTLEYDTM_Public int bcdtmLattice_populateIsopachLatticeFromDtmObjects
                 trgYmax = bcdtmUtl_getTrgMax(y) ;
                 if( trgXmin <= latticeP->LXMAX && trgXmax >= latticeP->LXMIN && trgYmin <= latticeP->LYMAX && trgYmax >= latticeP->LYMIN )
                   {
-                   newTriangle = 1 ;
+                   newTriangle = true ;
                    xs = (long)((trgXmin-latticeP->LXMIN) / latticeP->DX) ;
                    xf = (long)((trgXmax-latticeP->LXMIN) / latticeP->DX) ;
                    ys = (long)((trgYmin-latticeP->LYMIN) / latticeP->DY) ;
@@ -1119,7 +1121,7 @@ BENTLEYDTM_Public int bcdtmLattice_populateIsopachLatticeFromDtmObjects
                                   bcdtmMath_interpolatePointOnTrianglePlane(newTriangle,xl,yl,&zl,x,y,z) ;
                                   *(latticeP->LAT+iofs) -= (float) zl   ;
                                   bcdtmFlag_setFlag(subFlagP,iofs) ;
-                                  newTriangle = 0 ;
+                                  newTriangle = false;
                                   ++numLatPts ;
                                  }
                               }
@@ -1404,7 +1406,8 @@ BENTLEYDTM_Private int bcdtmLattice_populateReferenceAndIsopachLatticesFromDtmOb
 )
 {
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long    i,j,p1,p2,p3,xs,xf,ys,yf,iofs,clPtr,numLatPts,newTriangle,voidTriangle ;
+ long    i, j, p1, p2, p3, xs, xf, ys, yf, iofs, clPtr, numLatPts;
+ bool voidTriangle, newTriangle;
  double  xl,yl,zl,trgXmin,trgXmax,trgYmin,trgYmax,x[3],y[3],z[3] ;
  float   *lat,zmin,zmax ;
  unsigned char    *subFlagP=NULL,*cp ;
@@ -1463,7 +1466,7 @@ BENTLEYDTM_Private int bcdtmLattice_populateReferenceAndIsopachLatticesFromDtmOb
           clPtr  = clistP->nextPtr ;
           if( p3 > p1 && p2 > p1 && nodeP->hPtr != p2 )
             {
-             if( bcdtmList_testForVoidTriangleDtmObject(fromDtmP,p1,p2,p3,&voidTriangle)) goto errexit ;
+             if( bcdtmList_testForVoidTriangleDtmObject(fromDtmP,p1,p2,p3,voidTriangle)) goto errexit ;
              if( ! voidTriangle )
                {
                 p2P = pointAddrP(fromDtmP,p2) ;
@@ -1480,7 +1483,7 @@ BENTLEYDTM_Private int bcdtmLattice_populateReferenceAndIsopachLatticesFromDtmOb
                 trgYmax = bcdtmUtl_getTrgMax(y) ;
                 if( trgXmin <= isoLatticeP->LXMAX && trgXmax >= isoLatticeP->LXMIN && trgYmin <= isoLatticeP->LYMAX && trgYmax >= isoLatticeP->LYMIN )
                   {
-                   newTriangle = 1 ;
+                   newTriangle = true;
                    xs = (long)((trgXmin-isoLatticeP->LXMIN) / isoLatticeP->DX) ;
                    xf = (long)((trgXmax-isoLatticeP->LXMIN) / isoLatticeP->DX) ;
                    ys = (long)((trgYmin-isoLatticeP->LYMIN) / isoLatticeP->DY) ;
@@ -1502,7 +1505,7 @@ BENTLEYDTM_Private int bcdtmLattice_populateReferenceAndIsopachLatticesFromDtmOb
                               {
                                bcdtmMath_interpolatePointOnTrianglePlane(newTriangle,xl,yl,&zl,x,y,z) ;
                                *(isoLatticeP->LAT+iofs) = (float) zl   ;
-                               newTriangle = 0 ;
+                               newTriangle = false;
                                ++numLatPts ;
                               }
                            }
@@ -1549,7 +1552,7 @@ BENTLEYDTM_Private int bcdtmLattice_populateReferenceAndIsopachLatticesFromDtmOb
           clPtr  = clistP->nextPtr ;
           if( p3 > p1 && p2 > p1 && nodeP->hPtr != p2 )
             {
-             if( bcdtmList_testForVoidTriangleDtmObject(toDtmP,p1,p2,p3,&voidTriangle)) goto errexit ;
+             if( bcdtmList_testForVoidTriangleDtmObject(toDtmP,p1,p2,p3,voidTriangle)) goto errexit ;
              if( ! voidTriangle )
                {
                 p2P = pointAddrP(toDtmP,p2) ;
@@ -1566,7 +1569,7 @@ BENTLEYDTM_Private int bcdtmLattice_populateReferenceAndIsopachLatticesFromDtmOb
                 trgYmax = bcdtmUtl_getTrgMax(y) ;
                 if( trgXmin <= isoLatticeP->LXMAX && trgXmax >= isoLatticeP->LXMIN && trgYmin <= isoLatticeP->LYMAX && trgYmax >= isoLatticeP->LYMIN )
                   {
-                   newTriangle = 1 ;
+                   newTriangle = true;
                    xs = (long)((trgXmin-isoLatticeP->LXMIN) / isoLatticeP->DX) ;
                    xf = (long)((trgXmax-isoLatticeP->LXMIN) / isoLatticeP->DX) ;
                    ys = (long)((trgYmin-isoLatticeP->LYMIN) / isoLatticeP->DY) ;
@@ -1591,7 +1594,7 @@ BENTLEYDTM_Private int bcdtmLattice_populateReferenceAndIsopachLatticesFromDtmOb
                                   bcdtmMath_interpolatePointOnTrianglePlane(newTriangle,xl,yl,&zl,x,y,z) ;
                                   *(isoLatticeP->LAT+iofs) -= (float) zl   ;
                                   bcdtmFlag_setFlag(subFlagP,iofs) ;
-                                  newTriangle = 0 ;
+                                  newTriangle = false;
                                   ++numLatPts ;
                                  }
                               }
@@ -2000,7 +2003,8 @@ BENTLEYDTM_Private int bcdtmLattice_populateLatticeThemeFromDtmObjects
 )
 {
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long    i,j,p1,p2,p3,xs,xf,ys,yf,iofs,clPtr,newTriangle,voidTriangle ;
+ long    i, j, p1, p2, p3, xs, xf, ys, yf, iofs, clPtr;
+ bool newTriangle, voidTriangle;
  double  xl,yl,zl,trgXmin,trgXmax,trgYmin,trgYmax,x[3],y[3],z[3] ;
  float   *lat,zmin,zmax ;
  unsigned char    *subFlagP=NULL,*cp ;
@@ -2043,7 +2047,7 @@ BENTLEYDTM_Private int bcdtmLattice_populateLatticeThemeFromDtmObjects
           clPtr  = clistP->nextPtr ;
           if( p3 > p1 && p2 > p1 && nodeP->hPtr != p2 )
             {
-             if( bcdtmList_testForVoidTriangleDtmObject(fromDtmP,p1,p2,p3,&voidTriangle)) goto errexit ;
+             if( bcdtmList_testForVoidTriangleDtmObject(fromDtmP,p1,p2,p3,voidTriangle)) goto errexit ;
              if( ! voidTriangle )
                {
                 p2P = pointAddrP(fromDtmP,p2) ;
@@ -2060,7 +2064,7 @@ BENTLEYDTM_Private int bcdtmLattice_populateLatticeThemeFromDtmObjects
                 trgYmax = bcdtmUtl_getTrgMax(y) ;
                 if( trgXmin <= latticeP->LXMAX && trgXmax >= latticeP->LXMIN && trgYmin <= latticeP->LYMAX && trgYmax >= latticeP->LYMIN )
                   {
-                   newTriangle = 1 ;
+                   newTriangle = true;
                    xs = (long)((trgXmin-latticeP->LXMIN) / latticeP->DX) ;
                    xf = (long)((trgXmax-latticeP->LXMIN) / latticeP->DX) ;
                    ys = (long)((trgYmin-latticeP->LYMIN) / latticeP->DY) ;
@@ -2082,7 +2086,7 @@ BENTLEYDTM_Private int bcdtmLattice_populateLatticeThemeFromDtmObjects
                               {
                                bcdtmMath_interpolatePointOnTriangle(xl,yl,&zl,x,y,z) ;
                                *(latticeP->LAT+iofs) = (float) zl   ;
-                               newTriangle = 0 ;
+                               newTriangle = false;
                               }
                            }
                         }
@@ -2115,7 +2119,7 @@ BENTLEYDTM_Private int bcdtmLattice_populateLatticeThemeFromDtmObjects
           clPtr  = clistP->nextPtr ;
           if( p3 > p1 && p2 > p1 && nodeP->hPtr != p2 )
             {
-             if( bcdtmList_testForVoidTriangleDtmObject(toDtmP,p1,p2,p3,&voidTriangle)) goto errexit ;
+             if( bcdtmList_testForVoidTriangleDtmObject(toDtmP,p1,p2,p3,voidTriangle)) goto errexit ;
              if( ! voidTriangle )
                {
                 p2P = pointAddrP(toDtmP,p2) ;
@@ -2132,7 +2136,7 @@ BENTLEYDTM_Private int bcdtmLattice_populateLatticeThemeFromDtmObjects
                 trgYmax = bcdtmUtl_getTrgMax(y) ;
                 if( trgXmin <= latticeP->LXMAX && trgXmax >= latticeP->LXMIN && trgYmin <= latticeP->LYMAX && trgYmax >= latticeP->LYMIN )
                   {
-                   newTriangle = 1 ;
+                   newTriangle = true;
                    xs = (long)((trgXmin-latticeP->LXMIN) / latticeP->DX) ;
                    xf = (long)((trgXmax-latticeP->LXMIN) / latticeP->DX) ;
                    ys = (long)((trgYmin-latticeP->LYMIN) / latticeP->DY) ;
@@ -2171,7 +2175,7 @@ BENTLEYDTM_Private int bcdtmLattice_populateLatticeThemeFromDtmObjects
 
                                     } ;
                                   bcdtmFlag_setFlag(subFlagP,iofs) ;
-                                  newTriangle = 0 ;
+                                  newTriangle = false;
                                  }
                               }
                            }

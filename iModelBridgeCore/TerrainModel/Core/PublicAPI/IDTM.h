@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/IDTM.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,7 +36,7 @@ struct DTMFenceParams
         points = 0;
         numPoints = 0;
         }
-    DTMFenceParams (DTMFenceType fenceType, DTMFenceOption fenceOption, DPoint3dCP points, int numPoints)
+    DTMFenceParams (DTMFenceType fenceType, DTMFenceOption fenceOption, const DPoint3d points[], int numPoints)
         {
         this->fenceType = fenceType;
         this->fenceOption = fenceOption;
@@ -84,7 +84,7 @@ struct IDTMDrapedLine abstract : IRefCounted
 /*__OPUBLISH_CLASS_VIRTUAL__*/
 protected:
     virtual DTMStatusInt _GetPointByIndex (DTMDrapedLinePointPtr& ret, unsigned int index) const = 0;
-    virtual DTMStatusInt _GetPointByIndex (DPoint3dP ptP, double* distanceP, DTMDrapedLineCode* codeP, unsigned int index) const = 0;
+    virtual DTMStatusInt _GetPointByIndex (DPoint3dR ptP, double* distanceP, DTMDrapedLineCode* codeP, unsigned int index) const = 0;
     virtual unsigned int _GetPointCount () const = 0;
 
 /*__OPUBLISH_SECTION_START__*/
@@ -100,7 +100,7 @@ public:
     //! @param[out] codeP       The draped line code, can be null.
     //! @param[in]  index       The index of the point to get.
     //! @return error status.
-    BENTLEYDTM_EXPORT DTMStatusInt GetPointByIndex (DPoint3dP ptP, double* distanceP, DTMDrapedLineCode* codeP, unsigned int index) const;
+    BENTLEYDTM_EXPORT DTMStatusInt GetPointByIndex (DPoint3dR ptP, double* distanceP, DTMDrapedLineCode* codeP, unsigned int index) const;
     //! Gets the number of draped line points.
     //! @return the number of points.
     BENTLEYDTM_EXPORT unsigned int GetPointCount() const;
@@ -115,8 +115,8 @@ struct IDTMDraping abstract
 /*__OPUBLISH_SECTION_END__*/
 /*__OPUBLISH_CLASS_VIRTUAL__*/
 protected:
-virtual DTMStatusInt _DrapePoint (double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point) = 0;
-virtual DTMStatusInt _DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) = 0;
+virtual DTMStatusInt _DrapePoint (double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int& drapedType, DPoint3dCR point) = 0;
+virtual DTMStatusInt _DrapeLinear(DTMDrapedLinePtr& ret, const DPoint3d pts[], int numPoints) = 0;
 
 /*__OPUBLISH_SECTION_START__*/
 public:
@@ -128,13 +128,13 @@ public:
 //! @param[out] drapeType       Type of draping. Can be null. (should be declared as an DTMEnum !!!).    
 //! @param[in]  point           The point to drape.
 //! @return DTM status.
-BENTLEYDTM_EXPORT DTMStatusInt DrapePoint (double* elevation, double* slope, double* aspect, DPoint3d triangle[3], int* drapedType, DPoint3dCR point);
+BENTLEYDTM_EXPORT DTMStatusInt DrapePoint (double* elevation, double* slope, double* aspect, DPoint3d triangle[3], int& drapedType, DPoint3dCR point);
 //! Drapes a linear feature on to the DTM.
 //! @param[out] ret         The DTMDrapedLine result.
 //! @param[in]  pts         The points of the linear feature.
 //! @param[in] numPoints   The number of points.
 //! @return DTM status.
-BENTLEYDTM_EXPORT DTMStatusInt DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints);
+BENTLEYDTM_EXPORT DTMStatusInt DrapeLinear(DTMDrapedLinePtr& ret, const DPoint3d pts[], int numPoints);
 };
 
 /*=================================================================================**//**
@@ -254,7 +254,7 @@ virtual IDTMContouring* _GetDTMContouring () = 0;
 virtual DTMStatusInt _GetRange(DRange3dR range) = 0;
 virtual BcDTMP _GetBcDTM() = 0;
 virtual DTMStatusInt _GetBoundary(DTMPointArray& ret) = 0;
-virtual DTMStatusInt _CalculateSlopeArea (double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints) = 0;
+virtual DTMStatusInt _CalculateSlopeArea (double& flatArea, double& slopeArea, const DPoint3d pts[], int numPoints) = 0;
 virtual DTMStatusInt _GetTransformDTM (DTMPtr& transformedDTM, TransformCR transformation) = 0;
 virtual bool _GetTransformation (TransformR transformation) = 0;
 
@@ -295,7 +295,7 @@ BENTLEYDTM_EXPORT DTMStatusInt GetBoundary (DTMPointArray& ret);
 //! @param[in] pts           The points of the area.
 //! @param[in] numPoints     The number of points of the area.
 //! @return error status.
-BENTLEYDTM_EXPORT DTMStatusInt CalculateSlopeArea (double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints);
+BENTLEYDTM_EXPORT DTMStatusInt CalculateSlopeArea (double& flatArea, double& slopeArea, const DPoint3d pts[], int numPoints);
 //__PUBLISH_SECTION_START__
 
 //! Gets a Transformed copy of the DTM.

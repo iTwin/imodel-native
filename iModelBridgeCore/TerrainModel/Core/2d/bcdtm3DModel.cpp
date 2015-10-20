@@ -8,6 +8,7 @@
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
 #include "bcdtminlines.h" 
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -55,7 +56,7 @@ BENTLEYDTM_EXPORT int bcdtm3DModel_volumesDtm
 {
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long    NumIntPolys=0,nd ;
- TAG_POLYGON *IntPolys=NULL,*pip ;
+ TAG_POLYGON *IntPolys=nullptr,*pip ;
 /*
 ** Write Status message
 */
@@ -82,10 +83,10 @@ BENTLEYDTM_EXPORT int bcdtm3DModel_volumesDtm
 */
  if( numDesignTinObjects <= 0 ) { bcdtmWrite_message(2,0,0,"Invalid Value For numDesignTinObjects") ; goto errexit ; }
  if( numGroundTinObjects <  0 ) numGroundTinObjects = 0 ;
- if( designTinObjectsP == NULL ) { bcdtmWrite_message(2,0,0,"designTinObjectsP Initialised To NULL") ; goto errexit ; }
- if( numGroundTinObjects > 0 && groundTinObjectP == NULL ) { bcdtmWrite_message(2,0,0,"groundTinObjectP Initialised To NULL") ; goto errexit ; }
- if( *designVolumesPP !=   NULL ) { bcdtmWrite_message(2,0,0,"designVolumesPP Not Initialised To NULL") ; goto errexit ; }
- if( *groundVolumesPP !=   NULL ) { bcdtmWrite_message(2,0,0,"groundVolumesPP Not Initialised To NULL") ; goto errexit ; }
+ if( designTinObjectsP == nullptr ) { bcdtmWrite_message(2,0,0,"designTinObjectsP Initialised To nullptr") ; goto errexit ; }
+ if( numGroundTinObjects > 0 && groundTinObjectP == nullptr ) { bcdtmWrite_message(2,0,0,"groundTinObjectP Initialised To nullptr") ; goto errexit ; }
+ if( *designVolumesPP !=   nullptr ) { bcdtmWrite_message(2,0,0,"designVolumesPP Not Initialised To nullptr") ; goto errexit ; }
+ if( *groundVolumesPP !=   nullptr ) { bcdtmWrite_message(2,0,0,"groundVolumesPP Not Initialised To nullptr") ; goto errexit ; }
 /*
 ** Intersect All The Design DTMFeatureState::Tin Hulls
 */
@@ -96,7 +97,7 @@ BENTLEYDTM_EXPORT int bcdtm3DModel_volumesDtm
 ** Calculate Design Surface Volumes
 */
  *numDesignVolumesP = 0 ;
- *designVolumesPP = NULL ;
+ *designVolumesPP = nullptr ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Calculating Design Surface Volumes") ;
  if( bcdtm3DModel_calculateDesignSurfaceVolumesDtm(designTinObjectsP,numDesignTinObjects,loadFlag,IntPolys,NumIntPolys,designVolumesPP,numDesignVolumesP)) goto errexit ; 
  if( dbg )
@@ -112,7 +113,7 @@ BENTLEYDTM_EXPORT int bcdtm3DModel_volumesDtm
 */
  loadFlag = 0 ;
  *numGroundVolumesP = 0 ;
- *groundVolumesPP = NULL ;
+ *groundVolumesPP = nullptr ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Calculating Ground Surface Volumes") ;
  if( bcdtm3DModel_calculateGroundSurfaceVolumesDtm(groundTinObjectP,numGroundTinObjects,designTinObjectsP,numDesignTinObjects,loadFlag,IntPolys,NumIntPolys,groundVolumesPP,numGroundVolumesP)) goto errexit ; 
  if( dbg )
@@ -127,16 +128,16 @@ BENTLEYDTM_EXPORT int bcdtm3DModel_volumesDtm
 ** Clean Up
 */
  cleanup :
- if( IntPolys != NULL && NumIntPolys > 0 )
+ if( IntPolys != nullptr && NumIntPolys > 0 )
    {
     for( pip = IntPolys ; pip < IntPolys + NumIntPolys ; ++pip )
       {
-       if( pip->PolyPts    != NULL ) { free(pip->PolyPts)    ; pip->PolyPts    = NULL ; }
-       if( pip->TinIndexes != NULL ) { free(pip->TinIndexes) ; pip->TinIndexes = NULL ; }
-       if( pip->IntPolys   != NULL ) { free(pip->IntPolys)   ; pip->IntPolys   = NULL ; }
+       if( pip->PolyPts    != nullptr ) { free(pip->PolyPts)    ; pip->PolyPts    = nullptr ; }
+       if( pip->TinIndexes != nullptr ) { free(pip->TinIndexes) ; pip->TinIndexes = nullptr ; }
+       if( pip->IntPolys   != nullptr ) { free(pip->IntPolys)   ; pip->IntPolys   = nullptr ; }
       }
    }
- if( IntPolys != NULL ) { free(IntPolys) ; IntPolys = NULL ; }
+ if( IntPolys != nullptr ) { free(IntPolys) ; IntPolys = nullptr ; }
 /*
 ** Blank Out Non Fatal Error Messages
 */
@@ -181,13 +182,13 @@ BENTLEYDTM_Public int bcdtm3DModel_intersectDesignTinHullsDtm(BC_DTM_OBJLIST *De
  long             NumHullPts;
  DTMDirection Direction;
  double           Area,Pptol=0.001,Pltol=0.001 ;
- DPoint3d              *p3d,*HullPts=NULL ;
+ DPoint3d              *p3d,*HullPts=nullptr ;
  BC_DTM_OBJLIST  *olP ;
- BC_DTM_OBJ       *dtmP=NULL ;
+ BC_DTM_OBJ       *dtmP=nullptr ;
  TAG_POLYGON      *pip ; 
  VOLTININDEX      *pind ;
  DTMFeatureId   dtmFeatureId ;
- DTM_DAT_OBJ      *dataP=NULL ;
+ DTM_DAT_OBJ      *dataP=nullptr ;
  DTM_GUID nullGuid=DTM_NULL_GUID ;
 /*
 ** Write Status message
@@ -216,7 +217,7 @@ BENTLEYDTM_Public int bcdtm3DModel_intersectDesignTinHullsDtm(BC_DTM_OBJLIST *De
 ** Free HullPts Memory
 */
     NumHullPts = 0 ;
-    if( HullPts != NULL ) { free(HullPts) ; HullPts = NULL ; }
+    if( HullPts != nullptr ) { free(HullPts) ; HullPts = nullptr ; }
    }
 /*
 ** Write Intersect Data - Development Only
@@ -297,9 +298,9 @@ BENTLEYDTM_Public int bcdtm3DModel_intersectDesignTinHullsDtm(BC_DTM_OBJLIST *De
 ** Clean Up
 */
  cleanup :
- if( HullPts != NULL ) { free(HullPts) ; HullPts = NULL ; }
- if( dtmP    != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
- if( dataP   != NULL ) bcdtmObject_deleteDataObject(&dataP) ;
+ if( HullPts != nullptr ) { free(HullPts) ; HullPts = nullptr ; }
+ if( dtmP    != nullptr ) bcdtmObject_destroyDtmObject(&dtmP) ;
+ if( dataP   != nullptr ) bcdtmObject_deleteDataObject(&dataP) ;
 /*
 ** Job Completed
 */
@@ -337,10 +338,10 @@ BENTLEYDTM_Public int bcdtm3DModel_extractIntersectedTinHullPolygonsDtmObject(BC
  DTMDirection Direction;
  long        NumPolyPts=0,TagPolyNe=0,TagPolyMe=0,TagPolyMemInc=1000 ;
  double      PolyArea,Ipx,Ipy ;
- unsigned char        *Line=NULL,*pc ;
+ unsigned char        *Line=nullptr,*pc ;
  DTM_TIN_NODE       *pd ;
- DPoint3d         *PolyPts=NULL ;
- TAG_POLYGON *TagPolygons=NULL,*ppoly,*ppoly1 ;
+ DPoint3d         *PolyPts=nullptr ;
+ TAG_POLYGON *TagPolygons=nullptr,*ppoly,*ppoly1 ;
 /*
 ** Write Status Message ** Development Only
 */
@@ -350,7 +351,7 @@ BENTLEYDTM_Public int bcdtm3DModel_extractIntersectedTinHullPolygonsDtmObject(BC
 */
  Offset = dtmP->cListPtr / 8  + 1 ;
  Line = ( unsigned char * ) malloc ( Offset * sizeof(char)) ;
- if( Line == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+ if( Line == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
  for( pc = Line ; pc < Line + Offset ; ++pc ) *pc = (char) 0 ;
 /*
 ** Scan Tin Lines 
@@ -388,7 +389,7 @@ BENTLEYDTM_Public int bcdtm3DModel_extractIntersectedTinHullPolygonsDtmObject(BC
 **             Scan Back To Start Point
 */
                 NumPolyPts = 0 ;
-                if( PolyPts != NULL ) { free(PolyPts) ; PolyPts = NULL ; }
+                if( PolyPts != nullptr ) { free(PolyPts) ; PolyPts = nullptr ; }
                 spnt = sp ;
                 do
                   { 
@@ -466,9 +467,9 @@ BENTLEYDTM_Public int bcdtm3DModel_extractIntersectedTinHullPolygonsDtmObject(BC
                 if( TagPolyNe == TagPolyMe )
                   {
                    TagPolyMe = TagPolyMe + TagPolyMemInc ;
-                   if( TagPolygons == NULL ) TagPolygons = ( TAG_POLYGON * ) malloc  ( TagPolyMe * sizeof(TAG_POLYGON)) ;
+                   if( TagPolygons == nullptr ) TagPolygons = ( TAG_POLYGON * ) malloc  ( TagPolyMe * sizeof(TAG_POLYGON)) ;
                    else                   TagPolygons = ( TAG_POLYGON * ) realloc ( TagPolygons , TagPolyMe * sizeof(TAG_POLYGON)) ;
-                   if( TagPolygons == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+                   if( TagPolygons == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
                   }
                 (TagPolygons+TagPolyNe)->PolyId        = TagPolyNe ;
                 (TagPolygons+TagPolyNe)->PolyArea      = PolyArea  ;
@@ -477,16 +478,16 @@ BENTLEYDTM_Public int bcdtm3DModel_extractIntersectedTinHullPolygonsDtmObject(BC
                 (TagPolygons+TagPolyNe)->IntPointY     =  Ipy ;
                 (TagPolygons+TagPolyNe)->PolyPts       = PolyPts ;
                 (TagPolygons+TagPolyNe)->NumPolyPts    = NumPolyPts ;
-                (TagPolygons+TagPolyNe)->TinIndexes    = NULL ;
+                (TagPolygons+TagPolyNe)->TinIndexes    = nullptr ;
                 (TagPolygons+TagPolyNe)->NumTinIndexes = 0 ;
-                (TagPolygons+TagPolyNe)->IntPolys      = NULL ;
+                (TagPolygons+TagPolyNe)->IntPolys      = nullptr ;
                 (TagPolygons+TagPolyNe)->NumIntPolys   = 0 ;
                 ++TagPolyNe ;
 /*
 **              Free Memory
 */
                 NumPolyPts =  0 ;
-                PolyPts  = NULL ;
+                PolyPts  = nullptr ;
 /*
 **              Null Out Tptr Polygon
 */         
@@ -510,9 +511,9 @@ BENTLEYDTM_Public int bcdtm3DModel_extractIntersectedTinHullPolygonsDtmObject(BC
     if( ppoly->IntToPoly >= 0 )
       {
        ppoly1 = TagPolygons + ppoly->IntToPoly ;
-       if( ppoly1->IntPolys == NULL ) ppoly1->IntPolys = (long * ) malloc( sizeof(long)) ;
+       if( ppoly1->IntPolys == nullptr ) ppoly1->IntPolys = (long * ) malloc( sizeof(long)) ;
        else                           ppoly1->IntPolys = (long * ) realloc( ppoly1->IntPolys,(ppoly1->NumIntPolys+1) * sizeof(long)) ;
-       if( ppoly1->IntPolys == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+       if( ppoly1->IntPolys == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
        *(ppoly1->IntPolys+ppoly1->NumIntPolys) = ppoly->PolyId ;
        ++ppoly1->NumIntPolys ;
       } 
@@ -541,12 +542,12 @@ BENTLEYDTM_Public int bcdtm3DModel_extractIntersectedTinHullPolygonsDtmObject(BC
 */
  *IntPolys    = TagPolygons ;
  *NumIntPolys = TagPolyNe ;
- TagPolygons  = NULL ;
+ TagPolygons  = nullptr ;
 /*
 ** Clean Up
 */
  cleanup :
- if( Line != NULL ) { free(Line) ; Line = NULL ; }
+ if( Line != nullptr ) { free(Line) ; Line = nullptr ; }
 /*
 ** Job Completed
 */
@@ -585,7 +586,7 @@ BENTLEYDTM_Public int bcdtm3DModel_assignTinIndexesToIntersectPolygonsDtm(BC_DTM
  double      z ;
  BC_DTM_OBJLIST  *ptin  ;
  TAG_POLYGON *ppoly ;
- VOLTININDEX *TinIndexes=NULL,*pind,pindv,*pi ;
+ VOLTININDEX *TinIndexes=nullptr,*pind,pindv,*pi ;
 /*
 ** Write Status Message
 */
@@ -610,9 +611,9 @@ BENTLEYDTM_Public int bcdtm3DModel_assignTinIndexesToIntersectPolygonsDtm(BC_DTM
           if( NumTinIndexes == MemTinIndexes )
             {
              MemTinIndexes = MemTinIndexes + MemTinIndexesInc ;
-             if( TinIndexes == NULL ) TinIndexes = ( VOLTININDEX * ) malloc(MemTinIndexes*sizeof(VOLTININDEX)) ;
+             if( TinIndexes == nullptr ) TinIndexes = ( VOLTININDEX * ) malloc(MemTinIndexes*sizeof(VOLTININDEX)) ;
              else                     TinIndexes = ( VOLTININDEX * ) realloc(TinIndexes,MemTinIndexes*sizeof(VOLTININDEX)) ;
-             if( TinIndexes == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+             if( TinIndexes == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
             }
           (TinIndexes+NumTinIndexes)->Tin      = ptin->Tin ;
           (TinIndexes+NumTinIndexes)->Index    = ptin->TinIndex ;
@@ -676,13 +677,13 @@ BENTLEYDTM_Public int bcdtm3DModel_assignTinIndexesToIntersectPolygonsDtm(BC_DTM
 ** Reset For Next Intersection Polygon
 */
     NumTinIndexes = MemTinIndexes = 0 ;
-    TinIndexes = NULL ;
+    TinIndexes = nullptr ;
    }
 /*
 ** Clean Up
 */
  cleanup :
- if( TinIndexes != NULL ) { free(TinIndexes) ; TinIndexes = NULL ; }
+ if( TinIndexes != nullptr ) { free(TinIndexes) ; TinIndexes = nullptr ; }
 /*
 ** Job Completed
 */
@@ -742,7 +743,7 @@ BENTLEYDTM_Public int bcdtm3DModel_determineInternalIntersectedTinHullPolygonsDt
  for( ppol = IntPolys ; ppol < IntPolys + NumIntPolys ; ++ppol )
    {
     if( bcdtmInsert_internalStringIntoDtmObject(dtmP,1,2,ppol->PolyPts,ppol->NumPolyPts,&Spnt)) goto errexit ;
-    if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,DTMFeatureType::Polygon,ppol->PolyId,DTM_NULL_FEATURE_ID,Spnt,1)) goto errexit ; 
+    if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,nullptr,0,DTMFeatureType::Polygon,ppol->PolyId,DTM_NULL_FEATURE_ID,Spnt,1)) goto errexit ; 
    }
  if( dbg ) bcdtmWrite_message(0,0,0,"Storing Polygons In Tin As Dtm Feature Polygon Completed") ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Polygons = %6ld",dtmP->numFeatures) ;
@@ -851,7 +852,7 @@ BENTLEYDTM_Public int bcdtm3DModel_getBreakLineUserTagsForTinLineDtmObject(BC_DT
 */
  if( P1 < 0 || P1 >= dtmP->numPoints ) { bcdtmWrite_message(2,0,0,"Tin Point Range Error") ; goto errexit ; }
  if( P2 < 0 || P2 >= dtmP->numPoints ) { bcdtmWrite_message(2,0,0,"Tin Point Range Error") ; goto errexit ; }
- if( *UserTags != NULL ) { bcdtmWrite_message(1,0,0,"UserTags Not Initialised To Null") ; goto errexit ; }
+ if( *UserTags != nullptr ) { bcdtmWrite_message(1,0,0,"UserTags Not Initialised To Null") ; goto errexit ; }
 /*
 ** Scan Feature List For Point P1 And Count Features That Connect To P2
 */
@@ -871,7 +872,7 @@ BENTLEYDTM_Public int bcdtm3DModel_getBreakLineUserTagsForTinLineDtmObject(BC_DT
 ** Allocate Memory For Features And UserTags
 */
     *UserTags = ( DTMUserTag *) malloc(*NumOfTags * sizeof(DTMUserTag)) ;
-    if( *UserTags == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+    if( *UserTags == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
 /*
 ** Copy Features And UserTags To User Arrays
 */
@@ -900,7 +901,7 @@ BENTLEYDTM_Public int bcdtm3DModel_getBreakLineUserTagsForTinLineDtmObject(BC_DT
 */
  errexit :
  *NumOfTags = 0 ; 
- if( *UserTags != NULL ) { free(*UserTags) ; *UserTags = NULL ; }
+ if( *UserTags != nullptr ) { free(*UserTags) ; *UserTags = nullptr ; }
  if( dbg ) bcdtmWrite_message(0,0,0,"Getting Break Line User Tags For Line Error") ;
  return(1) ;
 }
@@ -938,8 +939,8 @@ BENTLEYDTM_Public int bcdtm3DModel_calculateDesignSurfaceVolumesDtm
  DPoint3d     *p3d  ; 
  TAG_POLYGON *pip,*ipoly ;
  VOLTININDEX *pind  ;
- VOLRANGETAB *RangeTable=NULL ;
- BC_DTM_OBJ  *dtmP=NULL ;
+ VOLRANGETAB *RangeTable=nullptr ;
+ BC_DTM_OBJ  *dtmP=nullptr ;
 /*
 ** Write Status Message
 */
@@ -996,7 +997,7 @@ BENTLEYDTM_Public int bcdtm3DModel_calculateDesignSurfaceVolumesDtm
             {
              ipoly = IntPolys + *(pip->IntPolys + nvoid) ;
              if( bcdtmInsert_internalStringIntoDtmObject(dtmP,1,2,ipoly->PolyPts,ipoly->NumPolyPts,&Spnt)) goto errexit ;
-             if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,DTMFeatureType::Void,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,Spnt,1)) goto errexit ;
+             if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,nullptr,0,DTMFeatureType::Void,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,Spnt,1)) goto errexit ;
             }
           bcdtmTin_markInternalVoidPointsDtmObject(dtmP) ;
           if( pip->NumIntPolys > 1 ) if( bcdtmClip_resolveAdjoiningPolygonalFeaturesDtmObject(dtmP)) goto errexit ;
@@ -1004,7 +1005,7 @@ BENTLEYDTM_Public int bcdtm3DModel_calculateDesignSurfaceVolumesDtm
 /*
 **     Calculate Surface To Surface Volume
 */
-       if( bcdtmTinVolume_surfaceToSurfaceDtmObjects((BC_DTM_OBJ *) pind->Tin,dtmP,RangeTable,0,pip->PolyPts,pip->NumPolyPts,NULL,NULL,Cut,Fill,Balance,Area ) ) goto err01 ;
+       if( bcdtmTinVolume_surfaceToSurfaceDtmObjects((BC_DTM_OBJ *) pind->Tin,dtmP,RangeTable,0,pip->PolyPts,pip->NumPolyPts,nullptr,nullptr,Cut,Fill,Balance,Area ) ) goto err01 ;
        if( dbg ) bcdtmWrite_message(0,0,0,"BI = %6I64d TI = %6I64d ** Cut = %10.4lf Fill = %10.4lf Area = %10.4lf",pind->Index,(pind+1)->Index,Cut,Fill,Area) ;
 /*
 **     Store In Design Volumes Structure
@@ -1012,9 +1013,9 @@ BENTLEYDTM_Public int bcdtm3DModel_calculateDesignSurfaceVolumesDtm
        if( *numDesignVolumesP == MemdesignVolumesPP )          
          {
           MemdesignVolumesPP = MemdesignVolumesPP + MemdesignVolumesPPInc ;
-          if( *designVolumesPP == NULL ) *designVolumesPP = ( MODEL_VOLUME * ) malloc ( MemdesignVolumesPP * sizeof(MODEL_VOLUME)) ;
+          if( *designVolumesPP == nullptr ) *designVolumesPP = ( MODEL_VOLUME * ) malloc ( MemdesignVolumesPP * sizeof(MODEL_VOLUME)) ;
           else                         *designVolumesPP = ( MODEL_VOLUME * ) realloc( *designVolumesPP , MemdesignVolumesPP * sizeof(MODEL_VOLUME)) ;  
-          if( *designVolumesPP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+          if( *designVolumesPP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
          }
        (*designVolumesPP + *numDesignVolumesP)->BottomIndex = pind->Index ;
        (*designVolumesPP + *numDesignVolumesP)->TopIndex    = (pind+1)->Index ;
@@ -1026,7 +1027,7 @@ BENTLEYDTM_Public int bcdtm3DModel_calculateDesignSurfaceVolumesDtm
 ** Delete Tin Object
 */
 err01 : 
-       if( dtmP != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
+       if( dtmP != nullptr ) bcdtmObject_destroyDtmObject(&dtmP) ;
       }
    }
 /*
@@ -1037,7 +1038,7 @@ err01 :
 ** Clean Up
 */
  cleanup :
- if( dtmP != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
+ if( dtmP != nullptr ) bcdtmObject_destroyDtmObject(&dtmP) ;
 /*
 ** Job Completed
 */
@@ -1076,8 +1077,8 @@ BENTLEYDTM_Public int bcdtm3DModel_calculateGroundSurfaceVolumesDtm(BC_DTM_OBJLI
  DPoint3d         *p3d  ; 
  TAG_POLYGON *pip,*ipoly ;
  VOLTININDEX *pind ;
- VOLRANGETAB *RangeTable=NULL ;
- BC_DTM_OBJ  *dtmP=NULL ;
+ VOLRANGETAB *RangeTable=nullptr ;
+ BC_DTM_OBJ  *dtmP=nullptr ;
 /*
 ** Write Status Message
 */
@@ -1123,7 +1124,7 @@ BENTLEYDTM_Public int bcdtm3DModel_calculateGroundSurfaceVolumesDtm(BC_DTM_OBJLI
          {
           ipoly = IntPolys + *(pip->IntPolys + nvoid) ;
           if( bcdtmInsert_internalStringIntoDtmObject(dtmP,1,2,ipoly->PolyPts,ipoly->NumPolyPts,&Spnt)) goto errexit ;
-          if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,DTMFeatureType::Void,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,Spnt,1)) goto errexit ;
+          if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,nullptr,0,DTMFeatureType::Void,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,Spnt,1)) goto errexit ;
          }
        bcdtmTin_markInternalVoidPointsDtmObject(dtmP) ;
        if( pip->NumIntPolys > 1 ) if( bcdtmClip_resolveAdjoiningPolygonalFeaturesDtmObject(dtmP)) goto errexit ;
@@ -1132,7 +1133,7 @@ BENTLEYDTM_Public int bcdtm3DModel_calculateGroundSurfaceVolumesDtm(BC_DTM_OBJLI
 **  Calculate Volumes
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Calculating Volumes") ;
-    if( bcdtmTinVolume_surfaceToSurfaceDtmObjects((BC_DTM_OBJ *)groundTinObjectP->Tin,dtmP,RangeTable,0,pip->PolyPts,pip->NumPolyPts,NULL,NULL,Cut,Fill,Balance,Area ) ) goto err01 ;
+    if( bcdtmTinVolume_surfaceToSurfaceDtmObjects((BC_DTM_OBJ *)groundTinObjectP->Tin,dtmP,RangeTable,0,pip->PolyPts,pip->NumPolyPts,nullptr,nullptr,Cut,Fill,Balance,Area ) ) goto err01 ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Index = %6I64d ** Cut = %10.4lf Fill = %10.4lf Area = %10.4lf",pind->Index,Cut,Fill,Area) ;
 /*
 **  Store In Ground Volumes Structure
@@ -1140,9 +1141,9 @@ BENTLEYDTM_Public int bcdtm3DModel_calculateGroundSurfaceVolumesDtm(BC_DTM_OBJLI
     if( *numGroundVolumesP == MemgroundVolumesPP )          
       {
        MemgroundVolumesPP = MemgroundVolumesPP + MemgroundVolumesPPInc ;
-       if( *groundVolumesPP == NULL ) *groundVolumesPP = ( MODEL_VOLUME * ) malloc ( MemgroundVolumesPP * sizeof(MODEL_VOLUME)) ;
+       if( *groundVolumesPP == nullptr ) *groundVolumesPP = ( MODEL_VOLUME * ) malloc ( MemgroundVolumesPP * sizeof(MODEL_VOLUME)) ;
        else                           *groundVolumesPP = ( MODEL_VOLUME * ) realloc( *groundVolumesPP , MemgroundVolumesPP * sizeof(MODEL_VOLUME)) ;  
-       if( *groundVolumesPP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+       if( *groundVolumesPP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
       }
     (*groundVolumesPP + *numGroundVolumesP)->BottomIndex = pind->Index ;
     (*groundVolumesPP + *numGroundVolumesP)->TopIndex    = groundTinObjectP->TinIndex ;
@@ -1151,7 +1152,7 @@ BENTLEYDTM_Public int bcdtm3DModel_calculateGroundSurfaceVolumesDtm(BC_DTM_OBJLI
     (*groundVolumesPP + *numGroundVolumesP)->Area = Area ;
     ++*numGroundVolumesP ;
 err01 : 
-   if( dtmP != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
+   if( dtmP != nullptr ) bcdtmObject_destroyDtmObject(&dtmP) ;
    }
 /*
 ** Realloacte Ground Volumes Array
@@ -1161,7 +1162,7 @@ err01 :
 ** Clean Up
 */
  cleanup :
- if( dtmP != NULL ) bcdtmObject_destroyDtmObject(&dtmP)  ;
+ if( dtmP != nullptr ) bcdtmObject_destroyDtmObject(&dtmP)  ;
 /*
 ** Job Completed
 */
@@ -1217,7 +1218,7 @@ BENTLEYDTM_EXPORT int bcdtm3DModel_insertMissingHullBreakLinesDtmObject(BC_DTM_O
 **  Insert As Break Line In Tin
 */
        nodeAddrP(dtmP,sp)->tPtr = np ;
-       if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,DTMFeatureType::Breakline,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,sp,1)) goto errexit ; 
+       if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,nullptr,0,DTMFeatureType::Breakline,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,sp,1)) goto errexit ; 
        breakLineInserted = 1 ;
       } 
 /*

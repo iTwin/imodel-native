@@ -3210,7 +3210,8 @@ BENTLEYDTM_Private int bcdtmPolyContour_buildLineIndexTable(BC_DTM_OBJ *dtmP,DTM
 */
 {
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long    p1,p2,clc,Nl,VoidLine,Direction ;
+ long    p1,p2,clc,Nl,Direction ;
+ bool VoidLine;
  DTM_SMOOTH_CONTOUR_INDEX *pItab ;
 /*
 ** Write Status Message - Development Only
@@ -3259,7 +3260,7 @@ BENTLEYDTM_Private int bcdtmPolyContour_buildLineIndexTable(BC_DTM_OBJ *dtmP,DTM
 /*
 **           Determine Line Type
 */
-             if(  bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,&VoidLine) ) goto errexit ;
+             if(  bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,VoidLine) ) goto errexit ;
              if( VoidLine ) pItab->Type = 0 ;
              else if( nodeAddrP(dtmP,p1)->hPtr == p2 ) pItab->Type = -2 ;
              else if( nodeAddrP(dtmP,p2)->hPtr == p1 ) pItab->Type =  2 ; 
@@ -3414,7 +3415,8 @@ BENTLEYDTM_Private int bcdtmPolyContour_buildZeroTinPointTableDtmObject(BC_DTM_O
 BENTLEYDTM_Private int bcdtmPolyContour_getScanTrianglesAtZeroTinPointDtmObject(BC_DTM_OBJ *dtmP,long P0,double Eps,double *partDerivP,DTM_SMOOTH_CONTOUR_ZERO_POINT **zeroPtsP,long *numZeroPts,long *MemZeroPTab,long MemZeroPTabInc)
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   clc,P1,P2,VoidTriangle ;
+ long   clc, P1, P2;
+ bool VoidTriangle;
  double F1,F2,ang,ang1,ang2,X1,Y1,X2,Y2,X11,Y11,X12,Y12,Zx,Zy,Zz ;
  double rad,radinc,radius ;
 /*
@@ -3450,7 +3452,7 @@ BENTLEYDTM_Private int bcdtmPolyContour_getScanTrianglesAtZeroTinPointDtmObject(
 /*
 **        Check For Non Void Triangle
 */
-          if(  bcdtmList_testForVoidTriangleDtmObject(dtmP,P0,P2,P1,&VoidTriangle)) goto errexit ;
+          if(  bcdtmList_testForVoidTriangleDtmObject(dtmP,P0,P2,P1,VoidTriangle)) goto errexit ;
           if( ! VoidTriangle )
             { 
 /*

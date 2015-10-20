@@ -515,7 +515,8 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determinePointVisibilityDtmObject(BC_DTM_O
  long    drapeFlag,numDrapePts ;
  DPoint3d     stringPts[2] ;
  double  Zs ;
- DTM_DRAPE_POINT *drapeP,*drapePtsP=nullptr ;
+ DTM_DRAPE_POINT *drapeP, *drapePtsP=nullptr ;
+ bvector<DTM_DRAPE_POINT> drapePts;
 /*
 ** Write Entry Message
 */
@@ -589,7 +590,9 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determinePointVisibilityDtmObject(BC_DTM_O
 */
  stringPts[0].x = Xe ; stringPts[0].y = Ye ; stringPts[0].z = Ze ;
  stringPts[1].x = Xp ; stringPts[1].y = Yp ; stringPts[1].z = Zp ;
- if( bcdtmDrape_stringDtmObject(dtmP,stringPts,2,FALSE,&drapePtsP,&numDrapePts)) goto errexit ;
+ if( bcdtmDrape_stringDtmObject(dtmP,stringPts,2,FALSE,drapePts)) goto errexit ;
+ drapePtsP = drapePts.data();
+ numDrapePts = (long)drapePts.size();
 /*
 ** Log Drape Angle
 */
@@ -602,16 +605,12 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determinePointVisibilityDtmObject(BC_DTM_O
 */
  for( drapeP = drapePtsP ; drapeP < drapePtsP + numDrapePts && *isVisibleP == 1 ; ++drapeP )
    {
-    if( drapeP->drapeZ > bcdtmVisibility_interpolateZOnLineOfSight(Xe,Ye,Ze,Xp,Yp,Zp,drapeP->drapeX,drapeP->drapeY)) *isVisibleP = 0 ; 
+    if( drapeP->drapePt.z > bcdtmVisibility_interpolateZOnLineOfSight(Xe,Ye,Ze,Xp,Yp,Zp,drapeP->drapePt.x,drapeP->drapePt.y)) *isVisibleP = 0 ; 
    }
 /*
 ** Clean Up
 */
  cleanup :
- if( drapePtsP != nullptr ) 
-   {
-    bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
-   } 
 /*
 ** Job Completed
 */
@@ -1095,7 +1094,8 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineVisibilityTinLinesDtmObject
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   p1,p2,clc,*losLineP,isVisible,voidLine,drapeFlag,startTime,lineNum=0 ;
+ long   p1,p2,clc,*losLineP,isVisible,drapeFlag,startTime,lineNum=0 ;
+ bool voidLine;
  double X1,Y1,Z1,X2,Y2,Z2,Zs ;
  DPoint3d    *p3dP,linePts[2]  ;
 /*
@@ -1169,7 +1169,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineVisibilityTinLinesDtmObject
             { 
              if( dbg && ( lineNum % 10000 == 0 || lineNum + 1 == dtmP->numLines) ) bcdtmWrite_message(1,0,0,"Processing Line %8ld of %8ld",lineNum+1,dtmP->numLines) ;
              ++lineNum ;  
-             if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,&voidLine)) goto errexit ;
+             if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,voidLine)) goto errexit ;
              if( ! voidLine ) 
                { 
                 X2 = pointAddrP(dtmP,p2)->x ;
@@ -1361,6 +1361,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
  DPoint3d    *p3d,radial[2],*loadPtsP=nullptr ;
  long   start,finish ;
  DTM_DRAPE_POINT *drape1P,*drape2P,*drapePtsP=nullptr ;
+ bvector<DTM_DRAPE_POINT> drapePts;
 /*
 ** Write Entry Message
 */
@@ -1442,7 +1443,9 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
 /*
 **  Drape Radial On Tin Surface
 */
-    if( bcdtmDrape_stringDtmObject(dtmP,radial,2,FALSE,&drapePtsP,&numDrapePts)) goto errexit ;
+    if( bcdtmDrape_stringDtmObject(dtmP,radial,2,FALSE,drapePts)) goto errexit ;
+    drapePtsP = drapePts.data();
+    numDrapePts = (long)drapePts.size();
 /*
 **  Remove Drape End Points Not On Tin
 */
@@ -1453,7 +1456,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
 */
     for( drape1P = drape2P = drapePtsP ; drape2P < drapePtsP + numDrapePts ; ++drape2P )
       {
-       if( drape2P->drapeX != drape1P->drapeX || drape2P->drapeY != drape1P->drapeY )
+       if( drape2P->drapePt.x != drape1P->drapePt.x || drape2P->drapePt.y != drape1P->drapePt.y )
          {
           ++drape1P ;
           *drape1P = *drape2P ;
@@ -1464,10 +1467,10 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
 **  Determine Visibility Of Draped Radial Points
 */
     if( bcdtmVisibility_storeVertice(100,0,0.0,0.0,0.0) ) goto errexit ;
-    if( bcdtmVisibility_storeVertice(1,1,drapePtsP->drapeX,drapePtsP->drapeY,drapePtsP->drapeZ) ) goto errexit ;
-    dx = (drapePtsP+1)->drapeX - Xe ;
-    dy = (drapePtsP+1)->drapeY - Ye ;
-    dz = (drapePtsP+1)->drapeZ - Ze ;
+    if( bcdtmVisibility_storeVertice(1,1,drapePtsP->drapePt.x,drapePtsP->drapePt.y,drapePtsP->drapePt.z) ) goto errexit ;
+    dx = (drapePtsP+1)->drapePt.x - Xe ;
+    dy = (drapePtsP+1)->drapePt.y - Ye ;
+    dz = (drapePtsP+1)->drapePt.z - Ze ;
     dd = sqrt(dx*dx+dy*dy) ;
     maxAngle = atan2(dz,dd) ;
     drape1P = drapePtsP + 2 ;
@@ -1484,17 +1487,17 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
           process = 1 ; 
           while ( drape1P <= drape2P && process )
             {
-             dx = drape1P->drapeX - Xe ;
-             dy = drape1P->drapeY - Ye ;
-             dz = drape1P->drapeZ - Ze ;
+             dx = drape1P->drapePt.x - Xe ;
+             dy = drape1P->drapePt.y - Ye ;
+             dz = drape1P->drapePt.z - Ze ;
              dd = sqrt(dx*dx+dy*dy) ;
              eyeAngle = atan2(dz,dd) ;
              if( eyeAngle >= maxAngle ) { maxAngle = eyeAngle ; ++drape1P ; }
              else                        process = 0 ; 
             }  
           --drape1P ;
-          if( bcdtmVisibility_storeVertice(1,1,drape1P->drapeX,drape1P->drapeY,drape1P->drapeZ) ) goto errexit ;
-          if( drape1P < drape2P ) if( bcdtmVisibility_storeVertice(1,0,drape1P->drapeX,drape1P->drapeY,drape1P->drapeZ) ) goto errexit ;
+          if( bcdtmVisibility_storeVertice(1,1,drape1P->drapePt.x,drape1P->drapePt.y,drape1P->drapePt.z) ) goto errexit ;
+          if( drape1P < drape2P ) if( bcdtmVisibility_storeVertice(1,0,drape1P->drapePt.x,drape1P->drapePt.y,drape1P->drapePt.z) ) goto errexit ;
           ++drape1P ; 
          } 
 /*
@@ -1506,9 +1509,9 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
           process = 1 ; 
           while ( drape1P <= drape2P && process )
             {
-             dx = drape1P->drapeX - Xe ;
-             dy = drape1P->drapeY - Ye ;
-             dz = drape1P->drapeZ - Ze ;
+             dx = drape1P->drapePt.x - Xe ;
+             dy = drape1P->drapePt.y - Ye ;
+             dz = drape1P->drapePt.z - Ze ;
              dd = sqrt(dx*dx+dy*dy) ;
              eyeAngle = atan2(dz,dd) ;
              if( eyeAngle < maxAngle ) { lastEyeAngle = eyeAngle ; ++drape1P ; }
@@ -1520,16 +1523,16 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
           if( process )
             {
              --drape1P ;
-             if( bcdtmVisibility_storeVertice(1,0,drape1P->drapeX,drape1P->drapeY,drape1P->drapeZ) ) goto errexit ;
+             if( bcdtmVisibility_storeVertice(1,0,drape1P->drapePt.x,drape1P->drapePt.y,drape1P->drapePt.z) ) goto errexit ;
              ++drape1P ;
             }
           else
             { 
              dx = maxAngle - lastEyeAngle ;
              dd = eyeAngle - lastEyeAngle ;
-             x =  (drape1P-1)->drapeX + (drape1P->drapeX - (drape1P-1)->drapeX) * dx / dd ;
-             y =  (drape1P-1)->drapeY + (drape1P->drapeY - (drape1P-1)->drapeY) * dx / dd ;
-             z =  (drape1P-1)->drapeZ + (drape1P->drapeZ - (drape1P-1)->drapeZ) * dx / dd ;
+             x =  (drape1P-1)->drapePt.x + (drape1P->drapePt.x - (drape1P-1)->drapePt.x) * dx / dd ;
+             y =  (drape1P-1)->drapePt.y + (drape1P->drapePt.y - (drape1P-1)->drapePt.y) * dx / dd ;
+             z =  (drape1P-1)->drapePt.z + (drape1P->drapePt.z - (drape1P-1)->drapePt.z) * dx / dd ;
              if( bcdtmVisibility_storeVertice(1,0,x,y,z) ) goto errexit ;
              if( bcdtmVisibility_storeVertice(1,1,x,y,z) ) goto errexit ;
             } 
@@ -1554,10 +1557,6 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
 **  Increment Angle For Next Radial
 */
     angle = angle + anginc ;
-/*
-**  Free Drape Points
-*/
-    if( drapePtsP != nullptr ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
    } 
 /*
 ** Get Elapsed Time ** Developement Purposes Only
@@ -1569,7 +1568,6 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
 */
  cleanup :
  if( loadPtsP != nullptr ) { free(loadPtsP) ; loadPtsP = nullptr ; }
- if( drapePtsP != nullptr ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
 /*
 ** Job Completed
 */
@@ -1768,7 +1766,8 @@ BENTLEYDTM_Private int bcdtmVisibility_buildVisibilityTablesForDtmObject
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long  p1,p2,ap,cp,clc,visibiltyAnt=0,visibiltyClk=0,visibiltyRidge ;
- long  dtmFeature,voidsInDtm,voidLine,startTime=bcdtmClock() ;
+ long  dtmFeature,startTime=bcdtmClock() ;
+ bool voidsInDtm, voidLine;
  DPoint3d   breakPts[2] ;
  BC_DTM_FEATURE *dtmFeatureP ;
  BC_DTM_OBJ *dataDtmP=nullptr ;
@@ -1827,10 +1826,10 @@ BENTLEYDTM_Private int bcdtmVisibility_buildVisibilityTablesForDtmObject
           clc = clistAddrP(dtmP,clc)->nextPtr ;
           if(  p1 < p2  )
             {
-             voidLine = FALSE ;
-             if( voidsInDtm == TRUE )
+             voidLine = false ;
+             if( voidsInDtm == true)
                {
-                if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,&voidLine)) goto errexit ;
+                if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,voidLine)) goto errexit ;
                } 
              if( voidLine == FALSE  )
                {  
@@ -2400,6 +2399,7 @@ BENTLEYDTM_Private int bcdtmVisibility_getLastVisibleSectionOfSurfaceLineBetween
  double dd,dx,dy,dz,x,y,z,maxAngle,eyeAngle=0.0,lastEyeAngle=0.0 ;
  DPoint3d    radial[2] ;
  DTM_DRAPE_POINT *drape1P,*drape2P,*drapePtsP=nullptr ;
+ bvector<DTM_DRAPE_POINT> drapePts;
 /*
 ** Initialise
 */ 
@@ -2412,7 +2412,9 @@ BENTLEYDTM_Private int bcdtmVisibility_getLastVisibleSectionOfSurfaceLineBetween
 /*
 **  Drape Radial On Tin Surface
 */
- if( bcdtmDrape_stringDtmObject(dtmP,radial,2,FALSE,&drapePtsP,&numDrapePts)) goto errexit ;
+ if( bcdtmDrape_stringDtmObject(dtmP,radial,2,FALSE, drapePts)) goto errexit ;
+ drapePtsP = drapePts.data();
+ numDrapePts = (long)drapePts.size();
 /*
 **  Remove Drape End Points Not On Tin
 */
@@ -2423,7 +2425,7 @@ BENTLEYDTM_Private int bcdtmVisibility_getLastVisibleSectionOfSurfaceLineBetween
 */
  for( drape1P = drape2P = drapePtsP ; drape2P < drapePtsP + numDrapePts ; ++drape2P )
    {
-    if( drape2P->drapeX != drape1P->drapeX || drape2P->drapeY != drape1P->drapeY )
+    if( drape2P->drapePt.x != drape1P->drapePt.x || drape2P->drapePt.y != drape1P->drapePt.y )
       {
        *drape1P = *drape2P ;
        ++drape1P ;
@@ -2434,10 +2436,10 @@ BENTLEYDTM_Private int bcdtmVisibility_getLastVisibleSectionOfSurfaceLineBetween
 **  Determine Visibility Of Draped Radial Points
 */
  if( bcdtmVisibility_storeVertice(100,0,0.0,0.0,0.0) ) goto errexit  ;
- if( bcdtmVisibility_storeVertice(1,1,drapePtsP->drapeX,drapePtsP->drapeY,drapePtsP->drapeZ) ) goto errexit  ;
- dx = (drapePtsP+1)->drapeX - Xe ;
- dy = (drapePtsP+1)->drapeY - Ye ;
- dz = (drapePtsP+1)->drapeZ - Ze ;
+ if( bcdtmVisibility_storeVertice(1,1,drapePtsP->drapePt.x,drapePtsP->drapePt.y,drapePtsP->drapePt.z) ) goto errexit  ;
+ dx = (drapePtsP+1)->drapePt.x - Xe ;
+ dy = (drapePtsP+1)->drapePt.y - Ye ;
+ dz = (drapePtsP+1)->drapePt.z - Ze ;
  dd = sqrt(dx*dx+dy*dy) ;
  maxAngle = atan2(dz,dd) ;
  drape1P = drapePtsP + 2 ;
@@ -2454,17 +2456,17 @@ BENTLEYDTM_Private int bcdtmVisibility_getLastVisibleSectionOfSurfaceLineBetween
        process = 1 ; 
        while ( drape1P <= drape2P && process )
          {
-          dx = drape1P->drapeX - Xe ;
-          dy = drape1P->drapeY - Ye ;
-          dz = drape1P->drapeZ - Ze ;
+          dx = drape1P->drapePt.x - Xe ;
+          dy = drape1P->drapePt.y - Ye ;
+          dz = drape1P->drapePt.z - Ze ;
           dd = sqrt(dx*dx+dy*dy) ;
           eyeAngle = atan2(dz,dd) ;
           if( eyeAngle >= maxAngle ) { maxAngle = eyeAngle ; ++drape1P ; }
           else                        process = 0 ; 
          }  
        --drape1P ;
-       if( bcdtmVisibility_storeVertice(1,1,drape1P->drapeX,drape1P->drapeY,drape1P->drapeZ) ) goto errexit ;
-       if( drape1P < drape2P ) if( bcdtmVisibility_storeVertice(1,0,drape1P->drapeX,drape1P->drapeY,drape1P->drapeZ) ) goto errexit ;
+       if( bcdtmVisibility_storeVertice(1,1,drape1P->drapePt.x,drape1P->drapePt.y,drape1P->drapePt.z) ) goto errexit ;
+       if( drape1P < drape2P ) if( bcdtmVisibility_storeVertice(1,0,drape1P->drapePt.x,drape1P->drapePt.y,drape1P->drapePt.z) ) goto errexit ;
        ++drape1P ; 
       } 
 /*
@@ -2476,9 +2478,9 @@ BENTLEYDTM_Private int bcdtmVisibility_getLastVisibleSectionOfSurfaceLineBetween
        process = 1 ; 
        while ( drape1P <= drape2P && process )
          {
-          dx = drape1P->drapeX - Xe ;
-          dy = drape1P->drapeY - Ye ;
-          dz = drape1P->drapeZ - Ze ;
+          dx = drape1P->drapePt.x - Xe ;
+          dy = drape1P->drapePt.y - Ye ;
+          dz = drape1P->drapePt.z - Ze ;
           dd = sqrt(dx*dx+dy*dy) ;
           eyeAngle = atan2(dz,dd) ;
           if( eyeAngle < maxAngle ) { lastEyeAngle = eyeAngle ; ++drape1P ; }
@@ -2490,16 +2492,16 @@ BENTLEYDTM_Private int bcdtmVisibility_getLastVisibleSectionOfSurfaceLineBetween
        if( process )
          {
           --drape1P ;
-          if( bcdtmVisibility_storeVertice(1,0,drape1P->drapeX,drape1P->drapeY,drape1P->drapeZ) ) goto errexit ;
+          if( bcdtmVisibility_storeVertice(1,0,drape1P->drapePt.x,drape1P->drapePt.y,drape1P->drapePt.z) ) goto errexit ;
           ++drape1P ;
          }
        else
          { 
           dx = maxAngle - lastEyeAngle ;
           dd = eyeAngle - lastEyeAngle ;
-          x =  (drape1P-1)->drapeX + (drape1P->drapeX - (drape1P-1)->drapeX) * dx / dd ;
-          y =  (drape1P-1)->drapeY + (drape1P->drapeY - (drape1P-1)->drapeY) * dx / dd ;
-          z =  (drape1P-1)->drapeZ + (drape1P->drapeZ - (drape1P-1)->drapeZ) * dx / dd ;
+          x =  (drape1P-1)->drapePt.x + (drape1P->drapePt.x - (drape1P-1)->drapePt.x) * dx / dd ;
+          y =  (drape1P-1)->drapePt.y + (drape1P->drapePt.y - (drape1P-1)->drapePt.y) * dx / dd ;
+          z =  (drape1P-1)->drapePt.z + (drape1P->drapePt.z - (drape1P-1)->drapePt.z) * dx / dd ;
           if( bcdtmVisibility_storeVertice(1,0,x,y,z) ) goto errexit ;
           if( bcdtmVisibility_storeVertice(1,1,x,y,z) ) goto errexit ;
          } 
@@ -2779,7 +2781,8 @@ BENTLEYDTM_Private int bcdtmVisibility_refineTinForRegionVisibilityDtmObject
 )
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
- long  p1,p2,p3,clPtr,voidFlag,startPnt,refineFlag,numStringPts,numPoints  ;
+ long  p1,p2,p3,clPtr,startPnt,refineFlag,numStringPts,numPoints  ;
+ bool voidFlag;
  long  trgNumber,dtmFeature,numFeatures,numBefore,numEnd,numJoinUserTags ;
  DPoint3d   *p3dP,*stringPtsP=nullptr,insertLine[2] ;
  DTM_TIN_NODE   *nodeP ;
@@ -2833,7 +2836,7 @@ BENTLEYDTM_Private int bcdtmVisibility_refineTinForRegionVisibilityDtmObject
                {
                 ++trgNumber ;
                 if( trgNumber == 1 || trgNumber % 100000 == 0 || trgNumber == dtmP->numTriangles ) bcdtmWrite_message(1,0,0,"Processing Triangle %6ld of %6ld",trgNumber,dtmP->numTriangles) ;
-                if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&voidFlag)) goto errexit  ;
+                if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidFlag)) goto errexit  ;
                 if( ! voidFlag ) 
                   {
                    if( bcdtmVisibility_calculateRegionVisibilityBreakLinesDtmObject(dtmP,dtmDataP,p1,p2,p3,numHorLines,hozLineIndexP,numHorLineIndex,hozIndexListP)) goto errexit  ;
@@ -2957,7 +2960,8 @@ BENTLEYDTM_Private int bcdtmVisibility_polygoniseAndLoadRegionVisibilityFromDtmO
 )
 {
  int       ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long      p1,p2,p3,lp,clc,offset,ofs1,ofs2,voidFlag,visValue,visibility ;
+ long      p1,p2,p3,lp,clc,offset,ofs1,ofs2,visValue,visibility ;
+ bool voidFlag;
  long      numLoadPts=0,memLoadPts=0,memLoadPtsInc=1000 ;
  double    x,y,sx,sy,area,X1,Y1,Z1,X2,Y2,Z2,X3,Y3,Z3  ;
  char      cv,nv=(char)-1/*255*/,*cP,*linesP=nullptr ;
@@ -2989,7 +2993,7 @@ BENTLEYDTM_Private int bcdtmVisibility_polygoniseAndLoadRegionVisibilityFromDtmO
             {
              if( nodeP->hPtr != p2 ) 
                {
-                if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&voidFlag)) goto errexit  ;
+                if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidFlag)) goto errexit  ;
                 if( ! voidFlag ) 
                   {
                    X1 = pointAddrP(dtmP,p1)->x ; Y1 = pointAddrP(dtmP,p1)->y ; Z1 = pointAddrP(dtmP,p1)->z + 0.00001 ;
@@ -4969,6 +4973,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialVisibilityDtmObject
  double x,y,z,dx,dy,dz,dd,Zs,maxangle,eyeangle,lasteyeangle ;
  DPoint3d    *p3dP,radialPts[2],*loadPtsP=nullptr ;
  DTM_DRAPE_POINT *drapeP,*drape1P,*drape2P,*drapePtsP=nullptr ;
+ bvector<DTM_DRAPE_POINT> drapePts;
 /*
 ** Write Status Message
 */
@@ -5040,7 +5045,9 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialVisibilityDtmObject
 **  Drape Radial On Tin
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Draping Radial On Tin") ;
- if( bcdtmDrape_stringDtmObject(dtmP,radialPts,2,FALSE,&drapePtsP,&numDrapePts)) goto errexit  ;
+ if( bcdtmDrape_stringDtmObject(dtmP,radialPts,2,FALSE,drapePts)) goto errexit  ;
+ drapePtsP = drapePts.data();
+ numDrapePts = (long)drapePts.size();
 /*
 **  Remove Drape End Points Not On Tin
 */
@@ -5052,7 +5059,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialVisibilityDtmObject
  if( dbg ) bcdtmWrite_message(0,0,0,"Removing Duplicate Drape Points") ;
  for( drape1P = drape2P = drapePtsP ; drape2P < drapePtsP + numDrapePts ; ++drape2P )
    {
-    if( drape2P->drapeX != drape1P->drapeX || drape2P->drapeY != drape1P->drapeY )
+    if( drape2P->drapePt.x != drape1P->drapePt.x || drape2P->drapePt.y != drape1P->drapePt.y )
       {
        if( drape1P != drape2P ) *drape1P = *drape2P ;
        ++drape1P ;
@@ -5064,10 +5071,10 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialVisibilityDtmObject
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Determine Visibility Of Draped Radial Points ** numDrapePts = %8ld", numDrapePts) ;
  if( bcdtmVisibility_storeVertice(100,0,0.0,0.0,0.0) ) goto errexit  ;
- if( bcdtmVisibility_storeVertice(1,1,drapePtsP->drapeX,drapePtsP->drapeY,drapePtsP->drapeZ) ) goto errexit  ;
- dx = (drapePtsP+1)->drapeX - Xe ;
- dy = (drapePtsP+1)->drapeY - Ye ;
- dz = (drapePtsP+1)->drapeZ - Ze ;
+ if( bcdtmVisibility_storeVertice(1,1,drapePtsP->drapePt.x,drapePtsP->drapePt.y,drapePtsP->drapePt.z) ) goto errexit  ;
+ dx = (drapePtsP+1)->drapePt.x - Xe ;
+ dy = (drapePtsP+1)->drapePt.y - Ye ;
+ dz = (drapePtsP+1)->drapePt.z - Ze ;
  dd = sqrt(dx*dx+dy*dy) ;
  maxangle = atan2(dz,dd) ;
  drape1P = drapePtsP + 2 ;
@@ -5083,17 +5090,17 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialVisibilityDtmObject
        process = 1 ; 
        while ( drape1P <= drape2P && process )
          {
-          dx = drape1P->drapeX - Xe ;
-          dy = drape1P->drapeY - Ye ;
-          dz = drape1P->drapeZ - Ze ;
+          dx = drape1P->drapePt.x - Xe ;
+          dy = drape1P->drapePt.y - Ye ;
+          dz = drape1P->drapePt.z - Ze ;
           dd = sqrt(dx*dx+dy*dy) ;
           eyeangle = atan2(dz,dd) ;
           if( eyeangle >= maxangle ) { maxangle = eyeangle ; ++drape1P ; }
           else                        process = 0 ; 
          }  
        --drape1P ;
-       if( bcdtmVisibility_storeVertice(1,1,drape1P->drapeX,drape1P->drapeY,drape1P->drapeZ) ) goto errexit  ;
-       if( drape1P < drape2P ) if( bcdtmVisibility_storeVertice(1,0,drape1P->drapeX,drape1P->drapeY,drape1P->drapeZ) ) goto errexit  ;
+       if( bcdtmVisibility_storeVertice(1,1,drape1P->drapePt.x,drape1P->drapePt.y,drape1P->drapePt.z) ) goto errexit  ;
+       if( drape1P < drape2P ) if( bcdtmVisibility_storeVertice(1,0,drape1P->drapePt.x,drape1P->drapePt.y,drape1P->drapePt.z) ) goto errexit  ;
        ++drape1P ; 
       } 
 /*
@@ -5104,9 +5111,9 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialVisibilityDtmObject
        process = 1 ; 
        while ( drape1P <= drape2P && process )
          {
-          dx = drape1P->drapeX - Xe ;
-          dy = drape1P->drapeY - Ye ;
-          dz = drape1P->drapeZ - Ze ;
+          dx = drape1P->drapePt.x - Xe ;
+          dy = drape1P->drapePt.y - Ye ;
+          dz = drape1P->drapePt.z - Ze ;
           dd = sqrt(dx*dx+dy*dy) ;
           eyeangle = atan2(dz,dd) ;
           if( eyeangle < maxangle ) { lasteyeangle = eyeangle ; ++drape1P ; }
@@ -5118,16 +5125,16 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialVisibilityDtmObject
        if( process )
          {
           --drape1P ;
-          if( bcdtmVisibility_storeVertice(1,0,drape1P->drapeX,drape1P->drapeY,drape1P->drapeZ) ) goto errexit  ;
+          if( bcdtmVisibility_storeVertice(1,0,drape1P->drapePt.x,drape1P->drapePt.y,drape1P->drapePt.z) ) goto errexit  ;
           ++drape1P ;
          }
        else
          { 
           dx = maxangle - lasteyeangle ;
           dd = eyeangle - lasteyeangle ;
-          x =  (drape1P-1)->drapeX + (drape1P->drapeX - (drape1P-1)->drapeX) * dx / dd ;
-          y =  (drape1P-1)->drapeY + (drape1P->drapeY - (drape1P-1)->drapeY) * dx / dd ;
-          z =  (drape1P-1)->drapeZ + (drape1P->drapeZ - (drape1P-1)->drapeZ) * dx / dd ;
+          x =  (drape1P-1)->drapePt.x + (drape1P->drapePt.x - (drape1P-1)->drapePt.x) * dx / dd ;
+          y =  (drape1P-1)->drapePt.y + (drape1P->drapePt.y - (drape1P-1)->drapePt.y) * dx / dd ;
+          z =  (drape1P-1)->drapePt.z + (drape1P->drapePt.z - (drape1P-1)->drapePt.z) * dx / dd ;
           if( bcdtmVisibility_storeVertice(1,0,x,y,z) ) goto errexit  ;
           if( bcdtmVisibility_storeVertice(1,1,x,y,z) ) goto errexit  ;
          } 

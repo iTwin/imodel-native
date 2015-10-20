@@ -559,7 +559,7 @@ ReprojectStatus DTMElementDisplayHandler::_OnGeoCoordinateReprojection (EditElem
             bcdtm->TransformUsingCallback (&geoconvertFunction, &geo);
             ElementRefP ref = element.GetElementRef ();
             element.SetElementRef (nullptr, element.GetModelRef());
-            BcDTMPtr dtm = BcDTM::CreateFromDtmHandle (bcdtm->GetTinHandle());
+            BcDTMPtr dtm = BcDTM::CreateFromDtmHandle (*bcdtm->GetTinHandle());
             DTMDataRefXAttribute::ScheduleFromDtm (element, &element, *dtm, mtrx, *element.GetModelRef(), true);
             TMReferenceXAttributeHandler::RemoveDTMDataReference (element);
             element.SetElementRef (ref, element.GetModelRef());
@@ -1502,7 +1502,7 @@ StatusInt DTMElementDisplayHandler::_DrawCut (ElementHandleCR thisElm, ICutPlane
                             {
                             DTMDrapedLineCode code = DTMDrapedLineCode::External;
 
-                            result->GetPointByIndex (&pts[ptNum], nullptr, &code, i);
+                            result->GetPointByIndex (pts[ptNum], nullptr, &code, i);
 
                             if (code == DTMDrapedLineCode::External || code == DTMDrapedLineCode::Void)
                                 {
@@ -2122,9 +2122,9 @@ bool DTMElementDisplayHandler::GetProjectedPointOnDTM (DPoint3dR pointOnDTM, Ele
         DPoint3d trianglePts[4];
         long drapedType;
         BC_DTM_OBJ* bcDTM = dtm->GetTinHandle();
-        long voidFlag;
+        bool voidFlag;
 
-        if (bcdtmDrape_intersectTriangleDtmObject (bcDTM, ((DPoint3d*)&sP), ((DPoint3d*)&eP), &drapedType, (DPoint3d*)&point, (DPoint3d*)&trianglePts, &voidFlag) != DTM_SUCCESS || drapedType == 0 || voidFlag != 0)
+        if (bcdtmDrape_intersectTriangleDtmObject (bcDTM, ((DPoint3d*)&sP), ((DPoint3d*)&eP), &drapedType, (DPoint3d*)&point, (DPoint3d*)&trianglePts, voidFlag) != DTM_SUCCESS || drapedType == 0 || voidFlag != false)
             { return false; }
 
         startPt = point;
@@ -2135,7 +2135,7 @@ bool DTMElementDisplayHandler::GetProjectedPointOnDTM (DPoint3dR pointOnDTM, Ele
     int drapedType;
 
     double elevation;
-    if (DTM_SUCCESS != dtm->DrapePoint (&elevation, nullptr, nullptr, trianglePts, &drapedType, &startPt))
+    if (DTM_SUCCESS != dtm->DrapePoint (&elevation, nullptr, nullptr, trianglePts, drapedType, startPt))
         { return false; }
 
     startPt.z = elevation;

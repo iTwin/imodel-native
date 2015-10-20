@@ -210,8 +210,8 @@ bool DTMFeatureEnumerator::MoveNext (long& m_index, size_t& m_nextSourceFeatureI
             continue;
 
         if ((m_userTagLow < m_userTagHigh) && (
-            m_userTagLow >= dtmFeatureP->dtmUserTag &&
-            m_userTagHigh <= dtmFeatureP->dtmUserTag))
+            m_userTagLow > dtmFeatureP->dtmUserTag &&
+            m_userTagHigh < dtmFeatureP->dtmUserTag))
             continue;
 
         if (m_filterByFeatureType)
@@ -634,7 +634,7 @@ DTMStatusInt DTMMeshEnumerator::Initialize () const
     ** Check For Voids In The Triangulation
     */
     voidsInDtm = false;
-    bcdtmList_testForVoidsInDtmObject (m_dtmP, (long*)&voidsInDtm);
+    bcdtmList_testForVoidsInDtmObject (m_dtmP, voidsInDtm);
     if (dbg) bcdtmWrite_message (0, 0, 0, "voidsInDtm = %2ld", voidsInDtm);
     /*
     ** Initialise
@@ -652,7 +652,7 @@ DTMStatusInt DTMMeshEnumerator::Initialize () const
     if (useFence == true)
         {
         if (bcdtmClip_buildClippingTinFromFencePointsDtmObject (&clipDtmP, fencePtsP, numFencePts)) goto errexit;
-        clipDtm = BcDTM::CreateFromDtmHandle (clipDtmP);
+        clipDtm = BcDTM::CreateFromDtmHandle (*clipDtmP);
         if (fabs (m_dtmP->xMin - clipDtmP->xMin) < m_dtmP->ppTol) clipDtmP->xMin = m_dtmP->xMin;
         if (fabs (m_dtmP->xMax - clipDtmP->xMax) < m_dtmP->ppTol) clipDtmP->xMax = m_dtmP->xMax;
         if (fabs (m_dtmP->yMin - clipDtmP->yMin) < m_dtmP->ppTol) clipDtmP->yMin = m_dtmP->yMin;
@@ -1078,9 +1078,7 @@ bool bcdtmList_testForRegionTriangleDtmObject (BC_DTM_OBJ *dtmP, std::vector<boo
 
                                 if (!voidTriangle && voidsInDtm == true)
                                     {
-                                    long voidTriangleLong;
-                                    if (bcdtmList_testForVoidTriangleDtmObject (m_dtmP, pnt1, pnt2, pnt3, (long*)&voidTriangleLong)) goto errexit;
-                                    voidTriangle = voidTriangleLong != 0;
+                                    if (bcdtmList_testForVoidTriangleDtmObject (m_dtmP, pnt1, pnt2, pnt3, voidTriangle)) goto errexit;
                                     }
                                 if (!voidTriangle && m_regionMode != RegionMode::Normal)
                                     {

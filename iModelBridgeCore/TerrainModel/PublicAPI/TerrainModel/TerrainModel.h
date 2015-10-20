@@ -63,9 +63,9 @@ TERRAINMODEL_TYPEDEFS (BcDTM)
 TERRAINMODEL_TYPEDEFS (DTMFenceParams)
 TERRAINMODEL_TYPEDEFS (DTMContourParams)
 //__PUBLISH_SECTION_END__
-TERRAINMODEL_TYPEDEFS (BcDTMEdges)
-TERRAINMODEL_TYPEDEFS (BcDTMMeshFace)
-TERRAINMODEL_TYPEDEFS (BcDTMMesh)
+//TERRAINMODEL_TYPEDEFS (BcDTMEdges)
+//TERRAINMODEL_TYPEDEFS (BcDTMMeshFace)
+//TERRAINMODEL_TYPEDEFS (BcDTMMesh)
 TERRAINMODEL_TYPEDEFS (IBcDtmStream)
 TERRAINMODEL_TYPEDEFS (BcDTMDrapedLine)
 TERRAINMODEL_TYPEDEFS (BcDTMDrapedLinePoint)
@@ -90,9 +90,9 @@ BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
 typedef RefCountedPtr<BcDTM> BcDTMPtr;
 //__PUBLISH_SECTION_END__
-typedef RefCountedPtr<BcDTMEdges> BcDTMEdgesPtr;
-typedef RefCountedPtr<BcDTMMeshFace> BcDTMMeshFacePtr;
-typedef RefCountedPtr<BcDTMMesh> BcDTMMeshPtr;
+//typedef RefCountedPtr<BcDTMEdges> BcDTMEdgesPtr;
+//typedef RefCountedPtr<BcDTMMeshFace> BcDTMMeshFacePtr;
+//typedef RefCountedPtr<BcDTMMesh> BcDTMMeshPtr;
 typedef RefCountedPtr<IBcDtmStream> BcDtmStreamPtr;
 typedef RefCountedPtr<BcDTMDrapedLine> BcDTMDrapedLinePtr;
 typedef RefCountedPtr<BcDTMDrapedLinePoint> BcDTMDrapedLinePointPtr;
@@ -498,15 +498,16 @@ template <typename APPDATA, typename KEY, typename HOST> struct DTMAppDataList
 
 
 // Callbacks
-typedef int (*DTMFeatureCallback)(DTMFeatureType dtmFeatureType, DTMUserTag userTag, DTMFeatureId featureId, DPoint3d *points, size_t numPoints, void* userArg);
-typedef int (*DTMTransformPointsCallback)(DPoint3dP points, size_t numPoints, void * userArg);
-typedef int (*DTMBrowseSinglePointFeatureCallback)(DTMFeatureType featureType, DPoint3d& point, void *userP);
-typedef int (*DTMBrowseSlopeIndicatorCallback)(bool major, DPoint3d& point1, DPoint3d& point2, void *userP);
-typedef int (*DTMDuplicatePointsCallback)(double x, double y, DTM_DUPLICATE_POINT_ERROR *dupErrorsP, long numDupErrors, void *userP);
-typedef int (*DTMCrossingFeaturesCallback)(DTM_CROSSING_FEATURE_ERROR& crossError, void *userP);
-typedef int (*DTMTriangleMeshCallback)(DTMFeatureType featureType, int numTriangles, int numMeshPoints, DPoint3d *meshPointsP, int numMeshFaces, long *meshFacesP, void *userP);
-typedef int (*DTMTriangleShadeMeshCallback)(DTMFeatureType featureType, int numTriangles, int numMeshPoints, DPoint3d* meshPointsP, DPoint3d*, int numMeshFaces, long* meshFacesP, void* userP);
-typedef int (*DTMTriangleHillShadeMeshCallback)(DTMFeatureType featureType, int numTriangles, int numMeshPoints, DPoint3d* meshPointsP, long* meshReflectance, int numMeshFaces, long* meshFacesP, void* userP);
+typedef std::function <int(DTMFeatureType dtmFeatureType, DTMUserTag userTag, DTMFeatureId featureId, DPoint3d *points, size_t numPoints, void* userArg)> DTMFeatureCallback;
+//typedef int(*DTMFeatureCallback)(DTMFeatureType dtmFeatureType, DTMUserTag userTag, DTMFeatureId featureId, DPoint3d *points, size_t numPoints, void* userArg);
+typedef std::function <int(DPoint3dP points, size_t numPoints, void * userArg)> DTMTransformPointsCallback;
+typedef std::function <int(DTMFeatureType featureType, DPoint3d& point, void *userP)> DTMBrowseSinglePointFeatureCallback;
+typedef std::function <int(bool major, DPoint3d& point1, DPoint3d& point2, void *userP)> DTMBrowseSlopeIndicatorCallback;
+typedef std::function <int(double x, double y, DTM_DUPLICATE_POINT_ERROR *dupErrorsP, long numDupErrors, void *userP)> DTMDuplicatePointsCallback;
+typedef std::function <int(DTM_CROSSING_FEATURE_ERROR& crossError, void *userP)> DTMCrossingFeaturesCallback;
+typedef std::function <int(DTMFeatureType featureType, int numTriangles, int numMeshPoints, DPoint3d *meshPointsP, int numMeshFaces, long *meshFacesP, void *userP)> DTMTriangleMeshCallback;
+typedef std::function <int(DTMFeatureType featureType, int numTriangles, int numMeshPoints, DPoint3d* meshPointsP, DPoint3d*, int numMeshFaces, long* meshFacesP, void* userP)> DTMTriangleShadeMeshCallback;
+typedef std::function <int(DTMFeatureType featureType, int numTriangles, int numMeshPoints, DPoint3d* meshPointsP, long* meshReflectance, int numMeshFaces, long* meshFacesP, void* userP)> DTMTriangleHillShadeMeshCallback;
 
 #endif /* !defined(__midl) */
 

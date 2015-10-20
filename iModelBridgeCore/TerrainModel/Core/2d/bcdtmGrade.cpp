@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmGrade.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -33,7 +33,8 @@ BENTLEYDTM_EXPORT int bcdtmGrade_getGradeSlopeStartDirectionsDtmObject(BC_DTM_OB
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   ns,P1,P2,P3,Ptype,savePnt,VoidFlag ;
+ long   ns, P1, P2, P3, Ptype, savePnt;
+ bool voidFlag;
  double z ;
 /*
 ** Write Arguements For Development Purposes
@@ -79,11 +80,11 @@ BENTLEYDTM_EXPORT int bcdtmGrade_getGradeSlopeStartDirectionsDtmObject(BC_DTM_OB
 /*
 ** Test For Point In Void
 */
- VoidFlag = 0 ;
- if( Ptype == 1 && bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,P1)->PCWD) ) VoidFlag = 1 ;
- if( Ptype == 2 || Ptype == 3 )  if( bcdtmList_testForVoidLineDtmObject(dtmP,P1,P2,&VoidFlag)) goto errexit ; ;
- if( Ptype == 4 ) if( bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,P2,P3,&VoidFlag)) goto errexit ; ;
- if( VoidFlag ) { bcdtmWrite_message(1,0,0,"Start Point In Void") ; goto cleanup ; ; }
+ voidFlag = false;
+ if( Ptype == 1 && bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,P1)->PCWD) ) voidFlag = 1 ;
+ if( Ptype == 2 || Ptype == 3 )  if( bcdtmList_testForVoidLineDtmObject(dtmP,P1,P2,voidFlag)) goto errexit ; ;
+ if( Ptype == 4 ) if( bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,P2,P3,voidFlag)) goto errexit ; ;
+ if( voidFlag ) { bcdtmWrite_message(1,0,0,"Start Point In Void") ; goto cleanup ; ; }
 /*
 ** Set Triangle Anti Clockwise
 */
@@ -1231,7 +1232,8 @@ BENTLEYDTM_EXPORT int bcdtmGrade_getMacaoGradeSlopeStartDirectionsDtmObject(BC_D
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   P1,P2,P3,Ptype,VoidFlag ;
+ long   P1, P2, P3, Ptype;
+ bool voidFlag;
  double z ;
 /*
 ** Write Arguements For Development Purposes
@@ -1280,11 +1282,11 @@ BENTLEYDTM_EXPORT int bcdtmGrade_getMacaoGradeSlopeStartDirectionsDtmObject(BC_D
 /*
 ** Test For Point In Void
 */
- VoidFlag = 0 ;
- if( Ptype == 1 && bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,P1)->PCWD) ) VoidFlag = 1 ;
- if( Ptype == 2 || Ptype == 3 )  if( bcdtmList_testForVoidLineDtmObject(dtmP,P1,P2,&VoidFlag)) goto errexit ; ;
- if( Ptype == 4 ) if( bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,P2,P3,&VoidFlag)) goto errexit ; ;
- if( VoidFlag ) { bcdtmWrite_message(1,0,0,"Start Point In Void") ; goto cleanup ; ; }
+ voidFlag = false;
+ if( Ptype == 1 && bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,P1)->PCWD) ) voidFlag = true ;
+ if( Ptype == 2 || Ptype == 3 )  if( bcdtmList_testForVoidLineDtmObject(dtmP,P1,P2,voidFlag)) goto errexit ;
+ if( Ptype == 4 ) if( bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,P2,P3,voidFlag)) goto errexit ;
+ if( voidFlag ) { bcdtmWrite_message(1,0,0,"Start Point In Void") ; goto cleanup ; }
 /*
 ** Get Start Dirtection For Triangle
 */
@@ -1332,7 +1334,8 @@ BENTLEYDTM_Public int bcdtmGrade_calculateMacaoGradeSlopeStartDirectionsForPoint
  long   numDrapePts,surfaceFlag,numMem=0,incMem=10 ;
  double X1,Y1,X2,Y2,Xs=0.0,Ys=0.0,Zs=0.0,angle,anginc ;
  DPoint3d    drapeString[2] ;
- DTM_DRAPE_POINT *drapeP,*drapePtsP=NULL ;
+ DTM_DRAPE_POINT *drapeP;
+ bvector<DTM_DRAPE_POINT> drapePtsP;
 /*
 ** Write Debug Message
 */
@@ -1374,31 +1377,32 @@ BENTLEYDTM_Public int bcdtmGrade_calculateMacaoGradeSlopeStartDirectionsForPoint
 */
     drapeString[0].x = X1 ; drapeString[0].y = Y1 ; drapeString[0].z = 0.0 ; 
     drapeString[1].x = X2 ; drapeString[1].y = Y2 ; drapeString[1].z = 0.0 ; 
-    if( bcdtmDrape_stringDtmObject(dtmP,drapeString,2,FALSE,&drapePtsP,&numDrapePts)) goto errexit ;
+    if( bcdtmDrape_stringDtmObject(dtmP,drapeString,2,FALSE,drapePtsP)) goto errexit ;
+    numDrapePts = (long)drapePtsP.size();
     if( dbg == 1 )
       {
        bcdtmWrite_message(0,0,0,"Number Of Drape Points = %6ld",numDrapePts) ;
-       for( drapeP = drapePtsP ; drapeP < drapePtsP + numDrapePts ; ++drapeP )  
+       for (drapeP = drapePtsP.data(); drapeP < drapePtsP.data() + numDrapePts; ++drapeP)
          {
-          bcdtmWrite_message(0,0,0,"Drape Point[%6ld]  L = %4ld T = %2ld ** %10.4lf %10.4lf",(long)(drapeP-drapePtsP),drapeP->drapeLine,drapeP->drapeType,drapeP->drapeX,drapeP->drapeY ) ;
+         bcdtmWrite_message(0, 0, 0, "Drape Point[%6ld]  L = %4ld T = %2ld ** %10.4lf %10.4lf", (long)(drapeP - drapePtsP.data()), drapeP->drapeLine, drapeP->drapeType, drapeP->drapePt.x, drapeP->drapePt.y);
          }
       } 
 /*
 ** Look For Surface z
 */
-   for( drapeP = drapePtsP ; drapeP < drapePtsP + numDrapePts - 1 ; ++drapeP )
+    for (drapeP = drapePtsP.data(); drapeP < drapePtsP.data() + numDrapePts - 1; ++drapeP)
      {
-      if( dbg ) bcdtmWrite_message(0,0,0,"drapePoint[%8ld] ** Type1 = %2ld Type2 = %2ld",(long)(drapeP-drapePtsP),drapeP->drapeType,(drapeP+1)->drapeType) ;
+     if (dbg) bcdtmWrite_message(0, 0, 0, "drapePoint[%8ld] ** Type1 = %2ld Type2 = %2ld", (long)(drapeP - drapePtsP.data()), drapeP->drapeType, (drapeP + 1)->drapeType);
       if (drapeP->drapeType != DTMDrapedLineCode::External && (drapeP + 1)->drapeType != DTMDrapedLineCode::External)
         {
          surfaceFlag = 0 ;
-         if     (  drapeP->drapeZ    == Zs ) { surfaceFlag = 1 ; Xs = (drapeP+1)->drapeX ; Ys = drapeP->drapeY ; }
-         else if( (drapeP+1)->drapeZ == Zs && drapeP+1 == drapePtsP + numDrapePts - 1 ) { surfaceFlag = 1 ; Xs = (drapeP+1)->drapeX ; Ys = drapeP->drapeY ; }
-         else if( ( drapeP->drapeZ > Zs && Zs > (drapeP+1)->drapeZ )  || ( drapeP->drapeZ < Zs && Zs < (drapeP+1)->drapeZ ) )
+         if     (  drapeP->drapePt.z    == Zs ) { surfaceFlag = 1 ; Xs = (drapeP+1)->drapePt.x ; Ys = drapeP->drapePt.y ; }
+         else if( (drapeP+1)->drapePt.z == Zs && drapeP+1 == drapePtsP.data() + numDrapePts - 1 ) { surfaceFlag = 1 ; Xs = (drapeP+1)->drapePt.x ; Ys = drapeP->drapePt.y ; }
+         else if( ( drapeP->drapePt.z > Zs && Zs > (drapeP+1)->drapePt.z )  || ( drapeP->drapePt.z < Zs && Zs < (drapeP+1)->drapePt.z ) )
            {
             surfaceFlag = 1 ;
-            Xs = drapeP->drapeX + ((drapeP+1)->drapeX - drapeP->drapeX) * ( Zs - drapeP->drapeZ ) / ( (drapeP+1)->drapeZ - drapeP->drapeZ ) ;
-            Ys = drapeP->drapeY + ((drapeP+1)->drapeY - drapeP->drapeY) * ( Zs - drapeP->drapeZ ) / ( (drapeP+1)->drapeZ - drapeP->drapeZ ) ;
+            Xs = drapeP->drapePt.x + ((drapeP+1)->drapePt.x - drapeP->drapePt.x) * ( Zs - drapeP->drapePt.z ) / ( (drapeP+1)->drapePt.z - drapeP->drapePt.z ) ;
+            Ys = drapeP->drapePt.y + ((drapeP+1)->drapePt.y - drapeP->drapePt.y) * ( Zs - drapeP->drapePt.z ) / ( (drapeP+1)->drapePt.z - drapeP->drapePt.z ) ;
            }
          if( dbg ) bcdtmWrite_message(0,0,0,"surfaceFlag = %2ld",surfaceFlag) ;
          if( surfaceFlag )
@@ -1421,13 +1425,11 @@ BENTLEYDTM_Public int bcdtmGrade_calculateMacaoGradeSlopeStartDirectionsForPoint
 */
     X1 = X2 ;
     Y1 = Y2 ;
-    if( drapePtsP != NULL ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
    } 
 /*
 ** Clean Up
 */
  cleanup :
- if( drapePtsP != NULL ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
 /*
 ** Job Completed
 */

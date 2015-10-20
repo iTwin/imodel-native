@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMDataRef.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -299,9 +299,9 @@ ViewportP      viewport
         DPoint3d trianglePts[4];
         long drapedType;
         BC_DTM_OBJ* bcDTM = dtm->GetTinHandle();
-        long voidFlag;
+        bool voidFlag;
 
-        if (bcdtmDrape_intersectTriangleDtmObject (bcDTM, ((DPoint3d*)&sP), ((DPoint3d*)&eP), &drapedType, (DPoint3d*)&point, (DPoint3d*)&trianglePts, &voidFlag) != DTM_SUCCESS || drapedType == 0 || voidFlag != 0)
+        if (bcdtmDrape_intersectTriangleDtmObject (bcDTM, ((DPoint3d*)&sP), ((DPoint3d*)&eP), &drapedType, (DPoint3d*)&point, (DPoint3d*)&trianglePts, voidFlag) != DTM_SUCCESS || drapedType == 0 || voidFlag != false)
             { return false; }
 
         startPt = point;
@@ -312,7 +312,7 @@ ViewportP      viewport
     int drapedType;
     double elevation;
 
-    if (DTM_SUCCESS != dtm->DrapePoint (&elevation, nullptr, nullptr, trianglePts, &drapedType, &startPt))
+    if (DTM_SUCCESS != dtm->DrapePoint (&elevation, nullptr, nullptr, trianglePts, drapedType, startPt))
         { return false; }
     startPt.z = elevation;
     drawingInfo.StorageToRoot (pointOnDTM = startPt);

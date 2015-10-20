@@ -981,6 +981,7 @@ int bcdtmSideSlope_setForceSlopeForSegmentsNotOnTin(DTM_SIDE_SLOPE_TABLE *sideSl
  double z ;
  DPoint3d    segPtsP[2] ;
  DTM_DRAPE_POINT      *drapeP,*drapePtsP=nullptr ;
+ bvector<DTM_DRAPE_POINT> drapePts;
  DTM_SIDE_SLOPE_TABLE *radialP  ;
 /*
 ** Write Entry Message
@@ -1012,7 +1013,9 @@ int bcdtmSideSlope_setForceSlopeForSegmentsNotOnTin(DTM_SIDE_SLOPE_TABLE *sideSl
           segPtsP[1].x = (radialP+1)->radialStartPoint.x ;
           segPtsP[1].y = (radialP+1)->radialStartPoint.y ;
           if( dbg ) bcdtmWrite_message(0,0,0,"Checking Segment ** %12.5lf %12.5lf ** %12.5lf %12.5lf",segPtsP[0].x,segPtsP[0].y,segPtsP[1].x,segPtsP[1].y) ;
-          if( bcdtmDrape_stringDtmObject((BC_DTM_OBJ *)radialP->slopeToTin,segPtsP,2,false,&drapePtsP,&numDrapePts)) goto errexit ;
+          if( bcdtmDrape_stringDtmObject((BC_DTM_OBJ *)radialP->slopeToTin,segPtsP,2,false,drapePts)) goto errexit ;
+          drapePtsP = drapePts.data();
+          numDrapePts = (long)drapePts.size();
 /*
 **       Check For Segment Or Part Of Not On Tin
 */
@@ -1034,16 +1037,11 @@ int bcdtmSideSlope_setForceSlopeForSegmentsNotOnTin(DTM_SIDE_SLOPE_TABLE *sideSl
              if( z >= (radialP+1)->radialStartPoint.z ) (radialP+1)->forcedSlope =  (radialP+1)->cutSlope ;
              else                                       (radialP+1)->forcedSlope = -(radialP+1)->fillSlope ;
             }
-          if( drapePtsP != nullptr ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
          }
       }
    }
-/*
-** Job Completed
-*/
- cleanup :
- if( drapePtsP != nullptr ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
-/*
+cleanup:
+ /*
 ** Return
 */
  if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Setting Force Slope For Segments Not On Tin Completed") ;
@@ -1257,8 +1255,9 @@ int bcdtmSideSlope_insertVerticesAtCutFillTransitions(DTM_SIDE_SLOPE_TABLE **Sid
  long   ofs1,ofs2,pofs,segmentInternal,zf1,zf2 ;
  double d1,d2,dd,ddx,ddy,ddz,dz1,dz2,dsz1,dsz2,sx1,sy1,sz1,sx2,sy2,sz2,sln,sdx,sdy,sdz,Xt,Yt,Zt,Zs=0.0 ;
  DPoint3d    p3dPts[2] ;
- DTM_DRAPE_POINT *drapeP,*DrapePts=nullptr ;
- DTM_SIDE_SLOPE_TABLE *radial,*radialofs ;
+ DTM_DRAPE_POINT *drapeP, *drapePtsP = nullptr;
+ bvector<DTM_DRAPE_POINT> drapePts;
+ DTM_SIDE_SLOPE_TABLE *radial, *radialofs;
 /*
 ** Write Entry Message
 */
@@ -1320,12 +1319,14 @@ int bcdtmSideSlope_insertVerticesAtCutFillTransitions(DTM_SIDE_SLOPE_TABLE **Sid
 /*
 **         Drape Side Slope Segment On Tin
 */
-           if( DrapePts != nullptr )bcdtmDrape_freeDrapePointMemory(&DrapePts,&NumDrapePts) ;
-           if( bcdtmDrape_stringDtmObject((BC_DTM_OBJ *) radial->cutFillTin,p3dPts,2,false,&DrapePts,&NumDrapePts)) goto errexit ;
+           if( bcdtmDrape_stringDtmObject((BC_DTM_OBJ *) radial->cutFillTin,p3dPts,2,false,drapePts)) goto errexit ;
+           drapePtsP = drapePts.data();
+           NumDrapePts = (long)drapePts.size();
+
 /*
 **         Check Side Slope Segment Is Within Tin Hull And Doesn't Pass Through Voids
 */
-           for( drapeP = DrapePts ; drapeP < DrapePts + NumDrapePts ; ++drapeP )
+           for (drapeP = drapePtsP; drapeP < drapePtsP + NumDrapePts; ++drapeP)
              {
               if( drapeP->drapeType == DTMDrapedLineCode::External)
                 {
@@ -1359,27 +1360,29 @@ int bcdtmSideSlope_insertVerticesAtCutFillTransitions(DTM_SIDE_SLOPE_TABLE **Sid
 */
           for( ofs1 = 0 , ofs2 = 1 ; ofs1 < NumDrapePts - 1 ; ++ofs1 , ++ofs2 )
             {
+            auto drapePtOfs1 = &drapePts[ofs1];
+            auto drapePtOfs2 = &drapePts[ofs2];
 /*
 **           Calculate Length Of Drape Section
 */
-             dd = bcdtmMath_distance((DrapePts+ofs1)->drapeX,(DrapePts+ofs1)->drapeY,(DrapePts+ofs2)->drapeX,(DrapePts+ofs2)->drapeY) ;
+            dd = bcdtmMath_distance((drapePtOfs1)->drapePt.x, (drapePtOfs1)->drapePt.y, (drapePtOfs2)->drapePt.x, (drapePtOfs2)->drapePt.y);
              if( dd > 0.0 )
                {
 /*
 **              Calculate z values On Element Segment At Drape Points
 */
-                d1 = bcdtmMath_distance(sx1,sy1,(DrapePts+ofs1)->drapeX,(DrapePts+ofs1)->drapeY) ;
-                d2 = bcdtmMath_distance(sx1,sy1,(DrapePts+ofs2)->drapeX,(DrapePts+ofs2)->drapeY) ;
+               d1 = bcdtmMath_distance(sx1, sy1, (drapePtOfs1)->drapePt.x, (drapePtOfs1)->drapePt.y);
+               d2 = bcdtmMath_distance(sx1, sy1, (drapePtOfs2)->drapePt.x, (drapePtOfs2)->drapePt.y);
                 dsz1 = sz1 + sdz * d1 / sln ;
                 dsz2 = sz1 + sdz * d2 / sln ;
 /*
 **              Check If Drape Points Are Above Or Below Element Segment
 */
                 zf1 = zf2 = 0 ;
-                if( dsz1 > (DrapePts+ofs1)->drapeZ ) zf1 =  1 ;
-                if( dsz1 < (DrapePts+ofs1)->drapeZ ) zf1 = -1 ;
-                if( dsz2 > (DrapePts+ofs2)->drapeZ ) zf2 =  1 ;
-                if( dsz2 < (DrapePts+ofs2)->drapeZ ) zf2 = -1 ;
+                if (dsz1 > (drapePtOfs1)->drapePt.z) zf1 = 1;
+                if (dsz1 < (drapePtOfs1)->drapePt.z) zf1 = -1;
+                if (dsz2 > (drapePtOfs2)->drapePt.z) zf2 = 1;
+                if (dsz2 < (drapePtOfs2)->drapePt.z) zf2 = -1;
 /*
 **              Check For Transition Point
 */
@@ -1388,16 +1391,16 @@ int bcdtmSideSlope_insertVerticesAtCutFillTransitions(DTM_SIDE_SLOPE_TABLE **Sid
 /*
 **                 Calculate Transition Point
 */
-                   dz1 = dsz1 - (DrapePts+ofs1)->drapeZ ;
-                   dz2 = dsz2 - (DrapePts+ofs2)->drapeZ ;
+                  dz1 = dsz1 - (drapePtOfs1)->drapePt.z;
+                  dz2 = dsz2 - (drapePtOfs2)->drapePt.z;
                    if( dz1 < 0.0 ) dz1 = -dz1 ;
                    if( dz2 < 0.0 ) dz2 = -dz2 ;
-                   ddx = (DrapePts+ofs2)->drapeX - (DrapePts+ofs1)->drapeX ;
-                   ddy = (DrapePts+ofs2)->drapeY - (DrapePts+ofs1)->drapeY ;
-                   ddz = (DrapePts+ofs2)->drapeZ - (DrapePts+ofs1)->drapeZ ;
-                   Xt  = (DrapePts+ofs1)->drapeX + ddx * dz1 / (dz1+dz2)  ;
-                   Yt  = (DrapePts+ofs1)->drapeY + ddy * dz1 / (dz1+dz2)  ;
-                   Zt  = (DrapePts+ofs1)->drapeZ + ddz * dz1 / (dz1+dz2)  ;
+                   ddx = (drapePtOfs2)->drapePt.x - (drapePtOfs1)->drapePt.x;
+                   ddy = (drapePtOfs2)->drapePt.y - (drapePtOfs1)->drapePt.y;
+                   ddz = (drapePtOfs2)->drapePt.z - (drapePtOfs1)->drapePt.z;
+                   Xt  = (drapePtOfs1)->drapePt.x + ddx * dz1 / (dz1+dz2)  ;
+                   Yt  = (drapePtOfs1)->drapePt.y + ddy * dz1 / (dz1+dz2)  ;
+                   Zt  = (drapePtOfs1)->drapePt.z + ddz * dz1 / (dz1+dz2)  ;
                    if( dbg ) bcdtmWrite_message(0,0,0,"Transition Point Found ** %10.4lf %10.4lf %10.4lf",Xt,Yt,Zt) ;
                    if( dsz1 == dsz2 ) Zt = dsz1 ;
 /*
@@ -1508,15 +1511,11 @@ int bcdtmSideSlope_insertVerticesAtCutFillTransitions(DTM_SIDE_SLOPE_TABLE **Sid
        bcdtmWrite_message(0,0,0,"Radial [%6ld] ** Status = %2ld Genesis = %2ld ** %10.4lf %10.4lf %10.4lf",(long)(radial-*SideSlopeTable),radial->radialStatus,radial->radialGenesis,radial->radialStartPoint.x,radial->radialStartPoint.y,radial->radialStartPoint.z) ;
       }
    }
-/*
-** Clean Up
-*/
- cleanup :
- if( DrapePts != nullptr ) bcdtmDrape_freeDrapePointMemory(&DrapePts,&NumDrapePts) ;
  *SideSlopeTable = (DTM_SIDE_SLOPE_TABLE *) realloc(*SideSlopeTable,*SideSlopeTableSize*sizeof(DTM_SIDE_SLOPE_TABLE)) ;
 /*
 ** Job Completed
 */
+ cleanup:
  if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Inserting Cut/Fill Transitions Into Side Slope Table Completed") ;
  if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Inserting Cut/Fill Transitions Into Side Slope Table Error") ;
  return(ret) ;
@@ -1543,6 +1542,7 @@ int bcdtmSideSlope_insertTransitionVerticesForSlopeToObject(DTM_SIDE_SLOPE_TABLE
  double d1,d2,dd,ddx,ddy,ddz,dz1,dz2,dsz1,dsz2,sx1,sy1,sz1,sx2,sy2,sz2,sln,sdx,sdy,sdz,Xt,Yt,Zt ;
  DPoint3d    p3dPts[2] ;
  DTM_DRAPE_POINT *drapeP,*DrapePts=nullptr ;
+ bvector<DTM_DRAPE_POINT> drapePts;
  DTM_SIDE_SLOPE_TABLE *radial,*radialOfs ;
 /*
 ** Write Entry Message
@@ -1604,7 +1604,10 @@ int bcdtmSideSlope_insertTransitionVerticesForSlopeToObject(DTM_SIDE_SLOPE_TABLE
 /*
 **         Drape Side Slope Segment On Tin
 */
-           if( bcdtmDrape_stringDtmObject((BC_DTM_OBJ *)radial->slopeToTin,p3dPts,2,false,&DrapePts,&NumDrapePts)) goto errexit ;
+           if( bcdtmDrape_stringDtmObject((BC_DTM_OBJ *)radial->slopeToTin,p3dPts,2,false,drapePts)) goto errexit ;
+           DrapePts = drapePts.data();
+           NumDrapePts = (long)drapePts.size();
+
 /*
 **         Check Side Slope Segment Is Within Tin Hull And Doesn't Pass Through Voids
 */
@@ -1649,20 +1652,20 @@ int bcdtmSideSlope_insertTransitionVerticesForSlopeToObject(DTM_SIDE_SLOPE_TABLE
              if( dbg == 2  )
                {
                 bcdtmWrite_message(0,0,0,"Testing For Transition Point Between Drape Points") ;
-                bcdtmWrite_message(0,0,0,"Drape Point[%6ld] ** %10.4lf %10.4lf %10.4lf",ofs1,(DrapePts+ofs1)->drapeX,(DrapePts+ofs1)->drapeY,(DrapePts+ofs1)->drapeZ) ;
-                bcdtmWrite_message(0,0,0,"Drape Point[%6ld] ** %10.4lf %10.4lf %10.4lf",ofs2,(DrapePts+ofs2)->drapeX,(DrapePts+ofs2)->drapeY,(DrapePts+ofs2)->drapeZ) ;
+                bcdtmWrite_message(0,0,0,"Drape Point[%6ld] ** %10.4lf %10.4lf %10.4lf",ofs1,(DrapePts+ofs1)->drapePt.x,(DrapePts+ofs1)->drapePt.y,(DrapePts+ofs1)->drapePt.z) ;
+                bcdtmWrite_message(0,0,0,"Drape Point[%6ld] ** %10.4lf %10.4lf %10.4lf",ofs2,(DrapePts+ofs2)->drapePt.x,(DrapePts+ofs2)->drapePt.y,(DrapePts+ofs2)->drapePt.z) ;
                }
 /*
 **           Calculate Length Of Drape Section
 */
-             dd = bcdtmMath_distance((DrapePts+ofs1)->drapeX,(DrapePts+ofs1)->drapeY,(DrapePts+ofs2)->drapeX,(DrapePts+ofs2)->drapeY) ;
+             dd = bcdtmMath_distance((DrapePts+ofs1)->drapePt.x,(DrapePts+ofs1)->drapePt.y,(DrapePts+ofs2)->drapePt.x,(DrapePts+ofs2)->drapePt.y) ;
              if( dd > 0.0 )
                {
 /*
 **              Calculate z values On Element Segment At Drape Points
 */
-                d1 = bcdtmMath_distance(sx1,sy1,(DrapePts+ofs1)->drapeX,(DrapePts+ofs1)->drapeY) ;
-                d2 = bcdtmMath_distance(sx1,sy1,(DrapePts+ofs2)->drapeX,(DrapePts+ofs2)->drapeY) ;
+                d1 = bcdtmMath_distance(sx1,sy1,(DrapePts+ofs1)->drapePt.x,(DrapePts+ofs1)->drapePt.y) ;
+                d2 = bcdtmMath_distance(sx1,sy1,(DrapePts+ofs2)->drapePt.x,(DrapePts+ofs2)->drapePt.y) ;
                 dsz1 = sz1 + sdz * d1 / sln ;
                 dsz2 = sz1 + sdz * d2 / sln ;
                 if( dbg == 2 )
@@ -1674,10 +1677,10 @@ int bcdtmSideSlope_insertTransitionVerticesForSlopeToObject(DTM_SIDE_SLOPE_TABLE
 **              Check If Drape Points Are Above Or Below Element Segment
 */
                 zf1 = zf2 = 0 ;
-                if( dsz1 > (DrapePts+ofs1)->drapeZ ) zf1 =  1 ;
-                if( dsz1 < (DrapePts+ofs1)->drapeZ ) zf1 = -1 ;
-                if( dsz2 > (DrapePts+ofs2)->drapeZ ) zf2 =  1 ;
-                if( dsz2 < (DrapePts+ofs2)->drapeZ ) zf2 = -1 ;
+                if( dsz1 > (DrapePts+ofs1)->drapePt.z ) zf1 =  1 ;
+                if( dsz1 < (DrapePts+ofs1)->drapePt.z ) zf1 = -1 ;
+                if( dsz2 > (DrapePts+ofs2)->drapePt.z ) zf2 =  1 ;
+                if( dsz2 < (DrapePts+ofs2)->drapePt.z ) zf2 = -1 ;
                 if( dbg ) bcdtmWrite_message(0,0,0,"Zf1 = %2ld Zf2 = %2ld",zf1,zf2) ;
 /*
 **              Check For Transition Point
@@ -1687,16 +1690,16 @@ int bcdtmSideSlope_insertTransitionVerticesForSlopeToObject(DTM_SIDE_SLOPE_TABLE
 /*
 **                 Calculate Transition Point
 */
-                   dz1 = dsz1 - (DrapePts+ofs1)->drapeZ ;
-                   dz2 = dsz2 - (DrapePts+ofs2)->drapeZ ;
+                   dz1 = dsz1 - (DrapePts+ofs1)->drapePt.z ;
+                   dz2 = dsz2 - (DrapePts+ofs2)->drapePt.z ;
                    if( dz1 < 0.0 ) dz1 = -dz1 ;
                    if( dz2 < 0.0 ) dz2 = -dz2 ;
-                   ddx = (DrapePts+ofs2)->drapeX - (DrapePts+ofs1)->drapeX ;
-                   ddy = (DrapePts+ofs2)->drapeY - (DrapePts+ofs1)->drapeY ;
-                   ddz = (DrapePts+ofs2)->drapeZ - (DrapePts+ofs1)->drapeZ ;
-                   Xt  = (DrapePts+ofs1)->drapeX + ddx * dz1 / (dz1+dz2)  ;
-                   Yt  = (DrapePts+ofs1)->drapeY + ddy * dz1 / (dz1+dz2)  ;
-                   Zt  = (DrapePts+ofs1)->drapeZ + ddz * dz1 / (dz1+dz2)  ;
+                   ddx = (DrapePts+ofs2)->drapePt.x - (DrapePts+ofs1)->drapePt.x ;
+                   ddy = (DrapePts+ofs2)->drapePt.y - (DrapePts+ofs1)->drapePt.y ;
+                   ddz = (DrapePts+ofs2)->drapePt.z - (DrapePts+ofs1)->drapePt.z ;
+                   Xt  = (DrapePts+ofs1)->drapePt.x + ddx * dz1 / (dz1+dz2)  ;
+                   Yt  = (DrapePts+ofs1)->drapePt.y + ddy * dz1 / (dz1+dz2)  ;
+                   Zt  = (DrapePts+ofs1)->drapePt.z + ddz * dz1 / (dz1+dz2)  ;
                    if( dbg ) bcdtmWrite_message(0,0,0,"Transition Point Found ** %10.4lf %10.4lf %10.4lf",Xt,Yt,Zt) ;
                    if( dsz1 == dsz2 ) Zt = dsz1 ;
 /*
@@ -1745,10 +1748,6 @@ int bcdtmSideSlope_insertTransitionVerticesForSlopeToObject(DTM_SIDE_SLOPE_TABLE
                }
             }
          }
-/*
-**     Free Drape Points Memory
-*/
-       if( DrapePts != nullptr ) bcdtmDrape_freeDrapePointMemory(&DrapePts,&NumDrapePts) ;
       }
    }
 /*
@@ -1766,7 +1765,6 @@ int bcdtmSideSlope_insertTransitionVerticesForSlopeToObject(DTM_SIDE_SLOPE_TABLE
 ** Clean Up
 */
  cleanup :
- if( DrapePts != nullptr ) bcdtmDrape_freeDrapePointMemory(&DrapePts,&NumDrapePts) ;
  *SideSlopeTable = ( DTM_SIDE_SLOPE_TABLE *) realloc(*SideSlopeTable,*SideSlopeTableSize*sizeof(DTM_SIDE_SLOPE_TABLE)) ;
 /*
 ** Job Completed
@@ -4124,10 +4122,12 @@ int bcdtmSideSlope_projectVectorStartToHullDtmObject(BC_DTM_OBJ *tinP,double Sx,
 */
  int    ret=DTM_SUCCESS,dbg=0 ;
  long   ofs,numDrapePts ;
- long   pntType,P1,P2,P3,startFlag,inVoidFlag ;
+ long   pntType, P1, P2, P3, startFlag;
+ bool inVoidFlag;
  double dl,z,radius ;
  DPoint3d    p3dPts[2] ;
- DTM_DRAPE_POINT *drapeP,*drapePts=nullptr ;
+ DTM_DRAPE_POINT *drapeP,*drapePtsP=nullptr ;
+ bvector<DTM_DRAPE_POINT> drapePts;
 /*
 ** Write Entry Message
 */
@@ -4156,12 +4156,12 @@ int bcdtmSideSlope_projectVectorStartToHullDtmObject(BC_DTM_OBJ *tinP,double Sx,
  if( pntType == 1 && bcdtmFlag_testVoidBitPCWD(&nodeAddrP(tinP,P1)->PCWD) ) startFlag = 1 ;
  if( pntType == 2 || pntType == 3 )
    {
-    if( bcdtmList_testForVoidLineDtmObject(tinP,P1,P2,&inVoidFlag)) goto errexit ;
+    if( bcdtmList_testForVoidLineDtmObject(tinP,P1,P2,inVoidFlag)) goto errexit ;
     if( inVoidFlag ) startFlag = 1 ;
    }
  if( pntType == 4 )
    {
-    if( bcdtmList_testForVoidTriangleDtmObject(tinP,P1,P2,P3,&inVoidFlag)) goto errexit ;
+    if( bcdtmList_testForVoidTriangleDtmObject(tinP,P1,P2,P3,inVoidFlag)) goto errexit ;
     if( inVoidFlag )  startFlag = 1 ;
    }
 /*
@@ -4189,19 +4189,22 @@ int bcdtmSideSlope_projectVectorStartToHullDtmObject(BC_DTM_OBJ *tinP,double Sx,
 */
     p3dPts[0].x = Sx ;
     p3dPts[0].y = Sy ;
-    if( bcdtmDrape_stringDtmObject(tinP,p3dPts,2,false,&drapePts,&numDrapePts)) goto errexit ;
+    if( bcdtmDrape_stringDtmObject(tinP,p3dPts,2,false,drapePts)) goto errexit ;
+    drapePtsP = drapePts.data();
+    numDrapePts = (long)drapePts.size();
+
 /*
 **  Scan To First Drape Point On Tin
 */
-    drapeP = drapePts ;
-    while (drapeP < drapePts + numDrapePts && drapeP->drapeType == DTMDrapedLineCode::External) ++drapeP;
-    if( drapeP >= drapePts + numDrapePts ) --drapeP ;
+    drapeP = drapePtsP;
+    while (drapeP < drapePtsP + numDrapePts && drapeP->drapeType == DTMDrapedLineCode::External) ++drapeP;
+    if (drapeP >= drapePtsP + numDrapePts) --drapeP;
 /*
 **  Set Projected Point Marginally Inside Tin Hull
 */
-    ofs = (long) ( drapeP-drapePts ) ;
-    *Hx = (drapePts+ofs)->drapeX + 0.00001 * cos(xyAngle) ;
-    *Hy = (drapePts+ofs)->drapeY + 0.00001 * sin(xyAngle) ;
+    ofs = (long)(drapeP - drapePtsP);
+    *Hx = (drapePtsP + ofs)->drapePt.x + 0.00001 * cos(xyAngle);
+    *Hy = (drapePtsP + ofs)->drapePt.y + 0.00001 * sin(xyAngle);
     dl  = bcdtmMath_distance(Sx,Sy,*Hx,*Hy) ;
     *Hz = Sz + dl * slope ;
 /*
@@ -4216,13 +4219,9 @@ int bcdtmSideSlope_projectVectorStartToHullDtmObject(BC_DTM_OBJ *tinP,double Sx,
     if( dbg ) bcdtmWrite_message(0,0,0,"Hx = %15.5lf Hy = %15.5lf Hz = %15.5lf",*Hx,*Hy,*Hz) ;
    }
 /*
-** Clean Up
-*/
- cleanup :
- if( drapePts != nullptr ) bcdtmDrape_freeDrapePointMemory(&drapePts,&numDrapePts) ;
-/*
 ** Job Completed
 */
+ cleanup:
  if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Projecting Start Point Onto Hull Completed") ;
  if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Projecting Start Point Onto Hull Error") ;
  return(ret) ;

@@ -1025,7 +1025,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
  DTM_CONNECTION_LINE    *conLineP,*conLine1P,*conLine2P,*conLinesP=NULL,*pntConLinesP=NULL ;
  DTM_INTERSECT_POINT    *intP,*int1P,*int2P,*intPtsP=NULL ;
  DTM_CONNECTION_LINE_INTERSECT *intConLineP,*intConLinesP=NULL ;
- DTM_TIN_POINT_FEATURES *pointFeaturesP=NULL ;
+ bvector<DTM_TIN_POINT_FEATURES> pointFeaturesP;
  struct Connect_Offsets { long pnt1,pnt2 ; } *conOffsetsP=NULL ;
  DTM_TIN_NODE  *nodesP ;
 /*
@@ -1184,8 +1184,9 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
 /*
 **     Get Dtm Feature For Point One
 */ 
-       if( bcdtmList_getDtmFeaturesForPointDtmObject(dtmP,pnt1,&pointFeaturesP,&numPointFeatures) ) goto errexit ;
-       pointOneFeature = pointFeaturesP->dtmFeature ;
+       if( bcdtmList_getDtmFeaturesForPointDtmObject(dtmP,pnt1,pointFeaturesP) ) goto errexit ;
+       numPointFeatures = (long)pointFeaturesP.size();
+       pointOneFeature = pointFeaturesP[0].dtmFeature ;
        if( dbg ) bcdtmWrite_message(0,0,0,"pointOneFeature = %6ld",pointOneFeature) ;
 /*
 **     Scan Point One
@@ -1209,11 +1210,12 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
 */
           else
             {
-             if( bcdtmList_getDtmFeaturesForPointDtmObject(dtmP,pnt3,&pointFeaturesP,&numPointFeatures) ) goto errexit ;
+             if( bcdtmList_getDtmFeaturesForPointDtmObject(dtmP,pnt3,pointFeaturesP) ) goto errexit ;
+             numPointFeatures = (long)pointFeaturesP.size();
              if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Point Features = %6ld",numPointFeatures) ;
-             if( numPointFeatures > 0 && pointOneFeature != pointFeaturesP->dtmFeature  )
+             if( numPointFeatures > 0 && pointOneFeature != pointFeaturesP[0].dtmFeature  )
                { 
-                if( bcdtmList_getFirstAndLastPointForDtmFeatureDtmObject(dtmP,pointFeaturesP->dtmFeature,&firstPnt,&lastPnt)) goto errexit ;
+                if( bcdtmList_getFirstAndLastPointForDtmFeatureDtmObject(dtmP,pointFeaturesP[0].dtmFeature,&firstPnt,&lastPnt)) goto errexit ;
 /*
 **              Check For Connection To Feature First Point
 */
@@ -1700,7 +1702,8 @@ BENTLEYDTM_Private int bcdtmConnect_getNumberOfDrapeBreakBetweenPointsDtmObject
  int               ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long              numDrapePts=0,numStringPts=2,dtmFeatureOption=FALSE ;
  DPoint3d               stringPts[2] ;          
- DTM_DRAPE_POINT   *drapeP,*drapePtsP=NULL ;
+ DTM_DRAPE_POINT   *drapeP;
+ bvector<DTM_DRAPE_POINT> drapePtsP;
 /*
 ** Write Entry Message
 */
@@ -1723,11 +1726,12 @@ BENTLEYDTM_Private int bcdtmConnect_getNumberOfDrapeBreakBetweenPointsDtmObject
 /*
 ** Drape String
 */
- if( bcdtmDrape_stringDtmObject(dtmP,stringPts,numStringPts,dtmFeatureOption,&drapePtsP,&numDrapePts)) goto errexit ;
+ if( bcdtmDrape_stringDtmObject(dtmP,stringPts,numStringPts,dtmFeatureOption,drapePtsP)) goto errexit ;
+ numDrapePts = (long)drapePtsP.size();
 /*
 ** Count Number Of Break Points
 */
- for( drapeP = drapePtsP ; drapeP < drapePtsP + numDrapePts ; ++drapeP)
+ for (drapeP = drapePtsP.data(); drapeP < drapePtsP.data() + numDrapePts; ++drapeP)
    {
    if (drapeP->drapeType == DTMDrapedLineCode::Breakline) ++*numBreaksP;
    }
@@ -1742,7 +1746,6 @@ BENTLEYDTM_Private int bcdtmConnect_getNumberOfDrapeBreakBetweenPointsDtmObject
 ** Cleanup
 */
  cleanup :
- if( drapePtsP != NULL ) free(drapePtsP) ;  // As dtmFeatureOption is FALSE
 /*
 ** Job Completed
 */

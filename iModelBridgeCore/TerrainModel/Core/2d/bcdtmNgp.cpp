@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmNgp.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -23,7 +23,8 @@ BENTLEYDTM_EXPORT int bcdtmLoad_markPointsInternalToPondsDtmObject(BC_DTM_OBJ *d
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long lowPoint,zeroSlopeSumpLine,zeroSlopeTriangle ;
- long ap,cp,p1,p2,p3,node,clptr,lowPnt,sumpPnt1,sumpPnt2,trgPnt1,trgPnt2,trgPnt3,voidLine,voidTriangle ;
+ long ap, cp, p1, p2, p3, node, clptr, lowPnt, sumpPnt1, sumpPnt2, trgPnt1, trgPnt2, trgPnt3;
+ bool voidLine, voidTriangle;
  DTM_TIN_NODE *nodeP ;
 /*
 ** Write Entry Message
@@ -86,7 +87,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_markPointsInternalToPondsDtmObject(BC_DTM_OBJ *d
 /*
 **                 Ignore Void Lines
 */
-                   if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,&voidLine)) goto errexit ;
+                   if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,voidLine)) goto errexit ;
                    if( ! voidLine )
                      { 
                       if( nodeAddrP(dtmP,p1)->hPtr == dtmP->nullPnt )
@@ -127,7 +128,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_markPointsInternalToPondsDtmObject(BC_DTM_OBJ *d
 /*
 **                 Ignore Void Triangles
 */
-                   if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&voidTriangle)) goto errexit ;
+                   if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidTriangle)) goto errexit ;
                    if( ! voidTriangle )
                      {
                       if( pointAddrP(dtmP,p1)->z == pointAddrP(dtmP,p2)->z &&

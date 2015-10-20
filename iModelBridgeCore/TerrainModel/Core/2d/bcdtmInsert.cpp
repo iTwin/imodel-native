@@ -85,14 +85,14 @@ BENTLEYDTM_Public int bcdtmInsert_addPointToDtmObject(BC_DTM_OBJ *dtmP,double Xp
 int bcdtmInsert_addPointAndFixFeaturesToDtmObject (BC_DTM_OBJ* dtmP, long firstPnt, long p1, long p2, long p3, int bkp, double intPntX, double intPntY, double intPntZ, long insertLine, long* p4)
     {
     int    ret=DTM_SUCCESS,dbg=0 ;
-    long   voidLine=0;
+    bool voidLine=false;
 
     if( bcdtmInsert_addPointToDtmObject(dtmP,intPntX,intPntY,intPntZ,p4) ) goto errexit ;
     if( dbg ) bcdtmWrite_message(0,0,0,"p4 = %8ld ** %12.5lf %12.5lf %10.4lf",p4,intPntX,intPntY,intPntZ) ;
     /*
     **    Check For Void Line
     */
-    bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,&voidLine) ;
+    bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,voidLine) ;
     if( dbg ) bcdtmWrite_message(0,0,0,"voidLine = %2ld",voidLine) ;
     if( voidLine ) bcdtmFlag_setVoidBitPCWD(&nodeAddrP(dtmP,*p4)->PCWD) ;
     /*
@@ -184,7 +184,7 @@ BENTLEYDTM_Public int bcdtmInsert_lineBetweenPointsDtmObject
  */
     {
  int    ret=DTM_SUCCESS,bkp,dbg=DTM_TRACE_VALUE(0) ;
-    long   p1=0,p2,p3,p4,startPnt,endPnt,insertLine,voidLine=0,fixType,precisionError ;
+    long   p1=0,p2,p3,p4,startPnt,endPnt,insertLine,fixType,precisionError ;
     double intPntX,intPntY,intPntZ=0.0 ;
     /*
     ** Write Entry Message
@@ -4208,7 +4208,8 @@ BENTLEYDTM_Public int  bcdtmInsert_storePointInDtmObject
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   findType,antPnt,clkPnt,pnt1,pnt2,pnt3,dtmPoint,voidPoint ;
+ long   findType, antPnt, clkPnt, pnt1, pnt2, pnt3, dtmPoint;
+ bool voidPoint;
  long   onLine1,onLine2,onLine3,fixType,precisionError ;
  double surfaceZ=0,d1,d2,d3,Xi,Yi ;
 /*
@@ -4397,7 +4398,7 @@ BENTLEYDTM_Public int  bcdtmInsert_storePointInDtmObject
 
     case  2 :      /* Coincident With Internal Tin Line  */
 
-      bcdtmList_testForVoidLineDtmObject(dtmP,pnt1,pnt2,&voidPoint) ;
+      bcdtmList_testForVoidLineDtmObject(dtmP,pnt1,pnt2,voidPoint) ;
       if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,pnt1,pnt2)) < 0 ) goto errexit ;
       if( (clkPnt = bcdtmList_nextClkDtmObject(dtmP,pnt1,pnt2)) < 0 ) goto errexit ;
       if(bcdtmList_deleteLineDtmObject(dtmP,pnt1,pnt2)) goto errexit ;
@@ -4416,7 +4417,7 @@ BENTLEYDTM_Public int  bcdtmInsert_storePointInDtmObject
     break ;
 
     case  3 :      /* Coincident With External Tin Line  */
-      bcdtmList_testForVoidLineDtmObject(dtmP,pnt1,pnt2,&voidPoint) ;
+      bcdtmList_testForVoidLineDtmObject(dtmP,pnt1,pnt2,voidPoint) ;
       if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,pnt1,pnt2))   < 0 ) goto errexit ;
       if(bcdtmList_deleteLineDtmObject(dtmP,pnt1,pnt2)) goto errexit ;
       if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt1,dtmPoint,antPnt)) goto errexit ;
@@ -4434,7 +4435,7 @@ BENTLEYDTM_Public int  bcdtmInsert_storePointInDtmObject
     break ;
 
     case  4 :   /* In Triangle                      */
-      if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,&voidPoint)) goto errexit ;
+      if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,voidPoint)) goto errexit ;
       if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt1,dtmPoint,pnt2)) goto errexit ;
       if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,pnt1,dtmP->nullPnt)) goto errexit ;
       if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt2,dtmPoint,pnt3)) goto errexit ;
@@ -6530,7 +6531,8 @@ BENTLEYDTM_Public int bcdtmInsert_storeRigidPointInDtmObject(BC_DTM_OBJ *dtmP,lo
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   pntType,dtmPnt1,dtmPnt2,dtmPnt3,newTinPnt,antPnt=0,clkPnt=0,voidFlag=0 ;
+ long   pntType, dtmPnt1, dtmPnt2, dtmPnt3, newTinPnt, antPnt = 0, clkPnt = 0;
+ bool voidFlag = false;
  long   onLine1,onLine2,onLine3,sp1=0,sp2=0,sp3=0,spt,perr,moveFlag ;
  double surfaceZ=0.0,d1,d2,d3,Xi,Yi ;
 /*
@@ -6752,7 +6754,7 @@ bcdtmWrite_message(0,0,0,"Internal Point External To Tin") ;
 
     case  2 :      /* Coincident With Internal Tin Line  */
 
-      bcdtmList_testForVoidLineDtmObject(dtmP,dtmPnt1,dtmPnt2,&voidFlag) ;
+      bcdtmList_testForVoidLineDtmObject(dtmP,dtmPnt1,dtmPnt2,voidFlag) ;
       if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,dtmPnt1,dtmPnt2))   < 0 ) goto errexit ;
       if( (clkPnt = bcdtmList_nextClkDtmObject(dtmP,dtmPnt1,dtmPnt2)) < 0 ) goto errexit ;
       if(bcdtmList_deleteLineDtmObject(dtmP,dtmPnt1,dtmPnt2)) goto errexit ;
@@ -6771,7 +6773,7 @@ bcdtmWrite_message(0,0,0,"Internal Point External To Tin") ;
     break ;
 
     case  3 :      /* Coincident With External Tin Line  */
-      bcdtmList_testForVoidLineDtmObject(dtmP,dtmPnt1,dtmPnt2,&voidFlag) ;
+      bcdtmList_testForVoidLineDtmObject(dtmP,dtmPnt1,dtmPnt2,voidFlag) ;
       if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,dtmPnt1,dtmPnt2))   < 0 ) goto errexit ;
       if(bcdtmList_deleteLineDtmObject(dtmP,dtmPnt1,dtmPnt2)) goto errexit ;
       if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt1,newTinPnt,antPnt)) goto errexit ;
@@ -6789,7 +6791,7 @@ bcdtmWrite_message(0,0,0,"Internal Point External To Tin") ;
     break ;
 
     case  4 :   /* In Triangle                      */
-      bcdtmList_testForVoidTriangleDtmObject(dtmP,dtmPnt1,dtmPnt2,dtmPnt3,&voidFlag) ;
+      bcdtmList_testForVoidTriangleDtmObject(dtmP,dtmPnt1,dtmPnt2,dtmPnt3,voidFlag) ;
       if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt1,newTinPnt,dtmPnt2)) goto errexit ;
       if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newTinPnt,dtmPnt1,dtmP->nullPnt)) goto errexit ;
       if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt2,newTinPnt,dtmPnt3)) goto errexit ;
@@ -6848,7 +6850,8 @@ BENTLEYDTM_Private int bcdtmInsert_rigidLineBetweenPointsDtmObject(BC_DTM_OBJ *d
 */
 {
  int    ret=DTM_SUCCESS,bkp,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- long   dtmPnt1,dtmPnt2,dtmPnt3,dtmPnt4,startPnt,endPnt,dtmFeatureLine,voidLine,numPreErrors=0 ;
+ long   dtmPnt1,dtmPnt2,dtmPnt3,dtmPnt4,startPnt,endPnt,dtmFeatureLine,numPreErrors=0 ;
+ bool voidLine;
  double intX,intY,intZ=0.0,ppTol=0.0,plTol=0.0 ;
 /*
 ** Write Entry Message
@@ -6950,7 +6953,7 @@ BENTLEYDTM_Private int bcdtmInsert_rigidLineBetweenPointsDtmObject(BC_DTM_OBJ *d
 /*
 **     Check For Void Line
 */
-       bcdtmList_testForVoidLineDtmObject(dtmP,dtmPnt1,dtmPnt2,&voidLine) ;
+       bcdtmList_testForVoidLineDtmObject(dtmP,dtmPnt1,dtmPnt2,voidLine) ;
        if( bcdtmList_deleteLineDtmObject(dtmP,dtmPnt1,dtmPnt2) ) goto errexit ;
        if( bcdtmInsert_addPointToDtmObject(dtmP,intX,intY,intZ,&dtmPnt4) ) goto errexit ;
        if( voidLine ) bcdtmFlag_setVoidBitPCWD(&nodeAddrP(dtmP,dtmPnt4)->PCWD) ;
@@ -8880,7 +8883,7 @@ BENTLEYDTM_Public int bcdtmInsert_checkFeatureIsInternalToTinHullDtmObject
  long numDrapePts ;
  DPoint3d *p3dP ;
  DTM_DRAPE_POINT *drapeP,*drapePtsP=NULL ;
-
+ bvector<DTM_DRAPE_POINT> drapePts;
  double dd,xi,yi,z ;
  long p1,p2,fndType,drapeFlag,onLine ;
  DTM_TIN_POINT *pnt1P,*pnt2P ;
@@ -8937,7 +8940,10 @@ BENTLEYDTM_Public int bcdtmInsert_checkFeatureIsInternalToTinHullDtmObject
 /*
 ** Drape Feature On DTM
 */
- if( bcdtmDrape_stringDtmObject(dtmP,featurePtsP,numFeaturePts,FALSE,&drapePtsP,&numDrapePts)) goto errexit ;
+ if( bcdtmDrape_stringDtmObject(dtmP,featurePtsP,numFeaturePts,FALSE,drapePts)) goto errexit ;
+ drapePtsP = drapePts.data();
+ numDrapePts = (long)drapePts.size();
+
 /*
 ** Write Out Drape Points
 */
@@ -8946,7 +8952,7 @@ BENTLEYDTM_Public int bcdtmInsert_checkFeatureIsInternalToTinHullDtmObject
     bcdtmWrite_message(0,0,0,"Number Of Drape Points = %8ld",numDrapePts) ;
     for( drapeP = drapePtsP ; drapeP < drapePtsP + numDrapePts ; ++drapeP )
       {
-       bcdtmWrite_message(0,0,0,"Drape Point[%4ld] = %12.5lf %12.5lf %12.5lf ** Line = %4ld Type = %2ld",(long)(drapeP-drapePtsP),drapeP->drapeX,drapeP->drapeY,drapeP->drapeZ,drapeP->drapeLine,drapeP->drapeType) ;
+       bcdtmWrite_message(0,0,0,"Drape Point[%4ld] = %12.5lf %12.5lf %12.5lf ** Line = %4ld Type = %2ld",(long)(drapeP-drapePtsP),drapeP->drapePt.x,drapeP->drapePt.y,drapeP->drapePt.z,drapeP->drapeLine,drapeP->drapeType) ;
       }
    }
 /*
@@ -8957,13 +8963,9 @@ BENTLEYDTM_Public int bcdtmInsert_checkFeatureIsInternalToTinHullDtmObject
    if (drapeP->drapeType == DTMDrapedLineCode::External) *isInternalP = 0;
    }
 /*
-** Clean Up
-*/
- cleanup :
- if( drapePtsP != NULL ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
-/*
 ** Job Completed
 */
+ cleanup:
  if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Checking Feature Is Internal To Tin Hull Completed") ;
  if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Checking Feature Is Internal To Tin Hull Error") ;
  return(ret) ;
@@ -8992,7 +8994,7 @@ BENTLEYDTM_Public int bcdtmInsert_checkFeatureIsInternalToTinHullMrDtmObject
  long numDrapePts ;
  DPoint3d *p3dP ;
  DTM_DRAPE_POINT *drapeP,*drapePtsP=NULL ;
-
+ bvector<DTM_DRAPE_POINT> drapePts;
  double dd,xi,yi,z ;
  long p1,p2,fndType,drapeFlag,onLine ;
  DTM_TIN_POINT *pnt1P,*pnt2P ;
@@ -9049,7 +9051,10 @@ BENTLEYDTM_Public int bcdtmInsert_checkFeatureIsInternalToTinHullMrDtmObject
 /*
 ** Drape Feature On DTM
 */
- if( bcdtmDrape_stringDtmObject(dtmP,featurePtsP,numFeaturePts,FALSE,&drapePtsP,&numDrapePts)) goto errexit ;
+ if( bcdtmDrape_stringDtmObject(dtmP,featurePtsP,numFeaturePts,FALSE,drapePts)) goto errexit ;
+ drapePtsP = drapePts.data();
+ numDrapePts = (long)drapePts.size();
+
 /*
 ** Write Out Drape Points
 */
@@ -9058,7 +9063,7 @@ BENTLEYDTM_Public int bcdtmInsert_checkFeatureIsInternalToTinHullMrDtmObject
     bcdtmWrite_message(0,0,0,"Number Of Drape Points = %8ld",numDrapePts) ;
     for( drapeP = drapePtsP ; drapeP < drapePtsP + numDrapePts ; ++drapeP )
       {
-       bcdtmWrite_message(0,0,0,"Drape Point[%4ld] = %12.5lf %12.5lf %12.5lf ** Line = %4ld Type = %2ld",(long)(drapeP-drapePtsP),drapeP->drapeX,drapeP->drapeY,drapeP->drapeZ,drapeP->drapeLine,drapeP->drapeType) ;
+       bcdtmWrite_message(0,0,0,"Drape Point[%4ld] = %12.5lf %12.5lf %12.5lf ** Line = %4ld Type = %2ld",(long)(drapeP-drapePtsP),drapeP->drapePt.x,drapeP->drapePt.y,drapeP->drapePt.z,drapeP->drapeLine,drapeP->drapeType) ;
       }
    }
 /*
@@ -9069,13 +9074,9 @@ BENTLEYDTM_Public int bcdtmInsert_checkFeatureIsInternalToTinHullMrDtmObject
    if (drapeP->drapeType == DTMDrapedLineCode::External) *isInternalP = 0;
    }
 /*
-** Clean Up
-*/
- cleanup :
- if( drapePtsP != NULL ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
-/*
 ** Job Completed
 */
+ cleanup:
  if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Checking Feature Is Internal To Tin Hull Completed") ;
  if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Checking Feature Is Internal To Tin Hull Error") ;
  return(ret) ;

@@ -8,6 +8,7 @@
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
 #include "bcdtminlines.h" 
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -23,16 +24,16 @@ BENTLEYDTM_EXPORT int bcdtmObject_createDataObject(DTM_DAT_OBJ **dataPP )
 /*
 ** Delete Data Object If It Exists
 */
- if( *dataPP != NULL )
+ if( *dataPP != nullptr )
    {
     if( bcdtmObject_deleteDataObject(dataPP)) goto errexit ;
-    *dataPP = NULL ;
+    *dataPP = nullptr ;
    }
 /*
 ** Create Data Object
 */
  *dataPP = ( DTM_DAT_OBJ * ) malloc ( sizeof(DTM_DAT_OBJ)) ;
- if( *dataPP == NULL ) 
+ if( *dataPP == nullptr ) 
    { 
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto errexit ;
@@ -106,10 +107,10 @@ BENTLEYDTM_Public int bcdtmObject_initialiseDataObject(DTM_DAT_OBJ *dataP)
  dataP->userTime     = 0 ;
  dataP->refCount     = 0 ;
  dataP->userStatus   = 0 ;
- dataP->featureCodeP = NULL  ;
- dataP->userTagP     = NULL  ;
- dataP->pointsP      = NULL  ;
- dataP->guidP        = NULL  ;
+ dataP->featureCodeP = nullptr  ;
+ dataP->userTagP     = nullptr  ;
+ dataP->pointsP      = nullptr  ;
+ dataP->guidP        = nullptr  ;
 /*
 **  Job Completed
 */
@@ -130,11 +131,11 @@ BENTLEYDTM_EXPORT int bcdtmObject_deleteDataObject(DTM_DAT_OBJ **dataPP)
 /*
 ** Check For Null Data Object
 */
- if( *dataPP != NULL ) 
+ if( *dataPP != nullptr ) 
    {
     if( bcdtmObject_freeMemoryDataObject(*dataPP)) goto errexit ;
     free(*dataPP) ;
-    *dataPP = NULL ;
+    *dataPP = nullptr ;
    }
 /*
 ** Log Destruction Of Data Object
@@ -171,9 +172,9 @@ BENTLEYDTM_Public int bcdtmObject_freeMemoryDataObject(DTM_DAT_OBJ *dataP)
  dataP->numPts = dataP->memPts = dataP->numFeatPts = dataP->stateFlag = 0 ;
  dataP->xMin = dataP->yMin = dataP->zMin = 0.0 ;
  dataP->xMax = dataP->yMax = dataP->zMax = 0.0 ;
- if( dataP->featureCodeP != NULL ) { free(dataP->featureCodeP) ; dataP->featureCodeP = NULL ; }
- if( dataP->pointsP      != NULL ) { free(dataP->pointsP)      ; dataP->pointsP = NULL ; }
- if( dataP->userTagP     != NULL ) { free(dataP->userTagP)     ; dataP->userTagP = NULL ; }
+ if( dataP->featureCodeP != nullptr ) { free(dataP->featureCodeP) ; dataP->featureCodeP = nullptr ; }
+ if( dataP->pointsP      != nullptr ) { free(dataP->pointsP)      ; dataP->pointsP = nullptr ; }
+ if( dataP->userTagP     != nullptr ) { free(dataP->userTagP)     ; dataP->userTagP = nullptr ; }
 /*
 ** Initialise Dat
 */
@@ -198,7 +199,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_createTinObject(DTM_TIN_OBJ **tinPP)
 /*
 ** Delete Tin Object If It Exists
 */
- if( *tinPP != NULL )
+ if( *tinPP != nullptr )
    {
     if( bcdtmObject_deleteTinObject(tinPP)) goto errexit ;
    }
@@ -206,7 +207,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_createTinObject(DTM_TIN_OBJ **tinPP)
 ** Create Tin Object
 */
  *tinPP = ( DTM_TIN_OBJ * ) malloc ( sizeof(DTM_TIN_OBJ)) ; 
- if( *tinPP == NULL )
+ if( *tinPP == nullptr )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto errexit ;
@@ -301,13 +302,13 @@ BENTLEYDTM_Public int bcdtmObject_initialiseTinObject(DTM_TIN_OBJ *tinP )
  tinP->SL1 = tinP->SL2 = tinP->SL3 = tinP->SL4 = tinP->SL5 = 0 ;
  tinP->SI641 = tinP->SI642 = tinP->SI643 = tinP->SI644 = tinP->SI645 = 0 ;
  tinP->SD1 = tinP->SD2 = tinP->SD3 = tinP->SD4 = tinP->SD5 = 0.0 ;
- tinP->SP1 = tinP->SP2 = tinP->SP3 = tinP->SP4 = tinP->SP5 = NULL ;
- tinP->pointsP     = NULL ;
- tinP->nodesP      = NULL ; 
- tinP->cListP      = NULL ;
- tinP->fTableP     = NULL ;
- tinP->fListP      = NULL ;
- tinP->fMapP       = NULL ; 
+ tinP->SP1 = tinP->SP2 = tinP->SP3 = tinP->SP4 = tinP->SP5 = nullptr ;
+ tinP->pointsP     = nullptr ;
+ tinP->nodesP      = nullptr ; 
+ tinP->cListP      = nullptr ;
+ tinP->fTableP     = nullptr ;
+ tinP->fListP      = nullptr ;
+ tinP->fMapP       = nullptr ; 
  strcpy(tinP->userName,"") ;
  strcpy(tinP->tinObjectFileName,"") ;
  strcpy(tinP->userMessage,"") ;
@@ -330,11 +331,11 @@ BENTLEYDTM_EXPORT int bcdtmObject_deleteTinObject(DTM_TIN_OBJ **tinPP)
 /*
 ** Check For Null Tin Object
 */
- if( *tinPP != NULL ) 
+ if( *tinPP != nullptr ) 
    {
     if( bcdtmObject_freeMemoryTinObject(*tinPP)) goto errexit ;
     free(*tinPP) ;
-    *tinPP = NULL ;
+    *tinPP = nullptr ;
    } 
 /*
 ** Clean Up
@@ -364,11 +365,11 @@ BENTLEYDTM_Public int bcdtmObject_freeMemoryTinObject(DTM_TIN_OBJ *tinP)
 /*
 ** Free Memory
 */
- if( tinP->pointsP != NULL ) { free(tinP->pointsP) ; tinP->pointsP = NULL ; }
- if( tinP->nodesP  != NULL ) { free(tinP->nodesP)  ; tinP->nodesP  = NULL ; }
- if( tinP->cListP  != NULL ) { free(tinP->cListP)  ; tinP->cListP  = NULL ; }
- if( tinP->fTableP != NULL ) { free(tinP->fTableP) ; tinP->fTableP = NULL ; }
- if( tinP->fListP  != NULL ) { free(tinP->fListP)  ; tinP->fListP  = NULL ; }
+ if( tinP->pointsP != nullptr ) { free(tinP->pointsP) ; tinP->pointsP = nullptr ; }
+ if( tinP->nodesP  != nullptr ) { free(tinP->nodesP)  ; tinP->nodesP  = nullptr ; }
+ if( tinP->cListP  != nullptr ) { free(tinP->cListP)  ; tinP->cListP  = nullptr ; }
+ if( tinP->fTableP != nullptr ) { free(tinP->fTableP) ; tinP->fTableP = nullptr ; }
+ if( tinP->fListP  != nullptr ) { free(tinP->fListP)  ; tinP->fListP  = nullptr ; }
 /*
 ** Initialise Tin
 */
@@ -393,7 +394,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_createLatticeObject(DTM_LAT_OBJ **latticePP)
 /*
 ** Delete Lattice Object If It Exists
 */
- if( *latticePP != NULL )
+ if( *latticePP != nullptr )
    {
     if( bcdtmObject_deleteLatticeObject(latticePP)) goto errexit ;
    }
@@ -401,7 +402,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_createLatticeObject(DTM_LAT_OBJ **latticePP)
 ** Create Lattice Object
 */
   *latticePP = ( DTM_LAT_OBJ * ) malloc ( sizeof(DTM_LAT_OBJ)) ;
-  if( *latticePP == NULL )
+  if( *latticePP == nullptr )
     {
      bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
      goto errexit ; 
@@ -454,7 +455,7 @@ BENTLEYDTM_Public int bcdtmObject_initialiseLatticeObject(DTM_LAT_OBJ *latticeP 
  latticeP->D1 = latticeP->D2 = latticeP->D3 = latticeP->D4 = latticeP->D5 = latticeP->D6 = latticeP->D7 = latticeP->D8 = 0.0 ;
  strcpy(latticeP->userName,"") ;
  strcpy(latticeP->LatticeObjectFile,"") ;
- latticeP->LAT = NULL ;
+ latticeP->LAT = nullptr ;
 /*
 ** Job Completed
 */
@@ -475,11 +476,11 @@ BENTLEYDTM_EXPORT int bcdtmObject_deleteLatticeObject(DTM_LAT_OBJ **latticePP)
 /*
 ** Check For Null Lattice Object
 */
- if( *latticePP != NULL ) 
+ if( *latticePP != nullptr ) 
    {
     if( bcdtmObject_freeMemoryLatticeObject(*latticePP)) goto errexit ; 
     free(*latticePP) ;
-    *latticePP = NULL ;
+    *latticePP = nullptr ;
    }
 /*
 ** Log Destruction Of Lattice Object
@@ -513,10 +514,10 @@ BENTLEYDTM_Public int bcdtmObject_freeMemoryLatticeObject(DTM_LAT_OBJ *latticeP)
 /*
 ** Free Memory
 */
- if( latticeP->LAT != NULL ) 
+ if( latticeP->LAT != nullptr ) 
    { 
     free(latticeP->LAT) ; 
-    latticeP->LAT = NULL ; 
+    latticeP->LAT = nullptr ; 
    }
 /*
 ** Initialise Lattice
@@ -740,7 +741,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_cloneDtmObject(BC_DTM_OBJ *dtmP,BC_DTM_OBJ *cl
 /*
 ** Copy Nodes
 */
-  if( dtmP->nodesPP != NULL && dtmP->memPoints > 0 )
+  if( dtmP->nodesPP != nullptr && dtmP->memPoints > 0 )
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Copying Nodes") ;
 /*
@@ -776,7 +777,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_cloneDtmObject(BC_DTM_OBJ *dtmP,BC_DTM_OBJ *cl
 /*
 ** Copy Circular List
 */
-  if( dtmP->cListPP != NULL )
+  if( dtmP->cListPP != nullptr )
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Copying Circular List") ;
 /*
@@ -812,7 +813,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_cloneDtmObject(BC_DTM_OBJ *dtmP,BC_DTM_OBJ *cl
 /*
 ** Copy Feature List
 */
-  if( dtmP->fListPP != NULL )
+  if( dtmP->fListPP != nullptr )
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Copying Feature List") ;
 /*
@@ -871,7 +872,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_cloneDtmObject(BC_DTM_OBJ *dtmP,BC_DTM_OBJ *cl
 BENTLEYDTM_EXPORT int bcdtmGeopak_readGeopakDatFileToDtmObject(BC_DTM_OBJ *dtmP,WCharCP datFileNameP)
 {
  int      ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- DTM_DAT_OBJ *dataP=NULL ;
+ DTM_DAT_OBJ *dataP=nullptr ;
 /*
 ** Write Status Message
 */
@@ -912,7 +913,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_readGeopakDatFileToDtmObject(BC_DTM_OBJ *dtmP,
 ** Clean Up
 */
  cleanup :
- if( dataP != NULL ) bcdtmObject_deleteDataObject(&dataP) ;
+ if( dataP != nullptr ) bcdtmObject_deleteDataObject(&dataP) ;
 /*
 **  Return
 */
@@ -937,7 +938,7 @@ BENTLEYDTM_Public int bcdtmGeopak_copyDataObjectToDtmObject(DTM_DAT_OBJ *dataP,B
  int               ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long              fsCode, fnCode, offset, numFeaturePts = 0;
  DTMFeatureType dtmFeatureType;
- DPoint3d               *points1P,*points2P,*featurePtsP=NULL ;
+ DPoint3d               *points1P,*points2P,*featurePtsP=nullptr ;
  DTM_FEATURE_CODE  *fCodeP,*nCodeP ;
  DTMUserTag      userTag ;
  DTMFeatureId    userFeatureId ;
@@ -993,7 +994,7 @@ BENTLEYDTM_Public int bcdtmGeopak_copyDataObjectToDtmObject(DTM_DAT_OBJ *dataP,B
 **     Allocate Memory To Store Points
 */
        featurePtsP = ( DPoint3d * ) malloc(numFeaturePts*sizeof(DPoint3d)) ;
-       if( featurePtsP == NULL )
+       if( featurePtsP == nullptr )
          {
           bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ;
           goto errexit ;
@@ -1013,7 +1014,7 @@ BENTLEYDTM_Public int bcdtmGeopak_copyDataObjectToDtmObject(DTM_DAT_OBJ *dataP,B
        userFeatureId = DTM_NULL_FEATURE_ID    ;
        if( dtmFeatureType != DTMFeatureType::RandomSpots )
          {
-          if( dataP->userTagP   != NULL ) userTag  = *(dataP->userTagP + offset) ;  
+          if( dataP->userTagP   != nullptr ) userTag  = *(dataP->userTagP + offset) ;  
           userFeatureId = (dtmP)->dtmFeatureIndex ;
           ++(dtmP)->dtmFeatureIndex ;
          } 
@@ -1024,7 +1025,7 @@ BENTLEYDTM_Public int bcdtmGeopak_copyDataObjectToDtmObject(DTM_DAT_OBJ *dataP,B
 /*
 **     Free Feature Points Memory
 */
-       if( featurePtsP != NULL ) { free(featurePtsP) ; featurePtsP = NULL ; }
+       if( featurePtsP != nullptr ) { free(featurePtsP) ; featurePtsP = nullptr ; }
 /*
 **     Set For Next Feature
 */
@@ -1039,7 +1040,7 @@ BENTLEYDTM_Public int bcdtmGeopak_copyDataObjectToDtmObject(DTM_DAT_OBJ *dataP,B
 ** Clean Up
 */
  cleanup :
- if( featurePtsP != NULL ) { free(featurePtsP) ; featurePtsP = NULL ; }
+ if( featurePtsP != nullptr ) { free(featurePtsP) ; featurePtsP = nullptr ; }
 /* 
 ** Job Completed
 */
@@ -1160,12 +1161,12 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_copyTinObjectToDtmObject(DTM_TIN_OBJ *tinP,BC_
  dtmP->xRange               = tinP->xRange ;
  dtmP->yRange               = tinP->yRange ;
  dtmP->zRange               = tinP->zRange ;
- dtmP->fTablePP             = NULL ;
- dtmP->pointsPP             = NULL ;
- dtmP->nodesPP              = NULL ;
- dtmP->cListPP              = NULL ;
- dtmP->fListPP              = NULL ;
- dtmP->DTMAllocationClass   = NULL;
+ dtmP->fTablePP             = nullptr ;
+ dtmP->pointsPP             = nullptr ;
+ dtmP->nodesPP              = nullptr ;
+ dtmP->cListPP              = nullptr ;
+ dtmP->fListPP              = nullptr ;
+ dtmP->DTMAllocationClass   = nullptr;
 /*
 ** Copy Features
 */
@@ -1382,10 +1383,10 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_copyDtmObjectToTinObject
 /*
 **  Validate Tin 2 Object
 */
- if( *tinPP != NULL ) 
+ if( *tinPP != nullptr ) 
    {
-    if( bcdtmObject_testForValidTinObject(*tinPP)) *tinPP = NULL ;
-    if( *tinPP != NULL ) bcdtmObject_deleteTinObject(tinPP) ; 
+    if( bcdtmObject_testForValidTinObject(*tinPP)) *tinPP = nullptr ;
+    if( *tinPP != nullptr ) bcdtmObject_deleteTinObject(tinPP) ; 
    }
 /*
 ** Test For Valid Data Object
@@ -1487,13 +1488,13 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_copyDtmObjectToTinObject
  (*tinPP)->SL1   = (*tinPP)->SL2   = (*tinPP)->SL3   = (*tinPP)->SL4   = (*tinPP)->SL5 = 0 ;
  (*tinPP)->SI641 = (*tinPP)->SI642 = (*tinPP)->SI643 = (*tinPP)->SI644 = (*tinPP)->SI645 = 0 ;
  (*tinPP)->SD1 = (*tinPP)->SD2     = (*tinPP)->SD3   = (*tinPP)->SD4   = (*tinPP)->SD5 = 0.0 ;
- (*tinPP)->SP1 = (*tinPP)->SP2     = (*tinPP)->SP3   = (*tinPP)->SP4   = (*tinPP)->SP5 = NULL ;
- (*tinPP)->pointsP     = NULL ;
- (*tinPP)->nodesP      = NULL ; 
- (*tinPP)->cListP      = NULL ;
- (*tinPP)->fTableP     = NULL ;
- (*tinPP)->fListP      = NULL ;
- (*tinPP)->fMapP       = NULL ; 
+ (*tinPP)->SP1 = (*tinPP)->SP2     = (*tinPP)->SP3   = (*tinPP)->SP4   = (*tinPP)->SP5 = nullptr ;
+ (*tinPP)->pointsP     = nullptr ;
+ (*tinPP)->nodesP      = nullptr ; 
+ (*tinPP)->cListP      = nullptr ;
+ (*tinPP)->fTableP     = nullptr ;
+ (*tinPP)->fListP      = nullptr ;
+ (*tinPP)->fMapP       = nullptr ; 
  strcpy((*tinPP)->userName,"") ;
  strcpy((*tinPP)->tinObjectFileName,"") ;
  strcpy((*tinPP)->userMessage,"") ;
@@ -1522,7 +1523,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_copyDtmObjectToTinObject
 ** Allocate Memory For Tin Point Array
 */
  (*tinPP)->pointsP = (DTM_TIN_POINT *) malloc( (*tinPP)->memPts * sizeof(DTM_TIN_POINT)) ;
- if( (*tinPP)->pointsP == NULL )  
+ if( (*tinPP)->pointsP == nullptr )  
    { 
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; 
     goto errexit ; 
@@ -1531,7 +1532,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_copyDtmObjectToTinObject
 ** Allocate Memory For Tin Node Array
 */
  (*tinPP)->nodesP = (DTM_TIN_NODE *) malloc( (*tinPP)->memPts * sizeof(DTM_TIN_NODE)) ;
- if( (*tinPP)->nodesP == NULL )  
+ if( (*tinPP)->nodesP == nullptr )  
    { 
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; 
     goto errexit ; 
@@ -1541,7 +1542,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_copyDtmObjectToTinObject
 */
  if( (*tinPP)->numPts == (*tinPP)->memPts ) (*tinPP)->cListP = (DTM_CIR_LIST *) malloc( (*tinPP)->cListPtr * sizeof(DTM_CIR_LIST)) ;
  else                                       (*tinPP)->cListP = (DTM_CIR_LIST *) malloc( (*tinPP)->memPts * 6 * sizeof(DTM_CIR_LIST)) ;                 
- if( (*tinPP)->cListP == NULL ) 
+ if( (*tinPP)->cListP == nullptr ) 
    { 
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto errexit ; 
@@ -1553,7 +1554,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_copyDtmObjectToTinObject
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Reading Tin Feature Table Array") ;
     (*tinPP)->fTableP = (DTM_FEATURE_TABLE *) malloc( (*tinPP)->memFeatureTable * sizeof(DTM_FEATURE_TABLE)) ;
-    if( (*tinPP)->fTableP == NULL )
+    if( (*tinPP)->fTableP == nullptr )
       { 
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; 
        goto errexit ; 
@@ -1565,7 +1566,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_copyDtmObjectToTinObject
  if( (*tinPP)->memFeatureList > 0 )
    {
     (*tinPP)->fListP = (DTM_FEATURE_LIST_VER200 *) malloc( (*tinPP)->memFeatureList * sizeof(DTM_FEATURE_LIST_VER200)) ;
-    if( (*tinPP)->fListP == NULL )
+    if( (*tinPP)->fListP == nullptr )
       { 
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ; 
@@ -1681,7 +1682,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_copyDtmObjectToTinObject
 */
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- if( *tinPP  != NULL ) bcdtmObject_deleteTinObject(tinPP) ;
+ if( *tinPP  != nullptr ) bcdtmObject_deleteTinObject(tinPP) ;
  goto cleanup ;
 }
 /*-------------------------------------------------------------------+
@@ -1702,8 +1703,8 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_convertTinFileToDtmFile
  long    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long    hullFeature,dtmFeature,numHullPts ;
  double  plTol ;
- DPoint3d     *hullPtsP=NULL ;
- BC_DTM_OBJ  *dtmP=NULL ;
+ DPoint3d     *hullPtsP=nullptr ;
+ BC_DTM_OBJ  *dtmP=nullptr ;
  BC_DTM_FEATURE *dtmFeatureP ;
 /*
 ** Initialise Variables
@@ -1718,8 +1719,8 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_convertTinFileToDtmFile
 /*
 ** Destroy Current Geopak Tin Object
 */
-// if( DTM_CTOBJ != NULL ) if( bcdtmObject_destroyDtmObject((BC_DTM_OBJ **)&DTM_CTOBJ)) goto errexit ;
-// DTM_CTOBJ = NULL ;
+// if( DTM_CTOBJ != nullptr ) if( bcdtmObject_destroyDtmObject((BC_DTM_OBJ **)&DTM_CTOBJ)) goto errexit ;
+// DTM_CTOBJ = nullptr ;
 // DTM_CTOBJ_FILE[0] = 0 ;
 /*
 ** Read Tin File
@@ -1761,7 +1762,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_convertTinFileToDtmFile
    {
     if( bcdtmList_extractHullDtmObject(dtmP,&hullPtsP,&numHullPts)) goto errexit ;
     if( bcdtmObject_storeDtmFeatureInDtmObject(dtmP,DTMFeatureType::Hull,dtmP->nullUserTag,1,&dtmP->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
-    if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+    if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
    }
 /*
 ** Assign Feature Id's To DTM Features
@@ -1795,7 +1796,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_convertTinFileToDtmFile
 ** Clean Up
 */
  cleanup :
- if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+ if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
 /* 
 ** Job Completed
 */
@@ -1806,7 +1807,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_convertTinFileToDtmFile
 ** Error Exit
 */
  errexit :
- if( dtmP != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
+ if( dtmP != nullptr ) bcdtmObject_destroyDtmObject(&dtmP) ;
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
 }
@@ -1826,8 +1827,8 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_reportDuplicatePointErrorsDtmFile
 {
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  char    dateStr[50],timeStr[50] ;
- FILE    *rptFP=NULL ;
- BC_DTM_OBJ *dtmP=NULL;
+ FILE    *rptFP=nullptr ;
+ BC_DTM_OBJ *dtmP=nullptr;
  DTM_GEOPAK_REPORT geopakReport ; 
 /*
 ** Initialise
@@ -1846,7 +1847,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_reportDuplicatePointErrorsDtmFile
 ** Open Report File
 */
  rptFP = bcdtmFile_open(reportFileNameP,L"w") ;
- if( rptFP == NULL ) 
+ if( rptFP == nullptr ) 
   { 
    bcdtmWrite_message(1,0,0,"Error Opening Report File") ; 
    goto errexit ; 
@@ -1881,7 +1882,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_reportDuplicatePointErrorsDtmFile
  geopakReport.dtmP          = dtmP ;
  geopakReport.fileP         = rptFP ;
  geopakReport.numErrors     = 0 ;
- geopakReport.loadFunctionP = NULL ;
+ geopakReport.loadFunctionP = nullptr ;
  if( bcdtmReport_duplicatePointErrorsDtmObject(dtmP,bcdtmGeopak_browseDuplicatePointErrors,&geopakReport)) goto errexit ;
  fprintf(rptFP,"**\n") ;
  fprintf(rptFP,"** %6ld Duplicate Point Errors Detected\n",geopakReport.numErrors) ;
@@ -1890,8 +1891,8 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_reportDuplicatePointErrorsDtmFile
 ** Cleanup
 */
  cleanup :
- if( rptFP != NULL ) { fclose(rptFP) ; rptFP = NULL ; }
- if( dtmP  != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
+ if( rptFP != nullptr ) { fclose(rptFP) ; rptFP = nullptr ; }
+ if( dtmP  != nullptr ) bcdtmObject_destroyDtmObject(&dtmP) ;
 /*
 ** Job Completed
 */
@@ -1914,7 +1915,7 @@ BENTLEYDTM_Private int bcdtmGeopak_browseDuplicatePointErrors(double x,double y,
 {
  DTM_GEOPAK_REPORT *userP = (DTM_GEOPAK_REPORT *)userArgs;
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- FILE *rptFP=NULL ;
+ FILE *rptFP=nullptr ;
  char dtmFeatureTypeName[100] ;
  DTM_DUPLICATE_POINT_ERROR *dupP ;
 /*
@@ -1972,8 +1973,8 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_reportCrossingFeaturesDtmFile
  char    dateStr[50],timeStr[50] ;
  DTMFeatureType    crossingFeatureList[2];
  long numCrossingFeatureList = 2;
- FILE    *rptFP=NULL ;
- BC_DTM_OBJ *dtmP=NULL;
+ FILE    *rptFP=nullptr ;
+ BC_DTM_OBJ *dtmP=nullptr;
  DTM_GEOPAK_REPORT geopakReport ; 
 /*
 ** Write Entry Message
@@ -1997,7 +1998,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_reportCrossingFeaturesDtmFile
 ** Open Report File
 */
  rptFP = bcdtmFile_open(reportFileNameP,L"w") ;
- if( rptFP == NULL ) 
+ if( rptFP == nullptr ) 
   { 
    bcdtmWrite_message(1,0,0,"Error Opening Report File") ; 
    goto errexit ; 
@@ -2041,8 +2042,8 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_reportCrossingFeaturesDtmFile
 ** Cleanup
 */
  cleanup :
- if( rptFP != NULL ) { fclose(rptFP) ; rptFP = NULL ; }
- if( dtmP  != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
+ if( rptFP != nullptr ) { fclose(rptFP) ; rptFP = nullptr ; }
+ if( dtmP  != nullptr ) bcdtmObject_destroyDtmObject(&dtmP) ;
 /*
 ** Job Completed
 */
@@ -2070,8 +2071,8 @@ BENTLEYDTM_Private int bcdtmGeopak_browseCrossingFeatures
  DTM_GEOPAK_REPORT *userP = (DTM_GEOPAK_REPORT *)userArgs;
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long found,numFeaturePts,dtmFeature ;
- DPoint3d  *p3dP,*featurePtsP=NULL ;
- FILE *rptFP=NULL ;
+ DPoint3d  *p3dP,*featurePtsP=nullptr ;
+ FILE *rptFP=nullptr ;
  char dtmFeatureTypeName[100] ;
  BC_DTM_FEATURE *dtmFeatureP ;
 /*
@@ -2111,7 +2112,7 @@ BENTLEYDTM_Private int bcdtmGeopak_browseCrossingFeatures
 /*
 ** Load Features
 */
- if( userP->loadFunctionP != NULL )
+ if( userP->loadFunctionP != nullptr )
    {
     found = FALSE ;
     for( dtmFeature = 0 ; dtmFeature < userP->dtmP->numFeatures && found == FALSE ; ++dtmFeature )
@@ -2120,7 +2121,7 @@ BENTLEYDTM_Private int bcdtmGeopak_browseCrossingFeatures
        if( dtmFeatureP->dtmFeatureId == crossError.dtmFeatureId1 )
          {
           if( bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(userP->dtmP,dtmFeature,&featurePtsP,&numFeaturePts)) goto errexit ;
-          if( userP->loadFunctionP((DTMFeatureType)dtmFeatureP->dtmFeatureType,dtmFeatureP->dtmUserTag,dtmFeatureP->dtmFeatureId,featurePtsP,numFeaturePts,NULL)) goto errexit ;
+          if( userP->loadFunctionP((DTMFeatureType)dtmFeatureP->dtmFeatureType,dtmFeatureP->dtmUserTag,dtmFeatureP->dtmFeatureId,featurePtsP,numFeaturePts,nullptr)) goto errexit ;
           if( dbg == 2 )
             {
              bcdtmWrite_message(0,0,0,"Number Of Points For Feature Id %10I64d = %6ld",dtmFeatureP->dtmFeatureId,numFeaturePts) ;
@@ -2129,7 +2130,7 @@ BENTLEYDTM_Private int bcdtmGeopak_browseCrossingFeatures
                 bcdtmWrite_message(0,0,0,"Point[%6ld] = %12.5lf %12.5lf %10.4lf",(long)(p3dP-featurePtsP),p3dP->x,p3dP->y,p3dP->z) ;
                }
             } 
-          if( featurePtsP != NULL ) { free(featurePtsP) ; featurePtsP = NULL ; }
+          if( featurePtsP != nullptr ) { free(featurePtsP) ; featurePtsP = nullptr ; }
           found = TRUE ; 
          }
       }
@@ -2148,8 +2149,8 @@ BENTLEYDTM_Private int bcdtmGeopak_browseCrossingFeatures
                 bcdtmWrite_message(0,0,0,"Point[%6ld] = %12.5lf %12.5lf %10.4lf",(long)(p3dP-featurePtsP),p3dP->x,p3dP->y,p3dP->z) ;
                }
             } 
-          if( userP->loadFunctionP((DTMFeatureType)dtmFeatureP->dtmFeatureType,dtmFeatureP->dtmUserTag,dtmFeatureP->dtmFeatureId,featurePtsP,numFeaturePts,NULL)) goto errexit ;
-          if( featurePtsP != NULL ) { free(featurePtsP) ; featurePtsP = NULL ; }
+          if( userP->loadFunctionP((DTMFeatureType)dtmFeatureP->dtmFeatureType,dtmFeatureP->dtmUserTag,dtmFeatureP->dtmFeatureId,featurePtsP,numFeaturePts,nullptr)) goto errexit ;
+          if( featurePtsP != nullptr ) { free(featurePtsP) ; featurePtsP = nullptr ; }
           found = TRUE ; 
          }
       }
@@ -2158,7 +2159,7 @@ BENTLEYDTM_Private int bcdtmGeopak_browseCrossingFeatures
 ** Cleanup
 */
  cleanup :
- if( featurePtsP != NULL ) { free(featurePtsP) ; featurePtsP = NULL ; }
+ if( featurePtsP != nullptr ) { free(featurePtsP) ; featurePtsP = nullptr ; }
 /*
 ** Job Completed
 */
@@ -2184,7 +2185,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_destroyAllExceptCurrentDtmObjects(void)
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long n,numNodeValues ;
- BC_DTM_OBJ *dtmP=NULL,**nodeDtmPP=NULL ;
+ BC_DTM_OBJ *dtmP=nullptr,**nodeDtmPP=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -2192,7 +2193,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_destroyAllExceptCurrentDtmObjects(void)
 /*
 ** Check DTM Objects Exist
 */
- if( glbDtmObjBtreeP != NULL )
+ if( glbDtmObjBtreeP != nullptr )
    {
 /*
 **  Get Array Of Dtm Objects
@@ -2216,7 +2217,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_destroyAllExceptCurrentDtmObjects(void)
 ** Clean Up
 */
  cleanup :
- if( nodeDtmPP != NULL ) free(nodeDtmPP) ;
+ if( nodeDtmPP != nullptr ) free(nodeDtmPP) ;
 /*
 ** Return
 */
@@ -2243,7 +2244,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_moveFirstOccurrenceOfDtmFeatureTypeToPointArra
 )
 /*
 ** This Function Extracts And Removes A DTM Features From A Data Object
-** Note ** If featurePtsPP is not NULL , featurePtsPP memory will be freed 
+** Note ** If featurePtsPP is not nullptr , featurePtsPP memory will be freed 
 */
 {
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
@@ -2258,7 +2259,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_moveFirstOccurrenceOfDtmFeatureTypeToPointArra
 */
  *userTagP = DTM_NULL_USER_TAG ;
  *numFeaturePtsP = 0 ;
- if( *featurePtsPP != NULL ) { free(*featurePtsPP) ; *featurePtsPP = NULL ; }
+ if( *featurePtsPP != nullptr ) { free(*featurePtsPP) ; *featurePtsPP = nullptr ; }
 /*
 ** Test For Valid DTM Object
 */
@@ -2350,7 +2351,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_getPositiveUserTagListDtmObject
 ** Initialise
 */
  *numUserTagsP = 0 ;
- if( *userTagListPP != NULL ) { free(*userTagListPP) ; *userTagListPP = NULL ; }
+ if( *userTagListPP != nullptr ) { free(*userTagListPP) ; *userTagListPP = nullptr ; }
 /*
 ** Test For Valid Dtm Object
 */
@@ -2385,9 +2386,9 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_getPositiveUserTagListDtmObject
        if( *numUserTagsP == memUserTags )
          {
           memUserTags = memUserTags + memUserTagsInc ;
-          if( *userTagListPP == NULL ) *userTagListPP = ( DTMUserTag * ) malloc( memUserTags * sizeof(DTMUserTag)) ;
+          if( *userTagListPP == nullptr ) *userTagListPP = ( DTMUserTag * ) malloc( memUserTags * sizeof(DTMUserTag)) ;
           else                         *userTagListPP = ( DTMUserTag * ) realloc(*userTagListPP,memUserTags * sizeof(DTMUserTag)) ;
-          if( *userTagListPP == NULL ) 
+          if( *userTagListPP == nullptr ) 
             {
              bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ;
              goto errexit ;
@@ -2406,7 +2407,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_getPositiveUserTagListDtmObject
  if( memUserTags > *numUserTagsP )
    {
     if( *numUserTagsP > 0 )  *userTagListPP = ( DTMUserTag * ) realloc(*userTagListPP,*numUserTagsP * sizeof(DTMUserTag)) ;
-    else if( *userTagListPP != NULL ) { free(*userTagListPP) ; *userTagListPP = NULL ; }
+    else if( *userTagListPP != nullptr ) { free(*userTagListPP) ; *userTagListPP = nullptr ; }
    }
 /*
 ** Clean Up
@@ -2438,7 +2439,7 @@ BENTLEYDTM_EXPORT int bcdtmExport_geopakTriangulationFromDtmObject
 */
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- FILE *tinFP=NULL ;
+ FILE *tinFP=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -2485,7 +2486,7 @@ BENTLEYDTM_EXPORT int bcdtmExport_geopakTriangulationFromDtmObject
 ** Open Binary Tin File
 */
  tinFP = bcdtmFile_open(tinFileNameP,L"wb") ;
- if( tinFP == NULL )
+ if( tinFP == nullptr )
    {
     bcdtmWrite_message(1,0,0,"Error Opening Geopak Tin File") ;
     goto errexit ;
@@ -2498,12 +2499,12 @@ BENTLEYDTM_EXPORT int bcdtmExport_geopakTriangulationFromDtmObject
 ** Close File
 */
  fclose(tinFP) ;
- tinFP = NULL ;
+ tinFP = nullptr ;
 /*
 ** Clean Up
 */
  cleanup :
- if( tinFP != NULL ) { fclose(tinFP) ; tinFP = NULL ; }
+ if( tinFP != nullptr ) { fclose(tinFP) ; tinFP = nullptr ; }
 /*
 ** Job Completed
 */
@@ -2593,7 +2594,7 @@ BENTLEYDTM_EXPORT int bcdtmImport_geopakTriangulationToExistingDtmObject
 BENTLEYDTM_Private int bcdtmGeopak_readFromFileDtmObject(BC_DTM_OBJ *dtmP,WCharCP dtmFileNameP)
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- FILE *dtmFP=NULL ;
+ FILE *dtmFP=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -2610,7 +2611,7 @@ BENTLEYDTM_Private int bcdtmGeopak_readFromFileDtmObject(BC_DTM_OBJ *dtmP,WCharC
 ** Open Dtm File For Reading
 */
  dtmFP = bcdtmFile_open(dtmFileNameP,L"rb") ;
- if( dtmFP == NULL )
+ if( dtmFP == nullptr )
    {
     bcdtmWrite_message(1,0,0,"Error Opening Dtm File %s For Reading",dtmFileNameP) ;
     goto errexit ; 
@@ -2623,7 +2624,7 @@ BENTLEYDTM_Private int bcdtmGeopak_readFromFileDtmObject(BC_DTM_OBJ *dtmP,WCharC
 ** Clean Up
 */
  cleanup :
- if( dtmFP != NULL ) fclose(dtmFP) ;
+ if( dtmFP != nullptr ) fclose(dtmFP) ;
 /*
 ** Job Completed
 */
@@ -2648,8 +2649,8 @@ BENTLEYDTM_Private int bcdtmGeopak_readAtFilePositionDtmObject(BC_DTM_OBJ *dtmP,
  DTMObjectTypes dtmObjType;
  long objType,verNum;
  char buffer[8] ;
- DTM_DAT_OBJ     *dataP=NULL ;
- DTM_TIN_OBJ     *tinP=NULL ;
+ DTM_DAT_OBJ     *dataP=nullptr ;
+ DTM_TIN_OBJ     *tinP=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -2664,9 +2665,9 @@ BENTLEYDTM_Private int bcdtmGeopak_readAtFilePositionDtmObject(BC_DTM_OBJ *dtmP,
     goto errexit ;
    }
 /*
-** Test For None NULL File Pointer
+** Test For None nullptr File Pointer
 */
- if( dtmFP == NULL )
+ if( dtmFP == nullptr )
    {
     bcdtmWrite_message(2,0,0,"Null File Pointer") ;
     goto errexit ;
@@ -2792,8 +2793,8 @@ BENTLEYDTM_Private int bcdtmGeopak_readAtFilePositionDtmObject(BC_DTM_OBJ *dtmP,
 ** Clean Up
 */
  cleanup :
- if( dataP != NULL ) bcdtmObject_deleteDataObject(&dataP) ;
- if( tinP  != NULL ) bcdtmObject_deleteTinObject(&tinP) ;
+ if( dataP != nullptr ) bcdtmObject_deleteDataObject(&dataP) ;
+ if( tinP  != nullptr ) bcdtmObject_deleteTinObject(&tinP) ;
 /*
 ** Job Completed
 */
@@ -2864,7 +2865,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_moveDtmFeatureTypePointsToPointArrayDtmObject(
 ** Initialise
 */
  *numFeatPtsP = 0 ;
- if( *featPtsPP != NULL ) { free(*featPtsPP) ; *featPtsPP = NULL ; }
+ if( *featPtsPP != nullptr ) { free(*featPtsPP) ; *featPtsPP = nullptr ; }
  *userTagP = DTM_NULL_USER_TAG ;
 /*
 ** Test For Valid DTM Object
@@ -2920,8 +2921,8 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_copyTinStateDtmObjectToDataStateDtmObject(BC_D
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long p1,p2,clc,dtmFeature,numFeatPts ;
- DPoint3d  tinLinePts[2],*featPtsP=NULL ;
- BC_DTM_FEATURE *dtmFeatureP=NULL ;
+ DPoint3d  tinLinePts[2],*featPtsP=nullptr ;
+ BC_DTM_FEATURE *dtmFeatureP=nullptr ;
  DTM_TIN_POINT  *pointP ;
  DTMFeatureId hullFeatureId ;
  DTMUserTag  hullUserTag ;
@@ -2998,7 +2999,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_copyTinStateDtmObjectToDataStateDtmObject(BC_D
          {
           if( bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(dtmP,dtmFeature,&featPtsP,&numFeatPts)) goto errexit ;
           if( bcdtmObject_storeDtmFeatureInDtmObject(dataP,dtmFeatureP->dtmFeatureType,dtmFeatureP->dtmUserTag,1,&dtmFeatureP->dtmFeatureId,featPtsP,numFeatPts)) goto errexit ;  
-          if( featPtsP != NULL )  { free(featPtsP) ; featPtsP = NULL ; }
+          if( featPtsP != nullptr )  { free(featPtsP) ; featPtsP = nullptr ; }
          }
       }
    }
@@ -3008,12 +3009,12 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_copyTinStateDtmObjectToDataStateDtmObject(BC_D
  if( dbg ) bcdtmWrite_message(0,0,0,"Exporting Tin Hull") ;
  if( bcdtmList_extractHullDtmObject(dtmP,&featPtsP,&numFeatPts)) goto errexit ;
  if( bcdtmObject_storeDtmFeatureInDtmObject(dataP,DTMFeatureType::Hull,hullUserTag,1,&hullFeatureId,featPtsP,numFeatPts)) goto errexit ;  
- if( featPtsP != NULL )  { free(featPtsP) ; featPtsP = NULL ; }
+ if( featPtsP != nullptr )  { free(featPtsP) ; featPtsP = nullptr ; }
 /*
 ** Clean Up
 */
  cleanup :
- if( featPtsP != NULL ) free(featPtsP) ;
+ if( featPtsP != nullptr ) free(featPtsP) ;
 /*
 ** Job Completed
 */
@@ -4572,7 +4573,7 @@ BENTLEYDTM_Public int bcdtmObject_deSortDataObject(DTM_DAT_OBJ *dataP)
 {
  int ret=DTM_SUCCESS ;
  long ofs ;
- DTM_DATA_POINT *tmpolyPtsPP=NULL,*ptsP ;
+ DTM_DATA_POINT *tmpolyPtsPP=nullptr,*ptsP ;
  DTM_FEATURE_CODE *fcP ;
 /*
 ** Test For Valid dataP Object
@@ -4587,7 +4588,7 @@ BENTLEYDTM_Public int bcdtmObject_deSortDataObject(DTM_DAT_OBJ *dataP)
 ** Allocate Memory For Temporary Points Array
 */
     tmpolyPtsPP = ( DTM_DATA_POINT * ) malloc ( dataP->numFeatPts * sizeof(DTM_DATA_POINT)) ;
-    if( tmpolyPtsPP == NULL ) 
+    if( tmpolyPtsPP == nullptr ) 
       { 
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
@@ -4616,13 +4617,13 @@ BENTLEYDTM_Public int bcdtmObject_deSortDataObject(DTM_DAT_OBJ *dataP)
     dataP->pointsP = tmpolyPtsPP ;
     dataP->stateFlag = 0 ;
     dataP->numPts = dataP->memPts = dataP->numFeatPts ;
-    tmpolyPtsPP = NULL ;
+    tmpolyPtsPP = nullptr ;
    }
 /*
 ** Clean Up
 */
  cleanup :
- if( tmpolyPtsPP != NULL ) free(tmpolyPtsPP) ;
+ if( tmpolyPtsPP != nullptr ) free(tmpolyPtsPP) ;
 /*
 ** Job Completed
 */

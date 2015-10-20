@@ -318,9 +318,8 @@ BENTLEYDTM_EXPORT int bcdtmEdit_selectDtmEditFeatureDtmObject
  DTMFeatureType dtmFeatureType,            /* ==> Type Of Dtm Feature To Snap To      */
  double  x,                         /* ==> Data Point x Coordinate Value       */
  double  y,                         /* ==> Data Point y Coordinate Value       */
- long    *featureFoundP,            /* <== Dtm Feature Found <true,false>      */
- DPoint3d     **featurePtsPP,            /* <== Feature Coordinates                 */
- long    *numFeaturePtsP            /* <== Number Of Feature Points            */
+ bool& featureFoundP,            /* <== Dtm Feature Found <true,false>      */
+ bvector<DPoint3d>& featurePtsPP            /* <== Feature Coordinates                 */
 )
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
@@ -337,9 +336,8 @@ BENTLEYDTM_EXPORT int bcdtmEdit_selectDtmEditFeatureDtmObject
 /*
 ** Initialise
 */
- *featureFoundP = false ;
- if( *featurePtsPP != NULL ) { free(*featurePtsPP) ; *featurePtsPP = NULL ; }
- *numFeaturePtsP = 0 ;
+ featureFoundP = false ;
+ featurePtsPP.clear();
 /*
 ** Set Edit Context To NULL
 */
@@ -369,21 +367,21 @@ BENTLEYDTM_EXPORT int bcdtmEdit_selectDtmEditFeatureDtmObject
  switch ( dtmFeatureType )
    {
     case DTMFeatureType::TinPoint :          // Snap To Tin Point
-      if( bcdtmEdit_selectPointDtmObject(dtmP,x,y,featureFoundP,featurePtsPP,numFeaturePtsP,&editPnt1)) goto errexit ;
+      if( bcdtmEdit_selectPointDtmObject(dtmP,x,y,featureFoundP,featurePtsPP,editPnt1)) goto errexit ;
       editDtmP             = dtmP ;
       editDtmFeatureType   = DTMFeatureType::TinPoint ;
       if( dbg ) bcdtmWrite_message(0,0,0,"Tin Point = %8ld",editPnt1) ;
     break ;
 
    case DTMFeatureType::TinLine :          // Snap To Tin Line
-      if( bcdtmEdit_selectLineDtmObject(dtmP,x,y,featureFoundP,featurePtsPP,numFeaturePtsP,&editPnt1,&editPnt2)) goto errexit ;
+      if( bcdtmEdit_selectLineDtmObject(dtmP,x,y,featureFoundP,featurePtsPP,editPnt1,editPnt2)) goto errexit ;
       editDtmP             = dtmP ;
       editDtmFeatureType   = DTMFeatureType::TinLine ;
       if( dbg ) bcdtmWrite_message(0,0,0,"Tin Line = %8ld-%8ld",editPnt1,editPnt2) ;
     break ;
 
     case DTMFeatureType::Triangle :          // Snap To Tin Triangle
-      if( bcdtmEdit_selectTriangleDtmObject(dtmP,x,y,featureFoundP,featurePtsPP,numFeaturePtsP,&editPnt1,&editPnt2,&editPnt3)) goto errexit ;
+      if( bcdtmEdit_selectTriangleDtmObject(dtmP,x,y,featureFoundP,featurePtsPP,editPnt1,editPnt2,editPnt3)) goto errexit ;
       editDtmP             = dtmP ;
       editDtmFeatureType   = DTMFeatureType::Triangle ;
       if( dbg ) bcdtmWrite_message(0,0,0,"Triangle Points = %8ld %8ld %8ld",editPnt1,editPnt2,editPnt3) ;
@@ -554,10 +552,9 @@ BENTLEYDTM_Private int bcdtmEdit_selectPointDtmObject
  BC_DTM_OBJ *dtmP,
  double x,
  double y,
- long   *pointFoundP,
- DPoint3d    **featurePtsPP,
- long   *numFeaturePtsP,
- long   *editPointP
+ bool& pointFound,
+ bvector<DPoint3d>& featurePts,
+ long& editPoint
 )
 /*
 ** This routine finds the closest Tin point to x,y
@@ -571,69 +568,47 @@ BENTLEYDTM_Private int bcdtmEdit_selectPointDtmObject
 /*
 ** Initialise Variables
 */
- *pointFoundP = false ;
- *editPointP = dtmP->nullPnt ;
- *numFeaturePtsP = 0 ;
- if( *featurePtsPP != NULL ) { free(featurePtsPP) ; *featurePtsPP = NULL ; }
+ pointFound = false ;
+ editPoint = dtmP->nullPnt ;
+ featurePts.clear();
 /*
 ** Find Edit Point
 */
- bcdtmFind_closestPointDtmObject(dtmP,x,y,editPointP) ;
+ bcdtmFind_closestPointDtmObject(dtmP,x,y,&editPoint) ;
  if( dbg )
    {
-    bcdtmWrite_message(0,0,0,"Closest Point = %6ld ** %10.4lf %10.4lf %10.4lf",*editPointP,pointAddrP(dtmP,*editPointP)->x,pointAddrP(dtmP,*editPointP)->y,pointAddrP(dtmP,*editPointP)->z) ;
-    bcdtmWrite_message(0,0,0,"Distance To Closet editPointP = %10.4lf",bcdtmMath_distance(x,y,pointAddrP(dtmP,*editPointP)->x,pointAddrP(dtmP,*editPointP)->y)) ;
-    if( bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,*editPointP)->PCWD)) bcdtmWrite_message(0,0,0,"Edit Point In Void") ;
+    bcdtmWrite_message(0,0,0,"Closest Point = %6ld ** %10.4lf %10.4lf %10.4lf",editPoint,pointAddrP(dtmP,editPoint)->x,pointAddrP(dtmP,editPoint)->y,pointAddrP(dtmP,editPoint)->z) ;
+    bcdtmWrite_message(0, 0, 0, "Distance To Closet editPointP = %10.4lf", bcdtmMath_distance(x, y, pointAddrP(dtmP, editPoint)->x, pointAddrP(dtmP, editPoint)->y));
+    if (bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP, editPoint)->PCWD)) bcdtmWrite_message(0, 0, 0, "Edit Point In Void");
    }
 /*
 ** If Edit Point In Void Find Closest Edit Point On Void Hull
 */
- if( bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,*editPointP)->PCWD) )
+ if( bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,editPoint)->PCWD) )
    {
-    bcdtmEdit_findClosestNonVoidPointDtmObject(dtmP,x,y,editPointP) ;
+    bcdtmEdit_findClosestNonVoidPointDtmObject(dtmP,x,y,&editPoint) ;
     if( dbg )
       {
-       bcdtmWrite_message(0,0,0,"** Closent Edit Point            = %6ld ** %10.4lf %10.4lf %10.4lf",*editPointP,pointAddrP(dtmP,*editPointP)->x,pointAddrP(dtmP,*editPointP)->y,pointAddrP(dtmP,*editPointP)->z) ;
-       bcdtmWrite_message(0,0,0,"** Distance To Closet Edit Point = %10.4lf",bcdtmMath_distance(x,y,pointAddrP(dtmP,*editPointP)->x,pointAddrP(dtmP,*editPointP)->y)) ;
-       if( bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,*editPointP)->PCWD)) bcdtmWrite_message(0,0,0,"** Edit Point In Void") ;
+      bcdtmWrite_message(0, 0, 0, "** Closent Edit Point            = %6ld ** %10.4lf %10.4lf %10.4lf", editPoint, pointAddrP(dtmP, editPoint)->x, pointAddrP(dtmP, editPoint)->y, pointAddrP(dtmP, editPoint)->z);
+      bcdtmWrite_message(0, 0, 0, "** Distance To Closet Edit Point = %10.4lf", bcdtmMath_distance(x, y, pointAddrP(dtmP, editPoint)->x, pointAddrP(dtmP, editPoint)->y));
+      if (bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP, editPoint)->PCWD)) bcdtmWrite_message(0, 0, 0, "** Edit Point In Void");
       }
    }
 /*
 ** Allocate Memory For Point Coordinates
 */
- *featurePtsPP = ( DPoint3d *) malloc(sizeof(DPoint3d)) ;
- if( *featurePtsPP == NULL )
-   {
-    bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-    goto errexit ;
-   }
+ featurePts.resize(1) ;
 /*
 ** Set Point Coordinates
 */
- (*featurePtsPP)->x = pointAddrP(dtmP,*editPointP)->x ;
- (*featurePtsPP)->y = pointAddrP(dtmP,*editPointP)->y ;
- (*featurePtsPP)->z = pointAddrP(dtmP,*editPointP)->z ;
- *pointFoundP = true ;
-/*
-** Clean Up
-*/
- cleanup :
+ featurePts[0] = *pointAddrP(dtmP,editPoint) ;
+ pointFound = true ;
 /*
 ** Return
 */
  if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Snapping To Point Completed") ;
  if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Snapping To Point Error") ;
  return(ret) ;
-/*
-** Error Exit
-*/
- errexit :
- if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- *pointFoundP = false ;
- *editPointP = dtmP->nullPnt ;
- *numFeaturePtsP = 0 ;
- if( *featurePtsPP != NULL ) { free(featurePtsPP) ; *featurePtsPP = NULL ; }
- goto cleanup ;
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -718,18 +693,18 @@ BENTLEYDTM_Private int bcdtmEdit_selectLineDtmObject
  BC_DTM_OBJ *dtmP,
  double  x,
  double  y,
- long    *lineFoundP,               /* <== Line Found <true,false>                          */
- DPoint3d     **linePtsPP,               /* <== Coordinates For Line Vertices                    */
- long    *numLinePtsP,              /* <== Number Of Line Vertices                          */
- long    *pnt1P,                    /* <== Dtm Internal Line Vertice Number                 */
- long    *pnt2P                     /* <== Dtm Internal Line Vertice Number                 */
+ bool& lineFoundP,               /* <== Line Found <true,false>                          */
+ bvector<DPoint3d>& linePtsPP,               /* <== Coordinates For Line Vertices                    */
+ long&    pnt1P,                    /* <== Dtm Internal Line Vertice Number                 */
+ long&    pnt2P                     /* <== Dtm Internal Line Vertice Number                 */
 )
 /*
 ** This routine finds the closest Tin Line to x,y
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   p1,p2,p3,fndType,voidLine,dtmFeature ;
+ long   p1,p2,p3,fndType,dtmFeature ;
+ bool voidLine;
  double Zs,n1,n2,n3    ;
 /*
 ** Write Status Message
@@ -738,10 +713,9 @@ BENTLEYDTM_Private int bcdtmEdit_selectLineDtmObject
 /*
 ** Initialise Variables
 */
- *lineFoundP = false ;
- if( *linePtsPP != NULL ) { free(*linePtsPP) ; *linePtsPP = NULL ; }
- *numLinePtsP = 0 ;
- *pnt1P = *pnt2P = dtmP->nullPnt ;
+ lineFoundP = false ;
+ linePtsPP.clear();
+ pnt1P = pnt2P = dtmP->nullPnt ;
 /*
 ** Find Triangle For Point
 */
@@ -759,10 +733,10 @@ BENTLEYDTM_Private int bcdtmEdit_selectLineDtmObject
 /*
 ** Test For Void Line
 */
- voidLine = 0 ;
+ voidLine = false ;
  if( fndType == 1 && bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,p1)->PCWD) ) voidLine = 1 ;
- if( fndType == 2 || fndType == 3 ) if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,&voidLine)) goto errexit ;
- if( fndType == 4 ) if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&voidLine)) goto errexit ;
+ if( fndType == 2 || fndType == 3 ) if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,voidLine)) goto errexit ;
+ if( fndType == 4 ) if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidLine)) goto errexit ;
 /*
 ** If Line In Void Find Enclosing Void
 */
@@ -778,21 +752,21 @@ BENTLEYDTM_Private int bcdtmEdit_selectLineDtmObject
  switch(fndType)
    {
     case 1 :               /* Point Coincident With Point   */
-      *pnt1P = p1 ; *pnt2P = clistAddrP(dtmP,nodeAddrP(dtmP,p1)->cPtr)->pntNum ;
+      pnt1P = p1 ; pnt2P = clistAddrP(dtmP,nodeAddrP(dtmP,p1)->cPtr)->pntNum ;
     break ;
 
     case 2 :               /* Colinear with Line */
         case 3 :
-          *pnt1P = p1 ; *pnt2P = p2 ;
+          pnt1P = p1 ; pnt2P = p2 ;
     break ;
 
     case 4 :               /* Point In Triangle  */
       n1 = bcdtmMath_normalDistanceToCordLine(pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,x,y) ;
       n2 = bcdtmMath_normalDistanceToCordLine(pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,pointAddrP(dtmP,p3)->x,pointAddrP(dtmP,p3)->y,x,y) ;
       n3 = bcdtmMath_normalDistanceToCordLine(pointAddrP(dtmP,p3)->x,pointAddrP(dtmP,p3)->y,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,x,y) ;
-      if     ( n1 <= n2 && n1 <= n3 ) { *pnt1P = p1 ; *pnt2P = p2 ; }
-          else if( n2 <= n1 && n2 <= n3 ) { *pnt1P = p2 ; *pnt2P = p3 ; }
-          else                            { *pnt1P = p3 ; *pnt2P = p1 ; }
+      if     ( n1 <= n2 && n1 <= n3 ) { pnt1P = p1 ; pnt2P = p2 ; }
+          else if( n2 <= n1 && n2 <= n3 ) { pnt1P = p2 ; pnt2P = p3 ; }
+          else                            { pnt1P = p3 ; pnt2P = p1 ; }
     break ;
 
     default :
@@ -801,23 +775,13 @@ BENTLEYDTM_Private int bcdtmEdit_selectLineDtmObject
 /*
 ** Allocate Memory For Line Coordinates
 */
- *linePtsPP = ( DPoint3d *) malloc(2*sizeof(DPoint3d)) ;
- if( *linePtsPP == NULL )
-   {
-    bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-    goto errexit ;
-   }
+ linePtsPP.resize(2);
 /*
 ** Set Point Coordinates
 */
- (*linePtsPP)->x   = pointAddrP(dtmP,*pnt1P)->x ;
- (*linePtsPP)->y   = pointAddrP(dtmP,*pnt1P)->y ;
- (*linePtsPP)->z   = pointAddrP(dtmP,*pnt1P)->z ;
- (*linePtsPP+1)->x = pointAddrP(dtmP,*pnt2P)->x ;
- (*linePtsPP+1)->y = pointAddrP(dtmP,*pnt2P)->y ;
- (*linePtsPP+1)->z = pointAddrP(dtmP,*pnt2P)->z ;
- *lineFoundP = true ;
- *numLinePtsP = 2 ;
+ linePtsPP[0] = *pointAddrP(dtmP, pnt1P);
+ linePtsPP[1] = *pointAddrP(dtmP, pnt2P);
+ lineFoundP = true ;
 /*
 ** Clean Up
 */
@@ -833,10 +797,9 @@ BENTLEYDTM_Private int bcdtmEdit_selectLineDtmObject
 */
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- *lineFoundP = false ;
- if( *linePtsPP != NULL ) { free(*linePtsPP) ; *linePtsPP = NULL ; }
- *numLinePtsP = 0 ;
- *pnt1P = *pnt2P = dtmP->nullPnt ;
+ lineFoundP = false ;
+ linePtsPP.clear();
+ pnt1P = pnt2P = dtmP->nullPnt ;
  goto cleanup ;
 }
 /*-------------------------------------------------------------------+
@@ -849,19 +812,19 @@ BENTLEYDTM_Private int bcdtmEdit_selectTriangleDtmObject
  BC_DTM_OBJ *dtmP,                  /* ==> Pointer To DTM Object                                */
  double  x,                         /* ==> x Coordinate Value                                   */
  double  y,                         /* ==> y Coordinate Value                                   */
- long    *trgFoundP,                /* <== Triangle Found <true,false>                          */
- DPoint3d     **trgPtsPP,                /* <== Coordinates For Triangle Vertices                    */
- long    *numTrgPtsP,               /* <== Number Of Triangle Vertices                          */
- long    *pnt1P,                    /* <== Dtm Internal Triangle Vertice Number                 */
- long    *pnt2P,                    /* <== Dtm Internal Triangle Vertice Number                 */
- long    *pnt3P                     /* <== Dtm Internal Triangle Vertice Number                 */
+ bool& trgFoundP,                /* <== Triangle Found <true,false>                          */
+ bvector<DPoint3d>& trgPtsPP,                /* <== Coordinates For Triangle Vertices                    */
+ long&    pnt1P,                    /* <== Dtm Internal Triangle Vertice Number                 */
+ long&    pnt2P,                    /* <== Dtm Internal Triangle Vertice Number                 */
+ long&    pnt3P                     /* <== Dtm Internal Triangle Vertice Number                 */
 )
 /*
 ** This Function Finds The closest Triangle to x,y
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   pnt1,pnt2,pnt3,fndType,voidFlag,voidFeature ;
+ long   pnt1, pnt2, pnt3, fndType, voidFeature;
+ bool voidFlag;
  double Zs    ;
  DTM_TIN_POINT *pointP ;
 /*
@@ -871,10 +834,9 @@ BENTLEYDTM_Private int bcdtmEdit_selectTriangleDtmObject
 /*
 ** Initialise Variables
 */
- *trgFoundP = false ;
- *pnt1P = *pnt2P = *pnt3P = dtmP->nullPnt ;
- if( *trgPtsPP != NULL ) { free(*trgPtsPP) ; *trgPtsPP = NULL ; }
- *numTrgPtsP = 0 ;
+ trgFoundP = false ;
+ pnt1P = pnt2P = pnt3P = dtmP->nullPnt ;
+ trgPtsPP.clear();
  /*
 ** Find Triangle For Point
 */
@@ -897,10 +859,10 @@ BENTLEYDTM_Private int bcdtmEdit_selectTriangleDtmObject
 /*
 ** Test For Point In Void
 */
- voidFlag = 0 ;
- if( fndType == 1 && bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,pnt1)->PCWD) ) voidFlag = 1 ;
- if( fndType == 2 || fndType == 3 ) if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt1,pnt2,&voidFlag)) goto errexit  ;
- if( fndType == 4 ) if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,&voidFlag)) goto errexit  ;
+ voidFlag = false ;
+ if( fndType == 1 && bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,pnt1)->PCWD) ) voidFlag = true ;
+ if( fndType == 2 || fndType == 3 ) if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt1,pnt2,voidFlag)) goto errexit  ;
+ if( fndType == 4 ) if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,voidFlag)) goto errexit  ;
 /*
 ** If Point In Void Find Enclosing Void
 */
@@ -939,35 +901,35 @@ BENTLEYDTM_Private int bcdtmEdit_selectTriangleDtmObject
  switch( fndType )
    {
     case 1 :               /* Point Coincident Triangle Vertex */
-      *pnt1P = pnt1 ;
-      *pnt2P = clistAddrP(dtmP,nodeAddrP(dtmP,pnt1)->cPtr)->pntNum ;
+      pnt1P = pnt1 ;
+      pnt2P = clistAddrP(dtmP,nodeAddrP(dtmP,pnt1)->cPtr)->pntNum ;
       if(( pnt3 = bcdtmList_nextClkDtmObject(dtmP,pnt1,pnt2)) < 0 ) goto errexit  ;
       if( ! bcdtmList_testLineDtmObject(dtmP,pnt3,pnt2) )
         {
          if(( pnt3 = bcdtmList_nextAntDtmObject(dtmP,pnt1,pnt2)) < 0 ) goto errexit  ;
         }
-      *pnt3P = pnt3 ;
-      *trgFoundP = true ;
+      pnt3P = pnt3 ;
+      trgFoundP = true ;
      break ;
 
     case 2 :               /* Point Colinear with Triangle Edge */
         case 3 :
-          *pnt1P = pnt1 ;
-      *pnt2P = pnt2 ;
+          pnt1P = pnt1 ;
+      pnt2P = pnt2 ;
       if( ( pnt3 = bcdtmList_nextAntDtmObject(dtmP,pnt1,pnt2)) < 0 ) goto errexit  ;
       if( ! bcdtmList_testLineDtmObject(dtmP,pnt3,pnt2))
         {
          if( ( pnt3 = bcdtmList_nextClkDtmObject(dtmP,pnt1,pnt2)) < 0 ) goto errexit  ;
         }
-      *pnt3P = pnt3 ;
-      *trgFoundP = true ;
+      pnt3P = pnt3 ;
+      trgFoundP = true ;
     break ;
 
     case 4 :               /* Point In Triangle                   */
-      *pnt1P = pnt1 ;
-      *pnt2P = pnt2 ;
-      *pnt3P = pnt3 ;
-      *trgFoundP = true ;
+      pnt1P = pnt1 ;
+      pnt2P = pnt2 ;
+      pnt3P = pnt3 ;
+      trgFoundP = true ;
     break ;
 
     default :
@@ -976,33 +938,18 @@ BENTLEYDTM_Private int bcdtmEdit_selectTriangleDtmObject
 /*
 ** Set Return Values
 */
- if( *trgFoundP != 0 )
+ if( trgFoundP != false )
    {
 /*
 **  Allocate Memory For Storing Triangle Vertices
 */
-    *numTrgPtsP = 3 ;
-    *trgPtsPP = ( DPoint3d * ) malloc( *numTrgPtsP * sizeof(DPoint3d)) ;
-    if( *trgPtsPP == NULL )
-      {
-       bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-       goto errexit ;
-      }
+   trgPtsPP.resize(3);
 /*
 **  Store Triangle Vertices
 */
-    pointP = pointAddrP(dtmP,*pnt1P) ;
-    (*trgPtsPP)->x = pointP->x ;
-    (*trgPtsPP)->y = pointP->y ;
-    (*trgPtsPP)->z = pointP->z ;
-    pointP = pointAddrP(dtmP,*pnt2P) ;
-    (*trgPtsPP+1)->x = pointP->x ;
-    (*trgPtsPP+1)->y = pointP->y ;
-    (*trgPtsPP+1)->z = pointP->z ;
-    pointP = pointAddrP(dtmP,*pnt3P) ;
-    (*trgPtsPP+2)->x = pointP->x ;
-    (*trgPtsPP+2)->y = pointP->y ;
-    (*trgPtsPP+2)->z = pointP->z ;
+   trgPtsPP[0] = *pointAddrP(dtmP, pnt1P);
+   trgPtsPP[1] = *pointAddrP(dtmP, pnt2P);
+   trgPtsPP[2] = *pointAddrP(dtmP, pnt3P);
    }
 /*
 ** Clean Up
@@ -1019,9 +966,8 @@ BENTLEYDTM_Private int bcdtmEdit_selectTriangleDtmObject
 */
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- *numTrgPtsP = 0 ;
- *pnt1P = *pnt2P = *pnt3P = dtmP->nullPnt ;
- if( *trgPtsPP != NULL ) { free(*trgPtsPP) ; *trgPtsPP = NULL ; }
+ pnt1P = pnt2P = pnt3P = dtmP->nullPnt ;
+ trgPtsPP.clear();
  goto cleanup ;
 }
 /*-------------------------------------------------------------------+
@@ -2212,12 +2158,15 @@ BENTLEYDTM_Private int bcdtmEdit_insertVoidsAndIslandsIntoEditDtmObject
  long    pp,np,pnt,lpnt,spnt,feature,numStartFeatures,numEndFeatures,numVoids,numIslands ;
  DTMDirection direction;
  long    point,dtmFeature ;
- long    numIntersectedFeatures,numVoidsFeatures,internalVoid,voidLine,numHullLines ;
+ long    numIntersectedFeatures,numVoidsFeatures,numHullLines ;
+ bool voidLine;
+ bool internalVoid;
  double  area ;
  char    dtmFeatureTypeName[50] ;
  DTM_TIN_POINT  *pointP ;
  BC_DTM_FEATURE *dtmFeatureP ;
- DTM_TIN_POINT_FEATURES *intersectedFeaturesP=NULL,*vfP,*voidFeaturesP=NULL ;
+ DTM_TIN_POINT_FEATURES* vfP, *intersectedFeaturesP = nullptr;
+ bvector<DTM_TIN_POINT_FEATURES> voidFeaturesP;
 /*
 ** Write Entry Message
 */
@@ -2470,7 +2419,7 @@ BENTLEYDTM_Private int bcdtmEdit_insertVoidsAndIslandsIntoEditDtmObject
 /*
 **     Check For Internal Void ** Coincident Hull Line With Island Hull
 */
-       internalVoid = 0 ;
+       internalVoid = false ;
        numHullLines = 0 ;
        spnt = ftableAddrP(dtmP,feature)->dtmFeaturePts.firstPoint ;
 /*
@@ -2497,7 +2446,7 @@ BENTLEYDTM_Private int bcdtmEdit_insertVoidsAndIslandsIntoEditDtmObject
                    while( pnt != pp && ! internalVoid && ! bcdtmList_testForIslandHullLineDtmObject(dtmP,spnt,pnt) && ! bcdtmList_testForVoidHullLineDtmObject(dtmP,pnt,spnt) )
                      {
                       if( dbg ) bcdtmWrite_message(0,0,0,"cp*pnt = %6ld ** %10.4lf %10.4lf %10.4lf",pnt,pointAddrP(dtmP,pnt)->x,pointAddrP(dtmP,pnt)->y,pointAddrP(dtmP,pnt)->z) ;
-                      if( bcdtmList_testForVoidLineDtmObject(dtmP,spnt,pnt,&internalVoid)) goto errexit ;
+                      if( bcdtmList_testForVoidLineDtmObject(dtmP,spnt,pnt,internalVoid)) goto errexit ;
                       if( ( pnt = bcdtmList_nextClkDtmObject(dtmP,spnt,pnt)) < 0 ) goto errexit ;
                      }
                   }
@@ -2513,7 +2462,7 @@ BENTLEYDTM_Private int bcdtmEdit_insertVoidsAndIslandsIntoEditDtmObject
                       while( pnt != np && ! internalVoid && ! bcdtmList_testForIslandHullLineDtmObject(dtmP,pnt,spnt) && ! bcdtmList_testForVoidHullLineDtmObject(dtmP,spnt,pnt) )
                         {
                          if( dbg ) bcdtmWrite_message(0,0,0,"ap*pnt = %6ld ** %10.4lf %10.4lf %10.4lf",pnt,pointAddrP(dtmP,pnt)->x,pointAddrP(dtmP,pnt)->y,pointAddrP(dtmP,pnt)->z) ;
-                         if( bcdtmList_testForVoidLineDtmObject(dtmP,spnt,pnt,&internalVoid)) goto errexit ;
+                         if( bcdtmList_testForVoidLineDtmObject(dtmP,spnt,pnt,internalVoid)) goto errexit ;
                          if( ( pnt = bcdtmList_nextAntDtmObject(dtmP,spnt,pnt)) < 0 ) goto errexit ;
                         }
                      }
@@ -2554,15 +2503,16 @@ BENTLEYDTM_Private int bcdtmEdit_insertVoidsAndIslandsIntoEditDtmObject
           do
             {
              if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,feature,spnt,&pnt)) goto errexit ;
-             if( bcdtmList_testForVoidLineDtmObject(dtmP,spnt,pnt,&voidLine)) goto errexit ;
+             if( bcdtmList_testForVoidLineDtmObject(dtmP,spnt,pnt,voidLine)) goto errexit ;
              if( voidLine )
                {
-                if( bcdtmList_getDtmFeaturesForLineDtmObject(dtmP,spnt,pnt,&voidFeaturesP,&numVoidsFeatures) ) goto errexit ;
-                for( vfP = voidFeaturesP ; vfP < voidFeaturesP + numVoidsFeatures ; ++vfP )
+                if( bcdtmList_getDtmFeaturesForLineDtmObject(dtmP,spnt,pnt,voidFeaturesP) ) goto errexit ;
+                numVoidsFeatures = (long)voidFeaturesP.size();
+                for(auto vfP : voidFeaturesP )
                   {
-                   if( vfP->dtmFeatureType == DTMFeatureType::Breakline || vfP->dtmFeatureType == DTMFeatureType::ContourLine )
+                   if( vfP.dtmFeatureType == DTMFeatureType::Breakline || vfP.dtmFeatureType == DTMFeatureType::ContourLine )
                      {
-                      if( bcdtmEdit_clipVoidLinesFromDtmFeatureDtmObject(dtmP,vfP->dtmFeature)) goto errexit ;
+                      if( bcdtmEdit_clipVoidLinesFromDtmFeatureDtmObject(dtmP,vfP.dtmFeature)) goto errexit ;
                      }
                   }
                }
@@ -2606,7 +2556,6 @@ BENTLEYDTM_Private int bcdtmEdit_insertVoidsAndIslandsIntoEditDtmObject
 */
  cleanup :
  if( intersectedFeaturesP != NULL ) free(intersectedFeaturesP) ;
- if( voidFeaturesP        != NULL ) free(voidFeaturesP) ;
 /*
 ** Job Completed
 */
@@ -2926,7 +2875,8 @@ BENTLEYDTM_Private int bcdtmEdit_getIslandVoidHoleFeaturesWithACommonHullSegemen
  long  fpnt,npnt,storeFlag,dtmFeature,numLineFeatures ;
  long  memFeatureTable=0,memInc=100 ;
  char  dtmFeatureTypeName[50] ;
- DTM_TIN_POINT_FEATURES *flP,*lineP,*lineFeaturesP=NULL ;
+ DTM_TIN_POINT_FEATURES *flP;
+ bvector<DTM_TIN_POINT_FEATURES> lineFeaturesP;
  BC_DTM_FEATURE *dtmFeatureP ;
 /*
 ** Write Entry Message
@@ -2953,21 +2903,22 @@ BENTLEYDTM_Private int bcdtmEdit_getIslandVoidHoleFeaturesWithACommonHullSegemen
 **        Get Next Feature Point
 */
           if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,fpnt,&npnt)) goto errexit ;
-          if( bcdtmList_getDtmFeaturesForLineDtmObject(dtmP,fpnt,npnt,&lineFeaturesP,&numLineFeatures)) goto errexit ;
+          if( bcdtmList_getDtmFeaturesForLineDtmObject(dtmP,fpnt,npnt,lineFeaturesP)) goto errexit ;
+          numLineFeatures = (long)lineFeaturesP.size();
 /*
 **        Scan Features Passing Through Line
 */
-          for( lineP = lineFeaturesP ; lineP < lineFeaturesP + numLineFeatures ; ++lineP )
+          for(auto lineP : lineFeaturesP)
             {
              if( dbg )
                {
-                bcdtmData_getDtmFeatureTypeNameFromDtmFeatureType(lineP->dtmFeatureType,dtmFeatureTypeName) ;
-                bcdtmWrite_message(0,0,0,"intersectedFeature = %6ld Type = %-20s ** x = %12.5lf y = %12.5lf",lineP->dtmFeature,dtmFeatureTypeName,pointAddrP(dtmP,fpnt)->x,pointAddrP(dtmP,fpnt)->y) ;
+                bcdtmData_getDtmFeatureTypeNameFromDtmFeatureType(lineP.dtmFeatureType,dtmFeatureTypeName) ;
+                bcdtmWrite_message(0,0,0,"intersectedFeature = %6ld Type = %-20s ** x = %12.5lf y = %12.5lf",lineP.dtmFeature,dtmFeatureTypeName,pointAddrP(dtmP,fpnt)->x,pointAddrP(dtmP,fpnt)->y) ;
                }
 /*
 **           Test For Intersecting Feature
 */
-             if( ftableAddrP(dtmP,lineP->dtmFeature)->dtmFeaturePts.firstPoint != dtmP->nullPnt && ( lineP->dtmFeatureType == DTMFeatureType::Island || lineP->dtmFeatureType == DTMFeatureType::Void || lineP->dtmFeatureType == DTMFeatureType::Hole ))
+             if( ftableAddrP(dtmP,lineP.dtmFeature)->dtmFeaturePts.firstPoint != dtmP->nullPnt && ( lineP.dtmFeatureType == DTMFeatureType::Island || lineP.dtmFeatureType == DTMFeatureType::Void || lineP.dtmFeatureType == DTMFeatureType::Hole ))
                {
 /*
 **              Check Feature Not Already In List
@@ -2975,7 +2926,7 @@ BENTLEYDTM_Private int bcdtmEdit_getIslandVoidHoleFeaturesWithACommonHullSegemen
                 storeFlag = 1 ;
                 for( flP = *intersectedFeaturesPP ; flP < *intersectedFeaturesPP + *numIntersectedFeaturesP && storeFlag ; ++flP )
                   {
-                   if( flP->dtmFeature == lineP->dtmFeature ) storeFlag = 0 ;
+                   if( flP->dtmFeature == lineP.dtmFeature ) storeFlag = 0 ;
                   }
 /*
 **             Allocate memory If Necessary To Store Intersected Feature
@@ -2992,14 +2943,10 @@ BENTLEYDTM_Private int bcdtmEdit_getIslandVoidHoleFeaturesWithACommonHullSegemen
 /*
 **                 Store Feature In List
 */
-                  (*intersectedFeaturesPP+*numIntersectedFeaturesP)->dtmFeature = lineP->dtmFeature ;
-                  (*intersectedFeaturesPP+*numIntersectedFeaturesP)->dtmFeatureType = lineP->dtmFeatureType ;
+                  (*intersectedFeaturesPP+*numIntersectedFeaturesP)->dtmFeature = lineP.dtmFeature ;
+                  (*intersectedFeaturesPP+*numIntersectedFeaturesP)->dtmFeatureType = lineP.dtmFeatureType ;
                    ++*numIntersectedFeaturesP ;
                   }
-/*
-**              Free Memory
-*/
-                if( lineFeaturesP != NULL ) { free(lineFeaturesP) ; lineFeaturesP = NULL ; }
                }
             }
 /*
@@ -3031,7 +2978,6 @@ BENTLEYDTM_Private int bcdtmEdit_getIslandVoidHoleFeaturesWithACommonHullSegemen
 ** Clean Up
 */
  cleanup :
- if( lineFeaturesP != NULL ) { free(lineFeaturesP) ; lineFeaturesP = NULL ; }
 /*
 ** Job Completed
 */
@@ -3504,7 +3450,8 @@ BENTLEYDTM_Private int bcdtmEdit_clipVoidLinesFromDtmFeatureDtmObject(BC_DTM_OBJ
 */
 {
  int         ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long        sp,np,fsp,spnt,tptr,process,voidLine ;
+ long        sp, np, fsp, spnt, tptr, process;
+ bool  voidLine;
  DTMFeatureType type;
  DTMUserTag utag ;
 /*
@@ -3525,10 +3472,10 @@ BENTLEYDTM_Private int bcdtmEdit_clipVoidLinesFromDtmFeatureDtmObject(BC_DTM_OBJ
  do
    {
     if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,sp,&np) ) goto errexit ;
-        voidLine = 0 ;
+        voidLine = false ;
     if( np != dtmP->nullPnt )
       {
-       if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,np,&voidLine) )goto errexit  ;
+       if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,np,voidLine) )goto errexit  ;
       }
     if( ! voidLine ) sp = np ;
    } while ( sp != ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint && sp != dtmP->nullPnt && ! voidLine ) ;
@@ -3570,7 +3517,7 @@ BENTLEYDTM_Private int bcdtmEdit_clipVoidLinesFromDtmFeatureDtmObject(BC_DTM_OBJ
           if( np != dtmP->nullPnt )
             {
              if( dbg ) bcdtmWrite_message(0,0,0,"sp = %6ld np = %6ld",sp,np) ;
-             if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,np,&voidLine)) goto errexit  ;
+             if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,np,voidLine)) goto errexit  ;
              if( voidLine ) { sp = np ; np = nodeAddrP(dtmP,sp)->tPtr ; }
             }
          } while ( np != spnt && np != dtmP->nullPnt && voidLine ) ;
@@ -3587,7 +3534,7 @@ BENTLEYDTM_Private int bcdtmEdit_clipVoidLinesFromDtmFeatureDtmObject(BC_DTM_OBJ
             {
              if( np != dtmP->nullPnt )
                {
-                if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,np,&voidLine)) goto errexit  ;
+                if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,np,voidLine)) goto errexit  ;
                 if( ! voidLine ) { sp = np ; np = nodeAddrP(dtmP,sp)->tPtr ; }
                }
             } while ( np != spnt && np != dtmP->nullPnt &&  voidLine ) ;
@@ -3647,7 +3594,8 @@ BENTLEYDTM_Private int bcdtmEdit_clipVoidPointsFromGroupSpotsDtmObject(BC_DTM_OB
 */
 {
  int         ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long        sp,np,fsp,spnt,tptr,process,voidPoint ;
+ long        sp, np, fsp, spnt, tptr, process;
+ bool  voidPoint;
  DTMFeatureType type;
  DTMUserTag utag ;
  DTMFeatureId  featureId ;
@@ -6132,7 +6080,8 @@ BENTLEYDTM_Public int bcdtmEdit_addPointToDtmObject(BC_DTM_OBJ *dtmP,double x,do
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   P1,P2,P3,Ptype,VoidFlag ;
+ long   P1, P2, P3, Ptype;
+ bool VoidFlag;
  double Zs ;
 /*
 ** Initialise
@@ -6151,12 +6100,12 @@ BENTLEYDTM_Public int bcdtmEdit_addPointToDtmObject(BC_DTM_OBJ *dtmP,double x,do
     if( Ptype == 1 && bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,P1)->PCWD) ) Ptype = 6 ;
     if( Ptype == 2 || Ptype == 3 )
           {
-       if( bcdtmList_testForVoidLineDtmObject(dtmP,P1,P2,&VoidFlag) ) goto errexit ;
+       if( bcdtmList_testForVoidLineDtmObject(dtmP,P1,P2,VoidFlag) ) goto errexit ;
        if( ! VoidFlag ) Ptype = 6 ;
       }
     if(  Ptype == 4 )
       {
-       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,P2,P3,&VoidFlag)) goto errexit ;
+       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,P2,P3,VoidFlag)) goto errexit ;
        if( VoidFlag ) Ptype = 6 ;
       }
    }
@@ -7054,7 +7003,8 @@ BENTLEYDTM_EXPORT int bcdtmEdit_deletePointDtmObject
  long  spnt,numFeaturePts,drapeOption,insertOption,canDeleteFlag=0 ;
  long  numPointFeatures,nextHullPnt,priorHullPnt,numHullPnts;
  DPoint3d   *featurePtsP=NULL ;
- DTM_TIN_POINT_FEATURES *ppf,*pointFeatures=NULL ;
+ DTM_TIN_POINT_FEATURES *ppf;
+ bvector<DTM_TIN_POINT_FEATURES> pointFeatures;
  BC_DTM_OBJ  *voidPolygonP=NULL ;
 /*
 ** Write Entry Message
@@ -7120,20 +7070,21 @@ BENTLEYDTM_EXPORT int bcdtmEdit_deletePointDtmObject
 /*
 ** Get List Of DTM Features For Point
 */
- if( bcdtmList_getDtmFeaturesForPointDtmObject(dtmP,tinPoint,&pointFeatures,&numPointFeatures) ) goto errexit ;
+ if( bcdtmList_getDtmFeaturesForPointDtmObject(dtmP,tinPoint,pointFeatures) ) goto errexit ;
+ numPointFeatures = (long)pointFeatures.size();
 /*
 ** Write Point Features
 */
  if( dbg == 1 )
    {
     bcdtmWrite_message(0,0,0,"Number Of Point Features = %3ld",numPointFeatures) ;
-    for( ppf = pointFeatures ; ppf < pointFeatures + numPointFeatures ; ++ppf )
+    for (ppf = pointFeatures.data(); ppf < pointFeatures.data() + numPointFeatures; ++ppf)
       {
-       bcdtmWrite_message(0,0,0,"Feature[%3ld] ** Feature = %6ld Type =  %4ld Prior = %9ld Next = %9ld UserTag = %I64d",(long)(ppf-pointFeatures),ppf->dtmFeature,ppf->dtmFeatureType,ppf->priorPoint,ppf->nextPoint,ppf->userTag) ;
+      bcdtmWrite_message(0, 0, 0, "Feature[%3ld] ** Feature = %6ld Type =  %4ld Prior = %9ld Next = %9ld UserTag = %I64d", (long)(ppf - pointFeatures.data()), ppf->dtmFeature, ppf->dtmFeatureType, ppf->priorPoint, ppf->nextPoint, ppf->userTag);
       }
     if( dbg == 2 )
       {
-       for( ppf = pointFeatures ; ppf < pointFeatures + numPointFeatures ; ++ppf )
+      for (ppf = pointFeatures.data(); ppf < pointFeatures.data() + numPointFeatures; ++ppf)
          {
           bcdtmList_writePointsForDtmFeatureDtmObject(dtmP,ppf->dtmFeature) ;
          }
@@ -7147,7 +7098,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_deletePointDtmObject
    {
     long  numPoints=0,closeFlag=0 ;
     bool canDelete = true ;
-    for( ppf = pointFeatures ; ppf < pointFeatures + numPointFeatures && canDelete ; ++ppf )
+    for (ppf = pointFeatures.data(); ppf < pointFeatures.data() + numPointFeatures && canDelete; ++ppf)
       {
        if( ppf->dtmFeatureType != DTMFeatureType::GroupSpots )
          {
@@ -7173,7 +7124,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_deletePointDtmObject
 
     if( numPointFeatures > 0 )
       {
-       for( ppf = pointFeatures ; ppf < pointFeatures + numPointFeatures ; ++ppf )
+      for (ppf = pointFeatures.data(); ppf < pointFeatures.data() + numPointFeatures; ++ppf)
          {
           if( ppf->dtmFeatureType != DTMFeatureType::GroupSpots )
             {
@@ -7213,14 +7164,14 @@ BENTLEYDTM_EXPORT int bcdtmEdit_deletePointDtmObject
 
 //   07Mar2012 RobC  Join Up Features With Broken Connections
 
-    for( ppf = pointFeatures ; ppf < pointFeatures + numPointFeatures ; ++ppf )
+     for (ppf = pointFeatures.data(); ppf < pointFeatures.data() + numPointFeatures; ++ppf)
       {
-       if( dbg )bcdtmWrite_message(0,0,0,"Feature[%3ld] ** Feature = %6ld Type =  %4ld Prior = %9ld Next = %9ld UserTag = %I64d",(long)(ppf-pointFeatures),ppf->dtmFeature,ppf->dtmFeatureType,ppf->priorPoint,ppf->nextPoint,ppf->userTag) ;
+      if (dbg)bcdtmWrite_message(0, 0, 0, "Feature[%3ld] ** Feature = %6ld Type =  %4ld Prior = %9ld Next = %9ld UserTag = %I64d", (long)(ppf - pointFeatures.data()), ppf->dtmFeature, ppf->dtmFeatureType, ppf->priorPoint, ppf->nextPoint, ppf->userTag);
        if( ppf->priorPoint != dtmP->nullPnt && ppf->nextPoint != dtmP->nullPnt )
          {
           if( ! bcdtmList_testLineDtmObject(dtmP,ppf->priorPoint,ppf->nextPoint ))
             {
-             if( dbg )bcdtmWrite_message(0,0,0,"Feature[%3ld] Connection Broken ** priorPnt = %8ld nextPoint = %8ld",(long)(ppf-pointFeatures),ppf->priorPoint,ppf->nextPoint,ppf->userTag) ;
+            if (dbg)bcdtmWrite_message(0, 0, 0, "Feature[%3ld] Connection Broken ** priorPnt = %8ld nextPoint = %8ld", (long)(ppf - pointFeatures.data()), ppf->priorPoint, ppf->nextPoint, ppf->userTag);
              if( ppf->dtmFeatureType != DTMFeatureType::GroupSpots )
                {
                 drapeOption = 1 ;
@@ -7278,7 +7229,6 @@ BENTLEYDTM_EXPORT int bcdtmEdit_deletePointDtmObject
 */
  cleanup :
  if( featurePtsP   != NULL ) { free(featurePtsP)   ; featurePtsP = NULL   ; }
- if( pointFeatures != NULL ) { free(pointFeatures) ; pointFeatures = NULL ; }
  if( voidPolygonP  != NULL ) bcdtmObject_destroyDtmObject(&voidPolygonP) ;
 /*
 ** Job Completed
@@ -7436,7 +7386,8 @@ BENTLEYDTM_EXPORT int bcdtmEdit_dataPointDtmObject
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   voidFlag,pt,p1,p2,p3,p4,sd3,sd4,count,closeFlag ;
+ long   pt,p1,p2,p3,p4,sd3,sd4,count,closeFlag ;
+ bool voidFlag;
  double n3,n4 ;
  bool   p3Intersect,p4Intersect ;
 /*
@@ -7467,12 +7418,12 @@ BENTLEYDTM_EXPORT int bcdtmEdit_dataPointDtmObject
     if( *pntTypeP == 1 && bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,*pnt1P)->PCWD) ) *pntTypeP = 5 ;
     if( *pntTypeP == 2 || *pntTypeP == 3 )
           {
-       if( bcdtmList_testForVoidLineDtmObject(dtmP,*pnt1P,*pnt2P,&voidFlag) ) goto errexit ;
+       if( bcdtmList_testForVoidLineDtmObject(dtmP,*pnt1P,*pnt2P,voidFlag) ) goto errexit ;
        if( voidFlag ) *pntTypeP = 5 ;
       }
     if(  *pntTypeP == 4 )
       {
-       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,*pnt1P,*pnt2P,*pnt3P,&voidFlag)) goto errexit ;
+       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,*pnt1P,*pnt2P,*pnt3P,voidFlag)) goto errexit ;
        if( voidFlag ) *pntTypeP = 5 ;
       }
    }
@@ -7617,7 +7568,8 @@ BENTLEYDTM_EXPORT int bcdtmEdit_deleteLineDtmObject(BC_DTM_OBJ *dtmP,long delete
  int   ret=DTM_SUCCESS,dbg=0 ;
  long  ap,cp,swapLine,numDtmFeatures,numLineFeatures,numPolyPts ;
  DPoint3d   *polyPtsP=NULL ;
- DTM_TIN_POINT_FEATURES *plf,*lineFeatures=NULL ;
+ DTM_TIN_POINT_FEATURES *plf;
+ bvector<DTM_TIN_POINT_FEATURES> lineFeatures;
  BC_DTM_OBJ *voidPolygonP=NULL ;
 /*
 ** Write Entry Message
@@ -7649,18 +7601,19 @@ BENTLEYDTM_EXPORT int bcdtmEdit_deleteLineDtmObject(BC_DTM_OBJ *dtmP,long delete
 /*
 ** Get List Of DTM Features For Line
 */
- if( bcdtmList_getDtmFeaturesForLineDtmObject(dtmP,tinPnt1,tinPnt2,&lineFeatures,&numLineFeatures) ) goto errexit ;
+ if( bcdtmList_getDtmFeaturesForLineDtmObject(dtmP,tinPnt1,tinPnt2,lineFeatures) ) goto errexit ;
+ numLineFeatures = (long)lineFeatures.size();
 /*
 ** Write Line Features
 */
  if( dbg == 2 )
    {
     bcdtmWrite_message(0,0,0,"Number Of Line Features = %3ld",numLineFeatures) ;
-    for( plf = lineFeatures ; plf < lineFeatures + numLineFeatures ; ++plf )
+    for (plf = lineFeatures.data(); plf < lineFeatures.data() + numLineFeatures; ++plf)
       {
-       bcdtmWrite_message(0,0,0,"Feature[%3ld] ** Feature = %6ld Type =  %4ld Prior = %6ld Next = %6ld UserTag = %I64d",(long)(plf-lineFeatures),plf->dtmFeature,plf->dtmFeatureType,plf->priorPoint,plf->nextPoint,plf->userTag) ;
+      bcdtmWrite_message(0, 0, 0, "Feature[%3ld] ** Feature = %6ld Type =  %4ld Prior = %6ld Next = %6ld UserTag = %I64d", (long)(plf - lineFeatures.data()), plf->dtmFeature, plf->dtmFeatureType, plf->priorPoint, plf->nextPoint, plf->userTag);
       }
-    for( plf = lineFeatures ; plf < lineFeatures + numLineFeatures ; ++plf )
+    for (plf = lineFeatures.data(); plf < lineFeatures.data() + numLineFeatures; ++plf)
       {
        bcdtmList_writePointsForDtmFeatureDtmObject(dtmP,plf->dtmFeature) ;
       }
@@ -7715,9 +7668,9 @@ BENTLEYDTM_EXPORT int bcdtmEdit_deleteLineDtmObject(BC_DTM_OBJ *dtmP,long delete
 **       Check Swap Line Is Not An Island,Void Or Hole Hull Line
 */
          swapLine = 1 ;
-         for( plf = lineFeatures ; plf < lineFeatures + numLineFeatures ; ++plf )
+         for(const auto& plf : lineFeatures )
            {
-            if( plf->dtmFeatureType == DTMFeatureType::Island ||plf->dtmFeatureType == DTMFeatureType::Void || plf->dtmFeatureType == DTMFeatureType::Hole ) swapLine = 0 ;
+            if( plf.dtmFeatureType == DTMFeatureType::Island ||plf.dtmFeatureType == DTMFeatureType::Void || plf.dtmFeatureType == DTMFeatureType::Hole ) swapLine = 0 ;
            }
 /*
 **       Check Swap Line Can Be Swapped
@@ -7766,7 +7719,6 @@ BENTLEYDTM_EXPORT int bcdtmEdit_deleteLineDtmObject(BC_DTM_OBJ *dtmP,long delete
 */
  cleanup :
  if( polyPtsP     != NULL ) { free(polyPtsP) ; polyPtsP = NULL ; }
- if( lineFeatures != NULL ) { free(lineFeatures) ; lineFeatures = NULL ; }
  if( voidPolygonP != NULL ) bcdtmObject_destroyDtmObject(&voidPolygonP) ;
 /*
 ** Job Completed
@@ -8919,6 +8871,7 @@ BENTLEYDTM_Private int bcdtmEdit_drapeDeleteLineOnEditDtmObject(BC_DTM_OBJ *dtmP
  long  ofs1,ofs2,numDrapePts=0 ;
  DPoint3d   *p3dP ;
  DTM_DRAPE_POINT *drapeP,*drapePtsP=NULL ;
+ bvector<DTM_DRAPE_POINT> drapePts;
 /*
 ** Write Entry Message
 */
@@ -8926,13 +8879,16 @@ BENTLEYDTM_Private int bcdtmEdit_drapeDeleteLineOnEditDtmObject(BC_DTM_OBJ *dtmP
 /*
 ** Drape Delete Line On Tin
 */
- if( bcdtmDrape_stringDtmObject(dtmP,deleteLinePtsP,numDeleteLinePts,false,&drapePtsP,&numDrapePts)) goto errexit ;
+ if( bcdtmDrape_stringDtmObject(dtmP,deleteLinePtsP,numDeleteLinePts,false,drapePts)) goto errexit ;
+ drapePtsP = drapePts.data();
+ numDrapePts = (long)drapePts.size();
+
  if( dbg == 2 )
    {
     bcdtmWrite_message(0,0,0,"Number Of Drape Points = %4ld",numDrapePts) ;
     for( drapeP = drapePtsP ; drapeP < drapePtsP + numDrapePts ; ++drapeP )
       {
-       bcdtmWrite_message(0,0,0,"Drape Point [%4ld] ** Line = %2ld Type = %2ld ** %10.4lf %10.4lf %10.4lf",(long)(drapeP-drapePtsP),drapeP->drapeLine,drapeP->drapeType,drapeP->drapeX,drapeP->drapeY,drapeP->drapeZ) ;
+       bcdtmWrite_message(0,0,0,"Drape Point [%4ld] ** Line = %2ld Type = %2ld ** %10.4lf %10.4lf %10.4lf",(long)(drapeP-drapePtsP),drapeP->drapeLine,drapeP->drapeType,drapeP->drapePt.x,drapeP->drapePt.y,drapeP->drapePt.z) ;
       }
    }
 /*
@@ -8951,9 +8907,9 @@ BENTLEYDTM_Private int bcdtmEdit_drapeDeleteLineOnEditDtmObject(BC_DTM_OBJ *dtmP
 */
  for( p3dP = *drapePointsPP , drapeP = drapePtsP ; drapeP < drapePtsP + numDrapePts ; ++p3dP , ++drapeP )
    {
-    p3dP->x = drapeP->drapeX ;
-    p3dP->y = drapeP->drapeY ;
-    p3dP->z = drapeP->drapeZ ;
+    p3dP->x = drapeP->drapePt.x ;
+    p3dP->y = drapeP->drapePt.y ;
+    p3dP->z = drapeP->drapePt.z ;
    }
 /*
 ** Remove Duplicate Drape Points
@@ -9018,7 +8974,8 @@ BENTLEYDTM_EXPORT int bcdtmEdit_checkForVoidsAlongTptrListDtmObject(BC_DTM_OBJ *
 */
 {
  int  ret=DTM_SUCCESS ;
- long sp,np,voidLine ;
+ long sp, np;
+bool voidLine;
 /*
 ** Initialise
 */
@@ -9036,7 +8993,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_checkForVoidsAlongTptrListDtmObject(BC_DTM_OBJ *
           np = nodeAddrP(dtmP,sp)->tPtr ;
           if( np != dtmP->nullPnt )
             {
-             if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,np,&voidLine)) goto errexit ;
+             if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,np,voidLine)) goto errexit ;
              if( voidLine ) *voidsFoundP = 1 ;
             }
           sp = np ;
@@ -9069,7 +9026,8 @@ BENTLEYDTM_EXPORT int bcdtmEdit_removeVoidsAlongTptrListDtmObject(BC_DTM_OBJ *dt
 */
 {
  int   ret=DTM_SUCCESS ;
- long  n,sp,np,*pl,spnt,voidLine,voidFeature,*islandsP=NULL,numIslands=0,*pointListP=NULL ;
+ long  n,sp,np,*pl,spnt,voidFeature,*islandsP=NULL,numIslands=0,*pointListP=NULL ;
+ bool voidLine;
 /*
 ** Initialise
 */
@@ -9090,7 +9048,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_removeVoidsAlongTptrListDtmObject(BC_DTM_OBJ *dt
           np = *(pointListP+sp) ;
           if( np != dtmP->nullPnt )
             {
-             if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,np,&voidLine)) goto errexit ;
+             if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,np,voidLine)) goto errexit ;
              if( voidLine )
                {
 /*
@@ -9960,7 +9918,7 @@ int bcdtmEdit_accumulateLinearFeaturesAndCursorDistanceForPointDtmObject
  DPoint3d  *p3dP,*featurePtsP=NULL ;
  double nx,ny,distance,cursorDistance=0.0 ;
  LinearFeature  linearFeature ;
- DTM_TIN_POINT_FEATURES *featP,*pntFeaturesP=NULL ;
+ bvector<DTM_TIN_POINT_FEATURES> pntFeaturesP;
 
 // Write Entry Message
 
@@ -9979,18 +9937,19 @@ int bcdtmEdit_accumulateLinearFeaturesAndCursorDistanceForPointDtmObject
     {
      if( nodeAddrP(dtmP,point)->fPtr != dtmP->nullPtr )
        {
-        if( bcdtmList_getDtmFeaturesForPointDtmObject(dtmP,point,&pntFeaturesP,&numPntFeatures) ) goto errexit ;
+        if( bcdtmList_getDtmFeaturesForPointDtmObject(dtmP,point,pntFeaturesP) ) goto errexit ;
+        numPntFeatures = (long)pntFeaturesP.size();
        }
     }
 
 //  Scan Point Features And Accumulate
 
-  if( pntFeaturesP != NULL )
+  if( pntFeaturesP.size())
     {
-     for( featP = pntFeaturesP ; featP < pntFeaturesP + numPntFeatures ; ++featP )
+     for( auto& featP : pntFeaturesP)
        {
 
-       if (featP->dtmFeatureType == DTMFeatureType::GroupSpots || featP->dtmFeatureType == DTMFeatureType::FeatureSpot)
+       if (featP.dtmFeatureType == DTMFeatureType::GroupSpots || featP.dtmFeatureType == DTMFeatureType::FeatureSpot)
            continue;
 //      Check Feature Has Not Already Been Accumulated
 
@@ -9998,7 +9957,7 @@ int bcdtmEdit_accumulateLinearFeaturesAndCursorDistanceForPointDtmObject
         SelectedLinearFeatures::iterator it  ;
         for( it = linearFeatures.begin() ; it != linearFeatures.end() && accumulateFeature == true ; ++it )
           {
-           if( it->featureNumber == featP->dtmFeature ) accumulateFeature = false ;
+           if( it->featureNumber == featP.dtmFeature ) accumulateFeature = false ;
           }
 
 //      Get Feature Points
@@ -10008,7 +9967,7 @@ int bcdtmEdit_accumulateLinearFeaturesAndCursorDistanceForPointDtmObject
 
 //         Get Feature Points
 
-           if( bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(dtmP,featP->dtmFeature,&featurePtsP,&numFeaturePts)) goto errexit ;
+           if( bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(dtmP,featP.dtmFeature,&featurePtsP,&numFeaturePts)) goto errexit ;
 
 //         Scan Feature And Find Closest Distance To Cursor Point
 
@@ -10024,8 +9983,8 @@ int bcdtmEdit_accumulateLinearFeaturesAndCursorDistanceForPointDtmObject
 
 //         Accumulate Feature
 
-           linearFeature.featureType     = featP->dtmFeatureType ;
-           linearFeature.featureNumber   = featP->dtmFeature ;
+           linearFeature.featureType     = featP.dtmFeatureType ;
+           linearFeature.featureNumber   = featP.dtmFeature ;
            linearFeature.featureDistance = cursorDistance ;
            linearFeature.featurePtsP     = (DPoint3d*)featurePtsP ;
            linearFeature.numFeaturePts   = numFeaturePts ;
@@ -10039,7 +9998,6 @@ int bcdtmEdit_accumulateLinearFeaturesAndCursorDistanceForPointDtmObject
 // Clean Up
 
  cleanup :
- if( pntFeaturesP != NULL ) free(pntFeaturesP) ;
  if( featurePtsP  != NULL ) free(featurePtsP) ;
 
 // Job Completed

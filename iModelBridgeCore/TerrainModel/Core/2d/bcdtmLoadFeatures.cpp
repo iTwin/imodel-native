@@ -8,6 +8,7 @@
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
 #include "bcdtminlines.h"
+#include "ppl.h"
 /*
 ** Define Cache Variables
 */
@@ -15,7 +16,6 @@ thread_local static DPoint3d *cachePtsP=nullptr ;
 thread_local static int numCachePts = 0;
 thread_local static int memCachePts = 0;
 thread_local static int memCachePtsInc = 10000;
-thread_local static DTMFeatureCallback  dtmDllLoadFunction = nullptr;
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -30,7 +30,8 @@ BENTLEYDTM_EXPORT int bcdtmLoad_setDtmDllLoadFunction
 */
 {
  int ret=DTM_SUCCESS ;
- dtmDllLoadFunction =  dllFunctionP ;
+ //dtmDllLoadFunction =  dllFunctionP ;
+ BeAssert(false);
 /*
 ** Job Completed
 */
@@ -401,11 +402,11 @@ BENTLEYDTM_Public int bcdtmLoad_callUserLoadFunction
 /*
 **  DLL Function Call
 */
-   else if( dtmDllLoadFunction != nullptr )
-     {
-      if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Calling Load Function = %p",dtmDllLoadFunction ) ;
-      if( dtmDllLoadFunction((DTMFeatureType)dtmFeatureType,userTag,userFeatureId,featurePtsP,numFeaturePts,userP) != DTM_SUCCESS ) goto errexit ;
-     }
+   //else if( dtmDllLoadFunction.local() != nullptr )
+   //  {
+   //   if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Calling Load Function = %p",dtmDllLoadFunction ) ;
+   //   if (dtmDllLoadFunction.local()((DTMFeatureType)dtmFeatureType, userTag, userFeatureId, featurePtsP, numFeaturePts, userP) != DTM_SUCCESS) goto errexit;
+   //  }
 /*
 **  MDL Function Call
 */
@@ -697,8 +698,9 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_dtmFeatureTypeOccurrencesDtmObject(BC_
 */
 {
  int             ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0);
- long            n,p1,p2,p3,clPtr,voidFlag,numSpots=0,numLines,numTriangles,numClipArrays,clipResult;
- long            *ofsP,voidsInDtm=FALSE,startPnt,lastPnt,startTime,dtmFeatureNum,numFeaturePts ;
+ long            n,p1,p2,p3,clPtr,numSpots=0,numLines,numTriangles,numClipArrays,clipResult;
+ bool voidFlag, voidsInDtm = false;
+ long            *ofsP,startPnt,lastPnt,startTime,dtmFeatureNum,numFeaturePts ;
  long            pnt1,pnt2,pnt3,fndType,insideFence,fenceLoad,numMask,numMarked=0 ;
  long            findType,trgPnt1,trgPnt2,trgPnt3 ;
  unsigned char   *charP,*pointMaskP=nullptr ;
@@ -1073,7 +1075,7 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_dtmFeatureTypeOccurrencesDtmObject(BC_
 
 //     Check For Voids In Dtm
 
-        bcdtmList_testForVoidsInDtmObject(dtmP,&voidsInDtm) ;
+        bcdtmList_testForVoidsInDtmObject(dtmP,voidsInDtm) ;
         if( dbg ) bcdtmWrite_message(0,0,0,"voidsInDtm = %2ld",voidsInDtm) ;
 
         for( p1 = 0 ; p1 < dtmP->numPoints  ; ++p1 )
@@ -1090,7 +1092,7 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_dtmFeatureTypeOccurrencesDtmObject(BC_
                   if( p2 > p1 && p3 > p1 && node1P->hPtr != p2 )
                     {
                        voidFlag = FALSE ;
-                       if( voidsInDtm ) { if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&voidFlag)) goto errexit ; }
+                       if( voidsInDtm ) { if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidFlag)) goto errexit ; }
 
                        // Set up the triangle points.
                        pntP = pointAddrP(dtmP,p1) ;
@@ -1283,7 +1285,7 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_dtmFeatureTypeOccurrencesDtmObject(BC_
 /*
 **    Check For Voids In Dtm
 */
-      bcdtmList_testForVoidsInDtmObject(dtmP,&voidsInDtm) ;
+      bcdtmList_testForVoidsInDtmObject(dtmP,voidsInDtm) ;
       if( dbg ) bcdtmWrite_message(0,0,0,"voidsInDtm = %2ld",voidsInDtm) ;
 /*
 **    Find First Point Before And Last Point After Fence
@@ -1494,7 +1496,7 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_dtmFeatureTypeOccurrencesDtmObject(BC_
                     if( ( p2 > p1 && p3 > p1 && node2P->sPtr == 1 && node3P->sPtr == 1 ) || ( node2P->sPtr == dtmP->nullPnt || node3P->sPtr == dtmP->nullPnt )  )
                       {
                        voidFlag = FALSE ;
-                       if( voidsInDtm ) { if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&voidFlag)) goto errexit ; }
+                       if( voidsInDtm ) { if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidFlag)) goto errexit ; }
                        if( voidFlag == FALSE )
                          {
 /*
@@ -1602,8 +1604,8 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_dtmFeatureTypeOccurrencesDtmObject(BC_
                      if( nodeAddrP(dtmP,p1)->hPtr != p2 )
                        {
                         voidFlag = FALSE ;
-                        if( voidsInDtm ) { if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&voidFlag)) goto errexit ; }
-                        if( voidFlag == FALSE )
+                        if( voidsInDtm ) { if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidFlag)) goto errexit ; }
+                        if( voidFlag == false )
                           {
 /*
 **                         Set Point Addresses
@@ -1730,7 +1732,7 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_dtmFeatureTypeOccurrencesDtmObject(BC_
 /*
 **    Check For Voids In Dtm
 */
-      bcdtmList_testForVoidsInDtmObject(dtmP,&voidsInDtm) ;
+      bcdtmList_testForVoidsInDtmObject(dtmP,voidsInDtm) ;
       if( dbg ) bcdtmWrite_message(0,0,0,"voidsInDtm = %2ld",voidsInDtm) ;
 /*
 **    Find First Point Before And Last Point After Fence
@@ -1806,7 +1808,7 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_dtmFeatureTypeOccurrencesDtmObject(BC_
                  if( p2 > p1 && node2P->sPtr == 1 )
                    {
                     voidFlag = FALSE ;
-                    if( voidsInDtm ) { if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,&voidFlag)) goto errexit ; }
+                    if( voidsInDtm ) { if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,voidFlag)) goto errexit ; }
                     if( voidFlag == FALSE )
                       {
 /*
@@ -1852,7 +1854,7 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_dtmFeatureTypeOccurrencesDtmObject(BC_
                   if( p2 > p1 )
                     {
                      voidFlag = FALSE ;
-                     if( voidsInDtm ) { if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,&voidFlag)) goto errexit ; }
+                     if( voidsInDtm ) { if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,voidFlag)) goto errexit ; }
                      if( voidFlag == FALSE )
                        {
 /*
@@ -2165,7 +2167,8 @@ BENTLEYDTM_EXPORT int bcdtmScanLoad_nextDtmFeatureTypeOccurrenceDtmObject
 */
 {
  int             ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0);
- long            n,p1,p2,p3,clPtr,voidFlag,clipResult;
+ long            n,p1,p2,p3,clPtr,clipResult;
+ bool voidFlag;
  long            *ofsP, startTime, dtmFeatureNum, numFeaturePts;
  DTMFenceOption trgExtent;
  long            pnt1,pnt2,pnt3,fndType,insideFence,fenceLoad,numMask,numPts=0,maxPoints=10000 ;
@@ -2181,7 +2184,8 @@ BENTLEYDTM_EXPORT int bcdtmScanLoad_nextDtmFeatureTypeOccurrenceDtmObject
 ** Static Variables For Maintaining Scan Context
 */
  static long scanPnt1=0,scanPnt2=0,scanPnt3=0,scanClPtr=0  ;
- static long startScanPnt=0,lastScanPnt=0,voidsInDtm=FALSE ;
+ static long startScanPnt = 0, lastScanPnt = 0;
+ bool voidsInDtm = false;
  static DTM_TIN_NODE  *scanNodeP=nullptr ;
  static unsigned char          *pointMaskP=nullptr ;
 /*
@@ -2298,7 +2302,7 @@ BENTLEYDTM_EXPORT int bcdtmScanLoad_nextDtmFeatureTypeOccurrenceDtmObject
 /*
 **     Check For Voids In Dtm
 */
-       bcdtmList_testForVoidsInDtmObject(dtmP,&voidsInDtm) ;
+       bcdtmList_testForVoidsInDtmObject(dtmP,voidsInDtm) ;
        if( dbg ) bcdtmWrite_message(0,0,0,"voidsInDtm = %2ld",voidsInDtm) ;
 /*
 **     Allocate Memory For Triangle Points
@@ -2706,7 +2710,7 @@ BENTLEYDTM_EXPORT int bcdtmScanLoad_nextDtmFeatureTypeOccurrenceDtmObject
 */
                if( fenceLoad == TRUE && voidsInDtm )
                  {
-                  if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&voidFlag)) goto errexit ;
+                  if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidFlag)) goto errexit ;
                   if( voidFlag ) fenceLoad = FALSE ;
                  }
 /*
@@ -2847,7 +2851,7 @@ BENTLEYDTM_EXPORT int bcdtmScanLoad_nextDtmFeatureTypeOccurrenceDtmObject
 */
                if( fenceLoad == TRUE && voidsInDtm )
                  {
-                  if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,&voidFlag)) goto errexit ;
+                  if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,voidFlag)) goto errexit ;
                   if( voidFlag ) fenceLoad = FALSE ;
                  }
 /*
@@ -4289,735 +4293,739 @@ BENTLEYDTM_EXPORT int bcdtmScanContextLoad_deleteScanContext(BC_DTM_SCAN_CONTEXT
 +-------------------------------------------------------------------*/
 BENTLEYDTM_EXPORT int bcdtmScanContextLoad_scanForDtmFeatureTypeOccurrenceDtmObject
 (
- BC_DTM_SCAN_CONTEXT *dtmScanContextP, /* ==> Scan Context Pointer                    */
- long *featureFoundP,                  /* <== Feature Found <TRUE,FALSE>              */
- DTMFeatureType* dtmFeatureTypeP,                /* <== Dtm Feature Type                        */
- DTMUserTag *userTagP,               /* <== User Tag For Feature                    */
- DTMFeatureId *userFeatureIdP,       /* <== User Feature Id For Feature             */
- DTM_POINT_ARRAY ***pointArraysPPP,    /* <== Pointer To Point Arrays                 */
- long *numPointArraysP                 /* <== Number Of Point Array Pointers          */
+BC_DTM_SCAN_CONTEXT *dtmScanContextP, /* ==> Scan Context Pointer                    */
+long *featureFoundP,                  /* <== Feature Found <TRUE,FALSE>              */
+DTMFeatureType* dtmFeatureTypeP,                /* <== Dtm Feature Type                        */
+DTMUserTag *userTagP,               /* <== User Tag For Feature                    */
+DTMFeatureId *userFeatureIdP,       /* <== User Feature Id For Feature             */
+DTM_POINT_ARRAY ***pointArraysPPP,    /* <== Pointer To Point Arrays                 */
+long *numPointArraysP                 /* <== Number Of Point Array Pointers          */
 )
-{
- int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   p1,p2,p3,p4,sp1,sp2,sp3,cPtr,sPnt,nPnt,fndType,numSpots,maxSpots ;
- DTMFenceOption clipOption;
- long  loadFlag, dtmFeature, numFeatPts, numFenceArrays = 0;
- DTMFeatureType dtmFeatureType;
- long   voidLine,voidTriangle,clipResult=0 ;
- char   dtmFeatureTypeName[50] ;
- DPoint3d    *p3dP,*featPtsP=nullptr      ;
- BC_DTM_OBJ        *dtmP=nullptr,*clipTinP=nullptr ;
- DTM_POINT_ARRAY   **fenceArraysPP=nullptr  ;
- BC_DTM_FEATURE    *dtmFeatureP ;
- static long fPtr=-1 ;
-/*
-** Write Entry Message
-*/
- if( dbg ) bcdtmWrite_message(0,0,0,"Context Scanning For Dtm Feature Type Occurrence From Dtm Object") ;
-/*
-** Check Existence Of Scan Context
-*/
- if( dtmScanContextP == nullptr )
-   {
-    bcdtmWrite_message(2,0,0,"Dtm Scan Context Not Initialised") ;
-    goto errexit ;
-   }
-/*
-** Check For Correct Dtm Object Type
-*/
- if( dtmScanContextP->dtmObjectType != BC_DTM_OBJ_TYPE  )
-   {
-    bcdtmWrite_message(2,0,0,"Invalid Dtm Scan Object Type") ;
-    goto errexit ;
-   }
-/*
-** Initialise Return Arguments
-*/
- *featureFoundP   = FALSE ;
- *dtmFeatureTypeP = dtmScanContextP->dtmFeatureType ;
- *userTagP        = DTM_NULL_USER_TAG ;
- *userFeatureIdP  = DTM_NULL_FEATURE_ID ;
-/*
-** Check Pointer To Point Arrays Is nullptr
-*/
- if( *pointArraysPPP != nullptr )
-   {
-    bcdtmWrite_message(2,0,0,"Pointer To Point Arrays Not Initialised To nullptr") ;
-    goto errexit ;
-   }
-/*
-** Set Scan Variables
-*/
- sp1  = dtmScanContextP->scanOffset1 ;
- sp2  = dtmScanContextP->scanOffset2 ;
- sp3  = dtmScanContextP->scanOffset3 ;
- dtmP = dtmScanContextP->dtmP ;
- clipTinP   = dtmScanContextP->clipTinP ;
- clipOption = dtmScanContextP->clipOption ;
- maxSpots   = dtmScanContextP->maxSpots ;
- if( dbg )
-   {
-    bcdtmWrite_message(0,0,0,"sp1 = %8ld sp2 = %8ld sp3 = %8ld ** dtmP = %p clipOption = %2ld",sp1,sp2,sp3,dtmP,clipOption) ;
-    bcdtmWrite_message(0,0,0,"dtmP->dtmState = %2ld",dtmP->dtmState) ;
-   }
-/*
-**  Switch For Feature Type
-*/
- dtmFeatureType = dtmScanContextP->dtmFeatureType ;
- if( dbg )
-   {
-    bcdtmData_getDtmFeatureTypeNameFromDtmFeatureType(dtmFeatureType,dtmFeatureTypeName);
-    bcdtmWrite_message(0,0,0,"Scanning For DTM Feature Type %s",dtmFeatureTypeName) ;
-   }
-/*
-** Check For Tin Hull
-*/
- if( dtmP->dtmState == DTMState::Tin && dtmFeatureType == DTMFeatureType::Hull ) dtmFeatureType = DTMFeatureType::TinHull ;
-/*
-** Switch For Feature Type
-*/
- switch( dtmFeatureType )
-   {
-    case  DTMFeatureType::Spots   :        // All Points
-    case  DTMFeatureType::RandomSpots :   // Points Not On A Dtm Feature
-/*
-**  Count Points
-*/
-    numSpots = 0  ;
-    for( p1 = sp1 ; p1 < dtmP->numPoints && numSpots < maxSpots ; ++p1 )
-      {
-       if( nodeAddrP(dtmP,p1)->cPtr != dtmP->nullPtr  )
-         {
-          if( ! bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,p1)->PCWD))
-            {
-             loadFlag = TRUE ;
-             if( dtmFeatureType == DTMFeatureType::RandomSpots && nodeAddrP(dtmP,p1)->fPtr != dtmP->nullPtr ) loadFlag = FALSE ;
-             if( loadFlag )
-               {
-                if( clipOption != DTMFenceOption::None)
-                  {
-                   if( bcdtmFind_triangleDtmObject(clipTinP,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,&fndType,&p2,&p3,&p4) ) goto errexit ;
-                   if( ! fndType ) loadFlag = FALSE ;
-                  }
-               }
-             if( loadFlag == TRUE ) ++numSpots ;
-            }
-         }
-      }
-/*
-**  Allocate Memory For Points
-*/
-    if( numSpots >  0 )
-      {
-       numFeatPts = numSpots ;
-       featPtsP = (DPoint3d *) malloc( numSpots * sizeof(DPoint3d)) ;
-       if( featPtsP == nullptr )
-         {
-          bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ;
-          goto errexit ;
-         }
-/*
-**     Copy Points To Feature Points
-*/
-       numSpots = 0 ;
-       p3dP = featPtsP ;
-       for( p1 = sp1 ; p1 < dtmP->numPoints && numSpots < numFeatPts ; ++p1 )
-         {
-          if( nodeAddrP(dtmP,p1)->cPtr != dtmP->nullPtr  )
-            {
-             if( ! bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,p1)->PCWD))
-               {
-                loadFlag = TRUE ;
-                if( dtmFeatureType == DTMFeatureType::RandomSpots && nodeAddrP(dtmP,p1)->fPtr != dtmP->nullPtr ) loadFlag = FALSE ;
-                if( loadFlag == TRUE )
-                  {
-                   if( clipOption != DTMFenceOption::None)
-                     {
-                      if( bcdtmFind_triangleDtmObject(clipTinP,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,&fndType,&p2,&p3,&p4) ) goto errexit ;
-                      if( ! fndType ) loadFlag = FALSE ;
-                     }
-                  }
-                if( loadFlag == TRUE )
-                  {
-                   p3dP->x = pointAddrP(dtmP,p1)->x ;
-                   p3dP->y = pointAddrP(dtmP,p1)->y ;
-                   p3dP->z = pointAddrP(dtmP,p1)->z ;
-                   ++p3dP ;
-                   ++numSpots ;
-                  }
-               }
-            }
-         }
-/*
-**  Set Return Values
-*/
-       *featureFoundP = TRUE ;
-       *dtmFeatureTypeP = dtmFeatureType ;
-       if( bcdtmMem_storePointsInPointerArrayToPointArray(pointArraysPPP,&featPtsP,numFeatPts )) goto errexit ;
-       *numPointArraysP = 1    ;
-       featPtsP = nullptr ;
-       dtmScanContextP->scanOffset1 = p1 ;
-      }
-    break ;
-
-    case  DTMFeatureType::TriangleEdge   :   // Triangle Edges
-/*
-**  Scan To Next Triangle Edge In Circular List
-*/
-        if (dtmP->dtmState == DTMState::Tin)
-            {
-            cPtr = nodeAddrP (dtmP, sp1)->cPtr;
-            if (sp1 != 0 || sp2 != 0)
-                {
-                while (cPtr != dtmP->nullPtr && clistAddrP (dtmP, cPtr)->pntNum != sp2) cPtr = clistAddrP (dtmP, cPtr)->nextPtr;
-                cPtr = clistAddrP (dtmP, cPtr)->nextPtr;
-                }
+    {
+    int    ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0);
+    long   p1, p2, p3, p4, sp1, sp2, sp3, cPtr, sPnt, nPnt, fndType, numSpots, maxSpots;
+    DTMFenceOption clipOption;
+    long  dtmFeature, numFeatPts, numFenceArrays = 0;
+    DTMFeatureType dtmFeatureType;
+    bool loadFlag, voidLine, voidTriangle;
+    long clipResult = 0;
+    char   dtmFeatureTypeName[50];
+    DPoint3d    *p3dP, *featPtsP = nullptr;
+    BC_DTM_OBJ        *dtmP = nullptr, *clipTinP = nullptr;
+    DTM_POINT_ARRAY   **fenceArraysPP = nullptr;
+    BC_DTM_FEATURE    *dtmFeatureP;
+    static long fPtr = -1;
+    /*
+    ** Write Entry Message
+    */
+    if (dbg) bcdtmWrite_message(0, 0, 0, "Context Scanning For Dtm Feature Type Occurrence From Dtm Object");
+    /*
+    ** Check Existence Of Scan Context
+    */
+    if (dtmScanContextP == nullptr)
+        {
+        bcdtmWrite_message(2, 0, 0, "Dtm Scan Context Not Initialised");
+        goto errexit;
+        }
+    /*
+    ** Check For Correct Dtm Object Type
+    */
+    if (dtmScanContextP->dtmObjectType != BC_DTM_OBJ_TYPE)
+        {
+        bcdtmWrite_message(2, 0, 0, "Invalid Dtm Scan Object Type");
+        goto errexit;
+        }
+    /*
+    ** Initialise Return Arguments
+    */
+    *featureFoundP = FALSE;
+    *dtmFeatureTypeP = dtmScanContextP->dtmFeatureType;
+    *userTagP = DTM_NULL_USER_TAG;
+    *userFeatureIdP = DTM_NULL_FEATURE_ID;
+    /*
+    ** Check Pointer To Point Arrays Is nullptr
+    */
+    if (*pointArraysPPP != nullptr)
+        {
+        bcdtmWrite_message(2, 0, 0, "Pointer To Point Arrays Not Initialised To nullptr");
+        goto errexit;
+        }
+    /*
+    ** Set Scan Variables
+    */
+    sp1 = dtmScanContextP->scanOffset1;
+    sp2 = dtmScanContextP->scanOffset2;
+    sp3 = dtmScanContextP->scanOffset3;
+    dtmP = dtmScanContextP->dtmP;
+    clipTinP = dtmScanContextP->clipTinP;
+    clipOption = dtmScanContextP->clipOption;
+    maxSpots = dtmScanContextP->maxSpots;
+    if (dbg)
+        {
+        bcdtmWrite_message(0, 0, 0, "sp1 = %8ld sp2 = %8ld sp3 = %8ld ** dtmP = %p clipOption = %2ld", sp1, sp2, sp3, dtmP, clipOption);
+        bcdtmWrite_message(0, 0, 0, "dtmP->dtmState = %2ld", dtmP->dtmState);
+        }
+    /*
+    **  Switch For Feature Type
+    */
+    dtmFeatureType = dtmScanContextP->dtmFeatureType;
+    if (dbg)
+        {
+        bcdtmData_getDtmFeatureTypeNameFromDtmFeatureType(dtmFeatureType, dtmFeatureTypeName);
+        bcdtmWrite_message(0, 0, 0, "Scanning For DTM Feature Type %s", dtmFeatureTypeName);
+        }
+    /*
+    ** Check For Tin Hull
+    */
+    if (dtmP->dtmState == DTMState::Tin && dtmFeatureType == DTMFeatureType::Hull) dtmFeatureType = DTMFeatureType::TinHull;
+    /*
+    ** Switch For Feature Type
+    */
+    switch (dtmFeatureType)
+        {
+        case  DTMFeatureType::Spots:        // All Points
+        case  DTMFeatureType::RandomSpots:   // Points Not On A Dtm Feature
             /*
-            **  Check For nullptr Next Triangle Edge
+            **  Count Points
             */
-    if( cPtr == dtmP->nullPtr )
+            numSpots = 0;
+            for (p1 = sp1; p1 < dtmP->numPoints && numSpots < maxSpots; ++p1)
                 {
-                ++sp1;
-                if (sp1 < dtmP->numPoints) cPtr = nodeAddrP (dtmP, sp1)->cPtr;
-                else                        cPtr = dtmP->nullPtr;
+                if (nodeAddrP(dtmP, p1)->cPtr != dtmP->nullPtr)
+                    {
+                    if (!bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP, p1)->PCWD))
+                        {
+                        loadFlag = TRUE;
+                        if (dtmFeatureType == DTMFeatureType::RandomSpots && nodeAddrP(dtmP, p1)->fPtr != dtmP->nullPtr) loadFlag = FALSE;
+                        if (loadFlag)
+                            {
+                            if (clipOption != DTMFenceOption::None)
+                                {
+                                if (bcdtmFind_triangleDtmObject(clipTinP, pointAddrP(dtmP, p1)->x, pointAddrP(dtmP, p1)->y, &fndType, &p2, &p3, &p4)) goto errexit;
+                                if (!fndType) loadFlag = FALSE;
+                                }
+                            }
+                        if (loadFlag == TRUE) ++numSpots;
+                        }
+                    }
                 }
             /*
-            **     Scan Tin Points For Triangle Edge
-*/
-    while ( sp1 < dtmP->numPoints  && *featureFoundP == FALSE )
+            **  Allocate Memory For Points
+            */
+            if (numSpots > 0)
                 {
-                while (cPtr != dtmP->nullPtr && *featureFoundP == FALSE)
+                numFeatPts = numSpots;
+                featPtsP = (DPoint3d *)malloc(numSpots * sizeof(DPoint3d));
+                if (featPtsP == nullptr)
                     {
-                    sp2 = clistAddrP (dtmP, cPtr)->pntNum;
-                    cPtr = clistAddrP (dtmP, cPtr)->nextPtr;
-                    /*
-                    **        Test For New Triangle Edge
-                    */
-                    if (sp2 > sp1)
+                    bcdtmWrite_message(0, 0, 0, "Memory Allocation Failure");
+                    goto errexit;
+                    }
+                /*
+                **     Copy Points To Feature Points
+                */
+                numSpots = 0;
+                p3dP = featPtsP;
+                for (p1 = sp1; p1 < dtmP->numPoints && numSpots < numFeatPts; ++p1)
+                    {
+                    if (nodeAddrP(dtmP, p1)->cPtr != dtmP->nullPtr)
                         {
-                        /*
-                        **           Test For Void Line
-                        */
-                        if (bcdtmList_testForVoidLineDtmObject (dtmP, sp1, sp2, &voidLine)) goto errexit;
-                        if (!voidLine)
-               {
-                            /*
-                            **              Allocate memory For Feature Points
-                            */
-                            numFeatPts = 2;
-                featPtsP = ( DPoint3d *) malloc( numFeatPts * sizeof(DPoint3d)) ;
-                if( featPtsP == nullptr )
+                        if (!bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP, p1)->PCWD))
+                            {
+                            loadFlag = TRUE;
+                            if (dtmFeatureType == DTMFeatureType::RandomSpots && nodeAddrP(dtmP, p1)->fPtr != dtmP->nullPtr) loadFlag = FALSE;
+                            if (loadFlag == TRUE)
                                 {
-                                bcdtmWrite_message (1, 0, 0, "Memory Allocation Failure");
-                                goto errexit;
-                                }
-                            /*
-                            **              Copy Feature Points
-                            */
-                (featPtsP)->x   = pointAddrP(dtmP,sp1)->x ;
-                (featPtsP)->y   = pointAddrP(dtmP,sp1)->y ;
-                (featPtsP)->z   = pointAddrP(dtmP,sp1)->z ;
-                (featPtsP+1)->x = pointAddrP(dtmP,sp2)->x ;
-                (featPtsP+1)->y = pointAddrP(dtmP,sp2)->y ;
-                (featPtsP+1)->z = pointAddrP(dtmP,sp2)->z ;
-                            /*
-                            **              Process Fence
-                            */
-                if( clipOption != DTMFenceOption::None)
-                                {
-                                if (bcdtmClip_featurePointArrayToTinHullDtmObject (clipTinP, clipOption, featPtsP, numFeatPts, &clipResult, &fenceArraysPP, &numFenceArrays)) goto errexit;
-                                /*
-                                **                 Free Feature Points memory
-*/
-                                if (featPtsP != nullptr)
+                                if (clipOption != DTMFenceOption::None)
                                     {
-                                    free (featPtsP);
-                      featPtsP = nullptr ;
-                     }
-                                numFeatPts = 0;
-                                /*
-                                **                Process Clipped Feature Sections
-*/
-                                if (numFenceArrays > 0)
-                                    {
-                                    *featureFoundP = TRUE;
-                      *dtmFeatureTypeP = DTMFeatureType::TriangleEdge ;
-                                    *pointArraysPPP = fenceArraysPP;
-                                    *numPointArraysP = numFenceArrays;
-                                    fenceArraysPP = nullptr;
-                                    dtmScanContextP->scanOffset1 = sp1;
-                                    dtmScanContextP->scanOffset2 = sp2;
-                     }
+                                    if (bcdtmFind_triangleDtmObject(clipTinP, pointAddrP(dtmP, p1)->x, pointAddrP(dtmP, p1)->y, &fndType, &p2, &p3, &p4)) goto errexit;
+                                    if (!fndType) loadFlag = FALSE;
+                                    }
                                 }
-                            /*
-                            **              Store Feature Points In Point Array
-                            */
-                            else
+                            if (loadFlag == TRUE)
                                 {
-                                *featureFoundP = TRUE;
-                   *dtmFeatureTypeP = DTMFeatureType::TriangleEdge ;
-                                if (bcdtmMem_storePointsInPointerArrayToPointArray (pointArraysPPP, &featPtsP, numFeatPts)) goto errexit;
-                                *numPointArraysP = 1;
-                                featPtsP = nullptr;
-                                dtmScanContextP->scanOffset1 = sp1;
-                                dtmScanContextP->scanOffset2 = sp2;
-                  }
+                                p3dP->x = pointAddrP(dtmP, p1)->x;
+                                p3dP->y = pointAddrP(dtmP, p1)->y;
+                                p3dP->z = pointAddrP(dtmP, p1)->z;
+                                ++p3dP;
+                                ++numSpots;
+                                }
                             }
                         }
                     }
                 /*
-                **     Get Next Tin Point
-*/
-                if (*featureFoundP == FALSE)
+                **  Set Return Values
+                */
+                *featureFoundP = TRUE;
+                *dtmFeatureTypeP = dtmFeatureType;
+                if (bcdtmMem_storePointsInPointerArrayToPointArray(pointArraysPPP, &featPtsP, numFeatPts)) goto errexit;
+                *numPointArraysP = 1;
+                featPtsP = nullptr;
+                dtmScanContextP->scanOffset1 = p1;
+                }
+            break;
+
+        case  DTMFeatureType::TriangleEdge:   // Triangle Edges
+            /*
+            **  Scan To Next Triangle Edge In Circular List
+            */
+            if (dtmP->dtmState == DTMState::Tin)
+                {
+                cPtr = nodeAddrP(dtmP, sp1)->cPtr;
+                if (sp1 != 0 || sp2 != 0)
+                    {
+                    while (cPtr != dtmP->nullPtr && clistAddrP(dtmP, cPtr)->pntNum != sp2) cPtr = clistAddrP(dtmP, cPtr)->nextPtr;
+                    cPtr = clistAddrP(dtmP, cPtr)->nextPtr;
+                    }
+                /*
+                **  Check For nullptr Next Triangle Edge
+                */
+                if (cPtr == dtmP->nullPtr)
                     {
                     ++sp1;
-                    if (sp1 < dtmP->numPoints) cPtr = nodeAddrP (dtmP, sp1)->cPtr;
-          else                     cPtr = dtmP->nullPtr ;
+                    if (sp1 < dtmP->numPoints) cPtr = nodeAddrP(dtmP, sp1)->cPtr;
+                    else                        cPtr = dtmP->nullPtr;
                     }
-                }
-            }
-    break ;
-
-    case  DTMFeatureType::Triangle   :   // Triangles
-        if (dtmP->dtmState == DTMState::Tin)
-            {
-            /*
-**  Scan To Next Triangle In Circular List
-*/
-            cPtr = nodeAddrP (dtmP, sp1)->cPtr;
-            if (sp1 != 0 || sp2 != 0 || sp3 != 0)
-                {
-                while (cPtr != dtmP->nullPtr && clistAddrP (dtmP, cPtr)->pntNum != sp3) cPtr = clistAddrP (dtmP, cPtr)->nextPtr;
-                cPtr = clistAddrP (dtmP, cPtr)->nextPtr;
-                }
-            /*
-            **  Check For nullptr Next Triangle Edge
-            */
-    if( cPtr == dtmP->nullPtr )
-                {
-                ++sp1;
-                if (sp1 < dtmP->numPoints) cPtr = nodeAddrP (dtmP, sp1)->cPtr;
-                else                     cPtr = dtmP->nullPtr;
-                if (cPtr != dtmP->nullPtr)
+                /*
+                **     Scan Tin Points For Triangle Edge
+                */
+                while (sp1 < dtmP->numPoints  && *featureFoundP == FALSE)
                     {
-                    if ((sp3 = bcdtmList_nextAntDtmObject (dtmP, sp1, clistAddrP (dtmP, cPtr)->pntNum)) < 0) goto errexit;
-                    }
-                }
-            /*
-            **  Scan Tin Points For Triangles
-*/
-    while ( sp1 < dtmP->numPoints  && *featureFoundP == FALSE )
-                {
-                while (cPtr != dtmP->nullPtr && *featureFoundP == FALSE)
-                    {
-                    sp2 = sp3;
-                    sp3 = clistAddrP (dtmP, cPtr)->pntNum;
-                    cPtr = clistAddrP (dtmP, cPtr)->nextPtr;
-                    /*
-**        Test For New Triangle
-                    */
-                    if (sp2 > sp1 && sp3 > sp1 && nodeAddrP (dtmP, sp3)->hPtr != sp1)
+                    while (cPtr != dtmP->nullPtr && *featureFoundP == FALSE)
                         {
+                        sp2 = clistAddrP(dtmP, cPtr)->pntNum;
+                        cPtr = clistAddrP(dtmP, cPtr)->nextPtr;
                         /*
-                        **           Test For Void Triangle
-*/
-                        if (bcdtmList_testForVoidTriangleDtmObject (dtmP, sp1, sp2, sp3, &voidTriangle)) goto errexit;
-                        if (!voidTriangle)
+                        **        Test For New Triangle Edge
+                        */
+                        if (sp2 > sp1)
                             {
                             /*
-                            **              Allocate memory For Triangle Points
+                            **           Test For Void Line
                             */
-                            numFeatPts = 4;
-                featPtsP = ( DPoint3d *) malloc( numFeatPts * sizeof(DPoint3d)) ;
-                if( featPtsP == nullptr )
+                            if (bcdtmList_testForVoidLineDtmObject(dtmP, sp1, sp2, voidLine)) goto errexit;
+                            if (!voidLine)
                                 {
-                                bcdtmWrite_message (1, 0, 0, "Memory Allocation Failure");
-                                goto errexit;
-                                }
-                            /*
-                            **              Copy Feature Points
-                            */
-                (featPtsP)->x   = pointAddrP(dtmP,sp1)->x ;
-                (featPtsP)->y   = pointAddrP(dtmP,sp1)->y ;
-                (featPtsP)->z   = pointAddrP(dtmP,sp1)->z ;
-                (featPtsP+1)->x = pointAddrP(dtmP,sp2)->x ;
-                (featPtsP+1)->y = pointAddrP(dtmP,sp2)->y ;
-                (featPtsP+1)->z = pointAddrP(dtmP,sp2)->z ;
-                (featPtsP+2)->x = pointAddrP(dtmP,sp3)->x ;
-                (featPtsP+2)->y = pointAddrP(dtmP,sp3)->y ;
-                (featPtsP+2)->z = pointAddrP(dtmP,sp3)->z ;
-                (featPtsP+3)->x = pointAddrP(dtmP,sp1)->x ;
-                (featPtsP+3)->y = pointAddrP(dtmP,sp1)->y ;
-                (featPtsP+3)->z = pointAddrP(dtmP,sp1)->z ;
-                            /*
-                            **              Process Fence
-                            */
-                if( clipOption != DTMFenceOption::None )
-                                {
-                                if (bcdtmClip_featurePointArrayToTinHullDtmObject (clipTinP, clipOption, featPtsP, numFeatPts, &clipResult, &fenceArraysPP, &numFenceArrays)) goto errexit;
                                 /*
-                                **                 Free Feature Points memory
+                                **              Allocate memory For Feature Points
                                 */
-                                if (featPtsP != nullptr)
+                                numFeatPts = 2;
+                                featPtsP = (DPoint3d *)malloc(numFeatPts * sizeof(DPoint3d));
+                                if (featPtsP == nullptr)
                                     {
-                                    free (featPtsP);
-                      featPtsP = nullptr ;
-                     }
-                                numFeatPts = 0;
+                                    bcdtmWrite_message(1, 0, 0, "Memory Allocation Failure");
+                                    goto errexit;
+                                    }
                                 /*
-                                **                 Process Clipped Feature Sections
-*/
-                                if (numFenceArrays > 0)
+                                **              Copy Feature Points
+                                */
+                                (featPtsP)->x = pointAddrP(dtmP, sp1)->x;
+                                (featPtsP)->y = pointAddrP(dtmP, sp1)->y;
+                                (featPtsP)->z = pointAddrP(dtmP, sp1)->z;
+                                (featPtsP + 1)->x = pointAddrP(dtmP, sp2)->x;
+                                (featPtsP + 1)->y = pointAddrP(dtmP, sp2)->y;
+                                (featPtsP + 1)->z = pointAddrP(dtmP, sp2)->z;
+                                /*
+                                **              Process Fence
+                                */
+                                if (clipOption != DTMFenceOption::None)
+                                    {
+                                    if (bcdtmClip_featurePointArrayToTinHullDtmObject(clipTinP, clipOption, featPtsP, numFeatPts, &clipResult, &fenceArraysPP, &numFenceArrays)) goto errexit;
+                                    /*
+                                    **                 Free Feature Points memory
+                                    */
+                                    if (featPtsP != nullptr)
+                                        {
+                                        free(featPtsP);
+                                        featPtsP = nullptr;
+                                        }
+                                    numFeatPts = 0;
+                                    /*
+                                    **                Process Clipped Feature Sections
+                                    */
+                                    if (numFenceArrays > 0)
+                                        {
+                                        *featureFoundP = TRUE;
+                                        *dtmFeatureTypeP = DTMFeatureType::TriangleEdge;
+                                        *pointArraysPPP = fenceArraysPP;
+                                        *numPointArraysP = numFenceArrays;
+                                        fenceArraysPP = nullptr;
+                                        dtmScanContextP->scanOffset1 = sp1;
+                                        dtmScanContextP->scanOffset2 = sp2;
+                                        }
+                                    }
+                                /*
+                                **              Store Feature Points In Point Array
+                                */
+                                else
                                     {
                                     *featureFoundP = TRUE;
-                      *dtmFeatureTypeP = DTMFeatureType::Triangle ;
-                                    *pointArraysPPP = fenceArraysPP;
-                                    *numPointArraysP = numFenceArrays;
-                                    fenceArraysPP = nullptr;
+                                    *dtmFeatureTypeP = DTMFeatureType::TriangleEdge;
+                                    if (bcdtmMem_storePointsInPointerArrayToPointArray(pointArraysPPP, &featPtsP, numFeatPts)) goto errexit;
+                                    *numPointArraysP = 1;
+                                    featPtsP = nullptr;
+                                    dtmScanContextP->scanOffset1 = sp1;
+                                    dtmScanContextP->scanOffset2 = sp2;
+                                    }
+                                }
+                            }
+                        }
+                    /*
+                    **     Get Next Tin Point
+                    */
+                    if (*featureFoundP == FALSE)
+                        {
+                        ++sp1;
+                        if (sp1 < dtmP->numPoints) cPtr = nodeAddrP(dtmP, sp1)->cPtr;
+                        else                     cPtr = dtmP->nullPtr;
+                        }
+                    }
+                }
+            break;
+
+        case  DTMFeatureType::Triangle:   // Triangles
+            if (dtmP->dtmState == DTMState::Tin)
+                {
+                /*
+    **  Scan To Next Triangle In Circular List
+    */
+                cPtr = nodeAddrP(dtmP, sp1)->cPtr;
+                if (sp1 != 0 || sp2 != 0 || sp3 != 0)
+                    {
+                    while (cPtr != dtmP->nullPtr && clistAddrP(dtmP, cPtr)->pntNum != sp3) cPtr = clistAddrP(dtmP, cPtr)->nextPtr;
+                    cPtr = clistAddrP(dtmP, cPtr)->nextPtr;
+                    }
+                /*
+                **  Check For nullptr Next Triangle Edge
+                */
+                if (cPtr == dtmP->nullPtr)
+                    {
+                    ++sp1;
+                    if (sp1 < dtmP->numPoints) cPtr = nodeAddrP(dtmP, sp1)->cPtr;
+                    else                     cPtr = dtmP->nullPtr;
+                    if (cPtr != dtmP->nullPtr)
+                        {
+                        if ((sp3 = bcdtmList_nextAntDtmObject(dtmP, sp1, clistAddrP(dtmP, cPtr)->pntNum)) < 0) goto errexit;
+                        }
+                    }
+                /*
+                **  Scan Tin Points For Triangles
+                */
+                while (sp1 < dtmP->numPoints  && *featureFoundP == FALSE)
+                    {
+                    while (cPtr != dtmP->nullPtr && *featureFoundP == FALSE)
+                        {
+                        sp2 = sp3;
+                        sp3 = clistAddrP(dtmP, cPtr)->pntNum;
+                        cPtr = clistAddrP(dtmP, cPtr)->nextPtr;
+                        /*
+    **        Test For New Triangle
+    */
+                        if (sp2 > sp1 && sp3 > sp1 && nodeAddrP(dtmP, sp3)->hPtr != sp1)
+                            {
+                            /*
+                            **           Test For Void Triangle
+                            */
+                            if (bcdtmList_testForVoidTriangleDtmObject(dtmP, sp1, sp2, sp3, voidTriangle)) goto errexit;
+                            if (!voidTriangle)
+                                {
+                                /*
+                                **              Allocate memory For Triangle Points
+                                */
+                                numFeatPts = 4;
+                                featPtsP = (DPoint3d *)malloc(numFeatPts * sizeof(DPoint3d));
+                                if (featPtsP == nullptr)
+                                    {
+                                    bcdtmWrite_message(1, 0, 0, "Memory Allocation Failure");
+                                    goto errexit;
+                                    }
+                                /*
+                                **              Copy Feature Points
+                                */
+                                (featPtsP)->x = pointAddrP(dtmP, sp1)->x;
+                                (featPtsP)->y = pointAddrP(dtmP, sp1)->y;
+                                (featPtsP)->z = pointAddrP(dtmP, sp1)->z;
+                                (featPtsP + 1)->x = pointAddrP(dtmP, sp2)->x;
+                                (featPtsP + 1)->y = pointAddrP(dtmP, sp2)->y;
+                                (featPtsP + 1)->z = pointAddrP(dtmP, sp2)->z;
+                                (featPtsP + 2)->x = pointAddrP(dtmP, sp3)->x;
+                                (featPtsP + 2)->y = pointAddrP(dtmP, sp3)->y;
+                                (featPtsP + 2)->z = pointAddrP(dtmP, sp3)->z;
+                                (featPtsP + 3)->x = pointAddrP(dtmP, sp1)->x;
+                                (featPtsP + 3)->y = pointAddrP(dtmP, sp1)->y;
+                                (featPtsP + 3)->z = pointAddrP(dtmP, sp1)->z;
+                                /*
+                                **              Process Fence
+                                */
+                                if (clipOption != DTMFenceOption::None)
+                                    {
+                                    if (bcdtmClip_featurePointArrayToTinHullDtmObject(clipTinP, clipOption, featPtsP, numFeatPts, &clipResult, &fenceArraysPP, &numFenceArrays)) goto errexit;
+                                    /*
+                                    **                 Free Feature Points memory
+                                    */
+                                    if (featPtsP != nullptr)
+                                        {
+                                        free(featPtsP);
+                                        featPtsP = nullptr;
+                                        }
+                                    numFeatPts = 0;
+                                    /*
+                                    **                 Process Clipped Feature Sections
+                                    */
+                                    if (numFenceArrays > 0)
+                                        {
+                                        *featureFoundP = TRUE;
+                                        *dtmFeatureTypeP = DTMFeatureType::Triangle;
+                                        *pointArraysPPP = fenceArraysPP;
+                                        *numPointArraysP = numFenceArrays;
+                                        fenceArraysPP = nullptr;
+                                        dtmScanContextP->scanOffset1 = sp1;
+                                        dtmScanContextP->scanOffset2 = sp2;
+                                        dtmScanContextP->scanOffset3 = sp3;
+                                        }
+                                    }
+                                /*
+                                **              Store Feature Points In Point Array
+                                */
+                                else
+                                    {
+                                    *featureFoundP = TRUE;
+                                    *dtmFeatureTypeP = DTMFeatureType::Triangle;
+                                    if (bcdtmMem_storePointsInPointerArrayToPointArray(pointArraysPPP, &featPtsP, numFeatPts)) goto errexit;
+                                    *numPointArraysP = 1;
+                                    featPtsP = nullptr;
                                     dtmScanContextP->scanOffset1 = sp1;
                                     dtmScanContextP->scanOffset2 = sp2;
                                     dtmScanContextP->scanOffset3 = sp3;
-                     }
+                                    }
                                 }
-                            /*
-                            **              Store Feature Points In Point Array
-                            */
-                            else
-                                {
-                                *featureFoundP = TRUE;
-                   *dtmFeatureTypeP = DTMFeatureType::Triangle ;
-                                if (bcdtmMem_storePointsInPointerArrayToPointArray (pointArraysPPP, &featPtsP, numFeatPts)) goto errexit;
-                                *numPointArraysP = 1;
-                                featPtsP = nullptr;
-                                dtmScanContextP->scanOffset1 = sp1;
-                                dtmScanContextP->scanOffset2 = sp2;
-                                dtmScanContextP->scanOffset3 = sp3;
-                  }
+                            }
+                        }
+                    /*
+                    **     Get Next Tin Point
+                    */
+                    if (*featureFoundP == FALSE)
+                        {
+                        ++sp1;
+                        if (sp1 < dtmP->numPoints) cPtr = nodeAddrP(dtmP, sp1)->cPtr;
+                        else                     cPtr = dtmP->nullPtr;
+                        if (cPtr != dtmP->nullPtr)
+                            {
+                            if ((sp3 = bcdtmList_nextAntDtmObject(dtmP, sp1, clistAddrP(dtmP, cPtr)->pntNum)) < 0) goto errexit;
                             }
                         }
                     }
-                /*
-                **     Get Next Tin Point
-*/
-                if (*featureFoundP == FALSE)
+                }
+            break;
+
+
+        case  DTMFeatureType::TinHull:     // Tin Hull
+            /*
+            **   Set User Tags And Feature Id's
+            */
+            *userTagP = dtmP->nullUserTag;
+            *userFeatureIdP = dtmP->nullFeatureId;
+            bcdtmList_getPointerAndOffsetToNextDtmFeatureTypeOccurrenceDtmObject(dtmP, DTMFeatureType::Hull, 1, &dtmFeatureP, &dtmFeature);
+            if (dtmFeatureP != nullptr)
+                {
+                *userTagP = dtmFeatureP->dtmUserTag;
+                *userFeatureIdP = dtmFeatureP->dtmFeatureId;
+                }
+            /*
+            **  Count Number Of Hull Points
+            */
+            if (dtmScanContextP->scanOffset1 == 0)
+                {
+                numSpots = 0;
+                sp1 = dtmP->hullPoint;
+                do
                     {
-                    ++sp1;
-                    if (sp1 < dtmP->numPoints) cPtr = nodeAddrP (dtmP, sp1)->cPtr;
-          else                     cPtr = dtmP->nullPtr ;
-                    if (cPtr != dtmP->nullPtr)
+                    ++numSpots;
+                    sp1 = nodeAddrP(dtmP, sp1)->hPtr;
+                    } while (sp1 != dtmP->hullPoint);
+                    /*
+                    **     Allocate memory For Hull Points
+                    */
+                    numFeatPts = numSpots + 1;
+                    featPtsP = (DPoint3d *)malloc(numFeatPts * sizeof(DPoint3d));
+                    if (featPtsP == nullptr)
                         {
-                        if ((sp3 = bcdtmList_nextAntDtmObject (dtmP, sp1, clistAddrP (dtmP, cPtr)->pntNum)) < 0) goto errexit;
+                        bcdtmWrite_message(1, 0, 0, "Memory Allocation Failure");
+                        goto errexit;
+                        }
+                    /*
+                    **     Copy Hull Points
+                    */
+                    p3dP = featPtsP;
+                    sp1 = dtmP->hullPoint;
+                    do
+                        {
+                        p3dP->x = pointAddrP(dtmP, sp1)->x;
+                        p3dP->y = pointAddrP(dtmP, sp1)->y;
+                        p3dP->z = pointAddrP(dtmP, sp1)->z;
+                        ++p3dP;
+                        sp1 = nodeAddrP(dtmP, sp1)->hPtr;
+                        } while (sp1 != dtmP->hullPoint);
+                        p3dP->x = pointAddrP(dtmP, sp1)->x;
+                        p3dP->y = pointAddrP(dtmP, sp1)->y;
+                        p3dP->z = pointAddrP(dtmP, sp1)->z;
+                        ++p3dP;
+                        /*
+                        **     Process Fence
+                        */
+                        if (clipOption != DTMFenceOption::None)
+                            {
+                            if (bcdtmClip_featurePointArrayToTinHullDtmObject(clipTinP, clipOption, featPtsP, numFeatPts, &clipResult, &fenceArraysPP, &numFenceArrays)) goto errexit;
+                            /*
+                            **        Free Feature Points memory
+                            */
+                            if (featPtsP != nullptr)
+                                {
+                                free(featPtsP);
+                                featPtsP = nullptr;
+                                }
+                            numFeatPts = 0;
+                            /*
+                            **        Process Clipped Feature Sections
+                            */
+                            if (numFenceArrays > 0)
+                                {
+                                *featureFoundP = TRUE;
+                                *dtmFeatureTypeP = DTMFeatureType::Hull;
+                                *pointArraysPPP = fenceArraysPP;
+                                *numPointArraysP = numFenceArrays;
+                                fenceArraysPP = nullptr;
+                                dtmScanContextP->scanOffset1 = 1;
+                                }
+                            }
+                        /*
+                        **    Store Feature Points In Point Array
+                        */
+                        else
+                            {
+                            *featureFoundP = TRUE;
+                            *dtmFeatureTypeP = DTMFeatureType::Hull;
+                            if (bcdtmMem_storePointsInPointerArrayToPointArray(pointArraysPPP, &featPtsP, numFeatPts)) goto errexit;
+                            *numPointArraysP = 1;
+                            featPtsP = nullptr;
+                            dtmScanContextP->scanOffset1 = 1;
+                            }
+                }
+            break;
+
+
+        case DTMFeatureType::GroupSpots:
+        case DTMFeatureType::Breakline:
+        case DTMFeatureType::ContourLine:
+        case DTMFeatureType::Void:
+        case DTMFeatureType::Island:
+        case DTMFeatureType::Hole:
+        case DTMFeatureType::Polygon:
+        case DTMFeatureType::Region:
+        case DTMFeatureType::Hull:
+            if (dbg) bcdtmWrite_message(0, 0, 0, "Scanning For DTM Feature Type = %4ld", dtmFeatureType);
+            /*
+            **     Scan To Next Feature Occurrence
+            */
+            for (dtmFeature = sp1; dtmFeature < dtmP->numFeatures && *featureFoundP == FALSE; ++dtmFeature)
+                {
+                dtmFeatureP = ftableAddrP(dtmP, dtmFeature);
+                if (dtmFeatureP->dtmFeatureState == DTMFeatureState::Data || dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin)
+                    {
+                    if (dtmFeatureP->dtmFeatureType == dtmFeatureType)
+                        {
+                        /*
+                        **           Count Number Of Points In Feature
+                        */
+                        if (dbg) bcdtmWrite_message(0, 0, 0, "Counting Number Of Feature Points");
+                        numSpots = 0;
+                        if (dtmP->dtmState == DTMState::Data) numSpots = dtmFeatureP->numDtmFeaturePts;
+                        else
+                            {
+                            sPnt = dtmFeatureP->dtmFeaturePts.firstPoint;
+                            do
+                                {
+                                ++numSpots;
+                                if (bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP, dtmFeature, sPnt, &nPnt)) goto errexit;
+                                sPnt = nPnt;
+                                } while (sPnt != dtmFeatureP->dtmFeaturePts.firstPoint && sPnt != dtmP->nullPnt);
+                                if (sPnt == dtmFeatureP->dtmFeaturePts.firstPoint) ++numSpots;
+                            }
+                        /*
+                        **           Allocate Memory For Feature Points
+                        */
+                        numFeatPts = numSpots;
+                        featPtsP = (DPoint3d *)malloc(numFeatPts * sizeof(DPoint3d));
+                        if (featPtsP == nullptr)
+                            {
+                            bcdtmWrite_message(1, 0, 0, "Memory Allocation Failure");
+                            goto errexit;
+                            }
+                        /*
+                        **           Copy Feature Points
+                        */
+
+                        p3dP = featPtsP;
+                        if (dtmP->dtmState == DTMState::Data)
+                            {
+                            for (sPnt = dtmFeatureP->dtmFeaturePts.firstPoint; sPnt < dtmFeatureP->dtmFeaturePts.firstPoint + dtmFeatureP->numDtmFeaturePts; ++sPnt)
+                                {
+                                p3dP->x = pointAddrP(dtmP, sPnt)->x;
+                                p3dP->y = pointAddrP(dtmP, sPnt)->y;
+                                p3dP->z = pointAddrP(dtmP, sPnt)->z;
+                                ++p3dP;
+                                }
+                            }
+                        else
+                            {
+                            if (dbg) bcdtmWrite_message(0, 0, 0, "Copying Feature Points");
+                            sPnt = dtmFeatureP->dtmFeaturePts.firstPoint;
+                            do
+                                {
+                                p3dP->x = pointAddrP(dtmP, sPnt)->x;
+                                p3dP->y = pointAddrP(dtmP, sPnt)->y;
+                                p3dP->z = pointAddrP(dtmP, sPnt)->z;
+                                ++p3dP;
+                                if (bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP, dtmFeature, sPnt, &nPnt)) goto errexit;
+                                sPnt = nPnt;
+                                } while (sPnt != dtmFeatureP->dtmFeaturePts.firstPoint && sPnt != dtmP->nullPnt);
+                                if (sPnt == dtmFeatureP->dtmFeaturePts.firstPoint)
+                                    {
+                                    p3dP->x = pointAddrP(dtmP, sPnt)->x;
+                                    p3dP->y = pointAddrP(dtmP, sPnt)->y;
+                                    p3dP->z = pointAddrP(dtmP, sPnt)->z;
+                                    ++p3dP;
+                                    }
+                            }
+                        /*
+                        **           Process Fence
+                        */
+                        if (clipOption != DTMFenceOption::None)
+                            {
+                            /*
+                            **              Group Spots
+                            */
+                            if (dbg) bcdtmWrite_message(0, 0, 0, "Clipping Feature");
+                            if (dtmFeatureType == DTMFeatureType::GroupSpots)
+                                {
+                                p1 = 0;
+                                for (p3dP = featPtsP; p3dP <= featPtsP + numFeatPts; ++p3dP)
+                                    {
+                                    if (bcdtmFind_triangleDtmObject(clipTinP, p3dP->x, p3dP->y, &fndType, &p2, &p3, &p4)) goto errexit;
+                                        {
+                                        if ((long)(p3dP - featPtsP) != p1)
+                                            {
+                                            (featPtsP + p1)->x = p3dP->x;
+                                            (featPtsP + p1)->y = p3dP->y;
+                                            (featPtsP + p1)->z = p3dP->z;
+                                            }
+                                        ++p1;
+                                        }
+                                    }
+                                numFeatPts = p1;
+                                if (numFeatPts > 0)
+                                    {
+                                    if (bcdtmMem_storePointsInPointerArrayToPointArray(&fenceArraysPP, &featPtsP, numFeatPts)) goto errexit;
+                                    numFenceArrays = 1;
+                                    }
+                                }
+                            /*
+                            **              Other Features
+                            */
+                            else
+                                {
+                                if (bcdtmClip_featurePointArrayToTinHullDtmObject(clipTinP, clipOption, featPtsP, numFeatPts, &clipResult, &fenceArraysPP, &numFenceArrays)) goto errexit;
+                                }
+                            /*
+                            **              Free Feature Points memory
+                            */
+                            if (featPtsP != nullptr)
+                                {
+                                free(featPtsP);
+                                featPtsP = nullptr;
+                                }
+                            numFeatPts = 0;
+                            /*
+                            **              Process Clipped Feature Sections
+                            */
+                            if (numFenceArrays > 0)
+                                {
+                                *featureFoundP = TRUE;
+                                *dtmFeatureTypeP = dtmFeatureP->dtmFeatureType;
+                                *pointArraysPPP = fenceArraysPP;
+                                *numPointArraysP = numFenceArrays;
+                                fenceArraysPP = nullptr;
+                                *userFeatureIdP = dtmFeatureP->dtmFeatureId;
+                                *userTagP = dtmFeatureP->dtmUserTag;
+                                dtmScanContextP->scanOffset1 = dtmFeature + 1;
+                                }
+                            }
+                        /*
+                        **           Store Feature Points In Point Array
+                        */
+                        else
+                            {
+                            if (dbg) bcdtmWrite_message(0, 0, 0, "Storing Feature Points");
+                            *featureFoundP = TRUE;
+                            if (bcdtmMem_storePointsInPointerArrayToPointArray(pointArraysPPP, &featPtsP, numFeatPts)) goto errexit;
+                            *numPointArraysP = 1;
+                            featPtsP = nullptr;
+                            *dtmFeatureTypeP = dtmFeatureP->dtmFeatureType;
+                            *userFeatureIdP = dtmFeatureP->dtmFeatureId;
+                            *userTagP = dtmFeatureP->dtmUserTag;
+                            dtmScanContextP->scanOffset1 = dtmFeature + 1;
+                            }
                         }
                     }
                 }
-            }
-    break ;
+            break;
 
 
-    case  DTMFeatureType::TinHull :     // Tin Hull
-/*
-**   Set User Tags And Feature Id's
-*/
-     *userTagP = dtmP->nullUserTag ;
-     *userFeatureIdP = dtmP->nullFeatureId ;
-     bcdtmList_getPointerAndOffsetToNextDtmFeatureTypeOccurrenceDtmObject(dtmP,DTMFeatureType::Hull,1,&dtmFeatureP,&dtmFeature) ;
-     if( dtmFeatureP != nullptr )
-       {
-        *userTagP = dtmFeatureP->dtmUserTag ;
-        *userFeatureIdP = dtmFeatureP->dtmFeatureId ;
-       }
-/*
-**  Count Number Of Hull Points
-*/
-    if( dtmScanContextP->scanOffset1 == 0 )
-      {
-       numSpots = 0 ;
-       sp1 = dtmP->hullPoint ;
-       do
-         {
-          ++numSpots ;
-          sp1 = nodeAddrP(dtmP,sp1)->hPtr ;
-         } while ( sp1 != dtmP->hullPoint ) ;
-/*
-**     Allocate memory For Hull Points
-*/
-       numFeatPts = numSpots + 1  ;
-       featPtsP = ( DPoint3d *) malloc( numFeatPts * sizeof(DPoint3d)) ;
-       if( featPtsP == nullptr )
-         {
-          bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-          goto errexit ;
-         }
-/*
-**     Copy Hull Points
-*/
-       p3dP = featPtsP ;
-       sp1  = dtmP->hullPoint ;
-       do
-         {
-          p3dP->x = pointAddrP(dtmP,sp1)->x ;
-          p3dP->y = pointAddrP(dtmP,sp1)->y ;
-          p3dP->z = pointAddrP(dtmP,sp1)->z ;
-          ++p3dP ;
-          sp1 = nodeAddrP(dtmP,sp1)->hPtr  ;
-         } while ( sp1 != dtmP->hullPoint ) ;
-       p3dP->x = pointAddrP(dtmP,sp1)->x ;
-       p3dP->y = pointAddrP(dtmP,sp1)->y ;
-       p3dP->z = pointAddrP(dtmP,sp1)->z ;
-       ++p3dP ;
-/*
-**     Process Fence
-*/
-       if (clipOption != DTMFenceOption::None)
-         {
-          if( bcdtmClip_featurePointArrayToTinHullDtmObject(clipTinP,clipOption,featPtsP,numFeatPts,&clipResult,&fenceArraysPP,&numFenceArrays) ) goto errexit ;
-/*
-**        Free Feature Points memory
-*/
-          if( featPtsP != nullptr )
+        default:
+            break;
+        }
+    /*
+    ** Write If Feature Found
+    */
+    if (dbg)
+        {
+        if (*featureFoundP == TRUE) bcdtmWrite_message(0, 0, 0, "DTM Feature Found");
+        else                         bcdtmWrite_message(0, 0, 0, "DTM Feature Not Found");
+        }
+    /*
+    ** Clean Up
+    */
+cleanup:
+    if (featPtsP != nullptr)
+        {
+        free(featPtsP); featPtsP = nullptr;
+        }
+    if (*featureFoundP == FALSE)
+        {
+        fPtr = -1;
+        if (dtmScanContextP != nullptr)
             {
-             free(featPtsP) ;
-             featPtsP = nullptr ;
+            dtmScanContextP->scanOffset1 = 0;
+            dtmScanContextP->scanOffset2 = 0;
+            dtmScanContextP->scanOffset3 = 0;
             }
-          numFeatPts = 0 ;
-/*
-**        Process Clipped Feature Sections
-*/
-          if( numFenceArrays > 0 )
-            {
-             *featureFoundP = TRUE ;
-             *dtmFeatureTypeP = DTMFeatureType::Hull ;
-             *pointArraysPPP  = fenceArraysPP ;
-             *numPointArraysP = numFenceArrays ;
-             fenceArraysPP    = nullptr ;
-             dtmScanContextP->scanOffset1 = 1 ;
-            }
-         }
-/*
-**    Store Feature Points In Point Array
-*/
-       else
-         {
-          *featureFoundP = TRUE ;
-          *dtmFeatureTypeP = DTMFeatureType::Hull ;
-          if( bcdtmMem_storePointsInPointerArrayToPointArray(pointArraysPPP,&featPtsP,numFeatPts )) goto errexit ;
-          *numPointArraysP = 1    ;
-          featPtsP= nullptr ;
-          dtmScanContextP->scanOffset1 = 1 ;
-         }
-      }
-    break ;
-
-
-    case DTMFeatureType::GroupSpots    :
-    case DTMFeatureType::Breakline    :
-    case DTMFeatureType::ContourLine  :
-    case DTMFeatureType::Void          :
-    case DTMFeatureType::Island        :
-    case DTMFeatureType::Hole          :
-    case DTMFeatureType::Polygon       :
-    case DTMFeatureType::Region        :
-    case DTMFeatureType::Hull          :
-    if( dbg ) bcdtmWrite_message(0,0,0,"Scanning For DTM Feature Type = %4ld",dtmFeatureType) ;
-/*
-**     Scan To Next Feature Occurrence
-*/
-    for( dtmFeature = sp1 ; dtmFeature < dtmP->numFeatures && *featureFoundP == FALSE ; ++dtmFeature )
-      {
-       dtmFeatureP = ftableAddrP(dtmP,dtmFeature) ;
-       if( dtmFeatureP->dtmFeatureState == DTMFeatureState::Data || dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin )
-         {
-          if( dtmFeatureP->dtmFeatureType == dtmFeatureType )
-            {
-/*
-**           Count Number Of Points In Feature
-*/
-             if( dbg ) bcdtmWrite_message(0,0,0,"Counting Number Of Feature Points") ;
-             numSpots = 0 ;
-             if( dtmP->dtmState == DTMState::Data ) numSpots = dtmFeatureP->numDtmFeaturePts ;
-             else
-               {
-                sPnt = dtmFeatureP->dtmFeaturePts.firstPoint ;
-                do
-                  {
-                   ++numSpots ;
-                   if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,sPnt,&nPnt)) goto errexit ;
-                   sPnt = nPnt ;
-                  } while ( sPnt != dtmFeatureP->dtmFeaturePts.firstPoint && sPnt != dtmP->nullPnt ) ;
-                if( sPnt ==  dtmFeatureP->dtmFeaturePts.firstPoint ) ++numSpots ;
-               }
-/*
-**           Allocate Memory For Feature Points
-*/
-             numFeatPts = numSpots  ;
-             featPtsP = ( DPoint3d *) malloc( numFeatPts * sizeof(DPoint3d)) ;
-             if( featPtsP == nullptr )
-               {
-                bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-                goto errexit ;
-               }
-/*
-**           Copy Feature Points
-*/
-
-             p3dP = featPtsP ;
-             if( dtmP->dtmState == DTMState::Data )
-               {
-                for( sPnt = dtmFeatureP->dtmFeaturePts.firstPoint ; sPnt < dtmFeatureP->dtmFeaturePts.firstPoint + dtmFeatureP->numDtmFeaturePts ; ++sPnt )
-                  {
-                   p3dP->x = pointAddrP(dtmP,sPnt)->x ;
-                   p3dP->y = pointAddrP(dtmP,sPnt)->y ;
-                   p3dP->z = pointAddrP(dtmP,sPnt)->z ;
-                   ++p3dP ;
-                  }
-               }
-             else
-               {
-                if( dbg ) bcdtmWrite_message(0,0,0,"Copying Feature Points") ;
-                sPnt = dtmFeatureP->dtmFeaturePts.firstPoint ;
-                do
-                  {
-                   p3dP->x = pointAddrP(dtmP,sPnt)->x ;
-                   p3dP->y = pointAddrP(dtmP,sPnt)->y ;
-                   p3dP->z = pointAddrP(dtmP,sPnt)->z ;
-                   ++p3dP ;
-                   if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,sPnt,&nPnt)) goto errexit ;
-                   sPnt = nPnt ;
-                  } while ( sPnt != dtmFeatureP->dtmFeaturePts.firstPoint && sPnt != dtmP->nullPnt ) ;
-                if( sPnt ==  dtmFeatureP->dtmFeaturePts.firstPoint )
-                  {
-                   p3dP->x = pointAddrP(dtmP,sPnt)->x ;
-                   p3dP->y = pointAddrP(dtmP,sPnt)->y ;
-                   p3dP->z = pointAddrP(dtmP,sPnt)->z ;
-                   ++p3dP ;
-                  }
-               }
-/*
-**           Process Fence
-*/
-             if (clipOption != DTMFenceOption::None)
-               {
-/*
-**              Group Spots
-*/
-                if( dbg ) bcdtmWrite_message(0,0,0,"Clipping Feature") ;
-                if( dtmFeatureType == DTMFeatureType::GroupSpots )
-                  {
-                   p1 = 0 ;
-                   for( p3dP = featPtsP ; p3dP <= featPtsP + numFeatPts ;  ++p3dP )
-                     {
-                      if( bcdtmFind_triangleDtmObject(clipTinP,p3dP->x,p3dP->y,&fndType,&p2,&p3,&p4) ) goto errexit ;
-                        {
-                         if( (long)(p3dP-featPtsP) != p1 )
-                           {
-                            (featPtsP+p1)->x = p3dP->x ;
-                            (featPtsP+p1)->y = p3dP->y ;
-                            (featPtsP+p1)->z = p3dP->z ;
-                           }
-                         ++p1 ;
-                        }
-                     }
-                   numFeatPts = p1 ;
-                   if( numFeatPts > 0 )
-                     {
-                      if( bcdtmMem_storePointsInPointerArrayToPointArray(&fenceArraysPP,&featPtsP,numFeatPts )) goto errexit ;
-                      numFenceArrays = 1 ;
-                     }
-                  }
-/*
-**              Other Features
-*/
-                else
-                  {
-                   if( bcdtmClip_featurePointArrayToTinHullDtmObject(clipTinP,clipOption,featPtsP,numFeatPts,&clipResult,&fenceArraysPP,&numFenceArrays) ) goto errexit ;
-                  }
-/*
-**              Free Feature Points memory
-*/
-                if( featPtsP != nullptr )
-                  {
-                   free(featPtsP) ;
-                   featPtsP = nullptr ;
-                  }
-                numFeatPts = 0 ;
-/*
-**              Process Clipped Feature Sections
-*/
-                if( numFenceArrays > 0 )
-                  {
-                   *featureFoundP = TRUE ;
-                   *dtmFeatureTypeP = dtmFeatureP->dtmFeatureType ;
-                   *pointArraysPPP  = fenceArraysPP ;
-                   *numPointArraysP = numFenceArrays ;
-                   fenceArraysPP    = nullptr ;
-                   *userFeatureIdP = dtmFeatureP->dtmFeatureId ;
-                   *userTagP  = dtmFeatureP->dtmUserTag  ;
-                   dtmScanContextP->scanOffset1 = dtmFeature + 1    ;
-                  }
-               }
-/*
-**           Store Feature Points In Point Array
-*/
-             else
-               {
-                if( dbg ) bcdtmWrite_message(0,0,0,"Storing Feature Points") ;
-                *featureFoundP = TRUE ;
-                if( bcdtmMem_storePointsInPointerArrayToPointArray(pointArraysPPP,&featPtsP,numFeatPts )) goto errexit ;
-                *numPointArraysP = 1    ;
-                featPtsP= nullptr ;
-                *dtmFeatureTypeP = dtmFeatureP->dtmFeatureType ;
-                *userFeatureIdP = dtmFeatureP->dtmFeatureId   ;
-                *userTagP  = dtmFeatureP->dtmUserTag ;
-                dtmScanContextP->scanOffset1 = dtmFeature + 1    ;
-               }
-            }
-         }
-      }
-    break ;
-
-
-     default :
-    break ;
-   }
-/*
-** Write If Feature Found
-*/
- if( dbg )
-   {
-    if( *featureFoundP == TRUE ) bcdtmWrite_message(0,0,0,"DTM Feature Found") ;
-    else                         bcdtmWrite_message(0,0,0,"DTM Feature Not Found") ;
-   }
-/*
-** Clean Up
-*/
- cleanup :
- if( featPtsP != nullptr ) {  free(featPtsP) ; featPtsP = nullptr ;  }
- if( *featureFoundP == FALSE )
-   {
-    fPtr = -1 ;
-    if( dtmScanContextP != nullptr )
-      {
-       dtmScanContextP->scanOffset1 = 0 ;
-       dtmScanContextP->scanOffset2 = 0 ;
-       dtmScanContextP->scanOffset3 = 0 ;
-      }
-   }
-/*
-** Job Completed
-*/
- if( dbg && ret == DTM_SUCCESS )  bcdtmWrite_message(0,0,0,"Scanning For Dtm Feature Type Occurrence From Dtm Object Completed") ;
- if( dbg && ret != DTM_SUCCESS )  bcdtmWrite_message(0,0,0,"Scanning For Dtm Feature Type Occurrence From Dtm Object Error") ;
- return(ret) ;
-/*
-** Error Exit
-*/
- errexit :
- *featureFoundP = FALSE ;
- *userTagP      = DTM_NULL_USER_TAG ;
- *userFeatureIdP     = DTM_NULL_FEATURE_ID    ;
- if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- goto cleanup ;
-}
+        }
+    /*
+    ** Job Completed
+    */
+    if (dbg && ret == DTM_SUCCESS)  bcdtmWrite_message(0, 0, 0, "Scanning For Dtm Feature Type Occurrence From Dtm Object Completed");
+    if (dbg && ret != DTM_SUCCESS)  bcdtmWrite_message(0, 0, 0, "Scanning For Dtm Feature Type Occurrence From Dtm Object Error");
+    return(ret);
+    /*
+    ** Error Exit
+    */
+errexit:
+    *featureFoundP = FALSE;
+    *userTagP = DTM_NULL_USER_TAG;
+    *userFeatureIdP = DTM_NULL_FEATURE_ID;
+    if (ret == DTM_SUCCESS) ret = DTM_ERROR;
+    goto cleanup;
+    }
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |

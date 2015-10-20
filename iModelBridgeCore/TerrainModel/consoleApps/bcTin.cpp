@@ -10,6 +10,7 @@
 #include "dtmdefs.h"
 #include "dtm2dfns.h"
 #include "dtmevars.h"
+#include <ppl.h>
 //#include <TerrainModel\Core\DTMEnumerators.h>
 
 USING_NAMESPACE_BENTLEY
@@ -17,8 +18,148 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 static long numDtmFeatures=0 ;
 //XM--static DTM_DAT_OBJ *dataP=NULL ;
-int  bcdtmLoad_dllLoadFunctionTest(DTMFeatureType dtmFeatureType,DTMUserTag userTag, DTMFeatureId featureId,DPoint3d *featurePtsP,size_t numFeaturePts,void *userP) ;
+StatusInt  bcdtmLoad_dllLoadFunctionTest(DTMFeatureType dtmFeatureType,DTMUserTag userTag, DTMFeatureId featureId,DPoint3d *featurePtsP,size_t numFeaturePts,void *userP) ;
 
+void test2 (int i)
+    {
+    BC_DTM_OBJ *dtmP = nullptr;
+    BC_DTM_OBJ *dtm2P = nullptr;
+
+    if (bcdtmRead_fromFileDtmObject (&dtmP, L"D:\\Data\\Mathew\\485189708464region\\485189708464tinWithRegionsBeforeBadTriangle.bcdtm"))
+        return;
+
+        bvector<DPoint3d> pts;
+        char fileName[300];
+        sprintf (fileName, "D:\\Data\\Mathew\\485189708464region\\485189708464regionNb%d.bcdtm", i);
+        FILE* fp = fopen (fileName, "r");
+
+        if (nullptr == fp)
+            return;
+        while (!feof (fp))
+            {
+            char buffer[100];
+            fgets (buffer, 100, fp);
+            if (strlen (buffer) < 10)
+                continue;
+            DPoint3d pt;
+            double x, y, z;
+            sscanf (buffer, "%lf,%lf,%lf", &x, &y, &z);
+            pt.x = x; pt.y = y; pt.z = z;
+            pts.push_back (pt);
+            }
+        fclose (fp);
+
+        DTMFeatureId* featureIds = nullptr;
+        long numFeatureIds;
+        if (bcdtmInsert_internalDtmFeatureMrDtmObject (dtmP, DTMFeatureType::Region,
+            1, 2, 0x100,
+            &featureIds,
+            &numFeatureIds,
+            pts.data (),
+            (long)pts.size ()))
+            return;
+        printf ("%d - %f, %f\n", i, dtmP->zMin, dtmP->zMax);
+
+        //DPoint3dP hullPtsP = nullptr;
+        //long numHullPts;
+        //if (bcdtmList_extractHullDtmObject (dtmP, &hullPtsP, &numHullPts)) return;
+        ///*
+        //**  Check For Overlap Of Bounding Rectangles
+        //*/
+        //DTM_POLYGON_OBJ * polyPP = nullptr;
+        //if (bcdtmPolygon_createPolygonObject (&polyPP))return;
+
+        //double ppTol, plTol;
+        //ppTol = plTol = dtmP->mppTol * 1000.0;
+
+        //long intersectFlagP;
+        //if (bcdtmPolygon_intersectPolygons (hullPtsP, numHullPts, pts.data (), (long)pts.size (), &intersectFlagP, &polyPP, ppTol, plTol))
+        //    return;
+
+/*
+if (bcdtmObject_createDtmObject (&dtm2P)) return;
+        if (bcdtmObject_storeDtmFeatureInDtmObject (dtm2P, DTMFeatureType::GraphicBreak, 1, 1, &dtmP->nullFeatureId, pts.data (), (long)pts.size ()))
+            return;
+        //if (bcdtmObject_storeDtmFeatureInDtmObject (dtm2P, DTMFeatureType::GraphicBreak, 1, 1, &dtmP->nullFeatureId, hullPtsP, numHullPts))
+        //    return;
+        if (bcdtmObject_storeDtmFeatureInDtmObject (dtm2P, DTMFeatureType::Breakline, 1, 1, &dtmP->nullFeatureId, pts.data (), (long)pts.size ()))
+            return;
+        //if (bcdtmObject_storeDtmFeatureInDtmObject (dtm2P, DTMFeatureType::Breakline, 1, 1, &dtmP->nullFeatureId, hullPtsP, numHullPts))
+        //    return;
+        if (bcdtmObject_createTinDtmObject (dtm2P, 1, 0.0, false)) return;
+*/
+    }
+
+void test_ ()
+    {
+    for (int j = 0; j < 100; j++)
+    concurrency::parallel_for ((int)0, (int)67, (int)1, [&](int i)
+        {
+        test2 (i);
+        });
+    BC_DTM_OBJ *dtmP = NULL;
+
+    if (bcdtmRead_fromFileDtmObject (&dtmP, L"Dd:\\Data\\Mathew\\485189708464region\\485189708464tinWithRegionsBeforeBadTriangle.bcdtm"))
+        return;
+
+    printf ("%f, %f\n", dtmP->zMin, dtmP->zMax);
+
+    for (int i = 0; ; i++)
+        {
+        bvector<DPoint3d> pts;
+        char fileName[300];
+        sprintf (fileName, "D:\\Data\\Mathew\\485189708464region\\485189708464regionNb%d.bcdtm", i);
+        FILE* fp = fopen (fileName, "r");
+
+        if (nullptr == fp)
+            break;
+        while (!feof (fp))
+            {
+            char buffer[100];
+            fgets (buffer, 100, fp);
+            if (strlen (buffer) < 10)
+                continue;
+            DPoint3d pt;
+            double x, y, z;
+            sscanf (buffer, "%lf,%lf,%lf", &x, &y, &z);
+            pt.x = x; pt.y = y; pt.z = z;
+            pts.push_back (pt);
+            }
+        fclose (fp);
+
+        DTMFeatureId* featureIds = nullptr;
+        long numFeatureIds;
+        if (bcdtmInsert_internalDtmFeatureMrDtmObject (dtmP, DTMFeatureType::Region,
+            1, 2, 0x100,
+            &featureIds,
+            &numFeatureIds,
+            pts.data(),
+            (long)pts.size()))
+            continue;
+        printf ("%d - %f, %f\n", i, dtmP->zMin, dtmP->zMax);
+        }
+    if (bcdtmWrite_toFileDtmObject (dtmP, L"d:\\temp.bcdtm"))
+        return;
+    }
+
+
+void test()
+    {
+    BC_DTM_OBJ *dtmP = NULL;
+
+    if (bcdtmRead_fromFileDtmObject(&dtmP, L"D:\\temp\\tile.dtm"))
+        return;
+
+    //FILE* fp = fopen("d:\\temp\\outputTM.dat", "rb");
+
+    //while (!feof(fp))
+    //    {
+    //    DPoint3d pts[4];
+    //    fread(pts, sizeof(pts[0]), 4, fp);
+    //    bcdtmObject_storeDtmFeatureInDtmObject(dtmP, DTMFeatureType::GraphicBreak, dtmP->nullUserTag, 1, &dtmP->nullFeatureId, &pts[0], 4);
+    //    }
+    bcdtmObject_triangulateStmTrianglesDtmObject(dtmP);
+    }
 // BCivilDTM.2.0.lib odbc32.lib odbccp32.lib
 int wmain(int argc, wchar_t *argv[])
 {
@@ -37,6 +178,7 @@ int wmain(int argc, wchar_t *argv[])
 ** Initialise DTM
 */
  bcdtmInitialise() ;
+ test ();
  if( fpLOG != NULL ) { fclose(fpLOG) ; fpLOG = NULL ; }
  bcdtmInitialise_openLogFile(L"bcTin.log") ;
  importStartTime = bcdtmClock() ;
@@ -343,7 +485,7 @@ int wmain(int argc, wchar_t *argv[])
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int  bcdtmLoad_dllLoadFunctionTest(DTMFeatureType dtmFeatureType,DTMUserTag userTag, DTMFeatureId featureId,DPoint3d *featurePtsP,size_t numFeaturePts,void *userP)
+StatusInt bcdtmLoad_dllLoadFunctionTest(DTMFeatureType dtmFeatureType,DTMUserTag userTag, DTMFeatureId featureId,DPoint3d *featurePtsP,size_t numFeaturePts,void *userP)
 /*
 ** Sample DTM Interrupt Load Function
 **

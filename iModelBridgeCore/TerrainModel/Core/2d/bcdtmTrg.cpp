@@ -4709,7 +4709,8 @@ BENTLEYDTM_EXPORT int bcdtmObject_slopeModifyDemTriangulationDtmObject(BC_DTM_OB
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0);
  long   p1,p2,p3,p4,clPtr ;
- long   swap,demDiagonal,voidsInDtm,voidLine ;
+ long   swap, demDiagonal;
+ bool voidsInDtm, voidLine;
  double descentAngle,ascentAngle,slope1,slope2,slope3,slope4 ;
  double angle,angleDelta,angle45,angle135,angle225,angle315 ;
  DTM_CIR_LIST *clistP ;
@@ -4733,7 +4734,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_slopeModifyDemTriangulationDtmObject(BC_DTM_OB
 /*
 ** Check For Voids In DTM
 */
- if( bcdtmList_testForVoidsInDtmObject(dtmP,&voidsInDtm)) goto errexit ;
+ if( bcdtmList_testForVoidsInDtmObject(dtmP,voidsInDtm)) goto errexit ;
 /*
 **  Scan Tin Lines And Flip For Slope Criteria
 */
@@ -4760,7 +4761,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_slopeModifyDemTriangulationDtmObject(BC_DTM_OB
 **              Check For Void Line
 */
                 voidLine = FALSE ;
-                if( voidsInDtm )if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,&voidLine)) goto errexit ;
+                if( voidsInDtm )if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,voidLine)) goto errexit ;
                 if( ! voidLine )
                   {
 /*

@@ -1319,7 +1319,7 @@ DTM^ DTM::FromHandle (IntPtr handle)
 DTM^ DTM::FromNativeDtmHandle (IntPtr handle)
     {
     if (handle.ToPointer() == NULL) throw ThrowingPolicy::Apply(gcnew System::ArgumentNullException("handle"));
-    BcDTMPtr bcDtmP = BcDTM::CreateFromDtmHandle((BC_DTM_OBJ*)handle.ToPointer()) ;
+    BcDTMPtr bcDtmP = BcDTM::CreateFromDtmHandle(*(BC_DTM_OBJ*)handle.ToPointer()) ;
     DTM^ dtm = bcDtmP.IsValid() ? gcnew DTM( bcDtmP.get() ) : nullptr;
     return dtm;
     }
@@ -1619,7 +1619,7 @@ DTMDrapedPoint^ DTM::DrapePoint (BGEO::DPoint3d point)
 
     CheckIsTriangulated();
     DTMHelpers::Copy (pt, point);
-    DTMException::CheckForErrorStatus (Handle->DrapePoint (&elevation, &slope, &aspect, triangle, &drapedType, &pt));
+    DTMException::CheckForErrorStatus (Handle->DrapePoint (&elevation, &slope, &aspect, triangle, drapedType, pt));
 
     array<BGEO::DPoint3d>^ tr = gcnew array<BGEO::DPoint3d>(3);
     DTMHelpers::Copy (tr[0], triangle[0]);
@@ -1688,7 +1688,7 @@ SlopeAreaResult^ DTM::CalculateSlopeArea ()
     {
     double area;
     CheckIsTriangulated();
-    DTMException::CheckForErrorStatus (Handle->CalculateSlopeArea (&area));
+    DTMException::CheckForErrorStatus (Handle->CalculateSlopeArea (area));
     return gcnew SlopeAreaResult(area);
     }
 
@@ -1704,7 +1704,7 @@ SlopeAreaResult^ DTM::CalculateSlopeArea (array<BGEO::DPoint3d>^ polygon)
     int nbPt = polygon->Length;
 
     CheckIsTriangulated();
-    DTMException::CheckForErrorStatus (Handle->CalculateSlopeArea (&area, (DPoint3d*)pLocPoly, nbPt));
+    DTMException::CheckForErrorStatus (Handle->CalculateSlopeArea (area, (DPoint3d*)pLocPoly, nbPt));
 
     return gcnew SlopeAreaResult(area);
     }
@@ -1723,7 +1723,7 @@ SlopeAreaResult^ DTM::CalculateSlopeArea (System::Collections::Generic::IEnumera
     int nbPt = (int)pts.size();
 
     CheckIsTriangulated();
-    DTMException::CheckForErrorStatus (Handle->CalculateSlopeArea (&area, &pts[0], nbPt));
+    DTMException::CheckForErrorStatus (Handle->CalculateSlopeArea (area, &pts[0], nbPt));
 
     return gcnew SlopeAreaResult(area);
     }
@@ -2808,36 +2808,36 @@ void  DTM::BrowseTriangleEdges (TriangleEdgesBrowsingCriteria^ criteria, Dynamic
 //=======================================================================================
 // @bsimethod                                               Sylvain.Pucci      5/2007
 //=======================================================================================
-Mesh^ DTM::GetMesh (bool firstCall, int maxMeshSize)
-    {
-    CheckIsTriangulated();
-    long firstCallLong = firstCall ? TRUE : FALSE;
-
-    BcDTMMeshPtr unmanagedMesh = Handle->GetMesh(firstCallLong, maxMeshSize, NULL, 0);
-
-    if (!unmanagedMesh.IsValid())
-        return nullptr;
-
-    Mesh^ mesh = gcnew Mesh(unmanagedMesh.get());
-
-    return mesh;
-    }
+//Mesh^ DTM::GetMesh (bool firstCall, int maxMeshSize)
+//    {
+//    CheckIsTriangulated();
+//    long firstCallLong = firstCall ? TRUE : FALSE;
+//
+//    BcDTMMeshPtr unmanagedMesh = Handle->GetMesh(firstCallLong, maxMeshSize, NULL, 0);
+//
+//    if (!unmanagedMesh.IsValid())
+//        return nullptr;
+//
+//    Mesh^ mesh = gcnew Mesh(unmanagedMesh.get());
+//
+//    return mesh;
+//    }
 
 //=======================================================================================
 // @bsimethod                                               Sylvain.Pucci      5/2007
 //=======================================================================================
-Edges^ DTM::GetEdges()
-    {
-    CheckIsTriangulated();
-    BcDTMEdgesPtr unmanagedEdges = Handle->GetEdges (NULL, 0);
-
-    if (!unmanagedEdges.IsValid())
-        return nullptr;
-
-    Edges^ edges = gcnew Edges(unmanagedEdges.get());
-
-    return edges;
-    }
+//Edges^ DTM::GetEdges()
+//    {
+//    CheckIsTriangulated();
+//    BcDTMEdgesPtr unmanagedEdges = Handle->GetEdges (NULL, 0);
+//
+//    if (!unmanagedEdges.IsValid())
+//        return nullptr;
+//
+//    Edges^ edges = gcnew Edges(unmanagedEdges.get());
+//
+//    return edges;
+//    }
 
 //=======================================================================================
 // @bsimethod                                               Sylvain.Pucci      5/2007
@@ -3532,7 +3532,7 @@ bool DTM::PointVisibility ( BGEO::DPoint3d Eye , BGEO::DPoint3d Point )
     bool pointVisible = false ;
 
     CheckIsTriangulated();
-    DTMException::CheckForErrorStatus (Handle->PointVisibility(&pointVisible,Eye.X,Eye.Y,Eye.Z,Point.X,Point.Y,Point.Z));
+    DTMException::CheckForErrorStatus (Handle->PointVisibility(pointVisible,Eye.X,Eye.Y,Eye.Z,Point.X,Point.Y,Point.Z));
     CheckMemoryPressure();
 
     return pointVisible  ;
@@ -3543,11 +3543,11 @@ bool DTM::PointVisibility ( BGEO::DPoint3d Eye , BGEO::DPoint3d Point )
 //=======================================================================================
 VisibilityResult^ DTM::LineVisibility ( BGEO::DPoint3d Eye , BGEO::DPoint3d linePoint1 , BGEO::DPoint3d linePoint2  )
     {
-    long lineVisible=0 ;
+    bool lineVisible= false;
     DTMDynamicFeatureArray visibilityFeaturesArray;
 
     CheckIsTriangulated();
-    DTMException::CheckForErrorStatus (Handle->LineVisibility(&lineVisible,Eye.X,Eye.Y,Eye.Z,linePoint1.X,linePoint1.Y,linePoint1.Z,linePoint2.X,linePoint2.Y,linePoint2.Z,visibilityFeaturesArray));
+    DTMException::CheckForErrorStatus (Handle->LineVisibility(lineVisible,Eye.X,Eye.Y,Eye.Z,linePoint1.X,linePoint1.Y,linePoint1.Z,linePoint2.X,linePoint2.Y,linePoint2.Z,visibilityFeaturesArray));
     CheckMemoryPressure();
 
     array<DTMDynamicFeatureInfo^>^ visibilityFeatures = nullptr ;

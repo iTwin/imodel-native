@@ -243,9 +243,9 @@ bool DTMElementFlowArrowsDisplayHandler::_Draw (ElementHandleCR el, const Elemen
                 DPoint3d trianglePts[4], point;
                 long drapedType;
                 BC_DTM_OBJ* bcDTM = dtm->GetTinHandle();
-                long voidFlag;
+                bool voidFlag;
 
-                if (bcdtmDrape_intersectTriangleDtmObject (bcDTM, ((DPoint3d*)&startPt), ((DPoint3d*)&endPt), &drapedType, (DPoint3d*)&point, (DPoint3d*)&trianglePts, &voidFlag) != DTM_SUCCESS || drapedType == 0 || voidFlag != 0)
+                if (bcdtmDrape_intersectTriangleDtmObject (bcDTM, ((DPoint3d*)&startPt), ((DPoint3d*)&endPt), &drapedType, (DPoint3d*)&point, (DPoint3d*)&trianglePts, voidFlag) != DTM_SUCCESS || drapedType == 0 || voidFlag != false)
                     return true;
 
                 startPt = point;
@@ -257,7 +257,7 @@ bool DTMElementFlowArrowsDisplayHandler::_Draw (ElementHandleCR el, const Elemen
         int drapedType;
         double elevation, slope, aspect;
 
-        if (dtm->DrapePoint(&elevation, &slope, &aspect, trianglePts, &drapedType, &startPt) == DTM_SUCCESS)
+        if (dtm->DrapePoint(&elevation, &slope, &aspect, trianglePts, drapedType, startPt) == DTM_SUCCESS)
             {
             if (drapedType == 1 || drapedType == 3)
                 {
@@ -309,7 +309,8 @@ WCharCP                           delimiterStr
 
     if (dtm == nullptr)
         { return; }
-    dtm->GetDTMDraping()->DrapePoint(&elev, &slope, &aspect, tri, nullptr, pt);
+    int drapeType;
+    dtm->GetDTMDraping()->DrapePoint(&elev, &slope, &aspect, tri, drapeType, pt);
 
     pt.z = elev;
     ldip.Get().FullStorageToUors (pt);

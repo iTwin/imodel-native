@@ -2,7 +2,7 @@
 |
 |     $Source: TerrainModelNET/DTMTinEditor.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "stdafx.h"
@@ -35,23 +35,20 @@ BcDTMP DTMTinEditor::BcDTM::get()
 bool DTMTinEditor::Select(DTMDynamicFeatureType featureType, BGEO::DPoint3d point)
     {
     DPoint3d pt;
-    long featureFound;
-    long numPoints;
-    DPoint3d* points = nullptr;
+    bool featureFound;
+    bvector<DPoint3d> points;
     DTMHelpers::Copy (pt, point);
 
-    DTMException::CheckForErrorStatus (BcDTM->EditorSelectDtmTinFeature ((::DTMFeatureType)featureType, pt, &featureFound, &points, &numPoints));
+    DTMException::CheckForErrorStatus (BcDTM->EditorSelectDtmTinFeature ((::DTMFeatureType)featureType, pt, featureFound, points));
 
     if(featureFound)
         {
-        m_featurePoints = gcnew array<BGEO::DPoint3d> (numPoints);
+        m_featurePoints = gcnew array<BGEO::DPoint3d> ((int)points.size());
         interior_ptr<BGEO::DPoint3d> mPoints = &m_featurePoints[0];
-        DPoint3d* endPt = &points[numPoints-1];
+        DPoint3d* endPt = &points[points.size() - 1];
         for (DPoint3d* pt = &points[0]; pt <= endPt; ++pt, ++mPoints)
             DTMHelpers::Copy (*mPoints, *pt);
 
-        if(points)
-            free(points);
         }
     else
         {

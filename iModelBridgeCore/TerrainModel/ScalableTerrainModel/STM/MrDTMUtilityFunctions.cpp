@@ -6,7 +6,7 @@
 |       $Date: 2013/03/27 15:53:21 $
 |     $Author: Jean-Francois.Cote $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -610,7 +610,7 @@ int CreateBcDTM(DTMPtr& dtmPtr)
         {
         BcDTMPtr bcDtmObjPtr;
 
-        bcDtmObjPtr = BcDTM::CreateFromDtmHandle(bcDtmP);
+        bcDtmObjPtr = BcDTM::CreateFromDtmHandle(*bcDtmP);
         //bcDtmObjPtr->Release();     
 
         dtmPtr = bcDtmObjPtr.get();
@@ -709,7 +709,7 @@ int TriangulateDTM(Bentley::TerrainModel::DTMPtr&                     dtmPtr,
 
     if (status == 0)
         {
-        BcDTMPtr bcDtmObjPtr(BcDTM::CreateFromDtmHandle(dtmObjP));
+        BcDTMPtr bcDtmObjPtr(BcDTM::CreateFromDtmHandle(*dtmObjP));
         dtmPtr = bcDtmObjPtr.get();            
         }   
 

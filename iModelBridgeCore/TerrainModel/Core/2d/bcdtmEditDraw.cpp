@@ -19,7 +19,8 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawPointFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMF
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   p2,p3,clc,voidFlag ;
+ long   p2, p3, clc;
+ bool voidFlag;
  double x,y,z,SlopeD,SlopeP,Aspect,Height ;
 /*
 ** Write Entry Mode
@@ -39,7 +40,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawPointFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMF
           clc = clistAddrP(dtmP,clc)->nextPtr ;
           if( nodeAddrP(dtmP,p3)->hPtr != point )
             {
-             if( bcdtmList_testForVoidTriangleDtmObject(dtmP,point,p2,p3,&voidFlag) ) goto errexit ;
+             if( bcdtmList_testForVoidTriangleDtmObject(dtmP,point,p2,p3,voidFlag) ) goto errexit ;
              if( ! voidFlag )
                {
 /*
@@ -77,14 +78,14 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawPointFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMF
 **           Draw DTM Features For Line p2-p3
 */
              if( dbg == 2 ) bcdtmWrite_message(0,0,0,"**** Drawing Triangle Base") ;
-             if( bcdtmList_testForVoidLineDtmObject(dtmP,p2,p3,&voidFlag) ) goto errexit ;
+             if( bcdtmList_testForVoidLineDtmObject(dtmP,p2,p3,voidFlag) ) goto errexit ;
              if( ! voidFlag ) if( bcdtmEdit_drawDtmFeaturesForLineDtmObject(dtmP,loadFunctionP,drawMode,p2,p3,userP) ) goto errexit ;
             }
 /*
 **        Draw DTM Features For Line point-p2
 */
           if( dbg == 2 ) bcdtmWrite_message(0,0,0,"**** Drawing Triangle Edge") ;
-          if( bcdtmList_testForVoidLineDtmObject(dtmP,point,p2,&voidFlag) ) goto errexit ;
+          if( bcdtmList_testForVoidLineDtmObject(dtmP,point,p2,voidFlag) ) goto errexit ;
           if( ! voidFlag ) if( bcdtmEdit_drawDtmFeaturesForLineDtmObject(dtmP,loadFunctionP,drawMode,point,p2,userP) ) goto errexit ;
 /*
 **        Reset For Next Triangle Point
@@ -144,11 +145,12 @@ BENTLEYDTM_Private int bcdtmEdit_drawDtmFeaturesForLineDtmObject(BC_DTM_OBJ *dtm
  int   ret=DTM_SUCCESS ;
  long  numLineFeatures, featureType;
  DTMFeatureType dtmFeatureType;
- DTM_TIN_POINT_FEATURES *plf,*lineFeatures=NULL ;
+ bvector<DTM_TIN_POINT_FEATURES> lineFeatures;
 /*
 ** Get List Of DTM Features For Line
 */
- if( bcdtmList_getDtmFeaturesForLineDtmObject(dtmP,P1,P2,&lineFeatures,&numLineFeatures) ) goto errexit ;
+ if( bcdtmList_getDtmFeaturesForLineDtmObject(dtmP,P1,P2, lineFeatures) ) goto errexit ;
+ numLineFeatures = (long)lineFeatures.size();
 /*
 ** Draw Hull Line
 */
@@ -174,9 +176,9 @@ BENTLEYDTM_Private int bcdtmEdit_drawDtmFeaturesForLineDtmObject(BC_DTM_OBJ *dtm
               default:
                   dtmFeatureType = DTMFeatureType::None;
           }
-       for( plf = lineFeatures ; plf < lineFeatures + numLineFeatures ; ++plf )
+       for(auto& plf : lineFeatures)
          {
-          if( plf->dtmFeatureType == dtmFeatureType )
+          if( plf.dtmFeatureType == dtmFeatureType )
             {
              if( bcdtmLoad_storePointInCache(pointAddrP(dtmP,P1)->x,pointAddrP(dtmP,P1)->y,pointAddrP(dtmP,P1)->z)) goto errexit ;
              if( bcdtmLoad_storePointInCache(pointAddrP(dtmP,P2)->x,pointAddrP(dtmP,P2)->y,pointAddrP(dtmP,P2)->z)) goto errexit ;
@@ -189,7 +191,6 @@ BENTLEYDTM_Private int bcdtmEdit_drawDtmFeaturesForLineDtmObject(BC_DTM_OBJ *dtm
 ** Clean Up
 */
  cleanup :
- if( lineFeatures != NULL ) { free(lineFeatures) ; lineFeatures = NULL ; }
 /*
 ** Job Completed
 */
@@ -209,7 +210,8 @@ BENTLEYDTM_Private int bcdtmEdit_drawDtmFeaturesForLineDtmObject(BC_DTM_OBJ *dtm
 BENTLEYDTM_EXPORT int bcdtmEdit_drawTriangleFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long P1,long P2,long P3,double contourInterval,void *userP )
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   clc,VoidFlag ;
+ long   clc;
+ bool voidFlag;
  double x,y,z,SlopeD,SlopeP,Aspect,Height ;
 /*
 ** Write Entry Message
@@ -239,8 +241,8 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawTriangleFeaturesDtmObject(BC_DTM_OBJ *dtmP,D
 ** Test For Void Triangle
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Testing For Void Triangle") ;
- if( bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,P2,P3,&VoidFlag)) goto errexit ;
- if( VoidFlag )
+ if( bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,P2,P3,voidFlag)) goto errexit ;
+ if( voidFlag )
    {
     if( bcdtmList_testForVoidHullLineDtmObject(dtmP,P1,P3) || bcdtmList_testForVoidHullLineDtmObject(dtmP,P1,P3))
       {
@@ -423,14 +425,15 @@ BENTLEYDTM_Public int bcdtmEdit_drawContoursForTriangleDtmObject(BC_DTM_OBJ *dtm
 */
 {
  int    ret=DTM_SUCCESS ;
- long   cpts,level,voidTriangle;
+ long   cpts, level;
+ bool voidTriangle;
  double dx,dy,dz,zc,zz ;
  double Zcon,Zmin,Zmax ;
  DPoint3d    trgPts[3] ;
 /*
 ** If Void Triangle Return
 */
- if( bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,P2,P3,&voidTriangle) ) goto errexit ;
+ if( bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,P2,P3,voidTriangle) ) goto errexit ;
  if( voidTriangle ) goto cleanup ;
 /*
 ** Update All Contour Lines For Triangle
@@ -644,7 +647,8 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawTriangleBaseLinesForPointDtmObject(BC_DTM_OB
 */
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long clc,clf,P2,P3,voidLine ;
+ long clc, clf, P2, P3;
+ bool voidLine;
 /*
 ** Write Entry Message
 */
@@ -666,7 +670,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawTriangleBaseLinesForPointDtmObject(BC_DTM_OB
    {
     P3  = clistAddrP(dtmP,clc)->pntNum ;
     clc = clistAddrP(dtmP,clc)->nextPtr ;
-    if( bcdtmList_testForVoidLineDtmObject(dtmP,P2,P3,&voidLine)) goto errexit ;
+    if( bcdtmList_testForVoidLineDtmObject(dtmP,P2,P3,voidLine)) goto errexit ;
     if( ! voidLine )
       {
 /*
@@ -745,7 +749,8 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawLineFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFe
 */
 {
  int    ret=DTM_SUCCESS,dbg=0 ;
- long   ap,cp,voidFeature ;
+ long   ap, cp;
+ bool voidFeature;
  double x,y,z,SlopeD,SlopeP,Aspect,Height ;
 /*
 ** Write Status Message
@@ -772,7 +777,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawLineFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFe
 */
           if( ap != dtmP->nullPnt )
             {
-             if( bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,ap,P2,&voidFeature)) goto errexit ;
+             if( bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,ap,P2,voidFeature)) goto errexit ;
              if( ! voidFeature )
                {
                 if( bcdtmEdit_drawTriangleDtmObject(dtmP,loadFunctionP,drawMode,P1,ap,P2,userP) ) goto errexit ;
@@ -781,7 +786,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawLineFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFe
             }
           if( cp != dtmP->nullPnt )
             {
-             if( bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,P2,cp,&voidFeature)) goto errexit ;
+             if( bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,P2,cp,voidFeature)) goto errexit ;
              if( ! voidFeature )
                {
                 if( bcdtmEdit_drawTriangleDtmObject(dtmP,loadFunctionP,drawMode,P1,P2,cp,userP) ) goto errexit ;
@@ -807,7 +812,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawLineFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFe
 */
           if( ap != dtmP->nullPnt )
             {
-             if( bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,ap,P2,&voidFeature)) goto errexit ;
+             if( bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,ap,P2,voidFeature)) goto errexit ;
              if( ! voidFeature )
                {
                 x = ( pointAddrP(dtmP,P1)->x + pointAddrP(dtmP,ap)->x + pointAddrP(dtmP,P2)->x ) / 3.0 ;
@@ -821,7 +826,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawLineFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFe
             }
           if( cp != dtmP->nullPnt )
             {
-             if( bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,P2,cp,&voidFeature)) goto errexit ;
+             if( bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,P2,cp,voidFeature)) goto errexit ;
              if( ! voidFeature )
                {
                 x = ( pointAddrP(dtmP,P1)->x + pointAddrP(dtmP,P2)->x + pointAddrP(dtmP,cp)->x ) / 3.0 ;
@@ -928,7 +933,8 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFe
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   sp,p2,p3,np,clc,feat,voidResult ;
+ long   sp, p2, p3, np, clc, feat;
+ bool  voidResult;
  DTMFeatureType type;
  double x,y,z,SlopeD,SlopeP,Aspect,Height ;
 /*
@@ -954,7 +960,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFe
     p2  = nodeAddrP(dtmP,sp)->tPtr ;
     do
       {
-       if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,p2,&voidResult) ) goto errexit ;
+       if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,p2,voidResult) ) goto errexit ;
        if( ! voidResult )
          {
           if( bcdtmLoad_storePointInCache(pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,pointAddrP(dtmP,sp)->z)) goto errexit ;
@@ -977,7 +983,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFe
       {
        p2  = clistAddrP(dtmP,clc)->pntNum ;
        clc = clistAddrP(dtmP,clc)->nextPtr ;
-       if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,p2,&voidResult) ) goto errexit ;
+       if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,p2,voidResult) ) goto errexit ;
        if( ! voidResult )
          {
           if( bcdtmLoad_storePointInCache(pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,pointAddrP(dtmP,sp)->z)) goto errexit ;
@@ -1019,7 +1025,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFe
           type = ftableAddrP(dtmP,feat)->dtmFeatureType ;
           if( ftableAddrP(dtmP,feat)->dtmFeaturePts.firstPoint != dtmP->nullPnt && flistAddrP(dtmP,clc)->nextPnt == p2 )
             {
-             if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,p2,&voidResult) ) goto errexit ;
+             if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,p2,voidResult) ) goto errexit ;
              if( ! voidResult )
                {
                 if( bcdtmLoad_storePointInCache(pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,pointAddrP(dtmP,sp)->z)) goto errexit ;
@@ -1039,7 +1045,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFe
           type = ftableAddrP(dtmP,feat)->dtmFeatureType ;
           if( ftableAddrP(dtmP,feat)->dtmFeaturePts.firstPoint != dtmP->nullPnt && flistAddrP(dtmP,clc)->nextPnt == sp )
             {
-             if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,p2,&voidResult) ) goto errexit ;
+             if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,p2,voidResult) ) goto errexit ;
              if( ! voidResult )
                {
                 if( bcdtmLoad_storePointInCache(pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,pointAddrP(dtmP,sp)->z)) goto errexit ;
@@ -1062,7 +1068,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFe
             {
              if( ftableAddrP(dtmP,feat)->dtmFeaturePts.firstPoint != dtmP->nullPnt && nodeAddrP(dtmP,np)->tPtr != dtmP->nullPnt  )
                {
-                if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,np,&voidResult) ) goto errexit ;
+                if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,np,voidResult) ) goto errexit ;
                 if( ! voidResult )
                   {
                    if( bcdtmLoad_storePointInCache(pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,pointAddrP(dtmP,sp)->z)) goto errexit ;
@@ -1088,7 +1094,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFe
     if( ( p3 = bcdtmList_nextClkDtmObject(dtmP,sp,p2)) < 0 ) goto errexit ;
     do
       {
-       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,sp,p2,p3,&voidResult)) goto errexit ;
+       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,sp,p2,p3,voidResult)) goto errexit ;
        if( ! voidResult ) if( bcdtmEdit_drawContoursForTriangleDtmObject(dtmP,loadFunctionP,drawMode,sp,p2,p3,contourInterval,userP)) goto errexit ;
        p2 = p3 ;
        if( ( p3 = bcdtmList_nextClkDtmObject(dtmP,sp,p2)) < 0 ) goto errexit ;
@@ -1108,7 +1114,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFe
       {
        p3  = clistAddrP(dtmP,clc)->pntNum ;
        clc = clistAddrP(dtmP,clc)->nextPtr ;
-       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,sp,p2,p3,&voidResult)) goto errexit ;
+       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,sp,p2,p3,voidResult)) goto errexit ;
        if( ! voidResult ) if( bcdtmEdit_drawContoursForTriangleDtmObject(dtmP,loadFunctionP,drawMode,sp,p2,p3,contourInterval,userP)) goto errexit ;
        p2 = p3 ;
       }
@@ -1124,7 +1130,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFe
     if( ( p3 = bcdtmList_nextClkDtmObject(dtmP,sp,p2)) < 0 ) goto errexit ;
     while( nodeAddrP(dtmP,sp)->tPtr != p3 )
       {
-       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,sp,p2,p3,&voidResult)) goto errexit ;
+       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,sp,p2,p3,voidResult)) goto errexit ;
        if( ! voidResult )
          {
           x = ( pointAddrP(dtmP,sp)->x + pointAddrP(dtmP,p2)->x + pointAddrP(dtmP,p3)->x ) / 3.0 ;
@@ -1153,7 +1159,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFe
       {
        p3  = clistAddrP(dtmP,clc)->pntNum ;
        clc = clistAddrP(dtmP,clc)->nextPtr ;
-       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,sp,p2,p3,&voidResult)) goto errexit ;
+       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,sp,p2,p3,voidResult)) goto errexit ;
        if( ! voidResult )
          {
           x = ( pointAddrP(dtmP,sp)->x + pointAddrP(dtmP,p2)->x + pointAddrP(dtmP,p3)->x ) / 3.0 ;
@@ -1207,7 +1213,8 @@ BENTLEYDTM_Public int bcdtmEdit_drawTptrLineFeaturesDtmObject(BC_DTM_OBJ *dtmP,D
 */
 {
  int    ret=DTM_SUCCESS ;
- long   sp,p2,clc,feat,voidResult ;
+ long   sp, p2, clc, feat;
+ bool  voidResult;
  DTMFeatureType type;
 /*
 ** Test Update Flag
@@ -1220,7 +1227,7 @@ BENTLEYDTM_Public int bcdtmEdit_drawTptrLineFeaturesDtmObject(BC_DTM_OBJ *dtmP,D
  do
    {
     p2  = nodeAddrP(dtmP,sp)->tPtr ;
-    if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,p2,&voidResult) ) goto errexit ;
+    if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,p2,voidResult) ) goto errexit ;
     if( ! voidResult )
       {
        if( bcdtmLoad_storePointInCache(pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,pointAddrP(dtmP,sp)->z)) goto errexit ;
@@ -1276,7 +1283,7 @@ BENTLEYDTM_Public int bcdtmEdit_drawTptrLineFeaturesDtmObject(BC_DTM_OBJ *dtmP,D
           type = ftableAddrP(dtmP,feat)->dtmFeatureType ;
           if( ftableAddrP(dtmP,feat)->dtmFeaturePts.firstPoint != dtmP->nullPnt && flistAddrP(dtmP,clc)->nextPnt == sp )
             {
-             if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,p2,&voidResult) ) goto errexit ;
+             if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,p2,voidResult) ) goto errexit ;
              if( ! voidResult )
                {
                 if( bcdtmLoad_storePointInCache(pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,pointAddrP(dtmP,sp)->z)) goto errexit ;
@@ -1425,7 +1432,8 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawExternalTptrFeaturesDtmObject(BC_DTM_OBJ *dt
 */
 {
  int    ret=DTM_SUCCESS ;
- long   sp,p2,p3,clc,feat,voidResult   ;
+ long   sp, p2, p3, clc, feat;
+ bool  voidResult;
  DTMFeatureType type;
  double x,y,z,SlopeD,SlopeP,Aspect,Height ;
 /*
@@ -1441,7 +1449,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawExternalTptrFeaturesDtmObject(BC_DTM_OBJ *dt
     p2  = nodeAddrP(dtmP,sp)->tPtr ;
     do
       {
-       if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,p2,&voidResult) ) goto errexit ;
+       if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,p2,voidResult) ) goto errexit ;
        if( ! voidResult )
          {
           if( bcdtmLoad_storePointInCache(pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,pointAddrP(dtmP,sp)->z)) goto errexit ;
@@ -1463,7 +1471,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawExternalTptrFeaturesDtmObject(BC_DTM_OBJ *dt
       {
        p2  = clistAddrP(dtmP,clc)->pntNum ;
        clc = clistAddrP(dtmP,clc)->nextPtr ;
-       if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,p2,&voidResult) ) goto errexit ;
+       if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,p2,voidResult) ) goto errexit ;
        if( ! voidResult )
          {
           if( bcdtmLoad_storePointInCache(pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,pointAddrP(dtmP,sp)->z)) goto errexit ;
@@ -1538,7 +1546,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawExternalTptrFeaturesDtmObject(BC_DTM_OBJ *dt
     if( ( p3 = bcdtmList_nextClkDtmObject(dtmP,sp,p2)) < 0 ) goto errexit ;
     do
       {
-       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,sp,p2,p3,&voidResult)) goto errexit ;
+       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,sp,p2,p3,voidResult)) goto errexit ;
        if( ! voidResult ) if( bcdtmEdit_drawContoursForTriangleDtmObject(dtmP,loadFunctionP,drawMode,sp,p2,p3,contourInterval,userP)) goto errexit ;
        p2 = p3 ;
        if( ( p3 = bcdtmList_nextClkDtmObject(dtmP,sp,p2)) < 0 ) goto errexit ;
@@ -1557,7 +1565,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawExternalTptrFeaturesDtmObject(BC_DTM_OBJ *dt
       {
        p3  = clistAddrP(dtmP,clc)->pntNum ;
        clc = clistAddrP(dtmP,clc)->nextPtr ;
-       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,sp,p2,p3,&voidResult)) goto errexit ;
+       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,sp,p2,p3,voidResult)) goto errexit ;
        if( ! voidResult ) if( bcdtmEdit_drawContoursForTriangleDtmObject(dtmP,loadFunctionP,drawMode,sp,p2,p3,contourInterval,userP)) goto errexit ;
        p2 = p3 ;
       }
@@ -1572,7 +1580,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawExternalTptrFeaturesDtmObject(BC_DTM_OBJ *dt
     if( ( p3 = bcdtmList_nextClkDtmObject(dtmP,sp,p2)) < 0 ) goto errexit ;
     while( nodeAddrP(dtmP,sp)->tPtr != p3 )
       {
-       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,sp,p2,p3,&voidResult)) goto errexit ;
+       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,sp,p2,p3,voidResult)) goto errexit ;
        if( ! voidResult )
          {
           x = ( pointAddrP(dtmP,sp)->x + pointAddrP(dtmP,p2)->x + pointAddrP(dtmP,p3)->x ) / 3.0 ;
@@ -1600,7 +1608,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawExternalTptrFeaturesDtmObject(BC_DTM_OBJ *dt
       {
        p3  = clistAddrP(dtmP,clc)->pntNum ;
        clc = clistAddrP(dtmP,clc)->nextPtr ;
-       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,sp,p2,p3,&voidResult)) goto errexit ;
+       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,sp,p2,p3,voidResult)) goto errexit ;
        if( ! voidResult )
          {
           x = ( pointAddrP(dtmP,sp)->x + pointAddrP(dtmP,p2)->x + pointAddrP(dtmP,p3)->x ) / 3.0 ;

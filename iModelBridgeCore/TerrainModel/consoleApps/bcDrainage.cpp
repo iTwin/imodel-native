@@ -2,7 +2,7 @@
 |
 |     $Source: consoleApps/bcDrainage.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //#include "stdafx.h"
@@ -72,7 +72,7 @@ int wmain(int argc, wchar_t *argv[])
 
     // Create IBcDTM
 
-    ibcDtm = BcDTM::CreateFromDtmHandle(dtmP);
+    ibcDtm = BcDTM::CreateFromDtmHandle(*dtmP);
     if(ibcDtm.IsNull())
         {
         bcdtmWrite_message(1,0,0,"Error Creating IbcDTM") ;
@@ -225,7 +225,8 @@ int bcdtmDrainage_testDrainageMethods(Bentley::TerrainModel::BcDTMPtr ibcDtm)
 
     // Variables To Test Maximum Descent And Ascent Tracing
  
-    int pnt1,pnt2,pnt3,clPtr,voidTriangle,numTrianglesTraced=0 ;
+    int pnt1,pnt2,pnt3,clPtr,numTrianglesTraced=0 ;
+    bool voidTriangle;
     double x,y,falseLowDepth=0.0 ;
    
     //  Drainage Tests
@@ -399,7 +400,7 @@ int bcdtmDrainage_testDrainageMethods(Bentley::TerrainModel::BcDTMPtr ibcDtm)
                               { 
                               if( nodeAddrP(dtmP,pnt1)->hPtr != pnt2 )    // Pnt1 On Tin Hull
                                   {
-                                  if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,(long *)&voidTriangle)) goto errexit ;
+                                  if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,voidTriangle)) goto errexit ;
                                   if( ! voidTriangle )
                                       {
                                       if( numTrianglesTraced % 1000 == 0 ) bcdtmWrite_message(0,0,0,"Triangles Traced = %8ld of %8ld",numTrianglesTraced,dtmP->numTriangles) ;
@@ -446,7 +447,7 @@ int bcdtmDrainage_testDrainageMethods(Bentley::TerrainModel::BcDTMPtr ibcDtm)
                               { 
                               if( nodeAddrP(dtmP,pnt1)->hPtr != pnt2 )    // Pnt1 On Tin Hull
                                   {
-                                  if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,(long *)&voidTriangle)) goto errexit ;
+                                  if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,voidTriangle)) goto errexit ;
                                   if( ! voidTriangle )
                                       {
                                       if( numTrianglesTraced % 1000 == 0 ) bcdtmWrite_message(0,0,0,"Triangles Traced = %8ld of %8ld",numTrianglesTraced,dtmP->numTriangles) ;

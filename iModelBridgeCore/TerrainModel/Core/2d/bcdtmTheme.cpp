@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmTheme.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -24,7 +24,8 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadTriangleAttributesDtmObject
 )
 {
  int      ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long     p1,p2,p3,clPtr,voidTriangle,voidsInDtm=FALSE,fndType;
+ long     p1,p2,p3,clPtr,fndType;
+ bool voidTriangle, voidsInDtm = false;
  DTMFenceOption loadFlag;
  long     trgPnt1,trgPnt2,trgPnt3 ;
  double   height=0.0,slopePercent=0.0,slopeDegrees=0.0,aspect=0.0 ;
@@ -61,7 +62,7 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadTriangleAttributesDtmObject
 /*
 **  Check For Voids In Dtm
 */
- bcdtmList_testForVoidsInDtmObject(dtmP,&voidsInDtm) ;
+ bcdtmList_testForVoidsInDtmObject(dtmP,voidsInDtm) ;
  if( dbg ) bcdtmWrite_message(0,0,0,"voidsInDtm = %2ld",voidsInDtm) ;
 /*
 ** Scan All Tin Points
@@ -101,14 +102,14 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadTriangleAttributesDtmObject
                    if( yTrgMax < pnt2P->y ) yTrgMax = pnt2P->y ;
                    if( yTrgMax < pnt3P->y ) yTrgMax = pnt3P->y ;
                    if (xTrgMax < clipDtmP->xMin || xTrgMin > clipDtmP->xMax) loadFlag = DTMFenceOption::None;
-	               if( yTrgMax < clipDtmP->yMin || yTrgMin > clipDtmP->yMax ) loadFlag = DTMFenceOption::None;
+                   if( yTrgMax < clipDtmP->yMin || yTrgMin > clipDtmP->yMax ) loadFlag = DTMFenceOption::None;
                   }
 /*
 **              Check For Void Triangle
 */
                 if (loadFlag == DTMFenceOption::Inside && voidsInDtm == TRUE)
                   { 
-                   if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&voidTriangle)) goto errexit ;
+                   if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidTriangle)) goto errexit ;
                    if( voidTriangle) loadFlag = DTMFenceOption::None ;
                   }
 /*
@@ -357,7 +358,8 @@ BENTLEYDTM_Private int bcdtmTheme_loadTriangleThemesFromDtmObject
 */
 {
  int      ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long     p1,p2,p3,clPtr,loadFlag,voidTriangle,themeIndex,voidsInDtm ;
+ long     p1, p2, p3, clPtr, themeIndex;
+ bool loadFlag, voidTriangle, voidsInDtm;
  double   height=0.0,slopePercent=0.0,slopeDegrees=0.0,aspect=0.0 ;
  DPoint3d      trgPts[4] ;
  DRange1d   *themeP ;
@@ -370,7 +372,7 @@ BENTLEYDTM_Private int bcdtmTheme_loadTriangleThemesFromDtmObject
 /*
 **  Check For Voids In Dtm
 */
- bcdtmList_testForVoidsInDtmObject(dtmP,&voidsInDtm) ;
+ bcdtmList_testForVoidsInDtmObject(dtmP,voidsInDtm) ;
  if( dbg ) bcdtmWrite_message(0,0,0,"voidsInDtm = %2ld",voidsInDtm) ;
 /*
 ** Scan All Tin Points
@@ -399,7 +401,7 @@ BENTLEYDTM_Private int bcdtmTheme_loadTriangleThemesFromDtmObject
 */
                 if( loadFlag == TRUE && voidsInDtm == TRUE ) 
                   { 
-                   if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&voidTriangle)) goto errexit ;
+                   if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidTriangle)) goto errexit ;
                    if( voidTriangle) loadFlag = FALSE ;
                   }
 /*
@@ -489,7 +491,8 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadPolygonThemesFromDtmObjectOld
 */
  int      ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
  char     charValue,nullValue=(char)-1/*255*/,*charP,*themeLineP=NULL ;
- long     p1,p2,p3,lp,clPtr,offset,ofs1,ofs2,loadFlag,voidTriangle,themeIndex,voidsInDtm ;
+ long     p1,p2,p3,lp,clPtr,offset,ofs1,ofs2,themeIndex ;
+ bool loadFlag, voidsInDtm, voidTriangle;
  long     numFeaturePts=0,memFeaturePts=0,memFeaturePtsInc=10000,startTime ;
  double   height=0.0,slopePercent=0.0,slopeDegrees=0.0,aspect=0.0 ;
  double   x,y,sx,sy,area ;
@@ -504,7 +507,7 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadPolygonThemesFromDtmObjectOld
 /*
 **  Check For Voids In Dtm
 */
- bcdtmList_testForVoidsInDtmObject(dtmP,&voidsInDtm) ;
+ bcdtmList_testForVoidsInDtmObject(dtmP,voidsInDtm) ;
  if( dbg ) bcdtmWrite_message(0,0,0,"voidsInDtm = %2ld",voidsInDtm) ;
 /*
 ** Allocate Memory
@@ -545,7 +548,7 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadPolygonThemesFromDtmObjectOld
 */
                 if( voidsInDtm == TRUE ) 
                   { 
-                   if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&voidTriangle)) goto errexit ;
+                   if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidTriangle)) goto errexit ;
                    if( voidTriangle) loadFlag = FALSE ;
                   }
 /*
@@ -581,12 +584,12 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadPolygonThemesFromDtmObjectOld
 */
                    if( themeIndex != DTM_NULL_PNT )
                      { 
-			          if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&offset,p1,p2) ) goto errexit ;
-			          *(themeLineP+offset) = ( char )themeIndex ;
-			          if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&offset,p2,p3) ) goto errexit ;
-			          *(themeLineP+offset) = ( char )themeIndex ; ;
-			          if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&offset,p3,p1) ) goto errexit ;
-			          *(themeLineP+offset) = ( char )themeIndex ;
+                      if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&offset,p1,p2) ) goto errexit ;
+                      *(themeLineP+offset) = ( char )themeIndex ;
+                      if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&offset,p2,p3) ) goto errexit ;
+                      *(themeLineP+offset) = ( char )themeIndex ; ;
+                      if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&offset,p3,p1) ) goto errexit ;
+                      *(themeLineP+offset) = ( char )themeIndex ;
                      }
                   }
                }
@@ -664,8 +667,8 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadPolygonThemesFromDtmObjectOld
           if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&ofs2,p2,p1) ) goto errexit ;
           if( *(themeLineP+ofs1) != *(themeLineP+ofs2)  && *(themeLineP+ofs1) != nullValue  && bcdtmList_testLineDtmObject(dtmP,p1,clistAddrP(dtmP,clPtr)->pntNum) && ( nodeAddrP(dtmP,p1)->hPtr != p2 || nodeAddrP(dtmP,p2)->hPtr != p1 ) )
             {         
-	         charValue = *(themeLineP+ofs1) ;
-	         p3 = p1 ;
+             charValue = *(themeLineP+ofs1) ;
+             p3 = p1 ;
 /*
 **           Get Polygon Direction
 */
@@ -692,8 +695,8 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadPolygonThemesFromDtmObjectOld
                 y = pointAddrP(dtmP,p3)->y - sy  ;
                 area = area + ( x * y ) / 2.0 + x * sy ;
                 sx = pointAddrP(dtmP,p3)->x ; sy = pointAddrP(dtmP,p3)->y ;
-	            lp = p2 ; p2 = p3 ; p3 = lp ;
-	           } while ( p2 != p1 ) ;
+                lp = p2 ; p2 = p3 ; p3 = lp ;
+               } while ( p2 != p1 ) ;
 /*
 **           If Polygon Is Clockwise Write Polygon
 */
@@ -707,7 +710,7 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadPolygonThemesFromDtmObjectOld
 **              Scan Until Back To First Point
 */
                 do
-	              {
+                  {
                    if( ( p3 = bcdtmList_nextAntDtmObject(dtmP,p2,p3)) < 0  )  goto errexit ;
                    if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&ofs1,p2,p3) )  goto errexit ;
                    if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&ofs2,p3,p2) )  goto errexit ;
@@ -717,10 +720,10 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadPolygonThemesFromDtmObjectOld
                       if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&ofs1,p2,p3) ) goto errexit ;
                       if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&ofs2,p3,p2) ) goto errexit ;
                      }
-	               *(themeLineP+ofs1)  = nullValue ;
+                   *(themeLineP+ofs1)  = nullValue ;
                    if( bcdtmLoad_storeFeaturePoint(pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,pointAddrP(dtmP,p2)->z,&featurePtsP,&numFeaturePts,&memFeaturePts,memFeaturePtsInc)) goto errexit ;
-	               lp = p2 ; p2 = p3 ; p3 = lp ;
-	              } while ( p2 != p1 ) ;
+                   lp = p2 ; p2 = p3 ; p3 = lp ;
+                  } while ( p2 != p1 ) ;
                 if( bcdtmLoad_storeFeaturePoint(pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,pointAddrP(dtmP,p2)->z,&featurePtsP,&numFeaturePts,&memFeaturePts,memFeaturePtsInc)) goto errexit ;
 /*
 **              Load Theme Polygon
@@ -728,7 +731,7 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadPolygonThemesFromDtmObjectOld
                 if( bcdtmLoad_callUserLoadFunction(loadFunctionP,DTMFeatureType::Theme,charValue,dtmP->nullFeatureId,featurePtsP,numFeaturePts,userP)) goto errexit ;
                 numFeaturePts = 0 ;
                }
-	        }
+            }
           clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
          }
       } 
@@ -776,7 +779,8 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadPolygonThemesFromDtmObject
 */
  int      ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  char     charValue,nullValue=(char)-1/*255*/,*charP,*themeLineP=NULL ;
- long     p1,p2,p3,lp,clPtr,offset,ofs1,ofs2,loadFlag,voidTriangle,themeIndex,voidsInDtm ;
+ long     p1, p2, p3, lp, clPtr, offset, ofs1, ofs2, themeIndex;
+ bool loadFlag, voidTriangle, voidsInDtm;
  long     numFeaturePts=0,memFeaturePts=0,memFeaturePtsInc=10000,startTime;
  DTMDirection direction;
  double   height=0.0,slopePercent=0.0,slopeDegrees=0.0,aspect=0.0 ;
@@ -792,7 +796,7 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadPolygonThemesFromDtmObject
 /*
 **  Check For Voids In Dtm
 */
- bcdtmList_testForVoidsInDtmObject(dtmP,&voidsInDtm) ;
+ bcdtmList_testForVoidsInDtmObject(dtmP,voidsInDtm) ;
  if( dbg ) bcdtmWrite_message(0,0,0,"voidsInDtm = %2ld",voidsInDtm) ;
 /*
 ** Allocate Memory
@@ -833,7 +837,7 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadPolygonThemesFromDtmObject
 */
                 if( voidsInDtm == TRUE ) 
                   { 
-                   if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&voidTriangle)) goto errexit ;
+                   if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidTriangle)) goto errexit ;
                    if( voidTriangle) loadFlag = FALSE ;
                   }
 /*
@@ -869,12 +873,12 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadPolygonThemesFromDtmObject
 */
                    if( themeIndex != DTM_NULL_PNT )
                      { 
-			          if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&offset,p1,p2) ) goto errexit ;
-			          *(themeLineP+offset) = ( char )themeIndex ;
-			          if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&offset,p2,p3) ) goto errexit ;
-			          *(themeLineP+offset) = ( char )themeIndex ; ;
-			          if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&offset,p3,p1) ) goto errexit ;
-			          *(themeLineP+offset) = ( char )themeIndex ;
+                      if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&offset,p1,p2) ) goto errexit ;
+                      *(themeLineP+offset) = ( char )themeIndex ;
+                      if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&offset,p2,p3) ) goto errexit ;
+                      *(themeLineP+offset) = ( char )themeIndex ; ;
+                      if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&offset,p3,p1) ) goto errexit ;
+                      *(themeLineP+offset) = ( char )themeIndex ;
                      }
                   }
                }
@@ -956,11 +960,11 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadPolygonThemesFromDtmObject
                 if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&ofs2,p2,p1) ) goto errexit ;
                 if( *(themeLineP+ofs1) != *(themeLineP+ofs2)  && *(themeLineP+ofs1) != nullValue  )
                   {         
-	               charValue = *(themeLineP+ofs1) ;
+                   charValue = *(themeLineP+ofs1) ;
 /*
 **                 Trace Theme
 */
-	               p3 = p1 ;
+                   p3 = p1 ;
                    do
                      {
                       if( ( lp = bcdtmList_nextAntDtmObject(dtmP,p2,p1)) < 0  )  goto errexit ;
@@ -973,9 +977,9 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadPolygonThemesFromDtmObject
                          if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&ofs2,lp,p2) ) goto errexit ;
                         }
                       nodeAddrP(dtmP,p1)->tPtr = p2 ;
-	                  p1 = p2 ;
+                      p1 = p2 ;
                       p2 = lp ;
-	                 } while ( p1 != p3 ) ;
+                     } while ( p1 != p3 ) ;
 /*
 **                 Check Connectivity Of Tptr Polygon
 */
@@ -999,10 +1003,10 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadPolygonThemesFromDtmObject
                      {
                       p2 = p1 ;
                       do
-	                    {
+                        {
                          if( bcdtmLoad_storeFeaturePoint(pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,pointAddrP(dtmP,p2)->z,&featurePtsP,&numFeaturePts,&memFeaturePts,memFeaturePtsInc)) goto errexit ;
-	                     p2 = nodeAddrP(dtmP,p2)->tPtr ;
-	                    } while ( p2 != p1 ) ;
+                         p2 = nodeAddrP(dtmP,p2)->tPtr ;
+                        } while ( p2 != p1 ) ;
                       if( bcdtmLoad_storeFeaturePoint(pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,pointAddrP(dtmP,p2)->z,&featurePtsP,&numFeaturePts,&memFeaturePts,memFeaturePtsInc)) goto errexit ;
 /*
 **                    Load Theme Polygon
@@ -1014,7 +1018,7 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadPolygonThemesFromDtmObject
 **                 Null Tptr List
 */
                    else if( bcdtmList_nullTptrListDtmObject(dtmP,p1)) goto errexit ;
-	              }
+                  }
                }
              clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
             }
@@ -1326,9 +1330,9 @@ BENTLEYDTM_Private int  bcdtmTheme_loadCellThemesFromLatticeObject
           y2 = y1 + latticeP->DY ;
           latPts[0].x = x1 ; latPts[0].y = y1 ; latPts[0].z = z1 ;
           latPts[1].x = x2 ; latPts[1].y = y1 ; latPts[1].z = z2 ;
-	      latPts[2].x = x2 ; latPts[2].y = y2 ; latPts[2].z = z4 ;
-	      latPts[3].x = x1 ; latPts[3].y = y2 ; latPts[3].z = z3 ;
-	      latPts[4].x = x1 ; latPts[4].y = y1 ; latPts[4].z = z1 ;
+          latPts[2].x = x2 ; latPts[2].y = y2 ; latPts[2].z = z4 ;
+          latPts[3].x = x1 ; latPts[3].y = y2 ; latPts[3].z = z3 ;
+          latPts[4].x = x1 ; latPts[4].y = y1 ; latPts[4].z = z1 ;
 /*
 **        Set Load Flag
 */
@@ -1338,8 +1342,8 @@ BENTLEYDTM_Private int  bcdtmTheme_loadCellThemesFromLatticeObject
 */
           if( useFence == TRUE )
             {         
-	         bcdtmMath_getStringMaxMinP3D(1,latPts,4,&xLatMin,&xLatMax,&yLatMin,&yLatMax,&zLatMin,&zLatMax) ;
-	         if     ( xLatMax < clipDtmP->xMin || xLatMin > clipDtmP->xMax ) loadFlag = DTMFenceOption::None ;
+             bcdtmMath_getStringMaxMinP3D(1,latPts,4,&xLatMin,&xLatMax,&yLatMin,&yLatMax,&zLatMin,&zLatMax) ;
+             if     ( xLatMax < clipDtmP->xMin || xLatMin > clipDtmP->xMax ) loadFlag = DTMFenceOption::None ;
              else if (yLatMax < clipDtmP->yMin || yLatMin > clipDtmP->xMax) loadFlag = DTMFenceOption::None;
              else
                {
@@ -1367,7 +1371,7 @@ BENTLEYDTM_Private int  bcdtmTheme_loadCellThemesFromLatticeObject
 */
           if( loadFlag == DTMFenceOption::Inside)
             {
-	         bcdtmMath_getLatticeAttributes(latPts,&slopeDegrees,&slopePercent,&aspect,&height) ;
+             bcdtmMath_getLatticeAttributes(latPts,&slopeDegrees,&slopePercent,&aspect,&height) ;
              themeIndex = DTM_NULL_PNT ;
              for( themeP = themeRangesP ; themeP < themeRangesP + numThemeRanges && themeIndex == DTM_NULL_PNT ; ++themeP )
                {
@@ -1499,9 +1503,9 @@ BENTLEYDTM_Private int bcdtmTheme_loadPolygonThemesFromLatticeObject
           y2 = y1 + latticeP->DY ;
           latPts[0].x = x1 ; latPts[0].y = y1 ; latPts[0].z = z1 ;
           latPts[1].x = x2 ; latPts[1].y = y1 ; latPts[1].z = z2 ;
-	      latPts[2].x = x2 ; latPts[2].y = y2 ; latPts[2].z = z4 ;
-	      latPts[3].x = x1 ; latPts[3].y = y2 ; latPts[3].z = z3 ;
-	      latPts[4].x = x1 ; latPts[4].y = y1 ; latPts[4].z = z1 ;
+          latPts[2].x = x2 ; latPts[2].y = y2 ; latPts[2].z = z4 ;
+          latPts[3].x = x1 ; latPts[3].y = y2 ; latPts[3].z = z3 ;
+          latPts[4].x = x1 ; latPts[4].y = y1 ; latPts[4].z = z1 ;
 /*
 **        Set Load Flag
 */
@@ -1511,7 +1515,7 @@ BENTLEYDTM_Private int bcdtmTheme_loadPolygonThemesFromLatticeObject
 */
           if( useFence == TRUE )
             {         
-	         bcdtmMath_getStringMaxMinP3D(1,latPts,4,&xLatMin,&xLatMax,&yLatMin,&yLatMax,&zLatMin,&zLatMax) ;
+             bcdtmMath_getStringMaxMinP3D(1,latPts,4,&xLatMin,&xLatMax,&yLatMin,&yLatMax,&zLatMin,&zLatMax) ;
              if (xLatMax < clipDtmP->xMin || xLatMin > clipDtmP->xMax) loadFlag = DTMFenceOption::None;
              else if (yLatMax < clipDtmP->yMin || yLatMin > clipDtmP->xMax) loadFlag = DTMFenceOption::None;
              else
@@ -1540,7 +1544,7 @@ BENTLEYDTM_Private int bcdtmTheme_loadPolygonThemesFromLatticeObject
 */
           if( loadFlag == DTMFenceOption::Inside )
             {
-	         bcdtmMath_getLatticeAttributes(latPts,&slopeDegrees,&slopePercent,&aspect,&height) ;
+             bcdtmMath_getLatticeAttributes(latPts,&slopeDegrees,&slopePercent,&aspect,&height) ;
              themeIndex = DTM_NULL_PNT ;
              for( themeP = themeRangesP ; themeP < themeRangesP + numThemeRanges && themeIndex == DTM_NULL_PNT ; ++themeP )
                {
@@ -1585,48 +1589,48 @@ BENTLEYDTM_Private int bcdtmTheme_loadPolygonThemesFromLatticeObject
        ofs1 = j * nyl + i  ; ofs2 = ofs1 + 1 ;
        if( *(latThemeP+ofs1) != *(latThemeP+ofs2) )
          {
-	      if( *(latThemeP+ofs2) != nullValue )
-	        {
-	         dirn = 1 ;
-	         i1 = i + 1 ; j1 = j ; 
-	         si = i1    ; sj = j1 ;
-	         startValue = *(latThemeP+ofs2) ; 
-	        }
+          if( *(latThemeP+ofs2) != nullValue )
+            {
+             dirn = 1 ;
+             i1 = i + 1 ; j1 = j ; 
+             si = i1    ; sj = j1 ;
+             startValue = *(latThemeP+ofs2) ; 
+            }
 
-	      else if( *(latThemeP+ofs1) != nullValue )
-	        {
-	         dirn = 3 ;
-	         i1 = i     ; j1 = j ; 
-	         si = i1    ; sj = j1 ;
-	         startValue = *(latThemeP+ofs1) ; 
-	        }
+          else if( *(latThemeP+ofs1) != nullValue )
+            {
+             dirn = 3 ;
+             i1 = i     ; j1 = j ; 
+             si = i1    ; sj = j1 ;
+             startValue = *(latThemeP+ofs1) ; 
+            }
 
-	      bcdtmTheme_getLatticeLineCoordinatesLatticeObject(latticeP,i1,j1,dirn,&x1,&y1,&z1,&x2,&y2,&z2) ;
+          bcdtmTheme_getLatticeLineCoordinatesLatticeObject(latticeP,i1,j1,dirn,&x1,&y1,&z1,&x2,&y2,&z2) ;
           if( bcdtmLoad_storeFeaturePoint(x1,y1,z1,&featurePtsP,&numFeaturePts,&memFeaturePts,memFeaturePtsInc)) goto errexit ;
           if( bcdtmLoad_storeFeaturePoint(x2,y2,z2,&featurePtsP,&numFeaturePts,&memFeaturePts,memFeaturePtsInc)) goto errexit ;
           sx = x1 ; sy = y1 ;
-	      
+          
           do
-	        {
-	         process = 1 ;
-	         while ( process )
-	           {
-	            process = 0 ;
-	            if( bcdtmTheme_getNextCellClk(i1,j1,&dirn,nxl,nyl,&i2,&j2) )
-	              {
-	               ofs2 = j2 * nyl + i2 ;
-	               if( startValue == *(latThemeP+ofs2) )
-	                 {
-		              --dirn ; if( dirn == 0 ) dirn = 4 ;
-		              --dirn ; if( dirn == 0 ) dirn = 4 ;
-		              i1 = i2 ; j1 = j2 ;
-		              process = 1 ;
-		             }
-	              }
-	           } 
-	         bcdtmTheme_getLatticeLineCoordinatesLatticeObject(latticeP,i1,j1,dirn,&x1,&y1,&z1,&x2,&y2,&z2) ;
+            {
+             process = 1 ;
+             while ( process )
+               {
+                process = 0 ;
+                if( bcdtmTheme_getNextCellClk(i1,j1,&dirn,nxl,nyl,&i2,&j2) )
+                  {
+                   ofs2 = j2 * nyl + i2 ;
+                   if( startValue == *(latThemeP+ofs2) )
+                     {
+                      --dirn ; if( dirn == 0 ) dirn = 4 ;
+                      --dirn ; if( dirn == 0 ) dirn = 4 ;
+                      i1 = i2 ; j1 = j2 ;
+                      process = 1 ;
+                     }
+                  }
+               } 
+             bcdtmTheme_getLatticeLineCoordinatesLatticeObject(latticeP,i1,j1,dirn,&x1,&y1,&z1,&x2,&y2,&z2) ;
              if( bcdtmLoad_storeFeaturePoint(x2,y2,z2,&featurePtsP,&numFeaturePts,&memFeaturePts,memFeaturePtsInc)) goto errexit ;
-	        } while ( sx != x2 || sy != y2 ) ;
+            } while ( sx != x2 || sy != y2 ) ;
 /*
 **        Load Theme Polygon
 */
@@ -1636,7 +1640,7 @@ BENTLEYDTM_Private int bcdtmTheme_loadPolygonThemesFromLatticeObject
 **        Null Theme Polygon
 */
           bcdtmTheme_nullThemePolygonLatticeObject(latticeP,latThemeP,si,sj,startValue,nullValue,nxl,nyl) ;
-	     }
+         }
       }
    }       
 /*
@@ -2035,7 +2039,8 @@ BENTLEYDTM_Private int bcdtmTheme_loadTriangleHillShadeThemeFromDtmObject
 */
 {
  int      ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long     p1,p2,p3,clPtr,loadFlag,voidTriangle,voidsInDtm,greyScale ;
+ long     p1,p2,p3,clPtr,greyScale ;
+ bool voidTriangle, voidsInDtm, loadFlag;
  double   height=0.0,slopePercent=0.0,slopeDegrees=0.0,aspect=0.0,reflectance=0.0 ;
  double   azRad,altRad,slope ;
  DPoint3d      trgPts[4] ;
@@ -2053,7 +2058,7 @@ BENTLEYDTM_Private int bcdtmTheme_loadTriangleHillShadeThemeFromDtmObject
 /*
 **  Check For Voids In Dtm
 */
- bcdtmList_testForVoidsInDtmObject(dtmP,&voidsInDtm) ;
+ bcdtmList_testForVoidsInDtmObject(dtmP,voidsInDtm) ;
  if( dbg ) bcdtmWrite_message(0,0,0,"voidsInDtm = %2ld",voidsInDtm) ;
 /*
 ** Scan All Tin Points
@@ -2076,13 +2081,13 @@ BENTLEYDTM_Private int bcdtmTheme_loadTriangleHillShadeThemeFromDtmObject
             {
              if( nodeP->hPtr != p2 ) 
                {
-                loadFlag = TRUE ;
+                loadFlag = true ;
 /*
 **              Check For Void Triangle
 */
-                if( loadFlag == TRUE && voidsInDtm == TRUE ) 
+                if( loadFlag == true && voidsInDtm == true ) 
                   { 
-                   if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&voidTriangle)) goto errexit ;
+                   if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidTriangle)) goto errexit ;
                    if( voidTriangle) loadFlag = FALSE ;
                   }
 /*
@@ -2270,9 +2275,9 @@ BENTLEYDTM_Private int  bcdtmTheme_loadCellHillShadeFromLatticeObject
           y2 = y1 + latticeP->DY ;
           latPts[0].x = x1 ; latPts[0].y = y1 ; latPts[0].z = z1 ;
           latPts[1].x = x2 ; latPts[1].y = y1 ; latPts[1].z = z2 ;
-	      latPts[2].x = x2 ; latPts[2].y = y2 ; latPts[2].z = z4 ;
-	      latPts[3].x = x1 ; latPts[3].y = y2 ; latPts[3].z = z3 ;
-	      latPts[4].x = x1 ; latPts[4].y = y1 ; latPts[4].z = z1 ;
+          latPts[2].x = x2 ; latPts[2].y = y2 ; latPts[2].z = z4 ;
+          latPts[3].x = x1 ; latPts[3].y = y2 ; latPts[3].z = z3 ;
+          latPts[4].x = x1 ; latPts[4].y = y1 ; latPts[4].z = z1 ;
 /*
 **        Set Load Flag
 */
@@ -2282,7 +2287,7 @@ BENTLEYDTM_Private int  bcdtmTheme_loadCellHillShadeFromLatticeObject
 */
           if( useFence == TRUE )
             {         
-	         bcdtmMath_getStringMaxMinP3D(1,latPts,4,&xLatMin,&xLatMax,&yLatMin,&yLatMax,&zLatMin,&zLatMax) ;
+             bcdtmMath_getStringMaxMinP3D(1,latPts,4,&xLatMin,&xLatMax,&yLatMin,&yLatMax,&zLatMin,&zLatMax) ;
              if (xLatMax < clipDtmP->xMin || xLatMin > clipDtmP->xMax) loadFlag = DTMFenceOption::None;
              else if (yLatMax < clipDtmP->yMin || yLatMin > clipDtmP->xMax) loadFlag = DTMFenceOption::None;
              else
@@ -2311,7 +2316,7 @@ BENTLEYDTM_Private int  bcdtmTheme_loadCellHillShadeFromLatticeObject
 */
           if( loadFlag == DTMFenceOption::Inside)
             {
-	         bcdtmMath_getLatticeAttributes(latPts,&slopeDegrees,&slopePercent,&aspect,&height) ;
+             bcdtmMath_getLatticeAttributes(latPts,&slopeDegrees,&slopePercent,&aspect,&height) ;
              slope = slopePercent / 100.0 ;
              aspect = aspect * DTM_PYE / 180.0 ;
              reflectance = sin(altRad)*sin(slope) + cos(altRad)*cos(slope)*cos(-azRad - aspect - DTM_PYE / 2.0 ) ;

@@ -2,14 +2,15 @@
 |
 |     $Source: Drainage/bcdtmDrainageTables.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcdtmDrainage.h"
 #include <TerrainModel/Core/bcdtmInlines.h>
 
+#pragma warning (disable: 4101)
+#pragma warning (disable: 4102)
 // Global Variables
-
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -17,13 +18,12 @@
 +-------------------------------------------------------------------*/
 int bcdtmTables_createAndCheckDrainageTablesDtmObject(BC_DTM_OBJ *dtmP)
 {
-
  int  ret=DTM_SUCCESS,dbg=1 ;
  int  exitPoint,priorPoint,nextPoint ;
  int  numFound=0,numNotFound=0,startTime=bcdtmClock() ;
  bool trgFound=false ;
  DPoint3d  dtmPoints[2] ;
- BC_DTM_OBJ *dataP=NULL ;
+ BC_DTM_OBJ *dataP=nullptr ;
 
  
  // Calculate Drainage Tables
@@ -31,7 +31,7 @@ int bcdtmTables_createAndCheckDrainageTablesDtmObject(BC_DTM_OBJ *dtmP)
  if( dbg ) bcdtmWrite_message(0,0,0,"Creating Drainage Tables") ;
  DTMDrainageTables drainageTables = DTMDrainageTables(dtmP) ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Time To Create Tables = %8.3lf seconds",bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ;
- 
+
  // Scan And Find All Triangles In Index
  
  int  p1,p2,p3,clc,antPnt,clkPnt,numTriangles=0,numTrianglesFound=0 ;
@@ -39,7 +39,7 @@ int bcdtmTables_createAndCheckDrainageTablesDtmObject(BC_DTM_OBJ *dtmP)
  double ascentAngle,descentAngle,slope ;
  bool   lowPoint ;
  DTM_TIN_POINT *pnt1P,*pnt2P,*antPntP,*clkPntP ;
- 
+
  startTime = bcdtmClock() ;
  for( p1 = 0 ; p1 < dtmP->numPoints ; ++p1 )	       
    {
@@ -70,7 +70,7 @@ int bcdtmTables_createAndCheckDrainageTablesDtmObject(BC_DTM_OBJ *dtmP)
       }          
   }
  
-  //  Report Number Of Triangles Found
+ //  Report Number Of Triangles Found
   
   if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Triangles = %8ld ** Number Of Triangles Found = %8ld",numTriangles,numTrianglesFound) ;
  
@@ -89,7 +89,7 @@ int bcdtmTables_createAndCheckDrainageTablesDtmObject(BC_DTM_OBJ *dtmP)
   // Add Pond Tables
   
   if( dbg ) bcdtmWrite_message(0,0,0,"Determing Ponds And Creating Pond Tables") ;
-  if( bcdtmDrainage_determinePondsDtmObject(dtmP,&drainageTables,NULL,false,true,NULL)) goto errexit ;
+  if( bcdtmDrainage_determinePondsDtmObject(dtmP,&drainageTables, nullptr,false,true,nullptr)) goto errexit ;
   if( dbg )
     {
      bcdtmWrite_message(0,0,0,"Size Of Low Point  Pond Table = %8ld",drainageTables.SizeOfLowPointPondTable()) ;
@@ -130,6 +130,7 @@ int bcdtmTables_createAndCheckDrainageTablesDtmObject(BC_DTM_OBJ *dtmP)
          } 
       }
    } 
+
  bcdtmWrite_message(0,0,0,"Number Of Low Point Ponds Found     = %8ld",numFound) ;    
  bcdtmWrite_message(0,0,0,"Number Of Low Point Ponds Not Found = %8ld",numNotFound) ;    
   
@@ -162,7 +163,7 @@ int bcdtmTables_createAndCheckDrainageTablesDtmObject(BC_DTM_OBJ *dtmP)
                    if( exitPoint >= 0 ) ++numFound ;
                    else                 
                      {
-                      if( dataP == NULL )if( bcdtmObject_createDtmObject(&dataP)) goto errexit ;
+                      if( dataP == nullptr )if( bcdtmObject_createDtmObject(&dataP)) goto errexit ;
                       dtmPoints[0].x = pnt1P->x ; dtmPoints[0].y = pnt1P->y ; dtmPoints[0].z = pnt1P->z ;
                       dtmPoints[1].x = pnt2P->x ; dtmPoints[1].y = pnt2P->y ; dtmPoints[1].z = pnt2P->z ;
                       if( bcdtmObject_storeDtmFeatureInDtmObject(dataP,DTMFeatureType::Breakline,dataP->nullUserTag,1,&dataP->nullFeatureId,dtmPoints,2)) goto errexit ;
@@ -180,13 +181,12 @@ int bcdtmTables_createAndCheckDrainageTablesDtmObject(BC_DTM_OBJ *dtmP)
    } 
  bcdtmWrite_message(0,0,0,"Number Of Zero Slope Line Ponds Found     = %8ld",numFound) ;    
  bcdtmWrite_message(0,0,0,"Number Of Zero Slope Line Ponds Not Found = %8ld",numNotFound) ;   
- if( dataP != NULL ) bcdtmWrite_geopakDatFileFromDtmObject(dataP,L"missingSumps.dat") ; 
- 
+ if( dataP != nullptr ) bcdtmWrite_geopakDatFileFromDtmObject(dataP,L"missingSumps.dat") ; 
 
  // Clean Up  
        
   cleanup :
-  if( dataP != NULL ) bcdtmObject_destroyDtmObject(&dataP) ;
+  if( dataP != nullptr ) bcdtmObject_destroyDtmObject(&dataP) ;
       
   // Return
 
@@ -228,9 +228,9 @@ int DTMTriangleIndex::CreateTriangleIndex(void)
             if( p2 > p1 && p3 > p1 && nodeAddrP(m_dtm,p3)->hPtr != p1 )
               {
                triangleIndex.index = numTriangles ;
-               if( bcdtmList_testForVoidTriangleDtmObject(m_dtm,p1,p2,p3,&triangleIndex.voidTriangle)) goto errexit ;
-               triangleIndex.flatTriangle = 0 ;
-               if( pointAddrP(m_dtm,p1)->z == pointAddrP(m_dtm,p2)->z && pointAddrP(m_dtm,p1)->z == pointAddrP(m_dtm,p3)->z ) triangleIndex.flatTriangle = 1 ;
+               if( bcdtmList_testForVoidTriangleDtmObject(m_dtm,p1,p2,p3,triangleIndex.voidTriangle)) goto errexit ;
+               triangleIndex.flatTriangle = false ;
+               if( pointAddrP(m_dtm,p1)->z == pointAddrP(m_dtm,p2)->z && pointAddrP(m_dtm,p1)->z == pointAddrP(m_dtm,p3)->z ) triangleIndex.flatTriangle = true ;
                triangleIndex.trgPnt1 = p1 ;
                triangleIndex.trgPnt2 = p2 ;
                triangleIndex.trgPnt3 = p3 ;
@@ -463,7 +463,7 @@ int DTMTriangleIndex::LogTriangleIndex(void)
     
     // Check Table Has Been Created
     
-    if( m_dtm != NULL )
+    if( m_dtm != nullptr )
       {
        bcdtmWrite_message(0,0,0,"Size Of Triangle Index Table = %8ld",m_triangleIndex.size()) ;
        for( DtmTriangleIndex::iterator indexP = m_triangleIndex.begin() ; indexP != m_triangleIndex.end() ; ++indexP )
@@ -1381,4 +1381,3 @@ int DTMSumpLinePondTable::FindZeroSlopeLinePond
       
    return(ret) ;
   }
-   

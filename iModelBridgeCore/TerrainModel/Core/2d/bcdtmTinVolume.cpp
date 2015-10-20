@@ -482,7 +482,8 @@ double          &fillAreaP
 */
     {
     int    ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE (0);
-    long   p1, p2, p3, clPtr, voidTriangle, numHullPts, dtmFeature, voidsInDtm = FALSE;
+    long   p1, p2, p3, clPtr, numHullPts, dtmFeature;
+    bool voidTriangle, voidsInDtm = false;
     double cutTriangle, fillTriangle, cutAreaTriangle, fillAreaTriangle;
     DPoint3d    *hullPtsP = NULL;
     BC_DTM_OBJ *clipDtmP = NULL;
@@ -543,8 +544,8 @@ double          &fillAreaP
                     p3 = clistAddrP (clipDtmP, clPtr)->pntNum;
                     if (p2 > p1 && p3 > p1 && nodeAddrP (clipDtmP, p3)->hPtr != p1)
                         {
-                        voidTriangle = FALSE;
-                        if (voidsInDtm == TRUE) if (bcdtmList_testForVoidTriangleDtmObject (clipDtmP, p1, p2, p3, &voidTriangle)) goto errexit;
+                        voidTriangle = false;
+                        if (voidsInDtm == true) if (bcdtmList_testForVoidTriangleDtmObject (clipDtmP, p1, p2, p3, voidTriangle)) goto errexit;
                         if (!voidTriangle)
                             {
                             bcdtmTinVolume_prismToFlatPlaneDtmObject (clipDtmP, p1, p2, p3, elevation, cutTriangle, fillTriangle, cutAreaTriangle, fillAreaTriangle);
@@ -1810,7 +1811,8 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateSurfaceToSurfaceVolumeForTriangleD
 */
 {
  int      ret=DTM_SUCCESS;
- long     p1,p2=0,p3,sp,np,lp,hp,clc,process,VoidFlag,NoMarked=0 ;
+ long     p1,p2=0,p3,sp,np,lp,hp,clc,process,NoMarked=0 ;
+ bool VoidFlag;
  double   area=0.0,cut=0.0,fill=0.0 ;
  double   X1,Y1,Z1,X2,Y2,Z2,X3,Y3,Z3 ;
  double   SZ1,SZ2,SZ3 ;
@@ -1913,8 +1915,8 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateSurfaceToSurfaceVolumeForTriangleD
             {
              if( nodeAddrP(dtmP,p1)->hPtr != p2 )
                {
-                VoidFlag = 0 ;
-                bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&VoidFlag) ;
+                VoidFlag = false;
+                bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,VoidFlag) ;
                 if( ! VoidFlag )
                   {
                    ++numVolTriangles ;
@@ -2353,7 +2355,8 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumesForPointDtmObject(BC_DTM_OB
 */
 {
  int    ret=DTM_SUCCESS ;
- long   clc,P2,P3,VoidFlag,TrgFlag ;
+ long   clc,P2,P3 ;
+ bool VoidFlag, TrgFlag;
  double cut,fill,area,X1,Y1,Z1,X2,Y2,Z2,X3,Y3,Z3,SZ1,SZ2,SZ3 ;
  DPoint3d    *TrgPts=NULL ;
  VOLRANGETAB *nr ;
@@ -2368,18 +2371,18 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumesForPointDtmObject(BC_DTM_OB
       {
        P3  = clistAddrP(dtmP,clc)->pntNum ;
        clc = clistAddrP(dtmP,clc)->nextPtr ;
-       TrgFlag = 0 ;
-       if     ( nodeAddrP(dtmP,P1)->tPtr == -dtmP->nullPnt && nodeAddrP(dtmP,P2)->tPtr == -dtmP->nullPnt && nodeAddrP(dtmP,P3)->tPtr == -dtmP->nullPnt ) TrgFlag = 1 ;
-       else if( nodeAddrP(dtmP,P1)->tPtr == -dtmP->nullPnt && nodeAddrP(dtmP,P3)->tPtr == P2 ) TrgFlag = 1;
-       else if( nodeAddrP(dtmP,P1)->tPtr == -dtmP->nullPnt && nodeAddrP(dtmP,P2)->tPtr == -dtmP->nullPnt && nodeAddrP(dtmP,P3)->tPtr !=  dtmP->nullPnt ) TrgFlag = 1 ;
-       else if( nodeAddrP(dtmP,P1)->tPtr == -dtmP->nullPnt && nodeAddrP(dtmP,P2)->tPtr !=  dtmP->nullPnt && nodeAddrP(dtmP,P3)->tPtr == -dtmP->nullPnt ) TrgFlag = 1 ;
-       else if((nodeAddrP(dtmP,P1)->tPtr != -dtmP->nullPnt && nodeAddrP(dtmP,P1)->tPtr < 0  && nodeAddrP(dtmP,P2)->tPtr < 0 && nodeAddrP(dtmP,P3)->tPtr < 0 ) ) TrgFlag = 1 ;
+       TrgFlag = false ;
+       if     ( nodeAddrP(dtmP,P1)->tPtr == -dtmP->nullPnt && nodeAddrP(dtmP,P2)->tPtr == -dtmP->nullPnt && nodeAddrP(dtmP,P3)->tPtr == -dtmP->nullPnt ) TrgFlag = true ;
+       else if( nodeAddrP(dtmP,P1)->tPtr == -dtmP->nullPnt && nodeAddrP(dtmP,P3)->tPtr == P2 ) TrgFlag = true;
+       else if( nodeAddrP(dtmP,P1)->tPtr == -dtmP->nullPnt && nodeAddrP(dtmP,P2)->tPtr == -dtmP->nullPnt && nodeAddrP(dtmP,P3)->tPtr !=  dtmP->nullPnt ) TrgFlag = true ;
+       else if( nodeAddrP(dtmP,P1)->tPtr == -dtmP->nullPnt && nodeAddrP(dtmP,P2)->tPtr !=  dtmP->nullPnt && nodeAddrP(dtmP,P3)->tPtr == -dtmP->nullPnt ) TrgFlag = true ;
+       else if((nodeAddrP(dtmP,P1)->tPtr != -dtmP->nullPnt && nodeAddrP(dtmP,P1)->tPtr < 0  && nodeAddrP(dtmP,P2)->tPtr < 0 && nodeAddrP(dtmP,P3)->tPtr < 0 ) ) TrgFlag = true;
        if( TrgFlag )
          {
           if( nodeAddrP(dtmP,P1)->hPtr != P2 )
             {
              ++numVolTriangles ;
-             bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,P2,P3,&VoidFlag) ;
+             bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,P2,P3,VoidFlag) ;
              if( ! VoidFlag )
                {
                 X1 = pointAddrP(dtmP,P1)->x - Xmin ; Y1 = pointAddrP(dtmP,P1)->y - Ymin ; Z1 = pointAddrP(dtmP,P1)->z - Zmin ;
@@ -2485,7 +2488,8 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumeSurfaceToSurfaceDtmObjects
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- long   p1,p2,p3,nr,clc,numTriangles,voidTriangle,numPolyPts,dtmFeature,voidsInDtm ;
+ long   p1, p2, p3, nr, clc, numTriangles, numPolyPts, dtmFeature;
+ bool voidsInDtm, voidTriangle;
  DTMDirection hullDirection;
  double diff, cutTrg, fillTrg, cutAreaTrg, fillAreaTrg, totalPolyArea, polyArea, hullArea, voidArea, polyVoidArea = 0.0, totalPolyVoidArea = 0.0, rangeCut, rangeFill;
  DPoint3d    trgPts[4],*polyPtsP=NULL ;
@@ -2579,7 +2583,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumeSurfaceToSurfaceDtmObjects
 /*
 ** Check For Voids In DTM
 */
- voidsInDtm = FALSE ;
+ voidsInDtm = false ;
  for( dtmFeature = 0 ; dtmFeature < dtmP->numFeatures && voidsInDtm == FALSE ; ++dtmFeature )
    {
     dtmFeatureP = ftableAddrP(dtmP,dtmFeature) ;
@@ -2603,8 +2607,8 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumeSurfaceToSurfaceDtmObjects
 /*
 **              Test For Void Triangle
 */
-                voidTriangle = FALSE ;
-                if( voidsInDtm == TRUE ) if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&voidTriangle)) goto errexit ;
+                voidTriangle = false ;
+                if( voidsInDtm == true) if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidTriangle)) goto errexit ;
 /*
 **              Calculate Volumes For Triangle
 */
@@ -3106,7 +3110,8 @@ BENTLEYDTM_Private int bcdtmTinVolume_storePointInDtmObject(BC_DTM_OBJ *dtmP,lon
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   p1,p2,pntType,trgPnt1,trgPnt2,trgPnt3,newPnt,precisionError=0 ;
- long   antPnt,clkPnt,voidFlag,onLine1,onLine2,onLine3,tableEntry,fixType=0 ;
+ long   antPnt,clkPnt,onLine1,onLine2,onLine3,tableEntry,fixType=0 ;
+ bool voidFlag;
  double Zs=0,d1,d2,d3,Xi,Yi ;
 /*
 ** Write Entry Message
@@ -3269,7 +3274,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_storePointInDtmObject(BC_DTM_OBJ *dtmP,lon
 
     case  2 :      /* Coincident With Internal Tin Line  */
 
-      bcdtmList_testForVoidLineDtmObject(dtmP,trgPnt1,trgPnt2,&voidFlag) ;
+      bcdtmList_testForVoidLineDtmObject(dtmP,trgPnt1,trgPnt2,voidFlag) ;
       if( (p1 = bcdtmList_nextAntDtmObject(dtmP,trgPnt1,trgPnt2))   < 0 ) goto errexit ; 
       if( (p2 = bcdtmList_nextClkDtmObject(dtmP,trgPnt1,trgPnt2)) < 0 ) goto errexit ; 
       if(bcdtmList_deleteLineDtmObject(dtmP,trgPnt1,trgPnt2)) goto errexit ; 
@@ -3293,7 +3298,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_storePointInDtmObject(BC_DTM_OBJ *dtmP,lon
     break ;
 
     case  3 :      /* Coincident With External Tin Line  */
-      bcdtmList_testForVoidLineDtmObject(dtmP,trgPnt1,trgPnt2,&voidFlag) ;
+      bcdtmList_testForVoidLineDtmObject(dtmP,trgPnt1,trgPnt2,voidFlag) ;
       if( (p1 = bcdtmList_nextAntDtmObject(dtmP,trgPnt1,trgPnt2))   < 0 ) goto errexit ; 
       if(bcdtmList_deleteLineDtmObject(dtmP,trgPnt1,trgPnt2)) goto errexit ; 
       if(bcdtmList_insertLineAfterPointDtmObject(dtmP,trgPnt1,newPnt,p1)) goto errexit ; 
@@ -3316,7 +3321,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_storePointInDtmObject(BC_DTM_OBJ *dtmP,lon
     break ;
 
     case  4 :   /* In Triangle                      */
-     bcdtmList_testForVoidTriangleDtmObject(dtmP,trgPnt1,trgPnt2,trgPnt3,&voidFlag) ; 
+     bcdtmList_testForVoidTriangleDtmObject(dtmP,trgPnt1,trgPnt2,trgPnt3,voidFlag) ; 
       if(bcdtmList_insertLineAfterPointDtmObject(dtmP,trgPnt1,newPnt,trgPnt2)) goto errexit ; 
       if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,trgPnt1,dtmP->nullPnt)) goto errexit ; 
       if(bcdtmList_insertLineAfterPointDtmObject(dtmP,trgPnt2,newPnt,trgPnt3)) goto errexit ; 
@@ -3377,7 +3382,8 @@ BENTLEYDTM_Private int bcdtmTinVolume_insertLineBetweenPointsDtmObject(BC_DTM_OB
 */
 {
  int    ret=DTM_SUCCESS,bkp,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- long   p1,p2,p3,p4,insertPnt,dtmFeatureLine,voidLine,tableEntry,precisionError,fixType ;
+ long   p1,p2,p3,p4,insertPnt,dtmFeatureLine,tableEntry,precisionError,fixType ;
+ bool voidLine;
  double x,y,z=0.0 ;
 /*
 ** Write Entry Message
@@ -3478,7 +3484,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_insertLineBetweenPointsDtmObject(BC_DTM_OB
 /*
 **     Check For Void Line
 */
-       if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,&voidLine) ) goto errexit ;
+       if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,voidLine) ) goto errexit ;
 /*
 **     Add P4 To Tin
 */
@@ -3815,7 +3821,8 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculatePrismoidalVolumesForTriangleDtmOb
 */
 {
  int      ret=DTM_SUCCESS,cdbg=DTM_CHECK_VALUE(0) ;
- long     p2,p3,firstPnt,nextPnt,clc,voidTriangle;
+ long     p2, p3, firstPnt, nextPnt, clc;
+ bool  voidTriangle;
  DTMDirection tptrDirection;
  double   cutArea=0.0,fillArea = 0,area = 0, cut=0.0,fill=0.0,trgArea=0.0,tptrArea=0.0,volArea=0.0 ;
  double   X1,Y1,Z1,X2,Y2,Z2,X3,Y3,Z3 ;
@@ -3887,7 +3894,7 @@ BENTLEYDTM_Private int bcdtmTinVolume_calculatePrismoidalVolumesForTriangleDtmOb
           if( nodeAddrP(dtmP,firstPnt)->hPtr != p2 )
             {
              ++numVolTriangles ;    
-             bcdtmList_testForVoidTriangleDtmObject(dtmP,firstPnt,p2,p3,&voidTriangle) ;
+             bcdtmList_testForVoidTriangleDtmObject(dtmP,firstPnt,p2,p3,voidTriangle) ;
              if( ! voidTriangle )
                {
                 X1 = pointAddrP(dtmP,firstPnt)->x - xMin ; Y1 = pointAddrP(dtmP,firstPnt)->y - yMin ; Z1 = pointAddrP(dtmP,firstPnt)->z - zMin ;

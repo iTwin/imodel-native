@@ -85,7 +85,7 @@ public:
             DTMFeatureType typeMap[] =
                 {
                 DTMFeatureType::Breakline,
-                DTMFeatureType::Hole,
+                DTMFeatureType::Region,
                 DTMFeatureType::Island,
                 DTMFeatureType::Void,
                 DTMFeatureType::Hull,

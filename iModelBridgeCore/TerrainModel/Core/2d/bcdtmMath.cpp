@@ -753,7 +753,7 @@ BENTLEYDTM_Public int bcdtmMath_interpolatePointOnTriangleDtmObject(BC_DTM_OBJ *
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmMath_interpolatePointOnTrianglePlane(long newTriangle,double x,double y,double *z,double xt[3],double yt[3],double zt[3] )
+BENTLEYDTM_Public int bcdtmMath_interpolatePointOnTrianglePlane(bool newTriangle,double x,double y,double *z,double xt[3],double yt[3],double zt[3] )
 /*
 ** This routine finds the z value for a point on the triangle plane
 */
@@ -1017,7 +1017,7 @@ BENTLEYDTM_Public int bcdtmMath_calculatePartialDerivativesDtmObject(BC_DTM_OBJ 
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmMath_interpolatePointOnPolynomial(long newTriangle,double xp,double yp,double *zp,double x[],double y[],double z[],double pd[] )
+BENTLEYDTM_Public int bcdtmMath_interpolatePointOnPolynomial(bool newTriangle,double xp,double yp,double *zp,double x[],double y[],double z[],double pd[] )
 /*
 **  This routine interpolates the z value for a point
 **  within a triangle from a bivarate polynominal
@@ -2015,6 +2015,7 @@ BENTLEYDTM_EXPORT int  bcdtmMath_calculatesSlopeAtGivenAngleFromPointDtmObject(B
  double d1,d2,d3,radius,z,Xi,Yi,ang,angn,angp ;
  DPoint3d    LinePts[2] ;
  DTM_DRAPE_POINT *drapeP,*drapePtsP=NULL ;
+ bvector<DTM_DRAPE_POINT> drapePts;
 /*
 **Write Entry Message
 */
@@ -2168,13 +2169,15 @@ BENTLEYDTM_EXPORT int  bcdtmMath_calculatesSlopeAtGivenAngleFromPointDtmObject(B
 ** Drape Line String On DTMFeatureState::Tin
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Draping String") ;
- if( bcdtmDrape_stringDtmObject(dtmP,LinePts,2,FALSE,&drapePtsP,&numDrapePts )) goto errexit ;
+ if( bcdtmDrape_stringDtmObject(dtmP,LinePts,2,FALSE,drapePts)) goto errexit ;
+ drapePtsP = drapePts.data();
+ numDrapePts = (long)drapePts.size();
  if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Number Of Drape Points = %6ld",numDrapePts ) ;
     for( drapeP = drapePtsP ; drapeP < drapePtsP + numDrapePts  ; ++drapeP )
       {
-       bcdtmWrite_message(0,0,0,"Drape Point[%4ld] Type = %1ld ** %10.4lf %10.4lf %10.4lf",(long)(drapeP-drapePtsP),drapeP->drapeType,drapeP->drapeX,drapeP->drapeY,drapeP->drapeZ) ;
+       bcdtmWrite_message(0,0,0,"Drape Point[%4ld] Type = %1ld ** %10.4lf %10.4lf %10.4lf",(long)(drapeP-drapePtsP),drapeP->drapeType,drapeP->drapePt.x,drapeP->drapePt.y,drapeP->drapePt.z) ;
       }
    }
 /*
@@ -2202,7 +2205,7 @@ BENTLEYDTM_EXPORT int  bcdtmMath_calculatesSlopeAtGivenAngleFromPointDtmObject(B
    {
    if (drapeP->drapeType == DTMDrapedLineCode::Breakline)
       {
-       if( bcdtmMath_distance(x,y,drapeP->drapeX,drapeP->drapeY) >= dtmP->ppTol ) breakPointFound = (long)(drapeP-drapePtsP) ;
+       if( bcdtmMath_distance(x,y,drapeP->drapePt.x,drapeP->drapePt.y) >= dtmP->ppTol ) breakPointFound = (long)(drapeP-drapePtsP) ;
       }
    }
  if( dbg ) bcdtmWrite_message(0,0,0,"00 breakPointFound = %4ld",breakPointFound) ;
@@ -2210,12 +2213,11 @@ BENTLEYDTM_EXPORT int  bcdtmMath_calculatesSlopeAtGivenAngleFromPointDtmObject(B
 /*
 ** Calculate Slope
 */
- *slopeP = ((drapePtsP+breakPointFound)->drapeZ - z) / bcdtmMath_distance(x,y,(drapePtsP+breakPointFound)->drapeX,(drapePtsP+breakPointFound)->drapeY) ;
+ *slopeP = ((drapePtsP+breakPointFound)->drapePt.z - z) / bcdtmMath_distance(x,y,(drapePtsP+breakPointFound)->drapePt.x,(drapePtsP+breakPointFound)->drapePt.y) ;
 /*
 ** Clean Up
 */
  cleanup :
- if( drapePtsP != NULL ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
 /*
 ** Job Completed
 */
@@ -3212,7 +3214,7 @@ BENTLEYDTM_Public int bcdtmMath_interpolatePointOnTriangle(double x,double y,dou
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmMath_interpolateLinear(long newTriangle,double x,double y,double *z,double xt[3],double yt[3],double zt[3] )
+BENTLEYDTM_Private int bcdtmMath_interpolateLinear(bool newTriangle,double x,double y,double *z,double xt[3],double yt[3],double zt[3] )
 /*
 ** This routine finds the z value for a point on the triangle plane
 */
@@ -3842,7 +3844,7 @@ BENTLEYDTM_Public int bcdtmMath_getLatticeAttributes(DPoint3d LatPts[],double *S
 |  bcdtmMath_interpolatePoly()                                         |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmMath_interpolatePoly(long NewTrg,double xp,double yp,double *zp,double x[],double y[],double z[],double pd[] )
+BENTLEYDTM_Public int bcdtmMath_interpolatePoly(bool NewTrg,double xp,double yp,double *zp,double x[],double y[],double z[],double pd[] )
 /*
 **  This routine interpolates the z value for a point
 **  within a triangle from a bivarate polynominal

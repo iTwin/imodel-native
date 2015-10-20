@@ -45,6 +45,7 @@
     <ClCompile Include="DTMFeatureEnumerator.cpp" />
     <ClCompile Include="DTMHelpers.cpp" />
     <ClCompile Include="DTMMesh.cpp" />
+    <ClCompile Include="DTMMeshEnumerator.cpp" />
     <ClCompile Include="DTMPond.cpp" />
     <ClCompile Include="DTMSideSlopeInput.cpp" />
     <ClCompile Include="DTMSideSlopeInputPoint.cpp" />
@@ -63,6 +64,7 @@
     <ClInclude Include="DTMFeatureEnumerator.h" />
     <ClInclude Include="DTMHelpers.h" />
     <ClInclude Include="DTMMesh.h" />
+    <ClInclude Include="DTMMeshEnumerator.h" />
     <ClInclude Include="DTMSideSlopeInput.h" />
     <ClInclude Include="DTMSideSlopeInputPoint.h" />
     <ClInclude Include="DTMTinEditor.h" />
