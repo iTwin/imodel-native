@@ -41,7 +41,7 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_colors(*this), m_domains(*this), m_styles(*this), m_views(*this),
                  m_geomParts(*this), m_units(*this), m_models(*this), m_elements(*this), 
                  m_links(*this), m_authorities(*this), m_textures(*this),
-                 m_ecsqlCache(50, "DgnDb")
+                 m_ecsqlCache(50, "DgnDb"), m_revisionManager(nullptr)
     {
     }
 
@@ -52,6 +52,11 @@ void DgnDb::Destroy()
     {
     m_models.Empty();
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
+    if (nullptr != m_revisionManager)
+        {
+        delete m_revisionManager;
+        m_revisionManager = nullptr;
+        }
     m_ecsqlCache.Empty();
     }
 
@@ -103,6 +108,17 @@ TxnManagerR DgnDb::Txns()
         m_txnManager = new TxnManager(*this);
 
     return *m_txnManager;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+RevisionManagerR DgnDb::Revisions() const
+    {
+    if (nullptr == m_revisionManager)
+        m_revisionManager = new RevisionManager(const_cast<DgnDbR>(*this));
+
+    return *m_revisionManager;
     }
 
 //--------------------------------------------------------------------------------------

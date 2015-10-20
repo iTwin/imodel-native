@@ -132,6 +132,8 @@ $(coreObjs)UnitDefinition$(oext): $(DgnCoreDir)UnitDefinition.cpp ${MultiCompile
 
 $(coreObjs)TxnManager$(oext): $(DgnCoreDir)TxnManager.cpp $(DgnCoreAPISrc)TxnManager.h ${MultiCompileDepends}
 
+$(coreObjs)RevisionManager$(oext): $(DgnCoreDir)RevisionManager.cpp $(DgnCoreAPISrc)RevisionManager.h ${MultiCompileDepends}
+
 $(coreObjs)MemoryManager$(oext): $(DgnCoreDir)MemoryManager.cpp $(DgnCoreAPISrc)MemoryManager.h ${MultiCompileDepends}
 
 $(coreObjs)ElementDependencyGraph$(oext): $(DgnCoreDir)ElementDependencyGraph.cpp $(DgnCoreAPISrc)TxnManager.h ${MultiCompileDepends}

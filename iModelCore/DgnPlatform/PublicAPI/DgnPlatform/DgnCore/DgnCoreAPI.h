@@ -27,6 +27,7 @@
 #include "IAuxCoordSys.h"
 #include "IPickGeom.h"
 #include "TxnManager.h"
+#include "RevisionManager.h"
 #include "IViewDraw.h"
 #include "IViewOutput.h"
 #include "IViewTransients.h"

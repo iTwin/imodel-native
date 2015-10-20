@@ -140,6 +140,7 @@ protected:
     DgnTextures     m_textures;
     TxnManagerPtr   m_txnManager;
     MemoryManager   m_memoryManager;
+    mutable RevisionManagerP m_revisionManager;
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
     mutable bmap<DgnMaterialId, uintptr_t> m_qvMaterialIds;
 
@@ -200,6 +201,7 @@ public:
     DgnTextures& Textures() const { return const_cast<DgnTextures&>(m_textures); }       //!< The textures for this DgnDb.
     DgnAuthorities& Authorities() const { return const_cast<DgnAuthorities&>(m_authorities); }   //!< The authorities associated with this DgnDb
     DGNPLATFORM_EXPORT TxnManagerR Txns();                    //!< The Txns for this DgnDb.
+    DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The Revisions for this DgnDb.
     MemoryManager& Memory() const { return const_cast<MemoryManager&>(m_memoryManager);}
 
     //! Gets a cached and prepared ECSqlStatement.
