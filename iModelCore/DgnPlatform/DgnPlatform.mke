@@ -348,7 +348,7 @@ $(o)GeoCoordServices$(oext): $(DgnGeoCoordDir)GeoCoordServices.cpp $(DgnPlatform
 #   Configuration
 #----------------------------------------------------------------------
 
-$(o)findfile$(oext) : $(ToolsDir)fileUtil/findfile.cpp ${MultiCompileDepends}
+$(o)findfile$(oext) : $(ToolsDir)fileutil/findfile.cpp ${MultiCompileDepends}
 
 $(o)ConfigurationManager$(oext): $(ConfigToolsDir)ConfigurationManager.cpp ${MultiCompileDepends}
 
@@ -356,7 +356,7 @@ $(o)MacroConfigurationAdmin$(oext): $(ConfigToolsDir)MacroConfigurationAdmin.cpp
 
 $(o)MacroFileProcessor$(oext): $(ConfigToolsDir)MacroFileProcessor.cpp ${MultiCompileDepends}
 
-$(o)ExpandMacro$(oext): $(ConfigToolsDir)ExpandMacro.cpp ${MultiCompileDepends}
+$(o)expandMacro$(oext): $(ConfigToolsDir)expandMacro.cpp ${MultiCompileDepends}
 
 $(o)envvutil$(oext): $(ConfigToolsDir)envvutil.cpp ${MultiCompileDepends}
 
