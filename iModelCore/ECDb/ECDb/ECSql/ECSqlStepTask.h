@@ -76,9 +76,9 @@ public:
         EmbeddedECSqlStatement* GetSelector (bool create = false);
         bool Add (std::unique_ptr<ECSqlStepTask> stepTask);
         bool Delete (Utf8CP name);
-        size_t Size () const;
-        bool HasAnyTask () const { return !m_stepTasks.empty (); }
-        void Clear ();
+        size_t Size () const { return m_stepTasks.size(); }
+        bool IsEmpty () const { return m_stepTasks.empty (); }
+        void Clear() { m_stepTasks.clear(); }
         void ResetSelector ();
         };
 
