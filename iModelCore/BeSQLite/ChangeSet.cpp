@@ -225,7 +225,7 @@ DbResult ChangeSet::ConcatenateWith(ChangeSet const& second)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Changes::Changes(struct ChangeSet& changeSet)
+Changes::Changes(ChangeSet const& changeSet)
     {
     m_data = (void*) changeSet.GetData();
     m_size = changeSet.GetSize();
@@ -241,6 +241,9 @@ void Changes::Finalize() const
 
     sqlite3changeset_finalize(m_iter);
     m_iter = nullptr;
+
+    if (nullptr != m_changeStream)
+        m_changeStream->Reset();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -711,10 +714,14 @@ int ChangeStream::FilterTableCallback(void *pCtx, Utf8CP tableName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ChangeStream::FromChangeTrack(ChangeTracker& session, ChangeSet::SetType setType)
     {
+    DbResult result;
     if (ChangeSet::SetType::Full == setType)
-        return (DbResult) sqlite3session_changeset_strm(session.GetSqlSession(), OutputCallback, this);
+        result = (DbResult) sqlite3session_changeset_strm(session.GetSqlSession(), OutputCallback, this);
     else
-        return (DbResult) sqlite3session_patchset_strm(session.GetSqlSession(), OutputCallback, this);
+        result = (DbResult) sqlite3session_patchset_strm(session.GetSqlSession(), OutputCallback, this);
+
+    _Reset();
+    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -722,22 +729,43 @@ DbResult ChangeStream::FromChangeTrack(ChangeTracker& session, ChangeSet::SetTyp
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ChangeStream::FromChangeGroup(ChangeGroup const& changeGroup)
     {
-    return (DbResult) sqlite3changegroup_output_strm((sqlite3_changegroup*) changeGroup.m_changegroup, OutputCallback, this);
+    DbResult result = (DbResult) sqlite3changegroup_output_strm((sqlite3_changegroup*) changeGroup.m_changegroup, OutputCallback, this);
+    _Reset();
+    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeStream::ToChangeGroup(ChangeGroup& changeGroup) const
+DbResult ChangeStream::ToChangeGroup(ChangeGroup& changeGroup)
     {
-    return (DbResult) sqlite3changegroup_add_strm((sqlite3_changegroup*) changeGroup.m_changegroup, InputCallback, (void*) this);
+    DbResult result = (DbResult) sqlite3changegroup_add_strm((sqlite3_changegroup*) changeGroup.m_changegroup, InputCallback, (void*) this);
+    _Reset();
+    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeStream::ApplyChanges(DbR db) const
+DbResult ChangeStream::ApplyChanges(DbR db)
     {
-    return (DbResult) sqlite3changeset_apply_strm(db.GetSqlDb(), InputCallback, (void*) this, FilterTableCallback, ConflictCallback, (void*) this);
+    DbResult result = (DbResult) sqlite3changeset_apply_strm(db.GetSqlDb(), InputCallback, (void*) this, FilterTableCallback, ConflictCallback, (void*) this);
+    _Reset();
+    return result;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChangeStream::Dump(Utf8CP label, DbCR db, bool isPatchSet /*=false*/, int detailLevel/*=0*/)
+    {
+    ChangeGroup changeGroup;
+    if (BE_SQLITE_OK == ToChangeGroup(changeGroup))
+        {
+        AbortOnConflictChangeSet changeSet;
+        if (BE_SQLITE_OK == changeSet.FromChangeGroup(changeGroup))
+            changeSet.Dump(label, db, isPatchSet, detailLevel);
+        }
+
+    _Reset();
+    }
