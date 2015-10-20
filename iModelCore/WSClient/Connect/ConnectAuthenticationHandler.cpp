@@ -10,7 +10,13 @@
 
 #include <Bentley/Base64Utilities.h>
 #include <WebServices/Connect/Connect.h>
+
+
+#if defined (BENTLEY_WIN32)
+#include <WebServices/Connect/CCConnectTokenProvider.h>
+#else
 #include <WebServices/Connect/ConnectTokenProvider.h>
+#endif
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
@@ -26,9 +32,15 @@ IHttpHandlerPtr customHttpHandler
 ) :
 AuthenticationHandler(customHttpHandler),
 m_urlBaseToAuth(urlBaseToAuth),
-m_tokenProvider(customTokenProvider ? customTokenProvider : std::make_shared<ConnectTokenProvider>()),
+
 m_thread(WorkerThread::Create("ConnectAuthenticationHandler"))
-    {}
+    {
+#if defined (BENTLEY_WIN32)
+        m_tokenProvider = (customTokenProvider ? customTokenProvider : std::make_shared<CCConnectTokenProvider> ());
+#else
+        m_tokenProvider = (customTokenProvider ? customTokenProvider : std::make_shared<ConnectTokenProvider> ());
+#endif
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
