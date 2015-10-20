@@ -1711,6 +1711,8 @@ TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, RevisionTest)
     {
+    // TODO: This test needs to be moved to a newRevision_Test.cpp
+
     /*
     * Create an initial revision
     */
@@ -1767,12 +1769,12 @@ TEST_F(ChangeSummaryTestFixture, RevisionTest)
     /*
      * Dump all revisions
      */
-    for (DgnRevisionPtr const& rev : revisions)
+    /*for (DgnRevisionPtr const& rev : revisions)
         {
         printf("---------------------------------------------------------\n");
         rev->Dump(*m_testDb);
         printf("\n\n");
-        }
+        }*/
 
     /*
     * Merge all the saved revisions
