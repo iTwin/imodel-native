@@ -55,11 +55,14 @@ DbResult DgnDb::CreateDictionaryModel()
     props.ToJson(propsValue);
     Utf8String propsJson = Json::FastWriter::ToString(propsValue);
 
-    Statement stmt(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) " (Id,Name,Descr,ECClassId,Visibility,Props) VALUES(?,?,'',?,0,?)");
+    DgnModel::Code modelCode = DgnModel::CreateModelCode(dictionaryName);
+    Statement stmt(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) " (Id,Code,Descr,ECClassId,Visibility,Props,CodeAuthorityId,CodeNameSpace) VALUES(?,?,'',?,0,?,?,?)");
     stmt.BindId(1, DgnModel::DictionaryId());
-    stmt.BindText(2, dictionaryName.c_str(), Statement::MakeCopy::No);
+    stmt.BindText(2, modelCode.GetValueCP(), Statement::MakeCopy::No);
     stmt.BindId(3, Domains().GetClassId(dgn_ModelHandler::Dictionary::GetHandler()));
     stmt.BindText(4, propsJson.c_str(), Statement::MakeCopy::No);
+    stmt.BindId(5, modelCode.GetAuthority());
+    stmt.BindText(6, modelCode.GetNameSpace().c_str(), Statement::MakeCopy::No);
 
     auto result = stmt.Step();
     BeAssert(BE_SQLITE_DONE == result && "Failed to create dictionary model");

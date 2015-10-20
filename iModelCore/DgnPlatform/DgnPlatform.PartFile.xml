@@ -35,7 +35,6 @@
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
         <SubPart PartName="ECDb"                PartFile="ECDb"         Repository="ECDb" />
-        <SubPart PartName="ToolsubsDll"         PartFile="RmgrTools"    Repository="RmgrTools" />
         <SubPart PartName="GeomDlls"            PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="BeXmlDll"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <SubPart PartName="ECObjectsNative"     PartFile="ecobjects"    Repository="ecobjects" />
@@ -160,6 +159,10 @@
     <Part Name="UnitTests-NonPublished" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="TestFixtureForUnitTests" />
+        
+        <!-- Temporary while Mike Embick determines the feasibility of this library via unit tests. -->
+        <SubPart PartName="GraphVizLibrary" PartFile="graphviz" Repository="libsrc-graphviz"/>
+        
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>
@@ -168,7 +171,6 @@
     <Part Name="UnitTests-Performance" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="TestFixtureForUnitTests" />
-        <SubPart PartName="PerformanceTestingHelpers" PartFile="BeSQLite" Repository="BeSQLite"/>
         <!-- Performance tests use DgnDbTestDgnManager, which is implemented in BackDoor -->
         <SubPart PartName="BackdoorForUnitTests"/>
         <Bindings>
@@ -595,7 +597,7 @@
         <SubPart PartName="UnitTests-Performance"        Repository="ECDb" PartFile="ECDb"/>
         <SubPart PartName="UnitTests-Performance"        Repository="Bentley" PartFile="Bentley"/>
         <SubPart PartName="UnitTests-Performance"        Repository="DgnPlatform" PartFile="DgnPlatform"/>
-        <SubPart PartName="PerformanceTests"             Repository="ECObjects" PartFile="ECObjects"/>
+        <SubPart PartName="PerformanceTests"             Repository="ecobjects" PartFile="ecobjects"/>
         <SubPart PartName="UnitTests-PerformanceTest"        Repository="geomlibs" PartFile="geomlibs"/>
         <!-- Pull in the dgnplatform's db3 file to serve as the "framework" sqlang for testing purposes -->
         <SubPart PartName="DgnPlatformSqlang"            Repository="DgnPlatform" PartFile="DgnPlatform"/>

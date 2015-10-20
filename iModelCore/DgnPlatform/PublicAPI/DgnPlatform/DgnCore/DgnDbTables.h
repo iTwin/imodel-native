@@ -16,8 +16,11 @@
 //-----------------------------------------------------------------------------------------
 // ECClass names (combine with DGN_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
+#define DGN_CLASSNAME_AnnotationFrameStyle  "AnnotationFrameStyle"
+#define DGN_CLASSNAME_AnnotationLeaderStyle "AnnotationLeaderStyle"
+#define DGN_CLASSNAME_AnnotationTextStyle   "AnnotationTextStyle"
 #define DGN_CLASSNAME_Authority             "Authority"
-#define DGN_CLASSNAME_Color                 "Color"
+#define DGN_CLASSNAME_TrueColor             "TrueColor"
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
 #define DGN_CLASSNAME_ComponentSolution     "ComponentSolution"
 #define DGN_CLASSNAME_DictionaryElement     "DictionaryElement"
@@ -46,6 +49,7 @@
 #define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
 #define DGN_CLASSNAME_SheetModel            "SheetModel"
 #define DGN_CLASSNAME_Style                 "Style"
+#define DGN_CLASSNAME_TextAnnotationSeed    "TextAnnotationSeed"
 #define DGN_CLASSNAME_Texture               "Texture"
 #define DGN_CLASSNAME_View                  "View"
 #define DGN_CLASSNAME_CameraView            "CameraView"
@@ -81,6 +85,64 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 namespace dgn_ElementHandler {struct Physical;};
 namespace dgn_TxnTable {struct Element; struct Model;};
+
+struct DgnImportContext;
+
+//=======================================================================================
+//! A Code is an identifier associated with some object in a DgnDb and issued by a
+//! DgnAuthority according to some scheme. The meaning of a Code is determined by the
+//! issuing authority. The issuing authority determines
+//! how (or if) an object's code is transformed when the object is cloned.
+//!
+//! The Code is stored as a three-part identifier: DgnAuthorityId, namespace, and value.
+//! The combination of the three must be unique within all objects of a given type
+//! (e.g., Elements, Models) within a DgnDb. 
+//!
+//! The authority ID must be non-null and identify a valid authority.
+//! The namespace may not be null, but may be a blank string.
+//! The value may be null if and only if the namespace is blank, signifying that the authority
+//! assigns no special meaning to the object's code.
+//! The value may not be an empty string.
+//!
+//! To obtain a Code, talk to the relevant DgnAuthority.
+// @bsiclass                                                     Paul.Connelly  09/15
+//=======================================================================================
+struct AuthorityIssuedCode
+{
+private:
+    DgnAuthorityId  m_authority;
+    Utf8String      m_value;
+    Utf8String      m_nameSpace;
+
+    friend struct DgnAuthority;
+    friend struct DgnElements;
+    friend struct DgnModel;
+    friend struct DgnModels;
+    friend struct SystemAuthority;
+
+    AuthorityIssuedCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) { }
+public:
+    //! Constructs an empty, invalid code
+    AuthorityIssuedCode() { }
+
+    //! Determine whether this Code is valid. A valid code has a valid authority ID and either:
+    //!     - An empty namespace and value; or
+    //!     - A non-empty value
+    bool IsValid() const {return m_authority.IsValid() && (IsEmpty() || !m_value.empty());}
+    //! Determine if this code is valid but not otherwise meaningful (and therefore not necessarily unique)
+    bool IsEmpty() const {return m_authority.IsValid() && m_nameSpace.empty() && m_value.empty();}
+    //! Determine if two Codes are equivalent
+    bool operator==(AuthorityIssuedCode const& other) const {return m_authority==other.m_authority && m_value==other.m_value && m_nameSpace==other.m_nameSpace;}
+
+    //! Get the value for this Code
+    Utf8StringCR GetValue() const {return m_value;}
+    Utf8CP GetValueCP() const {return !m_value.empty() ? m_value.c_str() : nullptr;}
+    //! Get the namespace for this Code
+    Utf8StringCR GetNameSpace() const {return m_nameSpace;}
+    //! Get the DgnAuthorityId of the DgnAuthority that issued this Code.
+    DgnAuthorityId GetAuthority() const {return m_authority;}
+    void RelocateToDestinationDb(DgnImportContext&);
+};
 
 //=======================================================================================
 //! A base class for api's that access a table in a DgnDb
@@ -307,11 +369,11 @@ public:
         friend struct DgnModels;
 
     private:
-        DgnModelId   m_id;
-        DgnClassId   m_classId;
-        Utf8String   m_name;
-        Utf8String   m_description;
-        bool         m_inGuiList;
+        DgnModelId          m_id;
+        DgnClassId          m_classId;
+        AuthorityIssuedCode m_code;
+        Utf8String          m_description;
+        bool                m_inGuiList;
 
     public:
         Model()
@@ -319,14 +381,13 @@ public:
             m_inGuiList = true;
             };
 
-        Model(Utf8CP name, DgnClassId classid, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_name(name)
+        Model(AuthorityIssuedCode code, DgnClassId classid, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_code(code)
             {
             m_inGuiList = true;
             }
 
-        Utf8StringR GetNameR() {return m_name;}
         Utf8StringR GetDescriptionR() {return m_description;}
-        void SetName(Utf8CP val) {m_name.assign(val);}
+        void SetCode(AuthorityIssuedCode code) {m_code = code;}
         void SetDescription(Utf8CP val) {m_description.AssignOrClear(val);}
         void SetInGuiList(bool val)   {m_inGuiList = val;}
         void SetId(DgnModelId id) {m_id = id;}
@@ -334,8 +395,7 @@ public:
         void SetModelType(DgnClassId classId) {m_classId = classId;}
 
         DgnModelId GetId() const {return m_id;}
-        Utf8CP GetNameCP() const {return m_name.c_str();}
-        Utf8String GetName() const {return m_name;}
+        AuthorityIssuedCode const& GetCode() const {return m_code;}
         Utf8CP GetDescription() const {return m_description.c_str();}
         DgnClassId GetClassId() const {return m_classId;}
         bool InGuiList() const {return m_inGuiList;}
@@ -357,7 +417,10 @@ public:
 
         public:
             DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
-            DGNPLATFORM_EXPORT Utf8CP GetName() const;
+            DGNPLATFORM_EXPORT AuthorityIssuedCode GetCode() const;
+            DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const;
+            DGNPLATFORM_EXPORT Utf8CP GetCodeNameSpace() const;
+            DGNPLATFORM_EXPORT DgnAuthorityId GetCodeAuthorityId() const;
             DGNPLATFORM_EXPORT Utf8CP GetDescription() const;
             DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
             DGNPLATFORM_EXPORT bool InGuiList() const;
@@ -374,6 +437,7 @@ public:
     };
 
 public:
+    static AuthorityIssuedCode GetModelCode(Iterator::Entry const& entry); //!< @private
     DGNPLATFORM_EXPORT QvCache* GetQvCache(bool createIfNecessary=true);
     void SetQvCache(QvCache* qvCache) {m_qvCache = qvCache;}
 
@@ -397,11 +461,11 @@ public:
     T_DgnModelMap const& GetLoadedModels() const {return m_models;}
 
     DGNPLATFORM_EXPORT BentleyStatus QueryModelById(Model* out, DgnModelId id) const;
-    DGNPLATFORM_EXPORT BentleyStatus GetModelName(Utf8StringR, DgnModelId id) const;
+    DGNPLATFORM_EXPORT BentleyStatus GetModelCode(AuthorityIssuedCode& code, DgnModelId id) const;
 
-    //! Find the ModelId of the model with the specified name name.
+    //! Find the ModelId of the model with the specified code.
     //! @return The model's ModelId. Check dgnModelId.IsValid() to see if the DgnModelId was found.
-    DGNPLATFORM_EXPORT DgnModelId QueryModelId(Utf8CP name) const;
+    DGNPLATFORM_EXPORT DgnModelId QueryModelId(AuthorityIssuedCode code) const;
 
     //! Query for the dependency index of the specified model
     //! @param[out] dependencyIndex  The model's DependencyIndex property value
@@ -441,7 +505,7 @@ struct DgnGeomParts : DgnDbTable
 
 private:
     explicit DgnGeomParts(DgnDbR db) : DgnDbTable(db) {}
-    DgnGeomPartId m_highestGeomPartId; // 0 means not yet valid. Highest DgnGeomPartId (for current repositoryId)
+    DgnGeomPartId m_highestGeomPartId; // 0 means not yet valid. Highest DgnGeomPartId (for current briefcaseId)
 
 public:
     DgnGeomPartId MakeNewGeomPartId();
@@ -472,91 +536,6 @@ public:
 
     //! Delete the geometry part associated with the specified ID
     DGNPLATFORM_EXPORT BentleyStatus DeleteGeomPart(DgnGeomPartId);
-};
-
-//=======================================================================================
-//! The DgnColors holds the Named Colors for a DgnDb. Named Colors are RGB values (no transparency) that may
-//! be named and from a "color book". The entries in the table are identified by DgnTrueColorId's.
-//! Once a True Color is defined, it may not be changed or deleted. Note that there may be multiple enties in the table with the same RGB value.
-//! However, for a given book name, there may not be two entries with the same name.
-//! @see DgnDb::Colors
-//=======================================================================================
-struct DgnColors : DgnDbTable
-{
-private:
-    friend struct DgnDb;
-
-    explicit DgnColors(DgnDbR db) : DgnDbTable(db){}
-
-public:
-    struct Color
-    {
-    friend struct DgnColors;
-    private:
-        DgnTrueColorId m_id;
-        ColorDef       m_color;
-        Utf8String     m_name;
-        Utf8String     m_book;
-
-    public:
-        Color(ColorDef color, Utf8CP name, Utf8CP book=nullptr) : m_color(color), m_book(book), m_name(name) {}
-        Color() {}
-        bool IsValid() const {return m_id.IsValid();}
-        DgnTrueColorId GetId() const {return m_id;}
-        ColorDef GetColor() const {return m_color;}
-        Utf8StringCR GetName() const {return m_name;}
-        Utf8StringCR GetBook() const {return m_book;}
-    };
-
-    //! Add a new Color to the table.
-    //! @param[in] color    The Color values for the new entry.
-    //! @param[out] result  The result of the operation
-    //! @note For a given bookname, there may not be more than one color with the same name.
-    //! @return colorId The DgnTrueColorId for the newly created entry. Will be invalid if name+bookname is not unique.
-    DGNPLATFORM_EXPORT DgnTrueColorId Insert(Color& color, DgnDbStatus* result = nullptr);
-
-    //! Find the first DgnTrueColorId that has a given ColorDef value.
-    //! @return A DgnTrueColorId for the supplied color value. If no entry in the table has the given value, the DgnTrueColorId will be invalid.
-    //! @note If the table holds more than one entry with the same value, it is undefined which DgnTrueColorId is returned.
-    DGNPLATFORM_EXPORT DgnTrueColorId FindMatchingColor(ColorDef color) const;
-
-    //! Get a color by DgnTrueColorId.
-    //! @param[in] colorId the true color id to query
-    //! @return Color 
-    DGNPLATFORM_EXPORT Color QueryColor(DgnTrueColorId colorId) const;
-
-    //! Get color by name and bookname.
-    //! @param[in] name The name for the colorId.
-    //! @param[in] bookname The bookName for the colorId.
-    DGNPLATFORM_EXPORT Color QueryColorByName(Utf8CP name, Utf8CP bookname) const;
-
-    struct Iterator : BeSQLite::DbTableIterator
-    {
-    public:
-        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) {}
-
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-        {
-        private:
-            friend struct Iterator;
-            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
-        public:
-            DGNPLATFORM_EXPORT DgnTrueColorId GetId() const;
-            DGNPLATFORM_EXPORT ColorDef GetColor() const;
-            DGNPLATFORM_EXPORT Utf8CP GetName() const;
-            DGNPLATFORM_EXPORT Utf8CP GetBook() const;
-            Entry const& operator*() const {return *this;}
-        };
-
-    typedef Entry const_iterator;
-    typedef Entry iterator;
-    DGNPLATFORM_EXPORT size_t QueryCount() const;
-    DGNPLATFORM_EXPORT Entry begin() const;
-    Entry end() const {return Entry(nullptr, false);}
-    };
-
-    //! Make an iterator over the named colors in this DgnDb.
-    Iterator MakeIterator() const {return Iterator(m_dgndb);}
 };
 
 //=======================================================================================
@@ -861,10 +840,6 @@ private:
     friend struct DgnDb;
 
     struct DgnLineStyles* m_lineStyles;
-    struct DgnAnnotationTextStyles* m_annotationTextStyles;
-    struct DgnAnnotationFrameStyles* m_annotationFrameStyles;
-    struct DgnAnnotationLeaderStyles* m_annotationLeaderStyles;
-    struct DgnTextAnnotationSeeds* m_textAnnotationSeeds;
 
     explicit DgnStyles(DgnDbR);
     ~DgnStyles();
@@ -872,18 +847,6 @@ private:
 public:
     //! Provides accessors for line styles.
     DGNPLATFORM_EXPORT struct DgnLineStyles& LineStyles();
-
-    //! Provides accessors for annotation text styles.
-    DGNPLATFORM_EXPORT struct DgnAnnotationTextStyles& AnnotationTextStyles();
-
-    //! Provides accessors for annotation frame styles.
-    DGNPLATFORM_EXPORT struct DgnAnnotationFrameStyles& AnnotationFrameStyles();
-
-    //! Provides accessors for annotation leader styles.
-    DGNPLATFORM_EXPORT struct DgnAnnotationLeaderStyles& AnnotationLeaderStyles();
-
-    //! Provides accessors for text annotation seeds.
-    DGNPLATFORM_EXPORT struct DgnTextAnnotationSeeds& TextAnnotationSeeds();
 };
 
 //=======================================================================================

@@ -2385,7 +2385,7 @@ void            MacroConfigurationAdmin::RenameMacros (T_ReplacementMap& replace
         m_macroSet.erase (foundEntry);
 
         foundMacroEntry->m_macroName.assign (thisReplacement.c_str());
-        bpair <T_MacroSet::const_iterator, bool> inserted = m_macroSet.insert (foundMacroEntry);
+        /*bpair <T_MacroSet::const_iterator, bool> inserted =*/ m_macroSet.insert (foundMacroEntry);
         }
 
     delete searchEntry;
@@ -3172,7 +3172,7 @@ void    GetStupidInstallHashString (WStringR installPathHash, WCharCP installDir
     // get the install directory. If it's not provided, make one up. If it's got the shortName character, get the long name.
     if ( (nullptr == installDirectory) || (0 == *installDirectory))
         installDirectory = L"c:\\Program Files (x86)\\Bentley\\MicroStation V8i (SELECTseries)\\MicroStation\\";
-    else if (nullptr != wcschr (installDirectory, '~'))
+    else if (nullptr != ::wcschr (installDirectory, '~'))
         {
         GetLongPathNameW (installDirectory, longPathName, _countof(longPathName));
         installDirectory = longPathName;

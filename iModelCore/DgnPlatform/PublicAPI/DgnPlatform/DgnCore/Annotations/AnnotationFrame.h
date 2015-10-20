@@ -45,7 +45,7 @@ private:
     
     DgnDbP m_dgndb;
     
-    DgnStyleId m_styleID;
+    AnnotationFrameStyleId m_styleID;
     AnnotationFrameStylePropertyBag m_styleOverrides;
 
     DGNPLATFORM_EXPORT void CopyFrom(AnnotationFrameCR);
@@ -56,13 +56,13 @@ public:
     AnnotationFrame(AnnotationFrameCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     AnnotationFrameR operator=(AnnotationFrameCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
     static AnnotationFramePtr Create(DgnDbR project) { return new AnnotationFrame(project); }
-    DGNPLATFORM_EXPORT static AnnotationFramePtr Create(DgnDbR, DgnStyleId);
+    DGNPLATFORM_EXPORT static AnnotationFramePtr Create(DgnDbR, AnnotationFrameStyleId);
     AnnotationFramePtr Clone() const { return new AnnotationFrame(*this); }
 
     DgnDbR GetDbR() const { return *m_dgndb; }
-    DgnStyleId GetStyleId() const { return m_styleID; }
-    DGNPLATFORM_EXPORT void SetStyleId(DgnStyleId, SetAnnotationFrameStyleOptions);
-    AnnotationFrameStylePtr CreateEffectiveStyle() const { return m_dgndb->Styles().AnnotationFrameStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
+    AnnotationFrameStyleId GetStyleId() const { return m_styleID; }
+    DGNPLATFORM_EXPORT void SetStyleId(AnnotationFrameStyleId, SetAnnotationFrameStyleOptions);
+    AnnotationFrameStylePtr CreateEffectiveStyle() const { return AnnotationFrameStyle::QueryStyle(m_styleID, *m_dgndb)->CreateEffectiveStyle(m_styleOverrides); }
     AnnotationFrameStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
     AnnotationFrameStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }
 };

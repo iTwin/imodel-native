@@ -340,8 +340,8 @@ BentleyStatus   JsonRenderMaterialMap::_GetImage (bvector<Byte>& data, Point2dR 
     if (textureIdValue.isNull())     
         return ERROR;                 // No external file support for now.
 
-    DgnTextureId            textureId = (DgnTextureId) textureIdValue.asUInt64();
-    DgnTextures::Texture    texture = dgnDb.Textures().Query (textureId);
+    DgnTextureId textureId = (DgnTextureId) textureIdValue.asUInt64();
+    DgnTextureCPtr texture = DgnTexture::QueryTexture(textureId, dgnDb);
 
     if (!texture.IsValid())
         {
@@ -349,9 +349,9 @@ BentleyStatus   JsonRenderMaterialMap::_GetImage (bvector<Byte>& data, Point2dR 
         return ERROR;
         }
 
-    imageSize.Init(texture.GetData().GetWidth(), texture.GetData().GetHeight());
+    imageSize.Init(texture->GetData().GetWidth(), texture->GetData().GetHeight());
 
-    return texture.GetImage (data);
+    return texture->GetImage (data);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -367,8 +367,8 @@ uintptr_t  JsonRenderMaterialMap::_GetQvTextureId (DgnDbR dgnDb, bool createIfNo
     DgnTextureId    textureId = (DgnTextureId) textureIdValue.asUInt64();
     uintptr_t       qvTextureId;
 
-    if (0 == (qvTextureId = dgnDb.Textures().GetQvTextureId (textureId)) && createIfNotFound)
-        qvTextureId = dgnDb.Textures().AddQvTextureId (textureId);
+    if (0 == (qvTextureId = dgnDb.GetQvTextureId (textureId)) && createIfNotFound)
+        qvTextureId = dgnDb.AddQvTextureId (textureId);
 
     return qvTextureId;
     }

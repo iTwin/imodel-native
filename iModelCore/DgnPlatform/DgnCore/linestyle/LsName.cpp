@@ -7,15 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
-// this is bogus.
-#if defined (DGN_PLATFORM_MT)
-#undef DGN_PLATFORM_MT
-#include    <RmgrTools/Tools/rmgrstrl.h>
-#define DGNPLATFORM_MT
-#else
-#include    <RmgrTools/Tools/rmgrstrl.h>
-#endif
-
 static DgnHost::Key s_allMapsKey;
 static DgnHost::Key s_systemLsFileInfoKey;
 

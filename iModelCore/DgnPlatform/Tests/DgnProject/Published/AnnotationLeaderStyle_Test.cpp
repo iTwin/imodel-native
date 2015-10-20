@@ -86,7 +86,7 @@ TEST_F(AnnotationLeaderStyleTest, DefaultsAndAccessors)
 
     // Basics
     EXPECT_TRUE(&project == &style->GetDbR());
-    EXPECT_TRUE(!style->GetId().IsValid()); // Cannot call SetId directly from published API.
+    EXPECT_TRUE(!style->GetStyleId().IsValid()); // Cannot call SetId directly from published API.
 
     // Defaults
     EXPECT_TRUE(style->GetName().empty());
@@ -126,7 +126,7 @@ TEST_F(AnnotationLeaderStyleTest, DeepCopy)
     ASSERT_TRUE(style.get() != clonedStyle.get());
     
     EXPECT_TRUE(&project == &clonedStyle->GetDbR());
-    EXPECT_TRUE(style->GetId() == clonedStyle->GetId());
+    EXPECT_TRUE(style->GetStyleId() == clonedStyle->GetStyleId());
     VERIFY_DATA_1(clonedStyle);
     }
 
@@ -142,35 +142,35 @@ TEST_F(AnnotationLeaderStyleTest, TableReadWrite)
 
     //.............................................................................................
     // Verify initial state. This is expected to be blank, but update this and other count checks if the seed files changes.
-    EXPECT_TRUE(0 == project.Styles().AnnotationLeaderStyles().MakeIterator().QueryCount());
+    EXPECT_EQ(0, AnnotationLeaderStyle::QueryCount(project));
 
     //.............................................................................................
     // Insert
     AnnotationLeaderStylePtr testStyle = AnnotationLeaderStyle::Create(project);
     DECLARE_AND_SET_DATA_1(testStyle);
 
-    ASSERT_TRUE(SUCCESS == project.Styles().AnnotationLeaderStyles().Insert(*testStyle));
-    ASSERT_TRUE(testStyle->GetId().IsValid());
+    ASSERT_TRUE(testStyle->Insert().IsValid());
+    ASSERT_TRUE(testStyle->GetStyleId().IsValid());
 
-    EXPECT_TRUE(1 == project.Styles().AnnotationLeaderStyles().MakeIterator().QueryCount());
+    EXPECT_EQ(1, AnnotationLeaderStyle::QueryCount(project));
 
     //.............................................................................................
     // Query
-    EXPECT_TRUE(project.Styles().AnnotationLeaderStyles().ExistsById(testStyle->GetId()));
-    EXPECT_TRUE(project.Styles().AnnotationLeaderStyles().ExistsByName(name.c_str()));
+    EXPECT_TRUE(AnnotationLeaderStyle::ExistsById(testStyle->GetStyleId(), project));
+    EXPECT_TRUE(AnnotationLeaderStyle::ExistsByName(name, project));
 
-    AnnotationLeaderStylePtr fileStyle = project.Styles().AnnotationLeaderStyles().QueryById(testStyle->GetId());
+    auto fileStyle = AnnotationLeaderStyle::QueryStyle(testStyle->GetStyleId(), project);
     ASSERT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDbR());
-    EXPECT_TRUE(testStyle->GetId() == fileStyle->GetId());
+    EXPECT_TRUE(testStyle->GetStyleId() == fileStyle->GetStyleId());
     VERIFY_DATA_1(fileStyle);
 
-    fileStyle = project.Styles().AnnotationLeaderStyles().QueryByName(name.c_str());
+    fileStyle = AnnotationLeaderStyle::QueryStyle(name, project);
     EXPECT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDbR());
-    EXPECT_TRUE(testStyle->GetId() == fileStyle->GetId());
+    EXPECT_TRUE(testStyle->GetStyleId() == fileStyle->GetStyleId());
     VERIFY_DATA_1(fileStyle);
     
     //.............................................................................................
@@ -183,27 +183,27 @@ TEST_F(AnnotationLeaderStyleTest, TableReadWrite)
     lineWeight = 5; mutatedStyle->SetLineWeight(lineWeight);
     terminatorColor = ColorDef(0xff, 0xff, 0x00); mutatedStyle->SetTerminatorColorValue(terminatorColor);
 
-    ASSERT_TRUE(SUCCESS == project.Styles().AnnotationLeaderStyles().Update(*mutatedStyle));
+    ASSERT_TRUE(mutatedStyle->Update().IsValid());
 
-    EXPECT_TRUE(1 == project.Styles().AnnotationLeaderStyles().MakeIterator().QueryCount());
+    EXPECT_EQ(1, AnnotationLeaderStyle::QueryCount(project));
 
-    fileStyle = project.Styles().AnnotationLeaderStyles().QueryByName(name.c_str());
+    fileStyle = AnnotationLeaderStyle::QueryStyle(name, project);
     EXPECT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDbR());
-    EXPECT_TRUE(mutatedStyle->GetId() == fileStyle->GetId());
+    EXPECT_TRUE(mutatedStyle->GetStyleId() == fileStyle->GetStyleId());
     VERIFY_DATA_1(fileStyle);
     
     //.............................................................................................
     // Iterate
-    DgnAnnotationLeaderStyles::Iterator iter1 = project.Styles().AnnotationLeaderStyles().MakeIterator();
+    auto iter1 = AnnotationLeaderStyle::MakeIterator(project);
     size_t numStyles = 0;
     for (auto const& style : iter1)
         {
         EXPECT_TRUE(!Utf8String::IsNullOrEmpty(style.GetName()));
         ASSERT_TRUE(style.GetId().IsValid());
         
-        AnnotationLeaderStylePtr iterStyle = project.Styles().AnnotationLeaderStyles().QueryById(style.GetId());
+        auto iterStyle = AnnotationLeaderStyle::QueryStyle(style.GetId(), project);
         ASSERT_TRUE(iterStyle.IsValid());
 
         EXPECT_TRUE(0 == name.compare(iterStyle->GetName()));
@@ -213,8 +213,7 @@ TEST_F(AnnotationLeaderStyleTest, TableReadWrite)
 
     EXPECT_TRUE(1 == numStyles);
 
-    DgnAnnotationLeaderStyles::Iterator iter2 = project.Styles().AnnotationLeaderStyles().MakeIterator();
-    iter2.Params().SetWhere("ORDER BY Name");
+    auto iter2 = AnnotationLeaderStyle::MakeOrderedIterator(project);
     numStyles = 0;
 
     for (auto const& style : iter2)
@@ -222,7 +221,7 @@ TEST_F(AnnotationLeaderStyleTest, TableReadWrite)
         EXPECT_TRUE(!Utf8String::IsNullOrEmpty(style.GetName()));
         ASSERT_TRUE(style.GetId().IsValid());
 
-        AnnotationLeaderStylePtr iterStyle = project.Styles().AnnotationLeaderStyles().QueryById(style.GetId());
+        auto iterStyle = AnnotationLeaderStyle::QueryStyle(style.GetId(), project);
         ASSERT_TRUE(iterStyle.IsValid());
 
         EXPECT_TRUE(0 == name.compare(iterStyle->GetName()));
@@ -234,9 +233,7 @@ TEST_F(AnnotationLeaderStyleTest, TableReadWrite)
 
     //.............................................................................................
     // Delete
-    ASSERT_TRUE(SUCCESS == project.Styles().AnnotationLeaderStyles().Delete(mutatedStyle->GetId()));
-
-    EXPECT_TRUE(0 == project.Styles().AnnotationLeaderStyles().MakeIterator().QueryCount());
-    EXPECT_TRUE(!project.Styles().AnnotationLeaderStyles().ExistsById(testStyle->GetId()));
-    EXPECT_TRUE(!project.Styles().AnnotationLeaderStyles().ExistsByName(name.c_str()));
+    auto styleToDelete = AnnotationLeaderStyle::QueryStyle(mutatedStyle->GetStyleId(), project);
+    EXPECT_EQ(DgnDbStatus::DeletionProhibited, styleToDelete->Delete());
     }
+

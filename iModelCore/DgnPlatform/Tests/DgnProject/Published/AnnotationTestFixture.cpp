@@ -22,8 +22,8 @@ AnnotationTextStylePtr AnnotationTestFixture::createAnnotationTextStyle(DgnDbR p
     docStyle->SetFontId(ttFontId);
     docStyle->SetHeight(11.0);
     
-    EXPECT_TRUE(SUCCESS == project.Styles().AnnotationTextStyles().Insert(*docStyle));
-    EXPECT_TRUE(docStyle->GetId().IsValid());
+    EXPECT_TRUE(docStyle->Insert().IsValid());
+    EXPECT_TRUE(docStyle->GetStyleId().IsValid());
     
     return docStyle;
     }
@@ -33,7 +33,7 @@ AnnotationTextStylePtr AnnotationTestFixture::createAnnotationTextStyle(DgnDbR p
 AnnotationTextRunPtr AnnotationTestFixture::createAnnotationTextRun(DgnDbR project , AnnotationTextStylePtr runStyle)
     {
         AnnotationTextRunPtr textRun = AnnotationTextRun::Create(project);
-    textRun->SetStyleId(runStyle->GetId(), SetAnnotationTextStyleOptions::Default);
+    textRun->SetStyleId(runStyle->GetStyleId(), SetAnnotationTextStyleOptions::Default);
     return textRun;
     }
 //---------------------------------------------------------------------------------------
@@ -42,7 +42,7 @@ AnnotationTextRunPtr AnnotationTestFixture::createAnnotationTextRun(DgnDbR proje
 AnnotationParagraphPtr AnnotationTestFixture::createAnnotationParagraph(DgnDbR project , AnnotationTextStylePtr parStyle, AnnotationTextRunPtr textRun)
     {
     AnnotationParagraphPtr par1 = AnnotationParagraph::Create(project);
-    par1->SetStyleId(parStyle->GetId(), SetAnnotationTextStyleOptions::Default);
+    par1->SetStyleId(parStyle->GetStyleId(), SetAnnotationTextStyleOptions::Default);
     par1->GetRunsR().push_back(textRun);
     return par1;
     }
@@ -52,7 +52,7 @@ AnnotationParagraphPtr AnnotationTestFixture::createAnnotationParagraph(DgnDbR p
 AnnotationTextBlockPtr AnnotationTestFixture::createAnnotationTextBlock(DgnDbR project , AnnotationTextStylePtr docStyle, AnnotationParagraphPtr par1)
     {
     AnnotationTextBlockPtr doc = AnnotationTextBlock::Create(project);
-    doc->SetStyleId(docStyle->GetId(), SetAnnotationTextStyleOptions::Default);    
+    doc->SetStyleId(docStyle->GetStyleId(), SetAnnotationTextStyleOptions::Default);    
     doc->GetParagraphsR().push_back(par1);
     return doc;
 }
@@ -64,9 +64,10 @@ AnnotationLeaderStylePtr AnnotationTestFixture::createAnnotationLeaderStyle(DgnD
         //.............................................................................................
         AnnotationLeaderStylePtr style = AnnotationLeaderStyle::Create(project);
         EXPECT_TRUE(style.IsValid());
+        style->SetName(styleName);
 
-        EXPECT_TRUE(SUCCESS == project.Styles().AnnotationLeaderStyles().Insert(*style));
-        EXPECT_TRUE(style->GetId().IsValid());
+        EXPECT_TRUE(style->Insert().IsValid());
+        EXPECT_TRUE(style->GetStyleId().IsValid());
         return style;
     }
 //---------------------------------------------------------------------------------------
@@ -78,7 +79,8 @@ AnnotationFrameStylePtr AnnotationTestFixture::createAnnotationFrameStyle(DgnDbR
         AnnotationFrameStylePtr style = AnnotationFrameStyle::Create(project);
         EXPECT_TRUE(style.IsValid());
 
-        EXPECT_TRUE(SUCCESS == project.Styles().AnnotationFrameStyles().Insert(*style));
-        EXPECT_TRUE(style->GetId().IsValid());
+        style->SetName(styleName);
+        EXPECT_TRUE(style->Insert().IsValid());
+        EXPECT_TRUE(style->GetStyleId().IsValid());
         return style;
     }

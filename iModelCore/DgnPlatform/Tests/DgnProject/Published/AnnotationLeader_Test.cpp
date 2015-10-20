@@ -47,20 +47,20 @@ TEST_F(AnnotationLeaderTest, DefaultsAndAccessors)
 
     //.............................................................................................
     AnnotationLeaderStylePtr style = createAnnotationLeaderStyle(project, "TestLeaderStyle");
-    AnnotationLeaderPtr leader = AnnotationLeader::Create(project,style->GetId());
+    AnnotationLeaderPtr leader = AnnotationLeader::Create(project,style->GetStyleId());
     ASSERT_TRUE(leader.IsValid());
 
     // Basics
     EXPECT_TRUE(&project == &leader->GetDbR());
-    EXPECT_TRUE(style->GetId() == leader->GetStyleId());
+    EXPECT_TRUE(style->GetStyleId() == leader->GetStyleId());
 
-    AnnotationLeaderPtr leader2 = AnnotationLeader::Create(project, style->GetId());
+    AnnotationLeaderPtr leader2 = AnnotationLeader::Create(project, style->GetStyleId());
     ASSERT_TRUE(leader2.IsValid());
 
     // Basics
     EXPECT_TRUE(&project == &leader->GetDbR());
-    leader->SetStyleId(style->GetId(),SetAnnotationLeaderStyleOptions::Default);
-    EXPECT_TRUE(style->GetId() == leader->GetStyleId());
+    leader->SetStyleId(style->GetStyleId(),SetAnnotationLeaderStyleOptions::Default);
+    EXPECT_TRUE(style->GetStyleId() == leader->GetStyleId());
     leader->SetTargetAttachmentType(AnnotationLeaderTargetAttachmentType::PhysicalPoint);
     EXPECT_TRUE(AnnotationLeaderTargetAttachmentType::PhysicalPoint == leader->GetTargetAttachmentType());
     

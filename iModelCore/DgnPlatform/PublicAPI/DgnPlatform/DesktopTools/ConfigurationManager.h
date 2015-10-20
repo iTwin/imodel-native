@@ -32,6 +32,8 @@ The IVariableMonitor interface is implemented by classes that need to be informe
 struct IVariableMonitor
 {
 public:
+    virtual ~IVariableMonitor(){}
+
     //! Called to inform that a Configuration variable was redefined.
     //! @param[in] variableName     The Configuration Variable name.
     virtual void _VariableChanged (WCharCP variableName) = 0;
