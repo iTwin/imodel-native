@@ -74,6 +74,8 @@ $(o)RealityDataDownload$(oext) : $(baseDir)RealityDataDownload.cpp $(PublicApiDi
 
 $(o)SpatioTemporalSelector$(oext) : $(baseDir)SpatioTemporalSelector.cpp $(PublicApiDir)SpatioTemporalSelector.h ${MultiCompileDepends}
 
+$(o)SpatioTemporalData$(oext) : $(baseDir)SpatioTemporalData.cpp $(baseDir)SpatioTemporalData.h ${MultiCompileDepends}
+
 $(o)md5$(oext) : $(baseDir)md5.cpp $(PublicApiDir)md5.h ${MultiCompileDepends}
 
 #
