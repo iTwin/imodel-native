@@ -59,6 +59,10 @@ $(o)Lzma2Dec$(oext)     : $(sevenDir)Lzma2Dec.c ${MultiCompileDepends}
 
 $(o)LzFind$(oext)       : $(sevenDir)LzFind.c ${MultiCompileDepends}
 
+$(o)md5$(oext)          : $(baseDir)Crypt/md5.cpp ${MultiCompileDepends}
+
+$(o)sha1$(oext)         : $(baseDir)Crypt/sha1.cpp ${MultiCompileDepends}
+
 %if $(TARGET_PLATFORM) == "Windows"
     $(o)MtCoder$(oext)      : $(sevenDir)MtCoder.c ${MultiCompileDepends}
 

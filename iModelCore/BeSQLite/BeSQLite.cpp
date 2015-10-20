@@ -2783,6 +2783,12 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
     bvector<Utf8String> columnNames;
     db.GetColumns(columnNames, tableName);
 
+    if (nCols > (int)columnNames.size())
+        {
+        printf("*** CORRUPT ***\n");
+        return;
+        }
+
     switch (opcode)
         {
         case BE_SQLITEOP_DELETE:
