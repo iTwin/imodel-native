@@ -1439,6 +1439,10 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& param
         rc = BeSQLiteProfileManager::AssignProfileVersion(*this);
         if (rc != BE_SQLITE_OK)
             return rc;
+
+        rc = SearchableText::CreateTable(*this);
+        if (rc != BE_SQLITE_OK)
+            return rc;
         }
 
     rc = _OnDbCreated(params);
