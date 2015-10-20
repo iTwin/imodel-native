@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 
-#include <WebServices/Connect/CCPublic.h>
+#include <BentleyDesktopClient/CCApi/CCPublic.h>
 #include <WebServices/Connect/ConnectClientCCApiWrapper.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
