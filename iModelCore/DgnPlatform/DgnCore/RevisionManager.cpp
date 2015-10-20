@@ -402,7 +402,7 @@ RevisionManager::~RevisionManager()
 BentleyStatus RevisionManager::SetParentRevisionId(Utf8StringCR revisionId)
     {
     BeAssert(revisionId.length() == SHA1::HashBytes * 2);
-    DbResult result = m_dgndb.SaveRepositoryLocalValue("ParentRevisionId", revisionId);
+    DbResult result = m_dgndb.SaveBriefcaseLocalValue("ParentRevisionId", revisionId);
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -418,7 +418,7 @@ BentleyStatus RevisionManager::SetParentRevisionId(Utf8StringCR revisionId)
 Utf8String RevisionManager::GetParentRevisionId() const
     {
     Utf8String revisionId;
-    DbResult result = m_dgndb.QueryRepositoryLocalValue("ParentRevisionId", revisionId);
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue("ParentRevisionId", revisionId);
     return (BE_SQLITE_ROW == result) ? revisionId : "";
     }
 
@@ -427,7 +427,7 @@ Utf8String RevisionManager::GetParentRevisionId() const
 //---------------------------------------------------------------------------------------
 BentleyStatus RevisionManager::UpdateInitialParentRevisionId()
     {
-    DbResult result = m_dgndb.SaveRepositoryLocalValue("InitialParentRevisionId", GetParentRevisionId());
+    DbResult result = m_dgndb.SaveBriefcaseLocalValue("InitialParentRevisionId", GetParentRevisionId());
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -443,7 +443,7 @@ BentleyStatus RevisionManager::UpdateInitialParentRevisionId()
 Utf8String RevisionManager::GetInitialParentRevisionId() const
     {
     Utf8String revisionId;
-    DbResult result = m_dgndb.QueryRepositoryLocalValue("InitialParentRevisionId", revisionId);
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue("InitialParentRevisionId", revisionId);
     return (BE_SQLITE_ROW == result) ? revisionId : "";
     }
 
