@@ -2027,6 +2027,55 @@ TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_JoinedTableForSubc
     }
  }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECDbMappingTestFixture, IndexGenerationOnClassId)
+    {
+    TestItem testItem (
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='ClassA' isDomainClass='True'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='P0' typeName='string' />"
+        "    </ECClass>"
+        "    <ECClass typeName='ClassB' isDomainClass='True'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='P0' typeName='string' />"
+        "    </ECClass>"
+        "</ECSchema>", true);
+
+    ECDb db;
+    bool asserted = false;
+    AssertSchemaImport (db, asserted, testItem, "IndexGenerationOnClassId.ecdb");
+    ASSERT_FALSE (asserted);
+
+    Statement sqlstmt;
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, sqlstmt.Prepare (db, "SELECT Name FROM ec_Index WHERE Id=(SELECT IndexId FROM ec_IndexColumn WHERE ColumnId=(SELECT Id FROM ec_Column WHERE Name='ECClassId' AND TableId=(SELECT Id FROM ec_Table WHERE Name='ts_ClassA')))"));
+    ASSERT_EQ (DbResult::BE_SQLITE_ROW, sqlstmt.Step ());
+    ASSERT_STREQ ("ix_ts_ClassA_ecclassid", sqlstmt.GetValueText (0));
+    sqlstmt.Finalize ();
+
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, sqlstmt.Prepare (db, "SELECT Name FROM ec_Index WHERE Id=(SELECT IndexId FROM ec_IndexColumn WHERE ColumnId=(SELECT Id FROM ec_Column WHERE Name='ECClassId' AND TableId=(SELECT Id FROM ec_Table WHERE Name='ts_ClassB')))"));
+    ASSERT_EQ (DbResult::BE_SQLITE_ROW, sqlstmt.Step ());
+    ASSERT_STREQ ("ix_ts_ClassB_ecclassid", sqlstmt.GetValueText (0));
+    sqlstmt.Finalize ();
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     07/15
