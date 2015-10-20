@@ -726,8 +726,8 @@ TEST_F(ECDbInstances, UpdateECInstances)
             {
             LOG.errorv("Updated ECInstance does not match expectations. Sending both to stdout. For %s, id=%s", 
                 importedInstance->GetClass().GetFullName(), importedInstance->GetInstanceId().c_str());
-            printf(importedInstance->ToString("IMPORT").c_str()); printf("\n");
-            printf(selectedInstance->ToString("SELECT").c_str()); printf("\n");
+            puts(importedInstance->ToString("IMPORT").c_str()); printf("\n");
+            puts(selectedInstance->ToString("SELECT").c_str()); printf("\n");
             ASSERT_TRUE (false && "Selected ECInstance does not match expectations.");
             }
 
@@ -824,8 +824,8 @@ TEST_F(ECDbInstances, UpdateECInstances)
             {
             LOG.errorv("Updated ECInstance does not match expectations. Sending both to stdout. For %s, id=%s", 
                 updateInst->GetClass().GetFullName(), updateInst->GetInstanceId().c_str());
-            printf(updateInst->ToString("EXPECT").c_str()); printf("\n");
-            printf(    actual->ToString("ACTUAL").c_str()); printf("\n");
+            puts(updateInst->ToString("EXPECT").c_str()); printf("\n");
+            puts(    actual->ToString("ACTUAL").c_str()); printf("\n");
             EXPECT_TRUE (false && "Updated ECInstance does not match expectations.");
             }
         }
