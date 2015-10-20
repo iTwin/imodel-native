@@ -2062,7 +2062,7 @@ public:
         //! Constructor
         //! @param[in]      matchExpression An expression conforming to sqlite's MATCH syntax indicating the text for which to search
         //! @param[in]      category        If supplied, only text belonging to the specified category will be included in the query
-        //! @remarks The matchExpression will be single-quoted and concatenated with a query to produce a where clause like WHERE searchable_text MATCH '<matchExpression>'.
+        //! @remarks The matchExpression will be single-quoted and concatenated with a query to produce a where clause like WHERE searchable_text MATCH 'matchExpression'.
         //! @remarks The caller is responsible for ensuring that search phrases within the expression are properly double-quoted and that the expression conforms to sqlite's MATCH syntax.
         BE_SQLITE_EXPORT explicit Query(Utf8StringCR matchExpression, Utf8CP category=nullptr);
 
