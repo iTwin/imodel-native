@@ -200,7 +200,7 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_trianglesDtmObject
  DPoint3d             trgPts[4] ;
  DTM_TIN_NODE    *nodeP,*node1P,*node2P,*node3P ;
  BC_DTM_OBJ      *clipDtmP=NULL  ;
- DTM_TIN_POINT   *p1P,*p2P,*p3P  ;
+ DPoint3d   *p1P,*p2P,*p3P  ;
  DTM_CIR_LIST    *clistP ;
  static long     pointMarkOffset=0;
 /*
@@ -589,7 +589,7 @@ BENTLEYDTM_Public int bcdtmInterruptLoadCSharp_trianglesDtmObject
  DPoint3d             trgPts[4] ;
  DTM_TIN_NODE    *nodeP,*node1P,*node2P,*node3P ;
  BC_DTM_OBJ      *clipDtmP=NULL  ;
- DTM_TIN_POINT   *p1P,*p2P,*p3P  ;
+ DPoint3d   *p1P,*p2P,*p3P  ;
  DTM_CIR_LIST    *clistP ;
  static long     pointMarkOffset=0;
 /*
@@ -860,7 +860,7 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_trianglesDtmObjectOld
  DPoint3d             trgPts[4] ;
  DTM_TIN_NODE    *nodeP,*node1P,*node2P,*node3P ;
  BC_DTM_OBJ      *clipDtmP=NULL  ;
- DTM_TIN_POINT   *p1P,*p2P,*p3P,*pntP  ;
+ DPoint3d   *p1P,*p2P,*p3P,*pntP  ;
  DTM_POINT_ARRAY **clipArraysPP=NULL ;
  DTM_CIR_LIST    *clistP ;
  static long     pointMarkOffset=0;
@@ -1185,7 +1185,7 @@ BENTLEYDTM_Public int bcdtmLoad_markTinPointsExternalToFenceDtmObject
 {
  int             ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long            pnt1,pnt2,numExternal=0,startTime ;
- DTM_TIN_POINT   *pnt1P,*pnt2P  ;
+ DPoint3d   *pnt1P,*pnt2P  ;
 /*
 **    Write Entry Message
 */
@@ -1715,7 +1715,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_triangleMeshFromDtmObject
  DPoint3d   *p3dP,*meshPtsP=NULL ;
  BC_DTM_OBJ *clipDtmP=NULL ;
  DTM_CIR_LIST  *clistP ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_TIN_NODE  *nodeP,*node1P,*node2P,*node3P ;
 /*
 ** Write Entry Message
@@ -2163,7 +2163,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoadCSharp_triangleMeshFromDtmObject
  DPoint3d   *p3dP,*meshPtsP=NULL ;
  BC_DTM_OBJ *clipDtmP=NULL ;
  DTM_CIR_LIST  *clistP ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_TIN_NODE  *nodeP,*node1P,*node2P,*node3P ;
 /*
 ** Write Entry Message
@@ -2611,7 +2611,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_triangleShadeMeshFromDtmObjectOld
  double dz ;
  BC_DTM_OBJ    *clipDtmP=NULL ;
  DTM_CIR_LIST  *clistP ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_TIN_NODE  *nodeP,*node1P,*node2P,*node3P ;
 /*
 ** Write Entry Message
@@ -3158,7 +3158,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_triangleShadeMeshFromDtmObject
  double dz ;
  BC_DTM_OBJ    *clipDtmP=NULL ;
  DTM_CIR_LIST  *clistP ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_TIN_NODE  *nodeP,*node1P,*node2P,*node3P ;
 /*
 ** Write Entry Message
@@ -3769,7 +3769,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_triangleShadeMeshForQVCacheFromDtmObjec
  double dz ;
  BC_DTM_OBJ    *clipDtmP=NULL ;
  DTM_CIR_LIST  *clistP ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_TIN_NODE  *nodeP,*node1P,*node2P,*node3P ;
 
 /*
@@ -4317,7 +4317,7 @@ BENTLEYDTM_Public int bcdtmLoad_calculateNormalVectorForTriangleVertexDtmObject
  DPoint3d  avgVector,trgVector ;
  double dz ;
  DTM_CIR_LIST *clistP ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_TIN_NODE *node2P,*node3P ;
 /*
 ** Write Entry Message
@@ -4471,7 +4471,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_triangleHillShadeMeshFromDtmObject
  double dz ;
  BC_DTM_OBJ    *clipDtmP=NULL ;
  DTM_CIR_LIST  *clistP ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_TIN_NODE  *nodeP,*node1P,*node2P,*node3P ;
 /*
 ** Write Entry Message
@@ -4998,7 +4998,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_triangleHillShadeMeshFromDtmObject
 +-------------------------------------------------------------------*/
 static inline void bcdtmRange_addPointToRange (BC_DTM_OBJ *dtmP, long p, DRange3d& range)
     {
-    DTM_TIN_POINT* pt = pointAddrP (dtmP, p);
+    DPoint3d* pt = pointAddrP (dtmP, p);
     range.extend ( pt);
     }
 
@@ -5024,7 +5024,7 @@ BENTLEYDTM_EXPORT int bcdtmRange_triangleShadeMeshForQVCacheFromDtmObject
  long minTptrPnt,maxTptrPnt ;
  BC_DTM_OBJ    *clipDtmP=NULL ;
  DTM_CIR_LIST  *clistP ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_TIN_NODE  *node1P,*node2P,*node3P ;
 /*
 ** Write Entry Message

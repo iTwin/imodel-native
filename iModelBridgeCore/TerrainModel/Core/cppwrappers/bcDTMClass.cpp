@@ -309,7 +309,7 @@ class TriangleMeshCallbackTransformHelper
 struct PrflPoint_t
     {
     double          s;
-    DTM_DRAPE_POINT  bcdtmDrapeData;
+    DTMDrapePoint  bcdtmDrapeData;
     };
 
 
@@ -413,7 +413,7 @@ static int digitalTM_setPoint
     PrflPoint_t     *pointTabP,    /* <> Point table                     */
     int             index,         /* => Index in point table            */
     double          currAbc,      /* => Current abcissa                */
-    DTM_DRAPE_POINT  drapedPts[]
+    DTMDrapePoint  drapedPts[]
 )
     {
     BC_START ();
@@ -438,7 +438,7 @@ static int digitalTM_createProfile
     (
     PrflPoint_t     **pointTabPP,
     long            *nbPt,
-    DTM_DRAPE_POINT  drapedPt[],
+    DTMDrapePoint  drapedPt[],
     int             nResPt,         /* => Number of points in line string */
     DPoint3dCP      origStringP,   /* => Points of original line string  */
     const double*   sTabP,         /* => point chainage or nullptr          */
@@ -612,7 +612,7 @@ BENTLEYDTM_EXPORT  int digitalTM_getDrapedPoints
     int                     nPts            /* => Number of points in line string     */
     )
     {
-    bvector<DTM_DRAPE_POINT> drapedPts;
+    bvector<DTMDrapePoint> drapedPts;
     PrflPoint_t     *prflPointTabP = nullptr;
     long            nbPtProfile;
     int             status = 0;
@@ -1006,7 +1006,7 @@ BcDTM::BcDTM(BC_DTM_OBJ* headerP, void* featureArraysP, void* pointArraysP, void
     _dtmHandleP->DTMAllocationClass = nullptr ;
     _dtmHandleP->refCount = 0 ;
     _dtmHandleP->fTablePP = (BC_DTM_FEATURE **)featureArraysP;
-    _dtmHandleP->pointsPP = (DTM_TIN_POINT **)pointArraysP;
+    _dtmHandleP->pointsPP = (DPoint3d **)pointArraysP;
     _dtmHandleP->nodesPP = (DTM_TIN_NODE **)nodeArraysP;
     _dtmHandleP->cListPP = (DTM_CIR_LIST **)cListArraysP;
     _dtmHandleP->fListPP = (DTM_FEATURE_LIST **)fListArraysP;
@@ -2932,8 +2932,8 @@ void BcDTM::_GetHandles (void** headerPP, int* nHeaderP, void*** featureArraysPP
     *nPointArraysP = _dtmHandleP->numPointPartitions;
     if (_dtmHandleP->numPointPartitions)
         {
-        *pointArraysSize = _dtmHandleP->pointPartitionSize * sizeof (DTM_TIN_POINT);
-        *lastPointArraysSize = (_dtmHandleP->memPoints * sizeof(DTM_TIN_POINT))
+        *pointArraysSize = _dtmHandleP->pointPartitionSize * sizeof (DPoint3d);
+        *lastPointArraysSize = (_dtmHandleP->memPoints * sizeof(DPoint3d))
             - ((*nPointArraysP - 1) * (*pointArraysSize));
         }
     else
@@ -3021,7 +3021,7 @@ BcDTMEdgesPtr BcDTM::_GetEdges (DPoint3dCP fencePts, int numFencePts)
     long *edgesP = nullptr;
     long numEdges = 0;
 
-    DTM_TIN_POINT** tinPointsPP = nullptr;    // Pointer To The Tin Point Arrays - Do not Free
+    DPoint3d** tinPointsPP = nullptr;    // Pointer To The Tin Point Arrays - Do not Free
 
     DTMStatusInt status = (DTMStatusInt)bcdtmLoad_tinEdgesFromDtmObject (_GetTinHandle (), fencePts != nullptr, (DPoint3d*)fencePts, numFencePts, &numEdges, &edgesP, &tinPointsPP);
 
@@ -3044,7 +3044,7 @@ void BcDTM::_GetMesh (DPoint3dCP fencePts, int numFencePts, bvector<DPoint3dP>& 
     BeAssert (false && "Needs Work");
     BC_DTM_OBJ *dtmHandleP = _GetTinHandle();
     DTMFenceType   fenceType=DTMFenceType::Shape ;
-    DTM_TIN_POINT **tinPointsPP = nullptr ;
+    DPoint3d **tinPointsPP = nullptr ;
     long numIndices;
     // Call DTMFeatureState::Tin function to get triangle index.
     DTMStatusInt status = (DTMStatusInt)bcdtmLoad_tinTrianglesFromDtmObject (dtmHandleP, fencePts != nullptr, fenceType, (DPoint3d*)fencePts, &numFencePts, numIndices, triangleIndexPP, &tinPointsPP);
@@ -3449,7 +3449,7 @@ DTMStatusInt BcDTM::_PurgeDTM (unsigned int flags)
 +----------------------------------------------------------------------*/
 DTMStatusInt BcDTM::_GetPoint (long index, DPoint3d& pt)
     {
-    DTMStatusInt status = (DTMStatusInt)bcdtmObject_getPointByIndexDtmObject (_GetTinHandle (), index, (DTM_TIN_POINT*)&pt);
+    DTMStatusInt status = (DTMStatusInt)bcdtmObject_getPointByIndexDtmObject (_GetTinHandle (), index, (DPoint3d*)&pt);
     if (status && _dtmTransformHelper.IsValid())
         _dtmTransformHelper->convertPointFromDTM (pt);
     return status;

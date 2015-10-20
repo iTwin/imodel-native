@@ -717,7 +717,7 @@ BENTLEYDTM_Public int bcdtmList_writePointsForDtmFeatureDtmObject(BC_DTM_OBJ *dt
  long n,listPtr,nextPnt=0,firstPnt,numPts,point ;
  char dtmFeatureTypeName[50] ;
  BC_DTM_FEATURE *dtmFeatureP ;
- DTM_TIN_POINT  *pointP ;
+ DPoint3d  *pointP ;
 /*
 ** Initialise
 */
@@ -981,7 +981,7 @@ BENTLEYDTM_Public int bcdtmList_reportAndSetToNullNoneNullTptrValuesDtmObject(BC
 {
  long ofs ;
  DTM_TIN_NODE  *nodeP ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
 /*
 ** Scan All Tin Points
 */
@@ -1016,7 +1016,7 @@ BENTLEYDTM_Public int bcdtmList_reportAndSetToNullNoneNullSptrValuesDtmObject(BC
 {
  long ofs ;
  DTM_TIN_NODE  *nodeP ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
 /*
 ** Scan All Tin Points
 */
@@ -1164,7 +1164,7 @@ BENTLEYDTM_Public int bcdtmList_testForVoidLineDtmObjectOld(BC_DTM_OBJ *dtmP,lon
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   p,ap,np,pp,sp,lp,numPointHullFeatures ;
- DTM_TIN_POINT_FEATURES *phfP,*pointHullFeatures=NULL ;
+ DTMTinPointFeatures *phfP,*pointHullFeatures=NULL ;
 /*
 ** Write Entry Message
 */
@@ -1946,14 +1946,14 @@ BENTLEYDTM_Public int bcdtmList_getDtmFeatureForDtmFeatureTypeOnLineDtmObject
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmList_getHullFeaturesForPointDtmObject(BC_DTM_OBJ *dtmP,long Point,DTM_TIN_POINT_FEATURES **pointFeaturesPP,long *numPointFeaturesP)
+BENTLEYDTM_Public int bcdtmList_getHullFeaturesForPointDtmObject(BC_DTM_OBJ *dtmP,long Point,DTMTinPointFeatures **pointFeaturesPP,long *numPointFeaturesP)
 /*
 ** This Function Gets The Hull Features For A Point
 */
 {
  int  ret=DTM_SUCCESS ;
  long np,pp,lp,clPtr,flPtr,pfPtr,feature,memFeatureTable=0,memInc=10 ;
- DTM_TIN_POINT_FEATURES* lhs;
+ DTMTinPointFeatures* lhs;
  BC_DTM_FEATURE* rhs;
 /*
 ** Initialise
@@ -1994,8 +1994,8 @@ BENTLEYDTM_Public int bcdtmList_getHullFeaturesForPointDtmObject(BC_DTM_OBJ *dtm
        if( *numPointFeaturesP == memFeatureTable )
          {
           memFeatureTable = memFeatureTable + memInc ;
-          if( *pointFeaturesPP == NULL ) *pointFeaturesPP = ( DTM_TIN_POINT_FEATURES * ) malloc ( memFeatureTable * sizeof(DTM_TIN_POINT_FEATURES)) ;
-          else                           *pointFeaturesPP = ( DTM_TIN_POINT_FEATURES * ) realloc ( *pointFeaturesPP , memFeatureTable * sizeof(DTM_TIN_POINT_FEATURES)) ;
+          if( *pointFeaturesPP == NULL ) *pointFeaturesPP = ( DTMTinPointFeatures * ) malloc ( memFeatureTable * sizeof(DTMTinPointFeatures)) ;
+          else                           *pointFeaturesPP = ( DTMTinPointFeatures * ) realloc ( *pointFeaturesPP , memFeatureTable * sizeof(DTMTinPointFeatures)) ;
           if( *pointFeaturesPP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
          }
 /*
@@ -2363,7 +2363,7 @@ BENTLEYDTM_Public int bcdtmList_resortTinStructureDtmObject(BC_DTM_OBJ *dtmP)
  long     node,fTable,fList,cList ;
  long     ofs,ofs1,ofs2,*srP,*sortP=NULL,*tempP=NULL ;
  DTM_TIN_NODE      *nodeP,tempNode  ;
- DTM_TIN_POINT     tempPoint  ;
+ DPoint3d     tempPoint  ;
  DTM_CIR_LIST      *cListP ;
  BC_DTM_FEATURE    *fTableP ;
  DTM_FEATURE_LIST  *fListP  ;
@@ -2613,7 +2613,7 @@ BENTLEYDTM_Public int bcdtmList_setNumberOfSortedPointsDtmObject(BC_DTM_OBJ *dtm
 {
  int   ret=DTM_SUCCESS ;
  long  point,process=TRUE ;
- DTM_TIN_POINT *p1P,*p2P ;
+ DPoint3d *p1P,*p2P ;
 /*
 ** Check For Valid Dtm Object
 */
@@ -3035,7 +3035,7 @@ BENTLEYDTM_EXPORT int bcdtmList_copyAllDtmFeatureTypePointsToPointArraysDtmObjec
 /*
 **     Get Points For Feature
 */
-       if( bcdtmObject_getPointsForDtmFeatureDtmObject(dtmP,dtmFeature,(DTM_TIN_POINT **)&dtmFeaturePtsP,&numDtmFeaturePts)) goto errexit ;
+       if( bcdtmObject_getPointsForDtmFeatureDtmObject(dtmP,dtmFeature,(DPoint3d **)&dtmFeaturePtsP,&numDtmFeaturePts)) goto errexit ;
 /*
 **     Check Pointer Array To Point Arrays
 */
@@ -3109,7 +3109,7 @@ BENTLEYDTM_EXPORT int bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(BC_DTM
 /*
 ** Get Points For Dtm Feature
 */
- if( bcdtmObject_getPointsForDtmFeatureDtmObject(dtmP,dtmFeature,(DTM_TIN_POINT **)featPtsPP,numFeatPtsP)) goto errexit ;
+ if( bcdtmObject_getPointsForDtmFeatureDtmObject(dtmP,dtmFeature,(DPoint3d **)featPtsPP,numFeatPtsP)) goto errexit ;
 /*
 ** Clean Up
 */
@@ -4023,7 +4023,7 @@ BENTLEYDTM_EXPORT int bcdtmList_removeNoneFeatureHullLinesDtmObject(BC_DTM_OBJ *
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmList_getDtmFeaturesForPointDtmObject(BC_DTM_OBJ *dtmP,long point,bvector<DTM_TIN_POINT_FEATURES>& pointFeaturesPP)
+BENTLEYDTM_Public int bcdtmList_getDtmFeaturesForPointDtmObject(BC_DTM_OBJ *dtmP,long point,bvector<DTMTinPointFeatures>& pointFeaturesPP)
 /*
 ** This Function Gets The Dtm Features For A Point
 ** Rob Cormack June 2003
@@ -4075,7 +4075,7 @@ BENTLEYDTM_Public int bcdtmList_getDtmFeaturesForPointDtmObject(BC_DTM_OBJ *dtmP
 /*
 ** Store Point Feature
 */
-    DTM_TIN_POINT_FEATURES pointFeature;
+    DTMTinPointFeatures pointFeature;
     pointFeature.dtmFeature     =  dtmFeature ;
     pointFeature.dtmFeatureType =  ftableAddrP(dtmP,dtmFeature)->dtmFeatureType ;
     pointFeature.userTag        =  ftableAddrP(dtmP,dtmFeature)->dtmUserTag  ;
@@ -4108,7 +4108,7 @@ BENTLEYDTM_Public int bcdtmList_getDtmFeaturesForPointDtmObject(BC_DTM_OBJ *dtmP
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_EXPORT int bcdtmList_getDtmFeaturesForLineDtmObject(BC_DTM_OBJ *dtmP,long pnt1,long pnt2,bvector<DTM_TIN_POINT_FEATURES>& lineFeaturesPP)
+BENTLEYDTM_EXPORT int bcdtmList_getDtmFeaturesForLineDtmObject(BC_DTM_OBJ *dtmP,long pnt1,long pnt2,bvector<DTMTinPointFeatures>& lineFeaturesPP)
 /*
 ** This Function Gets The List Of Dtm Features For Line pnt1-pnt2
 **
@@ -4160,7 +4160,7 @@ BENTLEYDTM_EXPORT int bcdtmList_getDtmFeaturesForLineDtmObject(BC_DTM_OBJ *dtmP,
 /*
 **     Store Point Feature
 */
-       DTM_TIN_POINT_FEATURES lineFeature;
+       DTMTinPointFeatures lineFeature;
        lineFeature.dtmFeature     =  feature ;
        lineFeature.dtmFeatureType =  ftableAddrP(dtmP,feature)->dtmFeatureType ;
        lineFeature.userTag        =  ftableAddrP(dtmP,feature)->dtmUserTag ;
@@ -4318,7 +4318,7 @@ BENTLEYDTM_EXPORT int bcdtmList_extractHullDtmObject(BC_DTM_OBJ *dtmP, DPoint3d 
  long  np,dtmFeature ;
  DPoint3d   *hullP ;
  BC_DTM_FEATURE *dtmFeatureP ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
 /*
 ** Write Entry Message
 */
@@ -6428,7 +6428,7 @@ BENTLEYDTM_Public int bcdtmList_copyTptrListFromDtmObjectToDtmObject
  int   ret=DTM_SUCCESS ;
  long  sp,numPts ;
  DPoint3d   *p3dP,*featurePtsP=NULL ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
 /*
 ** Check For Valid Dtm Objects
 */
@@ -6528,7 +6528,7 @@ BENTLEYDTM_Public int bcdtmList_copyCircularListPointsToPointArrayFromDtmObjectT
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long  fPnt  ;
  DPoint3d   *p3dP     ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
 /*
 ** Write Entry Message
 */
@@ -6654,7 +6654,7 @@ BENTLEYDTM_Public int bcdtmList_copyCircularListPointsToPointArrayFromDtmObjectT
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmList_getDtmFeatureTypeOccurrencesForPointDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureType dtmFeatureType,long Point,DTM_TIN_POINT_FEATURES **pointFeatures,long *numPointFeatures)
+BENTLEYDTM_Public int bcdtmList_getDtmFeatureTypeOccurrencesForPointDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureType dtmFeatureType,long Point,DTMTinPointFeatures **pointFeatures,long *numPointFeatures)
 /*
 ** This Function Gets The Dtm Features For A Point
 ** Rob Cormack June 2003
@@ -6699,8 +6699,8 @@ BENTLEYDTM_Public int bcdtmList_getDtmFeatureTypeOccurrencesForPointDtmObject(BC
        if( *numPointFeatures == memFeatureTable )
          {
           memFeatureTable = memFeatureTable + memInc ;
-          if( *pointFeatures == NULL ) *pointFeatures = ( DTM_TIN_POINT_FEATURES * ) malloc ( memFeatureTable * sizeof(DTM_TIN_POINT_FEATURES)) ;
-          else                         *pointFeatures = ( DTM_TIN_POINT_FEATURES * ) realloc ( *pointFeatures , memFeatureTable * sizeof(DTM_TIN_POINT_FEATURES)) ;
+          if( *pointFeatures == NULL ) *pointFeatures = ( DTMTinPointFeatures * ) malloc ( memFeatureTable * sizeof(DTMTinPointFeatures)) ;
+          else                         *pointFeatures = ( DTMTinPointFeatures * ) realloc ( *pointFeatures , memFeatureTable * sizeof(DTMTinPointFeatures)) ;
           if( *pointFeatures == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
          }
 /*
@@ -6739,7 +6739,7 @@ BENTLEYDTM_Public int bcdtmList_getDtmFeatureTypeOccurrencesForPointDtmObject(BC
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmList_getDtmFeatureTypeOccurrencesForLineDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureType dtmFeatureType,long P1,long P2,DTM_TIN_POINT_FEATURES **lineFeatures,long *numLineFeatures)
+BENTLEYDTM_Public int bcdtmList_getDtmFeatureTypeOccurrencesForLineDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureType dtmFeatureType,long P1,long P2,DTMTinPointFeatures **lineFeatures,long *numLineFeatures)
 /*
 ** This Function Gets The List Of Dtm Features For A Dtm Feature For Line P1-P2
 **
@@ -6768,8 +6768,8 @@ BENTLEYDTM_Public int bcdtmList_getDtmFeatureTypeOccurrencesForLineDtmObject(BC_
        if( *numLineFeatures == memFeatureTable )
          {
           memFeatureTable = memFeatureTable + memInc ;
-          if( *lineFeatures == NULL ) *lineFeatures = ( DTM_TIN_POINT_FEATURES * ) malloc ( memFeatureTable * sizeof(DTM_TIN_POINT_FEATURES)) ;
-          else                        *lineFeatures = ( DTM_TIN_POINT_FEATURES * ) realloc ( *lineFeatures , memFeatureTable * sizeof(DTM_TIN_POINT_FEATURES)) ;
+          if( *lineFeatures == NULL ) *lineFeatures = ( DTMTinPointFeatures * ) malloc ( memFeatureTable * sizeof(DTMTinPointFeatures)) ;
+          else                        *lineFeatures = ( DTMTinPointFeatures * ) realloc ( *lineFeatures , memFeatureTable * sizeof(DTMTinPointFeatures)) ;
           if( *lineFeatures == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
          }
 /*
@@ -6954,7 +6954,7 @@ BENTLEYDTM_EXPORT int bcdtmList_getBreakLineUsertagsAtTinPointDtmObject
 {
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long    numBreak;
- bvector<DTM_TIN_POINT_FEATURES>  featuresP;
+ bvector<DTMTinPointFeatures>  featuresP;
 /*
 ** Write Debug Information
 */
@@ -7253,8 +7253,8 @@ BENTLEYDTM_EXPORT int bcdtmList_getConnectedUsertagsDtmObject
  long    nt,dtmFeature,tinPoint,inList,memTags=0,memTagsInc=100,numFeatures ;
  DTMUserTag            utag ;
  BC_DTM_FEATURE          *dtmFeatureP ;
- DTM_TIN_POINT_FEATURES  *featP,*featuresP=NULL ;
- bvector<DTM_TIN_POINT_FEATURES> features;
+ DTMTinPointFeatures  *featP,*featuresP=NULL ;
+ bvector<DTMTinPointFeatures> features;
 /*
 ** Write Status Message
 */
@@ -7475,7 +7475,7 @@ BENTLEYDTM_EXPORT int bcdtmList_getFeaturesAtPointDtmObject
  long   point,dtmFeature ;
  DPoint3d    *p3dP,*ptsP ;
  BC_DTM_FEATURE *dtmFeatureP ;
- DTM_TIN_POINT  *pointP ;
+ DPoint3d  *pointP ;
 
 /*
 ** Initialise
@@ -7944,8 +7944,8 @@ BENTLEYDTM_EXPORT int bcdtmList_extractHullWithDtmFeatureTypeAndUserTagsDtmObjec
  long    np,nf,numPointFeatures ;
  P3DTAG  *hullP ;
  FEATTAG *ftP   ;
- DTM_TIN_POINT_FEATURES *pointFeaturesP=NULL ;
- bvector<DTM_TIN_POINT_FEATURES> pointFeatures;
+ DTMTinPointFeatures *pointFeaturesP=NULL ;
+ bvector<DTMTinPointFeatures> pointFeatures;
 /*
 ** Validate Input Parameters
 */

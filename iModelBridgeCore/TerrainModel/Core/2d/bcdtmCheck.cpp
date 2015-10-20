@@ -425,7 +425,7 @@ BENTLEYDTM_Public int bcdtmCheck_sortOrderDtmObject(BC_DTM_OBJ *dtmP, long write
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long  point ;
- DTM_TIN_POINT *p1P,*p2P ;
+ DPoint3d *p1P,*p2P ;
 /*
 ** Check For Valid Dtm Object
 */

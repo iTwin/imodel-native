@@ -939,7 +939,7 @@ int bcdtmDrainage_calculateTracePointsForTriangleDtmObject
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  double x1,y1,z1,x2,y2,z2,x3,y3,z3,angle,pptol ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
 /*
 ** Write Trace Triangle
 */
@@ -1031,7 +1031,7 @@ int bcdtmDrainage_refineTptrCatchmentPolygonDtmObjectOld
  double x,y,z,xn,yn,angP2,angP3,ascentAngle,descentAngle,ascentSlope ;
  BC_DTM_OBJ    *catchmentDtmP=NULL,*catchDtmP=NULL ;
  DTMUserTag  catchmentTag=0 ;
- DTM_TIN_POINT *pntP,*pnt1P,*pnt2P ;
+ DPoint3d *pntP,*pnt1P,*pnt2P ;
 
 
 /*
@@ -1449,7 +1449,7 @@ int bcdtmDrainage_traceMaximumAscentFromPointOnTriangleEdgeDtmObject
  long   p1,p2,p3,ascentType,traceAscent,lastPoint,memPoints=0,memPointsInc=1000  ;
  double dx,dy,ascentAngle=0.0,descentAngle,ascentSlope=0.0,radius  ;
  double sx,sy,sz,rx,ry,nx,ny,nz,fx,fy,fz,lastAngle ;
- DTM_TIN_POINT *pnt1P,*pnt2P,*pnt3P ;
+ DPoint3d *pnt1P,*pnt2P,*pnt3P ;
  DTMDrainageTables *drainageTablesP=NULL ;
 /*
 ** Write Entry Message
@@ -1785,7 +1785,7 @@ int bcdtmDrainage_calculateRadialIntersectOnOppositeTriangleEdgeDtmObject
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long sdof=0,intPnt ;
- DTM_TIN_POINT *pnt1P,*pnt2P,*pnt3P ;
+ DPoint3d *pnt1P,*pnt2P,*pnt3P ;
 /*
 ** Write Entry Message
 */
@@ -2271,7 +2271,7 @@ int bcdtmDrainage_determineCatchmentsDtmObject
  long    pnt1,pnt2,pnt3,index,trgPnt1,trgPnt2,trgPnt3,fndPnt,lowPnt1,lowPnt2 ;
  double  startX,startY,startZ ;
  bool    traceToLowPoint=false ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  BC_DTM_OBJ    *clipTinP=NULL ;
  DTMTriangleIndex*  triangleIndexP=nullptr ;
 
@@ -3799,7 +3799,7 @@ int bcdtmDrainage_determineRefinedCatchmentBoundaryDtmObject
  long    numFeaturePts=0,memFeaturePts=0,memFeaturePtsInc=1000,numBefore,numAfter ;
  double  x,y,sx,sy,area,startX,startY,startZ ;
  DPoint3d     *p3d1P,*p3d2P,*featurePtsP=NULL ;
- DTM_TIN_POINT *pnt1P,*pnt2P,*pnt3P ;
+ DPoint3d *pnt1P,*pnt2P,*pnt3P ;
  DTMFeatureId nullFeatureId=DTM_NULL_FEATURE_ID ;
 /*
 ** Write Entry Message
@@ -4196,7 +4196,7 @@ int bcdtmDrainage_expandTptrPolygonDtmObject
  long pnt1,pnt2,pnt3,pnt4,process ;
  DPoint3d  polygonLine[2] ;
  double dd ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  BC_DTM_OBJ *polygonDtmP=NULL ;
  DTMFeatureId  nullFeatureId=DTM_NULL_FEATURE_ID  ;
 /*
@@ -5232,7 +5232,7 @@ int bcdtmDrainage_copyCatchmentTrianglesDtmObject
  long   pnt1,pnt2,pnt3,clPtr,addPnt,listPnt,*pointsP=NULL ;
  double area ;
  DPoint3d    dtmPoint[4] ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTMFeatureId nullFeatureId=DTM_NULL_FEATURE_ID ;
 /*
 ** Write Entry Message

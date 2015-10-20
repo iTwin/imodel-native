@@ -315,7 +315,7 @@ BENTLEYDTM_EXPORT int bcdtmData_deleteAllOccurrencesOfDtmFeatureTypeDtmObject
  int    ret=DTM_SUCCESS,isModified=FALSE,dbg=DTM_TRACE_VALUE(0) ;
     long   pnt1,pnt2,point,dtmFeature,numPoints,firstPoint,lastPoint,lastCount=0 ;
     BC_DTM_FEATURE  *dtmFeatureP ;
-    DTM_TIN_POINT *pointP,*numPointsP ;
+    DPoint3d *pointP,*numPointsP ;
     unsigned char   *delP,*delPointsP=NULL ;
     long   *ofsP,*offsCountP=NULL ;
 
@@ -919,7 +919,7 @@ BENTLEYDTM_EXPORT int  bcdtmData_moveZDtmObject
     int  ret=DTM_SUCCESS ;
     long point,dtmFeature ;
     DPoint3d  *p3dP,*ptsP ;
-    DTM_TIN_POINT  *pointP ;
+    DPoint3d  *pointP ;
     BC_DTM_FEATURE *dtmFeatureP ;
     /*
     ** Test For Valid Data Object
@@ -1000,7 +1000,7 @@ BENTLEYDTM_EXPORT int  bcdtmData_moveZUsingTagDtmObject
     int ret=DTM_SUCCESS ;
     long point,dtmFeature ;
     DPoint3d  *p3dP,*ptsP ;
-    DTM_TIN_POINT  *pointP ;
+    DPoint3d  *pointP ;
     BC_DTM_FEATURE *dtmFeatureP ;
     /*
     ** Test For Valid Data Object
@@ -1092,7 +1092,7 @@ BENTLEYDTM_EXPORT int  bcdtmData_moveXYZDtmObject
     int  ret=DTM_SUCCESS ;
     long point,dtmFeature ;
     DPoint3d  *p3dP,*ptsP ;
-    DTM_TIN_POINT  *pointP ;
+    DPoint3d  *pointP ;
     BC_DTM_FEATURE *dtmFeatureP ;
     /*
     ** Test For Valid Data Object
@@ -1168,7 +1168,7 @@ BENTLEYDTM_EXPORT int  bcdtmData_moveXYZUsingTagDtmObject
     int ret=DTM_SUCCESS ;
     long point,dtmFeature ;
     DPoint3d  *p3dP,*ptsP ;
-    DTM_TIN_POINT  *pointP ;
+    DPoint3d  *pointP ;
     BC_DTM_FEATURE *dtmFeatureP ;
     /*
     ** Test For Valid Data Object
@@ -1511,7 +1511,7 @@ BENTLEYDTM_Public int bcdtmData_testForAdjacenyOfDtmObjectsDtmObject(BC_DTM_OBJ 
     DPoint3d     *featurePtsP=NULL ;
     BC_DTM_OBJ      *test1P=NULL,*test2P=NULL ;
     BC_DTM_FEATURE  *dtmFeatureP ;
-    DTM_TIN_POINT   *pointP,*point1P,*point2P ;
+    DPoint3d   *pointP,*point1P,*point2P ;
     DTMFeatureId  nullFeatureId=DTM_NULL_FEATURE_ID  ; 
     /*
     ** Write Status Message
@@ -1963,7 +1963,7 @@ BENTLEYDTM_EXPORT int bcdtmData_copyInitialDtmFeaturePointsToPointArrayDtmObject
     /*
     ** Get Points For Dtm Feature
     */
-    if( bcdtmData_getInitialPointsForDtmFeatureDtmObject(dtmP,dtmFeature,(DTM_TIN_POINT **)featPtsPP,numFeatPtsP)) goto errexit ; 
+    if( bcdtmData_getInitialPointsForDtmFeatureDtmObject(dtmP,dtmFeature,(DPoint3d **)featPtsPP,numFeatPtsP)) goto errexit ; 
     /*
     ** Clean Up
     */
@@ -1986,7 +1986,7 @@ errexit :
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmData_getInitialPointsForDtmFeatureDtmObject(BC_DTM_OBJ *dtmP,long dtmFeature,DTM_TIN_POINT **featPtsPP,long *numFeatPtsP) 
+BENTLEYDTM_Public int bcdtmData_getInitialPointsForDtmFeatureDtmObject(BC_DTM_OBJ *dtmP,long dtmFeature,DPoint3d **featPtsPP,long *numFeatPtsP) 
     /*
     ** This Function Writes Points For A Dtm Feature 
     */
@@ -1994,7 +1994,7 @@ BENTLEYDTM_Public int bcdtmData_getInitialPointsForDtmFeatureDtmObject(BC_DTM_OB
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
     long n,listPtr,nextPnt=0,firstPnt,point ;
     BC_DTM_FEATURE *dtmFeatureP ;
-    DTM_TIN_POINT  *pntP,*pointP ;
+    DPoint3d  *pntP,*pointP ;
     /*
     ** Write Entry Message
     */
@@ -2030,7 +2030,7 @@ BENTLEYDTM_Public int bcdtmData_getInitialPointsForDtmFeatureDtmObject(BC_DTM_OB
         /*
         **  Allocate memory To Store Feature Points
         */
-        *featPtsPP = ( DTM_TIN_POINT * ) malloc( *numFeatPtsP * sizeof( DTM_TIN_POINT )) ;
+        *featPtsPP = ( DPoint3d * ) malloc( *numFeatPtsP * sizeof( DPoint3d )) ;
         if( *featPtsPP == NULL )
             {
             bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
@@ -2058,7 +2058,7 @@ BENTLEYDTM_Public int bcdtmData_getInitialPointsForDtmFeatureDtmObject(BC_DTM_OB
             case DTMFeatureState::PointsArray : 
             case DTMFeatureState::TinError    : 
             case DTMFeatureState::Rollback     : 
-                memcpy(*featPtsPP,bcdtmMemory_getPointerP3D(dtmP, dtmFeatureP->dtmFeaturePts.pointsPI),dtmFeatureP->numDtmFeaturePts*sizeof(DTM_TIN_POINT)) ;
+                memcpy(*featPtsPP,bcdtmMemory_getPointerP3D(dtmP, dtmFeatureP->dtmFeaturePts.pointsPI),dtmFeatureP->numDtmFeaturePts*sizeof(DPoint3d)) ;
                 break ;
                 /*
                 **     Get Points From Point Offset Array
@@ -3093,7 +3093,7 @@ BENTLEYDTM_Public int bcdtmData_getHullsForIntersectingPolyonalFeaturesDtmObject
     DPoint3d      *p3dPtsP=NULL ;
     BC_DTM_OBJ      *dtmP=NULL ;
     BC_DTM_FEATURE  *dtmFeatureP ; 
-    DTM_TIN_POINT   *pntP ;
+    DPoint3d   *pntP ;
     /*
     ** Write Entry Message
     */

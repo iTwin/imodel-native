@@ -639,7 +639,7 @@ StatusInt BcDTMEdit::_SelectTrianglesByLine (const DPoint3d pts[], int numPts, b
     {
     // Need to drape the line and get the boundary of the triangles around it.
     m_selectionState = None;
-    bvector<DTM_DRAPE_POINT> drapePts;
+    bvector<DTMDrapePoint> drapePts;
     BC_DTM_OBJ* dtmP = m_dtm->GetTinHandle();
     TMTransformHelper::DPoint3dCopy transformedPoints = helper ? helper->copyPointsToDTM (pts, numPts) : TMTransformHelper::DPoint3dCopy (pts, true);
     bcdtmDrape_stringDtmObject(dtmP, (DPoint3d*)(DPoint3d*)transformedPoints, numPts, stopAtFeatures, drapePts);

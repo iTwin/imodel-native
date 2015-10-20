@@ -342,7 +342,7 @@ bool DTMXAttributeHandler::CheckTemporary (bool goingToModify)
             bcdtmWrite_message (0, 0, 0, "DTM failed Check After resize");
 
         // Fix up the size of the partitions. If we need to reload then we dont need to.
-        needsReload = needsReload | FixUpDTMPartitionArray<DTM_TIN_POINT> (DTMPartition::Point, m_originalHeader.memPoints, m_originalHeader.numPointPartitions, dtm->numPoints, dtm->memPoints, dtm->numPointPartitions, dtm->pointPartitionSize, dtm->pointsPP);
+        needsReload = needsReload | FixUpDTMPartitionArray<DPoint3d> (DTMPartition::Point, m_originalHeader.memPoints, m_originalHeader.numPointPartitions, dtm->numPoints, dtm->memPoints, dtm->numPointPartitions, dtm->pointPartitionSize, dtm->pointsPP);
         needsReload = needsReload | FixUpDTMPartitionArray<DTM_TIN_NODE> (DTMPartition::Node, m_originalHeader.memNodes, m_originalHeader.numNodePartitions, dtm->numNodes, dtm->memNodes, dtm->numNodePartitions, dtm->nodePartitionSize, dtm->nodesPP);
         needsReload = needsReload | FixUpDTMPartitionArray<BC_DTM_FEATURE> (DTMPartition::Feature, m_originalHeader.memFeatures, m_originalHeader.numFeaturePartitions, dtm->numFeatures, dtm->memFeatures, dtm->numFeaturePartitions, dtm->featurePartitionSize, dtm->fTablePP);
         needsReload = needsReload | FixUpDTMPartitionArray<DTM_FEATURE_LIST> (DTMPartition::FList, m_originalHeader.memFlist, m_originalHeader.numFlistPartitions, dtm->numFlist, dtm->memFlist, dtm->numFlistPartitions, dtm->flistPartitionSize, dtm->fListPP);
@@ -1384,7 +1384,7 @@ void DTMXAttributeHandler::dh_allocXAttr (memoryMapT::iterator& iter, DTMPartiti
         // Update Pointer in the DTM arrays
         switch (type)
             {
-            case DTMPartition::Point:   m_dtm->GetTinHandle ()->pointsPP[index] = (DTM_TIN_POINT*)iter->second.mem; break;
+            case DTMPartition::Point:   m_dtm->GetTinHandle ()->pointsPP[index] = (DPoint3d*)iter->second.mem; break;
             case DTMPartition::Feature: m_dtm->GetTinHandle ()->fTablePP[index] = (BC_DTM_FEATURE*)iter->second.mem; break;
             case DTMPartition::Node:    m_dtm->GetTinHandle ()->nodesPP[index] = (DTM_TIN_NODE*)iter->second.mem; break;
             case DTMPartition::CList:   m_dtm->GetTinHandle ()->cListPP[index] = (DTM_CIR_LIST*)iter->second.mem; break;

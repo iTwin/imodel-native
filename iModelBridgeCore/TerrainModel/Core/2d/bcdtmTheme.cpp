@@ -32,7 +32,7 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadTriangleAttributesDtmObject
  double   xTrgMin,yTrgMin,xTrgMax,yTrgMax ;
  DPoint3d      trgPts[4] ;
  BC_DTM_OBJ    *clipDtmP=NULL ;
- DTM_TIN_POINT *pnt1P,*pnt2P,*pnt3P ;
+ DPoint3d *pnt1P,*pnt2P,*pnt3P ;
  DTM_TIN_NODE  *nodeP ;
 /*
 ** Write Entry Message
@@ -364,7 +364,7 @@ BENTLEYDTM_Private int bcdtmTheme_loadTriangleThemesFromDtmObject
  DPoint3d      trgPts[4] ;
  DRange1d   *themeP ;
  DTM_TIN_NODE  *nodeP ;
- DTM_TIN_POINT *pnt1P,*pnt2P,*pnt3P ;
+ DPoint3d *pnt1P,*pnt2P,*pnt3P ;
 /*
 ** Write Entry Message
 */
@@ -499,7 +499,7 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadPolygonThemesFromDtmObjectOld
  DPoint3d      *featurePtsP=NULL ;
  DRange1d   *themeP ;
  DTM_TIN_NODE  *nodeP ;
- DTM_TIN_POINT *pnt1P,*pnt2P,*pnt3P ;
+ DPoint3d *pnt1P,*pnt2P,*pnt3P ;
 /*
 ** Write Entry Message
 */
@@ -788,7 +788,7 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadPolygonThemesFromDtmObject
  DPoint3d      *featurePtsP=NULL ;
  DRange1d   *themeP ;
  DTM_TIN_NODE  *nodeP ;
- DTM_TIN_POINT *pnt1P,*pnt2P,*pnt3P ;
+ DPoint3d *pnt1P,*pnt2P,*pnt3P ;
 /*
 ** Write Entry Message
 */
@@ -2045,7 +2045,7 @@ BENTLEYDTM_Private int bcdtmTheme_loadTriangleHillShadeThemeFromDtmObject
  double   azRad,altRad,slope ;
  DPoint3d      trgPts[4] ;
  DTM_TIN_NODE  *nodeP ;
- DTM_TIN_POINT *pnt1P,*pnt2P,*pnt3P ;
+ DPoint3d *pnt1P,*pnt2P,*pnt3P ;
 /*
 ** Write Entry Message
 */

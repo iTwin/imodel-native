@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmExport.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -22,7 +22,7 @@ BENTLEYDTM_EXPORT int bcdtmExport_dtmObjectToDtmObject(BC_DTM_OBJ *dtmP,BC_DTM_O
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long    p1,p2,clc,dtmFeature,numFeatPts ;
  DPoint3d     tinLinePts[2],*featPtsP=NULL ;
- DTM_TIN_POINT   *pointP ;
+ DPoint3d   *pointP ;
  BC_DTM_FEATURE  *dtmFeatureP ;
  DTMFeatureId   hullFeatureId ;
  DTMUserTag     hullUserTag ; 

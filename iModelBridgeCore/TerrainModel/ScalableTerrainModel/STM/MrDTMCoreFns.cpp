@@ -6,7 +6,7 @@
 |       $Date: 2012/11/14 18:20:56 $
 |     $Author: Daryl.Holmwood $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -195,7 +195,7 @@ int bcdtmMultiResolution_tinDecimateRandomSpotsDtmObject
  double elevation ;
  DPoint3d dtmPoint ;
  DTM_TIN_NODE  *nodeP ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  DTM_CIR_LIST  *clistP ;
  BC_DTM_OBJ    *planePtsP=NULL ;
  DTM_PLANE plane ;
@@ -508,7 +508,7 @@ int bcdtmMultiResolution_tileDecimateRandomSpotsDtmObject
  unsigned char *pointMarkP=NULL ;
  double dZ,xMin,yMin,zMin,xMax,yMax,zMax ;
  struct ElevDifference { double elevation ; long point ; } *eldP,*elevDiffP=NULL ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_PLANE plane ;
  DTM_POINT_TILE *pointTilesP=NULL ;
 /*
@@ -716,7 +716,7 @@ int bcdtmMultiResolution_tileZToleranceFilterRandomSpotsDtmObject
  unsigned char* pointMarkP=NULL ;
  double dZ,xMin,yMin,zMin,xMax,yMax,zMax ;
  struct ElevDifference { double elevation ; long point ; } *eldP,*elevDiffP=NULL ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_PLANE plane ;
  DTM_POINT_TILE *pointTilesP=NULL ;
 /*
@@ -927,7 +927,7 @@ int bcdtmMultiResolution_tinZToleranceFilterRandomSpotsDtmObject
  double elevation ;
  DPoint3d dtmPoint ;
  DTM_TIN_NODE  *nodeP ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  DTM_CIR_LIST  *clistP ;
  BC_DTM_OBJ    *planePtsP=NULL ;
  DTM_PLANE plane ;
@@ -1253,7 +1253,7 @@ int bcdtmMultiResolution_tinZToleranceFilterGroupSpotsDtmObject
  DPoint3d    *p3dP,*pointsP=NULL ;
  struct ElevDifference { double elevation ; long point ; } *eldP,*elevDiffP=NULL ;
  DTM_PLANE plane ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  DTM_TIN_NODE  *nodeP ;
  DTM_CIR_LIST  *clistP ;
  BC_DTM_FEATURE *dtmFeatureP ;
@@ -1697,7 +1697,7 @@ int bcdtmMultiResolution_tinDecimateGroupSpotsDtmObject
  DPoint3d    *p3dP,*pointsP=NULL ;
  struct ElevDifference { double elevation ; long point ; } *eldP,*elevDiffP=NULL ;
  DTM_PLANE plane ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  DTM_TIN_NODE  *nodeP ;
  DTM_CIR_LIST  *clistP ;
  BC_DTM_FEATURE *dtmFeatureP ;
@@ -2083,7 +2083,7 @@ int bcdtmMultiResolution_tileDecimateGroupSpotsDtmObject
  double dZ,xMin,yMin,zMin,xMax,yMax,zMax ;
  DPoint3d    *p3dP,*pointsP=NULL ;
  struct ElevDifferenceTile { double elevation ; long point ; long tile ; long keep ; } *eldP,*eld1P,*elevDiffP=NULL ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_PLANE plane ;
  BC_DTM_FEATURE *dtmFeatureP ;
  BC_DTM_OBJ *tempDtmP=NULL ;
@@ -2449,7 +2449,7 @@ int bcdtmMultiResolution_checkSortOrderDtmObject
 {
  int  ret=DTM_SUCCESS,dbg=0;
  long pnt1,pnt2 ; 
- DTM_TIN_POINT *pnt1P,*pnt2P ;
+ DPoint3d *pnt1P,*pnt2P ;
 /*
 ** Write Entry Message
 */
@@ -2541,7 +2541,7 @@ int bcdtmMultiResolution_checkForDuplicatesDtmObject
 {
  int  ret=DTM_SUCCESS,dbg=0;
  long pnt1,pnt2 ; 
- DTM_TIN_POINT *pnt1P,*pnt2P ;
+ DPoint3d *pnt1P,*pnt2P ;
 /*
 ** Write Entry Message
 */
@@ -2640,7 +2640,7 @@ int bcdtmMultiResolution_sortBinaryXYZFile
  long   numCachePoints=0,numPartitionPoints=0,partitionCacheOffset[1000],dtmPointsOffset[1000] ;
  DPoint3d    *pointCacheP=NULL,dtmPoint,dtmPoint1 ;
  BC_DTM_OBJ *dtmP=NULL ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  FILE *xyzFP=NULL ;
  FILE *outFP=NULL ;
  WChar *wFileNameP=NULL ;
@@ -3919,7 +3919,7 @@ int bcdtmMath_calculateNormalVectorsVariationForTriangleVerticesDtmObject
  long p1,p2,p3,clPtr,numVectors ;
  long p1p2Brk,p1p3Brk,p2p3Brk ; 
  DPoint3d  trgVector ; 
- DTM_TIN_POINT *p1P,*p2P,*p3P ;
+ DPoint3d *p1P,*p2P,*p3P ;
  double avgAngle ;
  DTM_TIN_NODE *nodeP ;
  DTM_CIR_LIST *clistP ; 
@@ -4157,7 +4157,7 @@ int bcdtmMultiResolution_filterToLowestResolutionLevelDtmObject
  __int64 fileOffset=0 ;
  char label[24],buffer[128],dtmFileName[128] ;
  DPoint3d  *p3dP,*tilePtsP=NULL ;
- DTM_TIN_POINT  *pointP ;
+ DPoint3d  *pointP ;
  BC_DTM_FEATURE *dtmFeatureP ;
  BC_DTM_OBJ *filterDtmP=NULL,*filteredDtmP=NULL,*tempDtmP=NULL ;
  struct filteredTilePoints { long tileNumber ; long resolutionLevel ; long numPoints ; DPoint3d *pointsP ; } *filtP,*filt1P,*filt2P,*filteredTilePtsP=NULL ;

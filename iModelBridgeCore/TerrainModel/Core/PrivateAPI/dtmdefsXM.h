@@ -120,7 +120,7 @@ struct DTM_TIN_OBJ
  double  SD1,SD2,SD3,SD4,SD5 ; 
  void    *SP1,*SP2,*SP3,*SP4,*SP5 ;
 /************************************/
- DTM_TIN_POINT     *pointsP   ;
+ DPoint3d     *pointsP   ;
  DTM_TIN_NODE      *nodesP    ;
  DTM_CIR_LIST      *cListP    ;
  DTM_FEATURE_TABLE *fTableP   ;
@@ -130,7 +130,7 @@ struct DTM_TIN_OBJ
 
 struct DTM_DRAPE_FEATURE_XM { DTMFeatureType dtmFeatureType ; DTMUserTag userTag ; DTM_GUID userGuid ; } ;
 struct DTM_DRAPE_DATA_XM { long DrapeType,DrapeLine,numFeatureTable ; double x,y,z ; DTM_DRAPE_FEATURE_XM *Features ; } ;
-struct DTM_TIN_POINT_FEATURES_XM { long dtmFeature; DTMFeatureType dtmFeatureType; long priorPoint,nextPoint ; DTMUserTag userTag ; DTM_GUID userGuid ; } ;
+struct DTMTinPointFeatures_XM { long dtmFeature; DTMFeatureType dtmFeatureType; long priorPoint,nextPoint ; DTMUserTag userTag ; DTM_GUID userGuid ; } ;
 
 struct DTM_FEATURE_XM 
 {
@@ -158,7 +158,7 @@ struct DTM_DRAPE_POINT_XM
  double drapeX ;                           /* x Coordinate Of Drape Point                     */
  double drapeY ;                           /* y Coordinate Of Drape Point                     */
  double drapeZ ;                           /* z Coordinate Of Drape Point                     */ 
- DTM_TIN_POINT_FEATURES_XM *drapeFeaturesP ;  /* Pointer To DTM Features At Drape Point          */
+ DTMTinPointFeatures_XM *drapeFeaturesP ;  /* Pointer To DTM Features At Drape Point          */
 } ;
 
 /*-------------------------------------------------------------------+

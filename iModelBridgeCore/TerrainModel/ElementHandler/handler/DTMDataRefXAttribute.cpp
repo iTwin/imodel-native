@@ -85,7 +85,7 @@ void RememberDTM (
     {
     memcpy (&stored_headerData, headerP, sizeof (BC_DTM_OBJ));
     remember (stored_featureArrays, featuresArrayP, stored_headerData.memFeatures, stored_headerData.featurePartitionSize, sizeof (BC_DTM_FEATURE));
-    remember (stored_pointArrays, pointArrayP, stored_headerData.memPoints, stored_headerData.pointPartitionSize, sizeof (DTM_TIN_POINT));
+    remember (stored_pointArrays, pointArrayP, stored_headerData.memPoints, stored_headerData.pointPartitionSize, sizeof (DPoint3d));
     remember (stored_nodeArrays, nodeArrayP, stored_headerData.memNodes, stored_headerData.nodePartitionSize, sizeof (DTM_TIN_NODE));
     remember (stored_cListArrays, clistArrayP, stored_headerData.memClist, stored_headerData.clistPartitionSize, sizeof (DTM_CIR_LIST));
     remember (stored_fListArrays, flistArrayP, stored_headerData.memFlist, stored_headerData.flistPartitionSize, sizeof (DTM_FEATURE_LIST));
@@ -105,7 +105,7 @@ void CompareDTM (
 
         BC_DTM_OBJ* dtm = (BC_DTM_OBJ*)headerData;
         compare (stored_featureArrays, featureArrays, dtm->memFeatures, dtm->featurePartitionSize, sizeof (BC_DTM_FEATURE));
-        compare (stored_pointArrays, pointArrays, dtm->memPoints, dtm->pointPartitionSize, sizeof (DTM_TIN_POINT));
+        compare (stored_pointArrays, pointArrays, dtm->memPoints, dtm->pointPartitionSize, sizeof (DPoint3d));
         compare (stored_nodeArrays, nodeArrays, dtm->memNodes, dtm->nodePartitionSize, sizeof (DTM_TIN_NODE));
         compare (stored_cListArrays, cListArrays, dtm->memClist, dtm->clistPartitionSize, sizeof (DTM_CIR_LIST));
         compare (stored_fListArrays, fListArrays, dtm->memFlist, dtm->flistPartitionSize, sizeof (DTM_FEATURE_LIST));

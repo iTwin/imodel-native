@@ -4381,8 +4381,8 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
  long   memPointArrays=0,memPointArraysInc=10 ;
  double xMin,yMin,xMax,yMax ;
  DPoint3d    *ptsP,*clipPtsP=NULL,*p3dP,*p3d1P,*p3d2P ;
- DTM_DRAPE_POINT *drapeP, *drape1P, *drape2P = NULL;
- bvector<DTM_DRAPE_POINT> drapePtsP;
+ DTMDrapePoint *drapeP, *drape1P, *drape2P = NULL;
+ bvector<DTMDrapePoint> drapePtsP;
  long startTime = bcdtmClock() ;
 
 /*
@@ -4701,7 +4701,7 @@ BENTLEYDTM_Public int bcdtmClip_determineFeatureExtentWithFenceDtmObject
  long            trgPnt1,trgPnt2,trgPnt3,pntFnd,numPtsOnDrape ;
  double          xMin,xMax,yMin,yMax ; 
  DPoint3d             *p3dP ;
- bvector<DTM_DRAPE_POINT> drapePtsP;
+ bvector<DTMDrapePoint> drapePtsP;
 /*
 ** Write Entry Message
 */

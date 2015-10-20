@@ -20,7 +20,7 @@ BENTLEYDTM_EXPORT int bcdtmMath_normaliseCoordinatesDtmObject(BC_DTM_OBJ *dtmP)
  int    ret=DTM_SUCCESS ;
  long   ofs,point,pointPartition ;
  double large ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
 /*
 ** Test For Valid Dtm Object
 */
@@ -91,7 +91,7 @@ BENTLEYDTM_EXPORT int bcdtmMath_setBoundingCubeDtmObject(BC_DTM_OBJ *dtmP)
 {
  int    ret=DTM_SUCCESS ;
  long   point       ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
 /*
 ** Test For Valid Dtm Object
 */
@@ -204,7 +204,7 @@ BENTLEYDTM_Public int bcdtmMath_pointSideOfDtmObject(BC_DTM_OBJ *dtmP,long p1,lo
 {
  int    ret=0,dbg=DTM_TRACE_VALUE(0) ;
  double sd1,sd2;
- DTM_TIN_POINT *point1P, *point2P, *point3P ;
+ DPoint3d *point1P, *point2P, *point3P ;
 /*
 ** Get Point Coordinates
 */
@@ -248,7 +248,7 @@ BENTLEYDTM_Public int bcdtmMath_linePointSideOfDtmObject(BC_DTM_OBJ *dtmP,long p
 {
  int    ret ;
  double sd1,sd2,sd3,x1,y1,x2,y2 ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  pointP = pointAddrP(dtmP,p1) ;
  x1 = pointP->x ;
  y1 = pointP->y ;
@@ -273,7 +273,7 @@ BENTLEYDTM_Public int bcdtmMath_linePointSideOfDtmObject(BC_DTM_OBJ *dtmP,long p
 BENTLEYDTM_Public double bcdtmMath_pointDistanceDtmObject(BC_DTM_OBJ *dtmP,long p1,long p2)
 {
  double x,y ;
- DTM_TIN_POINT *p1P,*p2P ;
+ DPoint3d *p1P,*p2P ;
  p1P = pointAddrP(dtmP,p1) ;
  p2P = pointAddrP(dtmP,p2) ;
  x = p2P->x - p1P->x ;
@@ -288,7 +288,7 @@ BENTLEYDTM_Public double bcdtmMath_pointDistanceDtmObject(BC_DTM_OBJ *dtmP,long 
 BENTLEYDTM_Public double bcdtmMath_pointDistanceSquaredDtmObject(BC_DTM_OBJ *dtmP,long p1,long p2)
 {
  double x,y ;
- DTM_TIN_POINT *p1P,*p2P ;
+ DPoint3d *p1P,*p2P ;
  p1P = pointAddrP(dtmP,p1) ;
  p2P = pointAddrP(dtmP,p2) ;
  x = p2P->x - p1P->x ;
@@ -303,7 +303,7 @@ BENTLEYDTM_Public double bcdtmMath_pointDistanceSquaredDtmObject(BC_DTM_OBJ *dtm
 BENTLEYDTM_Public double bcdtmMath_pointDistance3DDtmObject(BC_DTM_OBJ *dtmP,long p1,long p2)
 {
  double x,y,z ;
- DTM_TIN_POINT *p1P,*p2P ;
+ DPoint3d *p1P,*p2P ;
  p1P = pointAddrP(dtmP,p1) ;
  p2P = pointAddrP(dtmP,p2) ;
  x = p2P->x - p1P->x ;
@@ -320,7 +320,7 @@ BENTLEYDTM_Public int bcdtmMath_allPointSideOfDtmObject(BC_DTM_OBJ *dtmP,long p1
 {
  int    ret=0 ;
  double sd1,sd2,sd3,x1,y1,x2,y2,x3,y3 ;
- DTM_TIN_POINT *pP ;
+ DPoint3d *pP ;
  pP = pointAddrP(dtmP,p1) ;
  x1  = pP->x ; y1 = pP->y ;
  pP = pointAddrP(dtmP,p2) ;
@@ -349,7 +349,7 @@ BENTLEYDTM_Public int bcdtmMath_pointInTriangleDtmObject(BC_DTM_OBJ *dtmP,long P
 {
  long    swap ;
  double  x1,y1,x2,y2,x3,y3 ;
- DTM_TIN_POINT *p1P,*p2P,*p3P ;
+ DPoint3d *p1P,*p2P,*p3P ;
 /*
 ** Check And Set Triangle Direction Anti Clockwise
 */
@@ -389,7 +389,7 @@ BENTLEYDTM_Public int bcdtmMath_pointInsideTriangleDtmObject(BC_DTM_OBJ *dtmP,lo
 {
  long    swap ;
  double  x1,y1,x2,y2,x3,y3 ;
- DTM_TIN_POINT *p1P,*p2P,*p3P ;
+ DPoint3d *p1P,*p2P,*p3P ;
 /*
 ** Check And Set Triangle Direction Anti Clockwise
 */
@@ -460,7 +460,7 @@ BENTLEYDTM_Public double bcdtmMath_normalDistanceToLineDtmObject(BC_DTM_OBJ *dtm
 BENTLEYDTM_EXPORT double bcdtmMath_getPointAngleDtmObject(BC_DTM_OBJ *dtmP,long p1,long p2)
 {
  double ang,dx,dy ;
- DTM_TIN_POINT *p1P,*p2P ;
+ DPoint3d *p1P,*p2P ;
  p1P = pointAddrP(dtmP,p1) ;
  p2P = pointAddrP(dtmP,p2) ;
  dx = p2P->x - p1P->x ;
@@ -484,7 +484,7 @@ BENTLEYDTM_Public int bcdtmMath_calculateAreaAndDirectionHptrPolygonDtmObject(BC
 {
  long   sp,np ;
  double x,y ;
- DTM_TIN_POINT *spP,*npP ;
+ DPoint3d *spP,*npP ;
 /*
 ** Determine Hptr Polygon Area
 */
@@ -526,7 +526,7 @@ BENTLEYDTM_Public int bcdtmMath_calculateAreaAndDirectionSptrPolygonDtmObject(BC
 {
  long   sp,np ;
  double x,y ;
- DTM_TIN_POINT *spP,*npP ;
+ DPoint3d *spP,*npP ;
 /*
 ** Determine Hptr Polygon Area
 */
@@ -568,7 +568,7 @@ BENTLEYDTM_Public int bcdtmMath_calculateAreaAndDirectionTptrPolygonDtmObject(BC
 {
  long   sp,np ;
  double x,y ;
- DTM_TIN_POINT *spP,*npP ;
+ DPoint3d *spP,*npP ;
 /*
 ** Determine Tptr Polygon Area
 */
@@ -686,7 +686,7 @@ BENTLEYDTM_EXPORT int bcdtmMath_interpolatePointOnLineDtmObject(BC_DTM_OBJ *dtmP
 */
 {
  double dx,dy,dz ;
- DTM_TIN_POINT *p1P,*p2P   ;
+ DPoint3d *p1P,*p2P   ;
 /*
 ** Initialise Varibles
 */
@@ -715,7 +715,7 @@ BENTLEYDTM_Public int bcdtmMath_interpolatePointOnTriangleDtmObject(BC_DTM_OBJ *
 {
  long p ;
  double trgX[3],trgY[3],trgZ[3] ;
- DTM_TIN_POINT *p1P,*p2P,*p3P   ;
+ DPoint3d *p1P,*p2P,*p3P   ;
 /*
 ** Initialise Variables
 */
@@ -877,7 +877,7 @@ BENTLEYDTM_Public int bcdtmMath_calculatePartialDerivativesDtmObject(BC_DTM_OBJ 
  double  dnmy,dnmx,dnmz ;
  double  dnmxx,dnmxy,dnmyx,dnmyy ;
  long    p,cl,cp,feature ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
 /*
 ** Allocate Storage for Partial Derivatives
 */
@@ -1185,7 +1185,7 @@ BENTLEYDTM_Public int bcdtmMath_getTriangleAttributesDtmObject(BC_DTM_OBJ *dtmP,
 {
  double         X1,Y1,Z1,X2,Y2,Z2,X3,Y3,Z3 ;
  double         c,ca=0.0,cb=0.0,cc=0.0,cd=0.0,axy=0.0 ;
- DTM_TIN_POINT  *pntP ;
+ DPoint3d  *pntP ;
  static thread_local long    lp, lp1 = 0, lp2 = 0, lp3 = 0;
  static thread_local double  slopeDeg = 0.0, slopePer = 0.0, aspect = 0.0, height = 0.0;
  static thread_local BC_DTM_OBJ  *lastDtmP = NULL;
@@ -1527,7 +1527,7 @@ BENTLEYDTM_EXPORT int bcdtmMath_calculateNormalVectorToPlaneDtmObject
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  DPoint3d  vector1,vector2 ;
- DTM_TIN_POINT *p1P,*p2P,*p3P ;
+ DPoint3d *p1P,*p2P,*p3P ;
 /*
 ** Write Entry Message
 */
@@ -1585,7 +1585,7 @@ BENTLEYDTM_EXPORT int bcdtmMath_transformDtmObject
  double x,y,z,dx,dy,scaleFactor=1.0 ;
  DPoint3d    *p3dP,*ptsP,scalePts[2] ;
  double xMin = 0.0,yMin = 0.0,xMax = 0.0,yMax = 0.0,zMin = 0.0,zMax = 0.0;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  BC_DTM_FEATURE *dtmFeatureP ;
 /*
 ** Write Entry Message
@@ -1790,7 +1790,7 @@ BENTLEYDTM_EXPORT int bcdtmMath_transformViaCallbackDtmObject
  long   point,dtmFeature,priorTinState=FALSE ;
  DPoint3d    *p3dP,*ptsP ;
  double dx,dy,scaleFactor,priorTransformLength,postTransformLength ;
- DTM_TIN_POINT *pointP,tinPnt ;
+ DPoint3d *pointP,tinPnt ;
  BC_DTM_FEATURE *dtmFeatureP ;
 /*
 ** Write Entry Message
@@ -2014,8 +2014,8 @@ BENTLEYDTM_EXPORT int  bcdtmMath_calculatesSlopeAtGivenAngleFromPointDtmObject(B
  long   np,pp,P1,P2,P3,lf1,lf2,lf3,Ptype,numDrapePts ,breakPointFound,LineFlag ;
  double d1,d2,d3,radius,z,Xi,Yi,ang,angn,angp ;
  DPoint3d    LinePts[2] ;
- DTM_DRAPE_POINT *drapeP,*drapePtsP=NULL ;
- bvector<DTM_DRAPE_POINT> drapePts;
+ DTMDrapePoint *drapeP,*drapePtsP=NULL ;
+ bvector<DTMDrapePoint> drapePts;
 /*
 **Write Entry Message
 */
@@ -2250,7 +2250,7 @@ BENTLEYDTM_EXPORT int bcdtmMath_translateCoordinatesDtmObject(BC_DTM_OBJ *dtmP,d
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long  point ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
 /*
 ** Write Status Message
 */
@@ -2358,7 +2358,7 @@ BENTLEYDTM_EXPORT int bcdtmMath_rotateCoordinatesDtmObject(BC_DTM_OBJ *dtmP,doub
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   point ;
  double Tx,Ty,Radius,Pangle ;
- DTM_TIN_POINT  *pointP ;
+ DPoint3d  *pointP ;
 /*
 ** Write Status Message
 */
@@ -2477,7 +2477,7 @@ BENTLEYDTM_EXPORT int bcdtmMath_convertCoordinatesDtmObject(BC_DTM_OBJ *dtmP,dou
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long  point ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
 /*
 ** Write Status Message
 */
@@ -2568,7 +2568,7 @@ BENTLEYDTM_EXPORT int bcdtmMath_convertUnitsDtmObject(BC_DTM_OBJ *dtmP, double x
 {
  int    ret=DTM_SUCCESS ;
  long   point ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
 /*
 ** Test For Valid Dtm Object
 */

@@ -708,7 +708,7 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_dtmFeatureTypeOccurrencesDtmObject(BC_
  DTM_TIN_NODE    *nodeP,*node1P,*node2P,*node3P ;
  BC_DTM_FEATURE  *dtmFeatureP ;
  BC_DTM_OBJ      *clipDtmP=nullptr  ;
- DTM_TIN_POINT   *p1P,*p2P,*p3P,*pntP  ;
+ DPoint3d   *p1P,*p2P,*p3P,*pntP  ;
  DTM_POINT_ARRAY **clipArraysPP=nullptr ;
  DTM_CIR_LIST    *clistP ;
  DTMUserTag    hullUserTag ;
@@ -1150,7 +1150,7 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_dtmFeatureTypeOccurrencesDtmObject(BC_
          {
           if( dtmFeatureP->dtmFeatureState == DTMFeatureState::Data || dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin )
             {
-             if( bcdtmObject_getPointsForDtmFeatureDtmObject(dtmP,dtmFeatureNum,(DTM_TIN_POINT **) &featurePtsP ,&numFeaturePts)) goto errexit ;
+             if( bcdtmObject_getPointsForDtmFeatureDtmObject(dtmP,dtmFeatureNum,(DPoint3d **) &featurePtsP ,&numFeaturePts)) goto errexit ;
              if( numFeaturePts > 0 )
                {
                 if( useFence == FALSE )
@@ -2178,7 +2178,7 @@ BENTLEYDTM_EXPORT int bcdtmScanLoad_nextDtmFeatureTypeOccurrenceDtmObject
  char            dtmFeatureTypeName[50] ;
  DTM_TIN_NODE    *nodeP ;
  BC_DTM_FEATURE  *dtmFeatureP ;
- DTM_TIN_POINT   *p1P,*p2P,*p3P,*pntP  ;
+ DPoint3d   *p1P,*p2P,*p3P,*pntP  ;
  DTM_CIR_LIST    *clistP ;
 /*
 ** Static Variables For Maintaining Scan Context
@@ -2553,7 +2553,7 @@ BENTLEYDTM_EXPORT int bcdtmScanLoad_nextDtmFeatureTypeOccurrenceDtmObject
             {
              if( dtmFeatureP->dtmFeatureState != DTMFeatureState::TinError && dtmFeatureP->dtmFeatureState != DTMFeatureState::Rollback)
                {
-                if( bcdtmObject_getPointsForDtmFeatureDtmObject(dtmP,dtmFeatureNum,(DTM_TIN_POINT **) &featurePtsP ,&numFeaturePts)) goto errexit ;
+                if( bcdtmObject_getPointsForDtmFeatureDtmObject(dtmP,dtmFeatureNum,(DPoint3d **) &featurePtsP ,&numFeaturePts)) goto errexit ;
                 if( numFeaturePts > 0 )
                   {
                    fenceLoad  = TRUE ;
@@ -3824,7 +3824,7 @@ BENTLEYDTM_EXPORT int bcdtmScanLoad_nextDtmFeatureOccurrenceForDtmFeatureIdFromD
             {
              if( bcdtmList_extractHullDtmObject(dtmP,&featurePtsP,&numFeaturePts)) goto errexit ;
             }
-          else if( bcdtmObject_getPointsForDtmFeatureDtmObject(dtmP,dtmFeature,(DTM_TIN_POINT **) &featurePtsP ,&numFeaturePts)) goto errexit ;
+          else if( bcdtmObject_getPointsForDtmFeatureDtmObject(dtmP,dtmFeature,(DPoint3d **) &featurePtsP ,&numFeaturePts)) goto errexit ;
           if( numFeaturePts > 0 )
             {
              fenceLoad  = TRUE ;
@@ -4044,7 +4044,7 @@ BENTLEYDTM_EXPORT int bcdtmScanLoad_nextDtmFeatureOccurrenceForUserTagFromDtmObj
            dtmFeatureP->dtmFeatureState != DTMFeatureState::Deleted   &&
            dtmFeatureP->dtmUserTag      == userTag )
          {
-          if( bcdtmObject_getPointsForDtmFeatureDtmObject(dtmP,dtmFeature,(DTM_TIN_POINT **) &featurePtsP ,&numFeaturePts)) goto errexit ;
+          if( bcdtmObject_getPointsForDtmFeatureDtmObject(dtmP,dtmFeature,(DPoint3d **) &featurePtsP ,&numFeaturePts)) goto errexit ;
           if( numFeaturePts > 0 )
             {
              fenceLoad  = TRUE ;
@@ -5408,7 +5408,7 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_dtmFeatureUsertagOccurrencesDtmObject
  DPoint3d             *p3dP,*featurePtsP=nullptr ;
  BC_DTM_FEATURE  *dtmFeatureP ;
  BC_DTM_OBJ      *clipDtmP=nullptr  ;
- DTM_TIN_POINT   *pntP  ;
+ DPoint3d   *pntP  ;
  DTM_POINT_ARRAY **clipArraysPP=nullptr ;
 /*
 ** Write Entry Message
@@ -5535,7 +5535,7 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_dtmFeatureUsertagOccurrencesDtmObject
 */
        else
          {
-          if( bcdtmObject_getPointsForDtmFeatureDtmObject(dtmP,dtmFeature,(DTM_TIN_POINT **) &featurePtsP ,&numFeaturePts)) goto errexit ;
+          if( bcdtmObject_getPointsForDtmFeatureDtmObject(dtmP,dtmFeature,(DPoint3d **) &featurePtsP ,&numFeaturePts)) goto errexit ;
           if( useFence == FALSE )
             {
              if( loadFunctionP((DTMFeatureType)dtmFeatureP->dtmFeatureType,dtmFeatureP->dtmUserTag,dtmFeatureP->dtmFeatureId,featurePtsP,numFeaturePts,userP)) goto errexit ;
@@ -5695,7 +5695,7 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_dtmFeatureFeatureIdOccurrencesDtmObjec
  DPoint3d             *p3dP,*featurePtsP=nullptr ;
  BC_DTM_FEATURE  *dtmFeatureP ;
  BC_DTM_OBJ      *clipDtmP=nullptr  ;
- DTM_TIN_POINT   *pntP  ;
+ DPoint3d   *pntP  ;
  DTM_POINT_ARRAY **clipArraysPP=nullptr ;
 /*
 ** Write Entry Message
@@ -5825,7 +5825,7 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_dtmFeatureFeatureIdOccurrencesDtmObjec
 */
        else
          {
-          if( bcdtmObject_getPointsForDtmFeatureDtmObject(dtmP,dtmFeature,(DTM_TIN_POINT **) &featurePtsP ,&numFeaturePts)) goto errexit ;
+          if( bcdtmObject_getPointsForDtmFeatureDtmObject(dtmP,dtmFeature,(DPoint3d **) &featurePtsP ,&numFeaturePts)) goto errexit ;
           if( useFence == FALSE )
             {
              if( bcdtmLoad_callUserLoadFunction(loadFunctionP,dtmFeatureP->dtmFeatureType,dtmFeatureP->dtmUserTag,dtmFeatureP->dtmFeatureId,featurePtsP,numFeaturePts,userP)) goto errexit ;

@@ -51,7 +51,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_pointDtmObject(BC_DTM_OBJ *dtmP,double x,double
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
  long pnt1, pnt2, pnt3, fndType;
  bool voidFlag;
- DTM_TIN_POINT *pnt1P,*pnt2P ;
+ DPoint3d *pnt1P,*pnt2P ;
 /*
 ** Write Entry Message
 */
@@ -148,7 +148,7 @@ BENTLEYDTM_Private int bcdtmDrape_findClosestHullLineDtmObject(BC_DTM_OBJ *dtmP,
 {
  long   p1,p2,isw,lf ;
  double d1,d2,d3,d4,dn=0.0,Xn,Yn  ;
- DTM_TIN_POINT *p1P,*p2P ;
+ DPoint3d *p1P,*p2P ;
 /*
 ** Initialiase
 */
@@ -221,7 +221,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
  DPoint3d             *stringPtsP,        /* ==> Pointer To String Points                                     */ 
  long            numStringPts,       /* ==> Number Of String Points                                      */
  long            dtmFeatureOption,   /* ==> Optionally Return Dtm Features For Drape Points <TRUE,FALSE> */ 
- bvector<DTM_DRAPE_POINT>& drapePts       /* <== Pointer To Drape Points                                      */
+ bvector<DTMDrapePoint>& drapePts       /* <== Pointer To Drape Points                                      */
 )
 /*
 **
@@ -241,9 +241,9 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
  long    drapeType,lineNum,onLine ;
  double  nd,dz,xi,yi,zi,xls,yls,zls,xle,yle  ;
  DPoint3d     *p3dP ;
- DTM_DRAPE_POINT *dpP=NULL ;
+ DTMDrapePoint *dpP=NULL ;
  DTM_DAT_OBJ     *dataP=NULL ;
- DTM_TIN_POINT   *pnt1P,*pnt2P ;
+ DPoint3d   *pnt1P,*pnt2P ;
 // long    removeOn ;
  DTM_GUID nullGuid=DTM_NULL_GUID ;
 /*
@@ -1079,10 +1079,10 @@ BENTLEYDTM_Private int bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject
  long   pnt2,
  long   pnt3,
  long   dtmFeatureOption,
- bvector<DTM_DRAPE_POINT>& drapePts
+ bvector<DTMDrapePoint>& drapePts
 ) 
 /*
-** This Function Stores A Drape Point Into the DTM_DRAPE_POINT structure
+** This Function Stores A Drape Point Into the DTMDrapePoint structure
 */
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
@@ -1090,8 +1090,8 @@ BENTLEYDTM_Private int bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject
  long dtmFeature, breakPoint = 0;
  long numDrapeFeatures = 0;
  DTMDrapedLineCode newDrapeType;
- bvector<DTM_TIN_POINT_FEATURES> drapeFeatures;
- DTM_TIN_POINT_FEATURES *dfP;
+ bvector<DTMTinPointFeatures> drapeFeatures;
+ DTMTinPointFeatures *dfP;
 /*
 ** Write Entry Message
 */
@@ -1109,7 +1109,7 @@ BENTLEYDTM_Private int bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject
 **  drapeType == 3  Drape Point In Triangle
 **
 ** 
-** DTM_DRAPE_POINT drapeType Values   ==  0  Drape Point External To Tin 
+** DTMDrapePoint drapeType Values   ==  0  Drape Point External To Tin 
 **                                    ==  1  Drape Point In Triangle
 **                                    ==  2  Drape Point On Break Line  
 **                                    ==  3  Drape Point On Break Triangle Edge
@@ -1549,7 +1549,7 @@ BENTLEYDTM_EXPORT int  bcdtmDrape_pointReturnAttributesDtmObject
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long P1,P2,P3,fndType,startTime=0 ;
  bool voidFlag = false;
- DTM_TIN_POINT *pnt1P,*pnt2P ;
+ DPoint3d *pnt1P,*pnt2P ;
 /*
 ** Write Entry Message
 */
@@ -2150,8 +2150,8 @@ BENTLEYDTM_EXPORT int bcdtmDrape_spiralOnDtmObject (BC_DTM_OBJ *dtmP, double R1,
  long   numSpiralPts=0,memSpiralPts=0,memSpiralPtsInc=1000,numDrapePts ;
  double Sx,Sy,Nx,Ny,spiralInc,spiralLen,spiralStrokeTolerance=1000.0 ;
  DPoint3d    *p3dP,*spiralPtsP=NULL ;
- DTM_DRAPE_POINT *drapeP;
- bvector<DTM_DRAPE_POINT> drapePtsP;
+ DTMDrapePoint *drapeP;
+ bvector<DTMDrapePoint> drapePtsP;
 /*
 ** Write Status Message
 */ 
@@ -2376,7 +2376,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_arcOnDtmObject (BC_DTM_OBJ *dtmP, double Sx, do
  double  A3,Aa,Rs,Px,Py,Tx,Ty,Nx,Ny  ;
  long    numArcPts=0,memArcPts=0,memArcPtsInc=1000 ;
  DPoint3d    *p3dP,*arcPtsP=NULL ;
- bvector<DTM_DRAPE_POINT> drapePtsP;
+ bvector<DTMDrapePoint> drapePtsP;
 /*
  double d1,dn,ang,angn,Ix,Iy;
  long isw ;
@@ -3305,8 +3305,8 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectContourDtmObject
  double dx,dy,dz,dl,zMin,zMax,minContourPointDistance  ;
  double contourLow,contourHigh,startAngle,drapeAngle=0.0,drapeAngleInc=0.0 ;
  DPoint3d    surfacePoint,contourPoint,closestContourPoint,drapeLine[2] ;
- DTM_DRAPE_POINT *drapeP, *drapePtsP;
- bvector<DTM_DRAPE_POINT> drapePts;
+ DTMDrapePoint *drapeP, *drapePtsP;
+ bvector<DTMDrapePoint> drapePts;
  DTM_POINT_ARRAY contourPoints ;
 /*
 ** Write Entry Message

@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/bcdtminlines.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -36,7 +36,7 @@ __forceinline  BC_DTM_FEATURE * ftableAddrP(BC_DTM_OBJ *dtmP,long feature )
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-__forceinline  DTM_TIN_POINT * pointAddrP(BC_DTM_OBJ *dtmP,long point )
+__forceinline  DPoint3d * pointAddrP(BC_DTM_OBJ *dtmP,long point )
 {
  //    x = (dtmP->pointsP+offset)->x ;     old 
  //    x = pointAddrP(dtmP,offset)->x ;    new

@@ -31,7 +31,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_dtmFeatureTypeDtmObject
  long           point,feature,dtmFeature,numFeaturePts,numBeforeFilter,numAfterFilter ;
  DPoint3d            *p3dP,*featurePtsP=NULL ; 
  BC_DTM_FEATURE *dtmFeatureP ;
- DTM_TIN_POINT   *point1P,*point2P ;
+ DPoint3d   *point1P,*point2P ;
 /*
 ** Initialise
 */
@@ -569,7 +569,7 @@ BENTLEYDTM_Private int bcdtmFilter_setFeatureStatesToFirstPointDtmObject(BC_DTM_
  DPoint3d    *p3dP,*featurePtsP=NULL ;
  char   dtmFeatureTypeName[50] ;
  BC_DTM_FEATURE *dtmFeatureP  ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
 /*
 ** Write Entry Message
 */
@@ -659,7 +659,7 @@ BENTLEYDTM_Private int bcdtmFilter_filterRandomSpotTilesDtmObject
  DPoint3d  randomSpot ;
  double z ;
  BC_DTM_OBJ *dtm1P=NULL,*dtm2P=NULL ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  DTMFeatureId featureId ;
  DTMFeatureId  nullFeatureId=DTM_NULL_FEATURE_ID  ; 
 /*
@@ -897,7 +897,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileFilterRandomSpotsDtmObject
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
  long point,firstPoint,lastPoint ;
  DPoint3d  randomSpot;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  BC_DTM_OBJ *filterDtmP=NULL ;
  DTMFeatureId nullFeatureId=DTM_NULL_FEATURE_ID ;
 /*
@@ -1224,7 +1224,7 @@ BENTLEYDTM_Private void  bcdtmFilter_processTileDtmObject
 
  long iniPts = 0 ;
  long point ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  BC_DTM_OBJ  *tempFilterP=NULL ;  // all (sorted) points in current SlabX.
  DTMFeatureId nullFeatureId=DTM_NULL_FEATURE_ID ;
 /*
@@ -1424,7 +1424,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_findPlaneDtmObject
  double A[9] = {0.0};
  double b[3] = {0.0};
  DPoint3d pntC;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
 
  pPlane->A = 0.0 ;
  pPlane->B = 0.0 ;
@@ -1603,7 +1603,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_sortPointRangeDtmObject
  long   ofs,pnt,numPoints=0 ; 
  long   *sP,*sortP=NULL,*tempP=NULL ;
  double dSave ;
- DTM_TIN_POINT *pnt1P,*pnt2P,dtmPoint  ;
+ DPoint3d *pnt1P,*pnt2P,dtmPoint  ;
 /*
 ** Write Entry Message
 */
@@ -1782,7 +1782,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_sortTaggedPointRangeDtmObject
  long   ofs,pnt,numPoints=0,userTag ; 
  long   *sP,*sortP=NULL,*tempP=NULL ;
  double dSave ;
- DTM_TIN_POINT *pnt1P,*pnt2P,dtmPoint  ;
+ DPoint3d *pnt1P,*pnt2P,dtmPoint  ;
 /*
 ** Write Entry Message
 */
@@ -1961,7 +1961,7 @@ BENTLEYDTM_Private int bcdtmFilter_divConqMergeSortDtmObject(BC_DTM_OBJ *dtmP,lo
 */
 {
  long  i,numPts1,numPts2,startPnt1,startPnt2 ;
- DTM_TIN_POINT *p1P,*p2P,point ;
+ DPoint3d *p1P,*p2P,point ;
 /*
 ** Two data points
 */
@@ -2024,7 +2024,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_removeDuplicatePointsFromRangeDtmObject(BC_DTM
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   pnt1,pnt2 ; 
- DTM_TIN_POINT *pnt1P,*pnt2P  ;
+ DPoint3d *pnt1P,*pnt2P  ;
 /*
 ** Write Entry Message
 */
@@ -2107,7 +2107,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_removeTaggedDuplicatePointsFromRangeDtmObject(
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   pnt1,pnt2 ; 
- DTM_TIN_POINT *pnt1P,*pnt2P  ;
+ DPoint3d *pnt1P,*pnt2P  ;
 /*
 ** Write Entry Message
 */
@@ -2202,7 +2202,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileFilterSinglePointGroupSpotsDtmObject
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
  long point,firstPoint,lastPoint,dtmFeature ;
  DPoint3d  randomSpot ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  BC_DTM_OBJ *filterDtmP=NULL ;
  DTMFeatureId featureId ;
  BC_DTM_FEATURE *dtmFeatureP ;
@@ -2645,7 +2645,7 @@ BENTLEYDTM_Private int bcdtmFilter_filterSinglePointGroupSpotTilesDtmObject
  DPoint3d  randomSpot ;
  double z ;
  BC_DTM_OBJ *dtm1P=NULL,*dtm2P=NULL ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  DTMFeatureId featureId ;
  DTMFeatureId nullFeatureId=DTM_NULL_FEATURE_ID ;
 /*
@@ -2940,7 +2940,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinElevDiffRandomSpotsDtmObject
  long firstPoint,lastPoint,saveLastPoint,usePlane=TRUE,excludeBoundary=TRUE ;
  double elevation ; 
  DTM_TIN_NODE  *nodeP ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  DTM_CIR_LIST  *clistP ;
  BC_DTM_OBJ    *planePtsP=NULL ;
  DTM_PLANE plane ;
@@ -3189,7 +3189,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateRandomSpotsDtmObject
  double elevation ;
  DPoint3d dtmPoint ;
  DTM_TIN_NODE  *nodeP ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  DTM_CIR_LIST  *clistP ;
  BC_DTM_OBJ    *planePtsP=NULL ;
  DTM_PLANE plane ;
@@ -3503,7 +3503,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileElevDiffRandomSpotsDtmObject
  char *pointMarkP=NULL ;
  double dZ,xMin,yMin,zMin,xMax,yMax,zMax ;
  struct ElevDifference { double elevation ; long point ; } *elevDiffP=NULL ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_PLANE plane ;
  DTM_POINT_TILE *pointTilesP=NULL ;
 /*
@@ -3659,7 +3659,7 @@ int bcdtmFilter_tileDecimateRandomSpotsDtmObject
  unsigned char *cP,*pointMarkP=NULL ;
  double dZ,xMin,yMin,zMin,xMax,yMax,zMax ;
  struct ElevDifference { double elevation ; long point ; } *eldP,*elevDiffP=NULL ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_PLANE plane ;
  DTM_POINT_TILE *pointTilesP=NULL ;
  DTMFeatureId nullFeatureId=DTM_NULL_FEATURE_ID ;
@@ -3996,7 +3996,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tileZToleranceFilterRandomSpotsDtmObject
  unsigned char *cP,*pointMarkP=NULL ;
  double dZ,xMin,yMin,zMin,xMax,yMax,zMax ;
  struct ElevDifference { double elevation ; long point ; } *eldP,*elevDiffP=NULL ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_PLANE plane ;
  DTM_POINT_TILE *pointTilesP=NULL ;
  DTMFeatureId nullFeatureId=DTM_NULL_FEATURE_ID ;
@@ -4208,7 +4208,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterRandomSpotsDtmObject
  double elevation ;
  DPoint3d dtmPoint ;
  DTM_TIN_NODE  *nodeP ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  DTM_CIR_LIST  *clistP ;
  BC_DTM_OBJ    *planePtsP=NULL ;
  DTM_PLANE plane ;
@@ -4534,7 +4534,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterGroupSpotsDtmObject
  DPoint3d    *p3dP,*pointsP=NULL ;
  struct ElevDifference { double elevation ; long point ; } *eldP,*elevDiffP=NULL ;
  DTM_PLANE plane ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  DTM_TIN_NODE  *nodeP ;
  DTM_CIR_LIST  *clistP ;
  BC_DTM_FEATURE *dtmFeatureP ;
@@ -4941,7 +4941,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateGroupSpotsDtmObject
  DPoint3d    *p3dP,*pointsP=NULL ;
  struct ElevDifference { double elevation ; long point ; } *eldP,*elevDiffP=NULL ;
  DTM_PLANE plane ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  DTM_TIN_NODE  *nodeP ;
  DTM_CIR_LIST  *clistP ;
  BC_DTM_FEATURE *dtmFeatureP ;
@@ -5330,7 +5330,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileDecimateGroupSpotsDtmObject
  double dZ,xMin,yMin,zMin,xMax,yMax,zMax ;
  DPoint3d    *p3dP,*pointsP=NULL ;
  struct ElevDifferenceTile { double elevation ; long point ; long tile ; long keep ; } *eldP,*eld1P,*elevDiffP=NULL ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_PLANE plane ;
  BC_DTM_FEATURE *dtmFeatureP ;
  BC_DTM_OBJ *tempDtmP=NULL ;
@@ -5708,7 +5708,7 @@ BENTLEYDTM_Public int bcdtmFilter_tileZToleranceFilterGroupSpotsDtmObject
  double dZ,xMin,yMin,zMin,xMax,yMax,zMax ;
  DPoint3d    *p3dP,*pointsP=NULL ;
  struct ElevDifferenceTile { double elevation ; long point ; long tile ; long keep ; } *eldP,*eld1P,*elevDiffP=NULL ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_PLANE plane ;
  BC_DTM_FEATURE *dtmFeatureP ;
  BC_DTM_OBJ *tempDtmP=NULL ;
@@ -6083,7 +6083,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_quadTree
  DTM_QUAD_TREE_TILE *tileP ;
  BC_DTM_OBJ *unFilteredPtsP=NULL,*filteredPtsP=NULL ;
  BC_DTM_FEATURE *dtmFeatureP ; 
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  wchar_t fileName[32] ;
  DTMFeatureId nullFeatureId=DTM_NULL_FEATURE_ID ;
 /*

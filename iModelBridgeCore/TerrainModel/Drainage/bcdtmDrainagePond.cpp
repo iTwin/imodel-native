@@ -903,7 +903,7 @@ int bcdtmDrainage_tracePondBoundaryDtmObject
  double X,Y,ratio,area ;
  DPoint3d    *p3dP,contourStart ;
  BC_DTM_OBJ *tempDtmP=nullptr ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  DTMDirection  direction ;
  DTMPointCache pointCache ;
  long mark=-987654,numMarked=0,minPntNum=0,maxPntNum=0 ;
@@ -2056,7 +2056,7 @@ int bcdtmDrainage_determineZeroSlopeSumpLinePondsDtmObject
  long   numZeroSlopeSumpLines=0,memZeroSlopeSumpLines=0,memZeroSlopeSumpLinesInc=1000 ;
  double elevation1,elevation2 ;
  DTM_TIN_NODE      *dP ;
- DTM_TIN_POINT     *pnt1P,*pnt2P ;
+ DPoint3d     *pnt1P,*pnt2P ;
  DTM_POLYGON_OBJ   *polygonP=nullptr ;
  DTM_SUMP_LINES    *sumpLinesP=nullptr,*slP=nullptr ;
  DTM_ZERO_SLOPE_SUMP_LINE  *lineP,*zeroSlopeSumpLinesP=nullptr ;
@@ -4241,7 +4241,7 @@ int bcdtmDrainage_placePolygonAroundZeroSlopePolygonDtmObject
  long          spnt,npnt,ppnt,cptr ;
  DPoint3d      breakPts[2] ;
  BC_DTM_OBJ    *tempDtmP=nullptr ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
 /*
 ** Write Entry Message
 */
@@ -4403,7 +4403,7 @@ int bcdtmDrainage_placeTptrPolygonAroundTouchingZeroSlopePolygonDtmObject
  DPoint3d       breakPts[2] ;
  BC_DTM_FEATURE *dtmFeatureP ;
  BC_DTM_OBJ     *tempDtmP=nullptr ;
- DTM_TIN_POINT  *pntP ;
+ DPoint3d  *pntP ;
 /*
 ** Log Entry Parameters
 */
@@ -6835,7 +6835,7 @@ int bcdtmDrainage_getUnionOfPolygonsDtmObject
  DTMDirection direction ;
  bvector < int > points ;
  bvector < int >::iterator ipnt ;
- DTM_TIN_POINT *pnt1P,*pnt2P ;
+ DPoint3d *pnt1P,*pnt2P ;
 
 //  Log Function Arguments
 

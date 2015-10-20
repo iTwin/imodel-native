@@ -38,7 +38,7 @@ int bcdtmTables_createAndCheckDrainageTablesDtmObject(BC_DTM_OBJ *dtmP)
  int  flowPnt,flowDir1,flowDir2,flowDir3 ;
  double ascentAngle,descentAngle,slope ;
  bool   lowPoint ;
- DTM_TIN_POINT *pnt1P,*pnt2P,*antPntP,*clkPntP ;
+ DPoint3d *pnt1P,*pnt2P,*antPntP,*clkPntP ;
 
  startTime = bcdtmClock() ;
  for( p1 = 0 ; p1 < dtmP->numPoints ; ++p1 )	       

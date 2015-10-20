@@ -1334,8 +1334,8 @@ BENTLEYDTM_Public int bcdtmGrade_calculateMacaoGradeSlopeStartDirectionsForPoint
  long   numDrapePts,surfaceFlag,numMem=0,incMem=10 ;
  double X1,Y1,X2,Y2,Xs=0.0,Ys=0.0,Zs=0.0,angle,anginc ;
  DPoint3d    drapeString[2] ;
- DTM_DRAPE_POINT *drapeP;
- bvector<DTM_DRAPE_POINT> drapePtsP;
+ DTMDrapePoint *drapeP;
+ bvector<DTMDrapePoint> drapePtsP;
 /*
 ** Write Debug Message
 */

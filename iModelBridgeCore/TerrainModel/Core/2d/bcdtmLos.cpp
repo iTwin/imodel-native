@@ -188,7 +188,7 @@ BENTLEYDTM_Private int bcdtmVisibility_determineVisibilityDirectionOfTriangleDtm
 {
  int    ret=DTM_SUCCESS ;
  double dp,Ca,Cb,Cc,Cd,X1,Y1,Z1,X2,Y2,Z2,X3,Y3,Z3,Xmin,Ymin,Zmin ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
 /*
 ** Test For Valid Dtm Object
 */
@@ -515,8 +515,8 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determinePointVisibilityDtmObject(BC_DTM_O
  long    drapeFlag,numDrapePts ;
  DPoint3d     stringPts[2] ;
  double  Zs ;
- DTM_DRAPE_POINT *drapeP, *drapePtsP=nullptr ;
- bvector<DTM_DRAPE_POINT> drapePts;
+ DTMDrapePoint *drapeP, *drapePtsP=nullptr ;
+ bvector<DTMDrapePoint> drapePts;
 /*
 ** Write Entry Message
 */
@@ -911,7 +911,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineVisibilityTinPointsDtmObject
  double x,y,z,Zs  ;
  DPoint3d    dtmPoint[2]  ;
  DTM_TIN_NODE  *nodeP ;
- DTM_TIN_POINT  *pointP ;
+ DPoint3d  *pointP ;
 /*
 ** Write Status Message
 */
@@ -1360,8 +1360,8 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
  double dd,dx,dy,dz,Zs,x,y,z,angle,anginc,radius,maxAngle,eyeAngle=0.0,lastEyeAngle=0.0 ;
  DPoint3d    *p3d,radial[2],*loadPtsP=nullptr ;
  long   start,finish ;
- DTM_DRAPE_POINT *drape1P,*drape2P,*drapePtsP=nullptr ;
- bvector<DTM_DRAPE_POINT> drapePts;
+ DTMDrapePoint *drape1P,*drape2P,*drapePtsP=nullptr ;
+ bvector<DTMDrapePoint> drapePts;
 /*
 ** Write Entry Message
 */
@@ -2398,8 +2398,8 @@ BENTLEYDTM_Private int bcdtmVisibility_getLastVisibleSectionOfSurfaceLineBetween
  long   scan,process,numDrapePts=0 ;
  double dd,dx,dy,dz,x,y,z,maxAngle,eyeAngle=0.0,lastEyeAngle=0.0 ;
  DPoint3d    radial[2] ;
- DTM_DRAPE_POINT *drape1P,*drape2P,*drapePtsP=nullptr ;
- bvector<DTM_DRAPE_POINT> drapePts;
+ DTMDrapePoint *drape1P,*drape2P,*drapePtsP=nullptr ;
+ bvector<DTMDrapePoint> drapePts;
 /*
 ** Initialise
 */ 
@@ -2896,7 +2896,7 @@ BENTLEYDTM_Private int bcdtmVisibility_refineTinForRegionVisibilityDtmObject
        dtmFeatureP = ftableAddrP(dtmDataP,dtmFeature) ;
        if( dtmFeatureP->dtmFeatureType == DTMFeatureType::Breakline )
          {
-          if( bcdtmObject_getPointsForDtmFeatureDtmObject(dtmDataP,dtmFeature,(DTM_TIN_POINT **) &stringPtsP ,&numStringPts)) goto errexit ;
+          if( bcdtmObject_getPointsForDtmFeatureDtmObject(dtmDataP,dtmFeature,(DPoint3d **) &stringPtsP ,&numStringPts)) goto errexit ;
           if( numStringPts > 1 ) 
             {         
              for( p3dP = stringPtsP ; p3dP < stringPtsP + numStringPts - 1 ; ++p3dP)
@@ -4972,8 +4972,8 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialVisibilityDtmObject
  long   numLoadPts=0,memLoadPts=0,memLoadPtsInc=1000 ;
  double x,y,z,dx,dy,dz,dd,Zs,maxangle,eyeangle,lasteyeangle ;
  DPoint3d    *p3dP,radialPts[2],*loadPtsP=nullptr ;
- DTM_DRAPE_POINT *drapeP,*drape1P,*drape2P,*drapePtsP=nullptr ;
- bvector<DTM_DRAPE_POINT> drapePts;
+ DTMDrapePoint *drapeP,*drape1P,*drape2P,*drapePtsP=nullptr ;
+ bvector<DTMDrapePoint> drapePts;
 /*
 ** Write Status Message
 */

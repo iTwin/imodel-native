@@ -929,7 +929,7 @@ BENTLEYDTM_Private long bcdtmTin_leftMostPointDtmObject(BC_DTM_OBJ *dtmP,long P1
 **
 */
 {
- DTM_TIN_POINT *p1P,*p2P ;
+ DPoint3d *p1P,*p2P ;
  p1P = pointAddrP(dtmP,P1) ;
  p2P = pointAddrP(dtmP,P2) ;
  if( p1P->x < p2P->x || ( p1P->x == p2P->x &&  p1P->y <  p2P->y ) ) return(P1) ;
@@ -948,7 +948,7 @@ BENTLEYDTM_Private long bcdtmTin_rightMostPointDtmObject(BC_DTM_OBJ *dtmP,long P
 **
 */
 {
- DTM_TIN_POINT *p1P,*p2P ;
+ DPoint3d *p1P,*p2P ;
  p1P = pointAddrP(dtmP,P1) ;
  p2P = pointAddrP(dtmP,P2) ;
  if( p1P->x > p2P->x || ( p1P->x == p2P->x &&  p1P->y >  p2P->y ) ) return(P1) ;
@@ -967,7 +967,7 @@ BENTLEYDTM_Private long bcdtmTin_bottomMostPointDtmObject(BC_DTM_OBJ *dtmP,long 
 **
 */
 {
- DTM_TIN_POINT *p1P,*p2P ;
+ DPoint3d *p1P,*p2P ;
  p1P = pointAddrP(dtmP,P1) ;
  p2P = pointAddrP(dtmP,P2) ;
  if( p1P->y < p2P->y || ( p1P->y == p2P->y &&  p1P->x < p2P->x ) ) return(P1) ;
@@ -986,7 +986,7 @@ BENTLEYDTM_Private long bcdtmTin_topMostPointDtmObject(BC_DTM_OBJ *dtmP,long P1,
 **
 */
 {
- DTM_TIN_POINT *p1P,*p2P ;
+ DPoint3d *p1P,*p2P ;
  p1P = pointAddrP(dtmP,P1) ;
  p2P = pointAddrP(dtmP,P2) ;
  if( p1P->y > p2P->y || ( p1P->y == p2P->y &&  p1P->x > p2P->x ) ) return(P1) ;
@@ -995,7 +995,7 @@ BENTLEYDTM_Private long bcdtmTin_topMostPointDtmObject(BC_DTM_OBJ *dtmP,long P1,
 
 BENTLEYDTM_Private void bcdtmTin_lrbtMostPointDtmObject (BC_DTM_OBJ* dtmP, long P1, long P2, long* lpnt, long* rpnt, long* bpnt, long* tpnt)
     {
-    DTM_TIN_POINT *p1P, *p2P;
+    DPoint3d *p1P, *p2P;
     p1P = pointAddrP (dtmP, P1);
     p2P = pointAddrP (dtmP, P2);
     if (p1P->x < p2P->x || (p1P->x == p2P->x &&  p1P->y < p2P->y))
@@ -1026,7 +1026,7 @@ BENTLEYDTM_Private void bcdtmTin_lrbtMostPointDtmObject (BC_DTM_OBJ* dtmP, long 
 
 BENTLEYDTM_Private void bcdtmTin_lrbtMostPointFrom3PointsDtmObject (BC_DTM_OBJ* dtmP, long P1, long P2, long P3, long* lpnt, long* rpnt, long* bpnt, long* tpnt)
     {
-    DTM_TIN_POINT *p1P, *p2P, *p3P;
+    DPoint3d *p1P, *p2P, *p3P;
     p1P = pointAddrP (dtmP, P1);
     p2P = pointAddrP (dtmP, P2);
     p3P = pointAddrP (dtmP, P3);
@@ -1516,7 +1516,7 @@ BENTLEYDTM_Private int bcdtmTin_inCircleTestDtmObject(BC_DTM_OBJ *dtmP,long maxM
  double adx,bdx,cdx,ady,bdy,cdy;
  double bdxcdy,cdxbdy,cdxady,adxcdy,adxbdy,bdxady;
  double det,aval,bval,cval;
- DTM_TIN_POINT  *p1P,*p2P,*p3P,*p4P ;
+ DPoint3d  *p1P,*p2P,*p3P,*p4P ;
 /*
 ** Get Point Addresses
 */
@@ -1592,7 +1592,7 @@ BENTLEYDTM_Public int bcdtmTin_maxMinTestDtmObject(BC_DTM_OBJ *dtmP,long p1,long
  double a1sq,a2sq,b1sq,b2sq,c1sq,c2sq ;
  double s1sq,s2sq,s3sq,s4sq,s1max,s2max,s3max,s4max ;
  double s1min,s2min,u1,u2,u3,u4 ;
- DTM_TIN_POINT  *p1P,*p2P,*p3P,*p4P ;
+ DPoint3d  *p1P,*p2P,*p3P,*p4P ;
 /*
 ** Get Point Addresses
 */
@@ -1666,7 +1666,7 @@ BENTLEYDTM_Private int bcdtmTin_reconstructSortOrderDtmObject(BC_DTM_OBJ *dtmP)
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long   p,ofs,clPtr ;
  DTM_CIR_LIST  *clistP  ;
- DTM_TIN_POINT dtmPoint ;
+ DPoint3d dtmPoint ;
  DTM_TIN_NODE  dtmNode  ;
 /*
 ** Write Entry message
@@ -1778,7 +1778,7 @@ BENTLEYDTM_Public int bcdtmTin_precisionRemoveEdgeSliversDtmObject(BC_DTM_OBJ *d
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   p1,p2,p3,process ;
  double d1,d2,d3,n1 ;
- DTM_TIN_POINT *p3P ;
+ DPoint3d *p3P ;
 /*
 ** Write Entry Message
 */
@@ -3014,8 +3014,8 @@ BENTLEYDTM_Private int bcdtmTin_checkForIntersectionWithInsertedVoidsAndIslandsD
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long  scanPnt,pointFound,nextPnt,priorPnt,testForTouch=FALSE  ;
  long  featurePriorPnt,featureNextPnt,featurePnt,externalHit,internalHit,numPointFeatures=0 ;
- DTM_TIN_POINT_FEATURES *featP;
-bvector<DTM_TIN_POINT_FEATURES> pointFeaturesP;
+ DTMTinPointFeatures *featP;
+bvector<DTMTinPointFeatures> pointFeaturesP;
 /*
 ** Write Entry Message
 */
@@ -3157,7 +3157,7 @@ BENTLEYDTM_Private int bcdtmTin_addInteriorPointToSingleTriangleVoidsDtmObject(B
  long numPts,dtmFeature,nextPoint ;
  double x,y,z ;
  BC_DTM_FEATURE *dtmFeatureP ;
- DTM_TIN_POINT  *pntP ;
+ DPoint3d  *pntP ;
 /*
 ** Write Entry Message
 */
@@ -4392,7 +4392,7 @@ BENTLEYDTM_Public int bcdtmTin_clipTinToBoundaryPolygonDtmObject(BC_DTM_OBJ *dtm
  goto cleanup ;
 }
 
-BENTLEYDTM_Private bool bcdtmInsert_rollBackMapSortCompare (DTM_ROLLBACK_FEATURE_MAP& m1, DTM_ROLLBACK_FEATURE_MAP& m2)
+BENTLEYDTM_Private bool bcdtmInsert_rollBackMapSortCompare (DTMRollbackFeatureMap& m1, DTMRollbackFeatureMap& m2)
     {
     return m1.featureId < m2.featureId;
     }
@@ -4405,7 +4405,7 @@ BENTLEYDTM_Public int bcdtmInsert_rollBackDtmFeatureDtmObject(
  long    dtmFeature,numFeaturePts ;
  DPoint3d     *featurePtsP=NULL;
  BC_DTM_FEATURE *dtmFeatureP ;
- DTM_ROLLBACK_DATA* rollBackInfo = dtmP->extended ? dtmP->extended->rollBackInfoP : NULL;
+ DTMRollbackData* rollBackInfo = dtmP->extended ? dtmP->extended->rollBackInfoP : NULL;
 
  if (dbg)
      {
@@ -4418,7 +4418,7 @@ BENTLEYDTM_Public int bcdtmInsert_rollBackDtmFeatureDtmObject(
 
  if (!rollBackInfo->rollBackMapInitialized)
      {
-     DTM_ROLLBACK_FEATURE_MAP mapEntry;
+     DTMRollbackFeatureMap mapEntry;
 
      rollBackInfo->rollBackMap.clear();
      rollBackInfo->rollBackMap.empty();
@@ -4540,10 +4540,10 @@ BENTLEYDTM_Public int bcdtmInsert_rollBackDtmFeaturesExternalToTptrPolygonDtmObj
  long    concaveSpan,numMarked,numPts,mark=-987654321 ;
  DPoint3d     *featurePtsP=NULL,*markP,*markedPtsP=NULL ;
  DTM_TIN_NODE       *nodeP ;
- DTM_TIN_POINT      *pointP ;
+ DPoint3d      *pointP ;
  BC_DTM_FEATURE     *dtmFeatureP ;
  DTMFeatureId     nullFeatureId=DTM_NULL_FEATURE_ID  ;
- DTM_ROLLBACK_DATA* rollBackInfo = dtmP->extended ? dtmP->extended->rollBackInfoP : NULL;
+ DTMRollbackData* rollBackInfo = dtmP->extended ? dtmP->extended->rollBackInfoP : NULL;
 
  if( !( dtmP->extended && dtmP->extended->rollBackInfoP && dtmP->extended->rollBackInfoP->rollBackDtmP != NULL  && bcdtmObject_testApiCleanUpDtmObject (dtmP, DTMCleanupFlags::Changes)))
    goto cleanup;
@@ -4855,7 +4855,7 @@ BENTLEYDTM_Private int bcdtmTin_clipTinToBoundaryLinesDtmObject(BC_DTM_OBJ *dtmP
        if( bcdtmObject_getPointsForDtmFeatureDtmObject(
            dtmP,
            dtmFeatureNum,
-           ((DTM_TIN_POINT **)&hullPtsP),
+           ((DPoint3d **)&hullPtsP),
            &numHullPts)) goto errexit ;
        if( bcdtmObject_storeDtmFeatureInDtmObject(dataP,DTMFeatureType::HullLine,DTM_NULL_USER_TAG,1,&nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
        bcdtmTin_getPointerAndOffsetToNextDtmFeatureTypeOccurrenceDtmObject(dtmP,DTMFeatureType::HullLine,FALSE,&dtmFeatureP,&dtmFeatureNum) ;
@@ -4983,7 +4983,7 @@ BENTLEYDTM_Private int bcdtmTin_insertBoundaryLinesDtmObject(BC_DTM_OBJ *dtmP,BC
  long  error,sp,np,numFeatures,dtmFeature ;
  long  cp1,cp2,point,firstPoint,lastPoint,firstNewPoint ;
  BC_DTM_FEATURE *dtmFeatureP ;
- DTM_TIN_POINT  *p1P,*p2P ;
+ DPoint3d  *p1P,*p2P ;
 /*
 ** Write Entry Message
 */
@@ -6378,7 +6378,7 @@ BENTLEYDTM_EXPORT int bcdtmTin_maxsideRemoveExternalTrianglesDtmObject(BC_DTM_OB
 |                                                                    |
 +-------------------------------------------------------------------*/
 #ifndef notdef
-typedef PartitionArray<DTM_TIN_POINT, DTM_PARTITION_SHIFT_POINT, MAllocAllocator> DtmTinPointArray;
+typedef PartitionArray<DPoint3d, DTM_PARTITION_SHIFT_POINT, MAllocAllocator> DtmTinPointArray;
 
 BENTLEYDTM_Public int bcdtmTin_resortTinStructureDtmObject(BC_DTM_OBJ *dtmP)
 /*
@@ -6411,8 +6411,8 @@ BENTLEYDTM_Public int bcdtmTin_resortTinStructureDtmObject(BC_DTM_OBJ *dtmP)
  if( dtmP->numSortedPoints < dtmP->numPoints )
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Sorting") ;
-     PartitionArray<DTM_TIN_POINT, DTM_PARTITION_SHIFT_POINT, MAllocAllocator> pointsArray(dtmP->pointsPP, dtmP->numPoints, dtmP->numPointPartitions, dtmP->pointPartitionSize);
-     XYPointArraySort<DTM_TIN_POINT, DtmTinPointArray > sorter;
+     PartitionArray<DPoint3d, DTM_PARTITION_SHIFT_POINT, MAllocAllocator> pointsArray(dtmP->pointsPP, dtmP->numPoints, dtmP->numPointPartitions, dtmP->pointPartitionSize);
+     XYPointArraySort<DPoint3d, DtmTinPointArray > sorter;
 
     sorter.DoResort(pointsArray,dtmP->numSortedPoints, dtmP->numPoints-dtmP->numSortedPoints);
     LongArray& sortP = sorter.GetSortP();

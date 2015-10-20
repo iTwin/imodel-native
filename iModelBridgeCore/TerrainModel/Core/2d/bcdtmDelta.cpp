@@ -256,7 +256,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaTinToElevationDtmObject
  double  largestArea=0.0  ;
  DTM_POLYGON_OBJ  *polyP=NULL ;
  DTM_POLYGON_LIST *plistP,*pp ;
- DTM_TIN_POINT    *pntP ;
+ DPoint3d    *pntP ;
 /*
 ** Write Entry Message
 */
@@ -371,7 +371,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaTinToSurfaceDtmObject(BC_DTM_OBJ **d
  double  largestArea,area ;
  DPoint3d     *clipPtsP=NULL ;
  BC_DTM_OBJ       *dtm3P=NULL,*dtm4P=NULL,*saveTin ;
- DTM_TIN_POINT    *pntP ;
+ DPoint3d    *pntP ;
  DTM_POLYGON_OBJ  *polyP=NULL ;
  DTM_POLYGON_LIST *plist1P,*plist2P ; 
 /*
@@ -539,7 +539,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_cloneAndCreateDeltaTinToElevationDtmObject
 {
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0);
  long    pnt  ;
- DTM_TIN_POINT    *pntP ;
+ DPoint3d    *pntP ;
 /*
 ** Write Status Message
 */
@@ -633,7 +633,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_cloneAndCreateDeltaTinToSurfaceDtmObject
  double  largestArea,area ;
  DPoint3d     *clipPtsP=NULL ;
  BC_DTM_OBJ       *dtm3P=NULL,*dtm4P=NULL,*saveTin ;
- DTM_TIN_POINT    *pntP ;
+ DPoint3d    *pntP ;
  DTM_POLYGON_OBJ  *polyP=NULL ;
  DTM_POLYGON_LIST *plist1P,*plist2P ; 
 /*
@@ -1129,7 +1129,7 @@ BENTLEYDTM_Private int bcdtmDelta_drapeTin1PointsOnTin2DtmObject(BC_DTM_OBJ *dtm
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long pnt,drapeResult  ; 
- DTM_TIN_POINT  *pntP ;
+ DPoint3d  *pntP ;
  double z   ;
  long errCnt = 0 ;
 /*
@@ -1181,7 +1181,7 @@ BENTLEYDTM_Private int bcdtmDelta_copyTinPtsToP3DArrayDtmObject(BC_DTM_OBJ *dtmP
  int   ret=DTM_SUCCESS ;
  long  pnt ;
  DPoint3d   *p3dP=NULL ;
- DTM_TIN_POINT *pntP ; 
+ DPoint3d *pntP ; 
 /*
 ** Allocate Memory
 */
@@ -1301,7 +1301,7 @@ BENTLEYDTM_Private int bcdtmDelta_insertTinIntoTinDtmObject
  DPoint3d       *p3dP  ;
  PNTLINE   *lineP   ;
  long      startTime ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_TIN_NODE  *nodeP ;
 /*
 ** Initialise

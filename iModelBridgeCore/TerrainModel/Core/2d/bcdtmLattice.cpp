@@ -287,7 +287,7 @@ BENTLEYDTM_Public int bcdtmLattice_populateLatticeDtmObject(BC_DTM_OBJ *dtmP,DTM
  bool newTriangle, voidTriangle;
  double  xl,yl,zl,trgXmin,trgXmax,trgYmin,trgYmax,x[3],y[3],z[3],partialDeriv[15] ;
  float   nullValue,*latPointP,latZmin,latZmax ;
- DTM_TIN_POINT *p1P,*p2P,*p3P ;  
+ DPoint3d *p1P,*p2P,*p3P ;  
  DTM_TIN_NODE  *nodeP ; 
  DTM_CIR_LIST  *clistP ;
 /*
@@ -955,7 +955,7 @@ BENTLEYDTM_Public int bcdtmLattice_populateIsopachLatticeFromDtmObjects
  double  xl,yl,zl,trgXmin,trgXmax,trgYmin,trgYmax,x[3],y[3],z[3] ;
  float   *lat,zmin,zmax ;
  unsigned char    *subFlagP=NULL,*cp ;
- DTM_TIN_POINT *p1P,*p2P,*p3P ;  
+ DPoint3d *p1P,*p2P,*p3P ;  
  DTM_TIN_NODE  *nodeP ; 
  DTM_CIR_LIST  *clistP ;
 /*
@@ -1411,7 +1411,7 @@ BENTLEYDTM_Private int bcdtmLattice_populateReferenceAndIsopachLatticesFromDtmOb
  double  xl,yl,zl,trgXmin,trgXmax,trgYmin,trgYmax,x[3],y[3],z[3] ;
  float   *lat,zmin,zmax ;
  unsigned char    *subFlagP=NULL,*cp ;
- DTM_TIN_POINT *p1P,*p2P,*p3P ;  
+ DPoint3d *p1P,*p2P,*p3P ;  
  DTM_TIN_NODE  *nodeP ; 
  DTM_CIR_LIST  *clistP ;
 /*
@@ -2008,7 +2008,7 @@ BENTLEYDTM_Private int bcdtmLattice_populateLatticeThemeFromDtmObjects
  double  xl,yl,zl,trgXmin,trgXmax,trgYmin,trgYmax,x[3],y[3],z[3] ;
  float   *lat,zmin,zmax ;
  unsigned char    *subFlagP=NULL,*cp ;
- DTM_TIN_POINT *p1P,*p2P,*p3P ;  
+ DPoint3d *p1P,*p2P,*p3P ;  
  DTM_TIN_NODE  *nodeP ; 
  DTM_CIR_LIST  *clistP ;
 /*
@@ -2640,7 +2640,7 @@ BENTLEYDTM_Private int bcdtmLattice_removeNullPointsOnTinHullDtmObject(BC_DTM_OB
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),sdof ;
  long pnt,ap,sp,np,mp,clc,process ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
 /*
 ** Write Entry Message
 */
@@ -3164,7 +3164,7 @@ BENTLEYDTM_Private int bcdtmLattice_insertVoidsAndIslandsIntoDtmObject
 /*
 **     Get Points For Dtm Feature
 */
-       if( bcdtmObject_getPointsForDtmFeatureDtmObject(dtmP,dtmFeature,( DTM_TIN_POINT **)&featurePtsP,&numFeaturePts)) goto errexit ; 
+       if( bcdtmObject_getPointsForDtmFeatureDtmObject(dtmP,dtmFeature,( DPoint3d **)&featurePtsP,&numFeaturePts)) goto errexit ; 
 /*
 **     Store Polygon As Sptr Polygon
 */

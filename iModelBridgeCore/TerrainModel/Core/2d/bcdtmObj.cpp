@@ -399,8 +399,8 @@ BENTLEYDTM_EXPORT int bcdtmObject_updateDtmObjectForDtmElement
 
     if (dtmP->numPointPartitions)
         {
-        dtmP->pointsPP = (DTM_TIN_POINT**)realloc(old.pointsPP, sizeof(DTM_TIN_POINT *) * dtmP->numPointPartitions);
-        memcpy(dtmP->pointsPP, pointArraysP, sizeof(DTM_TIN_POINT *) * dtmP->numPointPartitions);
+        dtmP->pointsPP = (DPoint3d**)realloc(old.pointsPP, sizeof(DPoint3d *) * dtmP->numPointPartitions);
+        memcpy(dtmP->pointsPP, pointArraysP, sizeof(DPoint3d *) * dtmP->numPointPartitions);
         }
     else if (dtmP->pointsPP)
         {
@@ -521,7 +521,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_createDtmElementFromDtmObject
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long n,numPartition,remPartition ;
  BC_DTM_OBJ       dtmElement,*headerElmP ;
- DTM_TIN_POINT    *pointsElemP ;
+ DPoint3d    *pointsElemP ;
  DTM_TIN_NODE     *nodesElemP ;
  DTM_CIR_LIST     *clistElemP ;
  DTM_FEATURE_LIST *flistElemP ;
@@ -617,7 +617,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_createDtmElementFromDtmObject
    {
     if( dbg ) 
       {
-       bcdtmWrite_message(0,0,0,"Copying Dtm Points Array    ** Memory Size = %9ld",dtmElement.numPointPartitions,dtmElement.pointPartitionSize,sizeof(DTM_TIN_POINT)*dtmElement.numPoints) ;
+       bcdtmWrite_message(0,0,0,"Copying Dtm Points Array    ** Memory Size = %9ld",dtmElement.numPointPartitions,dtmElement.pointPartitionSize,sizeof(DPoint3d)*dtmElement.numPoints) ;
        bcdtmWrite_message(0,0,0,"**** numPoints   = %10ld partitionSize = %9ld numPartitions = %9ld",dtmElement.numPoints,dtmElement.pointPartitionSize,dtmElement.numPointPartitions) ;
       }
 
@@ -629,7 +629,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_createDtmElementFromDtmObject
 /*
 **  Allocate Memory For Storing Point Partitions
 */
-    dtmElement.pointsPP = ( DTM_TIN_POINT ** ) malloc ( dtmElement.numPointPartitions * sizeof(DTM_TIN_POINT *)) ;
+    dtmElement.pointsPP = ( DPoint3d ** ) malloc ( dtmElement.numPointPartitions * sizeof(DPoint3d *)) ;
     if( dtmElement.pointsPP == NULL )
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
@@ -643,7 +643,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_createDtmElementFromDtmObject
 /*
 **     Store Points In x Attributes
 */
-       pointsElemP = ( DTM_TIN_POINT * ) managedFunctionP(n,DTMPartition::Point,dtmP->pointsPP[n],sizeof(DTM_TIN_POINT)*dtmElement.pointPartitionSize,userP) ;
+       pointsElemP = ( DPoint3d * ) managedFunctionP(n,DTMPartition::Point,dtmP->pointsPP[n],sizeof(DPoint3d)*dtmElement.pointPartitionSize,userP) ;
        if( pointsElemP == NULL )
          {
           bcdtmWrite_message(1,0,0,"Points Partition Memory Allocation Failure") ;
@@ -659,7 +659,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_createDtmElementFromDtmObject
 /*
 **     Store Points In x Attributes
 */
-       pointsElemP = ( DTM_TIN_POINT * )managedFunctionP(n,DTMPartition::Point,dtmP->pointsPP[n],sizeof(DTM_TIN_POINT)*remPartition,userP) ;
+       pointsElemP = ( DPoint3d * )managedFunctionP(n,DTMPartition::Point,dtmP->pointsPP[n],sizeof(DPoint3d)*remPartition,userP) ;
        if( pointsElemP == NULL )
          {
           bcdtmWrite_message(1,0,0,"Points Partition Memory Allocation Failure") ;
@@ -1638,7 +1638,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_reportActiveDtmObjects( long reportOption, lon
       {
        dtmP = *(nodeDtmPP+n) ;
        memUsage = sizeof(BC_DTM_OBJ) ;
-       if( dtmP->pointsPP != NULL ) memUsage = memUsage + dtmP->memPoints   * sizeof(DTM_TIN_POINT) ;
+       if( dtmP->pointsPP != NULL ) memUsage = memUsage + dtmP->memPoints   * sizeof(DPoint3d) ;
        if( dtmP->nodesPP  != NULL ) memUsage = memUsage + dtmP->memPoints   * sizeof(DTM_TIN_NODE) ;
        if( dtmP->cListPP  != NULL ) memUsage = memUsage + dtmP->memClist    * sizeof(DTM_CIR_LIST) ;
        if( dtmP->fListPP  != NULL ) memUsage = memUsage + dtmP->memFlist    * sizeof(DTM_FEATURE_LIST) ;
@@ -1702,7 +1702,7 @@ BENTLEYDTM_EXPORT int  bcdtmObject_storeDtmFeatureInDtmObject
  DPoint3dCP p3dP ;
  char dtmFeatureTypeName[50] ;
  BC_DTM_FEATURE *dtmFeatureP=NULL ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
 /*
 ** Write Entry Message
 */
@@ -2526,7 +2526,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_allocatePointsMemoryDtmObject(BC_DTM_OBJ *dtmP
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long n,point,numPartitions,remPartition,numCurPartitions,remCurPartition,partitionNum,partitionOfs,partitionSize ;
- DTM_TIN_POINT *dtmPointP=NULL ;
+ DPoint3d *dtmPointP=NULL ;
 /*
 ** Write Entry Message
 */
@@ -2569,7 +2569,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_allocatePointsMemoryDtmObject(BC_DTM_OBJ *dtmP
 */
     dtmP->numPointPartitions = numPartitions ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Allocating Memory For Point Partition Pointers") ;
-    dtmP->pointsPP  = ( DTM_TIN_POINT  ** ) malloc( dtmP->numPointPartitions * sizeof( DTM_TIN_POINT * )) ;
+    dtmP->pointsPP  = ( DPoint3d  ** ) malloc( dtmP->numPointPartitions * sizeof( DPoint3d * )) ;
     if( dtmP->pointsPP == NULL )
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
@@ -2590,7 +2590,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_allocatePointsMemoryDtmObject(BC_DTM_OBJ *dtmP
 /*
 **     Allocate Partition Memory
 */
-       dtmP->pointsPP[n] = ( DTM_TIN_POINT * ) bcdtmMemory_allocatePartition(dtmP, DTMPartition::Point, n, partitionSize * sizeof( DTM_TIN_POINT)) ;
+       dtmP->pointsPP[n] = ( DPoint3d * ) bcdtmMemory_allocatePartition(dtmP, DTMPartition::Point, n, partitionSize * sizeof( DPoint3d)) ;
        if( dtmP->pointsPP[n] == NULL )
          {
           bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
@@ -2641,7 +2641,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_allocatePointsMemoryDtmObject(BC_DTM_OBJ *dtmP
 */
     if( numPartitions == dtmP->numPointPartitions )
       {
-       dtmP->pointsPP[dtmP->numPointPartitions-1] = ( DTM_TIN_POINT * ) bcdtmMemory_reallocatePartition(dtmP, DTMPartition::Point, dtmP->numPointPartitions-1, dtmP->pointsPP[dtmP->numPointPartitions-1],remPartition*sizeof(DTM_TIN_POINT)) ;      
+       dtmP->pointsPP[dtmP->numPointPartitions-1] = ( DPoint3d * ) bcdtmMemory_reallocatePartition(dtmP, DTMPartition::Point, dtmP->numPointPartitions-1, dtmP->pointsPP[dtmP->numPointPartitions-1],remPartition*sizeof(DPoint3d)) ;      
        if( dtmP->pointsPP[dtmP->numPointPartitions-1] == NULL )
          {
           bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
@@ -2657,7 +2657,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_allocatePointsMemoryDtmObject(BC_DTM_OBJ *dtmP
 **     Allocate Memory For Additional Point Partitions
 */
        if( dbg ) bcdtmWrite_message(0,0,0,"**** Allocating Memory For Additional Point Partition Pointers") ;
-       dtmP->pointsPP  = ( DTM_TIN_POINT  ** ) realloc(dtmP->pointsPP,numPartitions * sizeof( DTM_TIN_POINT * )) ;
+       dtmP->pointsPP  = ( DPoint3d  ** ) realloc(dtmP->pointsPP,numPartitions * sizeof( DPoint3d * )) ;
        if( dtmP->pointsPP == NULL )
          {
           bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
@@ -2670,7 +2670,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_allocatePointsMemoryDtmObject(BC_DTM_OBJ *dtmP
        if( remCurPartition < dtmP->pointPartitionSize )
          {
           if( dbg ) bcdtmWrite_message(0,0,0,"Reallocating Memory Witin Current Partition") ;
-          dtmP->pointsPP[dtmP->numPointPartitions-1] = ( DTM_TIN_POINT * ) bcdtmMemory_reallocatePartition( dtmP, DTMPartition::Point, dtmP->numPointPartitions-1, dtmP->pointsPP[dtmP->numPointPartitions-1],dtmP->pointPartitionSize*sizeof(DTM_TIN_POINT)) ;      
+          dtmP->pointsPP[dtmP->numPointPartitions-1] = ( DPoint3d * ) bcdtmMemory_reallocatePartition( dtmP, DTMPartition::Point, dtmP->numPointPartitions-1, dtmP->pointsPP[dtmP->numPointPartitions-1],dtmP->pointPartitionSize*sizeof(DPoint3d)) ;      
           if( dtmP->pointsPP[dtmP->numPointPartitions-1] == NULL )
             {
              bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
@@ -2691,7 +2691,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_allocatePointsMemoryDtmObject(BC_DTM_OBJ *dtmP
 /*
 **        Allocate Partition Memory
 */
-          dtmP->pointsPP[n] = ( DTM_TIN_POINT * ) bcdtmMemory_allocatePartition(dtmP, DTMPartition::Point, n, partitionSize * sizeof( DTM_TIN_POINT)) ;
+          dtmP->pointsPP[n] = ( DPoint3d * ) bcdtmMemory_allocatePartition(dtmP, DTMPartition::Point, n, partitionSize * sizeof( DPoint3d)) ;
           if( dtmP->pointsPP[n] == NULL )
             {
              bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
@@ -3551,7 +3551,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_resizeMemoryDtmObject(BC_DTM_OBJ *dtmP)
 */
     if( remNumPartition < dtmP->pointPartitionSize )
       {
-       dtmP->pointsPP[numPartition-1] = ( DTM_TIN_POINT * ) bcdtmMemory_reallocatePartition(dtmP, DTMPartition::Point, numPartition-1, dtmP->pointsPP[numPartition-1],remNumPartition * sizeof(DTM_TIN_POINT)) ; 
+       dtmP->pointsPP[numPartition-1] = ( DPoint3d * ) bcdtmMemory_reallocatePartition(dtmP, DTMPartition::Point, numPartition-1, dtmP->pointsPP[numPartition-1],remNumPartition * sizeof(DPoint3d)) ; 
       }
 /*
 **  Realloc Partition Pointer Memory
@@ -3559,7 +3559,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_resizeMemoryDtmObject(BC_DTM_OBJ *dtmP)
     if( numPartition < dtmP->numPointPartitions )
       {
        dtmP->numPointPartitions = numPartition ;
-       dtmP->pointsPP = ( DTM_TIN_POINT ** ) realloc (dtmP->pointsPP,dtmP->numPointPartitions * sizeof(DTM_TIN_POINT *)) ; 
+       dtmP->pointsPP = ( DPoint3d ** ) realloc (dtmP->pointsPP,dtmP->numPointPartitions * sizeof(DPoint3d *)) ; 
       }
 /*
 **  Reset Number Of Memory Points And Partitions
@@ -3795,9 +3795,9 @@ BENTLEYDTM_EXPORT int bcdtmObject_reportMemoryUsageDtmObject
 /*
 ** Calculate Memory Usage
 */
- *headMemAmountP    = sizeof(BC_DTM_OBJ) + dtmP->numFeaturePartitions * sizeof( BC_DTM_FEATURE * ) + dtmP->numPointPartitions * sizeof( DTM_TIN_POINT * ) ; 
+ *headMemAmountP    = sizeof(BC_DTM_OBJ) + dtmP->numFeaturePartitions * sizeof( BC_DTM_FEATURE * ) + dtmP->numPointPartitions * sizeof( DPoint3d * ) ; 
  *featureMemAmountP = dtmP->memFeatures * sizeof(BC_DTM_FEATURE) ;
- *pointMemAmountP   = dtmP->memPoints   * sizeof(DTM_TIN_POINT) ;
+ *pointMemAmountP   = dtmP->memPoints   * sizeof(DPoint3d) ;
  if( dtmP->nodesPP != NULL ) 
    {
     *nodeMemAmountP = dtmP->memPoints * sizeof(DTM_TIN_NODE) ;
@@ -4218,7 +4218,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_copyTinObjectToDtmObject(DTM_TIN_OBJ *tinP,BC_
  long ofs,numPartition,flist ;
  DTM_FEATURE_TABLE *featP ;
  BC_DTM_FEATURE    *dtmFeatureP ;
- DTM_TIN_POINT     *pointP,*dtmPointP ;
+ DPoint3d     *pointP,*dtmPointP ;
  DTM_TIN_NODE      *nodeP,*dtmNodeP ;
  DTM_CIR_LIST      *clistP,*dtmClistP ;
  DTM_FEATURE_LIST  *dtmFlistP ;
@@ -4535,7 +4535,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_cloneDtmObject(BC_DTM_OBJ *dtmP,BC_DTM_OBJ **d
  long *l1P,*l2P,ofs,num,numPartition ;
  DPoint3d               *p3d1P,*p3d2P ;
  BC_DTM_FEATURE    *featureP,*dtmFeatureP ;
- DTM_TIN_POINT     *pointP,*dtmPointP ;
+ DPoint3d     *pointP,*dtmPointP ;
  DTM_TIN_NODE      *nodeP,*dtmNodeP   ;
  DTM_CIR_LIST      *clistP,*dtmClistP ;
  DTM_FEATURE_LIST  *flistP,*dtmFlistP ;
@@ -4861,7 +4861,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_appendDtmObject(BC_DTM_OBJ *dtm1P,BC_DTM_OBJ *
  long sPnt,nPnt,fPnt,lPnt,dtmFeature,numFeaturePts,hullPresent=FALSE ;
  unsigned char *pointMarkP=NULL ;
  DPoint3d  *featurePtsP=NULL ;
- DTM_TIN_POINT   *pointP ;
+ DPoint3d   *pointP ;
  BC_DTM_FEATURE  *dtmFeatureP = NULL;
  DTMFeatureId  featureId ;
 /*
@@ -5045,7 +5045,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_appendWithUsertagDtmObject
  long sPnt,nPnt,fPnt,lPnt,dtmFeature,numFeaturePts,hullPresent=FALSE ;
  unsigned char *pointMarkP=NULL ;
  DPoint3d  *featurePtsP=NULL ;
- DTM_TIN_POINT   *pointP ;
+ DPoint3d   *pointP ;
  BC_DTM_FEATURE  *dtmFeatureP = NULL;
  DTMFeatureId  featureId ;
 /*
@@ -5267,7 +5267,7 @@ BENTLEYDTM_Public int bcdtmObject_getPointsForDtmFeatureDtmObject
 (
  BC_DTM_OBJ    *dtmP,
  long          dtmFeature,
- DTM_TIN_POINT **featPtsPP,
+ DPoint3d **featPtsPP,
  long          *numFeatPtsP
 ) 
 /*
@@ -5278,7 +5278,7 @@ BENTLEYDTM_Public int bcdtmObject_getPointsForDtmFeatureDtmObject
  long n,listPtr,nextPnt=0,firstPnt,point ;
 // char dtmFeatureTypeName[50] ;
  BC_DTM_FEATURE *dtmFeatureP ;
- DTM_TIN_POINT  *pntP,*pointP ;
+ DPoint3d  *pntP,*pointP ;
 /*
 ** Write Entry Message
 */
@@ -5316,7 +5316,7 @@ BENTLEYDTM_Public int bcdtmObject_getPointsForDtmFeatureDtmObject
 /*
 **  Allocate memory To Store Feature Points
 */
-    *featPtsPP = ( DTM_TIN_POINT * ) malloc( *numFeatPtsP * sizeof( DTM_TIN_POINT )) ;
+    *featPtsPP = ( DPoint3d * ) malloc( *numFeatPtsP * sizeof( DPoint3d )) ;
     if( *featPtsPP == NULL )
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
@@ -5344,7 +5344,7 @@ BENTLEYDTM_Public int bcdtmObject_getPointsForDtmFeatureDtmObject
        case DTMFeatureState::PointsArray : 
        case DTMFeatureState::TinError    : 
        case DTMFeatureState::Rollback     : 
-          memcpy(*featPtsPP,bcdtmMemory_getPointerP3D(dtmP,dtmFeatureP->dtmFeaturePts.pointsPI),dtmFeatureP->numDtmFeaturePts*sizeof(DTM_TIN_POINT)) ;
+          memcpy(*featPtsPP,bcdtmMemory_getPointerP3D(dtmP,dtmFeatureP->dtmFeaturePts.pointsPI),dtmFeatureP->numDtmFeaturePts*sizeof(DPoint3d)) ;
        break ;
 /*
 **     Get Points From Point Offset Array
@@ -5422,7 +5422,7 @@ BENTLEYDTM_Public int bcdtmObject_getPointsForDtmFeatureDtmObject
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
- BENTLEYDTM_EXPORT int bcdtmObject_getPointByIndexDtmObject(BC_DTM_OBJ *dtmP, long index, DTM_TIN_POINT* pt)
+ BENTLEYDTM_EXPORT int bcdtmObject_getPointByIndexDtmObject(BC_DTM_OBJ *dtmP, long index, DPoint3d* pt)
  /*
  ** This Function returns the point at an index.
  */
@@ -5687,7 +5687,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_copyToMemoryBlockDtmObject( BC_DTM_OBJ *dtmP, 
  DTM_FEATURE_LIST *flistP ;
  DTM_TIN_NODE     *nodeP ;
  DTM_CIR_LIST     *clistP ;
- DTM_TIN_POINT    *pointP ;  
+ DPoint3d    *pointP ;  
  unsigned long memPos=0,headMemory,featureMemory,featurePtsMemory,pointsMemory,nodesMemory,clistMemory,flistMemory,totalMemory ;
 /*
 **  Write Enty Message
@@ -5867,7 +5867,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_createFromMemoryBlockDtmObject( BC_DTM_OBJ **d
  DTM_FEATURE_LIST *flistP ;
  DTM_TIN_NODE     *nodeP ;
  DTM_CIR_LIST     *clistP ;
- DTM_TIN_POINT    *pointP ;  
+ DPoint3d    *pointP ;  
  unsigned long    memPos=0 ;
 /*
 **  Write Enty Message

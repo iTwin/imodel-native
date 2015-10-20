@@ -427,7 +427,7 @@ BENTLEYDTM_Private void bcdtmTile_medianSortPointsDtmObject(BC_DTM_OBJ *dtmP,lon
 {
  long    left,right,pivot,swap,scan ;
  double  pivot1=0.0,pivot2=0.0,x,y;
- DTM_TIN_POINT   *p1P,*p2P,temp;
+ DPoint3d   *p1P,*p2P,temp;
 /*
 ** Two Points
 */
@@ -696,7 +696,7 @@ BENTLEYDTM_Private void bcdtmTile_medianSortTaggedPointsDtmObject(BC_DTM_OBJ *dt
  long    left,right,pivot;
  bool    swap,scan ;
  double  pivot1=0.0,pivot2=0.0,x,y;
- DTM_TIN_POINT   *p1P,*p2P,temp;
+ DPoint3d   *p1P,*p2P,temp;
  long    tag ; 
 /*
 ** Two Points
@@ -1056,7 +1056,7 @@ BENTLEYDTM_Public int bcdtmMedianTile_getXYZCoordinateRangesDtmObject(BC_DTM_OBJ
  int ret=DTM_SUCCESS ;
  long point ;
  double xMin,yMin,zMin,xMax,yMax,zMax ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
 /*
 ** Initialise
 */
@@ -1531,7 +1531,7 @@ BENTLEYDTM_EXPORT int bcdtmQuadTreeTile_pointsDtmObject
  std::vector<std::thread> thread;
  bvector<DTM_MULTI_THREAD_QUAD_TREE_TILE> multiThread ;
  DTM_QUAD_TREE_TILE *tileP,*tile1P ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  /*
  ** Resize arrays
  */ numThreadArrayPoints.resize (DTM_NUM_PROCESSORS);

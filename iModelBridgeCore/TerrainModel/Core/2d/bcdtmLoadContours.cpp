@@ -25,11 +25,11 @@ typedef int (*DtmCallBack) ();
 BcDTMAppData::Key const DTMPondAppData::AppDataID;
 // Prototype Functions
 
-class DtmContourIndexArraySort : public ArraySort<DtmContourIndex, DtmContourIndexArray>
+class DtmContourIndexArraySort : public ArraySort<DTMContourIndex, DTMContourIndexArray>
     {
      private:
 #ifdef _WIN32_WCE
-        class CompareClass : public ICompareClass<DtmContourIndex>
+        class CompareClass : public ICompareClass<DTMContourIndex>
             {
             private:
                 BC_DTM_OBJ* m_dtmP;
@@ -38,7 +38,7 @@ class DtmContourIndexArraySort : public ArraySort<DtmContourIndex, DtmContourInd
                     {
                     m_dtmP = dtmP;
                     }
-                virtual int Compare(DtmContourIndex* index1P, DtmContourIndex* index2P)
+                virtual int Compare(DTMContourIndex* index1P, DTMContourIndex* index2P)
                     {
                      // access to dtp via m_dtmP
                      double p1Z,p2Z,zMinLine1,zMaxLine1,zMinLine2,zMaxLine2 ;
@@ -75,11 +75,11 @@ class DtmContourIndexArraySort : public ArraySort<DtmContourIndex, DtmContourInd
                     }
 */
 
-                virtual bool LessThan(DtmContourIndex* index1P, DtmContourIndex* index2P)
+                virtual bool LessThan(DTMContourIndex* index1P, DTMContourIndex* index2P)
                     {
                      return Compare(index1P, index2P) < 0;
                     }
-                virtual bool GreaterThan(DtmContourIndex* index1P, DtmContourIndex* index2P)
+                virtual bool GreaterThan(DTMContourIndex* index1P, DTMContourIndex* index2P)
                     {
                      return Compare(index1P, index2P) > 0;
                     }
@@ -96,7 +96,7 @@ class DtmContourIndexArraySort : public ArraySort<DtmContourIndex, DtmContourInd
                     {
                     m_dtmP = dtmP;
                     }
-                 __forceinline int Compare(DtmContourIndex* index1P, DtmContourIndex* index2P)
+                 __forceinline int Compare(DTMContourIndex* index1P, DTMContourIndex* index2P)
                     {
                      // access to dtp via m_dtmP
                      double p1Z,p2Z,zMinLine1,zMaxLine1,zMinLine2,zMaxLine2 ;
@@ -117,34 +117,34 @@ class DtmContourIndexArraySort : public ArraySort<DtmContourIndex, DtmContourInd
                      else if(  zMaxLine1 > zMaxLine2 ) return( 1) ;
                      return(0) ;
                     }
-                __forceinline bool LessThan(DtmContourIndex* p1P, DtmContourIndex* p2P)
+                __forceinline bool LessThan(DTMContourIndex* p1P, DTMContourIndex* p2P)
                     {
                      return(Compare(p1P, p2P) < 0) ;
                     }
 
-                __forceinline bool GreaterThan(DtmContourIndex* p1P, DtmContourIndex* p2P)
+                __forceinline bool GreaterThan(DTMContourIndex* p1P, DTMContourIndex* p2P)
                     {
                      return(Compare(p1P, p2P) > 0) ;
                     }
             };
 #endif
     public:
-        int doSort(DtmContourIndexArray& theArray, BC_DTM_OBJ *dtmP)
+        int doSort(DTMContourIndexArray& theArray, BC_DTM_OBJ *dtmP)
             {
             CompareClass compare(dtmP);
 #ifdef _WIN32_WCE
-            return ArraySort<DtmContourIndex, DtmContourIndexArray>::DoSort(theArray, &compare, 0, theArray.getSize());
+            return ArraySort<DTMContourIndex, DTMContourIndexArray>::DoSort(theArray, &compare, 0, theArray.getSize());
 #else
-            return ArraySort<DtmContourIndex, DtmContourIndexArray>::DoSort<CompareClass>(theArray, &compare, 0, theArray.getSize());
+            return ArraySort<DTMContourIndex, DTMContourIndexArray>::DoSort<CompareClass>(theArray, &compare, 0, theArray.getSize());
 #endif
             }
-        int doResort(DtmContourIndexArray& theArray, int start, int length, BC_DTM_OBJ *dtmP)
+        int doResort(DTMContourIndexArray& theArray, int start, int length, BC_DTM_OBJ *dtmP)
             {
             CompareClass compare(dtmP);
 #ifdef _WIN32_WCE
-            return ArraySort<DtmContourIndex, DtmContourIndexArray>::DoSort(theArray, &compare, start, length);
+            return ArraySort<DTMContourIndex, DTMContourIndexArray>::DoSort(theArray, &compare, start, length);
 #else
-            return ArraySort<DtmContourIndex, DtmContourIndexArray>::DoSort<CompareClass>(theArray, &compare, start, length);
+            return ArraySort<DTMContourIndex, DTMContourIndexArray>::DoSort<CompareClass>(theArray, &compare, start, length);
 #endif
             }
     };
@@ -314,8 +314,8 @@ BENTLEYDTM_Public int bcdtmLoad_testForOverlapWithTinHullDtmObject
  long   numDrapePts,numPtsOnDrape ;
  double xMin,yMin,xMax,yMax ;
  DPoint3d    *ptsP ;
- DTM_DRAPE_POINT *drapeP,*drapePtsP=nullptr ;
- bvector<DTM_DRAPE_POINT> drapePts;
+ DTMDrapePoint *drapeP,*drapePtsP=nullptr ;
+ bvector<DTMDrapePoint> drapePts;
 /*
 ** Write Entry Message
 */
@@ -412,7 +412,7 @@ BENTLEYDTM_Public int bcdtmLoad_buildContourIndexDtmObject
  double cInt,
  double cReg,
  unsigned char   **tinLinePP,
- DtmContourIndexArray& contourIndexPP,
+ DTMContourIndexArray& contourIndexPP,
  long *numContourIndexP
 )
 /*
@@ -426,7 +426,7 @@ BENTLEYDTM_Public int bcdtmLoad_buildContourIndexDtmObject
  double zMin,zMax,firstContour,lastContour;
  unsigned char   *cp ;
  DtmContourIndexArraySort sort;
- DtmContourIndexArray::iterator index;
+ DTMContourIndexArray::iterator index;
 /*
 ** Write Entry Message
 */
@@ -604,7 +604,7 @@ BENTLEYDTM_Public int bcdtmLoad_buildContourIndexDtmObject
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmLoad_getFirstTinLineForContourFromIndexDtmObject(BC_DTM_OBJ *dtmP,DtmContourIndexArray& contourIndexP,long numContourIndex,double contourValue,long *contourLineP)
+BENTLEYDTM_Public int bcdtmLoad_getFirstTinLineForContourFromIndexDtmObject(BC_DTM_OBJ *dtmP,DTMContourIndexArray& contourIndexP,long numContourIndex,double contourValue,long *contourLineP)
 /*
 ** This Function Finds The First Entry In The Contour Index For The Contour Value
 */
@@ -612,7 +612,7 @@ BENTLEYDTM_Public int bcdtmLoad_getFirstTinLineForContourFromIndexDtmObject(BC_D
  int  ret=DTM_SUCCESS ;
  long ofs,process=1 ;
  double zMin,zMax ;
- DTM_TIN_POINT *p1P,*p2P ;
+ DPoint3d *p1P,*p2P ;
 /*
 ** Initialise
 */
@@ -625,7 +625,7 @@ BENTLEYDTM_Public int bcdtmLoad_getFirstTinLineForContourFromIndexDtmObject(BC_D
 /*
 **  Set Start Index Position
 */
-    DtmContourIndexArray::iterator index = contourIndexP.start() + ofs;
+    DTMContourIndexArray::iterator index = contourIndexP.start() + ofs;
 /*
 **  Scan Index To First Entry For Contour Value
 */
@@ -916,10 +916,10 @@ void    *userP                  /* ==> User Pointer Passed Back To User         
  unsigned char    *cP,*tinLine1P=nullptr,*tinLine2P=nullptr ;
  bool useFence = (DTMFenceType::None != fenceParams.fenceType);
  DPoint3dCP     p3dP ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_CIR_LIST  *clistP ;
  BC_DTM_OBJ  *clipDtmP=nullptr;
- DtmContourIndexArray  contourIndex;
+ DTMContourIndexArray  contourIndex;
  Bentley::TerrainModel::DTMContourParams contourParams (contourParamsC);
 /*
 ** Write Entry Message
@@ -1378,7 +1378,7 @@ BENTLEYDTM_Private int bcdtmLoad_plotContourDtmObject
  double contourValue,             /* ==> Contour Value To Be Plotted        */
  unsigned char   *tinLineP,                /* ==> Marker Array For Marking Scanned Dtm Lines  */
  long   voidsInDtm,               /* ==> Voids Present<TRUE,FALSE>                   */
- DtmContourIndexArray& contourIndexP,  /* ==> Pointer To Contour Index                    */
+ DTMContourIndexArray& contourIndexP,  /* ==> Pointer To Contour Index                    */
  long   numContourIndex,          /* ==> Number Of Size Of Contour Index             */
  long   *contourStartLineP,       /* ==> Contour Index Start Scan                    */
  DTMFeatureCallback loadFunctionP,       /* ==> Pointer To Load Function                    */
@@ -1393,7 +1393,7 @@ BENTLEYDTM_Private int bcdtmLoad_plotContourDtmObject
  long   startTime=0 ;
  double zMin,zMax ;
  BC_DTM_FEATURE  *fP ;
- DTM_TIN_POINT *p1P,*p2P ;
+ DPoint3d *p1P,*p2P ;
  long zsp1 = DTM_NULL_PNT, zsp2;
 /*
 ** Initialise
@@ -1517,7 +1517,7 @@ BENTLEYDTM_Private int bcdtmLoad_plotContourDtmObject
 **     Set Contour Index Start
 */
        contourStartOffset = *contourStartLineP ;
-       DtmContourIndexArray::iterator index = contourIndexP.start() + *contourStartLineP ;
+       DTMContourIndexArray::iterator index = contourIndexP.start() + *contourStartLineP ;
 /*
 **     Set Zmin And Zmax For Start Contour Index
 */
@@ -5964,7 +5964,7 @@ BENTLEYDTM_Private int bcdtmLoad_markTriangleEdgesThatSpanTheFenceDtmObject
  long   ap,cp,p1,p2,p3,np1,np2,np3,fndType,drapeType ;
  long   onLine,processDrape,hullPnt1,hullPnt2 ;
  double nd,xi,yi,zi,xls,yls,zls,xle,yle ;
- DTM_TIN_POINT *pnt1P,*pnt2P ;
+ DPoint3d *pnt1P,*pnt2P ;
 /*
 ** Write Entry Message
 */

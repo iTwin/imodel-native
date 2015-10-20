@@ -89,7 +89,7 @@ BENTLEYDTM_Private int bcdtmList_writeVectorList (bvector<long>& featureNumList)
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmCleanUp_resolvePolygonalHolesFeatureTypeDtmObject (BC_DTM_OBJ* dtmP, BC_DTM_OBJ* cleanedDtmP, bvector<long>& usedFeatureIndexes, DTMFeatureType featureType, bvector <DTM_TIN_POINT>& points, DTMFeatureId dtmFeatureId)
+BENTLEYDTM_Private int bcdtmCleanUp_resolvePolygonalHolesFeatureTypeDtmObject (BC_DTM_OBJ* dtmP, BC_DTM_OBJ* cleanedDtmP, bvector<long>& usedFeatureIndexes, DTMFeatureType featureType, bvector <DPoint3d>& points, DTMFeatureId dtmFeatureId)
     {
     int    ret=DTM_SUCCESS;
     long   dtmFeature,numFeaturePts=0 ;  
@@ -287,7 +287,7 @@ BENTLEYDTM_Public int bcdtmCleanUp_resolveMultipleIntersectingPolygonalDtmObject
                 np = nodeAddrP(polyDtmP,sp)->hPtr ;
                 if( nodeAddrP(polyDtmP,sp)->tPtr == polyDtmP->nullPnt && bcdtmList_testForBreakLineDtmObject(polyDtmP,sp,np) )
                     {
-                    bvector<DTM_TIN_POINT> points;
+                    bvector<DPoint3d> points;
                     bvector<long> usedFeatureIndexes;
 
                     /*
@@ -553,7 +553,7 @@ int bcdtmClean_validateDtmFeaturesDtmObject
  long   ofs1,ofs2,ofs3,ofs4,point,dtmFeature,dtmFeature2,numFeaturePts=0,closeFlag; 
  long   numFeatures=0,validateResult,polygonalFeature=FALSE,numStartFeatures ;
  DPoint3d    *p3dP,*featurePtsP=NULL ; 
- DTM_TIN_POINT  *pointP,*point1P,*point2P ;
+ DPoint3d  *pointP,*point1P,*point2P ;
  BC_DTM_FEATURE *dtmFeatureP, *dtmFeature2P ;
 /*
 ** Write Entry Message
@@ -829,7 +829,7 @@ int bcdtmCleanUp_joinVoidsAndHoles (BC_DTM_OBJ *dtmP)
     long numAfterJoin;
     DTM_JOIN_USER_TAGS* joinUserTagsP = NULL;
     long numJoinUserTags = 0;
-    DTM_ROLLBACK_DATA* rollBackInfo = dtmP->extended ? dtmP->extended->rollBackInfoP : NULL;
+    DTMRollbackData* rollBackInfo = dtmP->extended ? dtmP->extended->rollBackInfoP : NULL;
 
     if (rollBackInfo) rollBackInfo->rollBackMapInitialized = false;
     if (bcdtmJoin_dtmFeatureTypeWithRollbackDtmObject ( dtmP, dtmP->ppTol, DTMFeatureType::VoidLine, DTMFeatureType::Void, &numBeforeJoin, &numAfterJoin, &joinUserTagsP, &numJoinUserTags, 1)) goto errexit;
@@ -861,7 +861,7 @@ int bcdtmCleanUp_joinHullLines (BC_DTM_OBJ *dtmP)
     long numAfterJoin;
     DTM_JOIN_USER_TAGS* joinUserTagsP = NULL;
     long numJoinUserTags = 0;
-    DTM_ROLLBACK_DATA* rollBackInfo = dtmP->extended ? dtmP->extended->rollBackInfoP : NULL;
+    DTMRollbackData* rollBackInfo = dtmP->extended ? dtmP->extended->rollBackInfoP : NULL;
 
     if (rollBackInfo) rollBackInfo->rollBackMapInitialized = false;
     if (bcdtmJoin_dtmFeatureTypeWithRollbackDtmObject ( dtmP, dtmP->ppTol, DTMFeatureType::HullLine, DTMFeatureType::HullLine, &numBeforeJoin, &numAfterJoin, &joinUserTagsP, &numJoinUserTags, 1)) goto errexit;
@@ -881,8 +881,8 @@ int bcdtmCleanUp_joinHullLines (BC_DTM_OBJ *dtmP)
                     {
                     long ofs1 = dtmFeatureP->dtmFeaturePts.firstPoint ;
                     long ofs2 = ofs1 + dtmFeatureP->numDtmFeaturePts - 1 ;
-                    DTM_TIN_POINT* startPtP = pointAddrP(dtmP,ofs1) ;
-                    DTM_TIN_POINT* endPtP = pointAddrP(dtmP,ofs2) ;
+                    DPoint3d* startPtP = pointAddrP(dtmP,ofs1) ;
+                    DPoint3d* endPtP = pointAddrP(dtmP,ofs2) ;
                     if( bcdtmMath_distance(startPtP->x,startPtP->y,endPtP->x,endPtP->y) <= dtmP->ppTol)
                         dtmFeatureP->dtmFeatureType = DTMFeatureType::Hull;
                     break;
@@ -1047,7 +1047,7 @@ int bcdtmCleanUp_resolveVoidAndIslandsDtmObject (BC_DTM_OBJ *dtmP)
     DPoint3d  *featurePtsP=NULL ;
     long numFeaturePts = 0;
     int k = 0;
-//    DTM_ROLLBACK_DATA* rollBackInfo = dtmP->extended ? dtmP->extended->rollBackInfoP : NULL;
+//    DTMRollbackData* rollBackInfo = dtmP->extended ? dtmP->extended->rollBackInfoP : NULL;
 
     DTMFeatureId dtmFeatureId ;
     BC_DTM_FEATURE *dtmFeature2P=NULL ;

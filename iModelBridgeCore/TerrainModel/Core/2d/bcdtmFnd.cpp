@@ -109,7 +109,7 @@ BENTLEYDTM_EXPORT int bcdtmFind_binaryScanDtmObject(BC_DTM_OBJ *dtmP,double x,lo
 */
 {
  long bp,tp ;
- DTM_TIN_POINT *pntP ;	  
+ DPoint3d *pntP ;	  
 /*
 ** Initialise
 */
@@ -153,7 +153,7 @@ BENTLEYDTM_EXPORT int bcdtmFind_closestPointDtmObject(BC_DTM_OBJ *dtmP,double x,
  long    dbg=DTM_TRACE_VALUE(0) ;
  long    cpnt,spnt,process ;
  double  dn = 0.0,dns,dd ;
- DTM_TIN_POINT *cpntP ;
+ DPoint3d *cpntP ;
 /*
 ** Write Entry Message
 */

@@ -22,7 +22,7 @@ BENTLEYDTM_Public int bcdtmInsert_addPointToDtmObject(BC_DTM_OBJ *dtmP,double Xp
 ** This Function Adds a Point To A DTM Object In Tin State
 */
 {
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_TIN_NODE  *nodeP ;
 /*
 ** Initialise
@@ -691,8 +691,8 @@ int bcdtmInsert_swapTinLinesThatIntersectInsertLineHelperDtmObject
     int    ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE (0);
     long   L1,L2;
     double d1,d2,X1,X2,Y1,Y2;
-    DTM_TIN_POINT* sPt;
-    DTM_TIN_POINT* ePt;
+    DPoint3d* sPt;
+    DPoint3d* ePt;
     enum {
         NotRecrossing,
         All,
@@ -865,7 +865,7 @@ bool allowAdd
     long   startPnt, P1, P2, P3, P4;
     //long loop=0 ;
     double X, Y;
-    DTM_TIN_POINT *firstPt, *lastPt, *P2Pt, *P3Pt;
+    DPoint3d *firstPt, *lastPt, *P2Pt, *P3Pt;
     double pTolSq = dtmP->ppTol * dtmP->ppTol;
     long prevInsErrorPt = -1, prevInsErrorPt2 = -1, prevInsErrorPt3 = -1;
     bvector <SwapLines> crossingLines;
@@ -1140,7 +1140,7 @@ BENTLEYDTM_Public int  bcdtmInsert_normalIntersectInsertLineDtmObject(BC_DTM_OBJ
 {
  double  x1,y1,x2,y2,x3,y3,x4,y4 ;
  double  n1,n2,xmin,ymin,xmax,ymax ;
- DTM_TIN_POINT  *p1P,*p2P,*fpP,*lpP ;
+ DPoint3d  *p1P,*p2P,*fpP,*lpP ;
 /*
 ** Get Point Addresses
 */
@@ -1296,7 +1296,7 @@ BENTLEYDTM_Public int bcdtmInsert_checkPointQuadrilateralPrecisionDtmObject(BC_D
 ** Inserted As A Common Vertex In The Clockwise Quadrilateral P1P2P3P4
 */
 {
- DTM_TIN_POINT  *p1P,*p2P,*p3P,*p4P ;
+ DPoint3d  *p1P,*p2P,*p3P,*p4P ;
 /*
 ** Get Point Addresses
 */
@@ -1776,7 +1776,7 @@ BENTLEYDTM_Public int bcdtmInsert_checkPointHullTrianglePrecisionDtmObject(BC_DT
 ** Into A Hull Line
 */
 {
- DTM_TIN_POINT  *p1P,*p2P,*p3P ;
+ DPoint3d  *p1P,*p2P,*p3P ;
 /*
 ** Initialise
 */
@@ -2082,7 +2082,7 @@ BENTLEYDTM_Public int bcdtmInsert_getZvalueDtmObject(BC_DTM_OBJ *dtmP,long P1,lo
 */
 {
  double  dx,dy,dz ;
- DTM_TIN_POINT *p1P,*p2P ;
+ DPoint3d *p1P,*p2P ;
 /*
 ** Test For Single Point
 */
@@ -3622,7 +3622,7 @@ BENTLEYDTM_Public int bcdtmInsert_removeFirstPointDtmDataFeatureFromDtmObject (B
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long  feature,numPoints,firstPoint,lastPoint ;
  BC_DTM_FEATURE *dtmFeatureP ;
- DTM_TIN_POINT  *firstPointP,*lastPointP ;
+ DPoint3d  *firstPointP,*lastPointP ;
 /*
 ** Write Entry Message
 */
@@ -8882,11 +8882,11 @@ BENTLEYDTM_Public int bcdtmInsert_checkFeatureIsInternalToTinHullDtmObject
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long numDrapePts ;
  DPoint3d *p3dP ;
- DTM_DRAPE_POINT *drapeP,*drapePtsP=NULL ;
- bvector<DTM_DRAPE_POINT> drapePts;
+ DTMDrapePoint *drapeP,*drapePtsP=NULL ;
+ bvector<DTMDrapePoint> drapePts;
  double dd,xi,yi,z ;
  long p1,p2,fndType,drapeFlag,onLine ;
- DTM_TIN_POINT *pnt1P,*pnt2P ;
+ DPoint3d *pnt1P,*pnt2P ;
 /*
 ** Write Status Message
 */
@@ -8993,11 +8993,11 @@ BENTLEYDTM_Public int bcdtmInsert_checkFeatureIsInternalToTinHullMrDtmObject
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long numDrapePts ;
  DPoint3d *p3dP ;
- DTM_DRAPE_POINT *drapeP,*drapePtsP=NULL ;
- bvector<DTM_DRAPE_POINT> drapePts;
+ DTMDrapePoint *drapeP,*drapePtsP=NULL ;
+ bvector<DTMDrapePoint> drapePts;
  double dd,xi,yi,z ;
  long p1,p2,fndType,drapeFlag,onLine ;
- DTM_TIN_POINT *pnt1P,*pnt2P ;
+ DPoint3d *pnt1P,*pnt2P ;
 /*
 ** Write Status Message
 */

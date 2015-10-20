@@ -1791,7 +1791,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer3TinObject
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long  n,Nvoid=0 ;
- DTM_TIN_POINT   *pntP ;
+ DPoint3d   *pntP ;
  DTM_TIN_NODE    *nodeP ;
 // DTM_CIR_LIST    *clistP ; 
  struct
@@ -1893,7 +1893,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer3TinObject
 /*
 ** Allocate Memory For Tin Points
 */
- tinP->pointsP = ( DTM_TIN_POINT * ) malloc ( tinP->numPts * sizeof(DTM_TIN_POINT)) ;
+ tinP->pointsP = ( DPoint3d * ) malloc ( tinP->numPts * sizeof(DPoint3d)) ;
  if( tinP->pointsP == NULL )
    { 
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; 
@@ -1903,7 +1903,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer3TinObject
 ** Read Tin Points
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Reading Tin Points") ;
- if( bcdtmStream_fread(tinP->pointsP,sizeof(DTM_TIN_POINT)*tinP->numPts,1,dtmStreamP) != 1 )
+ if( bcdtmStream_fread(tinP->pointsP,sizeof(DPoint3d)*tinP->numPts,1,dtmStreamP) != 1 )
    {
     bcdtmWrite_message(1,0,0,"Error Reading Tin File") ;
     goto errexit ; 
@@ -2131,7 +2131,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer400TinObject
     struct  Tinof *fTableP ;
     struct  Tinol *cPtr ;
    } Tinobj ;
- DTM_TIN_POINT     *pd ;
+ DPoint3d     *pd ;
  DTM_FEATURE_TABLE *pf ;
  DTM_TIN_NODE      *pn ;
  DTM_GUID nullGuid=DTM_NULL_GUID ;
@@ -2257,7 +2257,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer400TinObject
 ** Read Points Array
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Reading Ver 400 Points Array") ;
-    Tin->pointsP = (DTM_TIN_POINT *) malloc( Tin->memPts * sizeof(DTM_TIN_POINT)) ;
+    Tin->pointsP = (DPoint3d *) malloc( Tin->memPts * sizeof(DPoint3d)) ;
     Tin->nodesP  = (DTM_TIN_NODE  *) malloc( Tin->memPts * sizeof(DTM_TIN_NODE)) ;
     if( Tin->pointsP == NULL || Tin->nodesP == NULL ) 
       {
@@ -2399,7 +2399,7 @@ struct ver500TinObject
 struct ver500TinObject tinObj ;
 struct ver500FTable    fTable ;
 DTM_FEATURE_TABLE      *ftP   ;
-DTM_TIN_POINT  *pp ;
+DPoint3d  *pp ;
 DTM_TIN_NODE   *np ;
 long headerSize ;
 DTM_GUID nullGuid=DTM_NULL_GUID ;
@@ -2554,13 +2554,13 @@ DTM_GUID nullGuid=DTM_NULL_GUID ;
 **  Read Data Array
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Reading Data Array") ;
-    tinP->pointsP = (DTM_TIN_POINT *) malloc( tinP->memPts * sizeof(DTM_TIN_POINT)) ;
+    tinP->pointsP = (DPoint3d *) malloc( tinP->memPts * sizeof(DPoint3d)) ;
     if( tinP->pointsP == NULL )
       { 
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
       }
-    tinP->nodesP = (DTM_TIN_NODE *) malloc( tinP->memPts * sizeof(DTM_TIN_POINT)) ;
+    tinP->nodesP = (DTM_TIN_NODE *) malloc( tinP->memPts * sizeof(DPoint3d)) ;
     if( tinP->nodesP == NULL ) 
       { 
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
@@ -2774,13 +2774,13 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer501TinObject
 **  Read Points Array
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Reading Tin Points Array ** memPts = %8ld",tinP->memPts) ;
-    tinP->pointsP = (DTM_TIN_POINT *) malloc( tinP->memPts * sizeof(DTM_TIN_POINT)) ;
+    tinP->pointsP = (DPoint3d *) malloc( tinP->memPts * sizeof(DPoint3d)) ;
     if( tinP->pointsP == NULL )
       { 
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
       }
-    if( bcdtmStream_fread(tinP->pointsP,sizeof(DTM_TIN_POINT)*tinP->memPts,1,dtmStreamP) != 1 ) 
+    if( bcdtmStream_fread(tinP->pointsP,sizeof(DPoint3d)*tinP->memPts,1,dtmStreamP) != 1 ) 
       { 
        bcdtmWrite_message(1,0,0,"Error Reading Tin Object") ;
        goto errexit ;
@@ -2806,7 +2806,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer501TinObject
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
       }
-    if( bcdtmStream_fread(tinP->nodesP,sizeof(DTM_TIN_POINT)*tinP->memPts,1,dtmStreamP) != 1 ) 
+    if( bcdtmStream_fread(tinP->nodesP,sizeof(DPoint3d)*tinP->memPts,1,dtmStreamP) != 1 ) 
       { 
        bcdtmWrite_message(1,0,0,"Error Reading Tin Object") ;
        goto errexit ;

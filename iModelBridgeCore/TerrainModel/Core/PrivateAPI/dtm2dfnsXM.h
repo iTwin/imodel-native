@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PrivateAPI/dtm2dfnsXM.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,7 +27,7 @@
 //BENTLEYDTM_Private       int bcdtmAbl_insertArtificialPointInToTinObject(DTM_TIN_OBJ *Tin,long Spnt,long *InsertFlag ) ; 
 //BENTLEYDTM_Private       int bcdtmAbl_insertArtificialPointsBetweenContourLinesTinObject(DTM_TIN_OBJ *Tin,long Spnt,long *InsertFlag ) ; 
 //BENTLEYDTM_Private       int bcdtmAbl_insertArtificialPointsTinObject(DTM_TIN_OBJ *Tin ) ; 
-//BENTLEYDTM_Private       int bcdtmAbl_joinContourLinesFromNodeTableTinObject(DTM_TIN_OBJ *tinP,DtmContourNodeTable *nodeTableP,long numNodeTable) ; 
+//BENTLEYDTM_Private       int bcdtmAbl_joinContourLinesFromNodeTableTinObject(DTM_TIN_OBJ *tinP,DTMContourNodeTable *nodeTableP,long numNodeTable) ; 
 //BENTLEYDTM_Public        int bcdtmAbl_joinContourLinesTinObject(DTM_TIN_OBJ *tinP) ; 
 //BENTLEYDTM_Private       int bcdtmAbl_joinContourLinesWithCoincidentEndPointsTinObject(DTM_TIN_OBJ *tinP) ; 
 //BENTLEYDTM_Private       int bcdtmAbl_joinContourLinesWithGapsTinObject(DTM_TIN_OBJ *tinP) ; 
@@ -387,23 +387,23 @@ BENTLEYDTM_EXPORT        int bcdtmData_joinAdjacentDtmObjects(DTM_DAT_OBJLIST *j
 //BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_refineCatchmentsTinObject( DTM_TIN_OBJ *tinP,double falseLowDepth, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, void *userP, long *numCatchmentsP ) ; 
 //BENTLEYDTM_Private       int bcdtmDrainageNgp_removeLineFromDtmFeatureTinObject( DTM_TIN_OBJ *tinP, long dtmFeature, long pnt1, long pnt2) ; 
 //BENTLEYDTM_Private       int bcdtmDrainageNgp_removeRedundantAscentLinesTinObject( DTM_TIN_OBJ *tinP) ; 
-//BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnFalseLowPointOffsetsTinObject( DTM_TIN_OBJ *tinP, double falseLowDepth, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, DTM_TIN_POINT **tinPtsPP, long **lowPtsPP, long *numLowPtsP ) ; 
+//BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnFalseLowPointOffsetsTinObject( DTM_TIN_OBJ *tinP, double falseLowDepth, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, DPoint3d **tinPtsPP, long **lowPtsPP, long *numLowPtsP ) ; 
 //BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnFalseLowPointsTinObject( DTM_TIN_OBJ *tinP, DTMFeatureCallback loadFunctionP, double falseLowDepth, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, void *userP, long *numLowPtsP ) ; 
-//BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnHighPointOffsetsTinObject( DTM_TIN_OBJ *tinP, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, DTM_TIN_POINT **tinPtsPP, long **highPtsPP, long *numHighPtsP ) ; 
+//BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnHighPointOffsetsTinObject( DTM_TIN_OBJ *tinP, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, DPoint3d **tinPtsPP, long **highPtsPP, long *numHighPtsP ) ; 
 //BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnHighPointsTinObject( DTM_TIN_OBJ *tinP, DTMFeatureCallback loadFunctionP, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, void *userP, long *numHighPtsP ) ; 
-//BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnLowPointOffsetsTinObject( DTM_TIN_OBJ *tinP, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, DTM_TIN_POINT **tinPtsPP, long **lowPtsPP, long *numLowPtsP ) ; 
+//BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnLowPointOffsetsTinObject( DTM_TIN_OBJ *tinP, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, DPoint3d **tinPtsPP, long **lowPtsPP, long *numLowPtsP ) ; 
 //BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnLowPointsTinObject( DTM_TIN_OBJ *tinP, DTMFeatureCallback loadFunctionP, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, void *userP, long *numLowPtsP ) ; 
-//BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnNoneFalseLowPointOffsetsTinObject( DTM_TIN_OBJ *tinP, double falseLowDepth, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, DTM_TIN_POINT **tinPtsPP, long **lowPtsPP, long *numLowPtsP ) ; 
+//BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnNoneFalseLowPointOffsetsTinObject( DTM_TIN_OBJ *tinP, double falseLowDepth, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, DPoint3d **tinPtsPP, long **lowPtsPP, long *numLowPtsP ) ; 
 //BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnNoneFalseLowPointsTinObject( DTM_TIN_OBJ *tinP, DTMFeatureCallback loadFunctionP, double falseLowDepth, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, void *userP, long *numLowPtsP ) ; 
-//BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnRidgeLineOffsetsTinObject( DTM_TIN_OBJ *tinP, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, DTM_TIN_POINT **tinPtsPP, long **ridgePtsPP, long *numRidgeLinesP ) ; 
+//BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnRidgeLineOffsetsTinObject( DTM_TIN_OBJ *tinP, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, DPoint3d **tinPtsPP, long **ridgePtsPP, long *numRidgeLinesP ) ; 
 //BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnRidgeLinesTinObject( DTM_TIN_OBJ *tinP, DTMFeatureCallback loadFunctionP, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, void *userP, long *numRidgeLinesP ) ; 
-//BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnSumpLineOffsetsTinObject( DTM_TIN_OBJ *tinP, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, DTM_TIN_POINT **tinPtsPP, long **sumpPtsPP, long *numSumpLinesP ) ; 
+//BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnSumpLineOffsetsTinObject( DTM_TIN_OBJ *tinP, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, DPoint3d **tinPtsPP, long **sumpPtsPP, long *numSumpLinesP ) ; 
 //BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnSumpLinesTinObject( DTM_TIN_OBJ *tinP, DTMFeatureCallback loadFunctionP, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, void *userP, long *numSumpLinesP ) ; 
-//BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnZeroSlopeRidgeLineOffsetsTinObject( DTM_TIN_OBJ *tinP, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, DTM_TIN_POINT **tinPtsPP, long **ridgePtsPP, long *numRidgeLinesP ) ; 
+//BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnZeroSlopeRidgeLineOffsetsTinObject( DTM_TIN_OBJ *tinP, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, DPoint3d **tinPtsPP, long **ridgePtsPP, long *numRidgeLinesP ) ; 
 //BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnZeroSlopeRidgeLinesTinObject( DTM_TIN_OBJ *tinP, DTMFeatureCallback loadFunctionP, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, void *userP, long *numRidgeLinesP ) ; 
-//BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnZeroSlopeSumpLineOffsetsTinObject( DTM_TIN_OBJ *tinP, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, DTM_TIN_POINT **tinPtsPP, long **sumpPtsPP, long *numSumpLinesP ) ; 
+//BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnZeroSlopeSumpLineOffsetsTinObject( DTM_TIN_OBJ *tinP, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, DPoint3d **tinPtsPP, long **sumpPtsPP, long *numSumpLinesP ) ; 
 //BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnZeroSlopeSumpLinesTinObject( DTM_TIN_OBJ *tinP, DTMFeatureCallback loadFunctionP, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, void *userP, long *numSumpLinesP ) ; 
-//BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnZeroSlopeTriangleOffsetsTinObject( DTM_TIN_OBJ *tinP, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, DTM_TIN_POINT **tinPtsPP, long **trianglePtsPP, long *numZeroSlopeTrianglesP ) ; 
+//BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnZeroSlopeTriangleOffsetsTinObject( DTM_TIN_OBJ *tinP, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, DPoint3d **tinPtsPP, long **trianglePtsPP, long *numZeroSlopeTrianglesP ) ; 
 //BENTLEYDTM_EXPORT        int bcdtmDrainageNgp_returnZeroSlopeTrianglesTinObject( DTM_TIN_OBJ *tinP, DTMFeatureCallback loadFunctionP, long useFence, long fenceOption, DPoint3d *fencePtsP, long numFencePts, void *userP, long *numZeroSlopeTrianglesP ) ; 
 //BENTLEYDTM_Private       int bcdtmDrainageNgp_scanAscentTracesForClosureTinObject( DTM_TIN_OBJ *tinP, long startPnt, long nextPnt, long scanDirection, long *lastPntP, long *closureP) ; 
 //BENTLEYDTM_Public        int bcdtmDrainageNgp_scanBetweenPointsForMaximumAscentRidgeLineTinObject( DTM_TIN_OBJ *tinP, long useTables, long point, long startPoint, long endPoint, long *ridgePointP, double *ridgeSlopeP, double *ridgeAngleP ) ; 
@@ -585,10 +585,10 @@ BENTLEYDTM_EXPORT        int bcdtmData_joinAdjacentDtmObjects(DTM_DAT_OBJLIST *j
 //BENTLEYDTM_Public        int bcdtmEdit_findClosestVoidLineTinObject(DTM_TIN_OBJ *Tin,double x,double y,long *P1,long *P2,long *Feature) ; 
 //BENTLEYDTM_Public        int bcdtmEdit_findDtmFeatureEnclosingPointTinObject(DTM_TIN_OBJ *Tin,long P1,long DtmFeature,long *Feature) ; 
 //BENTLEYDTM_EXPORT        int bcdtmEdit_getDeleteFeaturesTinObject(DTM_TIN_OBJ *Tin,long Feature,long **DeleteDtmFeatures,long *NumDeleteDtmFeatures) ; 
-//BENTLEYDTM_Private       int bcdtmEdit_getInternalTptrPolygonDtmFeaturesTinObject(DTM_TIN_OBJ *Tin,long sPnt,DTM_TIN_POINT_FEATURES_XM **dtmFeatures,long *numDtmFeatures) ; 
-//BENTLEYDTM_Private       int bcdtmEdit_getIslandFeaturesInternalToVoidTinObject(DTM_TIN_OBJ *Tin,long voidFeature,DTM_TIN_POINT_FEATURES_XM **islands,long *numIslands) ; 
+//BENTLEYDTM_Private       int bcdtmEdit_getInternalTptrPolygonDtmFeaturesTinObject(DTM_TIN_OBJ *Tin,long sPnt,DTMTinPointFeatures_XM **dtmFeatures,long *numDtmFeatures) ; 
+//BENTLEYDTM_Private       int bcdtmEdit_getIslandFeaturesInternalToVoidTinObject(DTM_TIN_OBJ *Tin,long voidFeature,DTMTinPointFeatures_XM **islands,long *numIslands) ; 
 //BENTLEYDTM_Public        int bcdtmEdit_getIslandsInternalToVoidTinObject(DTM_TIN_OBJ *Tin,long voidFeature,long **islandsPP, long *numIslandsP) ; 
-//BENTLEYDTM_Private       int bcdtmEdit_getListOfIntersectedIslandVoidHoleFeaturesTinObject(DTM_TIN_OBJ *Tin,long numStartFeatures,DTM_TIN_POINT_FEATURES_XM **intersectedFeatures,long *numIntersectedFeatures) ; 
+//BENTLEYDTM_Private       int bcdtmEdit_getListOfIntersectedIslandVoidHoleFeaturesTinObject(DTM_TIN_OBJ *Tin,long numStartFeatures,DTMTinPointFeatures_XM **intersectedFeatures,long *numIntersectedFeatures) ; 
 //BENTLEYDTM_Public        int bcdtmEdit_getVoidExternalToIslandTinObject(DTM_TIN_OBJ *Tin,long IslandFeature,long *VoidFeature) ; 
 //BENTLEYDTM_Public        int bcdtmEdit_insertDtmFeatureIntoTinObject(DTM_TIN_OBJ *Tin,long DtmFeature,DTMUserTag UserTag,DPoint3d *StringPts,long NumStringPts,long *Spnt) ; 
 //BENTLEYDTM_EXPORT        int bcdtmEdit_insertIslandIntoTinObject(DTM_TIN_OBJ *Tin,DTMUserTag UserTag,DPoint3d *IslandPts,long NumIslandPts) ; 
@@ -610,12 +610,12 @@ BENTLEYDTM_EXPORT        int bcdtmData_joinAdjacentDtmObjects(DTM_DAT_OBJLIST *j
 //BENTLEYDTM_EXPORT        int bcdtmEdit_removePointTinObject(DTM_TIN_OBJ *Tin,long Point,long Ptype,long Feature,long P1,long P2,long P3) ; 
 //BENTLEYDTM_EXPORT        int bcdtmEdit_removeVoidsAlongTptrListTinObject(DTM_TIN_OBJ *Tin,long Spnt,double Cint ) ; 
 //BENTLEYDTM_Private       int bcdtmEdit_resolveIslandsVoidsHolesDataObject(DTM_DAT_OBJ **dtmFeatures,DTM_DAT_OBJ **resolvedDtmFeatures) ; 
-//BENTLEYDTM_Private       int bcdtmEdit_resolveOverlappingIslandsVoidsAndHolesTinObject(DTM_TIN_OBJ *Tin,long numStartFeatures,DTM_TIN_POINT_FEATURES_XM *intersectedFeatures,long numIntersectedFeatures) ; 
+//BENTLEYDTM_Private       int bcdtmEdit_resolveOverlappingIslandsVoidsAndHolesTinObject(DTM_TIN_OBJ *Tin,long numStartFeatures,DTMTinPointFeatures_XM *intersectedFeatures,long numIntersectedFeatures) ; 
 //BENTLEYDTM_Public        int bcdtmEdit_retriangualteAlongTptrListTinObject(DTM_TIN_OBJ *Tin,long LeftFlag,long RightFlag,long Spnt) ; 
 //BENTLEYDTM_EXPORT        int bcdtmEdit_snapToLineTinObject(DTM_TIN_OBJ *Tin,double x,double y,long *P1,long *P2,double *Sx,double *Sy,double *Sz) ; 
 //BENTLEYDTM_EXPORT        int bcdtmEdit_snapToPointTinObject(DTM_TIN_OBJ *Tin,double x,double y,long *Point,double *PX,double *PY,double *PZ) ; 
 //BENTLEYDTM_EXPORT        int bcdtmEdit_snapToTriangleTinObject(DTM_TIN_OBJ *Tin,double x,double y, double *z,long *P1,long *P2,long *P3) ; 
-//BENTLEYDTM_Private       int bcdtmEdit_storeFeatureInDtmFeatureList(DTM_TIN_POINT_FEATURES_XM **bcdtmList,long *numDtmList,long *memDtmList,long memDtmListInc,long dtmFeature,DTMFeatureType dtmFeatureType,DTMUserTag userTag,long priorPoint,long nextPoint) ; 
+//BENTLEYDTM_Private       int bcdtmEdit_storeFeatureInDtmFeatureList(DTMTinPointFeatures_XM **bcdtmList,long *numDtmList,long *memDtmList,long memDtmListInc,long dtmFeature,DTMFeatureType dtmFeatureType,DTMUserTag userTag,long priorPoint,long nextPoint) ; 
 //BENTLEYDTM_EXPORT        int bcdtmEdit_tempMoveVertexXYZTinObject(DTM_TIN_OBJ *Tin,long Point,double x,double y,double z) ; 
 //BENTLEYDTM_Public        int bcdtmEdit_testForDtmFeatureHullLineTinObject(DTM_TIN_OBJ *Tin,long DtmFeature,long P1,long P2,long *HullLine,long *Feature,DTMDirection* direction) ; 
 //BENTLEYDTM_Public        int bcdtmEdit_testForPointOnDtmFeatureTinObject(DTM_TIN_OBJ *Tin,long DtmFeature,long Point,long *Feature,long *numFeatureTable) ; 
@@ -849,17 +849,17 @@ BENTLEYDTM_Public        int bcdtmList_copyDtmFeatureToTptrListTinObject(DTM_TIN
 //BENTLEYDTM_Public        int bcdtmList_getDirectionAndFeatureForInsertLineTinObject(DTM_TIN_OBJ *Tin,long P1,long P2,long *Feature,DTMDirection* direction) ; 
 //BENTLEYDTM_Public        int bcdtmList_getDtmFeaturesAndUserTagsForTinLineTinObject(DTM_TIN_OBJ *Tin,long P1,long P2,long **Features, DTMUserTag **UserTags,long *NumberOfFeatures) ; 
 //BENTLEYDTM_Public        int bcdtmList_getDtmFeaturesAndUserTagsForTinPointTinObject(DTM_TIN_OBJ *Tin,long TinPoint,long **Features, DTMUserTag **UserTags,long *NumberOfFeatures) ; 
-//BENTLEYDTM_Public        int bcdtmList_getDtmFeaturesForLineTinObject(DTM_TIN_OBJ *tinP,long pnt1,long pnt2,DTM_TIN_POINT_FEATURES_XM **lineFeaturesPP,long *numLineFeaturesP) ; 
-//BENTLEYDTM_Public        int bcdtmList_getDtmFeaturesForPointTinObject(DTM_TIN_OBJ *tinP,long point,DTM_TIN_POINT_FEATURES_XM **pointFeaturesPP,long *numPointFeaturesP) ; 
-//BENTLEYDTM_Public        int bcdtmList_getDtmFeatureTypeOccurrencesForLineTinObject(DTM_TIN_OBJ *Tin,DTMFeatureType dtmFeatureType,long P1,long P2,DTM_TIN_POINT_FEATURES_XM **lineFeatures,long *numLineFeatures) ; 
-//BENTLEYDTM_Public        int bcdtmList_getDtmFeatureTypeOccurrencesForPointTinObject(DTM_TIN_OBJ *Tin,DTMFeatureType dtmFeatureType,long Point,DTM_TIN_POINT_FEATURES_XM **pointFeatures,long *numPointFeatures) ; 
+//BENTLEYDTM_Public        int bcdtmList_getDtmFeaturesForLineTinObject(DTM_TIN_OBJ *tinP,long pnt1,long pnt2,DTMTinPointFeatures_XM **lineFeaturesPP,long *numLineFeaturesP) ; 
+//BENTLEYDTM_Public        int bcdtmList_getDtmFeaturesForPointTinObject(DTM_TIN_OBJ *tinP,long point,DTMTinPointFeatures_XM **pointFeaturesPP,long *numPointFeaturesP) ; 
+//BENTLEYDTM_Public        int bcdtmList_getDtmFeatureTypeOccurrencesForLineTinObject(DTM_TIN_OBJ *Tin,DTMFeatureType dtmFeatureType,long P1,long P2,DTMTinPointFeatures_XM **lineFeatures,long *numLineFeatures) ; 
+//BENTLEYDTM_Public        int bcdtmList_getDtmFeatureTypeOccurrencesForPointTinObject(DTM_TIN_OBJ *Tin,DTMFeatureType dtmFeatureType,long Point,DTMTinPointFeatures_XM **pointFeatures,long *numPointFeatures) ; 
 //BENTLEYDTM_Public        int bcdtmList_getDtmFeatureTypeUserTagForLineTinObject(DTM_TIN_OBJ *Tin,long DtmFeatureType,long P1,long P2,DTMUserTag *UserTag ) ; 
 //BENTLEYDTM_Public        int bcdtmList_getDtmFeatureTypeUserTagForPointTinObject(DTM_TIN_OBJ *Tin,long DtmFeatureType,long Point,DTMUserTag *UserTag) ; 
 //BENTLEYDTM_EXPORT        int bcdtmList_getFeaturesAtPointDataObject(DTM_DAT_OBJ *Data,double x,double y,DTMUserTag Feature[] ,long MaxFeatures ,long *NoFeatures) ; 
 //BENTLEYDTM_EXPORT        int bcdtmList_getFeaturesAtPointTinObject(DTM_TIN_OBJ *Tin,double x,double y,DTMUserTag Feature[] ,long MaxFeatures ,long *NoFeatures) ; 
 //BENTLEYDTM_EXPORT        int bcdtmList_getFirstAndLastCoordiantesForUserTagTinObject(DTM_TIN_OBJ *Tin,DTMUserTag UserTag,DPoint3d Coordinates[]) ; 
 //BENTLEYDTM_Public        int bcdtmList_getFirstAndLastPointForDtmFeatureTinObject(DTM_TIN_OBJ *tinP,long dtmFeature,long *firstPnt,long *lastPnt) ; 
-//BENTLEYDTM_Public        int bcdtmList_getHullFeaturesForPointTinObject(DTM_TIN_OBJ *Tin,long Point,DTM_TIN_POINT_FEATURES_XM **pointFeatures,long *numPointFeatures) ; 
+//BENTLEYDTM_Public        int bcdtmList_getHullFeaturesForPointTinObject(DTM_TIN_OBJ *Tin,long Point,DTMTinPointFeatures_XM **pointFeatures,long *numPointFeatures) ; 
 //BENTLEYDTM_Public        int bcdtmList_getLastPointInTptrListTinObject(DTM_TIN_OBJ *Tin,long Spnt,long *Lpnt,long *Lppnt) ; 
 //BENTLEYDTM_Public        int bcdtmList_getNextAndPriorPointForFeatureTinObject(DTM_TIN_OBJ *Tin,long Feature,long Cp,long *Np,long *Pp) ; 
 BENTLEYDTM_Public        int bcdtmList_getNextPointForDtmFeatureTinObject(DTM_TIN_OBJ *tinP,long dtmFeature,long currentPnt ,long *nextPnt) ; 
@@ -935,8 +935,8 @@ BENTLEYDTM_Public        int bcdtmList_writePointsForDtmFeatureTinObject(DTM_TIN
 BENTLEYDTM_Public        int bcdtmList_writeTptrListTinObject(DTM_TIN_OBJ *Tin,long Point) ; 
 
 ////// bcdtmLoad//////
-//BENTLEYDTM_Public        int bcdtmLoad_buildContourIndexTinObject(DTM_TIN_OBJ *tinP,long startPnt,long lastPnt,double cMinZ,double cMaxZ,double cInt,double cReg,unsigned char **tinLinePP,DtmContourIndex **contourIndexPP,long *numContourIndexP) ;
-//BENTLEYDTM_Public        int bcdtmLoad_getFirstTinLineForContourFromIndexTinObject(DTM_TIN_OBJ *tinP,DtmContourIndex *contourIndexP,long numContourIndex,double contourValue,long *contourLineP) ;
+//BENTLEYDTM_Public        int bcdtmLoad_buildContourIndexTinObject(DTM_TIN_OBJ *tinP,long startPnt,long lastPnt,double cMinZ,double cMaxZ,double cInt,double cReg,unsigned char **tinLinePP,DTMContourIndex **contourIndexPP,long *numContourIndexP) ;
+//BENTLEYDTM_Public        int bcdtmLoad_getFirstTinLineForContourFromIndexTinObject(DTM_TIN_OBJ *tinP,DTMContourIndex *contourIndexP,long numContourIndex,double contourValue,long *contourLineP) ;
 //BENTLEYDTM_Public        int bcdtmLoad_setLineTinObject(DTM_TIN_OBJ *Tin,long P1,long P2,unsigned char *Flag) ; 
 //BENTLEYDTM_EXPORT        int bcdtmLoad_slopeLinesBetweenTinObjects(DTM_TIN_OBJ *tin1P,DTM_TIN_OBJ *tin2P,double majorInterval,double minorInterval) ; 
 //BENTLEYDTM_Public        int bcdtmLoad_testLineTinObject(DTM_TIN_OBJ *Tin,long P1,long P2,unsigned char *Flag) ; 
@@ -982,7 +982,7 @@ BENTLEYDTM_Public        int bcdtmList_writeTptrListTinObject(DTM_TIN_OBJ *Tin,l
 //BENTLEYDTM_Public        int bcdtmLoadNgp_loadDtmFeature(DTM_TIN_OBJ *clipTinP,long useFence,long fenceOption,DTMFeatureCallback loadFunctionP,DTMFeatureType dtmFeatureType,DTMUserTag userTag,DTM_GUID userFeatureId,void *userP) ; 
 //BENTLEYDTM_EXPORT        int bcdtmLoadNgp_mdlLoadFunction( DTMFeatureType dtmFeatureType, DTMUserTag userTag, DTM_GUID userFeatureId, void *userP) ; 
 //BENTLEYDTM_Private       int bcdtmLoadNgp_plotContourLatticeObject( DTM_LAT_OBJ *latticeP, unsigned char *markLatP, float contourValue, long smoothOption, DTM_TIN_OBJ *clipTinP, long useFence, long fenceOption, DTMFeatureCallback loadFunctionP, void *userP ) ; 
-//BENTLEYDTM_Private       int bcdtmLoadNgp_plotContourTinObject( DTM_TIN_OBJ *tinP, double conInt, double contourValue, long smoothOption, unsigned char *tinLineP, long voidFlag, DtmContourIndex *contourIndexP, long numContourIndex, long *contourStartLineP, DTM_TIN_OBJ *clipTinP, long useFence, long fenceOption, DTMFeatureCallback loadFunctionP, void *userP ) ; 
+//BENTLEYDTM_Private       int bcdtmLoadNgp_plotContourTinObject( DTM_TIN_OBJ *tinP, double conInt, double contourValue, long smoothOption, unsigned char *tinLineP, long voidFlag, DTMContourIndex *contourIndexP, long numContourIndex, long *contourStartLineP, DTM_TIN_OBJ *clipTinP, long useFence, long fenceOption, DTMFeatureCallback loadFunctionP, void *userP ) ; 
 //BENTLEYDTM_Private       int bcdtmLoadNgp_pullSmoothPointsBack( DTM_TIN_OBJ *tinP, double conInt, double *xKnotP, double *yKnotP, long *knotWghtP, long numKnots, long pointDensity, double contourValue, DPoint3d *conPtsP, long numConPts ) ; 
 //BENTLEYDTM_Private       int bcdtmLoadNgp_pullSmoothPointsBackOnToBreakLines(double x[],double y[],long conWght[],long numPts,long pointDensity,DPoint3d *conPtsP,long numConPts) ; 
 //BENTLEYDTM_Public        int bcdtmLoadNgp_removeDuplicateContourPoints(void) ; 
@@ -994,9 +994,9 @@ BENTLEYDTM_Public        int bcdtmList_writeTptrListTinObject(DTM_TIN_OBJ *Tin,l
 //BENTLEYDTM_Private       int bcdtmLoadNgp_storeContourPoint( DTM_TIN_OBJ *tinP, double conInt, long storeFlag, long smoothOption, long weight, double x, double y, double z, DTM_TIN_OBJ *clipTinP, long useFence, long fenceOption, DTMFeatureCallback loadFunctionP, void *userP ) ; 
 //BENTLEYDTM_Public        int bcdtmLoadNgp_storeFeaturePoint(double x,double y,double z) ; 
 //BENTLEYDTM_Private       int bcdtmLoadNgp_testForOverlapWithFence(DTM_TIN_OBJ *clipTinP,DPoint3d *featurePtsP,long numFeaturePts,long *overlapP) ; 
-//BENTLEYDTM_EXPORT        int bcdtmLoadNgp_tinEdgesFromTinObject( DTM_TIN_OBJ *tinP, long useFence, DPoint3d *fencePtsP, long numFencePts, long *numEdgesP, long **edgesPP, DTM_TIN_POINT **tinPtsPP ) ; 
+//BENTLEYDTM_EXPORT        int bcdtmLoadNgp_tinEdgesFromTinObject( DTM_TIN_OBJ *tinP, long useFence, DPoint3d *fencePtsP, long numFencePts, long *numEdgesP, long **edgesPP, DPoint3d **tinPtsPP ) ; 
 //BENTLEYDTM_EXPORT        int bcdtmLoadNgp_tinMeshFromTinObject( DTM_TIN_OBJ *tinP, long firstCall, long maxMeshSize, long useFence, DPoint3d *fencePtsP, long numFencePts, DPoint3d **meshPtsPP, long *numMeshPtsP, long **meshFacesPP, long *numMeshFacesP ) ; 
-//BENTLEYDTM_EXPORT        int bcdtmLoadNgp_tinTrianglesFromTinObject( DTM_TIN_OBJ *tinP, long useFence, DPoint3d *fencePtsP, long numFencePts, long *numTrianglesP, long **trianglesPP, DTM_TIN_POINT **tinPtsPP ) ; 
+//BENTLEYDTM_EXPORT        int bcdtmLoadNgp_tinTrianglesFromTinObject( DTM_TIN_OBJ *tinP, long useFence, DPoint3d *fencePtsP, long numFencePts, long *numTrianglesP, long **trianglesPP, DPoint3d **tinPtsPP ) ; 
 //BENTLEYDTM_Private       int bcdtmLoadNgp_traceContourLatticeObject( DTM_LAT_OBJ *latticeP, unsigned char *markLatP, float contourValue, long i1, long j1, long i2, long j2, long smoothOption, DTM_TIN_OBJ *clipTinP, long useFence, long fenceOption, DTMFeatureCallback loadFunctionP, void *userP ) ; 
 //BENTLEYDTM_Private       int bcdtmLoadNgp_traceContourTinObject( DTM_TIN_OBJ *tinP, double conInt, double contourValue, long smoothOption, long p1, long p2, DTMDirection direction, unsigned char *tinLineP, DTM_TIN_OBJ *clipTinP, long useFence, long fenceOption, DTMFeatureCallback loadFunctionP, void *userP ) ; 
 //BENTLEYDTM_Private       int bcdtmLoadNgp_traceZeroSlopeContourTinObject( DTM_TIN_OBJ *tinP, double conInt, long p1, long p2, DTMDirection direction, double contourDirection, double contourValue, long smoothOption, unsigned char *tinLineP, DTM_TIN_OBJ *clipTinP, long useFence, long fenceOption, DTMFeatureCallback loadFunctionP, void *userP ) ; 
@@ -1269,7 +1269,7 @@ BENTLEYDTM_Public        int bcdtmReadStream_atFilePositionVer502DataObject(DTM_
 ////// bcdtmSContour//////
 //BENTLEYDTM_Private       int bcdtmSContour_clipFromPolygonTinObject(DTM_TIN_OBJ *tin1P,DTM_TIN_OBJ **tin2PP,DPoint3d *clipPtsP,long numClipPts,long clipOption) ; 
 //BENTLEYDTM_EXPORT        int bcdtmSContour_contoursFromTinObject( DTM_TIN_OBJ *tinP, double conInterval, double conReg, double conMinZ, double conMaxZ, long numConValues, double *conValuesP, DPoint3d *fencePtsP, long numFencePts ) ; 
-//BENTLEYDTM_Private       int bcdtmSContour_contoursTinObject(DTM_TIN_OBJ *tinP,double cv,double conInterval,unsigned char *markLinesP ,long voidFlag,long contourFlag,long smoothOption,double smoothFactor,long filterOption,double filterTolerance,long smoothDensity,DtmContourIndex* contourIndexP,long numContourIndex,long *contourStartLineP ) ; 
+//BENTLEYDTM_Private       int bcdtmSContour_contoursTinObject(DTM_TIN_OBJ *tinP,double cv,double conInterval,unsigned char *markLinesP ,long voidFlag,long contourFlag,long smoothOption,double smoothFactor,long filterOption,double filterTolerance,long smoothDensity,DTMContourIndex* contourIndexP,long numContourIndex,long *contourStartLineP ) ; 
 //BENTLEYDTM_Private       int bcdtmSContour_extractedContourTinObject(DTM_TIN_OBJ *tinP,long dtmContourFeature,double conInterval,long smoothOption,double smoothFactor,long filterOption,double filterTolerance,long smoothDensity,unsigned char *markLinesP) ; 
 //BENTLEYDTM_Private       int bcdtmSContour_pullSmoothPointsBackWithinContourInterval( double x[], double y[], long weightP[], long numSplinePts, DTM_TIN_OBJ *tinP, double conInterval, long smoothDensity, double contourValue, DPoint3d *conPtsP, long numConPts) ; 
 //BENTLEYDTM_Private       int bcdtmSContour_smoothContour(DPoint3d **conPtsPP,long *numConPtsP,long **weightPP,DTM_TIN_OBJ *tinP,double conInterval,long smoothOption,double smoothFactor,long smoothDensity,long filterOption,double filterTolerance) ; 
@@ -1323,7 +1323,7 @@ BENTLEYDTM_Public        int bcdtmReadStream_atFilePositionVer502DataObject(DTM_
 //BENTLEYDTM_Private       int bcdtmSite_findClosestBreakLineEndPointWithinDeviationAngleTinObject( DTM_TIN_OBJ *tinP, double startX, double startY, double projectAngle, double deviationAngle, long sBrkPnt1, long sBrkPnt2, long *brkFndP, long *brkTypeP, long *brkPnt1P, long *brkPnt2P, double *brkPntXP, double *brkPntYP, double *brkPntZP, double *brkDistanceP) ; 
 //BENTLEYDTM_Private       int bcdtmSite_findClosestBreakLineIntersectionForProjectAngleTinObject( DTM_TIN_OBJ *tinP, double startX, double startY, double projectAngle, double deviationAngle, long sBrkPnt1, long sBrkPnt2, long *brkFndP, long *brkTypeP, long *brkPnt1P, long *brkPnt2P, double *brkPntXP, double *brkPntYP, double *brkPntZP, double *brkDistanceP) ; 
 //BENTLEYDTM_Private       int bcdtmSite_findClosestBreakLineIntersectionTinObject(DTM_TIN_OBJ *tinP,double startX,double startY,double endX,double endY,long startPnt,long endPnt,long *findTypeP,long *dtmFeatureP,long *brkPnt1P,long *brkPnt2P,double *brkPntXP,double *brkPntYP,double *brkPntZP,double *brkDistanceP) ; 
-//BENTLEYDTM_EXPORT        int bcdtmSite_findClosestOrthogonalBreakLineForUserTagsTinObject(DTM_TIN_OBJ *tinP,double pointX,double pointY,DTMUserTag *userTagsP,long numUserTags,long *findTypeP,long *brkPnt1P,long *brkPnt2P,double *brkPntXP,double *brkPntYP,double *brkPntZP,double *brkDistanceP,DTM_TIN_POINT_FEATURES_XM **brkFeaturesPP,long *numBrkFeaturesP) ;
+//BENTLEYDTM_EXPORT        int bcdtmSite_findClosestOrthogonalBreakLineForUserTagsTinObject(DTM_TIN_OBJ *tinP,double pointX,double pointY,DTMUserTag *userTagsP,long numUserTags,long *findTypeP,long *brkPnt1P,long *brkPnt2P,double *brkPntXP,double *brkPntYP,double *brkPntZP,double *brkDistanceP,DTMTinPointFeatures_XM **brkFeaturesPP,long *numBrkFeaturesP) ;
 //BENTLEYDTM_Private       int bcdtmSite_findClosestOrthogonalBreakLineIntersectionTinObject( DTM_TIN_OBJ *tinP, double startX, double startY, double rangeAngleStart, double rangeAngleEnd, double deviationAngle, long sBrkPnt1, long sBrkPnt2, long *brkFndP, long *brkTypeP, long *brkPnt1P, long *brkPnt2P, double *brkPntXP, double *brkPntYP, double *brkPntZP, double *brkDistanceP) ; 
 //BENTLEYDTM_Public        int bcdtmSite_findClosestOrthogonalBreakLineTinObject(DTM_TIN_OBJ *tinP,double pointX,double pointY,long scanOption,long *findTypeP,long *brkPnt1P,long *brkPnt2P,double *brkPntXP,double *brkPntYP,double *brkPntZP,double *brkDistanceP) ; 
 //BENTLEYDTM_Public        int bcdtmSite_findClosestOrthogonalBreakLineWithPositiveUserTagTinObject(DTM_TIN_OBJ *tinP,double pointX,double pointY,long *findTypeP,long *brkPnt1P,long *brkPnt2P,double *brkPntXP,double *brkPntYP,double *brkPntZP,double *brkDistanceP) ;
@@ -1337,13 +1337,13 @@ BENTLEYDTM_Public        int bcdtmReadStream_atFilePositionVer502DataObject(DTM_
 //BENTLEYDTM_Public        int bcdtmSite_markPointsInternalToIslandTinObject(DTM_TIN_OBJ *Tin,long IslandFeature ) ; 
 //BENTLEYDTM_Public        int bcdtmSite_markPointsInternalToVoidTinObject(DTM_TIN_OBJ *Tin,long VoidFeature ) ; 
 //BENTLEYDTM_Private       int bcdtmSite_modifyTinHullToBreakLinesTinObject(DTM_TIN_OBJ *tinP) ; 
-//BENTLEYDTM_EXPORT        int bcdtmSite_projectAtAngleFromPointToBreakLineTinObject( DTM_TIN_OBJ *tinP, double xPnt, double yPnt, long brkPnt1, long brkPnt2, double projectAngle, double deviationAngle, long *breakFoundP, long *breakTypeP, double *xBreakP, double *yBreakP, double *zBreakP, double *dBreakP, long *tinPnt1P, long *tinPnt2P, DTM_TIN_POINT_FEATURES_XM **breakFeaturesPP, long *numBreakFeaturesP ) ; 
-//BENTLEYDTM_EXPORT        int bcdtmSite_projectOrthogonalToBreakLineFromPointTinObject( DTM_TIN_OBJ *tinP, double xPnt, double yPnt, long brkPnt1, long brkPnt2, double rangeAngleStart, double rangeAngleEnd, double deviationAngle, long *breakFoundP, long *breakTypeP, double *xBreakP, double *yBreakP, double *zBreakP, double *dBreakP, long *tinPnt1P, long *tinPnt2P, DTM_TIN_POINT_FEATURES_XM **breakFeaturesPP, long *numBreakFeaturesP ) ; 
+//BENTLEYDTM_EXPORT        int bcdtmSite_projectAtAngleFromPointToBreakLineTinObject( DTM_TIN_OBJ *tinP, double xPnt, double yPnt, long brkPnt1, long brkPnt2, double projectAngle, double deviationAngle, long *breakFoundP, long *breakTypeP, double *xBreakP, double *yBreakP, double *zBreakP, double *dBreakP, long *tinPnt1P, long *tinPnt2P, DTMTinPointFeatures_XM **breakFeaturesPP, long *numBreakFeaturesP ) ; 
+//BENTLEYDTM_EXPORT        int bcdtmSite_projectOrthogonalToBreakLineFromPointTinObject( DTM_TIN_OBJ *tinP, double xPnt, double yPnt, long brkPnt1, long brkPnt2, double rangeAngleStart, double rangeAngleEnd, double deviationAngle, long *breakFoundP, long *breakTypeP, double *xBreakP, double *yBreakP, double *zBreakP, double *dBreakP, long *tinPnt1P, long *tinPnt2P, DTMTinPointFeatures_XM **breakFeaturesPP, long *numBreakFeaturesP ) ; 
 //BENTLEYDTM_EXPORT        int bcdtmSite_removeAllOccurrencesOfDtmFeatureTypeFromDataObject(DTM_DAT_OBJ *Data,long Fscode,long Fncode) ; 
 //BENTLEYDTM_Public        int bcdtmSite_resolveVoidsDataObject(DTM_DAT_OBJ *voidsP) ;
 //BENTLEYDTM_Public        int bcdtmSite_resolveVoidsWithinIslandsDataObject(DTM_DAT_OBJ *Data,long Lndp,DTM_DAT_OBJ *Voids) ; 
-//BENTLEYDTM_EXPORT        int bcdtmSite_snapToClosestBreakLine( DTM_TIN_OBJ *tinP, double xPnt, double yPnt, long *snapFoundP, long *snapTypeP, double *xSnapP, double *ySnapP, double *zSnapP, double *dSnapP, long *tinPnt1P, long *tinPnt2P, DTM_TIN_POINT_FEATURES_XM **snapFeaturesPP, long *numSnapFeaturesP ) ; 
-//BENTLEYDTM_EXPORT        int bcdtmSite_snapToClosestBreakLineWithPositiveUserTagTinObject( DTM_TIN_OBJ *tinP, double xPnt, double yPnt, long *snapFoundP, long *snapTypeP, double *xSnapP, double *ySnapP, double *zSnapP, double *dSnapP, long *tinPnt1P, long *tinPnt2P, DTM_TIN_POINT_FEATURES_XM **snapFeaturesPP, long *numSnapFeaturesP ) ; 
+//BENTLEYDTM_EXPORT        int bcdtmSite_snapToClosestBreakLine( DTM_TIN_OBJ *tinP, double xPnt, double yPnt, long *snapFoundP, long *snapTypeP, double *xSnapP, double *ySnapP, double *zSnapP, double *dSnapP, long *tinPnt1P, long *tinPnt2P, DTMTinPointFeatures_XM **snapFeaturesPP, long *numSnapFeaturesP ) ; 
+//BENTLEYDTM_EXPORT        int bcdtmSite_snapToClosestBreakLineWithPositiveUserTagTinObject( DTM_TIN_OBJ *tinP, double xPnt, double yPnt, long *snapFoundP, long *snapTypeP, double *xSnapP, double *ySnapP, double *zSnapP, double *dSnapP, long *tinPnt1P, long *tinPnt2P, DTMTinPointFeatures_XM **snapFeaturesPP, long *numSnapFeaturesP ) ; 
 //BENTLEYDTM_EXPORT        int bcdtmSite_snapToThenOrthogonalFromBreakLineTinObject( DTM_TIN_OBJ *tinP, double xPnt, double yPnt, DTM_POINT_ARRAY ***drapeArraysPPP, long *numDrapeArraysP ) ; 
 //BENTLEYDTM_EXPORT        int bcdtmSite_snapToThenOrthogonalToBreakLineTinObject( DTM_TIN_OBJ *tinP, double xPnt, double yPnt, DTM_POINT_ARRAY ***drapeArraysPPP, long *numDrapeArraysP ) ; 
 //BENTLEYDTM_Private       int bcdtmSite_storeIntersectLines(DTMFeatureType dtmFeatureType,DTMUserTag userTag,DTM_GUID userFeatureId,DPoint3d *contourPtsP,long numContourPts,void *userP) ; 

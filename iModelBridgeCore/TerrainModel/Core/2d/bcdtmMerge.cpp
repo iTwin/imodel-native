@@ -1454,7 +1454,7 @@ BENTLEYDTM_Public int bcdtmMerge_insertMergeDtmObject(BC_DTM_OBJ *dtm1P,BC_DTM_O
  long    ofs,newPnt,clc,pp,p1,p2,p3,p4,np1,np2,np3,saveIncPoints,numListPts ;
  DPoint3d     *p3dP,*listPtsP=NULL ;
  DTM_TIN_NODE   *nodeP ;
- DTM_TIN_POINT  *pointP ;
+ DPoint3d  *pointP ;
 /*
 ** Write Entry Message
 */
@@ -2210,7 +2210,7 @@ BENTLEYDTM_Public int bcdtmMerge_writeTinLinesDtmObject(BC_DTM_OBJ *dtmP,WCharCP
  DPoint3d   linePts[2] ;
  BC_DTM_OBJ *dataP=NULL ;
  DTM_CIR_LIST *clistP ;
- DTM_TIN_POINT *p1P,*p2P ;
+ DPoint3d *p1P,*p2P ;
 /*
 ** Create Data Object
 */

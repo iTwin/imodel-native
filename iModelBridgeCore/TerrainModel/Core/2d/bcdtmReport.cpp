@@ -28,7 +28,7 @@ BENTLEYDTM_EXPORT int bcdtmReport_duplicatePointErrorsDtmObject
  long  dtmFeature,dupPointError,numDupPoints ; 
  char  dtmFeatureTypeName[50] ;
  unsigned char  *pointMarkP=NULL,*processMarkP=NULL ;
- DTM_TIN_POINT *pnt1P,*pnt2P ;
+ DPoint3d *pnt1P,*pnt2P ;
  BC_DTM_FEATURE *dtmFeatureP ;
  DTM_DUPLICATE_POINT_ERROR *dupPtsP=NULL ;
 /*
@@ -489,7 +489,7 @@ BENTLEYDTM_Private int bcdtmReport_intersectCrossingFeaturesDtmObject
  DTM_INTERSECT_POINT  *intP,*intPointsP=NULL ;
  DTM_CROSSING_FEATURE_ERROR crossError ;
  BC_DTM_FEATURE  *dtmFeatureP ;
- DTM_TIN_POINT   *pntP ;
+ DPoint3d   *pntP ;
 /*
 ** Write Entry Message
 */
@@ -613,7 +613,7 @@ BENTLEYDTM_Private int  bcdtmReport_buildFeatureIntersectionTableDtmObject
  const DTMFeatureType *featureP;
  long   memIntTable=0,memIntTableInc=10000  ;
  double cord ; 
- DTM_TIN_POINT *pnt1P ;
+ DPoint3d *pnt1P ;
  BC_DTM_FEATURE *dtmFeatureP ;
  DTM_STRING_INTERSECT_TABLE *intP  ;
 /*

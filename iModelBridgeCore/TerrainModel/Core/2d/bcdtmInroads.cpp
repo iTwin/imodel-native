@@ -256,7 +256,7 @@ DTMPrivate int bcdtmInRoads_insertRectangleAroundTinDtmObject
     P3D  rectanglePts[5],*hullPtsP=NULL ;
     BC_DTM_OBJ *tempDtmP=NULL ;
     BC_DTM_FEATURE *dtmFeatureP ;
-    DTM_TIN_POINT *pointP ;
+    DPoint3d *pointP ;
     /*
     ** Write Entry Message
     */
@@ -1116,7 +1116,7 @@ DTMPrivate int bcdtmInRoads_insertLineBetweenVerticesDtmObject(BC_DTM_OBJ *dtmP,
 DTMPrivate int bcdtmInRoads_geopakPointsCallBackFunction( BC_DTM_OBJ *dtmP , double X,double Y,double Z )
 {
  int ret=DTM_SUCCESS,dbg=0,cdbg=0 ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
 /*
 ** Write Entry Message
 */
@@ -1168,7 +1168,7 @@ DTMPrivate int bcdtmInRoads_geopakCircularListCallBackFunction(BC_DTM_OBJ *dtmP,
  static long lastPointIndex=-1 ;
  BC_DTM_OBJ *temP=NULL ;
  long p1 ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
 /*
 ** Write Entry Message
 */
@@ -1429,7 +1429,7 @@ DTMPrivate int bcdtmInroads_dtmFeaturePointsCallBackFunction
  char dtmFeatureTypeName[30] ;
  DTM_FEATURE_ID  BcDTMFeatureId ;
  BC_DTM_OBJ  *temP=NULL ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  DTM_TIN_NODE  *nodeP ;
  static long dtmFeatureCount=0 ;
  DTM_STR_INT_PTS *notP,*knotsP=NULL ;
@@ -2146,7 +2146,7 @@ NATDLLEXP int bcdtmInRoads_getPaddingTrianglesForExteriorBoundary
  BC_DTM_OBJ    *dtmP=NULL ;
  DTM_CIR_LIST  *clistP ;
  DTM_TIN_NODE  *nodeP ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
 /*
 ** Write Entry Message
 */
@@ -2846,7 +2846,7 @@ NATDLLEXP int bcdtmInRoads_importTinFromDtmObject
  long node,numRandomPoints=0,numFeaturePoints=0 ;
  double xinc,xdec,ydec,yinc,xrange,yrange ;
  DTM_TIN_NODE *nodeP ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_FEATURE_ID islandFeatureId ;
 /*
 ** Write Entry Message

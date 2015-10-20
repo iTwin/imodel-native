@@ -67,7 +67,7 @@ enum DTMNullLong : long
 **  Memory Allocation Variables
 */
 /* HEREROB */
-#define   DTM_INI_MEM_PTS			   5000
+#define   DTM_INI_MEM_PTS              5000
 #define   DTM_INC_MEM_PTS              1000
 #define   DTM_INI_MEM_FEATURES_TABLE    200
 #define   DTM_INC_MEM_FEATURES_TABLE    200
@@ -77,7 +77,7 @@ enum DTMNullLong : long
 /*
 **  Memory Allocation Variables
 */
-#define   DTM_INI_MEM_PTS			  250000
+#define   DTM_INI_MEM_PTS             250000
 #define   DTM_INC_MEM_PTS              50000
 #define   DTM_INI_MEM_FEATURES_TABLE    1000
 #define   DTM_INC_MEM_FEATURES_TABLE    1000
@@ -232,7 +232,6 @@ struct P3DTAG : DPoint3d { long NumberOfTags ; FEATTAG *Tags ; } ;
 /*
 **  Data Structure For DTMFeatureState::Tin Data
 */
-struct DTM_TIN_POINT : DPoint3d { }  ;
 struct DTM_TIN_NODE {  unsigned short  PRGN,PCWD ;long hPtr,cPtr,tPtr,sPtr,fPtr ; } ;
 /*
 **  Data Structure For Circular List
@@ -336,12 +335,6 @@ struct LSTOBJ
 ** Data Structure For Sets Of Data Object
 */
 struct BC_DTM_OBJLIST { BC_DTM_OBJ *Tin  ; long TinIndex ; } ;
-/*-------------------------------------------------------------------+
-|                                                                    |
-|  Typedefs For ImagePP                                              |
-|                                                                    |
-+-------------------------------------------------------------------*/
-typedef std::function <int(long numPixels, char *nameP, char *descP, char *projectionP, void *baseCordP, void *userP)> ImagePPCallBack;
 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -350,25 +343,25 @@ typedef std::function <int(long numPixels, char *nameP, char *descP, char *proje
 +-------------------------------------------------------------------*/
 struct MODEL_RADIAL
 {
-int			radialIndex;	// Numeric index of radial - used in managing data
-DTMUserTag	fromId;			// The element id of the begin point
-DTMUserTag	toId;			// The element id of the end point
-void*	fromDgnModelRefP;	// => Model ref of beginning point
-void*	toDgnModelRefP;	// => Model ref of ending point
-int	       numberOfPoints;		// Number of radial/pattern points - 2 or 3
-DPoint3d		point[3];		// radial/pattern point on line 0
+int         radialIndex;    // Numeric index of radial - used in managing data
+DTMUserTag  fromId;         // The element id of the begin point
+DTMUserTag  toId;           // The element id of the end point
+void*   fromDgnModelRefP;   // => Model ref of beginning point
+void*   toDgnModelRefP; // => Model ref of ending point
+int        numberOfPoints;      // Number of radial/pattern points - 2 or 3
+DPoint3d        point[3];       // radial/pattern point on line 0
                             // [0] is beginning point (__BEGIN_RADIAL_POINT)
                             // [1] is ending point (__END_RADIAL_POINT)
                             // [2] is a extended point out to the hull perhaps (__EXTENDED_RADIAL_POINT)
-double		surfaceSlope;	// Intrinsic pavement slope - tangent slope of surface preceding beginning point
-double		distanceAlong;
+double      surfaceSlope;   // Intrinsic pavement slope - tangent slope of surface preceding beginning point
+double      distanceAlong;
 int         sideLtRt;   // Left side of shape = 0;   Right side = 1;
-double		station;		// Station along chain
-int			region;			// Region along chain
-double		absoluteStation;	// Absolute station
-DPoint3d			pglPoint;			// PGL point
-int			numberOfPavementPoints; // Number of pavement points
-DPoint3d			*pavementPointsP;		// Pavement points
+double      station;        // Station along chain
+int         region;         // Region along chain
+double      absoluteStation;    // Absolute station
+DPoint3d            pglPoint;           // PGL point
+int         numberOfPavementPoints; // Number of pavement points
+DPoint3d            *pavementPointsP;       // Pavement points
 } ;
 struct TRUNCATED_RADIAL { long radialIndex,truncatingRadialIndex,numberOfPoints ; DPoint3dP radialPoints ;} ;
 struct INTERSECT_POINT { long Line,Radial,RadialLine,Active ; double x,y,z,L ; } ;
@@ -385,13 +378,6 @@ struct MODEL_VOLUME { DTMUserTag BottomIndex,TopIndex ; double Cut,Fill,Area ; }
 +-------------------------------------------------------------------*/
 struct DTM_MACAO_TRGS { long Tp1,Tp2,Tp3,Activity ; };
 struct DTM_MACAO_BRKS { long Bp1,Bp2 ; };
-/*-------------------------------------------------------------------+
-|                                                                    |
-|  Typedefs For V8 Draping Function                                  |
-|                                                                    |
-+-------------------------------------------------------------------*/
-struct DTM_DRAPE_FEATURE { DTMFeatureType  dtmFeatureType ; DTMUserTag userTag ; DTMFeatureId userFeatureId ; } ;
-struct DTM_DRAPE_DATA { long DrapeType,DrapeLine,numFeatureTable ; double x,y,z ; DTM_DRAPE_FEATURE *Features ; } ;
 /*-------------------------------------------------------------------+
 |                                                                    |
 |  Typedefs For Cleaning Functions                                   |
@@ -469,23 +455,23 @@ struct GpkDtmUserTagList { DTMUserTag userTag ; long list00,list01,list02,list03
 |  Hull Point List                                                   |
 |                                                                    |
 +-------------------------------------------------------------------*/
-struct DTM_TIN_POINT_FEATURES { long dtmFeature; DTMFeatureType dtmFeatureType; long priorPoint,nextPoint ; DTMUserTag userTag ; DTMFeatureId userFeatureId ; } ;
+struct DTMTinPointFeatures { long dtmFeature; DTMFeatureType dtmFeatureType; long priorPoint,nextPoint ; DTMUserTag userTag ; DTMFeatureId userFeatureId ; } ;
 /*__PUBLISH_SECTION_END__*/
 /*-------------------------------------------------------------------+
 |                                                                    |
 |  Contour Index                                                     |
 |                                                                    |
 +-------------------------------------------------------------------*/
-struct DtmContourIndex { long p1,p2 ; } ;       // Athens Version
+struct DTMContourIndex { long p1,p2 ; } ;       // Athens Version
 #include <TerrainModel\Core\partitionarray.h>
-typedef PartitionArray<DtmContourIndex, 15, MAllocAllocator> DtmContourIndexArray;
-typedef DtmContourIndexArray& DtmContourIndexArrayR;
+typedef PartitionArray<DTMContourIndex, 15, MAllocAllocator> DTMContourIndexArray;
+typedef DTMContourIndexArray& DtmContourIndexArrayR;
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-struct DtmContourNodeTable { long node,nodePt,dtmFeature,isReversed,connectNode,flag ; double contourValue ; DtmContourNodeTable *joinNode ; } ;
+struct DTMContourNodeTable { long node,nodePt,dtmFeature,isReversed,connectNode,flag ; double contourValue ; DTMContourNodeTable *joinNode ; } ;
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -544,7 +530,7 @@ struct DTM_FEATURE
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-struct DTM_DRAPE_POINT
+struct DTMDrapePoint
 {
  long   drapeLine ;                        /* Segment Number Of User Drape String            */
  DTMDrapedLineCode drapeType;              /* Type Of Drape Point
@@ -556,7 +542,7 @@ struct DTM_DRAPE_POINT
                                               ==  5  Drape Point On Tin Point
                                               ==  6  Drape Point In Tin Line                  */
  DPoint3d drapePt ;                           /* x Coordinate Of Drape Point                     */
- bvector<DTM_TIN_POINT_FEATURES> drapeFeatures ;  /* Pointer To DTM Features At Drape Point          */
+ bvector<DTMTinPointFeatures> drapeFeatures ;  /* Pointer To DTM Features At Drape Point          */
 } ;
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -906,7 +892,7 @@ struct BC_DTM_OBJ_VER_100
  double       xMin,yMin,zMin,xMax,yMax,zMax ;
  double       xRange,yRange,zRange ;
  BC_DTM_FEATURE    **fTablePP  ;
- DTM_TIN_POINT     **pointsPP  ;
+ DPoint3d     **pointsPP  ;
  DTM_TIN_NODE      **nodesPP   ;
  DTM_CIR_LIST      **cListPP   ;
  DTM_FEATURE_LIST_VER200  **fListPP   ;
@@ -940,7 +926,7 @@ struct BC_DTM_OBJ_VER_200
  double       xMin,yMin,zMin,xMax,yMax,zMax ;
  double       xRange,yRange,zRange ;
  BC_DTM_FEATURE    **fTablePP  ;
- DTM_TIN_POINT     **pointsPP  ;
+ DPoint3d     **pointsPP  ;
  DTM_TIN_NODE      **nodesPP   ;
  DTM_CIR_LIST      **cListPP   ;
  DTM_FEATURE_LIST_VER200  **fListPP   ;
@@ -948,12 +934,12 @@ struct BC_DTM_OBJ_VER_200
  IDTMElementMemoryAllocator* DTMAllocationClass;
 };
 #define DTMIOHeaderSize_VER200  offsetof(BC_DTM_OBJ_VER_200, DTMAllocationClass)
-struct DTM_ROLLBACK_DATA;
+struct DTMRollbackData;
 
 struct BC_DTM_OBJ_EXTENDED 
 {
   int         (*triangulationCheckStopCallBackP)(DTMFeatureType  dtmFeatureType) ;
-  struct DTM_ROLLBACK_DATA* rollBackInfoP;
+  struct DTMRollbackData* rollBackInfoP;
   int         (*progressCallBackP)(WCharCP  string, int pos, int max, void* userP) ;
   void*       progressCallBackUserP;
 };
@@ -1011,7 +997,7 @@ struct BC_DTM_OBJ
  BC_DTM_OBJ_EXTENDED* extended;
 // void              *pointerFutureUse[1023] ;
  BC_DTM_FEATURE    **fTablePP  ;
- DTM_TIN_POINT     **pointsPP  ;
+ DPoint3d     **pointsPP  ;
  DTM_TIN_NODE      **nodesPP   ;
  DTM_CIR_LIST      **cListPP   ;
  DTM_FEATURE_LIST  **fListPP   ;
@@ -1088,18 +1074,6 @@ struct BC_DTM_SCAN_CONTEXT
  long         scanOffset2 ;        /* Scan Offset 2                                  */
  long         scanOffset3 ;        /* Scan Offset 3                                  */
 } ;
-/*__PUBLISH_SECTION_END__*/
-/*-------------------------------------------------------------------------------------+
-|                                                                                      |
-| TypeDef For DTM Scan Context                                                         |
-|                                                                                      |
-+-------------------------------------------------------------------------------------*/
-struct BC_MRDTM_DISPLAY_INFO
-{
- DTMObjectTypes dtmObjectType ;            /* Dtm Object Type <DTM_DAT_TYPE>,<BC_DTM_OBJ_TYPE>,<DTM_LAT_TYPE> */
- long  *tileTolValue;
-};
-/*__PUBLISH_SECTION_START__*/
 /*-------------------------------------------------------------------+
 |                                                                    |
 |  Typedefs For 3D Model Applications                                |
@@ -1231,18 +1205,18 @@ struct DTM_FEATURE_INDEX
   long     dtmFeature ;
 } ;
 
-struct DTM_ROLLBACK_FEATURE_MAP
+struct DTMRollbackFeatureMap
     {
     DTMFeatureId featureId;
     long featureIndex;
     };
-typedef std::deque<DTM_ROLLBACK_FEATURE_MAP> DtmRollBackFeatureMap;
-struct DTM_ROLLBACK_DATA
+typedef std::deque<DTMRollbackFeatureMap> DtmRollBackFeatureMap;
+struct DTMRollbackData
     {
     BC_DTM_OBJ* rollBackDtmP;
     bool rollBackMapInitialized;
     DtmRollBackFeatureMap rollBackMap;
-    DTM_ROLLBACK_DATA()
+    DTMRollbackData()
         {
         rollBackDtmP = NULL;
         rollBackMapInitialized = false;

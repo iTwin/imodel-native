@@ -332,7 +332,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
 */
  if( dtmP->numPoints > 0 )
    {
-    if( dbg ) bcdtmWrite_message(0,0,0,"Writing Dtm Points Array   ** Size = %9ld",sizeof(DTM_TIN_POINT)*dtmP->numPoints) ;
+    if( dbg ) bcdtmWrite_message(0,0,0,"Writing Dtm Points Array   ** Size = %9ld",sizeof(DPoint3d)*dtmP->numPoints) ;
 /*
 **  Determine Number Of Partitions
 */
@@ -343,7 +343,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
 */
     for( n = 0 ; n < numPartition  ; ++n )
       {
-       if( bcdtmStream_fwrite(dtmP->pointsPP[n],sizeof(DTM_TIN_POINT) * dtmP->pointPartitionSize,1,dtmStreamP) != 1 )
+       if( bcdtmStream_fwrite(dtmP->pointsPP[n],sizeof(DPoint3d) * dtmP->pointPartitionSize,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Writing Dtm File") ;
           goto errexit ; 
@@ -354,7 +354,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
 */
     if( remPartition > 0 )
       {
-       if( bcdtmStream_fwrite(dtmP->pointsPP[n],sizeof(DTM_TIN_POINT) * remPartition,1,dtmStreamP) != 1 )
+       if( bcdtmStream_fwrite(dtmP->pointsPP[n],sizeof(DPoint3d) * remPartition,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Writing Dtm File") ;
           goto errexit ; 
@@ -867,7 +867,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version100DtmObject(BC_DTM_OBJ *dtmP,Bentl
  BC_DTM_FEATURE_VER100 oldFeature;
  DTM_FEATURE_LIST_VER200 oldFeatureList ;
  DTM_FEATURE_LIST *flistP ;
-// DTM_TIN_POINT *pntP ;
+// DPoint3d *pntP ;
 /*
 ** Write Entry Message
 */
@@ -1112,7 +1112,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version100DtmObject(BC_DTM_OBJ *dtmP,Bentl
 */
  if( dtmP->pointsPP != NULL  )
    {
-    if( dbg ) bcdtmWrite_message(0,0,0,"Reading Dtm Points Array   ** Memory Size = %9ld",sizeof(DTM_TIN_POINT) * numPoints) ;
+    if( dbg ) bcdtmWrite_message(0,0,0,"Reading Dtm Points Array   ** Memory Size = %9ld",sizeof(DPoint3d) * numPoints) ;
 /*
 **  Determine Number Of Partitions
 */
@@ -1123,7 +1123,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version100DtmObject(BC_DTM_OBJ *dtmP,Bentl
 */
     for( n = 0 ; n < numPartition  ; ++n )
       {
-       if( bcdtmStream_fread(dtmP->pointsPP[n],sizeof(DTM_TIN_POINT) * dtmP->pointPartitionSize,1,dtmStreamP) != 1 )
+       if( bcdtmStream_fread(dtmP->pointsPP[n],sizeof(DPoint3d) * dtmP->pointPartitionSize,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
           goto errexit ; 
@@ -1134,7 +1134,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version100DtmObject(BC_DTM_OBJ *dtmP,Bentl
 */
     if( remPartition > 0 )
       {
-       if( bcdtmStream_fread(dtmP->pointsPP[n],sizeof(DTM_TIN_POINT) * remPartition,1,dtmStreamP) != 1 )
+       if( bcdtmStream_fread(dtmP->pointsPP[n],sizeof(DPoint3d) * remPartition,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
           goto errexit ; 
@@ -1159,7 +1159,7 @@ bcdtmWrite_message(0,0,0,"point[%8ld] = %12.5lf %12.5lf %10.4lf",n,pntP->x,pntP-
  if( dtmP->nodesPP != NULL )
    {
     numNodes = dtmP->numPoints ;
-    if( dbg ) bcdtmWrite_message(0,0,0,"Reading Dtm Nodes Array    ** Memory Size = %9ld",sizeof(DTM_TIN_POINT) * numNodes) ;
+    if( dbg ) bcdtmWrite_message(0,0,0,"Reading Dtm Nodes Array    ** Memory Size = %9ld",sizeof(DPoint3d) * numNodes) ;
 /*
 **  Determine Number Of Partitions
 */ 
@@ -1533,7 +1533,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
 */
  if( dtmP->pointsPP != NULL  )
    {
-    if( dbg ) bcdtmWrite_message(0,0,0,"Reading Dtm Points Array   ** Memory Size = %9ld",sizeof(DTM_TIN_POINT) * numPoints) ;
+    if( dbg ) bcdtmWrite_message(0,0,0,"Reading Dtm Points Array   ** Memory Size = %9ld",sizeof(DPoint3d) * numPoints) ;
 /*
 **  Determine Number Of Partitions
 */
@@ -1544,7 +1544,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
 */
     for( n = 0 ; n < numPartition  ; ++n )
       {
-       if( bcdtmStream_fread(dtmP->pointsPP[n],sizeof(DTM_TIN_POINT) * dtmP->pointPartitionSize,1,dtmStreamP) != 1 )
+       if( bcdtmStream_fread(dtmP->pointsPP[n],sizeof(DPoint3d) * dtmP->pointPartitionSize,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
           goto errexit ; 
@@ -1555,7 +1555,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
 */
     if( remPartition > 0 )
       {
-       if( bcdtmStream_fread(dtmP->pointsPP[n],sizeof(DTM_TIN_POINT) * remPartition,1,dtmStreamP) != 1 )
+       if( bcdtmStream_fread(dtmP->pointsPP[n],sizeof(DPoint3d) * remPartition,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
           goto errexit ; 
@@ -1572,7 +1572,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
  if( dtmP->nodesPP != NULL )
    {
     numNodes = dtmP->numPoints ;
-    if( dbg ) bcdtmWrite_message(0,0,0,"Reading Dtm Nodes Array    ** Memory Size = %9ld",sizeof(DTM_TIN_POINT) * numNodes) ;
+    if( dbg ) bcdtmWrite_message(0,0,0,"Reading Dtm Nodes Array    ** Memory Size = %9ld",sizeof(DPoint3d) * numNodes) ;
 /*
 **  Determine Number Of Partitions
 */ 
@@ -1922,7 +1922,7 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
 */
  if( dtmP->pointsPP != NULL  )
    {
-    if( dbg ) bcdtmWrite_message(0,0,0,"Reading Dtm Points Array   ** Memory Size = %9ld",sizeof(DTM_TIN_POINT) * numPoints) ;
+    if( dbg ) bcdtmWrite_message(0,0,0,"Reading Dtm Points Array   ** Memory Size = %9ld",sizeof(DPoint3d) * numPoints) ;
 /*
 **  Determine Number Of Partitions
 */
@@ -1933,7 +1933,7 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
 */
     for( n = 0 ; n < numPartition  ; ++n )
       {
-       if( bcdtmStream_fread(dtmP->pointsPP[n],sizeof(DTM_TIN_POINT) * dtmP->pointPartitionSize,1,dtmStreamP) != 1 )
+       if( bcdtmStream_fread(dtmP->pointsPP[n],sizeof(DPoint3d) * dtmP->pointPartitionSize,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
           goto errexit ; 
@@ -1944,7 +1944,7 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
 */
     if( remPartition > 0 )
       {
-       if( bcdtmStream_fread(dtmP->pointsPP[n],sizeof(DTM_TIN_POINT) * remPartition,1,dtmStreamP) != 1 )
+       if( bcdtmStream_fread(dtmP->pointsPP[n],sizeof(DPoint3d) * remPartition,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
           goto errexit ; 
@@ -1961,7 +1961,7 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
  if( dtmP->nodesPP != NULL )
    {
     numNodes = dtmP->numPoints ;
-    if( dbg ) bcdtmWrite_message(0,0,0,"Reading Dtm Nodes Array    ** Memory Size = %9ld",sizeof(DTM_TIN_POINT) * numNodes) ;
+    if( dbg ) bcdtmWrite_message(0,0,0,"Reading Dtm Nodes Array    ** Memory Size = %9ld",sizeof(DPoint3d) * numNodes) ;
 /*
 **  Determine Number Of Partitions
 */ 
@@ -2382,7 +2382,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_asciiGeopakDatFileFromDtmObject(BC_DTM_OBJ *dtm
  FILE   *dataFP=NULL ;
  DPoint3d    *p3dP ;
  BC_DTM_FEATURE *dtmFeatureP ;
- DTM_TIN_POINT  *pointP=NULL ;
+ DPoint3d  *pointP=NULL ;
 /*
 ** Write Status Message
 */
@@ -2579,7 +2579,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_geopakDatFileFromDtmObject(BC_DTM_OBJ *dtmP,WCh
  FILE   *dataFP=NULL ;
  DPoint3d    *p3dP ;
  BC_DTM_FEATURE *dtmFeatureP ;
- DTM_TIN_POINT  *pointP ;
+ DPoint3d  *pointP ;
 /*
 ** Write Status Message
 */
@@ -2899,7 +2899,7 @@ BENTLEYDTM_Private int bcdtmWriteStream_writeAtFilePositionGeopakDatObjectDtmObj
  long point,dtmFeature,numDataFeatures ;
  long fcode, fsCode, fnCode, currentPoint, featurePoint, firstPoint;
  DTM_DAT_OBJ    geopakDat ;
- DTM_TIN_POINT  *pointP ;
+ DPoint3d  *pointP ;
  BC_DTM_FEATURE *dtmFeatureP ;
  DTMUserTag nullUserTag=DTM_NULL_USER_TAG ;
 
@@ -2973,7 +2973,7 @@ BENTLEYDTM_Private int bcdtmWriteStream_writeAtFilePositionGeopakDatObjectDtmObj
     for( point = 0 ; point < dtmP->numPoints ; ++point )
       {
        pointP = pointAddrP(dtmP,point) ;
-       if( bcdtmStream_fwrite(pointP,sizeof(DTM_TIN_POINT),1,dtmStreamP) != 1 )
+       if( bcdtmStream_fwrite(pointP,sizeof(DPoint3d),1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(0,0,0,"Error Writing Geopak Tin Point") ;
           goto errexit ;
@@ -3154,7 +3154,7 @@ BENTLEYDTM_Public int bcdtmWriteStream_writeAtFilePositionGeopakTinObjectDtmObje
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0);
  long n,point,dtmFeature,numTinFeatures,clPtr ;
  DTM_TIN_OBJ geopakTin ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  DTM_TIN_NODE  *nodeP,node ;
  DTM_CIR_LIST  *clistP,clist ;
  DTM_FEATURE_TABLE  geopakFeature ;
@@ -3279,11 +3279,11 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Writing Tin  Object At File Position %8ld Fr
 */
  if( dtmP->numPoints > 0 )
    {
-    if( dbg ) bcdtmWrite_message(0,0,0,"Writing Dtm Points Array   ** Size = %9ld",sizeof(DTM_TIN_POINT)*dtmP->numPoints) ;
+    if( dbg ) bcdtmWrite_message(0,0,0,"Writing Dtm Points Array   ** Size = %9ld",sizeof(DPoint3d)*dtmP->numPoints) ;
     for( point = 0 ; point < dtmP->numPoints ; ++point )
       {
        pointP = pointAddrP(dtmP,point) ;
-       if( bcdtmStream_fwrite(pointP,sizeof(DTM_TIN_POINT),1,dtmStreamP) != 1 )
+       if( bcdtmStream_fwrite(pointP,sizeof(DPoint3d),1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(0,0,0,"Error Writing Geopak Tin Point") ;
           goto errexit ;
@@ -3295,7 +3295,7 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Writing Tin  Object At File Position %8ld Fr
 */
  if( dtmP->numPoints > 0 )
    {
-    if( dbg ) bcdtmWrite_message(0,0,0,"Writing Dtm Nodes  Array   ** Size = %9ld",sizeof(DTM_TIN_POINT)*dtmP->numPoints) ;
+    if( dbg ) bcdtmWrite_message(0,0,0,"Writing Dtm Nodes  Array   ** Size = %9ld",sizeof(DPoint3d)*dtmP->numPoints) ;
     for( point = 0 ; point < dtmP->numPoints ; ++point )
       {
        nodeP = nodeAddrP(dtmP,point) ;

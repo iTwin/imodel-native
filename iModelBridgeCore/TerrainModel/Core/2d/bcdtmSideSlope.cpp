@@ -56,7 +56,7 @@ int bcdtmSideSlope_createSideSlopesForSideSlopeTableDtmObject
  BC_DTM_OBJ *tempObjP=nullptr ;
  long    start ;
  static long numSideSlopes=0,numSideSlopeElements=0 ;
- DTM_TIN_POINT   *pointP ;
+ DPoint3d   *pointP ;
  DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
  // FILE *xyzFP=nullptr ;
 /*
@@ -980,8 +980,8 @@ int bcdtmSideSlope_setForceSlopeForSegmentsNotOnTin(DTM_SIDE_SLOPE_TABLE *sideSl
  long   drapeResult,numDrapePts ;
  double z ;
  DPoint3d    segPtsP[2] ;
- DTM_DRAPE_POINT      *drapeP,*drapePtsP=nullptr ;
- bvector<DTM_DRAPE_POINT> drapePts;
+ DTMDrapePoint      *drapeP,*drapePtsP=nullptr ;
+ bvector<DTMDrapePoint> drapePts;
  DTM_SIDE_SLOPE_TABLE *radialP  ;
 /*
 ** Write Entry Message
@@ -1255,8 +1255,8 @@ int bcdtmSideSlope_insertVerticesAtCutFillTransitions(DTM_SIDE_SLOPE_TABLE **Sid
  long   ofs1,ofs2,pofs,segmentInternal,zf1,zf2 ;
  double d1,d2,dd,ddx,ddy,ddz,dz1,dz2,dsz1,dsz2,sx1,sy1,sz1,sx2,sy2,sz2,sln,sdx,sdy,sdz,Xt,Yt,Zt,Zs=0.0 ;
  DPoint3d    p3dPts[2] ;
- DTM_DRAPE_POINT *drapeP, *drapePtsP = nullptr;
- bvector<DTM_DRAPE_POINT> drapePts;
+ DTMDrapePoint *drapeP, *drapePtsP = nullptr;
+ bvector<DTMDrapePoint> drapePts;
  DTM_SIDE_SLOPE_TABLE *radial, *radialofs;
 /*
 ** Write Entry Message
@@ -1541,8 +1541,8 @@ int bcdtmSideSlope_insertTransitionVerticesForSlopeToObject(DTM_SIDE_SLOPE_TABLE
  long   ofs1,ofs2,pofs,sideSlopeOption,segmentInternal,zf1,zf2,DrapeFlag ;
  double d1,d2,dd,ddx,ddy,ddz,dz1,dz2,dsz1,dsz2,sx1,sy1,sz1,sx2,sy2,sz2,sln,sdx,sdy,sdz,Xt,Yt,Zt ;
  DPoint3d    p3dPts[2] ;
- DTM_DRAPE_POINT *drapeP,*DrapePts=nullptr ;
- bvector<DTM_DRAPE_POINT> drapePts;
+ DTMDrapePoint *drapeP,*DrapePts=nullptr ;
+ bvector<DTMDrapePoint> drapePts;
  DTM_SIDE_SLOPE_TABLE *radial,*radialOfs ;
 /*
 ** Write Entry Message
@@ -4126,8 +4126,8 @@ int bcdtmSideSlope_projectVectorStartToHullDtmObject(BC_DTM_OBJ *tinP,double Sx,
  bool inVoidFlag;
  double dl,z,radius ;
  DPoint3d    p3dPts[2] ;
- DTM_DRAPE_POINT *drapeP,*drapePtsP=nullptr ;
- bvector<DTM_DRAPE_POINT> drapePts;
+ DTMDrapePoint *drapeP,*drapePtsP=nullptr ;
+ bvector<DTMDrapePoint> drapePts;
 /*
 ** Write Entry Message
 */
@@ -4244,7 +4244,7 @@ int bcdtmSideSlope_findClosestHullLineDtmObject(BC_DTM_OBJ *dtmP,double x,double
 {
  long   p1,p2,isw,lf ;
  double d1,d2,d3,d4,dn=0.0,Xn,Yn  ;
- DTM_TIN_POINT *p1P,*p2P ;
+ DPoint3d *p1P,*p2P ;
 /*
 ** Initialise
 */
@@ -4424,8 +4424,8 @@ int bcdtmSideSlope_intersectSurfaceDtmObject(BC_DTM_OBJ *Tin,double Sx,double Sy
      bcdtmSideSlope_findClosestHullLineDtmObject(Tin, Sx, Sy, &P1, &P2) ;
      if( P1 != Tin->nullPnt && P2 != Tin->nullPnt )
         {
-        DTM_TIN_POINT *pnt1P = pointAddrP (Tin, P1);
-        DTM_TIN_POINT *pnt2P = pointAddrP (Tin, P2);
+        DPoint3d *pnt1P = pointAddrP (Tin, P1);
+        DPoint3d *pnt2P = pointAddrP (Tin, P2);
         if( bcdtmMath_distance (Sx, Sy, pnt1P->x, pnt1P->y) <= Tin->ppTol )
             {
             P2 = Tin->nullPnt;

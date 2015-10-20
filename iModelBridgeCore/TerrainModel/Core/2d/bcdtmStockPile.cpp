@@ -330,8 +330,8 @@ BENTLEYDTM_EXPORT int bcdtmStockPile_createStringStockPileDtmObject
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   numDrapePts ;
- DTM_DRAPE_POINT *drP,*drapePtsP=nullptr ;
- bvector<DTM_DRAPE_POINT> drapePts;
+ DTMDrapePoint *drP,*drapePtsP=nullptr ;
+ bvector<DTMDrapePoint> drapePts;
 // Log Entry Arguments
 
  if( dbg )

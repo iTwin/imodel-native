@@ -1025,7 +1025,7 @@ BENTLEYDTM_Public int bcdtmConnect_buildConnectTablesFromTinLinesDtmObject
  DTM_CONNECTION_LINE    *conLineP,*conLine1P,*conLine2P,*conLinesP=NULL,*pntConLinesP=NULL ;
  DTM_INTERSECT_POINT    *intP,*int1P,*int2P,*intPtsP=NULL ;
  DTM_CONNECTION_LINE_INTERSECT *intConLineP,*intConLinesP=NULL ;
- bvector<DTM_TIN_POINT_FEATURES> pointFeaturesP;
+ bvector<DTMTinPointFeatures> pointFeaturesP;
  struct Connect_Offsets { long pnt1,pnt2 ; } *conOffsetsP=NULL ;
  DTM_TIN_NODE  *nodesP ;
 /*
@@ -1702,8 +1702,8 @@ BENTLEYDTM_Private int bcdtmConnect_getNumberOfDrapeBreakBetweenPointsDtmObject
  int               ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long              numDrapePts=0,numStringPts=2,dtmFeatureOption=FALSE ;
  DPoint3d               stringPts[2] ;          
- DTM_DRAPE_POINT   *drapeP;
- bvector<DTM_DRAPE_POINT> drapePtsP;
+ DTMDrapePoint   *drapeP;
+ bvector<DTMDrapePoint> drapePtsP;
 /*
 ** Write Entry Message
 */

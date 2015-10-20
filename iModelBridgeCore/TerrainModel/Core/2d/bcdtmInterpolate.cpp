@@ -154,7 +154,7 @@ BENTLEYDTM_Private int bcdtmInterpolate_linearFeatureDtmObject
  double  xs,ys,xe,ye,ds,de,dm,xMin,xMax,yMin,yMax,xn,yn ;
  double  deltaZ,segmentLength,interpolateLength ;
  DPoint3d     *p3dP ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  struct  IntPoint { long intFlag , pointCode ; double len,x,y,z ; } *intP,*int1P,*int2P,*int3P,*intLowP,*intHighP,*intPointsP=NULL,*allPointsP=NULL ;
 /*
 ** Write Entry Message
@@ -579,7 +579,7 @@ BENTLEYDTM_Private int bcdtmInterpolate_findClosestPointDtmObject(BC_DTM_OBJ *dt
  long    dbg=DTM_TRACE_VALUE(0) ;
  long    cpnt,spnt,process ;
  double  dn = 0.0,dd ;
- DTM_TIN_POINT *cpntP ;
+ DPoint3d *cpntP ;
 /*
 ** Write Entry Message
 */
@@ -682,7 +682,7 @@ BENTLEYDTM_Private int bcdtmInterpolate_findClosestPointDtmObject(BC_DTM_OBJ *dt
 BENTLEYDTM_Private double bcdtmInterpolate_getDistanceFromPointDtmObject(BC_DTM_OBJ *dtmP,long point,double x,double y)
 {
  double  dx,dy ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  pointP = pointAddrP(dtmP,point) ;
  dx = x - pointP->x ;
  dy = y - pointP->y ;

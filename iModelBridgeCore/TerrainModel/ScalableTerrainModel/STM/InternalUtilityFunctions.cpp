@@ -6,7 +6,7 @@
 |       $Date: 2012/08/20 16:31:58 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1225,7 +1225,7 @@ int AddIslandToDTM(Bentley::TerrainModel::DTMPtr&              dtmPtr,
             // The following code used to be in use but this resulted in clips with a lot more points
             // while it appears that the draping is automatically performed on clipping if the outter void is drape
             // So it was desactivated and the code is only preserved as an example
-            // DTM_DRAPE_POINT *drapePointsP = NULL;
+            // DTMDrapePoint *drapePointsP = NULL;
             // status = bcdtmDrape_stringDtmObject(dtmObjP, featurePtsPtr, pointCollection.size(), FALSE, &drapePointsP, &numDrapePoints);
             // if (0 == status) 
             //     {
@@ -1309,7 +1309,7 @@ int AddHolesToDTM(Bentley::TerrainModel::DTMPtr&                     dtmPtr,
             // The following code used to be in use but this resulted in clips with a lot more points
             // while it appears that the draping is automatically performed on clipping if the outter void is drape
             // So it was desactivated and the code is only preserved as an example
-            // DTM_DRAPE_POINT *drapePointsP = NULL;
+            // DTMDrapePoint *drapePointsP = NULL;
             // status = bcdtmDrape_stringDtmObject(dtmObjP, featurePtsPtr, pointCollection.size(), FALSE, &drapePointsP, &numDrapePoints);
             // if (0 == status) 
             //     {

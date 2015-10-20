@@ -145,7 +145,7 @@ BENTLEYDTM_Private int bcdtmEdit_drawDtmFeaturesForLineDtmObject(BC_DTM_OBJ *dtm
  int   ret=DTM_SUCCESS ;
  long  numLineFeatures, featureType;
  DTMFeatureType dtmFeatureType;
- bvector<DTM_TIN_POINT_FEATURES> lineFeatures;
+ bvector<DTMTinPointFeatures> lineFeatures;
 /*
 ** Get List Of DTM Features For Line
 */
@@ -870,7 +870,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawPolygonFeaturesDtmObject(BC_DTM_OBJ *dtmP,DT
  long   point ;
  double Xmin,Ymin,Xmax,Ymax ;
  DPoint3d    *p3dP ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
 /*
 ** Write Entry Message
 */

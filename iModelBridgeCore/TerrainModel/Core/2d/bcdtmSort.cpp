@@ -127,7 +127,7 @@ BENTLEYDTM_Private void bcdtmSort_mergeSortTaggedPointsInTileDtmObject(BC_DTM_OB
  long    left,right,pivot;
  bool swap ;
  double  pivot1=0.0,pivot2=0.0,X,Y;
- DTM_TIN_POINT *p1P,*p2P,temp;
+ DPoint3d *p1P,*p2P,temp;
  long    tag ;
 /*
 ** Two Points
@@ -239,7 +239,7 @@ BENTLEYDTM_Private void bcdtmSort_mergeSortTaggedPointsInTileDtmObject(BC_DTM_OB
  long    left,right,pivot;
  bool swap,scan ;
  double  pivot1=0.0,pivot2=0.0,x,y;
- DTM_TIN_POINT *p1P,*p2P,temp;
+ DPoint3d *p1P,*p2P,temp;
  long    tag ; 
 /*
 ** Two Points
@@ -480,7 +480,7 @@ BENTLEYDTM_Private void bcdtmSort_tilePointsDtmObject(BC_DTM_OBJ *dtmP,long star
 {
  long    left,right,pivot,swap,scan ;
  double  pivot1=0.0,pivot2=0.0,x,y;
- DTM_TIN_POINT *p1P,*p2P,temp;
+ DPoint3d *p1P,*p2P,temp;
 /*
 ** Two Points
 */
@@ -713,7 +713,7 @@ BENTLEYDTM_Private void bcdtmSort_tileTaggedPointsDtmObject(BC_DTM_OBJ *dtmP,lon
 {
  long    left,right,pivot,swap,scan ;
  double  pivot1=0.0,pivot2=0.0,x,y;
- DTM_TIN_POINT *p1P,*p2P,temp;
+ DPoint3d *p1P,*p2P,temp;
 /*
 ** Two Points
 */

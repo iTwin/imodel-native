@@ -29,7 +29,7 @@ static long editStatus=true ;
 +-------------------------------------------------------------------*/
 int bcdtmEdit_storeDtmFeatureInDtmFeatureList
 (
-DTM_TIN_POINT_FEATURES **dtmFeatureListPP,
+DTMTinPointFeatures **dtmFeatureListPP,
 long           *numFeatureListP,
 long           *memFeatureListP,
 long           memFeatureListInc,
@@ -48,7 +48,7 @@ long           nextPoint
     {
     int    ret = DTM_SUCCESS, dbg = 0;
     long   storeFlag;
-    DTM_TIN_POINT_FEATURES *featP;
+    DTMTinPointFeatures *featP;
     /*
     ** Write Entry Message
     */
@@ -72,8 +72,8 @@ long           nextPoint
         if (*numFeatureListP == *memFeatureListP)
             {
             *memFeatureListP = *memFeatureListP + memFeatureListInc;
-            if (*dtmFeatureListPP == NULL) *dtmFeatureListPP = (DTM_TIN_POINT_FEATURES *)malloc (*memFeatureListP * sizeof (DTM_TIN_POINT_FEATURES));
-            else                            *dtmFeatureListPP = (DTM_TIN_POINT_FEATURES *)realloc (*dtmFeatureListPP, *memFeatureListP * sizeof (DTM_TIN_POINT_FEATURES));
+            if (*dtmFeatureListPP == NULL) *dtmFeatureListPP = (DTMTinPointFeatures *)malloc (*memFeatureListP * sizeof (DTMTinPointFeatures));
+            else                            *dtmFeatureListPP = (DTMTinPointFeatures *)realloc (*dtmFeatureListPP, *memFeatureListP * sizeof (DTMTinPointFeatures));
             if (*dtmFeatureListPP == NULL)
                 {
                 bcdtmWrite_message (1, 0, 0, "Memory Allocation Failure"); goto errexit;
@@ -826,7 +826,7 @@ BENTLEYDTM_Private int bcdtmEdit_selectTriangleDtmObject
  long   pnt1, pnt2, pnt3, fndType, voidFeature;
  bool voidFlag;
  double Zs    ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
 /*
 ** Write Entry Message
 */
@@ -1140,7 +1140,7 @@ int bcdtmEdit_checkForIntersectionWithTinHullDtmObject
 {
  int    pnt,nextPnt,sideOf1,sideOf2 ;
  double xp,yp ;
- DTM_TIN_POINT *pnt1P,*pnt2P ;
+ DPoint3d *pnt1P,*pnt2P ;
  double xMin,yMin,xMax,yMax,xlMin,ylMin,xlMax,ylMax ;
 /*
 ** Initialiase
@@ -1213,7 +1213,7 @@ BENTLEYDTM_Public int bcdtmEdit_findClosestVoidLineDtmObject
  long n,p1,p2,p3,spnt,isw,lf,fndType ;
  long numIslandFeatures,voidFeature,islandFeature ;
  double d1,d2,d3,d4,dn=0.0,Xn,Yn,Zs  ;
- DTM_TIN_POINT_FEATURES *islandFeaturesP=NULL ;
+ DTMTinPointFeatures *islandFeaturesP=NULL ;
 /*
 ** Initialiase
 */
@@ -1622,7 +1622,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_cleanVoidDtmObject(BC_DTM_OBJ *dtmP,long VoidFea
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmEdit_getIslandFeaturesInternalToVoidDtmObject(BC_DTM_OBJ *dtmP,long voidFeature,DTM_TIN_POINT_FEATURES **islandsPP,long *numIslandsP) 
+BENTLEYDTM_Public int bcdtmEdit_getIslandFeaturesInternalToVoidDtmObject(BC_DTM_OBJ *dtmP,long voidFeature,DTMTinPointFeatures **islandsPP,long *numIslandsP) 
 /*
 ** This Function Gets The List Of All Island Feature Internal To A Void
 **
@@ -1632,7 +1632,7 @@ BENTLEYDTM_Public int bcdtmEdit_getIslandFeaturesInternalToVoidDtmObject(BC_DTM_
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   memIslands=0,memIslandsInc=10,islandFeature ;
  long   ofs,lp,clc,pnt,ppnt,npnt,lpnt,fPnt,lPnt,sPnt,numLineFeatures ;
- DTM_TIN_POINT_FEATURES *lineFeaturesP=NULL,*featP ;
+ DTMTinPointFeatures *lineFeaturesP=NULL,*featP ;
 /*
 ** Write Entry Message
 */
@@ -2042,7 +2042,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_deleteTriangleDtmObject(BC_DTM_OBJ *dtmP,long ti
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ; 
  long  numDtmFeatures ;
  DPoint3d   trgPts[4] ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  BC_DTM_OBJ *voidDtmP=NULL ;
 /*
 ** Write Entry Message
@@ -2163,10 +2163,10 @@ BENTLEYDTM_Private int bcdtmEdit_insertVoidsAndIslandsIntoEditDtmObject
  bool internalVoid;
  double  area ;
  char    dtmFeatureTypeName[50] ;
- DTM_TIN_POINT  *pointP ;
+ DPoint3d  *pointP ;
  BC_DTM_FEATURE *dtmFeatureP ;
- DTM_TIN_POINT_FEATURES* vfP, *intersectedFeaturesP = nullptr;
- bvector<DTM_TIN_POINT_FEATURES> voidFeaturesP;
+ DTMTinPointFeatures* vfP, *intersectedFeaturesP = nullptr;
+ bvector<DTMTinPointFeatures> voidFeaturesP;
 /*
 ** Write Entry Message
 */
@@ -2588,7 +2588,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_removeInsertedVoidsOnTinHullDtmObject(BC_DTM_OBJ
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long spnt,fsp1,lsp1,fsp2,lsp2,fPtr,coinFlag,voidFeature,numIslands  ;
  long *pntListP=NULL;
- DTM_TIN_POINT_FEATURES *islandsP=NULL ;
+ DTMTinPointFeatures *islandsP=NULL ;
  BC_DTM_FEATURE *voidFeatureP ;
 /*
 ** Write Entry Message
@@ -2745,12 +2745,12 @@ BENTLEYDTM_EXPORT int bcdtmEdit_removeInsertedVoidsOnTinHullDtmObject(BC_DTM_OBJ
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmEdit_getListOfIntersectedIslandVoidHoleFeaturesDtmObject(BC_DTM_OBJ *dtmP,long numStartFeatures,DTM_TIN_POINT_FEATURES **intersectedFeaturesPP,long *numIntersectedFeaturesP) 
+BENTLEYDTM_Private int bcdtmEdit_getListOfIntersectedIslandVoidHoleFeaturesDtmObject(BC_DTM_OBJ *dtmP,long numStartFeatures,DTMTinPointFeatures **intersectedFeaturesPP,long *numIntersectedFeaturesP) 
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long  cln,fpnt,npnt,feature,storeFlag,dtmFeature,memFeatureTable=0,memInc=100 ;
  char  dtmFeatureTypeName[50] ;
- DTM_TIN_POINT_FEATURES *flP ;
+ DTMTinPointFeatures *flP ;
  BC_DTM_FEATURE *dtmFeatureP ;
 /*
 ** Write Entry Message
@@ -2808,8 +2808,8 @@ BENTLEYDTM_Private int bcdtmEdit_getListOfIntersectedIslandVoidHoleFeaturesDtmOb
                    if( *numIntersectedFeaturesP == memFeatureTable )
                      {
                       memFeatureTable = memFeatureTable + memInc ;
-                      if( *intersectedFeaturesPP == NULL )  *intersectedFeaturesPP = ( DTM_TIN_POINT_FEATURES * ) malloc( memFeatureTable * sizeof(DTM_TIN_POINT_FEATURES)) ;
-                      else                                *intersectedFeaturesPP = ( DTM_TIN_POINT_FEATURES * ) realloc( *intersectedFeaturesPP,memFeatureTable * sizeof(DTM_TIN_POINT_FEATURES)) ;
+                      if( *intersectedFeaturesPP == NULL )  *intersectedFeaturesPP = ( DTMTinPointFeatures * ) malloc( memFeatureTable * sizeof(DTMTinPointFeatures)) ;
+                      else                                *intersectedFeaturesPP = ( DTMTinPointFeatures * ) realloc( *intersectedFeaturesPP,memFeatureTable * sizeof(DTMTinPointFeatures)) ;
                       if( *intersectedFeaturesPP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
                      }
 /*
@@ -2834,7 +2834,7 @@ BENTLEYDTM_Private int bcdtmEdit_getListOfIntersectedIslandVoidHoleFeaturesDtmOb
 */
  if( *intersectedFeaturesPP != NULL && *numIntersectedFeaturesP != memFeatureTable )
    {
-    *intersectedFeaturesPP = (DTM_TIN_POINT_FEATURES *) realloc ( *intersectedFeaturesPP , *numIntersectedFeaturesP * sizeof(DTM_TIN_POINT_FEATURES)) ;
+    *intersectedFeaturesPP = (DTMTinPointFeatures *) realloc ( *intersectedFeaturesPP , *numIntersectedFeaturesP * sizeof(DTMTinPointFeatures)) ;
    }
 /*
 ** Write Intersected Features
@@ -2869,14 +2869,14 @@ BENTLEYDTM_Private int bcdtmEdit_getListOfIntersectedIslandVoidHoleFeaturesDtmOb
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmEdit_getIslandVoidHoleFeaturesWithACommonHullSegementDtmObject(BC_DTM_OBJ *dtmP,long numStartFeatures,DTM_TIN_POINT_FEATURES **intersectedFeaturesPP,long *numIntersectedFeaturesP) 
+BENTLEYDTM_Private int bcdtmEdit_getIslandVoidHoleFeaturesWithACommonHullSegementDtmObject(BC_DTM_OBJ *dtmP,long numStartFeatures,DTMTinPointFeatures **intersectedFeaturesPP,long *numIntersectedFeaturesP) 
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long  fpnt,npnt,storeFlag,dtmFeature,numLineFeatures ;
  long  memFeatureTable=0,memInc=100 ;
  char  dtmFeatureTypeName[50] ;
- DTM_TIN_POINT_FEATURES *flP;
- bvector<DTM_TIN_POINT_FEATURES> lineFeaturesP;
+ DTMTinPointFeatures *flP;
+ bvector<DTMTinPointFeatures> lineFeaturesP;
  BC_DTM_FEATURE *dtmFeatureP ;
 /*
 ** Write Entry Message
@@ -2936,8 +2936,8 @@ BENTLEYDTM_Private int bcdtmEdit_getIslandVoidHoleFeaturesWithACommonHullSegemen
                   if( *numIntersectedFeaturesP == memFeatureTable )
                     {
                      memFeatureTable = memFeatureTable + memInc ;
-                     if( *intersectedFeaturesPP == NULL )  *intersectedFeaturesPP = ( DTM_TIN_POINT_FEATURES * ) malloc( memFeatureTable * sizeof(DTM_TIN_POINT_FEATURES)) ;
-                     else                                  *intersectedFeaturesPP = ( DTM_TIN_POINT_FEATURES * ) realloc( *intersectedFeaturesPP,memFeatureTable * sizeof(DTM_TIN_POINT_FEATURES)) ;
+                     if( *intersectedFeaturesPP == NULL )  *intersectedFeaturesPP = ( DTMTinPointFeatures * ) malloc( memFeatureTable * sizeof(DTMTinPointFeatures)) ;
+                     else                                  *intersectedFeaturesPP = ( DTMTinPointFeatures * ) realloc( *intersectedFeaturesPP,memFeatureTable * sizeof(DTMTinPointFeatures)) ;
                      if( *intersectedFeaturesPP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
                     }
 /*
@@ -2961,7 +2961,7 @@ BENTLEYDTM_Private int bcdtmEdit_getIslandVoidHoleFeaturesWithACommonHullSegemen
 */
  if( *intersectedFeaturesPP != NULL && *numIntersectedFeaturesP != memFeatureTable )
    {
-    *intersectedFeaturesPP = (DTM_TIN_POINT_FEATURES *) realloc ( *intersectedFeaturesPP , *numIntersectedFeaturesP * sizeof(DTM_TIN_POINT_FEATURES)) ;
+    *intersectedFeaturesPP = (DTMTinPointFeatures *) realloc ( *intersectedFeaturesPP , *numIntersectedFeaturesP * sizeof(DTMTinPointFeatures)) ;
    }
 /*
 ** Write Intersected Features
@@ -3000,7 +3000,7 @@ BENTLEYDTM_Private int bcdtmEdit_resolveOverlappingIslandsVoidsAndHolesDtmObject
 (
  BC_DTM_OBJ             *dtmP,
  long                   numStartFeatures,
- DTM_TIN_POINT_FEATURES *intersectedFeaturesP,
+ DTMTinPointFeatures *intersectedFeaturesP,
  long                   numIntersectedFeatures
 )
 {
@@ -3009,9 +3009,9 @@ BENTLEYDTM_Private int bcdtmEdit_resolveOverlappingIslandsVoidsAndHolesDtmObject
  DPoint3d     *featurePtsP=NULL ;
  char    dtmFeatureTypeName[50] ;
  BC_DTM_OBJ *featuresDtmP=NULL,*resolvedFeaturesDtmP=NULL ;
- DTM_TIN_POINT_FEATURES *featP ;
+ DTMTinPointFeatures *featP ;
  BC_DTM_FEATURE *dtmFeatureP ;
- DTM_TIN_POINT  *pointP ;
+ DPoint3d  *pointP ;
  DTMFeatureId dtmFeatureId ;
 /*
 ** Write Entry Message
@@ -3178,7 +3178,7 @@ BENTLEYDTM_Private int bcdtmEdit_resolveIslandsVoidsHolesDtmObject(BC_DTM_OBJ *d
  char    dtmFeatureTypeName[50] ;
  DPoint3d     *featurePtsP=NULL ;
  BC_DTM_FEATURE *dtmFeatureP ;
- DTM_TIN_POINT  *pointP ;
+ DPoint3d  *pointP ;
 /*
 ** Write Entry Message
 */
@@ -4012,8 +4012,8 @@ BENTLEYDTM_Private int bcdtmEdit_deleteInternalVoidPointsAndLinesAndRetriangulat
  long    p1Dtm,p2Dtm,p3Dtm ;
  DPoint3d     *featurePtsP=NULL ;
  BC_DTM_OBJ *voidDtmP=NULL ;
- DTM_TIN_POINT *pointP ;
- DTM_TIN_POINT_FEATURES *featP,*islandsP=NULL  ;
+ DPoint3d *pointP ;
+ DTMTinPointFeatures *featP,*islandsP=NULL  ;
 /*
 ** Write Entry Message
 */
@@ -6149,7 +6149,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_getIslandsInternalToVoidDtmObject(BC_DTM_OBJ *dt
 {
  int   ret=DTM_SUCCESS ;
  long  numIslandFeatures ;
- DTM_TIN_POINT_FEATURES *ifP,*islandFeaturesP=NULL ;
+ DTMTinPointFeatures *ifP,*islandFeaturesP=NULL ;
 /*
 ** Initialise
 */
@@ -6204,7 +6204,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_getIslandsInternalToVoidDtmObject(BC_DTM_OBJ *dt
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmEdit_getIslandFeaturesInternalToVoidDtmObjectDup(BC_DTM_OBJ *dtmP,long voidFeature,DTM_TIN_POINT_FEATURES **islands,long *numIslands) 
+BENTLEYDTM_Private int bcdtmEdit_getIslandFeaturesInternalToVoidDtmObjectDup(BC_DTM_OBJ *dtmP,long voidFeature,DTMTinPointFeatures **islands,long *numIslands) 
 /*
 ** This Function Gets The List Of All Island Feature Internal To A Void
 **
@@ -6214,7 +6214,7 @@ BENTLEYDTM_Private int bcdtmEdit_getIslandFeaturesInternalToVoidDtmObjectDup(BC_
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   memIslands=0,memIslandsInc=10,islandFeature ;
  long   ofs,lp,clc,pnt,ppnt,npnt,lpnt,fPnt,lPnt,sPnt,numLineFeatures ;
- DTM_TIN_POINT_FEATURES *lineFeatures=NULL,*featP ;
+ DTMTinPointFeatures *lineFeatures=NULL,*featP ;
 /*
 ** Write Entry Message
 */
@@ -6487,7 +6487,7 @@ BENTLEYDTM_Private int bcdtmEdit_getIslandFeaturesInternalToVoidDtmObjectDup(BC_
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmEdit_storePointFeaturesInDtmFeatureList(DTM_TIN_POINT_FEATURES **bcdtmList,long *numDtmList,long *memDtmList,long memDtmListInc,long dtmFeature,DTMFeatureType dtmFeatureType,DTMUserTag userTag,long priorPoint,long nextPoint)
+BENTLEYDTM_Private int bcdtmEdit_storePointFeaturesInDtmFeatureList(DTMTinPointFeatures **bcdtmList,long *numDtmList,long *memDtmList,long memDtmListInc,long dtmFeature,DTMFeatureType dtmFeatureType,DTMUserTag userTag,long priorPoint,long nextPoint)
 /*
 ** This Stores A Feature In A Dtm Feature List
 **
@@ -6496,7 +6496,7 @@ BENTLEYDTM_Private int bcdtmEdit_storePointFeaturesInDtmFeatureList(DTM_TIN_POIN
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   storeFlag ;
- DTM_TIN_POINT_FEATURES *pfl ;
+ DTMTinPointFeatures *pfl ;
 /*
 ** Write Entry Message
 */
@@ -6520,8 +6520,8 @@ BENTLEYDTM_Private int bcdtmEdit_storePointFeaturesInDtmFeatureList(DTM_TIN_POIN
     if( *numDtmList == *memDtmList )
       {
        *memDtmList = *memDtmList + memDtmListInc ;
-       if( *bcdtmList == NULL ) *bcdtmList = ( DTM_TIN_POINT_FEATURES * ) malloc ( *memDtmList * sizeof(DTM_TIN_POINT_FEATURES)) ;
-       else                   *bcdtmList = ( DTM_TIN_POINT_FEATURES * ) realloc ( *bcdtmList , *memDtmList * sizeof(DTM_TIN_POINT_FEATURES)) ;
+       if( *bcdtmList == NULL ) *bcdtmList = ( DTMTinPointFeatures * ) malloc ( *memDtmList * sizeof(DTMTinPointFeatures)) ;
+       else                   *bcdtmList = ( DTMTinPointFeatures * ) realloc ( *bcdtmList , *memDtmList * sizeof(DTMTinPointFeatures)) ;
        if( *bcdtmList == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
       }
 /*
@@ -6828,7 +6828,7 @@ BENTLEYDTM_Public int bcdtmEdit_triangulateVoidDtmObject
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long           sp,spnt,n,np,lp,pp,ps,pn,pl,pnt,point,numPoints,clc ;
  DPoint3d            *pointsP=NULL,intPoint ;
- DTM_TIN_POINT  *pntP ;
+ DPoint3d  *pntP ;
  BC_DTM_OBJ     *tempDtmP=NULL ;
 /*
 ** Write Entry Message
@@ -7003,8 +7003,8 @@ BENTLEYDTM_EXPORT int bcdtmEdit_deletePointDtmObject
  long  spnt,numFeaturePts,drapeOption,insertOption,canDeleteFlag=0 ;
  long  numPointFeatures,nextHullPnt,priorHullPnt,numHullPnts;
  DPoint3d   *featurePtsP=NULL ;
- DTM_TIN_POINT_FEATURES *ppf;
- bvector<DTM_TIN_POINT_FEATURES> pointFeatures;
+ DTMTinPointFeatures *ppf;
+ bvector<DTMTinPointFeatures> pointFeatures;
  BC_DTM_OBJ  *voidPolygonP=NULL ;
 /*
 ** Write Entry Message
@@ -7568,8 +7568,8 @@ BENTLEYDTM_EXPORT int bcdtmEdit_deleteLineDtmObject(BC_DTM_OBJ *dtmP,long delete
  int   ret=DTM_SUCCESS,dbg=0 ;
  long  ap,cp,swapLine,numDtmFeatures,numLineFeatures,numPolyPts ;
  DPoint3d   *polyPtsP=NULL ;
- DTM_TIN_POINT_FEATURES *plf;
- bvector<DTM_TIN_POINT_FEATURES> lineFeatures;
+ DTMTinPointFeatures *plf;
+ bvector<DTMTinPointFeatures> lineFeatures;
  BC_DTM_OBJ *voidPolygonP=NULL ;
 /*
 ** Write Entry Message
@@ -7747,7 +7747,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_polygonMoveZDtmObject(BC_DTM_OBJ *dtmP,DPoint3d 
  long   point ;
  double Xmin,Ymin,Xmax,Ymax ;
  DPoint3d    *p3dP ;
- DTM_TIN_POINT *pointP  ;
+ DPoint3d *pointP  ;
 /*
 ** Get Bounding Rectangle For Polygon
 */
@@ -8600,7 +8600,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_tptrPolygonMoveZDtmObject(BC_DTM_OBJ *dtmP,long 
  long   sp,clc,cp,np,point,process,nullValue1=-98989898,nullValue2 =-87878787 ;
  DTMDirection direction;
  double area ;
- DTM_TIN_POINT  *pointP ;
+ DPoint3d  *pointP ;
  DTM_TIN_NODE   *nodeP ;
 /*
 ** Write Entry Message
@@ -8870,8 +8870,8 @@ BENTLEYDTM_Private int bcdtmEdit_drapeDeleteLineOnEditDtmObject(BC_DTM_OBJ *dtmP
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long  ofs1,ofs2,numDrapePts=0 ;
  DPoint3d   *p3dP ;
- DTM_DRAPE_POINT *drapeP,*drapePtsP=NULL ;
- bvector<DTM_DRAPE_POINT> drapePts;
+ DTMDrapePoint *drapeP,*drapePtsP=NULL ;
+ bvector<DTMDrapePoint> drapePts;
 /*
 ** Write Entry Message
 */
@@ -9918,7 +9918,7 @@ int bcdtmEdit_accumulateLinearFeaturesAndCursorDistanceForPointDtmObject
  DPoint3d  *p3dP,*featurePtsP=NULL ;
  double nx,ny,distance,cursorDistance=0.0 ;
  LinearFeature  linearFeature ;
- bvector<DTM_TIN_POINT_FEATURES> pntFeaturesP;
+ bvector<DTMTinPointFeatures> pntFeaturesP;
 
 // Write Entry Message
 
@@ -10135,7 +10135,7 @@ int bcdtmEdit_getVoidFeaturesInternalToIslandDtmObject
 (
  BC_DTM_OBJ             *dtmP,
  long                   islandFeature,
- DTM_TIN_POINT_FEATURES **voidsPP,
+ DTMTinPointFeatures **voidsPP,
  long                   *numVoidsP
 )
 /*
@@ -10147,7 +10147,7 @@ int bcdtmEdit_getVoidFeaturesInternalToIslandDtmObject
  int    ret=DTM_SUCCESS,dbg=0 ;
  long   memVoids=0,memVoidsInc=10,voidFeature ;
  long   ofs,lp,clc,pnt,ppnt,npnt,lpnt,fPnt,lPnt,sPnt,numLineFeatures ;
- DTM_TIN_POINT_FEATURES *lineFeaturesP=NULL,*featP ;
+ DTMTinPointFeatures *lineFeaturesP=NULL,*featP ;
 /*
 ** Write Entry Message
 */
@@ -10433,7 +10433,7 @@ int bcdtmEdit_getVoidsInternalToIslandDtmObject
 {
  int   ret=DTM_SUCCESS ;
  long  numVoidFeatures ;
- DTM_TIN_POINT_FEATURES *ivp,*voidFeaturesP=NULL ;
+ DTMTinPointFeatures *ivp,*voidFeaturesP=NULL ;
 /*
 ** Initialise
 */

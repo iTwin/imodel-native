@@ -32,7 +32,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinTrianglesFromDtmObject
  long numFencePts,           /* ==> Number Of Fence Points                         */
  long *numTrianglesP,        /* <== Number Of Triangles                            */
  long **trianglesPP,         /* <== Pointer To Triangle Point Indicies             */
- DTM_TIN_POINT ***dtmPtsPPP  /* <== Pointer To Dtm Points Array ( Dpoint3d )       */
+ DPoint3d ***dtmPtsPPP  /* <== Pointer To Dtm Points Array ( Dpoint3d )       */
 )
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
@@ -42,7 +42,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinTrianglesFromDtmObject
  double xMin,yMin,xMax,yMax ;
  DPoint3d    trgPts[4] ; 
  BC_DTM_OBJ *clipDtmP=NULL ; 
- DTM_TIN_POINT *p1P,*p2P,*p3P ;
+ DPoint3d *p1P,*p2P,*p3P ;
  DTM_CIR_LIST  *clistP ;
 /*
 ** Write Entry Message
@@ -261,7 +261,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinEdgesFromDtmObject
  long numFencePts,           /* ==> Number Of Fence Points                         */
  long *numEdgesP,            /* <== Number Of Edges                                */
  long **edgesPP,             /* <== Pointer To Edge Point Indicies                 */
- DTM_TIN_POINT ***dtmPtsPPP  /* <== Pointer To Tin Points Array ( Dpoint3d )       */
+ DPoint3d ***dtmPtsPPP  /* <== Pointer To Tin Points Array ( Dpoint3d )       */
 )
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
@@ -492,7 +492,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinMeshFromDtmObject
  static DTMFenceType windowType = DTMFenceType::Block;
  static DTMFenceOption windowOption = DTMFenceOption::Overlap;
  static BC_DTM_OBJ *clipDtmP=NULL ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_TIN_NODE  *nodeP ;
 /*
 ** Write Entry Message

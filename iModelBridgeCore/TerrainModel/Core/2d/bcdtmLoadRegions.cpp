@@ -445,7 +445,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_trianglesFromRegionDtmObject
   long p1, p2, p3, clPtr;
   DTM_CIR_LIST    *clistP ;
   DTM_TIN_NODE    *node1P,*node2P,*node3P ;
-  DTM_TIN_POINT   *p1P,*p2P,*p3P;
+  DPoint3d   *p1P,*p2P,*p3P;
   bool voidTriangle,voidsInDtm=false;
 /*
 ** Write Entry Message
@@ -866,7 +866,7 @@ BENTLEYDTM_Private int bcdtmLoad_createTriangleShadeMeshDtmObject
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long node,minMeshPnt,maxMeshPnt,*faceP ;
  DPoint3d      *p3dP,*vectP,normalVector ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
  DTM_TIN_NODE  *nodeP ;
  double dz ;
 /*

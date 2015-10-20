@@ -586,7 +586,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_cloneDtmObject(BC_DTM_OBJ *dtmP,BC_DTM_OBJ *cl
  long *l1P,*l2P,ofs,num,numPartition ;
  DPoint3d               *p3d1P,*p3d2P ;
  BC_DTM_FEATURE    *featureP,*dtmFeatureP ;
- DTM_TIN_POINT     *pointP,*dtmPointP ;
+ DPoint3d     *pointP,*dtmPointP ;
  DTM_TIN_NODE      *nodeP,*dtmNodeP ;
  DTM_CIR_LIST      *clistP,*dtmClistP ;
  DTM_FEATURE_LIST  *flistP,*dtmFlistP ;
@@ -1066,7 +1066,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_copyTinObjectToDtmObject(DTM_TIN_OBJ *tinP,BC_
  long ofs,numPartition ;
  DTM_FEATURE_TABLE *featP ;
  BC_DTM_FEATURE    *dtmFeatureP ;
- DTM_TIN_POINT     *pointP,*dtmPointP ;
+ DPoint3d     *pointP,*dtmPointP ;
  DTM_TIN_NODE      *nodeP,*dtmNodeP ;
  DTM_CIR_LIST      *clistP,*dtmClistP ;
  DTM_FEATURE_LIST_VER200  *flistP ;
@@ -1365,7 +1365,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_copyDtmObjectToTinObject
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_TRACE_VALUE(0) ;
  long node,point,cList,fList,fTable,numTinFeatures,numDtmFeatures,dtmTinFeature ;
- DTM_TIN_POINT    *pointP ;
+ DPoint3d    *pointP ;
  DTM_TIN_NODE     *nodeP ;
  DTM_CIR_LIST     *cListP ;
  BC_DTM_FEATURE   *fTableP ;
@@ -1522,7 +1522,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_copyDtmObjectToTinObject
 /*
 ** Allocate Memory For Tin Point Array
 */
- (*tinPP)->pointsP = (DTM_TIN_POINT *) malloc( (*tinPP)->memPts * sizeof(DTM_TIN_POINT)) ;
+ (*tinPP)->pointsP = (DPoint3d *) malloc( (*tinPP)->memPts * sizeof(DPoint3d)) ;
  if( (*tinPP)->pointsP == nullptr )  
    { 
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; 
@@ -2923,7 +2923,7 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_copyTinStateDtmObjectToDataStateDtmObject(BC_D
  long p1,p2,clc,dtmFeature,numFeatPts ;
  DPoint3d  tinLinePts[2],*featPtsP=nullptr ;
  BC_DTM_FEATURE *dtmFeatureP=nullptr ;
- DTM_TIN_POINT  *pointP ;
+ DPoint3d  *pointP ;
  DTMFeatureId hullFeatureId ;
  DTMUserTag  hullUserTag ;
  DTMFeatureId nullFeatureId=DTM_NULL_FEATURE_ID ;
@@ -3677,7 +3677,7 @@ BENTLEYDTM_Public int bcdtmCheck_sortOrderTinObject(DTM_TIN_OBJ *Tin )
 ** This Function Checks The Sort Order Of A Tin Object
 */
 {
- DTM_TIN_POINT *pd ;
+ DPoint3d *pd ;
 /*
 ** Check For Valid Tin Object
 */

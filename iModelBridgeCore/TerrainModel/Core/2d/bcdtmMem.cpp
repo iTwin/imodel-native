@@ -21,7 +21,7 @@ BENTLEYDTM_Public BC_DTM_FEATURE * memftableAddrP(BC_DTM_OBJ *dtmP,long feature 
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public  DTM_TIN_POINT * mempointAddrP(BC_DTM_OBJ *dtmP,long point )
+BENTLEYDTM_Public  DPoint3d * mempointAddrP(BC_DTM_OBJ *dtmP,long point )
 {
  return( dtmP->pointsPP[point/dtmP->pointPartitionSize] + point % dtmP->pointPartitionSize) ;
 }

@@ -2,7 +2,7 @@
 |
 |     $Source: formats/ImagePP.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/WString.h>
@@ -30,6 +30,8 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #ifdef TODO
+typedef std::function <int(long numPixels, char *nameP, char *descP, char *projectionP, void *baseCordP, void *userP)> ImagePPCallBack;
+
 void readImage(char *imageFileP,char *proCodeP,double scaleFactor) ;
 
 static char BaseGeoCoordPath[512] ;
@@ -114,7 +116,7 @@ int bcdtmDem_importAndTriangulateImageDtmObject
  long   point,point1,point2 ;
  double xImageMin,yImageMin,zImageMin,xImageMax,yImageMax,zImageMax ;
  double xDist,yDist,colSpacing,rowSpacing ;
- DTM_TIN_POINT *p1P ,*p2P,*p3P,*pointP ;
+ DPoint3d *p1P ,*p2P,*p3P,*pointP ;
  BC_DTM_FEATURE *dtmFeatureP ;
 /*
 ** Write Entry Message
@@ -534,7 +536,7 @@ int bcdtmDem_importAndTriangulateImagePointsDtmObject
  double dx,dy,nullValue=-98765.4321 ;
  long   nx,ny,point,resort=0,dtmFeature,numVoids,numIslands,*islandsP=NULL ;
  long   startTime,cleanInternalVoids=0 ;
- DTM_TIN_POINT *p1P ,*p2P ;
+ DPoint3d *p1P ,*p2P ;
  BC_DTM_FEATURE *dtmFeatureP ;
 /*
 ** Write Entry Message
@@ -586,7 +588,7 @@ int bcdtmDem_importAndTriangulateImagePointsDtmObject
  if( dbg )
    {
     long point,numValues=0,numMissingValues=0 ;
-    DTM_TIN_POINT *pointP ;
+    DPoint3d *pointP ;
     for( point = 0 ; point < (*dtmPP)->numPoints ; ++point )
       {
        pointP = pointAddrP(*dtmPP,point) ;
@@ -1095,7 +1097,7 @@ int bcdtmImagePP_importImagePointsDtmObject
  long row,col,offset=0,numPts,gridStore=1 ;
  long noDataValueSet=0,xyLimitsSet=0,zLimitsSet=0,geoCordSysSet=0 ;
  double noDataValue=-987654.321,xMin=0.0,yMin=0.0,zMin=0.0,xMax=0.0,yMax=0.0,zMax=0.0 ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  P3D *p3dP ;
 /*
 ** Write Entry Message
@@ -1271,7 +1273,7 @@ int bcdtmImagePP_importImageDtmObject
  long row,col,offset=0,heightInPixels,widthInPixels,numPixels,numPts,gridStore=1 ;
  long noDataValueSet=0,xyLimitsSet=0,zLimitsSet=0,geoCordSysSet=0 ;
  double noDataValue=-987654.321,xMin=0.0,yMin=0.0,zMin=0.0,xMax=0.0,yMax=0.0,zMax=0.0 ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  P3D *p3dP ;
 /*
 ** Write Entry Message
@@ -2267,7 +2269,7 @@ static int bcdtmDem_checkSortOrderDemDtmObject(BC_DTM_OBJ *dtmP, long writeError
     {
     int   ret=DTM_SUCCESS;
     long  point ;
-    DTM_TIN_POINT *p1P,*p2P ;
+    DPoint3d *p1P,*p2P ;
     /*
     ** Check For Valid Dtm Object
     */
@@ -2333,7 +2335,7 @@ WCharCP    projectionKeyP
     long row, col, offset = 0, heightInPixels, widthInPixels, numPixels, numPts, gridStore = 1;
     long noDataValueSet = 0, xyLimitsSet = 0, zLimitsSet = 0, geoCordSysSet = 0;
     double noDataValue = -987654.321, xMin = 0.0, yMin = 0.0, zMin = 0.0, xMax = 0.0, yMax = 0.0, zMax = 0.0;
-    DTM_TIN_POINT *pointP;
+    DPoint3d *pointP;
     DPoint3dP p3dP;
     /*
     ** Write Entry Message
@@ -2645,7 +2647,7 @@ double     elevationScaleFactor               // Elevation Scale Factor
     long   point, point1, point2;
     double xImageMin, yImageMin, zImageMin, xImageMax, yImageMax, zImageMax;
     double xDist, yDist, colSpacing, rowSpacing;
-    DTM_TIN_POINT *p1P, *p2P, *p3P, *pointP;
+    DPoint3d *p1P, *p2P, *p3P, *pointP;
     BC_DTM_FEATURE *dtmFeatureP;
     BC_DTM_OBJ* dtmP;
     /*

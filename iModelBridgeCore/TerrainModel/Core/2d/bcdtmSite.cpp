@@ -2016,13 +2016,13 @@ BENTLEYDTM_EXPORT int bcdtmSite_snapToClosestBreakLineDtmObject
  double        *dSnapP,                   /* <== Distance To Snap Point                   */
  long          *dtmPnt1P,                 /* <== Tin Point Of Break Line End              */ 
  long          *dtmPnt2P,                 /* <== Tin Point Of Break Line End              */ 
- bvector<DTM_TIN_POINT_FEATURES>& snapFeaturesPP
+ bvector<DTMTinPointFeatures>& snapFeaturesPP
 )
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
  long   dtmPnt1,dtmPnt2,dtmPnt3,onLine,findType,dtmFeature ;
  double x,y,d1,d2,zPnt,snapDistance  ;
- DTM_TIN_POINT_FEATURES *fListP ;
+ DTMTinPointFeatures *fListP ;
 /*
 ** Write Entry Message
 */
@@ -2323,7 +2323,7 @@ BENTLEYDTM_EXPORT int bcdtmSite_findClosestOrthogonalBreakLineForUserTagsDtmObje
  double       *brkPntYP,                    /* <== Snap Point y Coordinate Value On Break Line         */ 
  double       *brkPntZP,                    /* <== Snap Point z Coordinate Value On Break Line         */
  double       *brkDistanceP,                /* <== Snap Distance To Break Line                         */
- bvector<DTM_TIN_POINT_FEATURES>& brkFeaturesPP    /* <== Pointer To Dtm Features For Snap Break Line Segment */
+ bvector<DTMTinPointFeatures>& brkFeaturesPP    /* <== Pointer To Dtm Features For Snap Break Line Segment */
 ) 
 /*
 ** This Function Finds The Closest User Tag Break Line To pointX,pointY 
@@ -2543,7 +2543,7 @@ BENTLEYDTM_EXPORT int bcdtmSite_projectAtAngleFromPointToBreakLineDtmObject
  double        *dBreakP,                  /* <== Distance To Break Point                   */
  long          *dtmPnt1P,                 /* <== Tin Point Of Break Line End               */ 
  long          *dtmPnt2P,                 /* <== Tin Point Of Break Line End               */ 
- bvector<DTM_TIN_POINT_FEATURES >& breakFeaturesPP
+ bvector<DTMTinPointFeatures >& breakFeaturesPP
 )
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
@@ -2755,7 +2755,7 @@ BENTLEYDTM_EXPORT int bcdtmSite_projectOrthogonalToBreakLineFromPointDtmObject
  double        *dBreakP,                  /* <== Distance To Break Point                   */
  long          *dtmPnt1P,                 /* <== Tin Point Of Break Line End               */ 
  long          *dtmPnt2P,                 /* <== Tin Point Of Break Line End               */ 
- bvector<DTM_TIN_POINT_FEATURES >& breakFeaturesPP
+ bvector<DTMTinPointFeatures >& breakFeaturesPP
 )
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
@@ -3552,7 +3552,7 @@ BENTLEYDTM_EXPORT int bcdtmSite_snapToClosestBreakLineWithPositiveUserTagDtmObje
  double        *dSnapP,                   /* <== Distance To Snap Point                   */
  long          *dtmPnt1P,                 /* <== Tin Point Of Break Line End              */ 
  long          *dtmPnt2P,                 /* <== Tin Point Of Break Line End              */ 
- bvector<DTM_TIN_POINT_FEATURES>& snapFeaturesPP /* <== Pointer To Dtm Features At Snap Point    */
+ bvector<DTMTinPointFeatures>& snapFeaturesPP /* <== Pointer To Dtm Features At Snap Point    */
 )
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
