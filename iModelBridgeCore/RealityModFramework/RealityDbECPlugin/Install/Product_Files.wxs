@@ -25,10 +25,10 @@
         <util:XmlConfig Id="SetWebconfigAccessControlAllowOriginValue" Action="create" Node="value" ElementPath="//appSettings/add[\[]@key='AccessControlAllowOrigin'[\]]" Name="value" Value="*" File="[INSTALLDIR]Web.config" On="install" Sequence="1"/>
 
         <util:XmlConfig Id="CreateElementecomconfig1" Action="create" Node="element" ElementPath="//ECConfiguration/StartupRepositories" Name="Repository" File="[INSTALLDIR]ecom.config" On="install" Sequence="1">
-          <util:XmlConfig Id="CreateElementecomconfig2" ElementId="CreateElementecomconfig1" Name="pluginId" Value="Bentley.RealityDbECPlugin" File="[INSTALLDIR]ecom.config" />
+          <util:XmlConfig Id="CreateElementecomconfig2" ElementId="CreateElementecomconfig1" Name="pluginId" Value="IndexECPlugin" File="[INSTALLDIR]ecom.config" />
           <util:XmlConfig Id="CreateElementecomconfig3" ElementId="CreateElementecomconfig1" Name="location" Value="[#newDbLocation.config]" File="[INSTALLDIR]ecom.config" />
         </util:XmlConfig>
-        <util:XmlConfig Id="RemoveElementecomconfig1" Action="delete" Node="element" ElementPath="//ECConfiguration/StartupRepositories" VerifyPath="//ECConfiguration/StartupRepositories/Repository[\[]@pluginId='Bentley.RealityDbECPlugin'[\]]" File="[INSTALLDIR]ecom.config" On="uninstall" Sequence="2"/>
+        <util:XmlConfig Id="RemoveElementecomconfig1" Action="delete" Node="element" ElementPath="//ECConfiguration/StartupRepositories" VerifyPath="//ECConfiguration/StartupRepositories/Repository[\[]@pluginId='IndexECPlugin'[\]]" File="[INSTALLDIR]ecom.config" On="uninstall" Sequence="2"/>
 
         <util:XmlConfig Id="CreateElementecomconfig4" Action="create" Node="element" ElementPath="//ECConfiguration/Extensions" Name="Extension" File="[INSTALLDIR]ecom.config" On="install" Sequence="3">
           <util:XmlConfig Id="CreateElementecomconfig5" ElementId="CreateElementecomconfig4" Name="assemblyPath" Value="bin\Extensions\Bentley.RealityDbECPlugin.dll" File="[INSTALLDIR]ecom.config" />
