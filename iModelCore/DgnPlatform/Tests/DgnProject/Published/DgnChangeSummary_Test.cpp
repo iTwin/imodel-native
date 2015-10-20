@@ -39,9 +39,7 @@ protected:
     DgnModelPtr m_testModel;
     DgnCategoryId m_testCategoryId;
     DgnElementId m_testElementId;
-    DgnAuthorityId m_authorityId;
-
-    Utf8String GetLabel(int iFloor, int iQuadrant) const;
+    RefCountedPtr<NamespaceAuthority> m_testAuthority;
 
     void CreateDgnDb(WCharCP filename);
     void OpenDgnDb(WCharCP filename);
@@ -51,15 +49,15 @@ protected:
     void InsertModel();
     void InsertCategory();
     void InsertAuthority();
-
-    DgnAuthority::Code CreateCode(Utf8StringCR value) { return m_testDb->Authorities().Get<NamespaceAuthority>(m_authorityId)->CreateCode(value); }
+    DgnAuthority::Code CreateCode(int iFloor, int iQuadrant);
+        
+    DgnElementId QueryElementId(int iFloor, int iQuadrant);
 
     void CreateSampleBuilding(WCharCP fileName);
     void InsertEmptyBuilding(WCharCP filename);
     void InsertFloor(int iFloor);
     void UpdateFloorGeometry(int iFloor);
     void DeleteFloor(int iFloor);
-    DgnElementId QueryElementIdByLabel(Utf8CP label);
 
     void CreateDefaultView();
     void UpdateDgnDbExtents();
@@ -176,9 +174,17 @@ void DgnChangeSummaryTestFixture::InsertCategory()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnChangeSummaryTestFixture::InsertAuthority()
     {
-    auto auth = NamespaceAuthority::CreateNamespaceAuthority("DgnChangeSummaryTest", *m_testDb);
-    ASSERT_TRUE(DgnDbStatus::Success == auth->Insert());
-    m_authorityId = auth->GetAuthorityId();
+    m_testAuthority = NamespaceAuthority::CreateNamespaceAuthority("DgnChangeSummaryTest", *m_testDb);
+    ASSERT_TRUE(DgnDbStatus::Success == m_testAuthority->Insert());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    08/2015
+//---------------------------------------------------------------------------------------
+DgnAuthority::Code DgnChangeSummaryTestFixture::CreateCode(int iFloor, int iQuadrant)
+    {
+    Utf8PrintfString codeStr("Floor %d,Quadrant %d", iFloor, iQuadrant);
+    return m_testAuthority->CreateCode(codeStr);
     }
 
 //---------------------------------------------------------------------------------------
@@ -258,19 +264,10 @@ void DgnChangeSummaryTestFixture::InsertEmptyBuilding(WCharCP filename)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    08/2015
 //---------------------------------------------------------------------------------------
-DgnElementId DgnChangeSummaryTestFixture::QueryElementIdByLabel(Utf8CP label)
+DgnElementId DgnChangeSummaryTestFixture::QueryElementId(int iFloor, int iQuadrant)
     {
-    CachedStatementPtr stmt = m_testDb->GetCachedStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Code=? LIMIT 1"); // find first if label not unique
-    stmt->BindText(1, label, Statement::MakeCopy::No);
-    return (BE_SQLITE_ROW != stmt->Step()) ? DgnElementId() : stmt->GetValueId<DgnElementId>(0);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    08/2015
-//---------------------------------------------------------------------------------------
-Utf8String DgnChangeSummaryTestFixture::GetLabel(int iFloor, int iQuadrant) const
-    {
-    return Utf8PrintfString("Floor %d,Quadrant %d", iFloor, iQuadrant);
+    DgnAuthority::Code code = CreateCode(iFloor, iQuadrant);
+    return m_testDb->Elements().QueryElementIdByCode(code);
     }
 
 //---------------------------------------------------------------------------------------
@@ -280,8 +277,7 @@ void DgnChangeSummaryTestFixture::DeleteFloor(int iFloor)
     {
     for (int iQuadrant = 1; iQuadrant <= 4; iQuadrant++)
         {
-        Utf8String label = GetLabel(iFloor, iQuadrant);
-        DgnElementId elementId = QueryElementIdByLabel(label.c_str());
+        DgnElementId elementId = QueryElementId(iFloor, iQuadrant);
         BeAssert(elementId.IsValid());
         m_testDb->Elements().Delete(elementId);
         }
@@ -312,7 +308,7 @@ void DgnChangeSummaryTestFixture::InsertFloor(int iFloor)
 
             PhysicalModelR physicalModel = *(dynamic_cast<PhysicalModelP> (m_testModel.get()));
             PhysicalElementPtr physicalElementPtr = PhysicalElement::Create(physicalModel, m_testCategoryId);
-            physicalElementPtr->SetCode(CreateCode(GetLabel(iFloor, iQuadrant)));
+            physicalElementPtr->SetCode(CreateCode(iFloor, iQuadrant));
             
             DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::FromZero(), blockSizeRange, true);
             ISolidPrimitivePtr geomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
@@ -340,8 +336,8 @@ void DgnChangeSummaryTestFixture::UpdateFloorGeometry(int iFloor)
     {
     for (int iQuadrant = 1; iQuadrant <= 4; iQuadrant++)
         {
-        Utf8String label = GetLabel(iFloor, iQuadrant);
-        DgnElementId elementId = QueryElementIdByLabel(label.c_str());
+        DgnElementId elementId = QueryElementId(iFloor, iQuadrant);
+        ASSERT_TRUE(elementId.IsValid());
 
         PhysicalElementPtr physicalElement = m_testDb->Elements().GetForEdit<PhysicalElement>(elementId);
         Placement3d newPlacement = physicalElement->GetPlacement();
@@ -351,7 +347,7 @@ void DgnChangeSummaryTestFixture::UpdateFloorGeometry(int iFloor)
         
         DgnDbStatus dbStatus;
         physicalElement->Update(&dbStatus);
-        BeAssert(dbStatus == DgnDbStatus::Success);
+        ASSERT_TRUE(dbStatus == DgnDbStatus::Success);
         }
 
     // UpdateDgnDbExtents();

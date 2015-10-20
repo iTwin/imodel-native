@@ -132,6 +132,8 @@ $(coreObjs)UnitDefinition$(oext): $(DgnCoreDir)UnitDefinition.cpp ${MultiCompile
 
 $(coreObjs)TxnManager$(oext): $(DgnCoreDir)TxnManager.cpp $(DgnCoreAPISrc)TxnManager.h ${MultiCompileDepends}
 
+$(coreObjs)RevisionManager$(oext): $(DgnCoreDir)RevisionManager.cpp $(DgnCoreAPISrc)RevisionManager.h ${MultiCompileDepends}
+
 $(coreObjs)MemoryManager$(oext): $(DgnCoreDir)MemoryManager.cpp $(DgnCoreAPISrc)MemoryManager.h ${MultiCompileDepends}
 
 $(coreObjs)ElementDependencyGraph$(oext): $(DgnCoreDir)ElementDependencyGraph.cpp $(DgnCoreAPISrc)TxnManager.h ${MultiCompileDepends}
@@ -348,7 +350,7 @@ $(o)GeoCoordServices$(oext): $(DgnGeoCoordDir)GeoCoordServices.cpp $(DgnPlatform
 #   Configuration
 #----------------------------------------------------------------------
 
-$(o)findfile$(oext) : $(ToolsDir)fileUtil/findfile.cpp ${MultiCompileDepends}
+$(o)findfile$(oext) : $(ToolsDir)fileutil/findfile.cpp ${MultiCompileDepends}
 
 $(o)ConfigurationManager$(oext): $(ConfigToolsDir)ConfigurationManager.cpp ${MultiCompileDepends}
 
@@ -356,7 +358,7 @@ $(o)MacroConfigurationAdmin$(oext): $(ConfigToolsDir)MacroConfigurationAdmin.cpp
 
 $(o)MacroFileProcessor$(oext): $(ConfigToolsDir)MacroFileProcessor.cpp ${MultiCompileDepends}
 
-$(o)ExpandMacro$(oext): $(ConfigToolsDir)ExpandMacro.cpp ${MultiCompileDepends}
+$(o)expandMacro$(oext): $(ConfigToolsDir)expandMacro.cpp ${MultiCompileDepends}
 
 $(o)envvutil$(oext): $(ConfigToolsDir)envvutil.cpp ${MultiCompileDepends}
 
