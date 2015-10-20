@@ -2107,47 +2107,47 @@ public:
     //! Query the number of records which match a full text search query
     //! @param[in]      query The searchable text query
     //! @return The number of records which match the query.
-    BE_SQLITE_EXPORT size_t QueryCount(Query const& query);
+    BE_SQLITE_EXPORT size_t QueryCount(Query const& query) const;
 
     //! Query the records which match a full text search query
     //! @param[in]      query The searchable text query
     //! @return An iterator over the matching records.
-    BE_SQLITE_EXPORT Iterator QueryText(Query const& query);
+    BE_SQLITE_EXPORT Iterator QueryRecords(Query const& query) const;
 
     //! Query the record with the specified category and ID.
     //! @param[in]      key The unique key identifying the record
     //! @return The corresponding record, or an invalid record if no such record exists.
-    BE_SQLITE_EXPORT Record QueryRecord(Key const& key);
+    BE_SQLITE_EXPORT Record QueryRecord(Key const& key) const;
 
     //! Query the categories present in the searchable text table
     //! @return The list of available categories
-    BE_SQLITE_EXPORT Categories QueryCategories();
+    BE_SQLITE_EXPORT Categories QueryCategories() const;
 
     //! Insert a new record into the searchable text table
     //! @param[in]      record The record to insert
     //! @return Success if the new record was inserted, or else an error code.
-    BE_SQLITE_EXPORT DbResult Insert(Record const& record);
+    BE_SQLITE_EXPORT DbResult Insert(Record const& record) const;
 
     //! Update an existing record in the searchable text table
     //! @param[in]      record      The modified record
     //! @param[in]      originalKey If non-null, identifies the existing record.
     //! @return Success if the record was updated, or else an error code.
     //! @remarks If originalKey is not supplied, the key is assumed to remain unchanged. Otherwise, the record will be looked up by original key, allowing the category and/or ID to be updated.
-    BE_SQLITE_EXPORT DbResult Update(Record const& record, Key const* originalKey);
+    BE_SQLITE_EXPORT DbResult Update(Record const& record, Key const* originalKey=nullptr) const;
 
     //! Removes all data from the searchable text table
     //! @return Success if the table was cleared, or an error code.
-    BE_SQLITE_EXPORT DbResult DropAll();
+    BE_SQLITE_EXPORT DbResult DropAll() const;
 
     //! Drops all records associated with the specified category
     //! @param[in]      category The category to drop
     //! @return Success if the associated records were dropped, or an error code.
-    BE_SQLITE_EXPORT DbResult DropCategory(Utf8CP category);
+    BE_SQLITE_EXPORT DbResult DropCategory(Utf8CP category) const;
 
     //! Drop a single record from the searchable text table
     //! @param[in]      key The key identifying the record to drop.
     //! @return Success if the record was dropped, or an error code.
-    BE_SQLITE_EXPORT DbResult DropRecord(Key const& key);
+    BE_SQLITE_EXPORT DbResult DropRecord(Key const& key) const;
 private:
     friend struct Db;
 

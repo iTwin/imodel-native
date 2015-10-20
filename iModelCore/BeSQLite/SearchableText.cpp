@@ -74,11 +74,11 @@ Utf8String SearchableText::Query::ToWhereClause() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t SearchableText::QueryCount(Query const& query)
+size_t SearchableText::QueryCount(Query const& query) const
     {
     Statement stmt;
     Utf8PrintfString sql("SELECT count(*) FROM " BEDB_TABLE_FTS_Index " %s", query.ToWhereClause().c_str());
-    if (BE_SQLITE_OK != stmt.Prepare(m_db, sql.c_str()))
+    if (BE_SQLITE_OK != stmt.Prepare(m_db, sql.c_str()) || BE_SQLITE_ROW != stmt.Step())
         {
         BeAssert(false);
         return 0;
@@ -108,7 +108,7 @@ SearchableText::Iterator::const_iterator SearchableText::Iterator::begin() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-SearchableText::Iterator SearchableText::QueryText(Query const& query)
+SearchableText::Iterator SearchableText::QueryRecords(Query const& query) const
     {
     return Iterator(m_db, query);
     }
@@ -116,7 +116,7 @@ SearchableText::Iterator SearchableText::QueryText(Query const& query)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-SearchableText::Record SearchableText::QueryRecord(Key const& key)
+SearchableText::Record SearchableText::QueryRecord(Key const& key) const
     {
     SqlPrintfString sql("SELECT Category,Id,Text FROM " BEDB_TABLE_FTS_Index " WHERE Category=%Q AND Id=%llu", key.GetCategory().c_str(), key.GetId().GetValue());
     Statement stmt;
@@ -131,7 +131,7 @@ SearchableText::Record SearchableText::QueryRecord(Key const& key)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-SearchableText::Categories SearchableText::QueryCategories()
+SearchableText::Categories SearchableText::QueryCategories() const
     {
     Categories categories;
     Statement stmt;
@@ -151,7 +151,7 @@ SearchableText::Categories SearchableText::QueryCategories()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SearchableText::Insert(Record const& record)
+DbResult SearchableText::Insert(Record const& record) const
     {
     BeAssert(record.IsValid());
     SqlPrintfString sql("INSERT INTO " BEDB_TABLE_FTS_Content " (Category,Id,Text) VALUES (%Q,%llu,%Q)", record.GetCategory().c_str(), record.GetId().GetValue(), record.GetText().c_str());
@@ -161,10 +161,10 @@ DbResult SearchableText::Insert(Record const& record)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SearchableText::Update(Record const& record, Key const* pOriginalKey)
+DbResult SearchableText::Update(Record const& record, Key const* pOriginalKey) const
     {
     auto const& key = nullptr != pOriginalKey ? *pOriginalKey : record.GetKey();
-    SqlPrintfString sql("UPDATE " BEDB_TABLE_FTS_Content " SET Category=%Q,Id=%llu,Text=%Q WHERE Category=%Q AND Id=%Q",
+    SqlPrintfString sql("UPDATE " BEDB_TABLE_FTS_Content " SET Category=%Q,Id=%llu,Text=%Q WHERE Category=%Q AND Id=%llu",
                         record.GetCategory().c_str(), record.GetId().GetValue(), record.GetText().c_str(),
                         key.GetCategory().c_str(), key.GetId().GetValue());
     return m_db.ExecuteSql(sql);
@@ -173,7 +173,7 @@ DbResult SearchableText::Update(Record const& record, Key const* pOriginalKey)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SearchableText::DropAll()
+DbResult SearchableText::DropAll() const
     {
     return m_db.ExecuteSql("DELETE FROM " BEDB_TABLE_FTS_Content);
     }
@@ -181,7 +181,7 @@ DbResult SearchableText::DropAll()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SearchableText::DropCategory(Utf8CP cat)
+DbResult SearchableText::DropCategory(Utf8CP cat) const
     {
     SqlPrintfString sql("DELETE FROM " BEDB_TABLE_FTS_Content " WHERE Category=%Q", cat);
     return m_db.ExecuteSql(sql);
@@ -190,7 +190,7 @@ DbResult SearchableText::DropCategory(Utf8CP cat)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SearchableText::DropRecord(Key const& key)
+DbResult SearchableText::DropRecord(Key const& key) const
     {
     SqlPrintfString sql("DELETE FROM " BEDB_TABLE_FTS_Content " WHERE Category=%Q AND Id=%llu", key.GetCategory().c_str(), key.GetId().GetValue());
     return m_db.ExecuteSql(sql);
