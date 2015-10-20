@@ -35,6 +35,7 @@
 #define DGN_CLASSNAME_ElementGroup          "ElementGroup"
 #define DGN_CLASSNAME_ElementItem           "ElementItem"
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
+#define DGN_CLASSNAME_ElementName           "ElementName"
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
