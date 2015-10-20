@@ -2974,7 +2974,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_IssueListener)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void AssertGeometry (IGeometryCR expected, IGeometryCR actual, Utf8P assertMessage)
+void AssertGeometry (IGeometryCR expected, IGeometryCR actual, Utf8CP assertMessage)
     {
     ASSERT_TRUE (actual.IsSameStructureAndGeometry (expected)) << assertMessage;
     }
