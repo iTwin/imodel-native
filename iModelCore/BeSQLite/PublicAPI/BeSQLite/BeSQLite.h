@@ -1984,6 +1984,179 @@ protected:
     BE_SQLITE_EXPORT BriefcaseLocalValueCache& GetRLVCache();
 };
 
+//=======================================================================================
+//! Every BeSQLite::Db has a table for storing searchable text for use with SQLite's
+//! FTS5 full text search features. Each search term is qualified by a category and associated
+//! with an ID into some other table from which the search term originated. The meaning of the
+//! ID field can be interpreted according to the search category. Applications can
+//! populate this table with search terms to enable efficient, database-wide full text search.
+//! Such queries may be optionally constrained to one or more search categories.
+//! @see Db::GetSearchableText
+// @bsiclass                                                    Paul.Connelly   10/15
+//=======================================================================================
+struct SearchableText
+{
+public:
+    //! Identifies a record in the searchable text table
+    struct Key
+    {
+    private:
+        Utf8String m_category;
+        BeInt64Id m_id;
+    public:
+        //! Constructor.
+        //! @param[in]      category The search category. May not be empty.
+        //! @param[in]      id       The ID of the associated object. Must be valid.
+        Key(Utf8StringCR category, BeInt64Id id) : m_category(category), m_id(id) { m_category.Trim(); }
+
+        //! Default constructor producing an invalid Key.
+        Key() { }
+
+        Utf8StringCR GetCategory() const { return m_category; } //!< The search category
+        BeInt64Id GetId() const { return m_id; } //!< The ID of the object associated with this record
+        bool IsValid() const { return !m_category.empty() && m_id.IsValid(); } //!< Determine whether this is a valid Key
+    };
+
+    //! A record in the searchable text table
+    struct Record
+    {
+    private:
+        Key m_key;
+        Utf8String  m_text;
+    public:
+        //! Constructor
+        //! @param[in]      category Identifies both the meaning of the ID and the "type" of the text. May not be empty.
+        //! @param[in]      id       The ID of the object associated with this text. Must be valid.
+        //! @param[in]      text     The searchable text. May not be empty.
+        //! @remarks The combination of category and ID must be unique within the searchable text table
+        Record(Utf8StringCR category, BeInt64Id id, Utf8StringCR text) : Record(Key(category, id), text) { }
+
+        //! Constructor
+        //! @param[in]      key  Uniquely identifies this record within the table. Must be valid.
+        //! @param[in]      text The searchable text. May not be empty.
+        Record(Key const& key, Utf8StringCR text) : m_key(key), m_text(text) { m_text.Trim(); }
+
+        //! Default constructor. Produces an invalid record.
+        Record() { }
+
+        Utf8StringCR GetCategory() const { return m_key.GetCategory(); } //!< The search category
+        BeInt64Id GetId() const { return m_key.GetId(); } //!< The ID of the object associated with the text
+        Utf8StringCR GetText() const { return m_text; } //!< The searchable text
+        Key const& GetKey() const { return m_key; } //!< The record key
+        bool IsValid() const { return m_key.IsValid() && !m_text.empty(); } //!< Determine if this is a valid record
+    };
+
+    //! A list of search categories by which to filter full-text search queries
+    typedef bvector<Utf8String> Categories;
+
+    //! Specifies a query on the searchable text table, optionally filtered by one or more search categories.
+    struct Query
+    {
+    private:
+        Categories m_categories;
+        Utf8String m_matchExpression;
+
+        friend struct SearchableText;
+        Utf8String ToWhereClause() const;
+    public:
+        //! Constructor
+        //! @param[in]      matchExpression An expression conforming to sqlite's MATCH syntax indicating the text for which to search
+        //! @param[in]      category        If supplied, only text belonging to the specified category will be included in the query
+        //! @remarks The matchExpression will be single-quoted and concatenated with a query to produce a where clause like WHERE searchable_text MATCH 'matchExpression'.
+        //! @remarks The caller is responsible for ensuring that search phrases within the expression are properly double-quoted and that the expression conforms to sqlite's MATCH syntax.
+        BE_SQLITE_EXPORT explicit Query(Utf8StringCR matchExpression, Utf8CP category=nullptr);
+
+        //! Add a category by which to filter. The query will only include text belonging to the specified categories.
+        //! @param[in]      category The category by which to filter.
+        BE_SQLITE_EXPORT void AddCategory(Utf8CP category);
+    };
+
+    //! An iterator over the results of a full text search query
+    struct Iterator : DbTableIterator
+    {
+    private:
+        friend struct SearchableText;
+
+        Iterator(Db& db, Query const& query) : DbTableIterator((DbCR)db), m_query(query) { }
+
+        Query m_query;
+    public:
+        //! An entry in a full text search results iterator
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+        {
+        private:
+            friend struct Iterator;
+            Entry(StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) { }
+        public:
+            BE_SQLITE_EXPORT Utf8CP GetCategory() const; //!< The search category
+            BE_SQLITE_EXPORT BeInt64Id GetId() const; //!< The ID of the associated object
+            BE_SQLITE_EXPORT Utf8CP GetText() const; //!< The search text
+            BE_SQLITE_EXPORT BeInt64Id GetRecordId() const; //!< The row ID of this record in the searchable text table
+
+            Key GetKey() const { return Key(GetCategory(), GetId()); } //!< The unique Key identifying this entry
+            Record GetRecord() const { return Record(GetCategory(), GetId(), GetText()); } //!< A record representing this entry
+            Entry const& operator*() const { return *this; } //!< Dereference this entry
+        };
+
+        typedef Entry const_iterator;
+        typedef Entry iterator;
+        BE_SQLITE_EXPORT Entry begin() const; //!< An iterator to the first entry in the results
+        Entry end() const { return Entry(nullptr, false); } //!< An iterator beyond the last entry in the results
+    };
+
+    //! Query the number of records which match a full text search query
+    //! @param[in]      query The searchable text query
+    //! @return The number of records which match the query.
+    BE_SQLITE_EXPORT size_t QueryCount(Query const& query) const;
+
+    //! Query the records which match a full text search query
+    //! @param[in]      query The searchable text query
+    //! @return An iterator over the matching records.
+    BE_SQLITE_EXPORT Iterator QueryRecords(Query const& query) const;
+
+    //! Query the record with the specified category and ID.
+    //! @param[in]      key The unique key identifying the record
+    //! @return The corresponding record, or an invalid record if no such record exists.
+    BE_SQLITE_EXPORT Record QueryRecord(Key const& key) const;
+
+    //! Query the categories present in the searchable text table
+    //! @return The list of available categories
+    BE_SQLITE_EXPORT Categories QueryCategories() const;
+
+    //! Insert a new record into the searchable text table
+    //! @param[in]      record The record to insert
+    //! @return Success if the new record was inserted, or else an error code.
+    BE_SQLITE_EXPORT DbResult Insert(Record const& record) const;
+
+    //! Update an existing record in the searchable text table
+    //! @param[in]      record      The modified record
+    //! @param[in]      originalKey If non-null, identifies the existing record.
+    //! @return Success if the record was updated, or else an error code.
+    //! @remarks If originalKey is not supplied, the key is assumed to remain unchanged. Otherwise, the record will be looked up by original key, allowing the category and/or ID to be updated.
+    BE_SQLITE_EXPORT DbResult Update(Record const& record, Key const* originalKey=nullptr) const;
+
+    //! Removes all data from the searchable text table
+    //! @return Success if the table was cleared, or an error code.
+    BE_SQLITE_EXPORT DbResult DropAll() const;
+
+    //! Drops all records associated with the specified category
+    //! @param[in]      category The category to drop
+    //! @return Success if the associated records were dropped, or an error code.
+    BE_SQLITE_EXPORT DbResult DropCategory(Utf8CP category) const;
+
+    //! Drop a single record from the searchable text table
+    //! @param[in]      key The key identifying the record to drop.
+    //! @return Success if the record was dropped, or an error code.
+    BE_SQLITE_EXPORT DbResult DropRecord(Key const& key) const;
+private:
+    friend struct Db;
+
+    Db& m_db;
+
+    SearchableText(Db& db) : m_db(db) { }
+
+    static DbResult CreateTable(Db& db);
+};
 
 //=======================================================================================
 //! A BeSQLite database file. This class is a wrapper around the SQLite datatype "sqlite3"
@@ -2615,6 +2788,10 @@ public:
     //! @return BE_SQLITE_OK if property was successfully saved, or a non-zero error status if the expiration date is invalid, is not UTC, or could not be saved to the database.
     //! @see QueryExpirationDate, IsExpired
     BE_SQLITE_EXPORT DbResult SaveExpirationDate(DateTime const& expirationDate);
+
+    //! Returns an interface for interacting with this file's FTS5 searchable text table.
+    //! @see SearchableText
+    SearchableText GetSearchableText() { return SearchableText(*this); }
 };
 
 //=======================================================================================
