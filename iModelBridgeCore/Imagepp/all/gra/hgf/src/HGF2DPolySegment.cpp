@@ -2030,7 +2030,7 @@ size_t HGF2DPolySegment::ObtainContiguousnessPoints(const HGF2DVector&       pi_
 
             // We check if they are in the proper order by checking relative position
             // of first and last points found
-            if (CalculateRelativePosition(*(TempPoints.begin())) < CalculateRelativePosition(*(TempPoints.rbegin())))
+            if ((CalculateRelativePosition(*(TempPoints.begin())) < CalculateRelativePosition(*(TempPoints.rbegin()))) || (TempPoints.rbegin()->IsEqualTo(GetEndPoint(), GetTolerance())))
                 {
                 // The points are in the proper order ... we copy
                 HGF2DPositionCollection::iterator MyIterator(TempPoints.begin());
