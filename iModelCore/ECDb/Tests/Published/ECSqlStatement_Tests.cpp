@@ -590,7 +590,7 @@ TEST_F (ECSqlSelectTests, GroupByClauseTests)
     //use of simple GROUP BY clause to find AVG(Price) from the Product table
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ProductName, AVG(Price) FROM ECST.Products GROUP BY ProductName ORDER BY ProductName"));
     expectedProductsNames = "Binder-Desk-Pen-Pen Set-Pencil-";
-    actualProductsNames;
+    //actualProductsNames;
     ExpectedSumOfAvgPrices = 1895.67;
     actualSumOfAvgPrices = 0;
     while (stmt.Step () != BE_SQLITE_DONE)
