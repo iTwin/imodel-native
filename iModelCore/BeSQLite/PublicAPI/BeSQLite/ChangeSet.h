@@ -79,7 +79,8 @@ struct ChangeSet;
 struct ChangeStream;
 
 //=======================================================================================
-//! An Iterator for a ChangeSet. This class is used to step through the individual changes within a ChangeSet.
+//! An Iterator for a ChangeSet or a ChangeStream. This class is used to step through the individual 
+//! changes within a ChangeSet, ChangeStream or individual pages of a ChangeStream.
 // @bsiclass                                                    Keith.Bentley   05/11
 //=======================================================================================
 struct Changes
@@ -299,8 +300,8 @@ struct ChangeStream : NonCopyableClass
         static int ConflictCallback(void *pCtx, int cause, SqlChangesetIterP iter);
         static int FilterTableCallback(void *pCtx, Utf8CP tableName);
 
-        //! Resets the change stream
-        //! Automatically called at the end of the various change stream operations
+        // Resets the change stream, and is internally called at the 
+        // end of various change stream operations
         void Reset() { _Reset(); }
 
     protected:
@@ -326,7 +327,8 @@ struct ChangeStream : NonCopyableClass
         virtual ChangeSet::ApplyChangesForTable _FilterTable(Utf8CP tableName) { return ChangeSet::ApplyChangesForTable::Yes; }
 
         //! Override to reset any state of the change stream
-        //! @remarks Automatically called at end of various change stream operations. Used to dispose resource like file handles. 
+        //! @remarks Called at end of various change stream operations, and is used by application to reset the stream and 
+        //! dispose resources as necessary. 
         virtual void _Reset() {}
 
     public:
