@@ -22906,6 +22906,9 @@
                 <KeyName>EPSG:900913</KeyName>
               </Member>
               <Member>
+                <KeyName>EPSG:3857</KeyName>
+              </Member>
+              <Member>
                 <KeyName>WGS84.UPSNorth</KeyName>
               </Member>
               <Member>
