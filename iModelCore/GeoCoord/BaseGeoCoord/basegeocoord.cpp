@@ -2356,7 +2356,8 @@ BaseGCS::ProjectionCodeValue GetProjectionCodeFromWKTName (WStringR name) const
         ID = BaseGCS::pcvAlbersEqualArea;
     else if ((upperMethodName == L"LAMBERT_CONFORMAL_CONIC") ||
              (upperMethodName == L"LAMBERT_CONFORMAL_CONIC_2SP") || // OGR name
-             (upperMethodName == L"LAMBERT CONFORMAL CONIC")) // Oracle name
+             (upperMethodName == L"LAMBERT CONFORMAL CONIC") || // Oracle name
+             (upperMethodName == L"LAMBERT CONFORMAL CONIC, TWO STANDARD PARALLELS")) // Some weird variant encountered in POD files
         ID = BaseGCS::pcvLambertConformalConicTwoParallel;
     else if (upperMethodName == L"LAMBERT_CONFORMAL_CONIC_1SP") // Name from OGR
         ID = BaseGCS::pcvLambertConformalConicOneParallel;
@@ -11203,7 +11204,8 @@ VerticalDatumConverter* verticalDatumConverter
     m_verticalDatumConverter    = verticalDatumConverter;
 
     // Allow soft errors to go through and let caller decide of the way to process ... (Soft errors will have return status greater than 0)
-    m_datumConvert->block_err   = cs_DTCFLG_BLK_W;
+    if (NULL != m_datumConvert)
+        m_datumConvert->block_err   = cs_DTCFLG_BLK_W;
 
     // by default, we don't convert elevations when we're converting 3D.
     // to make it do so, call SetReprojectElevation (true);
