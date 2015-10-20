@@ -248,6 +248,7 @@ struct DTMMeshEnumerator : RefCountedBase
     private: mutable DRange3d m_range;
     private: mutable bool m_calcRange = false;
     private: bool m_tilingMode;
+    private: bool m_useRealPointIndexes = false;
     private: RegionMode m_regionMode = RegionMode::Normal;
     private: DTMUserTag m_regionUserTag;
     private: DTMFeatureId m_regionFeatureId;
@@ -265,6 +266,15 @@ struct DTMMeshEnumerator : RefCountedBase
     public: BENTLEYDTM_EXPORT iterator end () const;
     public: BENTLEYDTM_EXPORT DRange3d DTMMeshEnumerator::GetRange () const;
 
+
+    public: void SetUseRealPointIndexes(bool value)
+        {
+        m_useRealPointIndexes = value;
+        }
+    public: bool GetUseRealPointIndexes() const
+        {
+        return m_useRealPointIndexes;
+        }
     public: void SetFilterRegionByUserTag (DTMUserTag value)
         {
         m_regionMode = RegionMode::RegionUserTag;

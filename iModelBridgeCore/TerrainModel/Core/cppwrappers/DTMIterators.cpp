@@ -1158,63 +1158,66 @@ PolyfaceQueryP DTMMeshEnumerator::iterator::operator* () const
     */
     minTptrPnt = m_dtmP->numPoints;
     maxTptrPnt = -1;
-
-    numMeshPts = 0;
-    for (long face : m_p_vec->meshFaces)
-        {
-        nodeP = nodeAddrP (m_dtmP, face);
-        if (nodeP->tPtr == nullPnt)
-            {
-            if (face < minTptrPnt) minTptrPnt = face;
-            else if (face > maxTptrPnt) maxTptrPnt = face;
-            nodeP->tPtr = ++numMeshPts;
-            }
-        }
-    if (dbg) bcdtmWrite_message (0, 0, 0, "minTptrPoint = %8ld maxTptrPoint = %8ld", minTptrPnt, maxTptrPnt);
-
-    if (maxTptrPnt == -1) maxTptrPnt = minTptrPnt;
-    /*
-    **                       Allocate Memory For Mesh Points
-    */
-    if (dbg) bcdtmWrite_message (0, 0, 0, "Populating Mesh Points ** numMeshPts = %8ld", numMeshPts);
     BlockedVectorDPoint3dR points = m_p_vec->meshPoints;
     BlockedVectorDVec3dR normals = m_p_vec->meshNormals;
-    points.resize (numMeshPts);
-    normals.resize (numMeshPts);
-    /*
-    **                       Populate Mesh Points Array And Mesh Vectors Array
-    */
-    for (node = minTptrPnt; node <= maxTptrPnt; ++node)
+
+    if (!m_p_vec->m_useRealPointIndexes)
         {
-        nodeP = nodeAddrP (m_dtmP, node);
-        if (nodeP->tPtr > 0 && nodeP->tPtr < m_dtmP->nullPnt)
+        numMeshPts = 0;
+        for (long face : m_p_vec->meshFaces)
             {
-            p3dP = points.GetPtr () + (nodeP->tPtr - 1);
-            normP = normals.GetPtr () + (nodeP->tPtr -1);
-            pntP = pointAddrP (m_dtmP, node);
-            p3dP->x = pntP->x;
-            p3dP->y = pntP->y;
-            if (m_p_vec->zAxisFactor != 1)
+            nodeP = nodeAddrP(m_dtmP, face);
+            if (nodeP->tPtr == nullPnt)
                 {
-                dz = (pntP->z - m_dtmP->zMin) * m_p_vec->zAxisFactor;
-                p3dP->z = m_dtmP->zMin + dz;
+                if (face < minTptrPnt) minTptrPnt = face;
+                else if (face > maxTptrPnt) maxTptrPnt = face;
+                nodeP->tPtr = ++numMeshPts;
                 }
-            else
-                p3dP->z = pntP->z;
-
-            // Convert Point.
-//            p3dP++;
-
-            bcdtmLoad_calculateNormalVectorForTriangleVertexDtmObject (m_dtmP, node, 2, m_p_vec->zAxisFactor, normP);
-            // Rotate normal....
-//            ++normP;
             }
+        if (dbg) bcdtmWrite_message(0, 0, 0, "minTptrPoint = %8ld maxTptrPoint = %8ld", minTptrPnt, maxTptrPnt);
+
+        if (maxTptrPnt == -1) maxTptrPnt = minTptrPnt;
+        /*
+        **                       Allocate Memory For Mesh Points
+        */
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Populating Mesh Points ** numMeshPts = %8ld", numMeshPts);
+        points.resize(numMeshPts);
+        normals.resize(numMeshPts);
+        /*
+        **                       Populate Mesh Points Array And Mesh Vectors Array
+        */
+        for (node = minTptrPnt; node <= maxTptrPnt; ++node)
+            {
+            nodeP = nodeAddrP(m_dtmP, node);
+            if (nodeP->tPtr > 0 && nodeP->tPtr < m_dtmP->nullPnt)
+                {
+                p3dP = points.GetPtr() + (nodeP->tPtr - 1);
+                normP = normals.GetPtr() + (nodeP->tPtr - 1);
+                pntP = pointAddrP(m_dtmP, node);
+                p3dP->x = pntP->x;
+                p3dP->y = pntP->y;
+                if (m_p_vec->zAxisFactor != 1)
+                    {
+                    dz = (pntP->z - m_dtmP->zMin) * m_p_vec->zAxisFactor;
+                    p3dP->z = m_dtmP->zMin + dz;
+                    }
+                else
+                    p3dP->z = pntP->z;
+
+                // Convert Point.
+                //            p3dP++;
+
+                bcdtmLoad_calculateNormalVectorForTriangleVertexDtmObject(m_dtmP, node, 2, m_p_vec->zAxisFactor, normP);
+                // Rotate normal....
+                //            ++normP;
+                }
+            }
+        /*
+        **                       Reset Point Indexes In Mesh Faces
+        */
+        for (int& ptIndex : m_p_vec->meshFaces)
+            ptIndex = nodeAddrP(m_dtmP, ptIndex)->tPtr;
         }
-    /*
-    **                       Reset Point Indexes In Mesh Faces
-    */   
-    for (int& ptIndex : m_p_vec->meshFaces)
-        ptIndex = nodeAddrP (m_dtmP, ptIndex)->tPtr;
 
     /*
     **                       Null Tptr Values
