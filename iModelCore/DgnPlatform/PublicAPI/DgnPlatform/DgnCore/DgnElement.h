@@ -588,13 +588,13 @@ public:
     };
 
     //! Allows a business key (unique identifier string) from an external system (identified by DgnAuthorityId) to be associated with a DgnElement via a persistent ElementAspect
-    struct EXPORT_VTABLE_ATTRIBUTE ExternalKey : AppData
+    struct EXPORT_VTABLE_ATTRIBUTE ExternalKeyAspect : AppData
     {
     private:
         DgnAuthorityId m_authorityId;
         Utf8String m_externalKey;
 
-        ExternalKey(DgnAuthorityId authorityId, Utf8CP externalKey)
+        ExternalKeyAspect(DgnAuthorityId authorityId, Utf8CP externalKey)
             {
             m_authorityId = authorityId;
             m_externalKey = externalKey;
@@ -605,27 +605,47 @@ public:
 
     public:
         DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
-        DGNPLATFORM_EXPORT static RefCountedPtr<ExternalKey> Create(DgnAuthorityId authorityId, Utf8CP externalKey);
+        DGNPLATFORM_EXPORT static RefCountedPtr<ExternalKeyAspect> Create(DgnAuthorityId authorityId, Utf8CP externalKey);
         DGNPLATFORM_EXPORT static DgnDbStatus Query(Utf8StringR, DgnElementCR, DgnAuthorityId);
         DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR, DgnAuthorityId);
         DgnAuthorityId GetAuthorityId() const {return m_authorityId;}
         Utf8CP GetExternalKey() const {return m_externalKey.c_str();}
     };
 
-    typedef RefCountedPtr<ExternalKey> ExternalKeyPtr;
+    typedef RefCountedPtr<ExternalKeyAspect> ExternalKeyAspectPtr;
 
-    //! Allows a description to be associated with a DgnElement via a persistent ElementAspect
-    struct EXPORT_VTABLE_ATTRIBUTE Description : AppData
+    //! Allows a name to be associated with a DgnElement via a persistent ElementAspect
+    struct EXPORT_VTABLE_ATTRIBUTE NameAspect : AppData
     {
     private:
-        DgnAuthorityId m_authorityId;
-        Utf8String m_label;
+        Utf8String m_name;
+
+        explicit NameAspect(Utf8CP name)
+            {
+            m_name.AssignOrClear(name);
+            }
+
+    protected:
+        DGNPLATFORM_EXPORT virtual DropMe _OnInserted(DgnElementCR) override;
+
+    public:
+        DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
+        DGNPLATFORM_EXPORT static RefCountedPtr<NameAspect> Create(Utf8CP name);
+        DGNPLATFORM_EXPORT static DgnDbStatus Query(Utf8StringR name, DgnElementCR);
+        DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR);
+        Utf8CP GetName() const {return m_name.c_str();}
+    };
+
+    typedef RefCountedPtr<NameAspect> NameAspectPtr;
+
+    //! Allows a description to be associated with a DgnElement via a persistent ElementAspect
+    struct EXPORT_VTABLE_ATTRIBUTE DescriptionAspect : AppData
+    {
+    private:
         Utf8String m_description;
 
-        Description(DgnAuthorityId authorityId, Utf8CP label, Utf8CP description)
+        explicit DescriptionAspect(Utf8CP description)
             {
-            m_authorityId = authorityId;
-            m_label.AssignOrClear(label);
             m_description.AssignOrClear(description);
             }
 
@@ -634,15 +654,13 @@ public:
 
     public:
         DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
-        DGNPLATFORM_EXPORT static RefCountedPtr<Description> Create(DgnAuthorityId authorityId, Utf8CP label, Utf8CP description);
-        DGNPLATFORM_EXPORT static DgnDbStatus Query(Utf8StringR label, Utf8StringR description, DgnElementCR, DgnAuthorityId);
-        DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR, DgnAuthorityId);
-        DgnAuthorityId GetAuthorityId() const {return m_authorityId;}
-        Utf8CP GetLabel() const {return m_label.c_str();}
+        DGNPLATFORM_EXPORT static RefCountedPtr<DescriptionAspect> Create(Utf8CP description);
+        DGNPLATFORM_EXPORT static DgnDbStatus Query(Utf8StringR description, DgnElementCR);
+        DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR);
         Utf8CP GetDescription() const {return m_description.c_str();}
     };
 
-    typedef RefCountedPtr<Description> DescriptionPtr;
+    typedef RefCountedPtr<DescriptionAspect> DescriptionAspectPtr;
 
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
