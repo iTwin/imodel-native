@@ -55,9 +55,9 @@ copy sqlite3-3.c            %BeSqlOutRoot%
 copy sqlite3-4.c            %BeSqlOutRoot%
 copy sqlite3-5.c            %BeSqlOutRoot%
 copy sqlite3-6.c            %BeSqlOutRoot%
+copy sqlite3-7.c            %BeSqlOutRoot%
 copy sqlite3.c              %BeSqlOutRoot%sqlite3.amalgam.c
 copy shell.c                %BeSqlOutRoot%
-copy ..\ext\misc\json1.c    %BeSqlOutRoot%
 copy sqlite3.h              %BeSqlOutRoot%
 
 popd

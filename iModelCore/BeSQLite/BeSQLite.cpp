@@ -255,7 +255,7 @@ bool     Db::IsReadonly() const {return m_dbFile->m_flags.m_readonly;}
 BeGuid   Db::GetDbGuid() const {return m_dbFile->m_dbGuid;}
 int32_t  Db::GetCurrentSavepointDepth() const {return (int32_t) m_dbFile->m_txns.size();}
 Utf8CP   Db::GetLastError(DbResult* lastResult) const { return IsDbOpen() ? m_dbFile->GetLastError(lastResult) : "Not opened"; }
-BeRepositoryId Db::GetRepositoryId() const {return m_dbFile->m_repositoryId;}
+BeBriefcaseId Db::GetBriefcaseId() const {return m_dbFile->m_briefcaseId;}
 
 int64_t  Db::GetLastInsertRowId() const {return sqlite3_last_insert_rowid(GetSqlDb());}
 int      Db::GetModifiedRowCount() const {return sqlite3_changes(GetSqlDb());}
@@ -390,10 +390,11 @@ DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) :
         sqlite3_busy_handler(sqlDb, besqliteBusyHandler, m_retry.get());
         }
 
-    m_rlvCache.Register(m_repositoryIdRlvIndex, "be_repositoryId");
+    // NB: "repository" here really means "briefcase", but we don't want to break existing DgnDbs.
+    m_rlvCache.Register(m_briefcaseIdRlvIndex, "be_repositoryId");
     }
 
-RepositoryLocalValueCache& DbFile::GetRLVCache() {return m_rlvCache;}
+BriefcaseLocalValueCache& DbFile::GetRLVCache() {return m_rlvCache;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/12
@@ -1173,12 +1174,12 @@ DbResult Db::SaveBeDbGuid()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::SaveRepositoryId()
+DbResult Db::SaveBriefcaseId()
     {
-    if (!m_dbFile->m_repositoryId.IsValid())
-        m_dbFile->m_repositoryId = BeRepositoryId(BeRepositoryId::Master());
+    if (!m_dbFile->m_briefcaseId.IsValid())
+        m_dbFile->m_briefcaseId = BeBriefcaseId(BeBriefcaseId::Master());
 
-    return m_dbFile->m_rlvCache.SaveValue(m_dbFile->m_repositoryIdRlvIndex, m_dbFile->m_repositoryId.GetValue());
+    return m_dbFile->m_rlvCache.SaveValue(m_dbFile->m_briefcaseIdRlvIndex, m_dbFile->m_briefcaseId.GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1193,28 +1194,28 @@ void Db::ChangeDbGuid(BeGuid id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::ChangeRepositoryId(BeRepositoryId id)
+DbResult Db::ChangeBriefcaseId(BeBriefcaseId id)
     {
     if (IsReadonly())
         return BE_SQLITE_READONLY;
 
-    // changing the BeRepositoryId invalidates all RepositoryLocalValues. Delete them.
-    DbResult stat = DeleteRepositoryLocalValues();
+    // changing the BeBriefcaseId invalidates all BriefcaseLocalValues. Delete them.
+    DbResult stat = DeleteBriefcaseLocalValues();
     if (stat != BE_SQLITE_OK)
         {
         AbandonChanges();
         return stat;
         }
 
-    m_dbFile->m_repositoryId = id;
-    stat = SaveRepositoryId();
+    m_dbFile->m_briefcaseId = id;
+    stat = SaveBriefcaseId();
     if (stat != BE_SQLITE_OK)
         {
         AbandonChanges();
         return stat;
         }
 
-    stat =_OnRepositoryIdChanged(id);
+    stat =_OnBriefcaseIdChanged(id);
     if (stat != BE_SQLITE_OK)
         {
         AbandonChanges();
@@ -1227,16 +1228,16 @@ DbResult Db::ChangeRepositoryId(BeRepositoryId id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeRepositoryBasedId::BeRepositoryBasedId(Db& db, Utf8CP tableName, Utf8CP colName)
+BeBriefcaseBasedId::BeBriefcaseBasedId(Db& db, Utf8CP tableName, Utf8CP colName)
     {
     SqlPrintfString sql("SELECT max(%s) FROM %s WHERE %s>=? AND %s<?", colName, tableName, colName, colName);
 
     Statement stmt;
     stmt.Prepare(db, sql);
 
-    BeRepositoryId myRepo = db.GetRepositoryId();
-    BeRepositoryBasedId firstId(myRepo, 1);
-    BeRepositoryBasedId lastId(myRepo.GetNextRepositoryId(), 0);
+    BeBriefcaseId myRepo = db.GetBriefcaseId();
+    BeBriefcaseBasedId firstId(myRepo, 1);
+    BeBriefcaseBasedId lastId(myRepo.GetNextBriefcaseId(), 0);
 
     stmt.BindInt64(1, firstId.GetValueUnchecked());
     stmt.BindInt64(2, lastId.GetValueUnchecked());
@@ -1248,20 +1249,20 @@ BeRepositoryBasedId::BeRepositoryBasedId(Db& db, Utf8CP tableName, Utf8CP colNam
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeRepositoryBasedId::UseNext(Db& db)
+void BeBriefcaseBasedId::UseNext(Db& db)
     {
     if (!IsValid())
         return;
 
-    BeRepositoryId myRepo = db.GetRepositoryId();
-    BeAssert(myRepo == GetRepositoryId());
+    BeBriefcaseId myRepo = db.GetBriefcaseId();
+    BeAssert(myRepo == GetBriefcaseId());
     ++m_id;
 
-    BeRepositoryBasedId lastId(myRepo.GetNextRepositoryId(), 0);
+    BeBriefcaseBasedId lastId(myRepo.GetNextBriefcaseId(), 0);
     if (m_id < lastId.GetValueUnchecked())
         return; // ok
 
-    BeAssert(false); // We're out of ids for this repositoryid!
+    BeAssert(false); // We're out of ids for this briefcaseid!
     Invalidate();
     }
 
@@ -1415,7 +1416,7 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& param
             return  rc;
 
         // this table purposely has no primary key so it won't be tracked / merged. It is meant to hold values that are
-        // local to the repository and never in a changeset.
+        // local to the briefcase and never in a changeset.
         rc = CreateTable(BEDB_TABLE_Local, "Name CHAR NOT NULL COLLATE NOCASE UNIQUE,Val BLOB");
         if (BE_SQLITE_OK != rc)
             return  rc;
@@ -1424,7 +1425,7 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& param
         if (BE_SQLITE_OK != rc)
             return  rc;
 
-        rc = SaveRepositoryId();
+        rc = SaveBriefcaseId();
         if (BE_SQLITE_OK != rc)
             return  rc;
 
@@ -1499,7 +1500,7 @@ DbResult Db::DetachDb(Utf8CP alias)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult RepositoryLocalValueCache::Register(size_t& index, Utf8CP name)
+DbResult BriefcaseLocalValueCache::Register(size_t& index, Utf8CP name)
     {
     size_t existingIndex = 0;
     if (TryGetIndex(existingIndex, name))
@@ -1513,7 +1514,7 @@ DbResult RepositoryLocalValueCache::Register(size_t& index, Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RepositoryLocalValueCache::TryGetIndex(size_t& index, Utf8CP name)
+bool BriefcaseLocalValueCache::TryGetIndex(size_t& index, Utf8CP name)
     {
     const size_t size = m_cache.size();
     for (size_t i = 0; i < size; i++)
@@ -1531,7 +1532,7 @@ bool RepositoryLocalValueCache::TryGetIndex(size_t& index, Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RepositoryLocalValueCache::Clear()
+void BriefcaseLocalValueCache::Clear()
     {
     for (CachedRLV& val : m_cache)
         val.Reset();
@@ -1540,7 +1541,7 @@ void RepositoryLocalValueCache::Clear()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult RepositoryLocalValueCache::SaveValue(size_t rlvIndex, uint64_t value)
+DbResult BriefcaseLocalValueCache::SaveValue(size_t rlvIndex, uint64_t value)
     {
     if (rlvIndex >= m_cache.size())
         return BE_SQLITE_NOTFOUND;
@@ -1552,7 +1553,7 @@ DbResult RepositoryLocalValueCache::SaveValue(size_t rlvIndex, uint64_t value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult RepositoryLocalValueCache::QueryValue(uint64_t& value, size_t rlvIndex)
+DbResult BriefcaseLocalValueCache::QueryValue(uint64_t& value, size_t rlvIndex)
     {
     if (rlvIndex >= m_cache.size())
         return BE_SQLITE_NOTFOUND;
@@ -1568,7 +1569,7 @@ DbResult RepositoryLocalValueCache::QueryValue(uint64_t& value, size_t rlvIndex)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult RepositoryLocalValueCache::IncrementValue(uint64_t& newValue, size_t rlvIndex)
+DbResult BriefcaseLocalValueCache::IncrementValue(uint64_t& newValue, size_t rlvIndex)
     {
     CachedRLV* cachedRlv = nullptr;
     if (!TryQuery(cachedRlv, rlvIndex))
@@ -1581,7 +1582,7 @@ DbResult RepositoryLocalValueCache::IncrementValue(uint64_t& newValue, size_t rl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-bool RepositoryLocalValueCache::TryQuery(CachedRLV*& value, size_t rlvIndex)
+bool BriefcaseLocalValueCache::TryQuery(CachedRLV*& value, size_t rlvIndex)
     {
     if (rlvIndex >= m_cache.size())
         return false;
@@ -1613,7 +1614,7 @@ bool RepositoryLocalValueCache::TryQuery(CachedRLV*& value, size_t rlvIndex)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult Db::DeleteRepositoryLocalValues()
+DbResult Db::DeleteBriefcaseLocalValues()
     {
     m_dbFile->m_rlvCache.Clear();
     return TruncateTable(BEDB_TABLE_Local);
@@ -1622,7 +1623,7 @@ DbResult Db::DeleteRepositoryLocalValues()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::SaveRepositoryLocalValue(Utf8CP name, Utf8StringCR value)
+DbResult Db::SaveBriefcaseLocalValue(Utf8CP name, Utf8StringCR value)
     {
     Statement stmt;
     stmt.Prepare(*this, "INSERT OR REPLACE INTO " BEDB_TABLE_Local " (Name,Val) VALUES(?,?)");
@@ -1634,7 +1635,7 @@ DbResult Db::SaveRepositoryLocalValue(Utf8CP name, Utf8StringCR value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::QueryRepositoryLocalValue(Utf8CP name, Utf8StringR value) const
+DbResult Db::QueryBriefcaseLocalValue(Utf8CP name, Utf8StringR value) const
     {
     Statement stmt;
     stmt.Prepare(*this, "SELECT Val FROM " BEDB_TABLE_Local " WHERE Name=?");
@@ -2198,11 +2199,11 @@ DbResult Db::QueryDbIds()
         return  BE_SQLITE_ERROR_NoPropertyTable;
 
     uint64_t repoId;
-    rc = m_dbFile->m_rlvCache.QueryValue(repoId, m_dbFile->m_repositoryIdRlvIndex);
+    rc = m_dbFile->m_rlvCache.QueryValue(repoId, m_dbFile->m_briefcaseIdRlvIndex);
     if (BE_SQLITE_OK != rc)
         return BE_SQLITE_ERROR_NoPropertyTable;
 
-    m_dbFile->m_repositoryId = BeRepositoryId((int32_t) repoId);
+    m_dbFile->m_briefcaseId = BeBriefcaseId((int32_t) repoId);
     return BE_SQLITE_OK;
     }
 
@@ -3118,7 +3119,7 @@ struct PropertyBlobInStream : ILzmaInputStream
 {
 private:
     Db&                 m_db;
-    BeRepositoryBasedId m_id;
+    BeBriefcaseBasedId m_id;
     Byte*               m_buffer;
     uint32_t            m_bufferSize;
     uint32_t            m_nBytesInBuffer;
@@ -3126,7 +3127,7 @@ private:
     uint32_t            m_nextChunk;
 
 public:
-    PropertyBlobInStream(Db&db, BeRepositoryBasedId id) : m_db(db), m_id(id), m_buffer(nullptr), m_bufferSize(0), m_nBytesInBuffer(0), m_bufferOffset(0), m_nextChunk(0) {}
+    PropertyBlobInStream(Db&db, BeBriefcaseBasedId id) : m_db(db), m_id(id), m_buffer(nullptr), m_bufferSize(0), m_nBytesInBuffer(0), m_bufferOffset(0), m_nextChunk(0) {}
     ~PropertyBlobInStream() { free(m_buffer); }
 
     //  The LZMA2 multithreading ensures that calls to _Read are sequential and do not overlap, so this code does not need to
@@ -3173,7 +3174,7 @@ struct  PropertyBlobOutStream : ILzmaOutputStream
 {
 private:
     Db&                 m_db;
-    BeRepositoryBasedId m_id;
+    BeBriefcaseBasedId m_id;
     bvector<Byte>       m_buffer;
     uint32_t            m_chunkSize;
     uint32_t            m_bufferOffset;
@@ -3193,7 +3194,7 @@ public:
         return rc;
         }
 
-    PropertyBlobOutStream(Db&db, BeRepositoryBasedId id, uint64_t chunkSize) : m_db(db), m_id(id), m_chunkSize(static_cast <uint32_t> (chunkSize)), m_bufferOffset(0), m_nextChunk(0), m_alwaysFlush(false)
+    PropertyBlobOutStream(Db&db, BeBriefcaseBasedId id, uint64_t chunkSize) : m_db(db), m_id(id), m_chunkSize(static_cast <uint32_t> (chunkSize)), m_bufferOffset(0), m_nextChunk(0), m_alwaysFlush(false)
         {
         m_buffer.resize(m_chunkSize);
         }
@@ -3304,7 +3305,7 @@ DbEmbeddedFileTable& Db::EmbeddedFiles() {return m_embeddedFiles;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void removeFileBlobs(Db& db, BeRepositoryBasedId id)
+static void removeFileBlobs(Db& db, BeBriefcaseBasedId id)
     {
     Statement stmt;
     DbResult rc = stmt.Prepare(db, "DELETE FROM " BEDB_TABLE_Property " WHERE Namespace=? AND Name=? AND Id=?");
@@ -3335,7 +3336,7 @@ static uint32_t getDictionarySize(uint32_t dictionarySize)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2013
 //---------------------------------------------------------------------------------------
-static DbResult compressAndEmbedFileImage(Db& db, uint32_t& chunkSize, BeRepositoryBasedId id, void const* data, uint32_t const size, bool supportRandomAccess)
+static DbResult compressAndEmbedFileImage(Db& db, uint32_t& chunkSize, BeBriefcaseBasedId id, void const* data, uint32_t const size, bool supportRandomAccess)
     {
     if (supportRandomAccess)
         chunkSize = getDictionarySize(chunkSize);
@@ -3416,7 +3417,7 @@ static bool isFileLockedBySQLite(BeFile& testfile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult compressAndEmbedFile(Db& db, uint64_t& filesize, uint32_t& chunkSize, BeRepositoryBasedId id, Utf8CP filespec, bool supportRandomAccess)
+static DbResult compressAndEmbedFile(Db& db, uint64_t& filesize, uint32_t& chunkSize, BeBriefcaseBasedId id, Utf8CP filespec, bool supportRandomAccess)
     {
     if (supportRandomAccess)
         chunkSize = getDictionarySize(chunkSize);
@@ -3468,7 +3469,7 @@ static DbResult compressAndEmbedFile(Db& db, uint64_t& filesize, uint32_t& chunk
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2014
 //---------------------------------------------------------------------------------------
-static DbResult embedFileImageWithoutCompressing(Db& db, void const*data, uint64_t size, uint32_t chunkSize, BeRepositoryBasedId id)
+static DbResult embedFileImageWithoutCompressing(Db& db, void const*data, uint64_t size, uint32_t chunkSize, BeBriefcaseBasedId id)
     {
     int32_t nChunks=0;
     EmbeddedLzmaHeader  header(EmbeddedLzmaHeader::NO_COMPRESSION);
@@ -3495,7 +3496,7 @@ static DbResult embedFileImageWithoutCompressing(Db& db, void const*data, uint64
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2014
 //---------------------------------------------------------------------------------------
-static DbResult embedFileWithoutCompressing(Db& db, uint64_t&filesize, uint32_t chunkSize, BeRepositoryBasedId id, Utf8CP filespec)
+static DbResult embedFileWithoutCompressing(Db& db, uint64_t&filesize, uint32_t chunkSize, BeBriefcaseBasedId id, Utf8CP filespec)
     {
     WString filespecW(filespec, true);
     BeFileName filename(filespecW.c_str());
@@ -3539,7 +3540,7 @@ static DbResult embedFileWithoutCompressing(Db& db, uint64_t&filesize, uint32_t 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult addEmbedFile(Db& db, Utf8CP name, Utf8CP type, Utf8CP description, BeRepositoryBasedId id, uint64_t fileSize, DateTime const* lastModified, uint32_t chunkSize)
+static DbResult addEmbedFile(Db& db, Utf8CP name, Utf8CP type, Utf8CP description, BeBriefcaseBasedId id, uint64_t fileSize, DateTime const* lastModified, uint32_t chunkSize)
     {
     const bool hasLastModifiedColumn = DbEmbeddedFileTable::HasLastModifiedColumn(db);
 
@@ -3573,33 +3574,33 @@ static DbResult addEmbedFile(Db& db, Utf8CP name, Utf8CP type, Utf8CP descriptio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeRepositoryBasedId DbEmbeddedFileTable::GetNextEmbedFileId() const
+BeBriefcaseBasedId DbEmbeddedFileTable::GetNextEmbedFileId() const
     {
     if (BE_SQLITE_OK != BeSQLiteProfileManager::UpgradeProfile(m_db))
-        return BeRepositoryBasedId();
+        return BeBriefcaseBasedId();
 
     BeAssert(m_db.TableExists(BEDB_TABLE_EmbeddedFile));
-    return BeRepositoryBasedId(m_db, BEDB_TABLE_EmbeddedFile, "Id");
+    return BeBriefcaseBasedId(m_db, BEDB_TABLE_EmbeddedFile, "Id");
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2014
 //---------------------------------------------------------------------------------------
-BeRepositoryBasedId DbEmbeddedFileTable::ImportWithoutCompressing(DbResult* stat, Utf8CP name, Utf8CP filespec, Utf8CP type, Utf8CP description, DateTime const* lastModified, uint32_t chunkSize)
+BeBriefcaseBasedId DbEmbeddedFileTable::ImportWithoutCompressing(DbResult* stat, Utf8CP name, Utf8CP filespec, Utf8CP type, Utf8CP description, DateTime const* lastModified, uint32_t chunkSize)
     {
     BeAssert(m_db.IsTransactionActive());
 
     // make sure name is unique before continuing
-    BeRepositoryBasedId fileId = QueryFile(name);
+    BeBriefcaseBasedId fileId = QueryFile(name);
     if (fileId.IsValid())
         {
         if (stat != nullptr)
             *stat = BE_SQLITE_CONSTRAINT_BASE;
 
-        return BeRepositoryBasedId();
+        return BeBriefcaseBasedId();
         }
 
-    BeRepositoryBasedId newId = GetNextEmbedFileId();
+    BeBriefcaseBasedId newId = GetNextEmbedFileId();
 
     uint64_t fileSize;
     DbResult rc = embedFileWithoutCompressing(m_db, fileSize, chunkSize, newId, filespec);
@@ -3609,13 +3610,13 @@ BeRepositoryBasedId DbEmbeddedFileTable::ImportWithoutCompressing(DbResult* stat
     if (stat != nullptr)
         *stat = rc;
 
-    return rc == BE_SQLITE_OK ? newId : BeRepositoryBasedId();
+    return rc == BE_SQLITE_OK ? newId : BeBriefcaseBasedId();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    03/2015
 //---------------------------------------------------------------------------------------
-BeRepositoryBasedId DbEmbeddedFileTable::ImportDbFile(DbResult& stat, Utf8CP name, Utf8CP filespec, Utf8CP type, Utf8CP description, DateTime const* lastModified, uint32_t chunkSize, bool supportRandomAccess)
+BeBriefcaseBasedId DbEmbeddedFileTable::ImportDbFile(DbResult& stat, Utf8CP name, Utf8CP filespec, Utf8CP type, Utf8CP description, DateTime const* lastModified, uint32_t chunkSize, bool supportRandomAccess)
     {
     Utf8CP vfs = 0;
     stat = isValidDbFile(filespec, vfs);
@@ -3623,7 +3624,7 @@ BeRepositoryBasedId DbEmbeddedFileTable::ImportDbFile(DbResult& stat, Utf8CP nam
     if (BE_SQLITE_OK != stat || nullptr != vfs)
         {
         LOG.errorv("ImportDbFile: isValidDbFile reported error %d", stat);
-        return BeRepositoryBasedId();
+        return BeBriefcaseBasedId();
         }
 
     return Import(&stat, name, filespec, type, description, lastModified, chunkSize, supportRandomAccess);
@@ -3632,21 +3633,21 @@ BeRepositoryBasedId DbEmbeddedFileTable::ImportDbFile(DbResult& stat, Utf8CP nam
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   10/14
 //+---------------+---------------+---------------+---------------+---------------+------
-BeRepositoryBasedId DbEmbeddedFileTable::Import(DbResult* stat, Utf8CP name, Utf8CP filespec, Utf8CP type, Utf8CP description, DateTime const* lastModified, uint32_t chunkSize, bool supportRandomAccess)
+BeBriefcaseBasedId DbEmbeddedFileTable::Import(DbResult* stat, Utf8CP name, Utf8CP filespec, Utf8CP type, Utf8CP description, DateTime const* lastModified, uint32_t chunkSize, bool supportRandomAccess)
     {
     BeAssert(m_db.IsTransactionActive());
 
     // make sure name is unique before continuing
-    BeRepositoryBasedId fileId = QueryFile(name);
+    BeBriefcaseBasedId fileId = QueryFile(name);
     if (fileId.IsValid())
         {
         if (stat != nullptr)
             *stat = BE_SQLITE_CONSTRAINT_BASE;
 
-        return BeRepositoryBasedId();
+        return BeBriefcaseBasedId();
         }
 
-    BeRepositoryBasedId newId = GetNextEmbedFileId();
+    BeBriefcaseBasedId newId = GetNextEmbedFileId();
 
     uint64_t fileSize;
     DbResult rc = compressAndEmbedFile(m_db, fileSize, chunkSize, newId, filespec, supportRandomAccess);
@@ -3656,7 +3657,7 @@ BeRepositoryBasedId DbEmbeddedFileTable::Import(DbResult* stat, Utf8CP name, Utf
     if (stat != nullptr)
         *stat = rc;
 
-    return (rc == BE_SQLITE_OK) ? newId : BeRepositoryBasedId();
+    return (rc == BE_SQLITE_OK) ? newId : BeBriefcaseBasedId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3670,7 +3671,7 @@ DbResult DbEmbeddedFileTable::AddEntry(Utf8CP name, Utf8CP type, Utf8CP descript
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult updateEmbedFile(Db& db, BeRepositoryBasedId id, uint64_t fileSize, DateTime const* lastModified, uint32_t chunkSize)
+static DbResult updateEmbedFile(Db& db, BeBriefcaseBasedId id, uint64_t fileSize, DateTime const* lastModified, uint32_t chunkSize)
     {
     const bool updateLastModified = DbEmbeddedFileTable::HasLastModifiedColumn(db) && lastModified != nullptr && lastModified->IsValid();
 
@@ -3705,7 +3706,7 @@ static DbResult updateEmbedFile(Db& db, BeRepositoryBasedId id, uint64_t fileSiz
 DbResult DbEmbeddedFileTable::Replace(Utf8CP name, Utf8CP filespec, uint32_t chunkSize, DateTime const* lastModified)
     {
     BeAssert(m_db.IsTransactionActive());
-    BeRepositoryBasedId id = QueryFile(name);
+    BeBriefcaseBasedId id = QueryFile(name);
     if (!id.IsValid())
         return  BE_SQLITE_ERROR;
 
@@ -3740,7 +3741,7 @@ DbResult DbEmbeddedFileTable::Replace(Utf8CP name, Utf8CP filespec, uint32_t chu
 DbResult DbEmbeddedFileTable::Save(void const* data, uint64_t size, Utf8CP name, bool compress, uint32_t chunkSize)
     {
     BeAssert(m_db.IsTransactionActive());
-    BeRepositoryBasedId id = QueryFile(name);
+    BeBriefcaseBasedId id = QueryFile(name);
     if (!id.IsValid())
         return  BE_SQLITE_ERROR;
 
@@ -3765,7 +3766,7 @@ DbResult DbEmbeddedFileTable::Export(Utf8CP filespec, Utf8CP name, ICompressProg
     BeAssert(m_db.IsTransactionActive());
     uint64_t expectedFileSize;
     uint32_t chunkSize;
-    BeRepositoryBasedId id = QueryFile(name, &expectedFileSize, &chunkSize);
+    BeBriefcaseBasedId id = QueryFile(name, &expectedFileSize, &chunkSize);
     if (!id.IsValid())
         return  BE_SQLITE_ERROR;
 
@@ -3863,7 +3864,7 @@ DbResult DbEmbeddedFileTable::Read(bvector<Byte>& callerBuffer, Utf8CP name)
     BeAssert(m_db.IsTransactionActive());
     uint64_t actualSize;
     uint32_t chunkSize;
-    BeRepositoryBasedId id = QueryFile(name, &actualSize, &chunkSize);
+    BeBriefcaseBasedId id = QueryFile(name, &actualSize, &chunkSize);
     if (!id.IsValid())
         return  BE_SQLITE_ERROR;
 
@@ -3912,11 +3913,11 @@ DbResult DbEmbeddedFileTable::Read(bvector<Byte>& callerBuffer, Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeRepositoryBasedId DbEmbeddedFileTable::QueryFile(Utf8CP name, uint64_t* size, uint32_t* chunkSize, Utf8StringP descr, Utf8StringP typestr, DateTime* lastModified)
+BeBriefcaseBasedId DbEmbeddedFileTable::QueryFile(Utf8CP name, uint64_t* size, uint32_t* chunkSize, Utf8StringP descr, Utf8StringP typestr, DateTime* lastModified)
     {
     // embedded file table is created on demand, so may not exist yet
     if (!m_db.TableExists(BEDB_TABLE_EmbeddedFile))
-        return BeRepositoryBasedId(); // invalid id indicates an error
+        return BeBriefcaseBasedId(); // invalid id indicates an error
 
     Utf8CP sql = DbEmbeddedFileTable::HasLastModifiedColumn(m_db) ?
         "SELECT Descr,Type,Id,Size,Chunk,LastModified FROM " BEDB_TABLE_EmbeddedFile " WHERE Name=?" :
@@ -3928,7 +3929,7 @@ BeRepositoryBasedId DbEmbeddedFileTable::QueryFile(Utf8CP name, uint64_t* size, 
 
     DbResult rc = stmt.Step();
     if (rc != BE_SQLITE_ROW)
-        return BeRepositoryBasedId(); // invalid id indicates an error
+        return BeBriefcaseBasedId(); // invalid id indicates an error
 
     if (descr)
         descr->AssignOrClear(stmt.GetValueText(0));
@@ -3949,7 +3950,7 @@ BeRepositoryBasedId DbEmbeddedFileTable::QueryFile(Utf8CP name, uint64_t* size, 
             }
         }
 
-    return BeRepositoryBasedId(stmt.GetValueUInt64(2));
+    return BeBriefcaseBasedId(stmt.GetValueUInt64(2));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3958,7 +3959,7 @@ BeRepositoryBasedId DbEmbeddedFileTable::QueryFile(Utf8CP name, uint64_t* size, 
 DbResult DbEmbeddedFileTable::Remove(Utf8CP name)
     {
     BeAssert(m_db.IsTransactionActive());
-    BeRepositoryBasedId id = QueryFile(name);
+    BeBriefcaseBasedId id = QueryFile(name);
     if (!id.IsValid())
         return  BE_SQLITE_ERROR;
 
@@ -4050,7 +4051,7 @@ DateTime DbEmbeddedFileTable::Iterator::Entry::GetLastModified() const
     return std::move(lastModified);
     }
 
-BeRepositoryBasedId DbEmbeddedFileTable::Iterator::Entry::GetId() const {return BeRepositoryBasedId(m_sql->GetValueUInt64(3));}
+BeBriefcaseBasedId DbEmbeddedFileTable::Iterator::Entry::GetId() const {return BeBriefcaseBasedId(m_sql->GetValueUInt64(3));}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    11/2012
