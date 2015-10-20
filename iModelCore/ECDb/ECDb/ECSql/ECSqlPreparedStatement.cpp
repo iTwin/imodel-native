@@ -22,6 +22,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 ECSqlPreparedStatement::ECSqlPreparedStatement(ECSqlType type, ECDbCR ecdb)
 : m_type(type), m_ecdb(&ecdb), m_isNoopInSqlite(false), m_isNothingToUpdate(false) {}
 
+JoinTableECSqlStatement* ECSqlPreparedStatement::GetBaseECSqlStatement(ECN::ECClassId jointTableId)
+    {
+    if (m_baseECSqlStatement == nullptr && jointTableId != 0)
+        {
+        m_baseECSqlStatement = std::unique_ptr<JoinTableECSqlStatement>(new JoinTableECSqlStatement(jointTableId));
+        }
+    return m_baseECSqlStatement.get();
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
@@ -103,6 +111,11 @@ ECSqlStatus ECSqlPreparedStatement::ClearBindings()
     if (m_isNoopInSqlite)
         return ECSqlStatus::Success;
 
+    if (auto baseStmt = GetBaseECSqlStatement())
+        {
+        baseStmt->ClearBindings();
+        }
+
     const DbResult nativeSqlStat = GetSqliteStatementR ().ClearBindings();
     GetParameterMapR ().OnClearBindings();
 
@@ -135,6 +148,11 @@ DbResult ECSqlPreparedStatement::DoStep()
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlPreparedStatement::Reset()
     {
+    if (auto baseStmt = GetBaseECSqlStatement())
+        {
+        baseStmt->Reset();
+        }
+
     return _Reset();
     }
 
@@ -325,8 +343,16 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
         checkModifiedRowCount = false;
         }
 
+
     //reset the ecinstanceid from key info for the next execution (if it was bound, and is no literal)
     m_ecInstanceKeyInfo.ResetBoundECInstanceId();
+    if (auto baseStmt = GetBaseECSqlStatement())
+        {      
+        baseStmt->GetBinder(1).BindId(ecinstanceidOfInsert);
+        auto r = baseStmt->Step();       
+        if (r != DbResult::BE_SQLITE_DONE)
+            return r;
+        }
 
     BeAssert(ecinstanceidOfInsert.IsValid());
     DbResult stat = DoStep();

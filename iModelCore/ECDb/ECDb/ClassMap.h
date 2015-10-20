@@ -180,6 +180,10 @@ public:
     bool IsMappedToSecondaryTable () const;
     bool IsRelationshipClassMap () const;
     bool IsAbstractECClass () const;
+    Utf8String GetECSqlName() const
+        {
+        return (GetClass().GetSchema().GetNamespacePrefix().empty() ? GetClass().GetSchema().GetName() : GetClass().GetSchema().GetNamespacePrefix()) + "." + GetClass().GetName();
+        }
 
     Utf8String ToString () const;
 

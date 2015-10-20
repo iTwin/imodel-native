@@ -16,13 +16,23 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-//static
 ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStatementExp const& exp)
     {
     BeAssert(exp.IsComplete());
     ctx.PushScope(exp);
 
     auto const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
+    if (auto info = ctx.GetJoinTableInfo())
+        {
+        auto baseStatement = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetBaseECSqlStatement(classMap.GetClass().GetId());
+        auto status = baseStatement->Prepare(ctx.GetECDb(), info->GetParentECSQlStatement());
+        if (status != ECSqlStatus::Success)
+            {
+            BeAssert("Base statement is generated statement should fail at prepare");
+            return status;
+            }
+        }
+
     NativeSqlSnippets insertNativeSqlSnippets;
     ECSqlStatus stat = GenerateNativeSqlSnippets(insertNativeSqlSnippets, ctx, exp, classMap);
     if (!stat.IsSuccess())
@@ -435,8 +445,7 @@ IClassMap const& classMap
 
     insertSqlSnippets.m_ecinstanceIdMode = ValidateUserProvidedECInstanceId(insertSqlSnippets.m_ecinstanceIdExpIndex, ctx, exp, classMap);
     if (insertSqlSnippets.m_ecinstanceIdMode == ECInstanceIdMode::Invalid)
-        return ECSqlStatus::InvalidECSql
-        ;
+        return ECSqlStatus::InvalidECSql;
 
     return ECSqlStatus::Success;
     }

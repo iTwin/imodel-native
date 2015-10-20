@@ -229,8 +229,12 @@ TEST(ECDbSchemas, JoinedTableTest)
             }
         };
 
-    assert_ecsql("DELETE FROM dgn.Goo WHERE ECInstanceId = 1 AND (A = 101 AND B = 'b1') AND (C = 101 AND D = 'd1');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 0);
+    assert_ecsql("INSERT INTO dgn.Goo(A, B, C, D) VALUES(:a,'b1',:c,'d1');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 0);
+    assert_ecsql("INSERT INTO dgn.Goo(ECInstanceId, A, B, C, D) VALUES(12, 101,'b3',101,'d1');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 0);
 
+    assert_ecsql("INSERT INTO dgn.Goo(A, B, C, D) VALUES(101,'b3',101,'d1');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 0);
+    assert_ecsql("INSERT INTO dgn.Foo(A, B) VALUES(101,'b1');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 0);
+    assert_ecsql("INSERT INTO dgn.Goo(A, B) VALUES(101,'b2');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 0);
 
     assert_ecsql("SELECT ECInstanceId, A, B FROM dgn.Foo", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 3);
     //base properties
@@ -257,10 +261,9 @@ TEST(ECDbSchemas, JoinedTableTest)
 
     assert_ecsql("DELETE FROM dgn.Foo WHERE ECInstanceId = 1 AND A = 101 AND B = 'b1';", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 0);
     assert_ecsql("DELETE FROM dgn.Goo WHERE ECInstanceId = 1 AND A = 101 AND B = 'b1';", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 0);
+    assert_ecsql("DELETE FROM dgn.Goo WHERE ECInstanceId = 1 AND (A = 101 AND B = 'b1') AND (C = 101 AND D = 'd1');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 0);
 
-    assert_ecsql("INSERT INTO dgn.Foo(A, B) VALUES(101,'b1');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 0);
-    assert_ecsql("INSERT INTO dgn.Goo(A, B) VALUES(101,'b2');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 0);
-    assert_ecsql("INSERT INTO dgn.Goo(A, B, C, D) VALUES(101,'b3',101,'d1');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 0);
+
 
     }
 /*---------------------------------------------------------------------------------**//**

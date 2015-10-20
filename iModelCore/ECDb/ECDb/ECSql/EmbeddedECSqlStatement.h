@@ -38,4 +38,21 @@ public:
     void Initialize (ECSqlPrepareContext& parentPrepareContext, ArrayECPropertyCP arrayProperty = nullptr, ECSqlColumnInfo const* parentColumnInfo = nullptr);
     bool HasColumnInfo () const { return m_parentColumnInfo != nullptr; }
     };
+//=======================================================================================
+//! @bsiclass                                                Affan.Khan      10/2013
+//+===============+===============+===============+===============+===============+======
+struct JoinTableECSqlStatement: public ECSqlStatementBase
+    {
+    private:
+        ECN::ECClassId m_jointTableClassId;
+        
+        virtual ECSqlPrepareContext _InitializePrepare(ECDbCR ecdb, Utf8CP ecsql) override
+            {          
+            return ECSqlPrepareContext(ecdb, *this, m_jointTableClassId);
+            }
+
+    public:
+        JoinTableECSqlStatement(ECN::ECClassId joinTableClassId): ECSqlStatementBase(), m_jointTableClassId(m_jointTableClassId) {}
+        ~JoinTableECSqlStatement() {}
+    };
 END_BENTLEY_SQLITE_EC_NAMESPACE
