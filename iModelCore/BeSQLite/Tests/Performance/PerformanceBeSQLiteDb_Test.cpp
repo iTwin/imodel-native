@@ -117,7 +117,7 @@ TEST_F(PerformanceBeSQLiteDbTests, IncrementBriefcaseLocalValueNoTransaction)
     testDb.SaveChanges ();
     m_stopwatch.Stop ();
 
-    LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds(), "Increment RLV");
+    LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds(), "Increment RLV", iterationCount);
     PERFORMANCELOG.infov ("Incrementing briefcase local value %d times took: %.4f msecs. %.4f msecs with saving outermost transaction at end.", 
                         iterationCount, 
                         totalSecs * 1000.0,
@@ -165,7 +165,7 @@ TEST_F(PerformanceBeSQLiteDbTests, IncrementBriefcaseLocalValueNoTransaction)
         }
     m_stopwatch.Stop ();
     ASSERT_EQ (iterationCount, sequenceVector[2]->GetValue ());
-    LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds(), "Increment RLV with vector lookup");
+    LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds(), "Increment RLV with vector lookup", iterationCount);
     PERFORMANCELOG.infov ("Incrementing simple in-memory sequence with vector lookup %d times took: %.4f msecs.", iterationCount,
         m_stopwatch.GetElapsedSeconds () * 1000.0);
 
@@ -178,7 +178,7 @@ TEST_F(PerformanceBeSQLiteDbTests, IncrementBriefcaseLocalValueNoTransaction)
         }
     m_stopwatch.Stop ();
     ASSERT_EQ (iterationCount, sequenceMap[keyVector[2].c_str ()].GetValue ());
-    LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds(), "Increment RLV with bmap lookup");
+    LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds(), "Increment RLV with bmap lookup", iterationCount);
     PERFORMANCELOG.infov ("Incrementing simple in-memory sequence with bmap lookup %d times took: %.4f msecs.", iterationCount,
         m_stopwatch.GetElapsedSeconds () * 1000.0);
     }
@@ -229,7 +229,7 @@ TEST_F(PerformanceBeSQLiteDbTests, IncrementBriefcaseLocalValueWithoutInMemoryCa
     testDb.SaveChanges ();
     m_stopwatch.Stop ();
 
-    LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds());
+    LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds(), "", iterationCount);
     PERFORMANCELOG.infov ("Incrementing briefcase local value %d times took: %.4f msecs. %.4f msecs with saving outermost transaction at end.", 
         iterationCount, 
         totalSecs * 1000.0,
@@ -260,7 +260,7 @@ TEST_F(PerformanceBeSQLiteDbTests, IncrementBriefcaseLocalValueWrappedInSavepoin
     testDb.SaveChanges ();
     m_stopwatch.Stop ();
 
-    LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds());
+    LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds(), "", iterationCount);
     PERFORMANCELOG.infov ("Incrementing briefcase local value %d times took: %.4f msecs. %.4f msecs with saving outermost transaction at end.", 
         iterationCount, 
         totalSecs * 1000.0,
@@ -291,7 +291,7 @@ TEST_F(PerformanceBeSQLiteDbTests, IncrementBriefcaseLocalValueAndCommittingOute
     testDb.SaveChanges ();
     m_stopwatch.Stop ();
     
-    LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds());
+    LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds(), "", iterationCount);
     PERFORMANCELOG.infov ("Incrementing briefcase local value %d times took: %.4f msecs. %.4f msecs with saving outermost transaction at end.", 
         iterationCount, 
         totalSecs * 1000.0,
@@ -326,7 +326,7 @@ TEST_F(PerformanceBeSQLiteDbTests, SaveBriefcaseLocalValueWithSavepointPerIterat
 
     m_stopwatch.Stop ();
     
-    LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds());
+    LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds(), "", iterationCount);
     PERFORMANCELOG.infov ("Calling SaveBriefcaseLocalValue %d times took: %.4f msecs.", 
         iterationCount, 
         m_stopwatch.GetElapsedSeconds () * 1000.0);
@@ -377,7 +377,7 @@ TEST_F(PerformanceBeSQLiteDbTests, InsertOrReplaceBlobVsIntegerWithSavepointPerI
             }
 
         m_stopwatch.Stop();
-        LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds(), "Insert or Replace Integers");
+        LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds(), "Insert or Replace Integers", iterationCount);
         PERFORMANCELOG.infov("Inserting or replacing integers %d times took: %.4f msecs.",
             iterationCount, 
             m_stopwatch.GetElapsedSeconds() * 1000.0);
@@ -404,7 +404,7 @@ TEST_F(PerformanceBeSQLiteDbTests, InsertOrReplaceBlobVsIntegerWithSavepointPerI
             }
 
         m_stopwatch.Stop ();
-        LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds(), "Insert or Replace Integers as Blobs");
+        LOGTODB(TEST_DETAILS, m_stopwatch.GetElapsedSeconds(), "Insert or Replace Integers as Blobs", iterationCount);
         PERFORMANCELOG.infov("Inserting or replacing integers as blobs %d times took: %.4f msecs.",
             iterationCount, 
             m_stopwatch.GetElapsedSeconds() * 1000.0);
