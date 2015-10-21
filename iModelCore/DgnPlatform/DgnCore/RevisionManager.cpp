@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <BeSqlite/SHA1.h>
+#include <BeSQLite/SHA1.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 

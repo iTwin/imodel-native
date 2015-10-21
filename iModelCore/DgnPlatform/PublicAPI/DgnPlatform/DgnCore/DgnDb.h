@@ -137,6 +137,7 @@ protected:
     DgnAuthorities  m_authorities;
     TxnManagerPtr   m_txnManager;
     MemoryManager   m_memoryManager;
+    DgnSearchableText  m_searchableText;
     mutable RevisionManagerP m_revisionManager;
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
     mutable bmap<DgnMaterialId, uintptr_t> m_qvMaterialIds;
@@ -196,6 +197,7 @@ public:
     DgnLinks& Links() const{return const_cast<DgnLinks&>(m_links);}                      //!< The DgnLinks for this DgnDb
     DgnDomains& Domains() const {return const_cast<DgnDomains&>(m_domains);}             //!< The DgnDomains associated with this DgnDb.
     DgnAuthorities& Authorities() const { return const_cast<DgnAuthorities&>(m_authorities); }   //!< The authorities associated with this DgnDb
+    DgnSearchableText& SearchableText() const { return const_cast<DgnSearchableText&>(m_searchableText); } //!< The searchable text table for this DgnDb
     DGNPLATFORM_EXPORT TxnManagerR Txns();                    //!< The Txns for this DgnDb.
     DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The Revisions for this DgnDb.
     MemoryManager& Memory() const { return const_cast<MemoryManager&>(m_memoryManager);}

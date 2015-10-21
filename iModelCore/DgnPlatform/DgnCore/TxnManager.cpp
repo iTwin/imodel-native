@@ -310,6 +310,9 @@ TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName)
     if (0 == strncmp(DGN_TABLE_Txns, tableName, sizeof(DGN_TABLE_Txns)-1))
         return  TrackChangesForTable::No;
 
+    if (DgnSearchableText::IsUntrackedFts5Table(tableName))
+        return  TrackChangesForTable::No;
+
     return TrackChangesForTable::Yes;
     }
 

@@ -286,6 +286,8 @@ $(coreObjs)DgnTexture$(oext) : $(DgnCoreDir)DgnTexture.cpp $(DgnCoreAPISrc)DgnDb
 
 $(coreObjs)DgnAuthority$(oext) : $(DgnCoreDir)DgnAuthority.cpp $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
+$(coreObjs)SearchableText$(oext) : $(DgnCoreDir)SearchableText.cpp $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
+
 $(coreObjs)SatelliteChangeSets$(oext) : $(DgnCoreDir)SatelliteChangeSets.cpp $(DgnCoreAPISrc)SatelliteChangeSets.h ${MultiCompileDepends}
 
 $(coreObjs)DgnMarkupProject$(oext): $(DgnCoreDir)DgnMarkupProject.cpp $(DgnCoreAPISrc)DgnMarkupProject.h $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
