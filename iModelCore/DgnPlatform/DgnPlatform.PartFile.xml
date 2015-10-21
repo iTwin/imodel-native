@@ -452,7 +452,7 @@
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatformTest -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatformTest -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="DgnPlatform-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -512,7 +512,7 @@
     <!--                *************** -->
     <!--                **** gtest **** -->
     <!--                *************** -->
-    <Part Name="Gtest-TestCollection-NoView" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=NoViewTests -dTEST_COLLECTION_PRODUCT=DgnPlatform-TestCollection-NoView -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="Gtest-TestCollection-NoView" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=NoViewTests -dTEST_COLLECTION_PRODUCT=DgnPlatform-TestCollection-NoView -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="DgnPlatform-TestCollection-NoView"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -626,7 +626,7 @@
         <SubPart PartName="Gtest-TestCollection-Performance"/>
     </Product>
 
-    <Part Name="Gtest-TestCollection-Performance" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPerformance -dTEST_COLLECTION_PRODUCT=DgnPlatform-TestCollection-Performance -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="Gtest-TestCollection-Performance" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPerformance -dTEST_COLLECTION_PRODUCT=DgnPlatform-TestCollection-Performance -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="DgnPlatform-TestCollection-Performance"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
