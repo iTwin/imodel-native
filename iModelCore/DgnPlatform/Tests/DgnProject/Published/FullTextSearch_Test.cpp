@@ -31,7 +31,7 @@ struct SearchableTextTest : public GenericDgnModelTestFixture
         {
         ST::Query query(text, cat1);
         if (nullptr != cat2)
-            query.AddCategory(cat2);
+            query.AddTextType(cat2);
 
         return query;
         }
@@ -130,8 +130,8 @@ TEST_F(SearchableTextTest, Query)
         
         // include all categories
         ST::Query queryAll(searchOp.text, "Name");
-        queryAll.AddCategory("Address");
-        queryAll.AddCategory("Company");
+        queryAll.AddTextType("Address");
+        queryAll.AddTextType("Company");
         EXPECT_EQ(totalCount, st.QueryCount(queryAll)) << searchOp.text;
 
         // Filter by each type
@@ -143,15 +143,15 @@ TEST_F(SearchableTextTest, Query)
 
         // Filter by two types
         ST::Query nameAddress(searchOp.text, "Name");
-        nameAddress.AddCategory("Address");
+        nameAddress.AddTextType("Address");
         EXPECT_EQ(searchOp.count[kName]+searchOp.count[kAddress], st.QueryCount(nameAddress)) << searchOp.text;
 
         ST::Query nameCompany(searchOp.text, "Name");
-        nameCompany.AddCategory("Company");
+        nameCompany.AddTextType("Company");
         EXPECT_EQ(searchOp.count[kName]+searchOp.count[kCompany], st.QueryCount(nameCompany)) << searchOp.text;
 
         ST::Query addressCompany(searchOp.text, "Address");
-        addressCompany.AddCategory("Company");
+        addressCompany.AddTextType("Company");
         EXPECT_EQ(searchOp.count[kAddress]+searchOp.count[kCompany], st.QueryCount(addressCompany)) << searchOp.text;
 
         // Filter by unknown type
@@ -160,7 +160,7 @@ TEST_F(SearchableTextTest, Query)
         }
 
     // Query categories
-    auto cats = st.QueryCategories();
+    auto cats = st.QueryTextTypes();
     EXPECT_EQ(3, cats.size());
     EXPECT_TRUE(cats.end() != std::find(cats.begin(), cats.end(), "Name"));
     EXPECT_TRUE(cats.end() != std::find(cats.begin(), cats.end(), "Address"));
@@ -177,7 +177,7 @@ TEST_F(SearchableTextTest, Query)
             EXPECT_TRUE(rec.IsValid());
             Utf8String cmp(kName == i ? client.name : (kAddress == i ? client.address : client.company));
             EXPECT_EQ(cmp, rec.GetText());
-            EXPECT_EQ(Utf8String(searchTypes[i]), rec.GetCategory());
+            EXPECT_EQ(Utf8String(searchTypes[i]), rec.GetTextType());
             EXPECT_EQ(rec.GetId(), id);
             }
         }
@@ -286,7 +286,7 @@ TEST_F(SearchableTextTest, DropAndUpdate)
     //     Cat     Text         ID
     //     "CatA"  "abc def"     2
     //     "CatA"  "xyz"         6
-    EXPECT_EQ(BE_SQLITE_OK, st.DropCategory("CatB"));
+    EXPECT_EQ(BE_SQLITE_OK, st.DropTextType("CatB"));
     ExpectCount(1, abc);
     ExpectCount(1, xyz);
     ExpectCount(1, "\"abc def\"");
