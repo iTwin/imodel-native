@@ -20,10 +20,6 @@ ConnectMkiHeaders = $(ConnectMkiPublicApiDir)Authentication.h                   
                     $(ConnectMkiPublicApiDir)ConnectSetup.h                        \
                     $(ConnectMkiPublicApiDir)ConnectSpaces.h                       \
                     $(ConnectMkiPublicApiDir)ConnectTokenProvider.h                \
-%if $(TARGET_PLATFORM)=="Windows"
-                    $(ConnectMkiPublicApiDir)CCConnectTokenProvider.h              \
-                    $(ConnectMkiPublicApiDir)ConnectClientCCApiWrapper.h           \
-%endif
                     $(ConnectMkiPublicApiDir)IConnectAuthenticationPersistence.h   \
                     $(ConnectMkiPublicApiDir)IConnectTokenProvider.h               \
                     $(ConnectMkiPublicApiDir)Passport.h                            \
@@ -48,12 +44,6 @@ $(o)ConnectSetup$(oext)                     : $(ConnectMkiSourceDir)ConnectSetup
 $(o)ConnectSpaces$(oext)                    : $(ConnectMkiSourceDir)ConnectSpaces.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
 $(o)ConnectTokenProvider$(oext)             : $(ConnectMkiSourceDir)ConnectTokenProvider.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
-
-%if $(TARGET_PLATFORM)=="Windows"
-$(o)ConnectClientCCApiWrapper$(oext)             : $(ConnectMkiSourceDir)ConnectClientCCApiWrapper.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
-
-$(o)CCConnectTokenProvider$(oext)           : $(ConnectMkiSourceDir)CCConnectTokenProvider.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
-%endif
 
 $(o)Passport$(oext)                         : $(ConnectMkiSourceDir)Passport.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 

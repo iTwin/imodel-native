@@ -16,11 +16,6 @@
 
 #include "AuthenticationData.h"
 
-#if defined (BENTLEY_WIN32)
-#include <WebServices/Connect/IConnectTokenProvider.h>
-#include <WebServices/Connect/CCConnectTokenProvider.h>
-#endif
-
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -30,7 +25,6 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 #define BENTLEY_CONNECT_USERNAME                    "BentleyConnect_UserName"
 #define BENTLEY_CONNECT_DISPLAYUSERNAME             "BentleyConnect_DisplayUserName"
 #define BENTLEY_CONNECT_USERID                      "BentleyConnect_UserId"
-#define BENTLEY_LOGON_TOKEN_SEARCHED                "Bentley_LogonTokenSearched"
 
 bool GetCredentials(JsonValueCR messageDataObj, CredentialsR cred);
 bool GetToken(JsonValueCR messageDataObj, Utf8StringR token);
@@ -40,7 +34,6 @@ void WebServices::ConnectSetup(JsonValueCR messageDataObj, bool requireToken)
     {
     Credentials cred;
     bool validCredentials = GetCredentials(messageDataObj, cred);
-    bool isSignedIn = false;
 
     Utf8String token;
     if (validCredentials)
@@ -49,54 +42,33 @@ void WebServices::ConnectSetup(JsonValueCR messageDataObj, bool requireToken)
 
         if (!requireToken || tokenResult)
             {
-            MobileDgnApplication::AbstractUiState ().SetValue (BENTLEY_LOGON_TOKEN_SEARCHED, true);
-            MobileDgnApplication::AbstractUiState ().SetValue (CONNECT_SIGNED_IN, true);
-            isSignedIn = true;
+            MobileDgnApplication::AbstractUiState().SetValue(CONNECT_SIGNED_IN, true);
+            }
+        else
+            {
+            MobileDgnApplication::AbstractUiState().SetValue(CONNECT_SIGNED_IN, false);
             }
         }
-#if defined (BENTLEY_WIN32)
     else
-       {
-        // Do not want to get the token again when signing out, if token was already obtained
-        bool searched = MobileDgnApplication::AbstractUiState ().GetValue (BENTLEY_LOGON_TOKEN_SEARCHED, false);
-
-        if (!searched)
         {
-            // Try to get the token from Bentley Logon
-            std::shared_ptr<IConnectTokenProvider> tokenProvider(std::make_shared<CCConnectTokenProvider> ());
-            SamlTokenPtr connectionClientToken = tokenProvider->GetToken ();
-            if (connectionClientToken && !connectionClientToken->IsEmpty ())
-                {
-                token = connectionClientToken->AsString ();
-                ConnectAuthenticationPersistence::GetShared ()->SetToken (connectionClientToken);
-                MobileDgnApplication::AbstractUiState ().SetValue (CONNECT_SIGNED_IN, true);
-                }
-            MobileDgnApplication::AbstractUiState ().SetValue (BENTLEY_LOGON_TOKEN_SEARCHED, true);
-            }
+        MobileDgnApplication::AbstractUiState().SetValue(CONNECT_SIGNED_IN, false);
+        ConnectAuthenticationPersistence::GetShared()->SetToken(nullptr);
         }
-#endif
 
     if (!cred.GetUsername().empty())
         {
         // NOTE: Username is sent to the UI whether or not the signin was successful.
         MobileDgnApplication::AbstractUiState().SetValue(BENTLEY_CONNECT_USERNAME, cred.GetUsername().c_str());
         }
-    
-    if (token.empty())
+
+    if (!token.empty())
         {
-        if (!isSignedIn)
-            {
-            MobileDgnApplication::AbstractUiState ().SetValue (CONNECT_SIGNED_IN, false);
-            ConnectAuthenticationPersistence::GetShared ()->SetToken (nullptr);
-            }
-        }
-    else
-        {
-        SamlToken sToken (token);
+        // if we have a valid token build a display name for the user from the claims in the token
+        SamlToken sToken(token);
+
         Utf8String displayUserName = "";
         bmap<Utf8String, Utf8String> attributes;
-        BentleyStatus attributeStatus = sToken.GetAttributes (attributes);
-
+        BentleyStatus attributeStatus = sToken.GetAttributes(attributes);
         if (SUCCESS == attributeStatus)
             {
             Utf8String givenName = attributes["givenname"];
@@ -151,4 +123,3 @@ bool GetToken(JsonValueCR messageDataObj, Utf8StringR token)
         }
     return true;
     }
-

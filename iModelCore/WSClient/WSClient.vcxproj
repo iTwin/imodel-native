@@ -133,11 +133,9 @@
     <ClCompile Include="Configuration\BuddiError.cpp" />
     <ClCompile Include="Connect\Authentication.cpp" />
     <ClCompile Include="Connect\AuthenticationData.cpp" />
-    <ClCompile Include="Connect\CCConnectTokenProvider.cpp" />
     <ClCompile Include="Connect\Connect.cpp" />
     <ClCompile Include="Connect\ConnectAuthenticationHandler.cpp" />
     <ClCompile Include="Connect\ConnectAuthenticationPersistence.cpp" />
-    <ClCompile Include="Connect\ConnectClientCCApiWrapper.cpp" />
     <ClCompile Include="Connect\ConnectSetup.cpp" />
     <ClCompile Include="Connect\ConnectSpaces.cpp" />
     <ClCompile Include="Connect\ConnectTokenProvider.cpp" />
@@ -271,11 +269,9 @@
     <ClInclude Include="PublicAPI\WebServices\Configuration\BuddiClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Configuration\BuddiError.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\Authentication.h" />
-    <ClInclude Include="PublicAPI\WebServices\Connect\CCConnectTokenProvider.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\Connect.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectAuthenticationHandler.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectAuthenticationPersistence.h" />
-    <ClInclude Include="PublicAPI\WebServices\Connect\ConnectClientCCApiWrapper.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectMessaging.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSetup.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSpaces.h" />

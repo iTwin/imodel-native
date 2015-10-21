@@ -7,11 +7,9 @@
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
     <Part Name="WebServicesClient">
-        <SubPart PartName="BentleyDesktopClientCCApi-Win7" />
         <SubPart PartName="WebServicesClient-PublicAPI" />
         <SubPart PartName="WebServicesClient-Library" />
         <SubPart PartName="WebServicesClient-Bindings" />
-        <SubPart PartName="WebServicesClient-Bindings-Win7" />
         <SubPart PartName="WebServicesClient-Bindings-Android" />
         <SubPart PartName="WSClient-Xliffs" />
     </Part>
@@ -20,10 +18,6 @@
         <Bindings>
             <PublicAPI Domain="WebServices" />
         </Bindings>
-    </Part>
-
-    <Part Name="BentleyDesktopClientCCApi-Win7" BentleyBuildMakeFile="BentleyDesktopClientCCApi.prewire.mke" OnlyPlatforms="x64">
-        <SubPart PartName="Bentley.Update.MSM" PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient" />
     </Part>
 
     <Part Name="WebServicesClient-PublishedAPI" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishApi.mke"
@@ -44,12 +38,6 @@
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesClient$(libext)</Libs>
             <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesClient$(shlibext)</Assemblies>
-        </Bindings>
-    </Part>
-
-    <Part Name="WebServicesClient-Bindings-Win7" OnlyPlatforms="x64">
-        <Bindings>
-            <Assemblies ProductDirectoryName="WSClientAssemblies" Required="false">Delivery/CCApi.dll</Assemblies>
         </Bindings>
     </Part>
 
