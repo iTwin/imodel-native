@@ -142,10 +142,10 @@
         <RequiredRepository>DgnDbUnitTestsData</RequiredRepository>
     </Part>
     
-    <Part Name="BackdoorForUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor">
+    <Part Name="BackdoorForUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=BackDoor">
         <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/Backdoor" SourceName="Delivery/UnitTests/Objects/Backdoor"/>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/BackDoor" SourceName="Delivery/UnitTests/Objects/BackDoor"/>
         </Bindings>
     </Part>
 
