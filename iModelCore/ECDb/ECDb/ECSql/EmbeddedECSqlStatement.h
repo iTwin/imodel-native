@@ -45,14 +45,23 @@ struct JoinTableECSqlStatement: public ECSqlStatementBase
     {
     private:
         ECN::ECClassId m_jointTableClassId;
-        
+        IECSqlBinder * m_ecInstanceIdBinder;
         virtual ECSqlPrepareContext _InitializePrepare(ECDbCR ecdb, Utf8CP ecsql) override
             {          
             return ECSqlPrepareContext(ecdb, *this, m_jointTableClassId);
             }
 
     public:
-        JoinTableECSqlStatement(ECN::ECClassId joinTableClassId): ECSqlStatementBase(), m_jointTableClassId(m_jointTableClassId) {}
+        ECN::ECClassId GetClassId() const {return m_jointTableClassId;}
+        void SetECInstanceIdBinder(int ecsqlParameterIndex)
+            {     
+            m_ecInstanceIdBinder = &GetBinder(ecsqlParameterIndex);
+            }
+        IECSqlBinder* GetECInstanceIdBinder() 
+            {
+            return m_ecInstanceIdBinder;
+            }
+        JoinTableECSqlStatement(ECN::ECClassId joinTableClassId): ECSqlStatementBase(), m_jointTableClassId(joinTableClassId), m_ecInstanceIdBinder(nullptr) {}
         ~JoinTableECSqlStatement() {}
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

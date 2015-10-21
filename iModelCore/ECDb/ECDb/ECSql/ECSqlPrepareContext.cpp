@@ -287,6 +287,7 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     auto propertyList = exp.GetPropertyNameListExp();
     auto valueList = exp.GetValuesExp();
     ptr->m_userProvidedECInstanceId = false;
+    ptr->m_primaryECInstanceIdParameterIndex = 0;
 
     for (size_t i = 0; i < propertyList->GetChildrenCount(); i++)
         {
@@ -306,11 +307,6 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
 
         if (property->GetPropertyMap().IsSystemPropertyMap())
             {
-            if (!ptr->m_userProvidedECInstanceId  && property->GetPropertyMap().GetFirstColumn())
-                {
-                ptr->m_userProvidedECInstanceId = Enum::Contains(property->GetPropertyMap().GetFirstColumn()->GetKnownColumnId(), ECDbKnownColumns::ECInstanceId);
-                }
-
             joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
             parentOfJoinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
@@ -319,6 +315,18 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
             ptr->m_parameterMap.GetPrimaryR().Add(thisValueParams);
             ptr->m_parameterMap.GetSecondaryR().Add(thisValueParams);
 
+            if (!ptr->m_userProvidedECInstanceId  && property->GetPropertyMap().GetFirstColumn())
+                {
+                ptr->m_userProvidedECInstanceId = Enum::Contains(property->GetPropertyMap().GetFirstColumn()->GetKnownColumnId(), ECDbKnownColumns::ECInstanceId);
+                BeAssert(thisValueParams.size() <= 1);
+                if (thisValueParams.size() == 1)
+                    ptr->m_primaryECInstanceIdParameterIndex = ptr->m_parameterMap.GetPrimaryR().Last();
+                else if (thisValueParams.size() > 1)
+                    {
+                    BeAssert(false && "This case is not handled where e.g. (ECInstanceId ) VALUES ( ? + ? ) has more then one parameter");
+                    return nullptr;
+                    }
+                }
             }
         else if (property->GetPropertyMap().IsMappedToPrimaryTable())
             {
@@ -339,6 +347,13 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
         parentOfJoinedTableProperties.push_back(NativeSqlBuilder("ECInstanceId"));
         parentOfJoinedTableValues.push_back(NativeSqlBuilder("?"));
         ptr->m_parameterMap.GetPrimaryR().Add();
+        ptr->m_primaryECInstanceIdParameterIndex = ptr->m_parameterMap.GetPrimaryR().Last();
+        }
+
+    if (joinedTableProperties.empty())
+        {
+        joinedTableProperties.push_back(NativeSqlBuilder("ECInstanceId"));
+        joinedTableValues.push_back(NativeSqlBuilder("NULL"));
         }
 
     joinedTableECSQL.AppendParenLeft().Append(joinedTableProperties).Append(") VALUES (").Append(joinedTableValues).AppendParenRight();

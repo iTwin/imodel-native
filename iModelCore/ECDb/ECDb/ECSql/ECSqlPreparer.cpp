@@ -1938,6 +1938,7 @@ ECSqlStatus ECSqlExpPreparer::ResolveParameterMappings (ECSqlPrepareContext& con
         isFirstItem = false;
         }
 
+    parameterMap.RemapForJoinTable(context);
     return ECSqlStatus::Success;
     }
 

@@ -348,7 +348,11 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
     m_ecInstanceKeyInfo.ResetBoundECInstanceId();
     if (auto baseStmt = GetBaseECSqlStatement())
         {      
-        baseStmt->GetBinder(1).BindId(ecinstanceidOfInsert);
+        if (auto binder = baseStmt->GetECInstanceIdBinder())
+            {
+            binder->BindId(ecinstanceidOfInsert);
+            }
+
         auto r = baseStmt->Step();       
         if (r != DbResult::BE_SQLITE_DONE)
             return r;

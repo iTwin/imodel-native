@@ -77,8 +77,9 @@ public:
 struct ECSqlParameterMap : NonCopyableClass
     {
 private:
-    std::vector<std::unique_ptr<ECSqlBinder>> m_binders;
-    std::vector<std::unique_ptr<ECSqlBinder>> m_internalSqlParameterBinders;
+    std::vector<std::unique_ptr<ECSqlBinder>> m_ownedBinders;
+    std::vector<ECSqlBinder*> m_binders;
+    std::vector<ECSqlBinder*> m_internalSqlParameterBinders;
     bmap<Utf8String, int> m_nameToIndexMapping;
 
     std::vector<ECSqlBinder*> m_bindersToCallOnClearBindings;
@@ -104,12 +105,16 @@ public:
 
     ECSqlBinder* AddBinder (ECSqlStatementBase& ecsqlStatement, ParameterExp const& parameterExp, bool targetIsVirtual = false, bool enforceConstraints = false);
     ECSqlBinder* AddInternalBinder (size_t& index, ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo);
+    ECSqlBinder* AddProxyBinder(int ecsqlParameterIndex, ECSqlBinder& binder);
 
     ECSqlStatus OnBeforeStep ();
 
     //Bindings in SQLite have already been cleared at this point. The method
     //allows subclasses to clean-up additional resources tied to binding parameters
     void OnClearBindings ();
+
+    ECSqlStatus RemapForJoinTable(ECSqlPrepareContext& ctx);
+
     };
 
 

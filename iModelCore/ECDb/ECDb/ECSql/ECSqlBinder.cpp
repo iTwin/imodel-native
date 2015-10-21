@@ -139,7 +139,7 @@ ECSqlStatus ECSqlParameterMap::TryGetBinder (ECSqlBinder*& binder, int ecsqlPara
         return ECSqlStatus::Error;
 
     //parameter indices are 1-based, but stored in a 0-based vector.
-    binder = m_binders[static_cast<size_t> (ecsqlParameterIndex - 1)].get ();
+    binder = m_binders[static_cast<size_t> (ecsqlParameterIndex - 1)];
     return ECSqlStatus::Success;
     }
 
@@ -151,7 +151,7 @@ ECSqlStatus ECSqlParameterMap::TryGetInternalBinder (ECSqlBinder*& binder, size_
     if (internalBinderIndex >= m_internalSqlParameterBinders.size ())
         return ECSqlStatus::Error;
 
-    binder = m_internalSqlParameterBinders[internalBinderIndex].get ();
+    binder = m_internalSqlParameterBinders[internalBinderIndex];
     return ECSqlStatus::Success;
     }
 
@@ -168,6 +168,60 @@ int ECSqlParameterMap::GetIndexForName (Utf8CP ecsqlParameterName) const
         return -1;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan          10/2015
+//---------------------------------------------------------------------------------------
+ECSqlBinder* ECSqlParameterMap::AddProxyBinder(int ecsqlParameterIndex, ECSqlBinder& binder)
+    {
+    BeAssert(ecsqlParameterIndex != 0);
+    if (ecsqlParameterIndex == 0)
+        return nullptr;
+    
+    m_binders.insert(m_binders.begin() + (ecsqlParameterIndex - 1), &binder);
+    for (auto& binder : m_nameToIndexMapping)
+        {
+        if (binder.second >= ecsqlParameterIndex)
+            {
+            binder.second = binder.second + 1;
+            }
+        }
+
+    return &binder;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan          10/2015
+//---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
+    {
+    auto joinInfo = ctx.GetJoinTableInfo();
+    if (joinInfo == nullptr)
+        return ECSqlStatus::Success;
+
+    auto baseStmt = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetBaseECSqlStatement();
+    BeAssert(baseStmt != nullptr);
+
+    auto& baseParameterMap = baseStmt->GetPreparedStatementP()->GetParameterMapR();
+    auto& primaryMap = joinInfo->GetParameterMap().GetPrimary();
+    for (auto oi = primaryMap.First(); oi != primaryMap.Last(); oi++)
+        {
+        auto param = primaryMap.Find(oi);
+        if (auto orignalParam = param->GetOrignalParameter())
+            {
+            ECSqlBinder* binder = nullptr;
+            auto status = baseParameterMap.TryGetBinder(binder, static_cast<int>(param->GetIndex()));
+            if (status != ECSqlStatus::Success)
+                {
+                BeAssert(false && "Programmer Error: Pararameter order is not correct.");
+                return status;
+                }
+
+            AddProxyBinder(static_cast<int>(orignalParam->GetIndex()), *binder);
+            }
+        }
+
+    return ECSqlStatus::Success;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
@@ -186,7 +240,8 @@ ECSqlBinder* ECSqlParameterMap::AddBinder (ECSqlStatementBase& ecsqlStatement, P
         return nullptr;
 
     auto binderP = binder.get (); //cache raw pointer as return value as the unique_ptr will be moved into the list
-    m_binders.push_back (std::move (binder));
+    m_ownedBinders.push_back (std::move (binder));
+    m_binders.push_back(binderP);
 
     if (binderP->HasToCallOnBeforeStep())
         m_bindersToCallOnStep.push_back(binderP);
@@ -213,7 +268,8 @@ ECSqlBinder* ECSqlParameterMap::AddInternalBinder (size_t& index, ECSqlStatement
         return nullptr;
 
     auto binderP = binder.get (); //cache raw pointer as return value as the unique_ptr will be moved into the list
-    m_internalSqlParameterBinders.push_back (std::move (binder));
+    m_ownedBinders.push_back(std::move(binder));
+    m_internalSqlParameterBinders.push_back (binderP);
     
     if (binderP->HasToCallOnBeforeStep())
         m_bindersToCallOnStep.push_back(binderP);

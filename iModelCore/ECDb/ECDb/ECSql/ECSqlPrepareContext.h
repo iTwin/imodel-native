@@ -20,7 +20,7 @@ struct ECSqlStatementBase;
 //=======================================================================================
 // @bsiclass                                                 Affan.Khan    06/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlPrepareContext
+struct ECSqlPrepareContext 
     {
 public:
     //=======================================================================================
@@ -105,6 +105,7 @@ public:
             typedef std::unique_ptr<JoinTableInfo> Ptr;
             struct Parameter
                 {
+                typedef std::unique_ptr<Parameter> Ptr;
                 private:
                     size_t m_index;
                     Utf8String m_name;
@@ -122,6 +123,27 @@ public:
                         :m_index(-1), m_orignalParameter(nullptr)
                         {
                         }    
+                    Parameter(Parameter const& rhs)
+                        :m_index(rhs.m_index), m_orignalParameter(rhs.m_orignalParameter), m_name(rhs.m_name)
+                        {
+                        }
+                    Parameter& operator = (Parameter const& rhs)
+                        {
+                        if (&rhs != this)
+                            {
+                            m_index = rhs.m_index;
+                            m_orignalParameter = rhs.m_orignalParameter;
+                            m_name = rhs.m_name;
+                            }
+
+                        return *this;
+                        }
+                    ~Parameter()
+                        {
+                        m_orignalParameter = nullptr;
+                        m_index = 0;
+                        m_name.clear();
+                        }
                     size_t GetIndex() const
                         {
                         return m_index;
@@ -142,77 +164,85 @@ public:
 
             struct ParameterSet
                 {
-                std::vector<Parameter> m_parameters;
-                
-                Parameter const* Find(size_t index) const
-                    {
-                    if (index > m_parameters.size() || index == 0)
-                        return nullptr;
-
-                    return &m_parameters.at(index);
-                    }
-
-                Parameter const* Find(Utf8CP name) const
-                    {
-                    for (auto& param : m_parameters)
+                private:
+                    std::vector<Parameter::Ptr> m_parameters;
+                public:
+                    ParameterSet()
                         {
-                        if (param.IsNamed())
-                            if (BeStringUtilities::Stricmp(param.GetName(), name) == 0)
-                                return &param;
+                        }
+                    ~ParameterSet(){}
+                    Parameter const* Find(size_t index) const
+                        {
+                        if (index > m_parameters.size() || index == 0)
+                            return nullptr;
+
+                        return m_parameters.at(index - 1).get();
                         }
 
-                    return nullptr;
-                    }
-                Parameter const* Add(ParameterExp const& exp)
-                    {
-                    if (exp.IsNamedParameter())
+                    Parameter const* Find(Utf8CP name) const
                         {
-                        if (auto r = Find(exp.GetParameterName()))
+                        for (auto& param : m_parameters)
                             {
-                            BeAssert(r->GetIndex() == exp.GetParameterIndex());
-                            return r;
+                            if (param->IsNamed())
+                                if (BeStringUtilities::Stricmp(param->GetName(), name) == 0)
+                                    return param.get();
+                            }
+
+                        return nullptr;
+                        }
+                    Parameter const* Add(ParameterExp const& exp)
+                        {
+                        if (exp.IsNamedParameter())
+                            {
+                            if (auto r = Find(exp.GetParameterName()))
+                                {
+                                BeAssert(r->GetIndex() == exp.GetParameterIndex());
+                                return r;
+                                }
+                            }
+
+                        m_parameters.push_back(Parameter::Ptr(new Parameter(exp.GetParameterIndex(), exp.GetParameterName())));
+                        return Find(Last());
+                        }
+                    Parameter const*  Add(Parameter const& orignalParam)
+                        {
+                        m_parameters.push_back(Parameter::Ptr(new Parameter(m_parameters.size() + 1, orignalParam.GetName(), orignalParam)));
+                        return Find(Last());
+                        }
+                    Parameter const*  Add()
+                        {
+                        m_parameters.push_back(Parameter::Ptr(new Parameter(m_parameters.size() + 1, "")));
+                        return Find(Last());
+                        }
+                    Parameter const*  Add(Utf8CP name)
+                        {
+                        m_parameters.push_back(Parameter::Ptr(new Parameter(m_parameters.size() + 1, name)));
+                        return Find(Last());
+                        }
+
+                    void  Add(std::vector<Parameter const*> const& params)
+                        {
+                        for (auto param : params)
+                            {
+                            BeAssert(param != nullptr);
+                            Add(*param);
                             }
                         }
-
-                    m_parameters.push_back(Parameter(exp.GetParameterIndex(), exp.GetParameterName()));
-                    return &(*m_parameters.rbegin());
-                    }
-                void Add(Parameter const& orignalParam)
-                    {
-                    m_parameters.push_back(Parameter(m_parameters.size() + 1, orignalParam.GetName(), orignalParam));
-                    }
-                void Add()
-                    {
-                    m_parameters.push_back(Parameter(m_parameters.size() + 1, ""));
-                    }
-                void Add(Utf8CP name)
-                    {
-                    m_parameters.push_back(Parameter(m_parameters.size() + 1, name));
-                    }
-
-                void Add(std::vector<Parameter const*> const& params)
-                    {
-                    for (auto param : params)
+                    size_t First() const
                         {
-                        BeAssert(param != nullptr);
-                        Add(*param);
-                        }
-                    }
-                size_t First() const 
-                    {
-                    if (m_parameters.size() > 0)
-                        return 1;
+                        if (m_parameters.size() > 0)
+                            return 1;
 
-                    return 0;
-                    }
-                size_t Last() const
-                    {
-                    return m_parameters.size();
-                    }
-                bool Empty() const 
-                    {
-                    return First() == Last();
-                    }
+                        return 0;
+                        }
+                    size_t Last() const
+                        {
+                        return m_parameters.size();
+                        }
+                    bool Empty() const
+                        {
+                        return First() == Last();
+                        }
                 };
             struct ParameterMap
                 {
@@ -220,14 +250,15 @@ public:
                     ParameterSet m_orignal;
                     ParameterSet m_primary;
                     ParameterSet m_secondary;
+
                 public:
                     ParameterSet& GetOrignalR() {return m_orignal;}
                     ParameterSet& GetPrimaryR() {return m_primary;}
                     ParameterSet& GetSecondaryR() {return m_secondary;}
 
-                    ParameterSet const& GetOrignal() {return m_orignal;}
-                    ParameterSet const& GetPrimary() {return m_primary;}
-                    ParameterSet const& GetSecondary() {return m_secondary;}
+                    ParameterSet const& GetOrignal() const {return m_orignal;}
+                    ParameterSet const& GetPrimary() const {return m_primary;}
+                    ParameterSet const& GetSecondary() const {return m_secondary;}
                 };
         private:
             Utf8String m_parentStatement;
@@ -235,6 +266,7 @@ public:
             Utf8String m_orginalStatement;
             ParameterMap m_parameterMap;
             bool m_userProvidedECInstanceId;
+            size_t m_primaryECInstanceIdParameterIndex;
         private:
             static Ptr TrySetupJoinTableContextForInsert(ECSqlPrepareContext& ctx, InsertStatementExp const& exp);
             static Ptr TrySetupJoinTableContextForUpdate(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp);
@@ -247,6 +279,7 @@ public:
             Utf8CP GetOrignalECSQlStatement() const {return m_orginalStatement.c_str();}
             ParameterMap const& GetParameterMap() const {return m_parameterMap;}
             bool IsUserProvidedECInstanceId ()const {return m_userProvidedECInstanceId;}
+            size_t GetPrimaryECinstanceIdParameterIndex() const {return m_primaryECInstanceIdParameterIndex;}
 
         };
     //=======================================================================================
