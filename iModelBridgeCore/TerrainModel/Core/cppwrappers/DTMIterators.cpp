@@ -1218,7 +1218,22 @@ PolyfaceQueryP DTMMeshEnumerator::iterator::operator* () const
         for (int& ptIndex : m_p_vec->meshFaces)
             ptIndex = nodeAddrP(m_dtmP, ptIndex)->tPtr;
         }
+    else
+        {
+        numMeshPts = 0;
+        for (long face : m_p_vec->meshFaces)
+            {
+            nodeP = nodeAddrP(m_dtmP, face);
+            if (nodeP->tPtr == nullPnt)
+                {
+                if (face < minTptrPnt) minTptrPnt = face;
+                else if (face > maxTptrPnt) maxTptrPnt = face;
+                }
+            }
+        if (dbg) bcdtmWrite_message(0, 0, 0, "minTptrPoint = %8ld maxTptrPoint = %8ld", minTptrPnt, maxTptrPnt);
 
+        if (maxTptrPnt == -1) maxTptrPnt = minTptrPnt;
+        }
     /*
     **                       Null Tptr Values
     */
