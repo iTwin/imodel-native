@@ -10,11 +10,13 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId DgnModels::QueryModelId(Utf8CP name) const
+DgnModelId DgnModels::QueryModelId(DgnModel::Code code) const
     {
     CachedStatementPtr stmt;
-    GetDgnDb().GetCachedStatement(stmt, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Name=?");
-    stmt->BindText(1, name, Statement::MakeCopy::No);
+    GetDgnDb().GetCachedStatement(stmt, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE CodeAuthorityId=? AND CodeNameSpace=? AND Code=? LIMIT 1");
+    stmt->BindId(1, code.GetAuthority());
+    stmt->BindText(2, code.GetNameSpace(), Statement::MakeCopy::No);
+    stmt->BindText(3, code.GetValue(), Statement::MakeCopy::No);
     return (BE_SQLITE_ROW != stmt->Step()) ? DgnModelId() : stmt->GetValueId<DgnModelId>(0);
     }
 
@@ -23,7 +25,7 @@ DgnModelId DgnModels::QueryModelId(Utf8CP name) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
     {
-    Statement stmt(m_dgndb, "SELECT Name,Descr,ECClassId,Visibility FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "SELECT Code,Descr,ECClassId,Visibility,CodeNameSpace,CodeAuthorityId FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
@@ -32,10 +34,10 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
     if (out) // this can be null to just test for the existence of a model by id
         {
         out->m_id = id;
-        out->m_name.AssignOrClear(stmt.GetValueText(0));
         out->m_description.AssignOrClear(stmt.GetValueText(1));
         out->m_classId = DgnClassId(stmt.GetValueInt64(2));
         out->m_inGuiList = TO_BOOL(stmt.GetValueInt(3));
+        out->m_code = DgnModel::Code(stmt.GetValueId<DgnAuthorityId>(5), stmt.GetValueText(0), stmt.GetValueText(4));
         }
 
     return SUCCESS;
@@ -44,16 +46,24 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnModels::GetModelName(Utf8StringR name, DgnModelId id) const
+BentleyStatus DgnModels::GetModelCode(DgnModel::Code& code, DgnModelId id) const
     {
-    Statement stmt(m_dgndb, "SELECT Name FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "SELECT CodeAuthorityId,CodeNameSpace,Code FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
         return  ERROR;
 
-    name.AssignOrClear(stmt.GetValueText(0));
+    code = DgnModel::Code(stmt.GetValueId<DgnAuthorityId>(0), stmt.GetValueText(2), stmt.GetValueText(1));
     return  SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModel::Code DgnModels::GetModelCode(Iterator::Entry const& entry)
+    {
+    return DgnModel::Code(entry.GetCodeAuthorityId(), entry.GetCodeValue(), entry.GetCodeNameSpace());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -139,7 +149,7 @@ DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sqlString = "SELECT Id,Name,Descr,Visibility,ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Model);
+        Utf8String sqlString = "SELECT Id,Code,Descr,Visibility,ECClassId,CodeAuthorityId,CodeNameSpace FROM " DGN_TABLE(DGN_CLASSNAME_Model);
         bool hasWhere = false;
         if (ModelIterate::Gui == m_itType)
             {
@@ -160,11 +170,13 @@ DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
     return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
     }
 
-DgnModelId   DgnModels::Iterator::Entry::GetModelId() const {Verify(); return m_sql->GetValueId<DgnModelId>(0);}
-Utf8CP       DgnModels::Iterator::Entry::GetName() const {Verify(); return m_sql->GetValueText(1);}
-Utf8CP       DgnModels::Iterator::Entry::GetDescription() const {Verify(); return m_sql->GetValueText(2);}
-bool         DgnModels::Iterator::Entry::InGuiList() const {Verify(); return (0 != m_sql->GetValueInt(3));}
-DgnClassId   DgnModels::Iterator::Entry::GetClassId() const {Verify(); return DgnClassId(m_sql->GetValueInt64(4));}
+DgnModelId      DgnModels::Iterator::Entry::GetModelId() const {Verify(); return m_sql->GetValueId<DgnModelId>(0);}
+Utf8CP          DgnModels::Iterator::Entry::GetCodeValue() const {Verify(); return m_sql->GetValueText(1);}
+Utf8CP          DgnModels::Iterator::Entry::GetDescription() const {Verify(); return m_sql->GetValueText(2);}
+bool            DgnModels::Iterator::Entry::InGuiList() const {Verify(); return (0 != m_sql->GetValueInt(3));}
+DgnClassId      DgnModels::Iterator::Entry::GetClassId() const {Verify(); return DgnClassId(m_sql->GetValueInt64(4));}
+Utf8CP          DgnModels::Iterator::Entry::GetCodeNameSpace() const {Verify(); return m_sql->GetValueText(5);}
+DgnAuthorityId  DgnModels::Iterator::Entry::GetCodeAuthorityId() const {Verify(); return m_sql->GetValueId<DgnAuthorityId>(6);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/00
@@ -178,7 +190,7 @@ void DgnModel::ReleaseAllElements()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_modelId(params.m_id), m_classId(params.m_classId), m_name(params.m_name), m_properties(params.m_props)
+DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_modelId(params.m_id), m_classId(params.m_classId), m_code(params.m_code), m_properties(params.m_props)
     {
     m_persistent = false;
     m_filled     = false;
@@ -748,7 +760,7 @@ DgnDbStatus DgnModel::_OnInsert()
     if (&m_dgndb != &m_dgndb)
         return DgnDbStatus::WrongDgnDb;
 
-    if (!DgnModels::IsValidName(m_name))
+    if (!DgnModels::IsValidName(m_code.GetValue()))
         {
         BeAssert(false);
         return DgnDbStatus::InvalidName;
@@ -801,18 +813,20 @@ DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
 
     DgnModels& models = GetDgnDb().Models();
 
-    m_name.Trim();
-    if (models.QueryModelId(m_name.c_str()).IsValid()) // can't allow two models with the same name
+    m_code.m_value.Trim();
+    if (models.QueryModelId(m_code).IsValid()) // can't allow two models with the same code
         return DgnDbStatus::DuplicateName;
 
     m_modelId = DgnModelId(m_dgndb, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
 
-    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Name,Descr,ECClassId,Visibility) VALUES(?,?,?,?,?)");
+    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Code,Descr,ECClassId,Visibility,CodeAuthorityId,CodeNameSpace) VALUES(?,?,?,?,?,?,?)");
     stmt.BindId(1, m_modelId);
-    stmt.BindText(2, m_name.c_str(), Statement::MakeCopy::No);
+    stmt.BindText(2, m_code.GetValue().c_str(), Statement::MakeCopy::No);
     stmt.BindText(3, description, Statement::MakeCopy::No);
     stmt.BindId(4, GetClassId());
     stmt.BindInt(5, inGuiList ? 1 : 0);
+    stmt.BindId(6, m_code.GetAuthority());
+    stmt.BindText(7, m_code.GetNameSpace().c_str(), Statement::MakeCopy::No);
 
     auto rc = stmt.Step();
     if (BE_SQLITE_DONE != rc)
@@ -872,7 +886,7 @@ DgnModelPtr DgnModels::LoadDgnModel(DgnModelId modelId)
     if (nullptr == handler)
         return nullptr;
 
-    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetName().c_str(), DgnModel::Properties(), modelId);
+    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetCode(), DgnModel::Properties(), modelId);
     DgnModelPtr dgnModel = handler->Create(params);
     if (!dgnModel.IsValid())
         return nullptr;
@@ -911,7 +925,7 @@ Utf8String DgnModels::GetUniqueModelName(Utf8CP baseName)
     {
     Utf8String tmpStr(baseName);
 
-    if (!tmpStr.empty() && !m_dgndb.Models().QueryModelId(tmpStr.c_str()).IsValid())
+    if (!tmpStr.empty() && !m_dgndb.Models().QueryModelId(DgnModel::CreateModelCode(tmpStr)).IsValid())
         return tmpStr;
 
     bool addDash = !tmpStr.empty();
@@ -931,7 +945,7 @@ Utf8String DgnModels::GetUniqueModelName(Utf8CP baseName)
         if (addDash)
             uniqueModelName.append("-");
         uniqueModelName.append(Utf8PrintfString("%d", ++index));
-        } while (m_dgndb.Models().QueryModelId(uniqueModelName.c_str()).IsValid());
+        } while (m_dgndb.Models().QueryModelId(DgnModel::CreateModelCode(uniqueModelName)).IsValid());
 
     return uniqueModelName;
     }
@@ -1112,7 +1126,7 @@ DgnDbStatus ComponentSolution::Query(Solution& sln, SolutionId sid)
         return DgnDbStatus::ReadError;
     sln.m_parameters = ModelSolverDef::ParameterSet(parametersJson);
         
-    sln.m_componentModelId = GetDgnDb().Models().QueryModelId(sid.m_modelName.c_str());
+    sln.m_componentModelId = GetDgnDb().Models().QueryModelId(DgnModel::CreateModelCode(sid.m_modelName));
     return DgnDbStatus::Success;
     }
 
@@ -1372,7 +1386,7 @@ DgnDbStatus BentleyApi::Dgn::ExecuteComponentSolutionEGA(DgnElementR el, DPoint3
     DgnDbR db = el.GetDgnDb();
 
     // Look up the ComponentModel that itemInstance is based on
-    ComponentModelPtr cm = db.Models().Get<ComponentModel>(db.Models().QueryModelId(cmName.c_str()));
+    ComponentModelPtr cm = db.Models().Get<ComponentModel>(db.Models().QueryModelId(DgnModel::CreateModelCode(cmName)));
     if (!cm.IsValid())
         {
         BeDataAssert(false);
@@ -1428,11 +1442,11 @@ void DgnModel::CreateParams::RelocateToDestinationDb(DgnImportContext& importer)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModel::CreateParams DgnModel::GetCreateParamsForImport(DgnImportContext& importer) const
     {
-    CreateParams parms(importer.GetDestinationDb(), GetClassId(), GetModelName(), GetProperties());
+    CreateParams parms(importer.GetDestinationDb(), GetClassId(), GetCode(), GetProperties());
     if (importer.IsBetweenDbs())
         {
         // Caller probably wants to preserve these when copying between Dbs. We *never* preserve them when copying within a Db.
-        parms.m_name = GetModelName();
+        parms.m_code = GetCode();
 
         parms.RelocateToDestinationDb(importer);
         }
@@ -1442,9 +1456,9 @@ DgnModel::CreateParams DgnModel::GetCreateParamsForImport(DgnImportContext& impo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelPtr DgnModel::Clone(Utf8CP newName) const
+DgnModelPtr DgnModel::Clone(Code newCode) const
     {
-    DgnModelPtr newModel = GetModelHandler().Create(DgnModel::CreateParams(m_dgndb, m_classId, newName));
+    DgnModelPtr newModel = GetModelHandler().Create(DgnModel::CreateParams(m_dgndb, m_classId, newCode));
     newModel->_InitFrom(*this);
     return newModel;
     }
@@ -1459,10 +1473,10 @@ DgnModelPtr DgnModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& impor
 
     DgnModel::CreateParams params = GetCreateParamsForImport(importer); // remaps classid
 
-    if (params.m_name.empty())
-        params.m_name = GetModelName();
+    if (!params.m_code.IsValid())
+        params.m_code = GetCode();
 
-    if (importer.GetDestinationDb().Models().QueryModelId(params.m_name.c_str()).IsValid()) // Is the name already used in destination?
+    if (importer.GetDestinationDb().Models().QueryModelId(params.m_code).IsValid()) // Is the name already used in destination?
         {
         if (nullptr != stat)
             *stat = DgnDbStatus::DuplicateName;
@@ -1719,11 +1733,11 @@ DgnModelPtr DgnModel::ImportModel(DgnDbStatus* statIn, DgnModelCR sourceModel, D
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-DgnModelPtr DgnModel::CopyModel(DgnModelCR model, Utf8CP newName)
+DgnModelPtr DgnModel::CopyModel(DgnModelCR model, Code newCode)
     {
     DgnDbR db = model.GetDgnDb();
 
-    DgnModelPtr model2 = model.Clone(newName);
+    DgnModelPtr model2 = model.Clone(newCode);
     if (DgnDbStatus::Success != model2->Insert())   
         return nullptr;
 

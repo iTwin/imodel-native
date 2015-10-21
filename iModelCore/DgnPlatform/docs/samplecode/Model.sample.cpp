@@ -21,7 +21,7 @@ PhysicalModelPtr createAndInsertPhysicalModel(DgnDbR db, Utf8CP name)
     {
     ModelHandlerR handler = dgn_ModelHandler::Physical::GetHandler();
     DgnClassId modelClassId = db.Domains().GetClassId(handler);
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, modelClassId, name));
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, modelClassId, DgnModel::CreateModelCode(name)));
 
     return (DgnDbStatus::Success == model->Insert()) ? model->ToPhysicalModelP()  : nullptr;
     }

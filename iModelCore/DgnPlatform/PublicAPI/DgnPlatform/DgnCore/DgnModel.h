@@ -10,6 +10,7 @@
 
 #include "DgnDomain.h"
 #include "DgnElement.h"
+#include "DgnAuthority.h"
 #include "ModelSolverDef.h"
 #include <Bentley/ValueFormat.h>
 #include <DgnPlatform/DgnProperties.h>
@@ -65,6 +66,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     friend struct dgn_TxnTable::Model;
 
     struct CreateParams;
+
+    typedef DgnAuthority::Code Code;
 
     //========================================================================================
     //! Application data attached to a DgnModel. Create a subclass of this to store non-persistent information on a DgnModel and
@@ -216,16 +219,16 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         DgnDbR      m_dgndb;
         DgnModelId  m_id;
         DgnClassId  m_classId;
-        Utf8String  m_name;
+        Code        m_code;
         Properties  m_props;
         //! Parameters to create a new instance of a DgnModel.
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] classId The DgnClassId for the new DgnModel.
-        //! @param[in] name The name for the DgnModel
+        //! @param[in] code The code for the DgnModel
         //! @param[in] props The properties for the new DgnModel.
         //! @param[in] id Internal only, must be DgnModelId() to create a new DgnModel.
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, Properties props=Properties(), DgnModelId id=DgnModelId()) :
-            m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name), m_props(props) {}
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, Properties props=Properties(), DgnModelId id=DgnModelId()) :
+            m_dgndb(dgndb), m_id(id), m_classId(classId), m_code(code), m_props(props) {}
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
     };
@@ -239,7 +242,7 @@ protected:
     DgnDbR          m_dgndb;
     DgnModelId      m_modelId;
     DgnClassId      m_classId;
-    Utf8String      m_name;
+    Code            m_code;
     Properties      m_properties;
     DgnElementMap   m_elements;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
@@ -448,8 +451,8 @@ public:
     //! Get the Properties for this DgnModel.
     Properties const& GetProperties() const {return m_properties;}
 
-    //! Get the name of this DgnModel
-    Utf8CP GetModelName() const {return m_name.c_str();}
+    //! Get the Code of this DgnModel
+    Code const& GetCode() const {return m_code;}
 
     //! Get the DgnClassId of this DgnModel
     DgnClassId GetClassId() const {return m_classId;}
@@ -518,16 +521,16 @@ public:
     /** @} */
 
     //! Make a copy of this DgnModel with the same DgnClassId and Properties.
-    //! @param[in] newName The name for the new DgnModel.
+    //! @param[in] newCode The code for the new DgnModel.
     //! @note This makes a new empty, non-persistent, DgnModel with the same properties as this Model, it does NOT clone the elements of this DgnModel.
     //! @see CopyModel, Import
-    DGNPLATFORM_EXPORT DgnModelPtr Clone(Utf8CP newName) const;
+    DGNPLATFORM_EXPORT DgnModelPtr Clone(Code newCode) const;
 
     //! Make a persitent copy of the specified DgnModel and its contents.
     //! @param[in] model The model to copy
-    //! @param[in] newName The name for the new DgnModel.
+    //! @param[in] newCode The Code for the new DgnModel.
     //! @see Import
-    DGNPLATFORM_EXPORT static DgnModelPtr CopyModel(DgnModelCR model, Utf8CP newName);
+    DGNPLATFORM_EXPORT static DgnModelPtr CopyModel(DgnModelCR model, Code newCode);
 
     //! Get the collection of elements for this DgnModel that were loaded by a previous call to FillModel.
     DgnElementMap const& GetElements() const {return m_elements;}
@@ -596,6 +599,9 @@ public:
     //! To indication a validation error, call TxnManager::ReportError. If the error is marked as fatal, then the transaction will be rolled back.
     //! @note This method must make changes of any kind to any other model. Dependent models will be validated later.
     void OnValidate() { _OnValidate(); }
+
+    //! Creates a Code for a model with the given name, associated with the default DgnAuthority for models.
+    DGNPLATFORM_EXPORT static Code CreateModelCode(Utf8StringCR modelName);
 };
 
 //=======================================================================================
@@ -616,12 +622,12 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel : DgnModel
         //! Parameters to create a new instance of a DgnModel.
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] classId The DgnClassId for the new DgnModel.
-        //! @param[in] name The name for the DgnModel
+        //! @param[in] code The Code for the DgnModel
         //! @param[in] props The properties for the new DgnModel.
         //! @param[in] solver The definition of the solver to be used by this model when validating changes to its content.
         //! @param[in] id Internal only, must be DgnModelId() to create a new DgnModel.
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, Properties props=Properties(), ModelSolverDef solver=ModelSolverDef(), DgnModelId id=DgnModelId())
-            : T_Super(dgndb, classId, name, props, id), m_solver(solver) { }
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, Properties props=Properties(), ModelSolverDef solver=ModelSolverDef(), DgnModelId id=DgnModelId())
+            : T_Super(dgndb, classId, code, props, id), m_solver(solver) { }
 
         //! @private
         //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
@@ -1013,7 +1019,7 @@ public:
         CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8StringCR name, ModelSolverDef const& solver=ModelSolverDef(), Utf8StringCR itemECClassName="", 
                     Utf8StringCR elementItemECBaseClassName="", Utf8StringCR elementECClassName="", Utf8StringCR elementCategory="", 
                     Properties props=Properties(), DgnModelId id=DgnModelId()) :
-            T_Super(dgndb, classId, name.c_str(), props, solver, id), 
+            T_Super(dgndb, classId, CreateModelCode(name), props, solver, id), 
             m_elementCategoryName(elementCategory), m_elementECClassName(elementECClassName), 
             m_itemECClassName(itemECClassName), m_itemECBaseClassName(elementItemECBaseClassName)
             {}
@@ -1165,6 +1171,8 @@ public:
     //! @return non-zero error status if the ECSchema could not be imported; DgnDbStatus::DuplicateName if an ECSchema by the same name already exists.
     //! @see GenerateECClass
     DGNPLATFORM_EXPORT static DgnDbStatus ImportSchema(DgnDbR targetDb, BeFileNameCR schemaFile);
+
+    Utf8CP GetModelName() const { return GetCode().GetValueCP(); } //!< The name of this component model
 };
 
 //=======================================================================================
@@ -1231,12 +1239,12 @@ struct EXPORT_VTABLE_ATTRIBUTE SheetModel : DgnModel2d
         //! Parameters for creating a new SheetModel.
         //! @param[in] dgndb the DgnDb into which the SheetModel will be created
         //! @param[in] classId the DgnClassId of thew new SheetModel (must be or derive from SheetModel)
-        //! @param[in] name the name of the new SheetModel
+        //! @param[in] code the code of the new SheetModel
         //! @param[in] size the size of the SheetModel, in meters.
         //! @param[in] props the Properties of the new SheetModel
         //! @param[in] id the DgnModelId of thew new SheetModel. This should be DgnModelId() when creating a new model.
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, DPoint2d size, Properties props=Properties(), DgnModelId id=DgnModelId()) :
-            T_Super(dgndb, classId, name, props, ModelSolverDef(), id), m_size(size) {}
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, DPoint2d size, Properties props=Properties(), DgnModelId id=DgnModelId()) :
+            T_Super(dgndb, classId, code, props, ModelSolverDef(), id), m_size(size) {}
 
         explicit CreateParams(DgnModel::CreateParams const& params, DPoint2d size=DPoint2d::FromZero()) : T_Super(params), m_size(size) {}
     };

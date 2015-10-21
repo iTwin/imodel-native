@@ -31,7 +31,7 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnTrueColor::CreateParams::CreateParams(DgnDbR db, ColorDef colorDef, Utf8StringCR name, Utf8StringCR book)
-  : T_Super(db, QueryDgnClassId(db), CreateColorCode(name, book, db)),
+  : T_Super(db, QueryDgnClassId(db), CreateColorCode(name, book)),
     m_colorDef(colorDef)
     {
     //

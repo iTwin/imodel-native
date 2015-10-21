@@ -66,6 +66,25 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </Target>
     </ECRelationshipClass>
 
+    <ECRelationshipClass typeName="AuthorityIssuesModelCode" description="Model has a code which was issued by the given authority" isDomainClass="True" strengthDirection="forward" strength="referencing">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>NoAction</OnDeleteAction>
+                <CreateIndex>False</CreateIndex><!-- We already index on Code -->
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="False">
+            <Class class="Authority" />
+        </Source>
+        <Target cardinality="(0,N)" roleLabel="has N codes" polymorphic="True">
+            <Class class="Model" >
+                <Key>
+                    <Property name="CodeAuthorityId" />
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
+
     <ECClass typeName="Model" isDomainClass="True" >
         <!--WIP: make Model abstract? -->
         <ECCustomAttributes>
@@ -75,14 +94,46 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                     <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                <Indexes>
+                    <DbIndex>
+                        <Name>idx_dgn_Model_Code</Name>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>CodeAuthorityId</string>
+                            <string>CodeNameSpace</string>
+                            <string>Code</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
             </ClassMap>
         </ECCustomAttributes>
-        <ECProperty propertyName="Name" displayLabel="Model" typeName="string" description="Name of model">
+        <ECProperty propertyName="CodeAuthorityId" typeName="long">
+             <!-- Foreign key relationship: AuthorityIssuesModelCode.CodeAuthorityId --> 
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
-                    <Collation>NoCase</Collation>
                     <IsNullable>False</IsNullable>
-                    <IsUnique>True</IsUnique>
+                    <IsUnique>False</IsUnique>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="CodeNameSpace" typeName="string">
+            <!-- The namespace enclosing the "business key" for this model. -->
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                    <Collation>NoCase</Collation>
+                    <IsUnique>False</IsUnique>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Code" typeName="string">
+            <!-- The "business key" for this Model. Typically used to link this Model with a record in an external system (identified by CodeAuthorityId). -->
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>True</IsNullable><!-- IFF namespace is blank - signifies the code is not meaningful/unique -->
+                    <Collation>NoCase</Collation>
+                    <!-- Code by itself is not necessarily unique, but CodeAuthorityId+CodeNameSpace+Code is unique.  -->
+                    <IsUnique>False</IsUnique>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>

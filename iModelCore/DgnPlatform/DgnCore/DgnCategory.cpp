@@ -109,7 +109,7 @@ void DgnCategory::_CopyFrom(DgnElementCR el)
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategory::CreateParams::CreateParams(DgnDbR db, Utf8StringCR name, Scope scope, Rank rank, Utf8StringCR descr)
-    : T_Super(db, QueryDgnClassId(db), CreateCategoryCode(name, db)), m_data(scope, rank, descr)
+    : T_Super(db, QueryDgnClassId(db), CreateCategoryCode(name)), m_data(scope, rank, descr)
     {
     //
     }
@@ -488,7 +488,7 @@ DgnAuthority::Code DgnSubCategory::_GenerateDefaultCode()
     {
     DgnCategoryCPtr cat = IsDefaultSubCategory() ? DgnCategory::QueryCategory(GetCategoryId(), GetDgnDb()) : nullptr;
     if (cat.IsValid())
-        return CreateSubCategoryCode(*cat, cat->GetCategoryName(), GetDgnDb());
+        return CreateSubCategoryCode(*cat, cat->GetCategoryName());
 
     BeAssert(false && "The creator of a sub-category must set its code");
     return Code();

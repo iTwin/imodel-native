@@ -115,7 +115,7 @@ void ChangeSummaryTestFixture::InsertModel()
     {
     ModelHandlerR handler = dgn_ModelHandler::Physical::GetHandler();
     DgnClassId classId = m_testDb->Domains().GetClassId(handler);
-    m_testModel = handler.Create(DgnModel::CreateParams(*m_testDb, classId, "ChangeSetModel"));
+    m_testModel = handler.Create(DgnModel::CreateParams(*m_testDb, classId, DgnModel::CreateModelCode("ChangeSetModel")));
 
     DgnDbStatus status = m_testModel->Insert();
     ASSERT_TRUE(DgnDbStatus::Success == status);
@@ -418,7 +418,7 @@ InstanceId;ClassId;ClassName;DbOpcode;Indirect
 	SourceECInstanceId;NULL;4
 	TargetECInstanceId;NULL;4
     */
-    EXPECT_EQ(13, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(14, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testModel->GetModelId().GetValueUnchecked()), "dgn", "PhysicalModel", DbOpcode::Insert));
     EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testCategoryId.GetValueUnchecked()), "dgn", "Category", DbOpcode::Insert));
     EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Insert));
@@ -593,7 +593,7 @@ InstanceId;ClassId;ClassName;DbOpcode;Indirect
 	SourceECInstanceId;NULL;4
 	TargetECInstanceId;NULL;4
     */
-    EXPECT_EQ(13, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(14, changeSummary.MakeInstanceIterator().QueryCount());
 
     ModifyElement();
 
@@ -659,7 +659,7 @@ InstanceId;ClassId;ClassName;DbOpcode;Indirect
             SourceECInstanceId;NULL;1
             TargetECInstanceId;NULL;1
     */
-    EXPECT_EQ(13, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(14, changeSummary.MakeInstanceIterator().QueryCount());
 
     DeleteElement();
 
@@ -694,7 +694,7 @@ InstanceId;ClassId;ClassName;DbOpcode;Indirect
             ECInstanceId;NULL;1
             Props;NULL;"{"color":16777215}"
     */
-    EXPECT_EQ(8, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(9, changeSummary.MakeInstanceIterator().QueryCount());
     }
 
 //---------------------------------------------------------------------------------------
@@ -717,10 +717,10 @@ TEST_F(ChangeSummaryTestFixture, ValidateInstanceIterator)
         countIter++;
         UNUSED_VARIABLE(entry);
         }
-    EXPECT_EQ(countIter, 13);
+    EXPECT_EQ(countIter, 14);
 
     int countQuery = changeSummary.MakeInstanceIterator().QueryCount();
-    EXPECT_EQ(countQuery, 13);
+    EXPECT_EQ(countQuery, 14);
     }
 
 extern ECSchemaPtr ReadECSchemaFromDisk(WCharCP schemaPathname);

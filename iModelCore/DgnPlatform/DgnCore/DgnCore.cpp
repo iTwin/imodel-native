@@ -17,7 +17,7 @@ double const fc_hugeVal = 1e37;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeRepositoryBasedIdSet::FromJson(Json::Value const& in)
+void BeBriefcaseBasedIdSet::FromJson(Json::Value const& in)
     {
     Utf8String str = in.asString();
     if (str.empty())
@@ -37,7 +37,7 @@ void BeRepositoryBasedIdSet::FromJson(Json::Value const& in)
             std::swap(startRange, endRange);
         
         for (; startRange<=endRange; ++startRange)
-            insert((BeRepositoryBasedId) startRange);
+            insert((BeBriefcaseBasedId) startRange);
 
         curr = strchr(curr, ',');
         if (curr == nullptr)
@@ -72,7 +72,7 @@ static void saveRange(bool& valid, Utf8StringR str, int64_t start, int64_t end)
 * convert an IdSet to a Json string. This looks for ranges of contiguous values and uses "n-m" syntax.
 * @bsimethod                                    Keith.Bentley                   12/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeRepositoryBasedIdSet::ToJson(Json::Value& out) const
+void BeBriefcaseBasedIdSet::ToJson(Json::Value& out) const
     {
     Utf8String str;
     int64_t start=0, end=0;

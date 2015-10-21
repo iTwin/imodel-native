@@ -154,9 +154,9 @@ public:
     Utf8String GetName() const { return GetCode().GetValue(); }
     Utf8StringCR GetDescription() const { return m_descr; }
     void SetDescription(Utf8StringCR value) { m_descr = value; }
-    void SetName(Utf8StringCR value) { SetCode(CreateStyleCode(value, GetDgnDb())); }
+    void SetName(Utf8StringCR value) { SetCode(CreateStyleCode(value)); }
 
-    DGNPLATFORM_EXPORT static Code CreateStyleCode(Utf8StringCR name, DgnDbR db);
+    DGNPLATFORM_EXPORT static Code CreateStyleCode(Utf8StringCR name);
     
     DGNPLATFORM_EXPORT AnnotationColorType GetColorType() const;
     DGNPLATFORM_EXPORT void SetColorType(AnnotationColorType);
@@ -198,7 +198,7 @@ public:
     AnnotationTextStyleCPtr Update(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Update<AnnotationTextStyle>(*this, status); }
 
     DGNPLATFORM_EXPORT static AnnotationTextStyleId QueryStyleId(Code const& code, DgnDbR db);
-    static AnnotationTextStyleId QueryStyleId(Utf8StringCR styleName, DgnDbR db) { return QueryStyleId(CreateStyleCode(styleName, db), db); }
+    static AnnotationTextStyleId QueryStyleId(Utf8StringCR styleName, DgnDbR db) { return QueryStyleId(CreateStyleCode(styleName), db); }
     static AnnotationTextStyleCPtr QueryStyle(AnnotationTextStyleId styleId, DgnDbR db) { return db.Elements().Get<AnnotationTextStyle>(styleId); }
     static AnnotationTextStyleCPtr QueryStyle(Utf8StringCR styleName, DgnDbR db) { return QueryStyle(QueryStyleId(styleName, db), db); }
 

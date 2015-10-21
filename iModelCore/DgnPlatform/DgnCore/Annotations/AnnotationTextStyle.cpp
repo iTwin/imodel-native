@@ -85,7 +85,7 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 AnnotationTextStyle::CreateParams::CreateParams(DgnDbR db, Utf8StringCR name, AnnotationTextStylePropertyBagCR data, Utf8StringCR descr)
-    : T_Super(db, QueryDgnClassId(db), CreateStyleCode(name, db)), m_data(data), m_descr(descr)
+    : T_Super(db, QueryDgnClassId(db), CreateStyleCode(name)), m_data(data), m_descr(descr)
     {
     //
     }

@@ -1449,11 +1449,12 @@ DGNPLATFORM_REF_COUNTED_PTR(WebMercatorModel)
 DgnModelId dgn_ModelHandler::StreetMap::CreateStreetMapModel(DgnDbR db, MapService mapService, MapType mapType, bool finerResolution)
     {
     //Utf8PrintfString modelName("com.bentley.dgn.StreetMap_%d_%d", mapService, mapType); // *** WIP_STREET_MAP how to make sure name is unique?
+    // ANSWER to WIP: create a DgnAuthority and use the namespace
     Utf8String modelName = getStreetMapServerDescription(mapService,mapType).c_str();
     DgnClassId classId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "StreetMapModel"));
     BeAssert(classId.IsValid());
 
-    WebMercatorModelPtr model = new StreetMapModel(DgnModel::CreateParams(db, classId, modelName.c_str()));
+    WebMercatorModelPtr model = new StreetMapModel(DgnModel::CreateParams(db, classId, DgnModel::CreateModelCode(modelName)));
 
     WebMercatorModel::Mercator props;
     props.m_mapService = Utf8PrintfString("%d", mapService);

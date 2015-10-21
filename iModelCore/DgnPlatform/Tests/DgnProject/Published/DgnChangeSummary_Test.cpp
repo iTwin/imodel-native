@@ -149,7 +149,7 @@ void DgnChangeSummaryTestFixture::InsertModel()
     {
     ModelHandlerR handler = dgn_ModelHandler::Physical::GetHandler();
     DgnClassId classId = m_testDb->Domains().GetClassId(handler);
-    m_testModel = handler.Create(DgnModel::CreateParams(*m_testDb, classId, "ChangeSetModel"));
+    m_testModel = handler.Create(DgnModel::CreateParams(*m_testDb, classId, DgnModel::CreateModelCode("ChangeSetModel")));
 
     DgnDbStatus status = m_testModel->Insert();
     ASSERT_TRUE(DgnDbStatus::Success == status);
