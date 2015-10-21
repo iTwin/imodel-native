@@ -290,7 +290,7 @@ struct DTMMeshEnumerator : RefCountedBase
 
     public: void SetFilterRegionByFeatureId (DTMFeatureId value)
         {
-        m_regionMode = RegionMode::RegionUserTag;
+        m_regionMode = RegionMode::RegionFeatureId;
         m_regionFeatureId = value;
         Reset();
         }

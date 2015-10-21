@@ -767,13 +767,13 @@ errexit:
     }
 
 void DTMMeshEnumerator::ScanAndMarkRegions () const
-    {
+    {  
     m_regionPointMask.resize (m_dtmP->numPoints);
     DTMFeatureEnumeratorPtr regionEnumerator = DTMFeatureEnumerator::Create (*m_dtm.get ());
     regionEnumerator->ExcludeAllFeatures ();
     regionEnumerator->IncludeFeature (DTMFeatureType::Region);
     regionEnumerator->SetReadSourceFeatures (false);
-
+      
     if (m_regionMode == RegionMode::RegionFeatureId)
         regionEnumerator->SetFeatureIdFilter (m_regionFeatureId);
     else if (m_regionMode == RegionMode::RegionUserTag)
