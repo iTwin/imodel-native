@@ -1,25 +1,25 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Client/WSChangesetBuilder.cpp $
+|     $Source: Client/WSChangeset.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
-#include <WebServices/Client/WSChangesetBuilder.h>
+#include <WebServices/Client/WSChangeset.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSChangesetBuilder::WSChangesetBuilder()
+WSChangeset::WSChangeset()
     {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t WSChangesetBuilder::GetInstanceCount() const
+size_t WSChangeset::GetInstanceCount() const
     {
     size_t count = m_instances.size();
     for (auto& instance : m_instances)
@@ -32,7 +32,7 @@ size_t WSChangesetBuilder::GetInstanceCount() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t WSChangesetBuilder::GetRelationshipCount() const
+size_t WSChangeset::GetRelationshipCount() const
     {
     return GetInstanceCount() - m_instances.size();
     }
@@ -40,7 +40,7 @@ size_t WSChangesetBuilder::GetRelationshipCount() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t WSChangesetBuilder::CalculateSize() const
+size_t WSChangeset::CalculateSize() const
     {
     static const size_t sizeMinimum = Utf8String(R"({"instances":[]})").size();
 
@@ -62,7 +62,7 @@ size_t WSChangesetBuilder::CalculateSize() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String WSChangesetBuilder::ToString() const
+Utf8String WSChangeset::ToString() const
     {
     Json::Value changesetJson;
     Json::Value& instancesJson = changesetJson["instances"];
@@ -86,7 +86,7 @@ Utf8String WSChangesetBuilder::ToString() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSChangesetBuilder::Instance& WSChangesetBuilder::AddInstance
+WSChangeset::Instance& WSChangeset::AddInstance
 (
 ObjectId instanceId,
 ChangeStatus status,
@@ -106,7 +106,7 @@ std::shared_ptr<Json::Value> properties
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool WSChangesetBuilder::RemoveInstance(Instance& instanceToRemove)
+bool WSChangeset::RemoveInstance(Instance& instanceToRemove)
     {
     for (auto& instance : m_instances)
         {
@@ -126,7 +126,7 @@ bool WSChangesetBuilder::RemoveInstance(Instance& instanceToRemove)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSChangesetBuilder::Instance& WSChangesetBuilder::Instance::AddRelatedInstance
+WSChangeset::Instance& WSChangeset::Instance::AddRelatedInstance
 (
 ObjectId relId,
 ChangeStatus relStatus,
@@ -152,7 +152,7 @@ std::shared_ptr<Json::Value> properties
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSChangesetBuilder::Instance::ToJson(JsonValueR instanceJsonOut) const
+void WSChangeset::Instance::ToJson(JsonValueR instanceJsonOut) const
     {
     FillBase(instanceJsonOut, m_id, m_status, m_properties);
 
@@ -184,7 +184,7 @@ void WSChangesetBuilder::Instance::ToJson(JsonValueR instanceJsonOut) const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSChangesetBuilder::Instance::FillBase
+void WSChangeset::Instance::FillBase
 (
 JsonValueR instanceJsonOut,
 ObjectIdCR id,
@@ -214,7 +214,7 @@ std::shared_ptr<Json::Value> properties
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t WSChangesetBuilder::Instance::CalculateBaseSize
+size_t WSChangeset::Instance::CalculateBaseSize
 (
 ObjectIdCR id,
 ChangeStatus status,
@@ -256,7 +256,7 @@ size_t& size
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t WSChangesetBuilder::Instance::CalculateSize() const
+size_t WSChangeset::Instance::CalculateSize() const
     {
     size_t size = CalculateBaseSize(m_id, m_status, m_properties, m_baseSize);
 
@@ -286,7 +286,7 @@ size_t WSChangesetBuilder::Instance::CalculateSize() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t WSChangesetBuilder::Instance::CalculateFieldSize(Utf8CP fieldName, Utf8CP fieldValue)
+size_t WSChangeset::Instance::CalculateFieldSize(Utf8CP fieldName, Utf8CP fieldValue)
     {
     static const size_t stringFieldMinimum = Utf8String(R"("":"",)").size();
 
@@ -301,7 +301,7 @@ size_t WSChangesetBuilder::Instance::CalculateFieldSize(Utf8CP fieldName, Utf8CP
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t WSChangesetBuilder::Instance::CalculateDirectionFieldSize(ECRelatedInstanceDirection direction)
+size_t WSChangeset::Instance::CalculateDirectionFieldSize(ECRelatedInstanceDirection direction)
     {
     if (direction == ECRelatedInstanceDirection::Forward)
         {
@@ -320,7 +320,7 @@ size_t WSChangesetBuilder::Instance::CalculateDirectionFieldSize(ECRelatedInstan
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t WSChangesetBuilder::Instance::CountRelatedInstances() const
+size_t WSChangeset::Instance::CountRelatedInstances() const
     {
     size_t count = m_relationships.size();
     for (auto& relationship : m_relationships)
@@ -333,7 +333,7 @@ size_t WSChangesetBuilder::Instance::CountRelatedInstances() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool WSChangesetBuilder::Instance::RemoveRelatedInstance(Instance& instanceToRemove)
+bool WSChangeset::Instance::RemoveRelatedInstance(Instance& instanceToRemove)
     {
     for (auto& relationship : m_relationships)
         {
@@ -353,7 +353,7 @@ bool WSChangesetBuilder::Instance::RemoveRelatedInstance(Instance& instanceToRem
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP WSChangesetBuilder::Instance::GetChangeStatusStr(ChangeStatus status)
+Utf8CP WSChangeset::Instance::GetChangeStatusStr(ChangeStatus status)
     {
     switch (status)
         {
@@ -375,7 +375,7 @@ Utf8CP WSChangesetBuilder::Instance::GetChangeStatusStr(ChangeStatus status)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP WSChangesetBuilder::Instance::GetDirectionStr(ECRelatedInstanceDirection direction)
+Utf8CP WSChangeset::Instance::GetDirectionStr(ECRelatedInstanceDirection direction)
     {
     switch (direction)
         {
@@ -393,7 +393,7 @@ Utf8CP WSChangesetBuilder::Instance::GetDirectionStr(ECRelatedInstanceDirection 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ObjectIdCR WSChangesetBuilder::Instance::GetId() const
+ObjectIdCR WSChangeset::Instance::GetId() const
     {
     return m_id;
     }
@@ -401,7 +401,7 @@ ObjectIdCR WSChangesetBuilder::Instance::GetId() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSChangesetBuilder::ChangeStatus WSChangesetBuilder::Instance::GetStatus() const
+WSChangeset::ChangeStatus WSChangeset::Instance::GetStatus() const
     {
     return m_status;
     }
