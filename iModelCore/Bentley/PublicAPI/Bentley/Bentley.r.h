@@ -90,6 +90,14 @@
     #endif
 #endif
 
+#ifndef INT64_C
+    #define INT64_C(c) c ## LL
+#endif
+
+#ifndef UINT64_C
+    #define UINT64_C(c) c ## ULL
+#endif
+
 #if !defined (NO_BENTLEY_BASICTYPES)
 // We have kept this typedef for readability reasons.
 typedef unsigned char Byte;
