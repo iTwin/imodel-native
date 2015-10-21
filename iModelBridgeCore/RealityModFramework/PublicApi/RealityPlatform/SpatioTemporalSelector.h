@@ -18,11 +18,14 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 //=====================================================================================
 enum class SelectionCriteria
     {
-    Date,                   //!< Take latest dataset first.
-    Resolution,             //!< Take dataset with highest resolution first.
-    DateAndResolution,      //!< Take dataset with highest resolution first and then complete with the latest ones.
+    Resolution_Good,        //!< Good level of quality.
+    Resolution_Better,      //!< Better level of quality.
+    Resolution_Best,        //!< Best level of quality.
+    Date_Less,              //!< Oldest capture date.
+    Date_Recent,            //!< Recent capture date.
+    Date_Most,              //!< Latest capture date.
     // *** Add new here.
-    Default,                //!< DateAndResolution. Date: 5 years. Resolution: High-res.
+    Default,                //!< Best level of quality and latest capture date.
     };
 
 //=====================================================================================
@@ -34,17 +37,33 @@ public:
     //!
     REALITYDATAPLATFORM_EXPORT static const bvector<Utf8String> GetIDsFromJson(const bvector<GeoPoint2d>& regionOfInterest,
                                                                                Utf8CP data, 
-                                                                               SelectionCriteria criteria = SelectionCriteria::Default);
+                                                                               SelectionCriteria qualityCriteria = SelectionCriteria::Default,
+                                                                               SelectionCriteria captureDateCriteria = SelectionCriteria::Default);
                                                                       
 private:
-    //! Select and return the data IDs that best fit the region of interest (footprint) and the criteria (date, resolution, etc.).
-    static const bvector<Utf8String> Select(const bvector<GeoPoint2d>& regionOfInterest,
-                                            const bvector<SpatioTemporalDataPtr>& dataset,
-                                            SelectionCriteria criteria);
+    //! Select and return the data IDs that best fit the region of interest.
+    //! High resolution and latest capture date first.
+    static const bvector<Utf8String> GetIDs(const bvector<GeoPoint2d>& regionOfInterest,
+                                            const bvector<SpatioTemporalDataPtr>& dataset);
 
-    static const bvector<Utf8String> SelectByDate(const bvector<GeoPoint2d>& regionOfInterest, const bvector<SpatioTemporalDataPtr>& dataset);
-    static const bvector<Utf8String> SelectByResolution(const bvector<GeoPoint2d>& regionOfInterest, const bvector<SpatioTemporalDataPtr>& dataset);
-    static const bvector<Utf8String> SelectByDateAndResolution(const bvector<GeoPoint2d>& regionOfInterest, const bvector<SpatioTemporalDataPtr>& dataset);
+    //! Select and return the data IDs that best fit the region of interest 
+    //! and based on quality (resolution) and capture date.
+    static const bvector<Utf8String> GetIDsByCriteria(const bvector<GeoPoint2d>& regionOfInterest,
+                                                      const bvector<SpatioTemporalDataPtr>& dataset,
+                                                      SelectionCriteria qualityCriteria,
+                                                      SelectionCriteria captureDateCriteria);
+
+
+    static const bvector<SpatioTemporalDataPtr> PositionFiltering(const bvector<GeoPoint2d>& regionOfInterest,
+                                                                  const bvector<SpatioTemporalDataPtr>& dataset);
+
+    static const bvector<SpatioTemporalDataPtr> CriteriaFiltering(const bvector<GeoPoint2d>& regionOfInterest,
+                                                                  const bvector<SpatioTemporalDataPtr>& dataset,
+                                                                  SelectionCriteria qualityCriteria,
+                                                                  SelectionCriteria captureDateCriteria);
+
+    static const bvector<SpatioTemporalDataPtr> Select(const bvector<GeoPoint2d>& regionOfInterest,
+                                                       const bvector<SpatioTemporalDataPtr>& dataset);
     };
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE
