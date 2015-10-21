@@ -1103,7 +1103,6 @@ public:
             DGNPLATFORM_EXPORT Utf8CP GetTextType() const; //!< The type of text
             DGNPLATFORM_EXPORT BeSQLite::BeInt64Id GetId() const; //!< The ID of the associated object
             DGNPLATFORM_EXPORT Utf8CP GetText() const; //!< The search text
-            DGNPLATFORM_EXPORT BeSQLite::BeInt64Id GetRecordId() const; //!< The row ID of this record in the searchable text table
 
             Key GetKey() const { return Key(GetTextType(), GetId()); } //!< The unique Key identifying this entry
             Record GetRecord() const { return Record(GetTextType(), GetId(), GetText()); } //!< A record representing this entry

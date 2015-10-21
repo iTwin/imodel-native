@@ -213,17 +213,17 @@ DbResult DgnSearchableText::CreateTable(DgnDbR db)
         return rc;
 
     // Create triggers to keep index in sync with content table
-    rc = db.ExecuteSql("CREATE TRIGGER be_fts_ai AFTER INSERT ON " FTS_TABLE_Content
+    rc = db.ExecuteSql("CREATE TRIGGER dgn_fts_ai AFTER INSERT ON " FTS_TABLE_Content
                        " BEGIN INSERT INTO " FTS_TABLE_Index "(rowid,Type,Id,Text) VALUES(new.rowid,new.Type,new.Id,new.Text); END;");
     if (BE_SQLITE_OK != rc)
         return rc;
 
-    rc = db.ExecuteSql("CREATE TRIGGER be_fts_ad AFTER DELETE ON " FTS_TABLE_Content
+    rc = db.ExecuteSql("CREATE TRIGGER dgn_fts_ad AFTER DELETE ON " FTS_TABLE_Content
                        " BEGIN INSERT INTO " FTS_TABLE_Index "(" FTS_TABLE_Index ",rowid,Type,Id,Text) VALUES('delete',old.rowid,old.Type,old.Id,old.Text); END;");
     if (BE_SQLITE_OK != rc)
         return rc;
 
-    rc = db.ExecuteSql("CREATE TRIGGER be_fts_au AFTER UPDATE ON " FTS_TABLE_Content " BEGIN"
+    rc = db.ExecuteSql("CREATE TRIGGER dgn_fts_au AFTER UPDATE ON " FTS_TABLE_Content " BEGIN"
                        " INSERT INTO " FTS_TABLE_Index "(" FTS_TABLE_Index ",rowid,Type,Id,Text) VALUES('delete',old.rowid,old.Type,old.Id,old.Text);"
                        " INSERT INTO " FTS_TABLE_Index "(rowid,Type,Id,Text) VALUES(new.rowid,new.Type,new.Id,new.Text);"
                        " END;");
