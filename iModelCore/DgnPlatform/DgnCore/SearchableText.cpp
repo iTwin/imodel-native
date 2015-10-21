@@ -10,33 +10,33 @@
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 
-#define FTS_TABLE__Content  "dgn_fts"
-#define FTS_TABLE__Index    "dgn_ftsidx"
+#define FTS_TABLE_Content  "dgn_fts_content"
+#define FTS_TABLE_Index    "dgn_fts_idx"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnSearchableText::Query::Query(Utf8StringCR matchExpression, Utf8CP category)
+DgnSearchableText::Query::Query(Utf8StringCR matchExpression, Utf8CP type)
     : m_matchExpression(matchExpression)
     {
     m_matchExpression.Trim();
-    if (nullptr != category)
-        AddCategory(category);
+    if (nullptr != type)
+        AddTextType(type);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnSearchableText::Query::AddCategory(Utf8CP cat)
+void DgnSearchableText::Query::AddTextType(Utf8CP type)
     {
-    Utf8String category(cat);
-    category.Trim();
-    BeAssert(!category.empty());
-    if (!category.empty())
+    Utf8String textType(type);
+    textType.Trim();
+    BeAssert(!textType.empty());
+    if (!textType.empty())
         {
-        BeAssert(m_categories.end() == std::find(m_categories.begin(), m_categories.end(), category));
-        if (m_categories.end() == std::find(m_categories.begin(), m_categories.end(), category))
-            m_categories.push_back(category);
+        BeAssert(m_types.end() == std::find(m_types.begin(), m_types.end(), textType));
+        if (m_types.end() == std::find(m_types.begin(), m_types.end(), textType))
+            m_types.push_back(textType);
         }
     }
 
@@ -45,26 +45,26 @@ void DgnSearchableText::Query::AddCategory(Utf8CP cat)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String DgnSearchableText::Query::ToWhereClause() const
     {
-    Utf8String categorySql;
-    for (auto const& category : m_categories)
+    Utf8String typeSql;
+    for (auto const& type : m_types)
         {
-        if (!categorySql.empty())
-            categorySql.append(1, ',');
+        if (!typeSql.empty())
+            typeSql.append(1, ',');
 
-        SqlPrintfString cat("%Q", category.c_str());
-        categorySql.append(cat);
+        SqlPrintfString quotedType("%Q", type.c_str());
+        typeSql.append(quotedType);
         }
 
-    Utf8String sql(SqlPrintfString("WHERE (" FTS_TABLE__Index " MATCH %Q)", m_matchExpression.c_str()));
-    switch (m_categories.size())
+    Utf8String sql(SqlPrintfString("WHERE (" FTS_TABLE_Index " MATCH %Q)", m_matchExpression.c_str()));
+    switch (m_types.size())
         {
         case 0:
             break;
         case 1:
-            sql.append(" AND Category=").append(categorySql);
+            sql.append(" AND Type=").append(typeSql);
             break;
         default:
-            sql.append(" AND Category IN (").append(categorySql).append(1, ')');
+            sql.append(" AND Type IN (").append(typeSql).append(1, ')');
             break;
         }
 
@@ -77,7 +77,7 @@ Utf8String DgnSearchableText::Query::ToWhereClause() const
 size_t DgnSearchableText::QueryCount(Query const& query) const
     {
     Statement stmt;
-    Utf8PrintfString sql("SELECT count(*) FROM " FTS_TABLE__Index " %s", query.ToWhereClause().c_str());
+    Utf8PrintfString sql("SELECT count(*) FROM " FTS_TABLE_Index " %s", query.ToWhereClause().c_str());
     if (BE_SQLITE_OK != stmt.Prepare(GetDgnDb(), sql.c_str()) || BE_SQLITE_ROW != stmt.Step())
         {
         BeAssert(false);
@@ -94,7 +94,7 @@ DgnSearchableText::Iterator::const_iterator DgnSearchableText::Iterator::begin()
     {
     if (!m_stmt.IsValid())
         {
-        Utf8PrintfString sql("SELECT Category,Id,Text FROM " FTS_TABLE__Index " %s", m_query.ToWhereClause().c_str());
+        Utf8PrintfString sql("SELECT Type,Id,Text FROM " FTS_TABLE_Index " %s", m_query.ToWhereClause().c_str());
         m_stmt = m_db->GetCachedStatement(sql.c_str());
         }
     else
@@ -118,7 +118,7 @@ DgnSearchableText::Iterator DgnSearchableText::QueryRecords(Query const& query) 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnSearchableText::Record DgnSearchableText::QueryRecord(Key const& key) const
     {
-    SqlPrintfString sql("SELECT Category,Id,Text FROM " FTS_TABLE__Index " WHERE Category=%Q AND Id=%llu", key.GetCategory().c_str(), key.GetId().GetValue());
+    SqlPrintfString sql("SELECT Type,Id,Text FROM " FTS_TABLE_Index " WHERE Type=%Q AND Id=%llu", key.GetTextType().c_str(), key.GetId().GetValue());
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(GetDgnDb(), sql))
         BeAssert(false);
@@ -131,21 +131,21 @@ DgnSearchableText::Record DgnSearchableText::QueryRecord(Key const& key) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnSearchableText::Categories DgnSearchableText::QueryCategories() const
+DgnSearchableText::TextTypes DgnSearchableText::QueryTextTypes() const
     {
-    Categories categories;
+    TextTypes textTypes;
     Statement stmt;
-    if (BE_SQLITE_OK == stmt.Prepare(GetDgnDb(), "SELECT DISTINCT Category FROM " FTS_TABLE__Index))
+    if (BE_SQLITE_OK == stmt.Prepare(GetDgnDb(), "SELECT DISTINCT Type FROM " FTS_TABLE_Index))
         {
         while (BE_SQLITE_ROW == stmt.Step())
-            categories.push_back(stmt.GetValueText(0));
+            textTypes.push_back(stmt.GetValueText(0));
         }
     else
         {
         BeAssert(false);
         }
 
-    return categories;
+    return textTypes;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -154,7 +154,7 @@ DgnSearchableText::Categories DgnSearchableText::QueryCategories() const
 DbResult DgnSearchableText::Insert(Record const& record)
     {
     BeAssert(record.IsValid());
-    SqlPrintfString sql("INSERT INTO " FTS_TABLE__Content " (Category,Id,Text) VALUES (%Q,%llu,%Q)", record.GetCategory().c_str(), record.GetId().GetValue(), record.GetText().c_str());
+    SqlPrintfString sql("INSERT INTO " FTS_TABLE_Content " (Type,Id,Text) VALUES (%Q,%llu,%Q)", record.GetTextType().c_str(), record.GetId().GetValue(), record.GetText().c_str());
     return GetDgnDb().ExecuteSql(sql);
     }
 
@@ -164,9 +164,9 @@ DbResult DgnSearchableText::Insert(Record const& record)
 DbResult DgnSearchableText::Update(Record const& record, Key const* pOriginalKey)
     {
     auto const& key = nullptr != pOriginalKey ? *pOriginalKey : record.GetKey();
-    SqlPrintfString sql("UPDATE " FTS_TABLE__Content " SET Category=%Q,Id=%llu,Text=%Q WHERE Category=%Q AND Id=%llu",
-                        record.GetCategory().c_str(), record.GetId().GetValue(), record.GetText().c_str(),
-                        key.GetCategory().c_str(), key.GetId().GetValue());
+    SqlPrintfString sql("UPDATE " FTS_TABLE_Content " SET Type=%Q,Id=%llu,Text=%Q WHERE Type=%Q AND Id=%llu",
+                        record.GetTextType().c_str(), record.GetId().GetValue(), record.GetText().c_str(),
+                        key.GetTextType().c_str(), key.GetId().GetValue());
     return GetDgnDb().ExecuteSql(sql);
     }
 
@@ -175,15 +175,15 @@ DbResult DgnSearchableText::Update(Record const& record, Key const* pOriginalKey
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnSearchableText::DropAll()
     {
-    return GetDgnDb().ExecuteSql("DELETE FROM " FTS_TABLE__Content);
+    return GetDgnDb().ExecuteSql("DELETE FROM " FTS_TABLE_Content);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnSearchableText::DropCategory(Utf8CP cat)
+DbResult DgnSearchableText::DropTextType(Utf8CP type)
     {
-    SqlPrintfString sql("DELETE FROM " FTS_TABLE__Content " WHERE Category=%Q", cat);
+    SqlPrintfString sql("DELETE FROM " FTS_TABLE_Content " WHERE Type=%Q", type);
     return GetDgnDb().ExecuteSql(sql);
     }
 
@@ -192,7 +192,7 @@ DbResult DgnSearchableText::DropCategory(Utf8CP cat)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnSearchableText::DropRecord(Key const& key)
     {
-    SqlPrintfString sql("DELETE FROM " FTS_TABLE__Content " WHERE Category=%Q AND Id=%llu", key.GetCategory().c_str(), key.GetId().GetValue());
+    SqlPrintfString sql("DELETE FROM " FTS_TABLE_Content " WHERE Type=%Q AND Id=%llu", key.GetTextType().c_str(), key.GetId().GetValue());
     return GetDgnDb().ExecuteSql(sql);
     }
 
@@ -202,30 +202,30 @@ DbResult DgnSearchableText::DropRecord(Key const& key)
 DbResult DgnSearchableText::CreateTable(DgnDbR db)
     {
     // Create the content table
-    DbResult rc = db.CreateTable(FTS_TABLE__Content, "Category NOT NULL,Id INTEGER NOT NULL,Text NOT NULL,PRIMARY KEY (Category,Id)");
+    DbResult rc = db.CreateTable(FTS_TABLE_Content, "Type NOT NULL,Id INTEGER NOT NULL,Text NOT NULL,PRIMARY KEY (Type,Id)");
     if (BE_SQLITE_OK != rc)
         return rc;
 
     // Create the virtual table
-    rc = db.ExecuteSql("CREATE VIRTUAL TABLE " FTS_TABLE__Index " using fts5(Category UNINDEXED,Id UNINDEXED,Text,"
-                       "content=" FTS_TABLE__Content ",content_rowid=rowid)");
+    rc = db.ExecuteSql("CREATE VIRTUAL TABLE " FTS_TABLE_Index " using fts5(Type UNINDEXED,Id UNINDEXED,Text,"
+                       "content=" FTS_TABLE_Content ",content_rowid=rowid)");
     if (BE_SQLITE_OK != rc)
         return rc;
 
     // Create triggers to keep index in sync with content table
-    rc = db.ExecuteSql("CREATE TRIGGER be_fts_ai AFTER INSERT ON " FTS_TABLE__Content
-                       " BEGIN INSERT INTO " FTS_TABLE__Index "(rowid,Category,Id,Text) VALUES(new.rowid,new.Category,new.Id,new.Text); END;");
+    rc = db.ExecuteSql("CREATE TRIGGER be_fts_ai AFTER INSERT ON " FTS_TABLE_Content
+                       " BEGIN INSERT INTO " FTS_TABLE_Index "(rowid,Type,Id,Text) VALUES(new.rowid,new.Type,new.Id,new.Text); END;");
     if (BE_SQLITE_OK != rc)
         return rc;
 
-    rc = db.ExecuteSql("CREATE TRIGGER be_fts_ad AFTER DELETE ON " FTS_TABLE__Content
-                       " BEGIN INSERT INTO " FTS_TABLE__Index "(" FTS_TABLE__Index ",rowid,Category,Id,Text) VALUES('delete',old.rowid,old.Category,old.Id,old.Text); END;");
+    rc = db.ExecuteSql("CREATE TRIGGER be_fts_ad AFTER DELETE ON " FTS_TABLE_Content
+                       " BEGIN INSERT INTO " FTS_TABLE_Index "(" FTS_TABLE_Index ",rowid,Type,Id,Text) VALUES('delete',old.rowid,old.Type,old.Id,old.Text); END;");
     if (BE_SQLITE_OK != rc)
         return rc;
 
-    rc = db.ExecuteSql("CREATE TRIGGER be_fts_au AFTER UPDATE ON " FTS_TABLE__Content " BEGIN"
-                       " INSERT INTO " FTS_TABLE__Index "(" FTS_TABLE__Index ",rowid,Category,Id,Text) VALUES('delete',old.rowid,old.Category,old.Id,old.Text);"
-                       " INSERT INTO " FTS_TABLE__Index "(rowid,Category,Id,Text) VALUES(new.rowid,new.Category,new.Id,new.Text);"
+    rc = db.ExecuteSql("CREATE TRIGGER be_fts_au AFTER UPDATE ON " FTS_TABLE_Content " BEGIN"
+                       " INSERT INTO " FTS_TABLE_Index "(" FTS_TABLE_Index ",rowid,Type,Id,Text) VALUES('delete',old.rowid,old.Type,old.Id,old.Text);"
+                       " INSERT INTO " FTS_TABLE_Index "(rowid,Type,Id,Text) VALUES(new.rowid,new.Type,new.Id,new.Text);"
                        " END;");
 
     return rc;
@@ -234,7 +234,19 @@ DbResult DgnSearchableText::CreateTable(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP DgnSearchableText::Iterator::Entry::GetCategory() const { return m_sql->GetValueText(0); }
+bool DgnSearchableText::IsUntrackedFts5Table(Utf8CP tableName)
+    {
+    // Our virtual table and the additional indexes created by SQLite all start with the same prefix.
+    // Our content table has a different prefix.
+    // We only want the content table included in changesets.
+    // Called by TxnManager::_FilterTable()
+    return 0 == strncmp(FTS_TABLE_Index, tableName, sizeof(FTS_TABLE_Index)-1);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP DgnSearchableText::Iterator::Entry::GetTextType() const { return m_sql->GetValueText(0); }
 BeInt64Id DgnSearchableText::Iterator::Entry::GetId() const { return m_sql->GetValueId<BeInt64Id>(1); }
 Utf8CP DgnSearchableText::Iterator::Entry::GetText() const { return m_sql->GetValueText(2); }
 
