@@ -200,8 +200,7 @@ Utf8String         LsDefinition::GetStyleName () const
     if (NULL == lsName)
         return Utf8String (L"");
 
-    Utf8String retval;
-    return Utf8String(retval);
+    return Utf8String(lsName);
     }
 
 //=======================================================================================

@@ -289,6 +289,7 @@ LsOkayForTextureGeneration LsCompoundComponent::_IsOkayForTextureGeneration() co
 LsCompoundComponent::LsCompoundComponent(LsCompoundComponentCR source) : LsComponent(&source), m_postProcessed(false)
     {
     m_size = source.m_size;
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::Unknown;
     for (LsOffsetComponent const& child: source.m_components)
         m_components.push_back(child);
     }
@@ -299,6 +300,7 @@ LsCompoundComponent::LsCompoundComponent(LsCompoundComponentCR source) : LsCompo
 LsCompoundComponent::LsCompoundComponent (LsLocation const *pLocation) :
             LsComponent (pLocation), m_postProcessed (false)
     {
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::Unknown;
     m_postProcessed = false;
     }
 
@@ -536,7 +538,7 @@ StatusInt       LsInternalComponent::_DoStroke (ViewContextP context, DPoint3dCP
 
     return SUCCESS;
 #else
-    return ERROR;
+    return LsStrokePatternComponent::_DoStroke (context, inPoints, nPoints, modifiers);
 #endif
     }
 

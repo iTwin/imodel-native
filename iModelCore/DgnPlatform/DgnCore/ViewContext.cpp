@@ -2344,6 +2344,15 @@ void ViewContext::_DrawSymbol(IDisplaySymbol* symbol, TransformCP trans, ClipPla
         {
         SymbolContext symbolContext(*this);
 
+#if defined (CONVERT_LINESTYLES_ENABLED)
+        //  NEEDSWORK_LINESTYLES -- without this logic line style symbols are always black.
+        GeomStreamEntryId entryId;
+        entryId.Init();
+        entryId.SetType(GeomStreamEntryId::Type::Indexed);
+        entryId.SetGeomPartId(DgnGeomPartId(BeRepositoryId(1), 10));
+        symbolContext.SetGeomStreamEntryId(entryId);
+#endif
+
         qvElem = symbolContext.DrawSymbolForCache(symbol, *symbolCache);
 
         if (nullptr == qvElem)

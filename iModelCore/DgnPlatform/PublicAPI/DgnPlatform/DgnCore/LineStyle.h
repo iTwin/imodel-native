@@ -19,6 +19,7 @@
 
 //  These are both used to try different configurations while testing.  They must both be eliminated
 #define LINESTYLES_ENABLED 0
+#define CONVERT_LINESTYLES_ENABLED 1
 #define TRYING_DIRECT_LINESTYLES 0
 
 #define LSID_DEFAULT        0
@@ -448,7 +449,6 @@ protected:
 
     // Should only be used for setting descr in resource definition
     void      CopyDescription (Utf8CP buffer);
-    static void GetNextComponentId (LsComponentId& id, DgnDbR project, BeSQLite::PropertySpec spec);
     static void UpdateLsOkayForTextureGeneration(LsOkayForTextureGeneration&current, LsOkayForTextureGeneration const&newValue);
 
 public:
@@ -459,6 +459,7 @@ public:
         m_location.SetFrom (&base->m_location);
         }
 
+    DGNPLATFORM_EXPORT static void GetNextComponentId (LsComponentId& id, DgnDbR project, BeSQLite::PropertySpec spec);
     DGNPLATFORM_EXPORT static LineStyleStatus AddComponentAsProperty (LsComponentId& componentId, DgnDbR project, BeSQLite::PropertySpec spec, V10ComponentBase const*data, uint32_t dataSize);
 
     bool                IsWidthDiscernible (ViewContextP, LineStyleSymbCP, DPoint3dCR) const;

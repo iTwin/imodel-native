@@ -147,16 +147,16 @@ struct LineStyleProperty
 {
     struct Spec : DbPropSpec
         {
-        Spec (Utf8CP name, DbPropTxnMode setting) : DbPropSpec (name, PROPERTY_APPNAME_LineStyle, setting) {}
+        Spec (Utf8CP name, DbPropTxnMode setting, Compress compress=Compress::Yes) : DbPropSpec (name, PROPERTY_APPNAME_LineStyle, setting, compress) {}
         };
 
-    struct ComponentProperty : Spec {ComponentProperty (Utf8CP name) : Spec(name, DbPropSpec::Mode::Normal){}};
+    struct ComponentProperty : Spec {ComponentProperty (Utf8CP name, Compress compress=Compress::Yes) : Spec(name, DbPropSpec::Mode::Normal, compress){}};
 
     static ComponentProperty Compound()         {return ComponentProperty("CompoundV1");}
     static ComponentProperty LineCode()         {return ComponentProperty("LineCodeV1");}
     static ComponentProperty LinePoint()        {return ComponentProperty("LinePointV1");}
     static ComponentProperty PointSym()         {return ComponentProperty("PointSymV1");}
-    static ComponentProperty RasterImage()      {return ComponentProperty("RasterImage");}
+    static ComponentProperty RasterImage()      {return ComponentProperty("RasterImage", DbPropSpec::Compress::No);}
 };
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

@@ -394,9 +394,6 @@ LsComponentPtr LsPointComponent::_GetForTextureGeneration() const
             continue;
             }
 
-        LsStrokeP stroke = m_strokeComponent->GetStrokePtr(symbref.GetStrokeNumber());
-        double length = stroke->GetLength();
-        printf("length = %f\n", length);
         if (symbref.GetRotationMode() != LsSymbolReference::ROTATE_Relative)
             {
             symbref.SetRotationMode(LsSymbolReference::ROTATE_Relative);
@@ -452,6 +449,7 @@ LsPointComponent::LsPointComponent (LsLocation const *pLocation) : LsComponent (
     {
     m_postProcessed   = false;
     m_strokeComponent = NULL;
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::Unknown;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -546,10 +544,6 @@ LsComponentReader*    reader
     LsPointComponent* pointComp = new LsPointComponent (reader->GetSource());
     pointComp->SetDescription (lpData->m_descr);
 
-#if defined(NOTNOW)
-    //  Maybe this is necessary to avoid recursing
-    LineStyleCacheManager::CacheAdd (pointComp);
-#endif
     LsLocation      tmpLocation;
     tmpLocation.GetLineCodeLocation (reader);
 
@@ -570,7 +564,7 @@ LsComponentReader*    reader
         while (pRscInfo < pRscEnd)
             {
             tmpLocation.GetPointSymbolLocation (reader, symNum++);
-            LsSymbolComponentP  symbol = (LsSymbolComponentP)DgnLineStyles::GetLsComponent (tmpLocation);
+            LsSymbolComponentP  symbol = dynamic_cast<LsSymbolComponentP>(DgnLineStyles::GetLsComponent (tmpLocation));
 
             // Apparently we have symbols that don't participate in the line style.  See TR #308324.
             // These should be removed when there is an opportunity like a file format change.

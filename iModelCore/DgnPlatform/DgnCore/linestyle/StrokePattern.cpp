@@ -182,6 +182,7 @@ LsCapMode       capMode
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsStrokePatternComponent::LsStrokePatternComponent (LsLocation const *pLocation) : LsComponent (pLocation)
     {
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::Unknown;
     m_phaseShift    = 0.0;
     m_autoPhase     = 0.0;
     m_maxCompress   = 0.3;
@@ -199,6 +200,7 @@ LsStrokePatternComponent::LsStrokePatternComponent (LsLocation const *pLocation)
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsStrokePatternComponent::LsStrokePatternComponent (LsStrokePatternComponent const* base) : LsComponent (base)
     {
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::Unknown;
     m_phaseShift    = base->m_phaseShift;
     m_autoPhase     = base->m_autoPhase;
     m_startTangent  = base->m_startTangent;
@@ -1987,8 +1989,11 @@ LsComponentPtr LsStrokePatternComponent::_GetForTextureGeneration() const
     for (size_t i = 0; i < retval->m_nStrokes; ++i)
         {
         LsStroke& stroke(*(retval->m_strokes + i));
+
+#if defined(NEEDSWORK_LINESTYLES_CapModeForTextureGen)
         if (stroke.GetCapMode() != LsCapMode::Open)
             stroke.SetCapMode(LsCapMode::Closed);
+#endif
 
         stroke.SetIsStretchable(false);
         //  end conditions are not enabled so it should not be necessary to mess with dash-first, etc.
@@ -2019,7 +2024,11 @@ LsOkayForTextureGeneration LsStrokePatternComponent::_IsOkayForTextureGeneration
         {
         LsStroke const& stroke(*(m_strokes+i));
         
-        if (stroke.IsStretchable() || (stroke.GetCapMode() != LsCapMode::Closed && stroke.GetCapMode() != LsCapMode::Open))
+        if (stroke.IsStretchable() 
+#if defined(NEEDSWORK_LINESTYLES_CapModeForTextureGen)
+                || (stroke.GetCapMode() != LsCapMode::Closed && stroke.GetCapMode() != LsCapMode::Open)
+#endif
+            )
             UpdateLsOkayForTextureGeneration(m_okayForTextureGeneration, LsOkayForTextureGeneration::ChangeRequired);
         }
 
