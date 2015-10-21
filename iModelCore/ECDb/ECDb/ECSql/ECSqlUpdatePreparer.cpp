@@ -91,7 +91,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
             {
             if (classIdColumn->GetPersistenceType () == PersistenceType::Persisted)
                 {
-                systemWhereClause.AppendEscaped (classIdColumn->GetName ().c_str ()).Append (" = ").Append (classMap.GetClass ().GetId ());
+                systemWhereClause.AppendEscaped (classIdColumn->GetName ().c_str ()).Append ("=").Append (classMap.GetClass ().GetId ());
                 }
             }
         }
@@ -115,7 +115,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
         else
             nativeSqlBuilder.Append (" AND ");
 
-        nativeSqlBuilder.Append (systemWhereClause);
+        nativeSqlBuilder.AppendParenLeft().Append(systemWhereClause).AppendParenRight();
         }
 
     status = PrepareStepTask (ctx, exp);

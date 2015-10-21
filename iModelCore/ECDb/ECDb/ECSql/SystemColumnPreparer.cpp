@@ -106,10 +106,16 @@ ECSqlStatus RegularClassSystemColumnPreparer::_GetWhereClause(ECSqlPrepareContex
     if (classIdCol == nullptr || !horizPartition->NeedsClassIdFilter ())
         return ECSqlStatus::Success; //table doesn't have class id or all class ids need to be considered -> no filter needed
 
-    if (!whereClauseBuilder.IsEmpty())
-        whereClauseBuilder.Append(BooleanSqlOperator::And);
+    const bool whereClauseWasEmpty = whereClauseBuilder.IsEmpty();
+
+    if (!whereClauseWasEmpty)
+        whereClauseBuilder.Append(BooleanSqlOperator::And).AppendParenLeft();
 
     horizPartition->AppendECClassIdFilterSql(classIdCol->GetName().c_str(), whereClauseBuilder);
+
+    if (!whereClauseWasEmpty)
+        whereClauseBuilder.AppendParenRight();
+
     return ECSqlStatus::Success;
     }
 
