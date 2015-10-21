@@ -159,6 +159,10 @@
     <Part Name="UnitTests-NonPublished" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="TestFixtureForUnitTests" />
+        
+        <!-- Temporary while Mike Embick determines the feasibility of this library via unit tests. -->
+        <SubPart PartName="GraphVizLibrary" PartFile="graphviz" Repository="libsrc-graphviz"/>
+        
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>
@@ -589,7 +593,6 @@
     <!-- Define the collection of performance tests. -->
     <Part Name="TestCollection-Performance">
         <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
-        <SubPart PartName="UnitTests-Performance"        Repository="BeSQLite" PartFile="BeSQLite"/>
         <SubPart PartName="UnitTests-Performance"        Repository="ECDb" PartFile="ECDb"/>
         <SubPart PartName="UnitTests-Performance"        Repository="Bentley" PartFile="Bentley"/>
         <SubPart PartName="UnitTests-Performance"        Repository="DgnPlatform" PartFile="DgnPlatform"/>

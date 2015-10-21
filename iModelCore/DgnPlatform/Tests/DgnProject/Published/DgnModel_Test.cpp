@@ -11,6 +11,74 @@
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DPTEST
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static BeFileName copyDb (WCharCP inputFileName, WCharCP outputFileName)
+    {
+    BeFileName fullInputFileName;
+    BeTest::GetHost().GetDocumentsRoot (fullInputFileName);
+    fullInputFileName.AppendToPath (inputFileName);
+
+    BeFileName fullOutputFileName;
+    BeTest::GetHost().GetOutputRoot(fullOutputFileName);
+    fullOutputFileName.AppendToPath(outputFileName);
+
+    if (BeFileNameStatus::Success != BeFileName::BeCopyFile (fullInputFileName, fullOutputFileName))
+        return BeFileName();
+
+    return fullOutputFileName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
+    {
+    DbResult result = BE_SQLITE_OK;
+    db = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(mode));
+    ASSERT_TRUE( db.IsValid() ) << (WCharCP)WPrintfString(L"Failed to open %ls in mode %d => result=%x", name.c_str(), (int)mode, (int)result);
+    ASSERT_EQ( BE_SQLITE_OK , result );
+    db->Txns().EnableTracking(true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
+static PhysicalModelPtr copyPhysicalModelSameDb(PhysicalModelCR model, Utf8CP newName)
+    {
+    return dynamic_cast<PhysicalModel*>(DgnModel::CopyModel(model, DgnModel::CreateModelCode(newName)).get());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
+static PhysicalModelPtr createPhysicalModel(DgnDbR db, Utf8CP newName)
+    {
+    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
+    PhysicalModelPtr model = new PhysicalModel(PhysicalModel::CreateParams(db, mclassId, DgnModel::CreateModelCode(newName)));
+    if (!model.IsValid())
+        return nullptr;
+    if (DgnDbStatus::Success != model->Insert())
+        return nullptr;
+    return model;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
+static DgnDbPtr openCopyOfDb(WCharCP sourceName, WCharCP destName, DgnDb::OpenMode mode, bool importDummySchemaFirst = true)
+    {
+    DgnDbPtr db2;
+    openDb(db2, copyDb(sourceName, destName), mode);
+    if (!db2.IsValid())
+        return nullptr;
+    if (importDummySchemaFirst)
+        DgnPlatformTestDomain::ImportDummySchema(*db2);
+    DgnPlatformTestDomain::ImportSchema(*db2);
+    return db2;
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsiclass                                                    Julija.Suboc     07/2013
 //----------------------------------------------------------------------------------------
@@ -370,74 +438,6 @@ static DgnElementCPtr getSingleElementInModel(DgnModelR model)
     return model.GetDgnDb().Elements().Get<DgnElement>(gid);
     }
     
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static BeFileName copyDb (WCharCP inputFileName, WCharCP outputFileName)
-    {
-    BeFileName fullInputFileName;
-    BeTest::GetHost().GetDocumentsRoot (fullInputFileName);
-    fullInputFileName.AppendToPath (inputFileName);
-
-    BeFileName fullOutputFileName;
-    BeTest::GetHost().GetOutputRoot(fullOutputFileName);
-    fullOutputFileName.AppendToPath(outputFileName);
-
-    if (BeFileNameStatus::Success != BeFileName::BeCopyFile (fullInputFileName, fullOutputFileName))
-        return BeFileName();
-
-    return fullOutputFileName;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
-    {
-    DbResult result = BE_SQLITE_OK;
-    db = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(mode));
-    ASSERT_TRUE( db.IsValid() ) << (WCharCP)WPrintfString(L"Failed to open %ls in mode %d => result=%x", name.c_str(), (int)mode, (int)result);
-    ASSERT_EQ( BE_SQLITE_OK , result );
-    db->Txns().EnableTracking(true);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      05/15
-//---------------------------------------------------------------------------------------
-static PhysicalModelPtr copyPhysicalModelSameDb(PhysicalModelCR model, Utf8CP newName)
-    {
-    return dynamic_cast<PhysicalModel*>(DgnModel::CopyModel(model, DgnModel::CreateModelCode(newName)).get());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      05/15
-//---------------------------------------------------------------------------------------
-static PhysicalModelPtr createPhysicalModel(DgnDbR db, Utf8CP newName)
-    {
-    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
-    PhysicalModelPtr model = new PhysicalModel(PhysicalModel::CreateParams(db, mclassId, DgnModel::CreateModelCode(newName)));
-    if (!model.IsValid())
-        return nullptr;
-    if (DgnDbStatus::Success != model->Insert())
-        return nullptr;
-    return model;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      05/15
-//---------------------------------------------------------------------------------------
-static DgnDbPtr openCopyOfDb(WCharCP sourceName, WCharCP destName, DgnDb::OpenMode mode, bool importDummySchemaFirst = true)
-    {
-    DgnDbPtr db2;
-    openDb(db2, copyDb(sourceName, destName), mode);
-    if (!db2.IsValid())
-        return nullptr;
-    if (importDummySchemaFirst)
-        DgnPlatformTestDomain::ImportDummySchema(*db2);
-    DgnPlatformTestDomain::ImportSchema(*db2);
-    return db2;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------

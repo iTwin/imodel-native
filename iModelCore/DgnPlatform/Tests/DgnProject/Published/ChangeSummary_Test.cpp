@@ -21,6 +21,9 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 //=======================================================================================
 struct ChangeSummaryTestFixture : public GenericDgnModelTestFixture
 {
+private:
+    int m_z = 0;
+
 protected:
     DgnDbPtr m_testDb;
     DgnModelPtr m_testModel;
@@ -30,14 +33,16 @@ protected:
     void CreateDgnDb();
     void OpenDgnDb();
     void CloseDgnDb();
+    void CreateDefaultView();
 
     void InsertModel();
     void InsertCategory();
-    void InsertElement();
+    void InsertElement(int x, int y, int z);
     void ModifyElement();
     void DeleteElement();
 
-    void DumpSqlChangeSet(ChangeSet const& sqlChangeSet, Utf8CP label);
+    void InsertFloor(int xmax, int ymax);
+
     void DumpChangeSummary(ChangeSummary const& changeSummary, Utf8CP label);
 
     void GetChangeSummaryFromCurrentTransaction(ChangeSummary& changeSummary);
@@ -50,6 +55,8 @@ public:
     virtual ~ChangeSummaryTestFixture() {m_testDb->SaveChanges();}
     virtual void SetUp() override {}
     virtual void TearDown() override {}
+
+    static void DumpSqlChanges(DgnDbCR dgnDb, Changes const& sqlChanges, Utf8CP label);
 };
 
 //=======================================================================================
@@ -74,10 +81,10 @@ void ChangeSummaryTestFixture::CreateDgnDb()
     createProjectParams.SetOverwriteExisting(true);
 
     //Deleting the project file if it exists already
-    BeFileName::BeDeleteFile(DgnDbTestDgnManager::GetOutputFilePath(L"ChangeSummaryTest.dgndb"));
+    BeFileName::BeDeleteFile(DgnDbTestDgnManager::GetOutputFilePath(L"ChangeSummaryTest.idgndb"));
 
     DbResult createStatus;
-    m_testDb = DgnDb::CreateDgnDb(&createStatus, DgnDbTestDgnManager::GetOutputFilePath(L"ChangeSummaryTest.dgndb"), createProjectParams);
+    m_testDb = DgnDb::CreateDgnDb(&createStatus, DgnDbTestDgnManager::GetOutputFilePath(L"ChangeSummaryTest.idgndb"), createProjectParams);
     ASSERT_TRUE(m_testDb.IsValid()) << "Could not create test project";
 
     m_testDb->Txns().EnableTracking(true);
@@ -90,7 +97,7 @@ void ChangeSummaryTestFixture::OpenDgnDb()
     {
     DbResult openStatus;
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
-    m_testDb = DgnDb::OpenDgnDb(&openStatus, DgnDbTestDgnManager::GetOutputFilePath(L"ChangeSummaryTest.dgndb"), openParams);
+    m_testDb = DgnDb::OpenDgnDb(&openStatus, DgnDbTestDgnManager::GetOutputFilePath(L"ChangeSummaryTest.idgndb"), openParams);
     ASSERT_TRUE(m_testDb.IsValid()) << "Could not open test project";
 
     DgnModelId modelId = m_testDb->Models().QueryFirstModelId();
@@ -98,6 +105,7 @@ void ChangeSummaryTestFixture::OpenDgnDb()
 
     m_testDb->Txns().EnableTracking(true);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
@@ -122,6 +130,46 @@ void ChangeSummaryTestFixture::InsertModel()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    03/2015
+//---------------------------------------------------------------------------------------
+void ChangeSummaryTestFixture::CreateDefaultView()
+    {
+    DgnViews::View viewRow;
+    DgnClassId classId(m_testDb->Schemas().GetECClassId("dgn", "PhysicalView"));
+    viewRow.SetDgnViewType(classId, DgnViewType::Physical);
+    viewRow.SetDgnViewSource(DgnViewSource::Generated);
+    viewRow.SetName("Default");
+    ASSERT_TRUE(m_testModel.IsValid());
+    viewRow.SetBaseModelId(m_testModel->GetModelId());
+    DbResult result = m_testDb->Views().Insert(viewRow);
+    BeAssert(BE_SQLITE_OK == result);
+    BeAssert(viewRow.GetId().IsValid());
+
+    AxisAlignedBox3d physicalExtents;
+    physicalExtents = m_testDb->Units().ComputeProjectExtents(); // TODO: What's the difference between Get() and Compute()? 
+    m_testDb->Units().SaveProjectExtents(physicalExtents);
+
+    PhysicalViewController viewController(*m_testDb, viewRow.GetId());
+    viewController.SetStandardViewRotation(StandardView::Iso);
+    viewController.LookAtVolume(physicalExtents);
+    viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::SmoothShade);
+    for (auto const& catId : DgnCategory::QueryCategories(*m_testDb))
+        viewController.ChangeCategoryDisplay(catId, true);
+    DgnModels::Iterator modIter = m_testDb->Models().MakeIterator();
+    for (auto& entry : modIter)
+        {
+        DgnModelId modelId = entry.GetModelId();
+        viewController.ChangeModelDisplay(modelId, true);
+        }
+    result = viewController.Save();
+    BeAssert(BE_SQLITE_OK == result);
+
+    DgnViewId viewId = viewRow.GetId();
+    m_testDb->SaveProperty(DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
+    m_testDb->SaveSettings();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
 void ChangeSummaryTestFixture::InsertCategory()
@@ -140,7 +188,18 @@ void ChangeSummaryTestFixture::InsertCategory()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-void ChangeSummaryTestFixture::InsertElement()
+void ChangeSummaryTestFixture::InsertFloor(int xmax, int ymax)
+    {
+    int z = m_z++;
+    for (int x = 0; x < xmax; x++)
+        for (int y = 0; y < ymax; y++)
+            InsertElement(x, y, z);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    06/2015
+//---------------------------------------------------------------------------------------
+void ChangeSummaryTestFixture::InsertElement(int x, int y, int z)
     {
     PhysicalModelP physicalTestModel = dynamic_cast<PhysicalModelP> (m_testModel.get());
     BeAssert(physicalTestModel != nullptr);
@@ -153,7 +212,7 @@ void ChangeSummaryTestFixture::InsertElement()
     ISolidPrimitivePtr testGeomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
     BeAssert(testGeomPtr.IsValid());
 
-    DPoint3d centerOfBlock = DPoint3d::From(0, 0, 0);
+    DPoint3d centerOfBlock = DPoint3d::From(x, y, z);
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*physicalTestModel, m_testCategoryId, centerOfBlock, YawPitchRollAngles());
     builder->Append(*testGeomPtr);
     BentleyStatus status = builder->SetGeomStreamAndPlacement(*testElement);
@@ -198,13 +257,9 @@ void ChangeSummaryTestFixture::DumpChangeSummary(ChangeSummary const& changeSumm
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-void ChangeSummaryTestFixture::DumpSqlChangeSet(ChangeSet const& changeSet, Utf8CP label)
+void ChangeSummaryTestFixture::DumpSqlChanges(DgnDbCR dgnDb, Changes const& changes, Utf8CP label)
     {
     printf("%s:\n", label);
-    
-    // BeFileName pathname = m_testHost.BuildProjectFileName(fileName);
-    // changeSet.Dump(label, *m_testDb, false, INT_MAX);
-    Changes changes(*const_cast<ChangeSet*>(&changeSet));
     for (Changes::Change change : changes)
         {
         Utf8CP tableName;
@@ -215,7 +270,7 @@ void ChangeSummaryTestFixture::DumpSqlChangeSet(ChangeSet const& changeSet, Utf8
         UNUSED_VARIABLE(rc);
 
         bvector<Utf8String> columnNames;
-        m_testDb->GetColumns(columnNames, tableName);
+        dgnDb.GetColumns(columnNames, tableName);
         BeAssert((int) columnNames.size() == nCols);
 
         if (opcode == DbOpcode::Delete || opcode == DbOpcode::Update)
@@ -332,7 +387,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     m_testDb->SaveChanges();
     InsertModel();
     InsertCategory();
-    InsertElement();
+    InsertElement(0, 0, 0);
     GetChangeSummaryFromCurrentTransaction(changeSummary);
 
     DumpChangeSummary(changeSummary, "ChangeSummary after inserts");
@@ -504,7 +559,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
 
     InsertModel();
     InsertCategory();
-    InsertElement();
+    InsertElement(0, 0, 0);
 
     m_testDb->SaveChanges();
 
@@ -706,7 +761,7 @@ TEST_F(ChangeSummaryTestFixture, ValidateInstanceIterator)
 
     InsertModel();
     InsertCategory();
-    InsertElement();
+    InsertElement(0, 0, 0);
 
     ChangeSummary changeSummary(*m_testDb);
     GetChangeSummaryFromCurrentTransaction(changeSummary);
@@ -1456,9 +1511,9 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
 
     InsertModel();
     InsertCategory();
-    InsertElement();
+    InsertElement(0, 0, 0);
     DgnElementId parentElementId = m_testElementId;
-    InsertElement();
+    InsertElement(1, 1, 1);
     DgnElementId childElementId = m_testElementId;
 
     m_testDb->SaveChanges();
@@ -1549,7 +1604,7 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
     bset<DgnElementId> insertedElements;
     for (int ii = 0; ii < 10; ii++)
         {
-        InsertElement();
+        InsertElement(ii, 0, 0);
         DgnElementId elementId = m_testElementId;
         insertedElements.insert(elementId);
         }
@@ -1622,7 +1677,7 @@ TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
 
         for (int jj = 0; jj < nTransactionsPerSession; jj++)
             {
-            InsertElement();
+            InsertElement(ii, jj, 0);
             m_testDb->SaveChanges();
             }
 
@@ -1649,4 +1704,83 @@ TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
     int actualChangeCount = stmt.GetValueInt(0);
     int expectedChangeCount = nSessions * nTransactionsPerSession + 2 /*category and subcategory*/;
     EXPECT_EQ(expectedChangeCount, actualChangeCount);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    07/2015
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, RevisionTest)
+    {
+    // TODO: This test needs to be moved to a newRevision_Test.cpp
+
+    /*
+    * Create an initial revision
+    */
+    CreateDgnDb();
+    InsertModel();
+    InsertCategory();
+    InsertFloor(1, 1);
+    CreateDefaultView();
+    m_testDb->SaveChanges("Created Initial Model");
+
+    DgnRevisionPtr revision = m_testDb->Revisions().StartCreateRevision();
+    ASSERT_TRUE(revision.IsValid());
+    BentleyStatus status = m_testDb->Revisions().FinishCreateRevision();
+    ASSERT_TRUE(SUCCESS == status);
+
+    CloseDgnDb();
+
+    /*
+    * Copy the Db
+    */
+    BeFileName originalFile = DgnDbTestDgnManager::GetOutputFilePath(L"ChangeSummaryTest.idgndb");
+    BeFileName copyFile = DgnDbTestDgnManager::GetOutputFilePath(L"ChangeSummaryTestCopy.idgndb");
+
+    BeFileNameStatus fileStatus = BeFileName::BeCopyFile(originalFile.c_str(), copyFile.c_str());
+    ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
+
+    /*
+     * Create and save multiple revisions
+     */
+    OpenDgnDb();
+    bvector<DgnRevisionPtr> revisions;
+    for (int revNum = 0; revNum < 4; revNum++)
+        {
+        InsertFloor(1, 1);
+        m_testDb->SaveChanges();
+
+        DgnRevisionPtr revision = m_testDb->Revisions().StartCreateRevision();
+        ASSERT_TRUE(revision.IsValid());
+
+        status = m_testDb->Revisions().FinishCreateRevision();
+        ASSERT_TRUE(SUCCESS == status);
+
+        revisions.push_back(revision);
+        }
+
+    /*
+    * Replace the original file with the unmodified copy
+    */
+    CloseDgnDb();
+    fileStatus = BeFileName::BeCopyFile(copyFile.c_str(), originalFile.c_str());
+    ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
+    OpenDgnDb();
+
+    /*
+     * Dump all revisions
+     */
+    /*for (DgnRevisionPtr const& rev : revisions)
+        {
+        printf("---------------------------------------------------------\n");
+        rev->Dump(*m_testDb);
+        printf("\n\n");
+        }*/
+
+    /*
+    * Merge all the saved revisions
+    */
+    
+    status = m_testDb->Revisions().MergeRevisions(revisions);
+    ASSERT_TRUE(status == SUCCESS);
+    m_testDb->SaveChanges();
     }

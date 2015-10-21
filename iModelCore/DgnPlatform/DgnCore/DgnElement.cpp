@@ -2318,7 +2318,7 @@ void ECSqlClassParams::RemoveAllButSelect()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppData::Key const& DgnElement::ExternalKey::GetAppDataKey()
+DgnElement::AppData::Key const& DgnElement::ExternalKeyAspect::GetAppDataKey()
     {
     static Key s_appDataKey;
     return s_appDataKey;
@@ -2327,7 +2327,7 @@ DgnElement::AppData::Key const& DgnElement::ExternalKey::GetAppDataKey()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::ExternalKeyPtr DgnElement::ExternalKey::Create(DgnAuthorityId authorityId, Utf8CP externalKey)
+DgnElement::ExternalKeyAspectPtr DgnElement::ExternalKeyAspect::Create(DgnAuthorityId authorityId, Utf8CP externalKey)
     {
     if (!authorityId.IsValid() || !externalKey || !*externalKey)
         {
@@ -2335,13 +2335,13 @@ DgnElement::ExternalKeyPtr DgnElement::ExternalKey::Create(DgnAuthorityId author
         return nullptr;
         }
 
-    return new DgnElement::ExternalKey(authorityId, externalKey);
+    return new DgnElement::ExternalKeyAspect(authorityId, externalKey);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppData::DropMe DgnElement::ExternalKey::_OnInserted(DgnElementCR element)
+DgnElement::AppData::DropMe DgnElement::ExternalKeyAspect::_OnInserted(DgnElementCR element)
     {
     CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " DGN_SCHEMA(DGN_CLASSNAME_ElementExternalKey) " ([ElementId],[AuthorityId],[ExternalKey]) VALUES (?,?,?)");
     if (!statement.IsValid())
@@ -2363,7 +2363,7 @@ DgnElement::AppData::DropMe DgnElement::ExternalKey::_OnInserted(DgnElementCR el
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::ExternalKey::QueryExternalKey(Utf8StringR externalKey, DgnElementCR element, DgnAuthorityId authorityId)
+DgnDbStatus DgnElement::ExternalKeyAspect::Query(Utf8StringR externalKey, DgnElementCR element, DgnAuthorityId authorityId)
     {
     CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT [ExternalKey] FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementExternalKey) " WHERE [ElementId]=? AND [AuthorityId]=?");
     if (!statement.IsValid())
@@ -2382,7 +2382,7 @@ DgnDbStatus DgnElement::ExternalKey::QueryExternalKey(Utf8StringR externalKey, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::ExternalKey::Delete(DgnElementCR element, DgnAuthorityId authorityId)
+DgnDbStatus DgnElement::ExternalKeyAspect::Delete(DgnElementCR element, DgnAuthorityId authorityId)
     {
     CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementExternalKey) " WHERE [ElementId]=? AND [AuthorityId]=?");
     if (!statement.IsValid())
@@ -2400,7 +2400,7 @@ DgnDbStatus DgnElement::ExternalKey::Delete(DgnElementCR element, DgnAuthorityId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppData::Key const& DgnElement::Description::GetAppDataKey()
+DgnElement::AppData::Key const& DgnElement::NameAspect::GetAppDataKey()
     {
     static Key s_appDataKey;
     return s_appDataKey;
@@ -2409,29 +2409,28 @@ DgnElement::AppData::Key const& DgnElement::Description::GetAppDataKey()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::DescriptionPtr DgnElement::Description::Create(DgnAuthorityId authorityId, Utf8CP description)
+DgnElement::NameAspectPtr DgnElement::NameAspect::Create(Utf8CP name)
     {
-    if (!authorityId.IsValid() || !description || !*description)
+    if (!name || !*name)
         {
         BeAssert(false);
         return nullptr;
         }
 
-    return new DgnElement::Description(authorityId, description);
+    return new DgnElement::NameAspect(name);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppData::DropMe DgnElement::Description::_OnInserted(DgnElementCR element)
+DgnElement::AppData::DropMe DgnElement::NameAspect::_OnInserted(DgnElementCR element)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " DGN_SCHEMA(DGN_CLASSNAME_ElementDescription) " ([ElementId],[AuthorityId],[Descr]) VALUES (?,?,?)");
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " DGN_SCHEMA(DGN_CLASSNAME_ElementName) " (ECInstanceId,[Name]) VALUES (?,?)");
     if (!statement.IsValid())
         return DgnElement::AppData::DropMe::Yes;
 
     statement->BindId(1, element.GetElementId());
-    statement->BindId(2, GetAuthorityId());
-    statement->BindText(3, GetDescription(), IECSqlBinder::MakeCopy::No);
+    statement->BindText(2, GetName(), IECSqlBinder::MakeCopy::No);
 
     ECInstanceKey key;
     if (BE_SQLITE_DONE != statement->Step(key))
@@ -2445,14 +2444,92 @@ DgnElement::AppData::DropMe DgnElement::Description::_OnInserted(DgnElementCR el
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::Description::QueryDescription(Utf8StringR description, DgnElementCR element, DgnAuthorityId authorityId)
+DgnDbStatus DgnElement::NameAspect::Query(Utf8StringR name, DgnElementCR element)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT [Descr] FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementDescription) " WHERE [ElementId]=? AND [AuthorityId]=?");
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT [Name] FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementName) " WHERE ECInstanceId=?");
     if (!statement.IsValid())
         return DgnDbStatus::ReadError;
 
     statement->BindId(1, element.GetElementId());
-    statement->BindId(2, authorityId);
+
+    if (BE_SQLITE_ROW != statement->Step())
+        return DgnDbStatus::ReadError;
+
+    name.AssignOrClear(statement->GetValueText(0));
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::NameAspect::Delete(DgnElementCR element)
+    {
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementName) " WHERE ECInstanceId=?");
+    if (!statement.IsValid())
+        return DgnDbStatus::WriteError;
+
+    statement->BindId(1, element.GetElementId());
+
+    if (BE_SQLITE_DONE != statement->Step())
+        return DgnDbStatus::WriteError;
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::AppData::Key const& DgnElement::DescriptionAspect::GetAppDataKey()
+    {
+    static Key s_appDataKey;
+    return s_appDataKey;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::DescriptionAspectPtr DgnElement::DescriptionAspect::Create(Utf8CP description)
+    {
+    if (!description || !*description)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return new DgnElement::DescriptionAspect(description);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::AppData::DropMe DgnElement::DescriptionAspect::_OnInserted(DgnElementCR element)
+    {
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " DGN_SCHEMA(DGN_CLASSNAME_ElementDescription) " (ECInstanceId,[Descr]) VALUES (?,?)");
+    if (!statement.IsValid())
+        return DgnElement::AppData::DropMe::Yes;
+
+    statement->BindId(1, element.GetElementId());
+    statement->BindText(2, GetDescription(), IECSqlBinder::MakeCopy::No);
+
+    ECInstanceKey key;
+    if (BE_SQLITE_DONE != statement->Step(key))
+        {
+        BeAssert(false);
+        }
+
+    return DgnElement::AppData::DropMe::Yes;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::DescriptionAspect::Query(Utf8StringR description, DgnElementCR element)
+    {
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT [Descr] FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementDescription) " WHERE ECInstanceId=?");
+    if (!statement.IsValid())
+        return DgnDbStatus::ReadError;
+
+    statement->BindId(1, element.GetElementId());
 
     if (BE_SQLITE_ROW != statement->Step())
         return DgnDbStatus::ReadError;
@@ -2464,14 +2541,13 @@ DgnDbStatus DgnElement::Description::QueryDescription(Utf8StringR description, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::Description::Delete(DgnElementCR element, DgnAuthorityId authorityId)
+DgnDbStatus DgnElement::DescriptionAspect::Delete(DgnElementCR element)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementDescription) " WHERE [ElementId]=? AND [AuthorityId]=?");
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementDescription) " WHERE ECInstanceId=?");
     if (!statement.IsValid())
         return DgnDbStatus::WriteError;
 
     statement->BindId(1, element.GetElementId());
-    statement->BindId(2, authorityId);
 
     if (BE_SQLITE_DONE != statement->Step())
         return DgnDbStatus::WriteError;
