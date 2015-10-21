@@ -270,6 +270,7 @@ struct DTMMeshEnumerator : RefCountedBase
     public: void SetUseRealPointIndexes(bool value)
         {
         m_useRealPointIndexes = value;
+        Reset();
         }
     public: bool GetUseRealPointIndexes() const
         {
@@ -279,6 +280,7 @@ struct DTMMeshEnumerator : RefCountedBase
         {
         m_regionMode = RegionMode::RegionUserTag;
         m_regionUserTag = value;
+        Reset();
         }
 
     public: DTMUserTag GetFilterRegionByUserTag () const
@@ -290,6 +292,7 @@ struct DTMMeshEnumerator : RefCountedBase
         {
         m_regionMode = RegionMode::RegionUserTag;
         m_regionFeatureId = value;
+        Reset();
         }
 
     public: DTMFeatureId  GetFilterRegionByFeatureId () const
@@ -300,6 +303,7 @@ struct DTMMeshEnumerator : RefCountedBase
     public: void SetExcludeAllRegions ()
         {
         m_regionMode = RegionMode::NonRegion;
+        Reset();
         }
 
     public: bool GetExcludeAllRegions ()
@@ -315,14 +319,17 @@ struct DTMMeshEnumerator : RefCountedBase
     public: void SetFence (DTMFenceParams& fence)
         {
         m_fence = DTMFenceParams (fence.fenceType, fence.fenceOption, fence.points, fence.numPoints);
+        Reset();
         }
     public: void SetMaxTriangles (int value)
         {
         maxTriangles = value;
+        Reset();
         }
     public: void SetTilingMode (bool value)
         {
         m_tilingMode = value;
+        Reset();
         }
 
     };
