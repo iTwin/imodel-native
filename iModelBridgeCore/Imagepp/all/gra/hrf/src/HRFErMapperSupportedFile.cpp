@@ -1570,8 +1570,14 @@ void HRFErMapperSupportedFile::InitErMapperLibrary()
         NCSSetGDTPath(multiByteDestination);
 //DMx        CNCSGDTLocation::SetGuessPath(true);
 
-//        NCSecwSetConfig(NCSCFG_CACHE_MAXMEM_64, 128*1024*1024);    // tr #243826, limit the cache to 8 meg in 2008
+#if defined(_WIN32) || defined(WIN32)
+        //By default, the doc says that it is going to use 25% of the RAM, that seems to be much more than that.
+        // Since we already cache on top of ECW library, we decided to limit to 512 MB.
+        NCSecwSetConfig(NCSCFG_CACHE_MAXMEM, 512*1024*1024);    // tr #243826, limit the cache to 8 meg in 2008
                                                                    // Now we need a minimum of 128Meg in 64Bit (2013)
+#else
+    #error Need to setup ErMapper MEM usage using available hardware RAM.
+#endif
 
         sIsLibraryInitialized = true;
         }
