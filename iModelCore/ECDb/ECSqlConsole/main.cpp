@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <Windows.h>
 #include <Bentley/Bentley.h>
-#include <Logging/BentleyLogging.h>
+#include <Logging/bentleylogging.h>
 #include <ECDb/ECDbApi.h>
 #include "ECSqlConsole.h"
 #include "Console.h"

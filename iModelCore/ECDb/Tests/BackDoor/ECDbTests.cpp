@@ -558,7 +558,7 @@ size_t ECDbTestUtility::GetIterableCount(ECPropertyIterable const& iterable)
     size_t count = 0;
     for (ECPropertyP p : iterable)
         {
-        p; // To avoid unreferenced variable compilation warning
+        UNUSED_VARIABLE(p); // To avoid unreferenced variable compilation warning
         count++;
         }
     return count;
