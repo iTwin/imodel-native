@@ -5,228 +5,52 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "DgnHandlersTests.h"
+#include "ChangeTestFixture.h"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
-USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_NAMESPACE_BENTLEY_EC
 
 // The counts recorded by change summary are quite sensitive to changes in the schema and implementation...
 // Turn this on for debugging.
 // #define DUMP_CHANGE_SUMMARY 1
 
 //=======================================================================================
-//! ChangeSummaryTestFixture
+// @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
-struct ChangeSummaryTestFixture : public GenericDgnModelTestFixture
-{
-private:
-    int m_z = 0;
-
-protected:
-    DgnDbPtr m_testDb;
-    DgnModelPtr m_testModel;
-    DgnCategoryId m_testCategoryId;
-    DgnElementId m_testElementId;
-
-    void CreateDgnDb();
-    void OpenDgnDb();
-    void CloseDgnDb();
-    void CreateDefaultView();
-
-    void InsertModel();
-    void InsertCategory();
-    void InsertElement(int x, int y, int z);
-    void ModifyElement();
-    void DeleteElement();
-
-    void InsertFloor(int xmax, int ymax);
-
-    void DumpChangeSummary(ChangeSummary const& changeSummary, Utf8CP label);
-
-    void GetChangeSummaryFromCurrentTransaction(ChangeSummary& changeSummary);
-    void GetChangeSummaryFromSavedTransactions(ChangeSummary& changeSummary);
-
-    bool ChangeSummaryHasInstance(ChangeSummary const& changeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode);
-    BentleyStatus ImportECInstance(ECInstanceKey& instanceKey, IECInstanceR instance, DgnDbR dgndb);
-public:
-    ChangeSummaryTestFixture() : GenericDgnModelTestFixture(__FILE__, true) {}
-    virtual ~ChangeSummaryTestFixture() {m_testDb->SaveChanges();}
-    virtual void SetUp() override {}
-    virtual void TearDown() override {}
-
-    static void DumpSqlChanges(DgnDbCR dgnDb, Changes const& sqlChanges, Utf8CP label);
-};
-
-//=======================================================================================
-//! SampleChangeSet
-//=======================================================================================
-struct SqlChangeSet : BeSQLite::ChangeSet
+struct ChangeSummaryTestFixture : ChangeTestFixture
     {
-    virtual ConflictResolution _OnConflict(ConflictCause cause, Changes::Change iter)
-        {
-        BeAssert(false);
-        fprintf(stderr, "Conflict \"%s\"\n", ChangeSet::InterpretConflictCause(cause).c_str());
-        return ConflictResolution::Skip;
-        }
+    DEFINE_T_SUPER(ChangeTestFixture)
+    protected:
+        WCharCP m_testFileName = L"ChangeSummaryTest.dgndb";
+
+        void CreateDgnDb() { T_Super::CreateDgnDb(m_testFileName); }
+        void OpenDgnDb() { T_Super::OpenDgnDb(m_testFileName); }
+
+        void ModifyElement(DgnElementId elementId);
+        void DeleteElement(DgnElementId elementId);
+
+        void DumpChangeSummary(ChangeSummary const& changeSummary, Utf8CP label);
+        void DumpSqlChanges(DgnDbCR dgnDb, Changes const& sqlChanges, Utf8CP label);
+
+        void GetChangeSummaryFromCurrentTransaction(ChangeSummary& changeSummary);
+        void GetChangeSummaryFromSavedTransactions(ChangeSummary& changeSummary);
+
+        bool ChangeSummaryHasInstance(ChangeSummary const& changeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode);
+        BentleyStatus ImportECInstance(ECInstanceKey& instanceKey, IECInstanceR instance, DgnDbR dgndb);
+
+    public:
+        virtual void SetUp() override {}
+        virtual void TearDown() override { if (m_testDb.IsValid()) m_testDb->SaveChanges(); }
     };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-void ChangeSummaryTestFixture::CreateDgnDb()
+void ChangeSummaryTestFixture::ModifyElement(DgnElementId elementId)
     {
-    CreateDgnDbParams createProjectParams;
-    createProjectParams.SetOverwriteExisting(true);
-
-    //Deleting the project file if it exists already
-    BeFileName::BeDeleteFile(DgnDbTestDgnManager::GetOutputFilePath(L"ChangeSummaryTest.idgndb"));
-
-    DbResult createStatus;
-    m_testDb = DgnDb::CreateDgnDb(&createStatus, DgnDbTestDgnManager::GetOutputFilePath(L"ChangeSummaryTest.idgndb"), createProjectParams);
-    ASSERT_TRUE(m_testDb.IsValid()) << "Could not create test project";
-
-    m_testDb->Txns().EnableTracking(true);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    06/2015
-//---------------------------------------------------------------------------------------
-void ChangeSummaryTestFixture::OpenDgnDb()
-    {
-    DbResult openStatus;
-    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
-    m_testDb = DgnDb::OpenDgnDb(&openStatus, DgnDbTestDgnManager::GetOutputFilePath(L"ChangeSummaryTest.idgndb"), openParams);
-    ASSERT_TRUE(m_testDb.IsValid()) << "Could not open test project";
-
-    DgnModelId modelId = m_testDb->Models().QueryFirstModelId();
-    m_testModel = m_testDb->Models().GetModel(modelId).get();
-
-    m_testDb->Txns().EnableTracking(true);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    06/2015
-//---------------------------------------------------------------------------------------
-void ChangeSummaryTestFixture::CloseDgnDb()
-    {
-    m_testDb->CloseDb();
-    m_testModel = nullptr;
-    m_testDb = nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    06/2015
-//---------------------------------------------------------------------------------------
-void ChangeSummaryTestFixture::InsertModel()
-    {
-    ModelHandlerR handler = dgn_ModelHandler::Physical::GetHandler();
-    DgnClassId classId = m_testDb->Domains().GetClassId(handler);
-    m_testModel = handler.Create(DgnModel::CreateParams(*m_testDb, classId, DgnModel::CreateModelCode("ChangeSetModel")));
-
-    DgnDbStatus status = m_testModel->Insert();
-    ASSERT_TRUE(DgnDbStatus::Success == status);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    03/2015
-//---------------------------------------------------------------------------------------
-void ChangeSummaryTestFixture::CreateDefaultView()
-    {
-    DgnViews::View viewRow;
-    DgnClassId classId(m_testDb->Schemas().GetECClassId("dgn", "PhysicalView"));
-    viewRow.SetDgnViewType(classId, DgnViewType::Physical);
-    viewRow.SetDgnViewSource(DgnViewSource::Generated);
-    viewRow.SetName("Default");
-    ASSERT_TRUE(m_testModel.IsValid());
-    viewRow.SetBaseModelId(m_testModel->GetModelId());
-    DbResult result = m_testDb->Views().Insert(viewRow);
-    BeAssert(BE_SQLITE_OK == result);
-    BeAssert(viewRow.GetId().IsValid());
-
-    AxisAlignedBox3d physicalExtents;
-    physicalExtents = m_testDb->Units().ComputeProjectExtents(); // TODO: What's the difference between Get() and Compute()? 
-    m_testDb->Units().SaveProjectExtents(physicalExtents);
-
-    PhysicalViewController viewController(*m_testDb, viewRow.GetId());
-    viewController.SetStandardViewRotation(StandardView::Iso);
-    viewController.LookAtVolume(physicalExtents);
-    viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::SmoothShade);
-    for (auto const& catId : DgnCategory::QueryCategories(*m_testDb))
-        viewController.ChangeCategoryDisplay(catId, true);
-    DgnModels::Iterator modIter = m_testDb->Models().MakeIterator();
-    for (auto& entry : modIter)
-        {
-        DgnModelId modelId = entry.GetModelId();
-        viewController.ChangeModelDisplay(modelId, true);
-        }
-    result = viewController.Save();
-    BeAssert(BE_SQLITE_OK == result);
-
-    DgnViewId viewId = viewRow.GetId();
-    m_testDb->SaveProperty(DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
-    m_testDb->SaveSettings();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    06/2015
-//---------------------------------------------------------------------------------------
-void ChangeSummaryTestFixture::InsertCategory()
-    {
-    DgnCategory category(DgnCategory::CreateParams(*m_testDb, "ChangeSetTestCategory", DgnCategory::Scope::Physical, DgnCategory::Rank::Application));
-
-    DgnSubCategory::Appearance appearance;
-    appearance.SetColor(ColorDef::White());
-
-    auto persistentCategory = category.Insert(appearance);
-    ASSERT_TRUE(persistentCategory.IsValid());
-
-    m_testCategoryId = persistentCategory->GetCategoryId();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    06/2015
-//---------------------------------------------------------------------------------------
-void ChangeSummaryTestFixture::InsertFloor(int xmax, int ymax)
-    {
-    int z = m_z++;
-    for (int x = 0; x < xmax; x++)
-        for (int y = 0; y < ymax; y++)
-            InsertElement(x, y, z);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    06/2015
-//---------------------------------------------------------------------------------------
-void ChangeSummaryTestFixture::InsertElement(int x, int y, int z)
-    {
-    PhysicalModelP physicalTestModel = dynamic_cast<PhysicalModelP> (m_testModel.get());
-    BeAssert(physicalTestModel != nullptr);
-    BeAssert(m_testCategoryId.IsValid());
-
-    PhysicalElementPtr testElement = PhysicalElement::Create(*physicalTestModel, m_testCategoryId);
-
-    DPoint3d sizeOfBlock = DPoint3d::From(1, 1, 1);
-    DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(0, 0, 0), sizeOfBlock, true);
-    ISolidPrimitivePtr testGeomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
-    BeAssert(testGeomPtr.IsValid());
-
-    DPoint3d centerOfBlock = DPoint3d::From(x, y, z);
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*physicalTestModel, m_testCategoryId, centerOfBlock, YawPitchRollAngles());
-    builder->Append(*testGeomPtr);
-    BentleyStatus status = builder->SetGeomStreamAndPlacement(*testElement);
-    BeAssert(status == SUCCESS);
-
-    m_testElementId = m_testDb->Elements().Insert(*testElement)->GetElementId();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    06/2015
-//---------------------------------------------------------------------------------------
-void ChangeSummaryTestFixture::ModifyElement()
-    {
-    RefCountedPtr<PhysicalElement> testElement = m_testDb->Elements().GetForEdit<PhysicalElement>(m_testElementId);
+    RefCountedPtr<PhysicalElement> testElement = m_testDb->Elements().GetForEdit<PhysicalElement>(elementId);
     BeAssert(testElement.IsValid());
 
     DgnDbStatus dbStatus;
@@ -237,9 +61,9 @@ void ChangeSummaryTestFixture::ModifyElement()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-void ChangeSummaryTestFixture::DeleteElement()
+void ChangeSummaryTestFixture::DeleteElement(DgnElementId elementId)
     {
-    DgnDbStatus dbStatus = m_testDb->Elements().Delete(m_testElementId);
+    DgnDbStatus dbStatus = m_testDb->Elements().Delete(elementId);
     BeAssert(dbStatus == DgnDbStatus::Success);
     }
 
@@ -357,7 +181,7 @@ BentleyStatus ChangeSummaryTestFixture::ImportECInstance(ECInstanceKey& instance
 //---------------------------------------------------------------------------------------
 void ChangeSummaryTestFixture::GetChangeSummaryFromCurrentTransaction(ChangeSummary& changeSummary)
     {
-    SqlChangeSet sqlChangeSet;
+    AbortOnConflictChangeSet sqlChangeSet;
     DbResult result = sqlChangeSet.FromChangeTrack(m_testDb->Txns(), ChangeSet::SetType::Full);
     ASSERT_TRUE(BE_SQLITE_OK == result);
 
@@ -387,99 +211,99 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     m_testDb->SaveChanges();
     InsertModel();
     InsertCategory();
-    InsertElement(0, 0, 0);
+    DgnElementId elementId = InsertElement(0, 0, 0);
     GetChangeSummaryFromCurrentTransaction(changeSummary);
 
     DumpChangeSummary(changeSummary, "ChangeSummary after inserts");
 
     /*
-ChangeSummary after inserts:
-InstanceId;ClassId;ClassName;DbOpcode;Indirect
-2;184;dgn:PhysicalModel;Insert;No
-	ECInstanceId;NULL;2
-	Name;NULL;"ChangeSetModel"
-	Props;NULL;"{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}"
-	Visibility;NULL;1
-2;131;dgn:AuthorityIssuesElementCode;Insert;No
-	ECInstanceId;NULL;2
-	SourceECInstanceId;NULL;4
-	TargetECClassId;NULL;136
-	TargetECInstanceId;NULL;2
-2;136;dgn:Category;Insert;No
-	Code;NULL;"ChangeSetTestCategory"
-	CodeAuthorityId;NULL;4
-	CodeNameSpace;NULL;""
-	Descr;NULL;""
-	ECInstanceId;NULL;2
-	LastMod;NULL;2.45731e+006
-	ModelId;NULL;1
-	Rank;NULL;2
-	Scope;NULL;1
-2;180;dgn:ModelContainsElements;Insert;No
-	ECInstanceId;NULL;2
-	SourceECInstanceId;NULL;1
-	TargetECClassId;NULL;136
-	TargetECInstanceId;NULL;2
-3;131;dgn:AuthorityIssuesElementCode;Insert;No
-	ECInstanceId;NULL;3
-	SourceECInstanceId;NULL;4
-	TargetECClassId;NULL;197
-	TargetECInstanceId;NULL;3
-3;167;dgn:ElementOwnsChildElements;Insert;No
-	ECInstanceId;NULL;3
-	SourceECClassId;NULL;197
-	SourceECInstanceId;NULL;2
-	TargetECClassId;NULL;197
-	TargetECInstanceId;NULL;3
-3;180;dgn:ModelContainsElements;Insert;No
-	ECInstanceId;NULL;3
-	SourceECInstanceId;NULL;1
-	TargetECClassId;NULL;197
-	TargetECInstanceId;NULL;3
-3;197;dgn:SubCategory;Insert;No
-	Code;NULL;"ChangeSetTestCategory"
-	CodeAuthorityId;NULL;4
-	CodeNameSpace;NULL;"ChangeSetTestCategory"
-	ECInstanceId;NULL;3
-	LastMod;NULL;2.45731e+006
-	ModelId;NULL;1
-	ParentId;NULL;2
-	Props;NULL;"{"color":16777215}"
-4;131;dgn:AuthorityIssuesElementCode;Insert;No
-	ECInstanceId;NULL;4
-	SourceECInstanceId;NULL;1
-	TargetECClassId;NULL;183
-	TargetECInstanceId;NULL;4
-4;180;dgn:ModelContainsElements;Insert;No
-	ECInstanceId;NULL;4
-	SourceECInstanceId;NULL;2
-	TargetECClassId;NULL;183
-	TargetECInstanceId;NULL;4
-4;183;dgn:PhysicalElement;Insert;No
-	CategoryId;NULL;2
-	Code;NULL;"0-4"
-	CodeAuthorityId;NULL;1
-	CodeNameSpace;NULL;"PhysicalElement"
-	ECInstanceId;NULL;4
-	LastMod;NULL;2.45731e+006
-	ModelId;NULL;2
-4;158;dgn:ElementGeom;Insert;No
-	ECInstanceId;NULL;4
-	Geom;NULL;...
-	InPhysicalSpace;NULL;1
-	Placement;NULL;...
-4;170;dgn:ElementOwnsGeom;Insert;No
-	ECInstanceId;NULL;4
-	SourceECInstanceId;NULL;4
-	TargetECInstanceId;NULL;4
+    ChangeSummary after inserts:
+    InstanceId;ClassId;ClassName;DbOpcode;Indirect
+    2;184;dgn:PhysicalModel;Insert;No
+	    ECInstanceId;NULL;2
+	    Name;NULL;"ChangeSetModel"
+	    Props;NULL;"{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}"
+	    Visibility;NULL;1
+    2;131;dgn:AuthorityIssuesElementCode;Insert;No
+	    ECInstanceId;NULL;2
+	    SourceECInstanceId;NULL;4
+	    TargetECClassId;NULL;136
+	    TargetECInstanceId;NULL;2
+    2;136;dgn:Category;Insert;No
+	    Code;NULL;"ChangeSetTestCategory"
+	    CodeAuthorityId;NULL;4
+	    CodeNameSpace;NULL;""
+	    Descr;NULL;""
+	    ECInstanceId;NULL;2
+	    LastMod;NULL;2.45731e+006
+	    ModelId;NULL;1
+	    Rank;NULL;2
+	    Scope;NULL;1
+    2;180;dgn:ModelContainsElements;Insert;No
+	    ECInstanceId;NULL;2
+	    SourceECInstanceId;NULL;1
+	    TargetECClassId;NULL;136
+	    TargetECInstanceId;NULL;2
+    3;131;dgn:AuthorityIssuesElementCode;Insert;No
+	    ECInstanceId;NULL;3
+	    SourceECInstanceId;NULL;4
+	    TargetECClassId;NULL;197
+	    TargetECInstanceId;NULL;3
+    3;167;dgn:ElementOwnsChildElements;Insert;No
+	    ECInstanceId;NULL;3
+	    SourceECClassId;NULL;197
+	    SourceECInstanceId;NULL;2
+	    TargetECClassId;NULL;197
+	    TargetECInstanceId;NULL;3
+    3;180;dgn:ModelContainsElements;Insert;No
+	    ECInstanceId;NULL;3
+	    SourceECInstanceId;NULL;1
+	    TargetECClassId;NULL;197
+	    TargetECInstanceId;NULL;3
+    3;197;dgn:SubCategory;Insert;No
+	    Code;NULL;"ChangeSetTestCategory"
+	    CodeAuthorityId;NULL;4
+	    CodeNameSpace;NULL;"ChangeSetTestCategory"
+	    ECInstanceId;NULL;3
+	    LastMod;NULL;2.45731e+006
+	    ModelId;NULL;1
+	    ParentId;NULL;2
+	    Props;NULL;"{"color":16777215}"
+    4;131;dgn:AuthorityIssuesElementCode;Insert;No
+	    ECInstanceId;NULL;4
+	    SourceECInstanceId;NULL;1
+	    TargetECClassId;NULL;183
+	    TargetECInstanceId;NULL;4
+    4;180;dgn:ModelContainsElements;Insert;No
+	    ECInstanceId;NULL;4
+	    SourceECInstanceId;NULL;2
+	    TargetECClassId;NULL;183
+	    TargetECInstanceId;NULL;4
+    4;183;dgn:PhysicalElement;Insert;No
+	    CategoryId;NULL;2
+	    Code;NULL;"0-4"
+	    CodeAuthorityId;NULL;1
+	    CodeNameSpace;NULL;"PhysicalElement"
+	    ECInstanceId;NULL;4
+	    LastMod;NULL;2.45731e+006
+	    ModelId;NULL;2
+    4;158;dgn:ElementGeom;Insert;No
+	    ECInstanceId;NULL;4
+	    Geom;NULL;...
+	    InPhysicalSpace;NULL;1
+	    Placement;NULL;...
+    4;170;dgn:ElementOwnsGeom;Insert;No
+	    ECInstanceId;NULL;4
+	    SourceECInstanceId;NULL;4
+	    TargetECInstanceId;NULL;4
     */
     EXPECT_EQ(14, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testModel->GetModelId().GetValueUnchecked()), "dgn", "PhysicalModel", DbOpcode::Insert));
     EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testCategoryId.GetValueUnchecked()), "dgn", "Category", DbOpcode::Insert));
-    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Insert));
 
     m_testDb->SaveChanges();
-    ModifyElement();
+    ModifyElement(elementId);
     GetChangeSummaryFromCurrentTransaction(changeSummary);
     
     DumpChangeSummary(changeSummary, "ChangeSummary after updates");
@@ -494,10 +318,10 @@ InstanceId;ClassId;ClassName;DbOpcode;Indirect
             LastMod;2.45726e+006;2.45726e+006
     */
     EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Update));
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Update));
 
     m_testDb->SaveChanges();
-    DeleteElement();
+    DeleteElement(elementId);
     GetChangeSummaryFromCurrentTransaction(changeSummary);
     
     DumpChangeSummary(changeSummary, "ChangeSummary after deletes");
@@ -545,7 +369,7 @@ InstanceId;ClassId;ClassName;DbOpcode;Indirect
             ModelId;1;NULL
     */
     EXPECT_EQ(5, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Delete));
+    EXPECT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Delete));
     }
 
 //---------------------------------------------------------------------------------------
@@ -559,7 +383,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
 
     InsertModel();
     InsertCategory();
-    InsertElement(0, 0, 0);
+    DgnElementId elementId = InsertElement(0, 0, 0);
 
     m_testDb->SaveChanges();
 
@@ -568,89 +392,89 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
     DumpChangeSummary(changeSummary, "After inserts");
 
     /* 
-After inserts:
-InstanceId;ClassId;ClassName;DbOpcode;Indirect
-2;184;dgn:PhysicalModel;Insert;No
-	ECInstanceId;NULL;2
-	Name;NULL;"ChangeSetModel"
-	Props;NULL;"{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}"
-	Visibility;NULL;1
-2;131;dgn:AuthorityIssuesElementCode;Insert;No
-	ECInstanceId;NULL;2
-	SourceECInstanceId;NULL;4
-	TargetECClassId;NULL;136
-	TargetECInstanceId;NULL;2
-2;136;dgn:Category;Insert;No
-	Code;NULL;"ChangeSetTestCategory"
-	CodeAuthorityId;NULL;4
-	CodeNameSpace;NULL;""
-	Descr;NULL;""
-	ECInstanceId;NULL;2
-	LastMod;NULL;2.45731e+006
-	ModelId;NULL;1
-	Rank;NULL;2
-	Scope;NULL;1
-2;180;dgn:ModelContainsElements;Insert;No
-	ECInstanceId;NULL;2
-	SourceECInstanceId;NULL;1
-	TargetECClassId;NULL;136
-	TargetECInstanceId;NULL;2
-3;131;dgn:AuthorityIssuesElementCode;Insert;No
-	ECInstanceId;NULL;3
-	SourceECInstanceId;NULL;4
-	TargetECClassId;NULL;197
-	TargetECInstanceId;NULL;3
-3;167;dgn:ElementOwnsChildElements;Insert;No
-	ECInstanceId;NULL;3
-	SourceECClassId;NULL;197
-	SourceECInstanceId;NULL;2
-	TargetECClassId;NULL;197
-	TargetECInstanceId;NULL;3
-3;180;dgn:ModelContainsElements;Insert;No
-	ECInstanceId;NULL;3
-	SourceECInstanceId;NULL;1
-	TargetECClassId;NULL;197
-	TargetECInstanceId;NULL;3
-3;197;dgn:SubCategory;Insert;No
-	Code;NULL;"ChangeSetTestCategory"
-	CodeAuthorityId;NULL;4
-	CodeNameSpace;NULL;"ChangeSetTestCategory"
-	ECInstanceId;NULL;3
-	LastMod;NULL;2.45731e+006
-	ModelId;NULL;1
-	ParentId;NULL;2
-	Props;NULL;"{"color":16777215}"
-4;131;dgn:AuthorityIssuesElementCode;Insert;No
-	ECInstanceId;NULL;4
-	SourceECInstanceId;NULL;1
-	TargetECClassId;NULL;183
-	TargetECInstanceId;NULL;4
-4;180;dgn:ModelContainsElements;Insert;No
-	ECInstanceId;NULL;4
-	SourceECInstanceId;NULL;2
-	TargetECClassId;NULL;183
-	TargetECInstanceId;NULL;4
-4;183;dgn:PhysicalElement;Insert;No
-	CategoryId;NULL;2
-	Code;NULL;"0-4"
-	CodeAuthorityId;NULL;1
-	CodeNameSpace;NULL;"PhysicalElement"
-	ECInstanceId;NULL;4
-	LastMod;NULL;2.45731e+006
-	ModelId;NULL;2
-4;158;dgn:ElementGeom;Insert;No
-	ECInstanceId;NULL;4
-	Geom;NULL;...
-	InPhysicalSpace;NULL;1
-	Placement;NULL;...
-4;170;dgn:ElementOwnsGeom;Insert;No
-	ECInstanceId;NULL;4
-	SourceECInstanceId;NULL;4
-	TargetECInstanceId;NULL;4
+    After inserts:
+    InstanceId;ClassId;ClassName;DbOpcode;Indirect
+    2;184;dgn:PhysicalModel;Insert;No
+	    ECInstanceId;NULL;2
+	    Name;NULL;"ChangeSetModel"
+	    Props;NULL;"{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}"
+	    Visibility;NULL;1
+    2;131;dgn:AuthorityIssuesElementCode;Insert;No
+	    ECInstanceId;NULL;2
+	    SourceECInstanceId;NULL;4
+	    TargetECClassId;NULL;136
+	    TargetECInstanceId;NULL;2
+    2;136;dgn:Category;Insert;No
+	    Code;NULL;"ChangeSetTestCategory"
+	    CodeAuthorityId;NULL;4
+	    CodeNameSpace;NULL;""
+	    Descr;NULL;""
+	    ECInstanceId;NULL;2
+	    LastMod;NULL;2.45731e+006
+	    ModelId;NULL;1
+	    Rank;NULL;2
+	    Scope;NULL;1
+    2;180;dgn:ModelContainsElements;Insert;No
+	    ECInstanceId;NULL;2
+	    SourceECInstanceId;NULL;1
+	    TargetECClassId;NULL;136
+	    TargetECInstanceId;NULL;2
+    3;131;dgn:AuthorityIssuesElementCode;Insert;No
+	    ECInstanceId;NULL;3
+	    SourceECInstanceId;NULL;4
+	    TargetECClassId;NULL;197
+	    TargetECInstanceId;NULL;3
+    3;167;dgn:ElementOwnsChildElements;Insert;No
+	    ECInstanceId;NULL;3
+	    SourceECClassId;NULL;197
+	    SourceECInstanceId;NULL;2
+	    TargetECClassId;NULL;197
+	    TargetECInstanceId;NULL;3
+    3;180;dgn:ModelContainsElements;Insert;No
+	    ECInstanceId;NULL;3
+	    SourceECInstanceId;NULL;1
+	    TargetECClassId;NULL;197
+	    TargetECInstanceId;NULL;3
+    3;197;dgn:SubCategory;Insert;No
+	    Code;NULL;"ChangeSetTestCategory"
+	    CodeAuthorityId;NULL;4
+	    CodeNameSpace;NULL;"ChangeSetTestCategory"
+	    ECInstanceId;NULL;3
+	    LastMod;NULL;2.45731e+006
+	    ModelId;NULL;1
+	    ParentId;NULL;2
+	    Props;NULL;"{"color":16777215}"
+    4;131;dgn:AuthorityIssuesElementCode;Insert;No
+	    ECInstanceId;NULL;4
+	    SourceECInstanceId;NULL;1
+	    TargetECClassId;NULL;183
+	    TargetECInstanceId;NULL;4
+    4;180;dgn:ModelContainsElements;Insert;No
+	    ECInstanceId;NULL;4
+	    SourceECInstanceId;NULL;2
+	    TargetECClassId;NULL;183
+	    TargetECInstanceId;NULL;4
+    4;183;dgn:PhysicalElement;Insert;No
+	    CategoryId;NULL;2
+	    Code;NULL;"0-4"
+	    CodeAuthorityId;NULL;1
+	    CodeNameSpace;NULL;"PhysicalElement"
+	    ECInstanceId;NULL;4
+	    LastMod;NULL;2.45731e+006
+	    ModelId;NULL;2
+    4;158;dgn:ElementGeom;Insert;No
+	    ECInstanceId;NULL;4
+	    Geom;NULL;...
+	    InPhysicalSpace;NULL;1
+	    Placement;NULL;...
+    4;170;dgn:ElementOwnsGeom;Insert;No
+	    ECInstanceId;NULL;4
+	    SourceECInstanceId;NULL;4
+	    TargetECInstanceId;NULL;4
     */
     EXPECT_EQ(14, changeSummary.MakeInstanceIterator().QueryCount());
 
-    ModifyElement();
+    ModifyElement(elementId);
 
     m_testDb->SaveChanges();
 
@@ -716,7 +540,7 @@ InstanceId;ClassId;ClassName;DbOpcode;Indirect
     */
     EXPECT_EQ(14, changeSummary.MakeInstanceIterator().QueryCount());
 
-    DeleteElement();
+    DeleteElement(elementId);
 
     m_testDb->SaveChanges();
 
@@ -1511,10 +1335,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
 
     InsertModel();
     InsertCategory();
-    InsertElement(0, 0, 0);
-    DgnElementId parentElementId = m_testElementId;
-    InsertElement(1, 1, 1);
-    DgnElementId childElementId = m_testElementId;
+    DgnElementId parentElementId = InsertElement(0, 0, 0);
+    DgnElementId childElementId = InsertElement(1, 1, 1);
 
     m_testDb->SaveChanges();
 
@@ -1604,8 +1426,7 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
     bset<DgnElementId> insertedElements;
     for (int ii = 0; ii < 10; ii++)
         {
-        InsertElement(ii, 0, 0);
-        DgnElementId elementId = m_testElementId;
+        DgnElementId elementId = InsertElement(ii, 0, 0);
         insertedElements.insert(elementId);
         }
 
@@ -1704,83 +1525,4 @@ TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
     int actualChangeCount = stmt.GetValueInt(0);
     int expectedChangeCount = nSessions * nTransactionsPerSession + 2 /*category and subcategory*/;
     EXPECT_EQ(expectedChangeCount, actualChangeCount);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    07/2015
-//---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, RevisionTest)
-    {
-    // TODO: This test needs to be moved to a newRevision_Test.cpp
-
-    /*
-    * Create an initial revision
-    */
-    CreateDgnDb();
-    InsertModel();
-    InsertCategory();
-    InsertFloor(1, 1);
-    CreateDefaultView();
-    m_testDb->SaveChanges("Created Initial Model");
-
-    DgnRevisionPtr revision = m_testDb->Revisions().StartCreateRevision();
-    ASSERT_TRUE(revision.IsValid());
-    BentleyStatus status = m_testDb->Revisions().FinishCreateRevision();
-    ASSERT_TRUE(SUCCESS == status);
-
-    CloseDgnDb();
-
-    /*
-    * Copy the Db
-    */
-    BeFileName originalFile = DgnDbTestDgnManager::GetOutputFilePath(L"ChangeSummaryTest.idgndb");
-    BeFileName copyFile = DgnDbTestDgnManager::GetOutputFilePath(L"ChangeSummaryTestCopy.idgndb");
-
-    BeFileNameStatus fileStatus = BeFileName::BeCopyFile(originalFile.c_str(), copyFile.c_str());
-    ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
-
-    /*
-     * Create and save multiple revisions
-     */
-    OpenDgnDb();
-    bvector<DgnRevisionPtr> revisions;
-    for (int revNum = 0; revNum < 4; revNum++)
-        {
-        InsertFloor(1, 1);
-        m_testDb->SaveChanges();
-
-        DgnRevisionPtr revision = m_testDb->Revisions().StartCreateRevision();
-        ASSERT_TRUE(revision.IsValid());
-
-        status = m_testDb->Revisions().FinishCreateRevision();
-        ASSERT_TRUE(SUCCESS == status);
-
-        revisions.push_back(revision);
-        }
-
-    /*
-    * Replace the original file with the unmodified copy
-    */
-    CloseDgnDb();
-    fileStatus = BeFileName::BeCopyFile(copyFile.c_str(), originalFile.c_str());
-    ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
-    OpenDgnDb();
-
-    /*
-     * Dump all revisions
-     */
-    /*for (DgnRevisionPtr const& rev : revisions)
-        {
-        printf("---------------------------------------------------------\n");
-        rev->Dump(*m_testDb);
-        printf("\n\n");
-        }*/
-
-    /*
-    * Merge all the saved revisions
-    */
-    
-    status = m_testDb->Revisions().MergeRevisions(revisions);
-    ASSERT_TRUE(status == SUCCESS);
-    m_testDb->SaveChanges();
     }

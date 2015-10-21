@@ -135,22 +135,21 @@ public:
     //! containing all the changes made since the previous revision. 
     //! <li> The revision must be finished or aborted with calls to FinishCreateRevision()
     //! or AbortCreateRevision()
-    //! <li> While a revision is being created, transactions cannot be undone. 
+    //! <li> Unless AbandonCreateRevision is subsequently called, transactions cannot be
+    //! undone anymore. 
     //! </ul>
     //! @see FinishCreateRevision, AbandonCreateRevision
     DGNPLATFORM_EXPORT DgnRevisionPtr StartCreateRevision();
     
     //! Finish creating a new revision
     //! @return SUCCESS if the revision was successfully finished, ERROR otherwise. 
-    //! @remarks Upon successful return, the transaction table is flushed - so changes cannot be undone anymore
+    //! @remarks Upon successful return, the transaction table is flushed and cannot be undone. 
     //! @see StartCreateRevision
     DGNPLATFORM_EXPORT BentleyStatus FinishCreateRevision();
 
     //! Abandon creating a new revision
     //! @see StartCreateRevision
     DGNPLATFORM_EXPORT void AbandonCreateRevision();
-
-
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
