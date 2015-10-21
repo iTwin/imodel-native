@@ -463,7 +463,7 @@ ECSqlTestDataset ECSqlUpdateTestDataset::ParameterAdvancedTests (int rowCountPer
     auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsql, rowCountPerClass, true);
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (123)));
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("s", ECValue ("hello")));
-    testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("l", ECValue (123456789LL)));
+    testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("l", ECValue (INT64_C(123456789))));
     }
 
     //type match tests
