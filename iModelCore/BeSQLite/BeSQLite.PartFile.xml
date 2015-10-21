@@ -49,13 +49,6 @@
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests-Performance" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
-        <SubPart PartName="PrewireForUnitTests" />
-        <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="BeSQLite/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
-        </Bindings>
-    </Part>
-
     <Part Name="UnitTests-Published" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="PublishedApi" />
