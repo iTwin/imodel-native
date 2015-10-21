@@ -20,7 +20,7 @@ ClientMkiHeaders =  $(ClientMkiPublicApiDir)ClientInfo.h                        
                     $(ClientMkiPublicApiDir)Response/WSObjectsReaderV1.h         \
                     $(ClientMkiPublicApiDir)Response/WSObjectsReaderV2.h         \
                     $(ClientMkiPublicApiDir)Response/WSObjectsResponse.h         \
-                    $(ClientMkiPublicApiDir)WSChangesetBuilder.h                 \
+                    $(ClientMkiPublicApiDir)WSChangeset.h                 \
                     $(ClientMkiPublicApiDir)WSClient.h                           \
                     $(ClientMkiPublicApiDir)WSError.h                            \
                     $(ClientMkiPublicApiDir)WSInfo.h                             \
@@ -81,7 +81,7 @@ $(o)ServerInfoProvider$(oext)               : $(ClientMkiSourceDir)ServerInfoPro
 
 $(o)Utils$(oext)                            : $(ClientMkiSourceDir)Utils.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)WSChangesetBuilder$(oext)               : $(ClientMkiSourceDir)WSChangesetBuilder.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+$(o)WSChangeset$(oext)                      : $(ClientMkiSourceDir)WSChangeset.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)WSClient$(oext)                         : $(ClientMkiSourceDir)WSClient.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 

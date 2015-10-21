@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/WebServices/Client/WSChangesetBuilder.h $
+|     $Source: PublicAPI/WebServices/Client/WSChangeset.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -19,7 +19,7 @@ USING_NAMESPACE_BENTLEY_EC
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct WSChangesetBuilder
+struct WSChangeset
     {
     public:
         enum ChangeStatus
@@ -37,7 +37,7 @@ struct WSChangesetBuilder
         bvector<std::shared_ptr<Instance>> m_instances;
 
     public:
-        WSCLIENT_EXPORT WSChangesetBuilder();
+        WSCLIENT_EXPORT WSChangeset();
 
         //! Add 
         WSCLIENT_EXPORT Instance& AddInstance
@@ -64,9 +64,9 @@ struct WSChangesetBuilder
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct WSChangesetBuilder::Instance
+struct WSChangeset::Instance
     {
-    friend struct WSChangesetBuilder;
+    friend struct WSChangeset;
 
     private:
         ObjectId m_id;
@@ -119,10 +119,10 @@ struct WSChangesetBuilder::Instance
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct WSChangesetBuilder::Relationship
+struct WSChangeset::Relationship
     {
-    friend struct WSChangesetBuilder;
-    friend struct WSChangesetBuilder::Instance;
+    friend struct WSChangeset;
+    friend struct WSChangeset::Instance;
 
     private:
         ObjectId m_id;

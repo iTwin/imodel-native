@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/WebServices/Client/WSChangesetBuilderTests.h $
+|     $Source: Tests/Published/WebServices/Client/WSChangesetTests.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,6 +10,6 @@
 
 #include "../../Utils/WebServicesTestsHelper.h"
 
-class WSChangesetBuilderTests : public WSClientBaseTest
+class WSChangesetTests : public WSClientBaseTest
     {
     };

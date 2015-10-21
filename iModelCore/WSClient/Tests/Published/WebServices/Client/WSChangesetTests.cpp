@@ -1,33 +1,33 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/WebServices/Client/WSChangesetBuilderTests.cpp $
+|     $Source: Tests/Published/WebServices/Client/WSChangesetTests.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "WSChangesetBuilderTests.h"
+#include "WSChangesetTests.h"
 
-#include <WebServices/Client/WSChangesetBuilder.h>
+#include <WebServices/Client/WSChangeset.h>
 #include <Bentley/BeTimeUtilities.h>
 
 using namespace ::testing;
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-TEST_F(WSChangesetBuilderTests, ToString_EmptyChangeset_ReturnsEmptyChangesetAndSizeIsSameAsEmptyChangesetJson)
+TEST_F(WSChangesetTests, ToString_EmptyChangeset_ReturnsEmptyChangesetAndSizeIsSameAsEmptyChangesetJson)
     {
-    WSChangesetBuilder changeset;
+    WSChangeset changeset;
     EXPECT_EQ(Utf8String(R"({"instances":[]})").size(), changeset.CalculateSize());
     EXPECT_EQ(Utf8String(R"({"instances":[]})"), changeset.ToString());
     EXPECT_EQ(0, changeset.GetInstanceCount());
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
-TEST_F(WSChangesetBuilderTests, ToString_OneExistingInstance_ReturnsChangesetJsonWithNotPropertiesAndCalculateSizeMatches)
+TEST_F(WSChangesetTests, ToString_OneExistingInstance_ReturnsChangesetJsonWithNotPropertiesAndCalculateSizeMatches)
     {
-    WSChangesetBuilder changeset;
-    changeset.AddInstance({"TestSchema.TestClass","Foo"}, WSChangesetBuilder::Existing, std::make_shared<Json::Value>(Json::objectValue));
+    WSChangeset changeset;
+    changeset.AddInstance({"TestSchema.TestClass","Foo"}, WSChangeset::Existing, std::make_shared<Json::Value>(Json::objectValue));
 
     auto expectedJson = ToJson(R"({
         "instances":[
@@ -45,12 +45,12 @@ TEST_F(WSChangesetBuilderTests, ToString_OneExistingInstance_ReturnsChangesetJso
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
-TEST_F(WSChangesetBuilderTests, ToString_OneCreatedInstance_ReturnsChangesetJsonWithPropertiesAndWithoutIdAndCalculateSizeMatches)
+TEST_F(WSChangesetTests, ToString_OneCreatedInstance_ReturnsChangesetJsonWithPropertiesAndWithoutIdAndCalculateSizeMatches)
     {
     auto properties = std::make_shared<Json::Value>(ToJson(R"({"TestProperty":"TestValue"})"));
 
-    WSChangesetBuilder changeset;
-    changeset.AddInstance({"TestSchema.TestClass","Foo"}, WSChangesetBuilder::Created, properties);
+    WSChangeset changeset;
+    changeset.AddInstance({"TestSchema.TestClass","Foo"}, WSChangeset::Created, properties);
 
     auto expectedJson = ToJson(R"({
         "instances":[
@@ -69,12 +69,12 @@ TEST_F(WSChangesetBuilderTests, ToString_OneCreatedInstance_ReturnsChangesetJson
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
-TEST_F(WSChangesetBuilderTests, ToString_OneModifiedInstance_ReturnsChangesetJsonWithPropertiesAndIdAndCalculateSizeMatches)
+TEST_F(WSChangesetTests, ToString_OneModifiedInstance_ReturnsChangesetJsonWithPropertiesAndIdAndCalculateSizeMatches)
     {
     auto properties = std::make_shared<Json::Value>(ToJson(R"({"TestProperty":"TestValue"})"));
 
-    WSChangesetBuilder changeset;
-    changeset.AddInstance({"TestSchema.TestClass","Foo"}, WSChangesetBuilder::Modified, properties);
+    WSChangeset changeset;
+    changeset.AddInstance({"TestSchema.TestClass","Foo"}, WSChangeset::Modified, properties);
 
     auto expectedJson = ToJson(R"({
         "instances":[
@@ -97,12 +97,12 @@ TEST_F(WSChangesetBuilderTests, ToString_OneModifiedInstance_ReturnsChangesetJso
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
-TEST_F(WSChangesetBuilderTests, ToString_OneDeletedInstance_ReturnsChangesetJsonWithoutPropertiesAndCalculateSizeMatches)
+TEST_F(WSChangesetTests, ToString_OneDeletedInstance_ReturnsChangesetJsonWithoutPropertiesAndCalculateSizeMatches)
     {
     auto properties = std::make_shared<Json::Value>(ToJson(R"({"TestProperty":"TestValue"})"));
 
-    WSChangesetBuilder changeset;
-    changeset.AddInstance({"TestSchema.TestClass","Foo"}, WSChangesetBuilder::Deleted, properties);
+    WSChangeset changeset;
+    changeset.AddInstance({"TestSchema.TestClass","Foo"}, WSChangeset::Deleted, properties);
 
     auto expectedJson = ToJson(R"({
         "instances":[
@@ -121,16 +121,16 @@ TEST_F(WSChangesetBuilderTests, ToString_OneDeletedInstance_ReturnsChangesetJson
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
-TEST_F(WSChangesetBuilderTests, ToString_OneForwardRelatedInstance_ReturnsChangesetJsonAndCalculateSizeMatches)
+TEST_F(WSChangesetTests, ToString_OneForwardRelatedInstance_ReturnsChangesetJsonAndCalculateSizeMatches)
     {
     auto propertiesA = std::make_shared<Json::Value>(ToJson(R"({"Foo":"A"})"));
     auto propertiesC = std::make_shared<Json::Value>(ToJson(R"({"Foo":"C"})"));
 
-    WSChangesetBuilder changeset;
+    WSChangeset changeset;
     changeset
-        .AddInstance({"TestSchemaA.TestClassA","IgnoredId"}, WSChangesetBuilder::Created, propertiesA)
-        .AddRelatedInstance({"TestSchemaB.TestClassB","IgnoredId"}, WSChangesetBuilder::Created, ECRelatedInstanceDirection::Forward,
-        {"TestSchemaC.TestClassC","IgnoredId"}, WSChangesetBuilder::Created, propertiesC);
+        .AddInstance({"TestSchemaA.TestClassA","IgnoredId"}, WSChangeset::Created, propertiesA)
+        .AddRelatedInstance({"TestSchemaB.TestClassB","IgnoredId"}, WSChangeset::Created, ECRelatedInstanceDirection::Forward,
+        {"TestSchemaC.TestClassC","IgnoredId"}, WSChangeset::Created, propertiesC);
 
     auto expectedJson = ToJson(R"({
         "instances":[
@@ -163,16 +163,16 @@ TEST_F(WSChangesetBuilderTests, ToString_OneForwardRelatedInstance_ReturnsChange
     EXPECT_EQ(1, changeset.GetRelationshipCount());
     }
 
-TEST_F(WSChangesetBuilderTests, ToString_OneBackwardRelatedInstance_ReturnsChangesetJsonAndCalculateSizeMatches)
+TEST_F(WSChangesetTests, ToString_OneBackwardRelatedInstance_ReturnsChangesetJsonAndCalculateSizeMatches)
     {
     auto propertiesA = std::make_shared<Json::Value>(ToJson(R"({"Foo":"A"})"));
     auto propertiesC = std::make_shared<Json::Value>(ToJson(R"({"Foo":"C"})"));
 
-    WSChangesetBuilder changeset;
+    WSChangeset changeset;
     changeset
-        .AddInstance({"TestSchemaA.TestClassA","IgnoredId"}, WSChangesetBuilder::Created, propertiesA)
-        .AddRelatedInstance({"TestSchemaB.TestClassB","IgnoredId"}, WSChangesetBuilder::Created, ECRelatedInstanceDirection::Backward,
-        {"TestSchemaC.TestClassC","IgnoredId"}, WSChangesetBuilder::Created, propertiesC);
+        .AddInstance({"TestSchemaA.TestClassA","IgnoredId"}, WSChangeset::Created, propertiesA)
+        .AddRelatedInstance({"TestSchemaB.TestClassB","IgnoredId"}, WSChangeset::Created, ECRelatedInstanceDirection::Backward,
+        {"TestSchemaC.TestClassC","IgnoredId"}, WSChangeset::Created, propertiesC);
 
     auto expectedJson = ToJson(R"({
         "instances":[
@@ -205,18 +205,18 @@ TEST_F(WSChangesetBuilderTests, ToString_OneBackwardRelatedInstance_ReturnsChang
     EXPECT_EQ(1, changeset.GetRelationshipCount());
     }
 
-TEST_F(WSChangesetBuilderTests, ToString_TwoRelatedInstances_ReturnsChangesetJsonAndCalculateSizeMatches)
+TEST_F(WSChangesetTests, ToString_TwoRelatedInstances_ReturnsChangesetJsonAndCalculateSizeMatches)
     {
     auto propertiesA = std::make_shared<Json::Value>(ToJson(R"({"Foo":"A"})"));
     auto propertiesC = std::make_shared<Json::Value>(ToJson(R"({"Foo":"C"})"));
     auto propertiesE = std::make_shared<Json::Value>(ToJson(R"({"Foo":"E"})"));
 
-    WSChangesetBuilder changeset;
-    auto& instance = changeset.AddInstance({"TestSchemaA.TestClassA","IgnoredId"}, WSChangesetBuilder::Created, propertiesA);
-    instance.AddRelatedInstance({"TestSchemaB.TestClassB","IgnoredId"}, WSChangesetBuilder::Created, ECRelatedInstanceDirection::Forward,
-    {"TestSchemaC.TestClassC","IgnoredId"}, WSChangesetBuilder::Created, propertiesC);
-    instance.AddRelatedInstance({"TestSchemaD.TestClassD","IgnoredId"}, WSChangesetBuilder::Created, ECRelatedInstanceDirection::Forward,
-    {"TestSchemaE.TestClassE","IgnoredId"}, WSChangesetBuilder::Created, propertiesE);
+    WSChangeset changeset;
+    auto& instance = changeset.AddInstance({"TestSchemaA.TestClassA","IgnoredId"}, WSChangeset::Created, propertiesA);
+    instance.AddRelatedInstance({"TestSchemaB.TestClassB","IgnoredId"}, WSChangeset::Created, ECRelatedInstanceDirection::Forward,
+    {"TestSchemaC.TestClassC","IgnoredId"}, WSChangeset::Created, propertiesC);
+    instance.AddRelatedInstance({"TestSchemaD.TestClassD","IgnoredId"}, WSChangeset::Created, ECRelatedInstanceDirection::Forward,
+    {"TestSchemaE.TestClassE","IgnoredId"}, WSChangeset::Created, propertiesE);
 
     auto expectedJson = ToJson(R"({
         "instances":[
@@ -262,16 +262,16 @@ TEST_F(WSChangesetBuilderTests, ToString_TwoRelatedInstances_ReturnsChangesetJso
     EXPECT_EQ(2, changeset.GetRelationshipCount());
     }
 
-TEST_F(WSChangesetBuilderTests, ToString_ThreeInstances_ReturnsChangesetAndCalculateSizeMatches)
+TEST_F(WSChangesetTests, ToString_ThreeInstances_ReturnsChangesetAndCalculateSizeMatches)
     {
     auto propertiesA = std::make_shared<Json::Value>(ToJson(R"({"Foo":"A"})"));
     auto propertiesB = std::make_shared<Json::Value>(ToJson(R"({"Foo":"B"})"));
     auto propertiesC = std::make_shared<Json::Value>(ToJson(R"({"Foo":"C"})"));
 
-    WSChangesetBuilder changeset;
-    changeset.AddInstance({"TestSchema.TestClass","A"}, WSChangesetBuilder::Modified, propertiesA);
-    changeset.AddInstance({"TestSchema.TestClass","B"}, WSChangesetBuilder::Created, propertiesB);
-    changeset.AddInstance({"TestSchema.TestClass","C"}, WSChangesetBuilder::Deleted, propertiesC);
+    WSChangeset changeset;
+    changeset.AddInstance({"TestSchema.TestClass","A"}, WSChangeset::Modified, propertiesA);
+    changeset.AddInstance({"TestSchema.TestClass","B"}, WSChangeset::Created, propertiesB);
+    changeset.AddInstance({"TestSchema.TestClass","C"}, WSChangeset::Deleted, propertiesC);
 
     auto expectedJson = ToJson(R"({
         "instances":[
@@ -309,10 +309,10 @@ TEST_F(WSChangesetBuilderTests, ToString_ThreeInstances_ReturnsChangesetAndCalcu
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
-TEST_F(WSChangesetBuilderTests, RemoveInstance_OneInstanceInstance_ReturnsTrueAndLeavesChangesetEmpty)
+TEST_F(WSChangesetTests, RemoveInstance_OneInstanceInstance_ReturnsTrueAndLeavesChangesetEmpty)
     {
-    WSChangesetBuilder changeset;
-    auto& instance = changeset.AddInstance({"TestSchema.TestClassA","A"}, WSChangesetBuilder::Modified, nullptr);
+    WSChangeset changeset;
+    auto& instance = changeset.AddInstance({"TestSchema.TestClassA","A"}, WSChangeset::Modified, nullptr);
 
     EXPECT_EQ(true, changeset.RemoveInstance(instance));
 
@@ -323,12 +323,12 @@ TEST_F(WSChangesetBuilderTests, RemoveInstance_OneInstanceInstance_ReturnsTrueAn
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
-TEST_F(WSChangesetBuilderTests, RemoveInstance_ThreeInstances_ReturnsTrueAndLeavesOtherTwoInstances)
+TEST_F(WSChangesetTests, RemoveInstance_ThreeInstances_ReturnsTrueAndLeavesOtherTwoInstances)
     {
-    WSChangesetBuilder changeset;
-    auto& instanceA = changeset.AddInstance({"TestSchema.TestClassA","A"}, WSChangesetBuilder::Modified, nullptr);
-    auto& instanceB = changeset.AddInstance({"TestSchema.TestClassB","B"}, WSChangesetBuilder::Created, nullptr);
-    auto& instanceC = changeset.AddInstance({"TestSchema.TestClassC","C"}, WSChangesetBuilder::Deleted, nullptr);
+    WSChangeset changeset;
+    auto& instanceA = changeset.AddInstance({"TestSchema.TestClassA","A"}, WSChangeset::Modified, nullptr);
+    auto& instanceB = changeset.AddInstance({"TestSchema.TestClassB","B"}, WSChangeset::Created, nullptr);
+    auto& instanceC = changeset.AddInstance({"TestSchema.TestClassC","C"}, WSChangeset::Deleted, nullptr);
 
     auto expectedJson = ToJson(R"({
         "instances":[
@@ -359,14 +359,14 @@ TEST_F(WSChangesetBuilderTests, RemoveInstance_ThreeInstances_ReturnsTrueAndLeav
     EXPECT_EQ(ObjectId("TestSchema.TestClassC", "C"), instanceC.GetId());
     }
 
-TEST_F(WSChangesetBuilderTests, RemoveInstance_TwoRelatedInstances_ReturnsRemovedIdAndLeavesOtherInstances)
+TEST_F(WSChangesetTests, RemoveInstance_TwoRelatedInstances_ReturnsRemovedIdAndLeavesOtherInstances)
     {
-    WSChangesetBuilder changeset;
-    auto& instanceA = changeset.AddInstance({"TestSchemaA.TestClassA","A"}, WSChangesetBuilder::Created, nullptr);
-    auto& instanceC = instanceA.AddRelatedInstance({"TestSchemaB.TestClassB","B"}, WSChangesetBuilder::Created, ECRelatedInstanceDirection::Forward,
-    {"TestSchemaC.TestClassC","C"}, WSChangesetBuilder::Created, nullptr);
-    auto& instanceE = instanceA.AddRelatedInstance({"TestSchemaD.TestClassD","D"}, WSChangesetBuilder::Created, ECRelatedInstanceDirection::Forward,
-    {"TestSchemaE.TestClassE","E"}, WSChangesetBuilder::Created, nullptr);
+    WSChangeset changeset;
+    auto& instanceA = changeset.AddInstance({"TestSchemaA.TestClassA","A"}, WSChangeset::Created, nullptr);
+    auto& instanceC = instanceA.AddRelatedInstance({"TestSchemaB.TestClassB","B"}, WSChangeset::Created, ECRelatedInstanceDirection::Forward,
+    {"TestSchemaC.TestClassC","C"}, WSChangeset::Created, nullptr);
+    auto& instanceE = instanceA.AddRelatedInstance({"TestSchemaD.TestClassD","D"}, WSChangeset::Created, ECRelatedInstanceDirection::Forward,
+    {"TestSchemaE.TestClassE","E"}, WSChangeset::Created, nullptr);
 
     auto expectedJson = ToJson(R"({
         "instances":[
@@ -403,7 +403,7 @@ TEST_F(WSChangesetBuilderTests, RemoveInstance_TwoRelatedInstances_ReturnsRemove
     EXPECT_EQ(ObjectId("TestSchemaC.TestClassC", "C"), instanceC.GetId());
     }
 
-TEST_F(WSChangesetBuilderTests, DISABLED_CalculateSize_LotsOfIntsances_PerformanceBetterThanDoingToString)
+TEST_F(WSChangesetTests, DISABLED_CalculateSize_LotsOfIntsances_PerformanceBetterThanDoingToString)
     {
     auto testProperties = std::make_shared<Json::Value>(ToJson(R"(
         {
@@ -417,32 +417,32 @@ TEST_F(WSChangesetBuilderTests, DISABLED_CalculateSize_LotsOfIntsances_Performan
     int testInstanceCount = 2500;
     int testIterations = 3;
 
-    auto testChangeset = [&] (std::function<void(WSChangesetBuilder&)> completeCallback, std::function<void(WSChangesetBuilder&)> incrementalCallback)
+    auto testChangeset = [&] (std::function<void(WSChangeset&)> completeCallback, std::function<void(WSChangeset&)> incrementalCallback)
         {
         for (int i = 0; i < testIterations; i++)
             {
-            WSChangesetBuilder changeset;
+            WSChangeset changeset;
             while (changeset.GetInstanceCount() < testInstanceCount)
                 {
-                auto& instance = changeset.AddInstance(testId, WSChangesetBuilder::Created, testProperties);
+                auto& instance = changeset.AddInstance(testId, WSChangeset::Created, testProperties);
 
                 if (incrementalCallback)
                     {
                     incrementalCallback(changeset);
                     }
 
-                instance.AddRelatedInstance(testId, WSChangesetBuilder::Created, ECRelatedInstanceDirection::Forward, testId, WSChangesetBuilder::Created, testProperties)
-                    .AddRelatedInstance(testId, WSChangesetBuilder::Created, ECRelatedInstanceDirection::Forward, testId, WSChangesetBuilder::Created, testProperties)
-                    .AddRelatedInstance(testId, WSChangesetBuilder::Created, ECRelatedInstanceDirection::Forward, testId, WSChangesetBuilder::Created, testProperties);
+                instance.AddRelatedInstance(testId, WSChangeset::Created, ECRelatedInstanceDirection::Forward, testId, WSChangeset::Created, testProperties)
+                    .AddRelatedInstance(testId, WSChangeset::Created, ECRelatedInstanceDirection::Forward, testId, WSChangeset::Created, testProperties)
+                    .AddRelatedInstance(testId, WSChangeset::Created, ECRelatedInstanceDirection::Forward, testId, WSChangeset::Created, testProperties);
 
                 if (incrementalCallback)
                     {
                     incrementalCallback(changeset);
                     }
 
-                instance.AddRelatedInstance(testId, WSChangesetBuilder::Created, ECRelatedInstanceDirection::Forward, testId, WSChangesetBuilder::Created, testProperties)
-                    .AddRelatedInstance(testId, WSChangesetBuilder::Created, ECRelatedInstanceDirection::Forward, testId, WSChangesetBuilder::Created, testProperties)
-                    .AddRelatedInstance(testId, WSChangesetBuilder::Created, ECRelatedInstanceDirection::Forward, testId, WSChangesetBuilder::Created, testProperties);
+                instance.AddRelatedInstance(testId, WSChangeset::Created, ECRelatedInstanceDirection::Forward, testId, WSChangeset::Created, testProperties)
+                    .AddRelatedInstance(testId, WSChangeset::Created, ECRelatedInstanceDirection::Forward, testId, WSChangeset::Created, testProperties)
+                    .AddRelatedInstance(testId, WSChangeset::Created, ECRelatedInstanceDirection::Forward, testId, WSChangeset::Created, testProperties);
 
                 if (incrementalCallback)
                     {
@@ -466,7 +466,7 @@ TEST_F(WSChangesetBuilderTests, DISABLED_CalculateSize_LotsOfIntsances_Performan
 
     // Measure CalculateSize()
     start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    testChangeset([&] (WSChangesetBuilder& changeset)
+    testChangeset([&] (WSChangeset& changeset)
         {
         changeset.CalculateSize();
         }, nullptr);
@@ -475,7 +475,7 @@ TEST_F(WSChangesetBuilderTests, DISABLED_CalculateSize_LotsOfIntsances_Performan
 
     // Measure ToString().size()
     start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    testChangeset([&] (WSChangesetBuilder& changeset)
+    testChangeset([&] (WSChangeset& changeset)
         {
         changeset.ToString().size();
         }, nullptr);
@@ -484,7 +484,7 @@ TEST_F(WSChangesetBuilderTests, DISABLED_CalculateSize_LotsOfIntsances_Performan
 
     // Measure CalculateSize() incrementally
     start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    testChangeset(nullptr, [&] (WSChangesetBuilder& changeset)
+    testChangeset(nullptr, [&] (WSChangeset& changeset)
         {
         changeset.CalculateSize();
         });
@@ -493,7 +493,7 @@ TEST_F(WSChangesetBuilderTests, DISABLED_CalculateSize_LotsOfIntsances_Performan
 
     // Measure ToString().size() incrementally
     //start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    //testChangeset(nullptr, [&] (WSChangesetBuilder& changeset)
+    //testChangeset(nullptr, [&] (WSChangeset& changeset)
     //    {
     //    changeset.ToString().size();
     //    });
