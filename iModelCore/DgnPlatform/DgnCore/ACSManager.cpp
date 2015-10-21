@@ -910,7 +910,7 @@ ColorDef IAuxCoordSys::_GetColor(DgnViewportP viewport, ColorDef menuColor, uint
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IAuxCoordSys::_DrawAxisText(DgnViewportP viewport, SceneDrawP cached, WCharCP labelStr, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options) const
+void IAuxCoordSys::_DrawAxisText(DgnViewportP viewport, ViewDrawP cached, WCharCP labelStr, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options) const
     {
     DPoint3d textPt;
     textPt.x = userOrgX; textPt.y = userOrgY; textPt.z = 0.0;
@@ -956,7 +956,7 @@ void IAuxCoordSys::_DrawAxisText(DgnViewportP viewport, SceneDrawP cached, WChar
 void            IAuxCoordSys::_DrawZAxis
 (
 DgnViewportP           viewport,
-SceneDrawP        cached,
+ViewDrawP        cached,
 Transform*          transformP,
 ACSDisplayOptions   options
 ) const
@@ -1013,7 +1013,7 @@ ACSDisplayOptions   options
 void            IAuxCoordSys::_DrawAxisArrow
 (
 DgnViewportP           viewport,
-SceneDrawP        cached,
+ViewDrawP        cached,
 Transform*          transformP,
 ColorDef            menuColor,
 WCharCP             labelStrP,

@@ -389,7 +389,7 @@ StatusInt DgnViewport::_ConnectToOutput()
     if (!m_output.IsValid())
         return ERROR;
 
-    StatusInt status = m_output->AssignRenderDevice (_GetRenderDevice());
+    StatusInt status = m_output->AssignRenderDevice(_GetRenderDevice());
 
     if (SUCCESS == status)
         m_qvDCAssigned = true;

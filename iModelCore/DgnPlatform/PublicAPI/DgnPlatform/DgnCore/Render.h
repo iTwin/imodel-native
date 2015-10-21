@@ -16,10 +16,8 @@
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
-DEFINE_POINTER_SUFFIX_TYPEDEFS(SceneDraw)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ElemDisplayParams)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ElemMatSymb)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(GeomDraw)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GradientSymb)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Graphic)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(IDisplaySymbol)
@@ -30,7 +28,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleParams)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleSymb)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Material)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MultiResImage)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Output)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(OvrMatSymb)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PlotInfo)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Renderer)
@@ -38,15 +35,12 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Scene)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Texture)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(ViewDraw)
 
-DEFINE_REF_COUNTED_PTR(SceneDraw)
 DEFINE_REF_COUNTED_PTR(GradientSymb)
 DEFINE_REF_COUNTED_PTR(Graphic)
 DEFINE_REF_COUNTED_PTR(LineStyleInfo)
 DEFINE_REF_COUNTED_PTR(Material)
 DEFINE_REF_COUNTED_PTR(MultiResImage)
-DEFINE_REF_COUNTED_PTR(Output)
 DEFINE_REF_COUNTED_PTR(PlotInfo)
 DEFINE_REF_COUNTED_PTR(Renderer)
 DEFINE_REF_COUNTED_PTR(Scene)
@@ -151,13 +145,6 @@ struct Task : IRefCounted, NonCopyableClass
 };
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   08/15
-//=======================================================================================
-struct Graphic : IRefCounted, NonCopyableClass
-{
-};
-
-//=======================================================================================
 // @bsiclass                                                    Keith.Bentley   09/15
 //=======================================================================================
 struct Material : IRefCounted, NonCopyableClass
@@ -249,13 +236,6 @@ struct MultiResImage : IRefCounted, NonCopyableClass
 // @bsiclass                                                    Keith.Bentley   07/15
 //=======================================================================================
 struct Target : IRefCounted, NonCopyableClass
-{
-};
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   07/15
-//=======================================================================================
-struct Scene : NonCopyableClass
 {
 };
 
@@ -992,6 +972,7 @@ struct GraphicStroker
     //! @param[in] context context to use to create the cached representation.
     virtual void _Stroke(ViewContextR context) = 0;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //! Return true if _StrokeForCache should be called for locate. The geometry output by the stroker will be used to generate the curve/edge hits
     //! required for snapping as well as for locating the interiors of filled/rendered geometry.
     //! @note A stroker that has a very expensive to create cached representation (ex. breps) should NEVER return true.
@@ -1008,8 +989,10 @@ struct GraphicStroker
     virtual void _SaveGraphic(DgnViewportCR vp, GraphicR graphic) const = 0;
 
     virtual DgnDbR _GetDgnDb() const = 0;
+#endif
 };
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //=======================================================================================
 //! GraphicStroker for GeometricElements.
 // @bsiclass
@@ -1045,26 +1028,12 @@ public:
     void _SaveGraphic(DgnViewportCR vp, GraphicR graphic) const override {m_graphics.Save(vp, graphic);}
     virtual DgnDbR _GetDgnDb() const override {return m_dgnDb;}
 };
+#endif
 
 //=======================================================================================
-//! DgnCore implements this interface to provide methods that draw geometry in either cached or non-cached contexts. However,
-//! not all implementations of this interface actually "draw" the geometry. For example, one implementation of this interface
-//! is used for locating (aka "picking") visible geometry previously drawn.
-//!
-//! Any object that implements IDrawGeom will have an "active" ElemMatSymb that determines the appearance of
-//! geometry drawn via calls to methods in this interface.
-//!
-//! <h3>Coordinates and Dimensionality</h3>
-//! All coordinate information are specified in the current "local" coordinate system (see ILocalCoordSys for a discussion of pushing and
-//! popping coordinate transforms.)
-//!
-//! There are typically both 2D and 3D versions of the geometry methods. The choice of whether to use the 2D or 3D version
-//! depends only on whether you have 2D or 3D coordinate information, not on any inherent property of the IDrawGeom. In other words,
-//! there is no such thing as a "2D" or "3D" DgnViewport, all viewports are always 3D - if you use the 2D methods, they are intrinsically
-//! planar and oriented on the X,Y plane at the specified Z depth.
 // @bsiclass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GeomDraw
+struct Graphic : IRefCounted, NonCopyableClass
 {
     friend struct ViewContext;
 
@@ -1095,17 +1064,9 @@ protected:
     virtual void _DrawMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) = 0;
     virtual void _PushTransClip(TransformCP trans, ClipPlaneSetCP clip = nullptr) = 0;
     virtual void _PopTransClip() = 0;
-    virtual RangeResult _PushBoundingRange3d(DPoint3dCP range) = 0;
-    virtual RangeResult _PushBoundingRange2d(DPoint2dCP range, double zDepth) = 0;
-    virtual void _PopBoundingRange() = 0;
-    virtual size_t _GetMethodIndex() {return 0;}
-    virtual void _PushMethodState() {}
-    virtual void _PopMethodState() {}
-    virtual ~GeomDraw() {}
+    virtual ~Graphic() {}
 
 public:
-    GeomDraw() {}
-
     //! Get the current View Flags for this object. The view flags are initialized from the view flags
     //! of its controlling DgnViewport at the beginning of every display operation. However, during display operations,
     //! the view flags are sometimes temporarily modified for specific purposes, so they are not
@@ -1244,13 +1205,6 @@ public:
     //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
     void DrawTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range) {_DrawTriStrip2d(numPoints, points, usageFlags, zDepth, range);}
 
-    RangeResult PushBoundingRange3d(DPoint3dCP range) {return _PushBoundingRange3d(range);}
-    RangeResult PushBoundingRange2d(DPoint2dCP range, double zDepth) {return _PushBoundingRange2d(range, zDepth);}
-    void PopBoundingRange() {_PopBoundingRange();}
-    size_t GetMethodIndex() {return _GetMethodIndex();}
-    void PushMethodState() {_PushMethodState();}
-    void PopMethodState() {_PopMethodState();}
-
     //! @private
     // Published to expose access for performance reasons for Bryan Oswalt's augmented reality prototyping.
     void DrawMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) {_DrawMosaic(numX, numY, tileIds, verts);}
@@ -1261,10 +1215,9 @@ public:
 };
 
 //=======================================================================================
-//! DgnCore implements this interface to provide the display system for Viewports.
 // @bsiclass
 //=======================================================================================
-struct ViewDraw : GeomDraw
+struct Scene : NonCopyableClass
 {
 protected:
     virtual void _SetToViewCoords(bool yesNo) = 0;
@@ -1276,18 +1229,19 @@ protected:
     virtual void _DrawRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) = 0;
     virtual void _DrawDgnOle(IDgnOleDraw*) = 0;
     virtual void _DrawPointCloud(IPointCloudDrawParams* drawParams) = 0;
-    virtual void _DrawGraphic(Graphic* graphic, int subElemIndex) = 0;
+    virtual void _DrawGraphic(Graphic* graphic) = 0;
     virtual void _ClearZ () = 0;
 
     virtual uintptr_t _DefineQVTexture(WCharCP textureName, DgnDbP) {return 0;}
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     virtual void _DefineQVGeometryMap(uintptr_t textureId, GraphicStroker&, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern) {}
+#endif
 
     virtual bool _IsOutputQuickVision() const = 0;
     virtual bool _ApplyMonochromeOverrides(ViewFlagsCR) const = 0;
-    virtual StatusInt _TestOcclusion(int numVolumes, DPoint3dP verts, int* results) = 0;
     virtual void _PushClipStencil(Graphic* graphic) = 0;
     virtual void _PopClipStencil() = 0;
-    virtual ~ViewDraw() {}
+    virtual ~Scene() {}
 
 public:
     //! Set the coordinate system temporarily to DgnCoordSystem::View. This removes the root coordinate system,
@@ -1335,7 +1289,7 @@ public:
     void DrawPointCloud(IPointCloudDrawParams* drawParams) {_DrawPointCloud(drawParams);}
 
     //! Draw a Graphic
-    void DrawGraphic(Graphic* graphic, int subElemIndex = 0) {_DrawGraphic(graphic, subElemIndex);}
+    void DrawGraphic(Graphic* graphic) {_DrawGraphic(graphic);}
 
     //! Draw OLE object.
     void DrawDgnOle(IDgnOleDraw* ole) {_DrawDgnOle(ole);}
@@ -1348,31 +1302,15 @@ public:
     //! Pop the most recently pushed clip stencil boundary.
     void PopClipStencil() {_PopClipStencil();}
 
-    StatusInt TestOcclusion(int numVolumes, DPoint3dP verts, int* results) {return _TestOcclusion(numVolumes, verts, results);}
-
     void ClearZ() {_ClearZ();}
     uintptr_t DefineQVTexture(WCharCP textureName, DgnDbP dgnFile) {return _DefineQVTexture(textureName, dgnFile);}
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     void DefineQVGeometryMap(uintptr_t textureId, GraphicStroker& stroker, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern = false){_DefineQVGeometryMap(textureId, stroker, spacing, useCellColors, seedContext, forAreaPattern);}
+#endif
     bool IsOutputQuickVision() const {return _IsOutputQuickVision();}
     bool ApplyMonochromeOverrides(ViewFlagsCR) const;
-};
 
-//=======================================================================================
-//! Begin/End announcements around scene-based drawing sequences.
-// @bsiclass
-//=======================================================================================
-struct SceneDraw : IRefCounted, GeomDraw
-{
-protected:
-    virtual void _BeginGraphic() = 0;
-    virtual GraphicPtr _EndGraphic() = 0;
-    virtual void _AddGraphicToScene(Scene*, Graphic*, int viewMode) = 0;
-
-public:
-    void BeginGraphic() {_BeginGraphic();}
-    GraphicPtr EndGraphic() {return _EndGraphic();}
-    void AddGraphicToScene(Scene* scene, Graphic* graphic, int viewMode = 0) {_AddGraphicToScene(scene, graphic, viewMode);}
-
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //! Push a transform.
     //! @param[in]  trans Transform to push.
     //! @see #PopTransform
@@ -1381,6 +1319,7 @@ public:
     //! Pop the most recently pushed transform.
     //! @see #PushTransform
     void PopTransform() {_PopTransClip();}
+#endif
 };
 
 //=======================================================================================
@@ -1485,6 +1424,7 @@ struct RenderWindow {};
 struct RenderCursor {};
 struct CursorSource {};
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -1515,8 +1455,6 @@ protected:
     virtual void      _SetBackingStoreValid(bool) = 0;
     virtual bool      _IsAccelerated() const = 0;
     virtual void      _ScreenDirtied(BSIRect const* rect) = 0;
-    virtual bool      _EnableZTesting(bool yesNo) = 0;
-    virtual bool      _EnableZWriting(bool yesNo) = 0;
     virtual StatusInt _BeginDraw(bool eraseBefore) = 0;
     virtual void      _EndDraw(PaintOptions const&) = 0;
     virtual bool      _IsDrawActive() = 0;
@@ -1581,9 +1519,8 @@ public:
     //! @see #PushTransClip
     void PopTransClip() {_PopTransClip();}
 
-    bool EnableZTesting(bool yesNo) {return _EnableZTesting(yesNo);}
-    bool EnableZWriting(bool yesNo) {return _EnableZWriting(yesNo);}
     bool CheckNeedsHeal(BSIRectP rect){return _CheckNeedsHeal(rect);}
 };
+#endif
 
 END_BENTLEY_RENDER_NAMESPACE

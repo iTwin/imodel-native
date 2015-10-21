@@ -30,8 +30,8 @@ DGNPLATFORM_EXPORT static void Draw(ISolidPrimitiveCR, ViewContextR, bool includ
 DGNPLATFORM_EXPORT static void Draw(MSBsplineSurfaceCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
 DGNPLATFORM_EXPORT static void Draw(ISolidKernelEntityCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
 
-DGNPLATFORM_EXPORT static void DrawOutline(CurveVectorCR, Render::GeomDrawR);
-DGNPLATFORM_EXPORT static void DrawOutline2d(CurveVectorCR, Render::GeomDrawR, double zDepth);
+DGNPLATFORM_EXPORT static void DrawOutline(CurveVectorCR, Render::GraphicR);
+DGNPLATFORM_EXPORT static void DrawOutline2d(CurveVectorCR, Render::GraphicR, double zDepth);
 
 }; // WireframeGeomUtil
 //__PUBLISH_SECTION_START__

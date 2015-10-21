@@ -135,7 +135,6 @@ DG_INLINE bool ViewContext::Is3dView() const {return m_is3dView;}
 
 DG_INLINE ElemMatSymbP ViewContext::GetElemMatSymb() {return &m_elemMatSymb;}
 DG_INLINE OvrMatSymb* ViewContext::GetOverrideMatSymb() {return &m_ovrMatSymb;}
-DG_INLINE bool ViewContext::CheckICachedDraw() {return m_creatingCacheElem;}
 DG_INLINE Byte& ViewContext::GetFilterLODFlag() {return m_filterLOD;}
 DG_INLINE void ViewContext::SetFilterLODFlag(FilterLODFlags flags) { m_filterLOD =(Byte) flags; }
 DG_INLINE size_t ViewContext::GetTransClipDepth() {return m_transformClipStack.GetSize(); }
@@ -154,7 +153,6 @@ DG_INLINE bool ViewContext::CheckStop() {return _CheckStop();}
 DG_INLINE void ViewContext::PopTransformClip() {_PopTransformClip();}
 DG_INLINE void ViewContext::PushTransform(TransformCR trans) {_PushTransform(trans);}
 DG_INLINE void ViewContext::PushClip(ClipVectorCR clip) {_PushClip(clip);}
-DG_INLINE IPickGeomP ViewContext::GetIPickGeom() {return _GetIPickGeom();}
 DG_INLINE void ViewContext::DrawSymbol(IDisplaySymbol* symb, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight) {_DrawSymbol(symb, trans, clip, ignoreColor, ignoreWeight);}
 DG_INLINE void ViewContext::InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
 DG_INLINE void ViewContext::DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed){_DrawStyledLineString2d(nPts, pts, zDepth, range, closed);}

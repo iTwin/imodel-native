@@ -1034,7 +1034,6 @@ private:
     PhysicalViewControllerPtr m_physical;
     bvector<SectionDrawingViewControllerPtr> m_drawings;
     ViewControllerP m_currentViewController;
-    bvector<DRange3d> m_unused_unused_unused_unused_unused_unused_unused;
     mutable Pass m_pass;
     int m_nearestCutPlane;
     DrawingSymbology m_symbology;

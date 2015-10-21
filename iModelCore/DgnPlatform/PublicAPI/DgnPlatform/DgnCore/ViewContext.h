@@ -60,7 +60,7 @@ struct  ClipVolumeOverrides
 
     int32_t    m_styleIndex;       //!< Display style of the clip volume area. -1 to match that view.
 
-    int32_t GetDisplayStyleIndex() const { return m_styleIndex; }
+    int32_t GetDisplayStyleIndex() const {return m_styleIndex;}
     void SetDisplayStyleIndex(int32_t index) { m_styleIndex = index; }
     bool IsEqual(const ClipVolumeOverrides& other) const
         {
@@ -258,8 +258,8 @@ public:
     struct  ClipStencil
         {
     private:
-        Render::GraphicStroker&    m_stroker;
-        Render::GraphicPtr         m_tmpQvElem;
+        Render::GraphicStroker& m_stroker;
+        Render::GraphicPtr  m_tmpQvElem;
         CurveVectorPtr      m_curveVector;
 
     public:
@@ -286,9 +286,7 @@ protected:
     bool                    m_is3dView;
     bool                    m_isCameraOn;
     bool                    m_wantMaterials;
-    bool                    m_creatingCacheElem;
     bool                    m_useNpcSubRange;
-    bool                    m_useCachedGraphics;
     bool                    m_ignoreViewRange;
     Byte                    m_filterLOD;
     DrawPurpose             m_purpose;
@@ -301,12 +299,12 @@ protected:
     TransformClipStack      m_transformClipStack;
     DgnViewportP            m_viewport;
     Render::ViewDrawP       m_IViewDraw;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     Render::GeomDrawP       m_IDrawGeom;
-    Render::SceneDrawP      m_ICachedDraw;
+#endif
     Render::ElemDisplayParams m_currDisplayParams;
     Render::ElemMatSymb     m_elemMatSymb;
     Render::OvrMatSymb      m_ovrMatSymb;
-    Render::RangeResult     m_parentRangeResult;
     double                  m_minLOD;             // minimum size of default level-of-detail test.
     double                  m_arcTolerance;
     double                  m_patternScale;
@@ -358,7 +356,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _SetupScanCriteria();
     virtual bool _WantUndisplayed() {return false;}
     virtual bool _WantUndisplayedClips() {return false;}
-    virtual bool _UseCachedDisplay() {return m_useCachedGraphics;}
 
     DGNPLATFORM_EXPORT virtual void _AddViewOverrides(Render::OvrMatSymbR);
     DGNPLATFORM_EXPORT virtual void _AddContextOverrides(Render::OvrMatSymbR);
@@ -386,8 +383,10 @@ public:
     DMap4dCR GetWorldToView() const {return m_worldToView;}
     DMap4dCR GetWorldToNpc() const {return m_worldToNpc;}
     bool GetWantMaterials() {return m_wantMaterials;};
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     void SetIViewDraw(Render::ViewDrawR output) { m_IViewDraw = &output; m_IDrawGeom = &output;}
     void SetIDrawGeom(Render::GeomDrawR drawGeom) { m_IDrawGeom = &drawGeom; }
+#endif
     bool IsAttached() {return m_isAttached;}
     void SetIntermediatePaintsBlocked(bool blockIntermediatePaints) {m_blockIntermediatePaints = blockIntermediatePaints;}
     void SetRasterPlane(uint32_t plane) {m_rasterPlane = plane;}
@@ -428,24 +427,18 @@ public:
     DGNPLATFORM_EXPORT void SetArcTolerance(double tol);
     DGNPLATFORM_EXPORT void SetLinestyleTangents(DPoint3dCP start, DPoint3dCP end);
 
-    DGNPLATFORM_EXPORT Render::GraphicPtr CreateGraphic(Render::GraphicStroker&, Render::SceneDrawP sceneDraw=nullptr);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    DGNPLATFORM_EXPORT Render::GraphicPtr CreateGraphic(Render::GraphicStroker&, Render::ViewDrawP sceneDraw=nullptr);
     DGNPLATFORM_EXPORT Render::GraphicPtr GetGraphic(Render::GraphicStroker& stroker);
+#endif
 
     DGNPLATFORM_EXPORT void DeleteSymbol(Render::IDisplaySymbol*);
 
-    DGNPLATFORM_EXPORT Render::RangeResult GetCurrParentRangeResult();
-    DGNPLATFORM_EXPORT void SetCurrParentRangeResult(Render::RangeResult);
     DGNPLATFORM_EXPORT double GetMinLOD () const;
     DGNPLATFORM_EXPORT void SetMinLOD (double);
     DGNPLATFORM_EXPORT Byte&           GetFilterLODFlag();
     DGNPLATFORM_EXPORT void            SetFilterLODFlag(FilterLODFlags);
     DGNPLATFORM_EXPORT ScanCriteriaCP  GetScanCriteria() const;
-    DGNPLATFORM_EXPORT bool            GetIgnoreScaleForDimensions();
-    DGNPLATFORM_EXPORT bool            GetIgnoreScaleForMultilines();
-    DGNPLATFORM_EXPORT bool            GetApplyRotationToDimView();
-    DGNPLATFORM_EXPORT void            SetIgnoreScaleForDimensions(bool ignore);
-    DGNPLATFORM_EXPORT void            SetIgnoreScaleForMultilines(bool ignore);
-    DGNPLATFORM_EXPORT void            SetApplyRotationToDimView(bool apply);
     DGNPLATFORM_EXPORT uint32_t        GetRasterPlane() const;
     DGNPLATFORM_EXPORT void            InitScanRangeAndPolyhedron();
     DGNPLATFORM_EXPORT void            AllocateScanCriteria();
@@ -454,8 +447,10 @@ public:
     DGNPLATFORM_EXPORT RasterDisplayParams const& GetRasterDisplayParams() const { return m_rasterDisplayParams; }
 
     //! !!!FOR INTERNAL USE ONLY!!!
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DGNPLATFORM_EXPORT static void DirectPushTransClipOutput(Render::GeomDrawR, TransformCP trans, ClipPlaneSetCP clip = nullptr); //<! @private
     DGNPLATFORM_EXPORT static void DirectPopTransClipOutput(Render::GeomDrawR); //<! @private
+#endif
 
 public:
     DGNPLATFORM_EXPORT StatusInt VisitElement(GeometricElementCR);
@@ -615,6 +610,7 @@ public:
     /// @name Query Methods
     //@{
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //! Get the current state of the ViewFlags for this context's output, can be nullptr.
     //! When a ViewContext is first attached to a DgnViewport, the ViewFlags are initialized
     //! from the DgnViewport's viewflags. However, during the course of an operation,
@@ -624,6 +620,7 @@ public:
 
     //! Sets the current state of the ViewFlags for this context's output.
     void SetViewFlags(ViewFlags flags) {m_IDrawGeom->SetDrawViewFlags(flags);}
+#endif
 
     //! Get the DgnDb for this ViewContext.
     DGNPLATFORM_EXPORT DgnDbR GetDgnDb() const;
@@ -661,7 +658,6 @@ public:
     /// @name Get/Set Current Display Parameters
     //@{
 
-    bool& GetUseCachedGraphics() {return m_useCachedGraphics;}
     DGNPLATFORM_EXPORT bool GetDisplayPriorityRange(int32_t& low, int32_t& high) const;
 
     //! Change the supplied "natural" ElemDisplayParams. Resolves effective symbology as required by the context and initializes the supplied ElemMatSymb.
@@ -674,7 +670,7 @@ public:
 
     //! Calculate the net display priority value. The net display priority is based on the geometry (element) and sub-category priority.
     //! @return the net display priority. For 3D views, display priority is always 0.
-DGNPLATFORM_EXPORT int32_t ResolveNetDisplayPriority(int32_t geomPriority, DgnSubCategoryId subCategoryId, DgnSubCategory::Appearance* appearance = nullptr) const;
+    DGNPLATFORM_EXPORT int32_t ResolveNetDisplayPriority(int32_t geomPriority, DgnSubCategoryId subCategoryId, DgnSubCategory::Appearance* appearance = nullptr) const;
 
     //! Get the current ElemMatSymb.
     //! @return   the current ElemMatSymb.
@@ -714,6 +710,7 @@ DGNPLATFORM_EXPORT int32_t ResolveNetDisplayPriority(int32_t geomPriority, DgnSu
 
     DGNPLATFORM_EXPORT void CacheQvGeometryTexture(uint32_t rendMatID);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //@}
 
     /// @name Methods to Retrieve Related Interfaces from a ViewContext
@@ -728,21 +725,12 @@ DGNPLATFORM_EXPORT int32_t ResolveNetDisplayPriority(int32_t geomPriority, DgnSu
     //! @return   the IDrawGeom for this context
     Render::GeomDrawR GetIDrawGeom() {BeAssert(nullptr != m_IDrawGeom); return *m_IDrawGeom;}
 
-    /** @cond BENTLEY_SDK_Scope1 */
-    //! Get the ICachedDraw interface for this ViewContext.
-    //! @return   the ICachedDraw for this context.
-    Render::SceneDrawP GetICachedDraw() {return m_ICachedDraw;}
-
-    //! Check whether we are creating a cached presentation.
-    //! @return   true if we're in the process of creating a cache presentation.
-    DGNPLATFORM_EXPORT bool CheckICachedDraw();
-    /** @endcond */
-
     //! Get the IPickGeom interface for this ViewContext. Only contexts that are specific to picking will return a non-nullptr value.
     //! @return the IPickGeom interface for this context. May return nullptr.
-    DGNPLATFORM_EXPORT IPickGeomP GetIPickGeom();
+    IPickGeomP GetIPickGeom() {return _GetIPickGeom();}
 
     //@}
+#endif
 
     /// @name Identifying element "topology".
     //@{

@@ -60,6 +60,8 @@ protected:
     DGNPLATFORM_EXPORT virtual size_t _GetMethodIndex() override;
     DGNPLATFORM_EXPORT virtual void _PushMethodState() override;
     DGNPLATFORM_EXPORT virtual void _PopMethodState() override;
+    virtual void _BeginGraphic() override {}
+    virtual Render::GraphicPtr _EndGraphic() override {return nullptr;}
 
     // Process functions implemented by sub-classes.
     virtual StatusInt _ProcessCurvePrimitive(ICurvePrimitiveCR, bool closed, bool filled) {return ERROR;}
@@ -116,10 +118,9 @@ protected:
     virtual void _DrawGrid(bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector, uint32_t gridsPerRef, Point2dCR repetitions) override {}
     virtual bool _DrawSprite(Render::ISpriteP sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) override {return false;}
     virtual void _DrawTiledRaster(Render::ITiledRasterP tiledRaster) override {}
-    virtual void _DrawGraphic(Render::Graphic*, int subElemIndex) override {}
+    virtual void _DrawGraphic(Render::Graphic*) override {}
     virtual bool _IsOutputQuickVision() const override {return false;}
     virtual bool _ApplyMonochromeOverrides(ViewFlagsCR) const override{return true;}
-    virtual StatusInt _TestOcclusion(int numVolumes, DPoint3dP verts, int* results) override { return ERROR; }
     virtual void _ClearZ () override {}
 
 public:

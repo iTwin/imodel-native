@@ -798,7 +798,7 @@ static void clearCurveVectorIds(CurveVectorCR curveVector)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void drawSolidPrimitiveCurveVector(CurveVectorCR curveVector, ViewContextR context, TransformCP transform, CurvePrimitiveId::Type type, CurveTopologyIdCR id, CompoundDrawStateP cds)
     {
-    bool    ignoreCurveIds = context.GetIViewDraw().IsOutputQuickVision() || context.CheckICachedDraw(); // Don't need when called from QvOutput/QvCachedOutput...
+    bool    ignoreCurveIds = context.GetIViewDraw().IsOutputQuickVision();
 
     if (!ignoreCurveIds) 
         {
@@ -828,7 +828,7 @@ static void drawSolidPrimitiveCurveVector(CurveVectorCR curveVector, ViewContext
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void drawSolidPrimitiveCurve(ICurvePrimitivePtr primitive, ViewContextR context, CurveTopologyIdCR topologyId, CompoundDrawStateP cds)
     {
-    bool    ignoreCurveIds = context.GetIViewDraw().IsOutputQuickVision() || context.CheckICachedDraw(); // Don't need when called from QvOutput/QvCachedOutput...
+    bool    ignoreCurveIds = context.GetIViewDraw().IsOutputQuickVision();
 
     if (!ignoreCurveIds)
         {
@@ -909,7 +909,7 @@ void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, ViewContextR context, 
                 drawSolidPrimitiveCurve(ICurvePrimitive::CreateArc(ellipse), context, CurveTopologyId::FromSweepProfile(1), nullptr);
                 }
 
-            bool    ignoreSilhouettes = context.GetIViewDraw().IsOutputQuickVision() || context.CheckICachedDraw(); // Don't need when called from QvOutput/QvCachedOutput...
+            bool    ignoreSilhouettes = context.GetIViewDraw().IsOutputQuickVision();
 
             if (!includeFaceIso || ignoreSilhouettes)
                 return; // QVis handles cone silhouette display...

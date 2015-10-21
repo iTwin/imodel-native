@@ -426,7 +426,7 @@ protected:
     CameraInfo      m_camera;
     ViewFlags       m_rootViewFlags;            // view flags for root model
     ColorDef        m_backgroundColor;
-    Render::OutputPtr m_output;
+    Render::TargetPtr m_renderTarget;
     DMap4d          m_rootToView;
     DMap4d          m_rootToNpc;
     double          m_minLOD;                   // default level of detail filter size
@@ -446,9 +446,10 @@ protected:
     virtual void _CallDecorators(bool& stopFlag) {}
     virtual void _SetNeedsHeal() {m_needsRefresh = true;}
     virtual void _SetNeedsRefresh() {m_needsRefresh = true;}
-    virtual Render::SceneDrawP _GetICachedDraw() = 0;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     virtual Render::ViewDrawP _GetIViewDraw() {return m_output.get();}
     virtual Render::OutputP _GetIViewOutput() {return m_output.get();}
+#endif
     virtual Render::AntiAliasPref _WantAntiAliasLines() const {return Render::AntiAliasPref::Detect;}
     virtual Render::AntiAliasPref _WantAntiAliasText() const {return Render::AntiAliasPref::Detect;}
     virtual void _AdjustFencePts(RotMatrixCR viewRot, DPoint3dCR oldOrg, DPoint3dCR newOrg) const {}
@@ -472,7 +473,6 @@ protected:
     virtual uintptr_t _GetBackDropTextureId() {return 0;}
     DGNPLATFORM_EXPORT virtual ColorDef _GetWindowBgColor() const;
     virtual BentleyStatus _RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) = 0;
-    virtual void _SetICachedDraw(Render::SceneDrawP cachedOutput) = 0;
     virtual double _GetMinimumLOD() const {return m_minLOD;}
     DGNPLATFORM_EXPORT virtual Render::Renderer& _GetRenderer() const;
 
@@ -496,7 +496,9 @@ public:
     DGNPLATFORM_EXPORT Point2d GetScreenOrigin() const;
     DGNPLATFORM_EXPORT void CalcNpcToView(DMap4dR npcToView);
     void ClearNeedsRefresh() {m_needsRefresh = false;}
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     void SetIViewOutput(Render::OutputP output) {m_output = output;}
+#endif
     void SetBackgroundColor(ColorDef color) {m_backgroundColor = color; m_backgroundColor.SetAlpha(0);}
     void AlignWithRootZ();
     DGNPLATFORM_EXPORT ColorDef GetWindowBgColor() const;
@@ -764,7 +766,7 @@ public:
     //! Determine whether this DgnViewport is currently active. Viewports become "active" after they have
     //! been initialized and connected to an output device.
     //! @return true if the DgnViewport is active.
-    bool IsActive() const {return m_output.IsValid();}
+    bool IsActive() const {return m_renderTarget.IsValid();}
 
     //! Determine whether this DgnViewport currently has a camera enabled. In this context, the "camera" is on
     //! if the WorldToView transform contains a perspective transformation.
@@ -780,12 +782,12 @@ public:
     //! @remarks Will be true only for a physical view.
     bool Is3dView() const {return m_is3dView;}
 
+    Render::TargetP GetRenderTarget() {return m_renderTarget.get();}
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     Render::ViewDrawP GetIViewDraw() {return _GetIViewDraw();}
     Render::OutputP GetIViewOutput() {return _GetIViewOutput();}
-
-    /** @cond BENTLEY_SDK_Scope1 */
-    Render::SceneDrawP GetICachedDraw() {return _GetICachedDraw();}
-    /** @endcond */
+#endif
 
     //! Get the ViewController associated with this DgnViewport.
     ViewControllerCR GetViewController() const {return *m_viewController;}
@@ -887,8 +889,6 @@ struct NonVisibleViewport : DgnViewport
 protected:
     virtual Render::RenderDevice* _GetRenderDevice() const override {return nullptr;}
     virtual void _AllocateOutput() override {}
-    virtual Render::SceneDrawP _GetICachedDraw() override {return nullptr;}
-    virtual void _SetICachedDraw(Render::SceneDrawP cachedOutput) override {}
     virtual ColorDef _GetWindowBgColor() const override {return ColorDef::Black();}
     virtual StatusInt _ConnectToOutput() override { return SUCCESS; }
     virtual void _AdjustZPlanesToModel(DPoint3dR, DVec3dR, ViewControllerCR) const override {}

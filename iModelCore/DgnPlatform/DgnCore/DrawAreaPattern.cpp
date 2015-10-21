@@ -1300,7 +1300,7 @@ DPoint3dR       origin
 )
     {
 #if !defined (BENTLEYCONFIG_GRAPHICS_OPENGLES)  //  We always want to use geometry map with OpenGL ES because the our OpenGL implementation of PushClipStencil does not work
-    bool            useStencil = context.GetIViewDraw().IsOutputQuickVision() && !context.CheckICachedDraw(); // Can't use stencil if creating QvElem...dimension terminators want patterns!
+    bool            useStencil = context.GetIViewDraw().IsOutputQuickVision(); // Can't use stencil if creating QvElem...dimension terminators want patterns!
 #else
     bool            useStencil = false;
 #endif

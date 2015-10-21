@@ -602,7 +602,7 @@ static int      DrawQvElemCheckStop(void* arg)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    _DrawGraphic(Graphic* qvElem, int subElemIndex) override
+virtual void    _DrawGraphic(Graphic* qvElem) override
     {
     if (!m_viewOutput || !m_context->GetViewport())
         return;

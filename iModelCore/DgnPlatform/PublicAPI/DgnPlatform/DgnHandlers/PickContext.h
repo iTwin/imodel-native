@@ -71,7 +71,7 @@ protected:
     virtual void _DrawTextString(TextStringCR, double* zDepth) override;
     virtual bool _DrawSprite(Render::ISpriteP sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) override;
     virtual void _DrawPointCloud(Render::IPointCloudDrawParams* drawParams) override;
-    virtual void _DrawGraphic(Render::Graphic* qvElem, int subElemIndex) override;
+    virtual void _DrawGraphic(Render::Graphic* qvElem) override;
 
 public:
     PickOutput();

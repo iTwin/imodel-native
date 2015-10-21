@@ -23,7 +23,6 @@ ViewContext::ViewContext()
     m_viewport    = nullptr;
     m_IViewDraw   = nullptr;
     m_IDrawGeom   = nullptr;
-    m_ICachedDraw = nullptr;
 
     m_scanCriteria  = nullptr;
     m_purpose       = DrawPurpose::NotSpecified;
@@ -1089,12 +1088,12 @@ StatusInt ViewContext::VisitHit(HitDetailCR hit)
 * create a QvElem using an GraphicStroker stroker.
 * @bsimethod                                                    Keith.Bentley   06/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicPtr ViewContext::CreateGraphic(GraphicStroker& stroker, SceneDrawP cachedDraw)
+GraphicPtr ViewContext::CreateGraphic(GraphicStroker& stroker, ViewDrawP cachedDraw)
     {
     BeAssert(!m_creatingCacheElem || nullptr != cachedDraw);
 
     if (nullptr == cachedDraw)
-        cachedDraw = m_ICachedDraw;
+        cachedDraw = m_IViewDraw;
 
     if (nullptr == cachedDraw)
         return nullptr;

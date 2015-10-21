@@ -987,7 +987,7 @@ void PickOutput::_DrawPointCloud(IPointCloudDrawParams* drawParams)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PickOutput::_DrawGraphic(Graphic* qvElem, int subElemIndex)
+void PickOutput::_DrawGraphic(Graphic* qvElem)
     {
     TestGraphics(qvElem, HitPriority::Interior);
     }
@@ -1003,7 +1003,6 @@ PickContext::PickContext(LocateOptions const& options, StopLocateTest* stopTeste
 void PickContext::_SetupOutputs()
     {
     SetIViewDraw(m_output);
-    m_ICachedDraw = m_viewport->GetICachedDraw();
     m_output.SetupViewOutput(m_viewport->GetIViewOutput());
     }
 

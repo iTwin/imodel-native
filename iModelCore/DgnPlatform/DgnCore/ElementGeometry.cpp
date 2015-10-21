@@ -2283,8 +2283,7 @@ DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImpo
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId category, ViewFlags flags) const
     {
-    // NEEDSWORK: Assumes QVElems will be cached per-view unlike Vancouver and cleared if view settings change... 
-    bool        isQVis = context.GetIViewDraw().IsOutputQuickVision() || context.CheckICachedDraw();
+    bool        isQVis = context.GetIViewDraw().IsOutputQuickVision();
     bool        isQVWireframe = (isQVis && DgnRenderMode::Wireframe == flags.GetRenderMode());
     bool        isPick = (nullptr != context.GetIPickGeom());
     bool        useBRep = !(isQVis || isPick);

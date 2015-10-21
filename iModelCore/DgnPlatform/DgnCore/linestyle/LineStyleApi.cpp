@@ -43,7 +43,7 @@ static double  getLinearLength (DPoint3dCP pts, int nPts, int& disconnectPt)
 bool LsComponent::IsWidthDiscernible (ViewContextP context, Render::LineStyleSymbCP lsSymb, DPoint3dCR pt) const
     {
     // Not attached...is discernable...
-    if (NULL == context->GetViewport() || context->CheckICachedDraw())
+    if (NULL == context->GetViewport())
         return true;
 
     // Line codes are always discernible.  This catches line codes in a compound.
