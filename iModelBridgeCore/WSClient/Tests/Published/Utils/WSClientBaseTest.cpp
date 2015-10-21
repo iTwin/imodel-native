@@ -33,6 +33,26 @@ void WSClientBaseTest::SetUpTestCase()
 void WSClientBaseTest::TearDownTestCase()
     {}
 
+// *** NEEDS WORK: This is a work-around. The WSClient tests seem to require localized strings from the MobileDgn sqlang db.
+// ***              However, these tests do not initialize MobileDgnUi properly and so they cannot call MobileDgnL10N::GetDefaultFrameworkSqlangFiles.
+// ***              This function is an attempt to replicate what MobileDgnL10N::GetDefaultFrameworkSqlangFiles does. Use this until
+// ***              we can figure out the right way to fix this.
+static BeFileName getMobileDgnSqlangFile()
+    {
+    BeFileName frameworkSqlangFile;
+    BeTest::GetHost().GetFrameworkSqlangFiles(frameworkSqlangFile);
+
+    BeFileName mobileDgnSqlangFile = frameworkSqlangFile.GetDirectoryName();
+    mobileDgnSqlangFile.AppendToPath(L"platform");
+#if defined (NDEBUG)
+    mobileDgnSqlangFile.AppendToPath(L"MobileDgn_en.sqlang.db3");
+#else
+    mobileDgnSqlangFile.AppendToPath(L"MobileDgn_pseudo.sqlang.db3");
+#endif
+    
+    return mobileDgnSqlangFile;
+    }
+
 void WSClientBaseTest::InitLibraries()
     {
     BeFileName::CreateNewDirectory(m_pathProvider.GetTemporaryDirectory());
@@ -40,9 +60,7 @@ void WSClientBaseTest::InitLibraries()
     BeSQLiteLib::Initialize(m_pathProvider.GetTemporaryDirectory());
     BeSQLite::EC::ECDb::Initialize(m_pathProvider.GetTemporaryDirectory(), &m_pathProvider.GetAssetsRootDirectory());
 
-    BeFileName sqlangFile;
-    BeTest::GetHost().GetFrameworkSqlangFiles(sqlangFile);
-    L10N::SqlangFiles sqlangFiles(sqlangFile);
+    L10N::SqlangFiles sqlangFiles(getMobileDgnSqlangFile());
     MobileDgnL10N::ReInitialize(sqlangFiles, sqlangFiles);
     }
 
