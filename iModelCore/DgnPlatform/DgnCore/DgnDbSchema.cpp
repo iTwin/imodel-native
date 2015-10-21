@@ -125,7 +125,10 @@ DbResult DgnDb::CreateDgnDbTables()
     ExecuteSql("CREATE TRIGGER delete_viewProps AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_View) " BEGIN DELETE FROM " BEDB_TABLE_Property
                " WHERE Namespace=\"" PROPERTY_APPNAME_DgnView "\" AND Id=OLD.Id;END");
 
-    return  BE_SQLITE_OK;
+    DbResult result = DgnSearchableText::CreateTable(*this);
+    BeAssert(BE_SQLITE_OK == result && "Failed to create FTS5 tables");
+
+    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**
