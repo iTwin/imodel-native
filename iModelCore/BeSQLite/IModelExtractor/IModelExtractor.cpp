@@ -322,7 +322,7 @@ static BentleyStatus getEmbeddedFileName (WString& embeddedFileName, BeSQLite::D
         expectedName.Sprintf ("%s.%s", Utf8String (BeFileName::GetFileNameWithoutExtension (WString (db.GetDbFileName (), BentleyCharEncoding::Utf8).c_str ()).c_str ()).c_str (), Utf8String (PROJECT_EXTENSION).c_str ());
 
     DbEmbeddedFileTable& embeddedFiles = db.EmbeddedFiles ();
-    BeRepositoryBasedId id = embeddedFiles.QueryFile (expectedName.c_str ());
+    BeBriefcaseBasedId id = embeddedFiles.QueryFile (expectedName.c_str ());
     if (id.IsValid ())
         {
         embeddedFileName.AssignUtf8 (expectedName.c_str ());

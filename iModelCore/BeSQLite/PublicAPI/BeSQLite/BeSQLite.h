@@ -55,15 +55,15 @@ from the perspective of your application. When this happens, you may choose to a
 
 Many layers that use BeSQLite are designed to work with a single process with a single (exclusive) connection to a
 database  file. That means that in a multi-user scenario, every user must have their own @i private copy of the
-database. We refer to each user's copy of the database as a "repository" (following the convention of Mercurial and Git
-for Distributed Revision Control, see http://en.wikipedia.org/wiki/Distributed_revision_control.) Each repository stores
-its own 4-byte identifier, referred to as its @c BeRepositoryId, that distinguishes it from all other repositories.
-Changes made in each repository can then be merged together in an orderly fashion by coordinating with a team server.
-Team servers are also responsible for assigning and tracking BeRepositoryIds.
+database. We refer to each user's copy of the database as a "briefcase" (following the convention of Mercurial and Git
+for Distributed Revision Control, see http://en.wikipedia.org/wiki/Distributed_revision_control.) Each briefcase stores
+its own 4-byte identifier, referred to as its @c BeBriefcaseId, that distinguishes it from all other repositories.
+Changes made in each briefcase can then be merged together in an orderly fashion by coordinating with a team server.
+Team servers are also responsible for assigning and tracking BeBriefcaseIds.
 
 @section OVRBeSQLiteIds 3. Ids in BeSQLite
 
-Since each user has a local copy of the repository, Ids in BeSQLite must be carefully managed. There are several
+Since each user has a local copy of the briefcase, Ids in BeSQLite must be carefully managed. There are several
 approaches:
 
     -# Use Globally Unique Identifiers (GUID, See #BeGuid). A globally unique identifier is a 16 byte randomly assigned
@@ -73,9 +73,9 @@ tables, GUIDs can add significant overhead for lookups and are much more expensi
 makes them a <i>poor choice for primary keys.</i> However, as the name implies, when you use a GUID, you never need to
 worry about uniqueness.
 
-    -# Use #RepositoryBasedIds. A RepositoryBasedId is an 8-byte number that is designed to be unique by combining the
-4-byte BeRepositoryId with a unique-within-the-repository 4-byte value. This limits the number of potential values
-within a BeRepository to 2^32 (4 billion). Of course it permits 4 billion different BeRepositories. It is often the best
+    -# Use #BriefcaseBasedIds. A BriefcaseBasedId is an 8-byte number that is designed to be unique by combining the
+4-byte BeBriefcaseId with a unique-within-the-briefcase 4-byte value. This limits the number of potential values
+within a BeBriefcase to 2^32 (4 billion). Of course it permits 4 billion different BeRepositories. It is often the best
 compromise of performance and flexibility for tables with lots of activity.
 
     -# Use #BeServerIssuedId. A BeServerIssuedId is an 8-byte number that is unique because it is issued by a
@@ -94,10 +94,10 @@ A PropertySpec has a flag that indicates that it is a "Setting." When Settings a
 effect only for the duration of the session, unless an explicit call to #Db::SaveSettings is made. If the database is
 closed without a call to Db::SaveSettings, the changes are not saved.
 
-@section OVRBeSQLiteProperties 5. Repository Local Values
+@section OVRBeSQLiteProperties 5. Briefcase Local Values
 
 Every BeSQLite database has a table named "be_local" that can be used to save name-value pairs that are specific to the
-BeRepository and not merged with the team server. They are used to keep track of the state of the local file and are not
+BeBriefcase and not merged with the team server. They are used to keep track of the state of the local file and are not
 considered part of the "real" database.
 
 @section OVRBeSQLiteEmbeddedFiles 6. Embedded Files
@@ -237,13 +237,13 @@ struct BeGuid
 };
 
 //=======================================================================================
-//! A unique Id for a BeRepository (a particular copy of a BeSQLite::Db is referred to as a BeRepository.)
-//! Whenever more than one BeRepository of a the same Db exists, each of them must have a unique identifier to facilitate
-//! change merging via BeRepositoryBasedId's.
-//! <p> This strategy relies on of uniqueness of BeRepositoryId's, but that must be enforced by infrastructure outside of BeSQLite.
+//! A unique Id for a BeBriefcase (a particular copy of a BeSQLite::Db is referred to as a BeBriefcase.)
+//! Whenever more than one BeBriefcase of a the same Db exists, each of them must have a unique identifier to facilitate
+//! change merging via BeBriefcaseBasedId's.
+//! <p> This strategy relies on of uniqueness of BeBriefcaseId's, but that must be enforced by infrastructure outside of BeSQLite.
 // @bsiclass                                                    Keith.Bentley   02/12
 //=======================================================================================
-struct BeRepositoryId
+struct BeBriefcaseId
 {
 protected:
     uint32_t m_id;
@@ -253,14 +253,14 @@ public:
     static uint32_t const Master()  {return 0;} 
     static uint32_t const Illegal() {return (uint32_t)0xffffffff;}
 
-    BeRepositoryId GetNextRepositoryId() const {return BeRepositoryId(m_id+1);}
-    BeRepositoryId() {Invalidate();}             //!< Construct an invalid BeRepositoryId.
-    explicit BeRepositoryId(uint32_t u) {m_id=u;} //!< Construct a BeRepositoryId from a 32 bit value.
-    void Invalidate() {m_id = Illegal();}  //!< Set this BeRepositoryId to the invalid id value 
-    bool IsValid() const {return Illegal() != m_id;}  //!< Test to see whether this RepositoryId is valid.
-    bool IsMasterId() const {return Master()==m_id;}  //!< Determine whether this is the id of the master repository (special id==0).
-    uint32_t GetValue() const {BeAssert(IsValid()); BeAssert(m_id<MaxRepo()); return m_id;} //!< Get the repository id as a uint32_t
-    bool operator==(BeRepositoryId const& rhs) const {return rhs.m_id==m_id;}
+    BeBriefcaseId GetNextBriefcaseId() const {return BeBriefcaseId(m_id+1);}
+    BeBriefcaseId() {Invalidate();}             //!< Construct an invalid BeBriefcaseId.
+    explicit BeBriefcaseId(uint32_t u) {m_id=u;} //!< Construct a BeBriefcaseId from a 32 bit value.
+    void Invalidate() {m_id = Illegal();}  //!< Set this BeBriefcaseId to the invalid id value 
+    bool IsValid() const {return Illegal() != m_id;}  //!< Test to see whether this BriefcaseId is valid.
+    bool IsMasterId() const {return Master()==m_id;}  //!< Determine whether this is the id of the master briefcase (special id==0).
+    uint32_t GetValue() const {BeAssert(IsValid()); BeAssert(m_id<MaxRepo()); return m_id;} //!< Get the briefcase id as a uint32_t
+    bool operator==(BeBriefcaseId const& rhs) const {return rhs.m_id==m_id;}
 };
 
 //=======================================================================================
@@ -323,41 +323,41 @@ public:
     private: explicit classname(int32_t v) : superclass() {} /* private to catch int vs. Id issues */
 
 //=======================================================================================
-//! A 8-byte value that is locally unique within a BeRepository. Since BeRepositoryId's are forced to be unique externally, a BeRepositoryBasedId
+//! A 8-byte value that is locally unique within a BeBriefcase. Since BeBriefcaseId's are forced to be unique externally, a BeBriefcaseBasedId
 //! can be assumed to be globally unique. This provides a more efficient strategy for id values than using true 128-bit GUIDs.
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
-struct BeRepositoryBasedId : BeInt64Id
+struct BeBriefcaseBasedId : BeInt64Id
 {
-    BEINT64_ID_DECLARE_MEMBERS(BeRepositoryBasedId,BeInt64Id)
+    BEINT64_ID_DECLARE_MEMBERS(BeBriefcaseBasedId,BeInt64Id)
 
 public:
-    static uint64_t const MaxLocal() {return 1LL<<40;} // top 24 bits are BeRepositoryId, lower 40 bits are local id
+    static uint64_t const MaxLocal() {return 1LL<<40;} // top 24 bits are BeBriefcaseId, lower 40 bits are local id
 
-    //! CONSTRUCT a BeInt64Id from a RepositoryId value and an id.
-    BeRepositoryBasedId(BeRepositoryId repositoryId, uint64_t id) {BeAssert(id<MaxLocal()); m_id = ((repositoryId.GetValue() * MaxLocal()) + id);}
+    //! CONSTRUCT a BeInt64Id from a BriefcaseId value and an id.
+    BeBriefcaseBasedId(BeBriefcaseId briefcaseId, uint64_t id) {BeAssert(id<MaxLocal()); m_id = ((briefcaseId.GetValue() * MaxLocal()) + id);}
 
-    BeRepositoryId GetRepositoryId() const {return BeRepositoryId((uint32_t) (m_id / MaxLocal()));} //!< Get the BeRepositoryId of this BeRepositoryBasedId
+    BeBriefcaseId GetBriefcaseId() const {return BeBriefcaseId((uint32_t) (m_id / MaxLocal()));} //!< Get the BeBriefcaseId of this BeBriefcaseBasedId
 
-    //! Increment this BeRepositoryBasedId
-    //! @note If this BeRepositoryBasedId is not valid, this method does nothing.
+    //! Increment this BeBriefcaseBasedId
+    //! @note If this BeBriefcaseBasedId is not valid, this method does nothing.
     BE_SQLITE_EXPORT void UseNext(Db&);
 
-    //! Construct a BeRepositoryBasedId with the value of the next available (unused) value for the supplied Table/Column.
-    //! @param[in] db the Db for this BeRepositoryBasedId
-    //! @param[in] tableName the name of the table for this BeRepositoryBasedId
-    //! @param[in] columnName the name of the column for this BeRepositoryBasedId
-    //! @note if the highest value of BeRepositoryBasedId is already used (i.e. the id column is "full" for this BeRepositoryId),
+    //! Construct a BeBriefcaseBasedId with the value of the next available (unused) value for the supplied Table/Column.
+    //! @param[in] db the Db for this BeBriefcaseBasedId
+    //! @param[in] tableName the name of the table for this BeBriefcaseBasedId
+    //! @param[in] columnName the name of the column for this BeBriefcaseBasedId
+    //! @note if the highest value of BeBriefcaseBasedId is already used (i.e. the id column is "full" for this BeBriefcaseId),
     //! this value will be invalid on return.
-    BE_SQLITE_EXPORT BeRepositoryBasedId(Db& db, Utf8CP tableName, Utf8CP columnName);
+    BE_SQLITE_EXPORT BeBriefcaseBasedId(Db& db, Utf8CP tableName, Utf8CP columnName);
 };
 
-#define BEREPOSITORYBASED_ID_SUBCLASS(classname,superclass) struct classname : superclass { \
-    classname(BeSQLite::BeRepositoryId repositoryId, uint64_t id) : superclass(repositoryId,id){} \
+#define BEBRIEFCASEBASED_ID_SUBCLASS(classname,superclass) struct classname : superclass { \
+    classname(BeSQLite::BeBriefcaseId briefcaseId, uint64_t id) : superclass(briefcaseId,id){} \
     classname(BeSQLite::Db& db, Utf8CP tableName, Utf8CP columnName) : superclass(db,tableName,columnName){} \
     BEINT64_ID_DECLARE_MEMBERS(classname,superclass) };
 
-#define BEREPOSITORYBASED_ID_CLASS(classname) BEREPOSITORYBASED_ID_SUBCLASS(classname,BeSQLite::BeRepositoryBasedId)
+#define BEBRIEFCASEBASED_ID_CLASS(classname) BEBRIEFCASEBASED_ID_SUBCLASS(classname,BeSQLite::BeBriefcaseBasedId)
 
 //=======================================================================================
 //! An 8-byte Id value that must be requested from an external authority that enforces uniqueness.
@@ -405,7 +405,7 @@ template <typename Derived, uint32_t s_invalidValue> struct BeUInt32Id
     //! Test to see whether this BeServerIssuedId is valid.
     bool Validate() const {return m_id!=s_invalidValue;}
 
-    //! Set this BeRepositoryBasedId to the invalid value).
+    //! Set this BeBriefcaseBasedId to the invalid value).
     void Invalidate() {m_id = s_invalidValue;}
 
     //! only for internal callers that understand the semantics of invalid IDs.
@@ -739,7 +739,7 @@ public:
     //! @see sqlite3_bind_int64
     DbResult BindUInt64(int paramNum, uint64_t value) {return BindInt64(paramNum, (int64_t) value);}
 
-    //! Bind a BeRepositoryBasedId value to a parameter of this (previously prepared) Statement. Binds NULL if the id is not valid.
+    //! Bind a BeBriefcaseBasedId value to a parameter of this (previously prepared) Statement. Binds NULL if the id is not valid.
     //! @param[in] paramNum the SQL parameter number to bind.
     //! @param[in] value the value to bind.
     DbResult BindId(int paramNum, BeInt64Id value) {return value.IsValid() ? BindUInt64(paramNum,value.GetValue()) : BindNull(paramNum);}
@@ -857,7 +857,7 @@ public:
     //! @see sqlite3_column_double
     BE_SQLITE_EXPORT double GetValueDouble(int col);
 
-    //! Get a BeRepositoryBasedId value from a column returned from Step
+    //! Get a BeBriefcaseBasedId value from a column returned from Step
     //! @param[in] col The column of interest
     template <class T_Id> T_Id GetValueId(int col) {if (!IsColumnNull(col)) {return T_Id(GetValueUInt64(col));} return T_Id();}
 
@@ -1438,7 +1438,7 @@ private:
     DbEmbeddedFileTable(DbR db) : m_db(db) {}
 
     //__PUBLISH_SECTION_END__
-    BeRepositoryBasedId GetNextEmbedFileId() const;
+    BeBriefcaseBasedId GetNextEmbedFileId() const;
     //__PUBLISH_SECTION_START__
 
 public:
@@ -1463,7 +1463,7 @@ public:
             BE_SQLITE_EXPORT uint64_t GetFileSize() const;        //!< the total size, in bytes, of this embedded file.
             BE_SQLITE_EXPORT uint32_t GetChunkSize() const;       //!< the chunk size used to embed this file.
             BE_SQLITE_EXPORT DateTime GetLastModified() const;    //!< the time the file was last modified.
-            BE_SQLITE_EXPORT BeRepositoryBasedId GetId() const;   //!< the id of this embedded file.
+            BE_SQLITE_EXPORT BeBriefcaseBasedId GetId() const;   //!< the id of this embedded file.
             Entry const& operator* () const {return *this;}
         };
 
@@ -1484,7 +1484,7 @@ public:
     //! @param[out] typeStr the type of this file. May be nullptr.
     //! @param[out] lastModified the time the file was last modified. May be nullptr.
     //! @return the id  of the file, if found. If there is no entry of the given name, id will be invalid.
-    BE_SQLITE_EXPORT BeRepositoryBasedId QueryFile(Utf8CP name, uint64_t* totalSize = nullptr, uint32_t* chunkSize = nullptr, Utf8StringP descr = nullptr, Utf8StringP typeStr = nullptr, DateTime* lastModified = nullptr);
+    BE_SQLITE_EXPORT BeBriefcaseBasedId QueryFile(Utf8CP name, uint64_t* totalSize = nullptr, uint32_t* chunkSize = nullptr, Utf8StringP descr = nullptr, Utf8StringP typeStr = nullptr, DateTime* lastModified = nullptr);
 
      //! Import a copy of an existing file from the local filesystem into this BeSQLite::Db.  ImportWithoutCompressing just makes a binary copy of the file
      //! without compressing it. Many file formats are already compressed. There is not much benefit to compressing for these formats.
@@ -1498,7 +1498,7 @@ public:
     //! @param[in] chunkSize the maximum number of bytes that are saved in a single blob to hold this file. There are many tradeoffs involved in
     //! choosing a good chunkSize, so be careful to test for optimal size. Generally, the default is fine.
     //! @return Id of the embedded file
-    BE_SQLITE_EXPORT BeRepositoryBasedId ImportWithoutCompressing(DbResult* stat, Utf8CP name, Utf8CP localFileName, Utf8CP typeStr, Utf8CP description = nullptr, DateTime const* lastModified = nullptr, uint32_t chunkSize = 500 * 1024);
+    BE_SQLITE_EXPORT BeBriefcaseBasedId ImportWithoutCompressing(DbResult* stat, Utf8CP name, Utf8CP localFileName, Utf8CP typeStr, Utf8CP description = nullptr, DateTime const* lastModified = nullptr, uint32_t chunkSize = 500 * 1024);
 
     //! Import a copy of an existing SQLite file from the local filesystem into this BeSQLite::Db after validating the file to be imported.
     //! @param[out] stat Success or error code. May be nullptr.
@@ -1522,7 +1522,7 @@ public:
     //!     - BE_SQLITE_IOERR if ImportDbFile failed to read the proper number of bytes from the file.
     //!     - BE_SQLITE_IOERR_WRITE if a write failed.
     //!     - BE_SQLITE_ERROR if there was an SQLite error and it was not possible to provide more detail.
-    BE_SQLITE_EXPORT BeRepositoryBasedId ImportDbFile(DbResult& stat, Utf8CP name, Utf8CP localFileName, Utf8CP typeStr, Utf8CP description = nullptr, DateTime const* lastModified = nullptr, uint32_t chunkSize = 500 * 1024, bool supportRandomAccess = true);
+    BE_SQLITE_EXPORT BeBriefcaseBasedId ImportDbFile(DbResult& stat, Utf8CP name, Utf8CP localFileName, Utf8CP typeStr, Utf8CP description = nullptr, DateTime const* lastModified = nullptr, uint32_t chunkSize = 500 * 1024, bool supportRandomAccess = true);
 
     //! Import a copy of an existing file from the local filesystem into this BeSQLite::Db.
     //! @param[out] stat Success or error code. May be nullptr.
@@ -1536,7 +1536,7 @@ public:
     //! choosing a good chunkSize, so be careful to test for optimal size. Generally, the default is fine.
     //! @param[in] supportRandomAccess if true, ignore the specified chunkSize and calculate it instead.  Generally, the default should be used.
     //! @return Id of the embedded file
-    BE_SQLITE_EXPORT BeRepositoryBasedId Import(DbResult* stat, Utf8CP name, Utf8CP localFileName, Utf8CP typeStr, Utf8CP description = nullptr, DateTime const* lastModified = nullptr, uint32_t chunkSize = 500 * 1024, bool supportRandomAccess = true);
+    BE_SQLITE_EXPORT BeBriefcaseBasedId Import(DbResult* stat, Utf8CP name, Utf8CP localFileName, Utf8CP typeStr, Utf8CP description = nullptr, DateTime const* lastModified = nullptr, uint32_t chunkSize = 500 * 1024, bool supportRandomAccess = true);
 
     //! @deprecated Please use the other overload instead.
     //! Import a copy of an existing file from the local file system into this BeSQLite::Db.
@@ -1820,7 +1820,7 @@ struct BusyRetry : RefCountedBase
 };
 
 //=======================================================================================
-// Cached "repository local values"
+// Cached "briefcase local values"
 // @bsiclass                                                    Keith.Bentley   12/12
 //=======================================================================================
 struct CachedRLV
@@ -1844,12 +1844,12 @@ public:
     };
 
 //=======================================================================================
-// Cache for int64_t RepositoryLocalValues. This is for RLV's that are of type int64_t and are frequently
+// Cache for int64_t BriefcaseLocalValues. This is for RLV's that are of type int64_t and are frequently
 // accessed and/or modified. The RLVs are identified in the cache by "registering" their name are thereafter
 // accessed by index. The cache is held in memory for performance. It is automatically saved whenever a transaction is committed.
 // @bsiclass                                                    Krischan.Eberle     07/14
 //=======================================================================================
-struct RepositoryLocalValueCache : NonCopyableClass
+struct BriefcaseLocalValueCache : NonCopyableClass
     {
 private:
     friend struct DbFile;
@@ -1861,44 +1861,44 @@ private:
     bool TryQuery(CachedRLV*&, size_t rlvIndex);
 
 public:
-    RepositoryLocalValueCache(DbFile& dbFile) : m_dbFile(dbFile) {}
+    BriefcaseLocalValueCache(DbFile& dbFile) : m_dbFile(dbFile) {}
 
-    //! Register a RepositoryLocalValue name with the Db.
+    //! Register a BriefcaseLocalValue name with the Db.
     //! @remarks On closing the Db the registration is cleared.
-    //! @param[out] rlvIndex Index for the RepositoryLocalValue used as input to the RepositoryLocalValue API.
-    //! @param[in] rlvName Name of the RepositoryLocalValue. Db does not make a copy of @p rlvName, so the caller
+    //! @param[out] rlvIndex Index for the BriefcaseLocalValue used as input to the BriefcaseLocalValue API.
+    //! @param[in] rlvName Name of the BriefcaseLocalValue. Db does not make a copy of @p rlvName, so the caller
     //! has to ensure that it remains valid for the entire lifetime of the Db object.
-    //! @return BE_SQLITE_OK if registration was successful. Error code, if a RepositoryLocalValue with the same
+    //! @return BE_SQLITE_OK if registration was successful. Error code, if a BriefcaseLocalValue with the same
     //! name has already been registered.
     BE_SQLITE_EXPORT DbResult Register(size_t& rlvIndex, Utf8CP rlvName);
 
-    //! Look up the RepositoryLocalValue index for the given name
-    //! @param[out] rlvIndex Found index for the RepositoryLocalValue
-    //! @param[in] rlvName Name of the RepositoryLocalValue
-    //! @return true, if the RepositoryLocalValue index was found, i.e. a RepositoryLocalValue is registered for @p rlvName,
+    //! Look up the BriefcaseLocalValue index for the given name
+    //! @param[out] rlvIndex Found index for the BriefcaseLocalValue
+    //! @param[in] rlvName Name of the BriefcaseLocalValue
+    //! @return true, if the BriefcaseLocalValue index was found, i.e. a BriefcaseLocalValue is registered for @p rlvName,
     //! false otherwise.
     BE_SQLITE_EXPORT bool TryGetIndex(size_t& rlvIndex, Utf8CP rlvName);
 
-    //! Save an RepositoryLocalValue into the BEDB_TABLE_Local table.
-    //! @param[in] rlvIndex The index of the RepositoryLocalValue to query.
+    //! Save an BriefcaseLocalValue into the BEDB_TABLE_Local table.
+    //! @param[in] rlvIndex The index of the BriefcaseLocalValue to query.
     //! @param[in] value Value to save
     //! @return BE_SQLITE_OK if successful, error code otherwise.
-    //! @see RegisterRepositoryLocalValue
+    //! @see RegisterBriefcaseLocalValue
     BE_SQLITE_EXPORT DbResult SaveValue(size_t rlvIndex, uint64_t value);
 
-    //! Read a RepositoryLocalValue from BEDB_TABLE_Local table.
+    //! Read a BriefcaseLocalValue from BEDB_TABLE_Local table.
     //! @param[out] value Retrieved value
-    //! @param[in] rlvIndex The index of the RepositoryLocalValue to query.
+    //! @param[in] rlvIndex The index of the BriefcaseLocalValue to query.
     //! @return BE_SQLITE_OK if the value exists, error code otherwise.
-    //! @see RegisterRepositoryLocalValue
+    //! @see RegisterBriefcaseLocalValue
     BE_SQLITE_EXPORT DbResult QueryValue(uint64_t& value, size_t rlvIndex);
 
-    //! Increment the RepositoryLocalValue by one for the given @p rlvIndex.
+    //! Increment the BriefcaseLocalValue by one for the given @p rlvIndex.
     //! @param[out] newValue Incremented value
-    //! @param[in] rlvIndex The index of the RepositoryLocalValue to increment.
+    //! @param[in] rlvIndex The index of the BriefcaseLocalValue to increment.
     //! @return BE_SQLITE_OK in case of success. Error code otherwise. If initialValue is nullptr and
-    //!         the RepositoryLocalValue does not exist, and error code is returned.
-    //! @see RegisterRepositoryLocalValue
+    //!         the BriefcaseLocalValue does not exist, and error code is returned.
+    //! @see RegisterBriefcaseLocalValue
     BE_SQLITE_EXPORT DbResult IncrementValue(uint64_t& newValue, size_t rlvIndex);
     };
 
@@ -1914,7 +1914,7 @@ struct DbFile
     friend struct RTreeAcceptFunction::Tester;
 
 private:
-    size_t  m_repositoryIdRlvIndex;
+    size_t  m_briefcaseIdRlvIndex;
 
 protected:
     typedef RefCountedPtr<struct ChangeTracker> ChangeTrackerPtr;
@@ -1927,10 +1927,10 @@ protected:
     uint64_t        m_dataVersion; // for detecting changes from another process
     RefCountedPtr<BusyRetry> m_retry;
     mutable void*   m_cachedProps;
-    RepositoryLocalValueCache m_rlvCache;
+    BriefcaseLocalValueCache m_rlvCache;
     BeGuid          m_dbGuid;
     Savepoint       m_defaultTxn;
-    BeRepositoryId  m_repositoryId;
+    BeBriefcaseId  m_briefcaseId;
     ChangeTrackerPtr m_tracker;
     StatementCache  m_statements;
     typedef bvector<Savepoint*> DbTxns;
@@ -1981,7 +1981,7 @@ protected:
     BE_SQLITE_EXPORT int AddFunction(DbFunction& function) const;
     BE_SQLITE_EXPORT int AddRTreeMatchFunction(RTreeMatchFunction& function) const;
     BE_SQLITE_EXPORT int RemoveFunction(DbFunction&) const;
-    BE_SQLITE_EXPORT RepositoryLocalValueCache& GetRLVCache();
+    BE_SQLITE_EXPORT BriefcaseLocalValueCache& GetRLVCache();
 };
 
 
@@ -2136,9 +2136,9 @@ protected:
     //! @note implementers should always forward this call to their superclass.
     BE_SQLITE_EXPORT virtual void _OnDbChangedByOtherConnection();
 
-    //!< override to perform additional processing when repository id is changed
+    //!< override to perform additional processing when briefcase id is changed
     //! @note implementers should always forward this call to their superclass.
-    virtual DbResult _OnRepositoryIdChanged(BeRepositoryId newRepositoryId) {return BE_SQLITE_OK;}
+    virtual DbResult _OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId) {return BE_SQLITE_OK;}
 
     //! Gets called when a Db is opened and checks whether the file can be opened, i.e
     //! whether the file version matches what the opening API expects.
@@ -2178,11 +2178,11 @@ protected:
 private:
     BE_SQLITE_EXPORT DbResult QueryDbIds();
     DbResult SaveBeDbGuid();
-    DbResult SaveRepositoryId();
+    DbResult SaveBriefcaseId();
     void DoCloseDb();
     DbResult DoOpenDb(Utf8CP dbName, OpenParams const& params);
     DbResult TruncateTable(Utf8CP tableName);
-    DbResult DeleteRepositoryLocalValues();
+    DbResult DeleteBriefcaseLocalValues();
 
 public:
     BE_SQLITE_EXPORT Db();
@@ -2455,25 +2455,25 @@ public:
     BE_SQLITE_EXPORT void SaveSettings();
     //! @}
 
-    //! @name RepositoryLocalValue
+    //! @name BriefcaseLocalValue
     //! @{
-    //! Repository Local Values are used for information specific to this copy of the Db. The table BEDB_Table_Local in which
-    //! RepositoryLocalValues are stored is not change tracked or change merged.
+    //! Briefcase Local Values are used for information specific to this copy of the Db. The table BEDB_Table_Local in which
+    //! BriefcaseLocalValues are stored is not change tracked or change merged.
 
-    //! Get a reference to the RepositoryLocalValueCache for this Db.
-    RepositoryLocalValueCache& GetRLVCache() {return m_dbFile->GetRLVCache();}
+    //! Get a reference to the BriefcaseLocalValueCache for this Db.
+    BriefcaseLocalValueCache& GetRLVCache() {return m_dbFile->GetRLVCache();}
 
-    //! Query the current value of a Repository Local Value of type string.
+    //! Query the current value of a Briefcase Local Value of type string.
     //! @param[in] name The name of the RLV.
     //! @param[out] value On success, the value of the RLV.
     //! @return BE_SQLITE_ROW if the value exists and value is valid, error status otherwise.
-    BE_SQLITE_EXPORT DbResult QueryRepositoryLocalValue(Utf8CP name, Utf8StringR value) const;
+    BE_SQLITE_EXPORT DbResult QueryBriefcaseLocalValue(Utf8CP name, Utf8StringR value) const;
 
-    //! Save a new value of a Repository Local Value of type string. If the RLC already exists, its value is replaced.
+    //! Save a new value of a Briefcase Local Value of type string. If the RLC already exists, its value is replaced.
     //! @param[in] name The name of the RLV.
     //! @param[in] value The new value for RLV name.
     //! @return BE_SQLITE_DONE if the value was saved, error status otherwise.
-    BE_SQLITE_EXPORT DbResult SaveRepositoryLocalValue(Utf8CP name, Utf8StringCR value);
+    BE_SQLITE_EXPORT DbResult SaveBriefcaseLocalValue(Utf8CP name, Utf8StringCR value);
     //! @}
 
     //! @return the rowid from the last insert statement for this Db.
@@ -2505,8 +2505,8 @@ public:
     //! Get the GUID of this Db.
     BE_SQLITE_EXPORT BeGuid GetDbGuid() const;
 
-    //! Get the (local) BeRepositoryId of this Db. Every copy of the Db must have a unique BeRepositoryId.
-    BE_SQLITE_EXPORT BeRepositoryId GetRepositoryId() const;
+    //! Get the (local) BeBriefcaseId of this Db. Every copy of the Db must have a unique BeBriefcaseId.
+    BE_SQLITE_EXPORT BeBriefcaseId GetBriefcaseId() const;
 
     //! Get a new value for a BeServerIssuedId from the server
     //! @param [in,out] value the new value of the BeServerIssuedId
@@ -2559,8 +2559,8 @@ public:
 
     BE_SQLITE_EXPORT void ChangeDbGuid(BeGuid);
 
-    //! Change the BeRepositoryId of this Db.
-    BE_SQLITE_EXPORT DbResult ChangeRepositoryId(BeRepositoryId);
+    //! Change the BeBriefcaseId of this Db.
+    BE_SQLITE_EXPORT DbResult ChangeBriefcaseId(BeBriefcaseId);
 
     //! Set or replace the ChangeTracker for this Db.
     //! @param[in] tracker The new ChangeTracker for this Db.
