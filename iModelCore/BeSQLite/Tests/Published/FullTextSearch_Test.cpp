@@ -269,11 +269,11 @@ TEST_F(FTS5Test, FilterExternalContentTable)
     SearchOp searchOps[] =
         {
             // text         name    address company
-            { "John Doe",   1,      1,      0 },
-            { "Ave",        0,      2,      0 },
-            { "Bakery",     0,      0,      2 },
-            { "Good",       1,      0,      2 },
-            { "Main Street",0,      1,      1 },
+            { "John Doe",   {1,      1,      0} },
+            { "Ave",        {0,      2,      0} },
+            { "Bakery",     {0,      0,      2} },
+            { "Good",       {1,      0,      2} },
+            { "Main Street",{0,      1,      1} },
         };
 
     Utf8CP searchTypes[] = { "Name", "Address", "Company" };
