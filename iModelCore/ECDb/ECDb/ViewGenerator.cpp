@@ -207,8 +207,8 @@ bool ensureDerivedClassesAreLoaded
 
     if (isPolymorphic)
         {
-        if (!classMap->IsParentOfJoinedTable())
-            {
+        //if (!classMap->IsParentOfJoinedTable())
+        //    {
             auto const& derivedClasses = ensureDerivedClassesAreLoaded ? map.GetECDbR().Schemas().GetDerivedECClasses(ecClass) : ecClass.GetDerivedClasses();
             for (auto derivedClass : derivedClasses)
                 {
@@ -216,7 +216,7 @@ bool ensureDerivedClassesAreLoaded
                 if (status != BentleyStatus::SUCCESS)
                     return status;
                 }
-            }
+            //}
         }
     return BentleyStatus::SUCCESS;
     }

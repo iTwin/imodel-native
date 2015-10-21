@@ -240,6 +240,7 @@ TEST(ECDbSchemas, JoinedTableTest)
 
         ASSERT_EQ(realRowCount, rowCountExpected);
         };
+
     assert_ecsql("INSERT INTO dgn.Goo(A, B, C, D) VALUES(:a,'b1',:c,'d1');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
     assert_ecsql("INSERT INTO dgn.Goo(ECInstanceId, A, B, C, D) VALUES(120, 102,'b2',202,'d2');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
     assert_ecsql("INSERT INTO dgn.Goo(A, B, C, D) VALUES(103,'b3',203,'d3');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
@@ -263,32 +264,38 @@ TEST(ECDbSchemas, JoinedTableTest)
 
     assert_ecsql2("SELECT ECInstanceId, A, B FROM dgn.Foo", ECSqlStatus::Success, 3, 16);
     assert_ecsql2("SELECT ECInstanceId, A, B FROM ONLY dgn.Foo", ECSqlStatus::Success, 3, 4);
+    assert_ecsql2("SELECT ECInstanceId, A, B FROM dgn.Foo WHERE A = 102 AND B = 'b2'", ECSqlStatus::Success, 3, 1);
+    assert_ecsql2("SELECT ECInstanceId, A, B FROM ONLY dgn.Foo WHERE A = 102 AND B = 'b2'", ECSqlStatus::Success, 3, 0);
+    assert_ecsql2("SELECT ECInstanceId, A, B FROM ONLY dgn.Foo  WHERE A = 104 AND B = 'b17'", ECSqlStatus::Success, 3, 1);
+
 
     assert_ecsql2("SELECT ECInstanceId, A, B, C, D FROM dgn.Goo", ECSqlStatus::Success, 5, 4);
+    assert_ecsql2("SELECT ECInstanceId, A, B FROM dgn.Goo", ECSqlStatus::Success, 3, 4);
+    assert_ecsql2("SELECT ECInstanceId, C, D FROM dgn.Goo", ECSqlStatus::Success, 3, 4);
     assert_ecsql2("SELECT ECInstanceId, A, B, C, D FROM ONLY dgn.Goo", ECSqlStatus::Success, 5, 4);
+    assert_ecsql2("SELECT ECInstanceId, A, B, C, D FROM dgn.Goo WHERE A = 102 AND B ='b2' AND C = 202 AND D ='d2'", ECSqlStatus::Success, 5, 1);
+    assert_ecsql2("SELECT ECInstanceId, A, B, C, D FROM ONLY dgn.Goo WHERE A = 102 AND B ='b2' AND C = 202 AND D ='d2'", ECSqlStatus::Success, 5, 1);
+
+
+    assert_ecsql2("SELECT ECInstanceId, A, B, E, F FROM dgn.Boo", ECSqlStatus::Success, 5, 4);
+    assert_ecsql2("SELECT ECInstanceId, A, B FROM dgn.Boo", ECSqlStatus::Success, 3, 4);
+    assert_ecsql2("SELECT ECInstanceId, E, F FROM dgn.Boo", ECSqlStatus::Success, 3, 4);
+    assert_ecsql2("SELECT ECInstanceId, A, B, E, F FROM ONLY dgn.Boo", ECSqlStatus::Success, 5, 4);
+    assert_ecsql2("SELECT ECInstanceId, A, B, E, F FROM dgn.Boo WHERE A = 102 AND B ='b8' AND E = 202 AND F ='f2'", ECSqlStatus::Success, 5, 1);
+    assert_ecsql2("SELECT ECInstanceId, A, B, E, F FROM ONLY dgn.Boo WHERE A = 102 AND B ='b8' AND E = 202 AND F ='f2'", ECSqlStatus::Success, 5, 1);
+
 
     assert_ecsql2("SELECT ECInstanceId, A, B, G, H FROM dgn.Roo", ECSqlStatus::Success, 5, 4);
+    assert_ecsql2("SELECT ECInstanceId, A, B FROM dgn.Roo", ECSqlStatus::Success, 3, 4);
+    assert_ecsql2("SELECT ECInstanceId, G, H FROM dgn.Roo", ECSqlStatus::Success, 3, 4);
     assert_ecsql2("SELECT ECInstanceId, A, B, G, H FROM ONLY dgn.Roo", ECSqlStatus::Success, 5, 4);
+    assert_ecsql2("SELECT ECInstanceId, A, B, G, H FROM dgn.Roo WHERE A = 102 AND B ='b13' AND G = 202 AND H ='h2'", ECSqlStatus::Success, 5, 1);
+    assert_ecsql2("SELECT ECInstanceId, A, B, G, H FROM ONLY dgn.Roo WHERE A = 102 AND B ='b13' AND G = 202 AND H ='h2'", ECSqlStatus::Success, 5, 1);
 
-    //// local properties
-    //assert_ecsql("SELECT ECInstanceId, GetECClassId(), C, D FROM dgn.Goo", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 4);
-    //assert_ecsql("SELECT ECInstanceId, GetECClassId(), E, F FROM dgn.Boo", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 4);
-    //assert_ecsql("SELECT ECInstanceId, GetECClassId(), G, H FROM dgn.Roo", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 4);
 
-    //// all properties
-    //assert_ecsql("SELECT ECInstanceId, GetECClassId(), A, B, C, D FROM dgn.Goo", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 6);
-    //assert_ecsql("SELECT ECInstanceId, GetECClassId(), A, B, E, F FROM dgn.Boo", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 6);
-    //assert_ecsql("SELECT ECInstanceId, GetECClassId(), A, B, G, H FROM dgn.Roo", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 6);
-
-    //// all properties
-    //assert_ecsql("SELECT * FROM dgn.Foo", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 3);
-    //assert_ecsql("SELECT * FROM dgn.Goo", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 5);
-    //assert_ecsql("SELECT * FROM dgn.Boo", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 5);
-    //assert_ecsql("SELECT * FROM dgn.Roo", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 5);
-
-    //assert_ecsql("DELETE FROM dgn.Foo WHERE ECInstanceId = 1 AND A = 101 AND B = 'b1';", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 0);
-    //assert_ecsql("DELETE FROM dgn.Goo WHERE ECInstanceId = 1 AND A = 101 AND B = 'b1';", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 0);
-    //assert_ecsql("DELETE FROM dgn.Goo WHERE ECInstanceId = 1 AND (A = 101 AND B = 'b1') AND (C = 101 AND D = 'd1');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE, 0);
+    assert_ecsql("DELETE FROM dgn.Foo WHERE ECInstanceId = 1 AND A = 101 AND B = 'b1';", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("DELETE FROM dgn.Goo WHERE ECInstanceId = 1 AND A = 101 AND B = 'b1';", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("DELETE FROM dgn.Goo WHERE ECInstanceId = 1 AND (A = 101 AND B = 'b1') AND (C = 101 AND D = 'd1');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
 
 
 
