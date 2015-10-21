@@ -2121,10 +2121,12 @@ DgnDbStatus DgnElement::Item::ExecuteEGA(DgnElementR el, DPoint3dCR origin, YawP
         return (0 == retval) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
         }
 
+#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
     if (0 == BeStringUtilities::Stricmp("ComponentModel", egaType.GetUtf8CP()))
         {
         return ExecuteComponentSolutionEGA(el, origin, angles, egaInstance, tsName, Utf8String(egaInputs.GetUtf8CP()), *this);
         }
+#endif
 
     BeAssert(false && "TBD - Unrecognized EGA type.");
     return DgnDbStatus::NotEnabled;

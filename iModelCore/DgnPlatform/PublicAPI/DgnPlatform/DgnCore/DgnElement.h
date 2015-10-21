@@ -1776,7 +1776,9 @@ struct InstanceBackedItem : DgnElement::Item
     void SetInstanceId(BeSQLite::EC::ECInstanceId eid);
 };
 
+#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 // *** WIP_ELEMENT_ITEM - move this back into ComponentSolution after making ElementItem a top-level class
 DgnDbStatus ExecuteComponentSolutionEGA(DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR itemInstance, Utf8StringCR cmName, Utf8StringCR paramNames, DgnElement::Item& item);
+#endif
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

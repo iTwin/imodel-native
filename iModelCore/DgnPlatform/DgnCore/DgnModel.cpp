@@ -1131,6 +1131,7 @@ void SheetModel::_FromPropertiesJson(Json::Value const& val)
     JsonUtils::DPoint2dFromJson(m_size, val["sheet_size"]);
     }
 
+#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1455,6 +1456,8 @@ DgnDbStatus BentleyApi::Dgn::ExecuteComponentSolutionEGA(DgnElementR el, DPoint3
     return DgnDbStatus::BadElement;
     }
 
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1774,6 +1777,7 @@ DgnModelPtr DgnModel::CopyModel(DgnModelCR model, Code newCode)
     return model2;
     }
 
+#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2053,6 +2057,7 @@ DgnDbStatus ComponentModel::Solve(ModelSolverDef::ParameterSet const& newParamet
         return DgnDbStatus::ValidationFailed;
     return DgnDbStatus::SQLiteError;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
