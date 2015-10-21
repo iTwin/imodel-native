@@ -78,34 +78,13 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
 
     // WHERE clause
     NativeSqlBuilder systemWhereClause;
-    //status = SystemColumnPreparer::GetFor(classMap).GetWhereClause(ctx, systemWhereClause, classMap, ECSqlType::Update,
-    //                classNameExp->IsPolymorphic (), nullptr); //SQLite UPDATE does not allow table aliases
-
-    //if (!status.IsSuccess())
-    //    return status;
-
-    auto& storageDesc = classMap.GetStorageDescription ();
-    if (storageDesc.GetNonVirtualHorizontalPartitionIndices ().empty () || !exp.GetClassNameExp ()->IsPolymorphic ())
+    ECDbSqlColumn const* classIdColumn = nullptr;
+    if (classMap.GetTable().TryGetECClassIdColumn(classIdColumn) && classIdColumn->GetPersistenceType() == PersistenceType::Persisted)
         {
-        if (auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ColumnKind::ECClassId))
-            {
-            if (classIdColumn->GetPersistenceType () == PersistenceType::Persisted)
-                {
-                systemWhereClause.AppendEscaped (classIdColumn->GetName ().c_str ()).Append ("=").Append (classMap.GetClass ().GetId ());
-                }
-            }
-        }
-    else if (storageDesc.GetNonVirtualHorizontalPartitionIndices ().size () == 1 && exp.GetClassNameExp ()->IsPolymorphic ())
-        {
-        if (auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ColumnKind::ECClassId))
-            {
-            if (classIdColumn->GetPersistenceType () == PersistenceType::Persisted)
-                {
-                auto& partition = storageDesc.GetHorizontalPartitions ().at (storageDesc.GetNonVirtualHorizontalPartitionIndices ().at (0));               
-                if (partition.NeedsClassIdFilter()) 
-                    partition.AppendECClassIdFilterSql(classIdColumn->GetName().c_str(), systemWhereClause);
-                }
-            }
+        if (SUCCESS != classMap.GetStorageDescription().GenerateECClassIdFilter(systemWhereClause,
+                                                                 *classIdColumn,
+                                                                 exp.GetClassNameExp()->IsPolymorphic()))
+            return ECSqlStatus::Error;
         }
 
     if (!systemWhereClause.IsEmpty ())

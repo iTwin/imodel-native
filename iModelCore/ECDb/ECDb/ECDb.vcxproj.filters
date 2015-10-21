@@ -358,12 +358,8 @@
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="ECSql\SystemColumnPreparer.h">
-      <Filter>ECSql\ECSqlPrepare</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
-    <ClInclude Include="BeRepositoryBasedIdSequence.h" />
     <ClInclude Include="ECDbSql.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
@@ -421,6 +417,7 @@
     <ClInclude Include="ECSql\ECSqlStepTask.h">
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClInclude>
+    <ClInclude Include="BeBriefcaseBasedIdSequence.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -458,7 +455,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BeRepositoryBasedIdSequence.cpp" />
     <ClCompile Include="ECSql\Parser\SqlBison.cpp">
       <Filter>ECSql\OSQLParser</Filter>
     </ClCompile>
@@ -726,9 +722,6 @@
     <ClCompile Include="ECSql\ECSqlStatementCache.cpp">
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClCompile>
-    <ClCompile Include="ECSql\SystemColumnPreparer.cpp">
-      <Filter>ECSql\ECSqlPrepare</Filter>
-    </ClCompile>
     <ClCompile Include="ECDbSql.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
@@ -778,6 +771,7 @@
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClCompile>
     <ClCompile Include="ChangeSummary.cpp" />
+    <ClCompile Include="BeBriefcaseBasedIdSequence.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="ECSchemas\ECDb_FileInfo.01.00.ecschema.xml">

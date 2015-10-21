@@ -105,32 +105,16 @@ ClassNameExp const& classNameExp
         if (!status.IsSuccess())
             return status;
         }
-    
+
     IClassMap const& classMap = classNameExp.GetInfo().GetMap();
-    auto& storageDesc = classMap.GetStorageDescription ();
-    if (storageDesc.GetNonVirtualHorizontalPartitionIndices ().empty() || !exp.GetClassNameExp ()->IsPolymorphic ())
-        {
-        if (auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ColumnKind::ECClassId))
-            {
-            if (classIdColumn->GetPersistenceType() == PersistenceType::Persisted)
-                {
-                deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet.AppendEscaped (classIdColumn->GetName().c_str()).Append(" = ").Append (classMap.GetClass ().GetId ());
-                }
-            }
-        }
-    else if (storageDesc.GetNonVirtualHorizontalPartitionIndices ().size() == 1 && exp.GetClassNameExp ()->IsPolymorphic ())
-        {
-        if (auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ColumnKind::ECClassId))
-            {
-            if (classIdColumn->GetPersistenceType () == PersistenceType::Persisted)
-                {
-                auto& partition = storageDesc.GetHorizontalPartitions ().at (storageDesc.GetNonVirtualHorizontalPartitionIndices ().at (0));               
-                if (partition.NeedsClassIdFilter()) 
-                    partition.AppendECClassIdFilterSql(classIdColumn->GetName().c_str(), deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet);
-                }
-            }
-        }
-    return ECSqlStatus::Success;
+
+    ECDbSqlColumn const* classIdColumn = nullptr;
+    if (!classMap.GetTable().TryGetECClassIdColumn(classIdColumn) || classIdColumn->GetPersistenceType() != PersistenceType::Persisted)
+        return ECSqlStatus::Success; //no class id column exists -> no system where clause
+    
+    return classMap.GetStorageDescription().GenerateECClassIdFilter(deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet, 
+                                                                    *classIdColumn, 
+                                                                    exp.GetClassNameExp()->IsPolymorphic()) == SUCCESS ? ECSqlStatus::Success : ECSqlStatus::Error;
     }
 
 //-----------------------------------------------------------------------------------------

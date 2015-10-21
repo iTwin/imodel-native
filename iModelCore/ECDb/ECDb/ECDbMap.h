@@ -220,17 +220,23 @@ public:
         explicit StorageDescription (ECN::ECClassId classId) : m_classId (classId), m_rootHorizontalPartitionIndex (0) {}
 
         HorizontalPartition* AddHorizontalPartition(ECDbSqlTable const& table, bool isRootPartition);
+
     public:
         ~StorageDescription (){}
         StorageDescription (StorageDescription&&);
         StorageDescription& operator=(StorageDescription&&);
 
-        HorizontalPartition const* GetHorizontalPartition (size_t index) const;
-        std::vector<HorizontalPartition> const& GetHorizontalPartitions () const { return m_horizontalPartitions; }
-        HorizontalPartition const& GetRootHorizontalPartition () const { return *GetHorizontalPartition (m_rootHorizontalPartitionIndex); }
-        std::vector<size_t> const& GetNonVirtualHorizontalPartitionIndices () const { return m_nonVirtualHorizontalPartitionIndices; }
+        //! Returns nullptr, if more than one non-virtual partitions exist.
+        //! If polymorphic is true or has no non-virtual partitions, gets root horizontal partition.
+        //! If has a single non-virtual partition returns that.
+        HorizontalPartition const* GetHorizontalPartition(bool polymorphic) const;
+        HorizontalPartition const& GetRootHorizontalPartition() const;
+        std::vector<HorizontalPartition> const& GetHorizontalPartitions() const { return m_horizontalPartitions; }
+        bool HasNonVirtualPartitions() const { return !m_nonVirtualHorizontalPartitionIndices.empty(); }
+        bool HierarchyMapsToMultipleTables() const { return m_nonVirtualHorizontalPartitionIndices.size() > 1; }
         ECN::ECClassId GetClassId () const { return m_classId; }
 
+        BentleyStatus GenerateECClassIdFilter(NativeSqlBuilder& filter, ECDbSqlColumn const& classIdColumn, bool polymorphic) const;
         static std::unique_ptr<StorageDescription> Create(IClassMap const&, ECDbMap::LightweightCache const& lwmc);
         };
 END_BENTLEY_SQLITE_EC_NAMESPACE

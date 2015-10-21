@@ -264,17 +264,19 @@ BentleyStatus SchemaImportECDbMapDb::GenerateIndexWhereClause(NativeSqlBuilder& 
         }
 
     StorageDescription const& storageDescription = classMap->GetStorageDescription();
-    std::vector<size_t> nonVirtualPartitionIndices = storageDescription.GetNonVirtualHorizontalPartitionIndices();
-    HorizontalPartition const* horizPartition = nullptr;
-    if (nonVirtualPartitionIndices.empty())
-        horizPartition = &storageDescription.GetRootHorizontalPartition();
-    else
+    if (index.AppliesToSubclassesIfPartial() && storageDescription.HierarchyMapsToMultipleTables())
         {
-        BeAssert(nonVirtualPartitionIndices.size() == 1 && "Check that class only maps to a single table should have been done during class name preparation");
-        horizPartition = storageDescription.GetHorizontalPartition(nonVirtualPartitionIndices[0]);
+        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                                                      "Index %s cannot be created for ECClass '%s' because the ECClass has subclasses in other tables and the index is defined to apply to subclasses.",
+                                                      index.GetName().c_str(), ecclass->GetFullName());
+        return ERROR;
         }
 
-    if (!horizPartition->NeedsClassIdFilter())
+    NativeSqlBuilder classIdFilter;
+    if (SUCCESS != storageDescription.GenerateECClassIdFilter(classIdFilter, *classIdCol, index.AppliesToSubclassesIfPartial()))
+        return ERROR;
+
+    if (classIdFilter.IsEmpty())
         return SUCCESS;
 
     //now we know the index would have to be partial.
@@ -315,19 +317,9 @@ BentleyStatus SchemaImportECDbMapDb::GenerateIndexWhereClause(NativeSqlBuilder& 
         }
 
     if (hasWhere)
-        whereClause.AppendSpace().Append(BooleanSqlOperator::And, true);
+        whereClause.AppendSpace().Append(BooleanSqlOperator::And, true).AppendParenLeft();
 
-    if (!index.AppliesToSubclassesIfPartial())
-        {
-        whereClause.Append(classIdCol->GetName().c_str()).Append(BooleanSqlOperator::EqualTo).Append(index.GetClassId());
-        return SUCCESS;
-        }
-
-
-    if (hasWhere)
-        whereClause.AppendParenLeft();
-
-    horizPartition->AppendECClassIdFilterSql(classIdCol->GetName().c_str(), whereClause);
+    whereClause.Append(classIdFilter);
     
     if (hasWhere)
         whereClause.AppendParenRight();

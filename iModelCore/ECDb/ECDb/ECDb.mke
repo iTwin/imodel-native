@@ -94,7 +94,6 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/NativeSqlBuilder.h \
                 $(baseDir)ECSql/ECSqlPreparer.h \
                 $(baseDir)ECSql/ECSqlPropertyNameExpPreparer.h \
-                $(baseDir)ECSql/SystemColumnPreparer.h \
                 $(baseDir)ECSql/ECSqlSelectPreparer.h \
                 $(baseDir)ECSql/ECSqlInsertPreparer.h \
                 $(baseDir)ECSql/ECSqlUpdatePreparer.h \
@@ -269,8 +268,6 @@ $(o)NativeSqlBuilder$(oext):								$(baseDir)ECSql/NativeSqlBuilder.cpp       $
 $(o)ECSqlPreparer$(oext):									$(baseDir)ECSql/ECSqlPreparer.cpp          $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlPropertyNameExpPreparer$(oext):					$(baseDir)ECSql/ECSqlPropertyNameExpPreparer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)SystemColumnPreparer$(oext):					        $(baseDir)ECSql/SystemColumnPreparer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlSelectPreparer$(oext):								$(baseDir)ECSql/ECSqlSelectPreparer.cpp    $(ECDbAllHeaders) ${MultiCompileDepends}
 

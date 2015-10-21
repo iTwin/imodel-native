@@ -1306,9 +1306,40 @@ StorageDescription& StorageDescription::operator=(StorageDescription&& rhs)
 
     return *this;
     }
+
 //------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    05 / 2015
+//@bsimethod                                                    Krischan.Eberle    10 / 2015
 //------------------------------------------------------------------------------------------
+BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filter, ECDbSqlColumn const& classIdColumn, bool polymorphic) const
+    {
+    if (!HasNonVirtualPartitions())
+        return SUCCESS; //table is virtual -> noop
+
+    Utf8CP classIdColName = classIdColumn.GetName().c_str();
+    HorizontalPartition const* partition = GetHorizontalPartition(polymorphic);
+
+    if (!polymorphic)
+        {
+        BeAssert(partition != nullptr);
+        if (partition->GetClassIds().size() > 1)
+            {
+            BeAssert(partition->GetClassIds()[0] == m_classId);
+            filter.AppendEscaped(classIdColName).Append(BooleanSqlOperator::EqualTo).Append(m_classId);
+            }
+
+        return SUCCESS;
+        }
+
+    if (HierarchyMapsToMultipleTables())
+        return SUCCESS; // view includes the filter already
+
+    BeAssert(partition != nullptr);
+    if (partition->NeedsClassIdFilter())
+        partition->AppendECClassIdFilterSql(classIdColName, filter);
+
+    return SUCCESS;
+    }
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan    05 / 2015
 //------------------------------------------------------------------------------------------
@@ -1361,17 +1392,29 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(IClassMap const& 
     }
 
 //------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    05 / 2015
+//@bsimethod                                                    Krischan.Eberle    10 / 2015
 //------------------------------------------------------------------------------------------
-HorizontalPartition const* StorageDescription::GetHorizontalPartition(size_t index) const
+HorizontalPartition const* StorageDescription::GetHorizontalPartition(bool polymorphic) const
     {
-    if (index >= m_horizontalPartitions.size())
-        {
-        BeAssert(false && "Index out of range");
-        return nullptr;
-        }
+    if (!polymorphic || m_nonVirtualHorizontalPartitionIndices.empty())
+        return &GetRootHorizontalPartition();
 
-    return &m_horizontalPartitions[index];
+    if (m_nonVirtualHorizontalPartitionIndices.size() > 1)
+        return nullptr;
+
+    size_t ix = m_nonVirtualHorizontalPartitionIndices[0];
+    BeAssert(ix < m_horizontalPartitions.size());
+
+    return &m_horizontalPartitions[ix];
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    10 / 2015
+//------------------------------------------------------------------------------------------
+HorizontalPartition const& StorageDescription::GetRootHorizontalPartition() const
+    {
+    BeAssert(m_rootHorizontalPartitionIndex < m_horizontalPartitions.size());
+    return m_horizontalPartitions[m_rootHorizontalPartitionIndex];
     }
 
 //------------------------------------------------------------------------------------------

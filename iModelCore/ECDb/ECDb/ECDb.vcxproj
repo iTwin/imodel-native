@@ -110,7 +110,6 @@
     <ClCompile Include="ECSql\StructArrayToSecondaryTableECSqlBinder.cpp" />
     <ClCompile Include="ECSql\StructMappedToColumnsECSqlField.cpp" />
     <ClCompile Include="ECSql\StructToColumnsECSqlBinder.cpp" />
-    <ClCompile Include="ECSql\SystemColumnPreparer.cpp" />
     <ClCompile Include="ECSql\SystemPropertyECSqlBinder.cpp" />
     <ClCompile Include="ECSql\UpdateStatementExp.cpp" />
     <ClCompile Include="ECSql\ValueExp.cpp" />
@@ -221,7 +220,6 @@
     <ClInclude Include="ECSql\StructArrayToSecondaryTableECSqlBinder.h" />
     <ClInclude Include="ECSql\StructMappedToColumnsECSqlField.h" />
     <ClInclude Include="ECSql\StructToColumnsECSqlBinder.h" />
-    <ClInclude Include="ECSql\SystemColumnPreparer.h" />
     <ClInclude Include="ECSql\SystemPropertyECSqlBinder.h" />
     <ClInclude Include="ECSql\UpdateStatementExp.h" />
     <ClInclude Include="ECSql\ValueExp.h" />
