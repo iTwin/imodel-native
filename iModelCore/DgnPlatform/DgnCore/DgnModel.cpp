@@ -1353,7 +1353,7 @@ DgnDbStatus ComponentSolution::CreateSolutionInstanceItem(DgnElementR instanceEl
     {
     DgnDbR db = instanceElement.GetDgnDb();
 
-    //  The the details of the solution and the class of the Item that should be created
+    //  The details of the solution and the class of the Item that should be created
     ComponentSolution solutions(db);
     Solution sln;
     DgnDbStatus status = solutions.Query(sln, solutionId);
