@@ -1048,7 +1048,7 @@ void ECDbTestUtility::GenerateRandomValue(ECValueR value, PrimitiveType type, EC
                     break;
                     }
 
-                uint64_t jd = 0ULL;
+                uint64_t jd = 0;
                 DateTime::GetCurrentTimeUtc().ToJulianDay(jd);
 
                 DateTime::FromJulianDay(dt, jd, info);
