@@ -39,6 +39,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Xml;
 using System.Text;
+using System.Configuration;
 
 namespace Bentley.ECPluginExamples
 {
@@ -122,7 +123,7 @@ namespace Bentley.ECPluginExamples
                 .SetOperationSupport<InsertOperation>(ExecuteInsertOperation);
             
                 IndexPolicyHandler.InitializeHandlers(builder);
-            
+
         }
 
         private RepositoryIdentifier GetRepositoryIdentifier(RepositoryModule module,
@@ -174,7 +175,6 @@ namespace Bentley.ECPluginExamples
                 throw new NotSupportedException("There can be one and only one \"configuration\" section in the configuration file");
             }
 
-            
             m_connectionString = nodelist[0].SelectSingleNode("ConnectionString").InnerText;
             m_schemaLocation = nodelist[0].SelectSingleNode("SchemaLocation").InnerText;
             m_packagesLocation = nodelist[0].SelectSingleNode("PackagesLocation").InnerText;
@@ -441,6 +441,20 @@ namespace Bentley.ECPluginExamples
         IExtendedParameters extendedParameters
         )
         {
+            //Here, we put the repository containing the dlls for the packager in the source path
+            string nativeDllsPath = ConfigurationManager.AppSettings.Get("PackagerNativeDllsPath");
+            if (nativeDllsPath == null)
+            {
+                throw new OperationFailedException("The server has not been configured to allow the packaging operation");
+            }
+
+            string path = Environment.GetEnvironmentVariable("Path");
+
+            if ((!path.Contains(nativeDllsPath + ";")) &&  (!path.EndsWith(nativeDllsPath)))
+            {
+                Environment.SetEnvironmentVariable("Path", Environment.GetEnvironmentVariable("Path") + ";" + nativeDllsPath);
+            }
+
             string className = instance.ClassDefinition.Name;
 
             switch(className)
