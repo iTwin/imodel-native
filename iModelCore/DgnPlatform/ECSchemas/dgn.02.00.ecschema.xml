@@ -170,9 +170,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="PhysicalRedlineModel" isDomainClass="True">
         <BaseClass>PhysicalModel</BaseClass>
     </ECClass>
+    <!--  WIP_COMPONENT_MODEL *** pending redesign
     <ECClass typeName="ComponentModel" isDomainClass="True">
         <BaseClass>Model3d</BaseClass>
     </ECClass>
+    -->
     <ECClass typeName="ResourceModel" isDomainClass="True">
         <BaseClass>Model</BaseClass>
     </ECClass>
@@ -931,22 +933,20 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <!-- // DgnDb "implementation detail" classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
 
+    <!-- WIP_COMPONENT_MODEL *** pending redesign
     <ECClass typeName="ComponentSolution" isDomainClass="True" >
-        <!-- WIP: Convert to subclass of DgnModel? -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
-                <!-- WIP_COMPONENTS: What I REALLY want is for the primary key to be (ComponentModelId,Parameters) -->
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="ComponentModelName" typeName="string"/>
         <ECProperty propertyName="SolutionName" typeName="string"/>
-        <!-- The parameters used to generate this solution, as a JSON array -->
         <ECProperty propertyName="Parameters" typeName="string"/>
-        <!-- WIP_COMPONENTS: I want (ComponentModelId,Parameters) to be unique and indexed -->
         <ECProperty propertyName="Geom" typeName="binary"/>
         <ECProperty propertyName="Range" typeName="binary"/>
     </ECClass>
+    -->
 
     <!-- WIP_COMPONENTS I need to be able to use (ComponentModelName,SolutionName) as the key to the ComponentSolution table
     <ECRelationshipClass typeName="ElementUsesSolution" isDomainClass="True" strength="referencing" strengthDirection="forward">
