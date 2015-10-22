@@ -263,6 +263,7 @@ public:
 
     //! Retrieves the custom attribute matching the class name.  Includes supplemental custom attributes
     //! and custom attributes from the base containers
+		//! @param[in]  schemaName  The name of the schema the CustomAttribute is defined in
     //! @param[in]  className   The name of the CustomAttribute Class to look for an instance of
     //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
     //! the custom attribute was found on the container.
@@ -277,6 +278,7 @@ public:
 
     //! Retrieves the custom attribute matching the class name.  Includes supplemental custom attributes
     //! but not base containers
+		//! @param[in]  schemaName  The name of the schema the CustomAttribute is defined in
     //! @param[in]  className   The name of the CustomAttribute Class to look for an instance of
     //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
     //! the custom attribute was found on the container.
@@ -291,6 +293,7 @@ public:
 
     //! Retrieves the custom attribute matching the class name.  Includes custom attributes from base containers
     //! but not supplemental custom attributes
+		//! @param[in]  schemaName  The name of the schema the CustomAttribute is defined in
     //! @param[in]  className   The name of the CustomAttribute Class to look for an instance of
     //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
     //! the custom attribute was found on the container.
@@ -315,6 +318,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetCustomAttribute(IECInstanceR customAttributeInstance);
 
     //! Removes a custom attribute from the container
+		//! @param[in]  schemaName  The name of the schema the CustomAttribute is defined in
     //! @param[in]  className   Name of the class of the custom attribute to remove
     ECOBJECTS_EXPORT bool               RemoveCustomAttribute(WStringCR schemaName, WStringCR className);
 
