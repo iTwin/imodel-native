@@ -2056,7 +2056,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::ParameterAdvancedTests (int rowCountPer
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, rowCountPerClass);
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (123)));
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("s", ECValue ("Sample string")));
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("l", ECValue (123456789LL)));
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("l", ECValue (INT64_C(123456789))));
         }
 
         {
@@ -2541,7 +2541,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::PrimitiveTests (int rowCountPerClass)
         {
         ecsql = "SELECT I, S FROM ecsql.PSA WHERE L = :p1 OR I = :p2";
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, rowCountPerClass);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("p1", ECValue (12LL)));
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("p1", ECValue (INT64_C(12))));
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("p2", ECValue (123)));
         }
 
@@ -2549,13 +2549,13 @@ ECSqlTestDataset ECSqlSelectTestDataset::PrimitiveTests (int rowCountPerClass)
         ecsql = "SELECT I, S FROM ecsql.PSA WHERE L = :p1 OR I = :p2";
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, rowCountPerClass);
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("p2", ECValue (123)));
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("p1", ECValue (12LL)));
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("p1", ECValue (INT64_C(12))));
         }
 
         {
         ecsql = "SELECT I, S FROM ecsql.PSA WHERE L = ? OR I = :p1 OR B = :p2 OR S = ?";
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, rowCountPerClass);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (100LL)));
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (INT64_C(100))));
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("p2", ECValue (true)));
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("p1", ECValue (123)));
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ("blabla")));
@@ -2564,7 +2564,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::PrimitiveTests (int rowCountPerClass)
         {
         ecsql = "SELECT I, S FROM ecsql.PSA WHERE L = ? OR I = :p1 OR I > :p1 OR S = ?";
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, rowCountPerClass);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (100LL)));
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (INT64_C(100))));
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("p1", ECValue (120)));
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ("blabla")));
         }
@@ -2602,7 +2602,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::PrimitiveTests (int rowCountPerClass)
         {
         ecsql = "SELECT I FROM ecsql.P WHERE D > ?";
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, IECSqlExpectedResult::Category::Supported, "Binding long to double parameter is no error as SQLite supports that.", 1, rowCountPerClass);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (1LL)));
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (INT64_C(1))));
         }
 
     //***** Boolean properties
@@ -2627,7 +2627,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::PrimitiveTests (int rowCountPerClass)
         {
         ecsql = "SELECT I FROM ecsql.P WHERE B = ?";
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, IECSqlExpectedResult::Category::Supported, "Binding long to boolean parameter is no error as SQLite supports that.", 1, rowCountPerClass);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (1LL)));
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (INT64_C(1))));
         }
 
         {
