@@ -532,5 +532,44 @@ TEST_F (CustomAttributeTest, SerializeSchemaToXmlUtfString)
     EXPECT_TRUE (expectedUtf8Value.Equals (actualUtf8Value)) << L"Unexpected string property value of custom attribute instance";
     EXPECT_STREQ (expectedCAString.c_str (), actualUtf8Value.GetUtf8CP ()) << L"Unexpected string value of custom attribute property value";
     }
+		
+TEST_F(CustomAttributeTest, TestCustomAttributesWithSameNameInDifferentSchemas)
+    {
+    ECSchemaPtr schema1;
+    ECSchemaPtr schema2;
+    ECSchemaPtr testSchema;
+    ECClassP customAttributeClass1;
+    ECClassP customAttributeClass2;
+
+    ECSchema::CreateSchema(schema1, L"CASchema1", 5, 5);
+    schema1->CreateClass(customAttributeClass1, L"CustomAttribClass");
+    customAttributeClass1->SetIsCustomAttributeClass(true);
+
+		ECSchema::CreateSchema(schema2, L"CASchema2", 5, 5);
+    schema2->CreateClass(customAttributeClass2, L"CustomAttribClass");
+    customAttributeClass2->SetIsCustomAttributeClass(true);
+    
+		IECInstancePtr caInstance1 = GetInstanceForClass(L"CustomAttribClass", *schema1);
+		IECInstancePtr caInstance2 = GetInstanceForClass(L"CustomAttribClass", *schema2);
+		
+		ECSchema::CreateSchema(testSchema, L"TestSchema", 5, 5);
+		EXPECT_EQ (ECOBJECTS_STATUS_Success, testSchema->SetCustomAttribute(*caInstance1)) << L"Assigning the custom attribute instance to class CASchema1.CustomAttribClass failed.";
+		EXPECT_EQ (ECOBJECTS_STATUS_Success, testSchema->SetCustomAttribute(*caInstance2)) << L"Assigning the custom attribute instance to class CASchema2.CustomAttribClass failed.";
+
+		EXPECT_TRUE(containerClass->IsDefined(L"TestSchema1", L"CustomAttribClass")) << L"CustomAttribute CATestSchema1.TestClass couldn't be found on TestSchema.";
+		EXPECT_TRUE(containerClass->IsDefined(L"TestSchema2", L"CustomAttribClass")) << L"CustomAttribute CATestSchema2.TestClass couldn't be found on TestSchema.";
+		EXPECT_TRUE(containerClass->IsDefined(L"CustomAttribClass")) << L"CustomAttribute TestClass couldn't be found on TestSchema."; // LEGENCY TEST
+		
+    ASSERT_TRUE (testSchema->GetCustomAttribute (L"TestSchema1", L"CustomAttribClass").IsValid ());
+    ASSERT_TRUE (testSchema->GetCustomAttribute (L"TestSchema2", L"CustomAttribClass").IsValid ());
+				
+		EXPECT_TRUE(containerClass->RemoveCustomAttribute(L"TestSchema2", L"CustomAttribClass"));
+		EXPECT_FALSE(containerClass->IsDefined(L"TestSchema2", L"CustomAttribClass")) << L"CustomAttribute CATestSchema2.TestClass was still found although it should have been removed.";
+		EXPECT_TRUE(containerClass->IsDefined(L"CustomAttribClass"));
+		
+		EXPECT_TRUE(containerClass->RemoveCustomAttribute(L"TestSchema1", L"CustomAttribClass"));
+		EXPECT_FALSE(containerClass->IsDefined(L"TestSchema1", L"CustomAttribClass")) << L"CustomAttribute CATestSchema1.TestClass was still found although it should have been removed.";
+		EXPECT_FALSE(containerClass->IsDefined(L"CustomAttribClass"));
+    }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
