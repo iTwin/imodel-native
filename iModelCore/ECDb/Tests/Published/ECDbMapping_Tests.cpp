@@ -3657,10 +3657,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
         AssertIndex(ecdb, "ix_ts_B_fk_ts_Rel1NNoKeyProp_target", false, "ts_B", {"ForeignECInstanceId_Rel1NNoKeyProp"}, "([ForeignECInstanceId_Rel1NNoKeyProp] IS NOT NULL)");
         AssertIndex(ecdb, "ix_ts_B_ecclassid", false, "ts_B", {"ECClassId"});
 
-        //These two are redundant and need to be detected by ECDb to only be one
-        AssertIndex(ecdb, "uix_ts_B_fk_ts_Rel11_target", true, "ts_B", {"sc03"}, indexWhereClause.c_str()); //this one is kept
-        AssertIndexExists(ecdb, "uix_ts_B_fk_ts_AnotherRel11_target", false); //this one is dropped
-
+        //Unique indexes on FK for Rel11 and AnotherRel11 are the same, therefore one is dropped
         ASSERT_EQ(3, (int) RetrieveIndicesForTable(ecdb, "ts_B").size());
         }
 
@@ -3799,7 +3796,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
         AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships.ecdb");
         ASSERT_FALSE(asserted);
 
-        ASSERT_EQ(10, (int) RetrieveIndicesForTable(ecdb, "ts_RelBase").size());
+        ASSERT_EQ(9, (int) RetrieveIndicesForTable(ecdb, "ts_RelBase").size());
         }
 
         {
