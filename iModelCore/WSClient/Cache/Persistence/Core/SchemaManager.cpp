@@ -31,21 +31,17 @@ m_db(db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaManager::ImportCacheSchemas()
     {
-    ECSchemaReadContextPtr schemaContext = SchemaContext::CreateReadContext();
+    ECSchemaReadContextPtr context = SchemaContext::CreateReadContext();
 
     SchemaKey cacheSchemaKey = SchemaKey
         (
-        WIDEN(SCHEMA_CacheSchema), 
-        SCHEMA_CacheSchema_Major, 
+        WIDEN(SCHEMA_CacheSchema),
+        SCHEMA_CacheSchema_Major,
         SCHEMA_CacheSchema_Minor
         );
 
-    ECSchemaPtr cacheSchema = schemaContext->LocateSchema(cacheSchemaKey, SchemaMatchType::SCHEMAMATCHTYPE_Exact);
-    BeAssert(cacheSchema.IsValid());
-
-    SchemaKey supportSchemaKey = SchemaKey(WIDEN(SCHEMA_CacheLegacySupportSchema), 1, 0);
-    ECSchemaPtr supportSchema = schemaContext->LocateSchema(supportSchemaKey, SchemaMatchType::SCHEMAMATCHTYPE_Exact);
-    BeAssert(supportSchema.IsValid());
+    ECSchemaPtr cacheSchema = LoadSchema(cacheSchemaKey, *context);
+    ECSchemaPtr supportSchema = LoadSchema(SchemaKey(WIDEN(SCHEMA_CacheLegacySupportSchema), 1, 0), *context);
 
     if (SUCCESS != ImportSchemas(std::vector<ECSchemaPtr> {cacheSchema, supportSchema}))
         {
@@ -58,6 +54,22 @@ BentleyStatus SchemaManager::ImportCacheSchemas()
         }
 
     return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaPtr SchemaManager::LoadSchema(SchemaKey key, ECSchemaReadContext& context)
+    {
+    ECSchemaPtr schema = context.LocateSchema(key, SchemaMatchType::SCHEMAMATCHTYPE_Exact);
+    if (!schema.IsValid())
+        {
+        LOG.errorv(L"Could not load schema: %ls.%ls. Check assets or dependencies", 
+            key.m_schemaName.c_str(), 
+            ECSchema::FormatSchemaVersion(key.m_versionMajor, key.m_versionMinor).c_str());
+        BeAssert(false);
+        }
+    return schema;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -97,6 +109,7 @@ BentleyStatus SchemaManager::ImportSchemas(const std::vector<ECSchemaPtr>& schem
         {
         if (schema.IsNull())
             {
+            LOG.error("One or more supplied schemas are null - check depenendcies and assets");
             BeAssert(false && "Supplied schema is null");
             return ERROR;
             }
