@@ -169,7 +169,7 @@ BentleyStatus PerformanceElementTestFixture::ImportTestSchema() const
 PhysicalModelPtr PerformanceElementTestFixture::CreatePhysicalModel() const
     {
     DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
-    PhysicalModelPtr targetModel = new PhysicalModel(PhysicalModel::CreateParams(*m_db, mclassId, "Instances"));
+    PhysicalModelPtr targetModel = new PhysicalModel(PhysicalModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode("Instances")));
     EXPECT_EQ( DgnDbStatus::Success , targetModel->Insert() );       /* Insert the new model into the DgnDb */
     return targetModel;
     }

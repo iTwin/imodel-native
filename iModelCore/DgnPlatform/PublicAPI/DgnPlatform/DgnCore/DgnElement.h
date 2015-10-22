@@ -54,6 +54,8 @@ public:
     DgnGeomPartId Add(DgnGeomPartId sourceId, DgnGeomPartId targetId) {return m_geomPartId[sourceId] = targetId;}
     DgnCategoryId Find(DgnCategoryId sourceId) const {return FindElement<DgnCategoryId>(sourceId);}
     DgnCategoryId Add(DgnCategoryId sourceId, DgnCategoryId targetId) {return DgnCategoryId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
+    DgnMaterialId Find(DgnMaterialId sourceId) const { return FindElement<DgnMaterialId>(sourceId); }
+    DgnMaterialId Add(DgnMaterialId sourceId, DgnMaterialId targetId) { return DgnMaterialId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
 
     DgnSubCategoryId Find(DgnSubCategoryId sourceId) const {return FindElement<DgnSubCategoryId>(sourceId);}
     DgnSubCategoryId Add(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {return DgnSubCategoryId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
@@ -104,14 +106,26 @@ public:
     DgnElementId AddElementId(DgnElementId sourceId, DgnElementId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a GeomPart has been imported
     DGNPLATFORM_EXPORT DgnGeomPartId RemapGeomPartId(DgnGeomPartId sourceId);
+    //! Look up a copy of a Category
+    DgnCategoryId FindCategory(DgnCategoryId sourceId) const { return m_remap.Find(sourceId); }
+    //! Register a copy of a Category
+    DgnCategoryId AddCategory(DgnCategoryId sourceId, DgnCategoryId targetId) { return m_remap.Add(sourceId, targetId); }
     //! Make sure that a Category has been imported
     DGNPLATFORM_EXPORT DgnCategoryId RemapCategory(DgnCategoryId sourceId);
     //! Look up a copy of an subcategory
     DgnSubCategoryId FindSubCategory(DgnSubCategoryId sourceId) const {return m_remap.Find(sourceId);}
+    //! Register a copy of a SubCategory
+    DgnSubCategoryId AddSubCategory(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a SubCategory has been imported
     DGNPLATFORM_EXPORT DgnSubCategoryId RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId sourceId);
     //! Make sure that an ECClass has been imported
     DGNPLATFORM_EXPORT DgnClassId RemapClassId(DgnClassId sourceId);
+    //! Look up a copy of a Category
+    DgnMaterialId FindMaterialId(DgnMaterialId sourceId) const {return m_remap.Find(sourceId);}
+    //! Register a copy of a Material
+    DgnMaterialId AddMaterialId(DgnMaterialId sourceId, DgnMaterialId targetId) {return m_remap.Add(sourceId, targetId);}
+    //! Make sure that a Material has been imported
+    DGNPLATFORM_EXPORT DgnMaterialId RemapMaterialId(DgnMaterialId sourceId);
     //! @}
 
     //! @name GCS coordinate system shift
@@ -574,13 +588,13 @@ public:
     };
 
     //! Allows a business key (unique identifier string) from an external system (identified by DgnAuthorityId) to be associated with a DgnElement via a persistent ElementAspect
-    struct EXPORT_VTABLE_ATTRIBUTE ExternalKey : AppData
+    struct EXPORT_VTABLE_ATTRIBUTE ExternalKeyAspect : AppData
     {
     private:
         DgnAuthorityId m_authorityId;
         Utf8String m_externalKey;
 
-        ExternalKey(DgnAuthorityId authorityId, Utf8CP externalKey)
+        ExternalKeyAspect(DgnAuthorityId authorityId, Utf8CP externalKey)
             {
             m_authorityId = authorityId;
             m_externalKey = externalKey;
@@ -591,26 +605,24 @@ public:
 
     public:
         DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
-        DGNPLATFORM_EXPORT static RefCountedPtr<ExternalKey> Create(DgnAuthorityId authorityId, Utf8CP externalKey);
-        DGNPLATFORM_EXPORT static DgnDbStatus QueryExternalKey(Utf8StringR, DgnElementCR, DgnAuthorityId);
+        DGNPLATFORM_EXPORT static RefCountedPtr<ExternalKeyAspect> Create(DgnAuthorityId authorityId, Utf8CP externalKey);
+        DGNPLATFORM_EXPORT static DgnDbStatus Query(Utf8StringR, DgnElementCR, DgnAuthorityId);
         DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR, DgnAuthorityId);
         DgnAuthorityId GetAuthorityId() const {return m_authorityId;}
         Utf8CP GetExternalKey() const {return m_externalKey.c_str();}
     };
 
-    typedef RefCountedPtr<ExternalKey> ExternalKeyPtr;
+    typedef RefCountedPtr<ExternalKeyAspect> ExternalKeyAspectPtr;
 
-    //! Allows a description to be associated with a DgnElement via a persistent ElementAspect
-    struct EXPORT_VTABLE_ATTRIBUTE Description : AppData
+    //! Allows a name to be associated with a DgnElement via a persistent ElementAspect
+    struct EXPORT_VTABLE_ATTRIBUTE NameAspect : AppData
     {
     private:
-        DgnAuthorityId m_authorityId;
-        Utf8String m_description;
+        Utf8String m_name;
 
-        Description(DgnAuthorityId authorityId, Utf8CP description)
+        explicit NameAspect(Utf8CP name)
             {
-            m_authorityId = authorityId;
-            m_description = description;
+            m_name.AssignOrClear(name);
             }
 
     protected:
@@ -618,14 +630,37 @@ public:
 
     public:
         DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
-        DGNPLATFORM_EXPORT static RefCountedPtr<Description> Create(DgnAuthorityId authorityId, Utf8CP description);
-        DGNPLATFORM_EXPORT static DgnDbStatus QueryDescription(Utf8StringR, DgnElementCR, DgnAuthorityId);
-        DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR, DgnAuthorityId);
-        DgnAuthorityId GetAuthorityId() const {return m_authorityId;}
+        DGNPLATFORM_EXPORT static RefCountedPtr<NameAspect> Create(Utf8CP name);
+        DGNPLATFORM_EXPORT static DgnDbStatus Query(Utf8StringR name, DgnElementCR);
+        DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR);
+        Utf8CP GetName() const {return m_name.c_str();}
+    };
+
+    typedef RefCountedPtr<NameAspect> NameAspectPtr;
+
+    //! Allows a description to be associated with a DgnElement via a persistent ElementAspect
+    struct EXPORT_VTABLE_ATTRIBUTE DescriptionAspect : AppData
+    {
+    private:
+        Utf8String m_description;
+
+        explicit DescriptionAspect(Utf8CP description)
+            {
+            m_description.AssignOrClear(description);
+            }
+
+    protected:
+        DGNPLATFORM_EXPORT virtual DropMe _OnInserted(DgnElementCR) override;
+
+    public:
+        DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
+        DGNPLATFORM_EXPORT static RefCountedPtr<DescriptionAspect> Create(Utf8CP description);
+        DGNPLATFORM_EXPORT static DgnDbStatus Query(Utf8StringR description, DgnElementCR);
+        DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR);
         Utf8CP GetDescription() const {return m_description.c_str();}
     };
 
-    typedef RefCountedPtr<Description> DescriptionPtr;
+    typedef RefCountedPtr<DescriptionAspect> DescriptionAspectPtr;
 
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
@@ -637,7 +672,6 @@ protected:
     struct Flags
     {
         uint32_t m_persistent:1;
-        uint32_t m_editable:1;
         uint32_t m_lockHeld:1;
         uint32_t m_inSelectionSet:1;
         uint32_t m_hilited:3;
@@ -861,7 +895,7 @@ protected:
     //! The default implementation sets the parent without doing any checking.
     //! @return DgnDbStatus::Success if the parentId was changed, error status otherwise.
     //! Override to validate the parent/child relationship and return a value other than DgnDbStatus::Success to reject proposed new parent.
-    virtual DgnDbStatus _SetParentId(DgnElementId parentId) {m_parentId = parentId; return DgnDbStatus::Success;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetParentId(DgnElementId parentId);
 
     //! Change the code of this DgnElement.
     //! The default implementation sets the code without doing any checking.

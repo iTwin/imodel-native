@@ -95,7 +95,7 @@ TEST_F (DgnTexturesTest, InsertQueryUpdateDelete)
     Compare(*tx2Edit, tx2);
 
     tx2Edit->SetDescription("New description");
-    EXPECT_EQ(DgnDbStatus::Success, tx2Edit->SetCode(DgnTexture::CreateTextureCode("Texture2Renamed", db)));
+    EXPECT_EQ(DgnDbStatus::Success, tx2Edit->SetCode(DgnTexture::CreateTextureCode("Texture2Renamed")));
     tx2Edit->SetData(MakeTextureData(DgnTexture::Format::JPEG, 9, 18));
 
     DgnDbStatus status;

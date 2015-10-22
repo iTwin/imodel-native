@@ -1,0 +1,201 @@
+//-------------------------------------------------------------------------------------- 
+//     $Source: Tests/DgnProject/Published/ChangeTestFixture.cpp $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//-------------------------------------------------------------------------------------- 
+
+#include "ChangeTestFixture.h"
+
+USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_SQLITE
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    06/2015
+//---------------------------------------------------------------------------------------
+void ChangeTestFixture::CreateSeedDgnDb(BeFileNameR seedPathname)
+    {
+    seedPathname = DgnDbTestDgnManager::GetOutputFilePath(L"ChangeTestSeed.dgndb");
+    if (seedPathname.DoesPathExist())
+        return;
+
+    CreateDgnDbParams createProjectParams;
+    createProjectParams.SetOverwriteExisting(true);
+
+    DbResult createStatus;
+    DgnDbPtr seedDgnDb = DgnDb::CreateDgnDb(&createStatus, seedPathname, createProjectParams);
+    ASSERT_TRUE(seedDgnDb.IsValid()) << "Could not create seed project";
+
+    seedDgnDb->CloseDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    06/2015
+//---------------------------------------------------------------------------------------
+void ChangeTestFixture::CreateDgnDb(WCharCP testFileName)
+    {
+    // Note: Since creating the DgnDb everytime consumes too much time, we instead
+    // just copy one we have created the first time around. 
+
+    BeFileName pathname = DgnDbTestDgnManager::GetOutputFilePath(testFileName);
+    if (pathname.DoesPathExist())
+        BeFileName::BeDeleteFile(pathname);
+
+    BeFileName seedPathname;
+    CreateSeedDgnDb(seedPathname);
+
+    BeFileNameStatus fileStatus = BeFileName::BeCopyFile(seedPathname.c_str(), pathname.c_str());
+    ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
+
+    OpenDgnDb(testFileName);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    06/2015
+//---------------------------------------------------------------------------------------
+void ChangeTestFixture::OpenDgnDb(WCharCP testFileName)
+    {
+    DbResult openStatus;
+    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
+    m_testDb = DgnDb::OpenDgnDb(&openStatus, DgnDbTestDgnManager::GetOutputFilePath(testFileName), openParams);
+    ASSERT_TRUE(m_testDb.IsValid()) << "Could not open test project";
+
+    DgnModelId modelId = m_testDb->Models().QueryFirstModelId();
+    if (modelId.IsValid())
+        m_testModel = m_testDb->Models().GetModel(modelId).get();
+
+    m_testDb->Txns().EnableTracking(true); // TODO: Check why this isn't automatically enabled
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    06/2015
+//---------------------------------------------------------------------------------------
+void ChangeTestFixture::CloseDgnDb()
+    {
+    m_testDb->CloseDb();
+    m_testModel = nullptr;
+    m_testDb = nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    06/2015
+//---------------------------------------------------------------------------------------
+void ChangeTestFixture::InsertModel()
+    {
+    ModelHandlerR handler = dgn_ModelHandler::Physical::GetHandler();
+    DgnClassId classId = m_testDb->Domains().GetClassId(handler);
+    m_testModel = handler.Create(DgnModel::CreateParams(*m_testDb, classId, DgnModel::CreateModelCode("ChangeSetModel")));
+
+    DgnDbStatus status = m_testModel->Insert();
+    ASSERT_TRUE(DgnDbStatus::Success == status);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    03/2015
+//---------------------------------------------------------------------------------------
+void ChangeTestFixture::CreateDefaultView()
+    {
+    ASSERT_TRUE(m_testModel.IsValid());
+
+    DgnViews::View viewRow;
+    DgnClassId classId(m_testDb->Schemas().GetECClassId("dgn", "CameraView"));
+    viewRow.SetDgnViewType(classId, DgnViewType::Physical);
+    viewRow.SetDgnViewSource(DgnViewSource::Generated);
+    viewRow.SetName("Default");
+    viewRow.SetBaseModelId(m_testModel->GetModelId());
+    DbResult result = m_testDb->Views().Insert(viewRow);
+    BeAssert(BE_SQLITE_OK == result);
+    BeAssert(viewRow.GetId().IsValid());
+
+    PhysicalViewController viewController(*m_testDb, viewRow.GetId());
+    viewController.SetStandardViewRotation(StandardView::Iso);
+    viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::SmoothShade);
+
+    for (auto const& catId : DgnCategory::QueryCategories(*m_testDb))
+        viewController.ChangeCategoryDisplay(catId, true);
+
+    DgnModels::Iterator modIter = m_testDb->Models().MakeIterator();
+    for (auto& entry : modIter)
+        {
+        DgnModelId modelId = entry.GetModelId();
+        viewController.ChangeModelDisplay(modelId, true);
+        }
+
+    result = viewController.Save();
+    BeAssert(BE_SQLITE_OK == result);
+
+    DgnViewId viewId = viewRow.GetId();
+    m_testDb->SaveProperty(DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
+    m_testDb->SaveSettings();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    08/2015
+//---------------------------------------------------------------------------------------
+void ChangeTestFixture::UpdateDgnDbExtents()
+    {
+    AxisAlignedBox3d physicalExtents;
+    physicalExtents = m_testDb->Units().ComputeProjectExtents();
+    m_testDb->Units().SaveProjectExtents(physicalExtents);
+
+    DgnViews::Iterator iter = m_testDb->Views().MakeIterator((int) DgnViewType::Physical);
+    BeAssert(iter.begin() != iter.end());
+
+    DgnViewId viewId = iter.begin().GetDgnViewId();
+
+    ViewControllerPtr viewController = m_testDb->Views().LoadViewController(viewId, DgnViews::FillModels::No);
+    viewController->LookAtVolume(physicalExtents);
+    DbResult result = viewController->Save();
+    BeAssert(result == BE_SQLITE_OK);
+
+    m_testDb->SaveSettings();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    06/2015
+//---------------------------------------------------------------------------------------
+void ChangeTestFixture::InsertCategory()
+    {
+    DgnCategory category(DgnCategory::CreateParams(*m_testDb, "ChangeSetTestCategory", DgnCategory::Scope::Physical, DgnCategory::Rank::Application));
+
+    DgnSubCategory::Appearance appearance;
+    appearance.SetColor(ColorDef::White());
+
+    auto persistentCategory = category.Insert(appearance);
+    ASSERT_TRUE(persistentCategory.IsValid());
+
+    m_testCategoryId = persistentCategory->GetCategoryId();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    08/2015
+//---------------------------------------------------------------------------------------
+void ChangeTestFixture::InsertAuthority()
+    {
+    m_testAuthority = NamespaceAuthority::CreateNamespaceAuthority("ChangeTestAuthority", *m_testDb);
+    ASSERT_TRUE(DgnDbStatus::Success == m_testAuthority->Insert());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    06/2015
+//---------------------------------------------------------------------------------------
+DgnElementId ChangeTestFixture::InsertElement(int x, int y, int z)
+    {
+    PhysicalModelP physicalTestModel = dynamic_cast<PhysicalModelP> (m_testModel.get());
+    BeAssert(physicalTestModel != nullptr);
+    BeAssert(m_testCategoryId.IsValid());
+
+    PhysicalElementPtr testElement = PhysicalElement::Create(*physicalTestModel, m_testCategoryId);
+
+    DPoint3d sizeOfBlock = DPoint3d::From(1, 1, 1);
+    DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(0, 0, 0), sizeOfBlock, true);
+    ISolidPrimitivePtr testGeomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
+    BeAssert(testGeomPtr.IsValid());
+
+    DPoint3d centerOfBlock = DPoint3d::From(x, y, z);
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*physicalTestModel, m_testCategoryId, centerOfBlock, YawPitchRollAngles());
+    builder->Append(*testGeomPtr);
+    BentleyStatus status = builder->SetGeomStreamAndPlacement(*testElement);
+    BeAssert(status == SUCCESS);
+
+    DgnElementId elementId = m_testDb->Elements().Insert(*testElement)->GetElementId();
+    return elementId;
+    }

@@ -12,6 +12,8 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+struct SystemAuthority;
+
 //=======================================================================================
 //! A DgnAuthority serves issues DgnAuthority::Codes when objects are created and cloned.
 // @bsistruct                                                    Paul.Connelly   09/15
@@ -19,59 +21,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct EXPORT_VTABLE_ATTRIBUTE DgnAuthority : RefCountedBase
 {
 public:
-    //=======================================================================================
-    //! A Code is an identifier associated with some object in a DgnDb and issued by a
-    //! DgnAuthority according to some scheme. The meaning of a Code is determined by the
-    //! issuing authority. The issuing authority determines
-    //! how (or if) an object's code is transformed when the object is cloned.
-    //!
-    //! The Code is stored as a three-part identifier: DgnAuthorityId, namespace, and value.
-    //! The combination of the three must be unique within all objects of a given type
-    //! (e.g., Elements, Models) within a DgnDb. 
-    //!
-    //! The authority ID must be non-null and identify a valid authority.
-    //! The namespace may not be null, but may be a blank string.
-    //! The value may be null if and only if the namespace is blank, signifying that the authority
-    //! assigns no special meaning to the object's code.
-    //! The value may not be an empty string.
-    //!
-    //! To obtain a Code, talk to the relevant DgnAuthority.
-    // @bsiclass                                                     Paul.Connelly  09/15
-    //=======================================================================================
-    struct Code
-    {
-    private:
-        DgnAuthorityId  m_authority;
-        Utf8String      m_value;
-        Utf8String      m_nameSpace;
-
-        friend struct DgnAuthority;
-        friend struct DgnElements;
-        friend struct DgnModel;
-
-        Code(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) { }
-    public:
-        //! Constructs an empty, invalid code
-        Code() { }
-
-        //! Determine whether this Code is valid. A valid code has a valid authority ID and either:
-        //!     - An empty namespace and value; or
-        //!     - A non-empty value
-        bool IsValid() const {return m_authority.IsValid() && (IsEmpty() || !m_value.empty());}
-        //! Determine if this code is valid but not otherwise meaningful (and therefore not necessarily unique)
-        bool IsEmpty() const {return m_authority.IsValid() && m_nameSpace.empty() && m_value.empty();}
-        //! Determine if two Codes are equivalent
-        bool operator==(Code const& other) const {return m_authority==other.m_authority && m_value==other.m_value && m_nameSpace==other.m_nameSpace;}
-
-        //! Get the value for this Code
-        Utf8StringCR GetValue() const {return m_value;}
-        Utf8CP GetValueCP() const {return !m_value.empty() ? m_value.c_str() : nullptr;}
-        //! Get the namespace for this Code
-        Utf8StringCR GetNameSpace() const {return m_nameSpace;}
-        //! Get the DgnAuthorityId of the DgnAuthority that issued this Code.
-        DgnAuthorityId GetAuthority() const {return m_authority;}
-        void RelocateToDestinationDb(DgnImportContext&);
-    };
+    typedef AuthorityIssuedCode Code;
 
     struct CreateParams
     {
@@ -84,7 +34,6 @@ public:
         CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, Utf8CP uri=nullptr, DgnAuthorityId id=DgnAuthorityId()) :
             m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name), m_uri(uri) { }
     };
-
 protected:
     friend struct DgnAuthorities;
     friend struct dgn_AuthorityHandler::Authority;
