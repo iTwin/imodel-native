@@ -3658,10 +3658,10 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
         AssertIndex(ecdb, "ix_ts_B_ecclassid", false, "ts_B", {"ECClassId"});
 
         //These two are redundant and need to be detected by ECDb to only be one
-        AssertIndex(ecdb, "uix_ts_B_fk_ts_Rel11_target", true, "ts_B", {"sc03"}, indexWhereClause.c_str());
-        AssertIndex(ecdb, "uix_ts_B_fk_ts_AnotherRel11_target", true, "ts_B", {"sc03"}, indexWhereClause.c_str());
+        AssertIndex(ecdb, "uix_ts_B_fk_ts_Rel11_target", true, "ts_B", {"sc03"}, indexWhereClause.c_str()); //this one is kept
+        AssertIndexExists(ecdb, "uix_ts_B_fk_ts_AnotherRel11_target", false); //this one is dropped
 
-        ASSERT_EQ(4, (int) RetrieveIndicesForTable(ecdb, "ts_B").size());
+        ASSERT_EQ(3, (int) RetrieveIndicesForTable(ecdb, "ts_B").size());
         }
 
         {
