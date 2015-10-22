@@ -209,9 +209,9 @@ bool DTMFeatureEnumerator::MoveNext (long& m_index, size_t& m_nextSourceFeatureI
         if (m_filterByFeatureId && m_featureIdFilter != dtmFeatureP->dtmFeatureId)
             continue;
 
-        if ((m_userTagLow <= m_userTagHigh) && (
-            m_userTagLow > dtmFeatureP->dtmUserTag ||
-            m_userTagHigh < dtmFeatureP->dtmUserTag))
+        if ((m_userTagLow < m_userTagHigh) && (
+            m_userTagLow >= dtmFeatureP->dtmUserTag &&
+            m_userTagHigh <= dtmFeatureP->dtmUserTag))
             continue;
 
         if (m_filterByFeatureType)
@@ -767,13 +767,13 @@ errexit:
     }
 
 void DTMMeshEnumerator::ScanAndMarkRegions () const
-    {  
+    {
     m_regionPointMask.resize (m_dtmP->numPoints);
     DTMFeatureEnumeratorPtr regionEnumerator = DTMFeatureEnumerator::Create (*m_dtm.get ());
     regionEnumerator->ExcludeAllFeatures ();
     regionEnumerator->IncludeFeature (DTMFeatureType::Region);
     regionEnumerator->SetReadSourceFeatures (false);
-      
+
     if (m_regionMode == RegionMode::RegionFeatureId)
         regionEnumerator->SetFeatureIdFilter (m_regionFeatureId);
     else if (m_regionMode == RegionMode::RegionUserTag)
@@ -1158,82 +1158,64 @@ PolyfaceQueryP DTMMeshEnumerator::iterator::operator* () const
     */
     minTptrPnt = m_dtmP->numPoints;
     maxTptrPnt = -1;
+
+    numMeshPts = 0;
+    for (long face : m_p_vec->meshFaces)
+        {
+        nodeP = nodeAddrP (m_dtmP, face);
+        if (nodeP->tPtr == nullPnt)
+            {
+            if (face < minTptrPnt) minTptrPnt = face;
+            else if (face > maxTptrPnt) maxTptrPnt = face;
+            nodeP->tPtr = ++numMeshPts;
+            }
+        }
+    if (dbg) bcdtmWrite_message (0, 0, 0, "minTptrPoint = %8ld maxTptrPoint = %8ld", minTptrPnt, maxTptrPnt);
+
+    if (maxTptrPnt == -1) maxTptrPnt = minTptrPnt;
+    /*
+    **                       Allocate Memory For Mesh Points
+    */
+    if (dbg) bcdtmWrite_message (0, 0, 0, "Populating Mesh Points ** numMeshPts = %8ld", numMeshPts);
     BlockedVectorDPoint3dR points = m_p_vec->meshPoints;
     BlockedVectorDVec3dR normals = m_p_vec->meshNormals;
-
-    if (!m_p_vec->m_useRealPointIndexes)
+    points.resize (numMeshPts);
+    normals.resize (numMeshPts);
+    /*
+    **                       Populate Mesh Points Array And Mesh Vectors Array
+    */
+    for (node = minTptrPnt; node <= maxTptrPnt; ++node)
         {
-        numMeshPts = 0;
-        for (long face : m_p_vec->meshFaces)
+        nodeP = nodeAddrP (m_dtmP, node);
+        if (nodeP->tPtr > 0 && nodeP->tPtr < m_dtmP->nullPnt)
             {
-            nodeP = nodeAddrP(m_dtmP, face);
-            if (nodeP->tPtr == nullPnt)
+            p3dP = points.GetPtr () + (nodeP->tPtr - 1);
+            normP = normals.GetPtr () + (nodeP->tPtr -1);
+            pntP = pointAddrP (m_dtmP, node);
+            p3dP->x = pntP->x;
+            p3dP->y = pntP->y;
+            if (m_p_vec->zAxisFactor != 1)
                 {
-                if (face < minTptrPnt) minTptrPnt = face;
-                else if (face > maxTptrPnt) maxTptrPnt = face;
-                nodeP->tPtr = ++numMeshPts;
+                dz = (pntP->z - m_dtmP->zMin) * m_p_vec->zAxisFactor;
+                p3dP->z = m_dtmP->zMin + dz;
                 }
+            else
+                p3dP->z = pntP->z;
+
+            // Convert Point.
+//            p3dP++;
+
+            bcdtmLoad_calculateNormalVectorForTriangleVertexDtmObject (m_dtmP, node, 2, m_p_vec->zAxisFactor, normP);
+            // Rotate normal....
+//            ++normP;
             }
-        if (dbg) bcdtmWrite_message(0, 0, 0, "minTptrPoint = %8ld maxTptrPoint = %8ld", minTptrPnt, maxTptrPnt);
-
-        if (maxTptrPnt == -1) maxTptrPnt = minTptrPnt;
-        /*
-        **                       Allocate Memory For Mesh Points
-        */
-        if (dbg) bcdtmWrite_message(0, 0, 0, "Populating Mesh Points ** numMeshPts = %8ld", numMeshPts);
-        points.resize(numMeshPts);
-        normals.resize(numMeshPts);
-        /*
-        **                       Populate Mesh Points Array And Mesh Vectors Array
-        */
-        for (node = minTptrPnt; node <= maxTptrPnt; ++node)
-            {
-            nodeP = nodeAddrP(m_dtmP, node);
-            if (nodeP->tPtr > 0 && nodeP->tPtr < m_dtmP->nullPnt)
-                {
-                p3dP = points.GetPtr() + (nodeP->tPtr - 1);
-                normP = normals.GetPtr() + (nodeP->tPtr - 1);
-                pntP = pointAddrP(m_dtmP, node);
-                p3dP->x = pntP->x;
-                p3dP->y = pntP->y;
-                if (m_p_vec->zAxisFactor != 1)
-                    {
-                    dz = (pntP->z - m_dtmP->zMin) * m_p_vec->zAxisFactor;
-                    p3dP->z = m_dtmP->zMin + dz;
-                    }
-                else
-                    p3dP->z = pntP->z;
-
-                // Convert Point.
-                //            p3dP++;
-
-                bcdtmLoad_calculateNormalVectorForTriangleVertexDtmObject(m_dtmP, node, 2, m_p_vec->zAxisFactor, normP);
-                // Rotate normal....
-                //            ++normP;
-                }
-            }
-        /*
-        **                       Reset Point Indexes In Mesh Faces
-        */
-        for (int& ptIndex : m_p_vec->meshFaces)
-            ptIndex = nodeAddrP(m_dtmP, ptIndex)->tPtr;
         }
-    else
-        {
-        numMeshPts = 0;
-        for (long face : m_p_vec->meshFaces)
-            {
-            nodeP = nodeAddrP(m_dtmP, face);
-            if (nodeP->tPtr == nullPnt)
-                {
-                if (face < minTptrPnt) minTptrPnt = face;
-                else if (face > maxTptrPnt) maxTptrPnt = face;
-                }
-            }
-        if (dbg) bcdtmWrite_message(0, 0, 0, "minTptrPoint = %8ld maxTptrPoint = %8ld", minTptrPnt, maxTptrPnt);
+    /*
+    **                       Reset Point Indexes In Mesh Faces
+    */   
+    for (int& ptIndex : m_p_vec->meshFaces)
+        ptIndex = nodeAddrP (m_dtmP, ptIndex)->tPtr;
 
-        if (maxTptrPnt == -1) maxTptrPnt = minTptrPnt;
-        }
     /*
     **                       Null Tptr Values
     */

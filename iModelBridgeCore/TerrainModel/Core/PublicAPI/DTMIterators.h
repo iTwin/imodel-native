@@ -248,7 +248,6 @@ struct DTMMeshEnumerator : RefCountedBase
     private: mutable DRange3d m_range;
     private: mutable bool m_calcRange = false;
     private: bool m_tilingMode;
-    private: bool m_useRealPointIndexes = false;
     private: RegionMode m_regionMode = RegionMode::Normal;
     private: DTMUserTag m_regionUserTag;
     private: DTMFeatureId m_regionFeatureId;
@@ -266,21 +265,10 @@ struct DTMMeshEnumerator : RefCountedBase
     public: BENTLEYDTM_EXPORT iterator end () const;
     public: BENTLEYDTM_EXPORT DRange3d DTMMeshEnumerator::GetRange () const;
 
-
-    public: void SetUseRealPointIndexes(bool value)
-        {
-        m_useRealPointIndexes = value;
-        Reset();
-        }
-    public: bool GetUseRealPointIndexes() const
-        {
-        return m_useRealPointIndexes;
-        }
     public: void SetFilterRegionByUserTag (DTMUserTag value)
         {
         m_regionMode = RegionMode::RegionUserTag;
         m_regionUserTag = value;
-        Reset();
         }
 
     public: DTMUserTag GetFilterRegionByUserTag () const
@@ -290,9 +278,8 @@ struct DTMMeshEnumerator : RefCountedBase
 
     public: void SetFilterRegionByFeatureId (DTMFeatureId value)
         {
-        m_regionMode = RegionMode::RegionFeatureId;
+        m_regionMode = RegionMode::RegionUserTag;
         m_regionFeatureId = value;
-        Reset();
         }
 
     public: DTMFeatureId  GetFilterRegionByFeatureId () const
@@ -303,7 +290,6 @@ struct DTMMeshEnumerator : RefCountedBase
     public: void SetExcludeAllRegions ()
         {
         m_regionMode = RegionMode::NonRegion;
-        Reset();
         }
 
     public: bool GetExcludeAllRegions ()
@@ -319,17 +305,14 @@ struct DTMMeshEnumerator : RefCountedBase
     public: void SetFence (DTMFenceParams& fence)
         {
         m_fence = DTMFenceParams (fence.fenceType, fence.fenceOption, fence.points, fence.numPoints);
-        Reset();
         }
     public: void SetMaxTriangles (int value)
         {
         maxTriangles = value;
-        Reset();
         }
     public: void SetTilingMode (bool value)
         {
         m_tilingMode = value;
-        Reset();
         }
 
     };
