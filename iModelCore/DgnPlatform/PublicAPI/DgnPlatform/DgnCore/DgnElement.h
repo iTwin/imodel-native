@@ -264,6 +264,26 @@ public:
         Background   = 2, //!< the element is displayed with the background color
     };
 
+    //! Identifies actions which may be restricted for elements created by a handler for a missing ECClass.
+    struct RestrictedActions
+    {
+        static const uint64_t None = 0; //!< No restrictions
+        static const uint64_t Delete = 1 << 0; //!< Delete element
+        static const uint64_t Copy = 1 << 1; //!< Create a copy of element
+
+        static const uint64_t RESERVED_2 = 1 << 2; //!< Reserved for future use 
+        static const uint64_t RESERVED_3 = 1 << 3; //!< Reserved for future use 
+        static const uint64_t RESERVED_4 = 1 << 4; //!< Reserved for future use 
+        static const uint64_t RESERVED_5 = 1 << 5; //!< Reserved for future use 
+        static const uint64_t RESERVED_6 = 1 << 6; //!< Reserved for future use 
+        static const uint64_t RESERVED_7 = 1 << 7; //!< Reserved for future use 
+        static const uint64_t RESERVED_8 = 1 << 8; //!< Reserved for future use 
+        static const uint64_t RESERVED_9 = 1 << 9; //!< Reserved for future use 
+        static const uint64_t RESERVED_A = 1 << 0xA; //!< Reserved for future use 
+
+        static const uint64_t MAX = 1 << 0xB; //!< Subclasses can add new actions beginning with this value
+    };
+
     //! Application data attached to a DgnElement. Create a subclass of this to store non-persistent information on a DgnElement.
     struct EXPORT_VTABLE_ATTRIBUTE AppData : RefCountedBase
     {

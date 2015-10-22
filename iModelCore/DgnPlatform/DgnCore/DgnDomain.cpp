@@ -353,8 +353,16 @@ DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId bas
     handler = FindHandler(DgnClassId(superClass->GetId()), baseClassId);
     if (nullptr != handler)
         {
-        m_handlers.Insert(handlerId, handler); // cache this result for all baseclasses
-        return handler;
+        // ###TODO Test if class HasHandler
+        // ###TODO Whether missing or not, set the handler's ECClassName to match that of the subclass
+        //  umm why? And we can't modify the base handler if class is NOT missing but simply doesn't have its own handler.
+        //  GetClassName() returns the name of the class the *handler* handles.
+        handler = handler->_CreateMissingHandler(0 /* ###TODO look up restrictions */);
+        if (nullptr != handler)
+            {
+            m_handlers.Insert(handlerId, handler); // cache this result for all baseclasses
+            return handler;
+            }
         }
 
     // the handlerId supplied must not derive from baseClassId or no registered handlers exist for any baseclasses

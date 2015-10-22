@@ -27,6 +27,7 @@
 #define DOMAINHANDLER_DECLARE_MEMBERS_NO_CTOR(__classname__,__exporter__) \
     private:   __exporter__ static __classname__*& z_PeekInstance(); \
                             static __classname__* z_CreateInstance(); \
+    protected: virtual Dgn::DgnDomain::Handler* _CreateMissingHandler(uint64_t restrictions) const override {return new Dgn::DgnDomain::MissingHandler<__classname__>(restrictions);}\
     public:    __exporter__ static __classname__& GetHandler() {return z_Get##__classname__##Instance();}\
                __exporter__ static __classname__& z_Get##__classname__##Instance();
 
@@ -109,6 +110,21 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
 
     //! The current version of the HandlerAPI
     enum {API_VERSION = 1};
+
+    struct Handler;
+
+    //! A template used to create a proxy handler of a superclass when the handler subclass cannot be found at run-time.
+    //! The proxy handler can restrict the behavior of the superclass according to restrictions imposed by the subclass.
+    template<typename T> struct MissingHandler : T
+    {
+    private:
+        uint64_t m_restrictions;
+
+        virtual DgnDomain::Handler* _CreateMissingHandler(uint64_t restrictions) const override { return T::_CreateMissingHandler(restrictions); }
+        virtual bool _IsRestrictedAction(uint64_t restrictedAction) const override { return 0 != (m_restrictions & restrictedAction); }
+    public:
+        explicit MissingHandler(uint64_t restrictions) : m_restrictions(restrictions) { }
+    };
 
     //! A DgnDomain::Handler is a C++ singleton object that provides an implementation for an ECClass and all of its subclasses.
     //! A DgnDomain::Handler must be registered with its DgnDomain via DgnDomain::RegisterHandler before any DgnDbs are created or opened.
@@ -218,6 +234,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         void SetSuperClass(Handler* super) {m_superClass = super;}
         void SetDomain(DgnDomain& domain) {m_domain = &domain;}
         DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&);
+        virtual Handler* _CreateMissingHandler(uint64_t restrictions) const { return new MissingHandler<Handler>(restrictions); }
 
         Handler* GetRootClass();
     public:
@@ -242,6 +259,10 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
 
         //! get a localized description of this handler's class
         virtual void _GetLocalizedDescription(Utf8StringR descr, uint32_t desiredLength) {descr = "";}
+
+        //! Query whether the specified action is disallowed. This function will only return true for a proxy handler associated with a missing ECClass.
+        //! The meaning of the input is defined by specific handler subclasses.
+        virtual bool _IsRestrictedAction(uint64_t restrictedAction) const { return false; }
 
         virtual ElementHandlerP _ToElementHandler() {return nullptr;}       //!< dynamic_cast this Handler to an ElementHandler
         virtual ModelHandlerP _ToModelHandler() {return nullptr;}           //!< dynamic_cast this Handler to a ModelHandler
