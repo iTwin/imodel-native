@@ -73,7 +73,7 @@ DLM_NAME                = $(assemblyName)
 RIGHTSCOMPLIANT         = true
 DLM_DEST                = $(o)
 DLM_OBJECT_FILES        = $(objList)
-LINKER_LIBRARIES        = $(BuildContextSubPartsLibraries)
+LINKER_LIBRARIES_DELAYLOADED        = $(BuildContextSubPartsLibraries)
 
 DLM_NO_DEF              = 1
 DLM_NO_IMPLIB           = 1
