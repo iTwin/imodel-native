@@ -82,10 +82,16 @@ TEST_F(PerformanceECSqlVsSqliteTests, UpdateWithWhereClauseWithPrimaryKey)
     for (ECInstanceId const& id : th3Ids)
         {
         if (ECSqlStatus::Success != stmt.BindId(1, id))
+            {
+            FAIL () << "ECSQL UPDATE bind failed";
             return;
+            }
 
         if (BE_SQLITE_DONE != stmt.Step())
+            {
+            FAIL() << "ECSQL UPDATE Step failed";
             return;
+            }
 
         stmt.Reset();
         stmt.ClearBindings();
@@ -106,10 +112,16 @@ TEST_F(PerformanceECSqlVsSqliteTests, UpdateWithWhereClauseWithPrimaryKey)
     for (ECInstanceId const& id : th3Ids)
         {
         if (BE_SQLITE_OK != stmt.BindId(1, id))
+            {
+            FAIL() << "SQL UPDATE bind failed";
             return;
+            }
 
         if (BE_SQLITE_DONE != stmt.Step())
+            {
+            FAIL() << "SQL UPDATE Step failed";
             return;
+            }
 
         stmt.Reset();
         stmt.ClearBindings();
@@ -150,10 +162,16 @@ TEST_F(PerformanceECSqlVsSqliteTests, UpdateWithWhereClauseWithPrimaryKey)
     for (ECInstanceId const& id : th3Ids)
         {
         if (BE_SQLITE_OK != stmt.BindId(1, id))
+            {
+            FAIL() << "SQL UPDATE bind failed";
             return;
+            }
 
         if (BE_SQLITE_DONE != stmt.Step())
+            {
+            FAIL() << "SQL UPDATE Step failed";
             return;
+            }
 
         stmt.Reset();
         stmt.ClearBindings();
