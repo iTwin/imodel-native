@@ -779,12 +779,29 @@ void DTMMeshEnumerator::ScanAndMarkRegions () const
     else if (m_regionMode == RegionMode::RegionUserTag)
         regionEnumerator->SetUserTagFilter (m_regionUserTag);
 
+    long  minPnt = m_dtmP->numPoints + 1, maxPnt = -1;
     for (DTMFeatureInfo info : *regionEnumerator)
-        ScanAndMarkRegion (info.FeatureIndex ());
+        {
+        long  tmpMinPnt = 0, tmpMaxPnt = 0;
+
+        ScanAndMarkRegion(info.FeatureIndex(), tmpMinPnt, tmpMaxPnt);
+        if (minPnt > tmpMinPnt)
+            minPnt = tmpMinPnt;
+        if (maxPnt < tmpMaxPnt)
+            maxPnt = tmpMaxPnt;
+        }
     bcdtmList_nullTptrValuesDtmObject (m_dtmP);
+
+    if (m_regionMode != RegionMode::NonRegion)
+        {
+        if (leftMostPnt < minPnt)
+            leftMostPnt = minPnt;
+        if (lastPnt > maxPnt)
+            lastPnt = maxPnt;
+        }
     }
 
-void DTMMeshEnumerator::ScanAndMarkRegion (long featureIndex) const
+void DTMMeshEnumerator::ScanAndMarkRegion (long featureIndex, long& minPnt, long& maxPnt) const
     {
     bool markValue = true;
     long startPnt;
@@ -793,7 +810,6 @@ void DTMMeshEnumerator::ScanAndMarkRegion (long featureIndex) const
         {
         BC_DTM_OBJ* dtmP = m_dtmP;
         long numMarked;
-        long  minPnt, maxPnt;
         long* minPntP = &minPnt;
         long* maxPntP = &maxPnt;
         long* numMarkedP = &numMarked;
@@ -824,7 +840,9 @@ void DTMMeshEnumerator::ScanAndMarkRegion (long featureIndex) const
         scanPnt = nodeAddrP (dtmP, startPnt)->tPtr;
         do
             {
-            antPnt = nextPnt = nodeAddrP (dtmP, scanPnt)->tPtr;
+            if (scanPnt < *minPntP) *minPntP = scanPnt;
+            if (scanPnt > *maxPntP) *maxPntP = scanPnt;
+            antPnt = nextPnt = nodeAddrP(dtmP, scanPnt)->tPtr;
             if ((antPnt = bcdtmList_nextAntDtmObject (dtmP, scanPnt, antPnt)) < 0)
                 return;// ToDo....
             while (antPnt != priorPnt)
@@ -959,7 +977,7 @@ void DTMMeshEnumerator::Reset ()
         }
 
 
-int bcdtmList_testForRegionLineDtmObject (BC_DTM_OBJ *dtmP, long P1, long P2)
+int DTMMeshEnumerator::bcdtmList_testForRegionLineDtmObject(BC_DTM_OBJ *dtmP, long P1, long P2) const
 /*
 ** This Function Tests If The Line P1-P2 is A Void Or Hole Hull Line
 */
@@ -973,7 +991,21 @@ int bcdtmList_testForRegionLineDtmObject (BC_DTM_OBJ *dtmP, long P1, long P2)
         {
         if (flistAddrP (dtmP, clPtr)->nextPnt == P2)
             {
-            if (ftableAddrP (dtmP, flistAddrP (dtmP, clPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Region)  return(1);
+            if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Region)
+                {
+                if (m_regionMode == RegionMode::RegionUserTag)
+                    {
+                    if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmUserTag == m_regionUserTag)
+                        return 1;
+                    }
+                else if (m_regionMode == RegionMode::RegionFeatureId)
+                    {
+                    if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmFeatureId == m_regionFeatureId)
+                        return 1;
+                    }
+                else
+                    return(1);
+                }
             }
         clPtr = flistAddrP (dtmP, clPtr)->nextPtr;
         }
@@ -983,7 +1015,7 @@ int bcdtmList_testForRegionLineDtmObject (BC_DTM_OBJ *dtmP, long P1, long P2)
     return(0);
     }
 
-bool bcdtmList_testForRegionTriangleDtmObject (BC_DTM_OBJ *dtmP, std::vector<bool>& pointMask, long P1, long P2, long P3)
+bool DTMMeshEnumerator::bcdtmList_testForRegionTriangleDtmObject(BC_DTM_OBJ *dtmP, std::vector<bool>& pointMask, long P1, long P2, long P3) const
 /*
 ** This Function Tests For A Void Triangle
 */

@@ -256,7 +256,10 @@ struct DTMMeshEnumerator : RefCountedBase
     private: DTMStatusInt Initialize () const;
     private: bool MoveNext (long& pnt1, long& pnt2) const;
     private: void ScanAndMarkRegions () const;
-    private: void ScanAndMarkRegion (long featureId) const;
+    private: void ScanAndMarkRegion(long featureId,long& minPnt, long& maxPnt) const;
+    private: int bcdtmList_testForRegionLineDtmObject(BC_DTM_OBJ *dtmP, long P1, long P2) const;
+    private: bool bcdtmList_testForRegionTriangleDtmObject(BC_DTM_OBJ *dtmP, std::vector<bool>& pointMask, long P1, long P2, long P3) const;
+
 
     protected: BENTLEYDTM_EXPORT DTMMeshEnumerator (BcDTMR dtm);
     public: BENTLEYDTM_EXPORT static DTMMeshEnumeratorPtr Create (BcDTMR dtm);
