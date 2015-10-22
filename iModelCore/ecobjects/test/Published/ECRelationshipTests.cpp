@@ -406,9 +406,6 @@ TEST_F (ECRelationshipTests, SourceDestOrderIDs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Raimondas.Rimkus               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-// CGM: This fails on graphite because line #8 (the ArrayProperty) has an offset of 49, not 62.  I don't know
-// where these numbers come from, but since hardcoded expected values in tests can change, I am disabling this
-// until someone can investigate
 TEST_F (ECRelationshipTests, DumpToString)
     {
     CreateTestSchema ();
@@ -431,10 +428,10 @@ TEST_F (ECRelationshipTests, DumpToString)
         "^~!@  \\[0x[a-f0-9]{2,8}\\]\\[   8\\] SourceOrderId = <null>$",
         "^~!@  \\[0x[a-f0-9]{2,8}\\]\\[  12\\] TargetOrderId = <null>$",
         "^~!@  \\[0x[a-f0-9]{2,8}\\]\\[  16\\] -> \\[0x[a-f0-9]{2,8}\\]\\[  36\\] Name = Some value 1$",
-        "^~!@  \\[0x[a-f0-9]{2,8}\\]\\[  20\\] -> \\[0x[a-f0-9]{2,8}\\]\\[  49\\] ArrayProperty = Count: 0 IsFixedSize: 0$",
+        "^~!@  \\[0x[a-f0-9]{2,8}\\]\\[  20\\] -> \\[0x[a-f0-9]{2,8}\\]\\[  62\\] ArrayProperty = Count: 0 IsFixedSize: 0$",
         "^~!@  \\[0x[a-f0-9]{2,8}\\]\\[  24\\] -> \\[0x[a-f0-9]{2,8}\\]\\[    \\] Source ECPointer = <null>$",
         "^~!@  \\[0x[a-f0-9]{2,8}\\]\\[  28\\] -> \\[0x[a-f0-9]{2,8}\\]\\[    \\] Target ECPointer = <null>$",
-        "^~!@  \\[0x[a-f0-9]{2,8}\\]\\[  32\\] Offset of TheEnd = 49$", };
+        "^~!@  \\[0x[a-f0-9]{2,8}\\]\\[  32\\] Offset of TheEnd = 62$", };
 
     EXPECT_EQ (sizeof(strMatches) / sizeof(strMatches[0]), strSplit.size ());
     size_t check_size = sizeof(strMatches) / sizeof(strMatches[0]) < strSplit.size () ? sizeof(strMatches) / sizeof(strMatches[0]) : strSplit.size ();
