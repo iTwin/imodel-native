@@ -209,9 +209,9 @@ bool DTMFeatureEnumerator::MoveNext (long& m_index, size_t& m_nextSourceFeatureI
         if (m_filterByFeatureId && m_featureIdFilter != dtmFeatureP->dtmFeatureId)
             continue;
 
-        if ((m_userTagLow < m_userTagHigh) && (
-            m_userTagLow >= dtmFeatureP->dtmUserTag &&
-            m_userTagHigh <= dtmFeatureP->dtmUserTag))
+        if ((m_userTagLow <= m_userTagHigh) && (
+            m_userTagLow > dtmFeatureP->dtmUserTag ||
+            m_userTagHigh < dtmFeatureP->dtmUserTag))
             continue;
 
         if (m_filterByFeatureType)
