@@ -302,6 +302,8 @@ DgnDbStatus DgnElement::_SetParentId(DgnElementId parentId)
     // Check for direct cycle...will check indirect cycles on update.
     if (parentId.IsValid() && parentId == GetElementId())
         return DgnDbStatus::InvalidParent;
+    else if (GetElementHandler()._IsRestrictedAction(RestrictedAction::SetParent))
+        return DgnDbStatus::MissingHandler;
 
     m_parentId = parentId;
     return DgnDbStatus::Success;
@@ -418,6 +420,9 @@ void DgnElement::_OnReversedUpdate(DgnElementCR original) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_OnDelete() const
     {
+    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Delete))
+        return DgnDbStatus::MissingHandler;
+
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
         DgnDbStatus stat = entry->second->_OnDelete(*this);
@@ -1152,6 +1157,14 @@ DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnModelR destMode
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElement::Import(DgnDbStatus* stat, DgnModelR destModel, DgnImportContext& importer) const
     {
+    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Clone))
+        {
+        if (nullptr != stat)
+            *stat = DgnDbStatus::MissingHandler;
+
+        return nullptr;
+        }
+
     if (nullptr != stat)
         *stat = DgnDbStatus::Success;
 
@@ -1182,6 +1195,22 @@ DgnElementCPtr DgnElement::Import(DgnDbStatus* stat, DgnModelR destModel, DgnImp
     ccp->_OnImported(*this, importer);
 
     return ccp;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementPtr DgnElement::Clone(DgnDbStatus* stat, DgnElement::CreateParams const* params) const
+    {
+    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Clone))
+        {
+        if (nullptr != stat)
+            *stat = DgnDbStatus::MissingHandler;
+
+        return nullptr;
+        }
+
+    return _Clone(stat, params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2563,3 +2592,83 @@ DictionaryElement::CreateParams::CreateParams(DgnDbR db, DgnClassId classId, Cod
     {
     //
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t DgnElement::RestrictedAction::Parse(Utf8CP name)
+    {
+    uint64_t action = T_Super::Parse(name);
+    if (RestrictedAction::None != action)
+        return action;
+
+    struct Pair { Utf8CP name; uint64_t action; };
+
+    static const Pair s_pairs[] = 
+        {
+            { "clone",          Clone },
+            { "setparent",      SetParent },
+            { "insertchild",    InsertChild },
+            { "updatechild",    UpdateChild },
+            { "deletechild",    DeleteChild },
+        };
+
+    for (auto const& pair : s_pairs)
+        if (0 == BeStringUtilities::Stricmp(name, pair.name))
+            return pair.action;
+
+    return None;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t GeometricElement::RestrictedAction::Parse(Utf8CP name)
+    {
+    return 0 == BeStringUtilities::Stricmp("move", name) ? Move : T_Super::Parse(name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_OnChildInsert(DgnElementCR) const { return GetElementHandler()._IsRestrictedAction(RestrictedAction::InsertChild) ? DgnDbStatus::MissingHandler : DgnDbStatus::Success; }
+DgnDbStatus DgnElement::_OnChildUpdate(DgnElementCR, DgnElementCR) const { return GetElementHandler()._IsRestrictedAction(RestrictedAction::UpdateChild) ? DgnDbStatus::MissingHandler : DgnDbStatus::Success; }
+DgnDbStatus DgnElement::_OnChildDelete(DgnElementCR) const { return GetElementHandler()._IsRestrictedAction(RestrictedAction::DeleteChild) ? DgnDbStatus::MissingHandler : DgnDbStatus::Success; }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement::_SetCategoryId(DgnCategoryId catId)
+    {
+    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::SetCategory))
+        return DgnDbStatus::MissingHandler;
+
+    m_categoryId = catId;
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement3d::SetPlacement(Placement3dCR placement)
+    {
+    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Move))
+        return DgnDbStatus::MissingHandler;
+
+    m_placement = placement;
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement2d::SetPlacement(Placement2dCR placement)
+    {
+    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Move))
+        return DgnDbStatus::MissingHandler;
+
+    m_placement = placement;
+    return DgnDbStatus::Success;
+    }
+

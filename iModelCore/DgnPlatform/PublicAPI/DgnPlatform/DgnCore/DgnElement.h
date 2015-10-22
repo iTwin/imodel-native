@@ -264,24 +264,28 @@ public:
         Background   = 2, //!< the element is displayed with the background color
     };
 
-    //! Identifies actions which may be restricted for elements created by a handler for a missing ECClass.
-    struct RestrictedActions
+    //! Identifies actions which may be restricted for elements created by a handler for a missing subclass of DgnElement.
+    struct RestrictedAction : DgnDomain::Handler::RestrictedAction
     {
-        static const uint64_t None = 0; //!< No restrictions
-        static const uint64_t Delete = 1 << 0; //!< Delete element
-        static const uint64_t Copy = 1 << 1; //!< Create a copy of element
+        DEFINE_T_SUPER(DgnDomain::Handler::RestrictedAction);
 
-        static const uint64_t RESERVED_2 = 1 << 2; //!< Reserved for future use 
-        static const uint64_t RESERVED_3 = 1 << 3; //!< Reserved for future use 
-        static const uint64_t RESERVED_4 = 1 << 4; //!< Reserved for future use 
-        static const uint64_t RESERVED_5 = 1 << 5; //!< Reserved for future use 
-        static const uint64_t RESERVED_6 = 1 << 6; //!< Reserved for future use 
-        static const uint64_t RESERVED_7 = 1 << 7; //!< Reserved for future use 
-        static const uint64_t RESERVED_8 = 1 << 8; //!< Reserved for future use 
-        static const uint64_t RESERVED_9 = 1 << 9; //!< Reserved for future use 
-        static const uint64_t RESERVED_A = 1 << 0xA; //!< Reserved for future use 
+        static const uint64_t Clone = T_Super::NextAvailable; //!< Create a copy of element. "Clone"
+        static const uint64_t SetParent = Clone << 1; //!< Change the parent element. "SetParent"
+        static const uint64_t InsertChild = SetParent << 1; //!< Insert an element with this element as its parent. "InsertChild"
+        static const uint64_t UpdateChild = InsertChild << 1; //!< Modify a child of this element. "UpdateChild"
+        static const uint64_t DeleteChild = UpdateChild << 1; //!< Delete a child of this element. "DeleteChild"
 
-        static const uint64_t MAX = 1 << 0xB; //!< Subclasses can add new actions beginning with this value
+        static const uint64_t Reserved_1 = DeleteChild << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_2 = Reserved_1 << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_3 = Reserved_2 << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_4 = Reserved_3 << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_5 = Reserved_4 << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_6 = Reserved_5 << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_7 = Reserved_6 << 1; //!< Reserved for future use 
+
+        static const uint64_t NextAvailable = Reserved_7 << 1; //!< Subclasses can add new actions beginning with this value
+
+        DGNPLATFORM_EXPORT static uint64_t Parse(Utf8CP name); //!< Parse action name from ClassHasHandler custom attribute
     };
 
     //! Application data attached to a DgnElement. Create a subclass of this to store non-persistent information on a DgnElement.
@@ -818,7 +822,7 @@ protected:
     //! @note implementers should not presume that returning DgnDbStatus::Success means that the element will become a child element,
     //! since the insert may fail for other reasons. Instead, rely on _OnChildInserted for that purpose.
     //! @note If you override this method, you @em must call T_Super::_OnChildInsert, forwarding its status.
-    virtual DgnDbStatus _OnChildInsert(DgnElementCR child) const {return DgnDbStatus::Success;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildInsert(DgnElementCR child) const;
 
     //! Called when an element that has this element as its parent is about to be updated in the DgnDb.
     //! Subclasses may override this method to control modifications to its children.
@@ -828,7 +832,7 @@ protected:
     //! @note implementers should not presume that returning DgnDbStatus::Success means that the element was updated,
     //! since the update may fail for other reasons. Instead, rely on _OnChildUpdated for that purpose.
     //! @note If you override this method, you @em must call T_Super::_OnChildUpdate, forwarding its status.
-    virtual DgnDbStatus _OnChildUpdate(DgnElementCR original, DgnElementCR replacement) const {return DgnDbStatus::Success;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildUpdate(DgnElementCR original, DgnElementCR replacement) const;
 
     //! Called when an child element of this element is about to be deleted from the DgnDb.
     //! Subclasses may override this method to block deletion of their children.
@@ -837,7 +841,7 @@ protected:
     //! @note implementers should not presume that returning DgnDbStatus::Success means that the element was deleted,
     //! since the delete may fail for other reasons. Instead, rely on _OnChildDeleted for that purpose.
     //! @note If you override this method, you @em must call T_Super::_OnChildDelete, forwarding its status.
-    virtual DgnDbStatus _OnChildDelete(DgnElementCR child) const {return DgnDbStatus::Success;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildDelete(DgnElementCR child) const;
 
     //! Called after a new element was inserted with this element as its parent.
     //! @note If you override this method, you @em must call T_Super::_OnChildInserted.
@@ -999,7 +1003,7 @@ public:
     //! @param[out] stat Optional status to describe failures, a valid DgnElementPtr will only be returned if successful.
     //! @param[in] params Optional CreateParams. Might specify a different destination model, etc.
     //! @remarks If no CreateParams are supplied, a new Code will be generated for the cloned element - it will \em not be copied from this element's Code.
-    DgnElementPtr Clone(DgnDbStatus* stat=nullptr, DgnElement::CreateParams const* params=nullptr) const {return _Clone(stat, params);}
+    DGNPLATFORM_EXPORT DgnElementPtr Clone(DgnDbStatus* stat=nullptr, DgnElement::CreateParams const* params=nullptr) const;
 
     //! Copy the content of another DgnElement into this DgnElement.
     //! @param[in] source The other element whose content is copied into this element.
@@ -1287,6 +1291,23 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
 
         CreateParams(T_Super const& params, DgnCategoryId category = DgnCategoryId()) : T_Super(params), m_categoryId(category) { }
     };
+
+    //! Identifies actions which may be restricted for elements created by a handler for a missing subclass of GeometricElement.
+    struct RestrictedAction : T_Super::RestrictedAction
+    {
+        DEFINE_T_SUPER(GeometricElement::T_Super::RestrictedAction);
+
+        static const uint64_t Move = T_Super::NextAvailable; //!< Rotate and/or translate. "Move"
+        static const uint64_t SetCategory = Move << 1; //!< Change element category. "SetCategory"
+        static const uint64_t Reserved_1 = SetCategory << 1; //!< Reserved for future use
+        static const uint64_t Reserved_2 = Reserved_1 << 1; //!< Reserved for future use
+        static const uint64_t Reserved_3 = Reserved_2 << 1; //!< Reserved for future use
+        static const uint64_t Reserved_4 = Reserved_3 << 1; //!< Reserved for future use
+
+        static const uint64_t NextAvailable = Reserved_4 << 1; //!< Subclasses can add new actions beginning with this value.
+
+        DGNPLATFORM_EXPORT static uint64_t Parse(Utf8CP name); //!< Parse action name from ClassHasHandler custom attribute
+    };
 protected:
     GeomStream m_geom;
     DgnCategoryId   m_categoryId;
@@ -1295,7 +1316,7 @@ protected:
     //! The default implementation sets the category without doing any checking.
     //! Override to validate the category.
     //! @return DgnDbStatus::Success if the categoryId was changed, error status otherwise.
-    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId; return DgnDbStatus::Success;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId);
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
@@ -1385,7 +1406,7 @@ protected:
 
 public:
     Placement3dCR GetPlacement() const {return m_placement;} //!< Get the Placement3d of this DgnElement3d
-    void SetPlacement(Placement3dCR placement) {m_placement = placement;} //!< Change the Placement3d for this DgnElement3d
+    DGNPLATFORM_EXPORT DgnDbStatus SetPlacement(Placement3dCR placement); //!< Change the Placement3d for this DgnElement3d
 };
 
 //=======================================================================================
@@ -1450,7 +1471,7 @@ protected:
 
 public:
     Placement2dCR GetPlacement() const {return m_placement;}     //!< Get the Placement2d for this DgnElement2d
-    void SetPlacement(Placement2dCR placement) {m_placement=placement;} //!< Change the Placement2d for this Dgnele
+    DGNPLATFORM_EXPORT DgnDbStatus SetPlacement(Placement2dCR placement); //!< Change the Placement2d for this Dgnele
 };
 
 //=======================================================================================

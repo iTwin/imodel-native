@@ -122,6 +122,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
 
         virtual DgnDomain::Handler* _CreateMissingHandler(uint64_t restrictions) const override { return T::_CreateMissingHandler(restrictions); }
         virtual bool _IsRestrictedAction(uint64_t restrictedAction) const override { return 0 != (m_restrictions & restrictedAction); }
+        virtual bool _IsMissingHandler() const override { return true; }
     public:
         explicit MissingHandler(uint64_t restrictions) : m_restrictions(restrictions) { }
     };
@@ -205,6 +206,24 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
             static Token* NewToken() {return new Token();}                                                                           //!< @private
         };
 
+        //! Identifies actions which may be restricted for objects created by a missing subclass of Handler
+        //! Specified as an array of action names in a ClassHasHandler custom attribute attached to the Handler's ECClass.
+        //! The action name to be used in the custom attribute's array is specified in quotes for each action below. (Parsing is case-insensitive)
+        //! Subclasses of Handler::RestrictedAction can add their own actions.
+        struct RestrictedAction
+        {
+            static const uint64_t None = 0; //!< No restrictions
+            static const uint64_t All = 0xffffffffffffffff; //!< All modifications are prohibited. "All"
+
+            static const uint64_t Delete = 1; //!< Delete the object. "Delete"
+            static const uint64_t Reserved_1 = Delete << 1; //!< Reserved for future use
+            static const uint64_t Reserved_2 = Reserved_1 << 1; //!< Reserved for future use
+
+            static const uint64_t NextAvailable = Reserved_2 << 1; //!< Subclasses can add actions beginning with this value.
+
+            DGNPLATFORM_EXPORT static uint64_t Parse(Utf8CP name); //!< Parse action name from ClassHasHandler custom attribute. Subclasses must call this base class method.
+        };
+
         private:
             DGNPLATFORM_EXPORT BentleyStatus AddExtension(Extension::Token&, Extension&);
             DGNPLATFORM_EXPORT BentleyStatus DropExtension(Extension::Token&);
@@ -235,6 +254,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         void SetDomain(DgnDomain& domain) {m_domain = &domain;}
         DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&);
         virtual Handler* _CreateMissingHandler(uint64_t restrictions) const { return new MissingHandler<Handler>(restrictions); }
+        virtual uint64_t _ParseRestrictedAction(Utf8CP restriction) const { return RestrictedAction::Parse(restriction); }
 
         Handler* GetRootClass();
     public:
@@ -260,9 +280,12 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         //! get a localized description of this handler's class
         virtual void _GetLocalizedDescription(Utf8StringR descr, uint32_t desiredLength) {descr = "";}
 
-        //! Query whether the specified action is disallowed. This function will only return true for a proxy handler associated with a missing ECClass.
+        //! Query whether the specified action is disallowed. This function will only ever return true for a missing handler.
         //! The meaning of the input is defined by specific handler subclasses.
         virtual bool _IsRestrictedAction(uint64_t restrictedAction) const { return false; }
+
+        //! Query whether this handler is substituting for one of its missing subclasses.
+        virtual bool _IsMissingHandler() const { return false; }
 
         virtual ElementHandlerP _ToElementHandler() {return nullptr;}       //!< dynamic_cast this Handler to an ElementHandler
         virtual ModelHandlerP _ToModelHandler() {return nullptr;}           //!< dynamic_cast this Handler to a ModelHandler
@@ -377,6 +400,7 @@ private:
     void LoadDomain(DgnDomainR);
     void AddHandler(DgnClassId id, DgnDomain::Handler* handler) {m_handlers.Insert(id, handler);}
     BeSQLite::DbResult InsertHandler(DgnDomain::Handler& handler);
+    bool GetHandlerInfo(uint64_t* restrictions, DgnClassId handlerId, DgnDomain::Handler& handler);
     BeSQLite::DbResult InsertDomain(DgnDomainCR);
     ECN::ECClassCP FindBaseOfType(DgnClassId subClassId, DgnClassId baseClassId);
     BeSQLite::DbResult OnDbOpened();
