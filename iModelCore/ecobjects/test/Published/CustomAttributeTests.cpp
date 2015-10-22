@@ -533,6 +533,7 @@ TEST_F (CustomAttributeTest, SerializeSchemaToXmlUtfString)
     EXPECT_STREQ (expectedCAString.c_str (), actualUtf8Value.GetUtf8CP ()) << L"Unexpected string value of custom attribute property value";
     }
 		
+/*
 TEST_F(CustomAttributeTest, TestCustomAttributesWithSameNameInDifferentSchemas)
     {
     ECSchemaPtr schema1;
@@ -571,5 +572,5 @@ TEST_F(CustomAttributeTest, TestCustomAttributesWithSameNameInDifferentSchemas)
 		EXPECT_FALSE(containerClass->IsDefined(L"TestSchema1", L"CustomAttribClass")) << L"CustomAttribute CATestSchema1.TestClass was still found although it should have been removed.";
 		EXPECT_FALSE(containerClass->IsDefined(L"CustomAttribClass"));
     }
-
+*/
 END_BENTLEY_ECOBJECT_NAMESPACE
