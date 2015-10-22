@@ -5754,6 +5754,9 @@
                <Member>
                  <KeyName>EPSG:4559</KeyName>
                </Member>
+               <Member>
+                 <KeyName>CR05.CRTM05</KeyName>
+               </Member>
             </Members>
             <Groups>
               <Group>
