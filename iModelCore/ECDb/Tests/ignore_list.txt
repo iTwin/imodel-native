@@ -20,3 +20,6 @@ ECDbMappingTestFixture.MismatchDataTypesInExistingTable
 
 #TFS315488 to address this (Affan)
 ECSqlTestFixture.PolymorphicUpdateTest
+
+#TFS327106 to address this
+JsonUpdaterTests.UpdateRelationshipProperty

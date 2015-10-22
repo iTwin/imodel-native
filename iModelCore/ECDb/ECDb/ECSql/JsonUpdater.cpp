@@ -32,7 +32,7 @@ bool JsonUpdater::IsValid () const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus JsonUpdater::Update (JsonValueCR jsonValue) const
     {
-    IECInstancePtr ecInstance = m_ecClass.GetDefaultStandaloneEnabler ()->CreateInstance (0);
+    IECInstancePtr ecInstance = ECInstanceAdapterHelper::CreateECInstance(m_ecClass);
     BeAssert (ecInstance.IsValid ());
     StatusInt status = ECJsonCppUtility::ECInstanceFromJsonValue (*ecInstance, jsonValue);
     if (status != SUCCESS)
@@ -46,7 +46,7 @@ BentleyStatus JsonUpdater::Update (JsonValueCR jsonValue) const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus JsonUpdater::Update (ECInstanceId const& instanceId, RapidJsonValueCR jsonValue) const
     {
-    IECInstancePtr ecInstance = m_ecClass.GetDefaultStandaloneEnabler ()->CreateInstance (0);
+    IECInstancePtr ecInstance = ECInstanceAdapterHelper::CreateECInstance(m_ecClass);
     BeAssert (ecInstance.IsValid ());
     if (SUCCESS != ECRapidJsonUtility::ECInstanceFromJsonValue (*ecInstance, jsonValue))
         return ERROR;

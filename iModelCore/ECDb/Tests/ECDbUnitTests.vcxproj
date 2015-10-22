@@ -68,6 +68,7 @@
     <ClCompile Include="Published\FSRTests.cpp" />
     <ClCompile Include="Published\InstanceCRUDTests.cpp" />
     <ClCompile Include="Published\JsonLibrary_Test.cpp" />
+    <ClCompile Include="Published\JsonUpdaterTests.cpp" />
     <ClCompile Include="Published\RandomECInstanceGenerator.cpp" />
     <ClCompile Include="Published\SchemaImportTestFixture.cpp" />
   </ItemGroup>
