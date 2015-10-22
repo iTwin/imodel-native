@@ -98,7 +98,7 @@ DgnModelId ThreeMxModel::CreateThreeMxModel(DgnDbR db, Utf8StringCR fileId)
     
     // Create model in DgnDb
     Utf8String modelName(fileName.GetFileNameWithoutExtension().c_str());
-    ThreeMxModelPtr model = new ThreeMxModel (DgnModel::CreateParams(db, classId, modelName.c_str()));
+    ThreeMxModelPtr model = new ThreeMxModel (DgnModel::CreateParams(db, classId, CreateModelCode(modelName)));
 
     model->SetScene (scene);
     model->SetFileId (fileId);

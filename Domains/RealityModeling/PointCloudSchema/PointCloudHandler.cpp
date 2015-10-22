@@ -46,7 +46,7 @@ DgnModelId PointCloudModelHandler::CreatePointCloudModel(DgnDbR db, Utf8StringCR
     pointCloudScenePtr->GetRange (props.m_range, false);
 
     // Create model in DgnDb
-    PointCloudModelPtr model = new PointCloudModel(DgnModel::CreateParams(db, classId, modelName.c_str()), props);
+    PointCloudModelPtr model = new PointCloudModel(DgnModel::CreateParams(db, classId, DgnModel::CreateModelCode(modelName)), props);
     model->Insert();
     return model->GetModelId();
     }
