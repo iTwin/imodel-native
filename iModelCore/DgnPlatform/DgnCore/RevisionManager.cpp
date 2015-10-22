@@ -355,15 +355,15 @@ DgnRevision::~DgnRevision()
 BeFileName DgnRevision::BuildChangeStreamPathname(Utf8String revisionId)
     {
     BeFileName tempPathname;
-    BeFileNameStatus fStatus = BeFileName::BeGetTempPath(tempPathname);
-    if (BeFileNameStatus::Success != fStatus)
+    BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempPathname, L"DgnDbRev");
+    if (SUCCESS != status)
         {
         BeAssert(false && "Cannot get temporary directory");
         return tempPathname;
         }
 
     tempPathname.AppendToPath(WString(revisionId.c_str(), true).c_str());
-    tempPathname.AppendExtension(L"dgndb.rev");
+    tempPathname.AppendExtension(L"rev");
     return tempPathname;
     }
 

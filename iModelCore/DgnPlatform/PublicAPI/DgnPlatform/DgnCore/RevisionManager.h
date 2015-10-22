@@ -116,15 +116,12 @@ public:
     //! Get the DgnDb for this RevisionManager
     DgnDbR GetDgnDb() { return m_dgndb; }
 
-    //! Return true if in the process of creating a revision
-    bool IsCreatingRevision() const { return m_currentRevision.IsValid(); }
-
     //! Get the parent revision id of any changes in the DgnDb
     DGNPLATFORM_EXPORT Utf8String GetParentRevisionId() const;
 
     //! Merge an ordered collection of revisions to the Db
-    //! @param[in] mergeRevisions Ordered collection of revisions to be applied
-    //! @return SUCCESS if the revisions were successfully applied, ERROR otherwise. 
+    //! @param[in] mergeRevisions Ordered collection of revisions to be merged
+    //! @return SUCCESS if the revisions were successfully merged, ERROR otherwise. 
     DGNPLATFORM_EXPORT BentleyStatus MergeRevisions(bvector<DgnRevisionPtr> const& mergeRevisions);
 
     //! Start creating a new revision from the changes saved to the Db
@@ -141,6 +138,9 @@ public:
     //! @see FinishCreateRevision, AbandonCreateRevision
     DGNPLATFORM_EXPORT DgnRevisionPtr StartCreateRevision();
     
+    //! Return true if in the process of creating a revision
+    bool IsCreatingRevision() const { return m_currentRevision.IsValid(); }
+
     //! Finish creating a new revision
     //! @return SUCCESS if the revision was successfully finished, ERROR otherwise. 
     //! @remarks Upon successful return, the transaction table is flushed and cannot be undone. 
