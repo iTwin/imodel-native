@@ -1321,11 +1321,9 @@ BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filt
     if (!polymorphic)
         {
         BeAssert(partition != nullptr);
-        if (partition->GetClassIds().size() > 1)
-            {
-            BeAssert(partition->GetClassIds()[0] == m_classId);
+        //if partition's table is only used by a single class, no filter needed
+        if (partition->IsSharedTable())
             filter.AppendEscaped(classIdColName).Append(BooleanSqlOperator::EqualTo).Append(m_classId);
-            }
 
         return SUCCESS;
         }
@@ -1334,9 +1332,7 @@ BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filt
         return SUCCESS; // view includes the filter already
 
     BeAssert(partition != nullptr);
-    if (partition->NeedsClassIdFilter())
-        partition->AppendECClassIdFilterSql(classIdColName, filter);
-
+    partition->AppendECClassIdFilterSql(classIdColName, filter);
     return SUCCESS;
     }
 
@@ -1396,11 +1392,11 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(IClassMap const& 
 //------------------------------------------------------------------------------------------
 HorizontalPartition const* StorageDescription::GetHorizontalPartition(bool polymorphic) const
     {
-    if (!polymorphic || m_nonVirtualHorizontalPartitionIndices.empty())
+    if (!polymorphic || !HasNonVirtualPartitions())
         return &GetRootHorizontalPartition();
 
-    if (m_nonVirtualHorizontalPartitionIndices.size() > 1)
-        return nullptr;
+    if (HierarchyMapsToMultipleTables())
+        return nullptr; //no single partition available
 
     size_t ix = m_nonVirtualHorizontalPartitionIndices[0];
     BeAssert(ix < m_horizontalPartitions.size());
@@ -1499,7 +1495,7 @@ void HorizontalPartition::GenerateClassIdFilter(std::vector<ECN::ECClassId> cons
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    05 / 2015
 //------------------------------------------------------------------------------------------
-bool HorizontalPartition::NeedsClassIdFilter() const
+bool HorizontalPartition::NeedsECClassIdFilter() const
     {
     BeAssert(!m_partitionClassIds.empty());
     //If class ids are not inversed, we always have a non-empty partition class id list. So filtering is needed.

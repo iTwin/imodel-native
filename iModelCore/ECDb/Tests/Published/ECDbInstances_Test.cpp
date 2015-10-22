@@ -649,9 +649,9 @@ TEST_F(ECDbInstances, UpdateArrayProperty)
     auto insertStatus = inserter.Insert (instanceKey, *testInstance);
     ASSERT_EQ (SUCCESS, insertStatus);
 
-    SqlPrintfString ecSql ("SELECT ECInstanceId, GetECClassId() as ECClassId, SmallIntArray FROM KitchenSink.TestClass");
+    Utf8CP ecSql = "SELECT ECInstanceId, GetECClassId() as ECClassId, SmallIntArray FROM KitchenSink.TestClass";
     ECSqlStatement ecStatement;
-    ECSqlStatus status = ecStatement.Prepare (db, ecSql.GetUtf8CP());
+    ECSqlStatus status = ecStatement.Prepare (db, ecSql);
     ASSERT_TRUE (ECSqlStatus::Success == status);
     ECInstanceECSqlSelectAdapter dataAdapter (ecStatement);
 
@@ -677,7 +677,7 @@ TEST_F(ECDbInstances, UpdateArrayProperty)
     ASSERT_EQ (SUCCESS, updateStatus);
 
     ECSqlStatement ecStatement2;
-    ECSqlStatus status2 = ecStatement2.Prepare (db, ecSql.GetUtf8CP());
+    ECSqlStatus status2 = ecStatement2.Prepare (db, ecSql);
     ASSERT_TRUE (ECSqlStatus::Success == status2);
     ECInstanceECSqlSelectAdapter dataAdapter2 (ecStatement2);
 

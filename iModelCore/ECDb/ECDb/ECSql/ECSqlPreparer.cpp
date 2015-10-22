@@ -444,8 +444,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
     else
         {
         StorageDescription const& desc = classMap.GetStorageDescription();
-        if (desc.HierarchyMapsToMultipleTables())
+        HorizontalPartition const* partition = desc.GetHorizontalPartition(exp.IsPolymorphic());
+        if (partition == nullptr)
             {
+            BeAssert(desc.HierarchyMapsToMultipleTables() && exp.IsPolymorphic() && "Returned partition is null only for a polymorphic ECSQL where subclasses are in a separate table");
             NativeSqlBuilder nativeSqlSnippet;
             Utf8String viewName = "_" + classMap.GetClass().GetSchema().GetNamespacePrefix() + "_" + classMap.GetClass().GetName();
             nativeSqlSnippet.AppendEscaped(viewName.c_str());
@@ -454,14 +456,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
             return ECSqlStatus::Success;
             }
 
-        HorizontalPartition const* partition = desc.GetHorizontalPartition(exp.IsPolymorphic());
-        if (partition == nullptr)
-            {
-            BeAssert(false);
-            return ECSqlStatus::Error;
-            }
-
         table = &partition->GetTable();
+        BeAssert(desc.HasNonVirtualPartitions() || table->GetPersistenceType() == PersistenceType::Virtual);
         }
 
     BeAssert(table != nullptr);

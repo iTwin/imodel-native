@@ -200,7 +200,8 @@ public:
             void AddClassId (ECN::ECClassId classId) { m_partitionClassIds.push_back (classId); }
             void GenerateClassIdFilter (std::vector<ECN::ECClassId> const& tableClassIds);
 
-            bool NeedsClassIdFilter () const;
+            bool IsSharedTable() const { return m_partitionClassIds.size() + m_inversedPartitionClassIds.size() > 1; }
+            bool NeedsECClassIdFilter() const;
             void AppendECClassIdFilterSql (Utf8CP classIdColName, NativeSqlBuilder&) const;
         };
 
