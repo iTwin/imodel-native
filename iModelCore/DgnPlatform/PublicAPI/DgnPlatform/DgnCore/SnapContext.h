@@ -9,7 +9,6 @@
 //__PUBLISH_SECTION_START__
 
 #include "HitDetail.h"
-#include "ViewContext.h"
 #include "NullContext.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -17,7 +16,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 //! Interface to be used when snapping.
 //=======================================================================================
-struct SnapContext : ViewContext
+struct SnapContext : NullContext
 {
 protected:
     SnapDetailP     m_snapPath; // result of the snap

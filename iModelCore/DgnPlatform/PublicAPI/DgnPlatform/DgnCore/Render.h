@@ -74,15 +74,6 @@ struct Renderer : NonCopyableClass
     //! Delete a specific entry from the symbol cache.
     virtual void _DeleteSymbol(IDisplaySymbol* symbol) {}
 
-    //! Define a texture
-    virtual void _DefineTextureId(uintptr_t textureId, Point2dCR imageSize, bool enableAlpha, uint32_t imageFormat, Byte const* imageData) {}
-
-    //! Check if a texture is defined
-    virtual bool _IsTextureIdDefined(uintptr_t textureId) {return false;}
-
-    //! Delete a specific texture, tile, or icon.
-    virtual void _DeleteTexture(uintptr_t textureId) {}
-
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //! Define a tile texture
     virtual void _DefineTile(uintptr_t textureId, char const* tileName, Point2dCR imageSize, bool enableAlpha, uint32_t imageFormat, uint32_t pitch, Byte const* imageData) {}
@@ -131,7 +122,6 @@ struct Renderer : NonCopyableClass
     //! Return false to inhibit creating rule lines for surface/solid geometry for wireframe display.
     //! Can be used to improve display performance in applications that only work in shaded views (or those that will clear all Graphicss before switching to wireframe)
     virtual bool _WantWireframeRuleDisplay() {return true;}
-
 };
 
 //=======================================================================================
@@ -952,6 +942,7 @@ struct Graphic : IRefCounted, NonCopyableClass
     friend struct ViewContext;
 
 protected:
+    virtual StatusInt _FinishDrawing() {return SUCCESS;}
     virtual void _ActivateMatSymb(ElemMatSymbCP matSymb) = 0;
     virtual void _DrawLineString3d(int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
     virtual void _DrawLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) = 0;
@@ -980,7 +971,6 @@ public:
     //! Set an ElemMatSymb to be the "active" ElemMatSymb for this IDrawGeom.
     //! @param[in]          matSymb     The new active ElemMatSymb. All geometry drawn via calls to this IDrawGeom will
     //!                                     be displayed using the values in this ElemMatSymb.
-    //! @note     See discussion of the symbology "overrides" in #ActivateOverrideMatSymb
     void ActivateMatSymb(ElemMatSymbCP matSymb) {_ActivateMatSymb(matSymb);}
 
 
@@ -1142,7 +1132,7 @@ protected:
 public:
     //! Set an ElemMatSymb to be the "active override" ElemMatSymb for this IDrawGeom.
     //! @param[in]          ovrMatSymb  The new active override ElemMatSymb.
-    //!                                     value in ovrMatSymb will be used instead of the value set by #ActivateMatSymb.
+    //!                                     value in ovrMatSymb will be used instead of the value set by ActivateMatSymb.
     void ActivateOverrideMatSymb(OvrMatSymbCP ovrMatSymb) {_ActivateOverrideMatSymb(ovrMatSymb);}
 
     //! Set the coordinate system temporarily to DgnCoordSystem::View. This removes the root coordinate system,
@@ -1316,6 +1306,7 @@ struct Target : IRefCounted, NonCopyableClass
     typedef ImageUtilities::RgbImageInfo CapturedImageInfo;
 
 protected:
+    virtual Render::GraphicPtr _CreateGraphic() = 0;
     virtual void _SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText) = 0;
     virtual RenderDevice* _GetRenderDevice() const = 0;
     virtual StatusInt _AssignRenderDevice(RenderDevice*) = 0;
@@ -1353,6 +1344,7 @@ protected:
 #endif
 
 public:
+    Render::GraphicPtr CreateGraphic() {return _CreateGraphic();}
     void SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText) {_SetViewAttributes(viewFlags, bgColor, usebgTexture, aaLines, aaText);}
     RenderDevice* GetRenderDevice() const {return _GetRenderDevice();}
     StatusInt AssignRenderDevice(RenderDevice* device) {return _AssignRenderDevice(device);}

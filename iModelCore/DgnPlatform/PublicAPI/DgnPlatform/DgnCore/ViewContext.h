@@ -123,14 +123,9 @@ struct  ILineStyle
 //=======================================================================================
 struct IElemTopology : IRefCounted
 {
-    //! Create a deep copy of this object.
-    virtual IElemTopologyP _Clone() const = 0;
-
-    //! Compare objects and return true if they should be considered the same.
-    virtual bool _IsEqual (IElemTopologyCR) const = 0;
-
-    //! Return an object for handling requests related to locate of transient geometry where we don't have an element handler.
-    virtual ITransientGeometryHandlerP _GetTransientGeometryHandler() const = 0;
+    virtual IElemTopologyP _Clone() const = 0; //!< Create a deep copy of this object.
+    virtual bool _IsEqual (IElemTopologyCR) const = 0; //!< Compare objects and return true if they should be considered the same.
+    virtual ITransientGeometryHandlerP _GetTransientGeometryHandler() const = 0; //!< Return an object for handling requests related to locate of transient geometry where we don't have an element handler.
 };
 
 typedef RefCountedPtr<IElemTopology> IElemTopologyPtr; //!< Reference counted type to manage the life-cycle of the IElemTopology.
@@ -280,6 +275,7 @@ protected:
     bool                    m_wantMaterials;
     bool                    m_useNpcSubRange;
     bool                    m_ignoreViewRange;
+    bool                    m_scanRangeValid;
     Byte                    m_filterLOD;
     ViewFlags               m_viewflags;
     DrawPurpose             m_purpose;
@@ -292,21 +288,19 @@ protected:
     TransformClipStack      m_transformClipStack;
     DgnViewportP            m_viewport;
     Render::GraphicPtr      m_currGraphic;
-    Render::TargetP         m_renderTarget;
+    Render::TargetPtr       m_renderTarget;
     Render::ElemDisplayParams m_currDisplayParams;
     Render::ElemMatSymb     m_elemMatSymb;
     Render::OvrMatSymb      m_ovrMatSymb;
-    double                  m_minLOD;             // minimum size of default level-of-detail test.
-    double                  m_arcTolerance;
     DPoint3dCP              m_startTangent;       // linestyle start tangent.
     DPoint3dCP              m_endTangent;         // linestyle end tangent.
-    uint32_t                m_rasterPlane;        // Current displayed raster plane
     DgnElement::Hilited     m_hiliteState;
     RasterDisplayParams     m_rasterDisplayParams;
     IElemTopologyPtr        m_currElemTopo;
     GeomStreamEntryId       m_currGeomStreamEntryId;
-    bool                    m_scanRangeValid;
     double                  m_levelOfDetail;
+    double                  m_minLOD;             // minimum size of default level-of-detail test.
+    double                  m_arcTolerance;
 
     void InvalidateScanRange() {m_scanRangeValid = false;}
     DGNPLATFORM_EXPORT void InitDisplayPriorityRange();
@@ -336,20 +330,20 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _FilterRangeIntersection(GeometricElementCR);
     DGNPLATFORM_EXPORT virtual DgnModelP _GetViewTarget();
     virtual IPickGeomP _GetIPickGeom() {return nullptr;}
-    virtual void _OnPreDrawTransient() {m_ovrMatSymb.Clear(); GetIDrawGeom().ActivateOverrideMatSymb(&m_ovrMatSymb);}
+    virtual void _OnPreDrawTransient() {}
+    virtual Render::GraphicPtr _BeginGraphic() = 0;
+    DGNPLATFORM_EXPORT virtual void _SetRenderTarget();
     DGNPLATFORM_EXPORT virtual void _VisitTransientGraphics(bool isPreUpdate);
     DGNPLATFORM_EXPORT virtual void _AllocateScanCriteria();
     DGNPLATFORM_EXPORT virtual void _SetupScanCriteria();
     virtual bool _WantUndisplayed() {return false;}
     virtual bool _WantUndisplayedClips() {return false;}
-
     DGNPLATFORM_EXPORT virtual void _AddViewOverrides(Render::OvrMatSymbR);
     DGNPLATFORM_EXPORT virtual void _AddContextOverrides(Render::OvrMatSymbR);
     DGNPLATFORM_EXPORT virtual void _ModifyPreCook(Render::ElemDisplayParamsR); 
     DGNPLATFORM_EXPORT virtual void _CookDisplayParams(Render::ElemDisplayParamsR, Render::ElemMatSymbR);
     DGNPLATFORM_EXPORT virtual void _SetScanReturn();
     DGNPLATFORM_EXPORT virtual void _PushFrustumClip();
-    DGNPLATFORM_EXPORT virtual void _InitScanCriteria();
     DGNPLATFORM_EXPORT virtual StatusInt _ScanDgnModel(DgnModelP model);
     DGNPLATFORM_EXPORT virtual bool _ScanRangeFromPolyhedron();
     DGNPLATFORM_EXPORT virtual void _SetDgnDb(DgnDbR);
@@ -366,8 +360,6 @@ public:
     bool GetWantMaterials() {return m_wantMaterials;};
     bool IsAttached() {return m_isAttached;}
     void SetIntermediatePaintsBlocked(bool blockIntermediatePaints) {m_blockIntermediatePaints = blockIntermediatePaints;}
-    void SetRasterPlane(uint32_t plane) {m_rasterPlane = plane;}
-    void ResetRasterPlane() {m_rasterPlane = RasterPlane_Any;}
     DgnElement::Hilited GetCurrHiliteState() {return m_hiliteState;}
     void SetSubRectFromViewRect(BSIRectCP viewRect);
     void OnPreDrawTransient() {_OnPreDrawTransient();} // Initialize per-transient state since _OutputElement may not be called...
@@ -401,7 +393,6 @@ public:
     Byte& GetFilterLODFlag() {return m_filterLOD;}
     void SetFilterLODFlag(FilterLODFlags flags) {m_filterLOD =(Byte) flags;}
     ScanCriteriaCP GetScanCriteria() const {return m_scanCriteria;}
-    uint32_t GetRasterPlane() const {return m_rasterPlane;}
     void InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
     void AllocateScanCriteria(){_AllocateScanCriteria();}
     void VisitDgnModel(DgnModelP model){_VisitDgnModel(model);}
@@ -729,11 +720,11 @@ public:
     //! Draw an instance of a DisplaySymbol given a DisplaySymbol definition (an IDisplaySymbol). DisplaySymbol definitions are generally cached globally,
     //! so the first call to this method for a given symbol definition will create the cached representation, and all subsequent calls will draw
     //! instances using that cached representation.
-    //! @param[in]      symbolDef        Symbol definition to draw from.
-    //! @param[in]      trans            Transform to be applied to the symbol definition to determine location, orientation, size of this instance.
-    //! @param[in]      clip             ClipPlaneSet to be applied to symbol. May be nullptr.
-    //! @param[in]      ignoreColor      If true, ignore the colors in the symbol definition and use the current color from \c context.
-    //! @param[in]      ignoreWeight     If true, ignore line weights in the symbol definition, and use the current line weight from \c context.
+    //! @param[in] symb Symbol definition to draw from.
+    //! @param[in] trans Transform to be applied to the symbol definition to determine location, orientation, size of this instance.
+    //! @param[in] clip ClipPlaneSet to be applied to symbol. May be nullptr.
+    //! @param[in] ignoreColor If true, ignore the colors in the symbol definition and use the current color from \c context.
+    //! @param[in] ignoreWeight If true, ignore line weights in the symbol definition, and use the current line weight from \c context.
     void DrawSymbol(Render::IDisplaySymbol* symb, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight) {_DrawSymbol(symb, trans, clip, ignoreColor, ignoreWeight);}
 
     //! Draw a text string and any adornments such as background shape, underline, overline, etc. Sets up current ElemDisplayParams for TextString symbology.

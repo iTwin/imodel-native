@@ -16,7 +16,7 @@
 * Output to determine if element should be accepted for fence processing..
 * @bsiclass                                                     Brien.Bastings  09/04
 +===============+===============+===============+===============+===============+======*/
-struct FenceAcceptOutput : public SimplifyViewDrawGeom
+struct FenceAcceptOutput : SimplifyViewDrawGeom
 {
     DEFINE_T_SUPER(SimplifyViewDrawGeom)
 protected:
@@ -682,39 +682,28 @@ struct FenceAcceptContext : public ViewContext
 {
     DEFINE_T_SUPER(ViewContext)
 private:
-    FenceAcceptOutput   m_output;
+    FenceAcceptOutput*  m_graphic;
     DgnElementIdSet     m_contents;
     bool                m_collectContents;  // true for GetContents, false for AcceptElement...
     DgnViewportP        m_nonVisibleViewport;
 
-protected:
-
 public:
 
-FenceAcceptContext()
-    {
-    m_purpose            = DrawPurpose::FenceAccept;
-    m_collectContents    = false;
-    m_nonVisibleViewport = NULL;
-    m_ignoreViewRange    = true;
-    }
+    FenceAcceptContext()
+        {
+        m_purpose            = DrawPurpose::FenceAccept;
+        m_collectContents    = false;
+        m_nonVisibleViewport = NULL;
+        m_ignoreViewRange    = true;
+        m_graphic = new FenceAcceptOutput();
+        }
 
-~FenceAcceptContext()
-    {
-    DELETE_AND_CLEAR (m_nonVisibleViewport);
-    }
+    ~FenceAcceptContext()
+        {
+        DELETE_AND_CLEAR (m_nonVisibleViewport);
+        }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    _SetupOutputs() override
-    {
-    SetIViewDraw(m_output);
-
-    m_output.SetViewContext(this);
-    }
-#endif
+    virtual Render::GraphicPtr _BeginGraphic() override {return m_graphic;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2013
@@ -729,7 +718,7 @@ virtual void    _PushFrustumClip() override
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual bool    _CheckStop() override
     {
-    return m_output.GetCurrentAbort(); // Doesn't want abort flag set...not reset between elements...
+    return m_graphic->GetCurrentAbort(); // Doesn't want abort flag set...not reset between elements...
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -764,15 +753,15 @@ virtual void    _DrawSymbol(IDisplaySymbol* symbolDefP, TransformCP transP, Clip
         }
 
     // Check symbol geometry...
-    m_output.ClipAndProcessSymbol(symbolDefP, transP, clipPlaneSetP, ignoreColor, ignoreWeight);
+    m_graphic->ClipAndProcessSymbol(symbolDefP, transP, clipPlaneSetP, ignoreColor, ignoreWeight);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    _DrawAreaPattern(ClipStencil& boundary) override
+virtual void _DrawAreaPattern(ClipStencil& boundary) override
     {
-    FenceParamsP    fp = m_output.GetFenceParamsP ();
+    FenceParamsP    fp = m_graphic->GetFenceParamsP ();
 
     if (fp->HasOverlaps())
         return; // Already have overlap w/element don't need to draw the pattern...
@@ -791,7 +780,7 @@ virtual void    _DrawAreaPattern(ClipStencil& boundary) override
         boundary.GetStroker()._Stroke(*this);
 
         // Element never rejected by pattern...so if boundary is acceptable we can skip drawing the pattern...
-        if (_CheckStop() || m_output.GetCurrentAccept())
+        if (_CheckStop() || m_graphic->GetCurrentAccept())
             return;
 
         fp->ClearSplitParams();
@@ -808,27 +797,6 @@ virtual void    _DrawAreaPattern(ClipStencil& boundary) override
     fp->SetHasOverlaps(true); // set overlap again...cleared by ClearSplitParams...
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual QvElem* _DrawCached(GraphicStroker& stroker) override
-    {
-    bool    testStroke = stroker._WantLocateByStroker();
-
-    if (testStroke)
-        stroker._StrokeForCache(*this);
-
-    if (CheckStop())
-        return nullptr;
-
-    if (testCached && nullptr != GetViewport())
-        return T_Super::_DrawCached(stroker);
-
-    return nullptr;
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -837,12 +805,12 @@ virtual StatusInt _VisitElement(GeometricElementCR element) override
     if (!m_collectContents)
         return T_Super::_VisitElement(element);
 
-    m_output.OnNewElement(); // Initialize accept status for top-level element...
+    m_graphic->OnNewElement(); // Initialize accept status for top-level element...
 
-    if (SUCCESS == T_Super::_VisitElement(element) && m_output.GetCurrentAccept())
+    if (SUCCESS == T_Super::_VisitElement(element) && m_graphic->GetCurrentAccept())
         m_contents.insert(element.GetElementId());
 
-    m_output.OnNewElement(); // Clear abort status and continue checking next top-level element...
+    m_graphic->OnNewElement(); // Clear abort status and continue checking next top-level element...
 
     return SUCCESS;
     }
@@ -862,34 +830,34 @@ virtual StatusInt _VisitDgnModel(DgnModelP inDgnModel) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            AcceptElement(GeometricElementCR element, FenceParamsR fp)
+bool AcceptElement(GeometricElementCR element, FenceParamsR fp)
     {
-    m_output.SetFenceParams(&fp);
+    m_graphic->SetFenceParams(&fp);
 
     if (SUCCESS != _Attach(fp.GetViewport(), m_purpose))
         return false;
 
-    m_output.Init();
+    m_graphic->Init();
     _Detach();
 
-    return (SUCCESS == _VisitElement(element) && m_output.GetCurrentAccept());
+    return (SUCCESS == _VisitElement(element) && m_graphic->GetCurrentAccept());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            AcceptCurveVector(CurveVectorCR curves, FenceParamsP fp)
+bool AcceptCurveVector(CurveVectorCR curves, FenceParamsP fp)
     {
-    m_output.SetFenceParams(fp);
+    m_graphic->SetFenceParams(fp);
 
     if (SUCCESS != _Attach(fp->GetViewport(), m_purpose))
         return false;
 
-    m_output.Init();
-    m_output.DrawCurveVector(curves, false);
+    m_graphic->Init();
+    m_graphic->DrawCurveVector(curves, false);
     _Detach();
 
-    return m_output.GetCurrentAccept();
+    return m_graphic->GetCurrentAccept();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -899,9 +867,9 @@ BentleyStatus GetContents(FenceParamsP fp, DgnElementIdSet& contents)
     {
     m_viewport = fp->GetViewport();
 
-    m_output.SetViewContext(this);
-    m_output.SetFenceParams(fp);
-    m_output.Init();
+    m_graphic->SetViewContext(this);
+    m_graphic->SetFenceParams(fp);
+    m_graphic->Init();
 
     if (SUCCESS != _Attach(m_viewport, m_purpose) || !fp->GetClipVector().IsValid())
         return ERROR;

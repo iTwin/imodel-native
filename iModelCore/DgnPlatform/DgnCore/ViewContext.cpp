@@ -19,37 +19,26 @@ static DRange3d const s_fullNpcRange =
 ViewContext::ViewContext()
     {
     m_dgnDb = nullptr;
-
     m_viewport    = nullptr;
-
     m_scanCriteria  = nullptr;
     m_purpose       = DrawPurpose::NotSpecified;
     m_arcTolerance  = .01;
     m_minLOD        = DEFAULT_MINUMUM_LOD;
-
     m_isAttached                = false;
     m_blockIntermediatePaints   = false;
     m_is3dView                  = true; // Changed default to 3d...
     m_useNpcSubRange            = false;
     m_filterLOD                 = FILTER_LOD_ShowRange;
-
     m_wantMaterials             = false;
-
     m_startTangent = m_endTangent = nullptr;
-
     m_ignoreViewRange = false;
     m_hiliteState = DgnElement::Hilited::None;
-
     m_rasterDisplayParams.SetFlags(0);
-
     m_scanRangeValid = false;
     m_levelOfDetail = 1.0;
 
     m_worldToNpc.InitIdentity();
     m_worldToView.InitIdentity();
-
-    // Draw any plane
-    ResetRasterPlane();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -59,6 +48,14 @@ ViewContext::~ViewContext()
     {
     BeAssert(!m_isAttached);
     DELETE_AND_CLEAR(m_scanCriteria);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewContext::_SetRenderTarget() 
+    {
+    m_renderTarget = m_viewport->GetRenderTarget();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -160,7 +157,6 @@ void ViewContext::_PushFrustumClip()
     if (m_ignoreViewRange)
         return;
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     int         nPlanes;
     ClipPlane   frustumPlanes[6];
     ViewFlags viewFlags = GetViewFlags();
@@ -169,7 +165,6 @@ void ViewContext::_PushFrustumClip()
 
     if (0 != (nPlanes = ClipUtil::RangePlanesFromPolyhedra(frustumPlanes, polyhedron.GetPts(), !viewFlags.noFrontClip, !viewFlags.noBackClip, 1.0E-6)))
         m_transformClipStack.PushClipPlanes(frustumPlanes, nPlanes);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -178,7 +173,6 @@ void ViewContext::_PushFrustumClip()
 void ViewContext::_InitScanRangeAndPolyhedron()
     {
     // set up scanner search criteria
-    _InitScanCriteria();
     _ScanRangeFromPolyhedron();
     }
 
@@ -244,24 +238,6 @@ void ViewContext::_PopTransformClip()
     m_transformClipStack.Pop(*this);
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::DirectPushTransClipOutput(GeomDrawR drawGeom, TransformCP trans, ClipPlaneSetCP clip)
-    {
-    drawGeom._PushTransClip(trans, clip);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::DirectPopTransClipOutput(GeomDrawR drawGeom)
-    {
-    drawGeom._PopTransClip();
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -278,13 +254,6 @@ void ViewContext::_SetDgnDb(DgnDbR dgnDb)
     m_dgnDb = &dgnDb;
     InitDisplayPriorityRange();
     _SetupScanCriteria();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_InitScanCriteria()
-    {
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -327,9 +296,7 @@ StatusInt ViewContext::_Attach(DgnViewportP viewport, DrawPurpose purpose)
     _AllocateScanCriteria();
 
     m_viewport = viewport;
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    _SetupOutputs();
-#endif
+    _SetRenderTarget();
 
     m_purpose = purpose;
     ClearAborted();
@@ -598,7 +565,10 @@ bool ViewContext::_FilterRangeIntersection(GeometricElementCR element)
 void ViewContext::_OutputElement(GeometricElementCR element)
     {
     ResetContextOverrides();
+
+    m_currGraphic = _BeginGraphic();
     m_viewport ? m_viewport->GetViewControllerR()._DrawElement(*this, element) : element._Stroke(*this);
+    m_currGraphic = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

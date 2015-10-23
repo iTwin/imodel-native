@@ -422,7 +422,6 @@ AxisAlignedBox3d ViewController::_GetViewedExtents() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::_DrawElement(ViewContextR context, GeometricElementCR element)
     {
-
     element._Stroke(context);
     }
 

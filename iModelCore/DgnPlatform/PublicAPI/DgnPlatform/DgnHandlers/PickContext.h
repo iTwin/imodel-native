@@ -21,6 +21,41 @@ enum TestLStylePhase
     };
 
 /*=================================================================================**//**
+* Output to determine if element should be accepted for fence processing..
+* @bsiclass                                                     Brien.Bastings  09/04
++===============+===============+===============+===============+===============+======*/
+struct PickOutput : SimplifyViewDrawGeom
+{
+    DEFINE_T_SUPER(SimplifyViewDrawGeom)
+
+private:
+    struct PickContext& m_pick;
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    static int LocateQvElemCheckStop(CallbackArgP);
+#endif
+    virtual StatusInt _ProcessCurvePrimitive(ICurvePrimitiveCR prim, bool closed, bool filled) override;
+    virtual StatusInt _ProcessCurveVector(CurveVectorCR vector, bool isFilled) override;
+    virtual StatusInt _ProcessSolidPrimitive(ISolidPrimitiveCR prim) override;
+    virtual StatusInt _ProcessSurface(MSBsplineSurfaceCR surface) override;
+    virtual StatusInt _ProcessFacetSet(PolyfaceQueryCR query, bool filled) override;
+    virtual StatusInt _ProcessBody(ISolidKernelEntityCR entity) override;
+
+protected:
+    virtual void _SetDrawViewFlags(ViewFlags) override;
+    virtual void _DrawTextString(TextStringCR, double* zDepth) override;
+    virtual bool _DoClipping() const override {return m_inSymbolDraw;} // Only need clip for symbols...
+    virtual bool _DoSymbolGeometry() const override {return true;}
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    virtual bool _DrawSprite(Render::ISpriteP sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) override;
+    virtual void _DrawPointCloud(Render::IPointCloudDrawParams* drawParams) override;
+#endif
+
+public:
+    PickOutput(struct PickContext& pick);
+};
+
+/*=================================================================================**//**
 * @bsiclass                                                     KeithBentley    04/01
 +===============+===============+===============+===============+===============+======*/
 struct PickContext : ViewContext, IPickGeom
@@ -29,6 +64,7 @@ struct PickContext : ViewContext, IPickGeom
 private:
     friend struct PickOutput;
 
+    PickOutput        m_graphic;
     bool              m_doneSearching;
     bool              m_unusableLStyleHit;
     bool              m_doLocateSilhouettes;
@@ -56,6 +92,8 @@ private:
     virtual void _DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3dCP range) override;
     virtual void _DrawStyledBSplineCurve3d(MSBsplineCurveCR) override;
     virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth) override;
+    virtual void  _OnPreDrawTransient() override;
+    virtual Render::GraphicPtr _BeginGraphic() {return &m_graphic;}
 
     bool TestPoint(DPoint3dCR localPt, HitPriority priority);
     bool TestPointArray(size_t numPts, DPoint3dCP localPts, HitPriority priority);
@@ -100,42 +138,6 @@ public:
     DGNPLATFORM_EXPORT static void InitBoresite(DRay3dR boresite, DPoint3dCR spacePoint, DMatrix4dCR worldToLocal);
 };
 
-
-/*=================================================================================**//**
-* Output to determine if element should be accepted for fence processing..
-* @bsiclass                                                     Brien.Bastings  09/04
-+===============+===============+===============+===============+===============+======*/
-struct PickOutput : SimplifyViewDrawGeom
-{
-    DEFINE_T_SUPER(SimplifyViewDrawGeom)
-
-private:
-    PickContext& m_pick;
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    static int LocateQvElemCheckStop(CallbackArgP);
-#endif
-    virtual StatusInt _ProcessCurvePrimitive(ICurvePrimitiveCR prim, bool closed, bool filled) override {return m_pick.ProcessCurvePrimitive(prim, closed, filled);}
-    virtual StatusInt _ProcessCurveVector(CurveVectorCR vector, bool isFilled) override {return m_pick.ProcessCurveVector(vector, isFilled);}
-    virtual StatusInt _ProcessSolidPrimitive(ISolidPrimitiveCR prim) override {return m_pick.ProcessSolidPrimitive(prim);}
-    virtual StatusInt _ProcessSurface(MSBsplineSurfaceCR surface) override {return m_pick.ProcessSurface(surface);}
-    virtual StatusInt _ProcessFacetSet(PolyfaceQueryCR query, bool filled) override {return m_pick.ProcessFacetSet(query, filled);}
-    virtual StatusInt _ProcessBody(ISolidKernelEntityCR entity) override {return m_pick.ProcessBody(entity);}
-
-protected:
-    virtual void _SetDrawViewFlags(ViewFlags) override;
-    virtual void  _OnPreDrawTransient() override;
-    virtual void _DrawTextString(TextStringCR, double* zDepth) override;
-    virtual bool _DoClipping() const override {return m_inSymbolDraw;} // Only need clip for symbols...
-    virtual bool _DoSymbolGeometry() const override {return true;}
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    virtual bool _DrawSprite(Render::ISpriteP sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) override;
-    virtual void _DrawPointCloud(Render::IPointCloudDrawParams* drawParams) override;
-#endif
-
-public:
-    PickOutput(PickContext& pick);
-};
 
 END_BENTLEY_DGN_NAMESPACE
 

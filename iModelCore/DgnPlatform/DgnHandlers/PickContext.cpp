@@ -951,7 +951,7 @@ void PickOutput::_DrawGraphic(Graphic* qvElem)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-PickContext::PickContext(LocateOptions const& options, StopLocateTest* stopTester) : m_options(options), m_stopTester(stopTester) 
+PickContext::PickContext(LocateOptions const& options, StopLocateTest* stopTester) : m_options(options), m_stopTester(stopTester), m_graphic(*this)
     {
     m_hitList               = NULL;
     m_hitPriorityOverride   = HitPriority::Highest;
@@ -1224,17 +1224,16 @@ bool PickContext::_CheckStop()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            PickContext::_OnPreDrawTransient()
+void PickContext::_OnPreDrawTransient()
     {
     T_Super::_OnPreDrawTransient();
-
-    m_output._GetGeomDetail().Init(); // Setup hit detail defaults...
+    _GetGeomDetail().Init(); // Setup hit detail defaults...
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    03/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            PickContext::_OutputElement(GeometricElementCR element)
+void PickContext::_OutputElement(GeometricElementCR element)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Setup hit detail defaults...unless this is a symbol, don't want hit detail (pattern/linestyle) cleared...
@@ -1461,3 +1460,13 @@ TestHitStatus PickContext::TestHit(HitDetailCR hit, DgnViewportR vp, DPoint3dCR 
 #endif
     return TestHitStatus::NotOn;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt PickOutput::_ProcessCurvePrimitive(ICurvePrimitiveCR prim, bool closed, bool filled) {return m_pick.ProcessCurvePrimitive(prim, closed, filled);}
+StatusInt PickOutput::_ProcessCurveVector(CurveVectorCR vector, bool isFilled) {return m_pick.ProcessCurveVector(vector, isFilled);}
+StatusInt PickOutput::_ProcessSolidPrimitive(ISolidPrimitiveCR prim) {return m_pick.ProcessSolidPrimitive(prim);}
+StatusInt PickOutput::_ProcessSurface(MSBsplineSurfaceCR surface) {return m_pick.ProcessSurface(surface);}
+StatusInt PickOutput::_ProcessFacetSet(PolyfaceQueryCR query, bool filled) {return m_pick.ProcessFacetSet(query, filled);}
+StatusInt PickOutput::_ProcessBody(ISolidKernelEntityCR entity) {return m_pick.ProcessBody(entity);}

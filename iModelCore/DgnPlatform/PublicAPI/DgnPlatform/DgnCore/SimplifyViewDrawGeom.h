@@ -39,7 +39,6 @@ private:
     void ClipAndProcessGlyph(DgnFontCR, DgnGlyphCR, DPoint3dCR glyphOffset);
     
 protected:
-
     // Functions implemented by sub-classes to allow them to control output.
     virtual bool _DoClipping() const {return false;}
     virtual bool _DoTextGeometry() const {return false;} // When false text is treated as a bounding shape.

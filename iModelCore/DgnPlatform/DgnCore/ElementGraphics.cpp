@@ -14,17 +14,12 @@ struct ElementGraphicsDrawGeom : SimplifyViewDrawGeom
 {
     DEFINE_T_SUPER(SimplifyViewDrawGeom)
 private:
-
-IElementGraphicsProcessor*  m_dropObj;
+    IElementGraphicsProcessor*  m_dropObj;
 
 protected:
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _DoClipping() const override {return m_dropObj->_WantClipping();}
-virtual bool _DoTextGeometry() const override {return true;}
-virtual bool _DoSymbolGeometry() const override {return true;}
+    virtual bool _DoClipping() const override {return m_dropObj->_WantClipping();}
+    virtual bool _DoTextGeometry() const override {return true;}
+    virtual bool _DoSymbolGeometry() const override {return true;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Earlin.Lutz     06/09
@@ -183,20 +178,21 @@ IElementGraphicsProcessor* GetIElementGraphicsProcessor() {return m_dropObj;}
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  06/09
 +===============+===============+===============+===============+===============+======*/
-struct ElementGraphicsContext : public NullContext
+struct ElementGraphicsContext : NullContext
 {
     DEFINE_T_SUPER(NullContext)
 protected:
-    ElementGraphicsDrawGeom* m_output;
-
+    ElementGraphicsDrawGeom* m_graphic;
+    ElementGraphicsContext() {}
+    virtual Render::GraphicPtr _BeginGraphic() override {return m_graphic;}
 public:
     ElementGraphicsContext(IElementGraphicsProcessor& dropObj)
         {
         m_purpose = dropObj._GetDrawPurpose();
         m_wantMaterials = true; // Setup material in ElemDisplayParams in case IElementGraphicsProcessor needs it...
 
-        m_output = new ElementGraphicsDrawGeom(this, dropObj);
-        m_currGraphic = m_output;
+        m_graphic = new ElementGraphicsDrawGeom(this, dropObj);
+        m_currGraphic = m_graphic;
 
         dropObj._AnnounceContext(*this);
         }
@@ -220,7 +216,7 @@ virtual void _DrawTextString(TextStringCR text) override
 virtual void _DrawSymbol(IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clipPlanes, bool ignoreColor, bool ignoreWeight) override
     {
     // Pass along any symbol that is drawn from _ExpandPatterns/_ExpandLineStyles, etc.
-    m_output->ClipAndProcessSymbol(symbolDef, trans, clipPlanes, ignoreColor, ignoreWeight);
+    m_graphic->ClipAndProcessSymbol(symbolDef, trans, clipPlanes, ignoreColor, ignoreWeight);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -228,7 +224,7 @@ virtual void _DrawSymbol(IDisplaySymbol* symbolDef, TransformCP trans, ClipPlane
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void _DrawAreaPattern(ClipStencil& boundary) override
     {
-    if (!m_output->GetIElementGraphicsProcessor()->_ExpandPatterns())
+    if (!m_graphic->GetIElementGraphicsProcessor()->_ExpandPatterns())
         return;
 
     T_Super::_DrawAreaPattern(boundary);
@@ -241,7 +237,7 @@ virtual ILineStyleCP _GetCurrLineStyle(LineStyleSymbP* symb) override
     {
     ILineStyleCP  currStyle = T_Super::_GetCurrLineStyle(symb);
 
-    if (!m_output->GetIElementGraphicsProcessor()->_ExpandLineStyles(currStyle))
+    if (!m_graphic->GetIElementGraphicsProcessor()->_ExpandLineStyles(currStyle))
         return NULL;
 
     return currStyle;

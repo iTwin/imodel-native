@@ -97,48 +97,8 @@ public:
      - draw "decorations" on top of the normal graphics
      - etc.
 
-<h3>View Controller types and sub-types</h3>
-A ViewController has a DgnViewType, indicating in broad terms what kind of view it is. There are only a few different DgnViewTypes.
-There are many specific types of ViewController within each view type category. ViewController defines a number of convenience methods
-to dynamic_cast a controller to a subclass. See ViewController::ToPhysicalViewController, ViewController::ToCameraViewController,
-ViewController::ToDrawingViewController.
-
-@verbatim
-    ViewControllerR viewController = ...
-
-    PhysicalViewControllerP physicalView = viewController.ToPhysicalViewControllerP();
-    if (physicalView != NULL)
-        {
-        physicalView->somefunction ();
-        }
-
-@endverbatim
-
-<h3>Inserting a new view in the database</h3>
-
-To create a new view, you must insert a view in the Views table and store type-specific settings for it. To define and store
-type-specific view data, you must create and save an instance of a subclass of ViewController.
-
-<h3>Loading data for an existing view from the database</h3>
-
-To read the settings stored in the database for a particular view, you must create an instance of the ViewController sub-class
-that corresponds to the view and then load it. The simplest way to create the correct type of controller for a view is to call
-the DgnViews::LoadViewController method, like this:
-@verbatim
-    auto viewController = project.Views().LoadViewController (project, viewId);
-    if (!viewController.IsValid())
-        return BSIERROR;
-
-    PhysicalViewControllerP physicalView = viewController->ToPhysicalViewControllerP();
-    if (physicalView != NULL)
-        {
-        physicalView->somefunction ();
-        }
-
-@endverbatim
 
 <h3>Defining a subclass of ViewController</h3>
-
 To create a subclass of ViewController, create a ViewHandler and implement _SupplyController.
 
 */

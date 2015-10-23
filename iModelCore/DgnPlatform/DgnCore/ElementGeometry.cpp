@@ -3012,25 +3012,23 @@ struct ElementGeometryCollectionContext : NullContext
 {
     DEFINE_T_SUPER(NullContext)
 protected:
-
-SimplifyViewDrawGeom* m_output;
-
+    RefCountedPtr<SimplifyViewDrawGeom> m_output;
 
 public:
+    virtual Render::GraphicPtr _BeginGraphic() override {return m_output;}
 
-virtual ~ElementGeometryCollectionContext() {delete (m_output);}
+    ElementGeometryCollectionContext(DgnDbR db)
+        {
+        m_purpose = DrawPurpose::CaptureGeometry;
+        m_wantMaterials = true; // Setup material in ElemDisplayParams...
 
-ElementGeometryCollectionContext(DgnDbR db)
-    {
-    m_output = new SimplifyViewDrawGeom();
-    m_purpose = DrawPurpose::CaptureGeometry;
-    m_wantMaterials = true; // Setup material in ElemDisplayParams...
+        m_output = new SimplifyViewDrawGeom();
+        m_currGraphic = m_output;
+        m_output->SetViewContext(this);
 
-    m_output->SetViewContext(this);
-
-    m_currDisplayParams = ElemDisplayParams();
-    SetDgnDb(db);
-    }
+        m_currDisplayParams = ElemDisplayParams();
+        SetDgnDb(db);
+        }
 
 }; // ElementGeometryCollectionContext
 
