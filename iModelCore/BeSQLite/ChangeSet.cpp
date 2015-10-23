@@ -8,6 +8,8 @@
 #include <BeSQLite/ChangeSet.h>
 #include "SQLite/sqlite3.h"
 
+#define STREAM_PAGE_BYTE_SIZE 1024
+
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -768,4 +770,73 @@ void ChangeStream::Dump(Utf8CP label, DbCR db, bool isPatchSet /*=false*/, int d
         }
 
     _Reset();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeStream::TransferBytesBetweenStreams(ChangeStream& inStream, ChangeStream& outStream)
+    {
+    DbResult result = BE_SQLITE_OK;
+    Byte buffer[STREAM_PAGE_BYTE_SIZE];
+    do
+        {
+        int numBytes = STREAM_PAGE_BYTE_SIZE;
+        result = (DbResult) InputCallback(&inStream, &buffer, &numBytes);
+        if (result == BE_SQLITE_OK)
+            {
+            if (0 == numBytes)
+                break; // Done!!
+
+            result = (DbResult) OutputCallback(&outStream, &buffer, numBytes);
+            }
+        } while (result == BE_SQLITE_OK);
+
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeStream::FromChangeStream(ChangeStream& inStream, bool invert /* = false */)
+    {
+    DbResult result = BE_SQLITE_OK;
+    if (invert)
+        result = (DbResult) sqlite3changeset_invert_strm(InputCallback, &inStream, OutputCallback, this);
+    else
+        result = TransferBytesBetweenStreams(inStream, *this);
+
+    inStream._Reset();
+    _Reset();
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeStream::ToChangeStream(ChangeStream& outStream, bool invert /* = false */)
+    {
+    DbResult result = BE_SQLITE_OK;
+    if (invert)
+        result = (DbResult) sqlite3changeset_invert_strm(InputCallback, this, OutputCallback, &outStream);
+    else
+        result = TransferBytesBetweenStreams(*this, outStream);
+
+    outStream._Reset();
+    _Reset();
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeStream::FromConcatenatedChangeStreams(ChangeStream& inStream1, ChangeStream& inStream2)
+    {
+    DbResult result = (DbResult) sqlite3changeset_concat_strm(InputCallback, &inStream1, InputCallback, &inStream2, OutputCallback, this);
+
+    inStream1._Reset();
+    inStream2._Reset();
+    _Reset();
+
+    return result;
     }

@@ -303,6 +303,7 @@ private:
     // Resets the change stream, and is internally called at the 
     // end of various change stream operations
     void Reset() { _Reset(); }
+    static DbResult TransferBytesBetweenStreams(ChangeStream& inStream, ChangeStream& outStream);
 
 protected:
     //! Application implements this to supply input to the system. 
@@ -351,6 +352,30 @@ public:
     //! @remarks Implement _InputPage to send the stream
     //! @return BE_SQLITE_OK if successful. Error status otherwise. 
     BE_SQLITE_EXPORT DbResult ToChangeGroup(ChangeGroup& changeGroup);
+
+    //! Stream changes from another ChangeStream
+    //! @param[in] inStream Another stream that provides input
+    //! @param[in] invert Pass true if the input stream needs to be inverted
+    //! @remarks Implement _OutputPage to receive the input stream. The
+    //! input stream needs to implement _InputPage to send the stream. 
+    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
+    BE_SQLITE_EXPORT DbResult FromChangeStream(ChangeStream& inStream, bool invert = false);
+
+    //! Stream changes to another ChangeStream
+    //! @param[in] outStream Another stream that accepts the output
+    //! @param[in] invert Pass true if this stream needs to be inverted
+    //! @remarks Implement _InputPage to send this stream. The output stream
+    //! needs to implement _OutputPage to receive this stream. 
+    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
+    BE_SQLITE_EXPORT DbResult ToChangeStream(ChangeStream& outStream, bool invert = false);
+
+    //! Stream changes by concatenating two other ChangeStream-s
+    //! @param[in] inStream1 First input stream
+    //! @param[in] inStream2 Second input stream
+    //! @remarks Implement _OutputPage to receive the concatenated stream. The input streams
+    //! need to implement _InputPage to send the streams. 
+    //! @return BE_SQLITE_OK if successful. Error status otherwise. 
+    BE_SQLITE_EXPORT DbResult FromConcatenatedChangeStreams(ChangeStream& inStream1, ChangeStream& inStream2);
 
     //! Apply all of the changes in this stream to the supplied database.
     //! @param[in] db the database to which the changes are applied.
