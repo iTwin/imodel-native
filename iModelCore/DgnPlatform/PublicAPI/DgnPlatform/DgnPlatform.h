@@ -411,6 +411,7 @@ struct DgnElementKey : BeSQLite::EC::ECInstanceKey
 
 typedef DgnElementKey const& DgnElementKeyCR;
 
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 //=======================================================================================
 //! The key (classId,instanceId) of a the Item aspect.
 //=======================================================================================
@@ -429,6 +430,7 @@ struct ElementItemKey : BeSQLite::EC::ECInstanceKey
 };
 
 typedef ElementItemKey const& ElementItemKeyCR;
+#endif
 
 //=======================================================================================
 //! A DRange3d that holds min/max values for an object in each of x,y,z in some coordinate system.
