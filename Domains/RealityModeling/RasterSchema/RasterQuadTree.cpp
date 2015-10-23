@@ -14,7 +14,7 @@
 //----------------------------------------------------------------------------------------
 static ReprojectStatus s_FilterGeocoordWarning(ReprojectStatus status)
     {
-    if(REPROJECT_CSMAPERR_OutOfUsefulRange == status)   // This a warning
+    if ((REPROJECT_CSMAPERR_OutOfUsefulRange == status) || (REPROJECT_CSMAPERR_VerticalDatumConversionError == status))   // This a warning
         return REPROJECT_Success;
 
     return status;   
