@@ -218,7 +218,6 @@ DgnModelP               m_targetModel;
 bvector<FloodSeed>      m_floodSeeds;
 FloodSeed               m_dynamicFaceSeed;
 
-virtual void            _SetupOutputs () override;
 virtual DgnModelP       _GetViewTarget () override {return (GetViewport () ? T_Super::_GetViewTarget () : m_targetModel);}
 
 virtual void            _DrawAreaPattern (ClipStencil& boundary) override {}

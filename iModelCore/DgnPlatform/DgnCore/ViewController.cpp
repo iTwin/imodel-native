@@ -422,7 +422,8 @@ AxisAlignedBox3d ViewController::_GetViewedExtents() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::_DrawElement(ViewContextR context, GeometricElementCR element)
     {
-    element._Draw(context);
+
+    element._Stroke(context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1799,6 +1800,7 @@ static void drawLocateHitDetail(DgnViewportR vp, double aperture, HitDetailCR hi
     if (!hit.GetGeomDetail().IsValidSurfaceHit())
         return; // AccuSnap will flash edge/segment geometry...
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     ViewDrawP  output = vp.GetIViewDraw();
     ColorDef    color = ColorDef(~vp.GetHiliteColor().GetValue());// Invert hilite color for good contrast...
     DPoint3d    pt = hit.GetHitPoint();
@@ -1824,6 +1826,7 @@ static void drawLocateHitDetail(DgnViewportR vp, double aperture, HitDetailCR hi
     segment.point[0].SumOf(pt, normal, length);
     segment.point[1].SumOf(pt, normal, -length);
     output->DrawLineString3d(2, segment.point, nullptr);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1832,6 +1835,7 @@ static void drawLocateHitDetail(DgnViewportR vp, double aperture, HitDetailCR hi
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void drawLocateCircle(DgnViewportR vp, double aperture, DPoint3dCR pt)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     ViewDrawP  output = vp.GetIViewDraw();
 
     output->SetToViewCoords(true);
@@ -1860,6 +1864,7 @@ static void drawLocateCircle(DgnViewportR vp, double aperture, DPoint3dCR pt)
     output->DrawArc2d(ellipse, false, false, 0.0, NULL);
 
     output->SetToViewCoords(false);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

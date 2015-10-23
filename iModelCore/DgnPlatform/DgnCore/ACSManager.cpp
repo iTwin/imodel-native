@@ -910,7 +910,7 @@ ColorDef IAuxCoordSys::_GetColor(DgnViewportP viewport, ColorDef menuColor, uint
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IAuxCoordSys::_DrawAxisText(DgnViewportP viewport, ViewDrawP cached, WCharCP labelStr, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options) const
+void IAuxCoordSys::_DrawAxisText(DgnViewportP viewport, SceneP cached, WCharCP labelStr, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options) const
     {
     DPoint3d textPt;
     textPt.x = userOrgX; textPt.y = userOrgY; textPt.z = 0.0;
@@ -937,8 +937,10 @@ void IAuxCoordSys::_DrawAxisText(DgnViewportP viewport, ViewDrawP cached, WCharC
         elemMatSymb.SetFillColor(viewport->GetBackgroundColor());
         elemMatSymb.SetIsBlankingRegion(true);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         cached->ActivateMatSymb(&elemMatSymb);
         cached->DrawShape3d(5, pts, true, NULL);
+#endif
         }
 
     elemMatSymb.SetLineColor(_GetColor(viewport, ColorDef::White(), _GetTransparency(false, options), options));
@@ -946,21 +948,18 @@ void IAuxCoordSys::_DrawAxisText(DgnViewportP viewport, ViewDrawP cached, WCharC
     elemMatSymb.SetWidth(isAxisLabel ? 2 : 1);
     elemMatSymb.SetIsBlankingRegion(false);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     cached->ActivateMatSymb(&elemMatSymb);
     cached->DrawTextString(textStr);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            IAuxCoordSys::_DrawZAxis
-(
-DgnViewportP           viewport,
-ViewDrawP        cached,
-Transform*          transformP,
-ACSDisplayOptions   options
-) const
+void IAuxCoordSys::_DrawZAxis (DgnViewportP viewport, SceneP cached, Transform* transformP, ACSDisplayOptions options) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DPoint3d    linePts[2];
 
     memset(linePts, 0, sizeof (linePts));
@@ -971,13 +970,12 @@ ACSDisplayOptions   options
     elemMatSymb.SetLineColor(_GetColor(viewport, ColorDef::Blue(), _GetTransparency(false, options), options));
     elemMatSymb.SetFillColor(_GetColor(viewport, ColorDef::Blue(), _GetTransparency(true, options), options));
     elemMatSymb.SetWidth(2);
-    cached->ActivateMatSymb(&elemMatSymb);
 
+    cached->ActivateMatSymb(&elemMatSymb);
     cached->DrawLineString3d(2, linePts, NULL);
 
     elemMatSymb.SetWidth(6);
     cached->ActivateMatSymb(&elemMatSymb);
-
     cached->DrawPointString3d(2, linePts, NULL);
 
     double      start = 0.0, sweep = msGeomConst_2pi, scale = ARROW_TIP_WIDTH/2.0;
@@ -1005,23 +1003,15 @@ ACSDisplayOptions   options
 
     cached->DrawArc3d(ellipse, true, true, NULL);
     cached->DrawArc3d(ellipse, false, false, NULL);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            IAuxCoordSys::_DrawAxisArrow
-(
-DgnViewportP           viewport,
-ViewDrawP        cached,
-Transform*          transformP,
-ColorDef            menuColor,
-WCharCP             labelStrP,
-bool                swapAxis,
-ACSDisplayOptions   options,
-ACSFlags            flags
-) const
+void IAuxCoordSys::_DrawAxisArrow (DgnViewportP viewport, SceneP cached, Transform* transformP, ColorDef menuColor, WCharCP labelStrP, bool swapAxis, ACSDisplayOptions options, ACSFlags flags) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     double      scale = 0.35, angle = swapAxis ? 0.0 : -msGeomConst_pi/2.0;
     DPoint2d    userOrg;
     DPoint3d    shapePts[8];
@@ -1071,6 +1061,7 @@ ACSFlags            flags
     elemMatSymb.SetIsBlankingRegion(true);
     cached->ActivateMatSymb(&elemMatSymb);
     cached->DrawShape3d(8, shapePts, true, NULL);
+#endif
     }
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)

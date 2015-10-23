@@ -10,7 +10,7 @@
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  06/09
 +===============+===============+===============+===============+===============+======*/
-struct ElementGraphicsDrawGeom : public SimplifyViewDrawGeom
+struct ElementGraphicsDrawGeom : SimplifyViewDrawGeom
 {
     DEFINE_T_SUPER(SimplifyViewDrawGeom)
 private:
@@ -166,10 +166,10 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Init(ViewContextP context, IElementGraphicsProcessor* dropObj)
+ElementGraphicsDrawGeom(ViewContextP context, IElementGraphicsProcessor& dropObj)
     {
     SetViewContext(context);
-    m_dropObj = dropObj;
+    m_dropObj = &dropObj;
     ModifyDrawViewFlags(m_viewFlags);
     }
 
@@ -187,23 +187,19 @@ struct ElementGraphicsContext : public NullContext
 {
     DEFINE_T_SUPER(NullContext)
 protected:
-
-ElementGraphicsDrawGeom&    m_output;
-
-virtual void _SetupOutputs() override {SetIViewDraw(m_output);}
+    ElementGraphicsDrawGeom* m_output;
 
 public:
+    ElementGraphicsContext(IElementGraphicsProcessor& dropObj)
+        {
+        m_purpose = dropObj._GetDrawPurpose();
+        m_wantMaterials = true; // Setup material in ElemDisplayParams in case IElementGraphicsProcessor needs it...
 
-ElementGraphicsContext(IElementGraphicsProcessor* dropObj, ElementGraphicsDrawGeom& output) : m_output(output)
-    {
-    m_purpose = dropObj->_GetDrawPurpose();
-    m_wantMaterials = true; // Setup material in ElemDisplayParams in case IElementGraphicsProcessor needs it...
+        m_output = new ElementGraphicsDrawGeom(this, dropObj);
+        m_currGraphic = m_output;
 
-    m_output.Init(this, dropObj);
-    _SetupOutputs();
-
-    dropObj->_AnnounceContext(*this);
-    }
+        dropObj._AnnounceContext(*this);
+        }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/2015
@@ -215,7 +211,7 @@ virtual void _DrawTextString(TextStringCR text) override
     CookDisplayParams();
 
     double zDepth = GetCurrentDisplayParams().GetNetDisplayPriority();
-    GetIDrawGeom().DrawTextString(text, Is3dView() ? nullptr : &zDepth);                
+    GetCurrentGraphicR().DrawTextString(text, Is3dView() ? nullptr : &zDepth);                
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -224,7 +220,7 @@ virtual void _DrawTextString(TextStringCR text) override
 virtual void _DrawSymbol(IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clipPlanes, bool ignoreColor, bool ignoreWeight) override
     {
     // Pass along any symbol that is drawn from _ExpandPatterns/_ExpandLineStyles, etc.
-    m_output.ClipAndProcessSymbol(symbolDef, trans, clipPlanes, ignoreColor, ignoreWeight);
+    m_output->ClipAndProcessSymbol(symbolDef, trans, clipPlanes, ignoreColor, ignoreWeight);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -232,7 +228,7 @@ virtual void _DrawSymbol(IDisplaySymbol* symbolDef, TransformCP trans, ClipPlane
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void _DrawAreaPattern(ClipStencil& boundary) override
     {
-    if (!m_output.GetIElementGraphicsProcessor()->_ExpandPatterns())
+    if (!m_output->GetIElementGraphicsProcessor()->_ExpandPatterns())
         return;
 
     T_Super::_DrawAreaPattern(boundary);
@@ -245,7 +241,7 @@ virtual ILineStyleCP _GetCurrLineStyle(LineStyleSymbP* symb) override
     {
     ILineStyleCP  currStyle = T_Super::_GetCurrLineStyle(symb);
 
-    if (!m_output.GetIElementGraphicsProcessor()->_ExpandLineStyles(currStyle))
+    if (!m_output->GetIElementGraphicsProcessor()->_ExpandLineStyles(currStyle))
         return NULL;
 
     return currStyle;
@@ -268,8 +264,7 @@ virtual void _CookDisplayParams(ElemDisplayParamsR elParams, ElemMatSymbR elMatS
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, GeometricElementCR element)
     {
-    ElementGraphicsDrawGeom output;
-    ElementGraphicsContext  context(&dropObj, output);
+    ElementGraphicsContext context(dropObj);
 
     context.SetDgnDb(element.GetDgnDb());
     
@@ -314,8 +309,7 @@ void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, Geometri
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, DgnDbR dgnDb)
     {
-    ElementGraphicsDrawGeom output;
-    ElementGraphicsContext  context(&dropObj, output);
+    ElementGraphicsContext  context(dropObj);
 
     context.GetCurrentDisplayParams() = ElemDisplayParams();
     context.SetDgnDb(dgnDb);
@@ -607,7 +601,7 @@ static int wireframe_drawSurfaceCurveCallback(void* userArg, MSBsplineCurveP bcu
                 /* Leave this test in as it supports discontinuity in a B-spline (which arises from the conversion of group holes). */
                 if (numStrokes && !LegacyMath::RpntEqual(&chord.point[0], strokeBuffer + numStrokes - 1))
                     {
-                    info->m_context.GetIDrawGeom().DrawLineString3d(numStrokes, strokeBuffer, NULL);
+                    info->m_context.GetCurrentGraphicR().DrawLineString3d(numStrokes, strokeBuffer, NULL);
                     numStrokes = 0;
                     }
  
@@ -623,14 +617,14 @@ static int wireframe_drawSurfaceCurveCallback(void* userArg, MSBsplineCurveP bcu
  
                 if (numStrokes >= MAX_CLIPBATCH-1)
                     {
-                    info->m_context.GetIDrawGeom().DrawLineString3d(numStrokes, strokeBuffer, NULL);
+                    info->m_context.GetCurrentGraphicR().DrawLineString3d(numStrokes, strokeBuffer, NULL);
                     strokeBuffer[0] = strokeBuffer[numStrokes - 1];
                     numStrokes = 1;
                     }
                 }
             }
  
-        info->m_context.GetIDrawGeom().DrawLineString3d(numStrokes, strokeBuffer, NULL);
+        info->m_context.GetCurrentGraphicR().DrawLineString3d(numStrokes, strokeBuffer, NULL);
  
         return (info->m_context.CheckStop() ? ERROR : SUCCESS);
         }
@@ -647,7 +641,7 @@ static int wireframe_drawSurfaceCurveCallback(void* userArg, MSBsplineCurveP bcu
         }
 
     if (showThisRule)
-        info->m_context.GetIDrawGeom().DrawBSplineCurve(*bcurve, false);
+        info->m_context.GetCurrentGraphicR().DrawBSplineCurve(*bcurve, false);
 
     return (info->m_context.CheckStop() ? ERROR : SUCCESS);
     }
@@ -798,7 +792,10 @@ static void clearCurveVectorIds(CurveVectorCR curveVector)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void drawSolidPrimitiveCurveVector(CurveVectorCR curveVector, ViewContextR context, TransformCP transform, CurvePrimitiveId::Type type, CurveTopologyIdCR id, CompoundDrawStateP cds)
     {
-    bool    ignoreCurveIds = context.GetIViewDraw().IsOutputQuickVision();
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    bool    ignoreCurveIds = context.GetRenderTarget().IsOutputQuickVision();
+#endif
+    bool    ignoreCurveIds = true;
 
     if (!ignoreCurveIds) 
         {
@@ -811,7 +808,7 @@ static void drawSolidPrimitiveCurveVector(CurveVectorCR curveVector, ViewContext
         context.PushTransform(*transform);
 
     // Always output as open profile...
-    WireframeGeomUtil::DrawOutline(curveVector, context.GetIDrawGeom());
+    WireframeGeomUtil::DrawOutline(curveVector, context.GetCurrentGraphicR());
 
     if (!ignoreCurveIds)
         {
@@ -828,7 +825,10 @@ static void drawSolidPrimitiveCurveVector(CurveVectorCR curveVector, ViewContext
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void drawSolidPrimitiveCurve(ICurvePrimitivePtr primitive, ViewContextR context, CurveTopologyIdCR topologyId, CompoundDrawStateP cds)
     {
-    bool    ignoreCurveIds = context.GetIViewDraw().IsOutputQuickVision();
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    bool    ignoreCurveIds = context.GetRenderTarget().IsOutputQuickVision();
+#endif
+    bool    ignoreCurveIds = true;
 
     if (!ignoreCurveIds)
         {
@@ -838,7 +838,7 @@ static void drawSolidPrimitiveCurve(ICurvePrimitivePtr primitive, ViewContextR c
         primitive->SetId(newId.get());
         }
 
-    context.GetIDrawGeom().DrawCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive), false);
+    context.GetCurrentGraphicR().DrawCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive), false);
     }
 
 /*----------------------------------------------------------------------------------*//**
@@ -909,7 +909,10 @@ void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, ViewContextR context, 
                 drawSolidPrimitiveCurve(ICurvePrimitive::CreateArc(ellipse), context, CurveTopologyId::FromSweepProfile(1), nullptr);
                 }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
             bool    ignoreSilhouettes = context.GetIViewDraw().IsOutputQuickVision();
+#endif
+            bool    ignoreSilhouettes = false;
 
             if (!includeFaceIso || ignoreSilhouettes)
                 return; // QVis handles cone silhouette display...
@@ -1162,7 +1165,7 @@ void WireframeGeomUtil::Draw(MSBsplineSurfaceCR surface, ViewContextR context, b
                 if (!curve.IsValid())
                     continue;
 
-                context.GetIDrawGeom().DrawCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
+                context.GetCurrentGraphicR().DrawCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
                 }
             }
         }
@@ -1483,7 +1486,7 @@ void WireframeGeomUtil::CollectPolyfaces(ISolidKernelEntityCR entity, DgnDbR dgn
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WireframeGeomUtil::DrawOutline(CurveVectorCR curves, GeomDrawR drawGeom)
+void WireframeGeomUtil::DrawOutline(CurveVectorCR curves, GraphicR drawGeom)
     {
     if (1 > curves.size())
         return;
@@ -1516,7 +1519,7 @@ void WireframeGeomUtil::DrawOutline(CurveVectorCR curves, GeomDrawR drawGeom)
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WireframeGeomUtil::DrawOutline2d(CurveVectorCR curves, GeomDrawR drawGeom, double zDepth)
+void WireframeGeomUtil::DrawOutline2d(CurveVectorCR curves, GraphicR drawGeom, double zDepth)
     {
     if (1 > curves.size())
         return;
@@ -1567,16 +1570,16 @@ void DrawCurveVector(ElementHandleCR eh, ViewContextR context, bool isFilled)
     if (!isFilled && m_curves.IsAnyRegionType() && context.GetIViewDraw().IsOutputQuickVision())
         {
         if (eh.GetDgnModelP ()->Is3d())
-            WireframeGeomUtil::DrawOutline(m_curves, context.GetIDrawGeom());
+            WireframeGeomUtil::DrawOutline(m_curves, context.GetCurrentGraphicR());
         else
-            WireframeGeomUtil::DrawOutline2d(m_curves, context.GetIDrawGeom(), context.GetDisplayPriority());
+            WireframeGeomUtil::DrawOutline2d(m_curves, context.GetCurrentGraphicR(), context.GetDisplayPriority());
         return;
         }
 
     if (eh.GetDgnModelP ()->Is3d())
-        context.GetIDrawGeom().DrawCurveVector(m_curves, isFilled);
+        context.GetCurrentGraphicR().DrawCurveVector(m_curves, isFilled);
     else
-        context.GetIDrawGeom().DrawCurveVector2d(m_curves, isFilled, context.GetDisplayPriority());
+        context.GetCurrentGraphicR().DrawCurveVector2d(m_curves, isFilled, context.GetDisplayPriority());
     }
 
 }; // CurveVectorStroker
@@ -1853,9 +1856,9 @@ static void DrawStyledCurveVector3d(ViewContextR context, CurveVectorCR curve)
     if (NULL == context.GetCurrLineStyle(NULL))
         {
         if (context.GetIViewDraw().IsOutputQuickVision())
-            WireframeGeomUtil::DrawOutline(curve, context.GetIDrawGeom());
+            WireframeGeomUtil::DrawOutline(curve, context.GetCurrentGraphicR());
         else
-            context.GetIDrawGeom().DrawCurveVector(curve, false);
+            context.GetCurrentGraphicR().DrawCurveVector(curve, false);
             
         return;
         }
@@ -1871,9 +1874,9 @@ static void DrawStyledCurveVector2d(ViewContextR context, CurveVectorCR curve, d
     if (NULL == context.GetCurrLineStyle(NULL))
         {
         if (context.GetIViewDraw().IsOutputQuickVision())
-            WireframeGeomUtil::DrawOutline2d(curve, context.GetIDrawGeom(), zDepth);
+            WireframeGeomUtil::DrawOutline2d(curve, context.GetCurrentGraphicR(), zDepth);
         else
-            context.GetIDrawGeom().DrawCurveVector2d(curve, false, zDepth);
+            context.GetCurrentGraphicR().DrawCurveVector2d(curve, false, zDepth);
             
         return;
         }
@@ -1955,7 +1958,7 @@ void ViewContext::DrawStyledCurveVector3d(CurveVectorCR curve)
 #if defined (WIP_NEEDSWORK_ELEMENT)
     CurveVectorOutlineStroker::DrawStyledCurveVector3d(*this, curve);
 #else
-    GetIDrawGeom().DrawCurveVector(curve, false);
+    GetCurrentGraphicR().DrawCurveVector(curve, false);
 #endif
     }
 
@@ -1967,7 +1970,7 @@ void ViewContext::DrawStyledCurveVector2d(CurveVectorCR curve, double zDepth)
 #if defined (WIP_NEEDSWORK_ELEMENT)
     CurveVectorOutlineStroker::DrawStyledCurveVector2d(*this, curve, zDepth);
 #else
-    GetIDrawGeom().DrawCurveVector2d(curve, false, zDepth);
+    GetCurrentGraphicR().DrawCurveVector2d(curve, false, zDepth);
 #endif
     }
 

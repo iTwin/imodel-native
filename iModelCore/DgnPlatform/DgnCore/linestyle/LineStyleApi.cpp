@@ -132,7 +132,7 @@ StatusInt       LsComponent::_StrokeLineString (ViewContextP context, LineStyleS
             return _StrokeLineString (context, lsSymb, pts+disconnect+1, nPts-disconnect-1, false);
             }
 
-        context->GetIDrawGeom().DrawLineString3d (nPts, pts, NULL);
+        context->GetCurrentGraphicR().DrawLineString3d (nPts, pts, NULL);
 
         return SUCCESS;
         }
@@ -149,6 +149,8 @@ StatusInt       LsComponent::_StrokeLineString (ViewContextP context, LineStyleS
     //  we can skip drawing some of the segments.  In some cases, this is absolutely 
     //  essential for performance -- especially on tablets.
     context->ValidateScanRange();
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     TransformClipStackR clipStack = context->GetTransformClipStack();
 
     int startPoint = 0;
@@ -172,11 +174,11 @@ StatusInt       LsComponent::_StrokeLineString (ViewContextP context, LineStyleS
             //  Nothing previously accepted; current point and next are not rejected by the same plane.
             accepted = startPoint;
         }
-
     if (accepted >= 0)
         {
         _DoStroke (context, pts+accepted, nPts-accepted, lsSymb);
         }
+#endif
 
     return false;
     }
@@ -277,11 +279,11 @@ BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, Line
             curve->push_back (ICurvePrimitive::CreateArc (ellipse));
             curve->push_back (ICurvePrimitive::CreateLineString (pts, 3));
 
-            context->GetIDrawGeom().DrawCurveVector (*curve, filled);
+            context->GetCurrentGraphicR().DrawCurveVector (*curve, filled);
             }
         else
             {
-            context->GetIDrawGeom().DrawArc3d (ellipse, NULL == inSweep, filled, range);
+            context->GetCurrentGraphicR().DrawArc3d (ellipse, NULL == inSweep, filled, range);
             }
         }
     else
@@ -290,7 +292,7 @@ BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, Line
         ElemDisplayParamsP elParams = context->GetCurrentDisplayParams();
         if (0 == elParams->GetWeight())
             {
-            context->GetIDrawGeom().DrawArc3d (ellipse, NULL == inSweep, filled, range);
+            context->GetCurrentGraphic().DrawArc3d (ellipse, NULL == inSweep, filled, range);
             }
         else
             {
@@ -301,12 +303,12 @@ BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, Line
             ElemDisplayParamsStateSaver saveState (*context->GetCurrentDisplayParams(), false, false, false, true, false);
             elParams->SetWeight (0);
             context->CookDisplayParams();
-            context->GetIDrawGeom().ActivateMatSymb (context->GetElemMatSymb());
-            context->GetIDrawGeom().DrawArc3d (ellipse, NULL == inSweep, filled, range);
-            context->GetIDrawGeom().ActivateMatSymb (&saveMatSymb);
+            context->GetCurrentGraphic().ActivateMatSymb (context->GetElemMatSymb());
+            context->GetCurrentGraphic().DrawArc3d (ellipse, NULL == inSweep, filled, range);
+            context->GetCurrentGraphic().ActivateMatSymb (&saveMatSymb);
             }
 #else
-        context->GetIDrawGeom().DrawArc3d (ellipse, NULL == inSweep, filled, range);
+        context->GetCurrentGraphicR().DrawArc3d (ellipse, NULL == inSweep, filled, range);
 #endif
         }
 
@@ -431,7 +433,7 @@ StatusInt       LsComponent::_StrokeBSplineCurve (ViewContextP context, LineStyl
     // if the linestyle is too small to recognize in this view, just draw the bspline with no style.
     if (!IsWidthDiscernible (context, lsSymb, firstPt))
         {
-        context->GetIDrawGeom().DrawBSplineCurve (*curve, false);
+        context->GetCurrentGraphicR().DrawBSplineCurve (*curve, false);
 
         return SUCCESS;
         }

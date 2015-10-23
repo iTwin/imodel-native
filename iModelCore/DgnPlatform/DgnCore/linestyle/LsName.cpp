@@ -17,7 +17,7 @@ struct LineStyleRangeCollector : IElementGraphicsProcessor
 {
 private:
 
-GraphicStroker&    m_stroker;
+Stroker const&      m_stroker;
 DRange3d            m_range;
 ViewContextP        m_context;
 Transform           m_currentTransform;
@@ -27,7 +27,7 @@ protected:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-explicit LineStyleRangeCollector(GraphicStroker& stroker) : m_stroker(stroker) 
+explicit LineStyleRangeCollector(Stroker const& stroker) : m_stroker(stroker) 
     {
     m_range.Init();
     m_currentTransform.InitIdentity();
@@ -75,13 +75,15 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-static void Process(DRange3dR range, GraphicStroker& stroker)
+static void Process(DRange3dR range, Stroker const& stroker)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     LineStyleRangeCollector  processor(stroker);
 
     ElementGraphicsOutput::Process(processor, stroker._GetDgnDb());
 
     processor.GetRange(range);
+#endif
     }
 
 }; // LineStyleRangeCollector
@@ -195,9 +197,11 @@ Utf8String         LsDefinition::GetStyleName () const
 //
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-/* static */  void CreateGeometryMapMaterial(ViewContextR context, GraphicStroker& stroker, intptr_t textureId)
+/* static */  void CreateGeometryMapMaterial(ViewContextR context, Stroker& stroker, intptr_t textureId)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.GetIViewDraw ().DefineQVGeometryMap (textureId, stroker, nullptr, false, context, false);
+#endif
     return;
     }
 
@@ -205,7 +209,7 @@ Utf8String         LsDefinition::GetStyleName () const
 //! Used to generate a texture based on a line style.
 // @bsiclass                                                    John.Gooding    08/2015
 //=======================================================================================
-struct ComponentToTextureStroker : GraphicStroker
+struct ComponentToTextureStroker : Stroker
 {
 private:
     ViewContextR        m_viewContext;
@@ -215,8 +219,8 @@ private:
     double              m_multiplier;
     double              m_length;
     Transform           m_transformForTexture;
-    bool                m_haveRange;
-    DRange3d            m_range;
+    mutable bool        m_haveRange;
+    mutable DRange3d    m_range;
 
 public:
 
@@ -243,7 +247,7 @@ ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-void _Stroke(ViewContextR context) override
+void _Stroke(ViewContextR context) const override
     {
     if (!m_haveRange)
         {
@@ -259,7 +263,7 @@ void _Stroke(ViewContextR context) override
     //  Use the current symbology, activating it here.  We may also activate symbology when drawing 
     //  symbols. 
 
-    context.GetIDrawGeom().ActivateMatSymb(&savedMatSymb);
+    context.GetCurrentGraphicR().ActivateMatSymb(&savedMatSymb);
 
     context.PushTransform(m_transformForTexture);
 
@@ -270,10 +274,6 @@ void _Stroke(ViewContextR context) override
     context.GetCurrentDisplayParams() = savedParams;
     *context.GetElemMatSymb() = savedMatSymb;
     }
-
-    DgnDbR _GetDgnDb() const override {return m_viewContext.GetDgnDb();}
-    Graphic* _FindGraphic(DgnViewportCR vp) const override {return nullptr;}
-    void _SaveGraphic(DgnViewportCR vp, GraphicR graphic) const override {}
 
 };
 
@@ -295,7 +295,9 @@ intptr_t  LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR
 
     ComponentToTextureStroker   stroker(viewContext, lineStyleSymb, *this);
     
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     viewContext.GetIViewDraw ().DefineQVGeometryMap (intptr_t(this), stroker, NULL, false, viewContext, false);
+#endif
     return intptr_t(this);
     }
 

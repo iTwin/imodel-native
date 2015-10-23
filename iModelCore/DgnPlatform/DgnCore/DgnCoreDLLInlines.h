@@ -53,17 +53,6 @@ DG_INLINE size_t IViewClipObject::GetPrimaryCutPlaneCount() const {return _GetPr
 DG_INLINE StatusInt IViewClipObject::ApplyTransform(TransformCR t) {return _ApplyTransform(t);}
 DG_INLINE void IViewClipObject::Draw(ViewContextR c) {return _Draw(c);}
 
-DG_INLINE CameraInfo const& DgnViewport::GetCamera() const {return m_camera;}
-DG_INLINE void DgnViewport::SetMinimumLOD(double minLOD) {m_minLOD = minLOD;}
-DG_INLINE RotMatrixCR DgnViewport::GetRotMatrix() const {return m_rotMatrix;}
-DG_INLINE DMap4dCP DgnViewport::GetWorldToViewMap() const {return &m_rootToView;}
-DG_INLINE DMap4dCP DgnViewport::GetWorldToNpcMap() const {return &m_rootToNpc;}
-DG_INLINE bool DgnViewport::IsGridOn() const {return _IsGridOn();}
-DG_INLINE void DgnViewport::Destroy() {_Destroy();}
-DG_INLINE ColorDef DgnViewport::GetBackgroundColor() const {return m_backgroundColor;}
-DG_INLINE void DgnViewport::GetViewCorners(DPoint3dR low, DPoint3dR high) const {_GetViewCorners(low,high);}
-DG_INLINE int DgnViewport::GetIndexedLineWidth(int index) const {return _GetIndexedLineWidth(index);}
-DG_INLINE uint32_t        DgnViewport::GetIndexedLinePattern(int index) const {return _GetIndexedLinePattern(index);}
 DG_INLINE void DgnViewport::SetFrustumFromRootCorners(DPoint3dCP rootBox, double compressionFraction) {_SetFrustumFromRootCorners(rootBox, compressionFraction);}
 DG_INLINE void DgnViewport::SetNeedsRefresh() {_SetNeedsRefresh();}
 DG_INLINE void DgnViewport::SetNeedsHeal() {_SetNeedsHeal();}
@@ -124,69 +113,6 @@ DG_INLINE IAuxCoordSysPtr IAuxCoordSys::Clone() const {return _Clone();}
 DG_INLINE StatusInt IAuxCoordSys::GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, double& uorPerGrid, double& gridRatio, uint32_t& gridPerRef) const {return _GetStandardGridParams(gridReps, gridOffset, uorPerGrid, gridRatio, gridPerRef);}
 DG_INLINE StatusInt IAuxCoordSys::SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, double uorPerGrid, double gridRatio, uint32_t gridPerRef) {return _SetStandardGridParams(gridReps, gridOffset, uorPerGrid, gridRatio, gridPerRef);}
 
-DG_INLINE DgnDbR ViewContext::GetDgnDb() const {BeAssert(nullptr != m_dgnDb); return *m_dgnDb;}
-DG_INLINE void ViewContext::SetDgnDb(DgnDbR dgnDb) {return _SetDgnDb(dgnDb);}
-DG_INLINE GeometricElementCP ViewContext::GetCurrentElement() const {return (m_currentElement.IsValid() ? m_currentElement->ToGeometricElement() : nullptr);}
-DG_INLINE void ViewContext::SetCurrentElement(GeometricElementCP element) {_SetCurrentElement(element);}
-
-DG_INLINE DrawPurpose ViewContext::GetDrawPurpose() const {return m_purpose;}
-DG_INLINE bool ViewContext::IsCameraOn() const {return m_isCameraOn;}
-DG_INLINE bool ViewContext::Is3dView() const {return m_is3dView;}
-
-DG_INLINE ElemMatSymbP ViewContext::GetElemMatSymb() {return &m_elemMatSymb;}
-DG_INLINE OvrMatSymb* ViewContext::GetOverrideMatSymb() {return &m_ovrMatSymb;}
-DG_INLINE Byte& ViewContext::GetFilterLODFlag() {return m_filterLOD;}
-DG_INLINE void ViewContext::SetFilterLODFlag(FilterLODFlags flags) { m_filterLOD =(Byte) flags; }
-DG_INLINE size_t ViewContext::GetTransClipDepth() {return m_transformClipStack.GetSize(); }
-DG_INLINE RangeResult ViewContext::GetCurrParentRangeResult() {return m_parentRangeResult; }
-DG_INLINE void ViewContext::SetCurrParentRangeResult(RangeResult val) {m_parentRangeResult = val;}
-DG_INLINE double ViewContext::GetArcTolerance() const {return m_arcTolerance;}
-DG_INLINE double ViewContext::GetMinLOD() const {return m_minLOD;}
-DG_INLINE void ViewContext::SetMinLOD(double lod) { m_minLOD = lod; }
-DG_INLINE ScanCriteriaCP ViewContext::GetScanCriteria() const {return m_scanCriteria;}
-DG_INLINE bool ViewContext::GetDisplayPriorityRange(int32_t& low, int32_t& high) const {if (NULL == m_viewport) return false; low = m_displayPriorityRange[0]; high = m_displayPriorityRange[1]; return true;}
-DG_INLINE void ViewContext::SetArcTolerance(double tol) {m_arcTolerance = tol;}
-DG_INLINE uint32_t ViewContext::GetRasterPlane() const {return m_rasterPlane;}
-DG_INLINE StatusInt ViewContext::Attach(DgnViewportP vp, DrawPurpose purpose) {return _Attach(vp,purpose);}
-DG_INLINE void ViewContext::Detach() {_Detach();}
-DG_INLINE bool ViewContext::CheckStop() {return _CheckStop();}
-DG_INLINE void ViewContext::PopTransformClip() {_PopTransformClip();}
-DG_INLINE void ViewContext::PushTransform(TransformCR trans) {_PushTransform(trans);}
-DG_INLINE void ViewContext::PushClip(ClipVectorCR clip) {_PushClip(clip);}
-DG_INLINE void ViewContext::DrawSymbol(IDisplaySymbol* symb, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight) {_DrawSymbol(symb, trans, clip, ignoreColor, ignoreWeight);}
-DG_INLINE void ViewContext::InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
-DG_INLINE void ViewContext::DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed){_DrawStyledLineString2d(nPts, pts, zDepth, range, closed);}
-DG_INLINE void ViewContext::DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed){_DrawStyledLineString3d(nPts, pts, range, closed);}
-DG_INLINE void ViewContext::DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double zDepth, DPoint2dCP range) {_DrawStyledArc2d(ellipse, isEllipse, zDepth, range);}
-DG_INLINE void ViewContext::DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3dCP range) {_DrawStyledArc3d(ellipse, isEllipse, range);}
-DG_INLINE void ViewContext::DrawStyledBSplineCurve2d(MSBsplineCurveCR curve, double zDepth) {_DrawStyledBSplineCurve2d(curve, zDepth);}
-DG_INLINE void ViewContext::DrawStyledBSplineCurve3d(MSBsplineCurveCR curve) {_DrawStyledBSplineCurve3d(curve);}
-DG_INLINE void ViewContext::PushViewIndependentOrigin(DPoint3dCP origin) {_PushViewIndependentOrigin(origin);}
-DG_INLINE StatusInt ViewContext::VisitElement(GeometricElementCR elem) {return _VisitElement(elem);}
-DG_INLINE void ViewContext::AllocateScanCriteria(){_AllocateScanCriteria();}
-DG_INLINE void ViewContext::VisitTransientGraphics(bool isPreUpdate) {_VisitTransientGraphics(isPreUpdate);}
-DG_INLINE void ViewContext::CookDisplayParams(ElemDisplayParamsR elParams, ElemMatSymbR elMatSymb) {_CookDisplayParams(elParams, elMatSymb);}
-DG_INLINE void ViewContext::CookDisplayParamsOverrides(ElemDisplayParamsR elParams, OvrMatSymbR ovrMatSymb) {_CookDisplayParamsOverrides(elParams, ovrMatSymb);}
-DG_INLINE StatusInt ViewContext::InitContextForView() {return _InitContextForView();}
-DG_INLINE bool ViewContext::VisitAllModelElements(bool includeTransients) { return _VisitAllModelElements(includeTransients); }
-DG_INLINE void ViewContext::ClearZ() { _ClearZ(); }
-DG_INLINE BentleyStatus ViewContext::GetCurrLocalToWorldTrans(TransformR trans) const { return m_transformClipStack.GetTransform(trans); }
-DG_INLINE BentleyStatus ViewContext::GetCurrWorldToLocalTrans(TransformR trans) const { return m_transformClipStack.GetInverseTransform(trans); }
-DG_INLINE TransformCP ViewContext::GetCurrLocalToWorldTransformCP() const { return m_transformClipStack.GetTransformCP(); }
-DG_INLINE void ViewContext::DrawTextString(TextStringCR textString) {_DrawTextString(textString);}
-DG_INLINE BentleyStatus ViewContext::GetLocalToWorldTrans(TransformR trans, size_t index) const { return m_transformClipStack.GetTransformFromIndex(trans, index); }
-DG_INLINE bool ViewContext::IsViewIndependent() { return m_transformClipStack.IsViewIndependent(); }
-DG_INLINE bool ViewContext::WantUndisplayedClips() { return _WantUndisplayedClips(); }
-
-DG_INLINE double ViewContext::GetCurrentLevelOfDetail() const { return m_levelOfDetail; }
-DG_INLINE void ViewContext::SetCurrentLevelOfDetail(double levelOfDetail) { m_levelOfDetail = levelOfDetail; }
-DG_INLINE ViewContext::ContextMark::~ContextMark() {Pop();}
-
-DG_INLINE IElemTopologyCP   ViewContext::GetElemTopology() const {return(m_currElemTopo.IsValid() ? m_currElemTopo.get() : nullptr);}
-DG_INLINE void              ViewContext::SetElemTopology(IElemTopologyP topo) {m_currElemTopo = topo;}
-DG_INLINE GeomStreamEntryId ViewContext::GetGeomStreamEntryId() const {return m_currGeomStreamEntryId;}
-DG_INLINE void              ViewContext::SetGeomStreamEntryId(GeomStreamEntryId geomId) {m_currGeomStreamEntryId = geomId;}
-
 DG_INLINE GradientSymb::GradientSymb() {memset(&m_mode, 0, offsetof(GradientSymb, m_values) + sizeof(m_values) - offsetof(GradientSymb, m_mode));}
 DG_INLINE int GradientSymb::GetNKeys() const {return m_nKeys;}
 DG_INLINE GradientMode GradientSymb::GetMode() const {return m_mode;}
@@ -241,7 +167,7 @@ DG_INLINE DwgHatchDefCR PatternParams::GetDwgHatchDef() const {return dwgHatchDe
 DG_INLINE DPoint3dCR PatternParams::GetOrigin() const {return origin;}
 DG_INLINE double PatternParams::GetAnnotationScale() const {return annotationscale;}
 
-DG_INLINE void ElemMatSymb::SetIndexedRasterPattern(int32_t index, uint32_t rasterPat) {m_elementStyle = IS_LINECODE(index) ? index : 0; m_rasterPat = rasterPat; m_extSymbId = 0;}
+DG_INLINE void ElemMatSymb::SetIndexedRasterPattern(int32_t index, uint32_t rasterPat) {m_elementStyle = IS_LINECODE(index) ? index : 0; m_rasterPat = rasterPat; }
 
 DG_INLINE bool PlotInfo::IsScreeningSet() const {return m_hasScreening;}
 DG_INLINE double PlotInfo::GetScreening() const {return m_screening;}
@@ -257,10 +183,6 @@ DG_INLINE double PlotInfo::GetLineWeightMM() const {return m_widthMM;}
 DG_INLINE void PlotInfo::SetLineWeightMM(double mm, bool set) {if (set) m_widthMM = mm; m_hasLineWeightMM = set;};
 
 DG_INLINE void LineStyleParams::SetScale(double inScale) { modifiers |= STYLEMOD_SCALE; scale = inScale; }
-
-DG_INLINE StatusInt     ViewController::VisitHit(HitDetailCR hit, ViewContextR context) const{return _VisitHit(hit, context);}
-DG_INLINE void ViewController::DrawView(ViewContextR context) {return _DrawView(context);}
-DG_INLINE void ViewController::VisitElements(ViewContextR context) {return _VisitElements(context);}
 
 DG_INLINE SnapDetailP     SnapContext::GetSnapDetail() {return m_snapPath;}
 DG_INLINE SnapMode      SnapContext::GetSnapMode() {return m_snapMode;}

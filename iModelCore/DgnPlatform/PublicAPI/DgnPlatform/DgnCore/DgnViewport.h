@@ -442,7 +442,7 @@ protected:
     virtual bool _IsGridOn() const {return m_rootViewFlags.grid;}
     virtual DPoint3dCP _GetViewDelta() const {return &m_viewDelta;}
     virtual DPoint3dCP _GetViewOrigin() const {return &m_viewOrg;}
-    virtual void _AllocateOutput() = 0;
+    virtual void _AllocateRenderTarget() = 0;
     virtual void _CallDecorators(bool& stopFlag) {}
     virtual void _SetNeedsHeal() {m_needsRefresh = true;}
     virtual void _SetNeedsRefresh() {m_needsRefresh = true;}
@@ -461,7 +461,7 @@ protected:
     virtual DVec2d _GetDpiScale() const {return DVec2d::From(1,1);}
     virtual void _Destroy() {DestroyViewport();}
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
-    DGNPLATFORM_EXPORT virtual StatusInt _ConnectToOutput();
+    DGNPLATFORM_EXPORT virtual StatusInt _ConnectRenderTarget();
     DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
     DGNPLATFORM_EXPORT virtual uint32_t _GetIndexedLinePattern(int index) const;
     DGNPLATFORM_EXPORT virtual void _GetViewCorners(DPoint3dR low, DPoint3dR high) const;
@@ -521,7 +521,7 @@ public:
     ViewportStatus SetupFromViewController() {return _SetupFromViewController();}
     DGNPLATFORM_EXPORT void SetFrustumFromRootCorners(DPoint3dCP rootBox, double compressionFraction);
     DGNPLATFORM_EXPORT ViewportStatus ChangeArea(DPoint3dCP pts);
-    DGNPLATFORM_EXPORT void Destroy();
+    void Destroy() {_Destroy();}
     DGNPLATFORM_EXPORT StatusInt ComputeVisibleDepthRange (double& minDepth, double& maxDepth, bool ignoreViewExtent = false);
     DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params) ;
     DGNPLATFORM_EXPORT void SetNeedsHeal();
@@ -538,7 +538,7 @@ public:
 
     //! @return the current Camera for this DgnViewport. Note that the DgnViewport's camera may not match its ViewController's camera
     //! due to adjustments made for front/back clipping being turned off.
-    DGNPLATFORM_EXPORT CameraInfo const& GetCamera() const;
+    CameraInfo const& GetCamera() const {return m_camera;}
 
     //! @return the camera target for this DgnViewport
     DGNPLATFORM_EXPORT DPoint3d GetCameraTarget() const;
@@ -567,7 +567,7 @@ public:
     //! @param[in] index the line weight value in the range of 0 to 31.
     //! @return  the number of pixels for lineWeightValue
     //! @private
-    DGNPLATFORM_EXPORT int GetIndexedLineWidth(int index) const;
+    int GetIndexedLineWidth(int index) const {return _GetIndexedLineWidth(index);}
 
     //! Get the 32 bit on-off "line pattern" for a line code value for this DgnViewport. Users select, and elements store a "line code"
     //! value in the range of 0 to 7. Output devices can change the on-off patterns based on resolution, etc. This method returns the line pattern
@@ -575,20 +575,20 @@ public:
     //! @param[in] index a the range of 0 to 7.
     //! @return  the line pattern for lineCodeValue
     //! @private
-    DGNPLATFORM_EXPORT uint32_t GetIndexedLinePattern(int index) const;
+    uint32_t GetIndexedLinePattern(int index) const {return _GetIndexedLinePattern(index);}
 
     //! Compute the range of the element when displayed in this DgnViewport
     //! @private
     DGNPLATFORM_EXPORT StatusInt ComputeFittedElementRange(DRange3dR range, DgnElementIdSet const& elements, RotMatrixCP rMatrix=nullptr);
 
     //! @private
-    DGNPLATFORM_EXPORT void SetMinimumLOD (double minLOD);
+    void SetMinimumLOD(double minLOD) {m_minLOD = minLOD;}
 
 /** @name Color Controls */
 /** @{ */
     //! Get the RGB color of the background for this DgnViewport.
     //! @return background RGB color
-    DGNPLATFORM_EXPORT ColorDef GetBackgroundColor() const;
+    ColorDef GetBackgroundColor() const {return m_backgroundColor;}
 
     //! @return either white or black, whichever has more contrast to the background color of this DgnViewport.
     DGNPLATFORM_EXPORT ColorDef GetContrastToBackgroundColor() const;
@@ -634,7 +634,7 @@ public:
     //! Get the Rotation Matrix for this DgnViewport. The concept of a DgnViewport's Rotation Matrix is somewhat limiting since it does not
     //! support perspective transformations. This method is provided for compatibility with previous API only.
     //! @see the Coordinate Coordinate Query and Conversion functions and #GetWorldToViewMap
-    DGNPLATFORM_EXPORT RotMatrixCR GetRotMatrix() const;
+    RotMatrixCR GetRotMatrix() const {return m_rotMatrix;}
 
     //! Get the DgnViewport rectangle in DgnCoordSystem::View.
     BSIRect GetViewRect() const {return _GetClientRect();}
@@ -642,7 +642,7 @@ public:
     //! Get the DgnCoordSystem::View coordinates of lower-left-back and upper-right-front corners of a viewport.
     //! @param[out] low The lower left back corner of the view
     //! @param[out] high The upper right front corner of the view
-    DGNPLATFORM_EXPORT void GetViewCorners(DPoint3dR low, DPoint3dR high) const;
+    void GetViewCorners(DPoint3dR low, DPoint3dR high) const {_GetViewCorners(low,high);}
 
     //! Get the DPI scale which can be used for conversion between physical pixels and device-independent pixels (DIPs).
     DGNPLATFORM_EXPORT DVec2d GetDpiScale() const;
@@ -670,11 +670,11 @@ public:
 
     //! Get the DMap4d to convert between DgnCoordSystem::World and DgnCoordSystem::View coordinates for this DgnViewport.
     //! @return the current WorldToView map for this DgnViewport.
-    DGNPLATFORM_EXPORT DMap4dCP GetWorldToViewMap() const;
+    DMap4dCP GetWorldToViewMap() const {return &m_rootToView;}
 
     //! Get the DMap4d to convert between DgnCoordSystem::World and DgnCoordSystem::Npc coordinates for this DgnViewport.
     //! @return the current WorldToNpc map for this DgnViewport.
-    DGNPLATFORM_EXPORT DMap4dCP GetWorldToNpcMap() const;
+    DMap4dCP GetWorldToNpcMap() const {return &m_rootToNpc;}
 
     //! Transfrom an array of points in DgnCoordSystem::Npc into DgnCoordSystem::View.
     //! @param[out] viewPts An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
@@ -776,13 +776,13 @@ public:
 
     //! Determine whether the Grid display is currently enabled in this DgnViewport.
     //! @return true if the grid display is on.
-    DGNPLATFORM_EXPORT bool IsGridOn() const;
+    bool IsGridOn() const {return _IsGridOn();}
 
     //! Determine whether this viewport is a 3D view.
     //! @remarks Will be true only for a physical view.
     bool Is3dView() const {return m_is3dView;}
 
-    Render::TargetP GetRenderTarget() {return m_renderTarget.get();}
+    Render::TargetP GetRenderTarget() const {return m_renderTarget.get();}
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     Render::ViewDrawP GetIViewDraw() {return _GetIViewDraw();}
@@ -888,9 +888,9 @@ struct NonVisibleViewport : DgnViewport
 {
 protected:
     virtual Render::RenderDevice* _GetRenderDevice() const override {return nullptr;}
-    virtual void _AllocateOutput() override {}
+    virtual void _AllocateRenderTarget() override {}
     virtual ColorDef _GetWindowBgColor() const override {return ColorDef::Black();}
-    virtual StatusInt _ConnectToOutput() override { return SUCCESS; }
+    virtual StatusInt _ConnectRenderTarget() override { return SUCCESS; }
     virtual void _AdjustZPlanesToModel(DPoint3dR, DVec3dR, ViewControllerCR) const override {}
     virtual BSIRect _GetClientRect() const override
         {

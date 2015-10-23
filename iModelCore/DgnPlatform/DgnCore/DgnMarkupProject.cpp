@@ -1186,6 +1186,7 @@ void DgnMarkupProject::CreateModelECProperties (DgnModelId modelId, Utf8CP model
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 void RedlineModel::StoreImageData(bvector<uint8_t> const& imageData, Output::CapturedImageInfo const& imageInfo, bool fitToX, bool compressImageProperty)
     {
     //  Grab possibly updated image definition data
@@ -1264,6 +1265,7 @@ void RedlineModel::StoreImageDataFromJPEG (uint8_t const* jpegData, size_t jpegD
         return;
     StoreImageData(rgbData, imageInfo, fitToX, /*compresssImageProperty*/false);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
@@ -1514,7 +1516,7 @@ BentleyStatus RedlineModel::DrawImage(ViewContextR context, DPoint3dCR viewOrg, 
     uintptr_t const& x = m_tileIds.front();
     int tilesY = (int)m_tileIds.size() / m_tilesX;
 
-    context.GetIViewDraw().DrawMosaic((int)m_tilesX, tilesY, &x, &m_tileOrigins[0]);
+    context.GetCurrentGraphicR().DrawMosaic((int)m_tilesX, tilesY, &x, &m_tileOrigins[0]);
 
     return BSISUCCESS;
     }

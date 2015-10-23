@@ -21,20 +21,19 @@ enum TestLStylePhase
     };
 
 /*=================================================================================**//**
-* Output to determine if element should be accepted for fence processing..
-* @bsiclass                                                     Brien.Bastings  09/04
+* @bsiclass                                                     KeithBentley    04/01
 +===============+===============+===============+===============+===============+======*/
-struct PickOutput : SimplifyViewDrawGeom, IPickGeom
+struct PickContext : ViewContext, IPickGeom
 {
-    DEFINE_T_SUPER(SimplifyViewDrawGeom)
-
+    DEFINE_T_SUPER(ViewContext)
 private:
+    friend struct PickOutput;
+
     bool              m_doneSearching;
     bool              m_unusableLStyleHit;
     bool              m_doLocateSilhouettes;
     bool              m_doLocateInteriors;
     TestLStylePhase   m_testingLStyle;
-    Render::OutputP      m_viewOutput;
     GeomDetail        m_currGeomDetail;
     HitListP          m_hitList;
     HitPriority       m_hitPriorityOverride;
@@ -43,74 +42,8 @@ private:
     double            m_pickAperture;
     double            m_pickApertureSquared;
     LocateOptions     m_options;
+    StopLocateTest*   m_stopTester;
 
-    bool PointWithinTolerance(DPoint4dCR testPt);
-    bool TestPoint(DPoint3dCR localPt, HitPriority priority);
-    bool TestPointArray(size_t numPts, DPoint3dCP localPts, HitPriority priority);
-    bool TestCurveVector(CurveVectorCR, HitPriority);
-    bool TestCurveVectorInterior(CurveVectorCR, HitPriority priority);
-    bool TestIndexedPolyEdge(DPoint3dCP verts, DPoint4dCP hVertsP, int closeVertexId, int segmentVertexId, DPoint3dR pickPt, HitPriority);
-    bool TestGraphics(Render::Graphic* qvElem, HitPriority);
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    static int LocateQvElemCheckStop(CallbackArgP);
-#endif
-    void AddSurfaceHit(DPoint3dCR hitPtLocal, DVec3dCR hitNormalLocal, HitPriority);
-
-protected:
-    virtual bool _DoClipping() const override {return m_inSymbolDraw;} // Only need clip for symbols...
-    virtual bool _DoSymbolGeometry() const override {return true;}
-    virtual StatusInt _ProcessCurvePrimitive(ICurvePrimitiveCR, bool closed, bool filled) override;
-    virtual StatusInt _ProcessCurveVector(CurveVectorCR, bool isFilled) override;
-    virtual StatusInt _ProcessSolidPrimitive(ISolidPrimitiveCR) override;
-    virtual StatusInt _ProcessSurface(MSBsplineSurfaceCR) override;
-    virtual StatusInt _ProcessFacetSet(PolyfaceQueryCR, bool filled) override;
-    virtual StatusInt _ProcessBody(ISolidKernelEntityCR) override;
-    virtual void _PushTransClip(TransformCP trans, ClipPlaneSetCP clip) override;
-    virtual void _PopTransClip() override;
-    virtual void _SetDrawViewFlags(ViewFlags) override;
-    virtual void _DrawTextString(TextStringCR, double* zDepth) override;
-    virtual bool _DrawSprite(Render::ISpriteP sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) override;
-    virtual void _DrawPointCloud(Render::IPointCloudDrawParams* drawParams) override;
-    virtual void _DrawGraphic(Render::Graphic* qvElem) override;
-
-public:
-    PickOutput();
-    DGNPLATFORM_EXPORT virtual ~PickOutput();
-
-    void Init(ViewContextP, DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP, LocateOptions const& options);
-    double GetPickAperture() {return m_pickAperture;}
-    HitListP GetHitList() {return m_hitList;}
-    bool GetDoneSearching() {return m_doneSearching;}
-    void SetTestLStylePhase(TestLStylePhase phase) {m_testingLStyle = phase; if (TEST_LSTYLE_None == phase) m_unusableLStyleHit = false;}
-    DPoint3dP GetProjectedPickPointView(DPoint3dR pPoint);
-    void SetupViewOutput(Render::OutputP output) {m_viewOutput = output;}
-    void InitStrokeForCache() {m_doLocateSilhouettes = false;}
-    bool GetLocateSilhouettes() {return m_doLocateSilhouettes;}
-    bool* GetLocateInteriors() {return &m_doLocateInteriors;}
-
-    // IPickGeom
-    virtual DPoint4dCR _GetPickPointView() const override {return m_pickPointView;}
-    virtual DPoint3dCR _GetPickPointWorld() const override {return m_pickPointWorld;}
-    virtual GeomDetailR _GetGeomDetail() override {return m_currGeomDetail;}
-    virtual bool _IsPointVisible(DPoint3dCP screenPt) override;
-    virtual void _SetHitPriorityOverride(HitPriority priority) override {m_hitPriorityOverride = priority;}
-    virtual void _AddHit(DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPriority) override;
-    virtual bool _IsSnap() const;
-    virtual DRay3d _GetBoresite() const;
-};
-
-/*=================================================================================**//**
-* @bsiclass                                                     KeithBentley    04/01
-+===============+===============+===============+===============+===============+======*/
-struct PickContext : ViewContext
-{
-    DEFINE_T_SUPER(ViewContext)
-private:
-    PickOutput       m_output;
-    StopLocateTest*  m_stopTester;
-    LocateOptions    m_options;
-
-    virtual void _SetupOutputs() override;
     virtual bool _CheckStop() override;
     virtual StatusInt _VisitDgnModel(DgnModelP inDgnModel) override;
     virtual void _OutputElement(GeometricElementCR) override;
@@ -123,17 +56,84 @@ private:
     virtual void _DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3dCP range) override;
     virtual void _DrawStyledBSplineCurve3d(MSBsplineCurveCR) override;
     virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth) override;
-    virtual void _DrawCached(Render::GraphicStroker&) override;
-    virtual IPickGeomP _GetIPickGeom() override {return &m_output;}
 
+    bool TestPoint(DPoint3dCR localPt, HitPriority priority);
+    bool TestPointArray(size_t numPts, DPoint3dCP localPts, HitPriority priority);
+    bool TestCurveVector(CurveVectorCR, HitPriority);
+    bool TestCurveVectorInterior(CurveVectorCR, HitPriority priority);
+    bool TestIndexedPolyEdge(DPoint3dCP verts, DPoint4dCP hVertsP, int closeVertexId, int segmentVertexId, DPoint3dR pickPt, HitPriority);
+    bool TestGraphics(Render::Graphic* qvElem, HitPriority);
     void InitNpcSubRect(DPoint3dCR pickPointWorld, double pickAperture, DgnViewportR viewport);
     void InitSearch(DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP);
+    bool PointWithinTolerance(DPoint4dCR testPt);
+    void AddSurfaceHit(DPoint3dCR hitPtLocal, DVec3dCR hitNormalLocal, HitPriority);
+
+    StatusInt ProcessCurvePrimitive(ICurvePrimitiveCR, bool closed, bool filled);
+    StatusInt ProcessCurveVector(CurveVectorCR, bool isFilled);
+    StatusInt ProcessSolidPrimitive(ISolidPrimitiveCR);
+    StatusInt ProcessSurface(MSBsplineSurfaceCR);
+    StatusInt ProcessFacetSet(PolyfaceQueryCR, bool filled);
+    StatusInt ProcessBody(ISolidKernelEntityCR);
 
 public:
+    double GetPickAperture() {return m_pickAperture;}
+    HitListP GetHitList() {return m_hitList;}
+    bool GetDoneSearching() {return m_doneSearching;}
+    void SetTestLStylePhase(TestLStylePhase phase) {m_testingLStyle = phase; if (TEST_LSTYLE_None == phase) m_unusableLStyleHit = false;}
+    DPoint3dP GetProjectedPickPointView(DPoint3dR pPoint);
+    void InitStrokeForCache() {m_doLocateSilhouettes = false;}
+    bool GetLocateSilhouettes() {return m_doLocateSilhouettes;}
+    bool* GetLocateInteriors() {return &m_doLocateInteriors;}
+
+    virtual DPoint4dCR _GetPickPointView() const override {return m_pickPointView;}
+    virtual DPoint3dCR _GetPickPointWorld() const override {return m_pickPointWorld;}
+    virtual GeomDetailR _GetGeomDetail() override {return m_currGeomDetail;}
+    virtual bool _IsPointVisible(DPoint3dCP screenPt) override;
+    virtual void _SetHitPriorityOverride(HitPriority priority) override {m_hitPriorityOverride = priority;}
+    virtual void _AddHit(DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPriority) override;
+    virtual bool _IsSnap() const;
+    virtual DRay3d _GetBoresite() const;
+
     DGNPLATFORM_EXPORT PickContext(LocateOptions const& options, StopLocateTest* stopTester=NULL);
     DGNPLATFORM_EXPORT bool PickElements(DgnViewportR, DPoint3dCR pickPointWorld, double pickApertureDevice, HitListP hitList);
     DGNPLATFORM_EXPORT TestHitStatus TestHit(HitDetailCR, DgnViewportR, DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP hitList);
     DGNPLATFORM_EXPORT static void InitBoresite(DRay3dR boresite, DPoint3dCR spacePoint, DMatrix4dCR worldToLocal);
+};
+
+
+/*=================================================================================**//**
+* Output to determine if element should be accepted for fence processing..
+* @bsiclass                                                     Brien.Bastings  09/04
++===============+===============+===============+===============+===============+======*/
+struct PickOutput : SimplifyViewDrawGeom
+{
+    DEFINE_T_SUPER(SimplifyViewDrawGeom)
+
+private:
+    PickContext& m_pick;
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    static int LocateQvElemCheckStop(CallbackArgP);
+#endif
+    virtual StatusInt _ProcessCurvePrimitive(ICurvePrimitiveCR prim, bool closed, bool filled) override {return m_pick.ProcessCurvePrimitive(prim, closed, filled);}
+    virtual StatusInt _ProcessCurveVector(CurveVectorCR vector, bool isFilled) override {return m_pick.ProcessCurveVector(vector, isFilled);}
+    virtual StatusInt _ProcessSolidPrimitive(ISolidPrimitiveCR prim) override {return m_pick.ProcessSolidPrimitive(prim);}
+    virtual StatusInt _ProcessSurface(MSBsplineSurfaceCR surface) override {return m_pick.ProcessSurface(surface);}
+    virtual StatusInt _ProcessFacetSet(PolyfaceQueryCR query, bool filled) override {return m_pick.ProcessFacetSet(query, filled);}
+    virtual StatusInt _ProcessBody(ISolidKernelEntityCR entity) override {return m_pick.ProcessBody(entity);}
+
+protected:
+    virtual void _SetDrawViewFlags(ViewFlags) override;
+    virtual void _DrawTextString(TextStringCR, double* zDepth) override;
+    virtual bool _DoClipping() const override {return m_inSymbolDraw;} // Only need clip for symbols...
+    virtual bool _DoSymbolGeometry() const override {return true;}
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    virtual bool _DrawSprite(Render::ISpriteP sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) override;
+    virtual void _DrawPointCloud(Render::IPointCloudDrawParams* drawParams) override;
+#endif
+
+public:
+    PickOutput(PickContext& pick);
 };
 
 END_BENTLEY_DGN_NAMESPACE

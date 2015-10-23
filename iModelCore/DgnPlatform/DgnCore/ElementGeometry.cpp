@@ -484,7 +484,7 @@ void ElementGeometry::Draw(ViewContextR context) const
             ICurvePrimitivePtr geom = GetAsICurvePrimitive();
             CurveVectorPtr curveGeom = CurveVector::Create(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString == geom->GetCurvePrimitiveType() ? CurveVector::BOUNDARY_TYPE_None : CurveVector::BOUNDARY_TYPE_Open, geom);
 
-            context.GetIDrawGeom().DrawCurveVector(*curveGeom, false);
+            context.GetCurrentGraphicR().DrawCurveVector(*curveGeom, false);
             break;
             }
 
@@ -492,7 +492,7 @@ void ElementGeometry::Draw(ViewContextR context) const
             {
             CurveVectorPtr geom = GetAsCurveVector();
 
-            context.GetIDrawGeom().DrawCurveVector(*geom, false);
+            context.GetCurrentGraphicR().DrawCurveVector(*geom, false);
             break;
             }
 
@@ -500,7 +500,7 @@ void ElementGeometry::Draw(ViewContextR context) const
             {
             ISolidPrimitivePtr geom = GetAsISolidPrimitive();
 
-            context.GetIDrawGeom().DrawSolidPrimitive(*geom);
+            context.GetCurrentGraphicR().DrawSolidPrimitive(*geom);
             break;
             }
 
@@ -508,7 +508,7 @@ void ElementGeometry::Draw(ViewContextR context) const
             {
             PolyfaceHeaderPtr geom = GetAsPolyfaceHeader();
 
-            context.GetIDrawGeom().DrawPolyface(*geom, false);
+            context.GetCurrentGraphicR().DrawPolyface(*geom, false);
             break;
             }
 
@@ -516,7 +516,7 @@ void ElementGeometry::Draw(ViewContextR context) const
             {
             MSBsplineSurfacePtr geom = GetAsMSBsplineSurface();
 
-            context.GetIDrawGeom().DrawBSplineSurface(*geom);
+            context.GetCurrentGraphicR().DrawBSplineSurface(*geom);
             break;
             }
         
@@ -524,7 +524,7 @@ void ElementGeometry::Draw(ViewContextR context) const
             {
             ISolidKernelEntityPtr geom = GetAsISolidKernelEntity();
 
-            context.GetIDrawGeom().DrawBody(*geom);
+            context.GetCurrentGraphicR().DrawBody(*geom);
             break;
             }
 
@@ -2283,7 +2283,7 @@ DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImpo
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId category, ViewFlags flags) const
     {
-    bool        isQVis = context.GetIViewDraw().IsOutputQuickVision();
+    bool        isQVis = context.GetCurrentGraphicR().IsQuickVision();
     bool        isQVWireframe = (isQVis && DgnRenderMode::Wireframe == flags.GetRenderMode());
     bool        isPick = (nullptr != context.GetIPickGeom());
     bool        useBRep = !(isQVis || isPick);
@@ -2374,15 +2374,15 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
                 switch (boundary)
                     {
                     case FB::BoundaryType_None:
-                        context.GetIDrawGeom().DrawPointString2d(nPts, pts, context.GetCurrentDisplayParams().GetNetDisplayPriority(), nullptr);
+                        context.GetCurrentGraphicR().DrawPointString2d(nPts, pts, context.GetCurrentDisplayParams().GetNetDisplayPriority(), nullptr);
                         break;
 
                     case FB::BoundaryType_Open:
-                        context.GetIDrawGeom().DrawLineString2d(nPts, pts, context.GetCurrentDisplayParams().GetNetDisplayPriority(), nullptr);
+                        context.GetCurrentGraphicR().DrawLineString2d(nPts, pts, context.GetCurrentDisplayParams().GetNetDisplayPriority(), nullptr);
                         break;
 
                     case FB::BoundaryType_Closed:
-                        context.GetIDrawGeom().DrawShape2d(nPts, pts, FillDisplay::Never != context.GetCurrentDisplayParams().GetFillDisplay(), context.GetCurrentDisplayParams().GetNetDisplayPriority(), nullptr);
+                        context.GetCurrentGraphicR().DrawShape2d(nPts, pts, FillDisplay::Never != context.GetCurrentDisplayParams().GetFillDisplay(), context.GetCurrentDisplayParams().GetNetDisplayPriority(), nullptr);
                         break;
                     }
                 break;
@@ -2407,16 +2407,16 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
                 switch (boundary)
                     {
                     case FB::BoundaryType_None:
-                        context.GetIDrawGeom().DrawPointString3d(nPts, pts, nullptr);
+                        context.GetCurrentGraphicR().DrawPointString3d(nPts, pts, nullptr);
                         break;
 
                     case FB::BoundaryType_Open:
-                        context.GetIDrawGeom().DrawLineString3d(nPts, pts, nullptr);
+                        context.GetCurrentGraphicR().DrawLineString3d(nPts, pts, nullptr);
 
                         break;
 
                     case FB::BoundaryType_Closed:
-                        context.GetIDrawGeom().DrawShape3d(nPts, pts, FillDisplay::Never != context.GetCurrentDisplayParams().GetFillDisplay(), nullptr);
+                        context.GetCurrentGraphicR().DrawShape3d(nPts, pts, FillDisplay::Never != context.GetCurrentDisplayParams().GetFillDisplay(), nullptr);
                         break;
                     }
                 break;
@@ -2440,16 +2440,16 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
                 if (!context.Is3dView())
                     {
                     if (FB::BoundaryType_Closed != boundary)
-                        context.GetIDrawGeom().DrawArc2d(arc, false, false, context.GetCurrentDisplayParams().GetNetDisplayPriority(), nullptr);
+                        context.GetCurrentGraphicR().DrawArc2d(arc, false, false, context.GetCurrentDisplayParams().GetNetDisplayPriority(), nullptr);
                     else
-                        context.GetIDrawGeom().DrawArc2d(arc, true, FillDisplay::Never != context.GetCurrentDisplayParams().GetFillDisplay(), context.GetCurrentDisplayParams().GetNetDisplayPriority(), nullptr);
+                        context.GetCurrentGraphicR().DrawArc2d(arc, true, FillDisplay::Never != context.GetCurrentDisplayParams().GetFillDisplay(), context.GetCurrentDisplayParams().GetNetDisplayPriority(), nullptr);
                     break;
                     }
 
                 if (FB::BoundaryType_Closed != boundary)
-                    context.GetIDrawGeom().DrawArc3d(arc, false, false, nullptr);
+                    context.GetCurrentGraphicR().DrawArc3d(arc, false, false, nullptr);
                 else
-                    context.GetIDrawGeom().DrawArc3d(arc, true, FillDisplay::Never != context.GetCurrentDisplayParams().GetFillDisplay(), nullptr);
+                    context.GetCurrentGraphicR().DrawArc3d(arc, true, FillDisplay::Never != context.GetCurrentDisplayParams().GetFillDisplay(), nullptr);
                 break;
                 }
 
@@ -2472,11 +2472,11 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
 
                 if (!context.Is3dView())
                     {
-                    context.GetIDrawGeom().DrawCurveVector2d(*curvePtr, false, context.GetCurrentDisplayParams().GetNetDisplayPriority());
+                    context.GetCurrentGraphicR().DrawCurveVector2d(*curvePtr, false, context.GetCurrentDisplayParams().GetNetDisplayPriority());
                     break;
                     }
 
-                context.GetIDrawGeom().DrawCurveVector(*curvePtr, false);
+                context.GetCurrentGraphicR().DrawCurveVector(*curvePtr, false);
                 break;
                 }
 
@@ -2496,11 +2496,11 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
 
                 if (!context.Is3dView())
                     {
-                    context.GetIDrawGeom().DrawCurveVector2d(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != context.GetCurrentDisplayParams().GetFillDisplay(), context.GetCurrentDisplayParams().GetNetDisplayPriority());
+                    context.GetCurrentGraphicR().DrawCurveVector2d(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != context.GetCurrentDisplayParams().GetFillDisplay(), context.GetCurrentDisplayParams().GetNetDisplayPriority());
                     break;
                     }
                     
-                context.GetIDrawGeom().DrawCurveVector(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != context.GetCurrentDisplayParams().GetFillDisplay());
+                context.GetCurrentGraphicR().DrawCurveVector(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != context.GetCurrentDisplayParams().GetFillDisplay());
                 break;
                 }
 
@@ -2517,7 +2517,7 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
                     break;
 
                 state.CookElemDisplayParams();
-                context.GetIDrawGeom().DrawPolyface(meshData, FillDisplay::Never != context.GetCurrentDisplayParams().GetFillDisplay());
+                context.GetCurrentGraphicR().DrawPolyface(meshData, FillDisplay::Never != context.GetCurrentDisplayParams().GetFillDisplay());
                 break;
                 };
 
@@ -2534,7 +2534,7 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
                     break;
 
                 state.CookElemDisplayParams();
-                context.GetIDrawGeom().DrawSolidPrimitive(*solidPtr);
+                context.GetCurrentGraphicR().DrawSolidPrimitive(*solidPtr);
                 break;
                 }
 
@@ -2551,7 +2551,7 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
                     break;
 
                 state.CookElemDisplayParams();
-                context.GetIDrawGeom().DrawBSplineSurface(*surfacePtr);
+                context.GetCurrentGraphicR().DrawBSplineSurface(*surfacePtr);
                 break;
                 }
 
@@ -2574,7 +2574,7 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
                     }
 
                 state.CookElemDisplayParams();
-                context.GetIDrawGeom().DrawBody(*entityPtr);
+                context.GetCurrentGraphicR().DrawBody(*entityPtr);
                 break;
                 }
 
@@ -2621,11 +2621,11 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
                                                                  (FloatRgb const*) meshData.GetFloatColorCP(), (RgbFactor const*) meshData.GetDoubleColorCP(), meshData.GetIntColorCP(), meshData.GetColorTableCP(),
                                                                  meshData.GetIlluminationNameCP(), meshData.GetMeshStyle(), meshData.GetNumPerRow());
 
-                    context.GetIDrawGeom().DrawPolyface(sourceData);
+                    context.GetCurrentGraphicR().DrawPolyface(sourceData);
                     break;
                     }
 
-                context.GetIDrawGeom().DrawPolyface(meshData);
+                context.GetCurrentGraphicR().DrawPolyface(meshData);
                 break;
                 }
 
@@ -2644,7 +2644,7 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
                     break;
 
                 state.CookElemDisplayParams();
-                context.GetIDrawGeom().DrawCurveVector(*curvePtr, false);
+                context.GetCurrentGraphicR().DrawCurveVector(*curvePtr, false);
                 break;
                 }
 
@@ -2663,7 +2663,7 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
                     break;
 
                 state.CookElemDisplayParams();
-                context.GetIDrawGeom().DrawCurveVector(*curvePtr, false);
+                context.GetCurrentGraphicR().DrawCurveVector(*curvePtr, false);
                 break;
                 }
             
@@ -2696,26 +2696,16 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElementStroker::_Stroke(ViewContextR context) 
-    {
-    // Yuck...dig out display priority, needed up front to create QvElem2d...NEEDSWORK: Allow display priority sub-category?
-    ElementGeomIO::Collection(m_element.GetGeomStream().GetData(), m_element.GetGeomStream().GetSize()).Draw(context, m_element.GetCategoryId(), context.GetViewFlags());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::_Draw(ViewContextR context) const
+void GeometricElement::_Stroke(ViewContextR context) const
     {
-    // NEEDSWORK: Want separate QvElems per-subCategory...
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     Transform placementTrans = (Is3d() ? ToElement3d()->GetPlacement().GetTransform() : ToElement2d()->GetPlacement().GetTransform());
-    GeometricElementStroker stroker(*this);
 
-    context.PushTransform(placementTrans);
-    context.DrawCached(stroker);
-    context.PopTransformClip();
+    context.GetCurrentGraphicR().PushTransClip(&placementTrans);
+#endif
+    ElementGeomIO::Collection(GetGeomStream().GetData(), GetGeomStream().GetSize()).Draw(context, GetCategoryId(), context.GetViewFlags());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3000,7 +2990,6 @@ protected:
 
 SimplifyViewDrawGeom* m_output;
 
-virtual void _SetupOutputs() override {SetIViewDraw(*m_output);}
 
 public:
 
@@ -3013,7 +3002,6 @@ ElementGeometryCollectionContext(DgnDbR db)
     m_wantMaterials = true; // Setup material in ElemDisplayParams...
 
     m_output->SetViewContext(this);
-    _SetupOutputs();
 
     m_currDisplayParams = ElemDisplayParams();
     SetDgnDb(db);

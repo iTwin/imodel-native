@@ -314,7 +314,7 @@ struct PatternBoundaryCollector : IElementGraphicsProcessor
 {
 private:
 
-GraphicStroker&    m_stroker;
+Stroker&    m_stroker;
 CurveVectorPtr      m_boundary;
 ViewContextP        m_context;
 Transform           m_currentTransform;
@@ -324,7 +324,7 @@ protected:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-explicit PatternBoundaryCollector(GraphicStroker& stroker) : m_stroker(stroker) {}
+explicit PatternBoundaryCollector(Stroker& stroker) : m_stroker(stroker) {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/13
@@ -365,11 +365,13 @@ CurveVectorPtr GetBoundary() {return m_boundary;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static CurveVectorPtr Process(GraphicStroker& stroker)
+static CurveVectorPtr Process(Stroker& stroker)
     {
     PatternBoundaryCollector  processor(stroker);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     ElementGraphicsOutput::Process(processor, stroker._GetDgnDb());
+#endif
 
     return processor.GetBoundary();
     }
@@ -395,7 +397,9 @@ GraphicPtr ViewContext::ClipStencil::GetQvElem(ViewContextR context)
     if (m_tmpQvElem.IsValid())
         return m_tmpQvElem;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_tmpQvElem = context.GetGraphic(m_stroker);
+#endif
     return m_tmpQvElem;
     }
 
@@ -561,7 +565,9 @@ static bool PushBoundaryClipStencil(ViewContextR context, VCClipStencil& boundar
     if (!qvElem.IsValid())
         return false;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.GetIViewDraw().PushClipStencil(qvElem.get());
+#endif
 
     return true;
     }
@@ -574,7 +580,9 @@ static void PopBoundaryClipStencil(ViewContextR context, Graphic* qvElem)
     if (NULL == qvElem)
         return;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.GetIViewDraw().PopClipStencil();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -952,7 +960,7 @@ static bool DrawCellTiles(ViewContextR context, PatternSymbol& symbCell, DPoint2
                 DPoint3d    tmpPt;
 
                 cellTrans.GetTranslation(tmpPt);
-                context.GetIDrawGeom().DrawPointString3d(1, &tmpPt, NULL);
+                context.GetCurrentGraphicR().DrawPointString3d(1, &tmpPt, NULL);
                 }
             else
                 {
@@ -974,8 +982,7 @@ static void ProcessAreaPattern
 ViewContextR    context,
 VCClipStencil&  boundary,
 PatternParamsP  params,
-DPoint3dR       origin,
-double          contextScale
+DPoint3dR       origin
 )
     {
 #if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
@@ -1299,12 +1306,14 @@ PatternParams*  params,
 DPoint3dR       origin
 )
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 #if !defined (BENTLEYCONFIG_GRAPHICS_OPENGLES)  //  We always want to use geometry map with OpenGL ES because the our OpenGL implementation of PushClipStencil does not work
-    bool            useStencil = context.GetIViewDraw().IsOutputQuickVision(); // Can't use stencil if creating QvElem...dimension terminators want patterns!
+    bool            useStencil = context.GetRenderTarget().IsOutputQuickVision(); // Can't use stencil if creating QvElem...dimension terminators want patterns!
 #else
     bool            useStencil = false;
 #endif
-    useStencil = false;
+#endif
+    bool useStencil = false;
     GPArraySmartP   boundGpa(PatternHelper::GetBoundaryGPA (boundary, params->rMatrix, origin, useStencil));
 
     if (NULL == boundGpa || 0 == boundGpa->GetCount())
@@ -1650,7 +1659,7 @@ void ViewContext::_DrawAreaPattern(ClipStencil& boundary)
              useParity = (0 != (cookedParams->modifiers & PatternParamsModifierFlags::HoleStyle) && PatternParamsHoleStyleType::Parity == cookedParams->holeStyle) */
 
     if (PatternParamsModifierFlags::None != (cookedParams->modifiers & PatternParamsModifierFlags::Cell))
-        PatternHelper::ProcessAreaPattern(*this, boundary, cookedParams.get(), origin, m_patternScale);
+        PatternHelper::ProcessAreaPattern(*this, boundary, cookedParams.get(), origin);
     else if (PatternParamsModifierFlags::None != (cookedParams->modifiers & PatternParamsModifierFlags::DwgHatchDef))
         PatternHelper::ProcessDWGHatchPattern(*this, boundary, cookedParams.get(), origin);
     else

@@ -199,7 +199,7 @@ BentleyStatus AnnotationLeaderDraw::Draw(ViewContextR context) const
     if ((AnnotationLeaderLineType::None == leaderStyle->GetLineType()) && (AnnotationLeaderTerminatorType::None == leaderStyle->GetTerminatorType()))
         return SUCCESS;
     
-    GeomDrawR output = context.GetIDrawGeom();
+    GraphicR output = context.GetCurrentGraphicR();
 
     if (AnnotationLeaderLineType::None != leaderStyle->GetLineType())
         {

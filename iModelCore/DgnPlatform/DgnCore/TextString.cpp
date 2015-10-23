@@ -391,7 +391,7 @@ void TextString::DrawTextAdornments(ViewContextR context) const
     if (!m_style.IsUnderlined())
         return;
 
-    GeomDrawR output = context.GetIDrawGeom();
+    GraphicR output = context.GetCurrentGraphicR();
 
     ElemDisplayParamsR elParams = context.GetCurrentDisplayParams();
     GetGlyphSymbology(elParams);

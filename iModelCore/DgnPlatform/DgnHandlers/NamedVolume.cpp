@@ -212,12 +212,11 @@ void NamedVolume::ClearClip (DgnViewport& viewport)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-// static
 void NamedVolume::DrawFace (DPoint3dCP points, size_t numPoints, uint32_t color, ViewContextR context )
     {
     DgnViewportP viewport = context.GetViewport ();
     BeAssert (viewport != nullptr);
-    ViewDrawR vDraw = context.GetIViewDraw();
+    GraphicR vDraw = context.GetCurrentGraphicR();
 
     viewport->SetSymbologyRgb (ColorDef(color), ColorDef(color), WEIGHT_Thin, STYLE_Solid);
     vDraw.DrawShape3d ((int) numPoints, points, true, nullptr);

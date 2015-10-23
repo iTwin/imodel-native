@@ -13,27 +13,6 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-//=======================================================================================
-//! Interface to supply additional topology information that describes the subsequent geometry.
-//! The ViewContext's current IElemTopology will be cloned and saved as part of the HitDetail
-//! when picking. Can be used to make transient geometry locatable; set context.SetElemTopology
-//! before drawing the geometry (ex. IViewTransients) and implement ITransientGeometryHandler.
-//! @note Always call context.SetElemTopology(nullptr) after drawing geometry.
-//=======================================================================================
-struct IElemTopology : BentleyApi::IRefCounted
-{
-//! Create a deep copy of this object.
-virtual IElemTopologyP _Clone() const = 0;
-
-//! Compare objects and return true if they should be considered the same.
-virtual bool _IsEqual (IElemTopologyCR) const = 0;
-
-//! Return an object for handling requests related to locate of transient geometry where we don't have an element handler.
-virtual ITransientGeometryHandlerP _GetTransientGeometryHandler() const = 0;
-
-}; // IElemTopology
-
-typedef RefCountedPtr<IElemTopology> IElemTopologyPtr; //!< Reference counted type to manage the life-cycle of the IElemTopology.
 
 //=======================================================================================
 //! Geometry data associated with a pick.

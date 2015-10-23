@@ -414,38 +414,6 @@ DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : m_sourceDb(sour
     ComputeGcsAdjustment();
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-static uintptr_t  s_nextQvMaterialId;
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t DgnDb::AddQvMaterialId(DgnMaterialId materialId) const { return (m_qvMaterialIds[materialId] = ++s_nextQvMaterialId); }
-uintptr_t DgnDb::GetQvMaterialId(DgnMaterialId materialId) const
-    {
-    auto const&   found = m_qvMaterialIds.find(materialId);
-
-    return (found == m_qvMaterialIds.end()) ? 0 : found->second; 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t DgnDb::AddQvTextureId(DgnTextureId TextureId) const 
-    { 
-    static uintptr_t s_nextQvTextureId;
-    return (m_qvTextureIds[TextureId] = ++s_nextQvTextureId); 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t DgnDb::GetQvTextureId(DgnTextureId TextureId) const
-    {
-    auto const& found = m_qvTextureIds.find(TextureId);
-    return (found == m_qvTextureIds.end()) ? 0 : found->second; 
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/

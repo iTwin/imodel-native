@@ -24,6 +24,16 @@ struct Graphic;
 DEFINE_REF_COUNTED_PTR(Graphic)
 
 //=======================================================================================
+//! This interface defines the method used by ViewContext::DrawCached.
+// @bsiclass
+//=======================================================================================
+struct Stroker
+{
+    //! Stroke this object into the current Graphic from the supplied context.
+    virtual void _Stroke(ViewContextR context) const = 0;
+};
+
+//=======================================================================================
 // @bsiclass                                                    Keith.Bentley   09/15
 //=======================================================================================
 struct GraphicSet
@@ -1218,7 +1228,7 @@ public:
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
+struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement, Render::Stroker
 {
     DEFINE_T_SUPER(DgnElement);
 
@@ -1269,7 +1279,7 @@ public:
 
     Render::GraphicSet& Graphics() const {return m_graphics;}
     DGNPLATFORM_EXPORT void SaveGeomStream(GeomStreamCP);
-    DGNPLATFORM_EXPORT virtual void _Draw(ViewContextR) const;
+    DGNPLATFORM_EXPORT virtual void _Stroke(ViewContextR) const;
     DGNPLATFORM_EXPORT virtual bool _DrawHit(HitDetailCR, ViewContextR) const;
     DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const;
     DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const; //!< Default snap using CurvePrimitive in HitDetail.

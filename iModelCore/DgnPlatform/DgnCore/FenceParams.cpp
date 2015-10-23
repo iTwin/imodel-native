@@ -26,11 +26,10 @@ bool            m_abort;
 bool            m_currentAccept;
 bool            m_accept;
 bool            m_firstAccept;
-OutputP    m_viewOutput;
 
 public:
 
-FenceAcceptOutput()      { m_fp = NULL; m_viewOutput = NULL; }
+FenceAcceptOutput()      { m_fp = NULL; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/04
@@ -52,7 +51,9 @@ void            SetFenceParams(FenceParamsP fp) {m_fp = fp;}
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            Init()
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_viewOutput = m_context->GetViewport()->GetIViewOutput(); // Keep QVis in synch for qv locate...
+#endif
     OnNewElement();
     }
 
@@ -72,7 +73,7 @@ void            OnNewElement()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    _SetDrawViewFlags (ViewFlags flags) override
+virtual void _SetDrawViewFlags (ViewFlags flags) override
     {
     T_Super::_SetDrawViewFlags(flags);
 
@@ -96,6 +97,7 @@ virtual void    _SetDrawViewFlags (ViewFlags flags) override
         }
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/05
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -117,6 +119,7 @@ virtual void    _PopTransClip() override
     if (m_viewOutput)
         m_viewOutput->PopTransClip();
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/05
@@ -599,6 +602,7 @@ static int      DrawQvElemCheckStop(void* arg)
     return (output->m_context->CheckStop() ? 1 : 0);
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/05
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -666,6 +670,7 @@ virtual void    _DrawGraphic(Graphic* qvElem) override
         break;
         }
     }
+#endif
 
 }; // FenceAcceptOutput
 
@@ -699,6 +704,7 @@ FenceAcceptContext()
     DELETE_AND_CLEAR (m_nonVisibleViewport);
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -708,6 +714,7 @@ virtual void    _SetupOutputs() override
 
     m_output.SetViewContext(this);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2013
@@ -919,7 +926,6 @@ BentleyStatus GetContents(FenceParamsP fp, DgnElementIdSet& contents)
 
     GetTransformClipStack().PushClip(*transformedClip);
     m_collectContents = true;
-    m_parentRangeResult = fp->IsOutsideClip() ? RangeResult::Inside : RangeResult::Overlap;
 
     // NOTE: Don't pass searchList...won't include parents of activated nested attachment...
     VisitAllViewElements(false, NULL);

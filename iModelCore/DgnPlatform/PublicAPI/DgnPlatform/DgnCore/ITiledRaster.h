@@ -15,8 +15,10 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
 //=======================================================================================
 struct ITiledRaster : IRefCounted
 {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     virtual void _DrawRaster(OutputR viewOutput) = 0;
     virtual void _PrintRaster(OutputR viewOutput) = 0;
+#endif
 };
 
 END_BENTLEY_RENDER_NAMESPACE

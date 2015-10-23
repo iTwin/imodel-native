@@ -359,9 +359,9 @@ public:
         double Bottom() const {return m_bottom;}
     };
 
-    DGNPLATFORM_EXPORT StatusInt VisitHit (HitDetailCR, ViewContextR) const;
-    DGNPLATFORM_EXPORT void DrawView(ViewContextR);
-    DGNPLATFORM_EXPORT void VisitElements(ViewContextR);
+    StatusInt VisitHit(HitDetailCR hit, ViewContextR context) const{return _VisitHit(hit, context);}
+    void DrawView(ViewContextR context) {return _DrawView(context);}
+    void VisitElements(ViewContextR context) {return _VisitElements(context);}
     DGNPLATFORM_EXPORT void ChangeModelDisplay(DgnModelId, bool onOff);
     DGNPLATFORM_EXPORT StatusInt GetRangeForFit(DRange3dR range);
     DGNPLATFORM_EXPORT void OnViewOpened(DgnViewportR);

@@ -126,13 +126,6 @@ SimplifyViewDrawGeom::SimplifyViewDrawGeom(bool addFacetNormals, bool addFacetPa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-SimplifyViewDrawGeom::~SimplifyViewDrawGeom()
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
 ClipVectorCP SimplifyViewDrawGeom::GetCurrClip() 
     {
     if (NULL == m_context)
@@ -225,7 +218,6 @@ void SimplifyViewDrawGeom::_DrawMosaic(int numX, int numY, uintptr_t const* tile
     {
     BeAssert(numX==1 && numY==1 && "TBD: march over tiles");
 
-    MethodMark  mark(*this);
     DPoint3d    shapePoints[5];
 
     shapePoints[0] = shapePoints[4] = points[0];
@@ -1052,7 +1044,6 @@ static void copy2dTo3d(int numPoints, DPoint3dP pts3d, DPoint2dCP pts2d, double 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyViewDrawGeom::_DrawLineString3d(int numPoints, DPoint3dCP points, DPoint3dCP range)
     {
-    MethodMark      mark(*this);
     CurveVectorPtr  curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
     
     curve->push_back(ICurvePrimitive::CreateLineString(points, numPoints));
@@ -1064,7 +1055,6 @@ void SimplifyViewDrawGeom::_DrawLineString3d(int numPoints, DPoint3dCP points, D
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyViewDrawGeom::_DrawLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range)
     {
-    MethodMark              mark(*this);
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
     copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
@@ -1076,7 +1066,6 @@ void SimplifyViewDrawGeom::_DrawLineString2d(int numPoints, DPoint2dCP points, d
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyViewDrawGeom::_DrawPointString3d(int numPoints, DPoint3dCP points, DPoint3dCP range)
     {
-    MethodMark      mark(*this);
     CurveVectorPtr  curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
 
     curve->push_back(ICurvePrimitive::CreatePointString(points, numPoints));
@@ -1088,7 +1077,6 @@ void SimplifyViewDrawGeom::_DrawPointString3d(int numPoints, DPoint3dCP points, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyViewDrawGeom::_DrawPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range)
     {
-    MethodMark              mark(*this);
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
     copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
@@ -1100,7 +1088,6 @@ void SimplifyViewDrawGeom::_DrawPointString2d(int numPoints, DPoint2dCP points, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyViewDrawGeom::_DrawShape3d(int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range)
     {
-    MethodMark      mark(*this);
     CurveVectorPtr  curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
 
     curve->push_back(ICurvePrimitive::CreateLineString(points, numPoints));
@@ -1112,7 +1099,6 @@ void SimplifyViewDrawGeom::_DrawShape3d(int numPoints, DPoint3dCP points, bool f
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyViewDrawGeom::_DrawShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range)
     {
-    MethodMark              mark(*this);
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
     copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
@@ -1124,8 +1110,6 @@ void SimplifyViewDrawGeom::_DrawShape2d(int numPoints, DPoint2dCP points, bool f
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyViewDrawGeom::_DrawTriStrip3d(int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range)
     {
-    MethodMark  mark(*this);
-
     if (1 == usageFlags) // represents thickened line...
         {
         int         nPt = 0;
@@ -1153,7 +1137,6 @@ void SimplifyViewDrawGeom::_DrawTriStrip3d(int numPoints, DPoint3dCP points, int
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyViewDrawGeom::_DrawTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range)
     {
-    MethodMark               mark(*this);
     std::valarray<DPoint3d>  localPointsBuf3d(numPoints);
 
     copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
@@ -1166,7 +1149,6 @@ void SimplifyViewDrawGeom::_DrawTriStrip2d(int numPoints, DPoint2dCP points, int
 void SimplifyViewDrawGeom::_DrawArc3d(DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range)
     {
     // NOTE: QVis closes arc ends and displays them filled (see outputCapArc for linestyle strokes)...
-    MethodMark      mark(*this);
     CurveVectorPtr  curve = CurveVector::Create((isEllipse || filled) ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
     
     curve->push_back(ICurvePrimitive::CreateArc(ellipse));
@@ -1191,8 +1173,6 @@ void SimplifyViewDrawGeom::_DrawArc3d(DEllipse3dCR ellipse, bool isEllipse, bool
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyViewDrawGeom::_DrawArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range)
     {
-    MethodMark  mark(*this);
-
     _DrawArc3d(ellipse, isEllipse, filled, NULL);
     }
 
@@ -1201,7 +1181,6 @@ void SimplifyViewDrawGeom::_DrawArc2d(DEllipse3dCR ellipse, bool isEllipse, bool
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyViewDrawGeom::_DrawBSplineCurve(MSBsplineCurveCR bcurve, bool filled)
     {
-    MethodMark      mark(*this);
     CurveVectorPtr  curve = CurveVector::Create(bcurve.params.closed ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
 
     curve->push_back(ICurvePrimitive::CreateBsplineCurve(bcurve));
@@ -1213,8 +1192,6 @@ void SimplifyViewDrawGeom::_DrawBSplineCurve(MSBsplineCurveCR bcurve, bool fille
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyViewDrawGeom::_DrawBSplineCurve2d(MSBsplineCurveCR bcurve, bool filled, double zDepth)
     {
-    MethodMark  mark(*this);
-
     _DrawBSplineCurve(bcurve, filled);
     }
 
@@ -1223,8 +1200,6 @@ void SimplifyViewDrawGeom::_DrawBSplineCurve2d(MSBsplineCurveCR bcurve, bool fil
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyViewDrawGeom::_DrawCurveVector(CurveVectorCR curves, bool isFilled)
     {
-    MethodMark  mark(*this);
-
     ClipAndProcessCurveVector(curves, isFilled);
     }
 
@@ -1233,8 +1208,6 @@ void SimplifyViewDrawGeom::_DrawCurveVector(CurveVectorCR curves, bool isFilled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyViewDrawGeom::_DrawCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth)
     {
-    MethodMark  mark(*this);
-
     _DrawCurveVector(curves, isFilled); // Ignore zDepth...
     }
 
@@ -1243,8 +1216,6 @@ void SimplifyViewDrawGeom::_DrawCurveVector2d(CurveVectorCR curves, bool isFille
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyViewDrawGeom::_DrawSolidPrimitive(ISolidPrimitiveCR primitive)
     {
-    MethodMark  mark(*this);
-
     ClipAndProcessSolidPrimitive(primitive);
     }
 
@@ -1253,8 +1224,6 @@ void SimplifyViewDrawGeom::_DrawSolidPrimitive(ISolidPrimitiveCR primitive)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyViewDrawGeom::_DrawBSplineSurface(MSBsplineSurfaceCR surface)
     {
-    MethodMark  mark(*this);
-
     ClipAndProcessSurface(surface);
     }
 
@@ -1323,8 +1292,6 @@ void SimplifyViewDrawGeom::ClipAndProcessFacetSetAsCurves(PolyfaceQueryCR meshDa
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyViewDrawGeom::_DrawPolyface(PolyfaceQueryCR meshData, bool filled)
     {
-    MethodMark  mark(*this);
-
     if (_ProcessAsFacets(true))
         {
         size_t  maxPerFace;
@@ -1359,8 +1326,6 @@ void SimplifyViewDrawGeom::_DrawPolyface(PolyfaceQueryCR meshData, bool filled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt SimplifyViewDrawGeom::_DrawBody(ISolidKernelEntityCR entity, double pixelSize)
     {
-    MethodMark  mark(*this);
-
     ClipAndProcessBody(entity, NULL);
     return SUCCESS;
     }
@@ -1370,7 +1335,6 @@ StatusInt SimplifyViewDrawGeom::_DrawBody(ISolidKernelEntityCR entity, double pi
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyViewDrawGeom::_DrawTextString(TextStringCR text, double* zDepth)
     {
-    MethodMark          mark(*this);
     AutoRestore <bool>  saveInTextDraw(&m_inTextDraw, true);
 
     if (!_DoTextGeometry())
@@ -1389,6 +1353,7 @@ void SimplifyViewDrawGeom::_DrawTextString(TextStringCR text, double* zDepth)
     ClipAndProcessText(text, zDepth);
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1498,6 +1463,7 @@ void SimplifyViewDrawGeom::_DrawPointCloud(IPointCloudDrawParams* drawParams)
         numPoints -= pointsThisIter;
         }
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2007
@@ -1509,6 +1475,7 @@ void SimplifyViewDrawGeom::_ActivateMatSymb(ElemMatSymbCP matSymb)
     m_currentMatSymb = *matSymb;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1519,6 +1486,7 @@ void SimplifyViewDrawGeom::_ActivateOverrideMatSymb(OvrMatSymbCP ovrMatSymb)
     else
         m_overrideMatSymb = *ovrMatSymb;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2007
@@ -2122,13 +2090,6 @@ void    SimplifyViewDrawGeom::StrokeGeometryMap(CurveVectorCR curves)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t  SimplifyViewDrawGeom::_GetMethodIndex()  { return m_methodStateStack.empty() ? 0 : m_methodStateStack.top().GetIndex(); }
-void    SimplifyViewDrawGeom::_PushMethodState() { m_methodStateStack.push(MethodState()); }
-void    SimplifyViewDrawGeom::_PopMethodState()  { m_methodStateStack.pop(); }
-
-void    SimplifyViewDrawGeom::PreDrawMethod()    { if (!m_methodStateStack.empty()) m_methodStateStack.top().PreDraw(); }
-void    SimplifyViewDrawGeom::PostDrawMethod()   { if (!m_methodStateStack.empty()) m_methodStateStack.top().PostDraw(); }
-
 BentleyStatus SimplifyViewDrawGeom::GetElementToWorldTransform(TransformR transform) { return m_context->GetTransformClipStack().GetTransformFromIndex(transform, m_elementTransformStackIndex); }
 BentleyStatus SimplifyViewDrawGeom::GetLocalToElementTransform(TransformR transform) { return m_context->GetTransformClipStack().GetTransformFromTopToIndex(transform, m_elementTransformStackIndex); }
 

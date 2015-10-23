@@ -1732,51 +1732,9 @@ bool ProcessViewNodesBatch(T_ViewNodeIterator begin, T_ViewNodeIterator end, boo
     if (begin == end)
         return false;
 
-    int                 results[MAX_OcclusionBatch];
-    uint32_t            nNodes;
-    DRTRangeCorners     corners[MAX_OcclusionBatch];
+    int results[MAX_OcclusionBatch];
     T_ViewNodeIterator  curr;
 
-    if (testOcclusion)
-        {
-        for (nNodes = 0, curr = begin; curr != end; ++curr)
-            {
-            if (curr->TestOcclusion())
-                {
-                corners[nNodes].InitFromRange(curr->m_leaf->GetRange(), curr->m_localToWorld);
-
-#ifdef DRT_DEBUGGING
-                s_statistics.m_traverse.m_elementsOcclusionTested += curr->GetElementCount();
-#endif
-                nNodes++;
-                }
-
-            if (WasAborted())
-                return true;
-            }
-
-        if (nNodes > s_prefs.m_minimumOcclusionNodeTest)
-            {
-#ifdef DRT_DEBUGGING
-            s_statistics.m_traverse.m_leavesOcclusionTested += nNodes;
-            s_statistics.m_traverse.m_occlusionCalls++;
-            double   occlusionTime = 0.0;
-            BEGIN_NET_TIMER(occlusionTime);
-#endif
-            if (SUCCESS != m_viewContext.GetIViewDraw().TestOcclusion(nNodes, corners[0].m_points, results))
-                testOcclusion = false;
-
-#ifdef DRT_DEBUGGING
-            END_NET_TIMER(occlusionTime);
-            s_statistics.m_traverse.m_maxOcclusionTime = MAX(s_statistics.m_traverse.m_maxOcclusionTime, occlusionTime);
-            s_statistics.m_traverse.m_occlusionTime  += occlusionTime;
-#endif
-            }
-        else
-            {
-            testOcclusion = false;
-            }
-        }
 
     int* pResult = results;
     for (curr = begin; curr != end; ++curr)

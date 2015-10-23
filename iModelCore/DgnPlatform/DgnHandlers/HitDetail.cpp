@@ -428,7 +428,7 @@ void HitDetail::FlashCurveSegment(ViewContextR context) const
     // NOTE: Would be nice if flashing made element "glow" for now just bump up weight...
     elMatSymb.SetWidth(elMatSymb.GetWidth()+2);
 
-    context.GetIDrawGeom().ActivateMatSymb(&elMatSymb);
+    context.GetCurrentGraphicR().ActivateMatSymb(&elMatSymb);
     context.ResetContextOverrides();
 
     bool doSegmentFlash = (GetHitType() < HitDetailType::Snap);
@@ -458,9 +458,9 @@ void HitDetail::FlashCurveSegment(ViewContextR context) const
         curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, GetGeomDetail().GetCurvePrimitive()->Clone());
 
     if (GetViewport().Is3dView())
-        context.GetIDrawGeom().DrawCurveVector(*curve, false);
+        context.GetCurrentGraphicR().DrawCurveVector(*curve, false);
     else
-        context.GetIDrawGeom().DrawCurveVector2d(*curve, false, elParams.GetNetDisplayPriority());
+        context.GetCurrentGraphicR().DrawCurveVector2d(*curve, false, elParams.GetNetDisplayPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**

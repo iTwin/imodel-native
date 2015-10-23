@@ -444,7 +444,7 @@ void SectionClipObject::SetDrawSymbology (ViewContextR context, ColorDef color, 
     elemMatSymb.SetWidth(vp->GetIndexedLineWidth(weight));
     elemMatSymb.SetIndexedRasterPattern(style, vp->GetIndexedLinePattern(style));
 
-    context.GetIDrawGeom().ActivateMatSymb(&elemMatSymb);
+    context.GetCurrentGraphicR().ActivateMatSymb(&elemMatSymb);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -466,11 +466,9 @@ bool SectionClipObject::IsDraw3D (ViewContextR context, DVec3dCR zVec)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    SunandSandurkar  08/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void   SectionClipObject::_Draw
-(
-ViewContextR        context
-)
+void SectionClipObject::_Draw (ViewContextR context)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     #ifdef WIP_SECTION_CLIP
     if (DrawPurpose::Plot == context.GetDrawPurpose () ||
         DrawPurpose::ExportVisibleEdges == context.GetDrawPurpose() ||
@@ -583,6 +581,7 @@ ViewContextR        context
                 }
             }
         }
+#endif
     }
 
 ///*---------------------------------------------------------------------------------**//**

@@ -112,12 +112,13 @@ private:
     DRange3d m_range;
 
 public:
-    bool  IsValid() {return !m_range.IsNull(); }
+    bool IsValid() {return !m_range.IsNull();}
+    void Invalidate() {m_range.Init();}
 
-    DGNPLATFORM_EXPORT ElemRangeCalc();
+    ElemRangeCalc() {Invalidate();}
     DGNPLATFORM_EXPORT StatusInt GetRange(DRange3dR range);
-    DGNPLATFORM_EXPORT void SetRange(DRange3dCR range);
-    DGNPLATFORM_EXPORT void Invalidate();
+    void SetRange(DRange3dCR range) {m_range = range;}
+
     DGNPLATFORM_EXPORT void Union(int numPoints, DPoint3dCP points, ClipStackCP currClip);
     DGNPLATFORM_EXPORT void Union(int numPoints, DPoint2d const* points, ClipStackCP currClip);
     DGNPLATFORM_EXPORT void Union(DRange3d const* in, ClipStackCP currClip);
@@ -129,24 +130,19 @@ public:
 * Context to calculate the range of an element.
 * @bsiclass                                                     KeithBentley    01/02
 +===============+===============+===============+===============+===============+======*/
-struct RangeOutput : SimplifyViewDrawGeom
+struct RangeGraphic : SimplifyViewDrawGeom
 {
     DEFINE_T_SUPER(SimplifyViewDrawGeom)
 private:
     ElemRangeCalc m_elRange;
-    ClipStack     m_rangeClipStack;
 
 public:
-    RangeOutput() {}
+    RangeGraphic() {}
 
     void SetViewFlags(ViewFlagsCR viewFlags) {m_viewFlags = viewFlags; m_viewFlags.SetRenderMode(DgnRenderMode::Wireframe);}
     ElemRangeCalc* GetElemRange() {return &m_elRange;}
-    ClipStackCP GetCurrRangeClip() {return &m_rangeClipStack;}
-    void PushCamera(DPoint3dCR camera, double focalLength) { m_rangeClipStack.Push(camera, focalLength); }
-    virtual void _PopTransClip() override;
 
     void Init(ViewContextP context);
-    void     _PushTransClip(TransformCP trans, ClipPlaneSetCP clip) override;
     void      UpdateRange(int numPoints, DPoint3dCP points);
     void      UpdateRange(int numPoints, DPoint2dCP points);
     void      UpdateRange(DEllipse3dCP ellipse);
@@ -157,7 +153,9 @@ public:
     void      _DrawLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override;
     void      _DrawShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range) override;
     void      _DrawArc2d(DEllipse3dCR ellipse, bool isEllipse, bool fill, double zDepth, DPoint2dCP range) override;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     void      _DrawRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range) override;
+#endif
     void      _DrawTextString(TextStringCR text, double* zDepth) override;
     void      _DrawPolyface(PolyfaceQueryCR meshData, bool filled = false) override;
 };

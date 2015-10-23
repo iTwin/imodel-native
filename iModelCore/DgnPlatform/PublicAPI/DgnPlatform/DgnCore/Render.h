@@ -233,13 +233,6 @@ struct MultiResImage : IRefCounted, NonCopyableClass
 };
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   07/15
-//=======================================================================================
-struct Target : IRefCounted, NonCopyableClass
-{
-};
-
-//=======================================================================================
 //! Line style parameters
 //! @private
 //=======================================================================================
@@ -734,7 +727,7 @@ public:
 //!
 //! Viewports always have an "active" ElemMatSymb.
 //=======================================================================================
-struct  ElemMatSymb
+struct ElemMatSymb
 {
 private:
     ColorDef            m_lineColor;
@@ -742,7 +735,6 @@ private:
     int                 m_elementStyle;
     bool                m_isFilled;
     bool                m_isBlankingRegion;
-    uintptr_t           m_extSymbId;
     MaterialPtr         m_material;
     uint32_t            m_rasterWidth;
     uint32_t            m_rasterPat;
@@ -762,12 +754,6 @@ public:
 
     // Get the element style.
     int GetElementStyle() {return m_elementStyle;}
-
-    //! Get the extended material Id from this ElemMatSymb
-    uintptr_t GetExtSymbId() const {return m_extSymbId;}
-
-    //! Set the extended material ID for this ElemMatSymb
-    void SetExtSymbId(uintptr_t extSymbId) {m_extSymbId = extSymbId;}
 
     //! Set the gradient symbology
     void SetGradient(GradientSymbP gradient) {m_gradient = gradient;}
@@ -846,7 +832,7 @@ public:
     //! Set the raster pattern for this ElemMatSymb.
     //! @param[in] rasterPat   the 32 bit on-off pattern to be repeated along lines drawn using this ElemMatSymb.
     //! @see          #GetRasterPattern
-    void SetRasterPattern(uint32_t rasterPat) {m_rasterPat = rasterPat; m_elementStyle = 0; m_extSymbId = 0;}
+    void SetRasterPattern(uint32_t rasterPat) {m_rasterPat = rasterPat; m_elementStyle = 0;}
 
     //! Set a raster pattern derived from a line code for this ElemMatSymb. Used to support plotting of cosmetic line styles mapped to line codes.
     //! @param[in] index       the new line style code.
@@ -902,8 +888,6 @@ public:
     OvrMatSymb() : m_flags(MATSYMB_OVERRIDE_None) {}
     ElemMatSymbCR GetMatSymb() const {return m_matSymb;}
     ElemMatSymbR GetMatSymbR () {return m_matSymb;}
-    uintptr_t GetExtSymbId() const {return m_matSymb.GetExtSymbId();}
-    void SetExtSymbId(uintptr_t extSymbID) {m_matSymb.SetExtSymbId(extSymbID); m_flags |= MATSYMB_OVERRIDE_ExtSymb;}
 
 public:
     //! Compare two OvrMatSymb.
@@ -961,76 +945,6 @@ struct IPointCloudDrawParams
 };
 
 //=======================================================================================
-//! This interface defines the method used by ViewContext::DrawCached.
-// @bsiclass
-//=======================================================================================
-struct GraphicStroker
-{
-    //! Stroke this object to create a cached representation. This method is the callback for ViewContext::DrawCached and can be used
-    //! to create a cached presentation for geometry that is expensive to create. The cached presentation created when this is called
-    //! will then be used for subsequent draws.
-    //! @param[in] context context to use to create the cached representation.
-    virtual void _Stroke(ViewContextR context) = 0;
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    //! Return true if _StrokeForCache should be called for locate. The geometry output by the stroker will be used to generate the curve/edge hits
-    //! required for snapping as well as for locating the interiors of filled/rendered geometry.
-    //! @note A stroker that has a very expensive to create cached representation (ex. breps) should NEVER return true.
-    virtual bool _WantLocateByStroker() const {return true;}
-
-    //! Return geometry range for the purpose of calculating pixelSize for creating a size dependent cache representation.
-    //! @note A valid range is required only if _GetSizeDependentGeometryPossible returns true.
-    virtual DRange3d _GetRange() const {return DRange3d::NullRange();}
-
-    //! Return Graphic created by a prior call to _StrokeForCache. When nullptrptr is returned, _Stroke will be called to create a new Graphic.
-    virtual Graphic* _FindGraphic(DgnViewportCR) const = 0;
-
-    //! Save the Graphic created by calling _StrokeForCache for use in subsequent draws.
-    virtual void _SaveGraphic(DgnViewportCR vp, GraphicR graphic) const = 0;
-
-    virtual DgnDbR _GetDgnDb() const = 0;
-#endif
-};
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-//=======================================================================================
-//! GraphicStroker for GeometricElements.
-// @bsiclass
-//=======================================================================================
-struct GeometricElementStroker : GraphicStroker
-{
-protected:
-    GeometricElementCR  m_element;
-
-public:
-    explicit GeometricElementStroker(GeometricElementCR element) : m_element(element) {}
-
-    DGNPLATFORM_EXPORT void _Stroke(ViewContextR context) override;
-    Graphic* _FindGraphic(DgnViewportCR vp) const override {return m_element.Graphics().Find(vp);}
-    void _SaveGraphic(DgnViewportCR vp, GraphicR graphic) const override {m_element.Graphics().Save(vp, graphic);}
-    DRange3d _GetRange() const override {return m_element.CalculateRange3d();}
-    DgnDbR _GetDgnDb() const override {return m_element.GetDgnDb();}
-};
-
-//=======================================================================================
-//! GraphicStroker sub-class specific to tools/transient cached graphics.
-// @bsiclass
-//=======================================================================================
-struct TransientStroker : GraphicStroker
-{
-protected:
-    DgnDbR m_dgnDb;
-    mutable Render::GraphicSet m_graphics;
-
-public:
-    explicit TransientStroker(DgnDbR dgnDb) : m_dgnDb(dgnDb) {}
-    Graphic* _FindGraphic(DgnViewportCR vp) const override {return m_graphics.Find(vp);}
-    void _SaveGraphic(DgnViewportCR vp, GraphicR graphic) const override {m_graphics.Save(vp, graphic);}
-    virtual DgnDbR _GetDgnDb() const override {return m_dgnDb;}
-};
-#endif
-
-//=======================================================================================
 // @bsiclass
 //=======================================================================================
 struct Graphic : IRefCounted, NonCopyableClass
@@ -1038,10 +952,7 @@ struct Graphic : IRefCounted, NonCopyableClass
     friend struct ViewContext;
 
 protected:
-    virtual ViewFlags _GetDrawViewFlags() = 0;
-    virtual void _SetDrawViewFlags(ViewFlags) = 0;
     virtual void _ActivateMatSymb(ElemMatSymbCP matSymb) = 0;
-    virtual void _ActivateOverrideMatSymb(OvrMatSymbCP ovrMatSymb) = 0;
     virtual void _DrawLineString3d(int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
     virtual void _DrawLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) = 0;
     virtual void _DrawPointString3d(int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
@@ -1062,31 +973,16 @@ protected:
     virtual StatusInt _DrawBody(ISolidKernelEntityCR, double pixelSize = 0.0) = 0;
     virtual void _DrawTextString(TextStringCR text, double* zDepth = nullptr) = 0;
     virtual void _DrawMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) = 0;
-    virtual void _PushTransClip(TransformCP trans, ClipPlaneSetCP clip = nullptr) = 0;
-    virtual void _PopTransClip() = 0;
+    virtual bool _IsQuickVision() const {return false;}
     virtual ~Graphic() {}
 
 public:
-    //! Get the current View Flags for this object. The view flags are initialized from the view flags
-    //! of its controlling DgnViewport at the beginning of every display operation. However, during display operations,
-    //! the view flags are sometimes temporarily modified for specific purposes, so they are not
-    //! always the same.
-    //! @return the current view flags for this IViewDraw
-    ViewFlags GetDrawViewFlags() {return _GetDrawViewFlags();}
-
-    //! Sets the current state of the ViewFlags for this context's output.
-    void SetDrawViewFlags(ViewFlags flags) {_SetDrawViewFlags(flags);}
-
     //! Set an ElemMatSymb to be the "active" ElemMatSymb for this IDrawGeom.
     //! @param[in]          matSymb     The new active ElemMatSymb. All geometry drawn via calls to this IDrawGeom will
     //!                                     be displayed using the values in this ElemMatSymb.
     //! @note     See discussion of the symbology "overrides" in #ActivateOverrideMatSymb
     void ActivateMatSymb(ElemMatSymbCP matSymb) {_ActivateMatSymb(matSymb);}
 
-    //! Set an ElemMatSymb to be the "active override" ElemMatSymb for this IDrawGeom.
-    //! @param[in]          ovrMatSymb  The new active override ElemMatSymb.
-    //!                                     value in ovrMatSymb will be used instead of the value set by #ActivateMatSymb.
-    void ActivateOverrideMatSymb(OvrMatSymbCP ovrMatSymb) {_ActivateOverrideMatSymb(ovrMatSymb);}
 
     //! Draw a 3D line string.
     //! @param[in]          numPoints   Number of vertices in points array.
@@ -1212,6 +1108,8 @@ public:
     // Helper Methods to draw simple SolidPrimitives.
     void DrawTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) { DrawSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}
     void DrawBox(DVec3dCR primary, DVec3dCR secondary, DPoint3dCR basePoint, DPoint3dCR topPoint, double baseWidth, double baseLength, double topWidth, double topLength, bool capped) {DrawSolidPrimitive(*ISolidPrimitive::CreateDgnBox(DgnBoxDetail::InitFromCenters(basePoint, topPoint, primary, secondary, baseWidth, baseLength, topWidth, topLength, capped))); }
+
+    bool IsQuickVision() const {return _IsQuickVision();}
 };
 
 //=======================================================================================
@@ -1221,7 +1119,7 @@ struct Scene : NonCopyableClass
 {
 protected:
     virtual void _SetToViewCoords(bool yesNo) = 0;
-    virtual void _SetSymbology(ColorDef lineColor, ColorDef fillColor, int lineWidth, uint32_t linePattern) = 0;
+    virtual void _ActivateOverrideMatSymb(OvrMatSymbCP ovrMatSymb) = 0;
     virtual void _DrawGrid(bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector, uint32_t gridsPerRef, Point2dCR repetitions) = 0;
     virtual bool _DrawSprite(ISprite* sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) = 0;
     virtual void _DrawTiledRaster(ITiledRaster* tiledRaster) = 0;
@@ -1232,30 +1130,26 @@ protected:
     virtual void _DrawGraphic(Graphic* graphic) = 0;
     virtual void _ClearZ () = 0;
 
-    virtual uintptr_t _DefineQVTexture(WCharCP textureName, DgnDbP) {return 0;}
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     virtual void _DefineQVGeometryMap(uintptr_t textureId, GraphicStroker&, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern) {}
 #endif
 
-    virtual bool _IsOutputQuickVision() const = 0;
     virtual bool _ApplyMonochromeOverrides(ViewFlagsCR) const = 0;
     virtual void _PushClipStencil(Graphic* graphic) = 0;
     virtual void _PopClipStencil() = 0;
     virtual ~Scene() {}
 
 public:
+    //! Set an ElemMatSymb to be the "active override" ElemMatSymb for this IDrawGeom.
+    //! @param[in]          ovrMatSymb  The new active override ElemMatSymb.
+    //!                                     value in ovrMatSymb will be used instead of the value set by #ActivateMatSymb.
+    void ActivateOverrideMatSymb(OvrMatSymbCP ovrMatSymb) {_ActivateOverrideMatSymb(ovrMatSymb);}
+
     //! Set the coordinate system temporarily to DgnCoordSystem::View. This removes the root coordinate system,
     //! including all camera definitions. It is ONLY valid or useful for drawing "overlay" graphics while drawing View Decorations.
     //! @param[in]      yesNo       If true, set to DgnCoordSystem::View. If false, restore to COORDSYS_Root.
     //! @note           calls to this method should be paired with true then false values for \c yesNo.
     void SetToViewCoords(bool yesNo) {_SetToViewCoords(yesNo);}
-
-    //! Set the active symbology for this IViewDraw. All subsequent draw methods will use the new active symbology.
-    //! @param[in]      lineColorTBGR   TBGR line color.
-    //! @param[in]      fillColorTBGR   TBGR color for filled regions.
-    //! @param[in]      lineWidth       The line width in pixels.
-    //! @param[in]      linePattern     The 32 bit on/off pattern for lines.
-    void SetSymbology(ColorDef lineColorTBGR, ColorDef fillColorTBGR, int lineWidth, uint32_t linePattern) {_SetSymbology(lineColorTBGR, fillColorTBGR, lineWidth, linePattern);}
 
     //! Draw the grid matrix.
     //! @param[in]      doIsoGrid       Draw the isometric grid points (if applicable).
@@ -1303,23 +1197,11 @@ public:
     void PopClipStencil() {_PopClipStencil();}
 
     void ClearZ() {_ClearZ();}
-    uintptr_t DefineQVTexture(WCharCP textureName, DgnDbP dgnFile) {return _DefineQVTexture(textureName, dgnFile);}
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     void DefineQVGeometryMap(uintptr_t textureId, GraphicStroker& stroker, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern = false){_DefineQVGeometryMap(textureId, stroker, spacing, useCellColors, seedContext, forAreaPattern);}
 #endif
-    bool IsOutputQuickVision() const {return _IsOutputQuickVision();}
     bool ApplyMonochromeOverrides(ViewFlagsCR) const;
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    //! Push a transform.
-    //! @param[in]  trans Transform to push.
-    //! @see #PopTransform
-    void PushTransform(TransformCR trans) {_PushTransClip(&trans);}
-
-    //! Pop the most recently pushed transform.
-    //! @see #PushTransform
-    void PopTransform() {_PopTransClip();}
-#endif
 };
 
 //=======================================================================================
@@ -1424,53 +1306,50 @@ struct RenderWindow {};
 struct RenderCursor {};
 struct CursorSource {};
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct Output : IRefCounted, ViewDraw
+struct Target : IRefCounted, NonCopyableClass
 {
     friend struct HealContext;
     friend struct IndexedViewport;
     typedef ImageUtilities::RgbImageInfo CapturedImageInfo;
 
 protected:
-    virtual void      _SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText) = 0;
+    virtual void _SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText) = 0;
     virtual RenderDevice* _GetRenderDevice() const = 0;
     virtual StatusInt _AssignRenderDevice(RenderDevice*) = 0;
-    virtual void      _AddLights(bool threeDview, RotMatrixCP rotMatrixP, DgnModelP model) = 0;
-    virtual void      _AdjustBrightness(bool useFixedAdaptation, double brightness) = 0;
-    virtual uint64_t  _GetLightStamp() = 0;
-    virtual void      _DefineFrustum(DPoint3dCR frustPts, double fraction, bool is2d) = 0;
-    virtual void      _SetDrawBuffer(DgnDrawBuffer drawBuffer, BSIRectCP subRect) = 0;
+    virtual void _AddLights(bool threeDview, RotMatrixCP rotMatrixP, DgnModelP model) = 0;
+    virtual void _AdjustBrightness(bool useFixedAdaptation, double brightness) = 0;
+    virtual uint64_t _GetLightStamp() = 0;
+    virtual void _DefineFrustum(DPoint3dCR frustPts, double fraction, bool is2d) = 0;
+    virtual void _SetDrawBuffer(DgnDrawBuffer drawBuffer, BSIRectCP subRect) = 0;
     virtual DgnDrawBuffer _GetDrawBuffer() const = 0;
-    virtual void      _SetEraseMode(bool newMode) = 0;
     virtual StatusInt _SynchDrawingFromBackingStore() = 0;
-    virtual void      _SynchDrawingFromBackingStoreAsynch() = 0;
+    virtual void _SynchDrawingFromBackingStoreAsynch() = 0;
     virtual StatusInt _SynchScreenFromDrawing() = 0;
-    virtual void      _SynchScreenFromDrawingAsynch() = 0;
-    virtual bool      _IsScreenDirty(BSIRect*) = 0;
-    virtual void      _ShowProgress() = 0;
-    virtual bool      _IsBackingStoreValid() const = 0;
-    virtual void      _SetBackingStoreValid(bool) = 0;
-    virtual bool      _IsAccelerated() const = 0;
-    virtual void      _ScreenDirtied(BSIRect const* rect) = 0;
+    virtual void _SynchScreenFromDrawingAsynch() = 0;
+    virtual bool _IsScreenDirty(BSIRect*) = 0;
+    virtual void _ShowProgress() = 0;
+    virtual bool _IsBackingStoreValid() const = 0;
+    virtual void _SetBackingStoreValid(bool) = 0;
+    virtual bool _IsAccelerated() const = 0;
+    virtual void _ScreenDirtied(BSIRect const* rect) = 0;
     virtual StatusInt _BeginDraw(bool eraseBefore) = 0;
-    virtual void      _EndDraw(PaintOptions const&) = 0;
-    virtual bool      _IsDrawActive() = 0;
-    virtual void      _ShowTransparent() = 0;
-    virtual void      _AccumulateDirtyRegion(bool val) = 0;
-    virtual void      _ClearHealRegion() = 0;
-    virtual void      _SetNeedsHeal(BSIRect const* dirty) = 0;
-    virtual void      _HealComplete(bool aborted) = 0;
-    virtual bool      _CheckNeedsHeal(BSIRect* rect) = 0;
-    virtual void      _BeginDecorating(BSIRect const* rect) = 0;
-    virtual void      _BeginOverlayMode() = 0;
-    virtual Scene*    _GetScene() = 0; // May return nullptr
-    virtual void      _SetFlashMode(bool newMode) = 0;
+    virtual void _EndDraw(PaintOptions const&) = 0;
+    virtual bool _IsDrawActive() = 0;
+    virtual void _AccumulateDirtyRegion(bool val) = 0;
+    virtual void _ClearHealRegion() = 0;
+    virtual void _SetNeedsHeal(BSIRect const* dirty) = 0;
+    virtual void _HealComplete(bool aborted) = 0;
+    virtual bool _CheckNeedsHeal(BSIRect* rect) = 0;
+    virtual void _BeginDecorating(BSIRect const* rect) = 0;
+    virtual void _BeginOverlayMode() = 0;
+    virtual Scene* _GetScene() = 0; // May return nullptr
     virtual BentleyStatus _FillImageCaptureBuffer(bvector<unsigned char>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) = 0;
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    virtual int       _GetVisibleTiles(MRImage* mri, size_t bufSize, int* lrc) = 0;
+    virtual void _SetSymbology(ColorDef lineColor, ColorDef fillColor, int lineWidth, uint32_t linePattern) = 0;
+    virtual int _GetVisibleTiles(MRImage* mri, size_t bufSize, int* lrc) = 0;
 #endif
 
 public:
@@ -1484,7 +1363,6 @@ public:
     void SetDrawBuffer(DgnDrawBuffer drawBuffer, BSIRect const* subRect) {_SetDrawBuffer(drawBuffer, subRect);}
     DgnDrawBuffer GetDrawBuffer() const {return _GetDrawBuffer();}
     void HealComplete(bool aborted) {_HealComplete(aborted);}
-    void SetEraseMode(bool newMode) {_SetEraseMode(newMode);}
     StatusInt SynchDrawingFromBackingStore() {return _SynchDrawingFromBackingStore();}
     void SynchDrawingFromBackingStoreAsynch() {_SynchDrawingFromBackingStoreAsynch();}
     StatusInt SynchScreenFromDrawing() {return _SynchScreenFromDrawing();}
@@ -1497,30 +1375,24 @@ public:
     StatusInt BeginDraw(bool eraseBefore) {return _BeginDraw(eraseBefore);}
     void EndDraw(PaintOptions const& op){_EndDraw(op);}
     bool IsDrawActive() {return _IsDrawActive();}
-    void ShowTransparent() {_ShowTransparent();}
     void AccumulateDirtyRegion(bool val) {_AccumulateDirtyRegion(val);}
     void ClearHealRegion() {_ClearHealRegion();}
     void SetNeedsHeal(BSIRectCP dirty) {_SetNeedsHeal(dirty);}
     void BeginDecorating(BSIRectCP rect) {_BeginDecorating(rect);}
     void BeginOverlayMode() {_BeginOverlayMode();}
-    void SetFlashMode(bool newMode) {_SetFlashMode(newMode);}
     BentleyStatus FillImageCaptureBuffer(bvector<unsigned char>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) {return _FillImageCaptureBuffer(buffer, info, screenBufferRange, outputImageSize, topDown);}
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     int GetVisibleTiles(MRImage* mri, size_t bufSize, int* lrc) {return _GetVisibleTiles(mri, bufSize, lrc);}
+
+    //! Set the active symbology for this IViewDraw. All subsequent draw methods will use the new active symbology.
+    //! @param[in]      lineColorTBGR   TBGR line color.
+    //! @param[in]      fillColorTBGR   TBGR color for filled regions.
+    //! @param[in]      lineWidth       The line width in pixels.
+    //! @param[in]      linePattern     The 32 bit on/off pattern for lines.
+    void SetSymbology(ColorDef lineColorTBGR, ColorDef fillColorTBGR, int lineWidth, uint32_t linePattern) {_SetSymbology(lineColorTBGR, fillColorTBGR, lineWidth, linePattern);}
 #endif
-
-    //! Push a transform and/or a clip plane set
-    //! @param[in]          trans           Transform to push. May be nullptr.
-    //! @param[in]          clipPlaneSet    Clip planes to push. May be nullptr.
-    //! @see #PopTransClip
-    void PushTransClip(TransformCP trans, ClipPlaneSetCP clipPlaneSet = nullptr) {_PushTransClip(trans, clipPlaneSet);}
-
-    //! Pop the most recently pushed transform and clipping.
-    //! @see #PushTransClip
-    void PopTransClip() {_PopTransClip();}
 
     bool CheckNeedsHeal(BSIRectP rect){return _CheckNeedsHeal(rect);}
 };
-#endif
 
 END_BENTLEY_RENDER_NAMESPACE

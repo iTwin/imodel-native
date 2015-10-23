@@ -17,10 +17,7 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 struct NullGraphic : Graphic
 {
-    virtual ViewFlags _GetDrawViewFlags() override {return ViewFlags();}
-    virtual void _SetDrawViewFlags(ViewFlags) override {}
     virtual void _ActivateMatSymb(ElemMatSymbCP matSymb) override {}
-    virtual void _ActivateOverrideMatSymb(OvrMatSymbCP ovrMatSymb) override {}
     virtual void _DrawLineString3d(int numPoints, DPoint3dCP points, DPoint3dCP range) override {}
     virtual void _DrawLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override {}
     virtual void _DrawPointString3d(int numPoints, DPoint3dCP points, DPoint3dCP range) override {}
@@ -47,8 +44,6 @@ struct NullGraphic : Graphic
     virtual void _DrawPointCloud(IPointCloudDrawParams* drawParams) override {}
 #endif
     virtual void _DrawMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) override {}
-    virtual void _PushTransClip(TransformCP trans, ClipPlaneSetCP clip = NULL) override {}
-    virtual void _PopTransClip() override {}
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     virtual void _PushClipStencil(Render::Graphic* qvElem) override {}
     virtual void _PopClipStencil() override {}
@@ -77,7 +72,9 @@ protected:
     bool    m_setupScan;
 
     void _AllocateScanCriteria() override {if (m_setupScan) T_Super::_AllocateScanCriteria();}
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     virtual void _DrawCached(Render::GraphicStroker& stroker) override {stroker._Stroke(*this);}
+#endif
 
     virtual void _DrawSymbol(Render::IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight) override {}
     virtual bool _FilterRangeIntersection(GeometricElementCR element) override {if (m_setupScan) return T_Super::_FilterRangeIntersection(element); return false;}
@@ -88,7 +85,7 @@ protected:
 #endif
 
 public:
-    NullContext(Render::TargetP target=nullptr, bool setupScan = false) {m_renderTarget=target; m_setupScan = setupScan; m_ignoreViewRange = true;}
+    NullContext(bool setupScan = false) {m_setupScan = setupScan; m_ignoreViewRange = true;}
 };
 
 END_BENTLEY_DGN_NAMESPACE

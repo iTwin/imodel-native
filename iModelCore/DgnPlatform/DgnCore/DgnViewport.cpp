@@ -48,7 +48,6 @@ DgnViewport::DgnViewport()
     m_frustumValid      = false;
     m_toolGraphicsHandler = nullptr;
     m_backgroundColor   = ColorDef::Black();
-    m_output            = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -56,7 +55,6 @@ DgnViewport::DgnViewport()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::DestroyViewport()
     {
-    m_output = nullptr;
     m_progressiveDisplay.clear();
     m_viewController = nullptr;
     m_qvDCAssigned = false;
@@ -69,9 +67,9 @@ void DgnViewport::DestroyViewport()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::InitViewSettings(bool useBgTexture)
     {
-    BeAssert(m_output.IsValid());
+    BeAssert(m_renderTarget.IsValid());
 
-    m_output->SetViewAttributes(GetViewFlags(), m_backgroundColor, useBgTexture, _WantAntiAliasLines(), _WantAntiAliasText());
+    m_renderTarget->SetViewAttributes(GetViewFlags(), m_backgroundColor, useBgTexture, _WantAntiAliasLines(), _WantAntiAliasText());
     m_qvParamsSet = true;
     }
 
@@ -381,15 +379,15 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::_ConnectToOutput()
+StatusInt DgnViewport::_ConnectRenderTarget()
     {
     if (m_qvDCAssigned)
         return SUCCESS;
 
-    if (!m_output.IsValid())
+    if (!m_renderTarget.IsValid())
         return ERROR;
 
-    StatusInt status = m_output->AssignRenderDevice(_GetRenderDevice());
+    StatusInt status = m_renderTarget->AssignRenderDevice(_GetRenderDevice());
 
     if (SUCCESS == status)
         m_qvDCAssigned = true;
@@ -441,8 +439,8 @@ void DgnViewport::_SetFrustumFromRootCorners(DPoint3dCP rootBox, double compress
             frustum[0].z = frustum[1].z = frustum[2].z = -displayPriority;
         }
 
-    if (m_output.IsValid())
-        m_output->DefineFrustum(*frustum, compressionFraction, !use3d);
+    if (m_renderTarget.IsValid())
+        m_renderTarget->DefineFrustum(*frustum, compressionFraction, !use3d);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -565,10 +563,10 @@ ViewportStatus DgnViewport::_SetupFromViewController()
     m_viewOrg   = origin;
     m_viewDelta = delta;
 
-    if (SUCCESS != _ConnectToOutput())
+    if (SUCCESS != _ConnectRenderTarget())
         return ViewportStatus::InvalidViewport;
 
-    BeAssert(!m_output.IsValid() || !m_output->IsDrawActive());
+    BeAssert(!m_renderTarget.IsValid() || !m_renderTarget->IsDrawActive());
 
     double compressionFraction;
     if (SUCCESS != RootToNpcFromViewDef(m_rootToNpc, &compressionFraction, IsCameraOn() ? &m_camera : nullptr, m_viewOrg, m_viewDelta, m_rotMatrix))
@@ -928,12 +926,12 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewportStatus DgnViewport::_Activate(PaintOptions const& opts)
     {
-    if (!m_output.IsValid() || !m_qvParamsSet)
+    if (!m_renderTarget.IsValid() || !m_qvParamsSet)
         return  ViewportStatus::ViewNotInitialized;
 
-    m_output->AccumulateDirtyRegion(opts.WantAccumulateDirty());
+    m_renderTarget->AccumulateDirtyRegion(opts.WantAccumulateDirty());
 
-    if (SUCCESS != m_output->BeginDraw(opts.WantEraseBefore()))
+    if (SUCCESS != m_renderTarget->BeginDraw(opts.WantEraseBefore()))
         return  ViewportStatus::DrawFailure;
 
     return  ViewportStatus::Success;
@@ -980,7 +978,9 @@ uint32_t DgnViewport::_GetIndexedLinePattern(int index) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::SetSymbologyRgb(ColorDef lineColor, ColorDef fillColor, int lineWidth, int lineCodeIndex)
     {
-    m_output->SetSymbology(lineColor, fillColor, lineWidth, _GetIndexedLinePattern(lineCodeIndex));
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    m_renderTarget->SetSymbology(lineColor, fillColor, lineWidth, _GetIndexedLinePattern(lineCodeIndex));
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

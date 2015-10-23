@@ -1021,6 +1021,7 @@ RegionGraphicsContext::RegionGraphicsContext()
     m_cullRedundantLoop = false;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1031,6 +1032,7 @@ void            RegionGraphicsContext::_SetupOutputs()
     m_output.SetViewContext(this);
     m_output.SetIsFlood(RegionType::Flood == m_operation);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/13
@@ -1041,7 +1043,7 @@ void            RegionGraphicsContext::_DrawTextString(TextStringCR text)
     text.GetGlyphSymbology(GetCurrentDisplayParams());
     CookDisplayParams();
 
-    GetIDrawGeom().DrawTextString(text, NULL);
+    GetCurrentGraphicR().DrawTextString(text, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1196,12 +1198,16 @@ void            RegionGraphicsContext::SetFlattenBoundary(DVec3dCR flattenDir)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   RegionGraphicsContext::SetTargetModel(DgnModelR targetModel)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     _SetupOutputs();
+#endif
 
     m_targetModel = &targetModel;
     SetDgnDb(targetModel.GetDgnDb());
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     SetViewFlags(GetViewFlags()); // Force _SetDrawViewFlags to be called on output...
+#endif
 
     return SUCCESS;
     }

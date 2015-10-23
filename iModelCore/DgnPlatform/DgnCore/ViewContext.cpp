@@ -21,39 +21,29 @@ ViewContext::ViewContext()
     m_dgnDb = nullptr;
 
     m_viewport    = nullptr;
-    m_IViewDraw   = nullptr;
-    m_IDrawGeom   = nullptr;
 
     m_scanCriteria  = nullptr;
     m_purpose       = DrawPurpose::NotSpecified;
     m_arcTolerance  = .01;
-    m_patternScale  = 1.0;
     m_minLOD        = DEFAULT_MINUMUM_LOD;
 
     m_isAttached                = false;
     m_blockIntermediatePaints   = false;
     m_is3dView                  = true; // Changed default to 3d...
-    m_creatingCacheElem         = false;
     m_useNpcSubRange            = false;
     m_filterLOD                 = FILTER_LOD_ShowRange;
-    m_parentRangeResult         = RangeResult::Overlap;
 
     m_wantMaterials             = false;
-    m_useCachedGraphics         = true;
 
     m_startTangent = m_endTangent = nullptr;
 
-    m_drawingClipElements       = false;
-    m_ignoreViewRange           = false;
-    m_edgeMaskState             = EdgeMaskState_None;
-    m_hiliteState               = DgnElement::Hilited::None;
-    m_isCameraOn                = false;
-    m_edgeMaskState             = EdgeMaskState_None;
+    m_ignoreViewRange = false;
+    m_hiliteState = DgnElement::Hilited::None;
 
     m_rasterDisplayParams.SetFlags(0);
 
-    m_scanRangeValid        = false;
-    m_levelOfDetail         = 1.0;
+    m_scanRangeValid = false;
+    m_levelOfDetail = 1.0;
 
     m_worldToNpc.InitIdentity();
     m_worldToView.InitIdentity();
@@ -68,7 +58,6 @@ ViewContext::ViewContext()
 ViewContext::~ViewContext()
     {
     BeAssert(!m_isAttached);
-
     DELETE_AND_CLEAR(m_scanCriteria);
     }
 
@@ -171,6 +160,7 @@ void ViewContext::_PushFrustumClip()
     if (m_ignoreViewRange)
         return;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     int         nPlanes;
     ClipPlane   frustumPlanes[6];
     ViewFlags viewFlags = GetViewFlags();
@@ -179,6 +169,7 @@ void ViewContext::_PushFrustumClip()
 
     if (0 != (nPlanes = ClipUtil::RangePlanesFromPolyhedra(frustumPlanes, polyhedron.GetPts(), !viewFlags.noFrontClip, !viewFlags.noBackClip, 1.0E-6)))
         m_transformClipStack.PushClipPlanes(frustumPlanes, nPlanes);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -206,11 +197,13 @@ void ViewContext::_PushClip(ClipVectorCR clip)
     {
     m_transformClipStack.PushClip(clip);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     for (ClipPrimitivePtr const& primitive: clip)
         {
-        GetIDrawGeom()._PushTransClip(nullptr, primitive->GetClipPlanes());
+        GetCurrentGraphicR()._PushTransClip(nullptr, primitive->GetClipPlanes());
         m_transformClipStack.IncrementPushedToDrawGeom();
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -219,7 +212,9 @@ void ViewContext::_PushClip(ClipVectorCR clip)
 void ViewContext::_PushTransform(TransformCR trans)
     {
     m_transformClipStack.PushTransform(trans);
-    GetIDrawGeom()._PushTransClip(&trans , nullptr);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    GetCurrentGraphicR()._PushTransClip(&trans , nullptr);
+#endif
     m_transformClipStack.IncrementPushedToDrawGeom();
     InvalidateScanRange();
     }
@@ -249,6 +244,7 @@ void ViewContext::_PopTransformClip()
     m_transformClipStack.Pop(*this);
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -264,17 +260,13 @@ void ViewContext::DirectPopTransClipOutput(GeomDrawR drawGeom)
     {
     drawGeom._PopTransClip();
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_SetCurrentElement(GeometricElementCP element)
     {
-    if (nullptr == element)
-        GetIDrawGeom().PopMethodState();
-    else
-        GetIDrawGeom().PushMethodState();
-
     m_currentElement = (DgnElementP) element;
     }
 
@@ -335,22 +327,20 @@ StatusInt ViewContext::_Attach(DgnViewportP viewport, DrawPurpose purpose)
     _AllocateScanCriteria();
 
     m_viewport = viewport;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     _SetupOutputs();
+#endif
 
     m_purpose = purpose;
     ClearAborted();
 
     m_minLOD = viewport->GetMinimumLOD();
     m_filterLOD = FILTER_LOD_ShowRange;
-    m_isCameraOn = viewport->IsCameraOn();
 
     m_is3dView = viewport->Is3dView();
-    m_useCachedGraphics = true;
-
     SetViewFlags(viewport->GetViewFlags());
 
     m_arcTolerance = 0.1;
-    m_parentRangeResult = RangeResult::Overlap;
 
     return _InitContextForView();
     }
@@ -367,11 +357,10 @@ void ViewContext::_Detach()
     m_transformClipStack.PopAll(*this);
     m_currentElement = nullptr;
 
-    /* m_IDrawGeom and m_IViewDraw are not typically nullptr so the Get methods return references.
-       However, there is a hack in SymbolContext::_Detach that NULLs them out specifically
-       to prevent this method from modifying them */
-    if (nullptr != m_IDrawGeom)
-        m_IDrawGeom->ActivateOverrideMatSymb(nullptr);     // clear any overrides
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    if (m_currGraphic.IsValid())
+        m_currGraphic->ActivateOverrideMatSymb(nullptr);     // clear any overrides
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -389,7 +378,7 @@ void ViewContext::LocalToView(DPoint3dP viewPts, DPoint3dCP localPts, int nPts) 
     {
     DMatrix4dCR  localToView = GetLocalToView();
 
-    if (m_isCameraOn)
+    if (m_viewport->IsCameraOn())
         localToView.MultiplyAndRenormalize(viewPts, localPts, nPts);
     else
         localToView.MultiplyAffine(viewPts, localPts, nPts);
@@ -534,16 +523,6 @@ void ViewContext::GetViewIndependentTransform(TransformP trans, DPoint3dCP origi
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    BSI                             04/2006
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::SetWantMaterials(bool wantMaterials)
-    {
-    bool    prevWantMaterials = m_wantMaterials;
-    m_wantMaterials = wantMaterials;
-    return prevWantMaterials;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
 ILineStyleCP ViewContext::_GetCurrLineStyle(LineStyleSymbP* symb)
@@ -577,31 +556,26 @@ bool ViewContext::_ScanRangeFromPolyhedron()
 
     if (m_scanCriteria)
         {
-        if (RangeResult::Inside == m_parentRangeResult)
-            m_scanCriteria->SetRangeTest(nullptr);
-        else
+        m_scanCriteria->SetRangeTest(&scanRange);
+
+        // if we're doing a skew scan, get the skew parameters
+        if (Is3dView())
             {
-            m_scanCriteria->SetRangeTest(&scanRange);
+            DRange3d skewRange;
 
-            // if we're doing a skew scan, get the skew parameters
-            if (Is3dView())
-                {
-                DRange3d skewRange;
+            // get bounding range of front plane of polyhedron
+            skewRange.InitFrom(polyhedron.GetPts(), 4);
 
-                // get bounding range of front plane of polyhedron
-                skewRange.InitFrom(polyhedron.GetPts(), 4);
+            // get unit bvector from front plane to back plane
+            DVec3d      skewVec = DVec3d::FromStartEndNormalize(polyhedron.GetCorner(0), polyhedron.GetCorner(4));
 
-                // get unit bvector from front plane to back plane
-                DVec3d      skewVec = DVec3d::FromStartEndNormalize(polyhedron.GetCorner(0), polyhedron.GetCorner(4));
+            // check to see if it's worthwhile using skew scan (skew bvector not along one of the three major axes */
+            int alongAxes = (fabs(skewVec.x) < 1e-8);
+            alongAxes += (fabs(skewVec.y) < 1e-8);
+            alongAxes += (fabs(skewVec.z) < 1e-8);
 
-                // check to see if it's worthwhile using skew scan (skew bvector not along one of the three major axes */
-                int alongAxes = (fabs(skewVec.x) < 1e-8);
-                alongAxes += (fabs(skewVec.y) < 1e-8);
-                alongAxes += (fabs(skewVec.z) < 1e-8);
-
-                if (alongAxes < 2)
-                    m_scanCriteria->SetSkewRangeTest(&scanRange, &skewRange, &skewVec);
-                }
+            if (alongAxes < 2)
+                m_scanCriteria->SetSkewRangeTest(&scanRange, &skewRange, &skewVec);
             }
         }
     m_scanRangeValid = true;
@@ -615,12 +589,6 @@ bool ViewContext::_ScanRangeFromPolyhedron()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::_FilterRangeIntersection(GeometricElementCR element)
     {
-    if (RangeResult::Inside == m_parentRangeResult)
-        return false;
-
-    if (RangeResult::Outside == m_parentRangeResult)
-        return true;
-
     return ClipPlaneContainment_StronglyOutside == m_transformClipStack.ClassifyRange(element.CalculateRange3d(), element.Is3d());
     }
 
@@ -630,7 +598,7 @@ bool ViewContext::_FilterRangeIntersection(GeometricElementCR element)
 void ViewContext::_OutputElement(GeometricElementCR element)
     {
     ResetContextOverrides();
-    m_viewport ? m_viewport->GetViewControllerR()._DrawElement(*this, element) : element._Draw(*this);
+    m_viewport ? m_viewport->GetViewControllerR()._DrawElement(*this, element) : element._Stroke(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -688,8 +656,10 @@ void ViewContext::CookDisplayParamsOverrides()
     {
     _CookDisplayParamsOverrides(m_currDisplayParams, m_ovrMatSymb);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Activate the ovrMatsymb in the IDrawGeom
-    GetIDrawGeom().ActivateOverrideMatSymb(&m_ovrMatSymb);
+    GetCurrentGraphicR().ActivateOverrideMatSymb(&m_ovrMatSymb);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -730,7 +700,7 @@ void ViewContext::CookDisplayParams()
         }
 
     // Activate the matsymb in the IDrawGeom
-    GetIDrawGeom().ActivateMatSymb(&m_elemMatSymb);
+    GetCurrentGraphicR().ActivateMatSymb(&m_elemMatSymb);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -743,7 +713,9 @@ void ViewContext::ResetContextOverrides()
     // NOTE: Context overrides CAN NOT look at m_currDisplayParams or m_elemMatSymb as they are not valid.
     m_ovrMatSymb.Clear();
     _AddContextOverrides(m_ovrMatSymb);
-    GetIDrawGeom().ActivateOverrideMatSymb(&m_ovrMatSymb);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    GetCurrentGraphicR().ActivateOverrideMatSymb(&m_ovrMatSymb);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -759,7 +731,7 @@ bool ViewContext::ElementIsUndisplayed(GeometricElementCR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::DrawBox(DPoint3dP box, bool is3d)
     {
-    GeomDrawR  drawGeom = GetIDrawGeom();
+    GraphicR drawGeom = GetCurrentGraphicR();
     DPoint3d    tmpPts[9];
 
     if (is3d)
@@ -820,7 +792,7 @@ StatusInt ViewContext::_VisitElement(GeometricElementCR element)
         default:
             {
             static int s_drawRange; // 0 - Host Setting (Bounding Box Debug), 1 - Bounding Box, 2 - Element Range
-            if (m_creatingCacheElem || nullptr == m_viewport || (!s_drawRange && !GetViewport()->GetRenderer()._WantDebugElementRangeDisplay()))
+            if (nullptr == m_viewport || (!s_drawRange && !GetViewport()->GetRenderer()._WantDebugElementRangeDisplay()))
                 break;
 
             DPoint3d  p[8];
@@ -839,7 +811,9 @@ StatusInt ViewContext::_VisitElement(GeometricElementCR element)
             m_ovrMatSymb.SetWidth(1);
             m_ovrMatSymb.SetRasterPattern(0);
             _AddContextOverrides(m_ovrMatSymb);
-            m_IDrawGeom->ActivateOverrideMatSymb(&m_ovrMatSymb);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+            GetCurrentGraphicR().ActivateOverrideMatSymb(&m_ovrMatSymb);
+#endif
 
             PushTransform(placementTrans);
             DrawBox(p, element.Is3d());
@@ -860,15 +834,15 @@ StatusInt ViewContext::_VisitElement(GeometricElementCR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_VisitTransientGraphics(bool isPreUpdate)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     Render::Output*    output = (IsAttached() ? GetViewport()->GetIViewOutput() : nullptr);
     bool            restoreZWrite = (output && isPreUpdate ? output->EnableZWriting(false) : false);
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     T_HOST.GetGraphicsAdmin()._CallViewTransients(*this, isPreUpdate);
-#endif
 
     if (restoreZWrite)
         output->EnableZWriting(true);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1084,6 +1058,7 @@ StatusInt ViewContext::VisitHit(HitDetailCR hit)
     return m_viewport->GetViewController().VisitHit(hit, *this);
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * create a QvElem using an GraphicStroker stroker.
 * @bsimethod                                                    Keith.Bentley   06/04
@@ -1151,6 +1126,7 @@ void ViewContext::_DrawCached(GraphicStroker& stroker)
     if (qvElem.IsValid())
         m_IViewDraw->DrawGraphic(qvElem.get());
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
@@ -1170,9 +1146,9 @@ void ViewContext::_DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP r
         }
 
     if (closed)
-        GetIDrawGeom().DrawShape3d(nPts, pts, false, range);
+        GetCurrentGraphicR().DrawShape3d(nPts, pts, false, range);
     else
-        GetIDrawGeom().DrawLineString3d(nPts, pts, range);
+        GetCurrentGraphicR().DrawLineString3d(nPts, pts, range);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1193,9 +1169,9 @@ void ViewContext::_DrawStyledLineString2d(int nPts, DPoint2dCP pts, double prior
         }
 
     if (closed)
-        GetIDrawGeom().DrawShape2d(nPts, pts, false, priority, range);
+        GetCurrentGraphicR().DrawShape2d(nPts, pts, false, priority, range);
     else
-        GetIDrawGeom().DrawLineString2d(nPts, pts, priority, range);
+        GetCurrentGraphicR().DrawLineString2d(nPts, pts, priority, range);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1217,7 +1193,7 @@ void ViewContext::_DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3
         return;
         }
 
-    GetIDrawGeom().DrawArc3d(ellipse, isEllipse, false, range);
+    GetCurrentGraphicR().DrawArc3d(ellipse, isEllipse, false, range);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1240,7 +1216,7 @@ void ViewContext::_DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double 
         return;
         }
 
-    GetIDrawGeom().DrawArc2d(ellipse, isEllipse, false, zDepth, range);
+    GetCurrentGraphicR().DrawArc2d(ellipse, isEllipse, false, zDepth, range);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1257,7 +1233,7 @@ void ViewContext::_DrawStyledBSplineCurve3d(MSBsplineCurveCR bcurve)
         return;
         }
 
-    GetIDrawGeom().DrawBSplineCurve(bcurve, false);
+    GetCurrentGraphicR().DrawBSplineCurve(bcurve, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1293,7 +1269,7 @@ void ViewContext::_DrawStyledBSplineCurve2d(MSBsplineCurveCR bcurve, double zDep
         return;
         }
 
-    GetIDrawGeom().DrawBSplineCurve2d(bcurve, false, zDepth);
+    GetCurrentGraphicR().DrawBSplineCurve2d(bcurve, false, zDepth);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1352,14 +1328,6 @@ double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
     ViewToLocal(vec, vec, 2);
 
     return vec[0].Distance(vec[1]);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_ClearZ()
-    {
-    GetIViewDraw().ClearZ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1472,12 +1440,6 @@ void ViewContext::ContextMark::Pop()
 
     while (m_context->GetTransClipDepth() > m_transClipMark)
         m_context->GetTransformClipStack().Pop(*m_context);
-
-    if (m_pushedRange)
-        {
-        m_context->SetCurrParentRangeResult(m_parentRangeResult);
-        m_pushedRange = false;
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1485,9 +1447,7 @@ void ViewContext::ContextMark::Pop()
 +---------------+---------------+---------------+---------------+---------------+------*/
 inline void ViewContext::ContextMark::SetNow()
     {
-    m_transClipMark                 = m_context->GetTransClipDepth();
-    m_parentRangeResult             = m_context->GetCurrParentRangeResult();
-    m_pushedRange                   = false;
+    m_transClipMark = m_context->GetTransClipDepth();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1566,7 +1526,6 @@ void ElemMatSymb::Init()
     m_elementStyle      = 0;
     m_isFilled          = false;
     m_isBlankingRegion  = false;
-    m_extSymbId         = 0;
     m_rasterWidth       = 1;
     m_rasterPat         = 0;
     m_patternParams     = nullptr;
@@ -1729,7 +1688,6 @@ bool ElemMatSymb::operator==(ElemMatSymbCR rhs) const
         rhs.m_elementStyle     != m_elementStyle     ||
         rhs.m_isFilled         != m_isFilled         ||
         rhs.m_isBlankingRegion != m_isBlankingRegion ||
-        rhs.m_extSymbId        != m_extSymbId        ||
         rhs.m_material         != m_material         ||
         rhs.m_rasterWidth      != m_rasterWidth      ||
         rhs.m_rasterPat        != m_rasterPat)
@@ -1751,7 +1709,6 @@ ElemMatSymb::ElemMatSymb(ElemMatSymbCR rhs)
     m_elementStyle      = rhs.m_elementStyle;
     m_isFilled          = rhs.m_isFilled;
     m_isBlankingRegion  = rhs.m_isBlankingRegion;
-    m_extSymbId         = rhs.m_extSymbId;
     m_material          = rhs.m_material;
     m_rasterWidth       = rhs.m_rasterWidth;
     m_rasterPat         = rhs.m_rasterPat;
@@ -1769,7 +1726,6 @@ ElemMatSymbR ElemMatSymb::operator=(ElemMatSymbCR rhs)
     m_elementStyle      = rhs.m_elementStyle;
     m_isFilled          = rhs.m_isFilled;
     m_isBlankingRegion  = rhs.m_isBlankingRegion;
-    m_extSymbId         = rhs.m_extSymbId;
     m_material          = rhs.m_material;
     m_rasterWidth       = rhs.m_rasterWidth;
     m_rasterPat         = rhs.m_rasterPat;
@@ -2015,7 +1971,7 @@ void ViewContext::_DrawSymbol(IDisplaySymbol* symbol, TransformCP trans, ClipPla
     if (!symbolCache || CheckICachedDraw())
         {
         // if we're creating a cache elem already, we need to stroke the symbol into that elem by value
-        IDrawGeomR output = GetIDrawGeom();
+        IDrawGeomR output = GetCurrentGraphicR();
 
         output._PushTransClip(trans, clip);
         symbol->_Draw(*this);
@@ -2056,7 +2012,7 @@ void ViewContext::_DrawTextString(TextStringCR text)
     CookDisplayParams();
 
     double zDepth = GetCurrentDisplayParams().GetNetDisplayPriority();
-    GetIDrawGeom().DrawTextString(text, Is3dView() ? nullptr : &zDepth);                
+    GetCurrentGraphicR().DrawTextString(text, Is3dView() ? nullptr : &zDepth);                
     text.DrawTextAdornments(*this);
     }
 
@@ -2071,10 +2027,11 @@ void ViewContext::SetLinestyleTangents(DPoint3dCP start, DPoint3dCP end)
     m_ovrMatSymb.GetMatSymbR().GetLineStyleSymbR().ClearContinuationData();
     }
 
-//  On tablets some of the raster information on the GPU is reset whenever QV is reset.
-//  On tablets, QV is reset when the app is put into the background and when the device is
-//  rotated.  That causes QV to reset some of the raster data that is kept in the GPU.
-//  To compensate the RasterHandler needs to know if QV has been reset.
-static uint32_t s_numQvInitCalls;
-uint32_t ViewContext::GetCountQvInitCalls() {return s_numQvInitCalls;}
-void ViewContext::IncrementCountQvInitCalls() { ++s_numQvInitCalls; }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ViewContext::IsCameraOn() const
+    {
+    return m_viewport->IsCameraOn();
+    }
+

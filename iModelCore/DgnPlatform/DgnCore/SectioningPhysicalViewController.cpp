@@ -200,8 +200,10 @@ void SectioningViewController::_DrawView(ViewContextR context)
     DrawViewInternal(context);
     context.PopTransformClip();
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.GetOverrideMatSymb()->Clear();
-    context.GetIDrawGeom().ActivateOverrideMatSymb(context.GetOverrideMatSymb());
+    context.GetCurrentGraphicR().ActivateOverrideMatSymb(context.GetOverrideMatSymb());
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -216,7 +218,7 @@ void SectioningViewController::_DrawElement(ViewContextR context, GeometricEleme
         }
 
     SetOverrideMatSymb(context);
-    element._Draw(context);
+    element._Stroke(context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -237,5 +239,7 @@ void SectioningViewController::SetOverrideMatSymb(ViewContextR context) const
     overrideMatSymb->SetFillColor(color);
     overrideMatSymb->SetFlags(overrideMatSymb->GetFlags() | MATSYMB_OVERRIDE_FillColorTransparency);
     overrideMatSymb->SetWidth(0);
-    context.GetIDrawGeom().ActivateOverrideMatSymb(overrideMatSymb);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    context.GetCurrentGraphicR().ActivateOverrideMatSymb(overrideMatSymb);
+#endif
     }

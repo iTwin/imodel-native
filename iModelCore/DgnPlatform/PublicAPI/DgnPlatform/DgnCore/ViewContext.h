@@ -56,12 +56,12 @@ struct  ClipVolumeOverrides
         unsigned    m_disableSnap:1;    //!< If true, the elements in the clip volume area cannot be snaped.
         unsigned    m_reflected:1;      //!< If true, the clip volume area is reflected.
         unsigned    m_unused:28;
-        }           m_flags;
+        } m_flags;
 
     int32_t    m_styleIndex;       //!< Display style of the clip volume area. -1 to match that view.
 
     int32_t GetDisplayStyleIndex() const {return m_styleIndex;}
-    void SetDisplayStyleIndex(int32_t index) { m_styleIndex = index; }
+    void SetDisplayStyleIndex(int32_t index) {m_styleIndex = index;}
     bool IsEqual(const ClipVolumeOverrides& other) const
         {
         if (m_flags.m_display != other.m_flags.m_display)
@@ -95,14 +95,13 @@ struct ClipVolumeFlags
 //=======================================================================================
 struct     ILineStyleComponent
 {
-    virtual bool          _IsContinuous() const = 0;
-    virtual bool          _HasWidth() const = 0;
-    virtual double        _GetLength() const = 0;
-    virtual StatusInt     _StrokeLineString(ViewContextP, Render::LineStyleSymbP, DPoint3dCP, int nPts, bool isClosed) const = 0;
-    virtual StatusInt     _StrokeLineString2d(ViewContextP, Render::LineStyleSymbP, DPoint2dCP, int nPts, double zDepth, bool isClosed) const = 0;
-    virtual StatusInt     _StrokeArc(ViewContextP, Render::LineStyleSymbP, DPoint3dCP origin, RotMatrixCP rMatrix,
-                                    double r0, double r1, double const* start, double const* sweep, DPoint3dCP range) const = 0;
-    virtual StatusInt     _StrokeBSplineCurve(ViewContextP context, Render::LineStyleSymbP lsSymb, MSBsplineCurveCP, double const* tolerance) const = 0;
+    virtual bool _IsContinuous() const = 0;
+    virtual bool _HasWidth() const = 0;
+    virtual double _GetLength() const = 0;
+    virtual StatusInt _StrokeLineString(ViewContextP, Render::LineStyleSymbP, DPoint3dCP, int nPts, bool isClosed) const = 0;
+    virtual StatusInt _StrokeLineString2d(ViewContextP, Render::LineStyleSymbP, DPoint2dCP, int nPts, double zDepth, bool isClosed) const = 0;
+    virtual StatusInt _StrokeArc(ViewContextP, Render::LineStyleSymbP, DPoint3dCP origin, RotMatrixCP rMatrix, double r0, double r1, double const* start, double const* sweep, DPoint3dCP range) const = 0;
+    virtual StatusInt _StrokeBSplineCurve(ViewContextP context, Render::LineStyleSymbP lsSymb, MSBsplineCurveCP, double const* tolerance) const = 0;
 };
 
 //=======================================================================================
@@ -116,6 +115,27 @@ struct  ILineStyle
 };
 
 //=======================================================================================
+//! Interface to supply additional topology information that describes the subsequent geometry.
+//! The ViewContext's current IElemTopology will be cloned and saved as part of the HitDetail
+//! when picking. Can be used to make transient geometry locatable; set context.SetElemTopology
+//! before drawing the geometry (ex. IViewTransients) and implement ITransientGeometryHandler.
+//! @note Always call context.SetElemTopology(nullptr) after drawing geometry.
+//=======================================================================================
+struct IElemTopology : IRefCounted
+{
+    //! Create a deep copy of this object.
+    virtual IElemTopologyP _Clone() const = 0;
+
+    //! Compare objects and return true if they should be considered the same.
+    virtual bool _IsEqual (IElemTopologyCR) const = 0;
+
+    //! Return an object for handling requests related to locate of transient geometry where we don't have an element handler.
+    virtual ITransientGeometryHandlerP _GetTransientGeometryHandler() const = 0;
+};
+
+typedef RefCountedPtr<IElemTopology> IElemTopologyPtr; //!< Reference counted type to manage the life-cycle of the IElemTopology.
+
+//=======================================================================================
 // @bsiclass
 //=======================================================================================
 struct IRangeNodeCheck
@@ -124,20 +144,10 @@ struct IRangeNodeCheck
 };
 
 //=======================================================================================
-// @bsiclass                                                   
-//=======================================================================================
-enum EdgeMaskState
-{
-    EdgeMaskState_None,
-    EdgeMaskState_GenerateMask,
-    EdgeMaskState_UseMask
-};
-
-//=======================================================================================
 // @bsiclass                                                    Keith.Bentley   01/12
 //=======================================================================================
 struct ICheckStop
-{   
+{  
 private:
     bool m_aborted;
 
@@ -206,15 +216,15 @@ public:
             DGNPLATFORM_EXPORT bool operator==(RasterDisplayParams const& rhs) const;
             DGNPLATFORM_EXPORT bool operator!=(RasterDisplayParams const& rhs) const;
 
-            uint32_t GetFlags() const { return m_flags; }
-            int8_t GetContrast() const { return m_contrast; }
-            int8_t GetBrightness() const { return m_brightness; }
-            bool GetGreyscale() const { return m_greyScale; }
-            bool GetApplyBinaryWhiteOnWhiteReversal() const { return m_applyBinaryWhiteOnWhiteReversal; }
-            bool GetEnableGrid() const { return m_enableGrid; }
-            ColorDefCR GetBackgroundColor() const { return m_backgroundColor; }
-            ColorDefCR GetForegroundColor() const { return m_foregroundColor; }
-            double GetQualityFactor() const { return m_quality; }
+            uint32_t GetFlags() const {return m_flags;}
+            int8_t GetContrast() const {return m_contrast;}
+            int8_t GetBrightness() const {return m_brightness;}
+            bool GetGreyscale() const {return m_greyScale;}
+            bool GetApplyBinaryWhiteOnWhiteReversal() const {return m_applyBinaryWhiteOnWhiteReversal;}
+            bool GetEnableGrid() const {return m_enableGrid;}
+            ColorDefCR GetBackgroundColor() const {return m_backgroundColor;}
+            ColorDefCR GetForegroundColor() const {return m_foregroundColor;}
+            double GetQualityFactor() const {return m_quality;}
 
             void SetFlags(uint32_t flags) {m_flags = flags;}
             DGNPLATFORM_EXPORT void SetContrast(int8_t value);
@@ -230,27 +240,18 @@ public:
     //=======================================================================================
     // @bsiclass                                                     KeithBentley    04/01
     //=======================================================================================
-    struct  ContextMark
+    struct ContextMark
         {
         ViewContextP m_context;
-        size_t       m_hdrOvrMark;
         size_t       m_transClipMark;
-        size_t       m_dynamicViewStateStackMark;
-        size_t       m_displayStyleStackMark;
-        bool         m_pushedRange;
-        Render::RangeResult  m_parentRangeResult;
-        double       m_reservedDouble;
 
     public:
         DGNPLATFORM_EXPORT explicit ContextMark(ViewContextP context);
-        DGNPLATFORM_EXPORT ~ContextMark();
-
+        ~ContextMark() {Pop();}
         DGNPLATFORM_EXPORT void Pop();
         DGNPLATFORM_EXPORT void SetNow();
-        void Init(ViewContextP context) { m_hdrOvrMark = m_transClipMark = 0; m_context = context; m_parentRangeResult = Render::RangeResult::Overlap; m_pushedRange = false; m_reservedDouble = 0.0;}
+        void Init(ViewContextP context) {m_transClipMark = 0; m_context = context;}
         };
-
-    friend struct ContextMark;
 
     //=======================================================================================
     // @bsiclass                                                     Brien.Bastings  11/07
@@ -258,25 +259,17 @@ public:
     struct  ClipStencil
         {
     private:
-        Render::GraphicStroker& m_stroker;
+        Render::Stroker& m_stroker;
         Render::GraphicPtr  m_tmpQvElem;
         CurveVectorPtr      m_curveVector;
 
     public:
         DGNPLATFORM_EXPORT Render::GraphicPtr GetQvElem(ViewContextR);
         DGNPLATFORM_EXPORT CurveVectorPtr GetCurveVector();
-        Render::GraphicStroker& GetStroker() {return m_stroker;}
+        Render::Stroker& GetStroker() {return m_stroker;}
 
-        DGNPLATFORM_EXPORT explicit ClipStencil(Render::GraphicStroker& stroker);
+        DGNPLATFORM_EXPORT explicit ClipStencil(Render::Stroker& stroker);
         DGNPLATFORM_EXPORT ~ClipStencil();
-        };
-
-    enum AlignmentMode
-        {
-        AlignmentMode_None                   = 0,
-        AlignmentMode_AlongLocalInDrawing    = 1,
-        AlignmentMode_AlongDrawing           = 2,
-        AlignmentMode_Billboard              = 3,
         };
 
 protected:
@@ -284,11 +277,11 @@ protected:
     bool                    m_isAttached;
     bool                    m_blockIntermediatePaints;
     bool                    m_is3dView;
-    bool                    m_isCameraOn;
     bool                    m_wantMaterials;
     bool                    m_useNpcSubRange;
     bool                    m_ignoreViewRange;
     Byte                    m_filterLOD;
+    ViewFlags               m_viewflags;
     DrawPurpose             m_purpose;
     DRange3d                m_npcSubRange;
     DMap4d                  m_worldToNpc;
@@ -298,21 +291,16 @@ protected:
     int32_t                 m_displayPriorityRange[2];
     TransformClipStack      m_transformClipStack;
     DgnViewportP            m_viewport;
-    Render::ViewDrawP       m_IViewDraw;
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    Render::GeomDrawP       m_IDrawGeom;
-#endif
+    Render::GraphicPtr      m_currGraphic;
+    Render::TargetP         m_renderTarget;
     Render::ElemDisplayParams m_currDisplayParams;
     Render::ElemMatSymb     m_elemMatSymb;
     Render::OvrMatSymb      m_ovrMatSymb;
     double                  m_minLOD;             // minimum size of default level-of-detail test.
     double                  m_arcTolerance;
-    double                  m_patternScale;
     DPoint3dCP              m_startTangent;       // linestyle start tangent.
     DPoint3dCP              m_endTangent;         // linestyle end tangent.
     uint32_t                m_rasterPlane;        // Current displayed raster plane
-    bool                    m_drawingClipElements;
-    EdgeMaskState           m_edgeMaskState;
     DgnElement::Hilited     m_hiliteState;
     RasterDisplayParams     m_rasterDisplayParams;
     IElemTopologyPtr        m_currElemTopo;
@@ -320,12 +308,10 @@ protected:
     bool                    m_scanRangeValid;
     double                  m_levelOfDetail;
 
-    DGNPLATFORM_EXPORT void PopOneTransformClip();
     void InvalidateScanRange() {m_scanRangeValid = false;}
     DGNPLATFORM_EXPORT void InitDisplayPriorityRange();
     DGNPLATFORM_EXPORT virtual StatusInt _Attach(DgnViewportP, DrawPurpose purpose);
     DGNPLATFORM_EXPORT virtual void _Detach();
-    virtual void _SetupOutputs() = 0;
     DGNPLATFORM_EXPORT virtual void _OutputElement(GeometricElementCR);
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
     DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(ClipStencil& boundary);
@@ -338,7 +324,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve3d(MSBsplineCurveCR);
     DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth);
     DGNPLATFORM_EXPORT virtual void _DrawTextString(TextStringCR);
-    DGNPLATFORM_EXPORT virtual void _DrawCached(Render::GraphicStroker&);
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(GeometricElementCR);
     DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron();
@@ -369,24 +354,16 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _ScanRangeFromPolyhedron();
     DGNPLATFORM_EXPORT virtual void _SetDgnDb(DgnDbR);
     DGNPLATFORM_EXPORT virtual void _SetCurrentElement(GeometricElementCP);
-    DGNPLATFORM_EXPORT virtual void _ClearZ ();
     DGNPLATFORM_EXPORT virtual ScanCriteria::Result _CheckNodeRange(ScanCriteriaCR, DRange3dCR, bool is3d);
-
     DGNPLATFORM_EXPORT ViewContext();
     DGNPLATFORM_EXPORT virtual ~ViewContext();
 
 public:
-    DGNPLATFORM_EXPORT static uint32_t GetCountQvInitCalls();
-    DGNPLATFORM_EXPORT static void IncrementCountQvInitCalls();
-    DGNPLATFORM_EXPORT static void MergeViewFlagsFromRef(ViewFlagsR flags, ViewFlagsCR refFlags, bool retainRenderMode, bool useRefFlags);
+    int ViewContext::GetTransClipDepth() {return (int) m_transformClipStack.GetSize();}
 
     DMap4dCR GetWorldToView() const {return m_worldToView;}
     DMap4dCR GetWorldToNpc() const {return m_worldToNpc;}
     bool GetWantMaterials() {return m_wantMaterials;};
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    void SetIViewDraw(Render::ViewDrawR output) { m_IViewDraw = &output; m_IDrawGeom = &output;}
-    void SetIDrawGeom(Render::GeomDrawR drawGeom) { m_IDrawGeom = &drawGeom; }
-#endif
     bool IsAttached() {return m_isAttached;}
     void SetIntermediatePaintsBlocked(bool blockIntermediatePaints) {m_blockIntermediatePaints = blockIntermediatePaints;}
     void SetRasterPlane(uint32_t plane) {m_rasterPlane = plane;}
@@ -394,66 +371,44 @@ public:
     DgnElement::Hilited GetCurrHiliteState() {return m_hiliteState;}
     void SetSubRectFromViewRect(BSIRectCP viewRect);
     DGNPLATFORM_EXPORT void SetSubRectNpc(DRange3dCR subRect);
-    DGNPLATFORM_EXPORT bool SetWantMaterials(bool wantMaterials);
+    void SetWantMaterials(bool wantMaterials) {m_wantMaterials = wantMaterials;}
     DGNPLATFORM_EXPORT DMatrix4d GetLocalToView() const;
     DGNPLATFORM_EXPORT DMatrix4d GetViewToLocal() const;
     bool ValidateScanRange() {return m_scanRangeValid ? true : _ScanRangeFromPolyhedron();}
-    DGNPLATFORM_EXPORT StatusInt Attach(DgnViewportP, DrawPurpose purpose);
-    DGNPLATFORM_EXPORT void Detach();
-    DGNPLATFORM_EXPORT bool VisitAllModelElements(bool includeTransients); // DgnModelListP includeList, bool useUpdateSequence, bool includeRefs, bool includeTransients);
+    StatusInt Attach(DgnViewportP vp, DrawPurpose purpose) {return _Attach(vp,purpose);}
+    void Detach() {_Detach();}
+    bool VisitAllModelElements(bool includeTransients) {return _VisitAllModelElements(includeTransients);}
     DGNPLATFORM_EXPORT bool VisitAllViewElements(bool includeTransients, BSIRectCP updateRect); // DgnModelListP includeList, bool useUpdateSequence, bool includeRefs, bool includeTransients);
     DGNPLATFORM_EXPORT StatusInt VisitHit(HitDetailCR hit);
-    DGNPLATFORM_EXPORT void VisitTransientGraphics(bool isPreUpdate);
+    void VisitTransientGraphics(bool isPreUpdate) {_VisitTransientGraphics(isPreUpdate);}
     DGNPLATFORM_EXPORT void DrawBox(DPoint3dP box, bool is3d);
-    DGNPLATFORM_EXPORT StatusInt InitContextForView();
+    StatusInt InitContextForView() {return _InitContextForView();}
     DGNPLATFORM_EXPORT bool IsWorldPointVisible(DPoint3dCR worldPoint, bool boresite);
     DGNPLATFORM_EXPORT bool IsLocalPointVisible(DPoint3dCR localPoint, bool boresite);
     DGNPLATFORM_EXPORT bool PointInsideClip(DPoint3dCR point);
     DGNPLATFORM_EXPORT bool GetRayClipIntersection(double& distance, DPoint3dCR origin, DVec3dCR direction);
     DGNPLATFORM_EXPORT Frustum GetFrustum();
-
-    DGNPLATFORM_EXPORT void ClearZ ();
-    void SetEdgeMaskState(EdgeMaskState state) {m_edgeMaskState = state;}
-    EdgeMaskState GetEdgeMaskState() const {return m_edgeMaskState;}
-
-    DGNPLATFORM_EXPORT uint32_t GetLocalTransformKey() const;
-    DGNPLATFORM_EXPORT TransformClipStackR GetTransformClipStack() { return m_transformClipStack; }
-    DGNPLATFORM_EXPORT bool& GetDrawingClipElements() { return m_drawingClipElements; }
-    DGNPLATFORM_EXPORT bool WantUndisplayedClips();
-
-    DGNPLATFORM_EXPORT size_t GetTransClipDepth();
-    DGNPLATFORM_EXPORT size_t GetRefTransClipDepth();
-    DGNPLATFORM_EXPORT double GetArcTolerance() const;
-    DGNPLATFORM_EXPORT void SetArcTolerance(double tol);
+    TransformClipStackR GetTransformClipStack() {return m_transformClipStack;}
+    double GetArcTolerance() const {return m_arcTolerance;}
+    void SetArcTolerance(double tol) {m_arcTolerance = tol;}
     DGNPLATFORM_EXPORT void SetLinestyleTangents(DPoint3dCP start, DPoint3dCP end);
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DGNPLATFORM_EXPORT Render::GraphicPtr CreateGraphic(Render::GraphicStroker&, Render::ViewDrawP sceneDraw=nullptr);
-    DGNPLATFORM_EXPORT Render::GraphicPtr GetGraphic(Render::GraphicStroker& stroker);
-#endif
-
+    Render::GraphicPtr GetCurrentGraphic() {return m_currGraphic;}
+    Render::GraphicR GetCurrentGraphicR() {return *m_currGraphic.get();}
     DGNPLATFORM_EXPORT void DeleteSymbol(Render::IDisplaySymbol*);
-
-    DGNPLATFORM_EXPORT double GetMinLOD () const;
-    DGNPLATFORM_EXPORT void SetMinLOD (double);
-    DGNPLATFORM_EXPORT Byte&           GetFilterLODFlag();
-    DGNPLATFORM_EXPORT void            SetFilterLODFlag(FilterLODFlags);
-    DGNPLATFORM_EXPORT ScanCriteriaCP  GetScanCriteria() const;
-    DGNPLATFORM_EXPORT uint32_t        GetRasterPlane() const;
-    DGNPLATFORM_EXPORT void            InitScanRangeAndPolyhedron();
-    DGNPLATFORM_EXPORT void            AllocateScanCriteria();
+    double GetMinLOD() const {return m_minLOD;}
+    void SetMinLOD(double lod) {m_minLOD = lod;}
+    Byte& GetFilterLODFlag() {return m_filterLOD;}
+    void SetFilterLODFlag(FilterLODFlags flags) {m_filterLOD =(Byte) flags;}
+    ScanCriteriaCP GetScanCriteria() const {return m_scanCriteria;}
+    uint32_t GetRasterPlane() const {return m_rasterPlane;}
+    void InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
+    void AllocateScanCriteria(){_AllocateScanCriteria();}
     void VisitDgnModel(DgnModelP model){_VisitDgnModel(model);}
     void SetScanReturn() {_SetScanReturn();}
-    DGNPLATFORM_EXPORT RasterDisplayParams const& GetRasterDisplayParams() const { return m_rasterDisplayParams; }
-
-    //! !!!FOR INTERNAL USE ONLY!!!
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DGNPLATFORM_EXPORT static void DirectPushTransClipOutput(Render::GeomDrawR, TransformCP trans, ClipPlaneSetCP clip = nullptr); //<! @private
-    DGNPLATFORM_EXPORT static void DirectPopTransClipOutput(Render::GeomDrawR); //<! @private
-#endif
+    DGNPLATFORM_EXPORT RasterDisplayParams const& GetRasterDisplayParams() const {return m_rasterDisplayParams;}
 
 public:
-    DGNPLATFORM_EXPORT StatusInt VisitElement(GeometricElementCR);
+    StatusInt VisitElement(GeometricElementCR elem) {return _VisitElement(elem);}
 
     /// @name Coordinate Query and Conversion
     //@{
@@ -544,23 +499,23 @@ public:
 
     //! Retrieve a pointer to the the transform from the current local coordinate system into DgnCoordSystem::World.
     //! @return   nullptr if no transform present.
-    DGNPLATFORM_EXPORT TransformCP GetCurrLocalToWorldTransformCP () const;
+    TransformCP GetCurrLocalToWorldTransformCP() const {return m_transformClipStack.GetTransformCP();}
 
     //! Retrieve a copy of the transform from the current local coordinate system into DgnCoordSystem::World.
     //! @param[out]     trans       Transform from current local coordinate system to DgnCoordSystem::World
     //! @return   SUCCESS if there is a current local coordinate system.
-    DGNPLATFORM_EXPORT BentleyStatus GetCurrLocalToWorldTrans(TransformR trans) const;
+    BentleyStatus GetCurrLocalToWorldTrans(TransformR trans) const {return m_transformClipStack.GetTransform(trans);}
 
     //! Retrieve a copy of the transform from the DgnCoordSystem::World to current local coordinate system.
     //! @param[out]     trans       Transform from DgnCoordSystem::World to current local coordinate system
     //! @return   SUCCESS if there is a current local coordinate system.
-    DGNPLATFORM_EXPORT BentleyStatus GetCurrWorldToLocalTrans(TransformR trans) const;
+    BentleyStatus GetCurrWorldToLocalTrans(TransformR trans) const {return m_transformClipStack.GetInverseTransform(trans);}
 
     //! Retrieve a copy of the transform from the local coordinate system at the specified index into DgnCoordSystem::World.
     //! @param[out]     trans  Transform from local coordinate system at the specified index to DgnCoordSystem::World
     //! @param[in]      index  Index into transform stack to return transform for.
     //! @return   SUCCESS if there is a local coordinate system.
-    DGNPLATFORM_EXPORT BentleyStatus GetLocalToWorldTrans(TransformR trans, size_t index) const;
+    BentleyStatus GetLocalToWorldTrans(TransformR trans, size_t index) const {return m_transformClipStack.GetTransformFromIndex(trans, index);}
 
     //! Calculate the size of a "pixel" at a given point in the current local coordinate system. This method can be used to
     //! approximate how large geometry in local coordinates will appear in DgnCoordSystem::View units.
@@ -576,7 +531,7 @@ public:
     //! as "View independent" (e.g. text, text nodes, point cells). They do this by pushing the inverse of the current
     //! view-to-local transformation via #PushViewIndependentOrigin.
     //! @return   true if the current local coordinate system is a view independent transform.
-    DGNPLATFORM_EXPORT bool IsViewIndependent();
+    bool IsViewIndependent() {return m_transformClipStack.IsViewIndependent();}
     //@}
 
     /// @name Pushing and Popping Transforms and Clips
@@ -584,14 +539,14 @@ public:
     //! Push a Transform, creating a new local coordinate system.
     //! @param[in]      trans       The transform to push.
     //! @see   PopTransformClip
-    DGNPLATFORM_EXPORT void PushTransform(TransformCR trans);
+    void PushTransform(TransformCR trans) {_PushTransform(trans);}
 
     /// @name Pushing and Popping Transforms and Clips
     //@{
     //! Push a ClipVector, creating a new local clip region.
     //! @param[in]      clip       A clipping descriptor to push.
     //! @see   PopTransformClip
-    DGNPLATFORM_EXPORT void PushClip(ClipVectorCR clip);
+    void PushClip(ClipVectorCR clip) {_PushClip(clip);}
 
     //! Push a set of clip planes, creating a new local clip region.
     //! @param[in]      clipPlanes  Clipping planes to push - the intersections of their half planes define clip region.
@@ -601,72 +556,63 @@ public:
     //! Push a transform such that the X,Y plane of the new local coordinate system will be aligned with the X,Y plane of the
     //! view coordinate system, oriented about the given origin.
     //! @param[in]      origin      Origin for rotation, in the \e current local coordinate system.
-    DGNPLATFORM_EXPORT void PushViewIndependentOrigin(DPoint3dCP origin);
+    void PushViewIndependentOrigin(DPoint3dCP origin) {_PushViewIndependentOrigin(origin);}
 
     //! Remove the most recently pushed coordinate system and clip, restoring the local coordinate system to its previous state.
-    DGNPLATFORM_EXPORT void PopTransformClip();
+    void PopTransformClip() {_PopTransformClip();}
     //@}
 
     /// @name Query Methods
     //@{
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    //! Get the current state of the ViewFlags for this context's output, can be nullptr.
+    //! Get the current state of the ViewFlags for this context
     //! When a ViewContext is first attached to a DgnViewport, the ViewFlags are initialized
     //! from the DgnViewport's viewflags. However, during the course of an operation,
-    //! the viewflags for the output may be different than those on the DgnViewport.
-    //! @return   the current state of the viewflags for this ViewContext.
-    DGNPLATFORM_EXPORT ViewFlags GetViewFlags() const {return m_IDrawGeom->GetDrawViewFlags();}
+    //! the viewflags may be different than those on the DgnViewport.
+    ViewFlags GetViewFlags() const {return m_viewflags;}
 
-    //! Sets the current state of the ViewFlags for this context's output.
-    void SetViewFlags(ViewFlags flags) {m_IDrawGeom->SetDrawViewFlags(flags);}
-#endif
+    //! Sets the current state of the ViewFlags for this context
+    void SetViewFlags(ViewFlags flags) {m_viewflags = flags;}
 
     //! Get the DgnDb for this ViewContext.
-    DGNPLATFORM_EXPORT DgnDbR GetDgnDb() const;
+    DgnDbR GetDgnDb() const {BeAssert(nullptr != m_dgnDb); return *m_dgnDb;}
 
     //! Get the current persistent element being visited by this ViewContext.
-    DGNPLATFORM_EXPORT GeometricElementCP GetCurrentElement() const;
+    GeometricElementCP GetCurrentElement() const {return (m_currentElement.IsValid() ? m_currentElement->ToGeometricElement() : nullptr);}
 
     /** @cond BENTLEY_SDK_Scope1 */
     //! Set the project for this ViewContext when not attaching a viewport.
-    DGNPLATFORM_EXPORT void SetDgnDb(DgnDbR);
+    void SetDgnDb(DgnDbR dgnDb) {return _SetDgnDb(dgnDb);}
 
     //! Set or clear the current persistent element.
-    DGNPLATFORM_EXPORT void SetCurrentElement(GeometricElementCP);
+    void SetCurrentElement(GeometricElementCP element) {_SetCurrentElement(element);}
     /** @endcond */
 
     //! Get the DrawPurpose specified when this ViewContext was attached to the current DgnViewport.
     //! @return the DrawPurpose specified in the call to DrawContext#Attach (drawcontext.h)
-    DGNPLATFORM_EXPORT DrawPurpose GetDrawPurpose() const;
+    DrawPurpose GetDrawPurpose() const {return m_purpose;}
 
     //! Get the DgnViewport to which this ViewContext is attached. ViewContext's do not always have to be attached to an
     //! DgnViewport, so therefore callers must always test the result of this call for nullptr.
     //! @return the DgnViewport. nullptr if not attached to a DgnViewport.
     DgnViewportP GetViewport() const {return m_viewport;}
 
-    DGNPLATFORM_EXPORT bool Is3dView() const;
+    bool Is3dView() const {return m_is3dView;}
     DGNPLATFORM_EXPORT bool IsCameraOn() const;
     //@}
 
-    //! Get the clip planes that define the limits of the displayed volume.  This will include
-    //! planes for the top,bottom,left and right sides of the view and optionally the front
-    //! and back planes if they are enabled.
-    //! @return the clip planes set.
-    DGNPLATFORM_EXPORT ClipPlaneSetCP GetRangePlanes() const;
-
     /// @name Get/Set Current Display Parameters
     //@{
-
-    DGNPLATFORM_EXPORT bool GetDisplayPriorityRange(int32_t& low, int32_t& high) const;
+    bool GetDisplayPriorityRange(int32_t& low, int32_t& high) const {if (NULL == m_viewport) return false; low = m_displayPriorityRange[0]; high = m_displayPriorityRange[1]; return true;}
 
     //! Change the supplied "natural" ElemDisplayParams. Resolves effective symbology as required by the context and initializes the supplied ElemMatSymb.
     //! @note Does NOT call ActivateMatSymb on the output or change the current ElemDisplayParams/ElemMatSymb of the context.
-    DGNPLATFORM_EXPORT void CookDisplayParams(Render::ElemDisplayParamsR, Render::ElemMatSymbR);
+    void CookDisplayParams(Render::ElemDisplayParamsR elParams, Render::ElemMatSymbR elMatSymb) {_CookDisplayParams(elParams, elMatSymb);}
+    DGNPLATFORM_EXPORT void CookDisplayParams();
 
     //! Change the supplied "natural" ElemDisplayParams. Resolves effective symbology as required by the context and initializes the supplied OvrMatSymb.
     //! @note Does NOT call ActivateOverrideMatSymb on the output or change the current ElemDisplayParams/OvrMatSymb of the context.
-    DGNPLATFORM_EXPORT void CookDisplayParamsOverrides(Render::ElemDisplayParamsR, Render::OvrMatSymbR);
+    void CookDisplayParamsOverrides(Render::ElemDisplayParamsR elParams, Render::OvrMatSymbR ovrMatSymb) {_CookDisplayParamsOverrides(elParams, ovrMatSymb);}
 
     //! Calculate the net display priority value. The net display priority is based on the geometry (element) and sub-category priority.
     //! @return the net display priority. For 3D views, display priority is always 0.
@@ -674,19 +620,15 @@ public:
 
     //! Get the current ElemMatSymb.
     //! @return   the current ElemMatSymb.
-    DGNPLATFORM_EXPORT Render::ElemMatSymbP GetElemMatSymb();
+    Render::ElemMatSymbP GetElemMatSymb() {return &m_elemMatSymb;}
 
     //! Get the current OvrMatSymb.
     //! @return the current OvrMatSymb.
-    DGNPLATFORM_EXPORT Render::OvrMatSymbP GetOverrideMatSymb();
+    Render::OvrMatSymbP GetOverrideMatSymb() {return &m_ovrMatSymb;}
 
     //! Get the current ElemDisplayParams.
     //! @return the current ElemDisplayParams.
     Render::ElemDisplayParams& GetCurrentDisplayParams() {return m_currDisplayParams;}
-
-    //! Change the current "natural" ElemDisplayParams. Resolves effective symbology as required by the context and initializes the current ElemMatSymb.
-    //! @note Calls ActivateMatSymb on the output.
-    DGNPLATFORM_EXPORT void CookDisplayParams();
 
     //! Change the current ElemDisplayParams for any context overrides. Cooks the modified ElemDisplayParams into the current OvrMatSymb using the current override flags.
     //! @note Calls ActivateOverrideMatSymb on the output.
@@ -698,11 +640,11 @@ public:
 
     //! Gets the current level of detail.
     //! @return       the current level of detail.
-    DGNPLATFORM_EXPORT double GetCurrentLevelOfDetail() const;
+    double GetCurrentLevelOfDetail() const {return m_levelOfDetail;}
 
 
     //! Sets the current level of detail.
-    DGNPLATFORM_EXPORT void SetCurrentLevelOfDetail(double levelOfDetail);
+    void SetCurrentLevelOfDetail(double levelOfDetail) {m_levelOfDetail = levelOfDetail;}
 
     //! Check the current display style for a monochrome color override.
     //! @return       whether monochrome style is currently active.
@@ -710,43 +652,27 @@ public:
 
     DGNPLATFORM_EXPORT void CacheQvGeometryTexture(uint32_t rendMatID);
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    //@}
-
-    /// @name Methods to Retrieve Related Interfaces from a ViewContext
-    //@{
-
-    //! Get the IViewDraw interface for this ViewContext. Usually, but not always, this will be the IViewDraw from the viewport to which this
-    //! context is attached.
-    //! @return   the IViewDraw for this context
-    Render::ViewDrawR GetIViewDraw() {BeAssert(nullptr != m_IViewDraw); return *m_IViewDraw;}
-
-    //! Get the IDrawGeom interface for this ViewContext. Applications should use this method to draw geometry in Draw methods.
-    //! @return   the IDrawGeom for this context
-    Render::GeomDrawR GetIDrawGeom() {BeAssert(nullptr != m_IDrawGeom); return *m_IDrawGeom;}
-
     //! Get the IPickGeom interface for this ViewContext. Only contexts that are specific to picking will return a non-nullptr value.
     //! @return the IPickGeom interface for this context. May return nullptr.
     IPickGeomP GetIPickGeom() {return _GetIPickGeom();}
 
     //@}
-#endif
 
     /// @name Identifying element "topology".
     //@{
     //! Query the current IElementTopology.
     //! @return An object that holds additional information about the graphics that are currently being drawn.
-    DGNPLATFORM_EXPORT IElemTopologyCP GetElemTopology() const;
+    IElemTopologyCP GetElemTopology() const {return (m_currElemTopo.IsValid() ? m_currElemTopo.get() : nullptr);}
 
     //! Set the current IElementTopology.
     //! @param topo An object holding additional information about the graphics to be drawn or nullptr to clear the current topology pointer.
-    DGNPLATFORM_EXPORT void SetElemTopology(IElemTopologyP topo);
+    void SetElemTopology(IElemTopologyP topo) {m_currElemTopo = topo;}
 
     //! Query the current GeomStreamEntryId.
-    DGNPLATFORM_EXPORT GeomStreamEntryId GetGeomStreamEntryId() const;
+    GeomStreamEntryId GetGeomStreamEntryId() const {return m_currGeomStreamEntryId;}
 
     //! Set the current GeomStreamEntryId.
-    DGNPLATFORM_EXPORT void SetGeomStreamEntryId(GeomStreamEntryId geomId);
+    void SetGeomStreamEntryId(GeomStreamEntryId geomId) {m_currGeomStreamEntryId = geomId;}
 
     //@}
 
@@ -763,7 +689,7 @@ public:
     //! @param[in]      range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
     //!                                 optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
     //! @param[in]      closed      Do point represent a shape or linestring.
-    DGNPLATFORM_EXPORT void DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false);
+    void DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed=false){_DrawStyledLineString2d(nPts, pts, zDepth, range, closed);}
 
     //! Draw a 3D linestring using the current Linestyle, if any. If there is no current Linestyle, draw a solid linestring.
     //! @param[in]      nPts        Number of vertices in \c pts.
@@ -771,7 +697,7 @@ public:
     //! @param[in]      range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
     //!                                 optional and is only used to speed processing. If you do not already have the range of your points, pass nullptr.
     //! @param[in]      closed      Do point represent a shape or linestring.
-    DGNPLATFORM_EXPORT void DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed = false);
+    void DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed=false){_DrawStyledLineString3d(nPts, pts, range, closed);}
 
     //! Draw a 2D elliptical arc using the current Linestyle. If there is no current Linestyle, draw a solid arc.
     //! @param[in]      ellipse     The arc data.
@@ -779,23 +705,23 @@ public:
     //! @param[in]      zDepth      Z depth value.
     //! @param[in]      range       Array of 2 points with the range (min followed by max) of the arc. This argument is
     //!                               optional and is only used to speed processing. If you do not already have the range, pass nullptr.
-    DGNPLATFORM_EXPORT void DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double zDepth, DPoint2dCP range);
+    void DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double zDepth, DPoint2dCP range) {_DrawStyledArc2d(ellipse, isEllipse, zDepth, range);}
 
     //! Draw a 3D elliptical arc using the current Linestyle. If there is no current Linestyle, draw a solid arc.
     //! @param[in]      ellipse     The arc data.
     //! @param[in]      isEllipse   Treat full sweep as ellipse not arc.
     //! @param[in]      range       Array of 2 points with the range (min followed by max) of the arc. This argument is
     //!                               optional and is only used to speed processing. If you do not already have the range, pass nullptr.
-    DGNPLATFORM_EXPORT void DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3dCP range);
+    void DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3dCP range) {_DrawStyledArc3d(ellipse, isEllipse, range);}
 
     //! Draw a 2d BSpline curve using the current Linestyle. If there is no current Linestyle, draw a solid BSpline.
     //! @param        curve       bspline curve parameters
     //! @param[in]    zDepth      Z depth value.
-    DGNPLATFORM_EXPORT void DrawStyledBSplineCurve2d(MSBsplineCurveCR curve, double zDepth);
+    void DrawStyledBSplineCurve2d(MSBsplineCurveCR curve, double zDepth) {_DrawStyledBSplineCurve2d(curve, zDepth);}
 
     //! Draw a BSpline curve using the current Linestyle. If there is no current Linestyle, draw a solid BSpline.
     //! @param        curve       bspline curve parameters
-    DGNPLATFORM_EXPORT void DrawStyledBSplineCurve3d(MSBsplineCurveCR curve);
+    void DrawStyledBSplineCurve3d(MSBsplineCurveCR curve) {_DrawStyledBSplineCurve3d(curve);}
 
     //! Draw a curve vector using the current Linestyle. If there is no current Linestyle, draw a solid curve vector.
     //! @param        curve       curve geometry
@@ -814,11 +740,12 @@ public:
     //! @param[in]      clip             ClipPlaneSet to be applied to symbol. May be nullptr.
     //! @param[in]      ignoreColor      If true, ignore the colors in the symbol definition and use the current color from \c context.
     //! @param[in]      ignoreWeight     If true, ignore line weights in the symbol definition, and use the current line weight from \c context.
-    DGNPLATFORM_EXPORT void DrawSymbol(Render::IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight);
+    void DrawSymbol(Render::IDisplaySymbol* symb, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight) {_DrawSymbol(symb, trans, clip, ignoreColor, ignoreWeight);}
 
     //! Draw a text string and any adornments such as background shape, underline, overline, etc. Sets up current ElemDisplayParams for TextString symbology.
-    DGNPLATFORM_EXPORT void DrawTextString(TextStringCR);
+    void DrawTextString(TextStringCR textString) {_DrawTextString(textString);}
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //! Draw geometry by either using a previously cached representation if it has already been created, or by
     //! calling its stroke method if the cached representation does not yet exist.
     //! <p>Any displayable that wishes to cache any or all of its output should call this method.
@@ -829,8 +756,9 @@ public:
     //! @note A single displayable may have many saved cached representations. Draw methods can decide which cached representation is appropriate.
     //! in the current context, and can even draw more than one of the cached representations by having the stroker return different cache indices.
     void DrawCached(Render::GraphicStroker& stroker) {return _DrawCached(stroker);}
+#endif
 
-    DGNPLATFORM_EXPORT bool CheckStop();
+    bool CheckStop() {return _CheckStop();}
 }; // ViewContext
 
 /** @endGroup */
