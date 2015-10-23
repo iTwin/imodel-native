@@ -86,7 +86,7 @@ DgnClassIds in two different DgnDbs. Whenever a DgnDb is created or opened, the 
 local DgnClassId to DgnDomain::Handler (it will report an error if any expected ones are missing.) That map is stored in a class
 called DgnDomains, which is accessed through the method DgnDb::Domains().
 
-The DgnDomain for the base "dgn" schema is is called DgnSchemaDomain. It is always loaded and it registers all of its DgnDomain::Handlers.
+The DgnDomain for the base "dgn" schema is is called DgnBaseDomain. It is always loaded and it registers all of its DgnDomain::Handlers.
 
 */
 
