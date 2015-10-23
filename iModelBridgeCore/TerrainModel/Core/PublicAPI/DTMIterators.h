@@ -120,11 +120,12 @@ struct DTMFeatureEnumerator : RefCountedBase
         m_readSourceFeatures = value;
         }
 
-    public: void ClearFilterByUserTag ()
+    public: void ClearFilterByUserTag()
         {
-        m_userTagLow = 0xffffffffffffffff;
+        m_userTagLow = 1;
         m_userTagHigh = 0;
         }
+
     public: bool GetUserTagFilterRange (DTMUserTag& low, DTMUserTag& high) const
         {
         low = m_userTagLow;
