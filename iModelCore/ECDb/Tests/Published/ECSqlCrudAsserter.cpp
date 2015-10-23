@@ -31,7 +31,7 @@ void ECSqlCrudAsserter::LogECSqlSupport (ECSqlTestItem const& testItem) const
     if (GetLogger ().isSeverityEnabled (NativeLogging::LOG_DEBUG))
         {
         const auto expectedResultCategory = testItem.GetExpectedResultCategory ();
-        const auto expectedResultCategoryStr = IECSqlExpectedResult::CategoryToString (expectedResultCategory);
+        const auto expectedResultCategoryStr = ECSqlExpectedResult::CategoryToString (expectedResultCategory);
 
         Utf8String logMessage;
         if (GetTargetOperationName () != nullptr)

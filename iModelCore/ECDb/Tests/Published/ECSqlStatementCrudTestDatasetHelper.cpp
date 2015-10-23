@@ -29,7 +29,7 @@ ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddSelect (ECSqlTestDataset&
 // @bsimethod                                     Krischan.Eberle                  07/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddSelect (ECSqlTestDataset& dataset, Utf8CP ecsql, IECSqlExpectedResult::Category IECSqlBinder, Utf8CP description, int expectedResultColumnCount, int expectedResultRowCount /*= -1*/)
+ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddSelect (ECSqlTestDataset& dataset, Utf8CP ecsql, ECSqlExpectedResult::Category IECSqlBinder, Utf8CP description, int expectedResultColumnCount, int expectedResultRowCount /*= -1*/)
     {
     ECSqlTestItem testItem (ecsql);
 
@@ -44,15 +44,15 @@ ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddSelect (ECSqlTestDataset&
 // @bsimethod                                     Krischan.Eberle                  07/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddNonSelect (ECSqlTestDataset& dataset, Utf8CP ecsql, int expectedAffectedRowCount, bool rollbackAfterwards /*= false*/)
+ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddNonSelect(ECSqlTestDataset& dataset, Utf8CP ecsql, bool rollbackAfterwards /*= false*/)
     {
-    ECSqlTestItem testItem (ecsql, rollbackAfterwards);
+    ECSqlTestItem testItem(ecsql, rollbackAfterwards);
 
     //In order to have the test prepare the statement before we can test the step, we need to add an expected success result for the preparation
-    testItem.AddExpectedResult (PrepareECSqlExpectedResult::Create (nullptr));
-    testItem.AddExpectedResult (AffectedRowsECSqlExpectedResult::Create (expectedAffectedRowCount));
+    testItem.AddExpectedResult(PrepareECSqlExpectedResult::Create(nullptr));
+    testItem.AddExpectedResult(ECSqlExpectedResult::Create());
 
-    return dataset.AddTestItem (testItem);
+    return dataset.AddTestItem(testItem);
     }
 
 
@@ -60,7 +60,7 @@ ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddNonSelect (ECSqlTestDatas
 // @bsimethod                                     Krischan.Eberle                  07/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (ECSqlTestDataset& dataset, Utf8CP ecsql, IECSqlExpectedResult::Category failureCategory, Utf8CP description /*= nullptr*/)
+ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (ECSqlTestDataset& dataset, Utf8CP ecsql, ECSqlExpectedResult::Category failureCategory, Utf8CP description /*= nullptr*/)
     {
     ECSqlTestItem testItem (ecsql);
     testItem.AddExpectedResult (PrepareECSqlExpectedResult::CreateFailing (nullptr, failureCategory, description));
@@ -72,14 +72,14 @@ ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (ECSqlTest
 // @bsimethod                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddStepFailingNonSelect (ECSqlTestDataset& dataset, Utf8CP ecsql, IECSqlExpectedResult::Category failureCategory, Utf8CP description /*= nullptr*/, bool rollbackAfterwards /* = false*/)
+ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddStepFailingNonSelect(ECSqlTestDataset& dataset, Utf8CP ecsql, ECSqlExpectedResult::Category failureCategory, Utf8CP description /*= nullptr*/, bool rollbackAfterwards /* = false*/)
     {
-    ECSqlTestItem testItem (ecsql, rollbackAfterwards);
+    ECSqlTestItem testItem(ecsql, rollbackAfterwards);
     //In order to have the test prepare the statement before we can test the step, we need to add an expected success result for the preparation
-    testItem.AddExpectedResult (PrepareECSqlExpectedResult::Create (nullptr));
-    testItem.AddExpectedResult (AffectedRowsECSqlExpectedResult::CreateFailing (failureCategory, description));
+    testItem.AddExpectedResult(PrepareECSqlExpectedResult::Create(nullptr));
+    testItem.AddExpectedResult(ECSqlExpectedResult::CreateFailing(failureCategory, description));
 
-    return dataset.AddTestItem (testItem);
+    return dataset.AddTestItem(testItem);
     }
 
 //---------------------------------------------------------------------------------------

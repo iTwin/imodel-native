@@ -75,7 +75,7 @@ struct ECSqlNonSelectStatementCrudAsserter : public ECSqlStatementCrudAsserter
 private:
     virtual void _Assert (ECSqlTestItem const& testItem) const override;
 
-    void AssertStep (ECSqlTestItem const& testItem, ECSqlStatement& statement, AffectedRowsECSqlExpectedResult const& expectedResult) const;
+    void AssertStep (ECSqlTestItem const& testItem, ECSqlStatement& statement, ECSqlExpectedResult const& expectedResult) const;
 
     DbResult Step (ECInstanceKey& generatedECInstanceKey, ECSqlStatement& statement, bool disableBeAsserts) const;
     DbResult Step (ECSqlStatement& statement, bool disableBeAsserts) const;
