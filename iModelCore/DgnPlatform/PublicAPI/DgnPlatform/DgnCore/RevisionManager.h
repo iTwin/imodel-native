@@ -79,6 +79,10 @@ public:
     Utf8StringCR GetSummary() const { return m_summary; }
     void SetSummary(Utf8CP summary) { m_summary = summary; }
 
+    //! Validate the contents of the revision
+    //! @remarks Validates the contents of the ChangeStreamFile against the revision Id.
+    DGNPLATFORM_EXPORT bool Validate(DgnDbCR dgndb) const;
+
     //! Dump to stdout for debugging purposes.
     DGNPLATFORM_EXPORT void Dump(DgnDbCR dgndb) const;
 };
@@ -103,7 +107,7 @@ private:
     BentleyStatus UpdateInitialParentRevisionId();
 
     BentleyStatus GroupChanges(BeSQLite::ChangeGroup& changeGroup) const;
-    DgnRevisionPtr CreateRevision(BeSQLite::ChangeGroup const& changeGroup);
+    DgnRevisionPtr CreateRevisionObject(BeSQLite::ChangeGroup const& changeGroup);
     static BentleyStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::ChangeGroup const& changeGroup);
 
 public:
@@ -121,7 +125,7 @@ public:
 
     //! Merge an ordered collection of revisions to the Db
     //! @param[in] mergeRevisions Ordered collection of revisions to be merged
-    //! @return SUCCESS if the revisions were successfully merged, ERROR otherwise. 
+    //! @return SUCCESS if the revisions were found to be valid, and were successfully merged, ERROR otherwise. 
     DGNPLATFORM_EXPORT BentleyStatus MergeRevisions(bvector<DgnRevisionPtr> const& mergeRevisions);
 
     //! Start creating a new revision from the changes saved to the Db
