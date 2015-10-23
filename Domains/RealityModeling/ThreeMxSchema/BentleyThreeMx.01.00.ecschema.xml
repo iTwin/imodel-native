@@ -6,6 +6,9 @@
     <ECSchemaReference name="dgn" version="02.00" prefix="dgn" />
 
     <ECClass typeName="ThreeMxModel" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
       <BaseClass>dgn:PhysicalModel</BaseClass>
     </ECClass>
 

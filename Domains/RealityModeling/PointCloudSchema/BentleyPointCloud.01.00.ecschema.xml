@@ -6,6 +6,9 @@
     <ECSchemaReference name="dgn" version="02.00" prefix="dgn" />
 
     <ECClass typeName="PointCloudModel" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
       <BaseClass>dgn:PointCloudBaseModel</BaseClass>
     </ECClass>
 
