@@ -310,6 +310,9 @@ TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName)
     if (0 == strncmp(DGN_TABLE_Txns, tableName, sizeof(DGN_TABLE_Txns)-1))
         return  TrackChangesForTable::No;
 
+    if (DgnSearchableText::IsUntrackedFts5Table(tableName))
+        return  TrackChangesForTable::No;
+
     return TrackChangesForTable::Yes;
     }
 
@@ -437,7 +440,9 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         return CancelChanges(changeset);
 
     OnBeginValidate();
-    AddChangeSet(changeset);
+
+    Changes changes(changeset);
+    AddChanges(changes);
 
     BentleyStatus status = PropagateChanges();   // Propagate to generate indirect changes
 
@@ -463,8 +468,56 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     if (result != BE_SQLITE_DONE)
         return OnCommitStatus::Abort;
 
+    m_dgndb.Revisions().UpdateInitialParentRevisionId(); // All new revisions are now based on the latest parent revision id
+
     OnEndValidate();
     return OnCommitStatus::Continue;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ * Merge changes from a changeStream that originated in an external repository
+ * @bsimethod                                Ramanujam.Raman                    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus TxnManager::MergeChanges(ChangeStream& changeStream)
+    {
+    m_dgndb.Txns().EnableTracking(false);
+    DbResult result = changeStream.ApplyChanges(m_dgndb);
+    if (result != BE_SQLITE_OK)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+    m_dgndb.Txns().EnableTracking(true);
+        
+    OnBeginValidate();
+
+    Changes changes(changeStream);
+    AddChanges(changes);
+
+    BentleyStatus status = PropagateChanges();   // Propagate to generate indirect changes
+
+    UndoChangeSet indirectChanges;
+    if (HasChanges())
+        {
+        indirectChanges.FromChangeTrack(*this);
+        Restart();
+
+        if (SUCCESS == status)
+            {
+            // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
+            T_HOST.GetTxnAdmin()._OnCommit(*this);
+
+            DbResult result = SaveCurrentChange(indirectChanges, "Merge");
+            if (BE_SQLITE_DONE != result)
+                status = ERROR;
+            }
+
+        if (SUCCESS != status)
+            CancelChanges(indirectChanges);
+        }
+    
+    OnEndValidate();
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -493,18 +546,16 @@ bool TxnManager::HasFatalErrors() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Add all of the changes in a changeset to the TxnSummary. TxnTables store information about the changes in their own state
+* Add all changes to the TxnSummary. TxnTables store information about the changes in their own state
 * if they need to hold on to them so they can react after the changeset is applied.
 * @bsimethod                                    Keith.Bentley                   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::AddChangeSet(ChangeSet& changeset)
+void TxnManager::AddChanges(Changes const& changes)
     {
     BeAssert(!m_dgndb.IsReadonly());
     Utf8String currTable;
     TxnTable* txnTable = 0;
     TxnManager& txns = m_dgndb.Txns();
-
-    Changes changes(changeset); // this is a "changeset iterator"
 
     // Walk through each changed row in the changeset. They are ordered by table, so we know that all changes to one table will be seen
     // before we see any changes to another table.
@@ -571,7 +622,7 @@ DbResult TxnManager::ApplyChangeSet(ChangeSet& changeset, TxnAction action)
 * If the TxnDirection is backwards, invert the changeset.
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ReadChangeSet(UndoChangeSet& changeset, TxnId rowId, TxnAction action)
+void TxnManager::ReadChangeSet(ChangeSet& changeset, TxnId rowId, TxnAction action)
     {
     if (ZIP_SUCCESS != m_snappyFrom.Init(m_dgndb, DGN_TABLE_Txns, "Change", rowId.GetValue()))
         {
@@ -653,6 +704,12 @@ void TxnManager::ReverseTxnRange(TxnRange& txnRange, Utf8StringP undoStr)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TxnManager::ReverseTo(TxnId pos, AllowCrossSessions allowPrevious)
     {
+    if (m_dgndb.Revisions().IsCreatingRevision())
+        {
+        BeAssert(false && "Cannot reverse transactions after starting a revision. Call FinishCreateRevision() or AbandonCreateRevision() first");
+        return DgnDbStatus::RevisionStarted;
+        }
+
     if (!pos.IsValid() || (allowPrevious == AllowCrossSessions::No && !PrepareForUndo()))
         return DgnDbStatus::NothingToUndo;
 
@@ -715,6 +772,12 @@ bool TxnManager::PrepareForUndo()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TxnManager::ReverseTxns(int numActions, AllowCrossSessions allowPrevious)
     {
+    if (m_dgndb.Revisions().IsCreatingRevision())
+        {
+        BeAssert(false && "Cannot reverse transactions after starting a revision. Call FinishCreateRevision() or AbandonCreateRevision() first");
+        return DgnDbStatus::RevisionStarted;
+        }
+
     if (allowPrevious == AllowCrossSessions::No && !PrepareForUndo())
         return DgnDbStatus::NothingToUndo;
 
@@ -749,6 +812,12 @@ DgnDbStatus TxnManager::ReverseTxns(int numActions, AllowCrossSessions allowPrev
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TxnManager::ReverseAll(bool prompt)
     {
+    if (m_dgndb.Revisions().IsCreatingRevision())
+        {
+        BeAssert(false && "Cannot reverse transactions after starting a revision. Call FinishCreateRevision() or AbandonCreateRevision() first");
+        return DgnDbStatus::RevisionStarted;
+        }
+
     if (!PrepareForUndo())
         return DgnDbStatus::NothingToUndo;
 
@@ -855,6 +924,25 @@ void TxnManager::DeleteReversedTxns()
     m_reversedTxn.clear();
     CachedStatementPtr stmt = GetTxnStatement("DELETE FROM " DGN_TABLE_Txns " WHERE Deleted=1");
     stmt->Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Delete transactions from the start of the table to (but not including) the specified
+* last transaction. 
+* @bsimethod                                                  Ramanujam.Raman   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TxnManager::DeleteFromStartTo(TxnId lastId)
+    {
+    CachedStatementPtr stmt = GetTxnStatement("DELETE FROM " DGN_TABLE_Txns " WHERE Id < ?");
+    stmt->BindInt64(1, lastId.GetValue());
+
+    DbResult result = stmt->Step();
+    if (BE_SQLITE_DONE != result)
+        {
+        BeAssert(false);
+        return DgnDbStatus::SQLiteError;
+        }
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

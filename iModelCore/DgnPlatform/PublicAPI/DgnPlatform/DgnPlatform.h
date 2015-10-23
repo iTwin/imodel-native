@@ -76,6 +76,7 @@ DGNPLATFORM_TYPEDEFS (DgnResourceURI)
 DGNPLATFORM_TYPEDEFS (DgnGlyph)
 DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutContext)
 DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutResult)
+DGNPLATFORM_TYPEDEFS (DgnRevision);
 DGNPLATFORM_TYPEDEFS (DgnRscFont)
 DGNPLATFORM_TYPEDEFS (DgnShxFont)
 DGNPLATFORM_TYPEDEFS (DgnTrueTypeFont)
@@ -111,7 +112,9 @@ DGNPLATFORM_TYPEDEFS (ChangeAnnotationScale)
 DGNPLATFORM_TYPEDEFS (ClipPrimitive)
 DGNPLATFORM_TYPEDEFS (ClipVector)
 DGNPLATFORM_TYPEDEFS (ClipVolumeOverrides)
+#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 DGNPLATFORM_TYPEDEFS (ComponentModel)
+#endif
 DGNPLATFORM_TYPEDEFS (CutGraphicsCachedKey)
 DGNPLATFORM_TYPEDEFS (Dgn3DInputEvent)
 DGNPLATFORM_TYPEDEFS (DgnButtonEvent)
@@ -182,6 +185,7 @@ DGNPLATFORM_TYPEDEFS (QueryModel)
 DGNPLATFORM_TYPEDEFS (QueryViewController)
 DGNPLATFORM_TYPEDEFS (RedlineViewController)
 DGNPLATFORM_TYPEDEFS (RegionGraphicsContext)
+DGNPLATFORM_TYPEDEFS (RevisionManager);
 DGNPLATFORM_TYPEDEFS (ScanCriteria)
 DGNPLATFORM_TYPEDEFS (SelectionSetManager)
 DGNPLATFORM_TYPEDEFS (SheetViewController)
@@ -210,12 +214,15 @@ DGNPLATFORM_REF_COUNTED_PTR (DgnGCS)
 DGNPLATFORM_REF_COUNTED_PTR (DgnGeomPart)
 DGNPLATFORM_REF_COUNTED_PTR (DgnMarkupProject)
 DGNPLATFORM_REF_COUNTED_PTR (DgnModel)
+DGNPLATFORM_REF_COUNTED_PTR (DgnRevision)
 DGNPLATFORM_REF_COUNTED_PTR (DrawingElement)
 DGNPLATFORM_REF_COUNTED_PTR (ElementGroup)
 DGNPLATFORM_REF_COUNTED_PTR (GeometricElement)
 DGNPLATFORM_REF_COUNTED_PTR (PatternParams)
 DGNPLATFORM_REF_COUNTED_PTR (PhysicalElement)
+#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 DGNPLATFORM_REF_COUNTED_PTR (ComponentModel)
+#endif
 DGNPLATFORM_REF_COUNTED_PTR (PhysicalModel)
 DGNPLATFORM_REF_COUNTED_PTR (PhysicalRedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR (QueryViewController)
@@ -411,6 +418,7 @@ struct DgnElementKey : BeSQLite::EC::ECInstanceKey
 
 typedef DgnElementKey const& DgnElementKeyCR;
 
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 //=======================================================================================
 //! The key (classId,instanceId) of a the Item aspect.
 //=======================================================================================
@@ -429,6 +437,7 @@ struct ElementItemKey : BeSQLite::EC::ECInstanceKey
 };
 
 typedef ElementItemKey const& ElementItemKeyCR;
+#endif
 
 //=======================================================================================
 //! A DRange3d that holds min/max values for an object in each of x,y,z in some coordinate system.

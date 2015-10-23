@@ -124,6 +124,7 @@ private:
 
 protected:
     virtual void _SetDrawViewFlags(ViewFlags) override;
+    virtual void  _OnPreDrawTransient() override;
     virtual void _DrawTextString(TextStringCR, double* zDepth) override;
     virtual bool _DoClipping() const override {return m_inSymbolDraw;} // Only need clip for symbols...
     virtual bool _DoSymbolGeometry() const override {return true;}

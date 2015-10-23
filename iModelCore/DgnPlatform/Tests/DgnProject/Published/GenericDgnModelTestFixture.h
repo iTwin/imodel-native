@@ -40,9 +40,11 @@ virtual ~GenericDgnModelTestFixture ()
     {
     }
 
-DgnModelP GetDgnModelP() const {return m_testDgnManager.GetDgnModelP();}
-DgnDbP GetDgnProjectP() const {return m_testDgnManager.GetDgnProjectP();}
-bool      Is3d() const {return m_is3d;}
+DgnModelP       GetDgnModelP() const {return m_testDgnManager.GetDgnModelP();}
+DgnDbP          GetDgnProjectP() const {return m_testDgnManager.GetDgnProjectP();}
+void            CloseTestFile() {m_testDgnManager.CloseTestFile();}
+BentleyStatus   ReopenTestFile() {return m_testDgnManager.OpenTestFile ();}
+bool            Is3d() const {return m_is3d;}
 };
 
 END_DGNDB_UNIT_TESTS_NAMESPACE

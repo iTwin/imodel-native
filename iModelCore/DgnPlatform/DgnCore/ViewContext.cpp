@@ -632,37 +632,6 @@ void ViewContext::_AddContextOverrides(OvrMatSymbR ovrMatSymb)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_CookDisplayParamsOverrides(ElemDisplayParamsR elParams, OvrMatSymbR ovrMatSymb)
-    {
-    // if no overrides are set there is nothing to do...
-    if (MATSYMB_OVERRIDE_None == ovrMatSymb.GetFlags())
-        return;
-
-    _ModifyPreCook(elParams); // Allow context to modify elParams before cooking...
-
-    // "cook" the display params into a OvrMatSymb
-    ovrMatSymb.GetMatSymbR().FromResolvedElemDisplayParams(elParams, *this, nullptr, nullptr);
-
-    // Add any overrides specific to the view/context...
-    _AddContextOverrides(ovrMatSymb);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::CookDisplayParamsOverrides()
-    {
-    _CookDisplayParamsOverrides(m_currDisplayParams, m_ovrMatSymb);
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    // Activate the ovrMatsymb in the IDrawGeom
-    GetCurrentGraphicR().ActivateOverrideMatSymb(&m_ovrMatSymb);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_ModifyPreCook(ElemDisplayParamsR elParams)

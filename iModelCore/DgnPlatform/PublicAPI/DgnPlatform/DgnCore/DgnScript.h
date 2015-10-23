@@ -48,28 +48,6 @@ struct DgnScript
     @endverbatim
     The \a myEgaPublicName parameter must match the name used to register a JavaScript EGA.
 
-    <h2>Specifying an EGA in an ECClass.</h2>
-    An ECClass that is derived from dgn.ElementItem that wants to specify an EGA must identify the JavaScript function in a custom attribute, like this:
-    @verbatim
-    <ECClass typeName="SomeItem" isDomainClass="True">
-        <BaseClass>dgn.ElementItem</BaseClass>
-        ...
-        <!-- Here is where I specify what kind of EGA I implement and where to find it. -->
-        <ECCustomAttributes xmlns="...">
-            <EGASpecifier>
-                <Type>JavaScript</Type>
-                <Name>myNamespace.myEgaPublicName</Name>
-                <!-- These are the properties that I want the handler to look up and pass to my EGA. -->
-                <Inputs>prop1, prop2, ...</Inputs>
-            </EGASpecifier>
-        </ECCustomAttributes>
-    </ECClass>
-    @endverbatim
-
-    Note that the EGASpecifier identifies the EGA JavaScript function using the same string as the JavaScript program used to register it.
-    Also note that the EGASpecifier specifies additional inputs by name. In the example above, they are prop1, prop2, and so forth.
-    The EGA JavaScript function expects to find properties by these names on the \a parms object that is passed in as its 4th argument.
-
     @param[out] functionReturnStatus    The function's integer return value. 0 means success.
     @param[in] el           The element to update
     @param[in] jsEgaFunctionName   Identifies the JavaScript function to be executed. Must be of the form namespace.functionname. 

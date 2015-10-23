@@ -21,8 +21,10 @@
 #define DGN_CLASSNAME_AnnotationTextStyle   "AnnotationTextStyle"
 #define DGN_CLASSNAME_Authority             "Authority"
 #define DGN_CLASSNAME_TrueColor             "TrueColor"
+#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
 #define DGN_CLASSNAME_ComponentSolution     "ComponentSolution"
+#endif
 #define DGN_CLASSNAME_DictionaryElement     "DictionaryElement"
 #define DGN_CLASSNAME_DictionaryModel       "DictionaryModel"
 #define DGN_CLASSNAME_DrawingElement        "DrawingElement"
@@ -35,6 +37,7 @@
 #define DGN_CLASSNAME_ElementGroup          "ElementGroup"
 #define DGN_CLASSNAME_ElementItem           "ElementItem"
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
+#define DGN_CLASSNAME_ElementName           "ElementName"
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
@@ -980,6 +983,182 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus InsertOnElement(DgnElementKey, DgnLinkId);
     DGNPLATFORM_EXPORT BentleyStatus DeleteFromElement(DgnElementKey, DgnLinkId);
     DGNPLATFORM_EXPORT void PurgeUnused();
+};
+
+//=======================================================================================
+//! Every DgnDb has a table for storing searchable text for use with SQLite's
+//! FTS5 full text search features. Each search term is qualified by a "text type" and associated
+//! with an ID into some other table from which the search term originated. The meaning of the
+//! ID field can be interpreted according to the text type. Applications can
+//! populate this table with search terms to enable efficient, database-wide full text search.
+//! Such queries may be optionally constrained to one or more text types.
+//! In general, an application should limit its queries to those text types which it either
+//! created or understands the meaning of.
+//! @see DgnDb::SearchableText
+// @bsiclass                                                    Paul.Connelly   10/15
+//=======================================================================================
+struct DgnSearchableText : DgnDbTable
+{
+private:
+    friend struct DgnDb;
+
+    DgnSearchableText(DgnDbR db) : DgnDbTable(db) { }
+
+    static BeSQLite::DbResult CreateTable(DgnDb& db);
+public:
+    //! Identifies a record in the searchable text table
+    struct Key
+    {
+    private:
+        Utf8String m_type;
+        BeSQLite::BeInt64Id m_id;
+    public:
+        //! Constructor.
+        //! @param[in]      textType Specifies the type of text. May not be empty.
+        //! @param[in]      id       The ID of the associated object. Must be valid.
+        Key(Utf8StringCR textType, BeSQLite::BeInt64Id id) : m_type(textType), m_id(id) { m_type.Trim(); }
+
+        //! Default constructor producing an invalid Key.
+        Key() { }
+
+        Utf8StringCR GetTextType() const { return m_type; } //!< The search text type
+        BeSQLite::BeInt64Id GetId() const { return m_id; } //!< The ID of the object associated with this record
+        bool IsValid() const { return !m_type.empty() && m_id.IsValid(); } //!< Determine whether this is a valid Key
+    };
+
+    //! A record in the searchable text table
+    struct Record
+    {
+    private:
+        Key m_key;
+        Utf8String  m_text;
+    public:
+        //! Constructor
+        //! @param[in]      textType Identifies both the meaning of the ID and the "type" of the text. May not be empty.
+        //! @param[in]      id       The ID of the object associated with this text. Must be valid.
+        //! @param[in]      text     The searchable text. May not be empty.
+        //! @remarks The combination of text type and ID must be unique within the searchable text table
+        Record(Utf8StringCR textType, BeSQLite::BeInt64Id id, Utf8StringCR text) : Record(Key(textType, id), text) { }
+
+        //! Constructor
+        //! @param[in]      key  Uniquely identifies this record within the table. Must be valid.
+        //! @param[in]      text The searchable text. May not be empty.
+        Record(Key const& key, Utf8StringCR text) : m_key(key), m_text(text) { m_text.Trim(); }
+
+        //! Default constructor. Produces an invalid record.
+        Record() { }
+
+        Utf8StringCR GetTextType() const { return m_key.GetTextType(); } //!< The search text type
+        BeSQLite::BeInt64Id GetId() const { return m_key.GetId(); } //!< The ID of the object associated with the text
+        Utf8StringCR GetText() const { return m_text; } //!< The searchable text
+        Key const& GetKey() const { return m_key; } //!< The record key
+        bool IsValid() const { return m_key.IsValid() && !m_text.empty(); } //!< Determine if this is a valid record
+    };
+
+    //! A list of text types by which to filter full-text search queries
+    typedef bvector<Utf8String> TextTypes;
+
+    //! Specifies a query on the searchable text table, optionally filtered by one or more text types.
+    struct Query
+    {
+    private:
+        TextTypes  m_types;
+        Utf8String m_matchExpression;
+
+        friend struct DgnSearchableText;
+        Utf8String ToWhereClause() const;
+    public:
+        //! Constructor
+        //! @param[in]      matchExpression An expression conforming to sqlite's MATCH syntax indicating the text for which to search
+        //! @param[in]      textType        If supplied, only text of the specified type will be included in the query
+        //! @remarks The matchExpression will be single-quoted and concatenated with a query to produce a where clause like WHERE searchable_text MATCH 'matchExpression'.
+        //! @remarks The caller is responsible for ensuring that search phrases within the expression are properly double-quoted and that the expression conforms to sqlite's MATCH syntax.
+        DGNPLATFORM_EXPORT explicit Query(Utf8StringCR matchExpression, Utf8CP textType=nullptr);
+
+        //! Add a text type by which to filter. The query will only include text belonging to the specified types.
+        //! @param[in]      textType The type by which to filter.
+        DGNPLATFORM_EXPORT void AddTextType(Utf8CP textType);
+    };
+
+    //! An iterator over the results of a full text search query
+    struct Iterator : BeSQLite::DbTableIterator
+    {
+    private:
+        friend struct DgnSearchableText;
+
+        Iterator(DgnDb& db, Query const& query) : DbTableIterator((BeSQLite::DbCR)db), m_query(query) { }
+
+        Query m_query;
+    public:
+        //! An entry in a full text search results iterator
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+        {
+        private:
+            friend struct Iterator;
+            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) { }
+        public:
+            DGNPLATFORM_EXPORT Utf8CP GetTextType() const; //!< The type of text
+            DGNPLATFORM_EXPORT BeSQLite::BeInt64Id GetId() const; //!< The ID of the associated object
+            DGNPLATFORM_EXPORT Utf8CP GetText() const; //!< The search text
+
+            Key GetKey() const { return Key(GetTextType(), GetId()); } //!< The unique Key identifying this entry
+            Record GetRecord() const { return Record(GetTextType(), GetId(), GetText()); } //!< A record representing this entry
+            Entry const& operator*() const { return *this; } //!< Dereference this entry
+        };
+
+        typedef Entry const_iterator;
+        typedef Entry iterator;
+        DGNPLATFORM_EXPORT Entry begin() const; //!< An iterator to the first entry in the results
+        Entry end() const { return Entry(nullptr, false); } //!< An iterator beyond the last entry in the results
+    };
+
+    //! Query the number of records which match a full text search query
+    //! @param[in]      query The searchable text query
+    //! @return The number of records which match the query.
+    DGNPLATFORM_EXPORT size_t QueryCount(Query const& query) const;
+
+    //! Query the records which match a full text search query
+    //! @param[in]      query The searchable text query
+    //! @return An iterator over the matching records.
+    DGNPLATFORM_EXPORT Iterator QueryRecords(Query const& query) const;
+
+    //! Query the record with the specified text type and ID.
+    //! @param[in]      key The unique key identifying the record
+    //! @return The corresponding record, or an invalid record if no such record exists.
+    DGNPLATFORM_EXPORT Record QueryRecord(Key const& key) const;
+
+    //! Query the types of text present in the searchable text table
+    //! @return The list of available text types
+    DGNPLATFORM_EXPORT TextTypes QueryTextTypes() const;
+
+    //! Insert a new record into the searchable text table
+    //! @param[in]      record The record to insert
+    //! @return Success if the new record was inserted, or else an error code.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Insert(Record const& record);
+
+    //! Update an existing record in the searchable text table
+    //! @param[in]      record      The modified record
+    //! @param[in]      originalKey If non-null, identifies the existing record.
+    //! @return Success if the record was updated, or else an error code.
+    //! @remarks If originalKey is not supplied, the key is assumed to remain unchanged. Otherwise, the record will be looked up by original key, allowing the text type and/or ID to be updated.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Update(Record const& record, Key const* originalKey=nullptr);
+
+    //! Removes all data from the searchable text table
+    //! @return Success if the table was cleared, or an error code.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DropAll();
+
+    //! Drops all records of the specified text type
+    //! @param[in]      textType The text type to drop
+    //! @return Success if the associated records were dropped, or an error code.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DropTextType(Utf8CP textType);
+
+    //! Drop a single record from the searchable text table
+    //! @param[in]      key The key identifying the record to drop.
+    //! @return Success if the record was dropped, or an error code.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DropRecord(Key const& key);
+//__PUBLISH_SECTION_END__
+    static bool IsUntrackedFts5Table(Utf8CP tableName);
+//__PUBLISH_SECTION_START__
 };
 
 END_BENTLEY_DGN_NAMESPACE

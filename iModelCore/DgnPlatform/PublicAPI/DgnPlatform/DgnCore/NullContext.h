@@ -79,7 +79,6 @@ protected:
     virtual void _DrawSymbol(Render::IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight) override {}
     virtual bool _FilterRangeIntersection(GeometricElementCR element) override {if (m_setupScan) return T_Super::_FilterRangeIntersection(element); return false;}
     virtual void _CookDisplayParams(Render::ElemDisplayParamsR, Render::ElemMatSymbR) override {}
-    virtual void _CookDisplayParamsOverrides(Render::ElemDisplayParamsR, Render::OvrMatSymbR) override {}
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     virtual void _SetupOutputs() override {BeAssert(NULL != m_IViewDraw); SetIViewDraw(*m_IViewDraw);} // Output CAN NOT be NULL!
 #endif

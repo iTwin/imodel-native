@@ -817,6 +817,7 @@ public:
     explicit DictionaryModel(CreateParams const& params) : T_Super(params) { }
 };
 
+#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 //=======================================================================================
 //! Captures the results of "solving" a ComponentModel.
 //! The basic pattern for placing instances of component solutions is:
@@ -923,7 +924,9 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus CreateSolutionInstanceItem(DgnElementR instanceElement, ECN::IECInstancePtr& itemProperties, SolutionId solutionId);
     //@}
     };
+#endif
 
+#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 /*=======================================================================================*//**
 * A DgnModel3d that captures the definition of a parametric component and its current solution.
 * Collaborates with ComponentSolution.
@@ -1174,6 +1177,7 @@ public:
 
     Utf8CP GetModelName() const { return GetCode().GetValueCP(); } //!< The name of this component model
 };
+#endif
 
 //=======================================================================================
 //! A PlanarPhysicalModel is an infinite planar model that subdivides physical space into two halves. The plane of a
@@ -1305,11 +1309,13 @@ namespace dgn_ModelHandler
         MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_PhysicalModel, PhysicalModel, Physical, Model, DGNPLATFORM_EXPORT)
     };
 
+#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
     //! The ModelHandler for ComponentModel
     struct EXPORT_VTABLE_ATTRIBUTE Component : Model
     {
         MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_ComponentModel, ComponentModel, Component, Model, DGNPLATFORM_EXPORT)
     };
+#endif
 
     //! The ModelHandler for PlanarPhysicalModel
     struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysical : Model

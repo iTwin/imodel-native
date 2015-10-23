@@ -170,9 +170,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="PhysicalRedlineModel" isDomainClass="True">
         <BaseClass>PhysicalModel</BaseClass>
     </ECClass>
+    <!--  WIP_COMPONENT_MODEL *** pending redesign
     <ECClass typeName="ComponentModel" isDomainClass="True">
         <BaseClass>Model3d</BaseClass>
     </ECClass>
+    -->
     <ECClass typeName="ResourceModel" isDomainClass="True">
         <BaseClass>Model</BaseClass>
     </ECClass>
@@ -328,7 +330,99 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="PhysicalTextAnnotationElement" isDomainClass="True">
         <BaseClass>PhysicalElement</BaseClass>
     </ECClass>
-    
+
+    <ECClass typeName="AnnotationTableElement" isDomainClass="True">
+        <!-- An AnnotationTableElement is a physical element that displays a grid containing text and or graphics -->
+        <BaseClass>PhysicalElement</BaseClass>
+    </ECClass>
+
+    <ECClass typeName="AnnotationTableHeader" isDomainClass="True">
+        <!-- The aspect that holds the header properties for an AnnotationTableElement -->
+        <BaseClass>ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="RowCount"                     typeName="int"/>
+        <ECProperty propertyName="ColumnCount"                  typeName="int"/>
+        <ECProperty propertyName="TextStyleId"                  typeName="int"/>
+        <ECProperty propertyName="TitleRowCount"                typeName="int"/>
+        <ECProperty propertyName="HeaderRowCount"               typeName="int"/>
+        <ECProperty propertyName="FooterRowCount"               typeName="int"/>
+        <ECProperty propertyName="HeaderColumnCount"            typeName="int"/>
+        <ECProperty propertyName="FooterColumnCount"            typeName="int"/>
+        <ECProperty propertyName="BreakType"                    typeName="int"/>
+        <ECProperty propertyName="BreakPosition"                typeName="int"/>
+        <ECProperty propertyName="BreakLength"                  typeName="double"/>
+        <ECProperty propertyName="BreakGap"                     typeName="double"/>
+        <ECProperty propertyName="RepeatHeaders"                typeName="boolean"/>
+        <ECProperty propertyName="RepeatFooters"                typeName="boolean"/>
+        <ECProperty propertyName="DefaultColumnWidth"           typeName="double"/>
+        <ECProperty propertyName="DefaultRowHeight"             typeName="double"/>
+        <ECProperty propertyName="DefaultMarginTop"             typeName="double"/>
+        <ECProperty propertyName="DefaultMarginBottom"          typeName="double"/>
+        <ECProperty propertyName="DefaultMarginLeft"            typeName="double"/>
+        <ECProperty propertyName="DefaultMarginRight"           typeName="double"/>
+        <ECProperty propertyName="DefaultCellAlignment"         typeName="int"/>
+        <ECProperty propertyName="FillSymbologyKeyOddRow"       typeName="int"/>
+        <ECProperty propertyName="FillSymbologyKeyEvenRow"      typeName="int"/>
+        <ECProperty propertyName="TitleRowTextStyle"            typeName="int"/>
+        <ECProperty propertyName="HeaderRowTextStyle"           typeName="int"/>
+        <ECProperty propertyName="FooterRowTextStyle"           typeName="int"/>
+        <ECProperty propertyName="HeaderColumnTextStyle"        typeName="int"/>
+        <ECProperty propertyName="FooterColumnTextStyle"        typeName="int"/>
+        <ECProperty propertyName="BackupTextHeight"             typeName="double"/>
+        <ECProperty propertyName="DataSourceProviderId"         typeName="int"/>
+        <ECProperty propertyName="BodyTextHeight"               typeName="double"/>
+        <ECProperty propertyName="TitleRowTextHeight"           typeName="double"/>
+        <ECProperty propertyName="HeaderRowTextHeight"          typeName="double"/>
+        <ECProperty propertyName="FooterRowTextHeight"          typeName="double"/>
+        <ECProperty propertyName="HeaderColumnTextHeight"       typeName="double"/>
+        <ECProperty propertyName="FooterColumnTextHeight"       typeName="double"/>
+    </ECClass>
+
+    <ECClass typeName="AnnotationTableRow" isDomainClass="True">
+        <!-- The aspect that holds the row properties for an AnnotationTableElement -->
+        <BaseClass>ElementMultiAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                <Indexes>
+                    <DbIndex>
+                        <Name>idx_dgn_AnnotationTable_Row</Name>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>ElementId</string>
+                            <string>RowIndex</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="RowIndex"                     typeName="int"/>
+        <ECProperty propertyName="HeightLock"                   typeName="boolean"/>
+        <ECProperty propertyName="Height"                       typeName="double"/>
+    </ECClass>
+
+    <ECClass typeName="AnnotationTableColumn" isDomainClass="True">
+        <!-- The aspect that holds the column properties for an AnnotationTableElement -->
+        <BaseClass>ElementMultiAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                <Indexes>
+                    <DbIndex>
+                        <Name>idx_dgn_AnnotationTable_Column</Name>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>ElementId</string>
+                            <string>ColumnIndex</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ColumnIndex"                  typeName="int"/>
+        <ECProperty propertyName="WidthLock"                    typeName="boolean"/>
+        <ECProperty propertyName="Width"                        typeName="double"/>
+    </ECClass>
+
     <ECRelationshipClass typeName="ElementOwnsChildElements" isDomainClass="True" strength="embedding" strengthDirection="forward">
         <Source cardinality="(1,1)" roleLabel="is on 1 element" polymorphic="True">
             <Class class="Element" />
@@ -507,38 +601,50 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </Target>
     </ECRelationshipClass>
 
-    <ECClass typeName="ElementDescription" isDomainClass="True" >
-        <!-- The aspect that holds a descriptions of an element -->
-        <BaseClass>ElementMultiAspect</BaseClass>
+    <ECClass typeName="ElementName" isDomainClass="True" >
+        <!-- The aspect that holds a user-defined name for an element -->
+        <BaseClass>ElementUniqueAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>
-                    <!-- All subclasses of ElementDescription will share the same table -->
-                    <Strategy>SharedTable</Strategy>
-                    <Options>SharedColumnsForSubclasses</Options>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
-                </MapStrategy>
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <Indexes>
-                    <DbIndex>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <!-- Only one ElementDescription per Authority per Element -->
-                            <string>ElementId</string>
-                            <string>AuthorityId</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
+                <!-- The ECInstanceId for ElementName is the same as the Id of the owning Element -->
+                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
-        <ECProperty propertyName="AuthorityId" typeName="long">
-            <!-- Foreign key relationship to Authority that controls the Description -->
+        <ECProperty propertyName="Name" typeName="string">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
+    </ECClass>
+    <ECRelationshipClass typeName="ElementOwnsName" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Cascade</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" polymorphic="True">
+            <Class class="Element" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="ElementName">
+                <Key>
+                    <Property name="ECInstanceId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECClass typeName="ElementDescription" isDomainClass="True" >
+        <!-- The aspect that holds a descriptions of an element -->
+        <BaseClass>ElementUniqueAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <!-- The ECInstanceId for ElementDescription is the same as the Id of the owning Element -->
+                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
+            </ClassMap>
+        </ECCustomAttributes>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
@@ -559,7 +665,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <Target cardinality="(0,N)" polymorphic="True">
             <Class class="ElementDescription">
                 <Key>
-                    <Property name="ElementId"/>
+                    <Property name="ECInstanceId"/>
                 </Key>
             </Class>
         </Target>
@@ -827,22 +933,20 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <!-- // DgnDb "implementation detail" classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
 
+    <!-- WIP_COMPONENT_MODEL *** pending redesign
     <ECClass typeName="ComponentSolution" isDomainClass="True" >
-        <!-- WIP: Convert to subclass of DgnModel? -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
-                <!-- WIP_COMPONENTS: What I REALLY want is for the primary key to be (ComponentModelId,Parameters) -->
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="ComponentModelName" typeName="string"/>
         <ECProperty propertyName="SolutionName" typeName="string"/>
-        <!-- The parameters used to generate this solution, as a JSON array -->
         <ECProperty propertyName="Parameters" typeName="string"/>
-        <!-- WIP_COMPONENTS: I want (ComponentModelId,Parameters) to be unique and indexed -->
         <ECProperty propertyName="Geom" typeName="binary"/>
         <ECProperty propertyName="Range" typeName="binary"/>
     </ECClass>
+    -->
 
     <!-- WIP_COMPONENTS I need to be able to use (ComponentModelName,SolutionName) as the key to the ComponentSolution table
     <ECRelationshipClass typeName="ElementUsesSolution" isDomainClass="True" strength="referencing" strengthDirection="forward">
@@ -864,11 +968,13 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECRelationshipClass>
     -->
 
+    <!-- WIP_ELEMENT_ITEM *** pending redesign
     <ECClass typeName="EGASpecifier" description="Specifies an EGA" isDomainClass="False" isCustomAttributeClass="True">
         <ECProperty propertyName="Type" typeName="string" description="The kind of EGA implementation that must be executed. One of: JavaScript, ... TBD" />
         <ECProperty propertyName="Name" typeName="string" description="Identifies the script or parametric model within the Db that will be executed. For scripts, this should have the form program_name:function_name" />
         <ECProperty propertyName="Inputs" typeName="string" description="comma-separated list of input parameter names. These are bound by name to the item's properties." />
     </ECClass>
+    -->
 
     <ECClass typeName="HandlerInfo" description="Specifies handler information for an ECClass" isDomainClass="False" isCustomAttributeClass="True">
         <ECProperty propertyName="RequiredForModification" typeName="boolean" description="Indicates whether a handler is required for instances of an ECClass to be modified." />

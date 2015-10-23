@@ -26,6 +26,7 @@
 #include "IAuxCoordSys.h"
 #include "IPickGeom.h"
 #include "TxnManager.h"
+#include "RevisionManager.h"
 #include "Render.h"
 #include "IViewTransients.h"
 #include "LineStyle.h"

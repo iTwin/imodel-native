@@ -93,6 +93,10 @@ protected:
 
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
     virtual Code _GenerateDefaultCode() override { return Code(); }
+//__PUBLISH_SECTION_END__
+public:
+    static DgnMaterialId ImportMaterial(DgnMaterialId source, DgnImportContext& importer);
+//__PUBLISH_SECTION_START__
 public:
     //! Construct a new DgnMaterial with the specified parameters
     explicit DgnMaterial(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }

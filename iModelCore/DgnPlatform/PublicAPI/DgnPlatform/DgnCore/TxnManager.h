@@ -143,6 +143,8 @@ typedef RefCountedPtr<TxnTable> TxnTablePtr;
 //=======================================================================================
 struct TxnManager : BeSQLite::ChangeTracker
 {
+    friend struct RevisionManager;
+
     //! Indicates an error when propagating changes for a Txn.
     struct ValidationError
     {
@@ -241,12 +243,12 @@ private:
     BeSQLite::SnappyFromBlob m_snappyFrom;
     BeSQLite::SnappyToBlob   m_snappyTo;
     bvector<ValidationError> m_validationErrors;
-
-    void AddChangeSet(BeSQLite::ChangeSet&);
+    
+    void AddChanges(BeSQLite::Changes const&);
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override;
     TrackChangesForTable _FilterTable(Utf8CP tableName) override;
     BeSQLite::DbResult SaveCurrentChange(BeSQLite::ChangeSet& changeset, Utf8CP operation);
-    void ReadChangeSet(UndoChangeSet&, TxnId rowid, TxnAction);
+    void ReadChangeSet(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
     void ReverseTxnRange(TxnRange& txnRange, Utf8StringP);
     void ReinstateTxn(TxnRange&, Utf8StringP redoStr);
     void ApplyChanges(TxnId, TxnAction);
@@ -260,6 +262,8 @@ private:
     TxnTable* FindTxnTable(Utf8CP tableName) const;
     BeSQLite::DbResult ApplyChangeSet(BeSQLite::ChangeSet& changeset, TxnAction isUndo);
     bool IsMultiTxnMember(TxnId rowid);
+    DgnDbStatus DeleteFromStartTo(TxnId lastId);
+    BentleyStatus MergeChanges(BeSQLite::ChangeStream& changeStream);
 
 public:
     void OnBeginValidate(); //!< @private
@@ -321,7 +325,7 @@ public:
     //! @return The TxnId of the the innermost multi-Txn operation. If no multi-Txn operation is active, the TxnId will be zero.
     DGNPLATFORM_EXPORT TxnId GetMultiTxnOperationStart();
     //@}
-
+    
     //! @name Reversing and Reinstating Transactions
     //@{
     //! Get the current Action being processed by the TxnManager. This can be called from inside TxnTable methods only,

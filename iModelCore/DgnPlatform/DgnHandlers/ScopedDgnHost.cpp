@@ -208,42 +208,64 @@ static DgnModelPtr getAndFill(DgnDbR db, DgnModelId modelID, bool fillCache)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestDataManager::TestDataManager (WCharCP fullFileName, Db::OpenMode dbOpenMode, bool fill)
+BentleyStatus   TestDataManager::OpenTestFile ()
     {
-    m_model = NULL;
-
     DbResult stat;
-    DgnDb::OpenParams params(dbOpenMode);
-    m_dgndb = DgnDb::OpenDgnDb(&stat, BeFileName(fullFileName), params);
+    DgnDb::OpenParams params(m_openMode);
+    m_dgndb = DgnDb::OpenDgnDb(&stat, BeFileName(m_fileName), params);
     if (m_dgndb == NULL)
         {
         if (stat == BE_SQLITE_ERROR_ProfileTooOld || stat == BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite)
             {
-            NativeLogging::LoggingManager::GetLogger (L"BeTest")->errorv (L"HORNSWAGGLED! \"%ls\"", fullFileName);
+            NativeLogging::LoggingManager::GetLogger (L"BeTest")->errorv (L"HORNSWAGGLED! \"%ls\"", m_fileName.c_str());
             BeAssert (false && "HORNSWAGGLED!");
             }
         else
             {
-            NativeLogging::LoggingManager::GetLogger (L"BeTest")->errorv (L"failed to open project fullFileName=\"%ls\" (status=%x)", fullFileName, stat);
+            NativeLogging::LoggingManager::GetLogger (L"BeTest")->errorv (L"failed to open project fullFileName=\"%ls\" (status=%x)", m_fileName.c_str(), stat);
             BeAssert (false && "failed to open test input project file");
             }
-        return;
+        return ERROR;
         }
 
 
     for (auto const& entry : m_dgndb->Models().MakeIterator())
         {
-        DgnModelPtr dgnModel = getAndFill(*m_dgndb, entry.GetModelId(), fill);
+        DgnModelPtr dgnModel = getAndFill(*m_dgndb, entry.GetModelId(), m_fill);
         if (m_model == NULL)
             m_model = dgnModel.get();
         }
 
     if (NULL == m_model)
         {
-        NativeLogging::LoggingManager::GetLogger (L"BeTest")->errorv (L"failed to load any model from project \"%ls\"", fullFileName);
+        NativeLogging::LoggingManager::GetLogger (L"BeTest")->errorv (L"failed to load any model from project \"%ls\"", m_fileName.c_str());
         BeAssert (false && "failed to load any model from test input project file");
-        return;
+        return ERROR;
         }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void    TestDataManager::CloseTestFile ()
+    {
+    m_model = nullptr;
+    m_dgndb = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+TestDataManager::TestDataManager (WCharCP fullFileName, Db::OpenMode dbOpenMode, bool fill)
+    {
+    m_model     = NULL;
+    m_fileName  = fullFileName;
+    m_openMode  = dbOpenMode;
+    m_fill      = fill;
+
+    OpenTestFile ();
     }
 
 /*---------------------------------------------------------------------------------**//**

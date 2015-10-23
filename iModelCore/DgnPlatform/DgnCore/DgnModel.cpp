@@ -1105,6 +1105,7 @@ void SheetModel::_FromPropertiesJson(Json::Value const& val)
     JsonUtils::DPoint2dFromJson(m_size, val["sheet_size"]);
     }
 
+#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1327,7 +1328,7 @@ DgnDbStatus ComponentSolution::CreateSolutionInstanceItem(DgnElementR instanceEl
     {
     DgnDbR db = instanceElement.GetDgnDb();
 
-    //  The the details of the solution and the class of the Item that should be created
+    //  The details of the solution and the class of the Item that should be created
     ComponentSolution solutions(db);
     Solution sln;
     DgnDbStatus status = solutions.Query(sln, solutionId);
@@ -1428,6 +1429,8 @@ DgnDbStatus BentleyApi::Dgn::ExecuteComponentSolutionEGA(DgnElementR el, DPoint3
 
     return DgnDbStatus::BadElement;
     }
+
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
@@ -1556,7 +1559,11 @@ DgnDbStatus DgnModel::_ImportElementsFrom(DgnModelCR sourceModel, DgnImportConte
 DgnDbStatus DgnModel::_ImportElementAspectsFrom(DgnModelCR sourceModel, DgnImportContext& importer)
     {
     // This base class implementation of _ImportElementAspectsFrom knows only the ElementAspect subclasses that are defined by the
-    //  base Dgn schema. That is, only DgnItem.
+    //  base Dgn schema. 
+    
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
+    
+    // That is, only DgnItem.
 
 
     // Step through all items in the source model
@@ -1592,6 +1599,7 @@ DgnDbStatus DgnModel::_ImportElementAspectsFrom(DgnModelCR sourceModel, DgnImpor
         DgnElement::Item::SetItem(*ccel, *ccitem);
         ccel->Update();
         }
+#endif
     return DgnDbStatus::Success;
     }
 
@@ -1748,6 +1756,7 @@ DgnModelPtr DgnModel::CopyModel(DgnModelCR model, Code newCode)
     return model2;
     }
 
+#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2027,6 +2036,7 @@ DgnDbStatus ComponentModel::Solve(ModelSolverDef::ParameterSet const& newParamet
         return DgnDbStatus::ValidationFailed;
     return DgnDbStatus::SQLiteError;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15

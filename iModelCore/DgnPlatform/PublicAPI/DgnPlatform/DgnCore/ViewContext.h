@@ -168,7 +168,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                     KeithBentley    04/01
 //=======================================================================================
-struct ViewContext : NonCopyableClass, ICheckStop, IRangeNodeCheck
+struct EXPORT_VTABLE_ATTRIBUTE ViewContext : NonCopyableClass, ICheckStop, IRangeNodeCheck
 {
     friend struct ViewController;
     friend struct SimplifyViewDrawGeom;
@@ -336,6 +336,7 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _FilterRangeIntersection(GeometricElementCR);
     DGNPLATFORM_EXPORT virtual DgnModelP _GetViewTarget();
     virtual IPickGeomP _GetIPickGeom() {return nullptr;}
+    virtual void _OnPreDrawTransient() {m_ovrMatSymb.Clear(); GetIDrawGeom().ActivateOverrideMatSymb(&m_ovrMatSymb);}
     DGNPLATFORM_EXPORT virtual void _VisitTransientGraphics(bool isPreUpdate);
     DGNPLATFORM_EXPORT virtual void _AllocateScanCriteria();
     DGNPLATFORM_EXPORT virtual void _SetupScanCriteria();
@@ -346,7 +347,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _AddContextOverrides(Render::OvrMatSymbR);
     DGNPLATFORM_EXPORT virtual void _ModifyPreCook(Render::ElemDisplayParamsR); 
     DGNPLATFORM_EXPORT virtual void _CookDisplayParams(Render::ElemDisplayParamsR, Render::ElemMatSymbR);
-    DGNPLATFORM_EXPORT virtual void _CookDisplayParamsOverrides(Render::ElemDisplayParamsR, Render::OvrMatSymbR);
     DGNPLATFORM_EXPORT virtual void _SetScanReturn();
     DGNPLATFORM_EXPORT virtual void _PushFrustumClip();
     DGNPLATFORM_EXPORT virtual void _InitScanCriteria();
@@ -370,6 +370,7 @@ public:
     void ResetRasterPlane() {m_rasterPlane = RasterPlane_Any;}
     DgnElement::Hilited GetCurrHiliteState() {return m_hiliteState;}
     void SetSubRectFromViewRect(BSIRectCP viewRect);
+    void OnPreDrawTransient() {_OnPreDrawTransient();} // Initialize per-transient state since _OutputElement may not be called...
     DGNPLATFORM_EXPORT void SetSubRectNpc(DRange3dCR subRect);
     void SetWantMaterials(bool wantMaterials) {m_wantMaterials = wantMaterials;}
     DGNPLATFORM_EXPORT DMatrix4d GetLocalToView() const;
@@ -610,10 +611,6 @@ public:
     void CookDisplayParams(Render::ElemDisplayParamsR elParams, Render::ElemMatSymbR elMatSymb) {_CookDisplayParams(elParams, elMatSymb);}
     DGNPLATFORM_EXPORT void CookDisplayParams();
 
-    //! Change the supplied "natural" ElemDisplayParams. Resolves effective symbology as required by the context and initializes the supplied OvrMatSymb.
-    //! @note Does NOT call ActivateOverrideMatSymb on the output or change the current ElemDisplayParams/OvrMatSymb of the context.
-    void CookDisplayParamsOverrides(Render::ElemDisplayParamsR elParams, Render::OvrMatSymbR ovrMatSymb) {_CookDisplayParamsOverrides(elParams, ovrMatSymb);}
-
     //! Calculate the net display priority value. The net display priority is based on the geometry (element) and sub-category priority.
     //! @return the net display priority. For 3D views, display priority is always 0.
     DGNPLATFORM_EXPORT int32_t ResolveNetDisplayPriority(int32_t geomPriority, DgnSubCategoryId subCategoryId, DgnSubCategory::Appearance* appearance = nullptr) const;
@@ -630,9 +627,6 @@ public:
     //! @return the current ElemDisplayParams.
     Render::ElemDisplayParams& GetCurrentDisplayParams() {return m_currDisplayParams;}
 
-    //! Change the current ElemDisplayParams for any context overrides. Cooks the modified ElemDisplayParams into the current OvrMatSymb using the current override flags.
-    //! @note Calls ActivateOverrideMatSymb on the output.
-    DGNPLATFORM_EXPORT void CookDisplayParamsOverrides();
 
     //! Clears current override flags and re-applies context overrides.
     //! @note Calls ActivateOverrideMatSymb on the output.

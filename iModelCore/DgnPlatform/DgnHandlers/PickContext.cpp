@@ -38,6 +38,7 @@ void PickOutput::Init(PickContext* context)
     {
     _SetDrawViewFlags(context->GetViewport()->GetViewFlags());
 
+    m_currGeomDetail.Init();
     // can't set up Pick point in screen coordinates until after we've attached to the view
     SetViewContext(context);
     }
@@ -1218,6 +1219,16 @@ bool PickContext::_CheckStop()
     return (WasAborted() ? true : AddAbortTest(m_output.GetDoneSearching() || (m_stopTester && m_stopTester->_CheckStopLocate())));
 #endif
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void            PickContext::_OnPreDrawTransient()
+    {
+    T_Super::_OnPreDrawTransient();
+
+    m_output._GetGeomDetail().Init(); // Setup hit detail defaults...
     }
 
 /*---------------------------------------------------------------------------------**//**

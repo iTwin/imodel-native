@@ -143,15 +143,6 @@ DgnDbStatus DgnCategory::_OnDelete() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnCategory::_OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const
-    {
-    BeAssert(false && "Import the category before importing subcategories"); // ###TODO?
-    return DgnDbStatus::ParentBlockedChange;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 void DgnCategory::_OnInserted(DgnElementP copiedFrom) const
     {
     // Create the default sub-category.
@@ -170,23 +161,31 @@ void DgnCategory::_OnInserted(DgnElementP copiedFrom) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnCategory::SetDefaultAppearance(DgnSubCategory::Appearance const& app) const
+    {
+    DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(GetDefaultSubCategoryId(), GetDgnDb());
+    BeAssert(subCat.IsValid());
+    if (!subCat.IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+    auto updatedSubCat = subCat->MakeCopy<DgnSubCategory>();
+    updatedSubCat->GetAppearanceR() = app;
+    updatedSubCat->Update();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryCPtr DgnCategory::Insert(DgnSubCategory::Appearance const& app, DgnDbStatus* stat)
     {
     auto cat = GetDgnDb().Elements().Insert<DgnCategory>(*this, stat);
-    if (cat.IsValid())
-        {
-        DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(GetDefaultSubCategoryId(), GetDgnDb());
-        BeAssert(subCat.IsValid());
-        if (subCat.IsValid())
-            {
-            auto updatedSubCat = subCat->MakeCopy<DgnSubCategory>();
-            updatedSubCat->GetAppearanceR() = app;
-            updatedSubCat->Update();
-            }
-        }
-
+    if (!cat.IsValid())
+        return cat;
+    SetDefaultAppearance(app);
     return cat;
     }
 
@@ -343,13 +342,19 @@ DgnDbStatus DgnSubCategory::_SetCode(Code const& code)
     if (!DgnCategory::IsValidName(code.GetValue()))
         return DgnDbStatus::InvalidName;
 
-    // default sub-category has same name as category
     // all sub-category codes have namespace = category name
     DgnCategoryCPtr cat = DgnCategory::QueryCategory(GetCategoryId(), GetDgnDb());
-    if (cat.IsNull() || !code.GetNameSpace().Equals(cat->GetCategoryName()) || (code.GetValue().Equals(cat->GetCategoryName()) != IsDefaultSubCategory()))
+    if (cat.IsNull() || !code.GetNameSpace().Equals(cat->GetCategoryName()))
         return DgnDbStatus::InvalidName;
-    else
-        return T_Super::_SetCode(code);
+
+    if (m_elementId.IsValid()) // (_SetCode is called during copying. In that case, this SubCategory does not yet have an ID.)
+        {
+        // default sub-category has same name as category
+        if ((code.GetValue().Equals(cat->GetCategoryName()) != IsDefaultSubCategory()))
+            return DgnDbStatus::InvalidName;
+        }
+
+    return T_Super::_SetCode(code);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -562,6 +567,23 @@ bool DgnSubCategory::Appearance::operator==(Appearance const& other) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnSubCategory::Appearance::RelocateToDestinationDb(DgnImportContext& context)
+    {
+    if (!context.IsBetweenDbs())
+        return;
+
+    if (m_style.IsValid())
+        {
+        BeAssert(false && "*** TBD: remap style id");
+        }
+
+    if (m_material.IsValid())
+        m_material = context.RemapMaterialId(m_material);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnSubCategory::Override::ToJson(JsonValueR outValue) const
@@ -610,13 +632,34 @@ void DgnSubCategory::Override::ApplyTo(Appearance& appear) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnCategory::_OnImported(DgnElementCR original, DgnImportContext& importer) const
     {
+    DgnCategoryId srcCatId = DgnCategoryId(original.GetElementId().GetValue());
+
+    // Copy over the default appearance and remap its internal IDs
+    DgnSubCategoryCPtr srcSubCat = DgnSubCategory::QuerySubCategory(DgnCategory::GetDefaultSubCategoryId(srcCatId), importer.GetSourceDb());
+    DgnSubCategory::Appearance appearance = srcSubCat->GetAppearance();
+    appearance.RelocateToDestinationDb(importer);
+    SetDefaultAppearance(appearance);
+    importer.AddSubCategory(srcSubCat->GetSubCategoryId(), GetDefaultSubCategoryId(GetCategoryId()));
+
     if (importer.IsBetweenDbs())
         {
         BeAssert(nullptr != dynamic_cast<DgnCategoryCP>(&original));
 
+        // When we import a Category, we currently import all of its SubCategories too.
+        // If we decide to change this policy and wait until the caller asks for a SubCategory, 
+        // we must change ElementGeomIO::Import to call RemapSubCategory, rather than FindSubCategory.
         for (auto const& srcSubCatId : DgnSubCategory::QuerySubCategories(importer.GetSourceDb(), DgnCategoryId(original.GetElementId().GetValue())))
             importer.RemapSubCategory(GetCategoryId(), srcSubCatId);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnCategory::_RemapIds(DgnImportContext& importer)
+    {
+    // Note - it's too soon to try to remap my default SubCategory -- I don't have an ElementId yet.
+    // Wait for _OnImported.
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -624,78 +667,69 @@ void DgnCategory::_OnImported(DgnElementCR original, DgnImportContext& importer)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnSubCategory::_RemapIds(DgnImportContext& importer)
     {
-    // *** WIP_IMPORT: Translate style IDS in sourceAppearance
+    m_data.m_appearance.RelocateToDestinationDb(importer);
     T_Super::_RemapIds(importer);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId DgnCategory::ImportCategory(DgnCategoryId srcCatId, DgnImportContext& importer, DgnRemapTables& remap)
+DgnCategoryId DgnCategory::ImportCategory(DgnCategoryId srcCatId, DgnImportContext& importer)
     {
-    DgnCategoryId dstCatId = remap.Find(srcCatId);
-    if (dstCatId.IsValid())
-        return dstCatId;
-
+    //  See if we already have a category with the same name in the destination Db.
+    //  If so, we'll map the source category to it.
     DgnCategoryCPtr srcCat = DgnCategory::QueryCategory(srcCatId, importer.GetSourceDb());
     BeAssert(srcCat.IsValid());
     if (!srcCat.IsValid())
-        return DgnCategoryId();
-
-    dstCatId = QueryCategoryId(srcCat->GetCategoryName(), importer.GetDestinationDb());
-    if (!dstCatId.IsValid())
         {
-        auto importedElem = srcCat->Import(nullptr, importer.GetDestinationDb().GetDictionaryModel(), importer);
-        if (importedElem.IsValid())
-            dstCatId = DgnCategoryId(importedElem->GetElementId().GetValue());
+        BeAssert(false && "invalid source category ID");
+        return DgnCategoryId();
         }
 
+    DgnCategoryId dstCatId = QueryCategoryId(srcCat->GetCategoryName(), importer.GetDestinationDb());
     if (dstCatId.IsValid())
-        remap.Add(srcCatId, dstCatId);
+        {
+        importer.AddCategory(srcCatId, dstCatId);
 
-    return dstCatId;
+        for (auto const& srcSubCatId : DgnSubCategory::QuerySubCategories(importer.GetSourceDb(), srcCatId)) // Make sure the subcats are remapped!
+            importer.RemapSubCategory(dstCatId, srcSubCatId);
+
+        return dstCatId;
+        }
+    
+    //  No such Category in the destination. Ask the source Category to import itself.
+    auto importedElem = srcCat->Import(nullptr, importer.GetDestinationDb().GetDictionaryModel(), importer);
+    return importedElem.IsValid()? DgnCategoryId(importedElem->GetElementId().GetValue()): DgnCategoryId();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnSubCategoryId DgnSubCategory::ImportSubCategory(DgnSubCategoryId srcSubCatId, DgnCategoryId dstCatId, DgnImportContext& importer, DgnRemapTables& remap)
+DgnSubCategoryId DgnSubCategory::ImportSubCategory(DgnSubCategoryId srcSubCatId, DgnCategoryId dstCatId, DgnImportContext& importer)
     {
-    DgnSubCategoryId dstSubCatId = remap.Find(srcSubCatId);
-    if (dstSubCatId.IsValid())
-        return dstSubCatId;
-
+    //  See if we already have a SubCategory in the destination Db.
+    //  If so, map the source SubCategory to it.
     DgnSubCategoryCPtr srcSubCat = DgnSubCategory::QuerySubCategory(srcSubCatId, importer.GetSourceDb());
     BeAssert(srcSubCat.IsValid());
     if (srcSubCat.IsNull())
-        return dstSubCatId;
-
-    if (srcSubCat->IsDefaultSubCategory())
         {
-        dstSubCatId = DgnCategory::GetDefaultSubCategoryId(dstCatId);
-        DgnSubCategoryCPtr dstSubCat = DgnSubCategory::QuerySubCategory(dstSubCatId, importer.GetDestinationDb());
-        BeAssert(dstSubCat.IsValid() && "Importing a category should have created a default sub-category");
-        if (dstSubCat.IsValid())
-            {
-            BeAssert(dstSubCat->IsDefaultSubCategory());
-
-            // Since we must create the default sub-category as soon as the category is inserted, we now need to update its properties to reflect the source sub-category
-
-            // *** WIP_IMPORT: Translate style IDS in sourceAppearance
-            UNUSED_VARIABLE(dstSubCat);
-            }
-        }
-    else
-        {
-        auto dstSubCat = srcSubCat->Import(nullptr, importer.GetDestinationDb().GetDictionaryModel(), importer);
-        if (dstSubCat.IsValid())
-            dstSubCatId = DgnSubCategoryId(dstSubCat->GetElementId().GetValue());
+        BeAssert(false && "Invalid SubCategory ID");
+        return DgnSubCategoryId();
         }
 
+    DgnSubCategoryId dstSubCatId = QuerySubCategoryId(dstCatId, srcSubCat->GetSubCategoryName(), importer.GetDestinationDb());
     if (dstSubCatId.IsValid())
-        remap.Add(srcSubCatId, dstSubCatId);
+        {
+        //  *** TBD: Check if the Appearances match. If not, rename and remap
+        importer.AddSubCategory(srcSubCatId, dstSubCatId);
+        return dstSubCatId;
+        }
+    
+    //  No such SubCategory in the destination. Ask the source SubCategory to import itself.
+    BeAssert(!srcSubCat->IsDefaultSubCategory() && "DgnCategory::_OnImported should have remapped the default SubCategory");
 
-    return dstSubCatId;
+    auto importedElem = srcSubCat->Import(nullptr, importer.GetDestinationDb().GetDictionaryModel(), importer);
+    return importedElem.IsValid()? DgnSubCategoryId(importedElem->GetElementId().GetValue()): DgnSubCategoryId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -710,7 +744,7 @@ DgnCategoryId DgnImportContext::RemapCategory(DgnCategoryId source)
     if (dest.IsValid())
         return dest;
 
-    return DgnCategory::ImportCategory(source, *this, m_remap);
+    return DgnCategory::ImportCategory(source, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -725,7 +759,7 @@ DgnSubCategoryId DgnImportContext::RemapSubCategory(DgnCategoryId destCategoryId
     if (dest.IsValid())
         return dest;
 
-    return DgnSubCategory::ImportSubCategory(source, destCategoryId, *this, m_remap);
+    return DgnSubCategory::ImportSubCategory(source, destCategoryId, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -759,6 +793,3 @@ DgnDbStatus DgnSubCategory::_OnUpdate(DgnElementCR el)
     {
     return DgnCategory::IsValidName(GetSubCategoryName()) ? T_Super::_OnUpdate(el) : DgnDbStatus::InvalidName;
     }
-
-
-
