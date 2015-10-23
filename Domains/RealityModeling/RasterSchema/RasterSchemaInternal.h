@@ -52,6 +52,9 @@
 #include <Imagepp/all/h/HRFRasterFileResBooster.h>
 #include <Imagepp/all/h/HRFRasterFileCache.h>
 #include <Imagepp/all/h/HRFUtility.h>
+#include <Imagepp/all/h/HRPDEMFilter.h>
+#include <Imagepp/all/h/HPMAttribute.h>
+#include <Imagepp/all/h/HRADEMRaster.h>
 
 #include <RasterSchema/RasterSchemaTypes.h>
 #include <RasterSchema/RasterSchemaCommon.h>

@@ -18,13 +18,17 @@ struct RasterFile : public RefCountedBase
 {
 private:
             ImagePP::HFCPtr<ImagePP::HRFRasterFile>         m_HRFRasterFilePtr;
-            ImagePP::HFCPtr<ImagePP::HRAStoredRaster>       m_storedRasterPtr;
+            ImagePP::HFCPtr<ImagePP::HRARaster>             m_rasterPtr;
             ImagePP::HFCPtr<ImagePP::HGF2DWorldCluster>     m_worldClusterPtr;
             ImagePP::HFCPtr<ImagePP::HRFPageFile>           m_pageFilePtr;            // Sister file decorator.
+            ImagePP::HFCPtr<ImagePP::HGF2DCoordSys>         m_pPhysicalCoordSys;
 
                                                             RasterFile(Utf8StringCR resolvedName);
             int                                             ComputeBufferSize(size_t& bufferSize, const Point2d& imageSize, int imageFormat) const;
             ImagePP::HGF2DWorldCluster*                     GetWorldClusterP();
+            StatusInt                                       GetSampleStatistics(double& minValue, double& maxValue);
+            ImagePP::HFCPtr<ImagePP::HRFPageDescriptor>     GetPageDescriptor() const;
+            ImagePP::HFCPtr<ImagePP::HRARaster>             DecorateRaster(ImagePP::HFCPtr<ImagePP::HRAStoredRaster>& pStoredRaster);
 
 public:
     static  RasterFilePtr                                   Create(Utf8StringCR resolvedName);
@@ -33,10 +37,8 @@ public:
             uint32_t                                        GetWidth() const;
             uint32_t                                        GetHeight() const;
             void                                            GetSize(Point2d* sizeP) const;
-            void                                            GetBitmap(ImagePP::HFCPtr<ImagePP::HRABitmapBase> pBitmap);
-            ImagePP::HRAStoredRaster*                       GetStoredRasterP();
-            ImagePP::HFCPtr<ImagePP::HGF2DCoordSys>         GetPhysicalCoordSys();
-            ImagePP::HFCPtr<ImagePP::HRFPageDescriptor>     GetPageDescriptor() const;
+            ImagePP::HRARaster*                             GetRasterP();
+            ImagePP::HFCPtr<ImagePP::HGF2DCoordSys>         GetPhysicalCoordSys();            
             void                                            GetCorners (DPoint3dP corners) const;
 
             DMatrix4d                                       GetPhysicalToLowerLeft() const;

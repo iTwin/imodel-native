@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_RASTERSCHEMA
 //----------------------------------------------------------------------------------------
 RasterFile::RasterFile(Utf8StringCR resolvedName)
     {
-    m_storedRasterPtr = nullptr;
+    m_rasterPtr = nullptr;
     m_worldClusterPtr = new HGFHMRStdWorldCluster();
     m_pageFilePtr = nullptr;
 
@@ -47,24 +47,6 @@ HRFRasterFile*   RasterFile::GetHRFRasterFileP() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
-void RasterFile::GetBitmap(HFCPtr<HRABitmapBase> pBitmap)
-    {
-    HRACopyFromOptions opts;
-    opts.SetResamplingMode(HGSResampling::AVERAGE);
-
-    // If destination doesn't support alpha we blend so transparent pixels are replaced with the default color. 
-    if(pBitmap->GetPixelType()->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) == HRPChannelType::FREE)
-        {
-        pBitmap->Clear();
-        opts.SetAlphaBlend(true);       
-        }
-        
-    pBitmap->CopyFrom(*GetStoredRasterP(), opts);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     6/2015
-//----------------------------------------------------------------------------------------
 HPMPool*  GetMemoryPool()
     {
     static HPMPool  s_pool(0/*illimited*/); // Memory pool shared by all rasters. (in KB)
@@ -74,11 +56,11 @@ HPMPool*  GetMemoryPool()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
-HRAStoredRaster* RasterFile::GetStoredRasterP()
+HRARaster* RasterFile::GetRasterP()
     {
     // Load on first request.
-    if(NULL != m_storedRasterPtr)
-        return m_storedRasterPtr.GetPtr();
+    if(NULL != m_rasterPtr)
+        return m_rasterPtr.GetPtr();
 
     HFCPtr<HGF2DCoordSys> pLogical = m_worldClusterPtr->GetCoordSysReference(m_HRFRasterFilePtr->GetWorldIdentificator());
     HFCPtr<HRSObjectStore> pStore = new HRSObjectStore (GetMemoryPool(), m_HRFRasterFilePtr, 0/*page*/, pLogical);
@@ -86,9 +68,58 @@ HRAStoredRaster* RasterFile::GetStoredRasterP()
     // Specify we do not want to use the file's clip shapes if any. Maybe we'll need to support the native clips some day...
     pStore->SetUseClipShape(false);
 
-    m_storedRasterPtr = pStore->LoadRaster();
+    HFCPtr<HRAStoredRaster> pStoredRaster = pStore->LoadRaster();
+    m_pPhysicalCoordSys = pStoredRaster->GetPhysicalCoordSys();
 
-    return m_storedRasterPtr.GetPtr();
+    m_rasterPtr = DecorateRaster(pStoredRaster);
+
+    return m_rasterPtr.GetPtr();
+    }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  10/2015
+//----------------------------------------------------------------------------------------
+HFCPtr<HRARaster> RasterFile::DecorateRaster(HFCPtr<HRAStoredRaster>& pStoredRaster)
+    {
+    double minValue = 0, maxValue = 0;
+    // Apply contrast stretch on single channel only 
+    if(pStoredRaster->GetPixelType()->GetChannelOrg().CountChannels() == 1 && 
+       pStoredRaster->GetPixelType()->GetChannelOrg().GetChannelPtr(0)->GetSize() >= 16 &&
+       SUCCESS == GetSampleStatistics(minValue, maxValue))
+        {
+        HRPDEMFilter::HillShadingSettings hillShading;
+        hillShading.SetHillShadingState(false);
+        HFCPtr<HRPDEMFilter> pDEMFilter = new HRPDEMFilter(hillShading, HRPDEMFilter::Style_Elevation);
+        pDEMFilter->SetClipToEndValues(true);
+
+        // Generate a greyscale range values.
+        double step = (maxValue-minValue) / 255;    // First step is minimum.
+        HRPDEMFilter::UpperRangeValues upperRangeValues;
+        for(uint32_t i=0; i < 256; ++i)
+            upperRangeValues.insert(HRPDEMFilter::UpperRangeValues::value_type(minValue+(i*step), HRPDEMFilter::RangeInfo((Byte)i,(Byte)i,(Byte)i,true)));
+        pDEMFilter->SetUpperRangeValues(upperRangeValues);
+
+        return new HRADEMRaster(pStoredRaster, 1.0, 1.0, new HGF2DIdentity(), pDEMFilter);
+        }
+
+    return pStoredRaster.GetPtr();    
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  05/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt  RasterFile::GetSampleStatistics(double& minValue, double& maxValue)
+    {
+    HRFAttributeMinSampleValue const* pMinValueTag = GetPageDescriptor()->FindTagCP<HRFAttributeMinSampleValue>();
+    HRFAttributeMaxSampleValue const* pMaxValueTag = GetPageDescriptor()->FindTagCP<HRFAttributeMaxSampleValue>();
+    if (pMinValueTag == NULL || pMaxValueTag == NULL)
+        return ERROR;
+
+    minValue = pMinValueTag->GetData()[0/*First channel*/];
+    maxValue = pMaxValueTag->GetData()[0/*First channel*/];
+
+    return SUCCESS;
     }
 
 //----------------------------------------------------------------------------------------
@@ -286,7 +317,11 @@ HFCPtr<HRFPageDescriptor> RasterFile::GetPageDescriptor() const
 //----------------------------------------------------------------------------------------
 HFCPtr<HGF2DCoordSys> RasterFile::GetPhysicalCoordSys() 
     {
-    return GetStoredRasterP()->GetPhysicalCoordSys();
+    GetRasterP();   // trigger load if not already loaded.
+
+    BeAssert(m_pPhysicalCoordSys != nullptr);
+
+    return m_pPhysicalCoordSys;
     }
 
 //----------------------------------------------------------------------------------------
