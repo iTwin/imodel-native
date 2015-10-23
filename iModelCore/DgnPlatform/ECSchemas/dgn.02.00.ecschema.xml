@@ -199,12 +199,14 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <BaseClass>PhysicalModel</BaseClass>
     </ECClass>
+    <!--  WIP_COMPONENT_MODEL *** pending redesign
     <ECClass typeName="ComponentModel" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>Model3d</BaseClass>
     </ECClass>
+    -->
     <ECClass typeName="ResourceModel" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
@@ -1036,22 +1038,20 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <!-- // DgnDb "implementation detail" classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
 
+    <!-- WIP_COMPONENT_MODEL *** pending redesign
     <ECClass typeName="ComponentSolution" isDomainClass="True" >
-        <!-- WIP: Convert to subclass of DgnModel? -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
-                <!-- WIP_COMPONENTS: What I REALLY want is for the primary key to be (ComponentModelId,Parameters) -->
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="ComponentModelName" typeName="string"/>
         <ECProperty propertyName="SolutionName" typeName="string"/>
-        <!-- The parameters used to generate this solution, as a JSON array -->
         <ECProperty propertyName="Parameters" typeName="string"/>
-        <!-- WIP_COMPONENTS: I want (ComponentModelId,Parameters) to be unique and indexed -->
         <ECProperty propertyName="Geom" typeName="binary"/>
         <ECProperty propertyName="Range" typeName="binary"/>
     </ECClass>
+    -->
 
     <!-- WIP_COMPONENTS I need to be able to use (ComponentModelName,SolutionName) as the key to the ComponentSolution table
     <ECRelationshipClass typeName="ElementUsesSolution" isDomainClass="True" strength="referencing" strengthDirection="forward">
@@ -1073,11 +1073,13 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECRelationshipClass>
     -->
 
+    <!-- WIP_ELEMENT_ITEM *** pending redesign
     <ECClass typeName="EGASpecifier" description="Specifies an EGA" isDomainClass="False" isCustomAttributeClass="True">
         <ECProperty propertyName="Type" typeName="string" description="The kind of EGA implementation that must be executed. One of: JavaScript, ... TBD" />
         <ECProperty propertyName="Name" typeName="string" description="Identifies the script or parametric model within the Db that will be executed. For scripts, this should have the form program_name:function_name" />
         <ECProperty propertyName="Inputs" typeName="string" description="comma-separated list of input parameter names. These are bound by name to the item's properties." />
     </ECClass>
+    -->
 
     <!-- Applied to an ECClass to indicate that a subclass of DgnDomain::Handler will be supplied for it at run-time.
          It must be applied to any ECClass if the application/domain registers a Handler for that ECClass.

@@ -333,7 +333,7 @@ public:
     //! subclasses of DgnElement::Aspect in order to manage transactions.
     //! A domain will normally subclass one of the following more specific subclasses:
     //!     * DgnElement::UniqueAspect when the domain defines a subclass of dgn.ElementUniqueAspect for aspects that must be 1:1 with the host element.
-    //!     * DgnElement::Item when the domain defines a subclass of dgn.ElementItem.
+    //!     *** WIP_ELEMENT_ITEM *** pending redesign * DgnElement::Item when the domain defines a subclass of dgn.ElementItem.
     //!     * DgnElement::MultiAspect when the domain defines a subclass of dgn.ElementMultiAspect for cases where multiple instances of the class can be associated with a given element.
     //! The domain must also define and register a subclass of ElementAspectHandler to load instances of its aspects.
     struct EXPORT_VTABLE_ATTRIBUTE Aspect : AppData
@@ -389,7 +389,7 @@ public:
         //! Get the ECClass for this aspect
         DGNPLATFORM_EXPORT ECN::ECClassCP GetECClass(DgnDbR) const;
 
-        //! The Item should make a copy of itself.
+        //! The aspect should make a copy of itself.
         DGNPLATFORM_EXPORT virtual RefCountedPtr<DgnElement::Aspect> _CloneForImport(DgnElementCR sourceEl, DgnImportContext& importer) const;
 
         //! The subclass should override this method if it holds any IDs that must be remapped when it is copied (perhaps between DgnDbs)
@@ -403,7 +403,7 @@ public:
     //!     * _GetECClassName
     //!     * _UpdateProperties
     //!     * _LoadProperties
-    //! @see Item, UniqueAspect
+    //! @see UniqueAspect
     //! (Note: This is not stored directly as AppData, but is held by an AppData that aggregates instances for this class.)
     //! @note A domain that defines a subclass of MultiAspect must also define a subclass of ElementAspectHandler to load it.
     struct EXPORT_VTABLE_ATTRIBUTE MultiAspect : Aspect
@@ -444,7 +444,7 @@ public:
     //!     * _GetECClassName
     //!     * _UpdateProperties
     //!     * _LoadProperties
-    //! @see MultiAspect, Item
+    //! @see MultiAspect
     //! @note A domain that defines a subclass of UniqueAspect must also define a subclass of ElementAspectHandler to load it.
     struct EXPORT_VTABLE_ATTRIBUTE UniqueAspect : Aspect
     {
@@ -459,6 +459,18 @@ public:
         static void SetAspect0(DgnElementCR el, UniqueAspect& aspect);
         DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el) override;
         DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el) override final;
+
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
+#endif
+        //! The reason why GenerateElementGeometry is being called
+        enum class GenerateReason
+        {
+            Insert,         //!< The Element is being inserted into the Db
+            Update,         //!< Some aspect of the Element's content has changed.
+            TempDraw,       //!< A tool wants to draw the Element temporarily (the Element may not be persistent)
+            BulkInsert,     //!< An application is creating a large number of Elements 
+            Other           //!< An unspecified reason
+        };
 
     public:
         //! Get the ID of this aspect. The aspect's ID is always the same as the host element's ID. This is a convenience function that converts from DgnElementId to ECInstanceId.
@@ -492,6 +504,7 @@ public:
         template<typename T> static T const* Get(DgnElementCR el, ECN::ECClassCR cls) {return dynamic_cast<T const*>(GetAspect(el,cls));}
     };
 
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
     //! Represents a dgn.ElementItem.
     //! dgn.ElementItem is-a dgn.ElementUniqueAspect. A dgn.Element can have 0 or 1 dgn.ElementItems, and the dgn.ElementItem always has the Id of its host dgn.Element.
     //! Note that the item's actual class can vary, as long as it is a subclass of dgn.ElementItem.
@@ -610,6 +623,7 @@ public:
         //! @see BentleyApi::Dgn::DgnScript for an explanation of script-based EGAs.
         DGNPLATFORM_EXPORT DgnDbStatus ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR egaInstance);
     };
+#endif
 
     //! Allows a business key (unique identifier string) from an external system (identified by DgnAuthorityId) to be associated with a DgnElement via a persistent ElementAspect
     struct EXPORT_VTABLE_ATTRIBUTE ExternalKeyAspect : AppData
@@ -1046,6 +1060,7 @@ public:
     //! Get the ElementHandler for this DgnElement.
     DGNPLATFORM_EXPORT ElementHandlerR GetElementHandler() const;
 
+    // *** WIP_ELEMENT_ITEM *** pending redesign
     //! Get the DgnElement::Item handler for this DgnElement or the ElementHandler if the DgnElement does not have a DgnElement::Item.
     //! @return DgnDomain::Handler or nullptr if DgnElement specifies a DgnElement::Item who's handler can't be found.
     //! @remarks Used to find extensions like IEditManipulatorExtension that should coordinate with the item handler whenever it exists.
@@ -1802,6 +1817,7 @@ public:
 //! register its own handler.
 // @bsiclass                                                BentleySystems
 //=======================================================================================
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 struct InstanceBackedItem : DgnElement::Item
 {
     ECN::IECInstancePtr m_instance;
@@ -1816,8 +1832,11 @@ struct InstanceBackedItem : DgnElement::Item
 
     void SetInstanceId(BeSQLite::EC::ECInstanceId eid);
 };
+#endif
 
+#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 // *** WIP_ELEMENT_ITEM - move this back into ComponentSolution after making ElementItem a top-level class
 DgnDbStatus ExecuteComponentSolutionEGA(DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR itemInstance, Utf8StringCR cmName, Utf8StringCR paramNames, DgnElement::Item& item);
+#endif
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
