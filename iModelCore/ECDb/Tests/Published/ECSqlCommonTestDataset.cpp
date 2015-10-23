@@ -780,6 +780,68 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereStructTests (ECSqlType ecsqlType, 
 
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlTestDataset ECSqlCommonTestDataset::OptionsTests(ECSqlType ecsqlType, ECDbCR ecdb, int rowCountPerClass)
+    {
+    ECSqlTestDataset dataset;
+
+    ECClassCP pClass = ecdb.Schemas().GetECClass("ECSqlTest", "P");
+    Utf8String pClassECSqlStub;
+    if (ToECSql(pClassECSqlStub, ecsqlType, *pClass, false))
+        {
+        Utf8String ecsql;
+
+        ecsql.Sprintf("%s OPTIONS", pClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "OPTIONS clause without options");
+
+        ecsql.Sprintf("%s OPTIONS 123", pClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "An option must be a name");
+
+        ecsql.Sprintf("%s OPTIONS myopt=", pClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "option value is missing");
+
+        ecsql.Sprintf("%s OPTIONS myopt", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s OPTIONS myopt myotheropt", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s OPTIONS myopt=1 myotheropt", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s OPTIONS myopt=1 myotheropt=true", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s OPTIONS myopt myotheropt=true", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s OPTIONS myopt myotheropt=true onemoreopt", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE ECInstanceId=? OPTIONS myopt", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE ECInstanceId=? OPTIONS myopt myotheropt", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE ECInstanceId=? OPTIONS myopt=1 myotheropt", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        if (ecsqlType == ECSqlType::Select)
+            {
+            ecsql.Sprintf("%s WHERE ECInstanceId=? ORDER BY I OPTIONS myopt=1 myotheropt", pClassECSqlStub.c_str());
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+            ecsql.Sprintf("%s WHERE ECInstanceId=? GROUP BY I HAVING I=1 OPTIONS myopt=1 myotheropt", pClassECSqlStub.c_str());
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+            }
+        }
+
+    return dataset;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
