@@ -458,6 +458,12 @@ DbResult DgnDomains::InsertHandler(DgnDomain::Handler& handler)
     if (!shouldHaveHandler)
         {
         BeAssert(false && "You cannot register a handler unless its ECClass has a ClassHasHandler custom attribute");
+
+#if !defined (NDEBUG)
+        printf("ERROR: HANDLER [%s] handles ECClass '%s' which lacks a ClassHasHandler custom attribute. Handler not registered.",
+                typeid(handler).name(), handler.GetClassName().c_str());
+#endif
+
         return BE_SQLITE_ERROR;
         }
 

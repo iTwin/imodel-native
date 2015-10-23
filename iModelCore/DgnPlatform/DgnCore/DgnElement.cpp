@@ -2625,7 +2625,14 @@ uint64_t DgnElement::RestrictedAction::Parse(Utf8CP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint64_t GeometricElement::RestrictedAction::Parse(Utf8CP name)
     {
-    return 0 == BeStringUtilities::Stricmp("move", name) ? Move : T_Super::Parse(name);
+    if (0 == BeStringUtilities::Stricmp("move", name))
+        return Move;
+    else if (0 == BeStringUtilities::Stricmp("geometry", name))
+        return Geometry;
+    else if (0 == BeStringUtilities::Stricmp("setcategory", name))
+        return SetCategory;
+    else
+        return T_Super::Parse(name);
     }
 
 /*---------------------------------------------------------------------------------**//**
