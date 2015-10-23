@@ -1984,7 +1984,6 @@ protected:
     BE_SQLITE_EXPORT BriefcaseLocalValueCache& GetRLVCache();
 };
 
-
 //=======================================================================================
 //! A BeSQLite database file. This class is a wrapper around the SQLite datatype "sqlite3"
 //! @note Refer to the SQLite documentation for the details of SQLite.
