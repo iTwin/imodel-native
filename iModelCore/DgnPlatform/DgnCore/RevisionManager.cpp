@@ -310,7 +310,25 @@ public:
         {
         DgnRevisionIdGenerator idgen;
         idgen.AddIdStringToHash(parentRevId);
-        idgen.FromChangeGroup(changeGroup);
+
+        DbResult result = idgen.FromChangeGroup(changeGroup);
+        if (BE_SQLITE_OK != result)
+            return "";
+
+        return idgen.GetHashString();
+        }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                Ramanujam.Raman                    10/2015
+    //---------------------------------------------------------------------------------------
+    static Utf8String GenerateId(Utf8String parentRevId, ChangeStream& changeStream)
+        {
+        DgnRevisionIdGenerator idgen;
+        idgen.AddIdStringToHash(parentRevId);
+
+        DbResult result = idgen.FromChangeStream(changeStream);
+        if (BE_SQLITE_OK != result)
+            return "";
 
         return idgen.GetHashString();
         }
@@ -355,15 +373,15 @@ DgnRevision::~DgnRevision()
 BeFileName DgnRevision::BuildChangeStreamPathname(Utf8String revisionId)
     {
     BeFileName tempPathname;
-    BeFileNameStatus fStatus = BeFileName::BeGetTempPath(tempPathname);
-    if (BeFileNameStatus::Success != fStatus)
+    BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempPathname, L"DgnDbRev");
+    if (SUCCESS != status)
         {
         BeAssert(false && "Cannot get temporary directory");
         return tempPathname;
         }
 
     tempPathname.AppendToPath(WString(revisionId.c_str(), true).c_str());
-    tempPathname.AppendExtension(L"dgndb.rev");
+    tempPathname.AppendExtension(L"rev");
     return tempPathname;
     }
 
@@ -385,6 +403,41 @@ void DgnRevision::Dump(DgnDbCR dgndb) const
     fs.Dump("Contents:\n", dgndb, false, 0);
 
     printf("\n");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    10/2015
+//---------------------------------------------------------------------------------------
+bool DgnRevision::Validate(DgnDbCR dgndb) const
+    {
+    if (m_id.empty())
+        {
+        BeAssert(false && "The revision id is empty");
+        return false;
+        }
+
+    Utf8String dbGuid = dgndb.GetDbGuid().ToString();
+    if (m_dbGuid != dbGuid)
+        {
+        BeAssert(false && "The revision did not originate in the specified DgnDb");
+        return false;
+        }
+
+    if (!m_changeStreamFile.DoesPathExist())
+        {
+        BeAssert(false && "File containing the change stream doesn't exist. Cannot validate.");
+        return false;
+        }
+
+    ChangeStreamFileReader fs (m_changeStreamFile);
+    Utf8String id = DgnRevisionIdGenerator::GenerateId(m_parentId, fs);
+    if (m_id != id)
+        {
+        BeAssert(false && "The contents of the change stream file don't match the DgnRevision");
+        return false;
+        }
+
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -482,18 +535,8 @@ BentleyStatus RevisionManager::MergeRevisions(bvector<DgnRevisionPtr> const& mer
     bvector<BeFileName> changeStreamFiles;
     for (DgnRevisionPtr const& revision : mergeRevisions)
         {
-        if (revision->GetDbGuid() != dbGuid)
-            {
-            BeAssert(false && "The revision was created in a database of a different origin and cannot be merged");
+        if (!revision->Validate(m_dgndb))
             return ERROR;
-            }
-
-        BeFileNameCR fileName = revision->GetChangeStreamFile();
-        if (!fileName.DoesPathExist())
-            {
-            BeAssert(false && "File backing revision was not found");
-            return ERROR;
-            }
 
         changeStreamFiles.push_back(revision->GetChangeStreamFile());
         }
@@ -542,7 +585,7 @@ BentleyStatus RevisionManager::GroupChanges(ChangeGroup& changeGroup) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-DgnRevisionPtr RevisionManager::CreateRevision(ChangeGroup const& changeGroup)
+DgnRevisionPtr RevisionManager::CreateRevisionObject(ChangeGroup const& changeGroup)
     {
     Utf8String parentRevId = GetParentRevisionId();
     Utf8String revId = DgnRevisionIdGenerator::GenerateId(parentRevId, changeGroup);
@@ -597,7 +640,7 @@ DgnRevisionPtr RevisionManager::StartCreateRevision()
     if (SUCCESS != status)
         return nullptr;
 
-    DgnRevisionPtr currentRevision = CreateRevision(changeGroup);
+    DgnRevisionPtr currentRevision = CreateRevisionObject(changeGroup);
     if (currentRevision.IsNull())
         return nullptr;
 
