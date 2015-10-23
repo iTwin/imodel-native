@@ -38,9 +38,9 @@ namespace DgnDbSync { namespace DgnV8 { struct ConvertV8TextToDgnDbExtension; } 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     09/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TextAnnotationItem : DgnElement::Item
+struct EXPORT_VTABLE_ATTRIBUTE TextAnnotationItem : DgnElement::UniqueAspect
 {
-    DGNASPECT_DECLARE_MEMBERS(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotationItem, Item);
+    DGNASPECT_DECLARE_MEMBERS(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotationItem, DgnElement::UniqueAspect);
 
 private:
 //__PUBLISH_SECTION_END__
@@ -55,14 +55,25 @@ protected:
     
     DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateProperties(DgnElementCR) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _LoadProperties(DgnElementCR) override;
+    #ifdef WIP_ELEMENT_ITEM // *** pending redesign
     DGNPLATFORM_EXPORT virtual DgnDbStatus _GenerateElementGeometry(GeometricElementR, GenerateReason) override;
+    #else
+    DgnDbStatus CallGenerateGeometry(DgnElementR el, GenerateReason reason)
+        {
+        GeometricElementP gel = el.ToGeometricElementP();
+        return nullptr == gel ? DgnDbStatus::Success : GenerateElementGeometry(*gel, reason);
+        }
+    DgnDbStatus _OnInsert(DgnElementR el) override final {return CallGenerateGeometry(el, GenerateReason::Insert);}
+    DgnDbStatus _OnUpdate(DgnElementR el, DgnElementCR original) override final {return CallGenerateGeometry(el, GenerateReason::Update);}
+    DGNPLATFORM_EXPORT DgnDbStatus GenerateElementGeometry(GeometricElementR, GenerateReason);
+    #endif
 
 public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotationItem); }
     static ECN::ECClassCP QueryECClass(DgnDbR db) { return db.Schemas().GetECClass(QueryECClassId(db)); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
-    static TextAnnotationItemCP GetCP(DgnElementCR el) { return Item::Get<TextAnnotationItem>(el); }
-    static TextAnnotationItemP GetP(DgnElementR el) { return Item::GetP<TextAnnotationItem>(el); }
+    DGNPLATFORM_EXPORT static TextAnnotationItemCP GetCP(DgnElementCR el);
+    DGNPLATFORM_EXPORT static TextAnnotationItemP GetP(DgnElementR el);
 
     TextAnnotationItem() : m_isGeometrySuppressed(false) {}
     TextAnnotationCP GetAnnotation() const { return m_annotation.get(); }

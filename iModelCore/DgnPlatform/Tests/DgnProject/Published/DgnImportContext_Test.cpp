@@ -581,7 +581,6 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
         DgnElement::Code code = auth1->CreateCode("TestElement");
         DgnCategoryId gcatid = DgnCategory::QueryHighestCategoryId(*db);
         TestElementPtr tempEl = TestElement::Create(*db, model1->GetModelId(), gcatid, code);
-        DgnElement::Item::SetItem(*tempEl, *TestItem::Create("Line"));
         ASSERT_TRUE(db->Elements().Insert(*tempEl).IsValid());
         db->SaveChanges();
     }
@@ -625,6 +624,7 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 TEST_F(ImportTest, ImportElementsWithItems)
 {
     DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
@@ -683,6 +683,7 @@ TEST_F(ImportTest, ImportElementsWithItems)
         db2->SaveChanges();
     }
 }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15

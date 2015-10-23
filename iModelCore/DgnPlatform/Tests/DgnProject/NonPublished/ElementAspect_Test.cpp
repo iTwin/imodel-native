@@ -75,7 +75,7 @@ void ElementItemTests::SetupProject(WCharCP projFile, WCharCP testFile, Db::Open
     m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
     }
 
-
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -203,6 +203,7 @@ TEST_F(ElementItemTests, ItemCRUD)
     ASSERT_TRUE( el.IsValid() );
     ASSERT_EQ( nullptr , DgnElement::Item::Get<TestItem>(*el) ) << "Item should now be gone";
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
