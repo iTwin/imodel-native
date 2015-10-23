@@ -3235,7 +3235,7 @@ BentleyStatus ElementGeometryBuilder::SetGeomStreamAndPlacement(GeometricElement
     if (element.GetCategoryId() != m_elParams.GetCategoryId())
         return ERROR;
 
-    if (element.GetElementHandler()._IsRestrictedAction(GeometricElement::RestrictedAction::Geometry))
+    if (element.GetElementHandler()._IsRestrictedAction(GeometricElement::RestrictedAction::SetGeometry))
         return ERROR;
 
     if (m_is3d)

@@ -90,4 +90,33 @@
         <ECProperty propertyName="SomeProperty" typeName="string" />
     </ECClass>
 
+    <ECClass typeName="RestrictedElement1" isDomainClass="true">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00">
+                <Restrictions>
+                    <string>Delete</string>
+                    <string>InsertChild</string>
+                    <string>DeleteChild</string>
+                    <string>Move</string>
+                    <string>SetGeometry</string>
+                </Restrictions>
+            </ClassHasHandler>
+        </ECCustomAttributes>
+        <BaseClass>dgn:PhysicalElement</BaseClass>
+    </ECClass>
+
+    <ECClass typeName="RestrictedElement2" isDomainClass="true">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00">
+                <Restrictions>
+                    <string>Clone</string>
+                    <string>SetParent</string>
+                    <string>UpdateChild</string>
+                    <string>SetCategory</string>
+                </Restrictions>
+            </ClassHasHandler>
+        </ECCustomAttributes>
+        <BaseClass>dgn:PhysicalElement</BaseClass>
+    </ECClass>
 </ECSchema>
+

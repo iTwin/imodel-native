@@ -1299,7 +1299,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
 
         static const uint64_t Move = T_Super::NextAvailable; //!< Rotate and/or translate. "Move"
         static const uint64_t SetCategory = Move << 1; //!< Change element category. "SetCategory"
-        static const uint64_t Geometry = SetCategory << 1; //!< Change element geometry. "Geometry"
+        static const uint64_t SetGeometry = SetCategory << 1; //!< Change element geometry. "SetGeometry"
         static const uint64_t Reserved_2 = Reserved_1 << 1; //!< Reserved for future use
         static const uint64_t Reserved_3 = Reserved_2 << 1; //!< Reserved for future use
         static const uint64_t Reserved_4 = Reserved_3 << 1; //!< Reserved for future use

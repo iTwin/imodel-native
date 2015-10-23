@@ -2627,8 +2627,8 @@ uint64_t GeometricElement::RestrictedAction::Parse(Utf8CP name)
     {
     if (0 == BeStringUtilities::Stricmp("move", name))
         return Move;
-    else if (0 == BeStringUtilities::Stricmp("geometry", name))
-        return Geometry;
+    else if (0 == BeStringUtilities::Stricmp("setgeometry", name))
+        return SetGeometry;
     else if (0 == BeStringUtilities::Stricmp("setcategory", name))
         return SetCategory;
     else
