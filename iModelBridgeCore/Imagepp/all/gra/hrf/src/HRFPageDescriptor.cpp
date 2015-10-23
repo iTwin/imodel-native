@@ -1042,15 +1042,19 @@ HRFPageDescriptor::HRFPageDescriptor(HFCAccessMode                            pi
         m_UnlimitedResolution = false;
 
     // TranfoModel
+    
+    RasterFileGeocodingPtr pGeoCoding;
     HFCPtr<HGF2DTransfoModel> pTransfoModel = 0;
     HRFScanlineOrientation TransfoModelOrientation;
     if (pi_rpPriorityPage->HasTransfoModel())
         {
+        pGeoCoding = pi_rpPriorityPage->m_pGeocoding;
         pTransfoModel = pi_rpPriorityPage->GetTransfoModel();
         TransfoModelOrientation = pi_rpPriorityPage->GetTransfoModelOrientation();
         }
     else if (pi_rpSecondPage->HasTransfoModel())
         {
+        pGeoCoding = pi_rpSecondPage->m_pGeocoding;
         pTransfoModel = pi_rpSecondPage->GetTransfoModel();
         TransfoModelOrientation = pi_rpSecondPage->GetTransfoModelOrientation();
         }
@@ -1062,6 +1066,14 @@ HRFPageDescriptor::HRFPageDescriptor(HFCAccessMode                            pi
         m_pTransfoModel = pTransfoModel->Clone();
         HASSERT(m_pTransfoModel != 0);
         m_TransfoModelOrientation = TransfoModelOrientation;
+        }
+
+    if(pGeoCoding.IsValid())
+        {
+        HFCPtr<HRFCapability> pCapability = new HRFGeocodingCapability(m_AccessMode);
+        HPRECONDITION(m_pPageCapabilities->Supports(pCapability));
+        m_pGeocoding = pGeoCoding->Clone();
+        HASSERT(m_pGeocoding != 0);        
         }
 
     // ClipShape
@@ -1220,8 +1232,6 @@ HRFPageDescriptor::HRFPageDescriptor(HFCAccessMode                            pi
             m_pListOfTag->Set((*TagIterator));
             }
         }
-
-    m_pGeocoding = RasterFileGeocoding::Create();//No geocoding by default, HRFFile MUST set it if supported
 
     // Resolution information
     m_ListOfResolutionDescriptor = pi_rResolutionDescriptors;
