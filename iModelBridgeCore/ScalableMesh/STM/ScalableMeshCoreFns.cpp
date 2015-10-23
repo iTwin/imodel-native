@@ -405,6 +405,7 @@ int bcdtmMultiResolution_tinDecimateRandomSpotsDtmObject
  BC_DTM_OBJ *filteredPtsP              /* <== Pointer To DTM Containing The Filtered Points                */
 )
 {
+#if 0
  int  ret=DTM_SUCCESS,dbg=0,cdbg=0 ;
  long n,m,node1,node2,point,point1,clPtr,numElevationPoints,numPointDiffs ; 
  long firstPoint,lastPoint,saveLastPoint,usePlane=TRUE,excludeBoundary=TRUE ;
@@ -703,6 +704,9 @@ int bcdtmMultiResolution_tinDecimateRandomSpotsDtmObject
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
+ #else
+ return DTM_ERROR;
+ #endif
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -717,6 +721,7 @@ int bcdtmMultiResolution_tileDecimateRandomSpotsDtmObject
  BC_DTM_OBJ *filteredDtmP              /* <== Pointer To DTM Object With The Filtered Points   */
 )
 {
+#if 0
  int  ret=DTM_SUCCESS,dbg=0,tdbg=0 ;
  long n,node1,node2,numMarks,saveLastPoint,numPointDiffs ; 
  long pnt,firstPoint,lastPoint,maxTilePts,minTilePts,startTime ;
@@ -911,7 +916,11 @@ int bcdtmMultiResolution_tileDecimateRandomSpotsDtmObject
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
+ #else 
+ return DTM_ERROR;
+ #endif
 }
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -925,6 +934,7 @@ int bcdtmMultiResolution_tileZToleranceFilterRandomSpotsDtmObject
  BC_DTM_OBJ *filteredDtmP              /* <== Pointer To DTM Object With The Filtered Points   */
 )
 {
+#if 0
  int  ret=DTM_SUCCESS,dbg=0,tdbg=0 ;
  long n,node1,node2,numMarks,saveLastPoint,numPointDiffs ; 
  long pnt,firstPoint,lastPoint,maxTilePts,minTilePts,startTime ;
@@ -1121,7 +1131,11 @@ int bcdtmMultiResolution_tileZToleranceFilterRandomSpotsDtmObject
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
+ #else
+ return DTM_ERROR;
+ #endif
 }
+#if 0
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -4857,4 +4871,5 @@ int bcdtmMultiResolution_filterToLowestResolutionLevelDtmObject
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
-} 
+}
+#endif 

@@ -286,7 +286,7 @@ template<class POINT, class EXTENT> void BuildCombinedDTM (BC_DTM_OBJ* pDtmObjec
 
 template<class POINT> void InsertDTMIntoVector (BC_DTM_OBJ* pDtm, HPMPooledVector<POINT>* outputVector)
 {
-    DTM_TIN_POINT* pBcPt;
+    DPoint3d* pBcPt;
     POINT          pt;                 
     
     //Add the filtered points to the parent node
@@ -308,7 +308,7 @@ template <class POINT, class EXTENT> void SpreadDTMIntoSubNodes (BC_DTM_OBJ* pDt
                                                                  vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>&  subNodes,
                                              size_t numSubNodes)
 {
-    DTM_TIN_POINT* pBcPt;
+    DPoint3d* pBcPt;
 
     // Clear subnodes and reserve points
 

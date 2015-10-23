@@ -610,7 +610,7 @@ int CreateBcDTM(DTMPtr& dtmPtr)
         {
         BcDTMPtr bcDtmObjPtr;
 
-        bcDtmObjPtr = BcDTM::CreateFromDtmHandle(bcDtmP);
+        bcDtmObjPtr = BcDTM::CreateFromDtmHandle(*bcDtmP);
         //bcDtmObjPtr->Release();     
 
         dtmPtr = bcDtmObjPtr.get();
@@ -710,7 +710,7 @@ int TriangulateDTM(Bentley::TerrainModel::DTMPtr&                     dtmPtr,
  
     if (status == 0)
         {
-        BcDTMPtr bcDtmObjPtr(BcDTM::CreateFromDtmHandle(dtmObjP));
+        BcDTMPtr bcDtmObjPtr(BcDTM::CreateFromDtmHandle(*dtmObjP));
         dtmPtr = bcDtmObjPtr.get();            
         }   
 

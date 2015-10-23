@@ -17,6 +17,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #include <DgnPlatform\Tools\ConfigurationManager.h>
 #include <PCLWrapper\INormalCalculator.h>
 #include <eigen\Eigen\Dense>
+#include <TerrainModel/Core/DTMIterators.h>
 
 
 #ifdef SCALABLE_MESH_ATP
@@ -621,7 +622,7 @@ bool GroundDetection::isPointWithinSlopeOfTin(double allowedSlope, DPoint3d& poi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Thomas.Butzbach                 01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-long GroundDetection::triangulation(DTM_TIN_POINT**& dtmPtsPP, BC_DTM_OBJ* dtmObject)
+long GroundDetection::triangulation(DPoint3d**& dtmPtsPP, BC_DTM_OBJ* dtmObject)
     {
     long numTriangles = 0;
     long* trianglesP = 0;
@@ -659,79 +660,86 @@ void addFaceToEdge(bvector<bvector<bpair<int, bvector<int>>>>& edgeMap, int idx1
 void filterInitialTriangulation(std::vector<DPoint3d>& insertedPoints, std::vector<DPoint3d>& toDeletePts,const DPoint3d* dtmP, BcDTMPtr& bcDtmObjPtr, double angle, double height)
     {
 
-    BcDTMMeshPtr mesh = bcDtmObjPtr->GetMesh(TRUE, bcDtmObjPtr->GetTrianglesCount(), NULL, 0);
-    bvector<bvector<int>> listOfFaces(bcDtmObjPtr->GetPointCount());
-    bvector<bvector<bpair<int, bvector<int>>>> edgeMap(mesh->GetPointCount());
-    for (size_t i = 0; i < mesh->GetFaceCount(); ++i)
+    //BcDTMMeshPtr mesh = bcDtmObjPtr->GetMesh(TRUE, bcDtmObjPtr->GetTrianglesCount(), NULL, 0);
+    DTMMeshEnumeratorPtr enumerator = DTMMeshEnumerator::Create (*bcDtmObjPtr);
+    enumerator->SetMaxTriangles (100000000); // Otherwise it could return more than one section.
+
+    //std::vector<DPoint3d> points;
+    //std::vector<int> indices;
+    for (auto pf : *enumerator)
         {
-        auto face = mesh->GetFace((long)i);
-        int idx1 = face->GetMeshPointIndex(0) - 1, idx2 = face->GetMeshPointIndex(1) - 1, idx3 = face->GetMeshPointIndex(2) - 1;
-        listOfFaces[idx1].push_back((int)i);
-        listOfFaces[idx2].push_back((int)i);
-        listOfFaces[idx3].push_back((int)i);
-        addFaceToEdge(edgeMap, idx1, idx2, idx3);
-        addFaceToEdge(edgeMap, idx1, idx3, idx2);
-        addFaceToEdge(edgeMap, idx2, idx1, idx3);
-        addFaceToEdge(edgeMap, idx2, idx3, idx1);
-        addFaceToEdge(edgeMap, idx3, idx1, idx2);
-        addFaceToEdge(edgeMap, idx3, idx2, idx1);
-        }
-    for (size_t i = 0; i < listOfFaces.size(); i++)
-        {
-        bvector<DVec3d> normals;
-        for (size_t j = 0; j < listOfFaces[i].size(); j++)
+        bvector<bvector<int>> listOfFaces(pf->GetPointCount());
+        bvector<bvector<bpair<int, bvector<int>>>> edgeMap(pf->GetPointCount());
+        for (size_t i = 0; i < pf->GetPointIndexCount(); i+=3)
             {
-            auto face = mesh->GetFace((long)listOfFaces[i][j]);
-            DPoint3d pt1 = mesh->GetPoint((long)face->GetMeshPointIndex(0) - 1), pt2 = mesh->GetPoint((long)face->GetMeshPointIndex(1) - 1);
-            DPoint3d pt3 = mesh->GetPoint((long)face->GetMeshPointIndex(2) - 1);
-            DPlane3d pl = DPlane3d::From3Points(pt1, pt2, pt3);
-            normals.push_back(pl.normal);
+            //auto face = mesh->GetFace((long)i);
+            int idx1 = pf->GetPointIndexCP()[i] - 1, idx2 = pf->GetPointIndexCP()[i+1] - 1, idx3 = pf->GetPointIndexCP()[i+2] - 1;
+            listOfFaces[idx1].push_back((int)i);
+            listOfFaces[idx2].push_back((int)i);
+            listOfFaces[idx3].push_back((int)i);
+            addFaceToEdge(edgeMap, idx1, idx2, idx3);
+            addFaceToEdge(edgeMap, idx1, idx3, idx2);
+            addFaceToEdge(edgeMap, idx2, idx1, idx3);
+            addFaceToEdge(edgeMap, idx2, idx3, idx1);
+            addFaceToEdge(edgeMap, idx3, idx1, idx2);
+            addFaceToEdge(edgeMap, idx3, idx2, idx1);
             }
-        size_t nOutlierNormals = 0;
-        for (auto& normal : normals)
+        for (size_t i = 0; i < listOfFaces.size(); i++)
             {
-            for (auto& normal2 : normals)
+            bvector<DVec3d> normals;
+            for (size_t j = 0; j < listOfFaces[i].size(); j++)
                 {
-                if (normal.SmallerUnorientedAngleTo(normal2) > angle*PI / 180)
+                //auto face = mesh->GetFace((long)listOfFaces[i][j]);
+                DPoint3d pt1 = pf->GetPointCP()[(long)pf->GetPointIndexCP()[listOfFaces[i][j]] - 1], pt2 = pf->GetPointCP()[pf->GetPointIndexCP()[listOfFaces[i][j]+1] - 1];
+                DPoint3d pt3 = pf->GetPointCP()[(long)pf->GetPointIndexCP()[listOfFaces[i][j]+2] - 1];
+                DPlane3d pl = DPlane3d::From3Points(pt1, pt2, pt3);
+                normals.push_back(pl.normal);
+                }
+            size_t nOutlierNormals = 0;
+            for (auto& normal : normals)
+                {
+                for (auto& normal2 : normals)
                     {
-                    nOutlierNormals++;
-                    break;
+                    if (normal.SmallerUnorientedAngleTo(normal2) > angle*PI / 180)
+                        {
+                        nOutlierNormals++;
+                        break;
+                        }
                     }
                 }
+            if (nOutlierNormals >= 3)
+                {
+                toDeletePts.push_back(dtmP[i]);
+                }
             }
-        if (nOutlierNormals >= 3)
+        bvector<size_t> mapOfThirdPoints(pf->GetPointCount(),0);
+        for (size_t i = 0; i <edgeMap.size(); ++i)
             {
-            toDeletePts.push_back(dtmP[i]);
+            for (size_t j = 0; j <edgeMap[i].size(); ++j)
+                {
+                if (edgeMap[i][j].second.size() <= 1) continue;
+                DPoint3d pt1 = pf->GetPointCP()[(long)i], pt2 = pf->GetPointCP()[(long)edgeMap[i][j].first];
+                DPoint3d pt3 = pf->GetPointCP()[(long)edgeMap[i][j].second[0]], pt4 = pf->GetPointCP()[(long)edgeMap[i][j].second[1]];
+                DVec3d vec1 = DPlane3d::From3Points(pt1, pt2, pt3).normal, vec2 = DPlane3d::From3Points(pt1, pt2, pt4).normal;
+                DPlane3d pl1 = DPlane3d::From3Points(pt1, pt2, pt3), pl2 = DPlane3d::From3Points(pt1, pt2, pt4);
+                DPoint3d proj1, proj2;
+                pl1.ProjectPoint(proj1, pt4);
+                pl2.ProjectPoint(proj2, pt3);
+                if (DVec3d::FromStartEnd(proj1, pt4).Magnitude() > height)mapOfThirdPoints[edgeMap[i][j].second[1]]++;
+                if (DVec3d::FromStartEnd(proj2, pt3).Magnitude() > height) mapOfThirdPoints[edgeMap[i][j].second[0]]++;
+                }
             }
-        }
-    bvector<size_t> mapOfThirdPoints(bcDtmObjPtr->GetPointCount(),0);
-    for (size_t i = 0; i <edgeMap.size(); ++i)
-        {
-        for (size_t j = 0; j <edgeMap[i].size(); ++j)
+        for (size_t i = 0; i < mapOfThirdPoints.size(); i++)
             {
-            if (edgeMap[i][j].second.size() <= 1) continue;
-            DPoint3d pt1 = mesh->GetPoint((long)i), pt2 = mesh->GetPoint((long)edgeMap[i][j].first);
-            DPoint3d pt3 = mesh->GetPoint((long)edgeMap[i][j].second[0]), pt4 = mesh->GetPoint((long)edgeMap[i][j].second[1]);
-            DVec3d vec1 = DPlane3d::From3Points(pt1, pt2, pt3).normal, vec2 = DPlane3d::From3Points(pt1, pt2, pt4).normal;
-            DPlane3d pl1 = DPlane3d::From3Points(pt1, pt2, pt3), pl2 = DPlane3d::From3Points(pt1, pt2, pt4);
-            DPoint3d proj1, proj2;
-            pl1.ProjectPoint(proj1, pt4);
-            pl2.ProjectPoint(proj2, pt3);
-            if (DVec3d::FromStartEnd(proj1, pt4).Magnitude() > height)mapOfThirdPoints[edgeMap[i][j].second[1]]++;
-            if (DVec3d::FromStartEnd(proj2, pt3).Magnitude() > height) mapOfThirdPoints[edgeMap[i][j].second[0]]++;
+            if (mapOfThirdPoints[i] > 1) toDeletePts.push_back(dtmP[i]);
+            }
+        for (size_t i = 0; i < toDeletePts.size(); i++)
+            {
+            DPoint3d toDelete = toDeletePts[i];
+            auto it = std::find_if(insertedPoints.begin(), insertedPoints.end(), [&toDelete] (DPoint3d& pt) { return fabs(toDelete.x - pt.x) <= 0.001 && fabs(toDelete.y - pt.y) <= 0.001 && fabs(toDelete.z - pt.z) <= 0.001; });
+            if (it != insertedPoints.end()) insertedPoints.erase(it);
             }
         }
-    for (size_t i = 0; i < mapOfThirdPoints.size(); i++)
-        {
-        if (mapOfThirdPoints[i] > 1) toDeletePts.push_back(dtmP[i]);
-        }
-    for (size_t i = 0; i < toDeletePts.size(); i++)
-        {
-        DPoint3d toDelete = toDeletePts[i];
-        auto it = std::find_if(insertedPoints.begin(), insertedPoints.end(), [&toDelete] (DPoint3d& pt) { return fabs(toDelete.x - pt.x) <= 0.001 && fabs(toDelete.y - pt.y) <= 0.001 && fabs(toDelete.z - pt.z) <= 0.001; });
-        if (it != insertedPoints.end()) insertedPoints.erase(it);
-        }
-
     }
 
 
@@ -741,79 +749,91 @@ void GroundDetection::computeStatisticsForTIN(double& allowedSlope, double& allo
     std::set<double> heightGradStats;
     std::set<double> slopeStats;
     // get all triangles
-    BcDTMMeshPtr mesh = bcDtmObjPtr->GetMesh(TRUE, bcDtmObjPtr->GetTrianglesCount(), NULL, 0);
-    bvector<bvector<bpair<int, bvector<int>>>> edgeMap(mesh->GetPointCount());
-    bvector<bvector<double>> distMap(mesh->GetPointCount());
-    double avgDistance = 0;
-    for (size_t i = 0; i < mesh->GetFaceCount(); ++i)
-        {
-        auto face = mesh->GetFace((long)i);
-        int idx1 = face->GetMeshPointIndex(0) - 1, idx2 = face->GetMeshPointIndex(1) - 1, idx3 = face->GetMeshPointIndex(2) - 1;
-        assert(idx1 >= 0 && idx2 >= 0 && idx3 >= 0);
-        addFaceToEdge(edgeMap, idx1, idx2, idx3);
-        addFaceToEdge(edgeMap, idx1, idx3, idx2);
-        addFaceToEdge(edgeMap, idx2, idx1, idx3);
-        addFaceToEdge(edgeMap, idx2, idx3, idx1);
-        addFaceToEdge(edgeMap, idx3, idx1, idx2);
-        addFaceToEdge(edgeMap, idx3, idx2, idx1);
-        DPoint3d pt1 = mesh->GetPoint((long)idx1), pt2 = mesh->GetPoint((long)idx2);
-        DPoint3d pt3 = mesh->GetPoint((long)idx3);
-        double dist12 = DVec3d::FromStartEnd(pt1, pt2).Magnitude(), dist13 = DVec3d::FromStartEnd(pt1, pt3).Magnitude(),
-            dist23 = DVec3d::FromStartEnd(pt3, pt2).Magnitude();
-        distMap[idx1].push_back((dist12 + dist13) / 2);
-        distMap[idx2].push_back((dist12 + dist23) / 2);
-        distMap[idx3].push_back((dist23 + dist13) / 2);
-        avgDistance += dist12 + dist13 + dist23;
-        }
-    avgDistance /= mesh->GetFaceCount() * 3;
-    for (size_t i = 0; i < mesh->GetPointCount(); ++i)
-        {
-        DPoint3d pt = mesh->GetPoint((long)i);
-        heightGradStats.insert(pt.z);
-        }
+    //BcDTMMeshPtr mesh = bcDtmObjPtr->GetMesh(TRUE, bcDtmObjPtr->GetTrianglesCount(), NULL, 0);
+    DTMMeshEnumeratorPtr enumerator = DTMMeshEnumerator::Create (*bcDtmObjPtr);
+    enumerator->SetMaxTriangles (100000000); // Otherwise it could return more than one section.
 
-    for (size_t i = 0; i <edgeMap.size(); ++i)
+    //std::vector<DPoint3d> points;
+    //std::vector<int> indices;
+    for (auto pf : *enumerator)
         {
-        for (size_t j = 0; j <edgeMap[i].size(); ++j)
+        bvector<bvector<bpair<int, bvector<int>>>> edgeMap(pf->GetPointCount());
+        bvector<bvector<double>> distMap(pf->GetPointCount());
+        double avgDistance = 0;
+        for (size_t i = 0; i < pf->GetPointIndexCount(); i+=3)
             {
-            if (edgeMap[i][j].second.size() <= 1) continue;
-            double dist1 = std::accumulate(distMap[i].begin(), distMap[i].end(), 0.0) / distMap[i].size();
-            double dist2 = std::accumulate(distMap[edgeMap[i][j].first].begin(), distMap[edgeMap[i][j].first].end(), 0.0) / distMap[edgeMap[i][j].first].size();
-            if (dist1 > avgDistance && dist2 > avgDistance) continue;
-            DPoint3d pt1 = mesh->GetPoint((long)i), pt2 = mesh->GetPoint((long)edgeMap[i][j].first);
-            DPoint3d pt3 = mesh->GetPoint((long)edgeMap[i][j].second[0]), pt4 = mesh->GetPoint((long)edgeMap[i][j].second[1]);
-            DVec3d vec1 = DPlane3d::From3Points(pt1, pt2, pt3).normal, vec2 = DPlane3d::From3Points(pt1, pt2, pt4).normal;
-            slopeStats.insert(vec1.SmallerUnorientedAngleTo(vec2));
-            DPlane3d pl1 = DPlane3d::From3Points(pt1, pt2, pt3), pl2 = DPlane3d::From3Points(pt1, pt2, pt4);
-            DPoint3d proj1, proj2;
-            pl1.ProjectPoint(proj1, pt4);
-            pl2.ProjectPoint(proj2, pt3);
-            heightStats.insert(DVec3d::FromStartEnd(proj1, pt4).Magnitude());
-            heightStats.insert(DVec3d::FromStartEnd(proj2, pt3).Magnitude());
+            //auto face = pf->GetPointIndexCP()[(long)i];
+            int idx1 = pf->GetPointIndexCP()[(long)i] - 1, idx2 = pf->GetPointIndexCP()[(long)i+1] - 1, idx3 = pf->GetPointIndexCP()[(long)i+2] - 1;
+            assert(idx1 >= 0 && idx2 >= 0 && idx3 >= 0);
+            addFaceToEdge(edgeMap, idx1, idx2, idx3);
+            addFaceToEdge(edgeMap, idx1, idx3, idx2);
+            addFaceToEdge(edgeMap, idx2, idx1, idx3);
+            addFaceToEdge(edgeMap, idx2, idx3, idx1);
+            addFaceToEdge(edgeMap, idx3, idx1, idx2);
+            addFaceToEdge(edgeMap, idx3, idx2, idx1);
+            DPoint3d pt1 = pf->GetPointCP()[(long)idx1], pt2 = pf->GetPointCP()[(long)idx2];
+            DPoint3d pt3 = pf->GetPointCP()[(long)idx3];
+            double dist12 = DVec3d::FromStartEnd(pt1, pt2).Magnitude(), dist13 = DVec3d::FromStartEnd(pt1, pt3).Magnitude(),
+                dist23 = DVec3d::FromStartEnd(pt3, pt2).Magnitude();
+            distMap[idx1].push_back((dist12 + dist13) / 2);
+            distMap[idx2].push_back((dist12 + dist23) / 2);
+            distMap[idx3].push_back((dist23 + dist13) / 2);
+            avgDistance += dist12 + dist13 + dist23;
             }
+        avgDistance /= pf->GetPointIndexCount() * 3;
+        for (size_t i = 0; i < pf->GetPointCount(); ++i)
+            {
+            DPoint3d pt = pf->GetPointCP()[(long)i];
+            heightGradStats.insert(pt.z);
+            }
+
+        for (size_t i = 0; i <edgeMap.size(); ++i)
+            {
+            for (size_t j = 0; j <edgeMap[i].size(); ++j)
+                {
+                if (edgeMap[i][j].second.size() <= 1) continue;
+                double dist1 = std::accumulate(distMap[i].begin(), distMap[i].end(), 0.0) / distMap[i].size();
+                double dist2 = std::accumulate(distMap[edgeMap[i][j].first].begin(), distMap[edgeMap[i][j].first].end(), 0.0) / distMap[edgeMap[i][j].first].size();
+                if (dist1 > avgDistance && dist2 > avgDistance) continue;
+                DPoint3d pt1 = pf->GetPointCP()[(long)i], pt2 = pf->GetPointCP()[(long)edgeMap[i][j].first];
+                DPoint3d pt3 = pf->GetPointCP()[(long)edgeMap[i][j].second[0]], pt4 = pf->GetPointCP()[(long)edgeMap[i][j].second[1]];
+                DVec3d vec1 = DPlane3d::From3Points(pt1, pt2, pt3).normal, vec2 = DPlane3d::From3Points(pt1, pt2, pt4).normal;
+                slopeStats.insert(vec1.SmallerUnorientedAngleTo(vec2));
+                DPlane3d pl1 = DPlane3d::From3Points(pt1, pt2, pt3), pl2 = DPlane3d::From3Points(pt1, pt2, pt4);
+                DPoint3d proj1, proj2;
+                pl1.ProjectPoint(proj1, pt4);
+                pl2.ProjectPoint(proj2, pt3);
+                heightStats.insert(DVec3d::FromStartEnd(proj1, pt4).Magnitude());
+                heightStats.insert(DVec3d::FromStartEnd(proj2, pt3).Magnitude());
+                }
+            }
+        allowedSlope = *std::next(slopeStats.begin(), (int)slopeStats.size()* percentile/100);
+        allowedHeight = *std::next(heightStats.begin(), (int)heightStats.size()*percentile/100);
+        heightgrad = *std::next(heightGradStats.begin(), (int)heightGradStats.size()*percentile / 100);
+        heightgrad -= *heightGradStats.begin();
+        allowedSlope *= 180 / PI;
         }
-    allowedSlope = *std::next(slopeStats.begin(), (int)slopeStats.size()* percentile/100);
-    allowedHeight = *std::next(heightStats.begin(), (int)heightStats.size()*percentile/100);
-    heightgrad = *std::next(heightGradStats.begin(), (int)heightGradStats.size()*percentile / 100);
-    heightgrad -= *heightGradStats.begin();
-    allowedSlope *= 180 / PI;
     }
 
 
 void populateTriangleList(std::vector<FPoint3d>& allTri, BcDTMPtr& bcDtmObjPtr, DPoint3d& minPt)
     {
-    BcDTMMeshPtr mesh;
+    //BcDTMMeshPtr mesh;
+    PolyfaceQueryP pf;
+    DTMMeshEnumeratorPtr enumerator = DTMMeshEnumerator::Create (*bcDtmObjPtr);
+    enumerator->SetMaxTriangles (100000000); 
         {
         std::lock_guard<std::mutex> lock(GroundDetection::s_mutexTriangle);
-        mesh = bcDtmObjPtr->GetMesh(TRUE, bcDtmObjPtr->GetTrianglesCount(), NULL, 0);
+        //mesh = bcDtmObjPtr->GetMesh(TRUE, bcDtmObjPtr->GetTrianglesCount(), NULL, 0);
+        pf = *(enumerator->begin());
         }
 
-    for (size_t i = 0; mesh!= NULL && i < mesh->GetFaceCount(); ++i)
+    for (size_t i = 0; pf!= NULL && i < pf->GetPointIndexCount(); i+=3)
         {
-        auto face = mesh->GetFace((long)i);
-        int idx1 = face->GetMeshPointIndex(0) - 1, idx2 = face->GetMeshPointIndex(1) - 1, idx3 = face->GetMeshPointIndex(2) - 1;
-        DPoint3d pt1 = mesh->GetPoint((long)idx1), pt2 = mesh->GetPoint((long)idx2);
-        DPoint3d pt3 = mesh->GetPoint((long)idx3);
+        //auto face = mesh->GetFace((long)i);
+        int idx1 = pf->GetPointIndexCP()[i] - 1, idx2 = pf->GetPointIndexCP()[i+1] - 1, idx3 = pf->GetPointIndexCP()[i+2] - 1;
+        DPoint3d pt1 = pf->GetPointCP()[(long)idx1], pt2 = pf->GetPointCP()[(long)idx2];
+        DPoint3d pt3 = pf->GetPointCP()[(long)idx3];
         pt1.DifferenceOf(pt1, minPt);
         pt2.DifferenceOf(pt2, minPt);
         pt3.DifferenceOf(pt3, minPt);
@@ -904,7 +924,7 @@ void GroundDetection::filterGroundForTile(QuadSeedPtr currentTile, BcDTMPtr dtmO
 
 
     long numTriangles = 0;
-    DTM_TIN_POINT **dtmPtsPP = 0; /* <== Pointer To Dtm Points Array ( Dpoint3d )       */
+    DPoint3d **dtmPtsPP = 0; /* <== Pointer To Dtm Points Array ( Dpoint3d )       */
     std::vector<DPoint3d> removedPts;
     std::vector<DPoint3d> insertedPoints;
         {
@@ -1229,7 +1249,7 @@ StatusInt GroundDetection::filterGround(std::vector<QuadSeedPtr>& seeds, EditEle
         {
         return ERROR;
         }
-    DTM_TIN_POINT **dtmPtsPP = 0; /* <== Pointer To Dtm Points Array ( Dpoint3d )       */
+    DPoint3d **dtmPtsPP = 0; /* <== Pointer To Dtm Points Array ( Dpoint3d )       */
     triangulation(dtmPtsPP, bcDtmObjPtr->GetTinHandle());
     // get all triangles
 #ifdef SCALABLE_MESH_ATP
@@ -1259,28 +1279,31 @@ StatusInt GroundDetection::filterGround(std::vector<QuadSeedPtr>& seeds, EditEle
     IScalableMeshATP::StoreDouble(ATP_GROUNDDETECTION_TIMINGS_PARAM_ESTIMATION, nTimeToEstimateParams);
 #endif
     //create index and vertex buffer
-    BcDTMMeshPtr mesh = bcDtmObjPtr->GetMesh(TRUE, bcDtmObjPtr->GetTrianglesCount(), NULL, 0);
+   // BcDTMMeshPtr mesh = bcDtmObjPtr->GetMesh(TRUE, bcDtmObjPtr->GetTrianglesCount(), NULL, 0);
+    DTMMeshEnumeratorPtr enumerator = DTMMeshEnumerator::Create (*bcDtmObjPtr);
+    enumerator->SetMaxTriangles (100000000); // Otherwise it could return more than one section.
 
-    std::vector<BcDTMMeshFacePtr> VectorFaces;
-    const int numFaces = mesh->GetFaceCount();
-    VectorFaces.resize(numFaces);
+    auto pf = *(enumerator->begin());
+    //std::vector<BcDTMMeshFacePtr> VectorFaces;
+    //const int numFaces =pf->GetPointIndexCount()/3;
+    //VectorFaces.resize(numFaces);
 
-    const size_t numPoints = mesh->GetPointCount();
+    const size_t numPoints = pf->GetPointCount();
     std::vector<DPoint3d> points;
     std::vector<int> indices;
     for (size_t i = 0; i < numPoints; i++)
-        points.push_back(mesh->GetPoint((int) i));
+        points.push_back(pf->GetPointCP()[(int) i]);
 
-    for (int i = 0; i < numFaces; i++)
+    for (int i = 0; i < pf->GetPointIndexCount(); i+=3)
         {
-        VectorFaces[i] = mesh->GetFace(i);
+        //VectorFaces[i] = mesh->GetFace(i);
 
-        indices.push_back(VectorFaces[i]->GetMeshPointIndex(0) - 1);
-        indices.push_back(VectorFaces[i]->GetMeshPointIndex(1) - 1);
-        indices.push_back(VectorFaces[i]->GetMeshPointIndex(2) - 1);
+        indices.push_back(pf->GetPointIndexCP()[i] - 1);
+        indices.push_back(pf->GetPointIndexCP()[i+1]  - 1);
+        indices.push_back(pf->GetPointIndexCP()[i+2]  - 1);
         }
 
-    VectorFaces.clear();
+    //VectorFaces.clear();
 
     // Now first triangulation is ready (seeds are triangulated)
     // Spatial partition of triangles

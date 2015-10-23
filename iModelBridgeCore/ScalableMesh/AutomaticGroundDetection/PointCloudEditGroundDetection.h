@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-typedef RefCountedPtr<BcDTMMeshFace> IBcDTMMeshFacePtr;
+//typedef RefCountedPtr<BcDTMMeshFace> IBcDTMMeshFacePtr;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                    Thomas.Butzbach                 01/2014
@@ -53,13 +53,13 @@ protected:
     bool        getClosestTriangleToPoint(BC_DTM_OBJ* dtmObject, DPoint3d& point, DPoint3d& pointInFacePlane, std::vector<DPoint3d>& oTriangle, DVec3d& groundNormal, double tolerance, double angle);
    
     //triangulation utilities
-    DPoint3d    nearest_vertex(DPoint3d& evaluatedPts, BcDTMMesh& pMesh);
+    DPoint3d    nearest_vertex(DPoint3d& evaluatedPts, PolyfaceQueryP pMesh);
     StatusInt   setTriangulation(std::vector<DPoint3d>& pPt, BC_DTM_OBJ* dtmP);
     void makeTriangulationForExtent(BC_DTM_OBJ* dtmObj, DPoint3d& minCorner, DPoint3d& maxCorner, std::vector<int>& remainingTriIndices, std::vector<DPoint3d>& insertedPointsPtr, PointCloudQuadNode* quadNode);
     void makeTriangulation(BC_DTM_OBJ* dtmObj, std::vector<DPoint3d>& ptsTriangulate);
     void        makeQuadTreeFromTriangulation(std::vector<DPoint3d>& points, std::vector<int>& indices);
     void        transformDataForSeedsTriangulation(std::vector<DPoint3d>& pPt);
-    long        triangulation(DTM_TIN_POINT**& dtmpPtsPP, BC_DTM_OBJ* dtmObject);
+    long        triangulation(DPoint3d**& dtmpPtsPP, BC_DTM_OBJ* dtmObject);
 
     //compute statistical parameters for a triangulation
     void        computeStatisticsForTIN(double& allowedSlope, double& allowedHeight, double& heightgrad, BcDTMPtr& bcDtmObjPtr, double percentile);

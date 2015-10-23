@@ -45,10 +45,10 @@ struct SMDrapedLine : RefCounted<IDTMDrapedLine>
             ret = SMDrapedPoint::Create(m_linePts[index], DTMDrapedLinePtr((IDTMDrapedLine*)this));
             return DTMStatusInt::DTM_SUCCESS;
             }
-        virtual DTMStatusInt _GetPointByIndex(DPoint3dP ptP, double* distanceP, DTMDrapedLineCode* codeP, unsigned int index) const override
+        virtual DTMStatusInt _GetPointByIndex(DPoint3dR ptP, double* distanceP, DTMDrapedLineCode* codeP, unsigned int index) const override
             {
             if (index >= m_linePts.size()) return DTMStatusInt::DTM_ERROR;
-            *ptP = m_linePts[index];
+            ptP = m_linePts[index];
             return DTMStatusInt::DTM_SUCCESS;
             }
         virtual unsigned int _GetPointCount() const override
@@ -518,7 +518,7 @@ bool MeshTraversalQueue::SetStartPoint(DPoint3d pt)
     }
 
 
-DTMStatusInt ScalableMeshDraping::_DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point)
+DTMStatusInt ScalableMeshDraping::_DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int& drapedType, DPoint3dCR point)
     {
     assert(!"Not implemented");
     return DTMStatusInt::DTM_ERROR;
