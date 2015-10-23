@@ -99,7 +99,7 @@ TEST(PerformanceBentley, bvector)
         for (int i=s_niters-1; i>=0; --i)
             vs[i].a = vs[i].b = (double)i;
         timer.Stop();
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "indexing (down). Integers", s_niters);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "indexing (down). Structs", s_niters);
 
         for (int i=s_niters-1; i>=0; --i)
             ASSERT_EQ (vs[i].a, (double)i);
