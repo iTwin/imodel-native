@@ -126,8 +126,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
     public:
         explicit MissingHandler(uint64_t restrictions, T const& base) : m_restrictions(restrictions)
             {
-            m_domain = &base.GetDomain();
-            m_superClass = base.GetSuperClass();
+            this->m_domain = &base.GetDomain();
+            this->m_superClass = base.GetSuperClass();
             }
     };
 
