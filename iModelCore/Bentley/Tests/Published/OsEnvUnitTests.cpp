@@ -643,7 +643,7 @@ TEST (BuildEnvTests, Win64MacroDefined)
 //---------------------------------------------------------------------------------------
 // @betest                                      Sam.Wilson                      03/2013
 //---------------------------------------------------------------------------------------
-#if !defined (_WIN32)
+#if !defined (_WIN32) && !defined(__APPLE__)
 static void testPosixRegex (char const* regexPattern, char const* str, size_t nmatchesexpected)
     {
     regex_t regex;
