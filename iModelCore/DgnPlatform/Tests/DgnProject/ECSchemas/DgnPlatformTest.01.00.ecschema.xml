@@ -95,7 +95,6 @@
             <ClassHasHandler xmlns="dgn.02.00">
                 <Restrictions>
                     <string>Delete</string>
-                    <string>InsertChild</string>
                     <string>DeleteChild</string>
                     <string>Move</string>
                     <string>SetGeometry</string>
@@ -111,6 +110,7 @@
                 <Restrictions>
                     <string>Clone</string>
                     <string>SetParent</string>
+                    <string>InsertChild</string>
                     <string>UpdateChild</string>
                     <string>SetCategory</string>
                 </Restrictions>

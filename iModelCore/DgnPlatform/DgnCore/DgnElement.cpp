@@ -2638,9 +2638,9 @@ uint64_t GeometricElement::RestrictedAction::Parse(Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_OnChildInsert(DgnElementCR) const { return GetElementHandler()._IsRestrictedAction(RestrictedAction::InsertChild) ? DgnDbStatus::MissingHandler : DgnDbStatus::Success; }
-DgnDbStatus DgnElement::_OnChildUpdate(DgnElementCR, DgnElementCR) const { return GetElementHandler()._IsRestrictedAction(RestrictedAction::UpdateChild) ? DgnDbStatus::MissingHandler : DgnDbStatus::Success; }
-DgnDbStatus DgnElement::_OnChildDelete(DgnElementCR) const { return GetElementHandler()._IsRestrictedAction(RestrictedAction::DeleteChild) ? DgnDbStatus::MissingHandler : DgnDbStatus::Success; }
+DgnDbStatus DgnElement::_OnChildInsert(DgnElementCR) const { return GetElementHandler()._IsRestrictedAction(RestrictedAction::InsertChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success; }
+DgnDbStatus DgnElement::_OnChildUpdate(DgnElementCR, DgnElementCR) const { return GetElementHandler()._IsRestrictedAction(RestrictedAction::UpdateChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success; }
+DgnDbStatus DgnElement::_OnChildDelete(DgnElementCR) const { return GetElementHandler()._IsRestrictedAction(RestrictedAction::DeleteChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success; }
 
 
 /*---------------------------------------------------------------------------------**//**

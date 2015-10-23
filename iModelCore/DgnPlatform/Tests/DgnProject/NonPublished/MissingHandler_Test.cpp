@@ -37,7 +37,6 @@ public:
     static uint64_t GetRestrictions()
         {
         return RestrictedAction::Delete
-             | RestrictedAction::InsertChild
              | RestrictedAction::DeleteChild
              | RestrictedAction::Move
              | RestrictedAction::SetGeometry;
@@ -61,6 +60,7 @@ public:
         {
         return RestrictedAction::Clone
              | RestrictedAction::SetParent
+             | RestrictedAction::InsertChild
              | RestrictedAction::UpdateChild
              | RestrictedAction::SetCategory;
         }
@@ -130,6 +130,8 @@ struct MissingHandlerTest : public ::testing::Test
     template<typename T> void CreateElement(ElemInfo& info, DgnDbR db);
     DgnElementId CreatePhysicalElement(DgnDbR db, DgnElementId parentId = DgnElementId());
     void InitDb(DgnDbR db);
+    void TestRestrictions(ElemInfo const& info, DgnDbR db, uint64_t restrictions);
+    void TestDelete(DgnElementId elemId, DgnDbR db, bool allowed);
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -183,6 +185,118 @@ void MissingHandlerTest::InitDb(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+void MissingHandlerTest::TestDelete(DgnElementId elemId, DgnDbR db, bool allowed)
+    {
+    auto cpElem = db.Elements().Get<PhysicalElement>(elemId);
+    ASSERT_TRUE(cpElem.IsValid());
+    auto status = cpElem->Delete();
+    if (allowed)
+        EXPECT_EQ(DgnDbStatus::Success, status);
+    else
+        EXPECT_EQ(DgnDbStatus::MissingHandler, status);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static CurveVectorPtr computeShape(double len)
+    {
+    DPoint3d pts[6];
+    pts[0] = DPoint3d::From(-len, -len);
+    pts[1] = DPoint3d::From(+len, -len);
+    pts[2] = DPoint3d::From(+len, +len);
+    pts[3] = DPoint3d::From(-len, +len);
+    pts[4] = pts[0];
+    pts[5] = pts[0];
+    pts[5].z = 1;
+
+    return CurveVector::CreateLinear(pts, _countof(pts), CurveVector::BOUNDARY_TYPE_Open);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint64_t restrictions)
+    {
+#define ALLOWED(ACTION) (0 == (restrictions & Restriction:: ## ACTION))
+
+    // Look up the element
+    PhysicalElementCPtr cpElem = db.Elements().Get<PhysicalElement>(info.m_elemId);
+    ASSERT_TRUE(cpElem.IsValid());
+
+    // Verify handler
+    EXPECT_EQ(0 != restrictions, cpElem->GetElementHandler()._IsMissingHandler());
+    EXPECT_TRUE(nullptr != dynamic_cast<dgn_ElementHandler::Physical*>(&cpElem->GetElementHandler()));
+
+    // Clone
+    DgnDbStatus status;
+    auto clone = cpElem->Clone(&status);
+    EXPECT_EQ(clone.IsValid(), ALLOWED(Clone));
+    EXPECT_EQ(DgnDbStatus::MissingHandler == status, !ALLOWED(Clone));
+    if (clone.IsValid())
+        {
+        EXPECT_EQ(&clone->GetElementHandler(), &cpElem->GetElementHandler());
+        EXPECT_EQ(clone->GetElementClassId(), cpElem->GetElementClassId());
+        }
+
+    // Change parent
+    auto pElem = cpElem->MakeCopy<PhysicalElement>();
+    DgnElementId parentId;
+    ASSERT_TRUE(pElem.IsValid());
+    status = pElem->SetParentId(parentId);
+    EXPECT_EQ(DgnDbStatus::MissingHandler == status, !ALLOWED(SetParent));
+    EXPECT_EQ(ALLOWED(SetParent), pElem->GetParentId() == parentId);
+
+    // Change category
+    status = pElem->SetCategoryId(m_alternateCategoryId);
+    EXPECT_EQ(DgnDbStatus::MissingHandler == status, !ALLOWED(SetCategory));
+    EXPECT_EQ(ALLOWED(SetCategory), pElem->GetCategoryId() == m_alternateCategoryId);
+
+    // Change placement
+    Placement3d placement;
+    status = pElem->SetPlacement(placement);
+    EXPECT_EQ(DgnDbStatus::MissingHandler == status, !ALLOWED(Move));
+
+    // Insert child
+    DgnElementId newChildId = CreatePhysicalElement(db, info.m_elemId);
+    EXPECT_EQ(newChildId.IsValid(), ALLOWED(InsertChild));
+
+    // Modify child
+    PhysicalElementCPtr cpChild = db.Elements().Get<PhysicalElement>(info.m_childId);
+    PhysicalElementPtr pChild = cpChild.IsValid() ? cpChild->MakeCopy<PhysicalElement>() : nullptr;
+    ASSERT_TRUE(pChild.IsValid());
+    EXPECT_EQ(DgnDbStatus::Success, pChild->SetCategoryId(m_alternateCategoryId));
+    EXPECT_EQ(pChild->Update().IsValid(), ALLOWED(UpdateChild));
+
+    // Delete child (schema is set up so that one element only supports insert, the other only supports delete - so try to delete the newly-added child
+    if (newChildId.IsValid())
+        {
+        cpChild = db.Elements().Get<PhysicalElement>(newChildId);
+        ASSERT_TRUE(cpChild.IsValid());
+        status = cpChild->Delete();
+        if (ALLOWED(DeleteChild))
+            EXPECT_EQ(status, DgnDbStatus::Success);
+        else
+            EXPECT_EQ(status, DgnDbStatus::ParentBlockedChange);
+        }
+
+    // Change geometry
+    auto model = db.Models().Get<PhysicalModel>(m_defaultModelId);
+    ASSERT_TRUE(model.IsValid());
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, pElem->GetCategoryId(), placement.GetOrigin());
+    ASSERT_TRUE(builder.IsValid());
+    CurveVectorPtr shape = computeShape(100);
+    builder->Append(*shape);
+    DgnConeDetail cylinderDetail(DPoint3d::From(0,0,0), DPoint3d::From(0,0,3), 1.5, 1.5, true);
+    ISolidPrimitivePtr cylinder = ISolidPrimitive::CreateDgnCone(cylinderDetail);
+    ASSERT_TRUE(cylinder.IsValid());
+    builder->Append(*cylinder);
+    EXPECT_EQ(SUCCESS == builder->SetGeomStreamAndPlacement(*pElem), ALLOWED(SetGeometry));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MissingHandlerTest, HandlerRestrictions)
     {
     static const WCharCP s_dbName = L"HandlerRestrictions.idgndb";
@@ -205,6 +319,10 @@ TEST_F(MissingHandlerTest, HandlerRestrictions)
 
         ASSERT_TRUE(nullptr != db->Domains().FindDomain(MHTEST_SCHEMA));
 
+        // Confirm all operations are permitted while handlers are loaded
+        TestRestrictions(m_elem1Info, *db, 0);
+        TestRestrictions(m_elem2Info, *db, 0);
+
         // Host terminated; DgnDb closed; domain and handlers no longer registered
         }
 
@@ -215,6 +333,30 @@ TEST_F(MissingHandlerTest, HandlerRestrictions)
         ASSERT_TRUE(db.IsValid());
 
         ASSERT_TRUE(nullptr == db->Domains().FindDomain(MHTEST_SCHEMA));
+
+        // Confirm restricted operations are prohibited when handler not available
+        TestRestrictions(m_elem1Info, *db, Elem1::GetRestrictions());
+        TestRestrictions(m_elem2Info, *db, Elem2::GetRestrictions());
+
+        // Confirm deletion restriction (NOTE: will result in our Elem2 element being deleted
+        TestDelete(m_elem1Info.m_elemId, *db, false);
+        TestDelete(m_elem2Info.m_elemId, *db, true);
+        }
+
+    // Reopen the dgndb once more, with handlers loaded again
+        {
+        ScopedDgnHost host;
+        DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, fullDgnDbFileName, DgnDb::OpenParams(BeSQLite::Db::OpenMode::ReadWrite));
+        ASSERT_TRUE(db.IsValid());
+
+        // register domain and handlers
+        MissingHandlerDomain domain;
+        DgnDomains::RegisterDomain(domain);
+        domain.ImportSchema(*db, T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+
+        // Confirm operations are all supported again now that handler is available
+        TestRestrictions(m_elem1Info, *db, 0);
+        TestDelete(m_elem1Info.m_elemId, *db, true);
         }
     }
 

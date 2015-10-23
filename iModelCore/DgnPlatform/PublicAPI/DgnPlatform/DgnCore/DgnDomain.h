@@ -27,7 +27,7 @@
 #define DOMAINHANDLER_DECLARE_MEMBERS_NO_CTOR(__classname__,__exporter__) \
     private:   __exporter__ static __classname__*& z_PeekInstance(); \
                             static __classname__* z_CreateInstance(); \
-    protected: virtual Dgn::DgnDomain::Handler* _CreateMissingHandler(uint64_t restrictions) const override {return new Dgn::DgnDomain::MissingHandler<__classname__>(restrictions);}\
+    protected: virtual Dgn::DgnDomain::Handler* _CreateMissingHandler(uint64_t restrictions) const override {return new Dgn::DgnDomain::MissingHandler<__classname__>(restrictions, *this);}\
     public:    __exporter__ static __classname__& GetHandler() {return z_Get##__classname__##Instance();}\
                __exporter__ static __classname__& z_Get##__classname__##Instance();
 
@@ -124,7 +124,11 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         virtual bool _IsRestrictedAction(uint64_t restrictedAction) const override { return 0 != (m_restrictions & restrictedAction); }
         virtual bool _IsMissingHandler() const override { return true; }
     public:
-        explicit MissingHandler(uint64_t restrictions) : m_restrictions(restrictions) { }
+        explicit MissingHandler(uint64_t restrictions, T const& base) : m_restrictions(restrictions)
+            {
+            m_domain = &base.GetDomain();
+            m_superClass = base.GetSuperClass();
+            }
     };
 
     //! A DgnDomain::Handler is a C++ singleton object that provides an implementation for an ECClass and all of its subclasses.
@@ -253,7 +257,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         void SetSuperClass(Handler* super) {m_superClass = super;}
         void SetDomain(DgnDomain& domain) {m_domain = &domain;}
         DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&);
-        virtual Handler* _CreateMissingHandler(uint64_t restrictions) const { return new MissingHandler<Handler>(restrictions); }
+        virtual Handler* _CreateMissingHandler(uint64_t restrictions) const { return new MissingHandler<Handler>(restrictions, *this); }
         virtual uint64_t _ParseRestrictedAction(Utf8CP restriction) const { return RestrictedAction::Parse(restriction); }
 
         Handler* GetRootClass();
