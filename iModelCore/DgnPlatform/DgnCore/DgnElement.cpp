@@ -18,7 +18,9 @@
 #define DGN_ELEMENT_PROPNAME_LASTMOD "LastMod"
 #define DGN_GEOMETRICELEMENT_PROPNAME_CATEGORYID "CategoryId"
 
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 DgnElement::Item::Key&  DgnElement::Item::GetKey() {static Key s_key; return s_key;}
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
@@ -1230,11 +1232,12 @@ ElementHandlerR DgnElement::GetElementHandler() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDomain::Handler* DgnElement::GetItemOrElementHandler() const
     {
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
     DgnClassId classId = DgnElement::Item::QueryExistingItemClass(*this);
 
     if (classId.IsValid())
         return dgn_AspectHandler::Aspect::FindHandler(GetDgnDb(), classId);
-
+#endif
     return &GetElementHandler();
     }
 
@@ -1764,12 +1767,13 @@ DgnElement::UniqueAspect* DgnElement::UniqueAspect::Find(DgnElementCR el, ECClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::UniqueAspect::SetAspect(DgnElementR el, UniqueAspect& newAspect)
     {
-    if (nullptr != dynamic_cast<Item*>(&newAspect))
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
+        if (nullptr != dynamic_cast<Item*>(&newAspect))
         {
         BeAssert(false && "You must use the DgnElement::Item class to work with Items");
         return;
         }
-
+#endif
     SetAspect0(el, newAspect);
     newAspect.m_changeType = ChangeType::Write;
     }
@@ -1811,7 +1815,7 @@ DgnElement::UniqueAspect* DgnElement::UniqueAspect::GetAspectP(DgnElementR el, E
 void DgnElement::UniqueAspect::SetAspect0(DgnElementCR el, UniqueAspect& newItem)
     {
     Key& key = newItem.GetKey(el.GetDgnDb());
-    el.DropAppData(key);  // remove any existing cached Item
+    el.DropAppData(key);  // remove any existing cached aspect
     el.AddAppData(key, &newItem);
     }
 
@@ -1846,11 +1850,13 @@ DgnElement::UniqueAspect* DgnElement::UniqueAspect::Load(DgnElementCR el, DgnCla
     if (!aspect.IsValid())
         return nullptr;
 
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
     if (nullptr != dynamic_cast<Item*>(aspect.get()))
         {
         BeAssert(false); // You must use the DgnElement::Item class to load Items
         return nullptr;
         }
+#endif
 
     SetAspect0(el, *aspect);
     aspect->m_changeType = ChangeType::None; // aspect starts out clean
@@ -1883,6 +1889,7 @@ DgnDbStatus DgnElement::UniqueAspect::_DeleteInstance(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 DgnDbStatus DgnElement::Item::_DeleteInstance(DgnElementCR el)
     {
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementItem) " WHERE ECInstanceId=?");
@@ -1890,6 +1897,7 @@ DgnDbStatus DgnElement::Item::_DeleteInstance(DgnElementCR el)
     DbResult status = stmt->Step();
     return (BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Sam.Wilson                    03/2015
@@ -1911,6 +1919,7 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Sam.Wilson                    03/2015
 //---------------------------------------------------------------------------------------
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 ECInstanceKey DgnElement::Item::_QueryExistingInstanceKey(DgnElementCR el)
     {
     // We know the ID, and we know that the instance will be in the dgn.ElementItem table if it exists. See if it's there.
@@ -1919,10 +1928,12 @@ ECInstanceKey DgnElement::Item::_QueryExistingInstanceKey(DgnElementCR el)
         return ECInstanceKey();
     return ECInstanceKey(classId.GetValue(), el.GetElementId());
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Sam.Wilson                    03/2015
 //---------------------------------------------------------------------------------------
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 DgnClassId DgnElement::Item::QueryExistingItemClass(DgnElementCR el)
     {
     // We know the ID, and we know that the instance will be in the dgn.ElementItem table if it exists. See if it's there.
@@ -1933,10 +1944,12 @@ DgnClassId DgnElement::Item::QueryExistingItemClass(DgnElementCR el)
         return DgnClassId();
     return DgnClassId(getItemClass->GetValueId<DgnClassId>(0));
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 DgnDbStatus DgnElement::Item::LoadPropertiesIntoInstance(IECInstancePtr& instance, DgnElementCR el)
     {
     DgnDbR db = el.GetDgnDb();
@@ -1964,10 +1977,12 @@ DgnDbStatus DgnElement::Item::LoadPropertiesIntoInstance(IECInstancePtr& instanc
 
     return DgnDbStatus::Success;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 Utf8CP DgnElement::Item::GetECSchemaNameOfInstance(IECInstanceCP instance)
     {
     if (nullptr == instance)
@@ -1978,10 +1993,12 @@ Utf8CP DgnElement::Item::GetECSchemaNameOfInstance(IECInstanceCP instance)
     
     return instance->GetClass().GetSchema().GetName().c_str();
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 Utf8CP DgnElement::Item::GetECClassNameOfInstance(IECInstanceCP instance)
     {
     if (nullptr == instance)
@@ -1992,36 +2009,44 @@ Utf8CP DgnElement::Item::GetECClassNameOfInstance(IECInstanceCP instance)
     
     return instance->GetClass().GetName().c_str();
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 DgnElement::Item* DgnElement::Item::Find(DgnElementCR el)
     {
     return (DgnElement::Item*)el.FindAppData(GetKey());
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 void DgnElement::Item::SetItem0(DgnElementCR el, Item& newItem)
     {
     el.DropAppData(GetKey());  // remove any existing cached Item
     el.AddAppData(GetKey(), &newItem);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 void DgnElement::Item::SetItem(DgnElementR el, Item& newItem)
     {
     SetItem0(el, newItem);
     newItem.m_changeType = ChangeType::Write;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 DgnElement::Item const* DgnElement::Item::GetItem(DgnElementCR el)
     {
     Item const* item = Find(el);
@@ -2036,10 +2061,12 @@ DgnElement::Item const* DgnElement::Item::GetItem(DgnElementCR el)
         }
     return item;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 DgnElement::Item* DgnElement::Item::GetItemP(DgnElementR el)
     {
     Item* item = const_cast<Item*>(GetItem(el));
@@ -2048,10 +2075,12 @@ DgnElement::Item* DgnElement::Item::GetItemP(DgnElementR el)
     item->m_changeType = ChangeType::Write;
     return item;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 DgnElement::Item* DgnElement::Item::Load(DgnElementCR el)
     {
     RefCountedPtr<DgnElement::UniqueAspect> aspect = Load0(el, QueryExistingItemClass(el));
@@ -2068,28 +2097,34 @@ DgnElement::Item* DgnElement::Item::Load(DgnElementCR el)
     SetItem0(el, *item);
     return item;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 DgnDbStatus DgnElement::Item::CallGenerateGeometry(DgnElementR el, GenerateReason reason)
     {
     GeometricElementP gel = el.ToGeometricElementP();
     return nullptr == gel ? DgnDbStatus::Success : _GenerateElementGeometry(*gel, reason);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 DgnDbStatus DgnElement::Item::GenerateElementGeometry(GeometricElementR el, GenerateReason reason)
     {
     Item* item = GetItemP(el);
     return nullptr == item ? DgnDbStatus::NotFound : item->_GenerateElementGeometry(el, reason);
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 DgnDbStatus DgnElement::Item::ExecuteEGA(DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, IECInstanceCR egaInstance)
     {
     ECClassCR ecclass = egaInstance.GetClass();
@@ -2131,10 +2166,12 @@ DgnDbStatus DgnElement::Item::ExecuteEGA(DgnElementR el, DPoint3dCR origin, YawP
     BeAssert(false && "TBD - Unrecognized EGA type.");
     return DgnDbStatus::NotEnabled;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 DgnDbStatus InstanceBackedItem::_GenerateElementGeometry(GeometricElementR el, GenerateReason)
     {
     Placement3d placement;
@@ -2187,6 +2224,7 @@ DgnDbStatus InstanceBackedItem::_LoadProperties(DgnElementCR el)
 
     return DgnDbStatus::Success;
     }
+#endif
 
 BEGIN_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
@@ -2249,12 +2287,14 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 DgnDbStatus InstanceBackedItem::_UpdateProperties(DgnElementCR el)
     {
     SetInstanceId(ECInstanceId(el.GetElementId().GetValue()));
     ECInstanceUpdater& updater = CachedECInstanceUpdaters::GetECInstanceUpdater(el.GetDgnDb(), m_instance->GetClass());
     return (BSISUCCESS != updater.Update(*m_instance)) ? DgnDbStatus::WriteError : DgnDbStatus::Success;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15

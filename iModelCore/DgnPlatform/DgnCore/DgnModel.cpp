@@ -1585,7 +1585,11 @@ DgnDbStatus DgnModel::_ImportElementsFrom(DgnModelCR sourceModel, DgnImportConte
 DgnDbStatus DgnModel::_ImportElementAspectsFrom(DgnModelCR sourceModel, DgnImportContext& importer)
     {
     // This base class implementation of _ImportElementAspectsFrom knows only the ElementAspect subclasses that are defined by the
-    //  base Dgn schema. That is, only DgnItem.
+    //  base Dgn schema. 
+    
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
+    
+    // That is, only DgnItem.
 
 
     // Step through all items in the source model
@@ -1621,6 +1625,7 @@ DgnDbStatus DgnModel::_ImportElementAspectsFrom(DgnModelCR sourceModel, DgnImpor
         DgnElement::Item::SetItem(*ccel, *ccitem);
         ccel->Update();
         }
+#endif
     return DgnDbStatus::Success;
     }
 
