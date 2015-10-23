@@ -507,7 +507,9 @@ BentleyStatus TxnManager::MergeChanges(ChangeStream& changeStream)
             // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
             T_HOST.GetTxnAdmin()._OnCommit(*this);
 
-            DbResult result = SaveCurrentChange(indirectChanges, "Merge");
+            Utf8String mergeComment = DgnCoreL10N::GetString(DgnCoreL10N::REVISION_Merge());
+
+            DbResult result = SaveCurrentChange(indirectChanges, mergeComment.c_str());
             if (BE_SQLITE_DONE != result)
                 status = ERROR;
             }
