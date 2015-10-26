@@ -99,7 +99,7 @@ ClassNameExp const& classNameExp
     if (!status.IsSuccess())
         return status;
 
-    if (auto whereClauseExp = exp.GetOptWhereClauseExp ())
+    if (auto whereClauseExp = exp.GetWhereClauseExp ())
         {
         status = ECSqlExpPreparer::PrepareWhereExp (deleteSqlSnippets.m_whereClauseNativeSqlSnippet, ctx, whereClauseExp);
         if (!status.IsSuccess())

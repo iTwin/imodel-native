@@ -2350,6 +2350,30 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_GetParameterIndex)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlTestFixture, NoECClassIdFilterOption)
+    {
+    const auto perClassRowCount = 10;
+    // Create and populate a sample project
+    auto& ecdb = SetUp("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ECInstanceId FROM ecsql.TH3 WHERE ECInstanceId=?"));
+    Utf8String nativeSql (statement.GetNativeSql());
+    ASSERT_TRUE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ECInstanceId FROM ecsql.TH3 WHERE ECInstanceId=? OPTIONS NoECClassIdFilter"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_FALSE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  08/15
 //+---------------+---------------+---------------+---------------+---------------+------
 struct PropertyPathEntry

@@ -687,26 +687,30 @@ Utf8String SelectClauseExp::_ToECSql() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-SingleSelectStatementExp::SingleSelectStatementExp (SqlSetQuantifier selectionType, std::unique_ptr<SelectClauseExp> selection, std::unique_ptr<FromExp> from, std::unique_ptr<WhereExp> where, std::unique_ptr<OrderByExp> orderby, std::unique_ptr<GroupByExp> groupby, std::unique_ptr<HavingExp> having, std::unique_ptr<LimitOffsetExp> limitOffsetExp ) 
-    : QueryExp (), m_selectionType (selectionType), m_whereClauseIndex (UNSET_CHILDINDEX),  m_orderByClauseIndex (UNSET_CHILDINDEX), m_groupByClauseIndex (UNSET_CHILDINDEX), m_havingClauseIndex (UNSET_CHILDINDEX), m_limitOffsetClauseIndex (UNSET_CHILDINDEX), m_finalizeParsingArgCache (nullptr)
+SingleSelectStatementExp::SingleSelectStatementExp(SqlSetQuantifier selectionType, std::unique_ptr<SelectClauseExp> selection, std::unique_ptr<FromExp> from, std::unique_ptr<WhereExp> where, std::unique_ptr<OrderByExp> orderby, std::unique_ptr<GroupByExp> groupby, std::unique_ptr<HavingExp> having, std::unique_ptr<LimitOffsetExp> limitOffsetExp, std::unique_ptr<OptionsExp> optionsExp)
+    : QueryExp(), m_selectionType(selectionType), m_whereClauseIndex(UNSET_CHILDINDEX), m_orderByClauseIndex(UNSET_CHILDINDEX), m_groupByClauseIndex(UNSET_CHILDINDEX), m_havingClauseIndex(UNSET_CHILDINDEX), m_limitOffsetClauseIndex(UNSET_CHILDINDEX), m_optionsClauseIndex(UNSET_CHILDINDEX), m_finalizeParsingArgCache(nullptr)
     {
     //WARNING: Do not change the order of following
-    m_fromClauseIndex = AddChild (std::move (from));
-    m_selectClauseIndex = AddChild (std::move (selection));
-    if (where != nullptr) 
-        m_whereClauseIndex = static_cast<int> (AddChild (std::move (where)));
+    m_fromClauseIndex = AddChild(std::move(from));
+    m_selectClauseIndex = AddChild(std::move(selection));
 
-    if (orderby != nullptr) 
-        m_orderByClauseIndex = static_cast<int> (AddChild (std::move (orderby)));
+    if (where != nullptr)
+        m_whereClauseIndex = (int) AddChild(std::move(where));
 
-    if (groupby != nullptr) 
-        m_groupByClauseIndex = static_cast<int> (AddChild (std::move (groupby)));
+    if (orderby != nullptr)
+        m_orderByClauseIndex = (int) AddChild(std::move(orderby));
 
-    if (having != nullptr) 
-        m_havingClauseIndex = static_cast<int> (AddChild (std::move (having)));
+    if (groupby != nullptr)
+        m_groupByClauseIndex = (int) AddChild(std::move(groupby));
 
-    if (limitOffsetExp != nullptr) 
-        m_limitOffsetClauseIndex = static_cast<int> (AddChild (std::move (limitOffsetExp)));
+    if (having != nullptr)
+        m_havingClauseIndex = (int) AddChild(std::move(having));
+
+    if (limitOffsetExp != nullptr)
+        m_limitOffsetClauseIndex = (int) AddChild(std::move(limitOffsetExp));
+
+    if (optionsExp != nullptr)
+        m_optionsClauseIndex = (int) AddChild(std::move(optionsExp));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -780,28 +784,28 @@ Utf8String SingleSelectStatementExp::_ToECSql() const
     tmp+= " ";
     tmp+= GetFrom()->ToECSql();
 
-    if (GetOptWhere() != nullptr)
+    if (GetWhere() != nullptr)
         {
         tmp+= " ";
-        tmp+= GetOptWhere()->ToECSql();
+        tmp+= GetWhere()->ToECSql();
         }
 
-    if (GetOptGroupBy() != nullptr)
+    if (GetGroupBy() != nullptr)
         {
         tmp+= " ";
-        tmp+= GetOptGroupBy()->ToECSql();
+        tmp+= GetGroupBy()->ToECSql();
         }
 
-    if (GetOptOrderBy() != nullptr)
+    if (GetOrderBy() != nullptr)
         {
         tmp+= " ";
-        tmp+= GetOptOrderBy()->ToECSql();
+        tmp+= GetOrderBy()->ToECSql();
         }
 
-    if (GetOptHaving() != nullptr)
+    if (GetHaving() != nullptr)
         {
         tmp+= " ";
-        tmp+= GetOptHaving()->ToECSql();
+        tmp+= GetHaving()->ToECSql();
         }
 
     if (GetLimitOffset() != nullptr)

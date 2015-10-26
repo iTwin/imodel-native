@@ -17,15 +17,18 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-UpdateStatementExp::UpdateStatementExp (unique_ptr<ClassRefExp> classNameExp, unique_ptr<AssignmentListExp> assignmentListExp, unique_ptr<WhereExp> whereClauseExp)
-    : Exp (), m_whereClauseIndex (UNSET_CHILDINDEX)
+UpdateStatementExp::UpdateStatementExp (unique_ptr<ClassRefExp> classNameExp, unique_ptr<AssignmentListExp> assignmentListExp, unique_ptr<WhereExp> whereClauseExp, unique_ptr<OptionsExp> optionsExp)
+    : Exp (), m_whereClauseIndex (UNSET_CHILDINDEX), m_optionsClauseIndex(UNSET_CHILDINDEX)
     {
     BeAssert (classNameExp->GetType () == Exp::Type::ClassName);
     m_classNameExpIndex = AddChild (move (classNameExp));
     m_assignmentListExpIndex = AddChild (move (assignmentListExp));
 
     if (whereClauseExp != nullptr)
-        m_whereClauseIndex = static_cast<int> (AddChild (move (whereClauseExp)));
+        m_whereClauseIndex = (int) AddChild (move (whereClauseExp));
+
+    if (optionsExp != nullptr)
+        m_optionsClauseIndex = (int) AddChild(move(optionsExp));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -71,7 +74,7 @@ AssignmentListExp const* UpdateStatementExp::GetAssignmentListExp () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-WhereExp const* UpdateStatementExp::GetOptWhereClauseExp () const
+WhereExp const* UpdateStatementExp::GetWhereClauseExp () const
     {
     if (m_whereClauseIndex < 0)
         return nullptr;
@@ -90,7 +93,7 @@ Utf8String UpdateStatementExp::_ToECSql () const
 
     ecsql.append ("SET ").append (GetAssignmentListExp ()->ToECSql ());
 
-    auto whereClauseExp = GetOptWhereClauseExp ();
+    auto whereClauseExp = GetWhereClauseExp ();
     if (whereClauseExp != nullptr)
         ecsql.append (" ").append (whereClauseExp->ToECSql ());
 

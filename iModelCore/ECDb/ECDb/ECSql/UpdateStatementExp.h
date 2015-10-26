@@ -10,6 +10,7 @@
 
 #include "ClassRefExp.h"
 #include "ListExp.h"
+#include "OptionsExp.h"
 #include "WhereExp.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -23,6 +24,7 @@ private:
     size_t m_classNameExpIndex;
     size_t m_assignmentListExpIndex;
     int m_whereClauseIndex;
+    int m_optionsClauseIndex;
 
     std::unique_ptr<RangeClassRefList> m_finalizeParsingArgCache;
 
@@ -31,11 +33,12 @@ private:
     virtual Utf8String _ToString () const override { return "Update"; }
 
 public:
-    UpdateStatementExp (std::unique_ptr<ClassRefExp> classNameExp, std::unique_ptr<AssignmentListExp> assignmentListExp, std::unique_ptr<WhereExp> whereClauseExp);
+    UpdateStatementExp(std::unique_ptr<ClassRefExp>, std::unique_ptr<AssignmentListExp>, std::unique_ptr<WhereExp>, std::unique_ptr<OptionsExp>);
 
     ClassNameExp const* GetClassNameExp () const;
     AssignmentListExp const* GetAssignmentListExp () const;
-    WhereExp const* GetOptWhereClauseExp () const;
+    WhereExp const* GetWhereClauseExp () const;
+    OptionsExp const* GetOptionsClauseExp() const;
     };
 
 

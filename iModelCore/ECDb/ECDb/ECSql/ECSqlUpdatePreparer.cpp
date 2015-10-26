@@ -66,7 +66,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
         ctx.SetNativeNothingToUpdate(true);
 
     bool hasWhereClause = false;
-    if (auto whereClauseExp = exp.GetOptWhereClauseExp ())
+    if (auto whereClauseExp = exp.GetWhereClauseExp ())
         {
         nativeSqlBuilder.AppendSpace ();
         status = ECSqlExpPreparer::PrepareWhereExp(nativeSqlBuilder, ctx, whereClauseExp);
@@ -155,7 +155,7 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareStepTask (ECSqlPrepareContext& ctx, Upda
 
     EmbeddedECSqlStatement* selectorStmt = stepTasks.GetSelector(true);
     selectorStmt->Initialize(ctx, ctx.GetParentArrayProperty(), nullptr);
-    Utf8String selectorQuery = ECSqlPrepareContext::CreateECInstanceIdSelectionQuery(ctx, *exp.GetClassNameExp(), exp.GetOptWhereClauseExp());
+    Utf8String selectorQuery = ECSqlPrepareContext::CreateECInstanceIdSelectionQuery(ctx, *exp.GetClassNameExp(), exp.GetWhereClauseExp());
     ECSqlStatus stat = selectorStmt->Prepare(classMap.GetECDbMap().GetECDbR(), selectorQuery.c_str());
     if (!stat.IsSuccess())
         {
@@ -163,7 +163,7 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareStepTask (ECSqlPrepareContext& ctx, Upda
         return stat;
         }
 
-    int parameterIndex = ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause(exp, exp.GetOptWhereClauseExp());
+    int parameterIndex = ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause(exp, exp.GetWhereClauseExp());
     int nParamterToBind = ((int) ecsqlParameterMap.Count()) - parameterIndex;
     for (int j = 1; j <= nParamterToBind; j++)
         {

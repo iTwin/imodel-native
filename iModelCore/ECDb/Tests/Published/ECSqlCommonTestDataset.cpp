@@ -801,6 +801,12 @@ ECSqlTestDataset ECSqlCommonTestDataset::OptionsTests(ECSqlType ecsqlType, ECDbC
         ecsql.Sprintf("%s OPTIONS myopt=", pClassECSqlStub.c_str());
         ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "option value is missing");
 
+        ecsql.Sprintf("%s OPTIONS myopt myopt", pClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "duplicate options not allowed");
+
+        ecsql.Sprintf("%s OPTIONS myopt=1 myopt", pClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "duplicate options not allowed");
+
         ecsql.Sprintf("%s OPTIONS myopt", pClassECSqlStub.c_str());
         AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
 

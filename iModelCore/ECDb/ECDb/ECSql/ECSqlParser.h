@@ -124,6 +124,7 @@ private:
     BentleyStatus parse_datetime_value_fct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
 
     BentleyStatus parse_ecclassid_fct_spec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus parse_ecsqloption(std::unique_ptr<OptionExp>&, connectivity::OSQLParseNode const*) const;
 
     BentleyStatus parse_fct_spec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus parse_and_add_functionarg(FunctionCallExp&, connectivity::OSQLParseNode const*) const;
@@ -157,6 +158,7 @@ private:
     BentleyStatus parse_opt_all_distinct(SqlSetQuantifier&, connectivity::OSQLParseNode const*) const;
     BentleyStatus parse_opt_asc_desc(OrderBySpecExp::SortDirection&, connectivity::OSQLParseNode const*) const;
     BentleyStatus parse_opt_column_ref_commalist(std::unique_ptr<PropertyNameListExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus parse_opt_ecsqloptions_clause(std::unique_ptr<OptionsExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus parse_opt_where_clause(std::unique_ptr<WhereExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus parse_order_by_clause(std::unique_ptr<OrderByExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus parse_outer_join_type(ECSqlJoinType&, connectivity::OSQLParseNode const*) const;

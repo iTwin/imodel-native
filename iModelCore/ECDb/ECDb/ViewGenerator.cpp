@@ -304,27 +304,19 @@ BentleyStatus ViewGenerator::GetViewQueryForChild (NativeSqlBuilder& viewSql, EC
     PRECONDITION(!childClassMap.empty(), BentleyStatus::ERROR);  
     PRECONDITION(!table.GetColumns().empty (), BentleyStatus::ERROR);  
 
-    std::vector<ECClassId> classesMappedToTable;
-
-    if (ECDbSchemaPersistence::GetClassesMappedToTable (classesMappedToTable, table, true, map.GetECDbR ()) != SUCCESS)
-        return ERROR;
- 
-    bool oneToManyMapping = classesMappedToTable.size() > 1;
-
     auto firstChildClassMap = *childClassMap.begin ();
 
     //Generate Select statement
-    viewSql.Append ("SELECT ");
+    viewSql.Append("SELECT ");
 
-    auto classIdColumn = table.FindColumnCP (ECDB_COL_ECClassId);
-    if (classIdColumn != nullptr)
-        viewSql.Append (classIdColumn->GetName ().c_str());
+    ECDbSqlColumn const* classIdColumn = nullptr;
+    if (table.TryGetECClassIdColumn(classIdColumn))
+        viewSql.Append(classIdColumn->GetName().c_str());
     else
-        viewSql.Append (firstChildClassMap->GetClass ().GetId ()).AppendSpace ().Append (ECCLASSID_COLUMNNAME);
+        viewSql.Append(firstChildClassMap->GetClass().GetId()).AppendSpace().Append(ECCLASSID_COLUMNNAME);
+
 
     std::vector<std::pair<PropertyMapCP, PropertyMapCP>> viewPropMaps;
-    
-    //auto skipSystemProperties = structArrayProperty == nullptr;
     auto isEmbeded = prepareContext.GetParentArrayProperty () != nullptr;
     auto status = GetPropertyMapsOfDerivedClassCastAsBaseClass (viewPropMaps, prepareContext, baseClassMap, *firstChildClassMap, false, isEmbeded);
     if (status != BentleyStatus::SUCCESS)
@@ -338,6 +330,16 @@ BentleyStatus ViewGenerator::GetViewQueryForChild (NativeSqlBuilder& viewSql, EC
     NativeSqlBuilder where;
     if (classIdColumn != nullptr)
         {
+        if (SUCCESS != baseClassMap.GetStorageDescription().GenerateECClassIdFilter(where, *classIdColumn, isPolymorphic))
+            return ERROR;
+
+        /*std::vector<ECClassId> classesMappedToTable;
+
+        if (ECDbSchemaPersistence::GetClassesMappedToTable(classesMappedToTable, table, true, map.GetECDbR()) != SUCCESS)
+            return ERROR;
+
+        bool oneToManyMapping = classesMappedToTable.size() > 1;
+        
         if (oneToManyMapping)
             {
             if (isPolymorphic)
@@ -393,7 +395,7 @@ BentleyStatus ViewGenerator::GetViewQueryForChild (NativeSqlBuilder& viewSql, EC
                 }
             else
             where.AppendParenLeft ().AppendEscaped (table.GetName ().c_str ()).AppendDot ().AppendEscaped (classIdColumn->GetName ().c_str ()).Append (" = ").Append (firstChildClassMap->GetClass ().GetId ()).AppendParenRight ();
-            }
+            }*/
         }
     //We allow query of struct classes.
     if (firstChildClassMap->IsMappedToSecondaryTable ())
