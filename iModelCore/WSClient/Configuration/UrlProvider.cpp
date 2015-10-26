@@ -78,6 +78,14 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgPunchList(
     &s_urlRegistry
     );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgClashIssues(
+    "Mobile.ClashIssuesWsg",
+    "https://dev-punchlist-eus.cloudapp.net",
+    "https://qa-punchlist-eus.cloudapp.net",
+    "",
+    &s_urlRegistry
+    );
+
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgSharedContent(
     "Mobile.ConnectWsgSharedContent",
     "https://dev-wsg20-eus.cloudapp.net",

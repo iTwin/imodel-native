@@ -80,6 +80,7 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgPersonalPublishing;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgProjectContent;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgPunchList;
+            WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgClashIssues;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgSharedContent;
             WSCLIENT_EXPORT static const UrlDescriptor ImsStsAuth;
             WSCLIENT_EXPORT static const UrlDescriptor Passport;
