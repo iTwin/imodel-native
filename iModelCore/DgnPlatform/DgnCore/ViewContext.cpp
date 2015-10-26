@@ -25,7 +25,6 @@ ViewContext::ViewContext()
     m_arcTolerance  = .01;
     m_minLOD        = DEFAULT_MINUMUM_LOD;
     m_isAttached                = false;
-    m_blockIntermediatePaints   = false;
     m_is3dView                  = true; // Changed default to 3d...
     m_useNpcSubRange            = false;
     m_filterLOD                 = FILTER_LOD_ShowRange;
@@ -48,14 +47,6 @@ ViewContext::~ViewContext()
     {
     BeAssert(!m_isAttached);
     DELETE_AND_CLEAR(m_scanCriteria);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_SetRenderTarget() 
-    {
-    m_renderTarget = m_viewport->GetRenderTarget();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -296,8 +287,6 @@ StatusInt ViewContext::_Attach(DgnViewportP viewport, DrawPurpose purpose)
     _AllocateScanCriteria();
 
     m_viewport = viewport;
-    _SetRenderTarget();
-
     m_purpose = purpose;
     ClearAborted();
 

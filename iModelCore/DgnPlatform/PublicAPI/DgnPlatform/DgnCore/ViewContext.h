@@ -270,7 +270,6 @@ public:
 protected:
     DgnDbP                  m_dgnDb;
     bool                    m_isAttached;
-    bool                    m_blockIntermediatePaints;
     bool                    m_is3dView;
     bool                    m_wantMaterials;
     bool                    m_useNpcSubRange;
@@ -288,7 +287,6 @@ protected:
     TransformClipStack      m_transformClipStack;
     DgnViewportP            m_viewport;
     Render::GraphicPtr      m_currGraphic;
-    Render::TargetPtr       m_renderTarget;
     Render::ElemDisplayParams m_currDisplayParams;
     Render::ElemMatSymb     m_elemMatSymb;
     Render::OvrMatSymb      m_ovrMatSymb;
@@ -332,7 +330,6 @@ protected:
     virtual IPickGeomP _GetIPickGeom() {return nullptr;}
     virtual void _OnPreDrawTransient() {}
     virtual Render::GraphicPtr _BeginGraphic() = 0;
-    DGNPLATFORM_EXPORT virtual void _SetRenderTarget();
     DGNPLATFORM_EXPORT virtual void _VisitTransientGraphics(bool isPreUpdate);
     DGNPLATFORM_EXPORT virtual void _AllocateScanCriteria();
     DGNPLATFORM_EXPORT virtual void _SetupScanCriteria();
@@ -359,7 +356,6 @@ public:
     DMap4dCR GetWorldToNpc() const {return m_worldToNpc;}
     bool GetWantMaterials() {return m_wantMaterials;};
     bool IsAttached() {return m_isAttached;}
-    void SetIntermediatePaintsBlocked(bool blockIntermediatePaints) {m_blockIntermediatePaints = blockIntermediatePaints;}
     DgnElement::Hilited GetCurrHiliteState() {return m_hiliteState;}
     void SetSubRectFromViewRect(BSIRectCP viewRect);
     void OnPreDrawTransient() {_OnPreDrawTransient();} // Initialize per-transient state since _OutputElement may not be called...
