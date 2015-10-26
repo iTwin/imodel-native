@@ -460,6 +460,7 @@ public:
         DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el) override;
         DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el) override final;
 
+    public:
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
 #endif
         //! The reason why GenerateElementGeometry is being called
@@ -472,7 +473,6 @@ public:
             Other           //!< An unspecified reason
         };
 
-    public:
         //! Get the ID of this aspect. The aspect's ID is always the same as the host element's ID. This is a convenience function that converts from DgnElementId to ECInstanceId.
         BeSQLite::EC::ECInstanceId GetAspectInstanceId(DgnElementCR el) const {return el.GetElementId();}
 
