@@ -41,7 +41,7 @@ BentleyStatus SchemaManager::ImportCacheSchemas()
         );
 
     ECSchemaPtr cacheSchema = LoadSchema(cacheSchemaKey, *context);
-    SchemaKey supportSchemaKey = SchemaKey(SCHEMA_CacheLegacySupportSchema, 1, 0);
+    ECSchemaPtr supportSchema = LoadSchema(SchemaKey(SCHEMA_CacheLegacySupportSchema, 1, 0), *context);
 
     if (SUCCESS != ImportSchemas(std::vector<ECSchemaPtr> {cacheSchema, supportSchema}))
         {
