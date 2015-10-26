@@ -704,6 +704,10 @@ uint64_t DgnDomain::Handler::RestrictedAction::Parse(Utf8CP name)
     {
     if (0 == BeStringUtilities::Stricmp("delete", name))
         return Delete;
+    else if (0 == BeStringUtilities::Stricmp("insert", name))
+        return Insert;
+    else if (0 == BeStringUtilities::Stricmp("update", name))
+        return Update;
     else if (0 == BeStringUtilities::Stricmp("all", name))
         return All;
     else

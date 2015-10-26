@@ -233,6 +233,28 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
     };
 
+    //! Actions which may be restricted for models when the handler for their ECClass is not loaded.
+    struct RestrictedAction : DgnDomain::Handler::RestrictedAction
+    {
+        DEFINE_T_SUPER(DgnDomain::Handler::RestrictedAction);
+
+        static const uint64_t InsertElement = T_Super::NextAvailable; //!< Insert an element into this model. "InsertElement"
+        static const uint64_t UpdateElement = InsertElement << 1; //!< Modify an element in this model. "UpdateElement"
+        static const uint64_t DeleteElement = UpdateElement << 1; //!< Delete an element in this model. "DeleteElement"
+        static const uint64_t Clone = DeleteElement << 1; //!< Create a copy of this model. "Clone"
+
+        static const uint64_t Reserved_1 = Clone << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_2 = Reserved_1 << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_3 = Reserved_2 << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_4 = Reserved_3 << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_5 = Reserved_4 << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_6 = Reserved_5 << 1; //!< Reserved for future use 
+
+        static const uint64_t NextAvailable = Reserved_6 << 1; //!< Subclasses can add new actions beginning with this value
+
+        DGNPLATFORM_EXPORT static uint64_t Parse(Utf8CP name);
+    };
+
 private:
     template<class T> void CallAppData(T const& caller) const;
     void RegisterElement(DgnElementCR el) {_RegisterElement(el);}
@@ -1275,6 +1297,7 @@ public:
 
 #define MODELHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,_handlerclass__,_handlersuperclass__,__exporter__) \
         private: virtual DgnModel* _CreateInstance(DgnModel::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
+        protected: virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override { return __classname__::RestrictedAction::Parse(name); }\
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,_handlerclass__,_handlersuperclass__,__exporter__)
 
 //=======================================================================================
@@ -1292,6 +1315,7 @@ namespace dgn_ModelHandler
     protected:
         ModelHandlerP _ToModelHandler() override {return this;}
         virtual DgnModelP _CreateInstance(DgnModel::CreateParams const& params) {return nullptr;}
+        virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override { return DgnModel::RestrictedAction::Parse(name); }
 
     public:
         //! Find an ModelHandler for a subclass of dgn.Model. This is just a shortcut for FindHandler with the base class

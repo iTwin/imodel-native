@@ -432,6 +432,9 @@ void DgnModel::_OnUpdated()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnUpdate()
     {
+    if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Update))
+        return DgnDbStatus::MissingHandler;
+
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
         DgnDbStatus stat = entry->second->_OnUpdate(*this);
@@ -600,7 +603,12 @@ void DgnModel::_OnLoadedElement(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnInsertElement(DgnElementR element)
     {
-    return m_dgndb.IsReadonly() ? DgnDbStatus::ReadOnly : DgnDbStatus::Success;
+    if (m_dgndb.IsReadonly())
+        return DgnDbStatus::ReadOnly;
+    else if (GetModelHandler()._IsRestrictedAction(RestrictedAction::InsertElement))
+        return DgnDbStatus::MissingHandler;
+    else
+        return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -624,7 +632,12 @@ void DgnModel::_OnReversedDeleteElement(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnDeleteElement(DgnElementCR element)
     {
-    return m_dgndb.IsReadonly() ? DgnDbStatus::ReadOnly : DgnDbStatus::Success;
+    if (m_dgndb.IsReadonly())
+        return DgnDbStatus::ReadOnly;
+    else if (GetModelHandler()._IsRestrictedAction(RestrictedAction::DeleteElement))
+        return DgnDbStatus::MissingHandler;
+    else
+        return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -668,7 +681,12 @@ void DgnModel::_OnReversedAddElement(DgnElementCR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnUpdateElement(DgnElementCR modified, DgnElementCR original)
     {
-    return m_dgndb.IsReadonly() ? DgnDbStatus::ReadOnly : DgnDbStatus::Success;
+    if (m_dgndb.IsReadonly())
+        return DgnDbStatus::ReadOnly;
+    else if (GetModelHandler()._IsRestrictedAction(RestrictedAction::UpdateElement))
+        return DgnDbStatus::MissingHandler;
+    else
+        return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -726,6 +744,9 @@ bool DgnModels::FreeQvCache()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnDelete()
     {
+    if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Delete))
+        return DgnDbStatus::MissingHandler;
+
     for (auto appdata : m_appData)
         appdata.second->_OnDelete(*this);
 
@@ -780,6 +801,9 @@ DgnDbStatus DgnModel::_OnInsert()
         BeAssert(false);
         return DgnDbStatus::InvalidName;
         }
+
+    if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Insert))
+        return DgnDbStatus::MissingHandler;
 
     return DgnDbStatus::Success;
     }
@@ -1487,6 +1511,9 @@ DgnModel::CreateParams DgnModel::GetCreateParamsForImport(DgnImportContext& impo
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelPtr DgnModel::Clone(Code newCode) const
     {
+    if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Clone))
+        return nullptr;
+
     DgnModelPtr newModel = GetModelHandler().Create(DgnModel::CreateParams(m_dgndb, m_classId, newCode));
     newModel->_InitFrom(*this);
     return newModel;
@@ -2076,4 +2103,24 @@ DgnModelPtr DictionaryModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext
     return nullptr;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t DgnModel::RestrictedAction::Parse(Utf8CP name)
+    {
+    struct Pair { Utf8CP name; uint64_t value; };
+    static const Pair s_pairs[] =
+        {
+            { "insertelement", InsertElement },
+            { "updateelement", UpdateElement },
+            { "deleteelement", DeleteElement },
+            { "clone", Clone },
+        };
+
+    for (auto const& pair : s_pairs)
+        if (0 == BeStringUtilities::Stricmp(pair.name, name))
+            return pair.value;
+
+    return T_Super::Parse(name);
+    }
 
