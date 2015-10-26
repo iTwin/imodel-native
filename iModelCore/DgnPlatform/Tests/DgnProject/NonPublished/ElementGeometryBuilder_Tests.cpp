@@ -67,7 +67,12 @@ TEST_F(ElementGeometryBuilderTests, CreateElement3d)
     Utf8CP sub_code = "Test SubCategory";
     Utf8CP sub_desc = "This is a test subcategory";
     DgnSubCategory subCategory(DgnSubCategory::CreateParams(*m_db, m_defaultCategoryId, sub_code, appearence, sub_desc));
-    EXPECT_TRUE(builder->Append(subCategory.GetSubCategoryId()));
+    DgnDbStatus status;
+    DgnSubCategoryCPtr newSubCategory =  subCategory.Insert(&status);
+    EXPECT_TRUE(DgnDbStatus::Success == status);
+    EXPECT_TRUE(newSubCategory.IsValid());
+    EXPECT_TRUE(newSubCategory->GetSubCategoryId().IsValid());
+    EXPECT_TRUE(builder->Append(newSubCategory->GetSubCategoryId()));
 
     // MSBsplineSurface
     //
