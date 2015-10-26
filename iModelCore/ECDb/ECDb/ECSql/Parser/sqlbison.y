@@ -167,7 +167,7 @@ using namespace connectivity;
 %token <pParseNode> SQL_TOKEN_LIMIT SQL_TOKEN_OFFSET SQL_TOKEN_NEXT SQL_TOKEN_ONLY
 
 //non-standard
-%token <pParseNode> SQL_TOKEN_MATCH
+%token <pParseNode> SQL_TOKEN_MATCH SQL_TOKEN_OPTIONS
 
 //EC data types
 %token <pParseNode> SQL_TOKEN_BINARY SQL_TOKEN_BOOLEAN SQL_TOKEN_DOUBLE SQL_TOKEN_INTEGER SQL_TOKEN_INT SQL_TOKEN_INT32 SQL_TOKEN_LONG SQL_TOKEN_INT64 SQL_TOKEN_STRING SQL_TOKEN_DATE SQL_TOKEN_TIMESTAMP SQL_TOKEN_DATETIME SQL_TOKEN_POINT2D SQL_TOKEN_POINT3D 
@@ -197,10 +197,10 @@ using namespace connectivity;
 %type <pParseNode> view_def opt_with_check_option opt_column_commalist column_ref_commalist opt_column_ref_commalist 
 %type <pParseNode> opt_order_by_clause ordering_spec_commalist
 %type <pParseNode> ordering_spec opt_asc_desc manipulative_statement commit_statement
-%type <pParseNode> /*delete_statement_positioned*/ delete_statement_searched fetch_statement
+%type <pParseNode> delete_statement_searched fetch_statement
 %type <pParseNode> insert_statement values_or_query_spec
 %type <pParseNode> rollback_statement select_statement_into opt_all_distinct
-%type <pParseNode> /*update_statement_positioned*/ assignment_commalist assignment
+%type <pParseNode> assignment_commalist assignment
 %type <pParseNode> update_statement_searched target_commalist target opt_where_clause ec_data_type
 %type <pParseNode> single_select_statement selection table_exp from_clause table_ref_commalist table_ref
 %type <pParseNode> where_clause opt_group_by_clause opt_having_clause
@@ -251,7 +251,7 @@ using namespace connectivity;
 %type <pParseNode> opt_limit_offset_clause limit_offset_clause opt_fetch_first_clause opt_only ecclassid_fct_spec union_op
 /* non-standard */
 %type <pParseNode> rtreematch_predicate rtreematch_predicate_part_2
-
+%type <pParseNode> opt_ecsqloptions_clause ecsqloptions_clause ecsqloptions_list ecsqloption ecsqloptionvalue
 %%
 
 /* Parse Tree an OSQLParser zurueckliefern
@@ -610,13 +610,11 @@ sql_not:
 
 manipulative_statement:
             commit_statement
-/*    |       delete_statement_positioned*/
     |       delete_statement_searched
     |       fetch_statement
     |       insert_statement
     |       rollback_statement
     |       select_statement_into
-/*    |       update_statement_positioned*/
     |       update_statement_searched
     |        select_statement
     ;
@@ -648,26 +646,16 @@ commit_statement:
             $$->append($1);
             $$->append($2);}
     ;
-/*
-delete_statement_positioned:
-        SQL_TOKEN_DELETE SQL_TOKEN_FROM table_node SQL_TOKEN_WHERE SQL_TOKEN_CURRENT SQL_TOKEN_OF cursor
+
+delete_statement_searched:
+        SQL_TOKEN_DELETE SQL_TOKEN_FROM table_ref opt_where_clause opt_ecsqloptions_clause
             {$$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2);
             $$->append($3);
             $$->append($4);
             $$->append($5);
-            $$->append($6);
-            $$->append($7);}
-    ;
-*/
-delete_statement_searched:
-        SQL_TOKEN_DELETE SQL_TOKEN_FROM table_ref opt_where_clause
-            {$$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2);
-            $$->append($3);
-            $$->append($4);}
+            }
     ;
 
 fetch_statement:
@@ -750,21 +738,6 @@ opt_all_distinct:
         |    SQL_TOKEN_DISTINCT
 
     ;
-/*
-update_statement_positioned:
-        SQL_TOKEN_UPDATE table_node SQL_TOKEN_SET assignment_commalist
-        SQL_TOKEN_WHERE SQL_TOKEN_CURRENT SQL_TOKEN_OF cursor
-            {$$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2);
-            $$->append($3);
-            $$->append($4);
-            $$->append($5);
-            $$->append($6);
-            $$->append($7);
-            $$->append($8);}
-    ;
-*/
 assignment_commalist:
             assignment
             {$$ = SQL_NEW_COMMALISTRULE;
@@ -786,13 +759,15 @@ update_source:
       | SQL_TOKEN_DEFAULT
     ;
 update_statement_searched:
-        SQL_TOKEN_UPDATE table_ref SQL_TOKEN_SET assignment_commalist opt_where_clause
+        SQL_TOKEN_UPDATE table_ref SQL_TOKEN_SET assignment_commalist opt_where_clause opt_ecsqloptions_clause
             {$$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2);
             $$->append($3);
             $$->append($4);
-            $$->append($5);}
+            $$->append($5);
+            $$->append($6);
+            }
     ;
 
 target_commalist:
@@ -907,7 +882,7 @@ limit_offset_clause:
     }
     ;
 table_exp:
-        from_clause opt_where_clause opt_group_by_clause opt_having_clause opt_window_clause opt_order_by_clause opt_limit_offset_clause opt_result_offset_clause opt_fetch_first_clause
+        from_clause opt_where_clause opt_group_by_clause opt_having_clause opt_window_clause opt_order_by_clause opt_limit_offset_clause opt_result_offset_clause opt_fetch_first_clause opt_ecsqloptions_clause
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -919,6 +894,7 @@ table_exp:
             $$->append($7);
             $$->append($8);
             $$->append($9);
+            $$->append($10);
         }
     ;
 
@@ -4061,6 +4037,55 @@ new_transition_variable_name:
 trigger_name:
     SQL_TOKEN_NAME
 ;
+
+opt_ecsqloptions_clause:
+        /* empty */         {$$ = SQL_NEW_RULE;}
+    |   ecsqloptions_clause
+    ;
+
+ecsqloptions_clause:
+    SQL_TOKEN_OPTIONS ecsqloptions_list
+        {
+        $$ = SQL_NEW_RULE;
+        $$->append($1);
+        $$->append($2);
+        }
+    ;
+
+ecsqloptions_list:
+    ecsqloptions_list ecsqloption
+        {
+            $1->append($2);
+            $$ = $1;
+        }
+    |   ecsqloption
+        {
+            $$ = SQL_NEW_LISTRULE;
+            $$->append($1);
+        }
+    ;
+
+ecsqloption:
+   SQL_TOKEN_NAME
+            {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            }           
+   |
+   SQL_TOKEN_NAME SQL_EQUAL ecsqloptionvalue
+            {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+            $$->append($3);
+            }
+    ;
+
+ecsqloptionvalue:
+    literal
+  | SQL_TOKEN_NAME
+  | truth_value
+  ;
 %%
 
 

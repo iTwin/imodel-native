@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ChangeSummary.cpp" />
     <ClCompile Include="ClassMap.cpp" />
     <ClCompile Include="ClassMapFactory.cpp" />
     <ClCompile Include="ClassMapInfo.cpp" />
@@ -30,7 +31,7 @@
     <ClCompile Include="ECDbMap.cpp" />
     <ClCompile Include="ECDbPch.cpp" />
     <ClCompile Include="ECDbSystemSchemaHelper.cpp" />
-    <ClCompile Include="BeRepositoryBasedIdSequence.cpp" />
+    <ClCompile Include="BeBriefcaseBasedIdSequence.cpp" />
     <ClCompile Include="ECInstanceId.cpp" />
     <ClCompile Include="ECInstanceFinder.cpp" />
     <ClCompile Include="ECDbProfileManager.cpp" />
@@ -109,7 +110,6 @@
     <ClCompile Include="ECSql\StructArrayToSecondaryTableECSqlBinder.cpp" />
     <ClCompile Include="ECSql\StructMappedToColumnsECSqlField.cpp" />
     <ClCompile Include="ECSql\StructToColumnsECSqlBinder.cpp" />
-    <ClCompile Include="ECSql\SystemColumnPreparer.cpp" />
     <ClCompile Include="ECSql\SystemPropertyECSqlBinder.cpp" />
     <ClCompile Include="ECSql\UpdateStatementExp.cpp" />
     <ClCompile Include="ECSql\ValueExp.cpp" />
@@ -139,7 +139,7 @@
     <ClInclude Include="..\PublicAPI\ECDb\IECSqlValue.h" />
     <ClInclude Include="..\PublicAPI\ECDb\IECSqlBinder.h" />
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h" />
-    <ClInclude Include="BeRepositoryBasedIdSequence.h" />
+    <ClInclude Include="BeBriefcaseBasedIdSequence.h" />
     <ClInclude Include="ClassMap.h" />
     <ClInclude Include="ClassMapFactory.h" />
     <ClInclude Include="ClassMapInfo.h" />
@@ -220,7 +220,6 @@
     <ClInclude Include="ECSql\StructArrayToSecondaryTableECSqlBinder.h" />
     <ClInclude Include="ECSql\StructMappedToColumnsECSqlField.h" />
     <ClInclude Include="ECSql\StructToColumnsECSqlBinder.h" />
-    <ClInclude Include="ECSql\SystemColumnPreparer.h" />
     <ClInclude Include="ECSql\SystemPropertyECSqlBinder.h" />
     <ClInclude Include="ECSql\UpdateStatementExp.h" />
     <ClInclude Include="ECSql\ValueExp.h" />
@@ -276,12 +275,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeOutput>$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\Build\ECDb\BeSQLiteECG.dll</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx64\Build\ECDb\BeSQLiteECG.dll</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions);BENTLEY_WIN32</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c</NMakeCleanCommandLine>
-    <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir)\ECSql\;$(ProjectDir);$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ECDb\VendorAPI\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ECDb\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -c &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir)\ECSql\;$(ProjectDir);$(OutRoot)Winx64\BuildContexts\ECDb\VendorAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeOutput>ECDb.exe</NMakeOutput>

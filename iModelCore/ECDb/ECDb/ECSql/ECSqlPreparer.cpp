@@ -443,38 +443,21 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         }
     else
         {
-        std::vector<size_t> nonVirtualPartitionIndices = classMap.GetStorageDescription().GetNonVirtualHorizontalPartitionIndices();
-        if (!exp.IsPolymorphic() || nonVirtualPartitionIndices.empty())
+        StorageDescription const& desc = classMap.GetStorageDescription();
+        HorizontalPartition const* partition = desc.GetHorizontalPartition(exp.IsPolymorphic());
+        if (partition == nullptr)
             {
-            table = &classMap.GetTable ();
+            BeAssert(desc.HierarchyMapsToMultipleTables() && exp.IsPolymorphic() && "Returned partition is null only for a polymorphic ECSQL where subclasses are in a separate table");
+            NativeSqlBuilder nativeSqlSnippet;
+            Utf8String viewName = "_" + classMap.GetClass().GetSchema().GetNamespacePrefix() + "_" + classMap.GetClass().GetName();
+            nativeSqlSnippet.AppendEscaped(viewName.c_str());
+            BeAssert(ctx.GetECDb().TableExists(viewName.c_str()) && "View must exist");
+            nativeSqlSnippets.push_back(move(nativeSqlSnippet));
+            return ECSqlStatus::Success;
             }
-        else
-            {
 
-            if (nonVirtualPartitionIndices.size () > 1)
-                {
-                //we need a view for it.
-                NativeSqlBuilder nativeSqlSnippet;
-                Utf8String viewName = "_" + classMap.GetClass ().GetSchema ().GetNamespacePrefix () + "_" + classMap.GetClass ().GetName ();
-                nativeSqlSnippet.AppendEscaped (viewName.c_str ());
-                BeAssert (ctx.GetECDb ().TableExists (viewName.c_str ()) && "View must exist");
-                nativeSqlSnippets.push_back (move (nativeSqlSnippet));
-
-                return ECSqlStatus::Success;
-
-                //return ctx.SetError (ECSqlStatus::InvalidECSql, "Polymorphic ECSQL %s is only supported if the ECClass and all its subclasses are mapped to the same table.",
-                //    ExpHelper::ToString (currentScopeECSqlType));
-                }
-            BeAssert(classMap.GetStorageDescription().GetHorizontalPartition(nonVirtualPartitionIndices[0]) != nullptr);
-            HorizontalPartition const* partition = classMap.GetStorageDescription().GetHorizontalPartition(nonVirtualPartitionIndices[0]);
-
-            //WIP: We need to fix deletion of subclasses' struct array entries for polymorphic delete. Until then we hard-fail
-            //on attempts to polymorphic DELETES if the class has subclasses
-            /*if (currentScopeECSqlType == ECSqlType::Delete && partition->GetClassIds().size() > 1)
-                return ctx.SetError(ECSqlStatus::InvalidECSql, "Polymorphic ECSQL DELETE is not yet supported.");
-*/
-            table = &partition->GetTable();
-            }
+        table = &partition->GetTable();
+        BeAssert(desc.HasNonVirtualPartitions() || table->GetPersistenceType() == PersistenceType::Virtual);
         }
 
     BeAssert(table != nullptr);
@@ -774,7 +757,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp (NativeSqlBuilder::Lis
         nativeSqlSnippet.AppendParenLeft();
 
     auto const& classMap = classNameExp->GetInfo ().GetMap ();
-    auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId);
+    auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ColumnKind::ECClassId);
 
     if (classIdColumn != nullptr)
         {

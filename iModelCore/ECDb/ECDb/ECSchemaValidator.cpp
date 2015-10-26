@@ -517,7 +517,8 @@ bool ValidRelationshipConstraintsRule::_ValidateSchema(ECN::ECSchemaCR schema, E
 //---------------------------------------------------------------------------------------
 bool ValidRelationshipConstraintsRule::ValidateConstraint(ECN::ECRelationshipClassCR relClass, bool isAbstractRelClass, ECN::ECRelationshipConstraintCR constraint) const
     {
-    if (isAbstractRelClass != constraint.GetClasses().empty())
+    ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
+    if (isAbstractRelClass != (constraintClasses.size() == 0))
         {
         //if rel is abstract, constraint must not have classes. if rel is not abstract, constraint must have classes
         m_error->AddInconsistency(relClass, isAbstractRelClass);
@@ -525,9 +526,9 @@ bool ValidRelationshipConstraintsRule::ValidateConstraint(ECN::ECRelationshipCla
         }
 
     bool valid = true;
-    for (ECN::ECClassCP constraintClass : constraint.GetClasses())
+    for (ECRelationshipConstraintClassCP constraintClass : constraintClasses)
         {
-        ECRelationshipClassCP relClassAsConstraint = constraintClass->GetRelationshipClassCP();
+        ECRelationshipClassCP relClassAsConstraint = constraintClass->GetClass().GetRelationshipClassCP();
         if (relClassAsConstraint != nullptr)
             {
             m_error->AddInconsistency(relClass, isAbstractRelClass, relClassAsConstraint);

@@ -7,13 +7,6 @@ InstanceCRUDTests.* 	# No need to run with the build, used by testing after buil
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
 
-#TFS316543
-# ECDb tests should not depend on DgnDb data
-ECDbFileInfo.ReplaceExistingEmbeddedFile
-ECDbFileInfo.ReadAddNewEntrySaveEmbeddedFile
-ECSqlSelectTests.SelectQueriesOnDbGeneratedDuringBuild_79Main
-ECSqlSelectTests.SelectQueriesOnDbGeneratedDuringBuild_04Plant
-
 # TFS 178486 will address these (Affan): (ECSchema Update not working in 06 yet.)
 ECDbSchemas.UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes
 ECDbInstances.CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST
@@ -23,12 +16,10 @@ ECDbSchemas.UpdatingExistingECSchema
 ECDbSchemas.Verify_TFS_14829_A
 
 #TFS268976 will address this (Affan)
-ECDbMapCATestFixture.MismatchDataTypesInExistingTable
-
-#TFS293050 will address this (Hassan)
-ECDbSchemaManager.SupplementWithLatestCompatibleSupplementalSchema
-ECDbSchemaManager.SupplementSchemaWhoseTargetedPrimaryHasLowerMinorVersion
-ECDbSchemaManager.SupplementSchemaWhoseTargetedPrimaryHasGreaterMinorVersion
+ECDbMappingTestFixture.MismatchDataTypesInExistingTable
 
 #TFS315488 to address this (Affan)
 ECSqlTestFixture.PolymorphicUpdateTest
+
+#TFS327106 to address this
+JsonUpdaterTests.UpdateRelationshipProperty

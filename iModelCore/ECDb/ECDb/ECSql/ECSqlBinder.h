@@ -42,7 +42,7 @@ protected:
     //Part of initialization. Must only called in constructor.
     void SetMappedSqlParameterCount (int mappedSqlParameterCount) { m_mappedSqlParameterCount = mappedSqlParameterCount; }
         
-    std::function<void (ECInstanceId const& bindValue)> GetOnBindRepositoryBasedIdEventHandler () const { return m_onBindRepositoyBasedIdEventHandler; }
+    std::function<void (ECInstanceId const& bindValue)> GetOnBindBriefcaseBasedIdEventHandler () const { return m_onBindRepositoyBasedIdEventHandler; }
     static NoopECSqlBinder& GetNoopBinder (ECSqlStatus status);
     IECSqlBinder* GetOnBindEventHandler () { return m_onBindEventHandler; }
 
@@ -68,7 +68,7 @@ public:
     ECSqlStatus OnBeforeStep ();
     void OnClearBindings ();
     void SetOnBindEventHandler (IECSqlBinder& binder) { BeAssert (m_onBindEventHandler == nullptr); m_onBindEventHandler = &binder; }
-    void SetOnBindRepositoryBasedIdEventHandler (std::function<void (ECInstanceId const& bindValue)> eventHandler) { BeAssert (m_onBindRepositoyBasedIdEventHandler == nullptr); m_onBindRepositoyBasedIdEventHandler = eventHandler; }
+    void SetOnBindBriefcaseBasedIdEventHandler (std::function<void (ECInstanceId const& bindValue)> eventHandler) { BeAssert (m_onBindRepositoyBasedIdEventHandler == nullptr); m_onBindRepositoyBasedIdEventHandler = eventHandler; }
     };
 
 //=======================================================================================

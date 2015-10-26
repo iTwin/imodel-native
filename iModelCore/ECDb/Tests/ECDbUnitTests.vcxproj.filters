@@ -70,9 +70,6 @@
     <ClCompile Include="Performance\QueryTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECInstanceECSqlSelectAdpaterTests.cpp">
-      <Filter>Published\ECSql</Filter>
-    </ClCompile>
     <ClCompile Include="Performance\PerformanceBisDesignTestFixture.cpp">
       <Filter>Performance\BisDesign</Filter>
     </ClCompile>
@@ -130,9 +127,6 @@
     <ClCompile Include="Published\SchemaImportTestFixture.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECDbMapCA_Tests.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Performance\PerformanceECDbMapCATests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
@@ -174,6 +168,18 @@
     </ClCompile>
     <ClCompile Include="BackDoor\ECDbTests.cpp">
       <Filter>BackDoor</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceECInstanceECSqlSelectAdapterTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceECDbReferentialIntegrityTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbMapping_Tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\JsonUpdaterTests.cpp">
+      <Filter>Published\ECSql</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

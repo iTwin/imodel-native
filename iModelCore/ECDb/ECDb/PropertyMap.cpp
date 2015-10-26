@@ -280,9 +280,9 @@ NativeSqlBuilder::List PropertyMap::_ToNativeSql(Utf8CP classIdentifier, ECSqlTy
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PropertyMap::FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMap::FindOrCreateColumnsInTable(SchemaImportContext* schemaImportContext, ClassMap& classMap, ClassMapInfo const* classMapInfo)
     {
-    return _FindOrCreateColumnsInTable(classMap, classMapInfo);
+    return _FindOrCreateColumnsInTable(schemaImportContext, classMap, classMapInfo);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -296,18 +296,7 @@ Utf8String PropertyMap::ToString() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-BentleyStatus PropertyMap::_FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo)
-    {
-    // Base implementation does nothing, but is implemented so PropertyMap can serve as a placeholder
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    casey.mullen      11/2012
-//---------------------------------------------------------------------------------------
-void PropertyMap::_GetColumns (std::vector<ECDbSqlColumn const*>& columns) const
-    {
-    }
+void PropertyMap::_GetColumns (std::vector<ECDbSqlColumn const*>& columns) const {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
@@ -421,7 +410,7 @@ bool PropertyMapCollection::TryGetPropertyMap (PropertyMapPtr& propertyMap, Utf8
 
     //recurse into access string and look up prop map for first member in access string
     bvector<Utf8String> tokens;
-    BeStringUtilities::Split(propertyAccessString, ".", NULL, tokens);
+    ECDbMap::ParsePropertyAccessString(tokens, propertyAccessString);
 
     bvector<Utf8String>::const_iterator tokenIt = tokens.begin ();
     bvector<Utf8String>::const_iterator tokenEndIt = tokens.end ();
@@ -616,11 +605,11 @@ BentleyStatus PropertyMapToInLineStruct::Initialize(ECDbMapCR map)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan     09/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus PropertyMapToInLineStruct::_FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMapToInLineStruct::_FindOrCreateColumnsInTable(SchemaImportContext* schemaImportContext, ClassMap& classMap, ClassMapInfo const* classMapInfo)
     {
     for(auto childPropMap : m_children)
         {
-        if (SUCCESS != const_cast<PropertyMapP> (childPropMap)->FindOrCreateColumnsInTable(classMap, classMapInfo))
+        if (SUCCESS != const_cast<PropertyMapP> (childPropMap)->FindOrCreateColumnsInTable(schemaImportContext, classMap, classMapInfo))
             return ERROR;
         }
 
@@ -743,14 +732,7 @@ void PropertyMapToTable::_GetColumns(std::vector<ECDbSqlColumn const*>& columns)
     {
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    casey.mullen      11/2012
-//---------------------------------------------------------------------------------------
-BentleyStatus PropertyMapToTable::_FindOrCreateColumnsInTable( ClassMap& classMap, ClassMapInfo const* classMapInfo)
-    {
-    return SUCCESS; // PropertyMapToTable adds no columns in the main table. The other table has a FK that points to the main table
-    }
-        
+       
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     11/2013
 //---------------------------------------------------------------------------------------
@@ -783,14 +765,14 @@ bool PropertyMapToColumn::_IsVirtual () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-BentleyStatus PropertyMapToColumn::_FindOrCreateColumnsInTable (ClassMap& classMap , ClassMapInfo const* classMapInfor)
+BentleyStatus PropertyMapToColumn::_FindOrCreateColumnsInTable (SchemaImportContext* schemaImportContext, ClassMap& classMap , ClassMapInfo const* classMapInfor)
     {
     Utf8CP        columnName = m_columnInfo.GetName ();
     PrimitiveType primitiveType = m_columnInfo.GetColumnType ();
     bool          nullable = m_columnInfo.IsNullable ();
     bool          unique = m_columnInfo.IsUnique ();
     ECDbSqlColumn::Constraint::Collation collation = m_columnInfo.GetCollation ();
-    m_column = classMap.FindOrCreateColumnForProperty(classMap, classMapInfor, *this, columnName, primitiveType, nullable, unique, collation, nullptr);
+    m_column = classMap.FindOrCreateColumnForProperty(schemaImportContext, classMap, classMapInfor, *this, columnName, primitiveType, nullable, unique, collation, nullptr);
     BeAssert (m_column != nullptr && "This actually indicates a mapping error. The method PropertyMapToColumn::_FindOrCreateColumnsInTable should therefore be changed to return an error.");
     return SUCCESS;
     }
@@ -941,7 +923,7 @@ Utf8String PropertyMapPoint::_ToString() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap,  ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(SchemaImportContext* schemaImportContext, ClassMap& classMap,  ClassMapInfo const* classMapInfo)
     {
     PrimitiveType primitiveType = PRIMITIVETYPE_Double;
 
@@ -952,17 +934,17 @@ BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap, 
 
     Utf8String xColumnName(columnName);
     xColumnName.append("_X");
-    m_xColumn = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, xColumnName.c_str(), primitiveType, nullable, unique, collation, "X");
+    m_xColumn = classMap.FindOrCreateColumnForProperty(schemaImportContext, classMap, classMapInfo, *this, xColumnName.c_str(), primitiveType, nullable, unique, collation, "X");
 
     Utf8String yColumnName(columnName);
     yColumnName.append("_Y");
-    m_yColumn = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, yColumnName.c_str(), primitiveType, nullable, unique, collation, "Y");
+    m_yColumn = classMap.FindOrCreateColumnForProperty(schemaImportContext, classMap, classMapInfo, *this, yColumnName.c_str(), primitiveType, nullable, unique, collation, "Y");
     if (!m_is3d)
         return SUCCESS;
 
     Utf8String zColumnName(columnName);
     zColumnName.append("_Z");
-    m_zColumn = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, zColumnName.c_str(), primitiveType, nullable, unique, collation, "Z");
+    m_zColumn = classMap.FindOrCreateColumnForProperty(schemaImportContext, classMap, classMapInfo, *this, zColumnName.c_str(), primitiveType, nullable, unique, collation, "Z");
     return SUCCESS;
     }
 

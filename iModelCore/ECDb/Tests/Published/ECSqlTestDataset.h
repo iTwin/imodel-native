@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/ECDB/Published/ECSqlTestDataset.h $
+|     $Source: Tests/Published/ECSqlTestDataset.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,14 +12,14 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //=======================================================================================    
 // @bsiclass                                                 Krischan.Eberle     04/2013
 //=======================================================================================    
-struct IECSqlExpectedResult
+struct ECSqlExpectedResult
     {
 public:
     enum class Type
         {
+        Generic,
         Prepare,
-        ResultCount,
-        AffectedRowCount
+        ResultCount
         };
 
     enum class Category
@@ -36,22 +36,27 @@ private:
     Utf8String m_description;
 
 protected:
-    explicit IECSqlExpectedResult (Type type);
-    IECSqlExpectedResult (Type type, Category category, Utf8CP description);
+    explicit ECSqlExpectedResult(Type type);
+    ECSqlExpectedResult(Type type, Category category, Utf8CP description);
 
 public:
-    virtual ~IECSqlExpectedResult () {}
-    IECSqlExpectedResult (IECSqlExpectedResult const& rhs);
-    IECSqlExpectedResult& operator= (IECSqlExpectedResult const& rhs);
-    IECSqlExpectedResult (IECSqlExpectedResult&& rhs);
-    IECSqlExpectedResult& operator= (IECSqlExpectedResult&& rhs);
+    virtual ~ECSqlExpectedResult() {}
+    ECSqlExpectedResult(ECSqlExpectedResult const& rhs);
+    ECSqlExpectedResult& operator= (ECSqlExpectedResult const& rhs);
+    ECSqlExpectedResult(ECSqlExpectedResult&& rhs);
+    ECSqlExpectedResult& operator= (ECSqlExpectedResult&& rhs);
 
-    Type GetType () const;
-    Category GetCategory () const;
-    Utf8CP GetDescription () const;
-    bool IsExpectedToSucceed () const;
+    //! Initializes a new instance of the ECSqlExpectedResult type indicating the test being expected to succeed.
+    static std::unique_ptr<ECSqlExpectedResult> Create();
+    //! Initializes a new instance of the ECSqlExpectedResult type indicating the test being expected to fail.
+    static std::unique_ptr<ECSqlExpectedResult> CreateFailing(Category failingCategory, Utf8CP description = nullptr);
 
-    static Utf8String CategoryToString (Category IECSqlBinder);
+    Type GetType() const;
+    Category GetCategory() const;
+    Utf8CP GetDescription() const;
+    bool IsExpectedToSucceed() const;
+
+    static Utf8String CategoryToString(Category IECSqlBinder);
     };
 
 //=======================================================================================    
@@ -60,8 +65,8 @@ public:
 struct ECSqlExpectedResultsDictionary : NonCopyableClass
     {
 private:
-    std::map<IECSqlExpectedResult::Type, std::unique_ptr<IECSqlExpectedResult>> m_innerDictionary;
-    IECSqlExpectedResult const* m_lastAdded;
+    std::map<ECSqlExpectedResult::Type, std::unique_ptr<ECSqlExpectedResult>> m_innerDictionary;
+    ECSqlExpectedResult const* m_lastAdded;
 
 public:
     ECSqlExpectedResultsDictionary () : m_lastAdded (nullptr) {}
@@ -72,10 +77,10 @@ public:
 
     //! Adds an expected result item for a given result type into the dictionary
     //! @param[in] expectedResult Expected result object. The dictionary will take over ownership of the object.
-    void Add (std::unique_ptr<IECSqlExpectedResult> expectedResult);
+    void Add (std::unique_ptr<ECSqlExpectedResult> expectedResult);
 
     template<class TECSqlExpectedResult>
-    bool TryGet (TECSqlExpectedResult const*& expectedResult, IECSqlExpectedResult::Type type) const
+    bool TryGet (TECSqlExpectedResult const*& expectedResult, ECSqlExpectedResult::Type type) const
         {
         expectedResult = nullptr;
 
@@ -89,7 +94,7 @@ public:
         return expectedResult != nullptr;
         }
 
-    IECSqlExpectedResult const* GetLastAdded () const;
+    ECSqlExpectedResult const* GetLastAdded () const;
     };
 
 //=======================================================================================    
@@ -243,7 +248,7 @@ public:
 
     void AddParameterValue (ParameterValue&& parameterValue);
 
-    void AddExpectedResult (std::unique_ptr<IECSqlExpectedResult> expectedResult);
+    void AddExpectedResult (std::unique_ptr<ECSqlExpectedResult> expectedResult);
 
     Utf8StringCR GetECSql () const;
     bool HasECSqlBuilder () const;
@@ -251,7 +256,7 @@ public:
     ECSqlExpectedResultsDictionary const& GetExpectedResults () const;
     bool GetRollbackAfterwards () const;
 
-    IECSqlExpectedResult::Category GetExpectedResultCategory () const;
+    ECSqlExpectedResult::Category GetExpectedResultCategory () const;
     Utf8CP GetExpectedResultDescription () const;
     };
 

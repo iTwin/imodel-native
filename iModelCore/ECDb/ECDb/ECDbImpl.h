@@ -9,7 +9,7 @@
 #include <ECDb/ECDb.h>
 #include <ECDb/ECDbSchemaManager.h>
 #include "ECDbMap.h"
-#include "BeRepositoryBasedIdSequence.h"
+#include "BeBriefcaseBasedIdSequence.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -83,16 +83,16 @@ private:
     std::unique_ptr<ECDbSchemaManager> m_schemaManager;
     std::unique_ptr<ECDbMap> m_ecdbMap;
 
-    mutable BeRepositoryBasedIdSequence m_ecInstanceIdSequence;
-    BeRepositoryBasedIdSequence m_ecSchemaIdSequence;
-    BeRepositoryBasedIdSequence m_ecClassIdSequence;
-    BeRepositoryBasedIdSequence m_ecPropertyIdSequence;
-    BeRepositoryBasedIdSequence m_tableIdSequence;
-    BeRepositoryBasedIdSequence m_columnIdSequence;
-    BeRepositoryBasedIdSequence m_indexIdSequence;
-    BeRepositoryBasedIdSequence m_constraintIdSequence;
-    BeRepositoryBasedIdSequence m_classmapIdSequence;
-    BeRepositoryBasedIdSequence m_propertypathIdSequence;
+    mutable BeBriefcaseBasedIdSequence m_ecInstanceIdSequence;
+    BeBriefcaseBasedIdSequence m_ecSchemaIdSequence;
+    BeBriefcaseBasedIdSequence m_ecClassIdSequence;
+    BeBriefcaseBasedIdSequence m_ecPropertyIdSequence;
+    BeBriefcaseBasedIdSequence m_tableIdSequence;
+    BeBriefcaseBasedIdSequence m_columnIdSequence;
+    BeBriefcaseBasedIdSequence m_indexIdSequence;
+    BeBriefcaseBasedIdSequence m_constraintIdSequence;
+    BeBriefcaseBasedIdSequence m_classmapIdSequence;
+    BeBriefcaseBasedIdSequence m_propertypathIdSequence;
 
     mutable bmap<DbFunctionKey, DbFunction*, DbFunctionKey::Comparer> m_sqlFunctions;
 
@@ -116,12 +116,12 @@ private:
 
     DbResult OnDbOpened () const;
     DbResult OnDbCreated () const;
-    DbResult OnRepositoryIdChanged (BeRepositoryId newRepositoryId);
+    DbResult OnBriefcaseIdChanged (BeBriefcaseId newBriefcaseId);
     void OnDbChangedByOtherConnection () const;
     DbResult VerifySchemaVersion (Db::OpenParams const& params) const;
 
     //other private methods
-    std::vector<BeRepositoryBasedIdSequence const*> GetSequences () const;
+    std::vector<BeBriefcaseBasedIdSequence const*> GetSequences () const;
 
         
 public:
@@ -129,17 +129,17 @@ public:
 
     ECDbMap const& GetECDbMap () const;
 
-    DbResult ResetSequences (BeRepositoryId* repoId = nullptr);
-    BeRepositoryBasedIdSequence& GetECInstanceIdSequence () { return m_ecInstanceIdSequence; }
-    BeRepositoryBasedIdSequence& GetECSchemaIdSequence () {return m_ecSchemaIdSequence; }
-    BeRepositoryBasedIdSequence& GetECClassIdSequence () { return m_ecClassIdSequence; }
-    BeRepositoryBasedIdSequence& GetECPropertyIdSequence () { return m_ecPropertyIdSequence; }
-    BeRepositoryBasedIdSequence& GetTableIdSequence () { return m_tableIdSequence; }
-    BeRepositoryBasedIdSequence& GetColumnIdSequence () { return m_columnIdSequence; }
-    BeRepositoryBasedIdSequence& GetIndexIdSequence () { return m_indexIdSequence; }
-    BeRepositoryBasedIdSequence& GetConstraintIdSequence () { return m_constraintIdSequence; }
-    BeRepositoryBasedIdSequence& GetClassMapIdSequence () { return m_classmapIdSequence; }
-    BeRepositoryBasedIdSequence& GetPropertyMapIdSequence () { return m_propertypathIdSequence; }
+    DbResult ResetSequences (BeBriefcaseId* repoId = nullptr);
+    BeBriefcaseBasedIdSequence& GetECInstanceIdSequence () { return m_ecInstanceIdSequence; }
+    BeBriefcaseBasedIdSequence& GetECSchemaIdSequence () {return m_ecSchemaIdSequence; }
+    BeBriefcaseBasedIdSequence& GetECClassIdSequence () { return m_ecClassIdSequence; }
+    BeBriefcaseBasedIdSequence& GetECPropertyIdSequence () { return m_ecPropertyIdSequence; }
+    BeBriefcaseBasedIdSequence& GetTableIdSequence () { return m_tableIdSequence; }
+    BeBriefcaseBasedIdSequence& GetColumnIdSequence () { return m_columnIdSequence; }
+    BeBriefcaseBasedIdSequence& GetIndexIdSequence () { return m_indexIdSequence; }
+    BeBriefcaseBasedIdSequence& GetConstraintIdSequence () { return m_constraintIdSequence; }
+    BeBriefcaseBasedIdSequence& GetClassMapIdSequence () { return m_classmapIdSequence; }
+    BeBriefcaseBasedIdSequence& GetPropertyMapIdSequence () { return m_propertypathIdSequence; }
 
     bool TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const;
 

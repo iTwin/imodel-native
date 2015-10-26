@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/BeRepositoryBasedIdSequence.cpp $
+|     $Source: ECDb/BeBriefcaseBasedIdSequence.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,29 +12,29 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2013
 //+---------------+---------------+---------------+---------------+---------------+--
-BeRepositoryBasedIdSequence::BeRepositoryBasedIdSequence (Db& db, Utf8CP repositoryLocalValueName)
-: m_db (db), m_repositoryLocalValueName (repositoryLocalValueName)
+BeBriefcaseBasedIdSequence::BeBriefcaseBasedIdSequence (Db& db, Utf8CP briefcaseLocalValueName)
+: m_db (db), m_briefcaseLocalValueName (briefcaseLocalValueName)
     {
-    BeAssert (!Utf8String::IsNullOrEmpty (repositoryLocalValueName));
+    BeAssert (!Utf8String::IsNullOrEmpty (briefcaseLocalValueName));
     }
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2013
 //+---------------+---------------+---------------+---------------+---------------+-
-BeRepositoryBasedIdSequence::~BeRepositoryBasedIdSequence ()
+BeBriefcaseBasedIdSequence::~BeBriefcaseBasedIdSequence ()
     {
     }
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                07/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult BeRepositoryBasedIdSequence::Initialize () const
+DbResult BeBriefcaseBasedIdSequence::Initialize () const
     {
-    const auto stat = m_db.GetRLVCache().Register(m_repositoryLocalValueIndex, m_repositoryLocalValueName.c_str ());
+    const auto stat = m_db.GetRLVCache().Register(m_briefcaseLocalValueIndex, m_briefcaseLocalValueName.c_str ());
     if (stat != BE_SQLITE_OK)
         {
-        LOG.fatalv ("Could not register RepositoryLocalValue for BeRepositoryBasedIdSequence '%s'.", m_repositoryLocalValueName.c_str ());
-        BeAssert (false && "Could not register RepositoryLocalValue for BeRepositoryBasedIdSequence");
+        LOG.fatalv ("Could not register BriefcaseLocalValue for BeBriefcaseBasedIdSequence '%s'.", m_briefcaseLocalValueName.c_str ());
+        BeAssert (false && "Could not register BriefcaseLocalValue for BeBriefcaseBasedIdSequence");
         }
 
     return stat;
@@ -43,19 +43,19 @@ DbResult BeRepositoryBasedIdSequence::Initialize () const
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2013
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult BeRepositoryBasedIdSequence::Reset (BeRepositoryId repositoryId) const
+DbResult BeBriefcaseBasedIdSequence::Reset (BeBriefcaseId briefcaseId) const
     {
     if (m_db.IsReadonly ())
         return BE_SQLITE_READONLY;
 
     //set the sequence start value (first id generated should be 1 for the given repo id.
     //Therefore call GetValueUnchecked as the stored last value is not a valid id yet.
-    const BeRepositoryBasedId initialId (repositoryId, 0);
-    auto stat = m_db.GetRLVCache().SaveValue (m_repositoryLocalValueIndex, initialId.GetValueUnchecked ());
+    const BeBriefcaseBasedId initialId (briefcaseId, 0);
+    auto stat = m_db.GetRLVCache().SaveValue (m_briefcaseLocalValueIndex, initialId.GetValueUnchecked ());
     if (stat != BE_SQLITE_OK)
         {
-        LOG.fatalv ("Could not save initial sequence value SaveRepositoryLocalValue for BeRepositoryBasedIdSequence '%s'.", m_repositoryLocalValueName.c_str ());
-        BeAssert (false && "BeRepositoryBasedIdSequence::Reset could not save initial sequence value in be_Local via SaveRepositoryLocalValue.");
+        LOG.fatalv ("Could not save initial sequence value SaveBriefcaseLocalValue for BeBriefcaseBasedIdSequence '%s'.", m_briefcaseLocalValueName.c_str ());
+        BeAssert (false && "BeBriefcaseBasedIdSequence::Reset could not save initial sequence value in be_Local via SaveBriefcaseLocalValue.");
         }
 
     return stat;
@@ -64,17 +64,17 @@ DbResult BeRepositoryBasedIdSequence::Reset (BeRepositoryId repositoryId) const
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2013
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult BeRepositoryBasedIdSequence::GetNextInt64Value (uint64_t& nextValue) const
+DbResult BeBriefcaseBasedIdSequence::GetNextInt64Value (uint64_t& nextValue) const
     {
     if (m_db.IsReadonly ())
         return BE_SQLITE_READONLY;
 
     uint64_t deserializedLastValue = 0LL;
-    DbResult stat = m_db.GetRLVCache().IncrementValue (deserializedLastValue, m_repositoryLocalValueIndex);
+    DbResult stat = m_db.GetRLVCache().IncrementValue (deserializedLastValue, m_briefcaseLocalValueIndex);
     if (stat != BE_SQLITE_OK)
         {
-        LOG.fatalv ("Could not increment sequence value for BeRepositoryBasedIdSequence '%s'.", m_repositoryLocalValueName.c_str ());
-        BeAssert (false && "BeRepositoryBasedIdSequence::GetNextValue could not increment sequence value from be_Local via IncrementRepositoryLocalValueInt64.");
+        LOG.fatalv ("Could not increment sequence value for BeBriefcaseBasedIdSequence '%s'.", m_briefcaseLocalValueName.c_str ());
+        BeAssert (false && "BeBriefcaseBasedIdSequence::GetNextValue could not increment sequence value from be_Local via IncrementBriefcaseLocalValueInt64.");
         return stat;
         }
 

@@ -304,6 +304,9 @@ public:
     //! @return SUCCESS or ERROR
     static BentleyStatus SetECInstanceId (ECN::IECInstanceR instance, ECInstanceId const& ecInstanceId);
 
+    //! Creates an empty ECInstance for the given class. Supports relationship classes, too.
+    static ECN::IECInstancePtr CreateECInstance(ECN::ECClassCR);
+
     //! Logs an error message based on the given information
     //! @param[in] operationName Name of the ECSQL operation for which the method is called. Should be one 
     //! out of 'insert', 'update', 'delete'.

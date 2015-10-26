@@ -217,23 +217,23 @@ TEST (ECDbTests, TwoConnectionsWithBusyRetryHandler)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbTests, getAndChangeRepositoryIdForDb)
+TEST(ECDbTests, getAndChangeBriefcaseIdForDb)
     {
     ECDbTestProject testProject;
-    ECDbR ecdbr = testProject.Create("EcdbRepositoryIdTest.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
-    BeRepositoryId id = ecdbr.GetRepositoryId();
+    ECDbR ecdbr = testProject.Create("EcdbBriefcaseIdTest.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
+    BeBriefcaseId id = ecdbr.GetBriefcaseId();
     ASSERT_TRUE(id.IsValid());
-    int32_t previousRepositoryId = id.GetValue();
-    BeRepositoryId nextid = id.GetNextRepositoryId();
-    ASSERT_EQ(BE_SQLITE_OK, ecdbr.ChangeRepositoryId(nextid));
-    int32_t changedRepositoryId = ecdbr.GetRepositoryId().GetValue();
-    ASSERT_FALSE(previousRepositoryId == changedRepositoryId);
+    int32_t previousBriefcaseId = id.GetValue();
+    BeBriefcaseId nextid = id.GetNextBriefcaseId();
+    ASSERT_EQ(BE_SQLITE_OK, ecdbr.ChangeBriefcaseId(nextid));
+    int32_t changedBriefcaseId = ecdbr.GetBriefcaseId().GetValue();
+    ASSERT_FALSE(previousBriefcaseId == changedBriefcaseId);
     }
 
 TEST(ECDbTests, getAndChangeGUIDForDb)
     {
     ECDbTestProject testProject;
-    ECDbR ecdbr = testProject.Create("EcdbRepositoryIdTest.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
+    ECDbR ecdbr = testProject.Create("EcdbBriefcaseIdTest.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
 
     BeGuid guid = ecdbr.GetDbGuid();
     ASSERT_TRUE(guid.IsValid());
@@ -254,7 +254,7 @@ TEST(ECDbTests, createEmptyProject)
     {
     ECDbTestProject testproject;
     ECDbR ecdbr = testproject.Create("emptyecdb.ecdb");
-    BeRepositoryId repositotyId = ecdbr.GetRepositoryId();
+    BeBriefcaseId repositotyId = ecdbr.GetBriefcaseId();
     ASSERT_TRUE(repositotyId.IsValid());
     ASSERT_TRUE(ecdbr.Schemas().GetECSchema("ECDb_System", true) != nullptr);
     }
@@ -268,7 +268,7 @@ TEST(ECDbTests, checkPrimaryKeyForTablesIsBasedOnECInstanceId)
     Utf8CP sc_Furniture = "CREATE TABLE [sc_Furniture] ([ECInstanceId] INTEGER not null , [ECClassId] INTEGER not null , [AssetID] CHAR, [AssetOwner] CHAR, [BarCode] CHAR, [AssetUserID] CHAR, [Cost] DOUBLE, [Room] CHAR, [AssetRecordKey] CHAR, [Condition] INTEGER, [Material] INTEGER, [Weight] DOUBLE, [ChairFootPrint] BLOB, [Type] CHAR, [Color] CHAR, [DeskFootPrint] CHAR, [NumberOfCabinets] INTEGER, [Size] CHAR, [Length] DOUBLE, [Breadth] DOUBLE, [Employee__src_01_id] INTEGER, PRIMARY KEY  (ECInstanceId)) ";
     Utf8CP sc_Employee = "CREATE TABLE [sc_Employee] ([ECInstanceId] INTEGER not null , [EmployeeID] INTEGER, [FirstName] CHAR, [JobTitle] CHAR, [LastName] CHAR, [ManagerID] INTEGER, [Room] CHAR, [SSN] INTEGER, [Project] CHAR, [WorkPhone] BLOB, [MobilePhone] BLOB, [FullName] CHAR, Location_Coordinate_X DOUBLE, [Location_Coordinate_Y] DOUBLE, [Location_Coordinate_Z] DOUBLE, [Location_Street] CHAR, [Location_City] CHAR, [Location_State] CHAR, [Location_Country] CHAR, [Location_Zip] CHAR, [EmployeeType] INTEGER, [Address_Coordinate_X] DOUBLE, [Address_Coordinate_Y] DOUBLE, [Address_Coordinate_Z] DOUBLE, [Address_Street] CHAR, [Address_City] CHAR, [Address_State] CHAR, [Address_Country] CHAR, [Address_Zip] CHAR, [EmployeeRecordKey] TIMESTAMP, [Company__trg_11_id] INTEGER, [Phone__trg_01_id] INTEGER, PRIMARY KEY  (ECInstanceId)) ";
     ECDbTestProject testProject;
-    ECDbR ecdbr = testProject.Create("EcdbRepositoryIdTest.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
+    ECDbR ecdbr = testProject.Create("EcdbBriefcaseIdTest.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
     Statement sqlstmt0;
     ASSERT_EQ(BE_SQLITE_OK, sqlstmt0.Prepare(ecdbr, "SELECT sql FROM sqlite_master WHERE type='table' AND tbl_name='sc_Furniture'"));
     sqlstmt0.Step();

@@ -23,11 +23,11 @@ private:
 
 public:
     static ECSqlTestItem& AddSelect (ECSqlTestDataset& dataset, Utf8CP ecsql, int expectedResultColumnCount, int expectedResultRowCount = -1);
-    static ECSqlTestItem& AddSelect (ECSqlTestDataset& dataset, Utf8CP ecsql, IECSqlExpectedResult::Category IECSqlBinder, Utf8CP description, int expectedResultColumnCount, int expectedResultRowCount = -1);
-    static ECSqlTestItem& AddNonSelect (ECSqlTestDataset& dataset, Utf8CP ecsql, int expectedAffectedRowCount, bool rollbackAfterwards = false);
+    static ECSqlTestItem& AddSelect (ECSqlTestDataset& dataset, Utf8CP ecsql, ECSqlExpectedResult::Category IECSqlBinder, Utf8CP description, int expectedResultColumnCount, int expectedResultRowCount = -1);
+    static ECSqlTestItem& AddNonSelect (ECSqlTestDataset& dataset, Utf8CP ecsql, bool rollbackAfterwards = false);
     
-    static ECSqlTestItem& AddPrepareFailing (ECSqlTestDataset& dataset, Utf8CP ecsql, IECSqlExpectedResult::Category failureCategory, Utf8CP description = nullptr);
-    static ECSqlTestItem& AddStepFailingNonSelect (ECSqlTestDataset& dataset, Utf8CP ecsql, IECSqlExpectedResult::Category failureCategory, Utf8CP description = nullptr, bool rollbackAfterwards = false);
+    static ECSqlTestItem& AddPrepareFailing (ECSqlTestDataset& dataset, Utf8CP ecsql, ECSqlExpectedResult::Category failureCategory, Utf8CP description = nullptr);
+    static ECSqlTestItem& AddStepFailingNonSelect (ECSqlTestDataset& dataset, Utf8CP ecsql, ECSqlExpectedResult::Category failureCategory, Utf8CP description = nullptr, bool rollbackAfterwards = false);
 
     //Helpers
     static ECInstanceId InsertTestInstance (ECDbCR, Utf8CP ecsql);

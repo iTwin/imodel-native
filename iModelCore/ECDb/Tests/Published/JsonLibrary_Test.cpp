@@ -521,7 +521,7 @@ TEST (RapidJson, ValueUint)
 TEST (RapidJson, ValueInt64) 
     {
     // Constructor with int
-    rapidjson::Value x (1234LL);
+    rapidjson::Value x (INT64_C(1234));
     ASSERT_EQ (rapidjson::kNumberType, x.GetType());
     ASSERT_EQ (1234, x.GetInt());
     ASSERT_EQ (1234u, x.GetUint());
@@ -542,7 +542,7 @@ TEST (RapidJson, ValueInt64)
     ASSERT_FALSE (x.IsObject());
     ASSERT_FALSE (x.IsArray());
 
-    rapidjson::Value nx (-1234LL);
+    rapidjson::Value nx (INT64_C(-1234));
     ASSERT_EQ (-1234, nx.GetInt());
     ASSERT_EQ (-1234, nx.GetInt64());
     ASSERT_TRUE (nx.IsInt());
@@ -571,7 +571,7 @@ TEST (RapidJson, ValueInt64)
 TEST (RapidJson, ValueUint64) 
     {
     // Constructor with int
-    rapidjson::Value x (1234LL);
+    rapidjson::Value x (INT64_C(1234));
     ASSERT_EQ (rapidjson::kNumberType, x.GetType());
     ASSERT_EQ (1234, x.GetInt());
     ASSERT_EQ (1234u, x.GetUint());

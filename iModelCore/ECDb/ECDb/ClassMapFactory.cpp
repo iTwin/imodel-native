@@ -96,7 +96,7 @@ ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ECClassCR ecClass, ECDb
 // @bsimethod                                 Krischan.Eberle                    02/2014
 //---------------------------------------------------------------------------------------
 //static
-ClassMapPtr ClassMapFactory::Create (MapStatus& mapStatus, SchemaImportContext const& schemaImportContext, ECN::ECClassCR ecClass, ECDbMapCR ecdbMap)
+ClassMapPtr ClassMapFactory::Create (MapStatus& mapStatus, SchemaImportContext& schemaImportContext, ECN::ECClassCR ecClass, ECDbMapCR ecdbMap)
     {
     if (ecdbMap.AssertIfIsNotImportingSchema())
         {
@@ -110,7 +110,7 @@ ClassMapPtr ClassMapFactory::Create (MapStatus& mapStatus, SchemaImportContext c
     if (classMapInfo == nullptr)
         return nullptr;
 
-    ClassMapPtr classMap = ClassMapFactory::CreateInstance (mapStatus, *classMapInfo, true);
+    ClassMapPtr classMap = ClassMapFactory::CreateInstance (mapStatus, &schemaImportContext, *classMapInfo, true);
     if (classMap == nullptr)
         return nullptr;
 
@@ -121,7 +121,7 @@ ClassMapPtr ClassMapFactory::Create (MapStatus& mapStatus, SchemaImportContext c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    02/2014
 //---------------------------------------------------------------------------------------
-ClassMapPtr ClassMapFactory::CreateInstance (MapStatus& mapStatus, ClassMapInfo const& mapInfo, bool setIsDirty)
+ClassMapPtr ClassMapFactory::CreateInstance (MapStatus& mapStatus, SchemaImportContext* schemaImportContext, ClassMapInfo const& mapInfo, bool setIsDirty)
     {
     auto const& ecClass = mapInfo.GetECClass();
     auto const& ecdbMap = mapInfo.GetECDbMap();
@@ -146,7 +146,7 @@ ClassMapPtr ClassMapFactory::CreateInstance (MapStatus& mapStatus, ClassMapInfo 
             classMap = ClassMap::Create (ecClass, ecdbMap, mapStrategy, setIsDirty);
         }
 
-    mapStatus = classMap->Initialize (mapInfo);
+    mapStatus = classMap->Initialize (schemaImportContext, mapInfo);
     return classMap;
     }
 

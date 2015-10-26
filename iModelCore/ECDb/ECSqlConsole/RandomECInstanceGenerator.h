@@ -1,10 +1,10 @@
 #pragma once
 
-#include <Logging/BentleyLogging.h>
+#include <Logging/bentleylogging.h>
 #include <Bentley/Bentley.h>
 #include <BeSQLite/BeSQLite.h>
 #include <ECDb/ECDbApi.h>
-#include <Logging/BentleyLogging.h>
+#include <Logging/bentleylogging.h>
 #include <Geom/GeomApi.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <set>

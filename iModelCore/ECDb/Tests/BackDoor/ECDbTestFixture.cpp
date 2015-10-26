@@ -5,8 +5,8 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "PublicApi/BackDoor/ECDb/ECDbTestFixture.h"
-#include "PublicApi/BackDoor/ECDb/ECDbTestProject.h"
+#include "PublicAPI/BackDoor/ECDb/ECDbTestFixture.h"
+#include "PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 

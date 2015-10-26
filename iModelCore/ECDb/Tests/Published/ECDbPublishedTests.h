@@ -7,6 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //this is just a wrapper header that avoids that all published ATPs have to add the below include.
-#include "../BackDoor/PublicApi/BackDoor/ECDb/ECDbTestFixture.h"
-#include "../BackDoor/PublicApi/BackDoor/ECDb/ECDbTestProject.h"
+#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestFixture.h"
+#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 

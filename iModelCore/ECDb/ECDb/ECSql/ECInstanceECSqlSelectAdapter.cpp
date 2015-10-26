@@ -71,13 +71,7 @@ ECN::ECClassId ecClassid
     if (ecClass == nullptr)
         return nullptr;
 
-    ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP(); //needswork: for polymorphism, this might need to be looking up ECClass by id
-    IECInstancePtr instance = nullptr;
-    if (relClass == nullptr)
-        instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    else
-        instance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relClass)->CreateRelationshipInstance();
-
+    ECN::IECInstancePtr instance = ECInstanceAdapterHelper::CreateECInstance(*ecClass);
     if (SUCCESS != SetInstanceData (*instance, true))
         return nullptr;
 
@@ -120,13 +114,7 @@ ECN::IECInstancePtr ECInstanceECSqlSelectAdapter::GetInstance() const
     if (nullptr == ecClass)
         return nullptr;
 
-    ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP(); //needswork: for polymorphism, this might need to be looking up ECClass by id
-    IECInstancePtr instance = nullptr;
-    if (relClass == nullptr)
-        instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    else
-        instance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relClass)->CreateRelationshipInstance();
-
+    ECN::IECInstancePtr instance = ECInstanceAdapterHelper::CreateECInstance(*ecClass);
     if (SUCCESS != SetInstanceData (*instance, false))
         return nullptr;
 

@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/ECDB/Published/ECSqlTestDataset.cpp $
+|     $Source: Tests/Published/ECSqlTestDataset.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlTestDataset.h"
@@ -13,20 +13,38 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 //********************* IECSqlExpectedResult ************************************
 //---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+unique_ptr<ECSqlExpectedResult> ECSqlExpectedResult::Create()
+    {
+    return unique_ptr<ECSqlExpectedResult>(new ECSqlExpectedResult(Type::Generic, Category::Supported, nullptr));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+unique_ptr<ECSqlExpectedResult> ECSqlExpectedResult::CreateFailing(Category failingCategory, Utf8CP description)
+    {
+    return unique_ptr<ECSqlExpectedResult>(new ECSqlExpectedResult(Type::Generic, failingCategory, description));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlExpectedResult::IECSqlExpectedResult (IECSqlExpectedResult::Type type)
+ECSqlExpectedResult::ECSqlExpectedResult (ECSqlExpectedResult::Type type)
 : m_type (type), m_category (Category::Supported)
     {}
 
-IECSqlExpectedResult::IECSqlExpectedResult (IECSqlExpectedResult::Type type, IECSqlExpectedResult::Category category, Utf8CP description)
+ECSqlExpectedResult::ECSqlExpectedResult (ECSqlExpectedResult::Type type, ECSqlExpectedResult::Category category, Utf8CP description)
 : m_type (type), m_category (category), m_description (description)
     {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlExpectedResult::IECSqlExpectedResult (IECSqlExpectedResult const& rhs)
+ECSqlExpectedResult::ECSqlExpectedResult (ECSqlExpectedResult const& rhs)
 : m_type (rhs.m_type), m_category (rhs.m_category), m_description (rhs.m_description)
     {
     }
@@ -34,7 +52,7 @@ IECSqlExpectedResult::IECSqlExpectedResult (IECSqlExpectedResult const& rhs)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlExpectedResult& IECSqlExpectedResult::operator= (IECSqlExpectedResult const& rhs)
+ECSqlExpectedResult& ECSqlExpectedResult::operator= (ECSqlExpectedResult const& rhs)
     {
     if (this != &rhs)
         {
@@ -49,7 +67,7 @@ IECSqlExpectedResult& IECSqlExpectedResult::operator= (IECSqlExpectedResult cons
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlExpectedResult::IECSqlExpectedResult (IECSqlExpectedResult&& rhs)
+ECSqlExpectedResult::ECSqlExpectedResult (ECSqlExpectedResult&& rhs)
 : m_type (move (rhs.m_type)), m_category (move (rhs.m_category)), m_description (move (rhs.m_description))
     {
     }
@@ -57,7 +75,7 @@ IECSqlExpectedResult::IECSqlExpectedResult (IECSqlExpectedResult&& rhs)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlExpectedResult& IECSqlExpectedResult::operator= (IECSqlExpectedResult&& rhs)
+ECSqlExpectedResult& ECSqlExpectedResult::operator= (ECSqlExpectedResult&& rhs)
     {
     if (this != &rhs)
         {
@@ -72,7 +90,7 @@ IECSqlExpectedResult& IECSqlExpectedResult::operator= (IECSqlExpectedResult&& rh
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlExpectedResult::Type IECSqlExpectedResult::GetType () const
+ECSqlExpectedResult::Type ECSqlExpectedResult::GetType () const
     {
     return m_type;
     }
@@ -80,7 +98,7 @@ IECSqlExpectedResult::Type IECSqlExpectedResult::GetType () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlExpectedResult::Category IECSqlExpectedResult::GetCategory () const
+ECSqlExpectedResult::Category ECSqlExpectedResult::GetCategory () const
     {
     return m_category;
     }
@@ -88,7 +106,7 @@ IECSqlExpectedResult::Category IECSqlExpectedResult::GetCategory () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8CP IECSqlExpectedResult::GetDescription () const
+Utf8CP ECSqlExpectedResult::GetDescription () const
     {
     return m_description.c_str ();
     }
@@ -96,7 +114,7 @@ Utf8CP IECSqlExpectedResult::GetDescription () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-bool IECSqlExpectedResult::IsExpectedToSucceed () const
+bool ECSqlExpectedResult::IsExpectedToSucceed () const
     {
     return m_category == Category::Supported || m_category == Category::SupportedButMightBecomeInvalid;
     }
@@ -105,7 +123,7 @@ bool IECSqlExpectedResult::IsExpectedToSucceed () const
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-Utf8String IECSqlExpectedResult::CategoryToString (IECSqlExpectedResult::Category category)
+Utf8String ECSqlExpectedResult::CategoryToString (ECSqlExpectedResult::Category category)
     {
     switch (category)
         {
@@ -154,7 +172,7 @@ ECSqlExpectedResultsDictionary& ECSqlExpectedResultsDictionary::operator= (ECSql
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlExpectedResultsDictionary::Add (unique_ptr<IECSqlExpectedResult> expectedResult)
+void ECSqlExpectedResultsDictionary::Add (unique_ptr<ECSqlExpectedResult> expectedResult)
     {
     m_lastAdded = expectedResult.get ();
     m_innerDictionary[expectedResult->GetType ()] = move (expectedResult);
@@ -163,7 +181,7 @@ void ECSqlExpectedResultsDictionary::Add (unique_ptr<IECSqlExpectedResult> expec
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlExpectedResult const* ECSqlExpectedResultsDictionary::GetLastAdded () const
+ECSqlExpectedResult const* ECSqlExpectedResultsDictionary::GetLastAdded () const
     {
     return m_lastAdded;
     }
@@ -221,7 +239,7 @@ void ECSqlTestItem::AddParameterValue (ParameterValue&& parameterValue)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlTestItem::AddExpectedResult (std::unique_ptr<IECSqlExpectedResult> expectedResult)
+void ECSqlTestItem::AddExpectedResult (std::unique_ptr<ECSqlExpectedResult> expectedResult)
     {
     m_expectedResults.Add (move (expectedResult));
     }
@@ -261,11 +279,11 @@ bool ECSqlTestItem::GetRollbackAfterwards () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  07/13
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlExpectedResult::Category ECSqlTestItem::GetExpectedResultCategory () const
+ECSqlExpectedResult::Category ECSqlTestItem::GetExpectedResultCategory () const
     {
     auto lastAddedExpectedResult = m_expectedResults.GetLastAdded ();
     if (lastAddedExpectedResult == nullptr)
-        return IECSqlExpectedResult::Category::Supported;
+        return ECSqlExpectedResult::Category::Supported;
 
     return lastAddedExpectedResult->GetCategory ();
     }

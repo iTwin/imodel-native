@@ -22,7 +22,7 @@ Utf8String CreateTestDb
 Utf8CP dbName,
 Utf8CP schemaFullName,
 int instanceCount,
-BeRepositoryId repoId = BeRepositoryId(0)
+BeBriefcaseId repoId = BeBriefcaseId(0)
 )
     {
     WString schemaFileName;
@@ -32,8 +32,8 @@ BeRepositoryId repoId = BeRepositoryId(0)
     testProject.Create(dbName, schemaFileName.c_str(), instanceCount);
     if (repoId.GetValue() > 0)
         {
-        testProject.GetECDb().ChangeRepositoryId(repoId);
-        EXPECT_EQ (BE_SQLITE_OK, testProject.GetECDb().SaveChanges()) << L"Changing repository id in test DgnDb failed";
+        testProject.GetECDb().ChangeBriefcaseId(repoId);
+        EXPECT_EQ (BE_SQLITE_OK, testProject.GetECDb().SaveChanges()) << L"Changing briefcase id in test DgnDb failed";
         }
     
     return Utf8String(testProject.GetECDbCR ().GetDbFileName());
@@ -92,7 +92,7 @@ Utf8CP dbName,
 Utf8CP schemaFullName,
 int instanceCount,
 Db::OpenMode openMode,
-BeRepositoryId repoId,
+BeBriefcaseId repoId,
 ECSchemaCP* schema = nullptr
 )
     {
@@ -163,12 +163,12 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceFirstIdTest)
     ECSchemaCP schema = nullptr;
     CreateAndReopenTestDb(ecdb, "StartupCompany.ecdb", "StartupCompany.02.00", 0, Db::OpenMode::ReadWrite, &schema);
 
-    const BeRepositoryBasedId expectedFirstId(ecdb.GetRepositoryId(), 1);
+    const BeBriefcaseBasedId expectedFirstId(ecdb.GetBriefcaseId(), 1);
 
     ECInstanceKey actualFirstKey;
     InsertInstance(actualFirstKey, ecdb, *(schema->GetClassCP ("AAA")));
 
-    EXPECT_EQ (expectedFirstId.GetValue(), actualFirstKey.GetECInstanceId().GetValue()) << "First ECInstanceId generated per repository id differs from expected.";
+    EXPECT_EQ (expectedFirstId.GetValue(), actualFirstKey.GetECInstanceId().GetValue()) << "First ECInstanceId generated per briefcase id differs from expected.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -179,7 +179,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceExcessTest)
     Utf8CP schemaFullName = "StartupCompany.02.00";
 
     Utf8String dbPath;
-    //max in this test means max per repository id.
+    //max in this test means max per briefcase id.
     int64_t maxId = 0LL;
     int64_t twoBelowMaxId = 0LL;
     size_t sequenceIndex = 0;
@@ -193,12 +193,12 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceExcessTest)
 
         ASSERT_EQ (BE_SQLITE_OK, db.GetRLVCache().Register(sequenceIndex, ECINSTANCEIDSEQUENCE_BELOCAL_KEY));
         //artificially set sequence close to maximum
-        BeRepositoryId repoId = db.GetRepositoryId();
-        maxId = BeRepositoryBasedId(repoId, BeRepositoryBasedId::MaxLocal()-1).GetValue();
+        BeBriefcaseId repoId = db.GetBriefcaseId();
+        maxId = BeBriefcaseBasedId(repoId, BeBriefcaseBasedId::MaxLocal()-1).GetValue();
 
         twoBelowMaxId = maxId - 2LL;
         stat = db.GetRLVCache().SaveValue(sequenceIndex, twoBelowMaxId);
-        EXPECT_EQ (BE_SQLITE_OK, stat) << "Setting ECInstanceIdSequence to two below per repository max in be_Local failed.";
+        EXPECT_EQ (BE_SQLITE_OK, stat) << "Setting ECInstanceIdSequence to two below per briefcase max in be_Local failed.";
         db.SaveChanges();
         }
 
@@ -225,7 +225,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceExcessTest)
     BeTest::SetFailOnAssert(false);
         {
         IECInstancePtr instance = InsertInstance(id, ecdb, *testClass);
-        ASSERT_TRUE (instance.IsValid()) << L"Insert instance which generates an ECInstanceId that exceeds the per repository id maximum is expected to succeed, with an undefined ECInstanceId";
+        ASSERT_TRUE (instance.IsValid()) << L"Insert instance which generates an ECInstanceId that exceeds the per briefcase id maximum is expected to succeed, with an undefined ECInstanceId";
         }
     BeTest::SetFailOnAssert(true);
     }
@@ -237,23 +237,23 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceTestWithMaximumRepoId)
     {
     Utf8CP const schemaFullName = "StartupCompany.02.00";
 
-    BeRepositoryId repo(22);
-    BeRepositoryBasedId test2(repo, 33);
-    ASSERT_TRUE(repo == test2.GetRepositoryId());
+    BeBriefcaseId repo(22);
+    BeBriefcaseBasedId test2(repo, 33);
+    ASSERT_TRUE(repo == test2.GetBriefcaseId());
 
-    BeRepositoryBasedId test3(repo, BeRepositoryBasedId::MaxLocal() - 2);
-    BeRepositoryId t3=test3.GetRepositoryId();
+    BeBriefcaseBasedId test3(repo, BeBriefcaseBasedId::MaxLocal() - 2);
+    BeBriefcaseId t3=test3.GetBriefcaseId();
     ASSERT_TRUE(repo == t3);
 
-    BeRepositoryId bigRepo(0xffff00);
+    BeBriefcaseId bigRepo(0xffff00);
     uint64_t localId = 44;
-    BeRepositoryBasedId t4(bigRepo, localId);
-    ASSERT_TRUE(localId == (t4.GetValue() - BeRepositoryBasedId(bigRepo,0).GetValue()));
+    BeBriefcaseBasedId t4(bigRepo, localId);
+    ASSERT_TRUE(localId == (t4.GetValue() - BeBriefcaseBasedId(bigRepo,0).GetValue()));
 
-    BeRepositoryId expectedRepoId(BeRepositoryId::MaxRepo()-2);
-    BeRepositoryBasedId oneBelowMaxIdValue(expectedRepoId, BeRepositoryBasedId::MaxLocal() - 2);
+    BeBriefcaseId expectedRepoId(BeBriefcaseId::MaxRepo()-2);
+    BeBriefcaseBasedId oneBelowMaxIdValue(expectedRepoId, BeBriefcaseBasedId::MaxLocal() - 2);
 
-    BeRepositoryId tryId = oneBelowMaxIdValue.GetRepositoryId();
+    BeBriefcaseId tryId = oneBelowMaxIdValue.GetBriefcaseId();
     ASSERT_TRUE(expectedRepoId == tryId);
 
     Utf8String dbPath;
@@ -278,7 +278,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceTestWithMaximumRepoId)
     EXPECT_TRUE (testClass != nullptr) << "Test class not found";
 
     //now insert an instance and it should get the last available ECInstanceId
-    const int64_t maxId = BeRepositoryBasedId(expectedRepoId, BeRepositoryBasedId::MaxLocal() - 1).GetValue();
+    const int64_t maxId = BeBriefcaseBasedId(expectedRepoId, BeBriefcaseBasedId::MaxLocal() - 1).GetValue();
     ECInstanceKey id;
     InsertInstance(id, db, *testClass);
     EXPECT_EQ (maxId, id.GetECInstanceId().GetValue()) << "Inserted instance is expected to have maximally possible ECInstanceId.";
@@ -302,15 +302,15 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceExistsAcrossSessionTest)
     size_t sequenceIndex = 0;
     ASSERT_TRUE (ecdb.GetRLVCache().TryGetIndex(sequenceIndex, ECINSTANCEIDSEQUENCE_BELOCAL_KEY));
 
-    BeRepositoryId repoId = ecdb.GetRepositoryId();
+    BeBriefcaseId repoId = ecdb.GetBriefcaseId();
     uint64_t lastId = -1LL;
     DbResult stat = ecdb.GetRLVCache().QueryValue(lastId, sequenceIndex);
     EXPECT_EQ (BE_SQLITE_OK, stat) << "Querying last id of ECInstanceIdSequence from be_Local failed";
 
     EXPECT_TRUE(lastId>0LL) << "Last id of ECInstanceIdSequence in be_Local must be greater than 0 as instances were already inserted.";
 
-    const BeRepositoryBasedId maxThreshold(repoId.GetNextRepositoryId(), 0);
-    EXPECT_LT (lastId, maxThreshold.GetValue()) << "Last id of ECInstanceIdSequence is expected to be less than maximum threshold which is the 0 id of the next repository id.";
+    const BeBriefcaseBasedId maxThreshold(repoId.GetNextBriefcaseId(), 0);
+    EXPECT_LT (lastId, maxThreshold.GetValue()) << "Last id of ECInstanceIdSequence is expected to be less than maximum threshold which is the 0 id of the next briefcase id.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -444,7 +444,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceIncrementationWithManyToMany
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECInstanceIdSequenceTests, ChangeRepositoryIdTest)
+TEST(ECInstanceIdSequenceTests, ChangeBriefcaseIdTest)
     {
     ECDb ecdb;
     ECSchemaCP schema = nullptr;
@@ -459,24 +459,24 @@ TEST(ECInstanceIdSequenceTests, ChangeRepositoryIdTest)
     IECInstancePtr instance = InsertInstance(idBeforeRepoIdChange, ecdb, testClass);
 
     //change repo id.
-    const BeRepositoryId expectedRepoId(213);
-    DbResult stat = ecdb.ChangeRepositoryId(expectedRepoId);
-    ASSERT_EQ (BE_SQLITE_OK, stat) << "Changing the repository id failed unexpectedly.";
+    const BeBriefcaseId expectedRepoId(213);
+    DbResult stat = ecdb.ChangeBriefcaseId(expectedRepoId);
+    ASSERT_EQ (BE_SQLITE_OK, stat) << "Changing the briefcase id failed unexpectedly.";
 
     uint64_t sequenceLastValue = -1LL;
     stat = ecdb.GetRLVCache().QueryValue(sequenceLastValue, sequenceIndex);
     EXPECT_EQ (BE_SQLITE_OK, stat) << "Failed to retrieve last ECInstanceIdSequence value from be_local";
 
-    const BeRepositoryBasedId expectedSequenceLastValueAfterReset(expectedRepoId, 0);
-    EXPECT_EQ (expectedSequenceLastValueAfterReset.GetValue(), sequenceLastValue) << "ECInstanceIdSequence last value is expected to be reset after call to ChangeRepositoryId.";
+    const BeBriefcaseBasedId expectedSequenceLastValueAfterReset(expectedRepoId, 0);
+    EXPECT_EQ (expectedSequenceLastValueAfterReset.GetValue(), sequenceLastValue) << "ECInstanceIdSequence last value is expected to be reset after call to ChangeBriefcaseId.";
 
     //now insert new instance
     ECInstanceKey actualId;
     instance = InsertInstance(actualId, ecdb, testClass);
-    ASSERT_TRUE (instance.IsValid()) << "Inserting ECInstance failed after having changed the repository id.";
+    ASSERT_TRUE (instance.IsValid()) << "Inserting ECInstance failed after having changed the briefcase id.";
 
-    const BeRepositoryBasedId expectedId(expectedRepoId, 1);
-    ASSERT_EQ (expectedId.GetValue(), actualId.GetECInstanceId().GetValue()) << "First instance inserted after repository id change is expected to be {new repo id | 1}.";
+    const BeBriefcaseBasedId expectedId(expectedRepoId, 1);
+    ASSERT_EQ (expectedId.GetValue(), actualId.GetECInstanceId().GetValue()) << "First instance inserted after briefcase id change is expected to be {new repo id | 1}.";
 
     //finally query for the instance inserted under the old repo id
     ECSqlSelectBuilder ecsqlBuilder;

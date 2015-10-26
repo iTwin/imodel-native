@@ -156,7 +156,7 @@ struct ChangeSummary : NonCopyableClass
         Utf8String m_ecClassIdColumnName;
         int  m_ecClassIdColumnIndex = -1;
 
-        bool QueryIdColumnFromMap(Utf8StringR idColumnName, ECDbR ecdb, Utf8CP tableName, int userData) const;
+        bool QueryIdColumnFromMap(Utf8StringR idColumnName, ECDbR ecdb, Utf8CP tableName, int columnKind) const;
         bool QueryInstanceIdColumnFromMap(Utf8StringR idColumnName, ECDbR ecdb, Utf8CP tableName) const;
         bool QueryClassIdColumnFromMap(Utf8StringR idColumnName, ECDbR ecdb, Utf8CP tableName) const;
         void FreeClassMap();
@@ -397,7 +397,7 @@ private:
     Utf8String ConstructWhereInClause(int queryDbOpcodes) const;
 public:
     //! Construct a ChangeSummary from a BeSQLite ChangeSet
-    ECDB_EXPORT ChangeSummary(ECDbR ecdb);
+    ECDB_EXPORT explicit ChangeSummary(ECDbR);
 
     //! Destructor
     ECDB_EXPORT ~ChangeSummary();

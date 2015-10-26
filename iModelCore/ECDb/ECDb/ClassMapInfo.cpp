@@ -268,7 +268,9 @@ bool ClassMapInfo::ValidateChildStrategy(UserECDbMapStrategy const& rootStrategy
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ClassMapInfo::_InitializeFromSchema ()
     {
-    if (SUCCESS != InitializeFromClassMapCA() || SUCCESS != InitializeFromClassHasCurrentTimeStampProperty())
+    if (SUCCESS != InitializeFromClassMapCA() ||
+        SUCCESS != InitializeDisableECInstanceIdAutogeneration() || 
+        SUCCESS != InitializeFromClassHasCurrentTimeStampProperty())
         return ERROR;
 
     // Add indices for important identifiers
@@ -381,7 +383,7 @@ bool ClassHasDisableECInstanceIdAutogenerationCA(bool* appliesToSubclasses, ECCl
     if (appliesToSubclasses != nullptr)
         *appliesToSubclasses = false;
 
-    IECInstancePtr disableECInstanceIdAutoGenerationCA = ecclass.GetCustomAttribute("DisableECInstanceIdAutogeneration");
+    IECInstancePtr disableECInstanceIdAutoGenerationCA = ecclass.GetCustomAttributeLocal("DisableECInstanceIdAutogeneration");
     if (disableECInstanceIdAutoGenerationCA != nullptr && appliesToSubclasses != nullptr)
         {
         ECValue v;
@@ -670,8 +672,8 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
         if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetOnUpdateAction(onUpdateActionStr))
             return ERROR;
 
-        const ECDbSqlForeignKeyConstraint::ActionType onDeleteAction = ECDbSqlForeignKeyConstraint::ToActionType(onDeleteActionStr.c_str());
-        if (onDeleteAction == ECDbSqlForeignKeyConstraint::ActionType::Cascade && relClass->GetStrength() != StrengthType::STRENGTHTYPE_Embedding)
+        const ForeignKeyActionType onDeleteAction = ECDbSqlForeignKeyConstraint::ToActionType(onDeleteActionStr.c_str());
+        if (onDeleteAction == ForeignKeyActionType::Cascade && relClass->GetStrength() != StrengthType::STRENGTHTYPE_Embedding)
             {
             LOG.errorv("ForeignKeyRelationshipMap custom attribute on ECRelationshipClass '%s' can only define a CASCADE DELETE constraint if the relationship strength is 'Embedding'.",
                        GetECClass().GetFullName());
