@@ -49,7 +49,14 @@
 #include <ErdasEcwJpeg2000/NCSTypes.h>
 #include <ErdasEcwJpeg2000/NCSECWCompressClient.h>
 
+// We cannot forward declare NCS typedef so we use a struct to hide them in the header file.
+struct NCSObjects 
+    {
+    NCSObjects(){m_pFileView = nullptr; m_pFileInfo = nullptr;}
 
+    NCSFileView*           m_pFileView;
+    NCSFileViewFileInfoEx* m_pFileInfo;
+    };
 
 #define round(a) ((long)((a)<0.0?(a)-0.5:(a)+0.5))
 
@@ -839,10 +846,10 @@ void HRFErMapperSupportedFile::Close()
     {
     if (m_IsOpen)
         {
-        if (m_pNCSFileView)
+        if (m_pNcsObjs->m_pFileView != nullptr)
             {
-            NCScbmCloseFileViewEx((NCSFileView*)m_pNCSFileView, true);
-            m_pNCSFileView = 0;
+            NCScbmCloseFileViewEx(m_pNcsObjs->m_pFileView, true);
+            m_pNcsObjs->m_pFileView = nullptr;
             }
 
         m_IsOpen = false;
@@ -982,22 +989,22 @@ bool HRFErMapperSupportedFile::Open()
             UrlOffset = 7; //Ignore the file:// placed at the front of the url
             }
 
-        NCSError error = NCScbmOpenFileViewW(m_pURL->GetURL().substr(UrlOffset).c_str(), (NCSFileView**)&m_pNCSFileView, 0);
+        NCSError error = NCScbmOpenFileViewW(m_pURL->GetURL().substr(UrlOffset).c_str(), &m_pNcsObjs->m_pFileView, 0);
 
         if (error != 0)
             {
-            m_pNCSFileView = 0;
+            m_pNcsObjs->m_pFileView = nullptr;
             }
         else
             {
-            error = NCScbmGetViewFileInfoEx((NCSFileView*)m_pNCSFileView, (NCSFileViewFileInfoEx**)&m_pNCSFileViewFileInfoEx);
+            error = NCScbmGetViewFileInfoEx(m_pNcsObjs->m_pFileView, &m_pNcsObjs->m_pFileInfo);
             }
 
         if (error == 0)
             {
             // Prepare bands (optimization)
-            m_pBandList = new uint32_t[((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->nBands];
-            for (unsigned short Band = 0; Band < ((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->nBands; Band++)
+            m_pBandList = new uint32_t[m_pNcsObjs->m_pFileInfo->nBands];
+            for (unsigned short Band = 0; Band < m_pNcsObjs->m_pFileInfo->nBands; Band++)
                 m_pBandList[Band] = Band;
 
             HasFileBeenOpened = true;
@@ -1086,11 +1093,11 @@ void HRFErMapperSupportedFile::SetLookAhead(uint32_t        pi_Page,
         Byte NbBytePerPixel;
 
         HArrayAutoPtr<Byte> pData;
-        if (((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->nBands == 1)
+        if (m_pNcsObjs->m_pFileInfo->nBands == 1)
             {
             NbBytePerPixel = 1;
             }
-        else if (((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->nBands == 3)
+        else if (m_pNcsObjs->m_pFileInfo->nBands == 3)
             {
             NbBytePerPixel = 3;
             }
@@ -1209,8 +1216,8 @@ bool HRFErMapperSupportedFile::Create()
 void HRFErMapperSupportedFile::CreateDescriptors ()
     {
     // Get image dimensions.
-    unsigned long Width  = ((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->nSizeX;
-    unsigned long Height = ((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->nSizeY;
+    unsigned long Width  = m_pNcsObjs->m_pFileInfo->nSizeX;
+    unsigned long Height = m_pNcsObjs->m_pFileInfo->nSizeY;
 
     // Calculate resolution count
     unsigned int  ResCount = 1;
@@ -1232,11 +1239,11 @@ void HRFErMapperSupportedFile::CreateDescriptors ()
     HFCPtr<HCDCodec>                               pCodec;
 
     // Pixel type
-    if (((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->nBands == 1)
+    if (m_pNcsObjs->m_pFileInfo->nBands == 1)
         {
         pPixelType = new HRPPixelTypeV8Gray8();
         }
-    else if (((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->nBands == 3)
+    else if (m_pNcsObjs->m_pFileInfo->nBands == 3)
         {
         pPixelType = new HRPPixelTypeV24R8G8B8();
         }
@@ -1342,7 +1349,7 @@ RasterFileGeocodingPtr HRFErMapperSupportedFile::ExtractGeocodingInformation(dou
     {
     WString osUnits;
 
-    if (((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->eCellSizeUnits == ECW_CELL_UNITS_FEET )
+    if (m_pNcsObjs->m_pFileInfo->eCellSizeUnits == ECW_CELL_UNITS_FEET )
         {
         if (ImageppLib::GetHost().GetImageppLibAdmin()._IsErMapperUseFeetInsteadofSurveyFeet())
             {
@@ -1355,12 +1362,12 @@ RasterFileGeocodingPtr HRFErMapperSupportedFile::ExtractGeocodingInformation(dou
             osUnits = L"FEET";
             }
         }
-    else if (((NCSFileViewFileInfoEx*) m_pNCSFileViewFileInfoEx)->eCellSizeUnits == ECW_CELL_UNITS_METERS)
+    else if (m_pNcsObjs->m_pFileInfo->eCellSizeUnits == ECW_CELL_UNITS_METERS)
         {
         factorModelToMeter=1.0;
         osUnits = L"METERS";
         }
-    else if (((NCSFileViewFileInfoEx*) m_pNCSFileViewFileInfoEx)->eCellSizeUnits == ECW_CELL_UNITS_DEGREES)
+    else if (m_pNcsObjs->m_pFileInfo->eCellSizeUnits == ECW_CELL_UNITS_DEGREES)
         {
         factorModelToMeter = 1.0;
         osUnits = L"DEGREES";
@@ -1369,8 +1376,8 @@ RasterFileGeocodingPtr HRFErMapperSupportedFile::ExtractGeocodingInformation(dou
     WString projection;
     WString datum;
 
-    BeStringUtilities::CurrentLocaleCharToWChar(projection,((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->szProjection);
-    BeStringUtilities::CurrentLocaleCharToWChar(datum,((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->szDatum);
+    BeStringUtilities::CurrentLocaleCharToWChar(projection, m_pNcsObjs->m_pFileInfo->szProjection);
+    BeStringUtilities::CurrentLocaleCharToWChar(datum, m_pNcsObjs->m_pFileInfo->szDatum);
 
     uint32_t EPSGCodeFomrERLibrary = GetEPSGFromProjectionAndDatum(projection, datum);
     IRasterBaseGcsPtr  pBaseGCS = HRFGeoCoordinateProvider::CreateRasterGcsFromERSIDS(EPSGCodeFomrERLibrary, projection,datum,osUnits);
@@ -1435,23 +1442,22 @@ void HRFErMapperSupportedFile::BuildTransfoModelMatrix(HFCPtr<HGF2DTransfoModel>
     else
 #endif
     {
-    switch(((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->eCellSizeUnits)
+    switch(m_pNcsObjs->m_pFileInfo->eCellSizeUnits)
         {
         case ECW_CELL_UNITS_METERS:
         case ECW_CELL_UNITS_UNKNOWN:
         case ECW_CELL_UNITS_DEGREES:
         case ECW_CELL_UNITS_FEET:
-            if (((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->fCellIncrementX == 0 ||
-                ((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->fCellIncrementY == 0)
+            if (m_pNcsObjs->m_pFileInfo->fCellIncrementX == 0 || m_pNcsObjs->m_pFileInfo->fCellIncrementY == 0)
                 throw HRFTransfoModelNotSupportedException(m_pURL->GetURL().c_str());
 
             // The unit will be treated by the tag ProjLinearUnits
-            TransfoMatrix[0][0] = ((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->fCellIncrementX;
+            TransfoMatrix[0][0] = m_pNcsObjs->m_pFileInfo->fCellIncrementX;
             TransfoMatrix[0][1] = 0.0;
-            TransfoMatrix[0][2] = ((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->fOriginX;
+            TransfoMatrix[0][2] = m_pNcsObjs->m_pFileInfo->fOriginX;
             TransfoMatrix[1][0] = 0.0;
-            TransfoMatrix[1][1] = ((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->fCellIncrementY;
-            TransfoMatrix[1][2] = ((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->fOriginY;
+            TransfoMatrix[1][1] = m_pNcsObjs->m_pFileInfo->fCellIncrementY;
+            TransfoMatrix[1][2] = m_pNcsObjs->m_pFileInfo->fOriginY;
             TransfoMatrix[2][0] = 0.0;
             TransfoMatrix[2][1] = 0.0;
             TransfoMatrix[2][2] = 1.0;
@@ -1532,7 +1538,7 @@ double HRFErMapperSupportedFile::RoundRatio(unsigned long pi_MainImageSize, unsi
 //-----------------------------------------------------------------------------
 void* HRFErMapperSupportedFile::GetFileView()
     {
-    return m_pNCSFileView;
+    return m_pNcsObjs->m_pFileView;
     }
 
 //-----------------------------------------------------------------------------
@@ -1542,7 +1548,7 @@ void* HRFErMapperSupportedFile::GetFileView()
 //-----------------------------------------------------------------------------
 const void* HRFErMapperSupportedFile::GetFileViewFileInfoEx()
     {
-    return m_pNCSFileViewFileInfoEx;
+    return m_pNcsObjs->m_pFileInfo;
     }
 
 
@@ -1654,8 +1660,7 @@ HRFErMapperSupportedFile::HRFErMapperSupportedFile(const HFCPtr<HFCURL>&        
     // The ancestor store the access mode
     m_IsOpen                = false;
 
-    m_pNCSFileView              = 0;
-    m_pNCSFileViewFileInfoEx    = 0;
+    m_pNcsObjs.reset(new NCSObjects);
 
     m_pBandList         = 0;
     m_pRatio            = 0;

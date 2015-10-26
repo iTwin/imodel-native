@@ -35,6 +35,8 @@
 #define BLOCK_WIDTH_ERMAPPER       256
 #define BLOCK_HEIGHT_ERMAPPER      256
 
+struct NCSObjects;
+
 BEGIN_IMAGEPP_NAMESPACE
 class HRFErMapperSupportedFileEditor;
 
@@ -121,9 +123,8 @@ protected:
     double                  RoundRatio(unsigned long pi_MainImageSize, unsigned long pi_ResImageSize);
 
     // members
-    void*                   m_pNCSFileView;            //NCSFileView
-    void*                   m_pNCSFileViewFileInfoEx;  //NCSFileViewFileInfoEx
-    uint32_t*                 m_pBandList;
+    unique_ptr<NCSObjects>  m_pNcsObjs; 
+    uint32_t*               m_pBandList;
     double*                 m_pRatio;
     bool                    m_IsJpeg2000;
     bool                    m_IsECWP;
@@ -140,6 +141,7 @@ private:
     static const BandList&              GetSpecifiedBands();
 
     // Methods Disabled
+    HRFErMapperSupportedFile();
     HRFErMapperSupportedFile(const HRFErMapperSupportedFile& pi_rObj);
     HRFErMapperSupportedFile&             operator= (const HRFErMapperSupportedFile& pi_rObj);
 
