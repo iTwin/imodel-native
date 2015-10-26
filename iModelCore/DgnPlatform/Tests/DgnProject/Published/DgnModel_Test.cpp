@@ -412,7 +412,6 @@ TEST_F(DgnModelTests, DictionaryModel)
     DgnImportContext importer(db, *db2);
     EXPECT_TRUE(DgnModel::Import(nullptr, dictModelR, importer).IsNull());
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Maha Nasir                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/

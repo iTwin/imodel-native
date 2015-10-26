@@ -256,6 +256,45 @@ DgnMaterialId DgnMaterial::ImportMaterial(DgnMaterialId srcMaterialId, DgnImport
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnMaterialId DgnMaterials::ImportMaterial(DgnImportContext& context, DgnDbR sourceDb, DgnMaterialId source)
+    {
+    Material sourceMaterial = sourceDb.Materials().Query(source);
+    if (!sourceMaterial.IsValid())
+        {
+        BeAssert(!source.IsValid() && "look up should fail only for an invalid materialid");
+        return DgnMaterialId();
+        }
+
+    // If the destination Db already contains a material by this name, then remap to it. Don't create another copy.
+    DgnMaterialId destMaterialId = context.GetDestinationDb().Materials().QueryMaterialId(sourceMaterial.GetName(), sourceMaterial.GetPalette());
+    if (destMaterialId.IsValid())
+        return destMaterialId;
+
+    //  Must copy and remap the source material.
+    Material destMaterial(sourceMaterial);
+    if (sourceMaterial.GetParentId().IsValid())
+        destMaterial.SetParentId(context.RemapMaterialId(sourceMaterial.GetParentId()));
+
+    Json::Value renderingAsset;
+
+    if (SUCCESS == destMaterial.GetRenderingAsset (renderingAsset))
+        {
+        RenderMaterialPtr       renderMaterial = JsonRenderMaterial::Create (renderingAsset, source);
+        JsonRenderMaterial*     jsonRenderMaterial = dynamic_cast <JsonRenderMaterial*> (renderMaterial.get());
+
+        if (nullptr != jsonRenderMaterial &&
+            SUCCESS == jsonRenderMaterial->DoImport (context, sourceDb))
+           destMaterial.SetRenderingAsset (jsonRenderMaterial->GetValue());
+        }
+
+    Insert (destMaterial);
+
+    return context.AddMaterialId(source, destMaterial.GetId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnMaterialId DgnImportContext::RemapMaterialId(DgnMaterialId source)
     {
     if (!IsBetweenDbs())
