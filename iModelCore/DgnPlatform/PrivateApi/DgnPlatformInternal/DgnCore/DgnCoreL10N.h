@@ -215,6 +215,9 @@ BENTLEY_TRANSLATABLE_STRINGS_START(DgnCoreL10N,dgncore_msg)
     L10N_STRING(VIEW_MessageID_BaseName)                        // =="Untitled"==
 
     L10N_STRING(MODELNAME_Dictionary)                           // =="Resource Dictionary"==
+
+    L10N_STRING(REVISION_Merge)                                 // =="Merge"==
+
 BENTLEY_TRANSLATABLE_STRINGS_END
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
