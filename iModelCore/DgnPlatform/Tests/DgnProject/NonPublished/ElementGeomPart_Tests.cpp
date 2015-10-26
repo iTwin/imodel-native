@@ -53,11 +53,12 @@ TEST_F(ElementGeomPartTests, CRUD)
     // Update
     builder->Append(*elGPtr);
     builder->SetGeomStream(*geomPartPtr);
+    ASSERT_TRUE(partId == geomPartPtr->GetId());
     EXPECT_TRUE(geomPartPtr->GetGeomStream().GetSize() > size);
     ASSERT_TRUE(geomPartPtr->GetId().IsValid());
-    EXPECT_TRUE(SUCCESS  == geomPartTable.UpdateGeomPart(*geomPartPtr));
+    ASSERT_EQ(SUCCESS  , geomPartTable.UpdateGeomPart(*geomPartPtr));
     
-    EXPECT_TRUE(geomPartTable.LoadGeomPart(partId)->GetGeomStream().GetSize() > size);
+    EXPECT_GT(geomPartTable.LoadGeomPart(partId)->GetGeomStream().GetSize() , size);
 
     // Delete
     EXPECT_TRUE(SUCCESS == geomPartTable.DeleteGeomPart(partId) );

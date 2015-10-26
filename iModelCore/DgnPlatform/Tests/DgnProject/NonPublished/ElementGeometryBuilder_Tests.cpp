@@ -61,13 +61,12 @@ TEST_F(ElementGeometryBuilderTests, CreateElement3d)
 
     // SubCategory
     //
-    DgnCategories::SubCategory::Appearance appearence;
+    DgnSubCategory::Appearance appearence;
     appearence.SetInvisible(false);
     appearence.SetColor(ColorDef::DarkRed());
     Utf8CP sub_code = "Test SubCategory";
     Utf8CP sub_desc = "This is a test subcategory";
-    Utf8CP sub_label = "TestSubCategory";
-    DgnCategories::SubCategory subCategory(m_defaultCategoryId, DgnCategories::DefaultSubCategoryId(m_defaultCategoryId), sub_code, appearence, sub_desc, sub_label);
+    DgnSubCategory subCategory(DgnSubCategory::CreateParams(*m_db, m_defaultCategoryId, sub_code, appearence, sub_desc));
     EXPECT_TRUE(builder->Append(subCategory.GetSubCategoryId()));
 
     // MSBsplineSurface
