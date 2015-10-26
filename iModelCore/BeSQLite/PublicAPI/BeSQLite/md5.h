@@ -88,6 +88,7 @@ public:
   BE_SQLITE_EXPORT HashVal GetHashVal();
 
   /// restart
+  void Reset();
   BE_SQLITE_EXPORT void Reset();
 };
 END_BENTLEY_SQLITE_NAMESPACE 
