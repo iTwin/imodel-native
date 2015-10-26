@@ -95,7 +95,7 @@ DgnDbStatus TextAnnotationItem::_LoadProperties(DgnElementCR el)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2015
 //---------------------------------------------------------------------------------------
-void TextAnnotationItem::GenerateElementGeometry(GeometricElementR el) const
+void TextAnnotationItem::GenerateElementGeometry(GeometricElementR el, GenerateReason reason) const
     {
     // To allow DgnV8 conversion to create first-class text elements, but provide custom WYSIWYG geometry.
     if (m_isGeometrySuppressed)
@@ -141,17 +141,17 @@ TextAnnotationItemR PhysicalTextAnnotationElement::GetItemR() { return getItemR(
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     10/2015
 //---------------------------------------------------------------------------------------
-static DgnDbStatus updateGeometryOnChange(DgnDbStatus superStatus, GeometricElementR el, TextAnnotationItemCP item)
+static DgnDbStatus updateGeometryOnChange(DgnDbStatus superStatus, GeometricElementR el, TextAnnotationItemCP item, DgnElement::UniqueAspect::GenerateReason reason)
     {
     if (DgnDbStatus::Success != superStatus)
         return superStatus;
     
     if (nullptr != item)
-        item->GenerateElementGeometry(el);
+        item->GenerateElementGeometry(el, reason);
 
     return DgnDbStatus::Success;
     }
-DgnDbStatus TextAnnotationElement::_OnInsert() { return updateGeometryOnChange(T_Super::_OnInsert(), *this, GetItemCP()); }
-DgnDbStatus PhysicalTextAnnotationElement::_OnInsert() { return updateGeometryOnChange(T_Super::_OnInsert(), *this, GetItemCP()); }
-DgnDbStatus TextAnnotationElement::_OnUpdate(DgnElementCR el) { return updateGeometryOnChange(T_Super::_OnUpdate(el), *this, GetItemCP()); }
-DgnDbStatus PhysicalTextAnnotationElement::_OnUpdate(DgnElementCR el) { return updateGeometryOnChange(T_Super::_OnUpdate(el), *this, GetItemCP()); }
+DgnDbStatus TextAnnotationElement::_OnInsert() { return updateGeometryOnChange(T_Super::_OnInsert(), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Insert); }
+DgnDbStatus PhysicalTextAnnotationElement::_OnInsert() { return updateGeometryOnChange(T_Super::_OnInsert(), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Insert); }
+DgnDbStatus TextAnnotationElement::_OnUpdate(DgnElementCR el) { return updateGeometryOnChange(T_Super::_OnUpdate(el), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Update); }
+DgnDbStatus PhysicalTextAnnotationElement::_OnUpdate(DgnElementCR el) { return updateGeometryOnChange(T_Super::_OnUpdate(el), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Update); }
