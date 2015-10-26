@@ -218,7 +218,7 @@ static CurveVectorPtr computeShape(double len)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint64_t restrictions)
     {
-#define ALLOWED(ACTION) (0 == (restrictions & Restriction:: ## ACTION))
+#define ALLOWED(ACTION) (0 == (restrictions & ACTION))
 
     // Look up the element
     PhysicalElementCPtr cpElem = db.Elements().Get<PhysicalElement>(info.m_elemId);
@@ -231,8 +231,8 @@ void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint6
     // Clone
     DgnDbStatus status;
     auto clone = cpElem->Clone(&status);
-    EXPECT_EQ(clone.IsValid(), ALLOWED(Clone));
-    EXPECT_EQ(DgnDbStatus::MissingHandler == status, !ALLOWED(Clone));
+    EXPECT_EQ(clone.IsValid(), ALLOWED(Restriction::Clone));
+    EXPECT_EQ(DgnDbStatus::MissingHandler == status, !ALLOWED(Restriction::Clone));
     if (clone.IsValid())
         {
         EXPECT_EQ(&clone->GetElementHandler(), &cpElem->GetElementHandler());
@@ -244,29 +244,29 @@ void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint6
     DgnElementId parentId;
     ASSERT_TRUE(pElem.IsValid());
     status = pElem->SetParentId(parentId);
-    EXPECT_EQ(DgnDbStatus::MissingHandler == status, !ALLOWED(SetParent));
-    EXPECT_EQ(ALLOWED(SetParent), pElem->GetParentId() == parentId);
+    EXPECT_EQ(DgnDbStatus::MissingHandler == status, !ALLOWED(Restriction::SetParent));
+    EXPECT_EQ(ALLOWED(Restriction::SetParent), pElem->GetParentId() == parentId);
 
     // Change category
     status = pElem->SetCategoryId(m_alternateCategoryId);
-    EXPECT_EQ(DgnDbStatus::MissingHandler == status, !ALLOWED(SetCategory));
-    EXPECT_EQ(ALLOWED(SetCategory), pElem->GetCategoryId() == m_alternateCategoryId);
+    EXPECT_EQ(DgnDbStatus::MissingHandler == status, !ALLOWED(Restriction::SetCategory));
+    EXPECT_EQ(ALLOWED(Restriction::SetCategory), pElem->GetCategoryId() == m_alternateCategoryId);
 
     // Change placement
     Placement3d placement;
     status = pElem->SetPlacement(placement);
-    EXPECT_EQ(DgnDbStatus::MissingHandler == status, !ALLOWED(Move));
+    EXPECT_EQ(DgnDbStatus::MissingHandler == status, !ALLOWED(Restriction::Move));
 
     // Insert child
     DgnElementId newChildId = CreatePhysicalElement(db, info.m_elemId);
-    EXPECT_EQ(newChildId.IsValid(), ALLOWED(InsertChild));
+    EXPECT_EQ(newChildId.IsValid(), ALLOWED(Restriction::InsertChild));
 
     // Modify child
     PhysicalElementCPtr cpChild = db.Elements().Get<PhysicalElement>(info.m_childId);
     PhysicalElementPtr pChild = cpChild.IsValid() ? cpChild->MakeCopy<PhysicalElement>() : nullptr;
     ASSERT_TRUE(pChild.IsValid());
     EXPECT_EQ(DgnDbStatus::Success, pChild->SetCategoryId(m_alternateCategoryId));
-    EXPECT_EQ(pChild->Update().IsValid(), ALLOWED(UpdateChild));
+    EXPECT_EQ(pChild->Update().IsValid(), ALLOWED(Restriction::UpdateChild));
 
     // Delete child (schema is set up so that one element only supports insert, the other only supports delete - so try to delete the newly-added child
     if (newChildId.IsValid())
@@ -274,7 +274,7 @@ void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint6
         cpChild = db.Elements().Get<PhysicalElement>(newChildId);
         ASSERT_TRUE(cpChild.IsValid());
         status = cpChild->Delete();
-        if (ALLOWED(DeleteChild))
+        if (ALLOWED(Restriction::DeleteChild))
             EXPECT_EQ(status, DgnDbStatus::Success);
         else
             EXPECT_EQ(status, DgnDbStatus::ParentBlockedChange);
@@ -291,7 +291,7 @@ void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint6
     ISolidPrimitivePtr cylinder = ISolidPrimitive::CreateDgnCone(cylinderDetail);
     ASSERT_TRUE(cylinder.IsValid());
     builder->Append(*cylinder);
-    EXPECT_EQ(SUCCESS == builder->SetGeomStreamAndPlacement(*pElem), ALLOWED(SetGeometry));
+    EXPECT_EQ(SUCCESS == builder->SetGeomStreamAndPlacement(*pElem), ALLOWED(Restriction::SetGeometry));
     }
 
 /*---------------------------------------------------------------------------------**//**
