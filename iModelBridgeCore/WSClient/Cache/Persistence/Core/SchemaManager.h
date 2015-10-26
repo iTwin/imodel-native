@@ -21,6 +21,9 @@ struct SchemaManager
         ObservableECDb& m_db;
         ECSchemaList m_repositorySchemas;
 
+    private:
+        ECSchemaPtr LoadSchema(SchemaKey key, ECSchemaReadContext& context);
+
     public:
         SchemaManager(ObservableECDb& m_db);
 
