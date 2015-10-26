@@ -43,7 +43,7 @@ static BeFileName getMobileDgnSqlangFile()
     BeTest::GetHost().GetFrameworkSqlangFiles(frameworkSqlangFile);
 
     BeFileName mobileDgnSqlangFile = frameworkSqlangFile.GetDirectoryName();
-    mobileDgnSqlangFile.AppendToPath(L"platform");
+    //mobileDgnSqlangFile.AppendToPath(L"platform");
 #if defined (NDEBUG)
     mobileDgnSqlangFile.AppendToPath(L"MobileDgn_en.sqlang.db3");
 #else
