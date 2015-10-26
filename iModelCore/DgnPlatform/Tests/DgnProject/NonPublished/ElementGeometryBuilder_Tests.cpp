@@ -14,7 +14,6 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ElementGeometryBuilderTests : public DgnDbTestFixture
 {
-
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -30,26 +29,73 @@ TEST_F(ElementGeometryBuilderTests, CreateElement3d)
     GeometricElementP geomElem = const_cast<GeometricElementP>(el->ToGeometricElement());
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
-    CurveVectorPtr curveVector =  GeomHelper::computeShape();
-    EXPECT_TRUE(builder->Append(*curveVector));
 
-    double dz = 3.0;
-    double radius = 1.5;
-    DgnConeDetail cylinderDetail(DPoint3d::From(0, 0, 0), DPoint3d::From(0, 0, dz), radius, radius, true);
-    ISolidPrimitivePtr cylinder = ISolidPrimitive::CreateDgnCone(cylinderDetail);
-    EXPECT_TRUE(builder->Append(*cylinder));
-
+    //  CurvePrimitive
+    //
     DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,
         0, 0, 2,
         0, 3, 0,
         0.0, Angle::TwoPi());
     ICurvePrimitivePtr ellipse = ICurvePrimitive::CreateArc(ellipseData);
     EXPECT_TRUE(builder->Append(*ellipse));
+    
+    // Curve Vector
+    //
+    CurveVectorPtr curveVector =  GeomHelper::computeShape();
+    EXPECT_TRUE(builder->Append(*curveVector));
 
+    // SolidPrimitive
+    //
+    double dz = 3.0;
+    double radius = 1.5;
+    DgnConeDetail cylinderDetail(DPoint3d::From(0, 0, 0), DPoint3d::From(0, 0, dz), radius, radius, true);
+    ISolidPrimitivePtr cylinder = ISolidPrimitive::CreateDgnCone(cylinderDetail);
+    EXPECT_TRUE(builder->Append(*cylinder));
+
+    // ElemDisplayParams
+    //
     ElemDisplayParams elemDisplayParams;
     elemDisplayParams.SetCategoryId(m_defaultCategoryId);
     elemDisplayParams.SetWeight(2);
     EXPECT_TRUE( builder->Append(elemDisplayParams));
+
+    // SubCategory
+    //
+    DgnSubCategory::Appearance appearence;
+    appearence.SetInvisible(false);
+    appearence.SetColor(ColorDef::DarkRed());
+    Utf8CP sub_code = "Test SubCategory";
+    Utf8CP sub_desc = "This is a test subcategory";
+    DgnSubCategory subCategory(DgnSubCategory::CreateParams(*m_db, m_defaultCategoryId, sub_code, appearence, sub_desc));
+    DgnDbStatus status;
+    DgnSubCategoryCPtr newSubCategory =  subCategory.Insert(&status);
+    EXPECT_TRUE(DgnDbStatus::Success == status);
+    EXPECT_TRUE(newSubCategory.IsValid());
+    EXPECT_TRUE(newSubCategory->GetSubCategoryId().IsValid());
+    EXPECT_TRUE(builder->Append(newSubCategory->GetSubCategoryId()));
+
+    // MSBsplineSurface
+    //
+    double a = 1000.0 / 3.0;
+    MSBsplineSurfacePtr surface = GeomHelper::CreateGridSurface(DPoint3d::From(0, 0, 0), a, a, 3, 4, 4);
+    EXPECT_TRUE(builder->Append(*surface));
+
+    // PolyfaceQuery
+    //
+    IFacetOptionsPtr options = IFacetOptions::Create();
+    IPolyfaceConstructionPtr faceBuilder = IPolyfaceConstruction::Create(*options);
+    faceBuilder->AddSweptNGon(4, 1.0, 0.0, 2.0, true, true);
+    PolyfaceHeaderPtr mesh = faceBuilder->GetClientMeshPtr();
+    EXPECT_TRUE(builder->Append(*mesh));
+
+    // ISolidKernelEntityPtr
+    //
+
+    // TextString
+    //
+    
+    TextStringPtr text = GeomHelper::CreateTextString();
+    EXPECT_TRUE(builder->Append(*text));
 
     EXPECT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
     EXPECT_TRUE(m_db->Elements().Insert(*el).IsValid());

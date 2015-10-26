@@ -360,6 +360,15 @@ DgnDbStatus DgnSubCategory::_SetCode(Code const& code)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnSubCategory::UpdateCode(DgnCategoryCR cat)
+    {
+    auto code = DgnSubCategory::CreateSubCategoryCode(cat, IsDefaultSubCategory() ? cat.GetCategoryName() : GetSubCategoryName());
+    return T_Super::_SetCode(code);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 void DgnSubCategory::_CopyFrom(DgnElementCR el)
     {
     T_Super::_CopyFrom(el);
@@ -789,7 +798,32 @@ DgnDbStatus DgnCategory::_OnUpdate(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DgnCategory::_OnUpdated(DgnElementCR original) const
+    {
+    Code myCode = GetCode();
+    Code originalCode = original.GetCode();
+    if (!myCode.GetValue().Equals(originalCode.GetValue()))
+        {
+        // update namespace of sub-categories and name of default sub-category
+        DgnSubCategoryIdSet subcatIds = QuerySubCategories();
+        for (auto const& subcatId : subcatIds)
+            {
+            DgnSubCategoryPtr subcat = GetDgnDb().Elements().GetForEdit<DgnSubCategory>(subcatId);
+            BeAssert(subcat.IsValid());
+            if (subcat.IsValid())
+                {
+                subcat->UpdateCode(*this);
+                subcat->Update();
+                }
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnSubCategory::_OnUpdate(DgnElementCR el)
     {
     return DgnCategory::IsValidName(GetSubCategoryName()) ? T_Super::_OnUpdate(el) : DgnDbStatus::InvalidName;
     }
+
