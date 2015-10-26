@@ -15,7 +15,6 @@ USING_NAMESPACE_BENTLEY_RASTERSCHEMA
 RasterFile::RasterFile(Utf8StringCR resolvedName)
     {
     m_storedRasterPtr = nullptr;
-    m_worldClusterPtr = new HGFHMRStdWorldCluster();
     m_pageFilePtr = nullptr;
 
     m_HRFRasterFilePtr = OpenRasterFile(resolvedName);
@@ -67,7 +66,12 @@ void RasterFile::GetBitmap(HFCPtr<HRABitmapBase> pBitmap)
 //----------------------------------------------------------------------------------------
 HPMPool*  GetMemoryPool()
     {
-    static HPMPool  s_pool(0/*illimited*/); // Memory pool shared by all rasters. (in KB)
+#if defined(_WIN32) || defined(WIN32)
+    static HPMPool  s_pool(256*1024); // 256 Mb
+#else
+    #error On other systems (Android,...), we need to define available RAM to define the pool size
+    static HPMPool  s_pool(32*1024); // 32 Mb
+#endif
     return &s_pool;
     }
 
@@ -80,7 +84,7 @@ HRAStoredRaster* RasterFile::GetStoredRasterP()
     if(NULL != m_storedRasterPtr)
         return m_storedRasterPtr.GetPtr();
 
-    HFCPtr<HGF2DCoordSys> pLogical = m_worldClusterPtr->GetCoordSysReference(m_HRFRasterFilePtr->GetWorldIdentificator());
+    HFCPtr<HGF2DCoordSys> pLogical = GetWorldCluster().GetCoordSysReference(m_HRFRasterFilePtr->GetWorldIdentificator());
     HFCPtr<HRSObjectStore> pStore = new HRSObjectStore (GetMemoryPool(), m_HRFRasterFilePtr, 0/*page*/, pLogical);
 
     // Specify we do not want to use the file's clip shapes if any. Maybe we'll need to support the native clips some day...
@@ -241,7 +245,7 @@ DMatrix4d RasterFile::GetPhysicalToLowerLeft() const
 DMatrix4d RasterFile::GetGeoTransform() const
     {
     // Retrieve the logical CS associated to the world of the raster
-    HFCPtr<HGF2DCoordSys> pLogical = m_worldClusterPtr->GetCoordSysReference(m_HRFRasterFilePtr->GetWorldIdentificator());
+    HFCPtr<HGF2DCoordSys> pLogical = GetWorldCluster().GetCoordSysReference(m_HRFRasterFilePtr->GetWorldIdentificator());
 
     if (GetPageDescriptor()->HasTransfoModel())
         {
@@ -250,7 +254,7 @@ DMatrix4d RasterFile::GetGeoTransform() const
         HFCPtr<HGF2DCoordSys> pLogicalToPhysRasterWorld(new HGF2DCoordSys(*pTransfoModel, pLogical));
 
         // Normalize to HGF2DWorld_HMRWORLD(lower left origin), which is the expected CS for QuadTree
-        HFCPtr<HGF2DCoordSys> pHmrWorld = m_worldClusterPtr->GetCoordSysReference(HGF2DWorld_HMRWORLD);
+        HFCPtr<HGF2DCoordSys> pHmrWorld = GetWorldCluster().GetCoordSysReference(HGF2DWorld_HMRWORLD);
         HFCPtr<HGF2DTransfoModel> pLogicalToHmrWorldTransfo(pLogical->GetTransfoModelTo(pHmrWorld));
         HFCPtr<HGF2DCoordSys> pLogicalToHmrWorld(new HGF2DCoordSys(*pLogicalToHmrWorldTransfo, pLogical));
         HFCPtr<HGF2DTransfoModel> pLogicalToCartesian(pLogicalToPhysRasterWorld->GetTransfoModelTo(pLogicalToHmrWorld));
@@ -375,13 +379,14 @@ HFCPtr<HRFRasterFile> RasterFile::OpenRasterFile(Utf8StringCR resolvedName)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
-HGF2DWorldCluster*   RasterFile::GetWorldClusterP()
+HGF2DWorldCluster& RasterFile::GetWorldCluster()
     {
-    if (m_worldClusterPtr == nullptr)
-        {
-        m_worldClusterPtr = new HGFHMRStdWorldCluster();
-        }
-    return m_worldClusterPtr.GetPtr();
+    static HFCPtr<HGF2DWorldCluster> worldClusterPtr = nullptr;
+
+    if (worldClusterPtr == nullptr)
+        worldClusterPtr = new HGFHMRStdWorldCluster();
+        
+    return *worldClusterPtr;
     }
 
 //----------------------------------------------------------------------------------------
