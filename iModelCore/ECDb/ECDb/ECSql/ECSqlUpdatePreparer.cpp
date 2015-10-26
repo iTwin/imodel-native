@@ -21,7 +21,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
     {
     BeAssert (exp.IsComplete ());
-    ctx.PushScope (exp);
+    ctx.PushScope (exp, exp.GetOptionsClauseExp());
 
     ClassNameExp const* classNameExp = exp.GetClassNameExp ();
 
@@ -77,8 +77,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
         hasWhereClause = true;
         }
 
-    OptionExp const* noECClassIdFilterOptionExp = nullptr;
-    if (exp.GetOptionsClauseExp() == nullptr || !exp.GetOptionsClauseExp()->TryGetOption(noECClassIdFilterOptionExp, OptionsExp::NOECCLASSIDFILTER_OPTION))
+    if (exp.GetOptionsClauseExp() == nullptr || !exp.GetOptionsClauseExp()->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION))
         {
         // WHERE clause
         NativeSqlBuilder systemWhereClause;

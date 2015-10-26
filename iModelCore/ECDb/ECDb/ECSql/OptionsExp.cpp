@@ -36,6 +36,22 @@ BentleyStatus OptionsExp::AddOptionExp(std::unique_ptr<OptionExp> optionExp)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/2015
 //+---------------+---------------+---------------+---------------+---------------+------
+bool OptionsExp::HasOption(Utf8CP optionName) const
+    {
+    OptionExp const* option = nullptr;
+    if (!TryGetOption(option, optionName))
+        return false;
+
+    if (!option->IsNameValuePair())
+        return true;
+
+    Utf8CP val = option->GetValue();
+    return BeStringUtilities::Stricmp(val, "true") == 0 || BeStringUtilities::Stricmp(val, "1") == 0;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  10/2015
+//+---------------+---------------+---------------+---------------+---------------+------
 bool OptionsExp::TryGetOption(OptionExp const*& exp, Utf8CP optionName) const
     {
     BeAssert(GetChildrenCount() != 0);

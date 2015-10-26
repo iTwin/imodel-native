@@ -149,6 +149,7 @@ private:
     //!@param[out] likeOperator parsed LIKE operator, e.g. LIKE or NOT LIKE
     BentleyStatus parse_like_predicate_part_2(std::unique_ptr<ComputedExp>&, BooleanSqlOperator& likeOperator, connectivity::OSQLParseNode const*) const;
     BentleyStatus parse_limit_offset_clause(std::unique_ptr<LimitOffsetExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus parse_literal(Utf8StringR literalVal, ECSqlTypeInfo& dataType, connectivity::OSQLParseNode const&) const;
 
     BentleyStatus parse_rtreematch_predicate(std::unique_ptr<BooleanExp>&, connectivity::OSQLParseNode const*) const;
 

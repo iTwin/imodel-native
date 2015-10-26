@@ -18,7 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 ECSqlStatus ECSqlDeletePreparer::Prepare (ECSqlPrepareContext& ctx, DeleteStatementExp const& exp)
     {
     BeAssert (exp.IsComplete ());
-    ctx.PushScope (exp);
+    ctx.PushScope (exp, exp.GetOptionsClauseExp());
 
     auto classNameExp = exp.GetClassNameExp ();
     auto const& classMap = classNameExp->GetInfo ().GetMap ();
@@ -109,8 +109,7 @@ ClassNameExp const& classNameExp
 
     //System WHERE clause
     //if option to disable class id filter is set, nothing more to do
-    OptionExp const* noECClassIdFilterOptionExp = nullptr;
-    if (exp.GetOptionsClauseExp() != nullptr && exp.GetOptionsClauseExp()->TryGetOption(noECClassIdFilterOptionExp, OptionsExp::NOECCLASSIDFILTER_OPTION))
+    if (exp.GetOptionsClauseExp() != nullptr && exp.GetOptionsClauseExp()->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION))
         return ECSqlStatus::Success;
 
 

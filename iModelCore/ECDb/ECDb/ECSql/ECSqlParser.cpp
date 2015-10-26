@@ -887,11 +887,17 @@ BentleyStatus ECSqlParser::parse_ecsqloption(std::unique_ptr<OptionExp>& exp, co
     BeAssert(childNodeCount == 1 || childNodeCount == 3);
 
     Utf8CP optionName = parseNode->getChild(0)->getTokenValue().c_str();
-    Utf8CP optionValue = nullptr;
+    Utf8String optionValue;
     if (childNodeCount == 3)
-        optionValue = parseNode->getChild(2)->getTokenValue().c_str();
+        {
+        OSQLParseNode const* valNode = parseNode->getChild(2);
+        BeAssert(valNode != nullptr);
+        ECSqlTypeInfo dataType;
+        if (SUCCESS != parse_literal(optionValue, dataType, *valNode))
+            return ERROR;
+        }
 
-    exp = std::unique_ptr<OptionExp>(new OptionExp(optionName, optionValue));
+    exp = std::unique_ptr<OptionExp>(new OptionExp(optionName, optionValue.c_str()));
     return SUCCESS;
     }
 
@@ -2449,6 +2455,54 @@ BentleyStatus ECSqlParser::parse_limit_offset_clause(unique_ptr<LimitOffsetExp>&
     }
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  10/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECSqlParser::parse_literal(Utf8StringR literalVal, ECSqlTypeInfo& dataType, connectivity::OSQLParseNode const& parseNode) const
+    {
+    //constant value
+    literalVal = nullptr;
+    switch (parseNode.getNodeType())
+        {
+            case SQL_NODE_INTNUM:
+                literalVal.assign(parseNode.getTokenValue());
+                dataType = ECSqlTypeInfo(PRIMITIVETYPE_Long);
+                break;
+            case SQL_NODE_APPROXNUM:
+                literalVal.assign(parseNode.getTokenValue());
+                dataType = ECSqlTypeInfo(PRIMITIVETYPE_Double);
+                break;
+            case SQL_NODE_STRING:
+                literalVal.assign(parseNode.getTokenValue());
+                dataType = ECSqlTypeInfo(PRIMITIVETYPE_String);
+                break;
+            case SQL_NODE_KEYWORD:
+            {
+            if (parseNode.getTokenID() == SQL_TOKEN_NULL)
+                {
+                literalVal.assign("NULL");
+                dataType = ECSqlTypeInfo(ECSqlTypeInfo::Kind::Null);
+                }
+            else if (parseNode.getTokenID() == SQL_TOKEN_TRUE)
+                {
+                literalVal.assign("TRUE");
+                dataType = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
+                }
+            else if (parseNode.getTokenID() == SQL_TOKEN_FALSE)
+                {
+                literalVal.assign("FALSE");
+                dataType = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
+                }
+            break;
+            }
+            default:
+                BeAssert(false && "Node type not handled.");
+                return ERROR;
+        };
+
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSqlParser::parse_opt_all_distinct (SqlSetQuantifier& setQuantifier, OSQLParseNode const* parseNode) const
@@ -2558,6 +2612,7 @@ BentleyStatus ECSqlParser::parse_select_statement (std::unique_ptr<SelectStateme
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSqlParser::parse_value_exp(unique_ptr<ValueExp>& valueExp, OSQLParseNode const* parseNode) const
     {
+    BeAssert(parseNode != nullptr);
     if (parseNode->isRule())
         {
         switch (parseNode->getKnownRuleID())
@@ -2614,47 +2669,12 @@ BentleyStatus ECSqlParser::parse_value_exp(unique_ptr<ValueExp>& valueExp, OSQLP
         }
 
     //constant value
-    Utf8CP value = nullptr;
+    Utf8String value;
     ECSqlTypeInfo dataType;
-    switch (parseNode->getNodeType())
-        {
-            case SQL_NODE_INTNUM:
-                value = parseNode->getTokenValue().c_str();
-                dataType = ECSqlTypeInfo(PRIMITIVETYPE_Long);
-                break;
-            case SQL_NODE_APPROXNUM:
-                value = parseNode->getTokenValue().c_str();
-                dataType = ECSqlTypeInfo(PRIMITIVETYPE_Double);
-                break;
-            case SQL_NODE_STRING:
-                value = parseNode->getTokenValue().c_str();
-                dataType = ECSqlTypeInfo(PRIMITIVETYPE_String);
-                break;
-            case SQL_NODE_KEYWORD:
-            {
-            if (parseNode->getTokenID() == SQL_TOKEN_NULL)
-                {
-                value = "NULL";
-                dataType = ECSqlTypeInfo(ECSqlTypeInfo::Kind::Null);
-                }
-            else if (parseNode->getTokenID() == SQL_TOKEN_TRUE)
-                {
-                value = "TRUE";
-                dataType = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
-                }
-            else if (parseNode->getTokenID() == SQL_TOKEN_FALSE)
-                {
-                value = "FALSE";
-                dataType = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
-                }
-            break;
-            }
-            default:
-                BeAssert(false && "Node type not handled.");
-                return ERROR;
-        };
+    if (SUCCESS != parse_literal(value, dataType, *parseNode))
+        return ERROR;
 
-    return LiteralValueExp::Create(valueExp, *m_context, value, dataType);
+    return LiteralValueExp::Create(valueExp, *m_context, value.c_str(), dataType);
     }
 
 //-----------------------------------------------------------------------------------------

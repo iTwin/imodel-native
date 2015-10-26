@@ -36,7 +36,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare (ECSqlPrepareContext& ctx, SingleSelect
     {
     BeAssert (exp.IsComplete ());
 
-    ctx.PushScope (exp);
+    ctx.PushScope (exp, exp.GetOptions());
 
     auto& sqlGenerator = ctx.GetSqlBuilderR ();
     sqlGenerator.Append ("SELECT ");

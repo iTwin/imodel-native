@@ -52,6 +52,18 @@ private:
 public:
     OptionsExp() :Exp() {}
     BentleyStatus AddOptionExp(std::unique_ptr<OptionExp> optionExp);
+    //! Checks whether an option with the given name was defined.
+    //! If it exists and if it has a value, the value is checked for truth.
+    //! Ex: ECSQLOPTIONS opt1 opt2=True opt3=1 opt4=False opt5=0
+    //! HasOption(opt1) returns true
+    //! HasOption(opt2) returns true
+    //! HasOption(opt3) returns true
+    //! HasOption(opt4) returns false
+    //! HasOption(opt5) returns false
+    //! HasOption(blabla) returns false
+    //! Options are case-insensitive
+    bool HasOption(Utf8CP optionName) const;
+
     //! Options are case-insensitive
     bool TryGetOption(OptionExp const*&, Utf8CP optionName) const;
     };

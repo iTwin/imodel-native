@@ -235,107 +235,111 @@ BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass (std::
 
 
 
-    for (auto baseClassPropertyMap : parentMap.GetPropertyMaps ())
-        {
-        if ((skipSystemProperties && baseClassPropertyMap->IsSystemPropertyMap ()) ||
-            baseClassPropertyMap->GetAsPropertyMapToTable ())
-            continue;
+for (auto baseClassPropertyMap : parentMap.GetPropertyMaps())
+    {
+    if ((skipSystemProperties && baseClassPropertyMap->IsSystemPropertyMap()) ||
+        baseClassPropertyMap->GetAsPropertyMapToTable())
+        continue;
 
-        auto accessString = baseClassPropertyMap->GetPropertyAccessString ();
-        auto childClassCounterpartPropMap = childMap.GetPropertyMap (accessString);
-        if (childClassCounterpartPropMap == nullptr)
-            return ERROR;
+    auto accessString = baseClassPropertyMap->GetPropertyAccessString();
+    auto childClassCounterpartPropMap = childMap.GetPropertyMap(accessString);
+    if (childClassCounterpartPropMap == nullptr)
+        return ERROR;
 
-        std::vector<ECDbSqlColumn const*> baseClassPropMapColumns;
-        std::vector<ECDbSqlColumn const*> childClassPropMapColumns;
-        baseClassPropertyMap->GetColumns (baseClassPropMapColumns);
-        childClassCounterpartPropMap->GetColumns (childClassPropMapColumns);
-        if (baseClassPropMapColumns.size () != childClassPropMapColumns.size ())
-            return ERROR;
+    std::vector<ECDbSqlColumn const*> baseClassPropMapColumns;
+    std::vector<ECDbSqlColumn const*> childClassPropMapColumns;
+    baseClassPropertyMap->GetColumns(baseClassPropMapColumns);
+    childClassCounterpartPropMap->GetColumns(childClassPropMapColumns);
+    if (baseClassPropMapColumns.size() != childClassPropMapColumns.size())
+        return ERROR;
 
-        propMaps.push_back ({baseClassPropertyMap, childClassCounterpartPropMap});
-        }
-
-    return SUCCESS;
+    propMaps.push_back({baseClassPropertyMap, childClassCounterpartPropMap});
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                      09/2013
-//+---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus ViewGenerator::AppendViewPropMapsToQuery (NativeSqlBuilder& viewQuery, ECDbR ecdb, ECSqlPrepareContext const& prepareContext, ECDbSqlTable const& table, std::vector<std::pair<PropertyMapCP, PropertyMapCP>> const& viewPropMaps, bool forNullView)
-    {
-    for (auto const& propMapPair : viewPropMaps)
+return SUCCESS;
+    }
+
+    //-----------------------------------------------------------------------------------------
+    // @bsimethod                                    Affan.Khan                      09/2013
+    //+---------------+---------------+---------------+---------------+---------------+-------
+    BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewQuery, ECDbR ecdb, ECSqlPrepareContext const& prepareContext, ECDbSqlTable const& table, std::vector<std::pair<PropertyMapCP, PropertyMapCP>> const& viewPropMaps, bool forNullView)
         {
-        auto basePropMap = propMapPair.first;
-        auto actualPropMap = propMapPair.second;
-        if (!prepareContext.GetSelectionOptions ().IsSelected (actualPropMap->GetPropertyAccessString()))
-            continue;
-
-        auto aliasSqlSnippets = basePropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
-        auto colSqlSnippets = actualPropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
-
-        const size_t snippetCount = colSqlSnippets.size ();
-        if (aliasSqlSnippets.size () != snippetCount)
+        for (auto const& propMapPair : viewPropMaps)
             {
-            BeAssert (false && "Number of alias SQL snippets is expected to be the same as number of column SQL snippets.");
+            auto basePropMap = propMapPair.first;
+            auto actualPropMap = propMapPair.second;
+            if (!prepareContext.GetSelectionOptions().IsSelected(actualPropMap->GetPropertyAccessString()))
+                continue;
+
+            auto aliasSqlSnippets = basePropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
+            auto colSqlSnippets = actualPropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
+
+            const size_t snippetCount = colSqlSnippets.size();
+            if (aliasSqlSnippets.size() != snippetCount)
+                {
+                BeAssert(false && "Number of alias SQL snippets is expected to be the same as number of column SQL snippets.");
+                return ERROR;
+                }
+
+            for (size_t i = 0; i < snippetCount; i++)
+                {
+                viewQuery.AppendComma(true);
+                auto const& aliasSqlSnippet = aliasSqlSnippets[i];
+                if (forNullView)
+                    viewQuery.Append("NULL ");
+                else
+                    viewQuery.Append(colSqlSnippets[i]).AppendSpace();
+
+                viewQuery.Append(aliasSqlSnippet);
+                }
+            }
+
+        return SUCCESS;
+        }
+
+    //-----------------------------------------------------------------------------------------
+    // @bsimethod                                    Affan.Khan                      07/2013
+    //+---------------+---------------+---------------+---------------+---------------+-------
+    BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, ECDbMapCR map, ECSqlPrepareContext const& prepareContext, ECDbSqlTable const& table, const std::vector<IClassMap const*>& childClassMap, IClassMap const& baseClassMap, bool isPolymorphic)
+        {
+        if (childClassMap.empty() || table.GetColumns().empty())
+            {
+            BeAssert(false);
             return ERROR;
             }
 
-        for (size_t i = 0; i < snippetCount; i++)
+        IClassMap const* firstChildClassMap = *childClassMap.begin();
+        //Generate Select statement
+        viewSql.Append("SELECT ");
+
+        ECDbSqlColumn const* classIdColumn = nullptr;
+        if (table.TryGetECClassIdColumn(classIdColumn))
+            viewSql.Append(classIdColumn->GetName().c_str());
+        else
+            viewSql.Append(firstChildClassMap->GetClass().GetId()).AppendSpace().Append(ECCLASSID_COLUMNNAME);
+
+
+        std::vector<std::pair<PropertyMapCP, PropertyMapCP>> viewPropMaps;
+        auto isEmbeded = prepareContext.GetParentArrayProperty() != nullptr;
+        auto status = GetPropertyMapsOfDerivedClassCastAsBaseClass(viewPropMaps, prepareContext, baseClassMap, *firstChildClassMap, false, isEmbeded);
+        if (status != BentleyStatus::SUCCESS)
+            return status;
+
+        //Append prop map columns to query [col1],[col2], ...
+        AppendViewPropMapsToQuery(viewSql, map.GetECDbR(), prepareContext, table, viewPropMaps);
+
+        viewSql.Append(" FROM ").AppendEscaped(table.GetName().c_str());
+
+        NativeSqlBuilder where;
+        if (classIdColumn != nullptr)
             {
-            viewQuery.AppendComma (true);
-            auto const& aliasSqlSnippet = aliasSqlSnippets[i];
-            if (forNullView)
-                viewQuery.Append ("NULL ");
-            else
-                viewQuery.Append (colSqlSnippets[i]).AppendSpace ();
-            
-            viewQuery.Append (aliasSqlSnippet);
-            }        
-        }
-
-    return SUCCESS;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                      07/2013
-//+---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, ECDbMapCR map, ECSqlPrepareContext const& prepareContext, ECDbSqlTable const& table, const std::vector<IClassMap const*>& childClassMap, IClassMap const& baseClassMap, bool isPolymorphic)
-    {
-    if (childClassMap.empty() || table.GetColumns().empty())
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    IClassMap const* firstChildClassMap = *childClassMap.begin();
-    //Generate Select statement
-    viewSql.Append("SELECT ");
-
-    ECDbSqlColumn const* classIdColumn = nullptr;
-    if (table.TryGetECClassIdColumn(classIdColumn))
-        viewSql.Append(classIdColumn->GetName().c_str());
-    else
-        viewSql.Append(firstChildClassMap->GetClass().GetId()).AppendSpace().Append(ECCLASSID_COLUMNNAME);
-
-
-    std::vector<std::pair<PropertyMapCP, PropertyMapCP>> viewPropMaps;
-    auto isEmbeded = prepareContext.GetParentArrayProperty() != nullptr;
-    auto status = GetPropertyMapsOfDerivedClassCastAsBaseClass(viewPropMaps, prepareContext, baseClassMap, *firstChildClassMap, false, isEmbeded);
-    if (status != BentleyStatus::SUCCESS)
-        return status;
-
-    //Append prop map columns to query [col1],[col2], ...
-    AppendViewPropMapsToQuery(viewSql, map.GetECDbR(), prepareContext, table, viewPropMaps);
-
-    viewSql.Append(" FROM ").AppendEscaped(table.GetName().c_str());
-
-    NativeSqlBuilder where;
-    if (classIdColumn != nullptr)
-        {
-        if (SUCCESS != baseClassMap.GetStorageDescription().GenerateECClassIdFilter(where, table, *classIdColumn, isPolymorphic))
-            return ERROR;
-        }
+            OptionsExp const* options = prepareContext.GetCurrentScope().GetOptions();
+            if (options == nullptr || !options->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION))
+                {
+                if (SUCCESS != baseClassMap.GetStorageDescription().GenerateECClassIdFilter(where, table, *classIdColumn, isPolymorphic))
+                    return ERROR;
+                }
+            }
 
     //We allow query of struct classes.
     if (firstChildClassMap->IsMappedToSecondaryTable())
@@ -574,6 +578,7 @@ BentleyStatus ViewGenerator::BuildRelationshipJoinIfAny (NativeSqlBuilder& sqlBu
                         if (status != BentleyStatus::SUCCESS)
                             return status;
                         break;
+
                     case ClassMap::Type::RelationshipLinkTable:
                     {
                     if (!unionQuery.IsEmpty())
@@ -583,22 +588,20 @@ BentleyStatus ViewGenerator::BuildRelationshipJoinIfAny (NativeSqlBuilder& sqlBu
                     if (status != BentleyStatus::SUCCESS)
                         return status;
 
+                    ECDbSqlTable const& table = relationMap.GetTable();
                     ECDbSqlColumn const* classIdColumn = nullptr;
-                    if (relationMap.GetTable().TryGetECClassIdColumn(classIdColumn))
+                    if (table.TryGetECClassIdColumn(classIdColumn))
                         {
-                        std::vector<ECClassId> classesMappedToTable;
-                        if (ECDbSchemaPersistence::GetClassesMappedToTable(classesMappedToTable, relationMap.GetTable(), false, map.GetECDbR()) != SUCCESS)
-                            return ERROR;
-
-                        if (classesMappedToTable.size() != 1)
+                        OptionsExp const* options = prepareContext.GetCurrentScope().GetOptions();
+                        if (options == nullptr || !options->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION))
                             {
-                            unionQuery.Append(" WHERE ");
-                            unionQuery.AppendEscaped(relationMap.GetTable().GetName().c_str()).AppendDot().AppendEscaped(classIdColumn->GetName().c_str()).Append(" IN ");
-                            unionQuery.AppendParenLeft();
+                            NativeSqlBuilder whereClause;
+                            if (SUCCESS != relationMap.GetStorageDescription().GenerateECClassIdFilter(whereClause, table, 
+                                                                                                  *classIdColumn, isPolymorphic))
+                                return ERROR;
 
-                            unionQuery.Append(cm->GetClass().GetId());
-
-                            unionQuery.AppendParenRight();
+                            if (!whereClause.IsEmpty())
+                                unionQuery.Append(" WHERE ").Append(whereClause);
                             }
                         }
                     }
@@ -611,8 +614,6 @@ BentleyStatus ViewGenerator::BuildRelationshipJoinIfAny (NativeSqlBuilder& sqlBu
             auto table = vm.first;
             if (vm.second.GetStorageType() != DbMetaDataHelper::ObjectType::Table)
                 continue;
-
-
 
             std::vector<RelationshipClassEndTableMapCP> etm;
             std::vector<RelationshipClassLinkTableMapCP> ltm;

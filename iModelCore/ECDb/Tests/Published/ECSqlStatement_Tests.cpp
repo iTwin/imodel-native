@@ -2369,7 +2369,49 @@ TEST_F(ECSqlTestFixture, NoECClassIdFilterOption)
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ECInstanceId FROM ecsql.TH3 WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter"));
     Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_FALSE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ECInstanceId FROM ecsql.TH3 WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter=True"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_FALSE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ECInstanceId FROM ecsql.TH3 WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter=False"));
+    Utf8String nativeSql(statement.GetNativeSql());
     ASSERT_TRUE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ECInstanceId FROM ecsql.TH3 WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter=0"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_TRUE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ECInstanceId FROM ecsql.TH3 WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter=1"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_FALSE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT t.ECInstanceId FROM ecsql.TH3 t JOIN ecsql.PSA p USING ecsql.PSAHasTHBase_0N WHERE p.ECInstanceId=?"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_TRUE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT t.ECInstanceId FROM ecsql.TH3 t JOIN ecsql.PSA p USING ecsql.PSAHasTHBase_0N WHERE p.ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_FALSE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
     }
 
     {
@@ -2396,6 +2438,34 @@ TEST_F(ECSqlTestFixture, NoECClassIdFilterOption)
     {
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "DELETE FROM ecsql.TH3 WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_FALSE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "DELETE FROM ecsql.TH3 WHERE ECInstanceId IN (SELECT t.ECInstanceId FROM ecsql.TH3 t JOIN ecsql.PSA USING ecsql.PSAHasTHBase_0N WHERE PSA.I=?)"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_TRUE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "DELETE FROM ecsql.TH3 WHERE ECInstanceId IN (SELECT t.ECInstanceId FROM ecsql.TH3 t JOIN ecsql.PSA USING ecsql.PSAHasTHBase_0N WHERE PSA.I=? ECSQLOPTIONS NoECClassIdFilter)"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_TRUE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "DELETE FROM ecsql.TH3 WHERE ECInstanceId IN (SELECT t.ECInstanceId FROM ecsql.TH3 t JOIN ecsql.PSA USING ecsql.PSAHasTHBase_0N WHERE PSA.I=?) ECSQLOPTIONS NoECClassIdFilter"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_TRUE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "DELETE FROM ecsql.TH3 WHERE ECInstanceId IN (SELECT t.ECInstanceId FROM ecsql.TH3 t JOIN ecsql.PSA USING ecsql.PSAHasTHBase_0N WHERE PSA.I=? ECSQLOPTIONS NoECClassIdFilter) ECSQLOPTIONS NoECClassIdFilter"));
     Utf8String nativeSql(statement.GetNativeSql());
     ASSERT_FALSE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
     }
