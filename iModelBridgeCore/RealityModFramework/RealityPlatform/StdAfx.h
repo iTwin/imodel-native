@@ -24,6 +24,7 @@
 #include <Imagepp/all/h/HCPGCoordModel.h>
 #include <Imagepp/all/h/HVE2DRectangle.h>
 #include <Imagepp/all/h/HRFUtility.h>
+#include <Imagepp/all/h/HGF2DPolygonOfSegments.h>
 
 USING_NAMESPACE_IMAGEPP
 

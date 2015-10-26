@@ -34,12 +34,12 @@ static int callback_progress_func (int index,void *pClient, size_t ByteCurrent,s
 static void callback_status_func (int index, void *pClient, int ErrorCode, const char* pMsg)
     {
     RealityDataDownload::FileTransfer* pEntry = (RealityDataDownload::FileTransfer*)pClient;
-    printf("****** Status: (%d) ErrCode: %d - (%s) <%ls>\n", index, ErrorCode, pMsg, pEntry->filename.c_str());
+    printf("****** Status: (%d) ErrCode: %d - fromCache(%d) - (%s) <%ls>\n", index, ErrorCode, pEntry->fromCache, pMsg, pEntry->filename.c_str());
 
     if (ErrorCode == 0)
         {
         WString out(L"k:\\tmp\\data\\unzip\\");
-        RealityDataDownload::UnZipFile(pEntry->filename, out);
+        RealityDataDownload::UnZipFile(pEntry->filename, out); 
         }
     }
 

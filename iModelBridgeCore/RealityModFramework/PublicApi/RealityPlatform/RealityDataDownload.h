@@ -36,6 +36,8 @@ public:
         AString  url;
         WString  filename;
         size_t   index;
+        bool     fromCache;         // as input: skip the download if the file already exist
+                                    // as output: specify if the file was dowloaded or not.
 
 
         // internal used only
@@ -82,6 +84,7 @@ private:
     ~RealityDataDownload();
 
     bool SetupCurlandFile(size_t pi_index);
+    bool SetupNextEntry();
 
     void*                       m_pCurlHandle;
     size_t                      m_nbEntry;

@@ -6,16 +6,21 @@
 |
 +--------------------------------------------------------------------------------------*/
 
+#include "StdAfx.h"
+#include "SpatioTemporalData.h"
+
 #include <RealityPlatform/SpatioTemporalSelector.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
+
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		10/2015
 //-------------------------------------------------------------------------------------
 const bvector<Utf8String> SpatioTemporalSelector::GetIDsFromJson(const bvector<GeoPoint2d>& regionOfInterest,
                                                                  Utf8CP data, 
-                                                                 SelectionCriteria criteria)
+                                                                 SelectionCriteria qualityCriteria,
+                                                                 SelectionCriteria captureDateCriteria)
     {
     bvector<Utf8String> selectedIDs = bvector<Utf8String>();
 
@@ -24,254 +29,596 @@ const bvector<Utf8String> SpatioTemporalSelector::GetIDsFromJson(const bvector<G
         return selectedIDs;
 
     // Parse JSON and create dataset.
-    SpatioTemporalDatasetPtr dataset = SpatioTemporalDataset::CreateFromJson(data);
+    SpatioTemporalDatasetPtr pDataset = SpatioTemporalDataset::CreateFromJson(data);
+    if (NULL == pDataset.get())
+        return selectedIDs;
 
-    // Select imagery data.
-    bvector<Utf8String> imageryIDs = Select(regionOfInterest, dataset->GetImageryGroup(), criteria);
-    if (!imageryIDs.empty())
-        selectedIDs.insert(selectedIDs.end(), imageryIDs.begin(), imageryIDs.end());
-
-    // Select terrain data.
-    bvector<Utf8String> terrainIDs = Select(regionOfInterest, dataset->GetTerrainGroup(), criteria);
-    if (!terrainIDs.empty())
-        selectedIDs.insert(selectedIDs.end(), terrainIDs.begin(), terrainIDs.end());
-
-    return selectedIDs;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 9/2015
-//-------------------------------------------------------------------------------------
-const bvector<Utf8String> SpatioTemporalSelector::Select(const bvector<GeoPoint2d>& regionOfInterest,
-                                                         const bvector<SpatioTemporalDataPtr>& dataset,
-                                                         SelectionCriteria criteria)
-    {
-    switch (criteria)
+    if (SelectionCriteria::Default == qualityCriteria ||
+        SelectionCriteria::Default == captureDateCriteria)
         {
-        case SelectionCriteria::Date:
-            {
-            return SelectByDate(regionOfInterest, dataset);
-            }
-        case SelectionCriteria::Resolution:
-            {
-            return SelectByResolution(regionOfInterest, dataset);
-            }
-        case SelectionCriteria::DateAndResolution:
-            {
-            return SelectByDateAndResolution(regionOfInterest, dataset);
-            }
-        default:
-            {
-            return SelectByDateAndResolution(regionOfInterest, dataset);
-            }
+        // Select imagery data.
+        bvector<Utf8String> imageryIDs = GetIDs(regionOfInterest, pDataset->GetImageryGroup());
+        if (!imageryIDs.empty())
+            selectedIDs.insert(selectedIDs.end(), imageryIDs.begin(), imageryIDs.end());
+
+        // Select terrain data.
+        bvector<Utf8String> terrainIDs = GetIDs(regionOfInterest, pDataset->GetTerrainGroup());
+        if (!terrainIDs.empty())
+            selectedIDs.insert(selectedIDs.end(), terrainIDs.begin(), terrainIDs.end());
         }
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    10/2015
-//-------------------------------------------------------------------------------------
-const bvector<Utf8String> SpatioTemporalSelector::SelectByDate(const bvector<GeoPoint2d>& regionOfInterest,
-                                                               const bvector<SpatioTemporalDataPtr>& dataset)
-    {
-    //&&JFC TODO
-    bvector<Utf8String> selectedIDs = bvector<Utf8String>();
-
-    for (const auto& data : dataset)
-        selectedIDs.push_back(data->GetIdentifier());
-
-    return selectedIDs;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    10/2015
-//-------------------------------------------------------------------------------------
-const bvector<Utf8String> SpatioTemporalSelector::SelectByResolution(const bvector<GeoPoint2d>& regionOfInterest,
-                                                                     const bvector<SpatioTemporalDataPtr>& dataset)
-    {
-    //&&JFC TODO
-    bvector<Utf8String> selectedIDs = bvector<Utf8String>();
-
-    for (const auto& data : dataset)
-        selectedIDs.push_back(data->GetIdentifier());
-
-    return selectedIDs;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    10/2015
-//-------------------------------------------------------------------------------------
-const bvector<Utf8String> SpatioTemporalSelector::SelectByDateAndResolution(const bvector<GeoPoint2d>& regionOfInterest,
-                                                                            const bvector<SpatioTemporalDataPtr>& dataset)
-    {
-    bvector<Utf8String> selectedIDs = bvector<Utf8String>();
-
-    for (const auto& data : dataset)
-        selectedIDs.push_back(data->GetIdentifier());
-
-    return selectedIDs;
-
-    //&&JFC TODO
-    //bvector<Utf8String> selectedIDs = bvector<Utf8String>();
-    //
-    //// First draft: Included in region of interest.
-    //bvector<Utf8String> firstDraftIDs = bvector<Utf8String>();
-    //for (const auto& data : dataset)
-    //    {
-    //    Utf8String identifier = data->GetIdentifier();
-    //    identifier;
-    //
-    //    }
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //return selectedIDs;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    10/2015
-//-------------------------------------------------------------------------------------
-
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		10/2015
-//-------------------------------------------------------------------------------------
-SpatioTemporalDatasetPtr SpatioTemporalDataset::CreateFromJson(Utf8CP data)
-    {
-    SpatioTemporalDatasetPtr dataset = new SpatioTemporalDataset();
-
-    // Make sure data exists.
-    if (Utf8String::IsNullOrEmpty(data))
-        return dataset;
-
-    // Parse.
-    Json::Value root(Json::objectValue);
-    if (!Json::Reader::Parse(data, root))
-        return dataset;
-
-    // Instances must be a root node.
-    if (!root.isMember("instances"))
-        return dataset;
-
-    // Required informations to get.
-    Utf8String identifier;
-    Utf8String resolution;
-    Utf8String footprintStr;
-    Utf8String classification;
-
-    DateTime date;
-    DRange2d footprint;
-
-    // Loop through all data and get required informations.
-    for (const auto& instance : root["instances"])
+    else
         {
-        if (!instance.isMember("properties"))
-            break;
+        // Select imagery data.
+        bvector<Utf8String> imageryIDs = GetIDsByCriteria(regionOfInterest, pDataset->GetImageryGroup(), qualityCriteria, captureDateCriteria);
+        if (!imageryIDs.empty())
+            selectedIDs.insert(selectedIDs.end(), imageryIDs.begin(), imageryIDs.end());
 
-        const Json::Value properties = instance["properties"];
+        // Select terrain data.
+        // For terrain, up-to-date high-res data is a priority.
+        bvector<Utf8String> terrainIDs = GetIDsByCriteria(regionOfInterest, pDataset->GetTerrainGroup(), SelectionCriteria::Resolution_Best, SelectionCriteria::Date_Most);
+        if (!terrainIDs.empty())
+            selectedIDs.insert(selectedIDs.end(), terrainIDs.begin(), terrainIDs.end());
+        }
 
-        // Id
-        properties.isMember("Id") ? identifier = properties["Id"].asString() : identifier = "";
-            
-        // Date
-        if (properties.isMember("Date"))
-            DateTime::FromString(date, properties["Date"].asCString());
-        else
-            date = DateTime();
+    return selectedIDs;
+    }
 
-        // Resolution
-        properties.isMember("ResolutionInMeters") ? resolution = properties["ResolutionInMeters"].asString() : resolution = "";
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    10/2015
+//-------------------------------------------------------------------------------------
+const bvector<Utf8String> SpatioTemporalSelector::GetIDs(const bvector<GeoPoint2d>& regionOfInterest,
+                                                         const bvector<SpatioTemporalDataPtr>& dataset)
+    {    
+    /*
+    bvector<Utf8String> selectedIDs = bvector<Utf8String>();
 
-        // Footprint
-        if (properties.isMember("Footprint"))
+    for (const auto& data : dataset)
+    selectedIDs.push_back(data->GetIdentifier());
+
+    return selectedIDs;
+    */
+
+    bvector<Utf8String> selectedIDs = bvector<Utf8String>();
+
+    // First draft: Spatial position selection - Included in region of interest.
+    // Create shape that represents the region of interest.
+    HGF2DPositionCollection ptsCollection;
+    for (const auto& pt : regionOfInterest)
+        {
+        ptsCollection.push_back(HGF2DCoord<double>(pt.longitude, pt.latitude));
+        }
+
+    HFCPtr<HGF2DShape> pROIShape = new HGF2DPolygonOfSegments(HGF2DPolySegment(ptsCollection));
+    if (pROIShape->IsEmpty())
+        return selectedIDs;
+
+    bvector<SpatioTemporalDataPtr> firstDraftDataset = bvector<SpatioTemporalDataPtr>();
+    for (const auto& data : dataset)
+        {
+        HGF2DShape::SpatialPosition bob1 = pROIShape->CalculateSpatialPositionOf(*(data->GetFootprint())); bob1;
+        HGF2DShape::SpatialPosition bob2 = data->GetFootprint()->CalculateSpatialPositionOf(*pROIShape); bob2;
+        //&&JFC Comment
+        if (HGF2DShape::SpatialPosition::S_OUT != pROIShape->CalculateSpatialPositionOf(*(data->GetFootprint())))
+            firstDraftDataset.push_back(data);
+        else if (HGF2DShape::SpatialPosition::S_OUT != data->GetFootprint()->CalculateSpatialPositionOf(*pROIShape))
+            firstDraftDataset.push_back(data);
+        }
+
+    // Second draft: Resolution selection - Compare resolutions and keep high-res only.
+    // Sort by resolution. High-res first.
+    bvector<SpatioTemporalDataPtr> sortByResDataset = bvector<SpatioTemporalDataPtr>();
+    for (const auto& dataToSort : firstDraftDataset)
+        {
+        if (sortByResDataset.empty())
             {
-            // Convert Utf8String to DRange2d. 
-            // The string should look like this:
-            // "{ \"points\" : [[-122.0,35.9],[-122.0,37.0],[-120.9,37.0],[-120.9,35.9],[-122.0,35.9]], \"coordinate_system\" : \"4326\" }"
-            footprintStr = properties["Footprint"].asString();
-            
-            // Extract points.
-            footprintStr = footprintStr.substr(footprintStr.find_first_of("["), footprintStr.find_last_of("]") - footprintStr.find_first_of("["));
-            size_t delimiterPos = 0;
-            while (Utf8String::npos != (delimiterPos = footprintStr.find("[")))
-                footprintStr.erase(delimiterPos, 1);
-            while (Utf8String::npos != (delimiterPos = footprintStr.find("]")))
-                footprintStr.erase(delimiterPos, 1);
-            bvector<Utf8String> tokens;
-            BeStringUtilities::Split(footprintStr.c_str(), ",", tokens);
-            BeAssert(10 == tokens.size()); // 5 points making the box (first point == last point).  
-
-            // Convert to double.
-            bvector<DPoint2d> footprintPts;
-            for (size_t i = 0; i < tokens.size(); i += 2)
+            sortByResDataset.push_back(dataToSort);
+            }
+        else
+            {
+            double dataToSortRes = dataToSort->GetResolution();
+            bvector<SpatioTemporalDataPtr>::iterator dataIterator = sortByResDataset.begin();
+            for (; dataIterator != sortByResDataset.end(); ++dataIterator)
                 {
-                DPoint2d pt;
-                pt.x = strtod(tokens[i].c_str(), NULL);
-                pt.y = strtod(tokens[i + 1].c_str(), NULL);
-
-                footprintPts.push_back(pt);
+                if (dataToSortRes < (*dataIterator)->GetResolution())
+                    {
+                    sortByResDataset.insert(dataIterator, dataToSort);
+                    break;
+                    }
+                else if (*dataIterator == sortByResDataset.back())
+                    {
+                    sortByResDataset.push_back(dataToSort);
+                    break;
+                    }
                 }
-
-            // Create range.
-            footprint = DRange2d::From(footprintPts);
             }
-        else
-            footprint = DRange2d::NullRange();
-
-        // Classification
-        properties.isMember("Classification") ? classification = properties["Classification"].asString() : classification = "";
-
-
-        // Add data to corresponding group.
-        if (classification.EqualsI("Imagery"))
-            dataset->m_imageryGroup.push_back(SpatioTemporalData::Create(identifier.c_str(), date, resolution.c_str(), footprint));
-        else if (classification.EqualsI("Terrain"))
-            dataset->m_terrainGroup.push_back(SpatioTemporalData::Create(identifier.c_str(), date, resolution.c_str(), footprint));
         }
 
-    return dataset;
+    HFCPtr<HGF2DShape> pFilledArea;
+    HFCPtr<HGF2DShape> pMissingArea;
+    bvector<SpatioTemporalDataPtr> secondDraftDataset = bvector<SpatioTemporalDataPtr>();
+    for (const auto& data : sortByResDataset)
+        {
+        if (NULL == pFilledArea)
+            {
+            secondDraftDataset.push_back(data);
+
+            pFilledArea = data->GetFootprint();
+            pMissingArea = pROIShape->DifferentiateShape(*pFilledArea);
+            }
+        else
+            {
+            HGF2DShape::SpatialPosition bob = pMissingArea->CalculateSpatialPositionOf(*(data->GetFootprint())); bob;
+            //&&JFC Comment
+            if (HGF2DShape::SpatialPosition::S_OUT != pMissingArea->CalculateSpatialPositionOf(*(data->GetFootprint())))
+                {
+                // Data is covering a part that is not already there, add it.
+                secondDraftDataset.push_back(data);
+
+                pFilledArea = pFilledArea->UnifyShape(*(data->GetFootprint()));
+                pMissingArea = pROIShape->DifferentiateShape(*pFilledArea);
+                }
+            else if (HGF2DShape::SpatialPosition::S_OUT != data->GetFootprint()->CalculateSpatialPositionOf(*pMissingArea))
+                {
+                // Data is covering a part that is not already there, add it.
+                secondDraftDataset.push_back(data);
+
+                pFilledArea = pFilledArea->UnifyShape(*(data->GetFootprint()));
+                pMissingArea = pROIShape->DifferentiateShape(*pFilledArea);
+                }
+            }
+
+        if (HGF2DShapeId_Void == pMissingArea->GetShapeType())
+            break;
+        }
+
+
+    // Third draft: Date selection - If there is any hole, complete dataset with the latest data possible.
+
+
+
+    for (const auto& data : secondDraftDataset)
+        {
+        selectedIDs.push_back(data->GetIdentifier());
+        }
+
+    return selectedIDs;
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2015
 //-------------------------------------------------------------------------------------
-SpatioTemporalDataset::SpatioTemporalDataset()
+const bvector<Utf8String> SpatioTemporalSelector::GetIDsByCriteria(const bvector<GeoPoint2d>& regionOfInterest,
+                                                                   const bvector<SpatioTemporalDataPtr>& dataset,
+                                                                   SelectionCriteria qualityCriteria,
+                                                                   SelectionCriteria captureDateCriteria)
     {
-    // Init.
-    //m_imageryGroup = bvector<SpatioTemporalData>();
-    //m_terrainGroup = bvector<SpatioTemporalData>();
+    bvector<Utf8String> selectedIDs = bvector<Utf8String>();
+
+    // First draft: Spatial position filtering - Included in region of interest.
+    bvector<SpatioTemporalDataPtr> firstDraftDataset = PositionFiltering(regionOfInterest, dataset);
+
+    // Second draft: Resolution and date filtering - Sort data according to quality and capture date criteria..
+    bvector<SpatioTemporalDataPtr> secondDraftDataset = CriteriaFiltering(regionOfInterest, firstDraftDataset, qualityCriteria, captureDateCriteria);
+
+    // Third draft: Data selection - Fill region of interest with best matching data.
+    bvector<SpatioTemporalDataPtr> thirdDraftDataset = Select(regionOfInterest, secondDraftDataset);
+
+    // Extract IDs from selected dataset.
+    for (const auto& data : thirdDraftDataset)
+        {
+        selectedIDs.push_back(data->GetIdentifier());
+        }
+
+    return selectedIDs;
     }
 
 //-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		10/2015
+// @bsimethod                                   Jean-Francois.Cote         	    10/2015
 //-------------------------------------------------------------------------------------
-SpatioTemporalDataset::~SpatioTemporalDataset()
-    {}
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		10/2015
-//-------------------------------------------------------------------------------------
-SpatioTemporalDataPtr SpatioTemporalData::Create(Utf8CP identifier, const DateTime& date, Utf8CP resolution, DRange2dCR footprint)
+const bvector<SpatioTemporalDataPtr> SpatioTemporalSelector::PositionFiltering(const bvector<GeoPoint2d>& regionOfInterest,
+                                                                               const bvector<SpatioTemporalDataPtr>& dataset)
     {
-    return new SpatioTemporalData(identifier, date, resolution, footprint);
+    bvector<SpatioTemporalDataPtr> selectedDataset = bvector<SpatioTemporalDataPtr>();
+
+    // &&JFC Find a way to create the HGF2DShape representing the region of interest only one time.
+    // Create shape that represents the region of interest.
+    HGF2DPositionCollection ptsCollection;
+    for (const auto& pt : regionOfInterest)
+        {
+        ptsCollection.push_back(HGF2DCoord<double>(pt.longitude, pt.latitude));
+        }
+
+    HFCPtr<HGF2DShape> pROIShape = new HGF2DPolygonOfSegments(HGF2DPolySegment(ptsCollection));
+    if (pROIShape->IsEmpty())
+        return selectedDataset;
+
+    // Position filtering, keep only the data included in region of interest.
+    for (const auto& data : dataset)
+        {
+        //&&JFC Comment why we need to do the inverse.
+        if (HGF2DShape::SpatialPosition::S_OUT != pROIShape->CalculateSpatialPositionOf(*(data->GetFootprint())))
+            selectedDataset.push_back(data);
+        else if (HGF2DShape::SpatialPosition::S_OUT != data->GetFootprint()->CalculateSpatialPositionOf(*pROIShape))
+            selectedDataset.push_back(data);
+        }
+
+    return selectedDataset;
     }
 
 //-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		10/2015
+// @bsimethod                                   Jean-Francois.Cote         	    10/2015
 //-------------------------------------------------------------------------------------
-SpatioTemporalData::SpatioTemporalData(Utf8CP identifier, const DateTime& date, Utf8CP resolution, DRange2dCR footprint)
-    : m_identifier(identifier),
-      m_date(date),
-      m_resolution(resolution),
-      m_footprint(footprint)
-    {}
+const bvector<SpatioTemporalDataPtr> SpatioTemporalSelector::CriteriaFiltering(const bvector<GeoPoint2d>& regionOfInterest,
+                                                                               const bvector<SpatioTemporalDataPtr>& dataset,
+                                                                               SelectionCriteria qualityCriteria,
+                                                                               SelectionCriteria captureDateCriteria)
+    {
+    bvector<SpatioTemporalDataPtr> selectedDataset = bvector<SpatioTemporalDataPtr>();
+
+    // &&JFC Find a way to create the HGF2DShape representing the region of interest only one time.
+    // Create shape that represents the region of interest.
+    HGF2DPositionCollection ptsCollection;
+    for (const auto& pt : regionOfInterest)
+        {
+        ptsCollection.push_back(HGF2DCoord<double>(pt.longitude, pt.latitude));
+        }
+
+    HFCPtr<HGF2DShape> pROIShape = new HGF2DPolygonOfSegments(HGF2DPolySegment(ptsCollection));
+    if (pROIShape->IsEmpty())
+        return selectedDataset;
+
+    // Resolution filtering, sort according to criteria.
+    // Low resolution: log(100cm) = 2
+    // Medium resolution: log(25cm) = 1.39
+    // High resolution: log(12cm) = 1.09
+    double minRes = DBL_MIN;
+    double maxRes = DBL_MAX;
+    double resolution = 0.0;
+    for (const auto& data : dataset)
+        {
+        // Find min/max resolution to determine the range.
+        resolution = log(data->GetResolution() * 100);
+
+        if (resolution > minRes)
+            minRes = resolution;
+        if (resolution < maxRes)
+            maxRes = resolution;
+        }
+
+    // Find in which range the data resolution is.
+    double interval = (minRes - maxRes) / 4;
+    double lowResMaxRange = minRes + interval;
+    double highResMinRange = maxRes - interval;
+
+    interval = (lowResMaxRange - highResMinRange) / 3;
+    double lowResMinRange = lowResMaxRange - interval;
+    double highResMaxRange = highResMinRange + interval;
+
+    bvector<SpatioTemporalDataPtr> lowResDataset = bvector<SpatioTemporalDataPtr>();
+    bvector<SpatioTemporalDataPtr> mediumResDataset = bvector<SpatioTemporalDataPtr>();
+    bvector<SpatioTemporalDataPtr> highResDataset = bvector<SpatioTemporalDataPtr>();
+    for (const auto& data : dataset)
+        {
+        resolution = log(data->GetResolution() * 100);
+        if (resolution >= lowResMinRange &&
+            resolution <= lowResMaxRange)
+            {
+            lowResDataset.push_back(data);
+            }
+        else if (resolution < lowResMinRange &&
+                 resolution > highResMaxRange)
+            {
+            mediumResDataset.push_back(data);
+            }
+        else if (resolution >= highResMinRange &&
+                 resolution <= highResMaxRange)
+            {
+            highResDataset.push_back(data);
+            }
+        }
+
+    DateTime date = DateTime();
+    double dateInJulian = 0.0;
+    double minDateInJulian = DBL_MAX;
+    double maxDateInJulian = DBL_MIN;
+    // Date filtering, sort according to criteria.
+    for (const auto& data : lowResDataset)
+        {
+        date = data->GetDate();
+        if (date.IsValid())
+            {
+            date.ToJulianDay(dateInJulian);
+
+            if (dateInJulian < minDateInJulian)
+                minDateInJulian = dateInJulian;
+            if (dateInJulian > maxDateInJulian)
+                maxDateInJulian = dateInJulian;
+            }
+        }
+
+    // Find in which range the date is.
+    interval = (maxDateInJulian - minDateInJulian) / 3;
+    double oldDateMinRange = minDateInJulian - interval;
+    double oldDateMaxRange = minDateInJulian + interval;
+    double actualDateMinRange = maxDateInJulian - interval;
+    double actualDateMaxRange = maxDateInJulian + interval;
+
+    bvector<SpatioTemporalDataPtr> lowResOldDataset = bvector<SpatioTemporalDataPtr>();
+    bvector<SpatioTemporalDataPtr> lowResRecentDataset = bvector<SpatioTemporalDataPtr>();
+    bvector<SpatioTemporalDataPtr> lowResActualDataset = bvector<SpatioTemporalDataPtr>();
+    for (const auto& data : lowResDataset)
+        {
+        date = data->GetDate();
+        if (date.IsValid())
+            {
+            date.ToJulianDay(dateInJulian);
+
+            if (dateInJulian >= oldDateMinRange &&
+                dateInJulian <= oldDateMaxRange)
+                {
+                lowResOldDataset.push_back(data);
+                }
+            else if (dateInJulian > oldDateMaxRange &&
+                     dateInJulian < actualDateMinRange)
+                {
+                lowResRecentDataset.push_back(data);
+                }
+            else if (dateInJulian >= actualDateMinRange &&
+                     dateInJulian <= actualDateMaxRange)
+                {
+                lowResActualDataset.push_back(data);
+                }
+            }
+        }
+
+    for (const auto& data : mediumResDataset)
+        {
+        date = data->GetDate();
+        if (date.IsValid())
+            {
+            date.ToJulianDay(dateInJulian);
+
+            if (dateInJulian < minDateInJulian)
+                minDateInJulian = dateInJulian;
+            if (dateInJulian > maxDateInJulian)
+                maxDateInJulian = dateInJulian;
+            }
+        }
+
+    // Find in which range the date is.
+    interval = (maxDateInJulian - minDateInJulian) / 3;
+    oldDateMinRange = minDateInJulian - interval;
+    oldDateMaxRange = minDateInJulian + interval;
+    actualDateMinRange = maxDateInJulian - interval;
+    actualDateMaxRange = maxDateInJulian + interval;
+
+    bvector<SpatioTemporalDataPtr> mediumResOldDataset = bvector<SpatioTemporalDataPtr>();
+    bvector<SpatioTemporalDataPtr> mediumResRecentDataset = bvector<SpatioTemporalDataPtr>();
+    bvector<SpatioTemporalDataPtr> mediumResActualDataset = bvector<SpatioTemporalDataPtr>();
+    for (const auto& data : mediumResDataset)
+        {
+        date = data->GetDate();
+        if (date.IsValid())
+            {
+            date.ToJulianDay(dateInJulian);
+
+            if (dateInJulian >= oldDateMinRange &&
+                dateInJulian <= oldDateMaxRange)
+                {
+                mediumResOldDataset.push_back(data);
+                }
+            else if (dateInJulian > oldDateMaxRange &&
+                     dateInJulian < actualDateMinRange)
+                {
+                mediumResRecentDataset.push_back(data);
+                }
+            else if (dateInJulian >= actualDateMinRange &&
+                     dateInJulian <= actualDateMaxRange)
+                {
+                mediumResActualDataset.push_back(data);
+                }
+            }
+        }
+
+    for (const auto& data : highResDataset)
+        {
+        date = data->GetDate();
+        if (date.IsValid())
+            {
+            date.ToJulianDay(dateInJulian);
+
+            if (dateInJulian < minDateInJulian)
+                minDateInJulian = dateInJulian;
+            if (dateInJulian > maxDateInJulian)
+                maxDateInJulian = dateInJulian;
+            }
+        }
+
+    // Find in which range the date is.
+    interval = (maxDateInJulian - minDateInJulian) / 3;
+    oldDateMinRange = minDateInJulian - interval;
+    oldDateMaxRange = minDateInJulian + interval;
+    actualDateMinRange = maxDateInJulian - interval;
+    actualDateMaxRange = maxDateInJulian + interval;
+
+    bvector<SpatioTemporalDataPtr> highResOldDataset = bvector<SpatioTemporalDataPtr>();
+    bvector<SpatioTemporalDataPtr> highResRecentDataset = bvector<SpatioTemporalDataPtr>();
+    bvector<SpatioTemporalDataPtr> highResActualDataset = bvector<SpatioTemporalDataPtr>();
+    for (const auto& data : highResDataset)
+        {
+        date = data->GetDate();
+        if (date.IsValid())
+            {
+            date.ToJulianDay(dateInJulian);
+
+            if (dateInJulian >= oldDateMinRange &&
+                dateInJulian <= oldDateMaxRange)
+                {
+                highResOldDataset.push_back(data);
+                }
+            else if (dateInJulian > oldDateMaxRange &&
+                     dateInJulian < actualDateMinRange)
+                {
+                highResRecentDataset.push_back(data);
+                }
+            else if (dateInJulian >= actualDateMinRange &&
+                     dateInJulian <= actualDateMaxRange)
+                {
+                highResActualDataset.push_back(data);
+                }
+            }
+        }
+
+    if (SelectionCriteria::Resolution_Good == qualityCriteria &&
+        SelectionCriteria::Date_Less == captureDateCriteria)
+        {
+        selectedDataset.insert(selectedDataset.end(), lowResOldDataset.begin(), lowResOldDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResRecentDataset.begin(), lowResRecentDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResActualDataset.begin(), lowResActualDataset.end());
+        }
+    else if (SelectionCriteria::Resolution_Good == qualityCriteria &&
+             SelectionCriteria::Date_Recent == captureDateCriteria)
+        {
+        selectedDataset.insert(selectedDataset.end(), lowResRecentDataset.begin(), lowResRecentDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResActualDataset.begin(), lowResActualDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResOldDataset.begin(), lowResOldDataset.end());
+        }
+    else if (SelectionCriteria::Resolution_Good == qualityCriteria &&
+             SelectionCriteria::Date_Most == captureDateCriteria)
+        {
+        selectedDataset.insert(selectedDataset.end(), lowResActualDataset.begin(), lowResActualDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResRecentDataset.begin(), lowResRecentDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResOldDataset.begin(), lowResOldDataset.end());
+        }
+    else if (SelectionCriteria::Resolution_Better == qualityCriteria &&
+             SelectionCriteria::Date_Less == captureDateCriteria)
+        {
+        selectedDataset.insert(selectedDataset.end(), mediumResOldDataset.begin(), mediumResOldDataset.end());
+        selectedDataset.insert(selectedDataset.end(), mediumResRecentDataset.begin(), mediumResRecentDataset.end());
+        selectedDataset.insert(selectedDataset.end(), mediumResActualDataset.begin(), mediumResActualDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResOldDataset.begin(), lowResOldDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResRecentDataset.begin(), lowResRecentDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResActualDataset.begin(), lowResActualDataset.end());
+        }
+    else if (SelectionCriteria::Resolution_Better == qualityCriteria &&
+             SelectionCriteria::Date_Recent == captureDateCriteria)
+        {
+        selectedDataset.insert(selectedDataset.end(), mediumResRecentDataset.begin(), mediumResRecentDataset.end());
+        selectedDataset.insert(selectedDataset.end(), mediumResActualDataset.begin(), mediumResActualDataset.end());
+        selectedDataset.insert(selectedDataset.end(), mediumResOldDataset.begin(), mediumResOldDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResRecentDataset.begin(), lowResRecentDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResActualDataset.begin(), lowResActualDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResOldDataset.begin(), lowResOldDataset.end());
+        }
+    else if (SelectionCriteria::Resolution_Better == qualityCriteria &&
+             SelectionCriteria::Date_Most == captureDateCriteria)
+        {
+        selectedDataset.insert(selectedDataset.end(), mediumResActualDataset.begin(), mediumResActualDataset.end());
+        selectedDataset.insert(selectedDataset.end(), mediumResRecentDataset.begin(), mediumResRecentDataset.end());
+        selectedDataset.insert(selectedDataset.end(), mediumResOldDataset.begin(), mediumResOldDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResActualDataset.begin(), lowResActualDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResRecentDataset.begin(), lowResRecentDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResOldDataset.begin(), lowResOldDataset.end());
+        }
+    else if (SelectionCriteria::Resolution_Best == qualityCriteria &&
+             SelectionCriteria::Date_Less == captureDateCriteria)
+        {
+        selectedDataset.insert(selectedDataset.end(), highResOldDataset.begin(), highResOldDataset.end());
+        selectedDataset.insert(selectedDataset.end(), highResRecentDataset.begin(), highResRecentDataset.end());
+        selectedDataset.insert(selectedDataset.end(), highResActualDataset.begin(), highResActualDataset.end());
+        selectedDataset.insert(selectedDataset.end(), mediumResOldDataset.begin(), mediumResOldDataset.end());
+        selectedDataset.insert(selectedDataset.end(), mediumResRecentDataset.begin(), mediumResRecentDataset.end());
+        selectedDataset.insert(selectedDataset.end(), mediumResActualDataset.begin(), mediumResActualDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResOldDataset.begin(), lowResOldDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResRecentDataset.begin(), lowResRecentDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResActualDataset.begin(), lowResActualDataset.end());
+        }
+    else if (SelectionCriteria::Resolution_Best == qualityCriteria &&
+             SelectionCriteria::Date_Recent == captureDateCriteria)
+        {
+        selectedDataset.insert(selectedDataset.end(), highResRecentDataset.begin(), highResRecentDataset.end());
+        selectedDataset.insert(selectedDataset.end(), highResActualDataset.begin(), highResActualDataset.end());
+        selectedDataset.insert(selectedDataset.end(), highResOldDataset.begin(), highResOldDataset.end());
+        selectedDataset.insert(selectedDataset.end(), mediumResRecentDataset.begin(), mediumResRecentDataset.end());
+        selectedDataset.insert(selectedDataset.end(), mediumResActualDataset.begin(), mediumResActualDataset.end());
+        selectedDataset.insert(selectedDataset.end(), mediumResOldDataset.begin(), mediumResOldDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResRecentDataset.begin(), lowResRecentDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResActualDataset.begin(), lowResActualDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResOldDataset.begin(), lowResOldDataset.end());
+        }
+    else if (SelectionCriteria::Resolution_Best == qualityCriteria &&
+             SelectionCriteria::Date_Most == captureDateCriteria)
+        {
+        selectedDataset.insert(selectedDataset.end(), highResActualDataset.begin(), highResActualDataset.end());
+        selectedDataset.insert(selectedDataset.end(), highResRecentDataset.begin(), highResRecentDataset.end());
+        selectedDataset.insert(selectedDataset.end(), highResOldDataset.begin(), highResOldDataset.end());
+        selectedDataset.insert(selectedDataset.end(), mediumResActualDataset.begin(), mediumResActualDataset.end());
+        selectedDataset.insert(selectedDataset.end(), mediumResRecentDataset.begin(), mediumResRecentDataset.end());
+        selectedDataset.insert(selectedDataset.end(), mediumResOldDataset.begin(), mediumResOldDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResActualDataset.begin(), lowResActualDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResRecentDataset.begin(), lowResRecentDataset.end());
+        selectedDataset.insert(selectedDataset.end(), lowResOldDataset.begin(), lowResOldDataset.end());
+        }
+
+    return selectedDataset;
+    }
 
 //-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		10/2015
+// @bsimethod                                   Jean-Francois.Cote         	    10/2015
 //-------------------------------------------------------------------------------------
-//SpatioTemporalData::~SpatioTemporalData()
-//    {}
+const bvector<SpatioTemporalDataPtr> SpatioTemporalSelector::Select(const bvector<GeoPoint2d>& regionOfInterest,
+                                                                    const bvector<SpatioTemporalDataPtr>& dataset)
+    {
+    bvector<SpatioTemporalDataPtr> selectedDataset = bvector<SpatioTemporalDataPtr>();
+
+    // &&JFC Find a way to create the HGF2DShape representing the region of interest only one time.
+    // Create shape that represents the region of interest.
+    HGF2DPositionCollection ptsCollection;
+    for (const auto& pt : regionOfInterest)
+        {
+        ptsCollection.push_back(HGF2DCoord<double>(pt.longitude, pt.latitude));
+        }
+
+    HFCPtr<HGF2DShape> pROIShape = new HGF2DPolygonOfSegments(HGF2DPolySegment(ptsCollection));
+    if (pROIShape->IsEmpty())
+        return selectedDataset;
+
+    HFCPtr<HGF2DShape> pFilledArea;
+    HFCPtr<HGF2DShape> pMissingArea;
+    for (const auto& data : dataset)
+        {
+        if (NULL == pFilledArea)
+            {
+            selectedDataset.push_back(data);
+
+            pFilledArea = data->GetFootprint();
+            pMissingArea = pROIShape->DifferentiateShape(*pFilledArea);
+            }
+        else
+            {
+            HGF2DShape::SpatialPosition bob = pMissingArea->CalculateSpatialPositionOf(*(data->GetFootprint())); bob;
+            //&&JFC Comment
+            if (HGF2DShape::SpatialPosition::S_OUT != pMissingArea->CalculateSpatialPositionOf(*(data->GetFootprint())))
+                {
+                // Data is covering a part that is not already there, add it.
+                selectedDataset.push_back(data);
+
+                pFilledArea = pFilledArea->UnifyShape(*(data->GetFootprint()));
+                pMissingArea = pROIShape->DifferentiateShape(*pFilledArea);
+                }
+            else if (HGF2DShape::SpatialPosition::S_OUT != data->GetFootprint()->CalculateSpatialPositionOf(*pMissingArea))
+                {
+                // Data is covering a part that is not already there, add it.
+                selectedDataset.push_back(data);
+
+                pFilledArea = pFilledArea->UnifyShape(*(data->GetFootprint()));
+                pMissingArea = pROIShape->DifferentiateShape(*pFilledArea);
+                }
+            }
+
+        if (HGF2DShapeId_Void == pMissingArea->GetShapeType())
+            break;
+        }
+
+    return selectedDataset;
+    }
