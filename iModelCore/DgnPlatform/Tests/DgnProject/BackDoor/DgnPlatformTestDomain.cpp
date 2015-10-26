@@ -17,7 +17,9 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 HANDLER_DEFINE_MEMBERS(TestElementHandler)
 HANDLER_DEFINE_MEMBERS(TestElement2dHandler)
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 HANDLER_DEFINE_MEMBERS(TestItemHandler)
+#endif
 HANDLER_DEFINE_MEMBERS(TestUniqueAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestMultiAspectHandler)
 DOMAIN_DEFINE_MEMBERS(DgnPlatformTestDomain)
@@ -25,6 +27,7 @@ HANDLER_DEFINE_MEMBERS(TestElementDrivesElementHandler)
 
 bool TestElementDrivesElementHandler::s_shouldFail;
 
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -46,6 +49,7 @@ DgnDbStatus TestItem::_GenerateElementGeometry(GeometricElementR el, GenerateRea
 
     return DgnDbStatus::Success;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
@@ -144,6 +148,7 @@ TestElement2dPtr TestElement2d::Create(DgnDbR db, DgnModelId mid, DgnCategoryId 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 DgnDbStatus TestItem::_LoadProperties(DgnElementCR el)
     {
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT " DPTEST_TEST_ITEM_TestItemProperty "," DPTEST_TEST_ITEM_TestItemLength " FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
@@ -166,6 +171,7 @@ DgnDbStatus TestItem::_UpdateProperties(DgnElementCR el)
     stmt->BindId(3, el.GetElementId());
     return (BE_SQLITE_DONE != stmt->Step())? DgnDbStatus::WriteError: DgnDbStatus::Success;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
@@ -266,7 +272,9 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "
     {
     RegisterHandler(TestElementHandler::GetHandler());
     RegisterHandler(TestElement2dHandler::GetHandler());
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
     RegisterHandler(TestItemHandler::GetHandler());
+#endif
     RegisterHandler(TestUniqueAspectHandler::GetHandler());
     RegisterHandler(TestMultiAspectHandler::GetHandler());
     RegisterHandler(TestElementDrivesElementHandler::GetHandler());

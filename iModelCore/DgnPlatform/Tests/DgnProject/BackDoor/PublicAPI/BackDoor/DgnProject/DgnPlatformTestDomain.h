@@ -22,9 +22,11 @@
 #define DPTEST_TEST_ELEMENT2d_CLASS_NAME                 "TestElement2d"
 #define DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
 #define DPTEST_TEST_ELEMENT_TestElementProperty          "TestElementProperty"
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 #define DPTEST_TEST_ITEM_CLASS_NAME                      "TestItem"
 #define DPTEST_TEST_ITEM_TestItemProperty                "TestItemProperty"
 #define DPTEST_TEST_ITEM_TestItemLength                  "Length"
+#endif
 #define DPTEST_TEST_UNIQUE_ASPECT_CLASS_NAME             "TestUniqueAspect"
 #define DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty "TestUniqueAspectProperty"
 #define DPTEST_TEST_MULTI_ASPECT_CLASS_NAME              "TestMultiAspect"
@@ -40,7 +42,9 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_BENTLEY_DPTEST_NAMESPACE
 
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 struct TestItemHandler;
+#endif
 struct TestElementHandler;
 
 //=======================================================================================
@@ -111,6 +115,7 @@ struct TestElement2dHandler : Dgn::dgn_ElementHandler::Drawing
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 struct TestItem : Dgn::DgnElement::Item
 {
     DEFINE_T_SUPER(Dgn::DgnElement::Item)
@@ -153,6 +158,7 @@ struct TestItemHandler : Dgn::dgn_AspectHandler::Aspect
     DOMAINHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ITEM_CLASS_NAME, TestItemHandler, Dgn::dgn_AspectHandler::Aspect, )
     RefCountedPtr<Dgn::DgnElement::Aspect> _CreateInstance() override {return new TestItem("");}
 };
+#endif
 
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
