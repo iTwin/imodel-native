@@ -414,12 +414,12 @@ TEST_F(WSChangesetTests, DISABLED_CalculateSize_LotsOfIntsances_PerformanceBette
         "Test5":"E - Ut maximus elit sit amet molestie faucibus. Duis pharetra, urna."
         })"));
     ObjectId testId("SomeTestSchema", "SomeTestClass", "TestId");
-    size_t testInstanceCount = 2500;
-    size_t testIterations = 3;
+    int testInstanceCount = 2500;
+    int testIterations = 3;
 
     auto testChangeset = [&] (std::function<void(WSChangeset&)> completeCallback, std::function<void(WSChangeset&)> incrementalCallback)
         {
-        for (size_t i = 0; i < testIterations; i++)
+        for (int i = 0; i < testIterations; i++)
             {
             WSChangeset changeset;
             while ((int)changeset.GetInstanceCount() < testInstanceCount)
