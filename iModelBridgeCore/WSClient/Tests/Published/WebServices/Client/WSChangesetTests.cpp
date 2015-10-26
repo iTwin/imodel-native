@@ -422,7 +422,7 @@ TEST_F(WSChangesetTests, DISABLED_CalculateSize_LotsOfIntsances_PerformanceBette
         for (int i = 0; i < testIterations; i++)
             {
             WSChangeset changeset;
-            while (changeset.GetInstanceCount() < testInstanceCount)
+            while ((int)changeset.GetInstanceCount() < testInstanceCount)
                 {
                 auto& instance = changeset.AddInstance(testId, WSChangeset::Created, testProperties);
 
