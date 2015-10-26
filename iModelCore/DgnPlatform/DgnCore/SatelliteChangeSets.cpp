@@ -191,7 +191,7 @@ DbResult SatelliteChangeSets::Sha1Info::Insert (Db& db) const
     stmt.Prepare (db, "INSERT INTO " CHANGES_TABLE_Sha1 " (SequenceNumber,SHA1) VALUES (?,?)");
     int col = 1;
     stmt.BindInt64(col++, m_sequenceNumber);
-    stmt.BindText (col++, m_sha1, Statement::MAKE_COPY_No);
+    stmt.BindText (col++, m_sha1, Statement::MakeCopy::No);
     return stmt.Step();
     }
 
@@ -217,7 +217,7 @@ DbResult SatelliteChangeSets::Sha1Info::Step (Statement& stmt)
 DbResult SatelliteChangeSets::Sha1Info::PrepareFindBySequenceNumber (Statement& stmt, SatelliteChangeSets& db, uint64_t cid)
     {
     stmt.Finalize();
-    auto result = stmt.Prepare ((*db.m_project), "SELECT SequenceNumber,SHA1 FROM " CHANGES_TABLE_Sha1 " WHERE (SequenceNumber=?)");
+    auto result = stmt.Prepare ((*db.m_dgndb), "SELECT SequenceNumber,SHA1 FROM " CHANGES_TABLE_Sha1 " WHERE (SequenceNumber=?)");
     stmt.BindInt64 (1, cid);
     return result;
     }
@@ -245,7 +245,7 @@ DbResult SatelliteChangeSets::VerifySha1(uint64_t sequenceNumber, void const* da
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult SatelliteChangeSets::CreateTables()
     {
-    Sha1Info::CreateTable (*m_project);
+    Sha1Info::CreateTable (*m_dgndb);
     return m_dgndb->CreateTable(CHANGESET_ATTACH(CHANGESET_Table), "SequenceNumber INTEGER PRIMARY KEY,Type INT,Description CHAR,Time DATETIME,Data BLOB,Compressed INT");
     }
 
@@ -290,10 +290,12 @@ BentleyStatus SatelliteChangeSets::InsertChangeSet(ChangeSetInfo const &infoIn, 
 
     //  Store the SHA-1 hash of the data
     Sha1Info sha1Info;
-    sha1Info.m_sequenceNumber = csid;
+    // WIP_MERGE
+    //sha1Info.m_sequenceNumber = csid;
+    
     SHA1 hash;
     sha1Info.m_sha1 = hash(data, datasize);
-    if (sha1Info.Insert(db) != BE_SQLITE_DONE)
+    if (sha1Info.Insert(*m_dgndb) != BE_SQLITE_DONE)
         return BSIERROR;
 
     // store the changeset data (optionally compressed) in a column of the new row
@@ -544,14 +546,14 @@ BentleyStatus SatelliteChangeSets::ApplyChangeSets(uint32_t& nChangesApplied, Db
             if (s_traceUpdate)
                 changeSet.Dump("", db, (ChangeSetType::Patch==info.m_type), 0);
 
-            if (csfile.m_project->TableExists(CHANGES_TABLE_Sha1))
+            if (csfile.m_dgndb->TableExists(CHANGES_TABLE_Sha1))
                 {
                 //  Verify that the stored changeset data is intact
                 if (BE_SQLITE_OK != csfile.VerifySha1(info.m_sequenceNumber, changeSet.GetData(), changeSet.GetSize()))
                     {
                     BeAssert(false);
                     LOG.errorv ("ApplyChangeSets - %ls, %d - verification failed", csFileName.c_str(), (int)info.m_sequenceNumber);
-                    project.AbandonChanges();
+                    db.AbandonChanges();
                     return BSIERROR;
                     }
                 }
