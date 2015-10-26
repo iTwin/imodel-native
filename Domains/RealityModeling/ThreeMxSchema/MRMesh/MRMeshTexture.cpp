@@ -14,17 +14,16 @@ USING_NAMESPACE_BENTLEY_THREEMX_SCHEMA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      11/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt readRGBFromJPEGData (bvector<Byte>& rgb, Point2dR size, Byte const* jpegData, size_t jpegDataSize)
+StatusInt readBGRAFromJPEGData (bvector<Byte>& bgra, Point2dR size, Byte const* jpegData, size_t jpegDataSize)
     {
     ImageUtilities::RgbImageInfo        outInfo, inInfo;
 
     memset (&inInfo, 0, sizeof (inInfo));       // Not really used.
     inInfo.hasAlpha = true;
-    inInfo.isBGR = false;
+    inInfo.isBGR = true;
     inInfo.isTopDown = true;
 
-
-    if (SUCCESS != ImageUtilities::ReadImageFromJpgBuffer (rgb, outInfo, jpegData, jpegDataSize, inInfo))
+    if (SUCCESS != ImageUtilities::ReadImageFromJpgBuffer (bgra, outInfo, jpegData, jpegDataSize, inInfo))
         return ERROR;
 
     size.x = outInfo.width;
@@ -46,7 +45,7 @@ MRMeshTexture::MRMeshTexture (Byte const* pData, size_t dataSize)
 
     m_compressedData.resize (dataSize);
     memcpy (&m_compressedData.front(), pData, dataSize);
-    readRGBFromJPEGData (m_data, m_size, pData, dataSize);
+    readBGRAFromJPEGData (m_data, m_size, pData, dataSize);
     }
 
 
@@ -68,9 +67,9 @@ public:
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static RenderMaterialPtr Create (Byte const* imageData, Point2dCR imageSize)
+static RenderMaterialPtr Create (ImageBufferR imageBuffer)
     {
-    RenderMaterialMapPtr        patternMap = SimpleBufferPatternMap::Create (imageData, imageSize);
+    RenderMaterialMapPtr        patternMap = SimpleBufferPatternMap::Create (imageBuffer);
     
     return new MRMeshRenderMaterial (patternMap);
     }
@@ -110,7 +109,12 @@ virtual     RenderMaterialMapPtr    _GetMap (char const* key) const override
 void    MRMeshTexture::Initialize (MRMeshNodeCR node, MRMeshContextCR host, ViewContextR viewContext)
     {
     if (!m_material.IsValid())
-        m_material = MRMeshRenderMaterial::Create (&m_data.front(), m_size);
+        {
+        ImageBufferPtr imageBuffer = ImageBuffer::Create(m_size.x, m_size.y, ImageBuffer::Format::Bgra);
+        memcpy(imageBuffer->GetDataP(), m_data.data(), imageBuffer->GetDataSize());
+
+        m_material = MRMeshRenderMaterial::Create (*imageBuffer);
+        }
     }
 
 /*-----------------------------------------------------------------------------------**//**

@@ -70,7 +70,7 @@ struct MRMeshGeometry : RefCountedBase
 +===============+===============+===============+===============+===============+======*/
 struct MRMeshTexture : RefCountedBase
 {
-    bvector <Byte>              m_data;
+    bvector <Byte>              m_data;         // BGRA
     bvector <Byte>              m_compressedData;
     Point2d                     m_size;
     RenderMaterialPtr           m_material;
