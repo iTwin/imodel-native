@@ -10,6 +10,7 @@
 
 #include <vector>
 #include "Exp.h"
+#include "OptionsExp.h"
 #include "ECSqlPreparedStatement.h"
 #include "NativeSqlBuilder.h"
 
@@ -103,16 +104,18 @@ public:
         ExpCR m_exp;
         ECSqlType m_ecsqlType;
         ExpScope const* m_parent;
+        OptionsExp const* m_options;
         int m_nativeSqlSelectClauseColumnCount;
         ECSqlType DetermineECSqlType (ExpCR exp) const;
 
     public:
-        ExpScope (ExpCR exp, ExpScope const* parent);
+        ExpScope (ExpCR exp, ExpScope const* parent, OptionsExp const* options);
 
-        ExpScope const* GetParent() const;
-        ExpCR GetExp () const;
-        
-        bool IsRootScope () const;
+        ExpScope const* GetParent() const { return m_parent; }
+        ExpCR GetExp() const { return m_exp; }
+        OptionsExp const* GetOptions() const { return m_options; }
+
+        bool IsRootScope() const { return m_parent == nullptr; }
         //SELECT only
         void IncrementNativeSqlSelectClauseColumnCount (size_t value);
         int GetNativeSqlSelectClauseColumnCount () const;
@@ -130,7 +133,7 @@ public:
     public:
         ExpScopeStack () {}
 
-        void Push (ExpCR statementExp);
+        void Push (ExpCR statementExp, OptionsExp const* options);
         void Pop ();
 
         size_t Depth () const;
@@ -188,7 +191,7 @@ public:
     ExpScope& GetCurrentScopeR ()  {return m_scopes.CurrentR();}
 
 
-    void PushScope (ExpCR exp) { m_scopes.Push (exp); }
+    void PushScope (ExpCR exp, OptionsExp const* options = nullptr) { m_scopes.Push (exp, options); }
     void PopScope () {m_scopes.Pop();}
 
     bool IsEmbeddedStatement () const { return m_parentCtx != nullptr; }

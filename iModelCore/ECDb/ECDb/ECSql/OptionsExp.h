@@ -39,10 +39,12 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct OptionsExp : Exp
     {
-DEFINE_EXPR_TYPE(Options)
+    DEFINE_EXPR_TYPE(Options)
+
+    static Utf8CP const NOECCLASSIDFILTER_OPTION;
 
 private:
-    bmap<Utf8CP, size_t> m_optionsByName;
+    bmap<Utf8CP, size_t, CompareIUtf8> m_optionsByName;
 
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString() const override { return "OptionsExp"; }
@@ -50,7 +52,8 @@ private:
 public:
     OptionsExp() :Exp() {}
     BentleyStatus AddOptionExp(std::unique_ptr<OptionExp> optionExp);
-    bool TryGetOption(OptionsExp const*&, Utf8CP optionName) const;
+    //! Options are case-insensitive
+    bool TryGetOption(OptionExp const*&, Utf8CP optionName) const;
     };
 
 

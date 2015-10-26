@@ -79,7 +79,18 @@ WhereExp const* UpdateStatementExp::GetWhereClauseExp () const
     if (m_whereClauseIndex < 0)
         return nullptr;
 
-    return GetChild<WhereExp> (static_cast<size_t> (m_whereClauseIndex));
+    return GetChild<WhereExp> ((size_t) m_whereClauseIndex);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   01/2014
+//+---------------+---------------+---------------+---------------+---------------+--------
+OptionsExp const* UpdateStatementExp::GetOptionsClauseExp() const
+    {
+    if (m_optionsClauseIndex < 0)
+        return nullptr;
+
+    return GetChild<OptionsExp>((size_t) m_optionsClauseIndex);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -93,9 +104,13 @@ Utf8String UpdateStatementExp::_ToECSql () const
 
     ecsql.append ("SET ").append (GetAssignmentListExp ()->ToECSql ());
 
-    auto whereClauseExp = GetWhereClauseExp ();
-    if (whereClauseExp != nullptr)
-        ecsql.append (" ").append (whereClauseExp->ToECSql ());
+    Exp const* exp = GetWhereClauseExp ();
+    if (exp != nullptr)
+        ecsql.append (" ").append (exp->ToECSql ());
+
+    exp = GetOptionsClauseExp();
+    if (exp != nullptr)
+        ecsql.append(" ").append(exp->ToECSql());
 
     return ecsql;
     }

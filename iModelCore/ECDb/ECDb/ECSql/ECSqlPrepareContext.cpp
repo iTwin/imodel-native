@@ -15,34 +15,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlPrepareContext::ExpScope::ExpScope (ExpCR exp, ExpScope const* parent) 
-: m_exp (exp), m_parent (parent), m_nativeSqlSelectClauseColumnCount (0)
+ECSqlPrepareContext::ExpScope::ExpScope(ExpCR exp, ExpScope const* parent, OptionsExp const* options)
+    : m_exp(exp), m_parent(parent), m_options(options), m_nativeSqlSelectClauseColumnCount(0)
     {
-    m_ecsqlType = DetermineECSqlType (exp);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    11/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlPrepareContext::ExpScope const* ECSqlPrepareContext::ExpScope::GetParent() const
-    {
-    return m_parent;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    11/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ExpCR ECSqlPrepareContext::ExpScope::GetExp() const
-    {
-    return m_exp;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    11/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-bool ECSqlPrepareContext::ExpScope::IsRootScope() const
-    {
-    return GetParent() == nullptr;
+    m_ecsqlType = DetermineECSqlType(exp);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -73,13 +49,13 @@ ECSqlType ECSqlPrepareContext::ExpScope::DetermineECSqlType (ExpCR exp) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlPrepareContext::ExpScopeStack::Push (ExpCR exp)
+void ECSqlPrepareContext::ExpScopeStack::Push (ExpCR exp, OptionsExp const* options)
     {
     ExpScope const* parent = nullptr;
     if (Depth() > 0)
         parent = & Current();
 
-    m_scopes.push_back (ExpScope (exp, parent));
+    m_scopes.push_back (ExpScope (exp, parent, options));
     }
 
 //-----------------------------------------------------------------------------------------

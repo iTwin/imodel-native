@@ -106,13 +106,22 @@ ClassNameExp const& classNameExp
             return status;
         }
 
-    IClassMap const& classMap = classNameExp.GetInfo().GetMap();
 
+    //System WHERE clause
+    //if option to disable class id filter is set, nothing more to do
+    OptionExp const* noECClassIdFilterOptionExp = nullptr;
+    if (exp.GetOptionsClauseExp() != nullptr && exp.GetOptionsClauseExp()->TryGetOption(noECClassIdFilterOptionExp, OptionsExp::NOECCLASSIDFILTER_OPTION))
+        return ECSqlStatus::Success;
+
+
+    IClassMap const& classMap = classNameExp.GetInfo().GetMap();
+    ECDbSqlTable const& table = classMap.GetTable();
     ECDbSqlColumn const* classIdColumn = nullptr;
-    if (!classMap.GetTable().TryGetECClassIdColumn(classIdColumn) || classIdColumn->GetPersistenceType() != PersistenceType::Persisted)
+    if (!table.TryGetECClassIdColumn(classIdColumn) || classIdColumn->GetPersistenceType() != PersistenceType::Persisted)
         return ECSqlStatus::Success; //no class id column exists -> no system where clause
     
-    return classMap.GetStorageDescription().GenerateECClassIdFilter(deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet, 
+    return classMap.GetStorageDescription().GenerateECClassIdFilter(deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet,
+                                                                    table,
                                                                     *classIdColumn, 
                                                                     exp.GetClassNameExp()->IsPolymorphic()) == SUCCESS ? ECSqlStatus::Success : ECSqlStatus::Error;
     }

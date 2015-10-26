@@ -9,6 +9,7 @@
 #include "ECSqlUpdatePreparer.h"
 #include "ECSqlPropertyNameExpPreparer.h"
 #include "StructArrayToSecondaryTableECSqlBinder.h"
+
 using namespace std;
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -76,25 +77,31 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
         hasWhereClause = true;
         }
 
-    // WHERE clause
-    NativeSqlBuilder systemWhereClause;
-    ECDbSqlColumn const* classIdColumn = nullptr;
-    if (classMap.GetTable().TryGetECClassIdColumn(classIdColumn) && classIdColumn->GetPersistenceType() == PersistenceType::Persisted)
+    OptionExp const* noECClassIdFilterOptionExp = nullptr;
+    if (exp.GetOptionsClauseExp() == nullptr || !exp.GetOptionsClauseExp()->TryGetOption(noECClassIdFilterOptionExp, OptionsExp::NOECCLASSIDFILTER_OPTION))
         {
-        if (SUCCESS != classMap.GetStorageDescription().GenerateECClassIdFilter(systemWhereClause,
-                                                                 *classIdColumn,
-                                                                 exp.GetClassNameExp()->IsPolymorphic()))
-            return ECSqlStatus::Error;
-        }
+        // WHERE clause
+        NativeSqlBuilder systemWhereClause;
+        ECDbSqlColumn const* classIdColumn = nullptr;
+        ECDbSqlTable const& table = classMap.GetTable();
+        if (table.TryGetECClassIdColumn(classIdColumn) &&
+            classIdColumn->GetPersistenceType() == PersistenceType::Persisted)
+            {
+            if (SUCCESS != classMap.GetStorageDescription().GenerateECClassIdFilter(systemWhereClause, table,
+                                                                                    *classIdColumn,
+                                                                                    exp.GetClassNameExp()->IsPolymorphic()))
+                return ECSqlStatus::Error;
+            }
 
-    if (!systemWhereClause.IsEmpty ())
-        {
-        if (!hasWhereClause)
-            nativeSqlBuilder.Append (" WHERE ");
-        else
-            nativeSqlBuilder.Append (" AND ");
+        if (!systemWhereClause.IsEmpty())
+            {
+            if (!hasWhereClause)
+                nativeSqlBuilder.Append(" WHERE ");
+            else
+                nativeSqlBuilder.Append(" AND ");
 
-        nativeSqlBuilder.AppendParenLeft().Append(systemWhereClause).AppendParenRight();
+            nativeSqlBuilder.AppendParenLeft().Append(systemWhereClause).AppendParenRight();
+            }
         }
 
     status = PrepareStepTask (ctx, exp);

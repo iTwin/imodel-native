@@ -55,20 +55,20 @@ Exp::FinalizeParseStatus DeleteStatementExp::_FinalizeParsing(ECSqlParseContext&
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-ClassNameExp const* DeleteStatementExp::GetClassNameExp () const
+ClassNameExp const* DeleteStatementExp::GetClassNameExp() const
     {
-    return GetChild<ClassNameExp> (m_classNameExpIndex);
+    return GetChild<ClassNameExp>(m_classNameExpIndex);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-WhereExp const* DeleteStatementExp::GetWhereClauseExp () const
+WhereExp const* DeleteStatementExp::GetWhereClauseExp() const
     {
     if (m_whereClauseIndex < 0)
         return nullptr;
 
-    return GetChild<WhereExp> (static_cast<size_t> (m_whereClauseIndex));
+    return GetChild<WhereExp>((size_t) m_whereClauseIndex);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -79,7 +79,7 @@ OptionsExp const* DeleteStatementExp::GetOptionsClauseExp() const
     if (m_optionsClauseIndex < 0)
         return nullptr;
 
-    return GetChild<OptionsExp>(static_cast<size_t> (m_optionsClauseIndex));
+    return GetChild<OptionsExp>((size_t) m_optionsClauseIndex);
     }
 
 //-----------------------------------------------------------------------------------------

@@ -220,7 +220,9 @@ public:
 
         explicit StorageDescription (ECN::ECClassId classId) : m_classId (classId), m_rootHorizontalPartitionIndex (0) {}
 
-        HorizontalPartition* AddHorizontalPartition(ECDbSqlTable const& table, bool isRootPartition);
+        HorizontalPartition* AddHorizontalPartition(ECDbSqlTable const&, bool isRootPartition);
+
+        HorizontalPartition const* GetHorizontalPartition(ECDbSqlTable const&) const;
 
     public:
         ~StorageDescription (){}
@@ -237,7 +239,7 @@ public:
         bool HierarchyMapsToMultipleTables() const { return m_nonVirtualHorizontalPartitionIndices.size() > 1; }
         ECN::ECClassId GetClassId () const { return m_classId; }
 
-        BentleyStatus GenerateECClassIdFilter(NativeSqlBuilder& filter, ECDbSqlColumn const& classIdColumn, bool polymorphic) const;
+        BentleyStatus GenerateECClassIdFilter(NativeSqlBuilder& filter, ECDbSqlTable const&, ECDbSqlColumn const& classIdColumn, bool polymorphic) const;
         static std::unique_ptr<StorageDescription> Create(IClassMap const&, ECDbMap::LightweightCache const& lwmc);
         };
 END_BENTLEY_SQLITE_EC_NAMESPACE

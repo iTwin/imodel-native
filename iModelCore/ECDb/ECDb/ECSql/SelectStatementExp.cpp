@@ -780,36 +780,25 @@ Utf8String SingleSelectStatementExp::_ToECSql() const
     if (!selectionType.empty())
         tmp.append (selectionType).append (" ");
 
-    tmp+= GetSelection()->ToECSql();
-    tmp+= " ";
-    tmp+= GetFrom()->ToECSql();
+    tmp.append(GetSelection()->ToECSql()).append(" ").append(GetFrom()->ToECSql());
 
     if (GetWhere() != nullptr)
-        {
-        tmp+= " ";
-        tmp+= GetWhere()->ToECSql();
-        }
+        tmp.append(" ").append(GetWhere()->ToECSql());
 
     if (GetGroupBy() != nullptr)
-        {
-        tmp+= " ";
-        tmp+= GetGroupBy()->ToECSql();
-        }
+        tmp.append(" ").append(GetGroupBy()->ToECSql());
 
     if (GetOrderBy() != nullptr)
-        {
-        tmp+= " ";
-        tmp+= GetOrderBy()->ToECSql();
-        }
+        tmp.append(" ").append(GetOrderBy()->ToECSql());
 
     if (GetHaving() != nullptr)
-        {
-        tmp+= " ";
-        tmp+= GetHaving()->ToECSql();
-        }
+        tmp.append(" ").append(GetHaving()->ToECSql());
 
     if (GetLimitOffset() != nullptr)
         tmp.append (" ").append (GetLimitOffset ()->ToECSql ());
+
+    if (GetOptions() != nullptr)
+        tmp.append(" ").append(GetOptions()->ToECSql());
 
     return tmp;
     }

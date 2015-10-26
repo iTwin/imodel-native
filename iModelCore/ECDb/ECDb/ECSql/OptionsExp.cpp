@@ -10,6 +10,11 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //****************************** OptionsExp *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  10/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+Utf8CP const OptionsExp::NOECCLASSIDFILTER_OPTION = "NoECClassIdFilter";
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/2015
@@ -31,7 +36,7 @@ BentleyStatus OptionsExp::AddOptionExp(std::unique_ptr<OptionExp> optionExp)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool OptionsExp::TryGetOption(OptionsExp const*& exp, Utf8CP optionName) const
+bool OptionsExp::TryGetOption(OptionExp const*& exp, Utf8CP optionName) const
     {
     BeAssert(GetChildrenCount() != 0);
 
@@ -44,7 +49,7 @@ bool OptionsExp::TryGetOption(OptionsExp const*& exp, Utf8CP optionName) const
 
     const size_t ix = it->second;
     BeAssert(ix < GetChildrenCount());
-    exp = GetChild<OptionsExp>(ix);
+    exp = GetChild<OptionExp>(ix);
     BeAssert(exp != nullptr);
     return true;
     }

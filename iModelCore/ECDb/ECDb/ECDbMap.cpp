@@ -1310,17 +1310,21 @@ StorageDescription& StorageDescription::operator=(StorageDescription&& rhs)
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    10 / 2015
 //------------------------------------------------------------------------------------------
-BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filter, ECDbSqlColumn const& classIdColumn, bool polymorphic) const
+BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filter, ECDbSqlTable const& table, ECDbSqlColumn const& classIdColumn, bool polymorphic) const
     {
-    if (!HasNonVirtualPartitions())
+    if (table.GetPersistenceType() != PersistenceType::Persisted)
         return SUCCESS; //table is virtual -> noop
 
-    Utf8CP classIdColName = classIdColumn.GetName().c_str();
-    HorizontalPartition const* partition = GetHorizontalPartition(polymorphic);
+    HorizontalPartition const* partition = GetHorizontalPartition(table);
+    if (partition == nullptr)
+        {
+        BeAssert(false && "Should always find a partition for the given table");
+        return ERROR;
+        }
 
+    Utf8CP classIdColName = classIdColumn.GetName().c_str();
     if (!polymorphic)
         {
-        BeAssert(partition != nullptr);
         //if partition's table is only used by a single class, no filter needed
         if (partition->IsSharedTable())
             filter.AppendEscaped(classIdColName).Append(BooleanSqlOperator::EqualTo).Append(m_classId);
@@ -1328,10 +1332,6 @@ BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filt
         return SUCCESS;
         }
 
-    if (HierarchyMapsToMultipleTables())
-        return SUCCESS; // view includes the filter already
-
-    BeAssert(partition != nullptr);
     partition->AppendECClassIdFilterSql(classIdColName, filter);
     return SUCCESS;
     }
@@ -1387,6 +1387,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(IClassMap const& 
     return std::move(storageDescription);
     }
 
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    10 / 2015
 //------------------------------------------------------------------------------------------
@@ -1402,6 +1403,20 @@ HorizontalPartition const* StorageDescription::GetHorizontalPartition(bool polym
     BeAssert(ix < m_horizontalPartitions.size());
 
     return &m_horizontalPartitions[ix];
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    10 / 2015
+//------------------------------------------------------------------------------------------
+HorizontalPartition const* StorageDescription::GetHorizontalPartition(ECDbSqlTable const& table) const
+    {
+    for (HorizontalPartition const& part : m_horizontalPartitions)
+        {
+        if (&part.GetTable() == &table)
+            return &part;
+        }
+
+    return nullptr;
     }
 
 //------------------------------------------------------------------------------------------
