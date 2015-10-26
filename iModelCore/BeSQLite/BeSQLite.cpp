@@ -2288,7 +2288,7 @@ Utf8CP DbFile::GetLastError(DbResult* lastResult) const
         }
 
     status = (DbResult) sqlite3_errcode(m_sqlDb);
-    return (Utf8CP) sqlite3_errmsg(m_sqlDb);
+    return Db::InterpretDbResult(status);
     }
 
 /*---------------------------------------------------------------------------------**//**
