@@ -1397,7 +1397,7 @@ Utf8String dgn_ModelHandler::StreetMap::CreateMapBoxUrl(WebMercatorTilingSystem:
     char const* mapid = (!props.m_mapType.empty() && props.m_mapType [0] == '0')? "mapbox.streets": "mapbox.satellite";
 
     //                                                  m  z  x  y  f
-    url = Utf8PrintfString ("https://api.mapbox.com/v4/%s/%d/%d/%d.%s?access_token=", 
+    url = Utf8PrintfString ("http://api.mapbox.com/v4/%s/%d/%d/%d.%s?access_token=", 
                                                         mapid, 
                                                            tileid.zoomLevel, tileid.column, tileid.row, 
                                                                     format);
