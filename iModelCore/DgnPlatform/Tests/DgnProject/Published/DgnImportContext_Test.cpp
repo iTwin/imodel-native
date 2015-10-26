@@ -360,7 +360,6 @@ void _DrawSymbol (IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP cl
 void _DeleteSymbol (IDisplaySymbol*) override {}
 bool _FilterRangeIntersection (GeometricElementCR element) override {return false;}
 void _CookDisplayParams (ElemDisplayParamsR, ElemMatSymbR) override {}
-void _CookDisplayParamsOverrides (ElemDisplayParamsR, OvrMatSymbR) override {}
 void _SetupOutputs () override {SetIViewDraw (*m_IViewDraw);}
 NullContext (DgnDbR db) {m_dgnDb=&db; m_IViewDraw = nullptr; m_IDrawGeom = nullptr; m_ignoreViewRange = true; }
 }; // NullContext

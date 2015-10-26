@@ -436,10 +436,10 @@ ImageBufferPtr  JsonRenderMaterialMap::_GetImage (DgnDbR dgnDb) const
         }
 
     bvector<Byte> data;
-    if(SUCCESS != texture.GetImage (data))
+    if(SUCCESS != texture->GetImage (data))
         return nullptr;        
 
-    return ImageBuffer::Create(texture.GetData().GetWidth(), texture.GetData().GetHeight(), ImageBuffer::Format::Rgba, data);
+    return ImageBuffer::Create(texture->GetData().GetWidth(), texture->GetData().GetHeight(), ImageBuffer::Format::Rgba, data);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -467,6 +467,7 @@ uintptr_t  JsonRenderMaterialMap::_GetQvTextureId (DgnDbR dgnDb, bool createIfNo
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus JsonRenderMaterialMap::DoImport (DgnImportContext& context, DgnDbR sourceDb) 
     {
+#ifdef WIP_MERGE_YII
     Json::Value&     textureIdValue = m_value[RENDER_MATERIAL_TextureId];
 
     if (textureIdValue.isNull())     
@@ -475,6 +476,9 @@ BentleyStatus JsonRenderMaterialMap::DoImport (DgnImportContext& context, DgnDbR
     textureIdValue = (uint64_t) context.GetDestinationDb().Textures().ImportTexture (context, sourceDb, (DgnTextureId) textureIdValue.asUInt64()).GetValue();
 
     return SUCCESS;
+#else
+    return ERROR;
+#endif
     }
 
 //=======================================================================================

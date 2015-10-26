@@ -216,6 +216,7 @@ DgnTextureId DgnTexture::QueryTextureId(Code const& code, DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_MERGE_YII
 DgnTextureId DgnTextures::ImportTexture(DgnImportContext& context, DgnDbR sourceDb, DgnTextureId source)
     {
     Texture sourceTexture = sourceDb.Textures().Query(source);
@@ -237,12 +238,14 @@ DgnTextureId DgnTextures::ImportTexture(DgnImportContext& context, DgnDbR source
 
     return context.AddTextureId(source, destTexture.GetId());
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnTextureId DgnImportContext::RemapTextureId(DgnTextureId source)
     {
+#ifdef WIP_MERGE_YII
     if (!IsBetweenDbs())
         return source;
 
@@ -251,4 +254,7 @@ DgnTextureId DgnImportContext::RemapTextureId(DgnTextureId source)
         return dest;
 
     return GetDestinationDb().Textures().ImportTexture(*this, GetSourceDb(), source);
+#else
+    return DgnTextureId();
+#endif
     }

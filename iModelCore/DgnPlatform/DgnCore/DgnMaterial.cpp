@@ -256,6 +256,7 @@ DgnMaterialId DgnMaterial::ImportMaterial(DgnMaterialId srcMaterialId, DgnImport
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_MERGE_YII
 DgnMaterialId DgnMaterials::ImportMaterial(DgnImportContext& context, DgnDbR sourceDb, DgnMaterialId source)
     {
     Material sourceMaterial = sourceDb.Materials().Query(source);
@@ -291,7 +292,8 @@ DgnMaterialId DgnMaterials::ImportMaterial(DgnImportContext& context, DgnDbR sou
 
     return context.AddMaterialId(source, destMaterial.GetId());
     }
-
+#endif
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
