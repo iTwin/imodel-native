@@ -19,13 +19,13 @@ using namespace std;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-BentleyStatus DgnLineStyles::Insert (DgnStyleId& newStyleId, Utf8CP name, LsComponentId componentId, LsComponentType componentType, uint32_t flags, double unitDefinition)
+BentleyStatus DgnLineStyles::Insert (DgnStyleId& newStyleId, Utf8CP name, LsComponentId componentId, LsComponentType componentType, LsComponentId rasterComponentId, uint32_t flags, double unitDefinition)
     {
     // Don't assert to ensure an invalid ID.
     // Consider the case of cloning a style object, modifying, and then inserting it as a new style. The Clone keeps the ID, and I don't think it's worth having an overload of Clone to expose this detail.
 
     Json::Value jsonObj(Json::objectValue);
-    LsDefinition::InitializeJsonObject(jsonObj, componentId, componentType, flags, unitDefinition);
+    LsDefinition::InitializeJsonObject(jsonObj, componentId, componentType, rasterComponentId, flags, unitDefinition);
     Utf8String data = Json::FastWriter::ToString(jsonObj);
 
     PRECONDITION(BE_SQLITE_OK == m_dgndb.GetServerIssuedId(newStyleId, DGN_TABLE(DGN_CLASSNAME_Style), "Id"), ERROR);
@@ -44,12 +44,12 @@ BentleyStatus DgnLineStyles::Insert (DgnStyleId& newStyleId, Utf8CP name, LsComp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-BentleyStatus DgnLineStyles::Update (DgnStyleId styleId, Utf8CP name, LsComponentId componentId, LsComponentType componentType, uint32_t flags, double unitDefinition)
+BentleyStatus DgnLineStyles::Update (DgnStyleId styleId, Utf8CP name, LsComponentId componentId, LsComponentType componentType, LsComponentId rasterComponentId, uint32_t flags, double unitDefinition)
     {
     PRECONDITION(styleId.IsValid(), ERROR);
 
     Json::Value jsonObj(Json::objectValue);
-    LsDefinition::InitializeJsonObject(jsonObj, componentId, componentType, flags, unitDefinition);
+    LsDefinition::InitializeJsonObject(jsonObj, componentId, componentType, rasterComponentId, flags, unitDefinition);
     Utf8String data = Json::FastWriter::ToString(jsonObj);
 
     Statement update;

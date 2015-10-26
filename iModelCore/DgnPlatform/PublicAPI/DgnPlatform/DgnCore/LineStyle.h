@@ -18,7 +18,7 @@
 #include <DgnPlatform/Tools/KeyTree.h>
 
 //  These are both used to try different configurations while testing.  They must both be eliminated
-#define LINESTYLES_ENABLED 0
+#define LINESTYLES_ENABLED 1
 #define CONVERT_LINESTYLES_ENABLED 1
 #define TRYING_DIRECT_LINESTYLES 0
 
@@ -300,6 +300,7 @@ private:
 public:
     uint32_t GetValue() const { return m_id; }
     LsComponentId() { m_id = 0xFFFFFFFF; }
+    bool IsValid() const { return m_id != 0xFFFFFFFF; }
     explicit LsComponentId(uint32_t value) : m_id(value) {}
 };
 
@@ -1327,7 +1328,7 @@ enum class LsUnit
 };
 
 //=======================================================================================
-//! Represents the defintion of a line style.
+//! Represents the definition of a line style.
 //!  @ingroup LineStyleManagerModule
 // @bsiclass
 //=======================================================================================
@@ -1344,6 +1345,7 @@ private:
     bool                m_componentLookupFailed;
     DgnStyleId          m_styleId;
     MSCharIKey          m_name;
+    LsComponentId       m_rasterComponentId;
     LsLocation          m_location;             // Where to find components of resource
     LsComponentPtr      m_lsComp;
     double              m_unitDef;
@@ -1352,7 +1354,7 @@ private:
     int                 m_hardwareLineCode;
     bool                m_componentLoadPostProcessed;
 
-    // For raster styles...
+    // For texture styles...
     mutable bool        m_textureInitialized;
     mutable uintptr_t   m_textureHandle;
 
@@ -1367,6 +1369,7 @@ public:
     DGNPLATFORM_EXPORT static uint32_t GetAttributes (Json::Value& lsDefinition);
     DGNPLATFORM_EXPORT static LsComponentType GetComponentType (Json::Value& lsDefinition);
     DGNPLATFORM_EXPORT static LsComponentId GetComponentId (Json::Value& lsDefinition);
+    DGNPLATFORM_EXPORT static LsComponentId GetRasterComponentId (Json::Value& lsDefinition);
 
     DGNPLATFORM_EXPORT static void Destroy (LsDefinitionP);
 
@@ -1405,7 +1408,7 @@ public:
     void MarkDirty (bool value = true) { m_isDirty = value; }
     StatusInt Commit ();
 
-    static void InitializeJsonObject (Json::Value& jsonObj, LsComponentId componentId, LsComponentType componentType, uint32_t flags, double unitDefinition);
+    static void InitializeJsonObject (Json::Value& jsonObj, LsComponentId componentId, LsComponentType componentType, LsComponentId isRasterImage, uint32_t flags, double unitDefinition);
     void InitializeJsonObject (Json::Value& jsonObj);
 
 //__PUBLISH_CLASS_VIRTUAL__
@@ -1653,16 +1656,17 @@ private:
 
 public:
     DGNPLATFORM_EXPORT static LsComponent* GetLsComponent(LsLocationCR location);
+    DGNPLATFORM_EXPORT LsComponentPtr GetLsComponent(LsComponentType componentType, LsComponentId componentId);
     DGNPLATFORM_EXPORT void PrepareToQueryAllLineStyles(BeSQLite::Statement& stmt);
     DGNPLATFORM_EXPORT void PrepareToQueryLineStyle(BeSQLite::Statement& stmt, DgnStyleId styleId);
     DGNPLATFORM_EXPORT LineStyleStatus LoadStyle(LsDefinitionP&style, DgnStyleId styleId);
 
 //__PUBLISH_SECTION_START__
     //! Adds a new line style to the project. If a style already exists by-name, no action is performed.
-    DGNPLATFORM_EXPORT BentleyStatus Insert(DgnStyleId& newStyleId, Utf8CP name, LsComponentId id, LsComponentType componentType, uint32_t flags, double unitDefinition);
+    DGNPLATFORM_EXPORT BentleyStatus Insert(DgnStyleId& newStyleId, Utf8CP name, LsComponentId id, LsComponentType componentType, LsComponentId rasterComponentId, uint32_t flags, double unitDefinition);
 
     //! Updates an a Line Style in the styles table..
-    DGNPLATFORM_EXPORT BentleyStatus Update(DgnStyleId styleId, Utf8CP name, LsComponentId id, LsComponentType componentType, uint32_t flags, double unitDefinition);
+    DGNPLATFORM_EXPORT BentleyStatus Update(DgnStyleId styleId, Utf8CP name, LsComponentId id, LsComponentType componentType, LsComponentId rasterComponentId, uint32_t flags, double unitDefinition);
 
     DGNPLATFORM_EXPORT LsCacheP GetLsCacheP (bool load=true);
     DGNPLATFORM_EXPORT LsCacheR ReloadMap();

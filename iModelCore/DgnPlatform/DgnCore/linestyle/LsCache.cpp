@@ -567,7 +567,7 @@ StatusInt LsDefinition::UpdateStyleTable () const
     {
     DgnDbP project = GetLocation()->GetDgnDb();
     project->Styles ().LineStyles().Update (DgnStyleId(m_styleId), _GetName(), GetLocation()->GetComponentId(),
-                                            GetLocation()->GetComponentType(), GetAttributes(), m_unitDef);
+                                            GetLocation()->GetComponentType(), m_rasterComponentId, GetAttributes(), m_unitDef);
 
     return BSISUCCESS;
     }
@@ -805,7 +805,12 @@ LsComponentP    LsDefinition::GetComponentP(DgnModelP modelRef) const
         }
 
     nonConstThis->m_componentLoadPostProcessed = false;
-    LsComponentP    component = DgnLineStyles::GetLsComponent (nonConstThis->m_location);
+    LsLocation  location = nonConstThis->m_location;
+    if (m_rasterComponentId.IsValid())
+        //  Use the raster image instead.
+        location.SetLocation(*location.GetDgnDb(), LsComponentType::RasterImage, m_rasterComponentId);
+
+    LsComponentP    component = DgnLineStyles::GetLsComponent (location);
     if (nullptr == component)
         {
         nonConstThis->m_componentLookupFailed = true;
@@ -940,4 +945,17 @@ LsComponent* DgnLineStyles::GetLsComponent(LsLocationCR location)
 
     dgnLineStyles.m_loadedComponents[location] = comp;
     return comp.get();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2015
+//---------------------------------------------------------------------------------------
+LsComponentPtr DgnLineStyles::GetLsComponent(LsComponentType componentType, LsComponentId componentId)
+    {
+    if (!componentId.IsValid())
+        return nullptr;
+
+    LsLocation   location;
+    location.SetLocation(m_dgndb, componentType, componentId);
+    return GetLsComponent(location);
     }

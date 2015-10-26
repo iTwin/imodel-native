@@ -169,6 +169,7 @@ LsDefinition::LsDefinition (Utf8CP name, DgnDbR project, Json::Value& lsDefiniti
     LsComponentId compId = GetComponentId(lsDefinition);
 
     m_location.SetLocation (project, compType, compId);
+    m_rasterComponentId = GetRasterComponentId(lsDefinition);
     SetHWStyle (compType, compId);
     m_componentLookupFailed = false;
     }

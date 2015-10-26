@@ -11,6 +11,7 @@ static Utf8CP DGNPROPERTYBLOB_CompId                = "compId";
 static Utf8CP DGNPROPERTYBLOB_CompType              = "compType";
 static Utf8CP DGNPROPERTYBLOB_Flags                 = "flags";
 static Utf8CP DGNPROPERTYBLOB_UnitDef               = "unitDef";
+static Utf8CP DGNPROPERTYBLOB_RasterCompId         = "rasterCompId";
 
 
 //---------------------------------------------------------------------------------------
@@ -144,19 +145,20 @@ BentleyStatus LsRasterImageComponent::CreateRscFromDgnDb(V10RasterImage** rscOut
 //--------------+------------------------------------------------------------------------
 void LsDefinition::InitializeJsonObject (Json::Value& jsonObj)
     {
-    InitializeJsonObject (jsonObj, m_location.GetComponentId(), m_location.GetComponentType(),
+    InitializeJsonObject (jsonObj, m_location.GetComponentId(), m_location.GetComponentType(),m_rasterComponentId,
                           m_attributes, (uint32_t) m_unitDef); // WIP: m_unitDef double --> UInt32 conversion
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-void LsDefinition::InitializeJsonObject (Json::Value& jsonObj, LsComponentId componentId, LsComponentType componentType, uint32_t flags, double unitDefinition)
+void LsDefinition::InitializeJsonObject (Json::Value& jsonObj, LsComponentId componentId, LsComponentType componentType, LsComponentId rasterCompId, uint32_t flags, double unitDefinition)
     {
     jsonObj.clear();
 
     jsonObj[DGNPROPERTYBLOB_CompId] = componentId.GetValue();
     jsonObj[DGNPROPERTYBLOB_CompType] = static_cast <uint16_t> (componentType);  //  defined(NOTNOW) (uint32_t)remapRscTypeToElmType(componentType);
+    jsonObj[DGNPROPERTYBLOB_RasterCompId] = rasterCompId.GetValue();
     jsonObj[DGNPROPERTYBLOB_Flags] = flags;
     jsonObj[DGNPROPERTYBLOB_UnitDef] = unitDefinition;
     }
@@ -190,6 +192,14 @@ LsComponentType LsDefinition::GetComponentType (Json::Value& lsDefinition)
         }
 
     return retval;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2015
+//---------------------------------------------------------------------------------------
+LsComponentId LsDefinition::GetRasterComponentId (Json::Value& lsDefinition)
+    {
+    return LsComponentId(lsDefinition[DGNPROPERTYBLOB_RasterCompId].asUInt());
     }
 
 //---------------------------------------------------------------------------------------

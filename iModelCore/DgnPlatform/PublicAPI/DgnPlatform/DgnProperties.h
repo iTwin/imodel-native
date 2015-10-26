@@ -156,7 +156,7 @@ struct LineStyleProperty
     static ComponentProperty LineCode()         {return ComponentProperty("LineCodeV1");}
     static ComponentProperty LinePoint()        {return ComponentProperty("LinePointV1");}
     static ComponentProperty PointSym()         {return ComponentProperty("PointSymV1");}
-    static ComponentProperty RasterImage()      {return ComponentProperty("RasterImage", DbPropSpec::Compress::No);}
+    static ComponentProperty RasterImage()      {return ComponentProperty("RasterImage");}
 };
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

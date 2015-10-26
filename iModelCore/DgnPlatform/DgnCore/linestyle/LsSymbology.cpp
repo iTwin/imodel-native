@@ -550,7 +550,7 @@ DPoint3dCP          endTangent
     SetScale (scale);
 
     //  NEEDSWORK_LINESTYLES -- this probably is the right place to get a raster texture based on an image.
-    if (!context.Is3dView())
+    //  if (!context.Is3dView())
         m_textureHandle = nameRec->GetTextureHandle (context, *this, false, scale);
 
     return 0;
