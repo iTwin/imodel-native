@@ -1372,6 +1372,41 @@ Utf8String dgn_ModelHandler::StreetMap::CreateOsmUrl (WebMercatorTilingSystem::T
     return url;
     }
 
+#define MAPBOX_ACCESS_KEY "pk.eyJ1IjoibWFwYm94YmVudGxleSIsImEiOiJjaWZvN2xpcW00ZWN2czZrcXdreGg2eTJ0In0.f7c9GAxz6j10kZvL_2DBHg"
+#define MAPBOX_ACCESS_KEY_URI_ENCODED "pk%2EeyJ1IjoibWFwYm94YmVudGxleSIsImEiOiJjaWZvN2xpcW00ZWN2czZrcXdreGg2eTJ0In0%2Ef7c9GAxz6j10kZvL%5F2DBHg"
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String dgn_ModelHandler::StreetMap::CreateMapBoxUrl(WebMercatorTilingSystem::TileId const& tileid, WebMercatorModel::Mercator const& props)
+    {
+    Utf8String url;
+
+    /*
+    @2x.png	2x scale(retina)
+    png32	32 color indexed PNG
+    png64	64 color indexed PNG
+    png128	128 color indexed PNG
+    png256	256 color indexed PNG
+    jpg70	70 % quality JPG
+    jpg80	80 % quality JPG
+    jpg90	90 % quality JPG
+    */
+    char const* format = "png32";
+
+    char const* mapid = (!props.m_mapType.empty() && props.m_mapType [0] == '0')? "mapbox.streets": "mapbox.satellite";
+
+    //                                                  m  z  x  y  f
+    url = Utf8PrintfString ("http://api.mapbox.com/v4/%s/%d/%d/%d.%s?access_token=", 
+                                                        mapid, 
+                                                           tileid.zoomLevel, tileid.column, tileid.row, 
+                                                                    format);
+
+    url += MAPBOX_ACCESS_KEY_URI_ENCODED; // NB: This URI-encoded string must not be included in the sprintf format string!
+
+    return url;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1392,18 +1427,9 @@ BentleyStatus dgn_ModelHandler::StreetMap::_CreateUrl (Utf8StringR url, ImageUti
 
     if (props.m_mapService[0] == '0')
         {
-        #ifndef NDEBUG  // *** In a developer build, go ahead and use OSM
-            url = CreateOsmUrl (tileid, props);
-        #endif
+        url = CreateMapBoxUrl (tileid, props);
+        //printf ("url=%s\n", url.c_str());
         }
-#ifdef WIP_MAP_SERVICE
-    else if (GoogleMaps)
-        url = CreateGoogleMapsUrl (tileid);
-    else if (BlackAndWhite)
-        url = Utf8PrintfString ("http://a.tile.stamen.com/toner/%d/%d/%d.png", tileid.zoomLevel, tileid.column, tileid.row);
-    else if (Bing)
-        url = CreateBingUrl (tileid);
-#endif
     else
         {
         BeAssert (false && "unrecognized map service");
@@ -1422,6 +1448,16 @@ static Utf8String getStreetMapServerDescription(dgn_ModelHandler::StreetMap::Map
     Utf8String descr;
     switch (mapService)
         {
+        case dgn_ModelHandler::StreetMap::MapService::MapBox:
+            {
+            descr = ("Mapbox");   // *** WIP translate
+            if (dgn_ModelHandler::StreetMap::MapType::Map == mapType)
+                descr.append(" Map");   // *** WIP translate
+            else
+                descr.append(" Satellite Images"); // *** WIP translate
+            break;
+            }
+
         case dgn_ModelHandler::StreetMap::MapService::OpenStreetMaps:
             {
             descr = ("Open Street Maps");   // *** WIP translate

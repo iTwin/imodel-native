@@ -21,8 +21,8 @@
 #define DGN_CLASSNAME_AnnotationTextStyle   "AnnotationTextStyle"
 #define DGN_CLASSNAME_Authority             "Authority"
 #define DGN_CLASSNAME_TrueColor             "TrueColor"
-#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
+#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 #define DGN_CLASSNAME_ComponentSolution     "ComponentSolution"
 #endif
 #define DGN_CLASSNAME_DictionaryElement     "DictionaryElement"

@@ -290,9 +290,7 @@ BentleyStatus SatelliteChangeSets::InsertChangeSet(ChangeSetInfo const &infoIn, 
 
     //  Store the SHA-1 hash of the data
     Sha1Info sha1Info;
-    // WIP_MERGE
-    //sha1Info.m_sequenceNumber = csid;
-    
+    sha1Info.m_sequenceNumber = info.m_sequenceNumber;
     SHA1 hash;
     sha1Info.m_sha1 = hash(data, datasize);
     if (sha1Info.Insert(*m_dgndb) != BE_SQLITE_DONE)

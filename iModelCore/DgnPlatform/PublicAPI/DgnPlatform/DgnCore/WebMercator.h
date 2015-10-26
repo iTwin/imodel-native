@@ -359,7 +359,10 @@ namespace dgn_ModelHandler
         //! Identifies a well known street map tile service
         enum class MapService
             {
-            OpenStreetMaps          //!< OpenStreetMaps
+#ifndef NDEBUG
+            OpenStreetMaps = 999,         //!< OpenStreetMaps (developer builds only!)
+#endif
+            MapBox = 0
             };
 
         //! The kind of map to display
@@ -372,7 +375,8 @@ namespace dgn_ModelHandler
     protected:
         DGNPLATFORM_EXPORT virtual BentleyStatus _CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorModel::Mercator const&, WebMercatorTilingSystem::TileId const&) override;
 
-        DGNPLATFORM_EXPORT Utf8String CreateOsmUrl (WebMercatorTilingSystem::TileId const&, WebMercatorModel::Mercator const&);
+        DGNPLATFORM_EXPORT Utf8String CreateOsmUrl(WebMercatorTilingSystem::TileId const&, WebMercatorModel::Mercator const&);
+        DGNPLATFORM_EXPORT Utf8String CreateMapBoxUrl (WebMercatorTilingSystem::TileId const&, WebMercatorModel::Mercator const&);
 
     public:
         //! Create a new street map model in the DgnDb.
