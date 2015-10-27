@@ -115,8 +115,8 @@
         <ProductDirectory Name="ECSchemas"                          Path="Assets" LibType="static"/>
         <ProductDirectory Name="DgnPlatformSqlang"                  Path="Assets/sqlang"/>
         <ProductDirectory Name="DgnPlatformSqlang"                  Path="Assets/sqlang" LibType="static"/>
-        <ProductDirectory Name="sqlang"                             Path="Assets/sqlang/platform"/>
-        <ProductDirectory Name="sqlang"                             Path="Assets/sqlang/platform" LibType="static"/>
+        <ProductDirectory Name="sqlang"                             Path="Assets/sqlang"/>
+        <ProductDirectory Name="sqlang"                             Path="Assets/sqlang" LibType="static"/>
         <ProductDirectory Name="DgnPlatformFont"                    Path="Assets/fonts"/>
         <ProductDirectory Name="DgnPlatformFont"                    Path="Assets/fonts" LibType="static"/>
         <ProductDirectory Name="DgnPlatformLastResortFonts"         Path="Assets"/>

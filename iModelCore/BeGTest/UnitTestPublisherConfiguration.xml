@@ -13,11 +13,22 @@
         <ForcedSelections/>
     </ECSchemas>
     <Thumbnails viewTypes="Physical Drawing" pixelResolution="768" renderModeOverride="None"/>
-    <Fonts>
-        <AlwaysEmbed>
-            <Font type="TrueType" name="Arial"/>
-            <Font type="RSC" name="STANDARD"/>
-        </AlwaysEmbed>
+    <Fonts searchPaths="$(AppRoot)DgnV8/Fonts/">
+        <!--
+        Wild cards can be used for defaults; any explicitly-named entry takes precedence over wildcards.
+        Wild cards cannot be used to specify EmbedAction=Always; such fonts must be explicitly listed.
+        Name wildcards take precedence over type wildcards.
+        First in wins if duplicates exist.
+        -->
+        <Font type="*" name="*">
+            <EmbedAction>IfUsed</EmbedAction>
+        </Font>
+        <Font type="TrueType" name="Arial">
+            <EmbedAction>Always</EmbedAction>
+        </Font>
+        <Font type="RSC" name="STANDARD">
+            <EmbedAction>Always</EmbedAction>
+        </Font>
     </Fonts>
     <Options>
         <OptionBool name="CompactDatabase" value="true"/>

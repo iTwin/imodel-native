@@ -19,6 +19,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if defined(BENTLEY_WIN32)
 static BentleyStatus getFileNameFromEnv (BeFileName& fn, CharCP envname)
     {
     WString filepath (getenv(envname), BentleyCharEncoding::Utf8);
@@ -27,6 +28,7 @@ static BentleyStatus getFileNameFromEnv (BeFileName& fn, CharCP envname)
     fn.SetName (filepath);
     return SUCCESS;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * This class knows how data files are linked into the Product/BeGTest directory structure.
