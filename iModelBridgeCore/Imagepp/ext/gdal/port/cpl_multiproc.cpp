@@ -690,10 +690,13 @@ void CPLDestroyMutex( void *hMutexIn )
 
     CloseHandle( hMutex );
 #else
-    CRITICAL_SECTION *pcs = (CRITICAL_SECTION *)hMutexIn;
+    if( hMutexIn != NULL )  //IPP NULL in some scenario because we define MUTEX_NONE. WACKY!!!
+        {
+        CRITICAL_SECTION *pcs = (CRITICAL_SECTION *)hMutexIn;
 
-    DeleteCriticalSection( pcs );
-    free( pcs );
+        DeleteCriticalSection( pcs );
+        free( pcs );
+        }
 #endif
 }
 

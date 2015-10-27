@@ -1390,7 +1390,7 @@ nonUniformObjs = \
     
 $(o)HRFErMapperSupportedFile$(oext) : $(ippGraDir)hrf/src/HRFErMapperSupportedFile.cpp $(ippAllInc)HRFErMapperSupportedFile.h
 
-$(o)HRFErMapperSupportedFileEditor$(oext) : $(ippGraDir)hrf/src/HRFErMapperSupportedFileEditor.cpp $(ippAllInc)HRFErMapperSupportedFileEditor.h
+$(o)HRFErMapperSupportedFileEditor$(oext) : $(ippGraDir)hrf/src/HRFErMapperSupportedFileEditor.cpp $(ippAllInc)HRFErMapperSupportedFileEditor.h $(ippAllInc)HRFErMapperSupportedFile.h
 %endif
 
 #----------------------------------------------------------------------

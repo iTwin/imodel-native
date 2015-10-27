@@ -968,7 +968,7 @@ void HRFGdalSupportedFile::CreateDescriptorsWith(const HFCPtr<HCDCodec>& pi_rpCo
     HFCPtr<HGF2DTransfoModel> pBuildTransfoModel;
 
     //warning : GetGeoRefInfo needs to be called before IsValidGeoRefInfo
-    if ((IsTransfoModel == true) && IsValidGeoRefInfo())
+    if (IsTransfoModel && IsValidGeoRefInfo())
         {
         if (pGeocoding != 0)
             {
@@ -1817,7 +1817,7 @@ RasterFileGeocodingPtr HRFGdalSupportedFile::ExtractGeocodingInformation()
                 //WktFlavorOGC. But in some case, the WKT has an hybrid flavor,
                 //so unknown is used instead.
                 IRasterBaseGcsPtr  pBaseGCS = HRFGeoCoordinateProvider:: CreateRasterGcsFromWKT(NULL, NULL, IRasterGeoCoordinateServices::WktFlavorUnknown, WktGeocode.c_str());
-                                
+                pGeocoding = RasterFileGeocoding::Create(pBaseGCS.get());               
             }
         }
 
