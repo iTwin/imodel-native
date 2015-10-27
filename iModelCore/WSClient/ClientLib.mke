@@ -5,9 +5,17 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-PolicyFile = $(SrcRoot)WSClient/ClientLibPolicy.mki
+# this is only used if compiling for the WinRT target.
+ENABLE_CPP_CX_EXTENSIONS    = 1
+
 %include mdl.mki
 
+CompileOptionsMki           = $(SrcRoot)WSClient/ClientLibCompileOptions.mki
+%include $(CompileOptionsMki)
+
+#--------------------------------------------------------------------------------------
+#   Building the WebServicesClient library
+#--------------------------------------------------------------------------------------
 ClientSourceDirectory       = $(_MakeFilePath)
 ClientPublicApiDirectory    = $(_MakeFilePath)PublicAPI/WebServices/
 BuildContextLibsDirectory   = $(BuildContext)SubParts/Libs/

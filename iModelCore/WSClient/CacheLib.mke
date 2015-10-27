@@ -5,8 +5,27 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-PolicyFile = $(SrcRoot)WSClient/CacheLibPolicy.mki
+# This only affect WinRT build.
+ENABLE_CPP_CX_EXTENSIONS = 1
 %include mdl.mki
+
+%if $(TARGET_PLATFORM)=="Windows"
+    # Ignore inheritance via dominance warning
+    cDefs + -wd4250
+%endif
+
+#--------------------------------------------------------------------------------------
+#   Building the WebServicesCache library
+#--------------------------------------------------------------------------------------
+nameToDefine = __WSCACHE_DLL_BUILD__
+%include cdefapnd.mki
+
+#--------------------------------------------------------------------------------------
+#   iOS-specific
+#--------------------------------------------------------------------------------------
+AppleCppFileTypeControl = $(AppleCppFileTypeControl_ObjCpp)
+# Ignore unknown pragmas
+LLVMCommonCompOpts + -Wno-unknown-pragmas
 
 CacheSourceDirectory       = $(_MakeFilePath)
 CachePublicApiDirectory    = $(_MakeFilePath)PublicAPI/WebServices/

@@ -1,15 +1,14 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: CacheLibPolicy.mki $
+#     $Source: ClientLibCompileOptions.mki $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-%include $(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
-%include $(SharedMki)DefinePublicApiIncludes.mki
-%include $(SharedMki)CommonCompileLinkPolicy.mki
-%include $(SrcRoot)Bentley/PublicMki/BentleyApi.mki 
-%include DefaultToolSet.mki
+# target platform needs to be defined (this is included before mdl.mki when it is included by PreCompileHeader.mke)
+%if !defined (__mdlMKI__)
+    %include mdl.mki
+%endif
 
 %if $(TARGET_PLATFORM)=="Windows"
     # Ignore inheritance via dominance warning
@@ -17,9 +16,9 @@
 %endif
 
 #--------------------------------------------------------------------------------------
-#   Building the WebServicesCache library
+#   Building the WebServicesClient library
 #--------------------------------------------------------------------------------------
-nameToDefine = __WSCACHE_DLL_BUILD__
+nameToDefine = __WSCLIENT_DLL_BUILD__
 %include cdefapnd.mki
 
 #--------------------------------------------------------------------------------------
