@@ -8,11 +8,11 @@
 #include "BuddiClientTests.h"
 
 #include <WebServices/Configuration/BuddiClient.h>
-#include <MobileDgn/Utils/Http/ProxyHttpHandler.h>
+#include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
 #include <Bentley/BeDebugLog.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 Utf8String FormatXml(Utf8StringCR inputXml)
     {

@@ -10,8 +10,8 @@
 
 #include <WebServices/Client/WebServicesClient.h>
 
-#include <MobileDgn/Utils/Threading/AsyncResult.h>
-#include <MobileDgn/Utils/Threading/LimitingTaskQueue.h>
+#include <DgnClientFx/Utils/Threading/AsyncResult.h>
+#include <DgnClientFx/Utils/Threading/LimitingTaskQueue.h>
 #include <WebServices/Client/ObjectId.h>
 #include <WebServices/Client/Response/WSCreateObjectResponse.h>
 #include <WebServices/Client/Response/WSFileResponse.h>
@@ -24,7 +24,7 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 //--------------------------------------------------------------------------------------+
 // WebServices Client API for connecting to BWSG server data source.

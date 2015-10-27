@@ -9,11 +9,11 @@
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Connect/IConnectTokenProvider.h>
-#include <MobileDgn/Utils/Http/AuthenticationHandler.h>
+#include <DgnClientFx/Utils/Http/AuthenticationHandler.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014

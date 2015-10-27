@@ -8,7 +8,7 @@
 #include "ClientInternal.h"
 #include <WebServices/Configuration/BuddiError.h>
 
-#include <MobileDgn/Utils/Http/HttpStatusHelper.h>
+#include <DgnClientFx/Utils/Http/HttpStatusHelper.h>
 #include <WebServices/Connect/Connect.h>
 #include "BuddiError.xliff.h"
 
