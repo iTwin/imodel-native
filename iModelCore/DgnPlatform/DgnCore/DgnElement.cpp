@@ -231,6 +231,9 @@ template<class T> void DgnElement::CallAppData(T const& caller) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_OnInsert()
     {
+    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Insert))
+        return DgnDbStatus::MissingHandler;
+
     if (!m_code.IsValid())
         {
         m_code = _GenerateDefaultCode();
@@ -347,6 +350,8 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
     {
     if (m_classId != original.m_classId)
         return DgnDbStatus::WrongClass;
+    else if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Update))
+        return DgnDbStatus::MissingHandler;
 
     auto parentId = GetParentId();
     if (parentId.IsValid() && parentId != original.GetParentId() && parentCycleExists(parentId, GetElementId(), GetDgnDb()))
@@ -2640,10 +2645,6 @@ DictionaryElement::CreateParams::CreateParams(DgnDbR db, DgnClassId classId, Cod
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint64_t DgnElement::RestrictedAction::Parse(Utf8CP name)
     {
-    uint64_t action = T_Super::Parse(name);
-    if (RestrictedAction::None != action)
-        return action;
-
     struct Pair { Utf8CP name; uint64_t action; };
 
     static const Pair s_pairs[] = 
@@ -2653,13 +2654,14 @@ uint64_t DgnElement::RestrictedAction::Parse(Utf8CP name)
             { "insertchild",    InsertChild },
             { "updatechild",    UpdateChild },
             { "deletechild",    DeleteChild },
+            { "setcode",        SetCode },
         };
 
     for (auto const& pair : s_pairs)
         if (0 == BeStringUtilities::Stricmp(name, pair.name))
             return pair.action;
 
-    return None;
+    return T_Super::Parse(name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2684,6 +2686,17 @@ DgnDbStatus DgnElement::_OnChildInsert(DgnElementCR) const { return GetElementHa
 DgnDbStatus DgnElement::_OnChildUpdate(DgnElementCR, DgnElementCR) const { return GetElementHandler()._IsRestrictedAction(RestrictedAction::UpdateChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success; }
 DgnDbStatus DgnElement::_OnChildDelete(DgnElementCR) const { return GetElementHandler()._IsRestrictedAction(RestrictedAction::DeleteChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success; }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_SetCode(Code const& code)
+    {
+    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::SetCode))
+        return DgnDbStatus::MissingHandler;
+
+    m_code = code;
+    return DgnDbStatus::Success;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15

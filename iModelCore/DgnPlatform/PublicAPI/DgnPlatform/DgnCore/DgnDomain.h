@@ -27,7 +27,7 @@
 #define DOMAINHANDLER_DECLARE_MEMBERS_NO_CTOR(__classname__,__exporter__) \
     private:   __exporter__ static __classname__*& z_PeekInstance(); \
                             static __classname__* z_CreateInstance(); \
-    protected: virtual Dgn::DgnDomain::Handler* _CreateMissingHandler(uint64_t restrictions) const override {return new Dgn::DgnDomain::MissingHandler<__classname__>(restrictions, *this);}\
+    protected: virtual Dgn::DgnDomain::Handler* _CreateMissingHandler(uint64_t restrictions) override {return new Dgn::DgnDomain::MissingHandler<__classname__>(restrictions, *this);}\
     public:    __exporter__ static __classname__& GetHandler() {return z_Get##__classname__##Instance();}\
                __exporter__ static __classname__& z_Get##__classname__##Instance();
 
@@ -120,14 +120,14 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
     private:
         uint64_t m_restrictions;
 
-        virtual DgnDomain::Handler* _CreateMissingHandler(uint64_t restrictions) const override { return T::_CreateMissingHandler(restrictions); }
+        virtual DgnDomain::Handler* _CreateMissingHandler(uint64_t restrictions) override { return T::_CreateMissingHandler(restrictions); }
         virtual bool _IsRestrictedAction(uint64_t restrictedAction) const override { return 0 != (m_restrictions & restrictedAction); }
         virtual bool _IsMissingHandler() const override { return true; }
     public:
-        explicit MissingHandler(uint64_t restrictions, T const& base) : m_restrictions(restrictions)
+        explicit MissingHandler(uint64_t restrictions, T& base) : m_restrictions(restrictions)
             {
             this->m_domain = &base.GetDomain();
-            this->m_superClass = base.GetSuperClass();
+            this->m_superClass = &base;
             }
     };
 
@@ -220,10 +220,10 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
             static const uint64_t All = 0xffffffffffffffff; //!< All modifications are prohibited. "All"
 
             static const uint64_t Delete = 1; //!< Delete the object. "Delete"
-            static const uint64_t Reserved_1 = Delete << 1; //!< Reserved for future use
-            static const uint64_t Reserved_2 = Reserved_1 << 1; //!< Reserved for future use
+            static const uint64_t Insert = Delete << 1; //!< Insert a new instance of this EClass into the database. "Insert"
+            static const uint64_t Update = Insert << 1; //!< Update an existing instance of this ECClass in the database. "Update"
 
-            static const uint64_t NextAvailable = Reserved_2 << 1; //!< Subclasses can add actions beginning with this value.
+            static const uint64_t NextAvailable = Update << 1; //!< Subclasses can add actions beginning with this value.
 
             DGNPLATFORM_EXPORT static uint64_t Parse(Utf8CP name); //!< Parse action name from ClassHasHandler custom attribute. Subclasses must call this base class method.
         };
@@ -257,7 +257,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         void SetSuperClass(Handler* super) {m_superClass = super;}
         void SetDomain(DgnDomain& domain) {m_domain = &domain;}
         DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&);
-        virtual Handler* _CreateMissingHandler(uint64_t restrictions) const { return new MissingHandler<Handler>(restrictions, *this); }
+        virtual Handler* _CreateMissingHandler(uint64_t restrictions) { return new MissingHandler<Handler>(restrictions, *this); }
         virtual uint64_t _ParseRestrictedAction(Utf8CP restriction) const { return RestrictedAction::Parse(restriction); }
 
         Handler* GetRootClass();

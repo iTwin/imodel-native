@@ -95,7 +95,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="Model" isDomainClass="True" >
         <!--WIP: make Model abstract? -->
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
+            <ClassHasHandler xmlns="dgn.02.00">
+                <Restrictions>
+                    <string>Clone</string><!-- It is never permitted to clone a model without its handler -->
+                </Restrictions>
+            </ClassHasHandler>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
@@ -199,14 +203,15 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <BaseClass>PhysicalModel</BaseClass>
     </ECClass>
-    <!--  WIP_COMPONENT_MODEL *** pending redesign
     <ECClass typeName="ComponentModel" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>Model3d</BaseClass>
+    <ECProperty propertyName="ItemECClass" typeName="string" description="Full name of ECClass of Item that is customized by this model"/>
+    <ECProperty propertyName="ItemCategory" typeName="string" description="Name of Category used by harvestable Items in this model"/>
+    <ECProperty propertyName="ItemCodeAuthority" typeName="string" description="Name of CodeAuthority to be used when creating component instances"/>
     </ECClass>
-    -->
     <ECClass typeName="ResourceModel" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />

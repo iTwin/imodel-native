@@ -105,6 +105,7 @@ namespace dgn_ElementHandler
         virtual ElementHandlerP _ToElementHandler() {return this;}
         virtual std::type_info const& _ElementType() const {return typeid(DgnElement);}
         DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&) override;
+        virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override { return DgnElement::RestrictedAction::Parse(name); }
 
         //! Add the names of any subclass properties used by ECSql INSERT, UPDATE, and/or SELECT statements to the ECSqlClassParams list.
         //! If you override this method, you @em must invoke T_Super::_GetClassParams().

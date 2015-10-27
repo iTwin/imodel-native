@@ -39,6 +39,8 @@ protected:
     bmap<DgnElementId, DgnElementId> m_elementId;
     bmap<DgnClassId, DgnClassId> m_classId;
     bmap<DgnAuthorityId, DgnAuthorityId> m_authorityId;
+    bmap<DgnMaterialId, DgnMaterialId> m_materialId;
+    bmap<DgnTextureId, DgnTextureId> m_textureId;
 
     template<typename T> T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
     template<typename T> T FindElement(T sourceId) const {return T(Find<DgnElementId>(m_elementId, sourceId).GetValueUnchecked());}
@@ -56,6 +58,8 @@ public:
     DgnCategoryId Add(DgnCategoryId sourceId, DgnCategoryId targetId) {return DgnCategoryId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
     DgnMaterialId Find(DgnMaterialId sourceId) const { return FindElement<DgnMaterialId>(sourceId); }
     DgnMaterialId Add(DgnMaterialId sourceId, DgnMaterialId targetId) { return DgnMaterialId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
+    DgnTextureId Find(DgnTextureId sourceId) const {return FindElement<DgnTextureId>(sourceId);}
+    DgnTextureId Add(DgnTextureId sourceId, DgnTextureId targetId) {return DgnTextureId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
 
     DgnSubCategoryId Find(DgnSubCategoryId sourceId) const {return FindElement<DgnSubCategoryId>(sourceId);}
     DgnSubCategoryId Add(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {return DgnSubCategoryId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
@@ -120,12 +124,20 @@ public:
     DGNPLATFORM_EXPORT DgnSubCategoryId RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId sourceId);
     //! Make sure that an ECClass has been imported
     DGNPLATFORM_EXPORT DgnClassId RemapClassId(DgnClassId sourceId);
-    //! Look up a copy of a Category
+    //! Look up a copy of a Material
     DgnMaterialId FindMaterialId(DgnMaterialId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a Material
     DgnMaterialId AddMaterialId(DgnMaterialId sourceId, DgnMaterialId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a Material has been imported
     DGNPLATFORM_EXPORT DgnMaterialId RemapMaterialId(DgnMaterialId sourceId);
+    //! Look up a copy of a Material
+    DgnTextureId FindTextureId(DgnTextureId sourceId) const {return m_remap.Find(sourceId);}
+    //! Register a copy of a Texture
+    DgnTextureId AddTextureId(DgnTextureId sourceId, DgnTextureId targetId) {return m_remap.Add(sourceId, targetId);}
+    //! Make sure that a Texture has been imported
+    DGNPLATFORM_EXPORT DgnTextureId RemapTextureId(DgnTextureId sourceId);
+    //! @}
+
     //! @}
 
     //! @name GCS coordinate system shift
@@ -274,16 +286,16 @@ public:
         static const uint64_t InsertChild = SetParent << 1; //!< Insert an element with this element as its parent. "InsertChild"
         static const uint64_t UpdateChild = InsertChild << 1; //!< Modify a child of this element. "UpdateChild"
         static const uint64_t DeleteChild = UpdateChild << 1; //!< Delete a child of this element. "DeleteChild"
+        static const uint64_t SetCode = DeleteChild << 1; //!< Change this element's code. "SetCode"
 
-        static const uint64_t Reserved_1 = DeleteChild << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_1 = SetCode << 1; //!< Reserved for future use 
         static const uint64_t Reserved_2 = Reserved_1 << 1; //!< Reserved for future use 
         static const uint64_t Reserved_3 = Reserved_2 << 1; //!< Reserved for future use 
         static const uint64_t Reserved_4 = Reserved_3 << 1; //!< Reserved for future use 
         static const uint64_t Reserved_5 = Reserved_4 << 1; //!< Reserved for future use 
         static const uint64_t Reserved_6 = Reserved_5 << 1; //!< Reserved for future use 
-        static const uint64_t Reserved_7 = Reserved_6 << 1; //!< Reserved for future use 
 
-        static const uint64_t NextAvailable = Reserved_7 << 1; //!< Subclasses can add new actions beginning with this value
+        static const uint64_t NextAvailable = Reserved_6 << 1; //!< Subclasses can add new actions beginning with this value
 
         DGNPLATFORM_EXPORT static uint64_t Parse(Utf8CP name); //!< Parse action name from ClassHasHandler custom attribute
     };
@@ -939,7 +951,7 @@ protected:
     //! The default implementation sets the code without doing any checking.
     //! Override to validate the code.
     //! @return DgnDbStatus::Success if the code was changed, error status otherwise.
-    virtual DgnDbStatus _SetCode(Code const& code) {m_code=code; return DgnDbStatus::Success;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(Code const& code);
 
     //! Override to customize how the DgnElement subclass generates its code.
     DGNPLATFORM_EXPORT virtual Code _GenerateDefaultCode();
@@ -1315,11 +1327,12 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
         static const uint64_t Move = T_Super::NextAvailable; //!< Rotate and/or translate. "Move"
         static const uint64_t SetCategory = Move << 1; //!< Change element category. "SetCategory"
         static const uint64_t SetGeometry = SetCategory << 1; //!< Change element geometry. "SetGeometry"
+
+        static const uint64_t Reserved_1 = SetCategory << 1; //!< Reserved for future use
         static const uint64_t Reserved_2 = Reserved_1 << 1; //!< Reserved for future use
         static const uint64_t Reserved_3 = Reserved_2 << 1; //!< Reserved for future use
-        static const uint64_t Reserved_4 = Reserved_3 << 1; //!< Reserved for future use
 
-        static const uint64_t NextAvailable = Reserved_4 << 1; //!< Subclasses can add new actions beginning with this value.
+        static const uint64_t NextAvailable = Reserved_3 << 1; //!< Subclasses can add new actions beginning with this value.
 
         DGNPLATFORM_EXPORT static uint64_t Parse(Utf8CP name); //!< Parse action name from ClassHasHandler custom attribute
     };

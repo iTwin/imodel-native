@@ -155,6 +155,7 @@ private:
     Data m_data;
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
+    DgnDbStatus UpdateCode(DgnCategoryCR category);
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
@@ -307,6 +308,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
+    DGNPLATFORM_EXPORT void _OnUpdated(DgnElementCR original) const override;
     DGNPLATFORM_EXPORT void _OnInserted(DgnElementP copiedFrom) const override;
     DGNPLATFORM_EXPORT void _OnImported(DgnElementCR original, DgnImportContext& importer) const override;
     
