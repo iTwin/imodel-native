@@ -1326,7 +1326,7 @@ BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filt
     if (fullyQualifyColumnName)
         classIdColSql.AppendEscaped(table.GetName().c_str()).AppendDot();
     
-    classIdColSql.AppendEscaped(classIdColumn.GetName().c_str());
+    classIdColSql.Append(classIdColumn.GetName().c_str(), false);
 
     if (!polymorphic)
         {
