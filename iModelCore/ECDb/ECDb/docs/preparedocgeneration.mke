@@ -5,17 +5,13 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
+%include mdl.mki
 
 #---------------------------------------------------------------
 # Environment
 #---------------------------------------------------------------
 baseDir           = $(_MakeFilePath)
-PolicyFile        = $(InternalSystemPolicy)
-SolutionPolicyMki = $(baseDir)../ECDbPolicy.mki
-
-%include mdl.mki
-
-docsBuildDir = $(buildDir)ECDb/docs/
+docsBuildDir      = $(OutBuildDir)ECDb/docs/
 
 #Sample code extraction was already done previously
 extractedSampleCodeDir = $(docsBuildDir)extractedsamplecode/
@@ -58,8 +54,8 @@ always:
 #documentation (Note folders in build context are pascal cased)
 bcDocsDir = $(BuildContext)Docs/
 linkdocstobuildcontext:
-    @CreateSymLinks.py -d"$(bcDocsDir)Source/ECDb=${preprocessedSourceDir}"
-    @CreateSymLinks.py -d"$(bcDocsDir)Images/ECDb=$(baseDir)images"
+    ~linkdir "$(bcDocsDir)Source/ECDb=${preprocessedSourceDir}"
+    ~linkdir "$(bcDocsDir)Images/ECDb=$(baseDir)images"
     @CreateSymLinks.py -m"$(bcDocsDir)Files/ECDb=$(baseDir)files"
     @CreateSymLinks.py "$(bcDocsDir)Files/ECDb/ECDbMap.ecschema.xml=$(OutBuildContexts)ECStandards/ECSchemas/Standard/$(ECDbMapSchemaName)"
     
