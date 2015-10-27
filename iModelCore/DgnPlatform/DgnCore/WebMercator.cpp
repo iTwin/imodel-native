@@ -1458,6 +1458,7 @@ static Utf8String getStreetMapServerDescription(dgn_ModelHandler::StreetMap::Map
             break;
             }
 
+#ifndef NDEBUG
         case dgn_ModelHandler::StreetMap::MapService::OpenStreetMaps:
             {
             descr = ("Open Street Maps");   // *** WIP translate
@@ -1467,6 +1468,7 @@ static Utf8String getStreetMapServerDescription(dgn_ModelHandler::StreetMap::Map
                 descr.append(" Satellite Images"); // *** WIP translate
             break;
             }
+#endif
         }
     return descr;
     }
