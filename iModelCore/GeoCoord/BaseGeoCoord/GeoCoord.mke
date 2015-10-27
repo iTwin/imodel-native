@@ -76,7 +76,6 @@ DLM_NO_DEF                  = 1
 DLM_NO_DLS                  = 1
 DLM_NOMSBUILTINS            = 1
 DLM_SPECIAL_LINKOPT         = -Fixed:no
-LINKER_LIBRARIES            = $(ToolsubsExportLib)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(stlibprefix)BeCsmapStatic$(stlibext)
 DLM_DEST                    = $(o)
 DLM_EXPORT_DEST             = $(o)
