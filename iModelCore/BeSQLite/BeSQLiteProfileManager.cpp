@@ -2,7 +2,7 @@
 |
 |     $Source: BeSQLiteProfileManager.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLiteProfileManager.h"
@@ -71,7 +71,7 @@ DbResult BeSQLiteProfileManager::UpgradeProfile (BeSQLiteDbR db)
     if (stat != BE_SQLITE_OK)
         {
         LOG.errorv ("Upgrade of %s profile of file '%s' failed. Could not assign new profile version. %s",
-                    PROFILENAME, db.GetDbFileName (), db.GetLastError ());
+                    PROFILENAME, db.GetDbFileName (), db.GetLastError ().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed; 
         }
     
@@ -97,7 +97,7 @@ DbResult BeSQLiteProfileManager::AssignProfileVersion (BeSQLiteDbR db)
     const auto stat = db.SavePropertyString (Properties::SchemaVersion (), profileVersionStr);
     if (BE_SQLITE_OK != stat)
         LOG.errorv ("Failed to create %s profile in file '%s'. Could not assign new profile version. %s",
-                    PROFILENAME, db.GetDbFileName (), db.GetLastError ());
+                    PROFILENAME, db.GetDbFileName (), db.GetLastError ().c_str());
 
     return stat;
     }
