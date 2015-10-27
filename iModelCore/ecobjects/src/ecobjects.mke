@@ -5,35 +5,31 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-PolicyFile      = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
-baseDir         = $(_MakeFilePath)
+%include mdl.mki
+%include $(SrcRoot)ecobjects/mki/ECObjects.mki
 
-SolutionPolicyMki=$(baseDir)ecobjects.mki
+baseDir             = $(_MakeFilePath)
+programName         = ECObjects
 
-programName = ECObjects
-%include    mdl.mki
-
-#----------------------------------------------------------------------
-#       Create output directories
-#----------------------------------------------------------------------
-always:
-    !~@mkdir $(o)
+# include the compile options mki file.
+CompileOptionsMki   = $(baseDir)ECObjectsCompileOpts.mki
+%include $(CompileOptionsMki)
 
 #--------------------------------------------------------------------------------
 #  Bring our precompiled header up-to-date.  After including PreCompileHeader.mki
 #  $(UsePrecompiledHeaderOptions) will contain the /Yu and /Fp options that we
 #  need to consume the .pch.
 #----------------------------------------------------------------------
-PchCompiland = $(baseDir)ECObjectsPch.cpp
-PchOutputDir = $(o)
+PchCompiland        = $(baseDir)ECObjectsPch.cpp
+PchOutputDir        = $(o)
 %if defined (winNT) && $(BUILD_TOOLSET) == "GCC"
     # Compiling using gch causes internal compiler error in GCC using windows ndk toolchain
     GCC_NO_PRE_COMPILED_HEADER = 1
 %endif
 %include $(SharedMki)PreCompileHeader.mki
 
-CCPchOpts  = $(UsePrecompiledHeaderOptions)
-CPchOpts   = $(UsePrecompiledHeaderOptions)
+CCPchOpts           = $(UsePrecompiledHeaderOptions)
+CPchOpts            = $(UsePrecompiledHeaderOptions)
 
 #----------------------------------------------------------------------
 # Prepare to multi-compile using a uniform set of dependency blocks.
@@ -41,71 +37,71 @@ CPchOpts   = $(UsePrecompiledHeaderOptions)
 # below compilands. The entire set of compilands must be content with
 # uniform treatment for multi-compilation to work.
 #----------------------------------------------------------------------
-MultiCompileDepends=$(_MakeFileSpec) 
+MultiCompileDepends = $(_MakeFileSpec) 
 %include MultiCppCompileRule.mki
 
 #----------------------------------------------------------------------
 #   Objects that go into the ECObjects library
 #----------------------------------------------------------------------
-ECObjectsHeaders =  $(ecobjectsPublicAPISrc)ECObjects.h \
-                    $(ecobjectsPublicAPISrc)ECSchema.h \
-                    $(ecobjectsPublicAPISrc)ECValue.h \
-                    $(ecobjectsPublicAPISrc)ECInstance.h \
-                    $(ecobjectsPublicAPISrc)ECEnabler.h \
-                    $(ecobjectsPublicAPISrc)DesignByContract.h \
-                    $(ecobjectsPublicAPISrc)ECDBuffer.h \
-                    $(ecobjectsPublicAPISrc)SupplementalSchema.h \
-                    $(ecobjectsPublicAPISrc)ECEvent.h \
-                    $(ecobjectsPublicAPISrc)ECObjectsAPIOverview.h \
-                    $(baseDir)ecxml.h \
-                    $(baseDir)FileUtilities.h \
-                    $(ecobjectsPublicAPISrc)CalculatedProperty.h \
-                    $(ecobjectsPublicAPISrc)StandardCustomAttributeHelper.h \
-                    $(baseDir)DateTimeInfoAccessor.h \
-                    $(ecobjectsPublicAPISrc)ECDiff.h \
-                    $(ecobjectsPublicAPISrc)SchemaLocalizedStrings.h \
+ECObjectsHeaders    =           $(ecobjectsPublicAPISrc)ECObjects.h \
+                                $(ecobjectsPublicAPISrc)ECSchema.h \
+                                $(ecobjectsPublicAPISrc)ECValue.h \
+                                $(ecobjectsPublicAPISrc)ECInstance.h \
+                                $(ecobjectsPublicAPISrc)ECEnabler.h \
+                                $(ecobjectsPublicAPISrc)DesignByContract.h \
+                                $(ecobjectsPublicAPISrc)ECDBuffer.h \
+                                $(ecobjectsPublicAPISrc)SupplementalSchema.h \
+                                $(ecobjectsPublicAPISrc)ECEvent.h \
+                                $(ecobjectsPublicAPISrc)ECObjectsAPIOverview.h \
+                                $(baseDir)ecxml.h \
+                                $(baseDir)FileUtilities.h \
+                                $(ecobjectsPublicAPISrc)CalculatedProperty.h \
+                                $(ecobjectsPublicAPISrc)StandardCustomAttributeHelper.h \
+                                $(baseDir)DateTimeInfoAccessor.h \
+                                $(ecobjectsPublicAPISrc)ECDiff.h \
+                                $(ecobjectsPublicAPISrc)SchemaLocalizedStrings.h \
 
 
-ECPresentationHeaders = $(ecpresentationPublicAPISrc)auicommand.h \
-                        $(ecpresentationPublicAPISrc)auiitem.h \
-                        $(ecpresentationPublicAPISrc)auijournal.h \
-                        $(ecpresentationPublicAPISrc)auipresentationmgr.h \
-                        $(ecpresentationPublicAPISrc)auiprovider.h \
-                        $(ECObjectsHeaders) \
-                        $(ecpresentationPublicAPISrc)auipresentationapi.h \
-                        $(ecpresentationPublicAPISrc)auievent.h
+ECPresentationHeaders =         $(ecpresentationPublicAPISrc)auicommand.h \
+                                $(ecpresentationPublicAPISrc)auiitem.h \
+                                $(ecpresentationPublicAPISrc)auijournal.h \
+                                $(ecpresentationPublicAPISrc)auipresentationmgr.h \
+                                $(ecpresentationPublicAPISrc)auiprovider.h \
+                                $(ECObjectsHeaders) \
+                                $(ecpresentationPublicAPISrc)auipresentationapi.h \
+                                $(ecpresentationPublicAPISrc)auievent.h
                         
-ECPresentationRulesHeaders = $(ecpresentationRulesPublicAPISrc)PresentationRules.h \
-                             $(ecpresentationRulesPublicAPISrc)ChildNodeSpecification.h \
-                             $(ecpresentationRulesPublicAPISrc)ChildNodeRule.h \
-                             $(ecpresentationRulesPublicAPISrc)CheckBoxRule.h \
-                             $(ecpresentationRulesPublicAPISrc)DisplayRelatedItemsSpecification.h \
-                             $(ecpresentationRulesPublicAPISrc)RenameNodeRule.h \
-                             $(ecpresentationRulesPublicAPISrc)ContentRule.h \
-                             $(ecpresentationRulesPublicAPISrc)ImageIdOverride.h \
-                             $(ecpresentationRulesPublicAPISrc)PresentationRule.h \
-                             $(ecpresentationRulesPublicAPISrc)PresentationRuleSet.h \
-                             $(ecpresentationRulesPublicAPISrc)LabelOverride.h \
-                             $(ecpresentationRulesPublicAPISrc)StyleOverride.h \
-                             $(ecpresentationRulesPublicAPISrc)LocalizationResourceKeyDefinition.h \
-                             $(ecpresentationRulesPublicAPISrc)UserSettingsGroup.h \
-                             $(ecpresentationRulesPublicAPISrc)GroupingRule.h \
-                             $(ecpresentationRulesPublicAPISrc)SortingRule.h \
-                             $(ecpresentationRulesPublicAPISrc)AllInstanceNodesSpecification.h \
-                             $(ecpresentationRulesPublicAPISrc)AllRelatedInstanceNodesSpecification.h \
-                             $(ecpresentationRulesPublicAPISrc)CustomNodeSpecification.h \
-                             $(ecpresentationRulesPublicAPISrc)InstanceNodesOfSpecificClassesSpecification.h \
-                             $(ecpresentationRulesPublicAPISrc)RelatedInstanceNodesSpecification.h \
-                             $(ecpresentationRulesPublicAPISrc)SearchResultInstanceNodesSpecification.h \
-                             $(ecpresentationRulesPublicAPISrc)ContentSpecification.h \
-                             $(ecpresentationRulesPublicAPISrc)ContentInstancesOfSpecificClassesSpecification.h \
-                             $(ecpresentationRulesPublicAPISrc)ContentRelatedInstancesSpecification.h \
-                             $(ecpresentationRulesPublicAPISrc)SelectedNodeInstancesSpecification.h \
-                             $(ECPresentationHeaders)
+ECPresentationRulesHeaders =    $(ecpresentationRulesPublicAPISrc)PresentationRules.h \
+                                $(ecpresentationRulesPublicAPISrc)ChildNodeSpecification.h \
+                                $(ecpresentationRulesPublicAPISrc)ChildNodeRule.h \
+                                $(ecpresentationRulesPublicAPISrc)CheckBoxRule.h \
+                                $(ecpresentationRulesPublicAPISrc)DisplayRelatedItemsSpecification.h \
+                                $(ecpresentationRulesPublicAPISrc)RenameNodeRule.h \
+                                $(ecpresentationRulesPublicAPISrc)ContentRule.h \
+                                $(ecpresentationRulesPublicAPISrc)ImageIdOverride.h \
+                                $(ecpresentationRulesPublicAPISrc)PresentationRule.h \
+                                $(ecpresentationRulesPublicAPISrc)PresentationRuleSet.h \
+                                $(ecpresentationRulesPublicAPISrc)LabelOverride.h \
+                                $(ecpresentationRulesPublicAPISrc)StyleOverride.h \
+                                $(ecpresentationRulesPublicAPISrc)LocalizationResourceKeyDefinition.h \
+                                $(ecpresentationRulesPublicAPISrc)UserSettingsGroup.h \
+                                $(ecpresentationRulesPublicAPISrc)GroupingRule.h \
+                                $(ecpresentationRulesPublicAPISrc)SortingRule.h \
+                                $(ecpresentationRulesPublicAPISrc)AllInstanceNodesSpecification.h \
+                                $(ecpresentationRulesPublicAPISrc)AllRelatedInstanceNodesSpecification.h \
+                                $(ecpresentationRulesPublicAPISrc)CustomNodeSpecification.h \
+                                $(ecpresentationRulesPublicAPISrc)InstanceNodesOfSpecificClassesSpecification.h \
+                                $(ecpresentationRulesPublicAPISrc)RelatedInstanceNodesSpecification.h \
+                                $(ecpresentationRulesPublicAPISrc)SearchResultInstanceNodesSpecification.h \
+                                $(ecpresentationRulesPublicAPISrc)ContentSpecification.h \
+                                $(ecpresentationRulesPublicAPISrc)ContentInstancesOfSpecificClassesSpecification.h \
+                                $(ecpresentationRulesPublicAPISrc)ContentRelatedInstancesSpecification.h \
+                                $(ecpresentationRulesPublicAPISrc)SelectedNodeInstancesSpecification.h \
+                                $(ECPresentationHeaders)
 
 
-ECUnitsHeaders = $(ecunitsPublicAPISrc)Units.h \
-                 $(ecunitsPublicAPISrc)ECUnitsClassLocater.h
+ECUnitsHeaders =                $(ecunitsPublicAPISrc)Units.h \
+                                $(ecunitsPublicAPISrc)ECUnitsClassLocater.h
 
 # ECObjects
 

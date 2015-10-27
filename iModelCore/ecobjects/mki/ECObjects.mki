@@ -1,0 +1,52 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: mki/ECObjects.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%if defined (__ECObjects_mki__)
+    %return
+%endif
+
+__ECObjects_mki__           = 1
+
+OutECObjects                = $(OutBuildDir)ECObjects/
+buildDir                    = $(OutECObjects)
+
+%if !defined (programName)
+    programName             = $(ASSEMBLY_NAME)
+%endif
+
+o                           = $(OutECObjects)$(programName)/
+
+always:
+    !~@mkdir $(o)
+
+# Including DefaultToolSet.mki is a noop if a toolset is already selected but, if not, it provides a default.
+#
+%include DefaultToolSet.mki
+
+#-----------------------------------------------------------------------
+#       Source directories
+#-----------------------------------------------------------------------
+ecPublicAPISrc          = $(SrcRoot)ecobjects/PublicApi/
+ecobjectsPublicAPISrc   = $(ecPublicAPISrc)ECObjects/
+ecobjectsSrc            = $(SrcRoot)ecobjects/
+
+ecpresentationPublicAPISrc      = $(ecPublicAPISrc)EcPresentation/
+ecpresentationRulesPublicAPISrc = $(ecPublicAPISrc)EcPresentationRules/
+ecunitsPublicAPISrc             = $(ecPublicAPISrc)ECUnits/
+
+#-----------------------------------------------------------------------
+# Configure Google Test macros
+#-----------------------------------------------------------------------
+#The gtest mk* files (which we harvest as a subpart for our gtest builds) rely on this macro being defined
+GUnitTestDir            = $(BuildContext)SubParts/google_gtest/
+
+#-----------------------------------------------------------------------
+# Configure includes
+#-----------------------------------------------------------------------
+PublicApiIncludes       + -I$(ecPublicAPISrc) -I$(BuildContext)SubParts/BoostAPI
+
+

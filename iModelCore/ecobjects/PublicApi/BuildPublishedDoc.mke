@@ -2,18 +2,18 @@
 #
 #     $Source: PublicApi/BuildPublishedDoc.mke $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 %include    mdl.mki
 %include    $(SharedMki)HtmlHelp.mki
+%include    $(SrcRoot)ecobjects/mki/ECObjects.mki
 
 OutputName     = ECObjectsAPI
-InputDir       = $(buildDir)PublishedAPI/ECObjects/
-DOXYGEN_OUTPUT = $(buildDir)dox/
+InputDir       = $(OutECObjects)PublishedAPI/ECObjects/
+DOXYGEN_OUTPUT = $(OutECObjects)dox/
 
-InputStamp     = $(buildDir)PublishedAPI.stamp
+InputStamp     = $(OutECObjects)PublishedAPI.stamp
 
 DOXYGEN_INPUT  = $(InputDir)
 
