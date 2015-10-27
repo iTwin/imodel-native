@@ -1,26 +1,33 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/WebServices/WebServicesTestsHelper.h $
+|     $Source: Tests/Published/Utils/WebServicesTestsHelper.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "../MobileUtilsTests.h"
-#include <Bentley/BeTest.h>
+#include "WebServicesUnitTests.h"
+
+#include <Bentley/BeDebugLog.h>
 #include <WebServices/Client/WSError.h>
 #include <WebServices/Client/WSRepositoryClient.h>
 #include <WebServices/Client/ObjectId.h>
-#include "Connect/StubLocalState.h"
-#include "Configuration/StubBuddiClient.h"
-#include "../StubInstances.h"
+
+#include "../WebServices/Connect/StubLocalState.h"
+#include "../WebServices/Configuration/StubBuddiClient.h"
+
+#include "ValuePrinter.h"
+#include "StubInstances.h"
+#include "WSClientBaseTest.h"
+#include "BaseMockHttpHandlerTest.h"
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+USING_NAMESPACE_WSCLIENT_UNITTESTS
 
 #define EXPECT_CONTAINS(container, value)                                       \
     EXPECT_FALSE(std::find(container.begin(), container.end(), value) == container.end())
@@ -31,6 +38,19 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 #define EXPECT_BETWEEN(smallerValue, value, biggerValue)                        \
     EXPECT_LE(smallerValue, value);                                             \
     EXPECT_GE(biggerValue, value);
+
+namespace rapidjson
+    {
+    bool operator==(const Value& a, const Value& b);
+    }
+
+BEGIN_WSCLIENT_UNITTESTS_NAMESPACE
+
+std::shared_ptr<rapidjson::Document> ToRapidJson(Utf8StringCR jsonString);
+
+Json::Value ToJson(Utf8StringCR jsonString);
+
+std::string RapidJsonToString(const rapidjson::Value& json);
 
 template<typename T>
 bvector<T> StubBVector(T element)
@@ -99,3 +119,15 @@ WSError StubWSConnectionError ();
 WSError StubWSCanceledError ();
 
 ClientInfoPtr StubClientInfo ();
+
+ECN::ECSchemaPtr ParseSchema(Utf8StringCR schemaXml, ECN::ECSchemaReadContextPtr context = nullptr);
+
+BeFileName GetTestsAssetsDir();
+BeFileName GetTestsTempDir();
+BeFileName StubFilePath(Utf8StringCR customFileName = "");
+BeFileName StubFile(Utf8StringCR content = "TestContent", Utf8StringCR customFileName = "");
+BeFileName StubFileWithSize(uint32_t bytesCount, Utf8StringCR customFileName = "");
+Utf8String SimpleReadFile(BeFileNameCR filePath);
+void SimpleWriteToFile(Utf8StringCR content, BeFileNameCR filePath);
+
+END_WSCLIENT_UNITTESTS_NAMESPACE

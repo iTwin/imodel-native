@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "../WebServicesTestsHelper.h"
+#include "CachingTestsHelper.h"
 #include "../Client/MockWSRepositoryClient.h"
 
 #include <WebServices/Cache/CachingDataSource.h>

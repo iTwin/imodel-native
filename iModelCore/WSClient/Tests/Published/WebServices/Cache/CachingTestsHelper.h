@@ -12,7 +12,7 @@
 #include <WebServices/Cache/Persistence/DataSourceCache.h>
 #include <WebServices/Cache/Util/ECDbHelper.h>
 
-#include "../WebServicesTestsHelper.h"
+#include "../../Utils/WebServicesTestsHelper.h"
 
 // Operator for comparisons
 bool operator <= (const DateTime& lhs, const DateTime& rhs);
