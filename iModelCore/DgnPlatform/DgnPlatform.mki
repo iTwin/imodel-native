@@ -5,60 +5,64 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
-#
-# This file is used as the SolutionPolicyMki for DgnPlatform.dll only.
-#
-%include msfilext.mki
+OutDgnPlatformBuild             = $(OutBuildDir)DgnPlatform/
+DgnPlatformObj                  = $(OutDgnPlatformBuild)DgnPlatform/
 
-dgnPlatformObj = $(dgnPlatformBuildDir_)DgnPlatform/
+MultiCompileIntermediatePdbFile = $(DgnPlatformObj)$(CCompPDBName).pdb
+IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
 
-MultiCompileIntermediatePdbFile=$(dgnPlatformObj)$(CCompPDBName).pdb
-IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
-
-# so that we can #include "DgnPlatformInternal.h"
-cIncs + -I$(SrcDgnPlatform)
+SrcDgnPlatform                  = $(SrcRoot)DgnPlatform/
+PrivateApiSrc                   = $(SrcDgnPlatform)PrivateApi/
 
 #----------------------------------------------------------------------
 # We're building the DgnPlatform dll
 #----------------------------------------------------------------------
-nameToDefine = __DGNPLATFORM_BUILD__
+nameToDefine                    = __DGNPLATFORM_BUILD__
 %include cdefapnd.mki
 
 # DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
 # If we define appName and use it for DLM_NAME, MultiCppCompileRule.mki will use it for CCompPDBName, and linkLibrary.mki will use DLM_NAME for LIB_NAME.
 # PreCompiledHeader.mki uses CCompPDBName
-appName     = DgnPlatform
-DLM_NAME    = $(appName)
-CCompPDBName = $(appName)
-MuiBaseName = $(appName)
+appName                         = DgnPlatform
+CCompPDBName                    = $(appName)
+DLM_NAME                        = $(appName)
+MuiBaseName                     = $(appName)
 
 #
 #  Defining NOMINMAX keeps windef.h from defining min/max macros. This is necessary to be able to use
 #  the std::min and std::max function templates. It might be nice to hoist this up to the power platform
 #  build policy level.
 #
-nameToDefine = NOMINMAX
+nameToDefine                    = NOMINMAX
 %include cdefapnd.mki
 
 %if defined (DEBUG) && !defined (DISABLE_HANDLE_CHECKS)
-    nameToDefine = DEBUG_BREAKS
+    nameToDefine                = DEBUG_BREAKS
     %include cdefapnd.mki
 %endif
 
 %if defined (debug)                     # If bmake  +ddebug
-    nameToDefine=PAGALLOC_PAGE_DEBUG_CHECK_DOUBLE_FREE=1
+    nameToDefine                = PAGALLOC_PAGE_DEBUG_CHECK_DOUBLE_FREE=1
     %include cdefapnd.mki
 %endif
-nameToDefine=DGN_PLATFORM_MT
+nameToDefine                    = DGN_PLATFORM_MT
 %include cdefapnd.mki
 
-nameToDefine=BENTLEY_PORTABLE_CODE
+nameToDefine                    = BENTLEY_PORTABLE_CODE
 %include cdefapnd.mki
+
+# so that we can #include "DgnPlatformInternal.h"
+dirToSearch                     = $(SrcDgnPlatform)
+%include cincapnd.mki
 
 # ICU header files require additional include paths... do this vs. modifying vendor APIs.
-dirToSearch = $(BuildContext)VendorAPI/icu4c/
+dirToSearch                     = $(BuildContext)VendorAPI/icu4c/
 %include cincapnd.mki
 
 # Freetype2 header files require additional include paths... do this vs. modifying vendor APIs.
-dirToSearch = $(BuildContext)VendorAPI/freetype2/
+dirToSearch                     = $(BuildContext)VendorAPI/freetype2/
 %include cincapnd.mki
+
+dirToSearch                     = $(PrivateApiSrc)
+%include cincapnd.mki
+

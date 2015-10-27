@@ -1,7 +1,0 @@
-#----------------------------------------------------------------------------------------
-#  $Source: DgnPlatform/examples/CompileDgnPlatformApiPolicy.mki $
-#
-#  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
-#----------------------------------------------------------------------------------------
-%include DefaultToolSet.mki
-ENABLE_WCHAR_TYPE=1

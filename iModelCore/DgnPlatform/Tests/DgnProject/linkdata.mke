@@ -2,11 +2,9 @@
 #
 #     $Source: Tests/DgnProject/linkdata.mke $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
-PolicyFile = $(InternalSystemPolicy)
-
 %include mdl.mki
 %include $(SrcBsiCommon)sharedmki/BeTestSelectHarness.mki
 
