@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/BeSQLiteDb_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLiteNonPublishedTests.h"
@@ -602,7 +602,7 @@ Utf8String PopulateDeleteCascadingTestDb (WCharCP dbFileName, bool withIndex, bo
     auto stat = db.ExecuteSql (createTableSql.c_str ());
     if (stat != BE_SQLITE_OK)
         {
-        LOG.error (db.GetLastError ());
+        LOG.error (db.GetLastError ().c_str());
         return "";
         }
 
@@ -619,7 +619,7 @@ Utf8String PopulateDeleteCascadingTestDb (WCharCP dbFileName, bool withIndex, bo
                                 );
         if (stat != BE_SQLITE_OK)
             {
-            LOG.error (db.GetLastError ());
+            LOG.error (db.GetLastError ().c_str());
             return "";
             }
         }
@@ -629,7 +629,7 @@ Utf8String PopulateDeleteCascadingTestDb (WCharCP dbFileName, bool withIndex, bo
     stat = primaryStmt.Prepare (db, "INSERT INTO PrimaryTable (Id, D, Name, I) VALUES (?,?,?,?)");
     if (stat != BE_SQLITE_OK)
         {
-        LOG.error (db.GetLastError ());
+        LOG.error (db.GetLastError ().c_str());
         return "";
         }
 
@@ -645,7 +645,7 @@ Utf8String PopulateDeleteCascadingTestDb (WCharCP dbFileName, bool withIndex, bo
         stat = primaryStmt.Step ();
         if (stat != BE_SQLITE_DONE)
             {
-            LOG.error (db.GetLastError ());
+            LOG.error (db.GetLastError ().c_str());
             return "";
             }
         }
@@ -654,7 +654,7 @@ Utf8String PopulateDeleteCascadingTestDb (WCharCP dbFileName, bool withIndex, bo
     stat = secondaryStmt.Prepare (db, "INSERT INTO SecondaryTable (PrimaryId, Id, Name, L) VALUES (?,?,?,?)");
     if (stat != BE_SQLITE_OK)
         {
-        LOG.error (db.GetLastError ());
+        LOG.error (db.GetLastError ().c_str());
         return "";
         }
 
@@ -672,7 +672,7 @@ Utf8String PopulateDeleteCascadingTestDb (WCharCP dbFileName, bool withIndex, bo
             stat = secondaryStmt.Step ();
             if (stat != BE_SQLITE_DONE)
                 {
-                LOG.error (db.GetLastError ());
+                LOG.error (db.GetLastError ().c_str());
                 return "";
                 }
             }
@@ -682,7 +682,7 @@ Utf8String PopulateDeleteCascadingTestDb (WCharCP dbFileName, bool withIndex, bo
     stat = ternaryStmt.Prepare (db, "INSERT INTO TernaryTable (PrimaryId, SecondaryId, Id, Name, D) VALUES (?,?,?,?,?)");
     if (stat != BE_SQLITE_OK)
         {
-        LOG.error (db.GetLastError ());
+        LOG.error (db.GetLastError ().c_str());
         return "";
         }
 
@@ -703,7 +703,7 @@ Utf8String PopulateDeleteCascadingTestDb (WCharCP dbFileName, bool withIndex, bo
                 stat = ternaryStmt.Step ();
                 if (stat != BE_SQLITE_DONE)
                     {
-                    LOG.error (db.GetLastError ());
+                    LOG.error (db.GetLastError ().c_str());
                     return "";
                     }
                 }

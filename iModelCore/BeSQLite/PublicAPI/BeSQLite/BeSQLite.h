@@ -2071,7 +2071,7 @@ protected:
     void DeleteCachedProperty(PropertySpecCR spec, uint64_t id, uint64_t subId);
     void DeleteCachedPropertyMap();
     void SaveCachedProperties(bool isCommit);
-    Utf8CP GetLastError (DbResult* lastResult) const;
+    Utf8String GetLastError (DbResult* lastResult) const;
     struct RlvCache& GetRlvCache () const;
     void SaveCachedRlvs(bool isCommit) const;
     void ClearRlvCache () const;
@@ -2670,7 +2670,7 @@ public:
     //! @return The last error message for this Db.
     //! @param[out] lastResult The last error code for this Db.
     //! @see sqlite3_errmsg, sqlite3_errcode
-    BE_SQLITE_EXPORT Utf8CP GetLastError (DbResult* lastResult = NULL) const;
+    BE_SQLITE_EXPORT Utf8String GetLastError (DbResult* lastResult = NULL) const;
 
     //! Save all modified settings entries in the properties table. Unless this is called, changes to Settings properties
     //! are not saved when the database is closed.
