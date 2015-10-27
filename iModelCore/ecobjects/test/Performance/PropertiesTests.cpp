@@ -27,6 +27,7 @@ struct PerformancePropertiesTest   : PerformanceTestFixture
         timer.Stop();
 
         PERFORMANCELOG.infov("%s - %lf", timerName, timer.GetElapsedSeconds());
+        LOGTODB(testcaseName, testName, timer.GetElapsedSeconds(), Utf8PrintfString("Adding array elements one at a time: %s", propertyName.c_str()), 1000);
         results[Utf8String(timerName)] = timer.GetElapsedSeconds();
         }
     void AddElementsOnce(ECClassP classA, Utf8StringCR propertyName, bmap<Utf8String, double>& results, Utf8String testcaseName, Utf8String testName)
@@ -40,8 +41,7 @@ struct PerformancePropertiesTest   : PerformanceTestFixture
         timer.Stop();
 
         PERFORMANCELOG.infov("ls - %lf", timerName, timer.GetElapsedSeconds());
-        LOGTODB(testcaseName, testName, timer.GetElapsedSeconds(), timerName, 1000);
-        LOGTODB(testcaseName, testName, timer.GetElapsedSeconds(), timerName, 1000);
+        LOGTODB(testcaseName, testName, timer.GetElapsedSeconds(), Utf8PrintfString("Adding array elements at once: %s", propertyName.c_str()), 1000);
         results[Utf8String(timerName)] = timer.GetElapsedSeconds();
         }
 };

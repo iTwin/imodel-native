@@ -38,12 +38,12 @@
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir>$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild ECObjectsNative -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) </NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild ECObjectsNative -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) </NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild ECObjectsNative -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild ECObjectsNative </NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild ECObjectsNative </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild ECObjectsNative -c</NMakeCleanCommandLine>
     <NMakeOutput>ecobjects.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;__ECOBJECTS_BUILD__</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir);$(VCInstallDir)INCLUDE\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ecobjects\PublicAPI\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ecobjects\VendorAPI\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\bsibin\PublicAPI\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\bsibin\VendorAPI\;$(SrcRoot)\Bentley\PublicAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir);$(VCInstallDir)INCLUDE\;$(OutRoot)Winx64\BuildContexts\ecobjects\PublicAPI\;$(OutRoot)Winx64\BuildContexts\ecobjects\VendorAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\PublicAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\VendorAPI\;$(SrcRoot)\Bentley\PublicAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <NMakeAssemblySearchPath>$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
     <NMakeForcedUsingAssemblies>$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
@@ -110,6 +110,7 @@
     <ClCompile Include="presentation\PresentationRules\StyleOverride.cpp" />
     <ClCompile Include="presentation\PresentationRules\UserSettingsGroup.cpp" />
     <ClCompile Include="SchemaLocalizedStrings.cpp" />
+    <ClCompile Include="SchemaXml.cpp" />
     <ClCompile Include="StandaloneECInstance.cpp" />
     <ClCompile Include="StandaloneECRelationshipInstance.cpp" />
     <ClCompile Include="StandardCustomAttributeHelper.cpp" />
@@ -157,6 +158,7 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECValue.h" />
     <ClInclude Include="ecxml.h" />
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECInstance.h" />
+    <ClInclude Include="SchemaXml.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ecobjects.mke" />

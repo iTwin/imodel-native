@@ -1685,6 +1685,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     switch (primitiveType)
         {
     case PRIMITIVETYPE_Binary:
+    case PRIMITIVETYPE_IGeometry:
         {
         bvector<Byte> bytes;
         if (!convertStringToByteArray (bytes, str))

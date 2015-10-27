@@ -136,7 +136,6 @@
 -->
     <Part Name="PerformanceTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
         <SubPart PartName="TestDependencies"/>
-        <SubPart PartName="PerformanceTestingHelpers" PartFile="BeSQLite" Repository="BeSQLite"/>
         <SubPart PartName="TestFixture"/>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>

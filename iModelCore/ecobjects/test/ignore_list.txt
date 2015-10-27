@@ -16,7 +16,4 @@ SchemaReferenceTest.ExpectSchemaGraphInCorrectOrder	# Schemas are in a .zip file
 
 CGBinarySerializationTests.WriterTest			   # notified Earlin and Carole
 
-ECRelationshipTests.DumpToString
-
-ValueTests.StringToIGeometry					   # Defect 276743
-
+#ECRelationshipTests.DumpToString # notified Carole
