@@ -53,7 +53,6 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
     if (!status.IsSuccess())
         return status;
 
-    //PropertyValueMap& propertyValueMap;
     // SET clause
     NativeSqlBuilder::ListOfLists assignmentListSnippetLists;
     status = PrepareAssignmentListExp (assignmentListSnippetLists, ctx, exp.GetAssignmentListExp ());

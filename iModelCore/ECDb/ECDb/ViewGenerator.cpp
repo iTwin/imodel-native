@@ -597,7 +597,7 @@ BentleyStatus ViewGenerator::BuildRelationshipJoinIfAny (NativeSqlBuilder& sqlBu
                             {
                             NativeSqlBuilder whereClause;
                             if (SUCCESS != cm->GetStorageDescription().GenerateECClassIdFilter(whereClause, table,
-                                                                                                  *classIdColumn, false))
+                                                                                                  *classIdColumn, false, true))
                                 return ERROR;
 
                             if (!whereClause.IsEmpty())

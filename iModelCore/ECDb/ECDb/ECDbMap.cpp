@@ -1310,7 +1310,7 @@ StorageDescription& StorageDescription::operator=(StorageDescription&& rhs)
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    10 / 2015
 //------------------------------------------------------------------------------------------
-BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filter, ECDbSqlTable const& table, ECDbSqlColumn const& classIdColumn, bool polymorphic) const
+BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filter, ECDbSqlTable const& table, ECDbSqlColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName) const
     {
     if (table.GetPersistenceType() != PersistenceType::Persisted)
         return SUCCESS; //table is virtual -> noop
@@ -1323,7 +1323,11 @@ BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filt
         }
 
     NativeSqlBuilder classIdColSql;
-    classIdColSql.AppendEscaped(table.GetName().c_str()).AppendDot().AppendEscaped(classIdColumn.GetName().c_str());
+    if (fullyQualifyColumnName)
+        classIdColSql.AppendEscaped(table.GetName().c_str()).AppendDot();
+    
+    classIdColSql.AppendEscaped(classIdColumn.GetName().c_str());
+
     if (!polymorphic)
         {
         //if partition's table is only used by a single class, no filter needed

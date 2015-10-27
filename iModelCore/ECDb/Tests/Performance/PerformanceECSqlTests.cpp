@@ -102,6 +102,36 @@ TEST_F(PerformanceECSqlVsSqliteTests, UpdateWithWhereClauseWithPrimaryKey)
     GetECDb().AbandonChanges();
     }
 
+    //ECSQL with option to omit class id filter
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ecsql.TH3 SET S='S', S1='S1', S2='S2', S3='S3' WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter"));
+    LOG.infov("Translated SQL: %s", stmt.GetNativeSql());
+
+    StopWatch timer(true);
+    for (ECInstanceId const& id : th3Ids)
+        {
+        if (ECSqlStatus::Success != stmt.BindId(1, id))
+            {
+            FAIL() << "ECSQL UPDATE bind failed";
+            return;
+            }
+
+        if (BE_SQLITE_DONE != stmt.Step())
+            {
+            FAIL() << "ECSQL UPDATE Step failed";
+            return;
+            }
+
+        stmt.Reset();
+        stmt.ClearBindings();
+        }
+
+    timer.Stop();
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "ECSQL UPDATE OPTIONS NoECClassIdFilter", instanceCount);
+    GetECDb().AbandonChanges();
+    }
+
     //SQL w/o classid filter
     {
     Statement stmt;
