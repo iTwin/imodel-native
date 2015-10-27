@@ -73,7 +73,7 @@ BeFileName temporaryDir
         }
     if (temporaryDir.empty())
         {
-        temporaryDir = FSTest::GetTempDir();
+        temporaryDir = GetTestsTempDir();
         }
 
     auto txnManager = std::make_shared<StubCacheTransactionManager>(cache);

@@ -75,6 +75,13 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
+        virtual AsyncTaskPtr<WSChangesetResult> SendChangesetRequest
+            (
+            HttpBodyPtr changeset,
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr cancellationToken = nullptr
+            ) const = 0;
+
         virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
             JsonValueCR objectCreationJson,

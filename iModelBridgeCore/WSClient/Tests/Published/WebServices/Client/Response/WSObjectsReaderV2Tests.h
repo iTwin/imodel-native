@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "../../WebServicesTestsHelper.h"
+#include "../../../Utils/WebServicesTestsHelper.h"
 
 class WSObjectsReaderV2Tests : public ::testing::Test
     {

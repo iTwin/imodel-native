@@ -132,6 +132,11 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
         // More efficient way to get SyncStatus
         virtual SyncStatus GetObjectSyncStatus(ECInstanceKeyCR instance) = 0;
 
+        // -- Getting changed data --
+
+        //! Get instance properties that were modified
+        virtual BentleyStatus ReadModifiedProperties(ECInstanceKeyCR instance, JsonValueR propertiesOut) = 0;
+
         // -- Commiting changes --
 
         // Commit changes for created objects/relationships/files

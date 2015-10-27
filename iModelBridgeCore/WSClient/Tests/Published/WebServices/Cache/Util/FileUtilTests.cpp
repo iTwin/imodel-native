@@ -197,32 +197,32 @@ TEST_F(FileUtilTests, TruncateFilePath_MaxPathSmallerThanDirectory_Error)
 
 TEST_F(FileUtilTests, CopyFileContent_FilesExist_CopiesContent)
     {
-    auto source = FSTest::StubFile("A");
-    auto target = FSTest::StubFile("B");
+    auto source = StubFile("A");
+    auto target = StubFile("B");
 
     ASSERT_EQ(SUCCESS, FileUtil::CopyFileContent(source, target));
 
-    EXPECT_EQ("A", FSTest::ReadFile(source));
-    EXPECT_EQ("A", FSTest::ReadFile(target));
+    EXPECT_EQ("A", SimpleReadFile(source));
+    EXPECT_EQ("A", SimpleReadFile(target));
     }
 
 TEST_F(FileUtilTests, CopyFileContent_TargetDoesNotExist_CopiesContent)
     {
-    auto source = FSTest::StubFile("A");
-    auto target = FSTest::StubFilePath();
+    auto source = StubFile("A");
+    auto target = StubFilePath();
 
     ASSERT_FALSE(target.DoesPathExist());
 
     ASSERT_EQ(SUCCESS, FileUtil::CopyFileContent(source, target));
 
-    EXPECT_EQ("A", FSTest::ReadFile(source));
-    EXPECT_EQ("A", FSTest::ReadFile(target));
+    EXPECT_EQ("A", SimpleReadFile(source));
+    EXPECT_EQ("A", SimpleReadFile(target));
     }
 
 TEST_F(FileUtilTests, CopyFileContent_SourceDoesNotExist_Error)
     {
-    auto source = FSTest::StubFilePath();
-    auto target = FSTest::StubFilePath();
+    auto source = StubFilePath();
+    auto target = StubFilePath();
 
     ASSERT_FALSE(source.DoesPathExist());
 
@@ -234,8 +234,8 @@ TEST_F(FileUtilTests, CopyFileContent_SourceDoesNotExist_Error)
 TEST_F(FileUtilTests, CopyFileContent_SourceIsLargeFile_CopiesContents)
     {
     auto size = 1024 * 100;
-    auto source = FSTest::StubFileWithSize(size);
-    auto target = FSTest::StubFilePath();
+    auto source = StubFileWithSize(size);
+    auto target = StubFilePath();
 
     ASSERT_EQ(SUCCESS, FileUtil::CopyFileContent(source, target));
 

@@ -1,0 +1,15 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: DgnDbServerClientPrewire.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+PolicyFile = $(InternalSystemPolicy)
+
+%include mdl.mki
+
+always:
+    !~@mkdir $(BuildContext)PublicAPI/DgnDbServer
+    @CreateSymLinks.py "$(BuildContext)PublicAPI/DgnDbServer/DgnDbServerCommon.h	=$(_MakeFilePath)/PublicAPI/DgnDbServer/DgnDbServerCommon.h"
+    @CreateSymLinks.py "$(BuildContext)PublicAPI/DgnDbServer/Client					=$(_MakeFilePath)/PublicAPI/DgnDbServer/Client"

@@ -206,6 +206,22 @@ ICancellationTokenPtr cancellationToken
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSChangesetResult> WSRepositoryClient::SendChangesetRequest
+(
+HttpBodyPtr changeset,
+HttpRequest::ProgressCallbackCR uploadProgressCallback,
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    return m_connection->GetWebApiAndReturnResponse<WSChangesetResult>([=] (WebApiPtr webApi)
+        {
+        return webApi->SendChangesetRequest(changeset, uploadProgressCallback, cancellationToken);
+        }, cancellationToken);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<WSCreateObjectResult> WSRepositoryClient::SendCreateObjectRequest

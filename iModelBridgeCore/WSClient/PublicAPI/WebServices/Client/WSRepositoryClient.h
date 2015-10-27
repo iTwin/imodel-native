@@ -35,6 +35,7 @@ typedef std::shared_ptr<struct IWSRepositoryClient>     IWSRepositoryClientPtr;
 typedef AsyncResult<WSObjectsResponse, WSError>         WSObjectsResult;
 typedef AsyncResult<WSFileResponse, WSError>            WSFileResult;
 typedef AsyncResult<WSCreateObjectResponse, WSError>    WSCreateObjectResult;
+typedef AsyncResult<void, WSError>                      WSChangesetResult;
 typedef AsyncResult<void, WSError>                      WSUpdateObjectResult;
 typedef AsyncResult<void, WSError>                      WSDeleteObjectResult;
 typedef AsyncResult<void, WSError>                      WSUpdateFileResult;
@@ -111,10 +112,22 @@ struct IWSRepositoryClient
             ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
 
+        //! Send changeset for multiple created/modified/deleted instances at once.
+        //! Supported from WSG 2.1, usage with older server versions will return "not supported" error.
+        //! @param changeset JSON serialized to string. IIS defaults request size to 4MB (configurable) so string should accomodate to that
+        //! @param uploadProgressCallback upload callback for changeset
+        //! @param cancellationToken 
+        virtual AsyncTaskPtr<WSChangesetResult> SendChangesetRequest
+            (
+            HttpBodyPtr changeset,
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr cancellationToken = nullptr
+            ) const = 0;
+
         //! Create object with any relationships or related objects. Optionally attach file.
         //! Parameter objectCreationJson must follow WSG 2.0 format for creating objects.
         //! NOTES for different server versions:
-        //!     WSG 2.0: changeset format is fully supported. When root instanceId is specified, POST will be done to that instance.
+        //!     WSG 2.0: creation format is fully supported. When root instanceId is specified, POST will be done to that instance.
         //!     WSG 1.x: objectCreationJson can have only one relationship to existing object. This related object will be treated as "parent".
         //!     Server version can be checked by using GetWSClient()->GetServerInfo()
         virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
@@ -261,6 +274,13 @@ struct WSRepositoryClient : public IWSRepositoryClient
             (
             WSQueryCR query,
             Utf8StringCR eTag = nullptr,
+            ICancellationTokenPtr cancellationToken = nullptr
+            ) const override;
+
+        WSCLIENT_EXPORT AsyncTaskPtr<WSChangesetResult> SendChangesetRequest
+            (
+            HttpBodyPtr changeset,
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr cancellationToken = nullptr
             ) const override;
 
