@@ -2,7 +2,7 @@
 #
 #     $Source: EnableUnicode.mki $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -19,5 +19,4 @@ nameToDefine = _UNICODE
 #-----------------------------------------------------------------------
 # Compiler options
 #-----------------------------------------------------------------------
-ENABLE_WCHAR_TYPE = 1
 

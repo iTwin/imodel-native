@@ -2,7 +2,7 @@
 #
 #     $Source: GTestPolicyNoUnicode.mki $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %if defined (__GTestPolicy_mki__)
@@ -26,7 +26,6 @@ __GTestPolicy_mki__  = 1
 
 SrcUtil         = $(SrcRoot)util/
 
-certDir         = $(bsiCerts)
 build           = $(OutUtil)lib/build/
 o               = $(build)obj/$(programName)/
 delivery        = $(build)delivery/
@@ -64,12 +63,12 @@ PublicApiDir        = $(BuildContext)PublicAPI/
 
 # ** We don't want to be calling upon any functionality that is available only post Windows XP **
 # ** These will be passed through as #defines to the compiler by winntmdl.mki **
-_WIN32_WINNT=0x0501
-MSB-_WIN32_WINNT=$(_WIN32_WINNT)
-WINVER=0x0501
-MSB-WINVER=$(WINVER)
-_WIN32_IE=0x0501
-MSB-_WIN32_IE=$(_WIN32_IE)
+# _WIN32_WINNT=0x0501
+# MSB-_WIN32_WINNT=$(_WIN32_WINNT)
+# WINVER=0x0501
+# MSB-WINVER=$(WINVER)
+# _WIN32_IE=0x0501
+# MSB-_WIN32_IE=$(_WIN32_IE)
 
 #-----------------------------------------------------------------------
 # Enable the output of line numbers to the map file

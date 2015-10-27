@@ -1,7 +1,7 @@
 #----------------------------------------------------------------------------------------
 #  $Source: BentleyTest/TestRunner/TestRunnerPolicy.mki $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #----------------------------------------------------------------------------------------
 %include $(SharedMki)DefinePublicApiIncludes.mki
 
@@ -20,5 +20,4 @@ PublicApiIncludes + -I$(SrcDgnPlatformTest)src/
 #----------------------------------------------------------------------------------------
 %include DefaultToolSet.mki
 
-ENABLE_WCHAR_TYPE=1
 
