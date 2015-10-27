@@ -2,24 +2,21 @@
 #
 #  $Source: BentleyLibTestDll.mke $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
-SrcBentley=$(SrcRoot)Bentley/
-BuildContext=$(OutputRootDir)BuildContexts/Bentley/
-TestDir=$(BuildContext)SubParts/UnitTests/source/
-PolicyFile=$(SrcBentley)AssertBentleyPolicy.mki
-
 %include mdl.mki
 
-%include $(SharedMki)bsioutputdirs.mki
+SrcBentley      = $(SrcRoot)Bentley/
+BuildContext    = $(OutputRootDir)BuildContexts/Bentley/
+TestDir         = $(BuildContext)SubParts/UnitTests/source/
 
-TEST_LOCATION = $(TestDir)Published/
-name = BentleyLibTest_Published
-UsingPublished = 1
-o = $(OutputRootDir)Build/Bentley/test/Published/
+TEST_LOCATION   = $(TestDir)Published/
+name            = BentleyLibTest_Published
+UsingPublished  = 1
+o               = $(OutputRootDir)Build/Bentley/test/Published/
 
-always: 
+always:
     ~mkdir $(o)
 
 $(o)BentleyLibTest$(oext)          : $(SrcBentley)BentleyLibTest.cpp

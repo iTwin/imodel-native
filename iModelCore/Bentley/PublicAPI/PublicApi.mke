@@ -2,10 +2,9 @@
 #
 #     $Source: PublicAPI/PublicApi.mke $
 #
-#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-PolicyFile      = ${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
 %include mdl.mki
 
 %if !defined (OutputApiDir)
@@ -16,13 +15,13 @@ PolicyFile      = ${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
 # Scope1 - optional. If defined, then MakePublicApi.py is called with --publicScope1. This causes the header files to include __PUBLISH_SCOPE_1_START__ sections
 
 %if defined (Scope1)
-    genDir       = $(OutputRootDir)build/Bentley/PublishedAPI_Scope1
-    scope1Arg = --publishScope1
+    genDir      = $(OutputRootDir)build/Bentley/PublishedAPI_Scope1
+    scope1Arg   = --publishScope1
 %else
-    genDir       = $(OutputRootDir)build/Bentley/PublishedAPI
+    genDir      = $(OutputRootDir)build/Bentley/PublishedAPI
 %endif
 
-stampFileName = $(genDir).stamp
+stampFileName   = $(genDir).stamp
 
 %if defined(BMAKE_DELETE_ALL_TARGETS)
 cleanopt = --clean
@@ -32,4 +31,4 @@ cleanopt =
 
 always:
     PublishAPI.py -o$(genDir) -d$(BuildContext)PublicAPI -s$(stampFileName) $(scope1Arg) $(cleanopt)
-    @CreateSymLinks.py -d"$(BuildContext)$(OutputApiDir)=$(genDir)"
+    ~linkdir "$(BuildContext)$(OutputApiDir)=$(genDir)"
