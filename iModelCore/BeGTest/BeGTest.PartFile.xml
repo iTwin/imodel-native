@@ -24,7 +24,7 @@
         </Bindings>
     </Part>
 
-    <Product Name="BeTestDocuments" PrgOutputDir="MobileDgnSdk">
+    <Product Name="BeTestDocuments" PrgOutputDir="DgnClientSdk">
         <Directories DirectoryListName="BeTestDocumentsDirList" />
         <SubPart PartName="DgnV8Converter"/>
         <SubPart PartName="LinkDgnDbPublisherIntoToolContext" LibType="Dynamic"/>
@@ -45,7 +45,7 @@
     </ProductDirectoryList>
 
     <!-- *********************************************************************************************** -->
-    <!-- This ProductDirectory can be used by any portable unit test product based on mobiledgn. -->
+    <!-- This ProductDirectory can be used by any portable unit test product based on dgnclientfx. -->
     <!-- This is also an example of how to lay out the directory structure for any BeGTest product. -->
     <!-- *********************************************************************************************** -->
     <ProductDirectoryList ListName="CollectionProduct">
@@ -79,8 +79,8 @@
         <ProductDirectory Name="BePortableUiAssemblies"             Deliver="false" LibType="static"/>
         <ProductDirectory Name="CordovaLibs"                        Path="Assemblies"/>
         <ProductDirectory Name="CordovaLibs"                        Deliver="false" LibType="static"/>
-        <ProductDirectory Name="MobileDgnNativeAssemblies"          Path="Assemblies"/>
-        <ProductDirectory Name="MobileDgnNativeAssemblies"          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="DgnClientFxNativeAssemblies"          Path="Assemblies"/>
+        <ProductDirectory Name="DgnClientFxNativeAssemblies"          Deliver="false" LibType="static"/>
         <ProductDirectory Name="WSClientAssemblies"                 Path="Assemblies"/>
         <ProductDirectory Name="WSClientAssemblies"                 Deliver="false" LibType="static"/>
         <ProductDirectory Name="BeCasablancaAssemblies"             Path="Assemblies"/>
@@ -127,8 +127,8 @@
         <ProductDirectory Name="GeoCoordData"                       Path="Assets/DgnGeoCoord" LibType="static"/>
         <ProductDirectory Name="GeoCoordDataMinimal"                Path="Assets/DgnGeoCoord"/>
         <ProductDirectory Name="GeoCoordDataMinimal"                Path="Assets/DgnGeoCoord" LibType="static"/>
-        <ProductDirectory Name="MobileDgnSdkSeedFiles"              Path="Assets/seed"/>
-        <ProductDirectory Name="MobileDgnSdkSeedFiles"              Path="Assets/seed" LibType="static"/>
+        <ProductDirectory Name="DgnClientSdkSeedFiles"              Path="Assets/seed"/>
+        <ProductDirectory Name="DgnClientSdkSeedFiles"              Path="Assets/seed" LibType="static"/>
         <ProductDirectory Name="PlanningLibs"                       Path="Libs"/>
         <ProductDirectory Name="PlanningLibs"                       Path="Libs" LibType="static"/>
         <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/GeomLibsTestData"/>
@@ -137,12 +137,12 @@
         <ProductDirectory Name="http"                               Path="Assets/http"/>
         <ProductDirectory Name="http"                               Path="Assets/http" LibType="static"/>
 
-        <ProductDirectory Name="MobileDgnJavaScript"                Path="Assets/js/"/>
-        <ProductDirectory Name="MobileDgnJavaScript"                Path="Assets/js/" LibType="static"/>
-        <ProductDirectory Name="MobileDgnJavaScriptViewGroups"      Path="Assets/js/ViewGroups"/>
-        <ProductDirectory Name="MobileDgnJavaScriptViewGroups"      Path="Assets/js/ViewGroups" LibType="static"/>
-        <ProductDirectory Name="MobileDgnJavaScriptIcons"           Path="Assets/js/resources/icons"/>
-        <ProductDirectory Name="MobileDgnJavaScriptIcons"           Path="Assets/js/resources/icons" LibType="static"/>
+        <ProductDirectory Name="DgnClientFxJavaScript"                Path="Assets/js/"/>
+        <ProductDirectory Name="DgnClientFxJavaScript"                Path="Assets/js/" LibType="static"/>
+        <ProductDirectory Name="DgnClientFxJavaScriptViewGroups"      Path="Assets/js/ViewGroups"/>
+        <ProductDirectory Name="DgnClientFxJavaScriptViewGroups"      Path="Assets/js/ViewGroups" LibType="static"/>
+        <ProductDirectory Name="DgnClientFxJavaScriptIcons"           Path="Assets/js/resources/icons"/>
+        <ProductDirectory Name="DgnClientFxJavaScriptIcons"           Path="Assets/js/resources/icons" LibType="static"/>
         <ProductDirectory Name="StdThemes"                          Path="Assets/std-themes"/>
         <ProductDirectory Name="StdThemes"                          Path="Assets/std-themes" LibType="static"/>
 
@@ -157,8 +157,8 @@
 
         <ProductDirectory Name="CordovaJavaScript" Deliver="false"/>
         <ProductDirectory Name="CordovaJavaScript" Deliver="false" LibType="static"/>
-        <ProductDirectory Name="MobileDgnSdkIncludeDirectory" Deliver="false"/>
-        <ProductDirectory Name="MobileDgnSdkIncludeDirectory" Deliver="false" LibType="static"/>
+        <ProductDirectory Name="DgnClientSdkIncludeDirectory" Deliver="false"/>
+        <ProductDirectory Name="DgnClientSdkIncludeDirectory" Deliver="false" LibType="static"/>
         <ProductDirectory Name="DgnViewDecorators" Deliver="false"/>
         <ProductDirectory Name="DgnViewDecorators" Deliver="false" LibType="static"/>
         <ProductDirectory Name="RmgrToolsNativeAssemblies" Deliver="false"/>
