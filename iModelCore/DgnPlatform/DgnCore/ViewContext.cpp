@@ -553,11 +553,8 @@ bool ViewContext::_FilterRangeIntersection(GeometricElementCR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_OutputElement(GeometricElementCR element)
     {
-    ResetContextOverrides();
-
     m_currGraphic = _BeginGraphic();
     m_viewport ? m_viewport->GetViewControllerR()._DrawElement(*this, element) : element._Stroke(*this);
-    m_currGraphic = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -566,15 +563,13 @@ void ViewContext::_OutputElement(GeometricElementCR element)
 void ViewContext::_AddViewOverrides(OvrMatSymbR ovrMatSymb)
     {
     // NOTE: ElemDisplayParams/ElemMatSymb ARE NOT setup at this point!
-    ViewFlags viewFlags = GetViewFlags();
-
-    if (!viewFlags.weights)
+    if (!m_viewFlags.weights)
         ovrMatSymb.SetWidth(1);
 
-    if (!viewFlags.styles)
+    if (!m_viewFlags.styles)
         ovrMatSymb.SetRasterPattern(DgnViewport::GetDefaultIndexedLinePattern(0));
 
-    if (!viewFlags.transparency)
+    if (!m_viewFlags.transparency)
         {
         ovrMatSymb.SetLineTransparency(0);
         ovrMatSymb.SetFillTransparency(0);

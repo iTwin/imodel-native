@@ -1239,10 +1239,12 @@ void PickContext::_OutputElement(GeometricElementCR element)
     // Setup hit detail defaults...unless this is a symbol, don't want hit detail (pattern/linestyle) cleared...
     if (!m_output.GetInSymbolDraw())
         m_output._GetGeomDetail().Init();
+#endif
 
     // do per-element test
     T_Super::_OutputElement(element);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Reset hit priority override in case it's been set...
     if (!m_output.GetInSymbolDraw())
         m_output._SetHitPriorityOverride(HitPriority::Highest);

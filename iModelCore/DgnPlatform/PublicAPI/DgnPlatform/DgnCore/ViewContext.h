@@ -77,19 +77,6 @@ struct  ClipVolumeOverrides
         }
 };
 
-/*=================================================================================**//**
-* Stores ClipVolume flags which are used by DynamicViewSettings
-* @remark This is stored persistently as part of the Reference Dynamic View Settings XAttributes, and thus cannot be changed
-* @bsiclass                                                     
-+===============+===============+===============+===============+===============+======*/
-struct ClipVolumeFlags
-{
-    unsigned   m_reflected:1;
-    unsigned   m_ignoreBoundaryClipping:1;  // if true, side crop handles are ignored and the cut plane is considered infinite 
-    unsigned   m_ignoreBoundaryCutPlanes:1; // if true, section graphics are not generated along side planes
-    unsigned   m_unused:29;
-};
-
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -334,7 +321,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _AllocateScanCriteria();
     DGNPLATFORM_EXPORT virtual void _SetupScanCriteria();
     virtual bool _WantUndisplayed() {return false;}
-    virtual bool _WantUndisplayedClips() {return false;}
     DGNPLATFORM_EXPORT virtual void _AddViewOverrides(Render::OvrMatSymbR);
     DGNPLATFORM_EXPORT virtual void _AddContextOverrides(Render::OvrMatSymbR);
     DGNPLATFORM_EXPORT virtual void _ModifyPreCook(Render::ElemDisplayParamsR); 
@@ -351,7 +337,6 @@ protected:
 
 public:
     int ViewContext::GetTransClipDepth() {return (int) m_transformClipStack.GetSize();}
-
     DMap4dCR GetWorldToView() const {return m_worldToView;}
     DMap4dCR GetWorldToNpc() const {return m_worldToNpc;}
     bool GetWantMaterials() {return m_wantMaterials;};
