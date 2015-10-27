@@ -9,6 +9,7 @@
 #include "ECSqlUpdatePreparer.h"
 #include "ECSqlPropertyNameExpPreparer.h"
 #include "StructArrayToSecondaryTableECSqlBinder.h"
+
 using namespace std;
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -20,7 +21,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
     {
     BeAssert (exp.IsComplete ());
-    ctx.PushScope (exp);
+    ctx.PushScope (exp, exp.GetOptionsClauseExp());
 
     ClassNameExp const* classNameExp = exp.GetClassNameExp ();
 
@@ -52,7 +53,6 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
     if (!status.IsSuccess())
         return status;
 
-    //PropertyValueMap& propertyValueMap;
     // SET clause
     NativeSqlBuilder::ListOfLists assignmentListSnippetLists;
     status = PrepareAssignmentListExp (assignmentListSnippetLists, ctx, exp.GetAssignmentListExp ());
@@ -66,7 +66,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
         ctx.SetNativeNothingToUpdate(true);
 
     bool hasWhereClause = false;
-    if (auto whereClauseExp = exp.GetOptWhereClauseExp ())
+    if (auto whereClauseExp = exp.GetWhereClauseExp ())
         {
         nativeSqlBuilder.AppendSpace ();
         status = ECSqlExpPreparer::PrepareWhereExp(nativeSqlBuilder, ctx, whereClauseExp);
@@ -76,25 +76,30 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
         hasWhereClause = true;
         }
 
-    // WHERE clause
-    NativeSqlBuilder systemWhereClause;
-    ECDbSqlColumn const* classIdColumn = nullptr;
-    if (classMap.GetTable().TryGetECClassIdColumn(classIdColumn) && classIdColumn->GetPersistenceType() == PersistenceType::Persisted)
+    if (exp.GetOptionsClauseExp() == nullptr || !exp.GetOptionsClauseExp()->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION))
         {
-        if (SUCCESS != classMap.GetStorageDescription().GenerateECClassIdFilter(systemWhereClause,
-                                                                 *classIdColumn,
-                                                                 exp.GetClassNameExp()->IsPolymorphic()))
-            return ECSqlStatus::Error;
-        }
+        // WHERE clause
+        NativeSqlBuilder systemWhereClause;
+        ECDbSqlColumn const* classIdColumn = nullptr;
+        ECDbSqlTable const& table = classMap.GetTable();
+        if (table.TryGetECClassIdColumn(classIdColumn) &&
+            classIdColumn->GetPersistenceType() == PersistenceType::Persisted)
+            {
+            if (SUCCESS != classMap.GetStorageDescription().GenerateECClassIdFilter(systemWhereClause, table,
+                                                                                    *classIdColumn,
+                                                                                    exp.GetClassNameExp()->IsPolymorphic()))
+                return ECSqlStatus::Error;
+            }
 
-    if (!systemWhereClause.IsEmpty ())
-        {
-        if (!hasWhereClause)
-            nativeSqlBuilder.Append (" WHERE ");
-        else
-            nativeSqlBuilder.Append (" AND ");
+        if (!systemWhereClause.IsEmpty())
+            {
+            if (!hasWhereClause)
+                nativeSqlBuilder.Append(" WHERE ");
+            else
+                nativeSqlBuilder.Append(" AND ");
 
-        nativeSqlBuilder.AppendParenLeft().Append(systemWhereClause).AppendParenRight();
+            nativeSqlBuilder.AppendParenLeft().Append(systemWhereClause).AppendParenRight();
+            }
         }
 
     status = PrepareStepTask (ctx, exp);
@@ -155,7 +160,7 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareStepTask (ECSqlPrepareContext& ctx, Upda
 
     EmbeddedECSqlStatement* selectorStmt = stepTasks.GetSelector(true);
     selectorStmt->Initialize(ctx, ctx.GetParentArrayProperty(), nullptr);
-    Utf8String selectorQuery = ECSqlPrepareContext::CreateECInstanceIdSelectionQuery(ctx, *exp.GetClassNameExp(), exp.GetOptWhereClauseExp());
+    Utf8String selectorQuery = ECSqlPrepareContext::CreateECInstanceIdSelectionQuery(ctx, *exp.GetClassNameExp(), exp.GetWhereClauseExp());
     ECSqlStatus stat = selectorStmt->Prepare(classMap.GetECDbMap().GetECDbR(), selectorQuery.c_str());
     if (!stat.IsSuccess())
         {
@@ -163,7 +168,7 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareStepTask (ECSqlPrepareContext& ctx, Upda
         return stat;
         }
 
-    int parameterIndex = ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause(exp, exp.GetOptWhereClauseExp());
+    int parameterIndex = ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause(exp, exp.GetWhereClauseExp());
     int nParamterToBind = ((int) ecsqlParameterMap.Count()) - parameterIndex;
     for (int j = 1; j <= nParamterToBind; j++)
         {

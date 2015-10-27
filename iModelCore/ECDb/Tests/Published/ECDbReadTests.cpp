@@ -59,8 +59,6 @@ TEST_F(ReadTests, ReadECInstances)
             s = readInstance->WriteToXmlFile(L"C:\\testInstance2.xml", true, true);
             EXPECT_EQ(INSTANCE_WRITE_STATUS_Success, s);
             }
-        //ASSERT_TRUE (ECDbTestUtility::CompareECInstances (*importedInstance, *readInstance)) << L"Failed to correctly read instance of class " << Utf8String (importedInstance->GetClass().GetName()).c_str();
-        
         }
     }
     
@@ -91,7 +89,6 @@ TEST_F(ReadTests, ReadPolymorphic)
 
     /*
      * Test retrieval when parent and children are all in the same table (TablePerHierarchy)
-     * Number of instances of Furniture and children = 9 (Furniture =3, Chair = 3, Desk = 3)
      */
     size_t count;
     ECClassCP furniture = db.Schemas().GetECClass("StartupCompany", "Furniture");
@@ -102,8 +99,7 @@ TEST_F(ReadTests, ReadPolymorphic)
     ASSERT_EQ (9, count);
 
     /*
-     * Test retrieval when parent and childrenare all in different tables (TablePerClass)
-     * Number of instances of Hardware and children = 9 (Hardware = 3, Computer = 3, Monitor = 3)
+     * Test retrieval when parent and children are all in different tables (TablePerClass)
      */
     ECClassCP hardware = db.Schemas().GetECClass("StartupCompany", "Hardware");
     ASSERT_TRUE (hardware != nullptr);

@@ -220,7 +220,7 @@ TEST(ECDbFileInfo, ReplaceExistingEmbeddedFile)
 
     BeFileName testFilePathOld;
     BeTest::GetHost().GetDocumentsRoot(testFilePathOld);
-    testFilePathOld.AppendToPath(L"ECdb");
+    testFilePathOld.AppendToPath(L"ECDb");
     testFilePathOld.AppendToPath (L"Schemas");
     testFilePathOld.AppendToPath(testFileNameOldW.c_str());
 

@@ -36,7 +36,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare (ECSqlPrepareContext& ctx, SingleSelect
     {
     BeAssert (exp.IsComplete ());
 
-    ctx.PushScope (exp);
+    ctx.PushScope (exp, exp.GetOptions());
 
     auto& sqlGenerator = ctx.GetSqlBuilderR ();
     sqlGenerator.Append ("SELECT ");
@@ -57,7 +57,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare (ECSqlPrepareContext& ctx, SingleSelect
         return status;
 
     // Append WHERE
-    if (auto e = exp.GetOptWhere ())
+    if (auto e = exp.GetWhere ())
         {
         sqlGenerator.AppendSpace ();
         status = ECSqlExpPreparer::PrepareWhereExp(sqlGenerator, ctx, e);
@@ -65,7 +65,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare (ECSqlPrepareContext& ctx, SingleSelect
             return status;
         }
     // Append GROUP BY
-    if (auto e = exp.GetOptGroupBy ())
+    if (auto e = exp.GetGroupBy ())
         {
         sqlGenerator.AppendSpace ();
         status = ECSqlExpPreparer::PrepareGroupByExp (ctx, e);
@@ -74,7 +74,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare (ECSqlPrepareContext& ctx, SingleSelect
         }
 
     // Append HAVING
-    if (auto e = exp.GetOptHaving ())
+    if (auto e = exp.GetHaving ())
         {
         sqlGenerator.AppendSpace ();
         status = ECSqlExpPreparer::PrepareHavingExp (ctx, e);
@@ -83,7 +83,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare (ECSqlPrepareContext& ctx, SingleSelect
         }
 
     // Append ORDER BY
-    if (auto e = exp.GetOptOrderBy())
+    if (auto e = exp.GetOrderBy())
         {
         sqlGenerator.AppendSpace();
         status = ECSqlExpPreparer::PrepareOrderByExp(ctx, e);

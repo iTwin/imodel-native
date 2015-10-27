@@ -176,33 +176,36 @@ public:
     };
 
 
+    struct StorageDescription;
     //=======================================================================================
     //! Hold detail about how table partition is described for this class
     // @bsiclass                                               Affan.Khan           05/2015
     //+===============+===============+===============+===============+===============+======
     struct HorizontalPartition : NonCopyableClass
         {
-        private:
-            ECDbSqlTable const* m_table;
-            std::vector<ECN::ECClassId> m_partitionClassIds;
-            std::vector<ECN::ECClassId> m_inversedPartitionClassIds;
-            bool m_hasInversedPartitionClassIds;
+    friend struct StorageDescription;
 
-        public:
-            explicit HorizontalPartition (ECDbSqlTable const& table) : m_table (&table), m_hasInversedPartitionClassIds (false) {}
-            ~HorizontalPartition () {}
-            HorizontalPartition (HorizontalPartition&& rhs);
-            HorizontalPartition& operator=(HorizontalPartition&& rhs);
+    private:
+        ECDbSqlTable const* m_table;
+        std::vector<ECN::ECClassId> m_partitionClassIds;
+        std::vector<ECN::ECClassId> m_inversedPartitionClassIds;
+        bool m_hasInversedPartitionClassIds;
 
-            ECDbSqlTable const& GetTable () const { return *m_table; }
-            std::vector<ECN::ECClassId> const& GetClassIds () const { return m_partitionClassIds; }
+        bool IsSharedTable() const { return m_partitionClassIds.size() + m_inversedPartitionClassIds.size() > 1; }
 
-            void AddClassId (ECN::ECClassId classId) { m_partitionClassIds.push_back (classId); }
-            void GenerateClassIdFilter (std::vector<ECN::ECClassId> const& tableClassIds);
+        void AddClassId(ECN::ECClassId classId) { m_partitionClassIds.push_back(classId); }
+        void GenerateClassIdFilter(std::vector<ECN::ECClassId> const& tableClassIds);
 
-            bool IsSharedTable() const { return m_partitionClassIds.size() + m_inversedPartitionClassIds.size() > 1; }
-            bool NeedsECClassIdFilter() const;
-            void AppendECClassIdFilterSql (Utf8CP classIdColName, NativeSqlBuilder&) const;
+    public:
+        explicit HorizontalPartition (ECDbSqlTable const& table) : m_table (&table), m_hasInversedPartitionClassIds (false) {}
+        ~HorizontalPartition () {}
+        HorizontalPartition (HorizontalPartition&& rhs);
+        HorizontalPartition& operator=(HorizontalPartition&& rhs);
+
+        ECDbSqlTable const& GetTable () const { return *m_table; }
+        std::vector<ECN::ECClassId> const& GetClassIds () const { return m_partitionClassIds; }
+        bool NeedsECClassIdFilter() const;
+        void AppendECClassIdFilterSql(Utf8CP classIdColName, NativeSqlBuilder&) const;
         };
 
 
@@ -220,7 +223,9 @@ public:
 
         explicit StorageDescription (ECN::ECClassId classId) : m_classId (classId), m_rootHorizontalPartitionIndex (0) {}
 
-        HorizontalPartition* AddHorizontalPartition(ECDbSqlTable const& table, bool isRootPartition);
+        HorizontalPartition* AddHorizontalPartition(ECDbSqlTable const&, bool isRootPartition);
+
+        HorizontalPartition const* GetHorizontalPartition(ECDbSqlTable const&) const;
 
     public:
         ~StorageDescription (){}
@@ -237,7 +242,7 @@ public:
         bool HierarchyMapsToMultipleTables() const { return m_nonVirtualHorizontalPartitionIndices.size() > 1; }
         ECN::ECClassId GetClassId () const { return m_classId; }
 
-        BentleyStatus GenerateECClassIdFilter(NativeSqlBuilder& filter, ECDbSqlColumn const& classIdColumn, bool polymorphic) const;
+        BentleyStatus GenerateECClassIdFilter(NativeSqlBuilder& filter, ECDbSqlTable const&, ECDbSqlColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName = false) const;
         static std::unique_ptr<StorageDescription> Create(IClassMap const&, ECDbMap::LightweightCache const& lwmc);
         };
 END_BENTLEY_SQLITE_EC_NAMESPACE

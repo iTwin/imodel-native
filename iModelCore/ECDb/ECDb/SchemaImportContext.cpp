@@ -318,7 +318,7 @@ BentleyStatus SchemaImportECDbMapDb::GenerateIndexWhereClause(NativeSqlBuilder& 
         }
 
     NativeSqlBuilder classIdFilter;
-    if (SUCCESS != storageDescription.GenerateECClassIdFilter(classIdFilter, *classIdCol, index.AppliesToSubclassesIfPartial()))
+    if (SUCCESS != storageDescription.GenerateECClassIdFilter(classIdFilter, index.GetTable(), *classIdCol, index.AppliesToSubclassesIfPartial()))
         return ERROR;
 
     if (classIdFilter.IsEmpty())

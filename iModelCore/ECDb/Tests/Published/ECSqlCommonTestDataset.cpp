@@ -792,50 +792,78 @@ ECSqlTestDataset ECSqlCommonTestDataset::OptionsTests(ECSqlType ecsqlType, ECDbC
         {
         Utf8String ecsql;
 
-        ecsql.Sprintf("%s OPTIONS", pClassECSqlStub.c_str());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "OPTIONS clause without options");
+        if (ecsqlType != ECSqlType::Insert)
+            {
+            ecsql.Sprintf("%s ECSQLOPTIONS", pClassECSqlStub.c_str());
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "OPTIONS clause without options");
 
-        ecsql.Sprintf("%s OPTIONS 123", pClassECSqlStub.c_str());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "An option must be a name");
+            ecsql.Sprintf("%s ECSQLOPTIONS 123", pClassECSqlStub.c_str());
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "An option must be a name");
 
-        ecsql.Sprintf("%s OPTIONS myopt=", pClassECSqlStub.c_str());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "option value is missing");
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt=", pClassECSqlStub.c_str());
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "option value is missing");
 
-        ecsql.Sprintf("%s OPTIONS myopt", pClassECSqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt myopt", pClassECSqlStub.c_str());
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "duplicate options not allowed");
 
-        ecsql.Sprintf("%s OPTIONS myopt myotheropt", pClassECSqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt myOpt", pClassECSqlStub.c_str());
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "duplicate options not allowed (even if they differ by case)");
 
-        ecsql.Sprintf("%s OPTIONS myopt=1 myotheropt", pClassECSqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt=1 myopt", pClassECSqlStub.c_str());
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "duplicate options not allowed");
 
-        ecsql.Sprintf("%s OPTIONS myopt=1 myotheropt=true", pClassECSqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+            ecsql.Sprintf("%s ECSQLOPTIONS myOpt=1 myopt", pClassECSqlStub.c_str());
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "duplicate options not allowed");
 
-        ecsql.Sprintf("%s OPTIONS myopt myotheropt=true", pClassECSqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt", pClassECSqlStub.c_str());
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
 
-        ecsql.Sprintf("%s OPTIONS myopt myotheropt=true onemoreopt", pClassECSqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt myotheropt", pClassECSqlStub.c_str());
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
 
-        ecsql.Sprintf("%s WHERE ECInstanceId=? OPTIONS myopt", pClassECSqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt=1 myotheropt", pClassECSqlStub.c_str());
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
 
-        ecsql.Sprintf("%s WHERE ECInstanceId=? OPTIONS myopt myotheropt", pClassECSqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt=1 myotheropt=true", pClassECSqlStub.c_str());
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
 
-        ecsql.Sprintf("%s WHERE ECInstanceId=? OPTIONS myopt=1 myotheropt", pClassECSqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt myotheropt=true", pClassECSqlStub.c_str());
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt myotheropt=true onemoreopt", pClassECSqlStub.c_str());
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+            ecsql.Sprintf("%s WHERE ECInstanceId=? ECSQLOPTIONS myopt", pClassECSqlStub.c_str());
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+            ecsql.Sprintf("%s WHERE ECInstanceId=? ECSQLOPTIONS myopt myotheropt", pClassECSqlStub.c_str());
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+            ecsql.Sprintf("%s WHERE ECInstanceId=? ECSQLOPTIONS myopt=1 myotheropt", pClassECSqlStub.c_str());
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+            }
 
         if (ecsqlType == ECSqlType::Select)
             {
-            ecsql.Sprintf("%s WHERE ECInstanceId=? ORDER BY I OPTIONS myopt=1 myotheropt", pClassECSqlStub.c_str());
+            ecsql.Sprintf("%s WHERE ECInstanceId=? ORDER BY I ECSQLOPTIONS myopt=1 myotheropt", pClassECSqlStub.c_str());
             AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
 
-            ecsql.Sprintf("%s WHERE ECInstanceId=? GROUP BY I HAVING I=1 OPTIONS myopt=1 myotheropt", pClassECSqlStub.c_str());
+            ecsql.Sprintf("%s WHERE ECInstanceId=? GROUP BY I HAVING I=1 ECSQLOPTIONS myopt=1 myotheropt", pClassECSqlStub.c_str());
             AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
             }
+
+        if (ecsqlType == ECSqlType::Insert)
+            {
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt", pClassECSqlStub.c_str());
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "No options supported for INSERT");
+
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt=1", pClassECSqlStub.c_str());
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "No options supported for INSERT");
+
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt myotheropt", pClassECSqlStub.c_str());
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "No options supported for INSERT");
+            }
+
         }
 
     return dataset;
