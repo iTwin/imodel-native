@@ -10,18 +10,6 @@
     <ClCompile Include="NonPublished\BeSQLiteDb_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
-    <ClCompile Include="Performance\PerformanceBeSQLiteDb_Test.cpp">
-      <Filter>Performance</Filter>
-    </ClCompile>
-    <ClCompile Include="Performance\PerformanceSQLite_Test.cpp">
-      <Filter>Performance</Filter>
-    </ClCompile>
-    <ClCompile Include="Performance\PerformanceSqlStatement_Tests.cpp">
-      <Filter>Performance</Filter>
-    </ClCompile>
-    <ClCompile Include="Performance\PerformanceTestingHelpers.cpp">
-      <Filter>Performance</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Published">
@@ -32,12 +20,6 @@
     </Filter>
     <Filter Include="NonPublished\PublicApi">
       <UniqueIdentifier>{2ae4b47d-b11e-49be-9848-808292b32795}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Performance">
-      <UniqueIdentifier>{4378687b-f89a-4de3-8909-771927c788ff}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Performance\include">
-      <UniqueIdentifier>{748398a8-c7de-4e1a-9855-2ce76c36ffec}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -52,12 +34,6 @@
     </ClInclude>
     <ClInclude Include="Published\BeSQLitePublishedTests.h">
       <Filter>Published</Filter>
-    </ClInclude>
-    <ClInclude Include="Performance\BeSQLitePerformanceTests.h">
-      <Filter>Performance</Filter>
-    </ClInclude>
-    <ClInclude Include="Performance\include\PerformanceTestingHelpers.h">
-      <Filter>Performance\include</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

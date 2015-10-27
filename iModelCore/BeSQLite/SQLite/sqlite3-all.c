@@ -28,10 +28,9 @@
 #define SQLITE_ENABLE_ZIPVFS 1
 #define SQLITE_USE_URI 1
 
-// include support for full text search
-#define SQLITE_ENABLE_FTS3 1
-#define SQLITE_ENABLE_FTS3_PARENTHESIS 1
-#define SQLITE_ENABLE_FTS4_UNICODE61 1
+
+#define SQLITE_ENABLE_FTS5 1    // include support for full text search
+#define SQLITE_ENABLE_JSON1 1   // include support for json
 
 #define HAVE_STDINT_H
 
@@ -69,17 +68,15 @@
 
 //#define SQLITE_ENABLE_SQLLOG 1
 
-#define SQLITE_ENABLE_JSON1
-
 #include "sqlite3-1.c"
 #include "sqlite3-2.c"
 #include "sqlite3-3.c"
 #include "sqlite3-4.c"
 #include "sqlite3-5.c"
 #include "sqlite3-6.c"
+#include "sqlite3-7.c"
 #include "zipvfs.c"
 #include "closure.c"
-#include "json1.c"
 
 #if defined (SQLITE_ENABLE_SQLLOG)
 #include "test_sqllog.c"

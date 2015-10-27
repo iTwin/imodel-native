@@ -73,24 +73,24 @@ private:
 public:
 
   /// same as reset()
-  SHA1();
+  BE_SQLITE_EXPORT SHA1();
 
   /// compute SHA1 of a memory block
-  Utf8String operator()(const void* data, size_t numBytes);
+  BE_SQLITE_EXPORT Utf8String operator()(const void* data, size_t numBytes);
   /// compute SHA1 of a string, excluding final zero
-  Utf8String operator()(Utf8StringCR text);
+  BE_SQLITE_EXPORT Utf8String operator()(Utf8StringCR text);
 
   /// add arbitrary number of bytes
-  void Add(const void* data, size_t numBytes);
+  BE_SQLITE_EXPORT void Add(const void* data, size_t numBytes);
 
   /// return latest hash as 40 hex characters
-  Utf8String GetHashString();
+  BE_SQLITE_EXPORT Utf8String GetHashString();
 
   /// return latest hash as 20 bytes
-  HashVal GetHashVal();
+  BE_SQLITE_EXPORT HashVal GetHashVal();
 
   /// restart
-  void Reset();
+  BE_SQLITE_EXPORT void Reset();
 };
 
 END_BENTLEY_SQLITE_NAMESPACE 

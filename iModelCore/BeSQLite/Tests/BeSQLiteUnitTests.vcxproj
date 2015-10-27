@@ -12,10 +12,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="NonPublished\BeSQLiteDb_Test.cpp" />
-    <ClCompile Include="Performance\PerformanceBeSQLiteDb_Test.cpp" />
-    <ClCompile Include="Performance\PerformanceSQLite_Test.cpp" />
-    <ClCompile Include="Performance\PerformanceSqlStatement_Tests.cpp" />
-    <ClCompile Include="Performance\PerformanceTestingHelpers.cpp" />
     <ClCompile Include="Published\BeSQLiteDb_Test.cpp" />
     <ClCompile Include="Published\Statement_Test.cpp" />
   </ItemGroup>
@@ -25,8 +21,6 @@
   <ItemGroup>
     <ClInclude Include="NonPublished\BeSQLiteNonPublishedTests.h" />
     <ClInclude Include="NonPublished\PublicAPI\NonPublished\BeSQLite\BeSQLiteTests.h" />
-    <ClInclude Include="Performance\BeSQLitePerformanceTests.h" />
-    <ClInclude Include="Performance\include\PerformanceTestingHelpers.h" />
     <ClInclude Include="Published\BeSQLitePublishedTests.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -55,20 +49,20 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeOutput>$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\product\BeGTest\bin\BeGTest.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx64\product\BeGTest\bin\BeGTest.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;BENTLEY_WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath>$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\BeSQLite\PublicAPI\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\BeSQLite\VendorAPI\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\build\UnitTests\BeSQLite\PublishedBeSQLiteUnitTests\PublicAPI\;$(ProjectDir)\NonPublished\PublicApi\NonPublished\BeSQLite\;$(ProjectDir)\NonPublished\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\build\UnitTests\BeSQLite\NonPublishedBeSQLiteUnitTests\PublicAPI\;$(ProjectDir)\Published\;$(ProjectDir);$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4  re -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) BeSQLiteUnitTests:*UnitTests* BeGTestExe</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(OutRoot)\Winx64\BuildContexts\BeSQLite\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\BeSQLite\VendorAPI\;$(OutRoot)\Winx64\build\UnitTests\BeSQLite\PublishedBeSQLiteUnitTests\PublicAPI\;$(ProjectDir)\NonPublished\PublicApi\NonPublished\BeSQLite\;$(ProjectDir)\NonPublished\;$(OutRoot)\Winx64\build\UnitTests\BeSQLite\NonPublishedBeSQLiteUnitTests\PublicAPI\;$(ProjectDir)\Published\;$(ProjectDir);$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4  re BeSQLiteUnitTests:*UnitTests* BeGTestExe</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe -c &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe -c</NMakeCleanCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <NMakeOutput>$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\product\BeGTest\BeGTest.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx64\product\BeGTest\BeGTest.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;BENTLEY_WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath>$(ProjectDir);$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\BeSQLiteUnitTests\PublicAPI\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\BeSQLiteUnitTests\VendorAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4  re -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) BeSQLiteUnitTests:*UnitTests* BeGTestExe</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(OutRoot)\Winx64\BuildContexts\BeSQLiteUnitTests\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\BeSQLiteUnitTests\VendorAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4  re BeSQLiteUnitTests:*UnitTests* BeGTestExe</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe -c &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLiteUnitTests:*UnitTests* BeGTestExe -c</NMakeCleanCommandLine>
   </PropertyGroup>
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
