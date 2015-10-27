@@ -2,20 +2,18 @@
 #
 #     $Source: src/managed/log4net/log4net.mke $
 #
-#   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-
-programName       = Bentley.logging.log4net-2.0
-
-PolicyFile=$(SrcRoot)LoggingSDK/mki/AssertLoggingSDKPolicy.mki
-%include mdl.mki
-
 ASSEMBLY_WARN_AS_ERROR=2
 
+%include mdl.mki
+%include $(SrcRoot)LoggingSdk/mki/LoggingSdkCommon.mki
+
+programName         = Bentley.logging.log4net-2.0
 prodSrc             = $(_MakeFilePath)
 
-ASSEMBLY_REFERENCE           = $(BuildContextDelivery)Bentley.logging-2.0.dll
+ASSEMBLY_REFERENCE  = $(BuildContextDelivery)Bentley.logging-2.0.dll
 %include csrefapnd.mki
 
 CSCOpt + -d:NET_2_0
@@ -25,6 +23,10 @@ CSCOpt + -d:NET_2_0
 ASSEMBLY_RES_TO_ADD_FILENAME = default.logging.xml
 ASSEMBLY_RES_TO_ADD_DIRECTORY = $(prodSrc)
 %include assemblyResourceAppend.mki
+
+always:
+    !~@mkdir $(o)
+
 
 #-----------------------------------------------------------------------
 #   Compile C# Modules

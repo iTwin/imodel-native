@@ -2,37 +2,40 @@
 #
 #     $Source: src/managed/interop/interop.mke $
 #
-#   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-
-programName = Bentley.logging.interop-2.0
-#programName = interop
-
-PolicyFile=$(SrcRoot)LoggingSDK/mki/AssertLoggingSDKPolicy.mki
-prodSrc             = $(_MakeFilePath)
-
-#STATIC_C_RUNTIME = 1
+HAVE_PERMISSION_TO_COMPILE_AT_W3=1
 
 %include mdl.mki
+%include $(SrcRoot)LoggingSdk/mki/LoggingSdkCommon.mki
 
-ASSEMBLY_PRODUCT_NAME = $(programName)
-ASSEMBLY_NAME       = $(programName)
-ASSEMBLY_TITLE      = Bentley logging native interop assembly
-ASSEMBLY_DESCRIPTION = Bentley logging native interop assembly
+programName = Bentley.logging.interop-2.0
 
-TARGET_DIRECTORY    = $(binDir)
+prodSrc                 = $(_MakeFilePath)
+
+ASSEMBLY_PRODUCT_NAME   = $(programName)
+ASSEMBLY_NAME           = $(programName)
+ASSEMBLY_TITLE          = Bentley logging native interop assembly
+ASSEMBLY_DESCRIPTION    = Bentley logging native interop assembly
+
+TARGET_DIRECTORY        = $(binDir)
 
 nameToDefine = BSILOG_INTEROP_EXPORTS
 %include cdefapnd.mki
 
+
+always:
+    !~@mkdir $(o)
+
+
 #-----------------------------------------------------------------------
 #                           Include Path
 #-----------------------------------------------------------------------
-dirToSearch =           $(nativeIntDir)
+dirToSearch             = $(nativeIntDir)
 %include cincapnd.mki
 
-assemDirToSearch =           $(BuildContextDelivery)
+assemDirToSearch        = $(BuildContextDelivery)
 %include cincapnd.mki
 
 #------------------------------------------------------------------------------

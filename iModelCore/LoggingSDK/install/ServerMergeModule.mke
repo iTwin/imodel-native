@@ -2,13 +2,13 @@
 #
 #     $Source: install/ServerMergeModule.mke $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-programName         = LoggingServerMergeModule
-
-PolicyFile=$(SrcRoot)LoggingSDK/mki/AssertLoggingSDKPolicy.mki
 %include mdl.mki
+%include $(SrcRoot)LoggingSdk/mki/LoggingSdkCommon.mki
+
+programName         = LoggingServerMergeModule
 
 #---------------------------------------------------------------------------------------
 # MSI Installer file Setup.

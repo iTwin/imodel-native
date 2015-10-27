@@ -2,13 +2,16 @@
 #
 #     $Source: install/ServerInstaller.mke $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
+%include mdl.mki
+%include $(SrcRoot)LoggingSdk/mki/LoggingSdkCommon.mki
+
 programName         = BentleyLoggingServer
 
-PolicyFile=$(SrcRoot)LoggingSDK/mki/AssertLoggingSDKPolicy.mki
-%include mdl.mki
+always:
+    !~@mkdir $(o)
 
 #---------------------------------------------------------------------------------------
 # MSI Installer file Setup.

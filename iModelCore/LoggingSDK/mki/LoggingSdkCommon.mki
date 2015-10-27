@@ -1,0 +1,123 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: mki/LoggingSdkCommon.mki $
+#
+#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%if defined (__LoggingSdkCommon_mki__)
+    %return
+%endif
+
+__LoggingSdkCommon_mki__  = 1
+
+SrcLoggingSDK           = $(SrcRoot)LoggingSDK/
+OutLoggingSdk           = $(OutBuildDir)LoggingSdk/
+
+PRODUCT_NAME            = Bentley Logging
+
+#-----------------------------------------------------------------------
+#       Define some directories
+#-----------------------------------------------------------------------
+loggingDir              = $(SrcLoggingSDK)src/
+managedDir              = $(loggingDir)managed/
+nativeDir               = $(loggingDir)native/
+nativeIntDir            = $(nativeDir)interface/
+sharedInc               = $(SrcBsiCommon)sharedInc/
+
+buildDir                = $(outLoggingSdk)
+deliveryDir             = $(outLoggingSdk)delivery/
+binDir                  = $(o)
+docDir                  = $(o)
+libraryDir              = $(o)
+installDir              = $(deliveryDir)install/
+includeDir              = $(deliveryDir)include/
+atpDir                  = $(buildDir)atp/
+smtpLib                 = $(buildDir)libsmtp/lib/
+devdocDir               = $(docDir)$(devdocProject)
+
+BuildContext            = $(OutBuildContexts)LoggingSDK/
+BuildContextDelivery    = $(BuildContext)Delivery/
+BuildContextVendorAPI   = $(BuildContext)VendorAPI/
+BuildContextSubParts    = $(BuildContext)SubParts/
+
+always:
+    !~@mkdir $(BuildContextPublicAPI)
+
+#-----------------------------------------------------------------------
+#       Validate our environment
+#-----------------------------------------------------------------------
+stdBcopyOpts            = -rCFjaw
+
+%if !defined (programName) && defined (ASSEMBLY_NAME)
+    programName         =% $(ASSEMBLY_NAME)
+%endif
+
+o                       = $(buildDir)$(programName)/
+
+#-----------------------------------------------------------------------
+#       Define our build options
+#-----------------------------------------------------------------------
+ENABLE_RTTI             = 1
+
+dirToSearch             = $(BuildContext)PublicAPI
+%include cincapnd.mki
+
+#-----------------------------------------------------------------------
+#       Define our dll link options
+#-----------------------------------------------------------------------
+DLM_NAME                    = $(programName)
+DLM_NOENTRY                 = 1
+DLM_NOMSBUILTINS            = 1
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(binDir)
+DLM_OBJECT_FILES            = $(Objects)
+DLM_NO_DLS                  = 1
+DLM_NO_DEF                  = 1
+DLM_NO_INITIALIZE_FUNCTION  = 1
+DLM_LIBDEF_SRC              =
+#DLM_NO_SIGN                = 1
+DLM_NO_RCSIGN               = 1
+DLM_MAPLINEINFO             = 1
+
+LIB_PDB_SOURCE_DIR          = $(o)
+
+ASSEMBLY_CONTEXT_LOCATION   = $(ContextDeliveryDir)
+DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)
+INSTALLER_CONTEXT_LOCATION  = $(BuildContext)Install/
+
+#-----------------------------------------------------------------------
+#       Define our managed compiler options when using bmake include files to
+#       build an assembly (i.e. mkcsharp.mki)
+#-----------------------------------------------------------------------
+
+%if !defined (ASSEMBLY_NAME)
+  ASSEMBLY_NAME             = $(programName)
+%endif
+
+%if !defined (ASSEMBLY_TITLE)
+  ASSEMBLY_TITLE            = $(programName)
+%endif
+
+#-----------------------------------------------------------------------
+# Define default assembly meta-data attributes
+#-----------------------------------------------------------------------
+%include $(SharedMki)stdversion.mki
+ASSEMBLY_COMPANY_NAME       = $(companyName)
+ASSEMBLY_COPYRIGHT          = $(Bentley_Copyright)
+#  temporary fix for ecframework builds
+ASSEMBLY_NO_AUTHENTICODE_SIGN = 1
+%include $(SharedMki)VersionedPartSignatureDefaults.mki
+ASSEMBLY_KEYFILE            =% $(ASSEMBLY_KEYFILE_DEFAULT)
+ASSEMBLY_TESTKEYFILE        =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
+
+log4netBase                 = $(SrcRoot)libsrc/log4net/log4net-1.2.11/
+log4netSrc                  = $(log4netBase)src/
+
+%ifdef DEBUG
+log4netDir                  = $(log4netBase)bin/net/2.0/Debug/
+%else
+log4netDir                  = $(log4netBase)bin/net/2.0/Release/
+%endif
+
+

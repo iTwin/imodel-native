@@ -2,26 +2,24 @@
 #
 #     $Source: src/native/log4cxx/atp/log4cxxTest.mke $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
+HAVE_PERMISSION_TO_COMPILE_AT_W3=1
+
+%include mdl.mki
+%include $(SrcRoot)LoggingSdk/mki/LoggingSdkCommon.mki
+
 
 #-----------------------------------------------------------------------
 #       Include compile options and pw macros
 #-----------------------------------------------------------------------
-programName = log4cxxtest
-executableName = log4cxxtest
+programName     = log4cxxtest
+executableName  = log4cxxtest
+baseDir         = $(_MakeFilePath)
+incDir          = $(baseDir)../
+unitTestDir     = $(UTILROOT)cpp/cppunittest/
 
-baseDir = $(_MakeFilePath)
-incDir = $(baseDir)../
-unitTestDir = $(UTILROOT)cpp/cppunittest/
-
-PolicyFile=$(SrcRoot)LoggingSDK/mki/AssertLoggingSDKPolicy.mki
-
-# Need to set this or fix the compiler warnings in CppUnitTest.
-HAVE_PERMISSION_TO_COMPILE_AT_W3=1
-
-%include mdl.mki
 
 dirToSearch = $(incDir)
 %include cincapnd.mki
@@ -29,6 +27,9 @@ dirToSearch = $(incDir)
 dirToSearch = $(nativeIntDir)
 %include cincapnd.mki
 
+
+always:
+    !~@mkdir $(o)
 
 #-----------------------------------------------------------------------
 #       Include Files

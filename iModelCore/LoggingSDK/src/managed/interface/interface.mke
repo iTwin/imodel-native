@@ -2,16 +2,17 @@
 #
 #     $Source: src/managed/interface/interface.mke $
 #
-#   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-
-programName       = Bentley.logging-2.0
-PolicyFile=$(SrcRoot)LoggingSDK/mki/AssertLoggingSDKPolicy.mki
-
 %include mdl.mki
+%include $(SrcRoot)LoggingSdk/mki/LoggingSdkCommon.mki
 
-prodSrc             = $(_MakeFilePath)
+programName     = Bentley.logging-2.0
+prodSrc         = $(_MakeFilePath)
+
+always:
+    !~@mkdir $(o)
 
 #-----------------------------------------------------------------------
 #   Compile C# Modules

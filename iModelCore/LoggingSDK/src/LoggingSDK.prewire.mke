@@ -2,10 +2,9 @@
 #
 #     $Source: src/LoggingSDK.prewire.mke $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
-PolicyFile = $(SrcRoot)LoggingSDK/mki/AssertLoggingSdkPolicy.mki 
 %include mdl.mki
 
 # NB: Do not try to link anything into $(BuildContext)PublicAPI/Logging. That directory points to

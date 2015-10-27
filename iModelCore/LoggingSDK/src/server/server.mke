@@ -2,20 +2,16 @@
 #
 #     $Source: src/server/server.mke $
 #
-#   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
+HAVE_PERMISSION_TO_COMPILE_AT_W3=1
 
-#-----------------------------------------------------------------------
-#   ECObjects assembly
-#-----------------------------------------------------------------------
+%include mdl.mki
+%include $(SrcRoot)LoggingSdk/mki/LoggingSdkCommon.mki
 
 programName       = BentleyLoggingServer-2.0
-
 prodSrc             = $(_MakeFilePath)
-
-PolicyFile=$(SrcRoot)LoggingSDK/mki/AssertLoggingSDKPolicy.mki
-%include mdl.mki
 
 ASSEMBLY_REFERENCE           = $(BuildContextDelivery)Bentley.logging-2.0.dll
 %include csrefapnd.mki
@@ -23,6 +19,8 @@ ASSEMBLY_REFERENCE           = $(BuildContextDelivery)Bentley.logging-2.0.dll
 ASSEMBLY_REFERENCE           = $(BuildContextDelivery)Bentley.logging.log4net-2.0.dll
 %include csrefapnd.mki
 
+always:
+    !~@mkdir $(o)
 
 #-----------------------------------------------------------------------
 #   Compile C# Modules

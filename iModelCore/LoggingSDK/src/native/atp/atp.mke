@@ -2,34 +2,25 @@
 #
 #     $Source: src/native/atp/atp.mke $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-
-#-----------------------------------------------------------------------
-#       Include compile options and pw macros
-#-----------------------------------------------------------------------
-programName = bentleyloggingtest
-executableName = bentleyloggingtest
-
-baseDir = $(_MakeFilePath)
-incDir = $(_MakeFilePath)../interface/
-unitTestDir = $(UTILROOT)cpp/cppunittest/
-
-SKIP_NTBSADDR       = 1
-
-PolicyFile=$(SrcRoot)LoggingSDK/mki/AssertLoggingSDKPolicy.mki
-
-# Need to set this or fix the compiler warnings in CppUnitTest.
 HAVE_PERMISSION_TO_COMPILE_AT_W3=1
 
 %include mdl.mki
+%include $(SrcRoot)LoggingSdk/mki/LoggingSdkCommon.mki
 
-%undef EXE_BASE_ADDRESS
+programName     = bentleyloggingtest
+executableName  = bentleyloggingtest
+baseDir         = $(_MakeFilePath)
+incDir          = $(_MakeFilePath)../interface/
+unitTestDir     = $(UTILROOT)cpp/cppunittest/
 
-dirToSearch = $(incDir)
+dirToSearch     = $(incDir)
 %include cincapnd.mki
 
+always:
+    !~@mkdir $(o)
 
 #-----------------------------------------------------------------------
 #       Include Files
@@ -39,9 +30,7 @@ allIncs         = $(BuildContext)PublicAPI/Logging/bentleylogging.h  $(BuildCont
 #-----------------------------------------------------------------------
 #       Object Files
 #-----------------------------------------------------------------------
-allObjs         =   $(o)consoleatp$(oext) \
-                                        $(o)log4cxxatp$(oext)    \
-                                        $(o)fileatp$(oext)
+allObjs         =   $(o)consoleatp$(oext) $(o)log4cxxatp$(oext) $(o)fileatp$(oext)
 
 #-----------------------------------------------------------------------
 #       Compile Source
