@@ -72,6 +72,7 @@ enum class DgnDbStatus : int
     ParentBlockedChange,
     ReadError,
     ReadOnly,
+    RevisionStarted,
     SQLiteError,
     TransactionActive,
     UnitsMissing,

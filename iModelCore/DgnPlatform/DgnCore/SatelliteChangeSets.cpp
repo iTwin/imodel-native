@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 
+#include <BeSQLite/SHA1.h>
 #include <DgnPlatform/DgnCore/SatelliteChangeSets.h>
 #include <Bentley/BeDirectoryIterator.h>
 
@@ -174,10 +175,77 @@ SatelliteChangeSets::ChangeSetInfo::ChangeSetInfo(Statement& stmt)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult SatelliteChangeSets::Sha1Info::CreateTable (Db& db)
+    {
+    return db.CreateTable (CHANGES_TABLE_Sha1, "SequenceNumber INTEGER PRIMARY KEY, SHA1 CHAR");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult SatelliteChangeSets::Sha1Info::Insert (Db& db) const
+    {
+    Statement stmt;
+    stmt.Prepare (db, "INSERT INTO " CHANGES_TABLE_Sha1 " (SequenceNumber,SHA1) VALUES (?,?)");
+    int col = 1;
+    stmt.BindInt64(col++, m_sequenceNumber);
+    stmt.BindText (col++, m_sha1, Statement::MakeCopy::No);
+    return stmt.Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult SatelliteChangeSets::Sha1Info::Step (Statement& stmt)
+    {
+    auto result = stmt.Step();
+    if (BE_SQLITE_ROW != result)
+        return result;
+
+    int col = 0;
+    m_sequenceNumber = stmt.GetValueInt64 (col++);
+    m_sha1 = stmt.GetValueText (col++);
+
+    return BE_SQLITE_ROW;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult SatelliteChangeSets::Sha1Info::PrepareFindBySequenceNumber (Statement& stmt, SatelliteChangeSets& db, uint64_t cid)
+    {
+    stmt.Finalize();
+    auto result = stmt.Prepare ((*db.m_dgndb), "SELECT SequenceNumber,SHA1 FROM " CHANGES_TABLE_Sha1 " WHERE (SequenceNumber=?)");
+    stmt.BindInt64 (1, cid);
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult SatelliteChangeSets::VerifySha1(uint64_t sequenceNumber, void const* data, int32_t size)
+    {
+    Statement stmt;
+    Sha1Info savedHash;
+    savedHash.PrepareFindBySequenceNumber(stmt, *this, sequenceNumber);
+    DbResult res = savedHash.Step(stmt);
+    if (BE_SQLITE_ROW != res)
+        return res;
+
+    SHA1 hash;
+    Utf8String computedHash = hash(data, size);
+
+    return (computedHash == savedHash.m_sha1)? BE_SQLITE_OK: BE_SQLITE_CORRUPT;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult SatelliteChangeSets::CreateTables()
     {
+    Sha1Info::CreateTable (*m_dgndb);
     return m_dgndb->CreateTable(CHANGESET_ATTACH(CHANGESET_Table), "SequenceNumber INTEGER PRIMARY KEY,Type INT,Description CHAR,Time DATETIME,Data BLOB,Compressed INT");
     }
 
@@ -219,6 +287,14 @@ BentleyStatus SatelliteChangeSets::InsertChangeSet(ChangeSetInfo const &infoIn, 
     {
     ChangeSetInfo info(infoIn);
     info.m_time = toUtc(info.m_time);
+
+    //  Store the SHA-1 hash of the data
+    Sha1Info sha1Info;
+    sha1Info.m_sequenceNumber = info.m_sequenceNumber;
+    SHA1 hash;
+    sha1Info.m_sha1 = hash(data, datasize);
+    if (sha1Info.Insert(*m_dgndb) != BE_SQLITE_DONE)
+        return BSIERROR;
 
     // store the changeset data (optionally compressed) in a column of the new row
     void const* dataToStore = data;
@@ -468,11 +544,23 @@ BentleyStatus SatelliteChangeSets::ApplyChangeSets(uint32_t& nChangesApplied, Db
             if (s_traceUpdate)
                 changeSet.Dump("", db, (ChangeSetType::Patch==info.m_type), 0);
 
+            if (csfile.m_dgndb->TableExists(CHANGES_TABLE_Sha1))
+                {
+                //  Verify that the stored changeset data is intact
+                if (BE_SQLITE_OK != csfile.VerifySha1(info.m_sequenceNumber, changeSet.GetData(), changeSet.GetSize()))
+                    {
+                    BeAssert(false);
+                    LOG.errorv ("ApplyChangeSets - %ls, %d - verification failed", csFileName.c_str(), (int)info.m_sequenceNumber);
+                    db.AbandonChanges();
+                    return BSIERROR;
+                    }
+                }
+
             DbResult applyResult = changeSet.ApplyChanges(db);
             if (applyResult != BE_SQLITE_OK)
                 {
                 BeAssert(false);
-                LOG.errorv("ApplyChangeSets - changeset  %ls ApplyChanges failed with code %s", csFileName.c_str(), BeSQLite::Db::InterpretDbResult(applyResult));
+                LOG.errorv ("ApplyChangeSets - %ls, %d - ApplyChanges failed with code %s", csFileName.c_str(), (int)info.m_sequenceNumber, BeSQLite::Db::InterpretDbResult(applyResult));
                 db.AbandonChanges();
                 return BSIERROR;
                 }
@@ -519,6 +607,9 @@ BentleyStatus SatelliteChangeSets::Dump(BeFileNameCR csfileName, Db& db, int det
     Db csfile;
     if (BE_SQLITE_OK != csfile.OpenBeSQLiteDb(csfileName, Db::OpenParams(Db::OpenMode::Readonly)))
         return BSIERROR;
+
+
+    printf ("---%ls---\n", csfileName.c_str());
 
     BeSQLite::Statement stmt;
     stmt.Prepare(csfile, "SELECT " CHANGSETINFO_COLS " FROM " CHANGESET_Table);
@@ -784,7 +875,7 @@ void SatelliteChangeSets::Close()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ChangeSetProperties::SaveToDb(Db& db)
     {
-    db.SaveRepositoryLocalValue(LAST_CHANGESET_ID_STR, uint64ToString(m_latestChangeSetId));
+    db.SaveBriefcaseLocalValue(LAST_CHANGESET_ID_STR, uint64ToString(m_latestChangeSetId));
     if (m_expirationDate.IsValid())
         {
         auto saveResult = db.SavePropertyString(Properties::ExpirationDate(), m_expirationDate.ToUtf8String());
@@ -804,7 +895,7 @@ BentleyStatus ChangeSetProperties::SaveToDb(Db& db)
 BentleyStatus ChangeSetProperties::LoadFromDb(Db& db)
     {
     Utf8String str;
-    DbResult rc = db.QueryRepositoryLocalValue(LAST_CHANGESET_ID_STR, str);
+    DbResult rc = db.QueryBriefcaseLocalValue(LAST_CHANGESET_ID_STR, str);
     m_latestChangeSetId = (BE_SQLITE_ROW == rc) ? uint64FromString(str) : 0;
 
     Utf8String expirationDateString;

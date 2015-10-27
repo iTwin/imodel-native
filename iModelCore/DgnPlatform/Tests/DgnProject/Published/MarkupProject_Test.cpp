@@ -41,7 +41,7 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
     if (true)
         {
         DgnDbTestDgnManager tdmSeed (L"empty2d_english.idgndb", __FILE__, Db::OpenMode::Readonly);
-        seedModelId = tdmSeed.GetDgnProjectP()->Models().QueryModelId ("RedlineSeedModel");
+        seedModelId = tdmSeed.GetDgnProjectP()->Models().QueryModelId (DgnModel::CreateModelCode("RedlineSeedModel"));
         seedViewId  = tdmSeed.GetDgnProjectP()->Views().QueryViewId ("RedlineSeedView");
 
         DgnDbTestDgnManager tdm (L"2dMetricGeneral.idgndb", __FILE__, Db::OpenMode::Readonly);

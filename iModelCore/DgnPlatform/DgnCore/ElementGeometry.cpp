@@ -437,18 +437,14 @@ ElementGeometryPtr ElementGeometry::Clone() const
 
         case GeometryType::Polyface:
             {
-            PolyfaceHeaderPtr geom = PolyfaceHeader::New();
-
-            geom->CopyFrom(*GetAsPolyfaceHeader());
+            PolyfaceHeaderPtr geom = GetAsPolyfaceHeader()->Clone();
 
             return new ElementGeometry(geom);
             }
 
         case GeometryType::BsplineSurface:
             {
-            MSBsplineSurfacePtr geom = MSBsplineSurface::CreatePtr();
-
-            geom->CopyFrom(*GetAsMSBsplineSurface());
+            MSBsplineSurfacePtr geom = GetAsMSBsplineSurface()->Clone();
 
             return new ElementGeometry(geom);
             }
@@ -576,8 +572,8 @@ ElementGeometryPtr ElementGeometry::Create(TextStringPtr const& source) {return 
 ElementGeometryPtr ElementGeometry::Create(ICurvePrimitiveCR source) {ICurvePrimitivePtr clone = source.Clone(); return Create(clone);}
 ElementGeometryPtr ElementGeometry::Create(CurveVectorCR source) {CurveVectorPtr clone = source.Clone(); return Create(clone);}
 ElementGeometryPtr ElementGeometry::Create(ISolidPrimitiveCR source) {ISolidPrimitivePtr clone = source.Clone(); return Create(clone);}
-ElementGeometryPtr ElementGeometry::Create(MSBsplineSurfaceCR source) {MSBsplineSurfacePtr clone = MSBsplineSurface::CreatePtr(); clone->CopyFrom(source); return Create(clone);}
-ElementGeometryPtr ElementGeometry::Create(PolyfaceQueryCR source) {PolyfaceHeaderPtr clone = PolyfaceHeader::New(); clone->CopyFrom(source); return Create(clone);}
+ElementGeometryPtr ElementGeometry::Create(MSBsplineSurfaceCR source) {MSBsplineSurfacePtr clone = source.Clone(); return Create(clone);}
+ElementGeometryPtr ElementGeometry::Create(PolyfaceQueryCR source) {PolyfaceHeaderPtr clone = source.Clone(); return Create(clone);}
 ElementGeometryPtr ElementGeometry::Create(ISolidKernelEntityCR source) {ISolidKernelEntityPtr clone = source.Clone(); return Create(clone);}
 ElementGeometryPtr ElementGeometry::Create(TextStringCR source) {TextStringPtr clone = source.Clone(); return Create(clone);}
 
@@ -2251,13 +2247,21 @@ DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImpo
         {
         switch (egOp.m_opCode)
             {
+            default:
+                writer.Append(egOp);
+                break;
+
             case ElementGeomIO::OpCode::BeginSubCategory:
                 {
                 DgnSubCategoryId subCategory;
                 Transform        geomToElem;
 
                 if (reader.Get(egOp, subCategory, geomToElem))
-                    writer.Append(importer.FindSubCategory(subCategory), geomToElem);   // Must assume that caller already imported the Category and its SubCategories
+                    {
+                    DgnSubCategoryId remappedSubCategoryId = importer.FindSubCategory(subCategory); 
+                    BeAssert(remappedSubCategoryId.IsValid() && "Category and all subcategories should have been remapped by the element that owns this geometry");
+                    writer.Append(remappedSubCategoryId, geomToElem);   
+                    }
                 break;
                 }
 
@@ -2266,14 +2270,31 @@ DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImpo
                 DgnGeomPartId geomPartId;
 
                 if (reader.Get(egOp, geomPartId))
-                    writer.Append(importer.RemapGeomPartId(geomPartId));    // Trigger deep-copy if necessary
-
+                    {
+                    DgnGeomPartId remappedGeomPartId = importer.RemapGeomPartId(geomPartId); //Trigger deep-copy if necessary
+                    BeAssert(remappedGeomPartId.IsValid() && "Unable to deep-copy geompart!");
+                    writer.Append(remappedGeomPartId);
+                    }
                 break;
                 }
 
-            default:
-                writer.Append(egOp);
+            case ElementGeomIO::OpCode::Material:
+                {
+#ifdef WIP_REMAP_MATERIAL // *** Should I always remap materialids in this opcode? 
+                          // *** There two cases: material from subcategory and not from subcategory. Should I handle them differently?
+#endif
+                auto fbSymb = flatbuffers::GetRoot<FB::Material>(egOp.m_data);
+                DgnMaterialId materialId((uint64_t)fbSymb->materialId());
+                DgnMaterialId remappedMaterialId = importer.RemapMaterialId(materialId);
+                BeAssert(remappedMaterialId.IsValid() && "Unable to deep-copy material");
+
+                FlatBufferBuilder remappedfbb;
+                auto mloc = FB::CreateMaterial(remappedfbb, fbSymb->useMaterial(), remappedMaterialId.GetValue(), nullptr, nullptr, 0.0, 0.0, 0.0);
+                remappedfbb.Finish(mloc);
+
+                writer.Append(Operation(OpCode::Material, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
                 break;
+                }
             }
         }
 
@@ -3212,6 +3233,9 @@ BentleyStatus ElementGeometryBuilder::SetGeomStreamAndPlacement(GeometricElement
         return ERROR;
 
     if (element.GetCategoryId() != m_elParams.GetCategoryId())
+        return ERROR;
+
+    if (element.GetElementHandler()._IsRestrictedAction(GeometricElement::RestrictedAction::SetGeometry))
         return ERROR;
 
     if (m_is3d)

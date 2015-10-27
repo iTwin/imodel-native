@@ -76,6 +76,7 @@ public:
         bool IsEqual(Appearance const& other) const {return *this==other;}
         void FromJson(Utf8StringCR); //!< initialize this appearance from a previously saved json string
         DGNPLATFORM_EXPORT Utf8String ToJson() const;   //!< convert this appearance to a json string
+        void RelocateToDestinationDb(DgnImportContext&);
     };// Appearance
 
     //! View-specific overrides of the appearance of a SubCategory
@@ -154,22 +155,24 @@ private:
     Data m_data;
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
+    DgnDbStatus UpdateCode(DgnCategoryCR category);
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetParentId(DgnElementId parentId) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(Code const& code) override;
-    DGNPLATFORM_EXPORT virtual Code _GenerateDefaultCode() override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _SetParentId(DgnElementId parentId) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _SetCode(Code const& code) override;
+    DGNPLATFORM_EXPORT Code _GenerateDefaultCode() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     
-    virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
+    uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
+
 //__PUBLISH_SECTION_END__
 public:
-    static DgnSubCategoryId ImportSubCategory(DgnSubCategoryId source, DgnCategoryId destCategoryId, DgnImportContext& importer, DgnRemapTables& remap);
+    static DgnSubCategoryId ImportSubCategory(DgnSubCategoryId source, DgnCategoryId destCategoryId, DgnImportContext& importer);
 //__PUBLISH_SECTION_START__
 public:
     //! Constructs a new DgnSubCategory with the specified parameters.
@@ -192,7 +195,7 @@ public:
     DGNPLATFORM_EXPORT static Code CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR subCategoryName, DgnDbR db);
 
     //! Create a Code for the name of a sub-category of the specified category
-    DGNPLATFORM_EXPORT static Code CreateSubCategoryCode(DgnCategoryCR category, Utf8StringCR subCategoryName, DgnDbR db);
+    DGNPLATFORM_EXPORT static Code CreateSubCategoryCode(DgnCategoryCR category, Utf8StringCR subCategoryName);
 
     //! Looks up a sub-category ID by code.
     DGNPLATFORM_EXPORT static DgnSubCategoryId QuerySubCategoryId(Code const& code, DgnDbR db);
@@ -294,25 +297,29 @@ private:
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(Code const& code) override;
-    DGNPLATFORM_EXPORT virtual Code _GenerateDefaultCode() override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildDelete(DgnElementCR child) const override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR) override;
-    DGNPLATFORM_EXPORT virtual void _OnInserted(DgnElementP copiedFrom) const override;
-    DGNPLATFORM_EXPORT virtual void _OnImported(DgnElementCR original, DgnImportContext& importer) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
+    DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _SetCode(Code const& code) override;
+    DGNPLATFORM_EXPORT Code _GenerateDefaultCode() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnChildDelete(DgnElementCR child) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
+    DGNPLATFORM_EXPORT void _OnUpdated(DgnElementCR original) const override;
+    DGNPLATFORM_EXPORT void _OnInserted(DgnElementP copiedFrom) const override;
+    DGNPLATFORM_EXPORT void _OnImported(DgnElementCR original, DgnImportContext& importer) const override;
     
-    virtual DgnDbStatus _SetParentId(DgnElementId parentId) override { return DgnDbStatus::InvalidParent; }
-    virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
+    DgnDbStatus _SetParentId(DgnElementId parentId) override { return DgnDbStatus::InvalidParent; }
+    uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
+
+    void SetDefaultAppearance(DgnSubCategory::Appearance const&) const;
+
 //__PUBLISH_SECTION_END__
 public:
-    static DgnCategoryId ImportCategory(DgnCategoryId source, DgnImportContext& importer, DgnRemapTables& remap);
+    static DgnCategoryId ImportCategory(DgnCategoryId source, DgnImportContext& importer);
 //__PUBLISH_SECTION_START__
 public:
     DgnCategoryId GetCategoryId() const { return DgnCategoryId(GetElementId().GetValue()); } //!< Returns the ID of this category.
@@ -342,9 +349,9 @@ public:
     void SetScope(Scope scope) { m_data.m_scope = scope; } //!< Set the category's scope.
     void SetRank(Rank rank) { m_data.m_rank = rank; } //!< Set the category's rank.
 
-    DGNPLATFORM_EXPORT static Code CreateCategoryCode(Utf8StringCR categoryName, DgnDbR db); //!< Creates a Code for a category name.
+    DGNPLATFORM_EXPORT static Code CreateCategoryCode(Utf8StringCR categoryName); //!< Creates a Code for a category name.
     DGNPLATFORM_EXPORT static DgnCategoryId QueryCategoryId(Code const& code, DgnDbR db); //!< Looks up the ID of a category by code.
-    static DgnCategoryId QueryCategoryId(Utf8StringCR categoryName, DgnDbR db) { return QueryCategoryId(CreateCategoryCode(categoryName, db), db); } //!< Looks up the ID of a category by name.
+    static DgnCategoryId QueryCategoryId(Utf8StringCR categoryName, DgnDbR db) { return QueryCategoryId(CreateCategoryCode(categoryName), db); } //!< Looks up the ID of a category by name.
     static DgnCategoryCPtr QueryCategory(DgnCategoryId categoryId, DgnDbR db) { return db.Elements().Get<DgnCategory>(categoryId); } //!< Looks up a category by ID.
     static DgnCategoryCPtr QueryCategory(Utf8StringCR categoryName, DgnDbR db) { return QueryCategory(QueryCategoryId(categoryName, db), db); } //!< Looks up a category by name.
 

@@ -43,37 +43,152 @@ bool TextAnnotationSeedPropertyBag::_IsRealProperty(T_Key key) const
 //*****************************************************************************************************************************************************************************************************
 //*****************************************************************************************************************************************************************************************************
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     07/2014
-//---------------------------------------------------------------------------------------
-TextAnnotationSeed::TextAnnotationSeed(DgnDbR project) :
-    T_Super()
+#define PROP_Data "Data"
+#define PROP_Descr "Descr"
+
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+namespace dgn_ElementHandler
+{
+    HANDLER_DEFINE_MEMBERS(TextAnnotationSeedHandler);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TextAnnotationSeedHandler::_GetClassParams(ECSqlClassParams& params)
     {
-    m_dgndb = &project;
+    T_Super::_GetClassParams(params);
+    params.Add(PROP_Data);
+    params.Add(PROP_Descr);
+    }
+}
+END_BENTLEY_DGNPLATFORM_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TextAnnotationSeed::CreateParams::CreateParams(DgnDbR db, Utf8StringCR name, TextAnnotationSeedPropertyBagCR data, Utf8StringCR descr)
+    : T_Super(db, QueryDgnClassId(db), CreateCodeForSeed(name)), m_data(data), m_descr(descr)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TextAnnotationSeed::BindParams(BeSQLite::EC::ECSqlStatement& stmt)
+    {
+    bvector<Byte> data;
+    PRECONDITION(SUCCESS == TextAnnotationSeedPersistence::EncodeAsFlatBuf(data, *this, TextAnnotationSeedPersistence::FlatBufEncodeOptions::ExcludeNonPropertyData), DgnDbStatus::BadArg);
+
+    return ECSqlStatus::Success == stmt.BindText(stmt.GetParameterIndex(PROP_Descr), m_descr.c_str(), IECSqlBinder::MakeCopy::No)
+        && ECSqlStatus::Success == stmt.BindBinary(stmt.GetParameterIndex(PROP_Data), &data[0], static_cast<int>(data.size()), IECSqlBinder::MakeCopy::Yes)
+        ? DgnDbStatus::Success : DgnDbStatus::BadArg;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TextAnnotationSeed::_ExtractSelectParams(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params)
+    {
+    DgnDbStatus status = T_Super::_ExtractSelectParams(stmt, params);
+    if (DgnDbStatus::Success == status)
+        {
+        int dataSize = 0;
+        Byte const* data = static_cast<Byte const*>(stmt.GetValueBinary(params.GetSelectIndex(PROP_Data), &dataSize));
+        POSTCONDITION(SUCCESS == TextAnnotationSeedPersistence::DecodeFromFlatBuf(*this, data, static_cast<size_t>(dataSize)), DgnDbStatus::BadArg);
+
+        m_descr.AssignOrClear(stmt.GetValueText(params.GetSelectIndex(PROP_Descr)));
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TextAnnotationSeed::_BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt)
+    {
+    auto status = T_Super::_BindInsertParams(stmt);
+    return DgnDbStatus::Success == status ? BindParams(stmt) : status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TextAnnotationSeed::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt)
+    {
+    auto status = T_Super::_BindUpdateParams(stmt);
+    return DgnDbStatus::Success == status ? BindParams(stmt) : status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TextAnnotationSeed::_CopyFrom(DgnElementCR src)
+    {
+    T_Super::_CopyFrom(src);
+    auto other = dynamic_cast<TextAnnotationSeedCP>(&src);
+    BeAssert(nullptr != other);
+    if (nullptr != other)
+        {
+        m_descr = other->m_descr;
+        m_data = other->m_data;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TextAnnotationSeed::_OnDelete() const
+    {
+    return DgnDbStatus::DeletionProhibited; // purge only
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TextAnnotationSeedId TextAnnotationSeed::QuerySeedId(Code const& code, DgnDbR db)
+    {
+    return TextAnnotationSeedId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     07/2014
-//---------------------------------------------------------------------------------------
-void TextAnnotationSeed::CopyFrom(TextAnnotationSeedCR rhs)
-    {
-    m_dgndb = rhs.m_dgndb;
-    m_id = rhs.m_id;
-    m_name = rhs.m_name;
-    m_description = rhs.m_description;
-    m_data = rhs.m_data;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     07/2014
+// @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
 void TextAnnotationSeed::Reset()
     {
-    m_id.Invalidate();
-    m_name.clear();
-    m_description.clear();
+    InvalidateElementId();
+    InvalidateCode();
+    m_descr.clear();
+    ResetProperties();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TextAnnotationSeed::ResetProperties()
+    {
     m_data.ClearAllProperties();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TextAnnotationSeed::ExistsById(TextAnnotationSeedId id, DgnDbR db)
+    {
+    PRECONDITION(id.IsValid(), false);
+
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationSeed) " WHERE ECInstanceId=? LIMIT 1");
+    if (stmt.IsValid())
+        {
+        stmt->BindId(1, id);
+        if (BE_SQLITE_ROW == stmt->Step())
+            return 0 < stmt->GetValueInt(0);
+        }
+
+    return false;
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2014
@@ -115,16 +230,16 @@ static void setIntegerValue(TextAnnotationSeedPropertyBagR data, TextAnnotationS
 // @bsimethod                                                   Jeff.Marker     07/2014
 //---------------------------------------------------------------------------------------
 static const TextAnnotationSeedPropertyBag::T_Integer DEFAULT_FRAMESTYLEID_VALUE = 0;
-DgnStyleId TextAnnotationSeed::GetFrameStyleId() const { return DgnStyleId((uint64_t)getIntegerValue(m_data, TextAnnotationSeedProperty::FrameStyleId, DEFAULT_FRAMESTYLEID_VALUE)); }
-void TextAnnotationSeed::SetFrameStyleId(DgnStyleId value) { setIntegerValue(m_data, TextAnnotationSeedProperty::FrameStyleId, DEFAULT_FRAMESTYLEID_VALUE, value.GetValue()); }
+AnnotationFrameStyleId TextAnnotationSeed::GetFrameStyleId() const { return AnnotationFrameStyleId((uint64_t)getIntegerValue(m_data, TextAnnotationSeedProperty::FrameStyleId, DEFAULT_FRAMESTYLEID_VALUE)); }
+void TextAnnotationSeed::SetFrameStyleId(AnnotationFrameStyleId value) { setIntegerValue(m_data, TextAnnotationSeedProperty::FrameStyleId, DEFAULT_FRAMESTYLEID_VALUE, value.GetValue()); }
     
 static const TextAnnotationSeedPropertyBag::T_Integer DEFAULT_LEADERSTYLEID_VALUE = 0;
-DgnStyleId TextAnnotationSeed::GetLeaderStyleId() const { return DgnStyleId((uint64_t)getIntegerValue(m_data, TextAnnotationSeedProperty::LeaderStyleId, DEFAULT_LEADERSTYLEID_VALUE)); }
-void TextAnnotationSeed::SetLeaderStyleId(DgnStyleId value) { setIntegerValue(m_data, TextAnnotationSeedProperty::LeaderStyleId, DEFAULT_LEADERSTYLEID_VALUE, value.GetValue()); }
+AnnotationLeaderStyleId TextAnnotationSeed::GetLeaderStyleId() const { return AnnotationLeaderStyleId((uint64_t)getIntegerValue(m_data, TextAnnotationSeedProperty::LeaderStyleId, DEFAULT_LEADERSTYLEID_VALUE)); }
+void TextAnnotationSeed::SetLeaderStyleId(AnnotationLeaderStyleId value) { setIntegerValue(m_data, TextAnnotationSeedProperty::LeaderStyleId, DEFAULT_LEADERSTYLEID_VALUE, value.GetValue()); }
     
 static const TextAnnotationSeedPropertyBag::T_Integer DEFAULT_TEXTSTYLEID_VALUE = 0;
-DgnStyleId TextAnnotationSeed::GetTextStyleId() const { return DgnStyleId((uint64_t)getIntegerValue(m_data, TextAnnotationSeedProperty::TextStyleId, DEFAULT_TEXTSTYLEID_VALUE)); }
-void TextAnnotationSeed::SetTextStyleId(DgnStyleId value) { setIntegerValue(m_data, TextAnnotationSeedProperty::TextStyleId, DEFAULT_TEXTSTYLEID_VALUE, value.GetValue()); }
+AnnotationTextStyleId TextAnnotationSeed::GetTextStyleId() const { return AnnotationTextStyleId((uint64_t)getIntegerValue(m_data, TextAnnotationSeedProperty::TextStyleId, DEFAULT_TEXTSTYLEID_VALUE)); }
+void TextAnnotationSeed::SetTextStyleId(AnnotationTextStyleId value) { setIntegerValue(m_data, TextAnnotationSeedProperty::TextStyleId, DEFAULT_TEXTSTYLEID_VALUE, value.GetValue()); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2014
@@ -132,13 +247,46 @@ void TextAnnotationSeed::SetTextStyleId(DgnStyleId value) { setIntegerValue(m_da
 TextAnnotationSeedPtr TextAnnotationSeed::CreateEffectiveStyle(TextAnnotationSeedPropertyBagCR overrides) const
     {
     TextAnnotationSeedPtr clone = Clone();
-    clone->m_name.clear();
-    clone->m_description.clear();
-    clone->m_id.Invalidate();
+    clone->InvalidateCode();
+    clone->m_descr.clear();
+    clone->InvalidateElementId();
 
     clone->m_data.MergeWith(overrides);
 
     return clone;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t TextAnnotationSeed::QueryCount(DgnDbR db)
+    {
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationSeed));
+    return stmt.IsValid() && BE_SQLITE_ROW == stmt->Step() ? static_cast<size_t>(stmt->GetValueInt(0)) : 0;
+    }
+
+#define SELECT_TextAnnotationSeed "SELECT ECInstanceId, Code, Descr FROM " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationSeed)
+#define SELECT_ORDERED_TextAnnotationSeed SELECT_TextAnnotationSeed " ORDER BY Code"
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TextAnnotationSeed::Iterator TextAnnotationSeed::MakeIterator(DgnDbR db, bool ordered)
+    {
+    Utf8CP ecSql = ordered? SELECT_ORDERED_TextAnnotationSeed : SELECT_TextAnnotationSeed;
+
+    Iterator iter;
+    iter.Prepare(db, ecSql, 0);
+
+    return iter;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t TextAnnotationSeed::_GetMemSize() const
+    {
+    return T_Super::_GetMemSize() + m_data.GetMemSize() + static_cast<uint32_t>(m_descr.length());
     }
 
 //*****************************************************************************************************************************************************************************************************
@@ -214,18 +362,6 @@ BentleyStatus TextAnnotationSeedPersistence::EncodeAsFlatBuf(bvector<Byte>& buff
     TemporaryForceDefaults forceDefaults(encoder, true);
 
     //.............................................................................................
-    Offset<String> nameOffset;
-    Offset<String> descriptionOffset;
-    if (!isEnumFlagSet(FlatBufEncodeOptions::ExcludeNonPropertyData, options))
-        {
-        PRECONDITION(!style.m_name.empty(), ERROR);
-
-        nameOffset = encoder.CreateString(style.m_name);
-        
-        if (!style.m_description.empty())
-            descriptionOffset = encoder.CreateString(style.m_description);
-        }
-
     FB::TextAnnotationSeedSetters setters;
     POSTCONDITION(SUCCESS == EncodeAsFlatBuf(setters, style.m_data), ERROR);
 
@@ -237,15 +373,6 @@ BentleyStatus TextAnnotationSeedPersistence::EncodeAsFlatBuf(bvector<Byte>& buff
     FB::TextAnnotationSeedBuilder fbStyle(encoder);
     fbStyle.add_majorVersion(CURRENT_MAJOR_VERSION);
     fbStyle.add_minorVersion(CURRENT_MINOR_VERSION);
-
-    if (!isEnumFlagSet(FlatBufEncodeOptions::ExcludeNonPropertyData, options))
-        {
-        fbStyle.add_id(style.GetId().GetValue());
-        fbStyle.add_name(nameOffset);
-
-        if (!style.m_description.empty())
-            fbStyle.add_description(descriptionOffset);
-        }
     
     if (!setters.empty())
         fbStyle.add_setters(settersOffset);
@@ -290,208 +417,9 @@ BentleyStatus TextAnnotationSeedPersistence::DecodeFromFlatBuf(TextAnnotationSee
     if (fbStyle->majorVersion() > CURRENT_MAJOR_VERSION)
         return ERROR;
 
-    if (fbStyle->has_id())
-        style.m_id = DgnStyleId((uint64_t)fbStyle->id());
-
-    if (fbStyle->has_name())
-        style.m_name = fbStyle->name()->c_str();
-
-    if (fbStyle->has_description())
-        style.m_description = fbStyle->description()->c_str();
-
     if (fbStyle->has_setters())
         POSTCONDITION(SUCCESS == DecodeFromFlatBuf(style.m_data, *fbStyle->setters()), ERROR);
 
     return SUCCESS;
     }
 
-#define DGN_STYLE_TYPE_TextAnnotationSeed "5"
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     02/2015
-//---------------------------------------------------------------------------------------
-TextAnnotationSeedPtr DgnTextAnnotationSeeds::QueryById(DgnStyleId id) const
-    {
-    PRECONDITION(id.IsValid(), nullptr);
-
-    Statement query;
-    query.Prepare(m_dgndb, "SELECT Name,Descr,Data FROM " DGN_TABLE(DGN_CLASSNAME_Style) " WHERE Type=" DGN_STYLE_TYPE_TextAnnotationSeed " AND Id=?");
-    query.BindId(1, id);
-
-    if (BE_SQLITE_ROW != query.Step())
-        return nullptr;
-
-    TextAnnotationSeedPtr style = TextAnnotationSeed::Create(m_dgndb);
-
-    // IMPORTANT: Decoding "resets" the style object to ensure defaults for non-persisted values.
-    // Since we store name and description independently, we must decode first, otherwise they'll be reset.
-    POSTCONDITION(SUCCESS == TextAnnotationSeedPersistence::DecodeFromFlatBuf(*style, (ByteCP)query.GetValueBlob(2), (size_t)query.GetColumnBytes(2)), nullptr);
-
-    style->SetDescription(query.GetValueText(1));
-    style->SetId(id);
-    style->SetName(query.GetValueText(0));
-
-    return style;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     02/2015
-//---------------------------------------------------------------------------------------
-TextAnnotationSeedPtr DgnTextAnnotationSeeds::QueryByName(Utf8CP name) const
-    {
-    PRECONDITION(!Utf8String::IsNullOrEmpty(name), nullptr);
-
-    Statement query;
-    query.Prepare(m_dgndb, "SELECT Id,Descr,Data FROM " DGN_TABLE(DGN_CLASSNAME_Style) " WHERE Type=" DGN_STYLE_TYPE_TextAnnotationSeed " AND Name=?");
-    query.BindText(1, name, Statement::MakeCopy::No);
-
-    if (BE_SQLITE_ROW != query.Step())
-        return nullptr;
-
-    TextAnnotationSeedPtr style = TextAnnotationSeed::Create(m_dgndb);
-
-    // IMPORTANT: Decoding "resets" the style object to ensure defaults for non-persisted values.
-    // Since we store name and description independently, we must decode first, otherwise they'll be reset.
-    POSTCONDITION(SUCCESS == TextAnnotationSeedPersistence::DecodeFromFlatBuf(*style, (ByteCP)query.GetValueBlob(2), (size_t)query.GetColumnBytes(2)), nullptr);
-    
-    style->SetDescription(query.GetValueText(1));
-    style->SetId(query.GetValueId<DgnStyleId>(0));
-    style->SetName(name);
-
-    return style;
-    }
-    
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     04/2014
-//---------------------------------------------------------------------------------------
-DgnTextAnnotationSeeds::Iterator::const_iterator DgnTextAnnotationSeeds::Iterator::begin() const
-    {
-    if (!m_stmt.IsValid())
-        {
-        Utf8String sql = MakeSqlString("SELECT Id,Name,Descr FROM " DGN_TABLE(DGN_CLASSNAME_Style) " WHERE Type=" DGN_STYLE_TYPE_TextAnnotationSeed, true);
-        m_db->GetCachedStatement(m_stmt, sql.c_str());
-        m_params.Bind(*m_stmt);
-        }
-    else
-        {
-        m_stmt->Reset();
-        }
-
-    return Entry(m_stmt.get(), (BE_SQLITE_ROW == m_stmt->Step()));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     04/2014
-//---------------------------------------------------------------------------------------
-size_t DgnTextAnnotationSeeds::Iterator::QueryCount() const
-    {
-    Utf8String sql = MakeSqlString("SELECT COUNT(*) FROM " DGN_TABLE(DGN_CLASSNAME_Style) " WHERE Type=" DGN_STYLE_TYPE_TextAnnotationSeed, true);
-
-    Statement query;
-    query.Prepare(*m_db, sql.c_str());
-    m_params.Bind(query);
-
-    POSTCONDITION(BE_SQLITE_ROW == query.Step(), 0);
-
-    return (size_t)query.GetValueInt(0);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     02/2015
-//---------------------------------------------------------------------------------------
-bool DgnTextAnnotationSeeds::ExistsById(DgnStyleId id) const
-    {
-    PRECONDITION(id.IsValid(), false);
-
-    Statement query;
-    query.Prepare(m_dgndb, "SELECT COUNT(*) FROM " DGN_TABLE(DGN_CLASSNAME_Style) " WHERE Type=" DGN_STYLE_TYPE_TextAnnotationSeed " AND Id=?");
-    query.BindId(1, id);
-
-    if (BE_SQLITE_ROW != query.Step())
-        return false;
-
-    return (query.GetValueInt(0) > 0);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     02/2015
-//---------------------------------------------------------------------------------------
-bool DgnTextAnnotationSeeds::ExistsByName(Utf8CP name) const
-    {
-    PRECONDITION(!Utf8String::IsNullOrEmpty(name), false);
-
-    Statement query;
-    query.Prepare(m_dgndb, "SELECT COUNT(*) FROM " DGN_TABLE(DGN_CLASSNAME_Style) " WHERE Type=" DGN_STYLE_TYPE_TextAnnotationSeed " AND Name=?");
-    query.BindText(1, name, Statement::MakeCopy::No);
-
-    if (BE_SQLITE_ROW != query.Step())
-        return false;
-
-    return (query.GetValueInt(0) > 0);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     02/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus DgnTextAnnotationSeeds::Insert(TextAnnotationSeedR style)
-    {
-    // Don't assert to ensure an invalid ID.
-    // Consider the case of cloning a style object, modifying, and then inserting it as a new style. The Clone keeps the ID, and I don't think it's worth having an overload of Clone to expose this detail.
-
-    bvector<Byte> data;
-    PRECONDITION(SUCCESS == TextAnnotationSeedPersistence::EncodeAsFlatBuf(data, style, TextAnnotationSeedPersistence::FlatBufEncodeOptions::ExcludeNonPropertyData), ERROR);
-
-    DgnStyleId nextId;
-    PRECONDITION(BE_SQLITE_OK == m_dgndb.GetServerIssuedId(nextId, DGN_TABLE(DGN_CLASSNAME_Style), "Id"), ERROR);
-    
-    Statement insert;
-    insert.Prepare(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Style) " (Id,Type,Name,Descr,Data) VALUES (?," DGN_STYLE_TYPE_TextAnnotationSeed ",?,?,?)");
-    insert.BindId(1, nextId);
-    insert.BindText(2, style.GetName().c_str(), Statement::MakeCopy::No);
-    insert.BindText(3, style.GetDescription().c_str(), Statement::MakeCopy::No);
-    insert.BindBlob(4, (void const*)&data[0], (int)data.size(), Statement::MakeCopy::No);
-
-    POSTCONDITION(BE_SQLITE_DONE == insert.Step(), ERROR);
-
-    style.SetId(nextId);
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     02/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus DgnTextAnnotationSeeds::Update(TextAnnotationSeedCR style)
-    {
-    PRECONDITION(style.GetId().IsValid(), ERROR);
-    
-    bvector<Byte> data;
-    PRECONDITION(SUCCESS == TextAnnotationSeedPersistence::EncodeAsFlatBuf(data, style, TextAnnotationSeedPersistence::FlatBufEncodeOptions::ExcludeNonPropertyData), ERROR);
-
-    Statement update;
-    update.Prepare(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Style) " SET Name=?,Descr=?,Data=? WHERE Type=" DGN_STYLE_TYPE_TextAnnotationSeed " AND Id=?");
-    update.BindText(1, style.GetName().c_str(), Statement::MakeCopy::No);
-    update.BindText(2, style.GetDescription().c_str(), Statement::MakeCopy::No);
-    update.BindBlob(3, (void const*)&data[0], (int)data.size(), Statement::MakeCopy::No);
-    update.BindId(4, style.GetId());
-
-    POSTCONDITION(BE_SQLITE_DONE == update.Step(), ERROR);
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     02/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus DgnTextAnnotationSeeds::Delete(DgnStyleId id)
-    {
-    PRECONDITION(id.IsValid(), ERROR);
-
-    Statement del;
-    del.Prepare(m_dgndb, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Style) " WHERE Type=" DGN_STYLE_TYPE_TextAnnotationSeed " AND Id=?");
-    del.BindId(1, id);
-
-    POSTCONDITION(BE_SQLITE_DONE == del.Step(), ERROR);
-
-    return SUCCESS;
-    }

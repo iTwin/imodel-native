@@ -179,6 +179,8 @@ $(CoreObjs)UnitDefinition$(oext) :                  $(DgnCoreDir)UnitDefinition.
 
 $(CoreObjs)TxnManager$(oext) :                      $(DgnCoreDir)TxnManager.cpp $(DgnCoreAPISrc)TxnManager.h ${MultiCompileDepends}
 
+$(coreObjs)RevisionManager$(oext) :                 $(DgnCoreDir)RevisionManager.cpp $(DgnCoreAPISrc)RevisionManager.h ${MultiCompileDepends}
+
 $(CoreObjs)MemoryManager$(oext) :                   $(DgnCoreDir)MemoryManager.cpp $(DgnCoreAPISrc)MemoryManager.h ${MultiCompileDepends}
 
 $(CoreObjs)ElementDependencyGraph$(oext) :          $(DgnCoreDir)ElementDependencyGraph.cpp $(DgnCoreAPISrc)TxnManager.h ${MultiCompileDepends}
@@ -211,13 +213,13 @@ $(CoreObjs)DgnRangeTree$(oext) :                    $(DgnCoreDir)DgnRangeTree.cp
 
 $(CoreObjs)VecMathDGNTolerances$(oext) :            $(DgnCoreDir)VecMathDGNTolerances.cpp $(DgnPlatformAPISrc)VecMath.h ${MultiCompileDepends}
 
-$(CoreObjs)DgnColors$(oext) :                       $(DgnCoreDir)DgnColors.cpp $(DgnCoreAPISrc)ColorUtil.h ${MultiCompileDepends}
+$(coreObjs)DgnColors$(oext) :                       $(DgnCoreDir)DgnColors.cpp $(DgnCoreAPISrc)ColorUtil.h $(DgnCoreAPISrc)DgnTrueColor.h ${MultiCompileDepends}
 
 $(CoreObjs)ViewController$(oext) :                  $(DgnCoreDir)ViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends} $(contextDepends)
 
 $(CoreObjs)HypermodelingViewController$(oext) :     $(DgnCoreDir)HypermodelingViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends} $(contextDepends)
 
-$(CoreObjs)SectioningPhysicalViewController$(oext) :$(DgnCoreDir)SectioningPhysicalViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends} $(contextDepends)
+$(CoreObjs)SectioningPhysicalViewController$(oext): $(DgnCoreDir)SectioningPhysicalViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends} $(contextDepends)
 
 $(CoreObjs)DgnElements$(oext) :                     $(DgnCoreDir)DgnElements.cpp $(DgnCoreAPISrc)DgnDb.h ${MultiCompileDepends}
 
@@ -331,6 +333,8 @@ $(CoreObjs)DgnTexture$(oext) :                      $(DgnCoreDir)DgnTexture.cpp 
 
 $(CoreObjs)DgnAuthority$(oext) :                    $(DgnCoreDir)DgnAuthority.cpp $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
+$(coreObjs)SearchableText$(oext) :                  $(DgnCoreDir)SearchableText.cpp $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
+
 $(CoreObjs)SatelliteChangeSets$(oext) :             $(DgnCoreDir)SatelliteChangeSets.cpp $(DgnCoreAPISrc)SatelliteChangeSets.h ${MultiCompileDepends}
 
 $(CoreObjs)DgnMarkupProject$(oext) :                $(DgnCoreDir)DgnMarkupProject.cpp $(DgnCoreAPISrc)DgnMarkupProject.h $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
@@ -349,8 +353,6 @@ $(CoreObjs)DgnLink$(oext) :                         $(DgnCoreDir)DgnLink.cpp $(D
 
 $(CoreObjs)DgnBaseDomain$(oext) :                   $(DgnCoreDir)DgnBaseDomain.cpp ${MultiCompileDepends}
 
-$(CoreObjs)DgnCustomAttributeHelper$(oext) :        $(DgnCoreDir)DgnCustomAttributeHelper.cpp ${MultiCompileDepends}
-
 $(CoreObjs)DgnHandlers$(oext) :                     $(DgnHandlersDir)DgnHandlers.cpp $(DgnPlatformPublicAPISrc)DgnPlatform/DgnPlatformLib.h ${MultiCompileDepends}
 
 $(CoreObjs)HitDetail$(oext) :                       $(DgnHandlersDir)HitDetail.cpp $(HandlerDepends) ${MultiCompileDepends}
@@ -367,7 +369,7 @@ $(CoreObjs)DgnChangeSummary$(oext) :                $(DgnHandlersDir)DgnChangeSu
 
 $(CoreObjs)DgnECSymbolProvider$(oext) :             $(DgnHandlersDir)DgnECSymbolProvider.cpp $(DgnHandlersAPISrc)DgnECSymbolProvider.h ${MultiCompileDepends}
 
-
+$(coreObjs)AnnotationTable$(oext) :                 $(DgnCoreDir)AnnotationTable.cpp $(DgnCoreAPISrc)AnnotationTable.h ${MultiCompileDepends}
 
 
 $(o)ECUtils$(oext) :                                $(DgnCoreDir)ECUtils.cpp $(DgnPlatformAPISrc)ECUtils.h ${MultiCompileDepends}
@@ -395,19 +397,19 @@ $(o)GeoCoordServices$(oext) :                       $(DgnGeoCoordDir)GeoCoordSer
 #   Configuration
 #----------------------------------------------------------------------
 
-$(o)findfile$(oext) :                               $(ToolsDir)fileUtil/findfile.cpp ${MultiCompileDepends}
+$(o)findfile$(oext) :                               $(ToolsDir)fileutil/findfile.cpp ${MultiCompileDepends}
 
-$(o)ConfigurationManager$(oext)                     :$(ConfigToolsDir)ConfigurationManager.cpp ${MultiCompileDepends}
+$(o)ConfigurationManager$(oext) :                   $(ConfigToolsDir)ConfigurationManager.cpp ${MultiCompileDepends}
 
-$(o)MacroConfigurationAdmin$(oext)                  :$(ConfigToolsDir)MacroConfigurationAdmin.cpp ${MultiCompileDepends}
+$(o)MacroConfigurationAdmin$(oext) :                $(ConfigToolsDir)MacroConfigurationAdmin.cpp ${MultiCompileDepends}
 
-$(o)MacroFileProcessor$(oext)                       :$(ConfigToolsDir)MacroFileProcessor.cpp ${MultiCompileDepends}
+$(o)MacroFileProcessor$(oext) :                     $(ConfigToolsDir)MacroFileProcessor.cpp ${MultiCompileDepends}
 
-$(o)ExpandMacro$(oext)                              :$(ConfigToolsDir)ExpandMacro.cpp ${MultiCompileDepends}
+$(o)expandMacro$(oext) :                            $(ConfigToolsDir)expandMacro.cpp ${MultiCompileDepends}
 
-$(o)envvutil$(oext)                                 :$(ConfigToolsDir)envvutil.cpp ${MultiCompileDepends}
+$(o)envvutil$(oext) :                               $(ConfigToolsDir)envvutil.cpp ${MultiCompileDepends}
 
-$(o)evalcnst$(oext)                                 :$(ConfigToolsDir)evalcnst.cpp ${MultiCompileDepends}
+$(o)evalcnst$(oext) :                               $(ConfigToolsDir)evalcnst.cpp ${MultiCompileDepends}
 
 
 #----------------------------------------------------------------------
@@ -569,8 +571,7 @@ DLM_NOMSBUILTINS        = 1
 DLM_NO_DEF              = 1
 DLM_NO_DLS              = 1
 DLM_NOENTRY             = 1
-LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(ToolsubsLib) \
-                            $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
+LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeZlib$(stlibext) \
                             $(ContextSubpartsLibs)$(libprefix)BePng$(stlibext) \

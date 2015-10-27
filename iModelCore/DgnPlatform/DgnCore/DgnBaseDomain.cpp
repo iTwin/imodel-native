@@ -8,6 +8,7 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/DgnMarkupProject.h>
 #include <DgnPlatform/DgnCore/Annotations/TextAnnotationElement.h>
+#include <DgnPlatform/DgnCore/AnnotationTable.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -24,7 +25,9 @@ namespace dgn_ModelHandler
 {
 HANDLER_DEFINE_MEMBERS(Model)
 HANDLER_DEFINE_MEMBERS(Physical)
+#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 HANDLER_DEFINE_MEMBERS(Component)
+#endif
 HANDLER_DEFINE_MEMBERS(PhysicalRedline)
 HANDLER_DEFINE_MEMBERS(Sheet)
 HANDLER_DEFINE_MEMBERS(Redline)
@@ -81,7 +84,9 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
 
     RegisterHandler(dgn_ModelHandler::Model::GetHandler());
     RegisterHandler(dgn_ModelHandler::Physical::GetHandler());
+#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
     RegisterHandler(dgn_ModelHandler::Component::GetHandler());
+#endif
     RegisterHandler(dgn_ModelHandler::Sheet::GetHandler());
     RegisterHandler(dgn_ModelHandler::Model2d::GetHandler());
     RegisterHandler(dgn_ModelHandler::PlanarPhysical::GetHandler());
@@ -101,11 +106,18 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::Group::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotationHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::PhysicalTextAnnotationHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::AnnotationTableHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::Material::GetHandler());
     RegisterHandler(dgn_ElementHandler::Texture::GetHandler());
     RegisterHandler(dgn_ElementHandler::LightDef::GetHandler());
     RegisterHandler(dgn_ElementHandler::Category::GetHandler());
     RegisterHandler(dgn_ElementHandler::SubCategory::GetHandler());
+    RegisterHandler(dgn_ElementHandler::TrueColor::GetHandler());
+
+    RegisterHandler(dgn_ElementHandler::AnnotationTextStyleHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::AnnotationFrameStyleHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::AnnotationLeaderStyleHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::TextAnnotationSeedHandler::GetHandler());
 
     RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Local::GetHandler());

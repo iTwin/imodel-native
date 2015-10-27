@@ -71,7 +71,6 @@
 #include <Logging/bentleylogging.h>
 #include <DgnPlatform/Tools/ostime.fdf>
 #include <DgnPlatform/Tools/stringop.h>
-#include <RmgrTools/Tools/toolsubsStdio.h>
 #include <DgnPlatformInternal/DgnCore/ElemRangeCalc.h>
 #include <DgnPlatform/DgnCore/IGeoCoordServices.h>
 #include <DgnPlatform/DgnCore/PointCloudBaseModel.h>
@@ -81,6 +80,7 @@
 #include <DgnPlatform/DgnCore/DgnLight.h>
 #include <DgnPlatform/DgnCore/DgnCategory.h>
 #include <DgnPlatform/DgnCore/DgnTexture.h>
+#include <DgnPlatform/DgnCore/DgnTrueColor.h>
 // #include <DgnPlatform/DgnCore/SolarUtility.h>
 
 #include "DgnCore/DgnCoreLog.h"

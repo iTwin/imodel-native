@@ -5,6 +5,8 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
+
 #ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnPlatformLib.h>
@@ -59,7 +61,7 @@ static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
 template<typename T>
 RefCountedPtr<T> getModelByName(DgnDbR db, Utf8CP cmname)
     {
-    return db.Models().Get<T>(db.Models().QueryModelId(cmname));
+    return db.Models().Get<T>(db.Models().QueryModelId(DgnModel::CreateModelCode(cmname)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -415,7 +417,7 @@ void ComponentModelTest::Client_ImportCM(Utf8CP componentName)
     m_clientDb->SaveChanges();
 
     //  Verify that we can look up an existing cmCopy
-    DgnModelId ccId = m_clientDb->Models().QueryModelId(componentName);
+    DgnModelId ccId = m_clientDb->Models().QueryModelId(DgnModel::CreateModelCode(componentName));
     ASSERT_EQ( ccId.GetValue(), cmCopy->GetModelId().GetValue() );
 
     CloseComponentDb();
@@ -428,7 +430,7 @@ void ComponentModelTest::Client_ImportCM(Utf8CP componentName)
 void ComponentModelTest::Client_CreateTargetModel(Utf8CP targetModelName)
     {
     DgnClassId mclassId = DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
-    PhysicalModelPtr targetModel = new PhysicalModel(PhysicalModel::CreateParams(*m_clientDb, mclassId, "Instances"));
+    PhysicalModelPtr targetModel = new PhysicalModel(PhysicalModel::CreateParams(*m_clientDb, mclassId, DgnModel::CreateModelCode("Instances")));
     ASSERT_EQ( DgnDbStatus::Success , targetModel->Insert() );       /* Insert the new model into the DgnDb */
     }
 
@@ -486,7 +488,7 @@ void ComponentModelTest::Client_SolveAndCapture(ComponentSolution::SolutionId& s
     //  -------------------------------------------------------
     ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
-    DgnModelId ccId = m_clientDb->Models().QueryModelId(componentName);
+    DgnModelId ccId = m_clientDb->Models().QueryModelId(DgnModel::CreateModelCode(componentName));
     RefCountedPtr<ComponentModel> cmCopy = m_clientDb->Models().Get<ComponentModel>(ccId);
     ASSERT_TRUE( cmCopy.IsValid() ) << "We should have imported the CM and created a cmCopy in a previous step";
 
@@ -817,3 +819,5 @@ TEST_F(ComponentModelTest, Performance_PlaceElements)
 #endif//def WIP_MOVE_INTO_PERFORMANCE_TESTS
 
 #endif //ndef BENTLEYCONFIG_NO_JAVASCRIPT
+
+#endif

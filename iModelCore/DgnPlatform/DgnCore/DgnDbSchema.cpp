@@ -55,11 +55,14 @@ DbResult DgnDb::CreateDictionaryModel()
     props.ToJson(propsValue);
     Utf8String propsJson = Json::FastWriter::ToString(propsValue);
 
-    Statement stmt(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) " (Id,Name,Descr,ECClassId,Visibility,Props) VALUES(?,?,'',?,0,?)");
+    DgnModel::Code modelCode = DgnModel::CreateModelCode(dictionaryName);
+    Statement stmt(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) " (Id,Code,Descr,ECClassId,Visibility,Props,CodeAuthorityId,CodeNameSpace) VALUES(?,?,'',?,0,?,?,?)");
     stmt.BindId(1, DgnModel::DictionaryId());
-    stmt.BindText(2, dictionaryName.c_str(), Statement::MakeCopy::No);
+    stmt.BindText(2, modelCode.GetValueCP(), Statement::MakeCopy::No);
     stmt.BindId(3, Domains().GetClassId(dgn_ModelHandler::Dictionary::GetHandler()));
     stmt.BindText(4, propsJson.c_str(), Statement::MakeCopy::No);
+    stmt.BindId(5, modelCode.GetAuthority());
+    stmt.BindText(6, modelCode.GetNameSpace().c_str(), Statement::MakeCopy::No);
 
     auto result = stmt.Step();
     BeAssert(BE_SQLITE_DONE == result && "Failed to create dictionary model");
@@ -122,7 +125,10 @@ DbResult DgnDb::CreateDgnDbTables()
     ExecuteSql("CREATE TRIGGER delete_viewProps AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_View) " BEGIN DELETE FROM " BEDB_TABLE_Property
                " WHERE Namespace=\"" PROPERTY_APPNAME_DgnView "\" AND Id=OLD.Id;END");
 
-    return  BE_SQLITE_OK;
+    DbResult result = DgnSearchableText::CreateTable(*this);
+    BeAssert(BE_SQLITE_OK == result && "Failed to create FTS5 tables");
+
+    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**

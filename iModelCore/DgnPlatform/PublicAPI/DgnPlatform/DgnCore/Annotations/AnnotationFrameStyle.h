@@ -12,6 +12,10 @@
 #include <Bentley/RefCounted.h>
 #include "AnnotationsCommon.h"
 #include "AnnotationPropertyBag.h"
+#include <DgnPlatform/DgnCore/DgnDb.h>
+#include <DgnPlatform/DgnCore/DgnElement.h>
+#include <DgnPlatform/DgnCore/ElementHandler.h>
+#include <DgnPlatform/DgnCore/ECSqlStatementIterator.h>
 
 DGNPLATFORM_TYPEDEFS(AnnotationFrameStylePropertyBag);
 DGNPLATFORM_REF_COUNTED_PTR(AnnotationFrameStylePropertyBag);
@@ -91,40 +95,65 @@ public:
 
 //=======================================================================================
 //! This is used to provide style properties when creating an AnnotationFrame.
-//! @see DgnStyles::AnnotationFrameStyles for persistence
 //! @note When creating an AnnotationFrame, the typical work flow is to create and store the style, and then create the AnnotationFrame with the stored style's ID.
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
-struct AnnotationFrameStyle : public RefCountedBase
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationFrameStyle : DictionaryElement
 {
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationFrameStyle, DictionaryElement);
+public:
+    struct CreateParams : T_Super::CreateParams
+    {
+        DEFINE_T_SUPER(AnnotationFrameStyle::T_Super::CreateParams);
+
+        AnnotationFrameStylePropertyBag m_data;
+        Utf8String                      m_descr;
+
+        //! Constructor from base class. Chiefly for internal use.
+        explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) { }
+
+        //! Constructor
+        //! @param[in]      db    DgnDb in which the style is to reside
+        //! @param[in]      name  The name of the style. Must be unique within the DgnDb
+        //! @param[in]      data  Style properties
+        //! @param[in]      descr Optional style description
+        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, Utf8StringCR name="", AnnotationFrameStylePropertyBagCR data=AnnotationFrameStylePropertyBag(), Utf8StringCR descr="");
+    };
 private:
-    DEFINE_T_SUPER(RefCountedBase)
     friend struct AnnotationFrameStylePersistence;
 
-    DgnDbP m_dgndb;
-    DgnStyleId m_id;
-    Utf8String m_name;
-    Utf8String m_description;
     AnnotationFrameStylePropertyBag m_data;
+    Utf8String m_descr;
 
-    DGNPLATFORM_EXPORT void CopyFrom(AnnotationFrameStyleCR);
     void Reset();
+    void ResetProperties();
+    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
+protected:
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
+    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
+    DGNPLATFORM_EXPORT virtual uint32_t _GetMemSize() const override;
 
+    virtual Code _GenerateDefaultCode() override { return Code(); }
 public:
-    DGNPLATFORM_EXPORT explicit AnnotationFrameStyle(DgnDbR);
-    AnnotationFrameStyle(AnnotationFrameStyleCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
-    AnnotationFrameStyleR operator=(AnnotationFrameStyleCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
-    static AnnotationFrameStylePtr Create(DgnDbR project) { return new AnnotationFrameStyle(project); }
-    AnnotationFrameStylePtr Clone() const { return new AnnotationFrameStyle(*this); }
+    explicit AnnotationFrameStyle(DgnDbR db) : AnnotationFrameStyle(CreateParams(db)) { }
+    explicit AnnotationFrameStyle(CreateParams const& params) : T_Super(params), m_data(params.m_data), m_descr(params.m_descr) { }
+
+    static AnnotationFrameStylePtr Create(DgnDbR db) { return new AnnotationFrameStyle(db); }
+    AnnotationFrameStylePtr Clone() const { return MakeCopy<AnnotationFrameStyle>(); }
+
     DGNPLATFORM_EXPORT AnnotationFrameStylePtr CreateEffectiveStyle(AnnotationFrameStylePropertyBagCR overrides) const;
 
-    DgnDbR GetDbR() const { return *m_dgndb; }
-    DgnStyleId GetId() const { return m_id; }
-    void SetId(DgnStyleId value) { m_id = value; } //!< @private
-    Utf8StringCR GetName() const { return m_name; }
-    void SetName(Utf8CP value) { m_name = value; }
-    Utf8StringCR GetDescription() const { return m_description; }
-    void SetDescription(Utf8CP value) { m_description = value; }
+    DgnDbR GetDbR() const { return GetDgnDb(); }
+    AnnotationFrameStyleId GetStyleId() const { return AnnotationFrameStyleId(GetElementId().GetValueUnchecked()); }
+    Utf8String GetName() const { return GetCode().GetValue(); }
+    Utf8StringCR GetDescription() const { return m_descr; }
+    void SetDescription(Utf8StringCR value) { m_descr = value; }
+    void SetName(Utf8StringCR value) { SetCode(CreateStyleCode(value)); }
+
+    DGNPLATFORM_EXPORT static Code CreateStyleCode(Utf8StringCR name);
 
     DGNPLATFORM_EXPORT double GetCloudBulgeFactor() const;
     DGNPLATFORM_EXPORT void SetCloudBulgeFactor(double);
@@ -155,83 +184,56 @@ public:
     DGNPLATFORM_EXPORT double GetVerticalPadding() const;
     DGNPLATFORM_EXPORT void SetVerticalPadding(double);
     void SetPadding(double value) { SetHorizontalPadding(value); SetVerticalPadding(value); }
-};
 
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct DgnAnnotationFrameStyles : public DgnDbTable
-{
-private:
-    DEFINE_T_SUPER(DgnDbTable);
-    friend struct DgnDb;
-    
-    DgnAnnotationFrameStyles(DgnDbR db) : T_Super(db) {}
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationFrameStyle); }
+    static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
 
-public:
-    //=======================================================================================
-    // @bsiclass
-    //=======================================================================================
-    struct Iterator : public BeSQLite::DbTableIterator
+    AnnotationFrameStyleCPtr Insert(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Insert<AnnotationFrameStyle>(*this, status); }
+    AnnotationFrameStyleCPtr Update(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Update<AnnotationFrameStyle>(*this, status); }
+
+    DGNPLATFORM_EXPORT static AnnotationFrameStyleId QueryStyleId(Code const& code, DgnDbR db);
+    static AnnotationFrameStyleId QueryStyleId(Utf8StringCR styleName, DgnDbR db) { return QueryStyleId(CreateStyleCode(styleName), db); }
+    static AnnotationFrameStyleCPtr QueryStyle(AnnotationFrameStyleId styleId, DgnDbR db) { return db.Elements().Get<AnnotationFrameStyle>(styleId); }
+    static AnnotationFrameStyleCPtr QueryStyle(Utf8StringCR styleName, DgnDbR db) { return QueryStyle(QueryStyleId(styleName, db), db); }
+
+    DGNPLATFORM_EXPORT static bool ExistsById(AnnotationFrameStyleId id, DgnDbR db);
+    static bool ExistsByName(Utf8StringCR name, DgnDbR db) { return QueryStyleId(name, db).IsValid(); }
+
+    DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR db);
+
+    struct Entry : ECSqlStatementEntry
     {
+        friend struct ECSqlStatementIterator<Entry>;
+        friend struct AnnotationFrameStyle;
     private:
-        DEFINE_T_SUPER(BeSQLite::DbTableIterator);
-
+        Entry(BeSQLite::EC::ECSqlStatement* stmt=nullptr) : ECSqlStatementEntry(stmt) { }
     public:
-        Iterator(DgnDbCR db) : T_Super((BeSQLite::DbCR)db) {}
-
-        //=======================================================================================
-        // @bsiclass
-        //=======================================================================================
-        struct Entry : public DbTableIterator::Entry, public std::iterator<std::input_iterator_tag,Entry const>
-        {
-        private:
-            DEFINE_T_SUPER(DbTableIterator::Entry);
-            friend struct Iterator;
-            
-            Entry(BeSQLite::StatementP sql, bool isValid) : T_Super(sql, isValid) {}
-
-        public:
-            DgnStyleId GetId() const { Verify(); return m_sql->GetValueId<DgnStyleId>(0); }
-            Utf8CP GetName() const { Verify(); return m_sql->GetValueText(1); }
-            Utf8CP GetDescription() const { Verify(); return m_sql->GetValueText(2); }
-            Entry const& operator* () const { return *this; }
-        };
-
-        typedef Entry const_iterator;
-        typedef Entry iterator;
-        DGNPLATFORM_EXPORT const_iterator begin() const;
-        const_iterator end() const { return Entry(NULL, false); }
-        DGNPLATFORM_EXPORT size_t QueryCount() const;
+        AnnotationFrameStyleId GetId() const { return m_statement->GetValueId<AnnotationFrameStyleId>(0); }
+        Utf8CP GetName() const { return m_statement->GetValueText(1); }
+        Utf8CP GetDescription() const { return m_statement->GetValueText(2); }
     };
-    
-    //! Queries the project for a frame style by-ID, and returns a deserialized instance.
-    DGNPLATFORM_EXPORT AnnotationFrameStylePtr QueryById(DgnStyleId) const;
 
-    //! Queries the project for a frame style by-name, and returns a deserialized instance.
-    DGNPLATFORM_EXPORT AnnotationFrameStylePtr QueryByName(Utf8CP) const;
+    struct Iterator : ECSqlStatementIterator<Entry>
+    {
+    };
 
-    //! Creates an iterator to iterate available frame styles.
-    Iterator MakeIterator() const {return Iterator(m_dgndb);}
-
-    //! Determines if a frame style by-ID exists in the project.
-    //! @note This does not attempt to deserialize the style into an object, and is thus faster than QueryById if you just want to check existence.
-    DGNPLATFORM_EXPORT bool ExistsById(DgnStyleId) const;
-
-    //! Determines if a frame style by-name exists in the project.
-    //! @note This does not attempt to deserialize the style into an object, and is thus faster than QueryByName if you just want to check existence.
-    DGNPLATFORM_EXPORT bool ExistsByName(Utf8CP) const;
-
-    //! Adds a new frame style to the project. The ID in the provided style is ignored during insert, but is updated to the new ID when the method returns. If a style already exists by-name, no action is performed.
-    DGNPLATFORM_EXPORT BentleyStatus Insert(AnnotationFrameStyleR);
-
-    //! Updates a frame style in the project. The ID in the provided style is used to identify which style to update. If a style does not exist by-ID, no action is performed.
-    DGNPLATFORM_EXPORT BentleyStatus Update(AnnotationFrameStyleCR);
-
-    //! Deletes a frame style from the project. If a style does not exist by-ID, no action is performed.
-    //! @note When a style is removed, no attempts are currently made to normalize existing elements. Thus, elements may still attempt to reference a missing style, and must be written to assume such a style doesn't exist.
-    DGNPLATFORM_EXPORT BentleyStatus Delete(DgnStyleId);
+    DGNPLATFORM_EXPORT static Iterator MakeIterator(DgnDbR db, bool ordered=false);
+    static Iterator MakeOrderedIterator(DgnDbR db) { return MakeIterator(db, true); }
 };
+
+namespace dgn_ElementHandler
+{
+    //=======================================================================================
+    //! The handler for annotation frame styles
+    //! @bsistruct                                                  Paul.Connelly   10/15
+    //=======================================================================================
+    struct AnnotationFrameStyleHandler : Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationFrameStyle, AnnotationFrameStyle, AnnotationFrameStyleHandler, Element, DGNPLATFORM_EXPORT);
+    protected:
+        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
+    };
+}
 
 //! @endGroup
 

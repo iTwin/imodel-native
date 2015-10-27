@@ -41,7 +41,7 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnTexture::CreateParams::CreateParams(DgnDbR db, Utf8StringCR name, Data const& data, Utf8StringCR descr)
-    : T_Super(db, QueryDgnClassId(db), CreateTextureCode(name, db)), m_data(data), m_descr(descr)
+    : T_Super(db, QueryDgnClassId(db), CreateTextureCode(name)), m_data(data), m_descr(descr)
     {
     //
     }
@@ -213,3 +213,48 @@ DgnTextureId DgnTexture::QueryTextureId(Code const& code, DgnDbR db)
     return DgnTextureId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_MERGE_YII
+DgnTextureId DgnTextures::ImportTexture(DgnImportContext& context, DgnDbR sourceDb, DgnTextureId source)
+    {
+    Texture sourceTexture = sourceDb.Textures().Query(source);
+    if (!sourceTexture.IsValid())
+        {
+        BeAssert(!source.IsValid() && "look up should fail only for an invalid Textureid");
+        return DgnTextureId();
+        }
+
+    // If the destination Db already contains a Texture by this name, then remap to it. Don't create another copy.
+    DgnTextureId destTextureId = context.GetDestinationDb().Textures().QueryTextureId (sourceTexture.GetName());
+    if (destTextureId.IsValid())
+        return destTextureId;
+
+    //  Must copy and remap the source material.
+    Texture destTexture(sourceTexture);
+
+    Insert (destTexture);
+
+    return context.AddTextureId(source, destTexture.GetId());
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnTextureId DgnImportContext::RemapTextureId(DgnTextureId source)
+    {
+#ifdef WIP_MERGE_YII
+    if (!IsBetweenDbs())
+        return source;
+
+    DgnTextureId dest = FindTextureId (source);
+    if (dest.IsValid())
+        return dest;
+
+    return GetDestinationDb().Textures().ImportTexture(*this, GetSourceDb(), source);
+#else
+    return DgnTextureId();
+#endif
+    }

@@ -119,7 +119,7 @@ DgnDbStatus DgnMaterial::_SetParentId(DgnElementId parentId)
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnMaterial::CreateParams::CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName, Utf8StringCR value, DgnMaterialId parentMaterialId, Utf8StringCR descr)
-  : T_Super(db, DgnMaterial::QueryDgnClassId(db), CreateMaterialCode(paletteName, materialName, db), parentMaterialId),
+  : T_Super(db, DgnMaterial::QueryDgnClassId(db), CreateMaterialCode(paletteName, materialName), parentMaterialId),
     m_data(value, descr)
     {
     //
@@ -187,3 +187,122 @@ DgnDbStatus DgnMaterial::_OnChildImport(DgnElementCR child, DgnModelR destModel,
     return status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnMaterial::Iterator DgnMaterial::Iterator::Create(DgnDbR db, Options const& options)
+    {
+    Utf8String ecsql("SELECT ECInstanceId,Code,CodeNameSpace,ParentId,Descr FROM " DGN_SCHEMA(DGN_CLASSNAME_MaterialElement));
+    if (options.m_byPalette)
+        ecsql.append(" WHERE CodeNameSpace=?");
+
+    if (options.m_byParent)
+        ecsql.append(options.m_byPalette ? " AND " : " WHERE ").append("ParentId=?");
+
+    if (options.m_ordered)
+        ecsql.append(" ORDER BY CodeNameSpace,Code");
+
+    Iterator iter;
+    ECSqlStatement* stmt = iter.Prepare(db, ecsql.c_str(), 0);
+    if (nullptr != stmt)
+        {
+        if (options.m_byPalette)
+            stmt->BindText(1, options.m_palette.c_str(), IECSqlBinder::MakeCopy::Yes);
+
+        if (options.m_byParent)
+            stmt->BindId(options.m_byPalette ? 2 : 1, options.m_parent);
+        }
+
+    return iter;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnMaterial::Iterator DgnMaterial::MakeIterator(DgnDbR db, Iterator::Options options)
+    {
+    return Iterator::Create(db, options);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnMaterialId DgnMaterial::ImportMaterial(DgnMaterialId srcMaterialId, DgnImportContext& importer)
+    {
+    //  See if we already have a material with the same palette and code in the destination Db.
+    //  If so, we'll map the source material to it.
+    DgnMaterialCPtr srcMaterial = DgnMaterial::QueryMaterial(srcMaterialId, importer.GetSourceDb());
+    BeAssert(srcMaterial.IsValid());
+    if (!srcMaterial.IsValid())
+        {
+        BeAssert(false && "invalid source material ID");
+        return DgnMaterialId();
+        }
+
+    DgnMaterialId dstMaterialId = QueryMaterialId(srcMaterial->GetPaletteName(), srcMaterial->GetMaterialName(), importer.GetDestinationDb());
+    if (dstMaterialId.IsValid())
+        {
+        //  *** TBD: Check if the material definitions match. If not, rename and remap
+        //  *** TBD: Make sure that child materials are also remapped? Or, wait for someone to ask for them one by one?
+        importer.AddMaterialId(srcMaterialId, dstMaterialId);
+        return dstMaterialId;
+        }
+
+    //  No such material in the destination Db. Ask the source Material to import itself.
+    auto importedElem = srcMaterial->Import(nullptr, importer.GetDestinationDb().GetDictionaryModel(), importer);
+    return importedElem.IsValid()? DgnMaterialId(importedElem->GetElementId().GetValue()): DgnMaterialId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_MERGE_YII
+DgnMaterialId DgnMaterials::ImportMaterial(DgnImportContext& context, DgnDbR sourceDb, DgnMaterialId source)
+    {
+    Material sourceMaterial = sourceDb.Materials().Query(source);
+    if (!sourceMaterial.IsValid())
+        {
+        BeAssert(!source.IsValid() && "look up should fail only for an invalid materialid");
+        return DgnMaterialId();
+        }
+
+    // If the destination Db already contains a material by this name, then remap to it. Don't create another copy.
+    DgnMaterialId destMaterialId = context.GetDestinationDb().Materials().QueryMaterialId(sourceMaterial.GetName(), sourceMaterial.GetPalette());
+    if (destMaterialId.IsValid())
+        return destMaterialId;
+
+    //  Must copy and remap the source material.
+    Material destMaterial(sourceMaterial);
+    if (sourceMaterial.GetParentId().IsValid())
+        destMaterial.SetParentId(context.RemapMaterialId(sourceMaterial.GetParentId()));
+
+    Json::Value renderingAsset;
+
+    if (SUCCESS == destMaterial.GetRenderingAsset (renderingAsset))
+        {
+        RenderMaterialPtr       renderMaterial = JsonRenderMaterial::Create (renderingAsset, source);
+        JsonRenderMaterial*     jsonRenderMaterial = dynamic_cast <JsonRenderMaterial*> (renderMaterial.get());
+
+        if (nullptr != jsonRenderMaterial &&
+            SUCCESS == jsonRenderMaterial->DoImport (context, sourceDb))
+           destMaterial.SetRenderingAsset (jsonRenderMaterial->GetValue());
+        }
+
+    Insert (destMaterial);
+
+    return context.AddMaterialId(source, destMaterial.GetId());
+    }
+#endif
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnMaterialId DgnImportContext::RemapMaterialId(DgnMaterialId source)
+    {
+    if (!IsBetweenDbs())
+        return source;
+    DgnMaterialId dest = FindMaterialId(source);
+    if (dest.IsValid())
+        return dest;
+    return DgnMaterial::ImportMaterial(source, *this);
+    }
