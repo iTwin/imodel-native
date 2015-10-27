@@ -462,7 +462,7 @@ TEST_F(WSChangesetTests, DISABLED_CalculateSize_LotsOfIntsances_PerformanceBette
     start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     testChangeset(nullptr, nullptr);
     end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    printf(Utf8PrintfString("Create changeset for ~%i instances took: %.2f ms\n", testInstanceCount, (end - start) / testIterations));
+    printf("Create changeset for ~%i instances took: %.2f ms\n", testInstanceCount, (end - start) / testIterations);
 
     // Measure CalculateSize()
     start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -471,7 +471,7 @@ TEST_F(WSChangesetTests, DISABLED_CalculateSize_LotsOfIntsances_PerformanceBette
         changeset.CalculateSize();
         }, nullptr);
     end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    printf(Utf8PrintfString("CalculateSize() for ~%i instances took: %.2f ms\n", testInstanceCount, (end - start) / testIterations));
+    printf("CalculateSize() for ~%i instances took: %.2f ms\n", testInstanceCount, (end - start) / testIterations);
 
     // Measure ToString().size()
     start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -480,7 +480,7 @@ TEST_F(WSChangesetTests, DISABLED_CalculateSize_LotsOfIntsances_PerformanceBette
         changeset.ToString().size();
         }, nullptr);
     end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    printf(Utf8PrintfString("ToString().size() for ~%i instances took: %.2f ms\n", testInstanceCount, (end - start) / testIterations));
+    printf("ToString().size() for ~%i instances took: %.2f ms\n", testInstanceCount, (end - start) / testIterations);
 
     // Measure CalculateSize() incrementally
     start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -489,7 +489,7 @@ TEST_F(WSChangesetTests, DISABLED_CalculateSize_LotsOfIntsances_PerformanceBette
         changeset.CalculateSize();
         });
     end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    printf(Utf8PrintfString("Incremental CalculateSize() for ~%i instances took: %.2f ms\n", testInstanceCount, (end - start) / testIterations));
+    printf("Incremental CalculateSize() for ~%i instances took: %.2f ms\n", testInstanceCount, (end - start) / testIterations);
 
     // Measure ToString().size() incrementally
     //start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -498,5 +498,5 @@ TEST_F(WSChangesetTests, DISABLED_CalculateSize_LotsOfIntsances_PerformanceBette
     //    changeset.ToString().size();
     //    });
     //end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    //printf(Utf8PrintfString("Incremental ToString().size() for ~%i instances took: %.2f ms\n", testInstanceCount, (end - start) / testIterations));
+    //printf("Incremental ToString().size() for ~%i instances took: %.2f ms\n", testInstanceCount, (end - start) / testIterations);
     }
