@@ -2,20 +2,19 @@
 #
 #     $Source: install/GeoCoordDataMergeModule.mke $
 #
-#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-programName         = GeoCoordDataMergeModule
+programName     = GeoCoordDataMergeModule
 
-PolicyFile=${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
 %include mdl.mki
 
 #---------------------------------------------------------------------------------------
 # MSI Installer file Setup.
 #---------------------------------------------------------------------------------------
 
-baseDir = $(_MakeFilePath)
-o       = $(OutputRootDir)build/csmap/install/
+baseDir         = $(_MakeFilePath)
+o               = $(OutputRootDir)build/csmap/install/
 
 %if !defined(REL_V)
     REL_V = 9

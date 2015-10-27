@@ -13,7 +13,6 @@
 #----------------------------------------------------------------------
 #   Define standard macros.
 #----------------------------------------------------------------------
-PolicyFile=${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
 %include mdl.mki
 
 %if defined (Minimal)
