@@ -5,15 +5,15 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-ASSEMBLY_NAME   = Bentley.DgnGeoCoord
-RIGHTSCOMPLIANT = true
-appName         = Bentley.DgnGeoCoord
-
-baseDir         = $(_MakeFilePath)
-langSpec        = $(baseDir)english/
-
-PolicyFile = $(SrcRoot)GeoCoord/mki/GeoCoordPolicy.mki
 %include mdl.mki
+
+ASSEMBLY_NAME       = Bentley.DgnGeoCoord
+RIGHTSCOMPLIANT     = true
+appName             = Bentley.DgnGeoCoord
+
+baseDir             = $(_MakeFilePath)
+langSpec            = $(baseDir)english/
+
 
 assemDirToSearch    = $(BuildContextSubPartsAssemblies)
 %include cincapnd.mki
@@ -25,13 +25,13 @@ assemDirToSearch    = $(BuildContextSubPartsAssemblies)
 #   !No other makefile should define this symbol!
 #
 #----------------------------------------------------------------------
-nameToDefine=__DGNGEOCOORDMANAGED_BUILD__
+nameToDefine        = __DGNGEOCOORDMANAGED_BUILD__
 %include cdefapnd.mki
 
 #----------------------------------------------------------------------
 #  Create output directories
 #----------------------------------------------------------------------
-o               = $(dgnGeoCoordObj)Managed/
+o                   = $(dgnGeoCoordObj)Managed/
 
 always:
     !~@mkdir $(o)
@@ -76,8 +76,6 @@ DLM_NO_DLS              = 1
 DLM_NOMSBUILTINS        = 1
 
 %undef DLM_CREATE_LIB_CONTEXT_LINK
-
-%include $(sharedmki)CommonCompileLinkPolicy.mki
 
 ASSEMBLY_TITLE          = $(appName)
 ASSEMBLY_DESCRIPTION    = Managed DGNGCS module

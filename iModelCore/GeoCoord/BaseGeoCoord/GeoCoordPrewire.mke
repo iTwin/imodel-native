@@ -2,20 +2,17 @@
 #
 #     $Source: BaseGeoCoord/GeoCoordPrewire.mke $
 #
-#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-appName         = basegeocoord
-sAppName        = basegeocoord
-baseDir         = $(_MakeFilePath)
-
-PolicyFile = $(SrcRoot)GeoCoord/mki/GeoCoordPolicy.mki
 %include mdl.mki
+
+baseDir         = $(_MakeFilePath)
 
 #----------------------------------------------------------------------
 # Put the BaseGeoCoord publicAPI file into the output directory so it
 # is available to other builds.
 #----------------------------------------------------------------------
 always:
-    @CreateSymLinks.py -d"$(BuildContext)PublicAPI/GeoCoord=$(baseDir)PublicAPI"
+    ~linkdir "$(BuildContext)PublicAPI/GeoCoord=$(baseDir)PublicAPI"
 

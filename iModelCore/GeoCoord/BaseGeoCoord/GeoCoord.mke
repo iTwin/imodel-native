@@ -5,28 +5,21 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-appName         = BaseGeoCoord
-sAppName        = BaseGeoCoord
-baseDir         = $(_MakeFilePath)
+WARNINGS_UP     = 1
 
-publicAPISrc    = $(baseDir)PublicAPI/
-
-PolicyFile = $(SrcRoot)GeoCoord/mki/GeoCoordPolicy.mki
 %include mdl.mki
 
-maName          = BaseGeoCoord
-dllName         = BaseGeoCoord
-alternateMkiName= $(sAppName)rsc
+appName         = BaseGeoCoord
+baseDir         = $(_MakeFilePath)
+publicAPISrc    = $(baseDir)PublicAPI/
+o               = $(OutBuildDir)$(appname)/
+SrcGeoCoord     = $(SrcRoot)GeoCoord/
 
 nameToDefine    = STANDALONE_BSI
 %include cdefapnd.mki
 
-o = $(build)$(appname)/
-
 always:
     !~mkdir $(o)
-    ~mkdir $(symbolsDllDir)
-    ~mkdir $(mapsDir)
 
 #----------------------------------------------------------------------
 #
@@ -84,11 +77,9 @@ DLM_NO_DLS                  = 1
 DLM_NOMSBUILTINS            = 1
 DLM_SPECIAL_LINKOPT         = -Fixed:no
 LINKER_LIBRARIES            = $(ToolsubsExportLib)
-LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(stlibprefix)BeCsmapStatic$(stlibext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(stlibprefix)BeCsmapStatic$(stlibext)
 DLM_DEST                    = $(o)
 DLM_EXPORT_DEST             = $(o)
-
-%include $(sharedmki)CommonCompileLinkPolicy.mki
 
 %include $(sharedMki)linkLibrary.mki
 
