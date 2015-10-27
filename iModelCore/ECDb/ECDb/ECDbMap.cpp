@@ -1322,17 +1322,18 @@ BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filt
         return ERROR;
         }
 
-    Utf8CP classIdColName = classIdColumn.GetName().c_str();
+    NativeSqlBuilder classIdColSql;
+    classIdColSql.AppendEscaped(table.GetName().c_str()).AppendDot().AppendEscaped(classIdColumn.GetName().c_str());
     if (!polymorphic)
         {
         //if partition's table is only used by a single class, no filter needed
         if (partition->IsSharedTable())
-            filter.AppendEscaped(classIdColName).Append(BooleanSqlOperator::EqualTo).Append(m_classId);
+            filter.Append(classIdColSql, false).Append(BooleanSqlOperator::EqualTo, false).Append(m_classId);
 
         return SUCCESS;
         }
 
-    partition->AppendECClassIdFilterSql(classIdColName, filter);
+    partition->AppendECClassIdFilterSql(classIdColSql.ToString(), filter);
     return SUCCESS;
     }
 

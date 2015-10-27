@@ -596,8 +596,8 @@ BentleyStatus ViewGenerator::BuildRelationshipJoinIfAny (NativeSqlBuilder& sqlBu
                         if (options == nullptr || !options->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION))
                             {
                             NativeSqlBuilder whereClause;
-                            if (SUCCESS != relationMap.GetStorageDescription().GenerateECClassIdFilter(whereClause, table, 
-                                                                                                  *classIdColumn, isPolymorphic))
+                            if (SUCCESS != cm->GetStorageDescription().GenerateECClassIdFilter(whereClause, table,
+                                                                                                  *classIdColumn, false))
                                 return ERROR;
 
                             if (!whereClause.IsEmpty())
