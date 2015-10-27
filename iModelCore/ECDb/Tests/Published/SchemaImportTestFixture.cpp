@@ -113,7 +113,7 @@ void SchemaImportTestFixture::AssertIndex(ECDbCR ecdb, Utf8CP indexName, bool is
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT sql FROM sqlite_master WHERE name=?"));
     ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, indexName, Statement::MakeCopy::No));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Index " << indexName << " does not exist unexpectedly";
 
     ASSERT_STRCASEEQ(expectedDdl.c_str(), stmt.GetValueText(0));
     }

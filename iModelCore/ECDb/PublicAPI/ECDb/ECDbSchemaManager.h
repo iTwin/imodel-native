@@ -214,7 +214,8 @@ public:
     //! @param[in] schemaCache Typically obtained from ECSchemaReadContext.GetCache() that contains the imported ECSchema and all of its referenced ECSchemas.
     //!                     If the referenced ECSchemas are known to have already been imported, they are not required, but it does no harm to include them again
     //!                     (the method detects that they are already imported, and simply skips them)
-    //!                     All schemas should be read from single ECSchemaReadContext.  if any dublicate schema is found in schemaCache the function will return error.
+    //!                     All schemas should be read from a single ECN::ECSchemaReadContext. 
+    //!                     If any dublicates are found in @p schemaCache an error will returned.
     //! @param[in] options Schema import options
     //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
     ECDB_EXPORT BentleyStatus ImportECSchemas (ECN::ECSchemaCacheR schemaCache, ImportOptions const& options = ImportOptions()) const;

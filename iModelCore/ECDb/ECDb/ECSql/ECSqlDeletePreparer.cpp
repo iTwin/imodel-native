@@ -18,7 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 ECSqlStatus ECSqlDeletePreparer::Prepare (ECSqlPrepareContext& ctx, DeleteStatementExp const& exp)
     {
     BeAssert (exp.IsComplete ());
-    ctx.PushScope (exp);
+    ctx.PushScope (exp, exp.GetOptionsClauseExp());
 
     auto classNameExp = exp.GetClassNameExp ();
     auto const& classMap = classNameExp->GetInfo ().GetMap ();
@@ -99,38 +99,30 @@ ClassNameExp const& classNameExp
     if (!status.IsSuccess())
         return status;
 
-    if (auto whereClauseExp = exp.GetOptWhereClauseExp ())
+    if (auto whereClauseExp = exp.GetWhereClauseExp ())
         {
         status = ECSqlExpPreparer::PrepareWhereExp (deleteSqlSnippets.m_whereClauseNativeSqlSnippet, ctx, whereClauseExp);
         if (!status.IsSuccess())
             return status;
         }
-    
+
+
+    //System WHERE clause
+    //if option to disable class id filter is set, nothing more to do
+    if (exp.GetOptionsClauseExp() != nullptr && exp.GetOptionsClauseExp()->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION))
+        return ECSqlStatus::Success;
+
+
     IClassMap const& classMap = classNameExp.GetInfo().GetMap();
-    auto& storageDesc = classMap.GetStorageDescription ();
-    if (storageDesc.GetNonVirtualHorizontalPartitionIndices ().empty() || !exp.GetClassNameExp ()->IsPolymorphic ())
-        {
-        if (auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ColumnKind::ECClassId))
-            {
-            if (classIdColumn->GetPersistenceType() == PersistenceType::Persisted)
-                {
-                deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet.AppendEscaped (classIdColumn->GetName().c_str()).Append(" = ").Append (classMap.GetClass ().GetId ());
-                }
-            }
-        }
-    else if (storageDesc.GetNonVirtualHorizontalPartitionIndices ().size() == 1 && exp.GetClassNameExp ()->IsPolymorphic ())
-        {
-        if (auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ColumnKind::ECClassId))
-            {
-            if (classIdColumn->GetPersistenceType () == PersistenceType::Persisted)
-                {
-                auto& partition = storageDesc.GetHorizontalPartitions ().at (storageDesc.GetNonVirtualHorizontalPartitionIndices ().at (0));               
-                if (partition.NeedsClassIdFilter()) 
-                    partition.AppendECClassIdFilterSql(classIdColumn->GetName().c_str(), deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet);
-                }
-            }
-        }
-    return ECSqlStatus::Success;
+    ECDbSqlTable const& table = classMap.GetTable();
+    ECDbSqlColumn const* classIdColumn = nullptr;
+    if (!table.TryGetECClassIdColumn(classIdColumn) || classIdColumn->GetPersistenceType() != PersistenceType::Persisted)
+        return ECSqlStatus::Success; //no class id column exists -> no system where clause
+    
+    return classMap.GetStorageDescription().GenerateECClassIdFilter(deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet,
+                                                                    table,
+                                                                    *classIdColumn, 
+                                                                    exp.GetClassNameExp()->IsPolymorphic()) == SUCCESS ? ECSqlStatus::Success : ECSqlStatus::Error;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -155,11 +147,14 @@ NativeSqlSnippets const& deleteNativeSqlSnippets
     if (!deleteNativeSqlSnippets.m_systemWhereClauseNativeSqlSnippet.IsEmpty ())
         {
         if (whereAlreadyAppended)
-            deleteBuilder.Append (" AND ");
+            deleteBuilder.Append (" AND ").AppendParenLeft();
         else
             deleteBuilder.Append (" WHERE ");
 
         deleteBuilder.Append (deleteNativeSqlSnippets.m_systemWhereClauseNativeSqlSnippet);
+        
+        if (whereAlreadyAppended)
+            deleteBuilder.AppendParenRight();
         }
     }
 

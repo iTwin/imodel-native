@@ -268,7 +268,9 @@ bool ClassMapInfo::ValidateChildStrategy(UserECDbMapStrategy const& rootStrategy
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ClassMapInfo::_InitializeFromSchema ()
     {
-    if (SUCCESS != InitializeFromClassMapCA() || SUCCESS != InitializeFromClassHasCurrentTimeStampProperty())
+    if (SUCCESS != InitializeFromClassMapCA() ||
+        SUCCESS != InitializeDisableECInstanceIdAutogeneration() || 
+        SUCCESS != InitializeFromClassHasCurrentTimeStampProperty())
         return ERROR;
 
     // Add indices for important identifiers
@@ -381,7 +383,7 @@ bool ClassHasDisableECInstanceIdAutogenerationCA(bool* appliesToSubclasses, ECCl
     if (appliesToSubclasses != nullptr)
         *appliesToSubclasses = false;
 
-    IECInstancePtr disableECInstanceIdAutoGenerationCA = ecclass.GetCustomAttribute("DisableECInstanceIdAutogeneration");
+    IECInstancePtr disableECInstanceIdAutoGenerationCA = ecclass.GetCustomAttributeLocal("DisableECInstanceIdAutogeneration");
     if (disableECInstanceIdAutoGenerationCA != nullptr && appliesToSubclasses != nullptr)
         {
         ECValue v;

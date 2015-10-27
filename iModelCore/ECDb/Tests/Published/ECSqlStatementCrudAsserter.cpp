@@ -217,10 +217,10 @@ void ECSqlSelectStatementCrudAsserter::_Assert (ECSqlTestItem const& testItem) c
     {
     PrepareECSqlExpectedResult const* expectedResultForPrepare = nullptr;
     ResultCountECSqlExpectedResult const* expectedResultForResultCount = nullptr;
-    const auto assertPrepare = testItem.GetExpectedResults ().TryGet<PrepareECSqlExpectedResult> (expectedResultForPrepare, IECSqlExpectedResult::Type::Prepare);
-    const auto assertStepSelect = testItem.GetExpectedResults ().TryGet<ResultCountECSqlExpectedResult> (expectedResultForResultCount, IECSqlExpectedResult::Type::ResultCount);
+    const auto assertPrepare = testItem.GetExpectedResults ().TryGet<PrepareECSqlExpectedResult> (expectedResultForPrepare, ECSqlExpectedResult::Type::Prepare);
+    const auto assertStepSelect = testItem.GetExpectedResults ().TryGet<ResultCountECSqlExpectedResult> (expectedResultForResultCount, ECSqlExpectedResult::Type::ResultCount);
 
-    IECSqlExpectedResult const* expectedResultOfLastStep = nullptr;
+    ECSqlExpectedResult const* expectedResultOfLastStep = nullptr;
     ECSqlStatement statement;
     if (assertPrepare)
         {
@@ -568,11 +568,11 @@ Utf8String ECSqlSelectStatementCrudAsserter::DataTypeToString (ECTypeDescriptor 
 void ECSqlNonSelectStatementCrudAsserter::_Assert (ECSqlTestItem const& testItem) const
     {
     PrepareECSqlExpectedResult const* expectedResultForPrepare = nullptr;
-    AffectedRowsECSqlExpectedResult const* expectedResultForAffectedRows = nullptr;
-    const auto assertPrepare = testItem.GetExpectedResults ().TryGet<PrepareECSqlExpectedResult> (expectedResultForPrepare, IECSqlExpectedResult::Type::Prepare);
-    const auto assertStepNonSelect = testItem.GetExpectedResults ().TryGet<AffectedRowsECSqlExpectedResult> (expectedResultForAffectedRows, IECSqlExpectedResult::Type::AffectedRowCount);
+    ECSqlExpectedResult const* expectedResultForStep = nullptr;
+    const auto assertPrepare = testItem.GetExpectedResults ().TryGet<PrepareECSqlExpectedResult> (expectedResultForPrepare, ECSqlExpectedResult::Type::Prepare);
+    const auto assertStepNonSelect = testItem.GetExpectedResults ().TryGet<ECSqlExpectedResult> (expectedResultForStep, ECSqlExpectedResult::Type::Generic);
 
-    IECSqlExpectedResult const* expectedResultOfLastStep = nullptr;
+    ECSqlExpectedResult const* expectedResultOfLastStep = nullptr;
     ECSqlStatement statement;
     if (assertPrepare)
         {
@@ -582,15 +582,15 @@ void ECSqlNonSelectStatementCrudAsserter::_Assert (ECSqlTestItem const& testItem
 
     if (assertStepNonSelect)
         {
-        AssertStep (testItem, statement, *expectedResultForAffectedRows);
-        expectedResultOfLastStep = expectedResultForAffectedRows;
+        AssertStep (testItem, statement, *expectedResultForStep);
+        expectedResultOfLastStep = expectedResultForStep;
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  11/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlNonSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testItem, ECSqlStatement& statement, AffectedRowsECSqlExpectedResult const& expectedResult) const
+void ECSqlNonSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testItem, ECSqlStatement& statement, ECSqlExpectedResult const& expectedResult) const
     {
     const bool expectedToSucceed = expectedResult.IsExpectedToSucceed ();
 

@@ -178,6 +178,9 @@
     <ClCompile Include="Published\ECDbMapping_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="Published\JsonUpdaterTests.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">

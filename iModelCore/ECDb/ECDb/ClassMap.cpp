@@ -279,8 +279,10 @@ ClassMap::ClassMap(ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStra
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::Initialize(SchemaImportContext const* schemaImportContext, ClassMapInfo const& mapInfo)
+MapStatus ClassMap::Initialize(SchemaImportContext* schemaImportContext, ClassMapInfo const& mapInfo)
     {
+    m_isECInstanceIdAutogenerationDisabled = mapInfo.IsECInstanceIdAutogenerationDisabled();
+
     ECDbMapStrategy const& mapStrategy = GetMapStrategy();
     IClassMap const* effectiveParentClassMap = (mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && mapStrategy.AppliesToSubclasses()) ? mapInfo.GetParentClassMap() : nullptr;
 
@@ -298,7 +300,7 @@ MapStatus ClassMap::Initialize(SchemaImportContext const* schemaImportContext, C
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::_InitializePart1(SchemaImportContext const* schemaImportContext, ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
+MapStatus ClassMap::_InitializePart1(SchemaImportContext* schemaImportContext, ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
     m_dbView = std::unique_ptr<ClassDbView> (new ClassDbView(*this));
 
@@ -344,7 +346,7 @@ MapStatus ClassMap::_InitializePart1(SchemaImportContext const* schemaImportCont
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::_InitializePart2(SchemaImportContext const* schemaImportContext, ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
+MapStatus ClassMap::_InitializePart2(SchemaImportContext* schemaImportContext, ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
     MapStatus stat = AddPropertyMaps(schemaImportContext, parentClassMap, nullptr,&mapInfo);
     if (stat != MapStatus::Success)
@@ -375,7 +377,11 @@ MapStatus ClassMap::_InitializePart2(SchemaImportContext const* schemaImportCont
             }
         }
 
-    return ProcessStandardKeySpecifications(schemaImportContext, mapInfo) == SUCCESS ? MapStatus::Success : MapStatus::Error;
+    //only done during schema import
+    if (schemaImportContext != nullptr)
+        return ProcessStandardKeySpecifications(*schemaImportContext, mapInfo) == SUCCESS ? MapStatus::Success : MapStatus::Error;
+
+    return MapStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -389,7 +395,7 @@ MapStatus ClassMap::_OnInitialized()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::AddPropertyMaps(SchemaImportContext const* schemaImportContext, IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo,ClassMapInfo const* classMapInfo)
+MapStatus ClassMap::AddPropertyMaps(SchemaImportContext* schemaImportContext, IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo,ClassMapInfo const* classMapInfo)
     {
     std::vector<ECPropertyP> propertiesToMap;
     PropertyMapPtr propMap = nullptr;
@@ -441,7 +447,7 @@ MapStatus ClassMap::AddPropertyMaps(SchemaImportContext const* schemaImportConte
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan.Khan                           09/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClassMap::ProcessStandardKeySpecifications(SchemaImportContext const* schemaImportContext, ClassMapInfo const& mapInfo)
+BentleyStatus ClassMap::ProcessStandardKeySpecifications(SchemaImportContext& schemaImportContext, ClassMapInfo const& mapInfo)
     {
     std::set<PropertyMapCP> doneList;
     std::set<Utf8String> specList;
@@ -482,15 +488,10 @@ BentleyStatus ClassMap::ProcessStandardKeySpecifications(SchemaImportContext con
         std::vector<ECDbSqlColumn const*> columns;
         propertyMap->GetColumns(columns);
 
-        ECDbSqlIndex* index = m_table->CreateIndex(schemaImportContext, indexName.c_str(), false, GetClass().GetId(), true);
-        for (auto column : columns)
-            index->Add(column->GetName().c_str());
-
-        //!ECDbSqlToDo add check to make sure index is not empty
-        if (!index->IsValid())
+        if (nullptr == schemaImportContext.GetECDbMapDb().CreateIndex(GetECDbMap().GetECDbR(), *m_table, indexName.c_str(), false, columns, nullptr,
+                                            true, GetClass().GetId()))
             {
             BeAssert(false && "Index was not created correctly");
-            index->Drop();
             return ERROR;
             }
         }
@@ -501,18 +502,16 @@ BentleyStatus ClassMap::ProcessStandardKeySpecifications(SchemaImportContext con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan.Khan                           09/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext const& schemaImportContext, ClassMapInfo const& classMapInfo) const
+BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImportContext, ClassMapInfo const& classMapInfo) const
     {
     int i = 0;
     IssueReporter const& issues = m_ecDbMap.GetECDbR().GetECDbImplR().GetIssueReporter();
     for (ClassIndexInfoPtr indexInfo : classMapInfo.GetIndexInfo())
         {
         i++;
-        auto index = m_table->CreateIndex(&schemaImportContext, indexInfo->GetName(), indexInfo->GetIsUnique(), GetClass().GetId(), false);
-        if (index == nullptr)
-            return ERROR;
 
-        Utf8String whereExpression;
+        std::vector<ECDbSqlColumn const*> totalColumns;
+        NativeSqlBuilder whereExpression;
 
         for (Utf8StringCR propertyAccessString : indexInfo->GetProperties())
             {
@@ -543,6 +542,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext const& sch
                 return ERROR;
                 }
 
+            totalColumns.insert(totalColumns.end(), columns.begin(), columns.end());
             for (ECDbSqlColumn const* column : columns)
                 {
                 if (column->GetPersistenceType() == PersistenceType::Virtual)
@@ -554,39 +554,33 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext const& sch
                     return ERROR;
                     }
 
-                if (index->Add(column->GetName().c_str()) == BentleyStatus::SUCCESS)
+                switch (indexInfo->GetWhere())
                     {
-                    switch (indexInfo->GetWhere())
+                        case EC::ClassIndexInfo::WhereConstraint::NotNull:
                         {
-                            case EC::ClassIndexInfo::WhereConstraint::NotNull:
-                            {
-                            //if column is not nullable, no need to add IS NOT NULL expression to where clause of index
-                            if (column->GetConstraint().IsNotNull())
-                                break;
-
-                            if (!whereExpression.empty())
-                                whereExpression.append(" AND ");
-
-                            whereExpression.append("[");
-                            whereExpression.append(column->GetName().c_str());
-                            whereExpression.append("]");
-                            whereExpression.append(" IS NOT NULL");
-
+                        //if column is not nullable, no need to add IS NOT NULL expression to where clause of index
+                        if (column->GetConstraint().IsNotNull())
                             break;
-                            }
 
-                            default:
-                                break;
+                        if (!whereExpression.IsEmpty())
+                            whereExpression.AppendSpace().Append(BooleanSqlOperator::And, true);
+
+                        whereExpression.AppendEscaped(column->GetName().c_str()).AppendSpace();
+                        whereExpression.Append(BooleanSqlOperator::IsNot).Append("NULL");
+
+                        break;
                         }
+
+                        default:
+                            break;
                     }
                 }
             }
 
-        index->SetAdditionalWhereExpression(whereExpression.c_str());
-        
-        if (!index->IsValid())
+        if (nullptr == schemaImportContext.GetECDbMapDb().CreateIndex(m_ecDbMap.GetECDbR(), *m_table, indexInfo->GetName(), indexInfo->GetIsUnique(),
+                                                                      totalColumns, whereExpression.ToString(),
+                                                                      false, GetClass().GetId()))
             {
-            index->Drop();
             return ERROR;
             }
         }
@@ -598,7 +592,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext const& sch
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    casey.mullen      11 / 2011
 //------------------------------------------------------------------------------------------
-ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty(SchemaImportContext const* schemaImportContext, ClassMapCR classMap,ClassMapInfo const* classMapInfo, PropertyMapR propertyMap, Utf8CP requestedColumnName, PrimitiveType columnType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collation collation, Utf8CP accessStringPrefix)
+ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty(SchemaImportContext* schemaImportContext, ClassMapCR classMap,ClassMapInfo const* classMapInfo, PropertyMapR propertyMap, Utf8CP requestedColumnName, PrimitiveType columnType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collation collation, Utf8CP accessStringPrefix)
     {
     ColumnFactory::Specification::Strategy strategy = ColumnFactory::Specification::Strategy::CreateOrReuse;
     ColumnFactory::Specification::GenerateColumnNameOptions generateColumnNameOpts = ColumnFactory::Specification::GenerateColumnNameOptions::NameBasedOnClassIdAndCaseSaveAccessString;
@@ -805,7 +799,7 @@ MappedTablePtr MappedTable::Create(ECDbMapR ecDbMap, ClassMapCR classMap)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MappedTable::FinishTableDefinition(SchemaImportContext const& schemaImportContext)
+BentleyStatus MappedTable::FinishTableDefinition(ECDbCR ecdb, SchemaImportContext& schemaImportContext)
     {
     if (m_table.GetOwnerType() == OwnerType::ECDb)
         {
@@ -826,19 +820,17 @@ BentleyStatus MappedTable::FinishTableDefinition(SchemaImportContext const& sche
             {
             if (!m_generatedClassIdColumn)
                 {
-                auto ecClassIdColumn = m_table.FindColumnP (ECDB_COL_ECClassId);
-                if (ecClassIdColumn == nullptr)
+                if (m_table.FindColumnCP(ECDB_COL_ECClassId) == nullptr)
                     {
                     const size_t insertPosition = 1;
-                    ecClassIdColumn = m_table.CreateColumn(ECDB_COL_ECClassId, ECDbSqlColumn::Type::Long, insertPosition, ColumnKind::ECClassId, PersistenceType::Persisted);
+                    ECDbSqlColumn const* ecClassIdColumn = m_table.CreateColumn(ECDB_COL_ECClassId, ECDbSqlColumn::Type::Long, insertPosition, ColumnKind::ECClassId, PersistenceType::Persisted);
                     if (ecClassIdColumn == nullptr)
                         return ERROR;
 
                     //whenever we create a class id column, we index it to speed up the frequent class id look ups
                     Utf8String indexName("ix_");
                     indexName.append(m_table.GetName()).append("_ecclassid");
-                    ECDbSqlIndex* index = m_table.CreateIndex(&schemaImportContext, indexName.c_str(), false, ECClass::UNSET_ECCLASSID, true);
-                    index->Add(ecClassIdColumn->GetName().c_str());
+                    schemaImportContext.GetECDbMapDb().CreateIndex(ecdb, m_table, indexName.c_str(), false, {ecClassIdColumn}, nullptr, true, ECClass::UNSET_ECCLASSID);
                     }
 
                 m_generatedClassIdColumn = true;
@@ -1159,16 +1151,11 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseStrategy(Specification const& sp
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseSharedColumnStrategy(SchemaImportContext const* schemaImportContext, Specification const& specifications, ECDbSqlTable& targetTable, ECClassId propertyLocalToClassId)
+ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseSharedColumnStrategy(SchemaImportContext* schemaImportContext, Specification const& specifications, ECDbSqlTable& targetTable, ECClassId propertyLocalToClassId)
     {
     ECDbSqlColumn const* reusableColumn = nullptr;
     if (TryFindReusableSharedDataColumn(reusableColumn, targetTable, specifications.GetCollation()))
-        {
-        if (schemaImportContext != nullptr)
-            schemaImportContext->SetColumnIsShared(*reusableColumn, ColumnKind::DataColumn);
-
         return const_cast<ECDbSqlColumn*>(reusableColumn);
-        }
 
     ECDbSqlColumn* newColumn = targetTable.CreateColumn(nullptr, ECDbSqlColumn::Type::Any, specifications.GetColumnKind(), specifications.GetColumnPersistenceType());
     if (newColumn == nullptr)
@@ -1218,7 +1205,7 @@ ECClassId ColumnFactory::GetPersistenceClassId(Specification const& specificatio
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-ECDbSqlColumn* ColumnFactory::Configure(SchemaImportContext const* schemaImportContext, Specification const& specifications, ECDbSqlTable& targetTable)
+ECDbSqlColumn* ColumnFactory::Configure(SchemaImportContext* schemaImportContext, Specification const& specifications, ECDbSqlTable& targetTable)
     {
     ECClassId persistenceClassId = GetPersistenceClassId(specifications);
     if (persistenceClassId == 0)
@@ -1248,7 +1235,7 @@ ECDbSqlColumn* ColumnFactory::Configure(SchemaImportContext const* schemaImportC
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-ECDbSqlColumn* ColumnFactory::Configure(SchemaImportContext const* schemaImportContext, Specification const& specifications)
+ECDbSqlColumn* ColumnFactory::Configure(SchemaImportContext* schemaImportContext, Specification const& specifications)
     {
     return Configure(schemaImportContext, specifications, m_classMap.GetTable());
     }

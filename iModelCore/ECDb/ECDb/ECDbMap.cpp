@@ -132,7 +132,7 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
 
     m_lightweightCache.Reset();
 
-    if (SUCCESS != m_ecdbSqlManager.GetDbSchema().CreateOrUpdateIndices(*m_schemaImportContext))
+    if (SUCCESS != m_schemaImportContext->GetECDbMapDb().CreateOrUpdateIndicesInDb(m_ecdb))
         {
         ClearCache();
         m_schemaImportContext = nullptr;
@@ -207,8 +207,7 @@ MapStatus ECDbMap::DoMapSchemas (bvector<ECSchemaCP>& mapSchemas, bool forceMapS
     int nRelationshipClasses = 0;
     for (ECSchemaCP schema : mapSchemas)
         {
-        SupplementalSchemaMetaDataPtr supplementalSchemaMetaData = nullptr;
-        if (SupplementalSchemaMetaData::TryGetFromSchema (supplementalSchemaMetaData, *schema) && supplementalSchemaMetaData != nullptr)
+        if (schema->IsSupplementalSchema())
             continue; // Don't map any supplemental schemas
 
         for (ECClassCP ecClass : schema->GetClasses ())
@@ -481,7 +480,7 @@ ClassMapPtr ECDbMap::DoGetClassMap (ECClassCR ecClass) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext const* schemaImportContext, Utf8CP tableName, bool isVirtual, Utf8CP primaryKeyColumnName, bool mapToSecondaryTable, bool mapToExistingTable)
+ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportContext, Utf8CP tableName, bool isVirtual, Utf8CP primaryKeyColumnName, bool mapToSecondaryTable, bool mapToExistingTable)
     {
     if (AssertIfIsNotImportingSchema ())
         return nullptr;
@@ -523,19 +522,30 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext const* schemaImpor
 
         if (mapToSecondaryTable)
             {            
-            column = table->CreateColumn (ECDB_COL_ParentECInstanceId, ECDbSqlColumn::Type::Long, ColumnKind::ParentECInstanceId, PersistenceType::Persisted);
-            column = table->CreateColumn (ECDB_COL_ECPropertyPathId, ECDbSqlColumn::Type::Long, ColumnKind::ECPropertyPathId, PersistenceType::Persisted);
-            column = table->CreateColumn (ECDB_COL_ECArrayIndex, ECDbSqlColumn::Type::Long, ColumnKind::ECArrayIndex, PersistenceType::Persisted);
+            table->CreateColumn (ECDB_COL_ParentECInstanceId, ECDbSqlColumn::Type::Long, ColumnKind::ParentECInstanceId, PersistenceType::Persisted);
+            table->CreateColumn (ECDB_COL_ECPropertyPathId, ECDbSqlColumn::Type::Long, ColumnKind::ECPropertyPathId, PersistenceType::Persisted);
+            table->CreateColumn (ECDB_COL_ECArrayIndex, ECDbSqlColumn::Type::Long, ColumnKind::ECArrayIndex, PersistenceType::Persisted);
             if (table->GetPersistenceType() == PersistenceType::Persisted)
                 {
-                //struct array indices don't get a class id
-                Utf8String indexName("uix_");
-                indexName.append(table->GetName()).append("_structarraykey");
-                ECDbSqlIndex* index = table->CreateIndex(schemaImportContext, indexName.c_str(), true, ECClass::UNSET_ECCLASSID, true, SchemaImportContext::IndexInfo::Scope::EnforceTable);
-                index->Add(ECDB_COL_ParentECInstanceId);
-                index->Add(ECDB_COL_ECPropertyPathId);
-                index->Add(ECDB_COL_ECArrayIndex);
-                index->Add(primaryKeyColumnName);
+                if (schemaImportContext != nullptr)
+                    {
+                    //indexes are only required at schema import time
+                    //struct array indices don't get a class id
+                    Utf8String indexName("uix_");
+                    indexName.append(table->GetName()).append("_structarraykey");
+                    if (nullptr == schemaImportContext->GetECDbMapDb().CreateIndex(m_ecdb, *table, indexName.c_str(), true,
+                                                                            {ECDB_COL_ParentECInstanceId, 
+                                                                             ECDB_COL_ECPropertyPathId, 
+                                                                             ECDB_COL_ECArrayIndex, 
+                                                                             primaryKeyColumnName},
+                                                                             nullptr,
+                                                                             true, 
+                                                                             ECClass::UNSET_ECCLASSID))
+                        {
+                        BeAssert(false);
+                        return nullptr;
+                        }
+                    }
                 }
             }
         }
@@ -629,7 +639,7 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables ()
                 
         if (!mappedTable->IsFinished())
             {
-            if (mappedTable->FinishTableDefinition(*GetSchemaImportContext()) != SUCCESS)
+            if (mappedTable->FinishTableDefinition(m_ecdb, *GetSchemaImportContext()) != SUCCESS)
                 return ERROR;
             }
 
@@ -676,7 +686,7 @@ bool ECDbMap::FinishTableDefinition () const
     for (; it != m_clustersByTable.end(); ++it)
         {
         MappedTablePtr const& mappedTable = it->second;
-        if (!mappedTable->IsFinished() && mappedTable->FinishTableDefinition(*GetSchemaImportContext()) != SUCCESS)
+        if (!mappedTable->IsFinished() && mappedTable->FinishTableDefinition(m_ecdb, *GetSchemaImportContext()) != SUCCESS)
             return false;
 
         }
@@ -942,7 +952,7 @@ void ECDbMap::LightweightCache::LoadRelationshipCache () const
         "            RCC.ClassId "
         "      FROM ec_RelationshipConstraintClass RCC "
         "      INNER JOIN ec_RelationshipConstraint RC "
-        "            ON RC.RelationshipClassId = RCC.RelationshipClassId AND RC.RelationshipEnd = RCC.[RelationshipEnd] "
+        "            ON RC.RelationshipClassId = RCC.RelationshipClassId AND RC.RelationshipEnd = RCC.RelationshipEnd "
         "    UNION "
         "        SELECT DCL.RelationshipClassId, DCL.RelationshipEnd, DCL.IsPolymorphic, BC.BaseClassId, BC.ClassId "
         "            FROM DerivedClassList DCL "
@@ -1296,9 +1306,41 @@ StorageDescription& StorageDescription::operator=(StorageDescription&& rhs)
 
     return *this;
     }
+
 //------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    05 / 2015
+//@bsimethod                                                    Krischan.Eberle    10 / 2015
 //------------------------------------------------------------------------------------------
+BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filter, ECDbSqlTable const& table, ECDbSqlColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName) const
+    {
+    if (table.GetPersistenceType() != PersistenceType::Persisted)
+        return SUCCESS; //table is virtual -> noop
+
+    HorizontalPartition const* partition = GetHorizontalPartition(table);
+    if (partition == nullptr)
+        {
+        BeAssert(false && "Should always find a partition for the given table");
+        return ERROR;
+        }
+
+    NativeSqlBuilder classIdColSql;
+    if (fullyQualifyColumnName)
+        classIdColSql.AppendEscaped(table.GetName().c_str()).AppendDot();
+    
+    classIdColSql.Append(classIdColumn.GetName().c_str(), false);
+
+    if (!polymorphic)
+        {
+        //if partition's table is only used by a single class, no filter needed
+        if (partition->IsSharedTable())
+            filter.Append(classIdColSql, false).Append(BooleanSqlOperator::EqualTo, false).Append(m_classId);
+
+        return SUCCESS;
+        }
+
+    partition->AppendECClassIdFilterSql(classIdColSql.ToString(), filter);
+    return SUCCESS;
+    }
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan    05 / 2015
 //------------------------------------------------------------------------------------------
@@ -1350,18 +1392,45 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(IClassMap const& 
     return std::move(storageDescription);
     }
 
+
 //------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    05 / 2015
+//@bsimethod                                                    Krischan.Eberle    10 / 2015
 //------------------------------------------------------------------------------------------
-HorizontalPartition const* StorageDescription::GetHorizontalPartition(size_t index) const
+HorizontalPartition const* StorageDescription::GetHorizontalPartition(bool polymorphic) const
     {
-    if (index >= m_horizontalPartitions.size())
+    if (!polymorphic || !HasNonVirtualPartitions())
+        return &GetRootHorizontalPartition();
+
+    if (HierarchyMapsToMultipleTables())
+        return nullptr; //no single partition available
+
+    size_t ix = m_nonVirtualHorizontalPartitionIndices[0];
+    BeAssert(ix < m_horizontalPartitions.size());
+
+    return &m_horizontalPartitions[ix];
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    10 / 2015
+//------------------------------------------------------------------------------------------
+HorizontalPartition const* StorageDescription::GetHorizontalPartition(ECDbSqlTable const& table) const
+    {
+    for (HorizontalPartition const& part : m_horizontalPartitions)
         {
-        BeAssert(false && "Index out of range");
-        return nullptr;
+        if (&part.GetTable() == &table)
+            return &part;
         }
 
-    return &m_horizontalPartitions[index];
+    return nullptr;
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    10 / 2015
+//------------------------------------------------------------------------------------------
+HorizontalPartition const& StorageDescription::GetRootHorizontalPartition() const
+    {
+    BeAssert(m_rootHorizontalPartitionIndex < m_horizontalPartitions.size());
+    return m_horizontalPartitions[m_rootHorizontalPartitionIndex];
     }
 
 //------------------------------------------------------------------------------------------
@@ -1446,7 +1515,7 @@ void HorizontalPartition::GenerateClassIdFilter(std::vector<ECN::ECClassId> cons
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    05 / 2015
 //------------------------------------------------------------------------------------------
-bool HorizontalPartition::NeedsClassIdFilter() const
+bool HorizontalPartition::NeedsECClassIdFilter() const
     {
     BeAssert(!m_partitionClassIds.empty());
     //If class ids are not inversed, we always have a non-empty partition class id list. So filtering is needed.

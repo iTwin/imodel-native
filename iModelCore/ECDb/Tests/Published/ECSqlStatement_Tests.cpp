@@ -590,7 +590,7 @@ TEST_F (ECSqlSelectTests, GroupByClauseTests)
     //use of simple GROUP BY clause to find AVG(Price) from the Product table
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ProductName, AVG(Price) FROM ECST.Products GROUP BY ProductName ORDER BY ProductName"));
     expectedProductsNames = "Binder-Desk-Pen-Pen Set-Pencil-";
-    actualProductsNames;
+    //actualProductsNames;
     ExpectedSumOfAvgPrices = 1895.67;
     actualSumOfAvgPrices = 0;
     while (stmt.Step () != BE_SQLITE_DONE)
@@ -2207,7 +2207,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ParameterInSelectClause)
         ECSqlStatement statement;
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ?, S FROM ecsql.PSA LIMIT 1"));
 
-        BeRepositoryBasedId expectedId(BeRepositoryId(3), 444);
+        BeBriefcaseBasedId expectedId(BeBriefcaseId(3), 444);
         ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, expectedId));
 
         ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
@@ -2225,7 +2225,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ParameterInSelectClause)
         ECSqlStatement statement;
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT -?, S FROM ecsql.PSA LIMIT 1"));
 
-        BeRepositoryBasedId expectedId(BeRepositoryId(3), 444);
+        BeBriefcaseBasedId expectedId(BeBriefcaseId(3), 444);
         ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, expectedId));
 
         ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
@@ -2346,6 +2346,129 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_GetParameterIndex)
         ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
         ASSERT_EQ(newKey.GetECInstanceId().GetValue(), statement.GetValueId<ECInstanceId>(0).GetValue());
         }
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlTestFixture, NoECClassIdFilterOption)
+    {
+    const auto perClassRowCount = 10;
+    // Create and populate a sample project
+    auto& ecdb = SetUp("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ECInstanceId FROM ecsql.TH3 WHERE ECInstanceId=?"));
+    Utf8String nativeSql (statement.GetNativeSql());
+    ASSERT_TRUE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ECInstanceId FROM ecsql.TH3 WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_FALSE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ECInstanceId FROM ecsql.TH3 WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter=True"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_FALSE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ECInstanceId FROM ecsql.TH3 WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter=False"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_TRUE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ECInstanceId FROM ecsql.TH3 WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter=0"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_TRUE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ECInstanceId FROM ecsql.TH3 WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter=1"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_FALSE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT t.ECInstanceId FROM ecsql.TH3 t JOIN ecsql.PSA p USING ecsql.PSAHasTHBase_0N WHERE p.ECInstanceId=?"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_TRUE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT t.ECInstanceId FROM ecsql.TH3 t JOIN ecsql.PSA p USING ecsql.PSAHasTHBase_0N WHERE p.ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_FALSE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "UPDATE ecsql.TH3 SET S2='hh' WHERE ECInstanceId=?"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_TRUE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "UPDATE ecsql.TH3 SET S2='hh' WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_FALSE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "DELETE FROM ecsql.TH3 WHERE ECInstanceId=?"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_TRUE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "DELETE FROM ecsql.TH3 WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_FALSE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "DELETE FROM ecsql.TH3 WHERE ECInstanceId IN (SELECT t.ECInstanceId FROM ecsql.TH3 t JOIN ecsql.PSA USING ecsql.PSAHasTHBase_0N WHERE PSA.I=?)"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_TRUE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "DELETE FROM ecsql.TH3 WHERE ECInstanceId IN (SELECT t.ECInstanceId FROM ecsql.TH3 t JOIN ecsql.PSA USING ecsql.PSAHasTHBase_0N WHERE PSA.I=? ECSQLOPTIONS NoECClassIdFilter)"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_TRUE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "DELETE FROM ecsql.TH3 WHERE ECInstanceId IN (SELECT t.ECInstanceId FROM ecsql.TH3 t JOIN ecsql.PSA USING ecsql.PSAHasTHBase_0N WHERE PSA.I=?) ECSQLOPTIONS NoECClassIdFilter"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_TRUE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "DELETE FROM ecsql.TH3 WHERE ECInstanceId IN (SELECT t.ECInstanceId FROM ecsql.TH3 t JOIN ecsql.PSA USING ecsql.PSAHasTHBase_0N WHERE PSA.I=? ECSQLOPTIONS NoECClassIdFilter) ECSQLOPTIONS NoECClassIdFilter"));
+    Utf8String nativeSql(statement.GetNativeSql());
+    ASSERT_FALSE(nativeSql.ContainsI("ECClassId=")) << "Native SQL: " << nativeSql.c_str();
+    }
 
     }
 
@@ -2952,7 +3075,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_IssueListener)
         {
         ECDbIssueListener issueListener(ecdb);
 
-        BeRepositoryBasedId id(BeRepositoryId(111), 111); //an id not used in the current file
+        BeBriefcaseBasedId id(BeBriefcaseId(111), 111); //an id not used in the current file
         ECSqlStatement stmt;
         ECSqlStatus stat = stmt.Prepare(ecdb, "INSERT INTO ecsql.P (ECInstanceId) VALUES (?)");
         ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation failed unexpectedly";
@@ -2974,7 +3097,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_IssueListener)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void AssertGeometry (IGeometryCR expected, IGeometryCR actual, Utf8P assertMessage)
+void AssertGeometry (IGeometryCR expected, IGeometryCR actual, Utf8CP assertMessage)
     {
     ASSERT_TRUE (actual.IsSameStructureAndGeometry (expected)) << assertMessage;
     }

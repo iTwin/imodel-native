@@ -673,6 +673,19 @@ BentleyStatus ECInstanceAdapterHelper::SetECInstanceId (ECN::IECInstanceR instan
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
+ECN::IECInstancePtr ECInstanceAdapterHelper::CreateECInstance(ECN::ECClassCR ecclass)
+    {
+    ECRelationshipClassCP relClass = ecclass.GetRelationshipClassCP();
+    if (relClass == nullptr)
+        return ecclass.GetDefaultStandaloneEnabler()->CreateInstance();
+    
+    return StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClass)->CreateRelationshipInstance();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   06/14
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
 void ECInstanceAdapterHelper::LogFailure (Utf8CP operationName, ECN::IECInstanceCR instance, Utf8CP errorMessage)
     {
     Utf8String displayLabel;

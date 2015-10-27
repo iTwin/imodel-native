@@ -87,7 +87,6 @@
 
     <Part Name="UnitTests-Performance" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
         <SubPart PartName="PrewireForUnitTests" />
-        <SubPart PartName="PerformanceTestingHelpers" PartFile="BeSQLite" Repository="BeSQLite"/>
         <SubPart PartName="BackDoorForUnitTests"/>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ECDb/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>

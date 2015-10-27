@@ -346,7 +346,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
                 }
 
             BeAssert(thisEndECInstanceIdBinder != nullptr);
-            thisEndECInstanceIdBinder->SetOnBindRepositoryBasedIdEventHandler([preparedStatement, classId] (ECInstanceId const& bindValue)
+            thisEndECInstanceIdBinder->SetOnBindBriefcaseBasedIdEventHandler([preparedStatement, classId] (ECInstanceId const& bindValue)
                 {
                 BeAssert(preparedStatement != nullptr);
                 preparedStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement::ECInstanceKeyInfo(classId, ECInstanceId(bindValue.GetValue())));
@@ -800,7 +800,7 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
         else
             {
             //capture the bound ecinstanceid in the prepared statement so that it can be returned from Step
-            ecinstanceidBinder->SetOnBindRepositoryBasedIdEventHandler([preparedStatement] (ECInstanceId const& bindValue)
+            ecinstanceidBinder->SetOnBindBriefcaseBasedIdEventHandler([preparedStatement] (ECInstanceId const& bindValue)
                 {
                 preparedStatement->GetECInstanceKeyInfo().SetBoundECInstanceId(ECInstanceId(bindValue.GetValue()));
                 });

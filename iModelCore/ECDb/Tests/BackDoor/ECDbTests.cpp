@@ -558,7 +558,7 @@ size_t ECDbTestUtility::GetIterableCount(ECPropertyIterable const& iterable)
     size_t count = 0;
     for (ECPropertyP p : iterable)
         {
-        p; // To avoid unreferenced variable compilation warning
+        UNUSED_VARIABLE(p); // To avoid unreferenced variable compilation warning
         count++;
         }
     return count;
@@ -1048,7 +1048,7 @@ void ECDbTestUtility::GenerateRandomValue(ECValueR value, PrimitiveType type, EC
                     break;
                     }
 
-                uint64_t jd = 0ULL;
+                uint64_t jd = 0;
                 DateTime::GetCurrentTimeUtc().ToJulianDay(jd);
 
                 DateTime::FromJulianDay(dt, jd, info);

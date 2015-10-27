@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/BeRepositoryBasedIdSequence.h $
+|     $Source: ECDb/BeBriefcaseBasedIdSequence.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -14,36 +14,36 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
-//! Sequence that generates sequential BeRepositoryBasedIds and stores
+//! Sequence that generates sequential BeBriefcaseBasedIds and stores
 //! its state in the @ref ECDbFile "ECDb file" across sessions.
 //!
 //! @bsiclass                                                 Krischan.Eberle     02/2013
 //=======================================================================================
-struct BeRepositoryBasedIdSequence : NonCopyableClass
+struct BeBriefcaseBasedIdSequence : NonCopyableClass
     {
 private:
     Db& m_db;
-    Utf8String const m_repositoryLocalValueName;
-    mutable size_t m_repositoryLocalValueIndex;
+    Utf8String const m_briefcaseLocalValueName;
+    mutable size_t m_briefcaseLocalValueIndex;
     DbResult GetNextInt64Value (uint64_t& nextValue) const;
 
 public:
-    BeRepositoryBasedIdSequence (Db& db, Utf8CP repositoryLocalValueName);
-    ~BeRepositoryBasedIdSequence ();
+    BeBriefcaseBasedIdSequence (Db& db, Utf8CP briefcaseLocalValueName);
+    ~BeBriefcaseBasedIdSequence ();
 
     DbResult Initialize () const;
 
-    DbResult Reset (BeRepositoryId repositoryId) const;
+    DbResult Reset (BeBriefcaseId briefcaseId) const;
 
-    template <typename TBeRepositoryBasedId>
-    DbResult GetNextValue (TBeRepositoryBasedId& nextValue) const
+    template <typename TBeBriefcaseBasedId>
+    DbResult GetNextValue (TBeBriefcaseBasedId& nextValue) const
         {
         uint64_t nextValueInt = 0LL;
         DbResult stat = GetNextInt64Value (nextValueInt);
         if (stat != BE_SQLITE_OK)
             return stat;
 
-        nextValue = TBeRepositoryBasedId(nextValueInt);
+        nextValue = TBeBriefcaseBasedId(nextValueInt);
         return BE_SQLITE_OK;
         }
     };

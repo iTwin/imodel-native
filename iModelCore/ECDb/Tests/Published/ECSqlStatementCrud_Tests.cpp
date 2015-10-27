@@ -159,6 +159,15 @@ TEST_F (ECSqlSelectTestFixture, NullLiteralTests)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlSelectTestFixture, OptionsTests)
+    {
+    auto dataset = ECSqlCommonTestDataset::OptionsTests(ECSqlType::Select, GetECDb(), PerClassRowCount);
+    RunTest(dataset);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlSelectTestFixture, OrderByTests)
@@ -413,6 +422,15 @@ TEST_F (ECSqlInsertTestFixture, MiscTests)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlInsertTestFixture, OptionsTests)
+    {
+    auto dataset = ECSqlCommonTestDataset::OptionsTests(ECSqlType::Insert, GetECDb(), PerClassRowCount);
+    RunTest(dataset);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlInsertTestFixture, ParameterAdvancedTests)
@@ -530,6 +548,15 @@ TEST_F (ECSqlUpdateTestFixture, MiscTests)
     {
     auto dataset = ECSqlUpdateTestDataset::MiscTests (PerClassRowCount);
     RunTest (dataset);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlUpdateTestFixture, OptionsTests)
+    {
+    auto dataset = ECSqlCommonTestDataset::OptionsTests(ECSqlType::Update, GetECDb(), PerClassRowCount);
+    RunTest(dataset);
     }
 
 //---------------------------------------------------------------------------------------
@@ -733,6 +760,14 @@ TEST_F (ECSqlDeleteTestFixture, MiscTests)
     RunTest (dataset);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlDeleteTestFixture, OptionsTests)
+    {
+    auto dataset = ECSqlCommonTestDataset::OptionsTests(ECSqlType::Delete, GetECDb(), PerClassRowCount);
+    RunTest(dataset);
+    }
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------

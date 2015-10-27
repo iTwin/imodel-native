@@ -112,9 +112,6 @@ BentleyStatus ECSqlParser::Parse (ECSqlParseTreePtr& ecsqlParseTree, ECDbCR ecdb
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSqlParser::parse_single_select_statement(unique_ptr<SingleSelectStatementExp>& exp, connectivity::OSQLParseNode const* parseNode) const
     {
-    //WIP_ECSQL: change all following to unique_ptr this will take care of memory leak in case failure
-    //data source must be resolved before anything else. We do not want to make two passes over tree
-
     SqlSetQuantifier opt_all_distinct;
     if (SUCCESS != parse_opt_all_distinct(opt_all_distinct, parseNode->getChild(1)))
         return ERROR;
@@ -154,6 +151,10 @@ BentleyStatus ECSqlParser::parse_single_select_statement(unique_ptr<SingleSelect
     if (SUCCESS != parse_limit_offset_clause(limitOffsetExp, table_exp->getChild(6)))
         return ERROR;
 
+    unique_ptr<OptionsExp> optionsExp = nullptr;
+    if (SUCCESS != parse_opt_ecsqloptions_clause(optionsExp, table_exp->getChild(9)))
+        return ERROR;
+
     if (selectClauseExp == nullptr || fromExp == nullptr)
         {
         GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSQL without select clause or from clause is invalid.");
@@ -168,7 +169,8 @@ BentleyStatus ECSqlParser::parse_single_select_statement(unique_ptr<SingleSelect
             move(orderByExp),
             move(groupByExp),
             move(havingExp),
-            move(limitOffsetExp)));
+            move(limitOffsetExp),
+            move(optionsExp)));
 
     return SUCCESS;
     }
@@ -303,7 +305,12 @@ BentleyStatus ECSqlParser::parse_update_statement_searched (unique_ptr<UpdateSta
     if (SUCCESS != stat)
         return stat;
 
-    exp = unique_ptr<UpdateStatementExp> (new UpdateStatementExp (move (classRefExp), move (assignmentListExp), move (opt_where_clause)));
+    unique_ptr<OptionsExp> opt_options_clause = nullptr;
+    stat = parse_opt_ecsqloptions_clause(opt_options_clause, parseNode->getChild(5));
+    if (SUCCESS != stat)
+        return stat;
+
+    exp = unique_ptr<UpdateStatementExp> (new UpdateStatementExp (move (classRefExp), move (assignmentListExp), move (opt_where_clause), move(opt_options_clause)));
     return SUCCESS;
     }
 
@@ -359,7 +366,12 @@ BentleyStatus ECSqlParser::parse_update_statement_searched (unique_ptr<UpdateSta
     if (SUCCESS != stat)
         return stat;
 
-    exp = unique_ptr<DeleteStatementExp> (new DeleteStatementExp (move (classRefExp), move (opt_where_clause)));
+    unique_ptr<OptionsExp> opt_options_clause = nullptr;
+    stat = parse_opt_ecsqloptions_clause(opt_options_clause, parseNode->getChild(4));
+    if (SUCCESS != stat)
+        return stat;
+
+    exp = unique_ptr<DeleteStatementExp> (new DeleteStatementExp (move (classRefExp), move (opt_where_clause), move(opt_options_clause)));
     return SUCCESS;
     }
 
@@ -404,6 +416,44 @@ BentleyStatus ECSqlParser::parse_update_statement_searched (unique_ptr<UpdateSta
     }
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   11/2013
+//+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus ECSqlParser::parse_opt_ecsqloptions_clause(std::unique_ptr<OptionsExp>& exp, connectivity::OSQLParseNode const* parseNode) const
+     {
+     exp = nullptr;
+     if (SQL_ISRULE(parseNode, opt_ecsqloptions_clause))
+         return SUCCESS; //this rule is hit if no options clause was given. So just return in that case
+
+     if (!SQL_ISRULE(parseNode, ecsqloptions_clause))
+         {
+         BeAssert(false && "Wrong grammar. Expecting ecsqloptions_clause");
+         return ERROR;
+         }
+
+     //first node is OPTIONS keyword, second node is option list
+     OSQLParseNode const* optionListNode = parseNode->getChild(1);
+
+     const size_t childCount = optionListNode->count();
+     if (childCount == 0)
+         return SUCCESS; //User never provided options
+
+     auto optionsExp = unique_ptr<OptionsExp>(new OptionsExp());
+     for (size_t i = 0; i < childCount; i++)
+         {
+         unique_ptr<OptionExp> optionExp = nullptr;
+         BentleyStatus stat = parse_ecsqloption(optionExp, optionListNode->getChild(i));
+         if (SUCCESS != stat)
+             return stat;
+
+         if (SUCCESS != optionsExp->AddOptionExp(move(optionExp)))
+             return ERROR;
+         }
+
+     exp = std::move(optionsExp);
+     return SUCCESS;
+    }
+
+ //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   04/2015
 //+---------------+---------------+---------------+---------------+---------------+--------
  BentleyStatus ECSqlParser::parse_column_ref_commalist(std::unique_ptr<PropertyNameListExp>& exp, connectivity::OSQLParseNode const* parseNode) const
@@ -536,7 +586,7 @@ BentleyStatus ECSqlParser::parse_update_statement_searched (unique_ptr<UpdateSta
     return parse_property_path (exp, parseNode->getFirst ());
     }
 
-
+ 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -827,6 +877,30 @@ BentleyStatus ECSqlParser::parse_ecclassid_fct_spec (unique_ptr<ValueExp>& exp, 
     exp = unique_ptr<ValueExp> (new ECClassIdFunctionExp (nullptr));
     return SUCCESS;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    05/2013
+//+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus ECSqlParser::parse_ecsqloption(std::unique_ptr<OptionExp>& exp, connectivity::OSQLParseNode const* parseNode) const
+    {
+    const size_t childNodeCount = parseNode->count();
+    BeAssert(childNodeCount == 1 || childNodeCount == 3);
+
+    Utf8CP optionName = parseNode->getChild(0)->getTokenValue().c_str();
+    Utf8String optionValue;
+    if (childNodeCount == 3)
+        {
+        OSQLParseNode const* valNode = parseNode->getChild(2);
+        BeAssert(valNode != nullptr);
+        ECSqlTypeInfo dataType;
+        if (SUCCESS != parse_literal(optionValue, dataType, *valNode))
+            return ERROR;
+        }
+
+    exp = std::unique_ptr<OptionExp>(new OptionExp(optionName, optionValue.c_str()));
+    return SUCCESS;
+    }
+
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
@@ -2381,6 +2455,54 @@ BentleyStatus ECSqlParser::parse_limit_offset_clause(unique_ptr<LimitOffsetExp>&
     }
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  10/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECSqlParser::parse_literal(Utf8StringR literalVal, ECSqlTypeInfo& dataType, connectivity::OSQLParseNode const& parseNode) const
+    {
+    //constant value
+    literalVal = nullptr;
+    switch (parseNode.getNodeType())
+        {
+            case SQL_NODE_INTNUM:
+                literalVal.assign(parseNode.getTokenValue());
+                dataType = ECSqlTypeInfo(PRIMITIVETYPE_Long);
+                break;
+            case SQL_NODE_APPROXNUM:
+                literalVal.assign(parseNode.getTokenValue());
+                dataType = ECSqlTypeInfo(PRIMITIVETYPE_Double);
+                break;
+            case SQL_NODE_STRING:
+                literalVal.assign(parseNode.getTokenValue());
+                dataType = ECSqlTypeInfo(PRIMITIVETYPE_String);
+                break;
+            case SQL_NODE_KEYWORD:
+            {
+            if (parseNode.getTokenID() == SQL_TOKEN_NULL)
+                {
+                literalVal.assign("NULL");
+                dataType = ECSqlTypeInfo(ECSqlTypeInfo::Kind::Null);
+                }
+            else if (parseNode.getTokenID() == SQL_TOKEN_TRUE)
+                {
+                literalVal.assign("TRUE");
+                dataType = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
+                }
+            else if (parseNode.getTokenID() == SQL_TOKEN_FALSE)
+                {
+                literalVal.assign("FALSE");
+                dataType = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
+                }
+            break;
+            }
+            default:
+                BeAssert(false && "Node type not handled.");
+                return ERROR;
+        };
+
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSqlParser::parse_opt_all_distinct (SqlSetQuantifier& setQuantifier, OSQLParseNode const* parseNode) const
@@ -2490,6 +2612,7 @@ BentleyStatus ECSqlParser::parse_select_statement (std::unique_ptr<SelectStateme
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSqlParser::parse_value_exp(unique_ptr<ValueExp>& valueExp, OSQLParseNode const* parseNode) const
     {
+    BeAssert(parseNode != nullptr);
     if (parseNode->isRule())
         {
         switch (parseNode->getKnownRuleID())
@@ -2546,47 +2669,12 @@ BentleyStatus ECSqlParser::parse_value_exp(unique_ptr<ValueExp>& valueExp, OSQLP
         }
 
     //constant value
-    Utf8CP value = nullptr;
+    Utf8String value;
     ECSqlTypeInfo dataType;
-    switch (parseNode->getNodeType())
-        {
-            case SQL_NODE_INTNUM:
-                value = parseNode->getTokenValue().c_str();
-                dataType = ECSqlTypeInfo(PRIMITIVETYPE_Long);
-                break;
-            case SQL_NODE_APPROXNUM:
-                value = parseNode->getTokenValue().c_str();
-                dataType = ECSqlTypeInfo(PRIMITIVETYPE_Double);
-                break;
-            case SQL_NODE_STRING:
-                value = parseNode->getTokenValue().c_str();
-                dataType = ECSqlTypeInfo(PRIMITIVETYPE_String);
-                break;
-            case SQL_NODE_KEYWORD:
-            {
-            if (parseNode->getTokenID() == SQL_TOKEN_NULL)
-                {
-                value = "NULL";
-                dataType = ECSqlTypeInfo(ECSqlTypeInfo::Kind::Null);
-                }
-            else if (parseNode->getTokenID() == SQL_TOKEN_TRUE)
-                {
-                value = "TRUE";
-                dataType = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
-                }
-            else if (parseNode->getTokenID() == SQL_TOKEN_FALSE)
-                {
-                value = "FALSE";
-                dataType = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
-                }
-            break;
-            }
-            default:
-                BeAssert(false && "Node type not handled.");
-                return ERROR;
-        };
+    if (SUCCESS != parse_literal(value, dataType, *parseNode))
+        return ERROR;
 
-    return LiteralValueExp::Create(valueExp, *m_context, value, dataType);
+    return LiteralValueExp::Create(valueExp, *m_context, value.c_str(), dataType);
     }
 
 //-----------------------------------------------------------------------------------------
