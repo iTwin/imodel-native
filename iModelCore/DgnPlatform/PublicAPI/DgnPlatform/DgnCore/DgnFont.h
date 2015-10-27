@@ -205,7 +205,7 @@ private:
     mutable T_FractionMap m_fractions;
     mutable bool m_hasLoadedFractions;
 
-    void LoadGlyphs() const;
+    DGNPLATFORM_EXPORT void LoadGlyphs() const;
     DGNPLATFORM_EXPORT DgnGlyphCP FindGlyphCP(DgnGlyph::T_Id) const;
     DgnGlyphCP GetDefaultGlyphCP() const { LoadGlyphs(); return m_defaultGlyph; }
     DgnGlyph::T_Id FindFractionGlyphCode(uint8_t numerator, uint8_t denominator) const;
