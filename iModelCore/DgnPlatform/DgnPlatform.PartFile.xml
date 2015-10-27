@@ -482,7 +482,7 @@
         <SubProduct ProductName="WinRTCppUnitTest-DgnPlatform-TestCollection-NoView"/>
     </Part>
 
-    <!-- Define a collection of tests that don't require QV. That excludes, DgnDisplay and MobileDgn -->
+    <!-- Define a collection of tests that don't require QV. That excludes, DgnDisplay and DgnClientFx -->
     <Part Name="TestCollection-NoView">
         <SubPart Repository="Bentley"               PartFile="Bentley"          PartName="Tests" />
         <SubPart Repository="GeomLibs"              PartFile="geomlibs"         PartName="Tests" />
