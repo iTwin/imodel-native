@@ -5,13 +5,14 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-
-PolicyFile = $(_MakeFilePath)../mki/AssertImagePPPolicy.mki 
-
-appName = ImagePP
-
-
+BUILD_NO_STACK_CHECK        = 1
+WARNINGS_UP                 = 1
 %include mdl.mki
+
+appName             = ImagePP
+SrcImagePP          = $(SrcRoot)ImagePP/
+%include $(SrcImagepp)mki/imageppdirs.mki
+
 
 %if $(TARGET_PLATFORM) == "Windows"
     %if defined (__IPP_EXTERNAL_THIRD_PARTY_SUPPORTED)
@@ -24,15 +25,17 @@ appName = ImagePP
     oracleLib=$(BuildContext)SubParts/Libs/
     
     %endif
-%else
-#   DisableMultiCompile=1
 %endif
+
+PublicApiIncludes   + -I$(ippPrivateAPISrc) -I$(ippOutPrivateApi)
+
 
 #----------------------------------------------------------------------
 #       Create output directories
 #----------------------------------------------------------------------
 always:
     !~@mkdir $(o)
+
 #----------------------------------------------------------
 # Preprocessor definition.
 #----------------------------------------------------------
@@ -77,6 +80,9 @@ nameToDefine = DLL_NAME_FOR_RESOURCES=L\"ImagePP$(DLM_API_NUMBER).dll\"
     %include cdefapnd.mki
 %endif
 %endif
+
+nameToDefine = NOMINMAX
+%include cdefapnd.mki
 
 #----------------------------------------------------------------------
 #       Build source files
@@ -1388,11 +1394,37 @@ $(o)HRFErMapperSupportedFileEditor$(oext) : $(ippGraDir)hrf/src/HRFErMapperSuppo
 %endif
 
 #----------------------------------------------------------------------
+#       Libraries used
+#----------------------------------------------------------------------
+BeLibJpegTurbo                  = $(ContextSubpartsLibs)$(libprefix)BeLibJpegTurbo$(stlibext)
+IppJpegLib12Bits                = $(ippOutPrivateLibs)$(libprefix)IppJpeg12Bits$(stlibext)
+IppGdalLib                      = $(ContextSubpartsLibs)$(libprefix)IppGdalLib$(stlibext)
+PdfLibInitializer               = $(libprefix)PdfLibInitializer$(libext)
+PdfLibInitializerExportLib      = $(ContextSubpartsLibs)$(PdfLibInitializer)
+BaseGeocoordLib                 = $(libprefix)basegeocoord$(libext)
+BaseGeocoordLibExportLib        = $(ContextSubpartsLibs)$(BaseGeocoordLib)
+OCIName                         = Oci
+
+
+#----------------------------------------------------------------------
 #       DLL/LIB creation
 #----------------------------------------------------------------------
-DLM_NAME            = $(appName)
-DLM_OBJECT_FILES    = $(objs) $(nonUniformObjs)
-DLM_OBJECT_PCH      = $(o)HStdcpp$(oext)
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(objs) $(nonUniformObjs)
+DLM_OBJECT_PCH              = $(o)HStdcpp$(oext)
+DLM_DEST                    = $(o)
+DLM_SYMB_DEST               = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_OBJECT_DEST             = $(o)
+DLM_NO_INITIALIZE_FUNCTION  = 1
+DLM_NO_DEF                  = 1
+DLM_NOMSBUILTINS            = 1
+DLM_NO_DLS                  = 1
+DLM_NOENTRY                 = 1
+DLMLINK_WARNINGS_AS_ERRORS  = 1
+
+# creatlib.mki common options
+LIB_TMP_DIR                 = $(o)
 LINKER_LIBRARIES_DELAYLOADED =  \
                         $(ntPlatformLib)wsock32.lib $(ntPlatformLib)ws2_32.lib  \
                         $(ntPlatformLib)Crypt32.lib $(ntPlatformLib)Dbghelp.lib \

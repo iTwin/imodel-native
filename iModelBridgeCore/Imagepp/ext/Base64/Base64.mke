@@ -6,17 +6,18 @@
 #       $Date: 2007/03/07 13:34:13 $
 #     $Author: Bern.McCarty $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-
-PolicyFile=$(_MakeFilePath)../AssertIppExtLibsPolicy.mki
-
-appName = Base64
-
+HAVE_PERMISSION_TO_COMPILE_AT_W3=1
+DLMLINK_WARNINGS_AS_ERRORS=1
 %include mdl.mki
 
-Base64Dir = $(_MakeFilePath)
+appName         = Base64
+Base64Dir       = $(_MakeFilePath)
+
+#Standard output directory used by misc mke/mki
+o               = $(OutputRootDir)build/imagepp/$(appName)/
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -32,9 +33,10 @@ $(o)base64$(oext) : $(Base64Dir)src/base64.cpp $(Base64Dir)h/base64.h
 #----------------------------------------------------------------------
 #       Lib creation
 #----------------------------------------------------------------------
-LIB_NAME    = $(appName)
-LIB_DEST    = $(o)
-LIB_OBJS    = $(o)base64$(oext)
+LIB_CONTEXT_LOCATION    = $(OutImagePP)PrivateLibs/
+LIB_NAME                = $(appName)
+LIB_DEST                = $(o)
+LIB_OBJS                = $(o)base64$(oext)
 
 %include creatlib.mki
 

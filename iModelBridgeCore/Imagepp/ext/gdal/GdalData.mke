@@ -2,12 +2,9 @@
 #
 #     $Source: ext/gdal/GdalData.mke $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
-
-PolicyFile = $(_MakeFilePath)../../mki/AssertImagePPPolicy.mki 
-
 #----------------------------------------------------------------
 #
 # Make file for CS_MAP GeoCoordinate Data that must be shipped with the GeoCoord libraries.

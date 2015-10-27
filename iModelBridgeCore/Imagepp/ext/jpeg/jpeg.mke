@@ -6,21 +6,21 @@
 #       $Date: 2007/03/07 13:34:13 $
 #     $Author: Bern.McCarty $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
+HAVE_PERMISSION_TO_COMPILE_AT_W3    = 1
 
-PolicyFile=$(_MakeFilePath)../AssertIppExtLibsPolicy.mki
+%include mdl.mki
+%include $(SrcRoot)ImagePP/mki/imageppdirs.mki
+
+jpegSrcDir  = $(_MakeFilePath)
 
 %if defined(JPEGLIB_SUPPORT_12BITS)
     appName = IppJpeg12Bits
 %else
     appName = IppJpegLib
 %endif
-
-%include mdl.mki
-
-jpegSrcDir = $(_MakeFilePath)
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -35,6 +35,7 @@ always:
     nameToDefine=JPEGLIB_SUPPORT_12BITS
     %include cdefapnd.mki
 %endif
+
 
 #----------------------------------------------------------
 #       Compiler options
@@ -153,12 +154,16 @@ $(o)transupp$(oext) : $(jpegSrcDir)transupp.c ${MultiCompileDepends}
 #----------------------------------------------------------------------
 #       Lib creation
 #----------------------------------------------------------------------
+DLMLINK_WARNINGS_AS_ERRORS          = 1
+
 LIB_NAME  = $(appName)
 LIB_DEST  = $(o)
 LIB_OBJS  = $(MultiCompileObjectList)
 
-%if !defined(JPEGLIB_SUPPORT_12BITS)
-    LIB_CONTEXT_LOCATION = $(BuildContext)Delivery/
+
+# if building 12bit library, put it in private location.
+%if defined(JPEGLIB_SUPPORT_12BITS)
+    LIB_CONTEXT_LOCATION    = $(ippOutPrivateLibs)
 %endif
 
 %include creatlib.mki
