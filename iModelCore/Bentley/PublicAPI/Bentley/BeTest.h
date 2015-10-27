@@ -20,6 +20,7 @@
 #include "BeAssert.h"
 #include "RefCounted.h"
 #include <Bentley/bvector.h>
+#include <Logging/bentleylogging.h>
 #include <string>
 
 #ifdef BETEST_GENERATE_UNITTESTS_LIST_H
@@ -395,6 +396,35 @@ BENTLEYDLL_EXPORT static void Log (Utf8CP category, LogPriority priority, Utf8CP
 #endif //!defined (USE_GTEST)
 
 };
+
+//Performance Result Recording to a CSV file
+
+// Add following line to your Performance test
+// LOGTODB(TEST_DETAILS, m_InsertTime, "Sql Insert time", 1000);
+// It automatically adds Test case name and Test name.You will need to provide time in seconds and then some additional details and number of operations.Last two arguments are optional.
+// All entries go into PerformanceResult.csv which is located in your Performance test runners' run\Output\\PerformanceTestResults folder.
+
+#define PERFORMANCELOG (*NativeLogging::LoggingManager::GetLogger (L"Performance"))
+#define LOGTODB PerformanceResultRecorder::writeResults
+#if defined (USE_GTEST)
+    #define TEST_DETAILS ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name(), ::testing::UnitTest::GetInstance()->current_test_info()->name()
+#else
+    #define TEST_DETAILS GetTestCaseNameA(), GetTestNameA()
+#endif
+
+
+//=======================================================================================
+// @bsiclass                                                Majd.Uddin     05/2015
+//=======================================================================================
+struct PerformanceResultRecorder
+{
+
+public:
+    PerformanceResultRecorder();
+    BENTLEYDLL_EXPORT static void writeResults(Utf8String testcaseName, Utf8String testName, double timeInSeconds, Utf8String testDescription = "", int opCount = -1);
+
+};
+
 
 END_BENTLEY_NAMESPACE
 

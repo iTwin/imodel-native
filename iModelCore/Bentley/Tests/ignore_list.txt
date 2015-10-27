@@ -8,8 +8,6 @@ BeFileNameTests.UNCReadOnlyTest         # Testable UNC path is required to be av
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-BeFileListIterator.Test1        # Depends on BeTestDocuments. It should not. Change the test to populate a directory with test files.
-BeDirectoryIterator.Test1       # Depends on BeTestDocuments. It should not. Change the test to populate a directory with test files.
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***

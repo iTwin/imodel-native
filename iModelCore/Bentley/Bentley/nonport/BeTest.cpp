@@ -28,6 +28,7 @@
 #include <Bentley/BeAssert.h>
 #include <Bentley/BeThread.h>
 #include <Bentley/BeNumerical.h>
+#include <Bentley/BeTimeUtilities.h>
 #include <Logging/bentleylogging.h>
 
 USING_NAMESPACE_BENTLEY
@@ -1021,3 +1022,36 @@ void            BeTest::Log (Utf8CP category, LogPriority priority, Utf8CP messa
     {
     NativeLogging::LoggingManager::GetLogger(category)->messagev (category, (NativeLogging::SEVERITY)priority, "%s", message);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* Writes time to a csv file
+*@bsimethod                                            Majd.Uddin          10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void PerformanceResultRecorder::writeResults(Utf8String testcaseName, Utf8String testName, double timeInSeconds, Utf8String testDescription, int opCount)
+{
+    FILE* logFile = NULL;
+
+    BeFileName dir;
+    BeTest::GetHost().GetOutputRoot(dir);
+    dir.AppendToPath(L"PerformanceTestResults");
+    if (!dir.DoesPathExist())
+        BeFileName::CreateNewDirectory(dir.c_str());
+
+    dir.AppendToPath(L"PerformanceResults.csv");
+
+    bool existingFile = dir.DoesPathExist();
+
+    logFile = fopen(dir.GetNameUtf8().c_str(), "a+");
+    PERFORMANCELOG.infov(L"CSV Results filename: %ls\n", dir.GetName());
+
+    if (!existingFile)
+        fprintf(logFile, "DateTime, TestCaseName, TestName, ExecutionTime, TestDescription, opCount\n");
+    tm t;
+    BeTimeUtilities::ConvertUnixMillisToLocalTime(t, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    int year = t.tm_year + 1900; //it is always from year 1900
+    int month = t.tm_mon + 1; // it is from Jan
+    fprintf(logFile, "%d-%d-%dT%d:%d:%d, %s, %s, %.6lf, \"%s\", %d\n", year, month, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec, testcaseName.c_str(), testName.c_str(), timeInSeconds, testDescription.c_str(), opCount);
+
+    fclose(logFile);
+}
+

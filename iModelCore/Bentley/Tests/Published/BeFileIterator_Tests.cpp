@@ -10,38 +10,86 @@
 #include <Bentley/BeDirectoryIterator.h>
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                      Majd.Uddin  10/2015
+//---------------------------------------------------------------------------------------
+static void createFiles(BeFileNameCR root)
+{
+    if (!root.DoesPathExist())
+        BeFileName::CreateNewDirectory(root.c_str());
+
+    BeFileName child1, child2, child3, child31;
+    child1 = child2 = child3 = root;
+    child1.AppendToPath(L"Child1");
+    child2.AppendToPath(L"Child2");
+    child3.AppendToPath(L"Child3");
+    child31 = child3;
+    child31.AppendToPath(L"Child31");
+
+    if (!child1.DoesPathExist())
+        BeFileName::CreateNewDirectory(child1.c_str());
+    if (!child2.DoesPathExist())
+        BeFileName::CreateNewDirectory(child2.c_str());
+    if (!child3.DoesPathExist())
+        BeFileName::CreateNewDirectory(child3.c_str());
+    if (!child31.DoesPathExist())
+        BeFileName::CreateNewDirectory(child31.c_str());
+
+
+    BeFile file0, file1, file2, file3, file31;
+    BeFileName fileName0, fileName1, fileName2, fileName3, fileName31;
+
+    fileName0 = root;
+    fileName0.AppendToPath(L"File0.txt");
+    EXPECT_EQ(BeFileStatus::Success, file0.Create(fileName0, true));
+    fileName1 = child1;
+    fileName1.AppendToPath(L"File1.log");
+    EXPECT_EQ(BeFileStatus::Success, file1.Create(fileName1, true));
+    fileName2 = child2;
+    fileName2.AppendToPath(L"File2.txt");
+    file2.Create(fileName2, true);
+    fileName3 = child3;
+    fileName3.AppendToPath(L"File3.log");
+    file3.Create(fileName3, true);
+    fileName31 = child31;
+    fileName31.AppendToPath(L"File31.txt");
+    file31.Create(fileName31, true);
+
+
+}
+//---------------------------------------------------------------------------------------
 // @betest                                      Sam.Wilson  05/2013
 //---------------------------------------------------------------------------------------
-#ifdef WIP_NEEDS_WORK // *** Bentley unit tests must not depend on BeTestDocuments
-#endif
 TEST (BeFileListIterator, Test1)
     {
-    BeFileName docs;
-    BeTest::GetHost().GetDocumentsRoot (docs);
-    BeFileName wildcard (NULL, docs, L"*", NULL);
+    BeFileName root;
+    BeTest::GetHost().GetOutputRoot(root);
+    root.AppendToPath(L"IteratorTest");
+    createFiles(root);
+
+    BeFileName wildcard (NULL, root, L"*", NULL);
     BeFileListIterator it (wildcard, /*recursive*/true);
     BeFileName name;
     size_t count=0;
-    bool found2dMetric = false;
-    bool found3dMetric = false;
+    bool foundFileName1 = false;
+    bool foundFileName31 = false;
     while (it.GetNextFileName (name) == SUCCESS)
         {
         BeFileName dir (BeFileName::DevAndDir, name);
-        ASSERT_TRUE( 0 == BeStringUtilities::Wcsnicmp (docs, dir, wcslen(docs)) );
+        ASSERT_TRUE( 0 == BeStringUtilities::Wcsnicmp (root, dir, wcslen(root)) );
         BeFileName base (BeFileName::Basename, name);
-        if (0==BeStringUtilities::Wcsicmp (base, L"2dMetricGeneral"))
-            found2dMetric = true;
-        else if (0==BeStringUtilities::Wcsicmp (base, L"3dMetricGeneral"))
-            found3dMetric = true;
+        if (0==BeStringUtilities::Wcsicmp (base, L"File1"))
+            foundFileName1 = true;
+        else if (0==BeStringUtilities::Wcsicmp (base, L"File31"))
+            foundFileName31 = true;
         ++count;
         }
-    ASSERT_TRUE( count > 2 );
-    ASSERT_TRUE( found2dMetric );
-    ASSERT_TRUE( found3dMetric );
+    ASSERT_TRUE(count > 2);
+    ASSERT_TRUE(foundFileName1);
+    ASSERT_TRUE(foundFileName31);
     }
 
 //---------------------------------------------------------------------------------------
-// @betest                                      Sam.Wilson  05/2013
+// @bsimethod                                      Sam.Wilson  05/2013
 //---------------------------------------------------------------------------------------
 static size_t countV8InDir (BeFileNameCR dir)
     {
@@ -54,7 +102,7 @@ static size_t countV8InDir (BeFileNameCR dir)
             count += countV8InDir (entryName);
         else
             {
-            if (BeFileName::GetExtension(entryName).EqualsI (L"v8"))
+            if (BeFileName::GetExtension(entryName).EqualsI (L"txt"))
                 ++count;
             }
         }
@@ -64,19 +112,18 @@ static size_t countV8InDir (BeFileNameCR dir)
 //---------------------------------------------------------------------------------------
 // @betest                                      Sam.Wilson  05/2013
 //---------------------------------------------------------------------------------------
-#ifdef WIP_NEEDS_WORK // *** Bentley unit tests must not depend on BeTestDocuments
-#endif
 TEST (BeDirectoryIterator, Test1)
     {
-    BeFileName docs;
-    BeTest::GetHost().GetDocumentsRoot (docs);
-
-    //  Count the number of files ending in ".v8" by iterating recursively through the doc directory tree.
-    size_t countv8 = countV8InDir (docs);
-    ASSERT_TRUE( countv8 > 2 );
+    BeFileName root;
+    BeTest::GetHost().GetOutputRoot(root);
+    root.AppendToPath(L"IteratorTest");
+    createFiles(root);
+    //  Count the number of files ending in ".txt" by iterating recursively through the doc directory tree.
+    size_t countv8 = countV8InDir(root);
+    ASSERT_TRUE( countv8 == 3 );
 
     //  Verify that the WalkDirsAndMatch utility gets the same count.
     bvector<BeFileName> found;
-    BeDirectoryIterator::WalkDirsAndMatch (found, docs, L"*.v8", /*recursive*/true);
+    BeDirectoryIterator::WalkDirsAndMatch(found, root, L"*.txt", /*recursive*/true);
     ASSERT_EQ( found.size(), countv8 );
     }

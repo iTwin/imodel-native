@@ -2251,12 +2251,12 @@ BentleyStatus BeFileName::GetTargetOfSymbolicLink(BeFileNameR target, WCharCP pa
     return SUCCESS;
     }
 
-#if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileNameStatus BeFileName::BeGetTempPath (BeFileName& tempPath)
     {
+#if defined (BENTLEY_WIN32) || (defined(BENTLEY_WINRT) && _MSC_VER >= 1900)
     WChar       tempName[MAX_PATH * 5];
 
     if (0 == ::GetTempPathW (_countof(tempName), tempName))
@@ -2264,24 +2264,20 @@ BeFileNameStatus BeFileName::BeGetTempPath (BeFileName& tempPath)
 
     tempPath = BeFileName (tempName);
     return BeFileNameStatus::Success;
-    }
-
-
 #else
-BeFileNameStatus BeFileName::BeGetTempPath (BeFileName& tempPath)
-    {
     return BeFileNameStatus::UnknownError;
-    }
-
 #endif
+    }
 
 BeFileNameStatus BeFileName::GetCwd (WStringR currentDirectory)
     {
-#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
+#if defined (BENTLEY_WIN32) || (defined(BENTLEY_WINRT) && _MSC_VER >= 1900)
     wchar_t cwdPath[MAX_PATH];
     _wgetcwd (cwdPath, _countof(cwdPath));
     currentDirectory.assign (cwdPath);
     return BeFileNameStatus::Success;
+#elif defined(BENTLEY_WINRT) && _MSC_VER < 1900
+    return BeFileNameStatus::UnknownError;
 #else
     char cwdPath[MAX_PATH];
     getcwd (cwdPath, sizeof(cwdPath));

@@ -35,6 +35,6 @@ TEST(Performance_DateTimeTests, FromString)
 
         timer.Stop();
         PERFORMANCELOG.infov("DateTime::FromString (\"%hs\"): %.4f msecs [%d repetitions].", testDate.c_str(), timer.GetElapsedSeconds() * 1000.0, repetitionCount);
-        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "", repetitionCount);
+        LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDate.c_str(), repetitionCount);
     }
 }
