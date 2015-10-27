@@ -202,6 +202,16 @@ bool*                           po_pDefaultUnitWasFound
     return pTransfo;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                   Eric.Paquet         10/2015
+//-----------------------------------------------------------------------------------------
+bool RasterFileGeocoding::IsValid() const
+    {
+    if (m_pGeocoding != nullptr || m_pGeoTiffKeys != nullptr)
+        return true;
+
+    return false;
+    }
 
 /** -----------------------------------------------------------------------------
     This constructor should @b{not be used}.
@@ -1068,12 +1078,16 @@ HRFPageDescriptor::HRFPageDescriptor(HFCAccessMode                            pi
         m_TransfoModelOrientation = TransfoModelOrientation;
         }
 
-    if(pGeoCoding.IsValid())
+    if(pGeoCoding.IsValid() && pGeoCoding->IsValid())
         {
         HFCPtr<HRFCapability> pCapability = new HRFGeocodingCapability(m_AccessMode);
         HPRECONDITION(m_pPageCapabilities->Supports(pCapability));
         m_pGeocoding = pGeoCoding->Clone();
         HASSERT(m_pGeocoding != 0);        
+        }
+    else
+        {
+        m_pGeocoding = RasterFileGeocoding::Create();  // We always need to allocate one
         }
 
     // ClipShape
