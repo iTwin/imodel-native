@@ -70,13 +70,13 @@ DbResult ECDb::_OnDbCreated (CreateParams const& params)
 // @bsimethod                                Krischan.Eberle                12/2012
 //---------------+---------------+---------------+---------------+---------------+------
 //override
-DbResult ECDb::_OnRepositoryIdChanged(BeRepositoryId newRepositoryId)
+DbResult ECDb::_OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId)
     {
-    DbResult stat = Db::_OnRepositoryIdChanged (newRepositoryId);
+    DbResult stat = Db::_OnBriefcaseIdChanged (newBriefcaseId);
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return m_pimpl->OnRepositoryIdChanged (newRepositoryId);
+    return m_pimpl->OnBriefcaseIdChanged (newBriefcaseId);
     }
 
 //--------------------------------------------------------------------------------------

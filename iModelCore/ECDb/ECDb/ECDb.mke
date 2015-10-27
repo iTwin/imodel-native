@@ -46,7 +46,7 @@ ECDbAllHeaders = \
 				$(baseDir)MapStrategy.h \
                 $(baseDir)ECSchemaComparers.h \
                 $(baseDir)ECDbImpl.h \
-                $(baseDir)BeRepositoryBasedIdSequence.h \
+                $(baseDir)BeBriefcaseBasedIdSequence.h \
                 $(baseDir)ColumnInfo.h \
                 $(baseDir)ECDbMap.h \
                 $(baseDir)ClassMap.h \
@@ -87,6 +87,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/InsertStatementExp.h \
                 $(baseDir)ECSql/UpdateStatementExp.h \
                 $(baseDir)ECSql/DeleteStatementExp.h \
+                $(baseDir)ECSql/OptionsExp.h \
                 $(baseDir)ECSql/ExpHelper.h \
                 $(baseDir)ECSql/ECSqlTypeInfo.h \
                 $(baseDir)ECSql/ECSqlPropertyPathImpl.h \
@@ -94,7 +95,6 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/NativeSqlBuilder.h \
                 $(baseDir)ECSql/ECSqlPreparer.h \
                 $(baseDir)ECSql/ECSqlPropertyNameExpPreparer.h \
-                $(baseDir)ECSql/SystemColumnPreparer.h \
                 $(baseDir)ECSql/ECSqlSelectPreparer.h \
                 $(baseDir)ECSql/ECSqlInsertPreparer.h \
                 $(baseDir)ECSql/ECSqlUpdatePreparer.h \
@@ -164,7 +164,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 #----------------------------------------------------------------------
 $(o)ECDbLogger$(oext):										$(baseDir)ECDbLogger.cpp                    $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)BeRepositoryBasedIdSequence$(oext):						$(baseDir)BeRepositoryBasedIdSequence.cpp   $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)BeBriefcaseBasedIdSequence$(oext):						$(baseDir)BeBriefcaseBasedIdSequence.cpp   $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbMap$(oext):											$(baseDir)ECDbMap.cpp                       $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -260,6 +260,8 @@ $(o)UpdateStatementExp$(oext):								$(baseDir)ECSql/UpdateStatementExp.cpp    
 
 $(o)DeleteStatementExp$(oext):								$(baseDir)ECSql/DeleteStatementExp.cpp     $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)OptionsExp$(oext):										$(baseDir)ECSql/OptionsExp.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)ExpHelper$(oext):										$(baseDir)ECSql/ExpHelper.cpp              $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlPrepareContext$(oext):								$(baseDir)ECSql/ECSqlPrepareContext.cpp    $(ECDbAllHeaders) ${MultiCompileDepends}
@@ -269,8 +271,6 @@ $(o)NativeSqlBuilder$(oext):								$(baseDir)ECSql/NativeSqlBuilder.cpp       $
 $(o)ECSqlPreparer$(oext):									$(baseDir)ECSql/ECSqlPreparer.cpp          $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlPropertyNameExpPreparer$(oext):					$(baseDir)ECSql/ECSqlPropertyNameExpPreparer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)SystemColumnPreparer$(oext):					        $(baseDir)ECSql/SystemColumnPreparer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlSelectPreparer$(oext):								$(baseDir)ECSql/ECSqlSelectPreparer.cpp    $(ECDbAllHeaders) ${MultiCompileDepends}
 

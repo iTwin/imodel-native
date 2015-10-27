@@ -7,17 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
-#include "WhereExp.h"
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-using namespace std;
-
-//****************************** WhereExp *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-WhereExp::WhereExp (unique_ptr<BooleanExp> expression)
+WhereExp::WhereExp (std::unique_ptr<BooleanExp> expression)
     {
     AddChild (move (expression));
     }
@@ -28,22 +23,6 @@ WhereExp::WhereExp (unique_ptr<BooleanExp> expression)
 BooleanExp const* WhereExp::GetSearchConditionExp() const
     {
     return GetChild<BooleanExp> (0);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String WhereExp::_ToECSql() const
-    {
-    return "WHERE " + GetSearchConditionExp ()->ToECSql();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String WhereExp::_ToString() const 
-    {
-    return "Where";
     }
 
 

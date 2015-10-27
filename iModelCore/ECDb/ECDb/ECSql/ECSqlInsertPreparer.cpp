@@ -376,7 +376,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
                 }
 
             BeAssert(thisEndECInstanceIdBinder != nullptr);
-            thisEndECInstanceIdBinder->SetOnBindRepositoryBasedIdEventHandler([preparedStatement, classId] (ECInstanceId const& bindValue)
+            thisEndECInstanceIdBinder->SetOnBindBriefcaseBasedIdEventHandler([preparedStatement, classId] (ECInstanceId const& bindValue)
                 {
                 BeAssert(preparedStatement != nullptr);
                 preparedStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement::ECInstanceKeyInfo(classId, ECInstanceId(bindValue.GetValue())));
@@ -597,7 +597,7 @@ ECN::ECRelationshipEnd constraintEnd
         }
     //Sometime SourceECClassId/TargetECClassId  propertyMap is mapped to another table where ECClassId exist.
     //In this case if user did not specify it is not a error..
-    if (!constraintClassIdPropMap->IsMappedToPrimaryTable() || constraintClassIdPropMap->GetFirstColumn()->GetKnownColumnId() == ECDbKnownColumns::ECClassId)
+    if (!constraintClassIdPropMap->IsMappedToPrimaryTable() || Enum::Contains(constraintClassIdPropMap->GetFirstColumn()->GetKind(), ColumnKind::ECClassId))
         {
         return ECSqlStatus::Success;
         }
@@ -671,7 +671,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareConstraintClassId(NativeSqlSnippets& ins
     if (constraintClassIdPropMap.IsVirtual())
         return ECSqlStatus::Success;
 
-    if (!constraintClassIdPropMap.IsMappedToPrimaryTable() || constraintClassIdPropMap.GetFirstColumn()->GetKnownColumnId() == ECDbKnownColumns::ECClassId)
+    if (!constraintClassIdPropMap.IsMappedToPrimaryTable() || Enum::Contains(constraintClassIdPropMap.GetFirstColumn()->GetKind(), ColumnKind::ECClassId))
         {
         return ECSqlStatus::Success;
         }
@@ -842,7 +842,7 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
         else
             {
             //capture the bound ecinstanceid in the prepared statement so that it can be returned from Step
-            ecinstanceidBinder->SetOnBindRepositoryBasedIdEventHandler([preparedStatement] (ECInstanceId const& bindValue)
+            ecinstanceidBinder->SetOnBindBriefcaseBasedIdEventHandler([preparedStatement] (ECInstanceId const& bindValue)
                 {
                 preparedStatement->GetECInstanceKeyInfo().SetBoundECInstanceId(ECInstanceId(bindValue.GetValue()));
                 });

@@ -510,7 +510,7 @@ ECDbMapAnalyser::Relationship::EndInfo::EndInfo(PropertyMapCR map)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-ECDbMapAnalyser::Relationship::EndInfo::EndInfo(PropertyMapCR map, Storage const& storage, ECDbKnownColumns columnType)
+ECDbMapAnalyser::Relationship::EndInfo::EndInfo(PropertyMapCR map, Storage const& storage, ColumnKind columnType)
     :m_accessString(map.GetPropertyAccessString())
     {
     auto firstColumn = storage.GetTable().GetFilteredColumnFirst(columnType);
@@ -620,7 +620,7 @@ ECDbMapAnalyser::Relationship::EndInfo ECDbMapAnalyser::Relationship::EndPoint::
         return EndInfo(*GetInstanceId());
         }
 
-    return EndInfo(*GetInstanceId(), forStorage, ECDbKnownColumns::ECInstanceId);
+    return EndInfo(*GetInstanceId(), forStorage, ColumnKind::ECInstanceId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -636,7 +636,7 @@ ECDbMapAnalyser::Relationship::EndInfo ECDbMapAnalyser::Relationship::EndPoint::
         return EndInfo(*GetClassId());
         }
 
-    return EndInfo(*GetInstanceId(), forStorage, ECDbKnownColumns::ECClassId);
+    return EndInfo(*GetInstanceId(), forStorage, ColumnKind::ECClassId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -676,7 +676,7 @@ ECDbMapAnalyser::Relationship::EndType ECDbMapAnalyser::Relationship::EndPoint::
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
 ECDbMapAnalyser::Relationship::Relationship (RelationshipClassMapCR classMap, Storage& storage, Class* parent)
-    :Class (classMap, storage, parent), m_from (*this, EndType::From), m_to (*this, EndType::To), m_onDeleteAction (ECDbSqlForeignKeyConstraint::ActionType::NotSpecified), m_onUpdateAction (ECDbSqlForeignKeyConstraint::ActionType::NotSpecified)
+    :Class (classMap, storage, parent), m_from (*this, EndType::From), m_to (*this, EndType::To), m_onDeleteAction (ForeignKeyActionType::NotSpecified), m_onUpdateAction (ForeignKeyActionType::NotSpecified)
     {
     ECDbForeignKeyRelationshipMap foreignKeyRelMap;
     if (ECDbMapCustomAttributeHelper::TryGetForeignKeyRelationshipMap (foreignKeyRelMap, GetRelationshipClassMap ().GetRelationshipClass ()))
@@ -815,7 +815,7 @@ void ECDbMapAnalyser::Storage::HandleStructArray ()
 
     builder.GetOnBuilder ().Append (GetTable ().GetName ().c_str ());
     auto& body = builder.GetBodyBuilder ();
-    auto ecInstanceid = GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
+    auto ecInstanceid = GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
     BeAssert (ecInstanceid != nullptr);
 
     for (auto structClass : m_structCascades)
@@ -823,7 +823,7 @@ void ECDbMapAnalyser::Storage::HandleStructArray ()
         for (auto& i : structClass->GetPartitionsR ())
             {
             auto toStorage = i.first;
-            auto parentECInstanceId = toStorage->GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ParentECInstanceId);
+            auto parentECInstanceId = toStorage->GetTable ().GetFilteredColumnFirst (ColumnKind::ParentECInstanceId);
             BeAssert (parentECInstanceId != nullptr);
             body
                 .Append ("DELETE FROM ")
@@ -863,7 +863,7 @@ void ECDbMapAnalyser::Storage::HandleCascadeLinkTable (std::vector<ECDbMapAnalys
                 .AppendEscaped (storage->GetTable ().GetName ().c_str ())
                 .Append (" WHERE ");
 
-            auto otherEndPrimaryKey = storage->GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
+            auto otherEndPrimaryKey = storage->GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
             body.AppendFormatted ("(OLD.[%s] = [%s])", relationship->To ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str (), otherEndPrimaryKey->GetName ().c_str ());
             if (relationship->IsHolding ())
                 {
@@ -1245,8 +1245,8 @@ BentleyStatus ECDbMapAnalyser::BuildPolymorphicDeleteTrigger (Class& nclass)
     BeAssert (nclass.RequireView ());
     auto viewInfo = GetViewInfoForClass (nclass);
     BeAssert (viewInfo != nullptr && !viewInfo->GetView ().IsEmpty ());
-    auto p = nclass.GetStorage ().GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
-    auto c = nclass.GetStorage ().GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId);
+    auto p = nclass.GetStorage ().GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
+    auto c = nclass.GetStorage ().GetTable ().GetFilteredColumnFirst (ColumnKind::ECClassId);
     for (auto & i : nclass.GetPartitionsR ())
         {
         auto storage = i.first;
@@ -1266,7 +1266,7 @@ BentleyStatus ECDbMapAnalyser::BuildPolymorphicDeleteTrigger (Class& nclass)
             }
 
         auto& body = builder.GetBodyBuilder ();
-        auto f = storage->GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
+        auto f = storage->GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
         body.Append ("DELETE FROM ").AppendEscaped (storage->GetTable ().GetName ().c_str ());
         body.AppendFormatted (" WHERE OLD.[%s] = [%s]", p->GetName ().c_str (), f->GetName ().c_str ());
         body.Append (";").AppendEOL ();
@@ -1287,8 +1287,8 @@ BentleyStatus ECDbMapAnalyser::BuildPolymorphicUpdateTrigger (Class& nclass)
 
     auto rootPMS = PropertyMapSet::Create (nclass.GetClassMap ());
     auto rootEndPoints = rootPMS->GetEndPoints ();
-    auto p = nclass.GetStorage ().GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
-    auto c = nclass.GetStorage ().GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId);
+    auto p = nclass.GetStorage ().GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
+    auto c = nclass.GetStorage ().GetTable ().GetFilteredColumnFirst (ColumnKind::ECClassId);
 
     for (auto & i : nclass.GetPartitionsR ())
         {
@@ -1310,7 +1310,7 @@ BentleyStatus ECDbMapAnalyser::BuildPolymorphicUpdateTrigger (Class& nclass)
 
         auto& body = builder.GetBodyBuilder ();
         auto& firstClass = **(i.second.begin ());
-        auto f = storage->GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
+        auto f = storage->GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
         auto childPMS = PropertyMapSet::Create (firstClass.GetClassMap ());
         body.Append ("UPDATE ").AppendEscaped (storage->GetTable ().GetName ().c_str ());
         body.Append ("SET ");
@@ -1319,7 +1319,7 @@ BentleyStatus ECDbMapAnalyser::BuildPolymorphicUpdateTrigger (Class& nclass)
         for (auto const rootE : rootEndPoints)
             {
             auto childE = childPMS->GetEndPointByAccessString (rootE->GetAccessString ().c_str ());
-            if (rootE->GetKnownColumnId () != ECDbKnownColumns::DataColumn)
+            if (rootE->GetColumnKind () != ColumnKind::DataColumn)
                 continue;
 
             if (childE->GetValue ().IsNull ())
@@ -1403,9 +1403,10 @@ SqlViewBuilder ECDbMapAnalyser::BuildView (Class& nclass)
             }
 
         select.Append (" FROM ").AppendEscaped (firstChildMap->GetTable ().GetName ().c_str ());
-        if (auto classIdColumn = hp.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId))
+        ECDbSqlColumn const* classIdColumn = nullptr;
+        if (hp.GetTable ().TryGetECClassIdColumn(classIdColumn))
             {
-            if (classIdColumn->GetPersistenceType () == PersistenceType::Persisted && hp.NeedsClassIdFilter ())
+            if (classIdColumn->GetPersistenceType () == PersistenceType::Persisted && hp.NeedsECClassIdFilter ())
                 {
                 select.Append (" WHERE ");
                 hp.AppendECClassIdFilterSql (classIdColumn->GetName().c_str(), select);
@@ -1710,7 +1711,7 @@ void ECDbMapAnalyser::HandleLinkTable (Storage* fromStorage, std::map<ECDbMapAna
             .AppendEscaped (relationshipStorage->GetTable ().GetName ().c_str ())
             .Append (" WHERE ");
 
-        auto thisECInstanceIdColumn = fromStorage->GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
+        auto thisECInstanceIdColumn = fromStorage->GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
         for (auto forignKey : forignKeys)
             {
             body.AppendFormatted ("(OLD.[%s] = [%s])", thisECInstanceIdColumn->GetName ().c_str (), forignKey->GetName ().c_str ());
@@ -1932,11 +1933,11 @@ void ECDbMapAnalyser::ProcessEndTableRelationships ()
                         //This is issue with EndTable our Source/Target key is always in same table. Following should fix that
                         if (persistedInFrom)
                             {
-                            fromKeyColumn = toStorage->GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
+                            fromKeyColumn = toStorage->GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
                             }
                         else
                             {
-                            toKeyColumn = fromStorage->GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
+                            toKeyColumn = fromStorage->GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
                             }
                         }
                     body.AppendFormatted ("([%s] = OLD.[%s])",

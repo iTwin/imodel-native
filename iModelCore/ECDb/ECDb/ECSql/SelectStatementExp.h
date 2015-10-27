@@ -10,6 +10,7 @@
 
 #include "ClassRefExp.h"
 #include "JoinExp.h"
+#include "OptionsExp.h"
 #include "PropertyNameExp.h"
 #include "WhereExp.h"
 
@@ -267,77 +268,85 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct SingleSelectStatementExp : QueryExp
     {
-DEFINE_EXPR_TYPE(SingleSelect) 
-private:
-    SqlSetQuantifier m_selectionType;
-    size_t m_fromClauseIndex;
-    size_t m_selectClauseIndex;
-    int m_whereClauseIndex;
-    int m_orderByClauseIndex;
-    int m_groupByClauseIndex;
-    int m_havingClauseIndex;
-    int m_limitOffsetClauseIndex;
+    DEFINE_EXPR_TYPE(SingleSelect)
+    private:
+        SqlSetQuantifier m_selectionType;
+        size_t m_fromClauseIndex;
+        size_t m_selectClauseIndex;
+        int m_whereClauseIndex;
+        int m_orderByClauseIndex;
+        int m_groupByClauseIndex;
+        int m_havingClauseIndex;
+        int m_limitOffsetClauseIndex;
+        int m_optionsClauseIndex;
 
-    std::unique_ptr<RangeClassRefList> m_finalizeParsingArgCache;
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
+        std::unique_ptr<RangeClassRefList> m_finalizeParsingArgCache;
 
-    virtual Utf8String _ToECSql() const override;
-    virtual Utf8String _ToString() const override;
+        virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
-protected:
-    virtual DerivedPropertyExp const* _FindProperty(Utf8CP propertyName) const override;
-    virtual SelectClauseExp const* _GetSelection() const override { return GetChild<SelectClauseExp> (m_selectClauseIndex); }
+        virtual Utf8String _ToECSql() const override;
+        virtual Utf8String _ToString() const override;
 
-public :
-    SingleSelectStatementExp(SqlSetQuantifier selectionType, std::unique_ptr<SelectClauseExp> selection, std::unique_ptr<FromExp> from, std::unique_ptr<WhereExp> where, 
-        std::unique_ptr<OrderByExp> orderby, std::unique_ptr<GroupByExp> groupby, std::unique_ptr<HavingExp> having, std::unique_ptr<LimitOffsetExp> limitOffsetExp);
+    protected:
+        virtual DerivedPropertyExp const* _FindProperty(Utf8CP propertyName) const override;
+        virtual SelectClauseExp const* _GetSelection() const override { return GetChild<SelectClauseExp>(m_selectClauseIndex); }
 
-    FromExp const* GetFrom() const { return GetChild<FromExp> (m_fromClauseIndex);}
-    WhereExp const* GetOptWhere() const 
-        { 
-        if (m_whereClauseIndex < 0)
-            return nullptr;
+    public:
+        SingleSelectStatementExp(SqlSetQuantifier selectionType, std::unique_ptr<SelectClauseExp>, std::unique_ptr<FromExp>, std::unique_ptr<WhereExp>,
+                                 std::unique_ptr<OrderByExp>, std::unique_ptr<GroupByExp>, std::unique_ptr<HavingExp>, std::unique_ptr<LimitOffsetExp> limitOffsetExp, std::unique_ptr<OptionsExp>);
 
-        return GetChild<WhereExp> (static_cast<size_t> (m_whereClauseIndex));
-        }
+        FromExp const* GetFrom() const { return GetChild<FromExp>(m_fromClauseIndex); }
 
-    OrderByExp const* GetOptOrderBy() const 
-        { 
-        if (m_orderByClauseIndex < 0)
-            return nullptr;
+        WhereExp const* GetWhere() const
+            {
+            if (m_whereClauseIndex < 0)
+                return nullptr;
 
-        return GetChild<OrderByExp> (static_cast<size_t> (m_orderByClauseIndex));
-        }
+            return GetChild<WhereExp>((size_t) m_whereClauseIndex);
+            }
 
-    GroupByExp const* GetOptGroupBy() const 
-        { 
-        if (m_groupByClauseIndex < 0)
-            return nullptr;
+        OrderByExp const* GetOrderBy() const
+            {
+            if (m_orderByClauseIndex < 0)
+                return nullptr;
 
-        return GetChild<GroupByExp> (static_cast<size_t> (m_groupByClauseIndex));
-        }
+            return GetChild<OrderByExp>((size_t) m_orderByClauseIndex);
+            }
 
-    HavingExp const* GetOptHaving() const 
-        { 
-        if (m_havingClauseIndex < 0)
-            return nullptr;
+        GroupByExp const* GetGroupBy() const
+            {
+            if (m_groupByClauseIndex < 0)
+                return nullptr;
 
-        return GetChild<HavingExp> (static_cast<size_t> (m_havingClauseIndex));
-        }
+            return GetChild<GroupByExp>((size_t) m_groupByClauseIndex);
+            }
 
-    LimitOffsetExp const* GetLimitOffset () const
-        {
-        if (m_limitOffsetClauseIndex < 0)
-            return nullptr;
+        HavingExp const* GetHaving() const
+            {
+            if (m_havingClauseIndex < 0)
+                return nullptr;
 
-        return GetChild<LimitOffsetExp> (static_cast<size_t> (m_limitOffsetClauseIndex));
-        }
-    
-    bool IsCoreSelect() const
-        {
-        return GetLimitOffset() == nullptr && GetOptOrderBy() == nullptr;
-        }
-    SqlSetQuantifier GetSelectionType() const {return m_selectionType;}
+            return GetChild<HavingExp>((size_t) m_havingClauseIndex);
+            }
+
+        LimitOffsetExp const* GetLimitOffset() const
+            {
+            if (m_limitOffsetClauseIndex < 0)
+                return nullptr;
+
+            return GetChild<LimitOffsetExp>((size_t) m_limitOffsetClauseIndex);
+            }
+
+        OptionsExp const* GetOptions() const
+            {
+            if (m_optionsClauseIndex < 0)
+                return nullptr;
+
+            return GetChild<OptionsExp>((size_t) m_optionsClauseIndex);
+            }
+
+        bool IsCoreSelect() const { return GetLimitOffset() == nullptr && GetOrderBy() == nullptr; }
+        SqlSetQuantifier GetSelectionType() const { return m_selectionType; }
     };
 
 //********* QueryExp subclasses ***************************

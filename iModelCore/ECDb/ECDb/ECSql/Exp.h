@@ -134,6 +134,8 @@ public:
         NamedPropertiesJoin,
         NaturalJoin,
         NonJoinQuery,
+        Option,
+        Options,
         OrderBy,
         OrderBySpec,
         Parameter,

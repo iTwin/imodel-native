@@ -372,7 +372,7 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
 
         instanceKey = ECInstanceKey(m_ecInstanceKeyInfo.GetECClassId(), ecinstanceidOfInsert);
 
-        if (GetStepTasks().HasAnyTask())
+        if (!GetStepTasks().IsEmpty())
             {
             stat = GetStepTasks().ExecuteAfterStepTaskList(ecinstanceidOfInsert);
             if (BE_SQLITE_OK != stat)

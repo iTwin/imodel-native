@@ -31,7 +31,7 @@ DbResult ECSqlStepTask::Collection::ExecuteBeforeStepTaskList()
     {
     //even if no tasks exist, but if event handlers are registered
     //we need to execute the selector so that event can return the correct instances affected.
-    if ((!HasAnyTask() ) ||  m_selector == nullptr)
+    if (IsEmpty() ||  m_selector == nullptr)
         return BE_SQLITE_OK;
 
     auto stmt = m_selector->GetPreparedStatementP<ECSqlSelectPreparedStatement> ();
@@ -52,7 +52,7 @@ DbResult ECSqlStepTask::Collection::ExecuteBeforeStepTaskList()
 //---------------------------------------------------------------------------------------
 DbResult ECSqlStepTask::Collection::ExecuteAfterStepTaskList(ECInstanceId const& instanceId)
     {
-    if (HasAnyTask())
+    if (!IsEmpty())
         {
         DbResult stat = Execute(ExecutionCategory::ExecuteAfterParentStep, instanceId);
         if (BE_SQLITE_OK != stat)
@@ -99,22 +99,6 @@ bool ECSqlStepTask::Collection::Add(std::unique_ptr<ECSqlStepTask> stepTask)
 
     m_stepTasks[name] = std::move(stepTask);
     return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Affan.Khan         02/2014
-//---------------------------------------------------------------------------------------
-size_t ECSqlStepTask::Collection::Size() const
-    {
-    return m_stepTasks.size();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Affan.Khan         02/2014
-//---------------------------------------------------------------------------------------
-void ECSqlStepTask::Collection::Clear()
-    {
-    m_stepTasks.clear();
     }
 
 //---------------------------------------------------------------------------------------

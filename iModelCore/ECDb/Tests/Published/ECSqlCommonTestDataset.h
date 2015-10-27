@@ -29,23 +29,24 @@ private:
     ECSqlCommonTestDataset ();
     ~ECSqlCommonTestDataset ();
 
-    static ECSqlTestItem& AddTestItem (ECSqlTestDataset& dataset, ECSqlType ecsqlType, Utf8CP ecsql, int expectedResultRows);
-    static bool ToECSql (Utf8StringR ecsql, ECSqlType type, ECN::ECClassCR targetClass, bool polymorphic);
-    static bool FindPrimitivePropertyAccessStringInClass (Utf8StringR propertyAccessString, ECN::ECClassCR ecClass, bool includeBaseProperties);
+    static ECSqlTestItem& AddTestItem (ECSqlTestDataset&, ECSqlType, Utf8CP ecsql, int expectedResultRows);
+    static bool ToECSql (Utf8StringR ecsql, ECSqlType, ECN::ECClassCR targetClass, bool polymorphic);
+    static bool FindPrimitivePropertyAccessStringInClass (Utf8StringR propertyAccessString, ECN::ECClassCR, bool includeBaseProperties);
 
 public:
     //Generates test datasets common to all ECSQL types
-    static ECSqlTestDataset WhereAbstractClassTests (ECSqlType ecsqlType, ECDbCR, int rowCountPerClass);
-    static ECSqlTestDataset WhereAndOrPrecedenceTests(ECSqlType ecsqlType, ECDbCR, int rowCountPerClass);
-    static ECSqlTestDataset WhereBasicsTests(ECSqlType ecsqlType, ECDbCR, int rowCountPerClass);
-    static ECSqlTestDataset WhereCommonGeometryTests (ECSqlType ecsqlType, ECDbCR, int rowCountPerClass);
-    static ECSqlTestDataset WhereFunctionTests (ECSqlType ecsqlType, ECDbCR, int rowCountPerClass);
-    static ECSqlTestDataset WhereMatchTests(ECSqlType ecsqlType, ECDbCR, int rowCountPerClass);
-    static ECSqlTestDataset WhereRelationshipEndTableMappingTests(ECSqlType ecsqlType, ECDbR, int rowCountPerClass);
-    static ECSqlTestDataset WhereRelationshipLinkTableMappingTests (ECSqlType ecsqlType, ECDbR, int rowCountPerClass);
-    static ECSqlTestDataset WhereRelationshipWithAnyClassConstraintTests (ECSqlType ecsqlType, ECDbR, int rowCountPerClass);
-    static ECSqlTestDataset WhereRelationshipWithAdditionalPropsTests (ECSqlType ecsqlType, ECDbR, int rowCountPerClass);
-    static ECSqlTestDataset WhereStructTests (ECSqlType ecsqlType, ECDbCR, int rowCountPerClass);
+    static ECSqlTestDataset WhereAbstractClassTests (ECSqlType, ECDbCR, int rowCountPerClass);
+    static ECSqlTestDataset WhereAndOrPrecedenceTests(ECSqlType, ECDbCR, int rowCountPerClass);
+    static ECSqlTestDataset WhereBasicsTests(ECSqlType, ECDbCR, int rowCountPerClass);
+    static ECSqlTestDataset WhereCommonGeometryTests (ECSqlType, ECDbCR, int rowCountPerClass);
+    static ECSqlTestDataset WhereFunctionTests (ECSqlType, ECDbCR, int rowCountPerClass);
+    static ECSqlTestDataset WhereMatchTests(ECSqlType, ECDbCR, int rowCountPerClass);
+    static ECSqlTestDataset WhereRelationshipEndTableMappingTests(ECSqlType, ECDbR, int rowCountPerClass);
+    static ECSqlTestDataset WhereRelationshipLinkTableMappingTests (ECSqlType, ECDbR, int rowCountPerClass);
+    static ECSqlTestDataset WhereRelationshipWithAnyClassConstraintTests (ECSqlType, ECDbR, int rowCountPerClass);
+    static ECSqlTestDataset WhereRelationshipWithAdditionalPropsTests (ECSqlType, ECDbR, int rowCountPerClass);
+    static ECSqlTestDataset WhereStructTests (ECSqlType, ECDbCR, int rowCountPerClass);
+    static ECSqlTestDataset OptionsTests(ECSqlType, ECDbCR, int rowCountPerClass);
     };
 
 END_ECDBUNITTESTS_NAMESPACE

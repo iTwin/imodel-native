@@ -261,7 +261,7 @@ BentleyStatus ECDbSchemaWriter::Import(ECN::ECSchemaCR ecSchema)
         }
 
     // GenerateId
-    BeRepositoryBasedId nextId;
+    BeBriefcaseBasedId nextId;
     if (BE_SQLITE_OK != m_ecdb.GetECDbImplR().GetECSchemaIdSequence().GetNextValue(nextId))
         {
         BeAssert(false && "Could not generate new ECSchemaId");
@@ -416,7 +416,7 @@ BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
         }
 
     // GenerateId
-    BeRepositoryBasedId nextId;
+    BeBriefcaseBasedId nextId;
     if (BE_SQLITE_OK != m_ecdb.GetECDbImplR().GetECClassIdSequence().GetNextValue(nextId))
         return ERROR;
 
@@ -515,7 +515,7 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
 BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, ECClassId ecClassId, int32_t index)
     {
     // GenerateId
-    BeRepositoryBasedId nextId;
+    BeBriefcaseBasedId nextId;
     if (BE_SQLITE_OK != m_ecdb.GetECDbImplR().GetECPropertyIdSequence().GetNextValue(nextId))
         return ERROR;
 

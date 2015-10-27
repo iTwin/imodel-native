@@ -78,7 +78,7 @@ protected:
     ECDB_EXPORT virtual DbResult _OnDbOpened() override;
     //! Fired when an ECDb file was created. Creates the %EC profile.
     ECDB_EXPORT virtual DbResult _OnDbCreated(CreateParams const& params) override;
-    ECDB_EXPORT virtual DbResult _OnRepositoryIdChanged(BeRepositoryId newRepositoryId) override;
+    ECDB_EXPORT virtual DbResult _OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId) override;
     ECDB_EXPORT virtual void _OnDbClose() override;
     ECDB_EXPORT virtual void _OnDbChangedByOtherConnection() override;
     ECDB_EXPORT virtual DbResult _VerifySchemaVersion(Db::OpenParams const& params) override;

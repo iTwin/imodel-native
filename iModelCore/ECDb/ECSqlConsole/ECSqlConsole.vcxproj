@@ -55,15 +55,15 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeOutput>$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\product\ECSqlConsole\ECSqlConsole.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx64\product\ECSqlConsole\ECSqlConsole.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions);BENTLEY_WIN32</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDb ECSqlConsoleExe -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDb ECSqlConsoleExe -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDb -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDb ECSqlConsoleExe -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c</NMakeCleanCommandLine>
-    <NMakeIncludeSearchPath>$(ProjectDir);$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ECDb\VendorAPI\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ECDb\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDb ECSqlConsoleExe </NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDb ECSqlConsoleExe  -c &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDb </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDb ECSqlConsoleExe  -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(OutRoot)Winx64\BuildContexts\ECDb\VendorAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <NMakeOutput>$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\product\ECSqlConsole\ECSqlConsole.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx64\product\ECSqlConsole\ECSqlConsole.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <ItemDefinitionGroup>

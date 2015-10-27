@@ -137,7 +137,9 @@ ECSchemaCacheR cache,
 ImportOptions const& options
 ) const
     {
-    SchemaImportContext context;
+    SchemaImportContext context (m_map.GetSQLManagerR().GetDbSchemaR());
+    if (SUCCESS != context.Initialize())
+        return ERROR;
 
     if (m_ecdb.IsReadonly ())
         {

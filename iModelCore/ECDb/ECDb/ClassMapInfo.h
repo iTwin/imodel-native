@@ -8,7 +8,6 @@
 #pragma once
 #include "ECDbInternalTypes.h"
 #include "MapStrategy.h"
-#include "ECDbSql.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -76,8 +75,10 @@ public:
     ClassMapInfo(ECN::ECClassCR, ECDbMapCR);
     virtual ~ClassMapInfo() {}
 
-    ECN::ECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
     MapStatus Initialize();
+
+    ECN::ECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
+    bool IsECInstanceIdAutogenerationDisabled() const { return m_isECInstanceIdAutogenerationDisabled; }
 
     ECDbMapStrategy const& GetMapStrategy () const{ return m_resolvedStrategy; }
 
@@ -143,8 +144,8 @@ private:
     RelationshipEndColumns m_targetColumnsMapping;
     bool m_allowDuplicateRelationships;
     bool m_createForeignKeyConstraint;
-    ECDbSqlForeignKeyConstraint::ActionType m_onDeleteAction;
-    ECDbSqlForeignKeyConstraint::ActionType m_onUpdateAction;
+    ForeignKeyActionType m_onDeleteAction;
+    ForeignKeyActionType m_onUpdateAction;
     bool m_createIndexOnForeignKey;
     CustomMapType m_customMapType;
 
@@ -155,8 +156,8 @@ private:
 public:
     RelationshipMapInfo(ECN::ECRelationshipClassCR relationshipClass, ECDbMapCR ecdbMap)
         : ClassMapInfo(relationshipClass, ecdbMap), m_sourceColumnsMappingIsNull(true), m_targetColumnsMappingIsNull(true), 
-        m_allowDuplicateRelationships(false), m_createForeignKeyConstraint(false), m_onDeleteAction(ECDbSqlForeignKeyConstraint::ActionType::NotSpecified),
-        m_onUpdateAction(ECDbSqlForeignKeyConstraint::ActionType::NotSpecified), m_createIndexOnForeignKey(true), m_customMapType(CustomMapType::None)
+        m_allowDuplicateRelationships(false), m_createForeignKeyConstraint(false), m_onDeleteAction(ForeignKeyActionType::NotSpecified),
+        m_onUpdateAction(ForeignKeyActionType::NotSpecified), m_createIndexOnForeignKey(true), m_customMapType(CustomMapType::None)
         {}
 
     virtual ~RelationshipMapInfo() {}
@@ -167,8 +168,8 @@ public:
     bool AllowDuplicateRelationships() const { BeAssert((m_customMapType == CustomMapType::LinkTable || m_customMapType == CustomMapType::None) && !m_resolvedStrategy.IsForeignKeyMapping()); return m_allowDuplicateRelationships; }
 
     bool CreateForeignKeyConstraint() const { BeAssert(m_customMapType != CustomMapType::LinkTable && m_resolvedStrategy.IsForeignKeyMapping()); return m_createForeignKeyConstraint;}
-    ECDbSqlForeignKeyConstraint::ActionType GetOnDeleteAction() const { BeAssert(CreateForeignKeyConstraint()); return m_onDeleteAction; }
-    ECDbSqlForeignKeyConstraint::ActionType GetOnUpdateAction() const { BeAssert(CreateForeignKeyConstraint()); return m_onUpdateAction; }
+    ForeignKeyActionType GetOnDeleteAction() const { BeAssert(CreateForeignKeyConstraint()); return m_onDeleteAction; }
+    ForeignKeyActionType GetOnUpdateAction() const { BeAssert(CreateForeignKeyConstraint()); return m_onUpdateAction; }
 
     bool CreateIndexOnForeignKey() const { BeAssert(m_customMapType != CustomMapType::LinkTable && m_resolvedStrategy.IsForeignKeyMapping()); return m_createIndexOnForeignKey; }
     };

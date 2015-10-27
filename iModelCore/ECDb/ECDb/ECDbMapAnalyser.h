@@ -235,7 +235,7 @@ struct ECDbMapAnalyser
             public:
                 EndInfo(Utf8CP accessString, ECDbSqlColumn const& column);
                 EndInfo(PropertyMapCR map);
-                EndInfo(PropertyMapCR map, Storage const& storage, ECDbKnownColumns columnType);
+                EndInfo(PropertyMapCR map, Storage const& storage, ColumnKind columnType);
                 EndInfo(EndInfo const&& rhs);
                 EndInfo();
                 EndInfo& operator = (EndInfo const&& rhs);
@@ -267,8 +267,8 @@ struct ECDbMapAnalyser
         private:
             EndPoint m_from;
             EndPoint m_to;
-            ECDbSqlForeignKeyConstraint::ActionType m_onDeleteAction;
-            ECDbSqlForeignKeyConstraint::ActionType m_onUpdateAction;
+            ForeignKeyActionType m_onDeleteAction;
+            ForeignKeyActionType m_onUpdateAction;
 
         public:
             Relationship(RelationshipClassMapCR classMap, Storage& storage, Class* parent);
@@ -294,12 +294,12 @@ struct ECDbMapAnalyser
             bool IsMarkedForCascadeDelete() const
                 {
                 BeAssert(!IsLinkTable());
-                return m_onDeleteAction == ECDbSqlForeignKeyConstraint::ActionType::Cascade;
+                return m_onDeleteAction == ForeignKeyActionType::Cascade;
                 }
             bool IsMarkedForCascadeUpdate() const
                 {
                 BeAssert(!IsLinkTable());
-                return m_onUpdateAction == ECDbSqlForeignKeyConstraint::ActionType::Cascade;
+                return m_onUpdateAction == ForeignKeyActionType::Cascade;
                 }
 
         };

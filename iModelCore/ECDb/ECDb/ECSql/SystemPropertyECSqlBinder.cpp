@@ -184,7 +184,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindInt64(int64_t value)
             return ReportError(sqliteStat, "ECSqlStatement::BindInt64");
         }
 
-    auto onBindEventHandler = GetOnBindRepositoryBasedIdEventHandler();
+    auto onBindEventHandler = GetOnBindBriefcaseBasedIdEventHandler();
     if (onBindEventHandler != nullptr)
         onBindEventHandler(ECInstanceId(value));
 
@@ -222,7 +222,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::Mak
             return ReportError(sqliteStat, "ECSqlStatement::BindText");
         }
 
-    auto onBindEventHandler = GetOnBindRepositoryBasedIdEventHandler();
+    auto onBindEventHandler = GetOnBindBriefcaseBasedIdEventHandler();
     if (onBindEventHandler != nullptr)
         {
         ECInstanceId id;

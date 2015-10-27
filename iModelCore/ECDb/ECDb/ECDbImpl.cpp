@@ -110,16 +110,16 @@ DbResult ECDb::Impl::OnDbCreated () const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2012
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::OnRepositoryIdChanged(BeRepositoryId newRepositoryId)
+DbResult ECDb::Impl::OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId)
     {
     if (m_ecdb.IsReadonly ())
         return BE_SQLITE_READONLY;
 
-    const auto stat = ResetSequences (&newRepositoryId);
+    const auto stat = ResetSequences (&newBriefcaseId);
     if (BE_SQLITE_OK != stat)
         {
-        LOG.errorv ("Changing repository id to %d in file '%s' failed because ECDb's id sequences could not be reset.",
-                    newRepositoryId.GetValue (),
+        LOG.errorv ("Changing briefcase id to %d in file '%s' failed because ECDb's id sequences could not be reset.",
+                    newBriefcaseId.GetValue (),
                     m_ecdb.GetDbFileName());
         }
 
@@ -162,9 +162,9 @@ void ECDb::Impl::ClearECDbCache () const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2014
 //---------------+---------------+---------------+---------------+---------------+------
-std::vector<BeRepositoryBasedIdSequence const*> ECDb::Impl::GetSequences () const
+std::vector<BeBriefcaseBasedIdSequence const*> ECDb::Impl::GetSequences () const
     {
-    return std::move (std::vector < BeRepositoryBasedIdSequence const* > 
+    return std::move (std::vector < BeBriefcaseBasedIdSequence const* > 
         {
         &m_ecInstanceIdSequence, 
         &m_ecSchemaIdSequence, 
@@ -249,9 +249,9 @@ ECDbMap const& ECDb::Impl::GetECDbMap () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  12/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::ResetSequences (BeRepositoryId* repoId)
+DbResult ECDb::Impl::ResetSequences (BeBriefcaseId* repoId)
     {
-    BeRepositoryId actualRepoId = repoId != nullptr ? *repoId : m_ecdb.GetRepositoryId ();
+    BeBriefcaseId actualRepoId = repoId != nullptr ? *repoId : m_ecdb.GetBriefcaseId ();
     for (auto sequence : GetSequences ())
         {
         auto stat = sequence->Reset (actualRepoId);

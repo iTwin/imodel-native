@@ -10,8 +10,10 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
-
 struct ECInstanceUpdaterTests : ECDbTestFixture
+    {};
+
+struct ECInstanceUpdaterAgainstPrimitiveClassTests : ECInstanceUpdaterTests
     {
     protected:
         void UpdateInstances(Utf8CP className, Utf8CP schemaName, int numberOfInstances, bool populateAllProperties)
@@ -85,26 +87,15 @@ struct ECInstanceUpdaterTests : ECDbTestFixture
             }
     };
 
-TEST_F(ECInstanceUpdaterTests, UpdateSingleInstanceOfPrimitiveClass)
+TEST_F(ECInstanceUpdaterAgainstPrimitiveClassTests, UpdateSingleInstanceOfPrimitiveClass)
     {
     UpdateInstances("PrimitiveClass", "KitchenSink", 1, true);
     }
 
-TEST_F(ECInstanceUpdaterTests, UpdateMultipleInstancesOfPrimitiveClass)
-    {
-    UpdateInstances("PrimitiveClass", "KitchenSink", 100, true);
-    }
-
-TEST_F(ECInstanceUpdaterTests, UpdateSingleInstanceOfPrimitiveClassWithIncompleteInstance)
+TEST_F(ECInstanceUpdaterAgainstPrimitiveClassTests, UpdateSingleInstanceOfPrimitiveClassWithIncompleteInstance)
     {
     UpdateInstances("PrimitiveClass", "KitchenSink", 1, false);
     }
-
-TEST_F(ECInstanceUpdaterTests, UpdateMultipleInstancesOfPrimitiveClassWithIncompleteInstance)
-    {
-    UpdateInstances("PrimitiveClass", "KitchenSink", 100, false);
-    }
-
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad.Zaighum                  01/15

@@ -177,41 +177,41 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType ecsqlType, 
         AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
 
         ecsql.Sprintf("%s WHERE 3.14", pClassECSqlStub.c_str());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
         ecsql.Sprintf("%s WHERE 'hello'", pClassECSqlStub.c_str());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
         ecsql.Sprintf("%s WHERE D", pClassECSqlStub.c_str());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
         ecsql.Sprintf("%s WHERE S", pClassECSqlStub.c_str());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
         ecsql.Sprintf("%s WHERE P2D", pClassECSqlStub.c_str());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
         ecsql.Sprintf("%s WHERE P3D", pClassECSqlStub.c_str());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
         ecsql.Sprintf("%s WHERE ?", pClassECSqlStub.c_str());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
         ecsql.Sprintf("%s WHERE Random()", pClassECSqlStub.c_str());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
         ecsql.Sprintf("%s WHERE Hex(Bi)", pClassECSqlStub.c_str());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
         //unary operator
         ecsql.Sprintf ("%s WHERE -I = -123", pClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
 
         ecsql.Sprintf ("%s WHERE I == 10", pClassECSqlStub.c_str ());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), IECSqlExpectedResult::Category::Invalid, "The only equality operator supported in SQL is the single =.");
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::Invalid, "The only equality operator supported in SQL is the single =.");
 
         ecsql.Sprintf ("%s WHERE Garbage = 'bla'", pClassECSqlStub.c_str ());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), IECSqlExpectedResult::Category::Invalid,
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::Invalid,
             "One of the properties does not exist in the target class.");
 
 
@@ -220,21 +220,21 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType ecsqlType, 
         //*******************************************************
         ecsql.Sprintf ("%s WHERE B = UNKNOWN", pClassECSqlStub.c_str ());
         ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (),
-            IECSqlExpectedResult::Category::Invalid, "Boolean literal UNKNOWN (from SQL-99) is not valid in ECSQL as it is not supported by ECObjects.");
+            ECSqlExpectedResult::Category::Invalid, "Boolean literal UNKNOWN (from SQL-99) is not valid in ECSQL as it is not supported by ECObjects.");
 
         ecsql.Sprintf ("%s WHERE Dt = TIME '13:35:16'", pClassECSqlStub.c_str ());
         ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (),
-            IECSqlExpectedResult::Category::Invalid, "TIME literal (as specified in SQL-99) is not valid in ECSQL as it is not supported by ECObjects.");
+            ECSqlExpectedResult::Category::Invalid, "TIME literal (as specified in SQL-99) is not valid in ECSQL as it is not supported by ECObjects.");
 
         ecsql.Sprintf ("%s WHERE Dt = LOCALTIME", pClassECSqlStub.c_str ());
         ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (),
-            IECSqlExpectedResult::Category::Invalid, "LOCALTIME function (as specified in SQL-99) is not valid in ECSQL as implicit time zone conversions will not be supported for now.");
+            ECSqlExpectedResult::Category::Invalid, "LOCALTIME function (as specified in SQL-99) is not valid in ECSQL as implicit time zone conversions will not be supported for now.");
 
         ecsql.Sprintf ("%s WHERE P2D = POINT2D (-1.3, 45.134)", pClassECSqlStub.c_str ());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), IECSqlExpectedResult::Category::NotYetSupported);
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::NotYetSupported);
 
         ecsql.Sprintf ("%s WHERE P3D = POINT3D (-1.3, 45.134, 2)", pClassECSqlStub.c_str ());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), IECSqlExpectedResult::Category::NotYetSupported);
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::NotYetSupported);
         }
 
     return std::move (dataset);
@@ -316,10 +316,10 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType ecsqlType
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
 
         ecsql.Sprintf ("%s WHERE LOWER (I) = 'hello'", pClassECSqlStub.c_str ());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), IECSqlExpectedResult::Category::Invalid);
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::Invalid);
 
         ecsql.Sprintf ("%s WHERE UPPER (D) = 'hello'", pClassECSqlStub.c_str ());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), IECSqlExpectedResult::Category::Invalid);
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::Invalid);
 
         {
         ecsql.Sprintf ("%s WHERE LOWER (S) = ?", pClassECSqlStub.c_str ());
@@ -335,13 +335,13 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType ecsqlType
 
         {
         ecsql.Sprintf ("%s WHERE LOWER (S) = ?", pClassECSqlStub.c_str ());
-        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), IECSqlExpectedResult::Category::Invalid);
+        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::Invalid);
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (DateTime (2012, 1, 1))));
         }
 
         {
         ecsql.Sprintf ("%s WHERE UPPER (?) = 'hello'", pClassECSqlStub.c_str ());
-        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), IECSqlExpectedResult::Category::Invalid);
+        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::Invalid);
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (DateTime (2012,1,1))));
         }
 
@@ -366,20 +366,20 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereMatchTests(ECSqlType ecsqlType, EC
         //on the rhs must be a geometric function as defined in SQLite
         Utf8String ecsql;
         ecsql.Sprintf("%s WHERE ECInstanceId MATCH random()", testClassECSqlStub.c_str());
-        ECSqlStatementCrudTestDatasetHelper::AddStepFailingNonSelect(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+        ECSqlStatementCrudTestDatasetHelper::AddStepFailingNonSelect(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
         ecsql.Sprintf("%s WHERE ECInstanceId NOT MATCH random()", testClassECSqlStub.c_str());
-        ECSqlStatementCrudTestDatasetHelper::AddStepFailingNonSelect(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+        ECSqlStatementCrudTestDatasetHelper::AddStepFailingNonSelect(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
         ecsql.Sprintf("%s WHERE I MATCH random()", testClassECSqlStub.c_str());
-        ECSqlStatementCrudTestDatasetHelper::AddStepFailingNonSelect(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+        ECSqlStatementCrudTestDatasetHelper::AddStepFailingNonSelect(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
         //even though SQLite expects the LHS to be a column, we allow a value exp in the ECSQL grammar.
         ecsql.Sprintf("%s WHERE (I + L) MATCH random()", testClassECSqlStub.c_str());
-        ECSqlStatementCrudTestDatasetHelper::AddStepFailingNonSelect(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+        ECSqlStatementCrudTestDatasetHelper::AddStepFailingNonSelect(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
         ecsql.Sprintf("%s WHERE ECInstanceId MATCH '123'", testClassECSqlStub.c_str());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::Invalid);
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
         }
 
     return dataset;
@@ -744,13 +744,13 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereStructTests (ECSqlType ecsqlType, 
         Utf8String ecsql;
 
         ecsql.Sprintf ("%s WHERE PStructProp IS NULL", psaClassECSqlStub.c_str ());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), IECSqlExpectedResult::Category::NotYetSupported, "Structs are not supported yet in where clause.");
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::NotYetSupported, "Structs are not supported yet in where clause.");
 
         ecsql.Sprintf ("%s WHERE PStructProp IS NOT NULL", psaClassECSqlStub.c_str ());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), IECSqlExpectedResult::Category::NotYetSupported, "Structs are not supported yet in where clause.");
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::NotYetSupported, "Structs are not supported yet in where clause.");
 
         ecsql.Sprintf ("%s WHERE PStructProp = ?", psaClassECSqlStub.c_str ());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), IECSqlExpectedResult::Category::NotYetSupported, "Structs are not supported yet in where clause.");
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::NotYetSupported, "Structs are not supported yet in where clause.");
 
         ecsql.Sprintf ("%s WHERE PStructProp.i = 123 AND B = true", psaClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
@@ -766,10 +766,10 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereStructTests (ECSqlType ecsqlType, 
         Utf8String ecsql;
 
         ecsql.Sprintf ("%s WHERE SAStructProp.PStructProp IS NULL", saClassECSqlStub.c_str ());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), IECSqlExpectedResult::Category::NotYetSupported, "Structs are not supported yet in where clause.");
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::NotYetSupported, "Structs are not supported yet in where clause.");
 
         ecsql.Sprintf ("%s WHERE SAStructProp.PStructProp = ?", saClassECSqlStub.c_str ());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), IECSqlExpectedResult::Category::NotYetSupported, "Structs are not supported yet in where clause.");
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::NotYetSupported, "Structs are not supported yet in where clause.");
 
         ecsql.Sprintf ("%s WHERE SAStructProp.PStructProp.i = 123 AND SAStructProp.PStructProp.dt <> DATE '2010-10-10'", saClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
@@ -778,6 +778,96 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereStructTests (ECSqlType ecsqlType, 
     return dataset;
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlTestDataset ECSqlCommonTestDataset::OptionsTests(ECSqlType ecsqlType, ECDbCR ecdb, int rowCountPerClass)
+    {
+    ECSqlTestDataset dataset;
+
+    ECClassCP pClass = ecdb.Schemas().GetECClass("ECSqlTest", "P");
+    Utf8String pClassECSqlStub;
+    if (ToECSql(pClassECSqlStub, ecsqlType, *pClass, false))
+        {
+        Utf8String ecsql;
+
+        if (ecsqlType != ECSqlType::Insert)
+            {
+            ecsql.Sprintf("%s ECSQLOPTIONS", pClassECSqlStub.c_str());
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "OPTIONS clause without options");
+
+            ecsql.Sprintf("%s ECSQLOPTIONS 123", pClassECSqlStub.c_str());
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "An option must be a name");
+
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt=", pClassECSqlStub.c_str());
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "option value is missing");
+
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt myopt", pClassECSqlStub.c_str());
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "duplicate options not allowed");
+
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt myOpt", pClassECSqlStub.c_str());
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "duplicate options not allowed (even if they differ by case)");
+
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt=1 myopt", pClassECSqlStub.c_str());
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "duplicate options not allowed");
+
+            ecsql.Sprintf("%s ECSQLOPTIONS myOpt=1 myopt", pClassECSqlStub.c_str());
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "duplicate options not allowed");
+
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt", pClassECSqlStub.c_str());
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt myotheropt", pClassECSqlStub.c_str());
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt=1 myotheropt", pClassECSqlStub.c_str());
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt=1 myotheropt=true", pClassECSqlStub.c_str());
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt myotheropt=true", pClassECSqlStub.c_str());
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt myotheropt=true onemoreopt", pClassECSqlStub.c_str());
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+            ecsql.Sprintf("%s WHERE ECInstanceId=? ECSQLOPTIONS myopt", pClassECSqlStub.c_str());
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+            ecsql.Sprintf("%s WHERE ECInstanceId=? ECSQLOPTIONS myopt myotheropt", pClassECSqlStub.c_str());
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+            ecsql.Sprintf("%s WHERE ECInstanceId=? ECSQLOPTIONS myopt=1 myotheropt", pClassECSqlStub.c_str());
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+            }
+
+        if (ecsqlType == ECSqlType::Select)
+            {
+            ecsql.Sprintf("%s WHERE ECInstanceId=? ORDER BY I ECSQLOPTIONS myopt=1 myotheropt", pClassECSqlStub.c_str());
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+            ecsql.Sprintf("%s WHERE ECInstanceId=? GROUP BY I HAVING I=1 ECSQLOPTIONS myopt=1 myotheropt", pClassECSqlStub.c_str());
+            AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+            }
+
+        if (ecsqlType == ECSqlType::Insert)
+            {
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt", pClassECSqlStub.c_str());
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "No options supported for INSERT");
+
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt=1", pClassECSqlStub.c_str());
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "No options supported for INSERT");
+
+            ecsql.Sprintf("%s ECSQLOPTIONS myopt myotheropt", pClassECSqlStub.c_str());
+            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "No options supported for INSERT");
+            }
+
+        }
+
+    return dataset;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/14
@@ -789,7 +879,7 @@ ECSqlTestItem& ECSqlCommonTestDataset::AddTestItem (ECSqlTestDataset& dataset, E
         //all select statements tested by the commonalities return a single column: SELECT ECInstanceId FROM ...
         return ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, expectedResultRows);
     else
-        return ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsql, expectedResultRows, true);
+        return ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsql, true);
     }
 
 //---------------------------------------------------------------------------------------

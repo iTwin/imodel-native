@@ -51,20 +51,20 @@ struct PropertyMapSet : NonCopyableClass
             ECDbSqlColumn const* m_column;
             Utf8String m_accessString;
             ECN::ECValue m_value;
-            ECDbKnownColumns m_knownColumn;
+            ColumnKind m_columnKind;
         public:
-            EndPoint (Utf8CP accessString, ECDbKnownColumns knownColumn, ECN::ECValueCR value)
-                : m_accessString (accessString), m_column (nullptr), m_value (value), m_knownColumn (knownColumn)
+            EndPoint (Utf8CP accessString, ColumnKind columnKin, ECN::ECValueCR value)
+                : m_accessString (accessString), m_column (nullptr), m_value (value), m_columnKind (columnKin)
                 {
                 }
             EndPoint (Utf8CP accessString, ECDbSqlColumn const& column, ECN::ECValueCR value)
-                : m_accessString (accessString), m_column (&column), m_value (value), m_knownColumn (column.GetKnownColumnId ())
+                : m_accessString (accessString), m_column (&column), m_value (value), m_columnKind (column.GetKind ())
                 {
                 }
             ECDbSqlColumn const* GetColumn () const { return m_column; }
             Utf8StringCR GetAccessString () const { return m_accessString; }
             ECN::ECValueCR GetValue () const { return m_value; }
-            ECDbKnownColumns GetKnownColumnId () const { return m_knownColumn; }
+            ColumnKind GetColumnKind () const { return m_columnKind; }
         };
 
 
@@ -81,7 +81,7 @@ struct PropertyMapSet : NonCopyableClass
     public:
         IClassMap const& GetClassMap () const;
         const EndPoints GetEndPoints () const;
-        const EndPoints FindEndPoints (ECDbKnownColumns filter) const;
+        const EndPoints FindEndPoints (ColumnKind filter) const;
         const EndPoint* GetEndPointByAccessString (Utf8CP accessString) const
             {
             auto itor = m_endPointByAccessString.find (accessString);
@@ -90,7 +90,7 @@ struct PropertyMapSet : NonCopyableClass
 
             return itor->second;
             }
-        static BentleyStatus AddSystemEndPoint (PropertyMapSet& propertySet, IClassMap const& classMap, ECDbKnownColumns knownColumnId, ECN::ECValueCR value, ECDbSqlColumn const* column = nullptr);
+        static BentleyStatus AddSystemEndPoint (PropertyMapSet& propertySet, IClassMap const& classMap, ColumnKind, ECN::ECValueCR value, ECDbSqlColumn const* column = nullptr);
         static PropertyMapSet::Ptr Create (IClassMap const& classMap);
     };
 
@@ -125,10 +125,8 @@ public:
         DomainClass, //!<Class of the mapping is viewed as domain class
         EmbeddedType //!<Class of the mapping is viewed as struct type embedded into another class
         };
-
+  
 private:
-    bool m_isECInstanceIdAutogenerationDisabled;
-
     virtual IClassMap const& _GetView (View classView) const = 0;
     virtual Type _GetClassMapType () const = 0;
     virtual ECN::ECClassCR _GetClass () const = 0;
@@ -140,6 +138,8 @@ private:
     virtual ClassDbView const& _GetDbView () const = 0;
 
 protected:
+    bool m_isECInstanceIdAutogenerationDisabled;
+
     IClassMap() :m_isECInstanceIdAutogenerationDisabled(false) {}
 
 public:
@@ -197,13 +197,6 @@ public:
 //===============+===============+===============+===============+===============+======
 struct ColumnFactory : NonCopyableClass
     {
-    enum class SortBy
-        {
-        None,
-        LeastUsedColumn,
-        MostUsedColumn,
-        LeftToRightColumnOrderInTable
-        };
     struct Specification
         {
         enum class Strategy
@@ -230,7 +223,7 @@ struct ColumnFactory : NonCopyableClass
             Utf8String m_accessString;
             Utf8String m_requestedColumnName;
             Strategy m_strategy;
-            ECDbKnownColumns m_knownColumnId;
+            ColumnKind m_columnKind;
             bool m_isNotNull;
             bool m_isUnique;
 
@@ -241,7 +234,7 @@ struct ColumnFactory : NonCopyableClass
                 GenerateColumnNameOptions generateColumnNameOptions = GenerateColumnNameOptions::NameBasedOnLetterFollowedByIntegerSequence,
                 Utf8CP columnName = nullptr,
                 ECDbSqlColumn::Type columnType = ECDbSqlColumn::Type::Any,
-                ECDbKnownColumns columnUserData = ECDbKnownColumns::DataColumn,
+                ColumnKind columnUserData = ColumnKind::DataColumn,
                 PersistenceType persistenceType = PersistenceType::Persisted,
                 Utf8CP accessStringPrefix = nullptr,
                 bool isNotNull = false,
@@ -256,7 +249,7 @@ struct ColumnFactory : NonCopyableClass
             bool IsUnique () const { return m_isUnique; }
             GenerateColumnNameOptions GetGenerateColumnNameOptions () const { return m_generateColumnNameOptions; }
             Strategy GetStrategy () const { return m_strategy; }
-            ECDbKnownColumns GetKnownColumnId () const { return m_knownColumnId; }
+            ColumnKind GetColumnKind () const { return m_columnKind; }
             PersistenceType GetColumnPersistenceType () const { return m_persistenceType; }
             ECDbSqlColumn::Constraint::Collation GetCollation () const { return m_collation; }
         };
@@ -265,29 +258,26 @@ struct ColumnFactory : NonCopyableClass
         ClassMapCR m_classMap;
         std::set<Utf8String, CompareIUtf8> columnsInUseSet;
 
-        static void  SortByLeastUsedColumnFirst (std::vector<ECDbSqlColumn const*>& columns);
-        static void  SortByMostUsedColumnFirst (std::vector<ECDbSqlColumn const*>& columns);
-        static void  SortByColumnOrderInTable (std::vector<ECDbSqlColumn const*>& columns);
-
-        BentleyStatus ResolveColumnName (Utf8StringR resolvedColumName, Specification const& specifications, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId, int retryCount) const;
-        ECDbSqlColumn* ApplyCreateStrategy (Specification const& specifications, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId);
-        ECDbSqlColumn* ApplyCreateOrReuseStrategy (Specification const& specifications, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId);
-        ECDbSqlColumn* ApplyCreateOrReuseSharedColumnStrategy (Specification const& specifications, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId);
-        ECN::ECClassId GetPersistenceClassId (Specification const& specifications) const;
-        bool FindReusableSharedDataColumns (std::vector<ECDbSqlColumn const*>& columns, ECDbSqlTable const& table, ECDbSqlColumn::Constraint::Collation collation = ECDbSqlColumn::Constraint::Collation::Default, SortBy sortby = SortBy::None) const;
+        BentleyStatus ResolveColumnName (Utf8StringR resolvedColumName, Specification const&, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId, int retryCount) const;
+        ECDbSqlColumn* ApplyCreateStrategy (Specification const&, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId);
+        ECDbSqlColumn* ApplyCreateOrReuseStrategy (Specification const&, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId);
+        ECDbSqlColumn* ApplyCreateOrReuseSharedColumnStrategy (SchemaImportContext*, Specification const&, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId);
+        ECN::ECClassId GetPersistenceClassId (Specification const&) const;
+        bool TryFindReusableSharedDataColumn (ECDbSqlColumn const*& reusableColumn, ECDbSqlTable const& table, ECDbSqlColumn::Constraint::Collation collation = ECDbSqlColumn::Constraint::Collation::Default) const;
         bool IsColumnInUse (Utf8CP columnFullName) const;
         bool IsColumnInUse (Utf8CP tableName, Utf8CP columnName) const;
-        bool IsColumnInUse (ECDbSqlColumn const& column) const;
+        bool IsColumnInUse (ECDbSqlColumn const&) const;
         const Utf8String Encode (Utf8StringCR acessString) const;
+
     public:
-        ColumnFactory (ClassMapCR classMap);
+        ColumnFactory (ClassMapCR);
         ~ColumnFactory (){}
         ECDbSqlTable & GetTable ();
-        void RegisterColumnInUse (ECDbSqlColumn const& column);
+        void RegisterColumnInUse (ECDbSqlColumn const&);
         void Reset ();
         void Update ();
-        ECDbSqlColumn* Configure (Specification const& specifications, ECDbSqlTable& targetTable);
-        ECDbSqlColumn* Configure (Specification const& specifications);
+        ECDbSqlColumn* Configure (SchemaImportContext*, Specification const&, ECDbSqlTable&);
+        ECDbSqlColumn* Configure (SchemaImportContext*, Specification const&);
     };
 //=======================================================================================
 //!Maps an ECClass to a DbTable
@@ -309,7 +299,7 @@ struct ClassMap : public IClassMap, RefCountedBase
         std::unique_ptr<ClassDbView> m_dbView;
         ColumnFactory               m_columnFactory;
     private:
-        BentleyStatus ProcessStandardKeySpecifications(ClassMapInfo const&);
+        BentleyStatus ProcessStandardKeySpecifications(SchemaImportContext&, ClassMapInfo const&);
 
         //! Used to find an ECProperty from a propertyAccessString
         //! @param propertyAccessString (as used here) does not support access "inside" arrays, e.g. you can access a struct member inside an array of structs
@@ -321,11 +311,11 @@ struct ClassMap : public IClassMap, RefCountedBase
     protected:
         ClassMap (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
 
-        virtual MapStatus _InitializePart1 (ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap);
-        virtual MapStatus _InitializePart2 (ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap);
+        virtual MapStatus _InitializePart1 (SchemaImportContext*, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap);
+        virtual MapStatus _InitializePart2 (SchemaImportContext*, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap);
         virtual BentleyStatus _Save (std::set<ClassMap const*>& savedGraph); virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap);
 
-        MapStatus AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo, ClassMapInfo const* classMapInfo);
+        MapStatus AddPropertyMaps (SchemaImportContext*, IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo, ClassMapInfo const* classMapInfo);
         void SetTable (ECDbSqlTable* newTable) { m_table = newTable; }
         virtual PropertyMapCollection const& _GetPropertyMaps () const;
         virtual ECDbSqlTable& _GetTable () const override { return *m_table; }
@@ -340,30 +330,15 @@ struct ClassMap : public IClassMap, RefCountedBase
         ECDbSchemaManagerCR Schemas () const;
     public:
         static ClassMapPtr Create (ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new ClassMap (ecClass, ecdbMap, mapStrategy, setIsDirty); }
-        //! Builds the list of PropertyMaps for this ClassMap
-        //! @param  classMapInfo This will contain information cleaned from ClassMap custom attribute
-        MapStatus Initialize (ClassMapInfo const& classMapInfo);
+        MapStatus Initialize (SchemaImportContext*, ClassMapInfo const& classMapInfo);
  
-    
-    //! Used when finding/creating DbColumns that are mapped to ECProperties of the ECClass
-    //! If there is a name conflict, it may call the PropertyMap's SetColumnName method to resolve it
-    ECDbSqlColumn* FindOrCreateColumnForProperty
-        (
-        ClassMapCR classMap,
-        ClassMapInfo const* classMapInfo,
-        PropertyMapR propertyMap, 
-        Utf8CP requestedColumnName, 
-        ECN::PrimitiveType primitiveType, 
-        bool nullable, 
-        bool unique, 
-        ECDbSqlColumn::Constraint::Collation, 
-        Utf8CP accessStringPrefix);
-
+    ECDbSqlColumn* FindOrCreateColumnForProperty (SchemaImportContext*, ClassMapCR classMap, ClassMapInfo const* classMapInfo, PropertyMapR propertyMap, 
+        Utf8CP requestedColumnName, ECN::PrimitiveType primitiveType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collation, Utf8CP accessStringPrefix);
 
     PropertyMapCP GetECInstanceIdPropertyMap () const;
     bool TryGetECInstanceIdPropertyMap (PropertyMapPtr& ecIstanceIdPropertyMap) const;
     
-    BentleyStatus CreateUserProvidedIndices(ClassMapInfo const&) const;
+    BentleyStatus CreateUserProvidedIndices(SchemaImportContext&, ClassMapInfo const&) const;
 
     bool IsDirty () const { return m_isDirty; }
     ECDbClassMapId GetId () const { return m_id; }
@@ -400,7 +375,7 @@ public:
     //! FinishTableDefinition will ensure there is a primary key for the table, and will add a
     //! ClassId column, if necessary
     //! It must be called prior to calling ECDbMap::CreateTableInDb()
-    BentleyStatus FinishTableDefinition();
+    BentleyStatus FinishTableDefinition(ECDbCR, SchemaImportContext&);
     BentleyStatus AddClassMap(ClassMapCR classMap);
     bool IsFinished() const { return m_generatedClassIdColumn;}
     };

@@ -991,7 +991,7 @@ bool JsonECSqlSelectAdapter::JsonFromPropertyValue(JsonValueR jsonValue, IECSqlV
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
- bool JsonECSqlSelectAdapter::JsonFromCell(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const
+bool JsonECSqlSelectAdapter::JsonFromCell(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const
     {
     // Create an empty JSON cell (create hierarchy in the case of structs)
     ECSqlColumnInfoCR columnInfo = ecsqlValue.GetColumnInfo();
@@ -1004,17 +1004,19 @@ bool JsonECSqlSelectAdapter::JsonFromPropertyValue(JsonValueR jsonValue, IECSqlV
         {
         ECPropertyCP ecProperty = propertyPath.At(ii).GetProperty();
         BeAssert(ecProperty != nullptr && "According to the ECSqlStatement API, this can happen only for array readers, where this method should never have been called");
-        Utf8String ecPropertyName = Utf8String(ecProperty->GetName());
+        Utf8String ecPropertyName(ecProperty->GetName());
         if (IsInstanceIdProperty(ecPropertyName))
             {
             ecPropertyName = "$" + ecPropertyName;
             isInstanceIdColumn = true;
             BeAssert(pathLength == 1 && "Cannot have a instance id field as a member of a struct");
             }
+        else if (ecPropertyName.EqualsI("SourceECClassId") || ecPropertyName.EqualsI("TargetECClassId"))
+            ecPropertyName = "$" + ecPropertyName;
 
-        currentCell = &((*currentCell)[ecPropertyName.c_str()]); 
+        currentCell = &((*currentCell)[ecPropertyName.c_str()]);
         }
- 
+
     if (isInstanceIdColumn)
         return JsonFromInstanceId(*currentCell, ecsqlValue);
     else

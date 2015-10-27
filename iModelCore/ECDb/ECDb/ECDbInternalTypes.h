@@ -121,6 +121,19 @@ enum class SqlSetQuantifier
     All,
     };
 
+//=======================================================================================
+//! @bsiclass                                                Affan.Khan      03/2015
+//+===============+===============+===============+===============+===============+======
+enum class ForeignKeyActionType
+    {
+    NotSpecified,
+    Cascade,
+    NoAction,
+    SetNull,
+    SetDefault,
+    Restrict,
+    };
+
 typedef int64_t ECContainerId;
 
 enum class MapStatus 
@@ -148,6 +161,11 @@ enum class ECContainerType
 #define ECDB_COL_ECPropertyPathId       "ECPropertyPathId"
 #define ECDB_COL_ParentECInstanceId     "ParentECInstanceId"
 #define ECDB_COL_ECArrayIndex           "ECArrayIndex"
+
+
+#define COLUMNKIND_ECINSTANCEID_SQLVAL "1"
+#define COLUMNKIND_ECCLASSID_SQLVAL "2"
+
 
 //=======================================================================================
 // @bsiclass                                 Affan.Khan                10/2015
@@ -182,6 +200,9 @@ public:
         
     template<typename TEnum>
     static bool Contains(TEnum test, TEnum candidate) { return Enum::And(test, candidate) == candidate; }
+
+    template<typename TEnum>
+    static bool Intersects(TEnum lhs, TEnum rhs) { return (ToInt<TEnum>(lhs) & ToInt<TEnum>(rhs)) != 0; }
     };
 
 //=======================================================================================
