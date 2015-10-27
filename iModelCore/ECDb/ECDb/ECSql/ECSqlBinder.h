@@ -26,6 +26,7 @@ private:
     ECSqlStatementBase& m_ecsqlStatement;
     ECSqlTypeInfo m_typeInfo;
     int m_mappedSqlParameterCount;
+    std::unique_ptr<std::vector<IECSqlBinder*>> m_onBindEventHandlers;
     IECSqlBinder* m_onBindEventHandler;
     bool m_hasToCallOnBeforeStep;
     bool m_hasToCallOnClearBindings;
@@ -67,7 +68,7 @@ public:
 
     ECSqlStatus OnBeforeStep ();
     void OnClearBindings ();
-    void SetOnBindEventHandler (IECSqlBinder& binder) { BeAssert (m_onBindEventHandler == nullptr); m_onBindEventHandler = &binder; }
+    ECSqlStatus SetOnBindEventHandler(IECSqlBinder& binder);
     void SetOnBindRepositoryBasedIdEventHandler (std::function<void (ECInstanceId const& bindValue)> eventHandler) { BeAssert (m_onBindRepositoyBasedIdEventHandler == nullptr); m_onBindRepositoyBasedIdEventHandler = eventHandler; }
     };
 

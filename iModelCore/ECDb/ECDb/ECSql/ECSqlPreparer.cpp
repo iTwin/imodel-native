@@ -449,6 +449,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
             BeAssert(rootMap != nullptr);
             table = &rootMap->GetTable();
             }
+        else if (classMap.IsJoinedTable() && currentScopeECSqlType == ECSqlType::Update)
+            {
+            table = &classMap.GetTable();
+            }
         else 
             {
             std::vector<size_t> nonVirtualPartitionIndices = classMap.GetStorageDescription().GetNonVirtualHorizontalPartitionIndices();

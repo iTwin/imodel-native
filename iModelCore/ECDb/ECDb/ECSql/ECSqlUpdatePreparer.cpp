@@ -32,6 +32,20 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
         }
 
     IClassMap const& classMap = classNameExp->GetInfo ().GetMap ();
+    if (auto info = ctx.GetJoinTableInfo())
+        {
+        if (info->HasParentECSQlStatement() && info->HasECSQlStatement())
+            {
+            auto baseStatement = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetBaseECSqlStatement(classMap.GetClass().GetId());
+            auto status = baseStatement->Prepare(ctx.GetECDb(), info->GetParentECSQlStatement());
+            if (status != ECSqlStatus::Success)
+                {
+                BeAssert("Base statement is generated statement should fail at prepare");
+                return status;
+                }
+            }
+        }
+
     if (classMap.IsRelationshipClassMap ())
         {
         if (!specialTokenExpIndexMap.IsUnset(ECSqlSystemProperty::SourceECInstanceId) ||
@@ -65,16 +79,55 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
     if (assignmentListSnippets.size() == 0)
         ctx.SetNativeNothingToUpdate(true);
 
-    bool hasWhereClause = false;
-    if (auto whereClauseExp = exp.GetOptWhereClauseExp ())
+    //WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] WHERE (%s))
+    NativeSqlBuilder topLevelWhereClause;
+    if (auto whereClauseExp = exp.GetOptWhereClauseExp())
         {
-        nativeSqlBuilder.AppendSpace ();
-        status = ECSqlExpPreparer::PrepareWhereExp(nativeSqlBuilder, ctx, whereClauseExp);
+        NativeSqlBuilder whereClause;
+        status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereClauseExp);
         if (!status.IsSuccess())
             return status;
 
-        hasWhereClause = true;
+        //Following generate optimized WHERE depending on what was accessed in WHERE class of delete. It will avoid uncessary
+        auto const & currentClassMap = classMap;
+        if (auto rootOfJoinedTable = currentClassMap.FindRootOfJoinedTable())
+            {
+            auto const tableBeenAccessed = whereClauseExp->GetReferencedTables();
+            bool referencedRootOfJoinedTable = (tableBeenAccessed.find(&rootOfJoinedTable->GetTable()) != tableBeenAccessed.end());
+            bool referencedJoinedTable = (tableBeenAccessed.find(&currentClassMap.GetTable()) != tableBeenAccessed.end());
+            if (!referencedRootOfJoinedTable && referencedJoinedTable)
+                {
+                //do not modifiy where
+                topLevelWhereClause = whereClause;
+                }
+            else
+                {
+                auto joinedTableId = currentClassMap.GetTable().GetFilteredColumnFirst(ECDbKnownColumns::ECInstanceId);
+                auto parentOfjoinedTableId = rootOfJoinedTable->GetTable().GetFilteredColumnFirst(ECDbKnownColumns::ECInstanceId);
+                NativeSqlBuilder snippet;
+                snippet.AppendFormatted(
+                    " WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] %s) ",
+                    parentOfjoinedTableId->GetName().c_str(),
+                    rootOfJoinedTable->GetTable().GetName().c_str(),
+                    parentOfjoinedTableId->GetName().c_str(),
+                    rootOfJoinedTable->GetTable().GetName().c_str(),
+                    currentClassMap.GetTable().GetName().c_str(),
+                    currentClassMap.GetTable().GetName().c_str(),
+                    joinedTableId->GetName().c_str(),
+                    rootOfJoinedTable->GetTable().GetName().c_str(),
+                    parentOfjoinedTableId->GetName().c_str(),
+                    whereClause.ToString()
+                    );
+
+                topLevelWhereClause = snippet;
+                }
+            }
+        else
+            topLevelWhereClause = whereClause;
         }
+
+    if (!topLevelWhereClause.IsEmpty())
+        nativeSqlBuilder.Append(topLevelWhereClause);
 
     // WHERE clause
     NativeSqlBuilder systemWhereClause;
@@ -85,13 +138,15 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
     //    return status;
 
     auto& storageDesc = classMap.GetStorageDescription ();
+    ECClassId classId = classMap.GetClass().GetId();
+
     if (storageDesc.GetNonVirtualHorizontalPartitionIndices ().empty () || !exp.GetClassNameExp ()->IsPolymorphic ())
         {
         if (auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId))
             {
             if (classIdColumn->GetPersistenceType () == PersistenceType::Persisted)
                 {
-                systemWhereClause.AppendEscaped (classIdColumn->GetName ().c_str ()).Append (" = ").Append (classMap.GetClass ().GetId ());
+                systemWhereClause.AppendEscaped (classIdColumn->GetName ().c_str ()).Append (" = ").Append (classId);
                 }
             }
         }
@@ -110,7 +165,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
 
     if (!systemWhereClause.IsEmpty ())
         {
-        if (!hasWhereClause)
+        if (topLevelWhereClause.IsEmpty())
             nativeSqlBuilder.Append (" WHERE ");
         else
             nativeSqlBuilder.Append (" AND ");

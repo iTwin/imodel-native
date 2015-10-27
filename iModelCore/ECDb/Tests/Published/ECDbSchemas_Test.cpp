@@ -241,6 +241,12 @@ TEST(ECDbSchemas, JoinedTableTest)
         ASSERT_EQ(realRowCount, rowCountExpected);
         };
 
+    assert_ecsql("UPDATE dgn.Goo SET A = ?, B = 'bb1', C = :c1, D = 'dd1' WHERE  A = ? AND B = :b1;", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("UPDATE dgn.Goo SET A = ?, B = 'bb1' WHERE  A = ? AND B = :b1;", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("UPDATE dgn.Goo SET C = :c1, D = 'dd1' WHERE  A = ? AND B = :b1;", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assert_ecsql("UPDATE dgn.Foo SET A = 2, B = 'bb1' WHERE  A = 101 AND B = 'b1';", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+
+
     assert_ecsql("INSERT INTO dgn.Goo(A, B, C, D) VALUES(:a,'b1',:c,'d1');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
     assert_ecsql("INSERT INTO dgn.Goo(ECInstanceId, A, B, C, D) VALUES(120, 102,'b2',202,'d2');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
     assert_ecsql("INSERT INTO dgn.Goo(A, B, C, D) VALUES(103,'b3',203,'d3');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
@@ -260,7 +266,6 @@ TEST(ECDbSchemas, JoinedTableTest)
     assert_ecsql("INSERT INTO dgn.Roo(A, B) VALUES(105,'b15');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
     assert_ecsql("INSERT INTO dgn.Foo(A, B) VALUES(104,'b16');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
     assert_ecsql("INSERT INTO dgn.Foo(A, B) VALUES(104,'b17');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
-
 
     assert_ecsql2("SELECT ECInstanceId, A, B FROM dgn.Foo", ECSqlStatus::Success, 3, 16);
     assert_ecsql2("SELECT ECInstanceId, A, B FROM ONLY dgn.Foo", ECSqlStatus::Success, 3, 4);
@@ -291,6 +296,7 @@ TEST(ECDbSchemas, JoinedTableTest)
     assert_ecsql2("SELECT ECInstanceId, A, B, G, H FROM ONLY dgn.Roo", ECSqlStatus::Success, 5, 4);
     assert_ecsql2("SELECT ECInstanceId, A, B, G, H FROM dgn.Roo WHERE A = 102 AND B ='b13' AND G = 202 AND H ='h2'", ECSqlStatus::Success, 5, 1);
     assert_ecsql2("SELECT ECInstanceId, A, B, G, H FROM ONLY dgn.Roo WHERE A = 102 AND B ='b13' AND G = 202 AND H ='h2'", ECSqlStatus::Success, 5, 1);
+
 
 
     assert_ecsql("DELETE FROM dgn.Foo WHERE ECInstanceId = 1 AND A = 101 AND B = 'b1';", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);

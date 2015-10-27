@@ -105,18 +105,20 @@ public:
             typedef std::unique_ptr<JoinTableInfo> Ptr;
             struct Parameter
                 {
+                friend struct JoinTableInfo;
                 typedef std::unique_ptr<Parameter> Ptr;
                 private:
                     size_t m_index;
                     Utf8String m_name;
+                    bool m_shared;
                     Parameter const* m_orignalParameter;
                 public:
                     Parameter(size_t index, Utf8CP name)
-                        :m_index(index), m_name(name), m_orignalParameter(nullptr)
+                        :m_index(index), m_name(name), m_orignalParameter(nullptr), m_shared(false)
                         {
                         }
-                    Parameter(size_t index, Utf8CP name, Parameter const& orignalParamter )
-                        :m_index(index), m_name(name), m_orignalParameter(&orignalParamter)
+                    Parameter(size_t index, Utf8CP name, Parameter const& orignalParamter)
+                        :m_index(index), m_name(name), m_orignalParameter(&orignalParamter), m_shared(false)
                         {
                         }
                     Parameter()
@@ -143,6 +145,10 @@ public:
                         m_orignalParameter = nullptr;
                         m_index = 0;
                         m_name.clear();
+                        }
+                    bool IsShared() const 
+                        {
+                        return m_shared;
                         }
                     size_t GetIndex() const
                         {
@@ -178,7 +184,6 @@ public:
 
                         return m_parameters.at(index - 1).get();
                         }
-
                     Parameter const* Find(Utf8CP name) const
                         {
                         for (auto& param : m_parameters)
@@ -204,17 +209,17 @@ public:
                         m_parameters.push_back(Parameter::Ptr(new Parameter(exp.GetParameterIndex(), exp.GetParameterName())));
                         return Find(Last());
                         }
-                    Parameter const*  Add(Parameter const& orignalParam)
+                    Parameter const* Add(Parameter const& orignalParam)
                         {
                         m_parameters.push_back(Parameter::Ptr(new Parameter(m_parameters.size() + 1, orignalParam.GetName(), orignalParam)));
                         return Find(Last());
                         }
-                    Parameter const*  Add()
+                    Parameter const* Add()
                         {
                         m_parameters.push_back(Parameter::Ptr(new Parameter(m_parameters.size() + 1, "")));
                         return Find(Last());
                         }
-                    Parameter const*  Add(Utf8CP name)
+                    Parameter const* Add(Utf8CP name)
                         {
                         m_parameters.push_back(Parameter::Ptr(new Parameter(m_parameters.size() + 1, name)));
                         return Find(Last());
@@ -250,7 +255,7 @@ public:
                     ParameterSet m_orignal;
                     ParameterSet m_primary;
                     ParameterSet m_secondary;
-
+                  
                 public:
                     ParameterSet& GetOrignalR() {return m_orignal;}
                     ParameterSet& GetPrimaryR() {return m_primary;}
@@ -267,9 +272,13 @@ public:
             ParameterMap m_parameterMap;
             bool m_userProvidedECInstanceId;
             size_t m_primaryECInstanceIdParameterIndex;
+            ECClassCP m_class;
+            ECClassCP m_parentClass;
+
         private:
             static Ptr TrySetupJoinTableContextForInsert(ECSqlPrepareContext& ctx, InsertStatementExp const& exp);
             static Ptr TrySetupJoinTableContextForUpdate(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp);
+            static NativeSqlBuilder BuildAssignmentExpression(NativeSqlBuilder::List const& prop, NativeSqlBuilder::List const& values);
             JoinTableInfo(){}
         public:
             ~JoinTableInfo() {}
@@ -277,6 +286,11 @@ public:
             Utf8CP GetECSQlStatement() const {return m_statement.c_str();}
             Utf8CP GetParentECSQlStatement() const {return m_parentStatement.c_str();}
             Utf8CP GetOrignalECSQlStatement() const {return m_orginalStatement.c_str();}
+            bool HasParentECSQlStatement() const {return !m_parentStatement.empty();}
+            bool HasECSQlStatement() const {return !m_statement.empty();}
+            ECClassCR GetClass() const {return *m_class;}
+            ECClassCR GetParentClass() const {return *m_parentClass;}
+
             ParameterMap const& GetParameterMap() const {return m_parameterMap;}
             bool IsUserProvidedECInstanceId ()const {return m_userProvidedECInstanceId;}
             size_t GetPrimaryECinstanceIdParameterIndex() const {return m_primaryECInstanceIdParameterIndex;}

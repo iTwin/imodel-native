@@ -274,6 +274,10 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     NativeSqlBuilder parentOfJoinedTableECSQL;
     NativeSqlBuilder joinedTableECSQL;
     auto rootClassMap = classMap.FindRootOfJoinedTable();
+
+    ptr->m_class = &classMap.GetClass();
+    ptr->m_parentClass = &rootClassMap->GetClass();
+
     auto tables = exp.GetReferencedTables();
 
     NativeSqlBuilder::List joinedTableProperties;
@@ -363,10 +367,122 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     ptr->m_parentStatement = parentOfJoinedTableECSQL.ToString();
     return std::move(ptr);
     }
+
 //static 
 ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TrySetupJoinTableContextForUpdate(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
     {
-    return nullptr;
+    Ptr ptr = Ptr(new JoinTableInfo());
+    auto const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
+    if (!classMap.IsJoinedTable())
+        return false;
+
+    NativeSqlBuilder parentOfJoinedTableECSQL;
+    NativeSqlBuilder joinedTableECSQL;
+    auto rootClassMap = classMap.FindRootOfJoinedTable();
+    ptr->m_class = &classMap.GetClass();
+    ptr->m_parentClass = &rootClassMap->GetClass();
+
+    auto tables = exp.GetReferencedTables();
+
+    NativeSqlBuilder::List joinedTableProperties;
+    NativeSqlBuilder::List joinedTableValues;
+    NativeSqlBuilder::List parentOfJoinedTableValues;
+    NativeSqlBuilder::List parentOfJoinedTableProperties;
+    bool isPolymorphic = exp.GetClassNameExp()->IsPolymorphic();
+    joinedTableECSQL.Append("UPDATE ").AppendIf(!isPolymorphic, "ONLY ").Append(classMap.GetECSqlName().c_str()).Append(" SET ");
+    parentOfJoinedTableECSQL.Append("UPDATE ").AppendIf(!isPolymorphic, "ONLY ").Append(rootClassMap->GetECSqlName().c_str()).Append(" SET ");
+
+    auto assignmentList = exp.GetAssignmentListExp();
+    ptr->m_userProvidedECInstanceId = false;
+    ptr->m_primaryECInstanceIdParameterIndex = 0;
+    for (size_t i = 0; i < assignmentList->GetChildrenCount(); i++)
+        {
+        auto assignmentExp = assignmentList->GetAssignmentExp(i);
+        auto property = assignmentExp->GetPropertyNameExp();
+        auto value = assignmentExp->GetValueExp();
+
+        std::vector<Parameter const*> thisValueParams;
+        for (auto exp : value->Find(Exp::Type::Parameter, true /* recusive*/))
+            {
+            auto param = static_cast<ParameterExp const*>(exp);
+            if (param->IsNamedParameter() && ptr->m_parameterMap.GetOrignal().Find(param->GetParameterName()))
+                {
+                //do nothing
+                }
+            else
+                thisValueParams.push_back(ptr->m_parameterMap.GetOrignalR().Add(*param));
+            }
+
+        if (property->GetPropertyMap().IsSystemPropertyMap())
+            {
+            BeAssert(false && "Updating system properties are not supported");
+            return nullptr;
+            }
+        else if (property->GetPropertyMap().IsMappedToPrimaryTable())
+            {
+            joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
+            joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
+            ptr->m_parameterMap.GetSecondaryR().Add(thisValueParams);
+            }
+        else
+            {
+            parentOfJoinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
+            parentOfJoinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
+            ptr->m_parameterMap.GetPrimaryR().Add(thisValueParams);
+            }
+        }
+
+
+    joinedTableECSQL.Append(BuildAssignmentExpression(joinedTableProperties, joinedTableValues));
+    parentOfJoinedTableECSQL.Append(BuildAssignmentExpression(parentOfJoinedTableProperties, parentOfJoinedTableValues));
+
+    if (auto bwhere = exp.GetOptWhereClauseExp())
+        {
+        std::vector<Parameter const*> thisValueParams;
+        for (auto exp : bwhere->Find(Exp::Type::Parameter, true /* recusive*/))
+            {
+            auto param = static_cast<ParameterExp const*>(exp);
+            if (param->IsNamedParameter() && ptr->m_parameterMap.GetOrignal().Find(param->GetParameterName()))
+                {
+                //do nothing
+                }
+            else
+                thisValueParams.push_back(ptr->m_parameterMap.GetOrignalR().Add(*param));
+            }
+
+        ptr->m_parameterMap.GetSecondaryR().Add(thisValueParams);
+        ptr->m_parameterMap.GetPrimaryR().Add(thisValueParams);
+        joinedTableECSQL.Append(bwhere->ToECSql().c_str());
+        parentOfJoinedTableECSQL.Append(bwhere->ToECSql().c_str());
+        }
+
+
+    if (!joinedTableProperties.empty())
+        {
+        ptr->m_statement = joinedTableECSQL.ToString();
+        }
+
+    if (!parentOfJoinedTableProperties.empty())
+        {
+        ptr->m_parentStatement = parentOfJoinedTableECSQL.ToString();
+        }
+
+    return std::move(ptr);
+    }
+//static
+NativeSqlBuilder ECSqlPrepareContext::JoinTableInfo::BuildAssignmentExpression(NativeSqlBuilder::List const& prop, NativeSqlBuilder::List const& values)
+    {
+    BeAssert(prop.size() == values.size());
+    NativeSqlBuilder out;
+    for (auto propI = prop.begin(), valueI = values.begin(); propI != prop.end() && valueI != values.end(); ++propI, ++valueI)
+        {
+        if (propI != prop.begin())
+            out.AppendComma();
+
+        out.Append(*propI).Append(" = ").Append(*valueI);      
+        }
+
+    return std::move(out);
     }
 //static 
 ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TrySetupJoinTableContextIfAny(ECSqlPrepareContext& ctx, ECSqlParseTreeCR const& exp, Utf8CP orignalECSQL)
@@ -379,7 +495,33 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
 
     if (ptr != nullptr)
         {
+        bool isValidJoinTableContext = ptr->m_class != nullptr && ptr->m_parentClass != nullptr && !(ptr->m_statement.empty() && ptr->m_parentStatement.empty());
+        if (!isValidJoinTableContext)
+            {
+            BeAssert(isValidJoinTableContext == true);
+            return nullptr;
+            }
+
         ptr->m_orginalStatement = orignalECSQL;
+
+        auto& primary = ptr->m_parameterMap.GetPrimaryR();
+        auto& secondary = ptr->m_parameterMap.GetSecondaryR();
+        for (auto i = primary.First(); i != primary.Last(); ++i)
+            {
+            auto p = const_cast<Parameter*>(primary.Find(i));
+            if (p->GetOrignalParameter())
+                {
+                for (auto j = secondary.First(); j != secondary.Last(); ++j)
+                    {
+                    auto s = const_cast<Parameter*>(secondary.Find(j));
+                    if (p->GetOrignalParameter() == s->GetOrignalParameter())
+                        {
+                        p->m_shared = s->m_shared = true;
+                        }
+                    }
+                }
+            }
+
         return std::move(ptr);
         }
 

@@ -8,7 +8,7 @@
 #include "ECDbPch.h"
 #include "ECSqlBinder.h"
 #include "ECSqlStatementBase.h"
-
+#include "PrimitiveToSingleColumnECSqlBinder.h"
 using namespace std;
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -21,7 +21,18 @@ int ECSqlBinder::GetMappedSqlParameterCount() const
     {
     return m_mappedSqlParameterCount;
     }
-
+ECSqlStatus ECSqlBinder::SetOnBindEventHandler(IECSqlBinder& binder)
+    {
+    BeAssert(m_onBindEventHandler == nullptr);
+    if (dynamic_cast<PrimitiveToSingleColumnECSqlBinder const*>(&binder) == nullptr)
+        {
+        BeAssert(dynamic_cast<PrimitiveToSingleColumnECSqlBinder const*>(&binder) != nullptr && "Only PrimitiveToSingleColumnECSqlBinder is supported as EventHandlers");
+        return ECSqlStatus::Error;
+        }
+    
+    m_onBindEventHandler = &binder;
+    return ECSqlStatus::Success;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
@@ -194,12 +205,14 @@ ECSqlBinder* ECSqlParameterMap::AddProxyBinder(int ecsqlParameterIndex, ECSqlBin
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
     {
+    ECSqlStatus st = ECSqlStatus::Success;
     auto joinInfo = ctx.GetJoinTableInfo();
     if (joinInfo == nullptr)
-        return ECSqlStatus::Success;
+        return st;
 
     auto baseStmt = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetBaseECSqlStatement();
-    BeAssert(baseStmt != nullptr);
+    if (baseStmt == nullptr)
+        return st;
 
     auto& baseParameterMap = baseStmt->GetPreparedStatementP()->GetParameterMapR();
     auto& primaryMap = joinInfo->GetParameterMap().GetPrimary();
@@ -209,18 +222,64 @@ ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
         if (auto orignalParam = param->GetOrignalParameter())
             {
             ECSqlBinder* binder = nullptr;
-            auto status = baseParameterMap.TryGetBinder(binder, static_cast<int>(param->GetIndex()));
-            if (status != ECSqlStatus::Success)
+            if (param->IsShared())
                 {
-                BeAssert(false && "Programmer Error: Pararameter order is not correct.");
-                return status;
-                }
+                ECSqlBinder* cbinder = nullptr;
+                if (param->IsNamed())
+                    {
+                    auto status = baseParameterMap.TryGetBinder(binder, param->GetName());
+                    if (!status)
+                        {
+                        BeAssert(false && "Programmer Error: Failed to find named parameter in base");
+                        return ECSqlStatus::Error;
+                        }
 
-            AddProxyBinder(static_cast<int>(orignalParam->GetIndex()), *binder);
+                    if (!TryGetBinder(cbinder, param->GetName()))
+                        {
+                        BeAssert(false && "Programmer Error: Failed to find named parameter in secondary");
+                        return ECSqlStatus::Error;
+                        }
+
+                    st = cbinder->SetOnBindEventHandler(*binder);
+                    if (st != ECSqlStatus::Success)
+                        return st;
+                    }
+                else
+                    {
+                    st = baseParameterMap.TryGetBinder(binder, static_cast<int>(param->GetIndex()));
+                    if (st != ECSqlStatus::Success)
+                        {
+                        BeAssert(false && "Programmer Error: Pararameter order is not correct.");
+                        return st;
+                        }
+
+                    st = TryGetBinder(cbinder, static_cast<int>(orignalParam->GetIndex()));
+                    if (st != ECSqlStatus::Success)
+                        {
+                        BeAssert(false && "Programmer Error: Failed to find named parameter in secondary");
+                        return st;
+                        }
+
+                    st = cbinder->SetOnBindEventHandler(*binder);
+                    if (st != ECSqlStatus::Success)
+                        return st;
+                    }
+                }
+            else
+                {
+                st = baseParameterMap.TryGetBinder(binder, static_cast<int>(param->GetIndex()));
+                if (st != ECSqlStatus::Success)
+                    {
+                    BeAssert(false && "Programmer Error: Pararameter order is not correct.");
+                    return st;
+                    }
+
+                AddProxyBinder(static_cast<int>(orignalParam->GetIndex()), *binder);
+                }
             }
         }
 
-    return ECSqlStatus::Success;
+    return st;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013

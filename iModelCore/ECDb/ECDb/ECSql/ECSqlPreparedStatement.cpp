@@ -431,6 +431,13 @@ DbResult ECSqlUpdatePreparedStatement::Step()
         if (BE_SQLITE_OK != status)
             return status;
 
+        if (auto baseStmt = GetBaseECSqlStatement())
+            {
+            auto r = baseStmt->Step();
+            if (r != DbResult::BE_SQLITE_DONE)
+                return r;
+            }
+
         if (!IsNothingToUpdate())
             return DoStep();
         }
