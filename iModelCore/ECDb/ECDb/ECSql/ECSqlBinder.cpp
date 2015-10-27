@@ -23,14 +23,18 @@ int ECSqlBinder::GetMappedSqlParameterCount() const
     }
 ECSqlStatus ECSqlBinder::SetOnBindEventHandler(IECSqlBinder& binder)
     {
-    BeAssert(m_onBindEventHandler == nullptr);
+    if (m_onBindEventHandlers == nullptr)
+        m_onBindEventHandlers = std::unique_ptr<std::vector<IECSqlBinder*>>(new std::vector<IECSqlBinder*>());
+    
+    BeAssert(std::find(m_onBindEventHandlers->begin(), m_onBindEventHandlers->end(), &binder) == m_onBindEventHandlers->end());
+
     if (dynamic_cast<PrimitiveToSingleColumnECSqlBinder const*>(&binder) == nullptr)
         {
         BeAssert(dynamic_cast<PrimitiveToSingleColumnECSqlBinder const*>(&binder) != nullptr && "Only PrimitiveToSingleColumnECSqlBinder is supported as EventHandlers");
         return ECSqlStatus::Error;
         }
     
-    m_onBindEventHandler = &binder;
+    m_onBindEventHandlers->push_back(&binder);
     return ECSqlStatus::Success;
     }
 //---------------------------------------------------------------------------------------

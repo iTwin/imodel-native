@@ -27,7 +27,6 @@ private:
     ECSqlTypeInfo m_typeInfo;
     int m_mappedSqlParameterCount;
     std::unique_ptr<std::vector<IECSqlBinder*>> m_onBindEventHandlers;
-    IECSqlBinder* m_onBindEventHandler;
     bool m_hasToCallOnBeforeStep;
     bool m_hasToCallOnClearBindings;
 
@@ -37,7 +36,7 @@ private:
 
 protected:
     ECSqlBinder (ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo, int mappedSqlParameterCount, bool hasToCallOnBeforeStep, bool hasToCallOnClearBindings)
-        : m_ecsqlStatement (ecsqlStatement), m_typeInfo (typeInfo), m_mappedSqlParameterCount (mappedSqlParameterCount), m_onBindEventHandler (nullptr), m_hasToCallOnBeforeStep (hasToCallOnBeforeStep), m_hasToCallOnClearBindings (hasToCallOnClearBindings)
+        : m_ecsqlStatement (ecsqlStatement), m_typeInfo (typeInfo), m_mappedSqlParameterCount (mappedSqlParameterCount), m_onBindEventHandlers (nullptr), m_hasToCallOnBeforeStep (hasToCallOnBeforeStep), m_hasToCallOnClearBindings (hasToCallOnClearBindings)
         {}
 
     //Part of initialization. Must only called in constructor.
@@ -45,7 +44,7 @@ protected:
         
     std::function<void (ECInstanceId const& bindValue)> GetOnBindRepositoryBasedIdEventHandler () const { return m_onBindRepositoyBasedIdEventHandler; }
     static NoopECSqlBinder& GetNoopBinder (ECSqlStatus status);
-    IECSqlBinder* GetOnBindEventHandler () { return m_onBindEventHandler; }
+    std::vector<IECSqlBinder*>* GetOnBindEventHandlers () { return m_onBindEventHandlers.get(); }
 
     ECSqlStatus ReportError(DbResult sqliteStat, Utf8CP errorMessageHeader = nullptr) const;
 

@@ -25,11 +25,14 @@ void PrimitiveToSingleColumnECSqlBinder::_SetSqliteIndex(int ecsqlParameterCompo
 //---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindNull()
     {
-    if (auto eh = GetOnBindEventHandler())
+    if (auto ehs = GetOnBindEventHandlers())
         {
-        auto es = eh->BindNull();
-        if (es != ECSqlStatus::Success)
-            return es;
+        for (auto eh : *ehs)
+            {
+            auto es = eh->BindNull();
+            if (es != ECSqlStatus::Success)
+                return es;
+            }
         }
 
     const auto sqliteStat = GetSqliteStatementR ().BindNull(m_sqliteIndex);
@@ -48,11 +51,14 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindBoolean(bool value)
     if (!stat.IsSuccess())
         return stat;
 
-    if (auto eh = GetOnBindEventHandler())
+    if (auto ehs = GetOnBindEventHandlers())
         {
-        auto es = eh->BindBoolean(value);
-        if (es != ECSqlStatus::Success)
-            return es;
+        for (auto eh : *ehs)
+            {
+            auto es = eh->BindBoolean(value);
+            if (es != ECSqlStatus::Success)
+                return es;
+            }
         }
 
     const auto sqliteStat = GetSqliteStatementR ().BindInt(m_sqliteIndex, value ? 1 : 0);
@@ -71,11 +77,14 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindBinary(const void* value, i
     if (!stat.IsSuccess())
         return stat;
 
-    if (auto eh = GetOnBindEventHandler())
+    if (auto ehs = GetOnBindEventHandlers())
         {
-        auto es = eh->BindBinary(value, binarySize, makeCopy);
-        if (es != ECSqlStatus::Success)
-            return es;
+        for (auto eh : *ehs)
+            {
+            auto es = eh->BindBinary(value, binarySize, makeCopy);
+            if (es != ECSqlStatus::Success)
+                return es;
+            }
         }
 
     const auto sqliteStat = GetSqliteStatementR ().BindBlob(m_sqliteIndex, value, binarySize, ToBeSQliteBindMakeCopy(makeCopy));
@@ -116,11 +125,14 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDateTime(double julianDay, 
         return ECSqlStatus::Error;
         }
     
-    if (IECSqlBinder* eh = GetOnBindEventHandler())
+    if (auto ehs = GetOnBindEventHandlers())
         {
-        const ECSqlStatus es = eh->BindDateTime(julianDay, metadata);
-        if (es != ECSqlStatus::Success)
-            return es;
+        for (auto eh : *ehs)
+            {
+            auto es = eh->BindDateTime(julianDay, metadata);
+            if (es != ECSqlStatus::Success)
+                return es;
+            }
         }
 
     const DbResult sqliteStat = GetSqliteStatementR().BindDouble(m_sqliteIndex, julianDay);
@@ -140,11 +152,14 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDouble(double value)
     if (!stat.IsSuccess())
         return stat;
 
-    if (auto eh = GetOnBindEventHandler())
+    if (auto ehs = GetOnBindEventHandlers())
         {
-        auto es = eh->BindDouble(value);
-        if (es != ECSqlStatus::Success)
-            return es;
+        for (auto eh : *ehs)
+            {
+            auto es = eh->BindDouble(value);
+            if (es != ECSqlStatus::Success)
+                return es;
+            }
         }
 
     const auto sqliteStat = GetSqliteStatementR ().BindDouble(m_sqliteIndex, value);
@@ -163,11 +178,14 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindGeometryBlob(const void* va
     if (!stat.IsSuccess())
         return stat;
 
-    if (auto eh = GetOnBindEventHandler())
+    if (auto ehs = GetOnBindEventHandlers())
         {
-        auto es = eh->BindGeometryBlob(value, blobSize, makeCopy);
-        if (es != ECSqlStatus::Success)
-            return es;
+        for (auto eh : *ehs)
+            {
+            auto es = eh->BindGeometryBlob(value, blobSize, makeCopy);
+            if (es != ECSqlStatus::Success)
+                return es;
+            }
         }
 
     const auto sqliteStat = GetSqliteStatementR ().BindBlob(m_sqliteIndex, value, blobSize, ToBeSQliteBindMakeCopy(makeCopy));
@@ -186,11 +204,14 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindInt(int value)
     if (!stat.IsSuccess())
         return stat;
 
-    if (auto eh = GetOnBindEventHandler())
+    if (auto ehs = GetOnBindEventHandlers())
         {
-        auto es = eh->BindInt(value);
-        if (es != ECSqlStatus::Success)
-            return es;
+        for (auto eh : *ehs)
+            {
+            auto es = eh->BindInt(value);
+            if (es != ECSqlStatus::Success)
+                return es;
+            }
         }
 
     const auto sqliteStat = GetSqliteStatementR ().BindInt(m_sqliteIndex, value);
@@ -209,11 +230,14 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindInt64(int64_t value)
     if (!stat.IsSuccess())
         return stat;
 
-    if (auto eh = GetOnBindEventHandler())
+    if (auto ehs = GetOnBindEventHandlers())
         {
-        auto es = eh->BindInt64(value);
-        if (es != ECSqlStatus::Success)
-            return es;
+        for (auto eh : *ehs)
+            {
+            auto es = eh->BindInt64(value);
+            if (es != ECSqlStatus::Success)
+                return es;
+            }
         }
 
     const auto sqliteStat = GetSqliteStatementR ().BindInt64(m_sqliteIndex, value);
@@ -250,11 +274,14 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindText(Utf8CP value, IECSqlBi
     if (!stat.IsSuccess())
         return stat;
 
-    if (auto eh = GetOnBindEventHandler())
+    if (auto ehs = GetOnBindEventHandlers())
         {
-        auto es = eh->BindText(value, makeCopy, byteCount);
-        if (es != ECSqlStatus::Success)
-            return es;
+        for (auto eh : *ehs)
+            {
+            auto es = eh->BindText(value, makeCopy, byteCount);
+            if (es != ECSqlStatus::Success)
+                return es;
+            }
         }
 
     const auto sqliteStat = GetSqliteStatementR ().BindText(m_sqliteIndex, value, ToBeSQliteBindMakeCopy(makeCopy), byteCount);
