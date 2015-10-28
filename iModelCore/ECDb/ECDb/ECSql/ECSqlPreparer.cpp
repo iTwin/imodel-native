@@ -757,9 +757,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp (NativeSqlBuilder::Lis
         nativeSqlSnippet.AppendParenLeft();
 
     auto const& classMap = classNameExp->GetInfo ().GetMap ();
-    auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ColumnKind::ECClassId);
-
-    if (classIdColumn != nullptr)
+    ECDbSqlColumn const* classIdColumn = nullptr;
+    if (classMap.GetTable().TryGetECClassIdColumn(classIdColumn))
         {
         auto classRefId = classRefExp->GetId ().c_str ();
         auto classIdColumnName = classIdColumn->GetName ().c_str();
@@ -772,7 +771,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp (NativeSqlBuilder::Lis
             //for select statements we need to use the view's ecclass id column to avoid
             //that a constant class id number shows up in order by etc
             auto classRefId = classRefExp->GetId ().c_str ();
-            nativeSqlSnippet.Append (classRefId, ViewGenerator::ECCLASSID_COLUMNNAME);
+            nativeSqlSnippet.Append (classRefId, ECDB_COL_ECClassId);
             }
         else
             {

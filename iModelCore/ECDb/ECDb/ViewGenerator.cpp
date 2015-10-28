@@ -13,12 +13,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define ECDB_HOLDING_VIEW "ec_RelationshipHoldingStatistics"
         
 //************************** ViewGenerator ***************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    10/2013
-//---------------------------------------------------------------------------------------
-//static
-Utf8CP const ViewGenerator::ECCLASSID_COLUMNNAME = "ECClassId";
-
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      07/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -45,7 +39,7 @@ BentleyStatus ViewGenerator::CreateView (NativeSqlBuilder& viewSql, ECDbMapCR ma
     BentleyStatus status;
     if (ClassMap::IsAnyClass (classMap.GetClass ()))
         {
-        PRECONDITION (isPolymorphicQuery && "This operation require require polymorphic query to be enabled", BentleyStatus::ERROR);
+        PRECONDITION (isPolymorphicQuery && "This operation require require polymorphic query to be enabled", ERROR);
 
         std::vector<IClassMap const*> rootClassMaps;
         status = GetRootClasses(rootClassMaps, map.GetECDbR());
@@ -316,7 +310,7 @@ return SUCCESS;
         if (table.TryGetECClassIdColumn(classIdColumn))
             viewSql.Append(classIdColumn->GetName().c_str());
         else
-            viewSql.Append(firstChildClassMap->GetClass().GetId()).AppendSpace().Append(ECCLASSID_COLUMNNAME);
+            viewSql.Append(firstChildClassMap->GetClass().GetId()).AppendSpace().Append(ECDB_COL_ECClassId);
 
 
         std::vector<std::pair<PropertyMapCP, PropertyMapCP>> viewPropMaps;
@@ -691,7 +685,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps (NativeSqlBuilder& viewSql, EC
         }
 
     viewSql.Append (relationMap.GetECInstanceIdPropertyMap ()->ToNativeSql ( nullptr, ECSqlType::Select, false)).AppendComma (true);
-    viewSql.Append (relationMap.GetClass ().GetId ()).AppendSpace ().Append (ECCLASSID_COLUMNNAME).AppendComma (true);
+    viewSql.Append (relationMap.GetClass ().GetId ()).AppendSpace ().Append (ECDB_COL_ECClassId).AppendComma (true);
 
     //Source
     BeAssert (dynamic_cast<PropertyMapRelationshipConstraint const*> (relationMap.GetSourceECInstanceIdPropMap ()) != nullptr);
@@ -754,7 +748,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps (NativeSqlBuilder& viewSql, EC
     if (sqlSnippets.size () != 1)
         return ERROR;
     viewSql.Append ("SELECT NULL ").Append (sqlSnippets).AppendComma (true);
-    viewSql.Append ("NULL ").Append (ECCLASSID_COLUMNNAME).AppendComma (true);
+    viewSql.Append ("NULL ").Append (ECDB_COL_ECClassId).AppendComma (true);
 
     //Source constraint
     sqlSnippets = relationMap.GetSourceECInstanceIdPropMap ()->ToNativeSql (nullptr, ECSqlType::Select, false);
@@ -853,8 +847,9 @@ void ViewGenerator::CreateSystemClassView (NativeSqlBuilder &viewSql, std::map<E
 
         bool includeEntireTable = tableToIncludeEntirly.find (tableP) != tableToIncludeEntirly.end ();
         IClassMap const* classMap = classMaps[0];
-        ECDbSqlColumn const* ecInstanceIdColumn = classMap->GetPropertyMap ("ECInstanceId")->GetFirstColumn ();
-        ECDbSqlColumn const* ecClassIdColumn = tableP->FindColumnCP ("ECClassId");
+        ECDbSqlColumn const* ecInstanceIdColumn = classMap->GetPropertyMap (PropertyMapECInstanceId::PROPERTYACCESSSTRING)->GetFirstColumn ();
+        ECDbSqlColumn const* ecClassIdColumn = nullptr;
+        tableP->TryGetECClassIdColumn(ecClassIdColumn);
 
         if (tableP->GetPersistenceType() == PersistenceType::Virtual)
             continue;
@@ -884,7 +879,7 @@ void ViewGenerator::CreateSystemClassView (NativeSqlBuilder &viewSql, std::map<E
         
         if (first)
             {
-            viewSql.Append ("ECClassId", true);
+            viewSql.Append (ECDB_COL_ECClassId, true);
             }
 
         if (forStructArray)
@@ -898,10 +893,10 @@ void ViewGenerator::CreateSystemClassView (NativeSqlBuilder &viewSql, std::map<E
         if (!includeEntireTable && classMaps.size () > 1)
             {
             if (classMaps.size () == 1)
-                viewSql.Append ("WHERE ECClassID = ").Append (classMap->GetClass ().GetId ());
+                viewSql.Append ("WHERE " ECDB_COL_ECClassId "=").Append (classMap->GetClass ().GetId ());
             else
                 {
-                viewSql.Append ("WHERE ECClassID IN (");
+                viewSql.Append ("WHERE " ECDB_COL_ECClassId " IN (");
                 for (auto itor = classMaps.begin (); itor != classMaps.end (); ++itor)
                     {
                     viewSql.Append ((*itor)->GetClass ().GetId ());

@@ -18,10 +18,6 @@ struct ECSqlPrepareContext;
 +===============+===============+===============+===============+===============+======*/
 struct ViewGenerator
     { 
-public:
-    //! Name of the ECClassId column in the generated view
-    static Utf8CP const ECCLASSID_COLUMNNAME;
-
 private:
     struct ViewMember
         {
