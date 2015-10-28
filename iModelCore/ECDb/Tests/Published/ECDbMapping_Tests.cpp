@@ -3870,6 +3870,77 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
         indexWhereClause.Sprintf("([ForeignECInstanceId_RelPoly] IS NOT NULL) AND (ECClassId<>%lld)", bClassId);
         AssertIndex(ecdb, "uix_ts_B_fk_ts_RelPoly_target", true, "ts_B", {"ForeignECInstanceId_RelPoly"}, indexWhereClause.c_str());
         }
+
+        {
+        //Tests that AllowDuplicateRelationships Flag from LinkTableRelationshipMap CA is not applied to subclasses
+        TestItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                          "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+                          "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+                          "  <ECClass typeName='A' >"
+                          "    <ECProperty propertyName='Name' typeName='string' />"
+                          "  </ECClass>"
+                          "  <ECClass typeName='B' >"
+                          "    <ECProperty propertyName='BName' typeName='string' />"
+                          "  </ECClass>"
+                          "  <ECClass typeName='C' >"
+                          "    <ECProperty propertyName='CName' typeName='string' />"
+                          "  </ECClass>"
+                          "  <ECRelationshipClass typeName='ARelB' isDomainClass='True' strength='referencing'>"
+                          "    <ECCustomAttributes>"
+                          "        <ClassMap xmlns='ECDbMap.01.00'>"
+                          "                <MapStrategy>"
+                          "                   <Strategy>SharedTable</Strategy>"
+                          "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                          "                </MapStrategy>"
+                          "        </ClassMap>"
+                          "        <LinkTableRelationshipMap xmlns='ECDbMap.01.00'>"
+                          "             <AllowDuplicateRelationships>True</AllowDuplicateRelationships>"
+                          "        </LinkTableRelationshipMap>"
+                          "    </ECCustomAttributes>"
+                          "    <Source cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class = 'A' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class = 'B' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "  <ECRelationshipClass typeName='ARelC' isDomainClass='True' strength='referencing'>"
+                          "    <BaseClass>ARelB</BaseClass>"
+                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                          "      <Class class = 'A' />"
+                          "    </Source>"
+                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "      <Class class = 'C' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "</ECSchema>", true, "");
+
+        ECDb ecdb;
+        bool asserted = false;
+        AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships.ecdb");
+        ASSERT_FALSE(asserted);
+
+        ASSERT_TRUE(ecdb.TableExists("ts_ARelB"));
+        ASSERT_FALSE(ecdb.TableExists("ts_ARelC")) << "ARelC is expected to be persisted in ts_ARelB as well (SharedTable strategy)";
+
+        ASSERT_EQ(5, (int) RetrieveIndicesForTable(ecdb, "ts_ARelB").size());
+
+        ECClassId aRelCClassId = ecdb.Schemas().GetECClassId("TestSchema", "ARelC");
+        ASSERT_TRUE(aRelCClassId != ECClass::UNSET_ECCLASSID);
+
+        Utf8String indexWhereClause;
+        indexWhereClause.Sprintf("ECClassId=%lld", aRelCClassId);
+
+        AssertIndex(ecdb, "ix_ts_ARelB_source", false, "ts_ARelB", {"SourceECInstanceId"});
+        AssertIndex(ecdb, "ix_ts_ARelB_target", false, "ts_ARelB", {"TargetECInstanceId"});
+
+        AssertIndex(ecdb, "uix_ts_ARelC_target", true, "ts_ARelB", {"TargetECInstanceId"}, indexWhereClause.c_str());
+
+        //ARelB must not have a unique index on source and target as it as AllowDuplicateRelationship set to true.
+        //ARelC must have the unique index, as AllowDuplicateRelationship is not applied to subclasses
+        AssertIndexExists(ecdb, "uix_ts_ARelB_sourcetarget", false);
+        AssertIndex(ecdb, "uix_ts_ARelC_sourcetarget", true, "ts_ARelB", {"SourceECInstanceId", "TargetECInstanceId"}, indexWhereClause.c_str());
+        }
     }
 
 //---------------------------------------------------------------------------------------
