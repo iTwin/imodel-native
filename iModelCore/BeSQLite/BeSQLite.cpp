@@ -254,7 +254,7 @@ SqlDbP   Db::GetSqlDb() const {return m_dbFile->m_sqlDb;}
 bool     Db::IsReadonly() const {return m_dbFile->m_flags.m_readonly;}
 BeGuid   Db::GetDbGuid() const {return m_dbFile->m_dbGuid;}
 int32_t  Db::GetCurrentSavepointDepth() const {return (int32_t) m_dbFile->m_txns.size();}
-Utf8CP   Db::GetLastError(DbResult* lastResult) const { return IsDbOpen() ? m_dbFile->GetLastError(lastResult) : "Not opened"; }
+Utf8String Db::GetLastError(DbResult* lastResult) const { return IsDbOpen() ? m_dbFile->GetLastError(lastResult) : "Not opened"; }
 BeBriefcaseId Db::GetBriefcaseId() const {return m_dbFile->m_briefcaseId;}
 
 int64_t  Db::GetLastInsertRowId() const {return sqlite3_last_insert_rowid(GetSqlDb());}
@@ -305,8 +305,8 @@ DbResult Statement::Prepare(DbFile const& dbFile, Utf8CP sql)
     DbResult rc = DoPrepare(dbFile.m_sqlDb, sql);
     if (rc != BE_SQLITE_OK)
         {
-        Utf8CP lastError = dbFile.GetLastError(nullptr); // keep on separate line for debugging
-        LOG.errorv("Error \"%s\" preparing SQL: %s", lastError, sql);
+        Utf8String lastError = dbFile.GetLastError(nullptr); // keep on separate line for debugging
+        LOG.errorv("Error \"%s\" preparing SQL: %s", lastError.c_str(), sql);
         BeAssert(false);
         }
 
@@ -612,8 +612,8 @@ DbResult Db::ExecuteSql(Utf8CP sql, int (*callback)(void*,int,CharP*,CharP*),voi
     DbResult rc = (DbResult) sqlite3_exec(GetSqlDb(), sql, callback, arg, errmsg);
     if (rc != BE_SQLITE_OK && rc != BE_SQLITE_DONE)
         {
-        Utf8CP lastError = GetLastError(); // keep on separate line for debuggging
-        LOG.errorv("Error \"%s\" SQL: %s", lastError, sql);
+        Utf8String lastError = GetLastError(); // keep on separate line for debuggging
+        LOG.errorv("Error \"%s\" SQL: %s", lastError.c_str(), sql);
         BeAssert(false);  // If you EXPECT failures to be non-exceptional, call TryExecuteSql
         }
     return rc;
@@ -1164,7 +1164,7 @@ DbResult Db::SaveBeDbGuid()
     DbResult rc = SaveProperty(Properties::DbGuid(), (void*) &m_dbFile->m_dbGuid, sizeof(m_dbFile->m_dbGuid));
     if (BE_SQLITE_OK != rc)
         {
-        LOG.warningv("Could not save GUID. Error: %s - %s", InterpretDbResult(rc), GetLastError());
+        LOG.warningv("Could not save GUID. Error: %s - %s", InterpretDbResult(rc), GetLastError().c_str());
         BeAssert(false);
         }
 
@@ -1465,8 +1465,8 @@ DbResult Db::AttachDb(Utf8CP filename, Utf8CP alias)
     if (rc != BE_SQLITE_OK)
         {
         BeAssert(false);
-        Utf8CP lastError = GetLastError(nullptr); // keep on separate line for debuggging
-        LOG.errorv("AttachDb failed: \"%s\" filename:[%s], alias:[%s]", lastError, filename, alias);
+        Utf8String lastError = GetLastError(nullptr); // keep on separate line for debuggging
+        LOG.errorv("AttachDb failed: \"%s\" filename:[%s], alias:[%s]", lastError.c_str(), filename, alias);
         }
 
     if (wasActive)
@@ -1487,8 +1487,8 @@ DbResult Db::DetachDb(Utf8CP alias)
     if (rc != BE_SQLITE_OK)
         {
         BeAssert(false);
-        Utf8CP lastError = GetLastError(nullptr); // keep on separate line for debuggging
-        LOG.errorv("DetachDb failed: \"%s\" alias:[%s]", lastError, alias);
+        Utf8String lastError = GetLastError(nullptr); // keep on separate line for debuggging
+        LOG.errorv("DetachDb failed: \"%s\" alias:[%s]", lastError.c_str(), alias);
         }
 
     if (wasActive)
@@ -2278,7 +2278,7 @@ void Db::SetChangeTracker(ChangeTracker* tracker)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP DbFile::GetLastError(DbResult* lastResult) const
+Utf8String DbFile::GetLastError(DbResult* lastResult) const
     {
     DbResult ALLOW_NULL_OUTPUT(status, lastResult);
     if (nullptr == m_sqlDb)
@@ -2288,7 +2288,9 @@ Utf8CP DbFile::GetLastError(DbResult* lastResult) const
         }
 
     status = (DbResult) sqlite3_errcode(m_sqlDb);
-    return Db::InterpretDbResult(status);
+    Utf8String msg = (Utf8CP)sqlite3_errmsg(m_sqlDb);
+    msg.append(" (").append(Db::InterpretDbResult(status)).append(")");
+    return msg;
     }
 
 /*---------------------------------------------------------------------------------**//**
