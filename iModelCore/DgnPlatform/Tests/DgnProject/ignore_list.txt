@@ -4,6 +4,8 @@
 DimensionHandler.CreateAngularTypes                     # Josh -- We'll need this for markups in Graphite04 -- On non-Windows - Problem setting range of dimension text
 DimensionHandler.CreateLabelLineDimension               # Josh -- We'll need this for markups in Graphite04 -- On non-Windows - Problem setting range of dimension text
 
+ComponentModelTest.SimulateDeveloperAndClient           # Sam - working on ComponentModels ...
+
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
@@ -23,3 +25,4 @@ BeSQLiteRealityDataStorageTests.DoesCleanupDatabase     # Notified Grigas
 ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_79Main # WIP_ELEMENT_ITEM this test seems to find 4 things now, but it expects to find 3
 
 ElementGeomPartTests.CRUD                               # informed Jeff - assertion on update operation
+
