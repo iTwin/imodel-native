@@ -152,6 +152,7 @@ void LsDefinition::Init(Utf8CP name, Json::Value& lsDefinition, DgnStyleId style
 
     m_textureInitialized = false;
     m_textureHandle = 0;
+    m_hasTextureWidth = false;
     }
 
 //---------------------------------------------------------------------------------------
@@ -211,7 +212,7 @@ Utf8String         LsDefinition::GetStyleName () const
 struct ComponentStroker : Dgn::IStrokeForCache
     {
 protected:
-    ViewContextR        m_viewContext;
+    DgnDbR              m_dgndb;
     LsComponentPtr      m_component;
     DPoint3d            m_points[2];
 public:
@@ -219,23 +220,28 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-ComponentStroker(ViewContextR viewContext, LsComponentR component, double scale) : m_viewContext(viewContext), m_component(&component)
+ComponentStroker(DgnDbR dgndb, LsComponentR component, double scale) : m_dgndb(dgndb), m_component(&component)
     {
     double length = component._GetLength();
+
     if (length <  mgds_fc_epsilon)
-        length = 1.0;   //  Apparently nothing is length dependent.
+        {
+        //  Apparently nothing is length dependent.
+        length = component._GetMaxWidth(nullptr);
+        if (length <  mgds_fc_epsilon)
+            length = 1.0;
+        }
 
     length *= scale;
 
-    //  NEEDSWORK_LINESTYLES decide how to scale when creating texture.
     m_points[0].Init(0, 0, 0);
     m_points[1].Init(length, 0, 0);
     }
 
 int32_t _GetQvIndex() const override {return 1;}
-QvElemP _GetQvElem(double pixelSize = 0.0) const override {return nullptr;}
+QvElemP _GetQvElem(double pixelSize) const override {return nullptr;}
 void _SaveQvElem(QvElemP, double pixelSize = 0.0, double sizeDependentRatio = 0.0) const override {}
-DgnDbR _GetDgnDb() const override { return m_viewContext.GetDgnDb(); }
+DgnDbR _GetDgnDb() const override { return m_dgndb; }
 };
 
 //=======================================================================================
@@ -244,10 +250,12 @@ DgnDbR _GetDgnDb() const override { return m_viewContext.GetDgnDb(); }
 //=======================================================================================
 struct          StrokeComponentForRange : ComponentStroker
 {
+DgnCategoryId   m_categoryId;
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-StrokeComponentForRange(ViewContextR viewContext, LsComponentR component) : ComponentStroker(viewContext, component, 1.0)
+StrokeComponentForRange(DgnDbR dgndb, LsComponentR component, DgnCategoryId categoryId) : ComponentStroker(dgndb, component, 1.0), m_categoryId(categoryId)
     {
     //  It should have already created a copy of the components if that is necessary
     BeAssert(m_component->_IsOkayForTextureGeneration() == LsOkayForTextureGeneration::NoChangeRequired);
@@ -268,12 +276,10 @@ void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
 //---------------------------------------------------------------------------------------
 void ComputeRange(DRange3dR range)
     {
-    LineStyleRangeCollector::Process(range, *this, m_viewContext.GetCurrentDisplayParams().GetCategoryId());
+    //  NEEDSWORK_LINESTYLES -- should this really require a valid categoryId?
+    LineStyleRangeCollector::Process(range, *this, m_categoryId);
     }
 };
-
-// WIP It should be possible to eliminate this.  This is just used for experimenting.
-static  int TEST_LS_SCALE = 1;
 
 //=======================================================================================
 //! Used to generate a texture based on a line style.
@@ -282,8 +288,7 @@ static  int TEST_LS_SCALE = 1;
 struct          ComponentToTextureStroker : ComponentStroker
 {
 private:
-    LineStyleSymbR      m_lineStyleSymb;
-    double              m_multiplier;
+    double              m_scaleFactor;
     Transform           m_transformForTexture;
 
 public:
@@ -291,16 +296,13 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, LsComponentR component) : ComponentStroker(viewContext, component, lineStyleSymb.GetScale()), m_lineStyleSymb(lineStyleSymb)
+ComponentToTextureStroker(DgnDbR dgndb, double scaleFactor, LsComponentR component) : ComponentStroker(dgndb, component, scaleFactor), m_scaleFactor(scaleFactor)
     {
     //  If a modified copy is required, the caller passed the copy. 
     BeAssert(component._IsOkayForTextureGeneration() == LsOkayForTextureGeneration::NoChangeRequired);
 
-    //  m_length = m_component->_GetLength() * lineStyleSymb.GetScale(); -- maybe push lineStyleSymb to ComponentStroker
-
-    //  NEEDSWORK_LINESTYLES decide how to scale when creating texture.
-    m_multiplier = TEST_LS_SCALE;
-    m_transformForTexture.InitFromScaleFactors(m_multiplier, m_multiplier, m_multiplier);
+    //  Will probably eliminate this.  Assume that the scaling is done by setting a scale factor in the LineStyleSymb.
+    m_transformForTexture.InitIdentity();
     }
 
 //---------------------------------------------------------------------------------------
@@ -308,24 +310,69 @@ ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb
 //---------------------------------------------------------------------------------------
 void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
     {
-    ElemDisplayParams   savedParams(context.GetCurrentDisplayParams());
-    ElemMatSymb         savedMatSymb (*context.GetElemMatSymb());
+    ElemMatSymb         elemMatSymb;
 
-    //  Use the current symbology, activating it here.  We may also activate symbology when drawing 
-    //  symbols. 
+    elemMatSymb.Init();
+    elemMatSymb.SetLineColor(ColorDef::White());
+    elemMatSymb.SetFillColor(ColorDef::White());
 
-    context.GetIDrawGeom().ActivateMatSymb(&savedMatSymb);
+    LineStyleSymb   lineStyleSymb;
+    lineStyleSymb.Init(nullptr);
+    lineStyleSymb.SetScale(m_scaleFactor);
 
-    context.PushTransform(m_transformForTexture);
+    context.GetIDrawGeom().ActivateMatSymb(&elemMatSymb);
 
-    m_component->_StrokeLineString(&context, &m_lineStyleSymb, m_points, 2, false);
-
-    context.PopTransformClip();
-
-    context.GetCurrentDisplayParams() = savedParams;
-    *context.GetElemMatSymb() = savedMatSymb;
+    m_component->_StrokeLineString(&context, &lineStyleSymb, m_points, 2, false);
     }
 };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2015
+//---------------------------------------------------------------------------------------
+static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, double componentLength)
+    {
+    scaleFactor = 1;
+
+    //  Use the stroked range, accounting for any leading or trailing pad.
+    DRange2d range2d;
+    range2d.low.x = std::min(0.0, lsRange.low.x);
+    range2d.low.y = lsRange.low.y;
+    range2d.high.x = std::max(lsRange.high.x, componentLength);
+    range2d.high.y = lsRange.high.y;
+
+    double xRange = range2d.high.x - range2d.low.x;
+    BeAssert(xRange != 0.0);
+    if (xRange == 0.0)
+        return range2d;
+
+    //  if xRange is too small  StrokeComponentForRange will fail when it creates the viewport because it will be smaller than the minimum.
+    if (xRange < 1)
+        {
+        scaleFactor = (uint32_t)ceil(1/xRange);
+        range2d.high.Scale(scaleFactor);
+        range2d.low.Scale(scaleFactor);
+        xRange = range2d.high.x - range2d.low.x;
+        }
+
+    //  Theoretically we could make the image smaller and save memory by just guaranteeing that
+    //  the size of the Y range is a multiple of 2 of the X range or vice versa.  However, I don't
+    //  think QV is detecting that correctly so for now I am just going for the same size.  Without
+    //  this change to the range QV scales the contents of the geometry map in one direction or the other.
+    double yRange = range2d.high.y - range2d.low.y;
+    double diff = xRange - yRange;
+    if (diff > 0.0)
+        {
+        double lowChange = 0;
+        double highChange = range2d.high.y/yRange * diff;;
+        if (range2d.low.y < 0)
+            lowChange = -range2d.low.y/yRange * diff;
+
+        range2d.low.y -= lowChange;
+        range2d.high.y += highChange;
+        }
+
+    return range2d;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
@@ -343,23 +390,20 @@ intptr_t  LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR
     if (comp.IsNull())
         return 0;
 
+    //  Get just the range of the components.  Don't let any scaling enter into this.
     DRange3d  lsRange;
-    StrokeComponentForRange rangeStroker(viewContext, *comp);
+    StrokeComponentForRange rangeStroker(viewContext.GetDgnDb(), *comp, viewContext.GetCurrentDisplayParams().GetCategoryId());
     rangeStroker.ComputeRange(lsRange);
 
-    ComponentToTextureStroker   stroker(viewContext, lineStyleSymb, *comp);
+    uint32_t  scaleFactor = 1;
+    DRange2d range2d = getAdjustedRange(scaleFactor, lsRange, comp->_GetLength());
 
-    DRange2d range2d;
-    range2d.low.x = 0;  // maybe minimum of 0 and lsRange.low.x
-    range2d.low.y = lsRange.low.y;
-    range2d.high.x = std::max(lsRange.high.x, comp->_GetLength());
-    range2d.high.y = lsRange.high.y;
-
-    range2d.low.y *= lineStyleSymb.GetScale() * TEST_LS_SCALE;
-    range2d.high.y *= lineStyleSymb.GetScale() * TEST_LS_SCALE;
-    range2d.high.x *= lineStyleSymb.GetScale() * TEST_LS_SCALE;
+    ComponentToTextureStroker   stroker(viewContext.GetDgnDb(), scaleFactor, *comp);
 
     viewContext.GetIViewDraw ().DefineQVGeometryMap (intptr_t(this), stroker, range2d, false, viewContext, false);
+
+    m_hasTextureWidth = true;
+    m_textureWidth = scaleFactor * (range2d.high.y - range2d.low.y);
     return intptr_t(this);
     }
 
@@ -376,13 +420,13 @@ uintptr_t     LsDefinition::GetTextureHandle (ViewContextR viewContext, LineStyl
 
     if (!m_textureInitialized)
         {
-        m_textureInitialized = true;
         if (m_lsComp->GetComponentType() == LsComponentType::RasterImage)
             {
             uint8_t const* image;
             Point2d     imageSize;
             uint32_t      flags = 0;
 
+            m_textureInitialized = true;
             if (SUCCESS == m_lsComp->_GetRasterTexture (image, imageSize, flags))
                 {
                 if (0 != (flags & LsRasterImageComponent::FlagMask_AlphaOnly))       // Alpha Only.
@@ -402,25 +446,19 @@ uintptr_t     LsDefinition::GetTextureHandle (ViewContextR viewContext, LineStyl
                     DgnPlatformLib::GetHost().GetGraphicsAdmin()._DefineTextureId (m_textureHandle = reinterpret_cast <uintptr_t> (this), imageSize, true, 0, image);
                     }
                 }
+            m_hasTextureWidth = m_lsComp->_GetTextureWidth(m_textureWidth) == BSISUCCESS;
             }
         else if (forceTexture)
             {
+            m_textureInitialized = true;
             //  Convert this type to texture on the fly if possible
-#if TRYING_DIRECT_LINESTYLES
-            m_textureHandle = 0; 
-#else
             m_textureHandle = GenerateTexture(viewContext, lineStyleSymb);
-#endif
             }
         }
     
 
-    double          rasterWidth;
-
-    if (0 != m_textureHandle &&
-        m_lsComp.IsValid() &&
-        SUCCESS == m_lsComp->_GetTextureWidth (rasterWidth))
-        lineStyleSymb.SetWidth (rasterWidth * scale);
+    if (0 != m_textureHandle && m_lsComp.IsValid() && m_hasTextureWidth)
+        lineStyleSymb.SetWidth (m_textureWidth * scale);
     
     return m_textureHandle;
     }
