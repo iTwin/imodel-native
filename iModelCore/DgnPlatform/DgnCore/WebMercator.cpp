@@ -930,6 +930,22 @@ BentleyStatus WebMercatorDisplay::CreateUrl (Utf8StringR url, ImageUtilities::Rg
     return webMercatorModelHandler->_CreateUrl(url, imageInfo, m_model.m_mercator, tileid);
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String WebMercatorDisplay::GetCopyright()
+    {
+    ModelHandlerP modelHandler = dgn_ModelHandler::Model::FindHandler(m_model.GetDgnDb(), m_model.GetClassId());
+    dgn_ModelHandler::WebMercator* webMercatorModelHandler = dynamic_cast<dgn_ModelHandler::WebMercator*>(modelHandler);
+    if (nullptr == webMercatorModelHandler)
+        {
+        BeAssert(false);
+        return "";
+        }
+    return webMercatorModelHandler->_GetCopyright(m_model.m_mercator);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1153,6 +1169,27 @@ void WebMercatorDisplay::DrawView (ViewContextR context)
         context.GetViewport()->ScheduleProgressiveDisplay (*this);
         m_waitTime = 100;
         m_nextRetryTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + m_waitTime;
+        }
+
+    //  Always draw the copyright (in the same location)
+    Utf8String cmsg = GetCopyright();
+    if (!cmsg.empty())
+        {
+        DPoint3d cloc = *context.GetViewport()->GetViewOrigin();
+
+        auto pixels = context.GetPixelSizeAtPoint(NULL);
+
+        TextStringStylePtr style = TextStringStyle::Create();
+        style->SetFont(DgnFontManager::GetLastResortTrueTypeFont());
+        DPoint2d textScale;
+        textScale.Init(10 * pixels, 10 * pixels);
+        style->SetSize(textScale);
+
+        TextStringPtr textString = TextString::Create();
+        textString->SetText(cmsg.c_str());
+        textString->SetStyle(*style);
+        textString->SetOrigin(cloc);
+        context.GetIDrawGeom().DrawTextString(*textString);
         }
     }
 
@@ -1438,6 +1475,17 @@ BentleyStatus dgn_ModelHandler::StreetMap::_CreateUrl (Utf8StringR url, ImageUti
         }
 
     return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String dgn_ModelHandler::StreetMap::_GetCopyright(WebMercatorModel::Mercator const& props)
+    {
+    if (props.m_mapService[0] == '0')
+        return "(c) Mapbox, Data ODbL (c) OpenStreetMap contributors";
+
+    return "";
     }
 
 /*---------------------------------------------------------------------------------**//**
