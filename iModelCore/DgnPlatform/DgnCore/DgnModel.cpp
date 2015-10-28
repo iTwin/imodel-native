@@ -1825,20 +1825,16 @@ DgnModelPtr DgnModel::CopyModel(DgnModelCR model, Code newCode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ComponentModel::CreateParams::CreateParams(DgnDbR dgndb, Utf8StringCR name, Utf8StringCR iclass, Utf8StringCR icat, Utf8String iauthority, ModelSolverDef const& solver)
     :
-    T_Super(dgndb, DgnClassId(dgndb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ComponentModel)), CreateModelCode(name), Properties(), solver)
+    T_Super(dgndb, DgnClassId(dgndb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ComponentModel)), CreateModelCode(name), Properties(), solver),
+    m_compProps(iclass, icat, iauthority)
     {
-    m_itemECClassName = iclass;
-    m_itemCategoryName = icat;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ComponentModel::ComponentModel(CreateParams const& params) : T_Super(params) 
+ComponentModel::ComponentModel(CreateParams const& params) : T_Super(params), m_compProps(params.m_compProps)
     {
-    m_itemECClassName = params.m_itemECClassName;
-    m_itemCategoryName = params.m_itemCategoryName;
-    m_itemCodeAuthority = params.m_itemCodeAuthority;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1846,9 +1842,23 @@ ComponentModel::ComponentModel(CreateParams const& params) : T_Super(params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModel::_GetSolverOptions(Json::Value& json)
     {
-    json["Category"] = m_itemCategoryName.c_str();
-    json["ECClass"] = m_itemECClassName.c_str();
-    json["CodeAuthority"] = m_itemCodeAuthority.c_str();
+    json["Category"] = m_compProps.m_itemCategoryName.c_str();          // *** NB: Do not change this name. It is part of the DgnScriptAPI
+    json["ECClass"] = m_compProps.m_itemECClassName.c_str();            //              "
+    json["CodeAuthority"] = m_compProps.m_itemCodeAuthority.c_str();    //              "
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ComponentModel::CompProps::IsValid(DgnDbR db) const
+    {
+    if (m_itemCategoryName.empty() || !DgnCategory::QueryCategoryId(m_itemCategoryName.c_str(), db).IsValid())
+        return false;
+    Utf8String ns, cls;
+    std::tie(ns, cls) = parseFullECClassName(m_itemECClassName.c_str());
+    if (m_itemECClassName.empty() || nullptr == db.Schemas().GetECClass(ns.c_str(), cls.c_str()))
+        return false;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1856,13 +1866,9 @@ void ComponentModel::_GetSolverOptions(Json::Value& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ComponentModel::IsValid() const
     {
-    if (m_itemCategoryName.empty() || !DgnCategory::QueryCategoryId(m_itemCategoryName.c_str(), GetDgnDb()).IsValid())
-        return false;
-    Utf8String ns, cls;
-    std::tie(ns, cls) = parseFullECClassName(m_itemECClassName.c_str());
-    if (m_itemECClassName.empty() || nullptr == GetDgnDb().Schemas().GetECClass(ns.c_str(), cls.c_str()))
-        return false;
     if (!GetSolver().IsValid())
+        return false;
+    if (!m_compProps.IsValid(GetDgnDb()))
         return false;
     return true;
     }
@@ -1889,77 +1895,35 @@ DgnDbStatus ComponentModel::_OnDelete()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ComponentModel::GetItemCategoryName() const
+Utf8String ComponentModel::GetItemCategoryName() const {return m_compProps.m_itemCategoryName;}
+Utf8String ComponentModel::GetItemECClassName() const {return m_compProps.m_itemECClassName;}
+Utf8String ComponentModel::GetItemCodeAuthority() const {return m_compProps.m_itemCodeAuthority;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModel::_ToPropertiesJson(Json::Value& val) const {m_compProps.ToJson(val);}
+void ComponentModel::_FromPropertiesJson(Json::Value const& val) {m_compProps.FromJson(val);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModel::CompProps::FromJson(Json::Value const& inValue)
     {
-    return m_itemCategoryName;
+    m_itemCategoryName = inValue["ComponentModel_itemCategoryName"].asCString();
+    m_itemECClassName = inValue["ComponentModel_itemECClassName"].asCString();
+    m_itemCodeAuthority = inValue["ComponentModel_itemCodeAuthority"].asCString();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
+* @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ComponentModel::GetItemECClassName() const
+void ComponentModel::CompProps::ToJson(Json::Value& outValue) const
     {
-    return m_itemECClassName;
+    outValue["ComponentModel_itemCategoryName"] = m_itemCategoryName;
+    outValue["ComponentModel_itemECClassName"] = m_itemECClassName;
+    outValue["ComponentModel_itemCodeAuthority"] = m_itemCodeAuthority;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ComponentModel::GetItemCodeAuthority() const
-    {
-    return m_itemCodeAuthority;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentModel::_Update()
-    {
-    DgnDbStatus status = T_Super::_Update();
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    CachedStatementPtr stmt;
-    m_dgndb.GetCachedStatement(stmt, "UPDATE " DGN_TABLE(DGN_CLASSNAME_ComponentModel) " SET ItemECClass=?, ItemCategory=?, ItemCodeAuthority=? WHERE Id=?");
-
-    stmt->BindText(1, m_itemECClassName, Statement::MakeCopy::No);
-    stmt->BindText(2, m_itemCategoryName, Statement::MakeCopy::No);
-    stmt->BindText(3, m_itemCodeAuthority, Statement::MakeCopy::No);
-    stmt->BindId(4, m_modelId);
-
-    DbResult  result = stmt->Step();
-    if (BE_SQLITE_ROW != result)
-        {
-        BeAssert(false);
-        return DgnDbStatus::WriteError;
-        }
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModel::_ReadProperties()
-    {
-    T_Super::_ReadProperties();
-
-    CachedStatementPtr stmt;
-    m_dgndb.GetCachedStatement(stmt, "SELECT ItemECClass, ItemCategory, ItemCodeAuthority FROM " DGN_TABLE(DGN_CLASSNAME_ComponentModel) " WHERE Id=?");
-    stmt->BindId(1, m_modelId);
-
-    DbResult  result = stmt->Step();
-    if (BE_SQLITE_ROW != result)
-        {
-        BeAssert(false);
-        return;
-        }
-
-    m_itemECClassName = stmt->GetValueText(0);
-    m_itemCategoryName = stmt->GetValueText(1);
-    m_itemCodeAuthority = stmt->GetValueText(2);
-    }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15

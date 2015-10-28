@@ -969,6 +969,18 @@ struct EXPORT_VTABLE_ATTRIBUTE ComponentModel : DgnModel3d
 private:
     DEFINE_T_SUPER(DgnModel3d)
 
+    struct CompProps
+        {
+        Utf8String m_itemECClassName;
+        Utf8String m_itemCategoryName;
+        Utf8String m_itemCodeAuthority;
+
+        CompProps(Utf8StringCR iclass, Utf8StringCR icat, Utf8String iauthority) : m_itemECClassName(iclass), m_itemCategoryName(icat), m_itemCodeAuthority(iauthority) {;}
+        bool IsValid(DgnDbR) const;
+        void FromJson(Json::Value const& inValue);
+        void ToJson(Json::Value& outValue) const;
+        };
+
 public:
     //=======================================================================================
     //! Parameters to create a new instances of a ComponentModel.
@@ -979,9 +991,7 @@ public:
     private:
         DEFINE_T_SUPER(DgnModel3d::CreateParams)
         friend struct ComponentModel;
-        Utf8String m_itemECClassName;
-        Utf8String m_itemCategoryName;
-        Utf8String m_itemCodeAuthority;
+        CompProps m_compProps;
     public:
         //! Parameters to create a new instance of a ComponentModel.
         //! @param[in] dgndb The DgnDb for the new ComponentModel
@@ -994,22 +1004,22 @@ public:
 
         //! @private
         //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
-        explicit CreateParams(DgnModel::CreateParams const& params) : T_Super(params) {}
+        explicit CreateParams(DgnModel::CreateParams const& params) : T_Super(params), m_compProps("","","") {}
     };
 
-private:
-    Utf8String m_itemECClassName;
-    Utf8String m_itemCategoryName;
-    Utf8String m_itemCodeAuthority;
+    friend struct CreateParams;
 
-    DPoint3d _GetGlobalOrigin() const override {return DPoint3d::FromZero();}
-    CoordinateSpace _GetCoordinateSpace() const override {return CoordinateSpace::Local;}
+private:
+    CompProps m_compProps;
+
+    DPoint3d _GetGlobalOrigin() const override sealed {return DPoint3d::FromZero();}
+    CoordinateSpace _GetCoordinateSpace() const override sealed {return CoordinateSpace::Local;}
     DGNPLATFORM_EXPORT void _GetSolverOptions(Json::Value&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() override;
 
 protected:
-    DGNPLATFORM_EXPORT virtual void _ReadProperties();
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _Update();
+    DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const;//!< @private
+    DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&);//!< @private
 
 public:
     /**
@@ -1189,13 +1199,11 @@ namespace dgn_ModelHandler
         MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_PhysicalModel, PhysicalModel, Physical, Model, DGNPLATFORM_EXPORT)
     };
 
-#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
     //! The ModelHandler for ComponentModel
     struct EXPORT_VTABLE_ATTRIBUTE Component : Model
     {
         MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_ComponentModel, ComponentModel, Component, Model, DGNPLATFORM_EXPORT)
     };
-#endif
 
     //! The ModelHandler for PlanarPhysicalModel
     struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysical : Model

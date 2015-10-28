@@ -208,9 +208,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>Model3d</BaseClass>
-    <ECProperty propertyName="ItemECClass" typeName="string" description="Full name of ECClass of Item that is customized by this model"/>
-    <ECProperty propertyName="ItemCategory" typeName="string" description="Name of Category used by harvestable Items in this model"/>
-    <ECProperty propertyName="ItemCodeAuthority" typeName="string" description="Name of CodeAuthority to be used when creating component instances"/>
+        <!--  These are in the model's Props JSON
+        <ECProperty propertyName="ItemECClass" typeName="string" description="Full name of ECClass of Item that is customized by this model"/>
+        <ECProperty propertyName="ItemCategory" typeName="string" description="Name of Category used by harvestable Items in this model"/>
+        <ECProperty propertyName="ItemCodeAuthority" typeName="string" description="Name of CodeAuthority to be used when creating component instances"/>
+        -->
     </ECClass>
     <ECClass typeName="ResourceModel" isDomainClass="True">
         <ECCustomAttributes>
