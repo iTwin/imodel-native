@@ -297,7 +297,7 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
 
             if (!ptr->m_userProvidedECInstanceId  && property->GetPropertyMap().GetFirstColumn())
                 {
-                ptr->m_userProvidedECInstanceId = Enum::Contains(property->GetPropertyMap().GetFirstColumn()->GetKnownColumnId(), ECDbKnownColumns::ECInstanceId);
+                ptr->m_userProvidedECInstanceId = Enum::Contains(property->GetPropertyMap().GetFirstColumn()->GetKind(), ColumnKind::ECInstanceId);
                 BeAssert(thisValueParams.size() <= 1);
                 if (thisValueParams.size() == 1)
                     ptr->m_primaryECInstanceIdParameterIndex = ptr->m_parameterMap.GetPrimaryR().Last();
@@ -412,7 +412,7 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     joinedTableECSQL.Append(BuildAssignmentExpression(joinedTableProperties, joinedTableValues));
     parentOfJoinedTableECSQL.Append(BuildAssignmentExpression(parentOfJoinedTableProperties, parentOfJoinedTableValues));
 
-    if (auto bwhere = exp.GetOptWhereClauseExp())
+    if (auto bwhere = exp.GetWhereClauseExp())
         {
         std::vector<Parameter const*> thisValueParams;
         for (auto exp : bwhere->Find(Exp::Type::Parameter, true /* recusive*/))

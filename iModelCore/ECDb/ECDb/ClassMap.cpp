@@ -375,6 +375,7 @@ MapStatus ClassMap::_InitializePart1(SchemaImportContext* schemaImportContext, C
         m_parentMapClassId = parentClassMap->GetClass().GetId();
 
         auto table = const_cast<ECDbMapR>(m_ecDbMap).FindOrCreateTable(
+            schemaImportContext,
             mapInfo.GetTableName(),
             mapInfo.IsMapToVirtualTable(),
             mapInfo.GetECInstanceIdColumnName(),
@@ -466,8 +467,8 @@ MapStatus ClassMap::_InitializePart2(SchemaImportContext* schemaImportContext, C
     if (isJoinedTable)
         {
         PRECONDITION(parentClassMap != nullptr, MapStatus::Error);
-        auto primaryKeyColumn = parentClassMap->GetTable().GetFilteredColumnFirst(ECDbKnownColumns::ECInstanceId);
-        auto foreignKeyColumn = GetTable().GetFilteredColumnFirst(ECDbKnownColumns::ECInstanceId);
+        auto primaryKeyColumn = parentClassMap->GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+        auto foreignKeyColumn = GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
         PRECONDITION(primaryKeyColumn != nullptr, MapStatus::Error);
         PRECONDITION(foreignKeyColumn != nullptr, MapStatus::Error);
         bool createFKConstraint = true;
@@ -491,7 +492,7 @@ MapStatus ClassMap::_InitializePart2(SchemaImportContext* schemaImportContext, C
             {
             auto fkConstraint = GetTable().CreateForeignKeyConstraint(parentClassMap->GetTable());
             fkConstraint->Add(foreignKeyColumn->GetName().c_str(), primaryKeyColumn->GetName().c_str());
-            fkConstraint->SetOnDeleteAction(ECDbSqlForeignKeyConstraint::ActionType::Cascade);
+            fkConstraint->SetOnDeleteAction(ForeignKeyActionType::Cascade);
             }
         }
 		

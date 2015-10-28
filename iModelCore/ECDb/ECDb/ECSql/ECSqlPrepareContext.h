@@ -42,7 +42,8 @@ public:
                     ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME,
                     ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME,
                     ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME
-                };
+                    };
+                
                 return s_systemProperties.find (accessString) != s_systemProperties.end ();
                 }
             static const std::vector<Utf8String> Split (Utf8CP accessString, Utf8Char seperator)

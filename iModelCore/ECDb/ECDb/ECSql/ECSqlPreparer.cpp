@@ -422,14 +422,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
     if (currentScopeECSqlType == ECSqlType::Select)
         {
         NativeSqlBuilder classViewSql;
-        if (classMap.GetDbView ().Generate (classViewSql, exp.IsPolymorphic (), ctx) != SUCCESS)
+        if (classMap.GetDbView().Generate(classViewSql, exp.IsPolymorphic(), ctx) != SUCCESS)
             {
-            BeAssert (false && "Class view generation failed during preparation of class name expression.");
+            BeAssert(false && "Class view generation failed during preparation of class name expression.");
             return ECSqlStatus::Error;
             }
 
-        classViewSql.AppendSpace ().AppendEscaped (exp.GetId ().c_str ());
-        nativeSqlSnippets.push_back (move (classViewSql));
+        classViewSql.AppendSpace().AppendEscaped(exp.GetId().c_str());
+        nativeSqlSnippets.push_back(move(classViewSql));
 
         return ECSqlStatus::Success;
         }
@@ -453,26 +453,26 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
             {
             table = &classMap.GetTable();
             }
-        else 
+        else
             {
-        StorageDescription const& desc = classMap.GetStorageDescription();
-        if (exp.IsPolymorphic() && desc.HierarchyMapsToMultipleTables())
+            StorageDescription const& desc = classMap.GetStorageDescription();
+            if (exp.IsPolymorphic() && desc.HierarchyMapsToMultipleTables())
                 {
-            BeAssert(desc.HierarchyMapsToMultipleTables() && exp.IsPolymorphic() && "Returned partition is null only for a polymorphic ECSQL where subclasses are in a separate table");
+                BeAssert(desc.HierarchyMapsToMultipleTables() && exp.IsPolymorphic() && "Returned partition is null only for a polymorphic ECSQL where subclasses are in a separate table");
                 //we need a view for it.
                 NativeSqlBuilder nativeSqlSnippet;
-                Utf8String viewName = "_" + classMap.GetClass ().GetSchema ().GetNamespacePrefix () + "_" + classMap.GetClass ().GetName ();
-                nativeSqlSnippet.AppendEscaped (viewName.c_str ());
-                BeAssert (ctx.GetECDb ().TableExists (viewName.c_str ()) && "View must exist");
-                nativeSqlSnippets.push_back (move (nativeSqlSnippet));
+                Utf8String viewName = "_" + classMap.GetClass().GetSchema().GetNamespacePrefix() + "_" + classMap.GetClass().GetName();
+                nativeSqlSnippet.AppendEscaped(viewName.c_str());
+                BeAssert(ctx.GetECDb().TableExists(viewName.c_str()) && "View must exist");
+                nativeSqlSnippets.push_back(move(nativeSqlSnippet));
                 return ECSqlStatus::Success;
                 }
 
 
-        HorizontalPartition const* partition = desc.GetHorizontalPartition(exp.IsPolymorphic());
+            HorizontalPartition const* partition = desc.GetHorizontalPartition(exp.IsPolymorphic());
             table = &partition->GetTable();
-                }
-        BeAssert(desc.HasNonVirtualPartitions() || table->GetPersistenceType() == PersistenceType::Virtual);
+            }
+        //BeAssert(desc.HasNonVirtualPartitions() || table->GetPersistenceType() == PersistenceType::Virtual);
         }
 
     BeAssert(table != nullptr);

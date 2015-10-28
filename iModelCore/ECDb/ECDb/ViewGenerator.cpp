@@ -275,7 +275,7 @@ return SUCCESS;
                 continue;
 
             auto aliasSqlSnippets = basePropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
-        bool isInstanceId = actualPropMap->GetFirstColumn()->GetKnownColumnId() == ECDbKnownColumns::ECInstanceId;
+        bool isInstanceId = actualPropMap->GetFirstColumn()->GetKind() == ColumnKind::ECInstanceId;
         auto colSqlSnippets = actualPropMap->ToNativeSql(isInstanceId? table.GetName().c_str() : nullptr, ECSqlType::Select, false);
 
             const size_t snippetCount = colSqlSnippets.size();
@@ -347,14 +347,14 @@ return SUCCESS;
 
         viewSql.Append(" FROM ").AppendEscaped(table.GetName().c_str());
     //Join necessary table for table
-    auto primaryKey = table.GetFilteredColumnFirst(ECDbKnownColumns::ECInstanceId);
+    auto primaryKey = table.GetFilteredColumnFirst(ColumnKind::ECInstanceId);
     for (auto const& vpart : firstChildClassMap->GetStorageDescription().GetVerticalPartitions())
         {
         bool tableReferencedInQuery = tableToJoinOn.find(&vpart.GetTable()) != tableToJoinOn.end();
         bool notYetReferenced = &vpart.GetTable() != &table;
         if (tableReferencedInQuery && notYetReferenced)
             {
-            auto fkKey = vpart.GetTable().GetFilteredColumnFirst(ECDbKnownColumns::ECInstanceId);
+            auto fkKey = vpart.GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
             viewSql.Append(" INNER JOIN ").AppendEscaped(vpart.GetTable().GetName().c_str());
             viewSql.Append(" ON ").AppendEscaped(table.GetName().c_str()).AppendDot().AppendEscaped(primaryKey->GetName().c_str());
             viewSql.Append(" = ").AppendEscaped(vpart.GetTable().GetName().c_str()).AppendDot().AppendEscaped(fkKey->GetName().c_str());

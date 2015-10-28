@@ -102,8 +102,8 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
                 }
             else
                 {
-                auto joinedTableId = currentClassMap.GetTable().GetFilteredColumnFirst(ECDbKnownColumns::ECInstanceId);
-                auto parentOfjoinedTableId = rootOfJoinedTable->GetTable().GetFilteredColumnFirst(ECDbKnownColumns::ECInstanceId);
+                auto joinedTableId = currentClassMap.GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+                auto parentOfjoinedTableId = rootOfJoinedTable->GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
                 NativeSqlBuilder snippet;
                 snippet.AppendFormatted(
                     " WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] %s) ",
@@ -132,7 +132,6 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
         NativeSqlBuilder systemWhereClause;
         ECDbSqlColumn const* classIdColumn = nullptr;
         ECDbSqlTable const& table = classMap.GetTable();
-    ECClassId classId = classMap.GetClass().GetId();
 
         if (table.TryGetECClassIdColumn(classIdColumn) &&
             classIdColumn->GetPersistenceType() == PersistenceType::Persisted)

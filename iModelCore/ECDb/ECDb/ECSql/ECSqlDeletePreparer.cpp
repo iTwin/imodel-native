@@ -87,21 +87,21 @@ RelationshipClassEndTableMapCR classMap
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets 
+ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets
 (
-NativeSqlSnippets& deleteSqlSnippets, 
-ECSqlPrepareContext& ctx, 
-DeleteStatementExp const& exp,
-ClassNameExp const& classNameExp
-)
+    NativeSqlSnippets& deleteSqlSnippets,
+    ECSqlPrepareContext& ctx,
+    DeleteStatementExp const& exp,
+    ClassNameExp const& classNameExp
+    )
     {
-    auto status = ECSqlExpPreparer::PrepareClassRefExp (deleteSqlSnippets.m_classNameNativeSqlSnippet, ctx, classNameExp);
+    auto status = ECSqlExpPreparer::PrepareClassRefExp(deleteSqlSnippets.m_classNameNativeSqlSnippet, ctx, classNameExp);
     if (!status.IsSuccess())
         return status;
 
-   
+
     //WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] WHERE (%s))
-    if (auto whereClauseExp = exp.GetWhereClauseExp ())
+    if (auto whereClauseExp = exp.GetWhereClauseExp())
         {
         NativeSqlBuilder whereClause;
         status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereClauseExp);
@@ -122,8 +122,8 @@ ClassNameExp const& classNameExp
                 }
             else
                 {
-                auto joinedTableId = currentClassMap.GetTable().GetFilteredColumnFirst(ECDbKnownColumns::ECInstanceId);
-                auto parentOfjoinedTableId = rootOfJoinedTable->GetTable().GetFilteredColumnFirst(ECDbKnownColumns::ECInstanceId);
+                auto joinedTableId = currentClassMap.GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+                auto parentOfjoinedTableId = rootOfJoinedTable->GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
                 NativeSqlBuilder snippet;
                 snippet.AppendFormatted(
                     " WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] %s) ",
@@ -157,13 +157,12 @@ ClassNameExp const& classNameExp
     ECDbSqlTable const& table = classMap.GetTable();
     ECDbSqlColumn const* classIdColumn = nullptr;
     if (!table.TryGetECClassIdColumn(classIdColumn) || classIdColumn->GetPersistenceType() != PersistenceType::Persisted)
-                    partition.AppendECClassIdFilterSql(classIdColumn->GetName().c_str(), deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet);
         return ECSqlStatus::Success; //no class id column exists -> no system where clause
     
     return classMap.GetStorageDescription().GenerateECClassIdFilter(deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet,
-                                                                    table,
-                                                                    *classIdColumn, 
-                                                                    exp.GetClassNameExp()->IsPolymorphic()) == SUCCESS ? ECSqlStatus::Success : ECSqlStatus::Error;
+        table,
+        *classIdColumn,
+        exp.GetClassNameExp()->IsPolymorphic()) == SUCCESS ? ECSqlStatus::Success : ECSqlStatus::Error;
     }
 
 //-----------------------------------------------------------------------------------------
