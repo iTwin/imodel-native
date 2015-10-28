@@ -30,9 +30,7 @@ MuiBaseName                     = $(appName)
 
 #
 #  Defining NOMINMAX keeps windef.h from defining min/max macros. This is necessary to be able to use
-#  the std::min and std::max function templates. It might be nice to hoist this up to the power platform
-#  build policy level.
-#
+#  the std::min and std::max function templates.
 nameToDefine                    = NOMINMAX
 %include cdefapnd.mki
 
