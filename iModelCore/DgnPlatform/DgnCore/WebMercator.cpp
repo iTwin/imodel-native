@@ -334,12 +334,8 @@ static double computeGroundResolutionInMeters (uint8_t zoomLevel, double latitud
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef GRAPHITE0502
-#define GET_METERS_PER_UOR(units) units.GetPhysicalUnits().ConvertFromUorsToMeters();
-#else
 // In Graphite06, data is stored in meters. 
 #define GET_METERS_PER_UOR(units) 1.0
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/2014
@@ -742,12 +738,13 @@ void WebMercatorTileDisplayHelper::DrawMissingTile (ViewContextR context, WebMer
 #endif
     }
 
+#ifdef WEBMERCATOR_DEBUG_TILES
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
-#ifdef WEBMERCATOR_DEBUG_TILES
++---------------+---------------+---------------+---------------+---------------+------*/
 static void drawPoint (ViewContextR context, DPoint3dCR pt, bool drawCrossHair=false)
     {
-    auto pixels = context.GetPixelSizeAtPoint(NULL);
+        auto pixels = context.GetPixelSizeAtPoint(NULL);
 
     DEllipse3d circle;
     auto z = DVec3d::From (0,0,1);
@@ -767,7 +764,6 @@ static void drawPoint (ViewContextR context, DPoint3dCR pt, bool drawCrossHair=f
         }
     }
 #endif
-+---------------+---------------+---------------+---------------+---------------+------*/
 
 #ifdef WEBMERCATOR_DEBUG_TILES
 /*---------------------------------------------------------------------------------**//**
@@ -930,12 +926,13 @@ BentleyStatus WebMercatorDisplay::CreateUrl (Utf8StringR url, ImageUtilities::Rg
     return webMercatorModelHandler->_CreateUrl(url, imageInfo, m_model.m_mercator, tileid);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String WebMercatorDisplay::GetCopyright()
+Utf8String WebMercatorDisplay::_GetCopyrightMessage(DgnViewportR vp)
     {
+    if (!vp.GetViewController().GetViewedModels().Contains(m_model.GetModelId()))
+        return "";
     ModelHandlerP modelHandler = dgn_ModelHandler::Model::FindHandler(m_model.GetDgnDb(), m_model.GetClassId());
     dgn_ModelHandler::WebMercator* webMercatorModelHandler = dynamic_cast<dgn_ModelHandler::WebMercator*>(modelHandler);
     if (nullptr == webMercatorModelHandler)
@@ -1170,27 +1167,6 @@ void WebMercatorDisplay::DrawView (ViewContextR context)
         m_waitTime = 100;
         m_nextRetryTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + m_waitTime;
         }
-
-    //  Always draw the copyright (in the same location)
-    Utf8String cmsg = GetCopyright();
-    if (!cmsg.empty())
-        {
-        DPoint3d cloc = *context.GetViewport()->GetViewOrigin();
-
-        auto pixels = context.GetPixelSizeAtPoint(NULL);
-
-        TextStringStylePtr style = TextStringStyle::Create();
-        style->SetFont(DgnFontManager::GetLastResortTrueTypeFont());
-        DPoint2d textScale;
-        textScale.Init(10 * pixels, 10 * pixels);
-        style->SetSize(textScale);
-
-        TextStringPtr textString = TextString::Create();
-        textString->SetText(cmsg.c_str());
-        textString->SetStyle(*style);
-        textString->SetOrigin(cloc);
-        context.GetIDrawGeom().DrawTextString(*textString);
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1293,6 +1269,7 @@ WebMercatorDisplay::WebMercatorDisplay (WebMercatorModel& model, DgnViewportR vp
     m_failedAttempts(0)
     {
     DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT
+    T_HOST.RegisterCopyrightSupplier(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1300,6 +1277,7 @@ WebMercatorDisplay::WebMercatorDisplay (WebMercatorModel& model, DgnViewportR vp
 +---------------+---------------+---------------+---------------+---------------+------*/
 WebMercatorDisplay::~WebMercatorDisplay() 
     {
+    T_HOST.UnregisterCopyrightSupplier(*this);
     }
 
 #ifdef WIP_MAP_SERVICE

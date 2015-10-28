@@ -214,7 +214,7 @@ public:
 // Dislays tiles of a street map as they become available over time.
 // @bsiclass                                                    Sam.Wilson      10/2014
 //=======================================================================================
-struct WebMercatorDisplay : IProgressiveDisplay, NonCopyableClass
+struct WebMercatorDisplay : IProgressiveDisplay, CopyrightSupplier, NonCopyableClass
 {
     DEFINE_BENTLEY_REF_COUNTED_MEMBERS
 
@@ -232,6 +232,7 @@ protected:
     bool m_drawSubstitutes;
     bool m_preferFinerResolution;                       //!< Download and display more tiles, in order to get the best resolution? Else, go with 1/4 as many tiles and be satisfied with slightly fuzzy resolution.
     WebMercatorTileDisplayHelper m_helper;
+    TextStringStylePtr m_copyrightStyle;
 
 protected:
     BentleyStatus DrawSubstituteTilesFinerFromTextureCache (ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, uint32_t maxLevelsToTry);
@@ -247,9 +248,9 @@ protected:
     BentleyStatus GetCachedTiles (bvector<TileDisplayImageData>& tilesAndUrls, bool& allFoundInTextureCache, uint8_t zoomLevel, ViewContextR context);
 
     //! Helper function that invokes _CreateUrl on the handler
-    DGNPLATFORM_EXPORT virtual BentleyStatus CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorTilingSystem::TileId const& tileid);
+    DGNPLATFORM_EXPORT BentleyStatus CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorTilingSystem::TileId const& tileid);
 
-    DGNPLATFORM_EXPORT virtual Utf8String GetCopyright();
+    DGNPLATFORM_EXPORT Utf8String _GetCopyrightMessage(DgnViewportR vp) override;
 
     //! Displays tiled rasters and schedules downloads. 
     //! INPUT: This function assumes that m_missingTiles has been populated.
