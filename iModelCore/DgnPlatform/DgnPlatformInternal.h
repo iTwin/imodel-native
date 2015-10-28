@@ -74,8 +74,6 @@
 #include <RmgrTools/Tools/toolsubsStdio.h>
 #include <DgnPlatformInternal/DgnCore/ElemRangeCalc.h>
 #include <DgnPlatform/DgnCore/IGeoCoordServices.h>
-#include <DgnPlatform/DgnCore/PointCloudBaseModel.h>
-#include <DgnPlatform/DgnCore/RasterBaseModel.h>
 #include <DgnPlatform/DgnCore/RenderMaterial.h>
 // #include <DgnPlatform/DgnCore/SolarUtility.h>
 

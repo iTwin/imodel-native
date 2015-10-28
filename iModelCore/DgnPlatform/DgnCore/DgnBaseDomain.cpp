@@ -33,8 +33,6 @@ HANDLER_DEFINE_MEMBERS(PlanarPhysical)
 HANDLER_DEFINE_MEMBERS(SectionDrawing)
 HANDLER_DEFINE_MEMBERS(StreetMap)
 HANDLER_DEFINE_MEMBERS(WebMercator)
-HANDLER_DEFINE_MEMBERS(PointCloud)
-HANDLER_DEFINE_MEMBERS(Raster)
 HANDLER_DEFINE_MEMBERS(Resource)
 HANDLER_DEFINE_MEMBERS(Model2d)
 };
@@ -90,8 +88,6 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ModelHandler::PhysicalRedline::GetHandler());
     RegisterHandler(dgn_ModelHandler::WebMercator::GetHandler());
     RegisterHandler(dgn_ModelHandler::StreetMap::GetHandler());
-    RegisterHandler(dgn_ModelHandler::PointCloud::GetHandler());
-    RegisterHandler(dgn_ModelHandler::Raster::GetHandler());
     RegisterHandler(dgn_ModelHandler::Resource::GetHandler());
 
     RegisterHandler(dgn_ElementHandler::Element::GetHandler());

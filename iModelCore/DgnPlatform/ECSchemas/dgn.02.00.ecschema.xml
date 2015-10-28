@@ -143,12 +143,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="StreetMapModel" isDomainClass="True" >
         <BaseClass>WebMercatorModel</BaseClass>
     </ECClass>
-    <ECClass typeName="PointCloudBaseModel" isDomainClass="True" >
-        <BaseClass>PhysicalModel</BaseClass>
-    </ECClass>
-    <ECClass typeName="RasterBaseModel" isDomainClass="True" >
-        <BaseClass>PhysicalModel</BaseClass>
-    </ECClass>
     
     <ECClass typeName="Category" isDomainClass="True" >
         <ECCustomAttributes>
