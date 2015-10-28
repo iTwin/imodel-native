@@ -177,7 +177,7 @@ public:
     bool IsAbstractECClass () const;
 
     Utf8String ToString () const;
-    const std::set<ECDbSqlTable const*> GetSecondaryTables () const
+    std::set<ECDbSqlTable const*> GetSecondaryTables () const
         {
         std::set<ECDbSqlTable const*> secondaryTables;
         GetPropertyMaps ().Traverse ([&secondaryTables,this] (TraversalFeedback& feedback, PropertyMapCP propMap)
@@ -196,7 +196,7 @@ public:
             feedback = TraversalFeedback::Next;
             }, true);
 
-        return secondaryTables;
+        return std::move(secondaryTables);
         }
 
     static bool IsMapToSecondaryTableStrategy (ECN::ECClassCR ecClass);
