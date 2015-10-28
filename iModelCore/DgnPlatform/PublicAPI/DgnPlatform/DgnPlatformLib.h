@@ -992,7 +992,8 @@ public:
         ScriptAdmin*         m_scriptingAdmin;
         Utf8String              m_productName;
         T_RegisteredDomains     m_registeredDomains;
-        
+        bvector<CopyrightSupplier*> m_copyrights;
+
     public:
         T_RegisteredDomains& RegisteredDomains() {return m_registeredDomains;}
         
@@ -1088,10 +1089,19 @@ public:
         //  LineStyleManagerR       GetLineStyleManager()      {return *m_lineStyleManager;}
         FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}
         RealityDataAdmin&       GetRealityDataAdmin()      {return *m_realityDataAdmin;}
-        ScriptAdmin&         GetScriptAdmin()        {return *m_scriptingAdmin;}
+        ScriptAdmin&            GetScriptAdmin()           {return *m_scriptingAdmin;}
         Utf8CP                  GetProductName()           {return m_productName.c_str();}
 
         void ChangeNotificationAdmin(NotificationAdmin& newAdmin) {m_notificationAdmin = &newAdmin;}
+
+        //! Register a copyright supplier. Do not free the supplier until after you call UnregisterCopyrightSupplier.
+        void RegisterCopyrightSupplier(CopyrightSupplier& s) { m_copyrights.push_back(&s); }
+
+        //! Un-register a copyright supplier
+        void UnregisterCopyrightSupplier(CopyrightSupplier& s) {auto i = std::remove(m_copyrights.begin(), m_copyrights.end(), &s); if (i != m_copyrights.end()) m_copyrights.erase(i); }
+
+        //! Return the list of registered copyright suppliers
+        bvector<CopyrightSupplier*> const& GetCopyrightSuppliers() const { return m_copyrights; }
 
         //! Returns true if this Host has been initialized; otherwise, false
         bool IsInitialized() {return 0 != m_fontAdmin;}

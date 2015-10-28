@@ -568,7 +568,7 @@ BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, FB::Tex
         text.m_range = *reinterpret_cast<DRange2dCP>(fbText.range());
 
         DgnFontCR font = text.m_style.GetFont();
-        DgnFontStyle fontStyle = DgnFont::ComputeFontStyle(text.m_style.m_isBold, text.m_style.m_isItalic);
+        DgnFontStyle fontStyle = DgnFont::FontStyleFromBoldItalic(text.m_style.m_isBold, text.m_style.m_isItalic);
         
         // See comments in TextStringPersistence::EncodeAsFlatBuf as to why these transforms occur.
         for (uoffset_t iGlyph = 0; iGlyph < fbText.glyphIds()->size(); ++iGlyph)
