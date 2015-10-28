@@ -664,15 +664,15 @@ public:
 
     typedef RefCountedPtr<ExternalKeyAspect> ExternalKeyAspectPtr;
 
-    //! Allows a name to be associated with a DgnElement via a persistent ElementAspect
-    struct EXPORT_VTABLE_ATTRIBUTE NameAspect : AppData
+    //! Allows a label to be associated with a DgnElement via a persistent ElementAspect
+    struct EXPORT_VTABLE_ATTRIBUTE LabelAspect : AppData
     {
     private:
-        Utf8String m_name;
+        Utf8String m_label;
 
-        explicit NameAspect(Utf8CP name)
+        explicit LabelAspect(Utf8CP label)
             {
-            m_name.AssignOrClear(name);
+            m_label.AssignOrClear(label);
             }
 
     protected:
@@ -680,13 +680,13 @@ public:
 
     public:
         DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
-        DGNPLATFORM_EXPORT static RefCountedPtr<NameAspect> Create(Utf8CP name);
-        DGNPLATFORM_EXPORT static DgnDbStatus Query(Utf8StringR name, DgnElementCR);
+        DGNPLATFORM_EXPORT static RefCountedPtr<LabelAspect> Create(Utf8CP label);
+        DGNPLATFORM_EXPORT static DgnDbStatus Query(Utf8StringR label, DgnElementCR);
         DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR);
-        Utf8CP GetName() const {return m_name.c_str();}
+        Utf8CP GetLabel() const {return m_label.c_str();}
     };
 
-    typedef RefCountedPtr<NameAspect> NameAspectPtr;
+    typedef RefCountedPtr<LabelAspect> LabelAspectPtr;
 
     //! Allows a description to be associated with a DgnElement via a persistent ElementAspect
     struct EXPORT_VTABLE_ATTRIBUTE DescriptionAspect : AppData
