@@ -25,18 +25,12 @@ private:
         std::vector<IClassMap const*> m_classMaps;
         DbMetaDataHelper::ObjectType m_storageType;
     public:
-        std::vector<IClassMap const*>& GetClassMaps () { return m_classMaps; }
-        DbMetaDataHelper::ObjectType GetStorageType() const { return m_storageType;}
+        ViewMember() :m_storageType(DbMetaDataHelper::ObjectType::Table) {}
+        ViewMember (DbMetaDataHelper::ObjectType storageType, IClassMap const& classMap) :m_storageType(storageType) { m_classMaps.push_back(&classMap); }
 
-        ViewMember()
-            :m_storageType(DbMetaDataHelper::ObjectType::Table)
-            {
-            }
-        ViewMember (DbMetaDataHelper::ObjectType storageType, IClassMap const& classMap)
-            :m_storageType(storageType)
-            {
-            m_classMaps.push_back(&classMap);
-            }
+        void AddClassMap(IClassMap const& classMap) { m_classMaps.push_back(&classMap); }
+        std::vector<IClassMap const*> const& GetClassMaps() const { return m_classMaps; }
+        DbMetaDataHelper::ObjectType GetStorageType() const { return m_storageType; }
         };
 
     typedef bmap<ECDbSqlTable const*, ViewMember> ViewMemberByTable; 
