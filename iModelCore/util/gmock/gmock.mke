@@ -5,11 +5,11 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-PolicyFile = $(_MakeFilePath)GMockPolicy.mki
+IS_THIRD_PARTY_LIBRARY = 1
 %include mdl.mki
 
-appName = gmock
-o = $(OutputRootDir)build/gmock/build/
+appName     = gmock
+o           = $(OutputRootDir)build/gmock/build/
 always: 
     ~mkdir $(o)
 
