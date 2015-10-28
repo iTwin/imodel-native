@@ -5,12 +5,10 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
-PolicyFile = $(InternalSystemPolicy)
-
 %include mdl.mki
 
-Vancouver_BentleyDesktopClient = $(BuildContext)SubParts/
-BDC_LKG = $(SrcRoot)/LastKnownGood/Winx64/BentleyDesktopClient/
+Vancouver_BentleyDesktopClient  = $(BuildContext)SubParts/
+BDC_LKG                         = $(SrcRoot)/LastKnownGood/Winx64/BentleyDesktopClient/
 
 always:
     @CreateSymLinks.py -d "$(BuildContext)PublicAPI/BentleyDesktopClient=$(BDC_LKG)PublicAPI"

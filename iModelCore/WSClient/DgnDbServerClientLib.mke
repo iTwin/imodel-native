@@ -5,16 +5,38 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-PolicyFile = $(SrcRoot)WSClient/DgnDbServerClientLibPolicy.mki
+# affects WinRT build only.
+ENABLE_CPP_CX_EXTENSIONS = 1
+
 %include mdl.mki
 
-DgnDbServerClientSourceDirectory  = $(_MakeFilePath)
+DgnDbServerClientSourceDirectory    = $(_MakeFilePath)
 DgnDbServerClientPublicApiDirectory = $(_MakeFilePath)PublicAPI/DgnDbServer/
-BuildContextLibsDirectory   = $(BuildContext)SubParts/Libs/
+BuildContextLibsDirectory           = $(BuildContext)SubParts/Libs/
+o                                   = $(OutputRootDir)build/WSClient/DgnDbServer/Client/
 
-o = $(OutputRootDir)build/WSClient/DgnDbServer/Client/
 always:
     !~@mkdir $(o)
+
+
+#--------------------------------------------------------------------------------------
+#   Building the WebServicesClient library
+#--------------------------------------------------------------------------------------
+nameToDefine    = __DgnDbServerClient_DLL_BUILD__
+%include cdefapnd.mki
+
+%if $(TARGET_PLATFORM)=="Windows"
+    # Ignore inheritance via dominance warning
+    cDefs + -wd4250
+%endif
+
+#--------------------------------------------------------------------------------------
+#   iOS-specific
+#--------------------------------------------------------------------------------------
+AppleCppFileTypeControl = $(AppleCppFileTypeControl_ObjCpp)
+
+# Ignore unknown pragmas
+LLVMCommonCompOpts      + -Wno-unknown-pragmas
 
 #--------------------------------------------------------------------------------------
 #   Compile
