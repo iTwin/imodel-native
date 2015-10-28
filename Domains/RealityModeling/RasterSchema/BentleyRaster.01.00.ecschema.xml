@@ -6,11 +6,14 @@
     <ECSchemaReference name="dgn" version="02.00" prefix="dgn" />
 
     <ECClass typeName="RasterModel" isDomainClass="True" >
-      <BaseClass>dgn:RasterBaseModel</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="dgn.02.00" />
+      </ECCustomAttributes>
+      <BaseClass>dgn:PhysicalModel</BaseClass>
     </ECClass>
 
     <ECClass typeName="WmsModel" isDomainClass="True" >
-        <BaseClass>RasterModel</BaseClass>
+          <BaseClass>RasterModel</BaseClass>
     </ECClass>
 
     <ECClass typeName="RasterFileModel" isDomainClass="True" >

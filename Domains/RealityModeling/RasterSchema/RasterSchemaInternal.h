@@ -13,7 +13,6 @@
 
 #include <Bentley/Bentley.h>
 #include <DgnPlatform/DgnCore/DgnDomain.h>
-#include <DgnPlatform/DgnCore/RasterBaseModel.h>
 #include <DgnPlatform/DgnCore/ImageUtilities.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/DgnHandlers/image.h>
