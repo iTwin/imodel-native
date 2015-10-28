@@ -20,10 +20,12 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 typedef RefCountedPtr<ECPropertyValue> ECPropertyValuePtr;
 typedef RefCountedPtr<ECValuesCollection> ECValuesCollectionPtr;
 
-//=======================================================================================    
-//! Information about an array in an ECN::IECInstance. Does not contain the actual elements.
 //! @addtogroup ECObjectsGroup
 //! @beginGroup
+
+
+//=======================================================================================    
+//! Information about an array in an ECN::IECInstance. Does not contain the actual elements.
 //! @see ECValue
 //=======================================================================================    
 struct ArrayInfo

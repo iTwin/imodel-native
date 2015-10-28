@@ -15,6 +15,8 @@
 #include <Bentley/bset.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
 
 typedef RefCountedPtr<StandaloneECEnabler>              StandaloneECEnablerPtr;
 typedef RefCountedPtr<ECEnabler>                        ECEnablerPtr;
@@ -36,8 +38,6 @@ typedef RefCountedPtr<StandaloneECRelationshipInstance> StandaloneECRelationship
 //!
 //! Operations involving property indices are significantly more efficient than those involving
 //! access strings and should be preferred where possible.
-//! @addtogroup ECObjectsGroup
-//! @beginGroup
 //=======================================================================================    
 struct ECEnabler : RefCountedBase
 /*__PUBLISH_SECTION_END__*/

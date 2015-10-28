@@ -14,6 +14,11 @@
 #include <ECObjects/ECInstance.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
+
+
+
 //=======================================================================================    
 //! DateTimeInfo contains the meta data held by the custom attribute \b %DateTimeInfo on an 
 //! ECProperty of type DgnPlatform::PRIMITIVETYPE_DateTime.
@@ -22,8 +27,6 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! contain metadata about the actual date time value (see DateTime::Info). 
 //! In order to preserve the metadata when persisting a DateTime, clients can decorate the respective
 //! ECProperty with the \b %DateTimeInfo custom attribute from the standard ECSchema \b Bentley_Standard_CustomAttributes.
-//! @addtogroup ECObjectsGroup
-//! @beginGroup
 //! @bsiclass
 //=======================================================================================    
 struct DateTimeInfo

@@ -272,27 +272,27 @@ enum EvaluationOptions
     {
     //! Legacy behavior. IECTypeAdapter::_ConvertTo/FromExpressionType() will be invoked for each property value used in the ECExpression.
     //! This can have undesirable results:
-    //!  -Converts linear units to dimensionsed meters
-    //!  -Converts boolean and StandardValues values to localized strings
-    //!  -etc.
+    //!  @li Converts linear units to dimensionsed meters
+    //!  @li Converts boolean and StandardValues values to localized strings
+    //!  @li etc.
     //! This option is not appropriate for expressions intended to be persisted.
     EVALOPT_Legacy                          = 0,
 
     //! IECTypeAdapter::_ConvertTo/FromExpressionType() will not be invoked for property values used in the ECExpression.
-    //!  -Property values will retain their storage units
-    //!  -StandardValues values will retain their internal integer values
-    //!  -Boolean property values will be represented as non-localized true/false
+    //!  @li Property values will retain their storage units
+    //!  @li StandardValues values will retain their internal integer values
+    //!  @li Boolean property values will be represented as non-localized true/false
     //! This option is recommended when units are important, or if the results of the ECExpression will not be displayed to the user directly, or
     //! if the expression will be persisted.
     EVALOPT_SuppressTypeConversions         = 1 << 0,
 
     //! Arithmetic, comparison, and assignment operations will check the units of their operands and:
-    //!  -Convert values to compatible units if possible, or
-    //!  -Produce an error if units are not compatible
+    //!  @li Convert values to compatible units if possible, or
+    //!  @li Produce an error if units are not compatible
     //! If units are not specified for a numeric value within the ECExpression, an attempt will be made to infer the units from the other operand.
     //! Currently, units are enforced as follows:
-    //!  -Addition, subtraction, and comparison: Units must be compatible (have same base unit).
-    //!  -Multiplication and division: Only one operand may have units; the other is a scalar.
+    //!  @li Addition, subtraction, and comparison: Units must be compatible (have same base unit).
+    //!  @li Multiplication and division: Only one operand may have units; the other is a scalar.
     //! This option implies type conversions will be suppressed.
     EVALOPT_EnforceUnits                    = (1 << 1) | EVALOPT_SuppressTypeConversions,
     

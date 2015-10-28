@@ -13,12 +13,12 @@
 #include <ECObjects/StandaloneECInstance.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
 
 typedef RefCountedPtr<ECSchemaReadContext>      ECSchemaReadContextPtr;
 //=======================================================================================
 //! Context object used for schema creation and deserialization.
-//! @addtogroup ECObjectsGroup
-//! @beginGroup
 //=======================================================================================
 struct ECSchemaReadContext : RefCountedBase
 {

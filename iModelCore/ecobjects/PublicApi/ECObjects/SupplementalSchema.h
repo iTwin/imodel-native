@@ -18,9 +18,11 @@ struct SupplementalSchemaMetaData;
 typedef RefCountedPtr<SupplementalSchemaMetaData> SupplementalSchemaMetaDataPtr;
 typedef bmap<WString, WString> SchemaNamePurposeMap;
 
-//=======================================================================================
 //! @addtogroup ECObjectsGroup
 //! @beginGroup
+
+
+//=======================================================================================
 //! Used to store the information from the SupplementalSchemaMetaData custom attribute.
 //! An example of the custom attribute:
 //! \code

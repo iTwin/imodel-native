@@ -18,11 +18,13 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 typedef RefCountedPtr<StandaloneECRelationshipEnabler>  StandaloneECRelationshipEnablerPtr;
 
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
+
+
 #pragma warning(disable:4250)
 
 //=======================================================================================
-//! @addtogroup ECObjectsGroup
-//! @beginGroup
 //! Used to set the orderIds of a relationship upon persistence
 //! two IECInstances 
 //=======================================================================================

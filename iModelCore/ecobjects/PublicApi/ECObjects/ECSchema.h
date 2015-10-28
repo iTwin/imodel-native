@@ -75,16 +75,18 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
+
+
 //=======================================================================================
 //! Handles validation, encoding, and decoding of names for ECSchemas, ECClasses, and
 //! ECProperties.
 //! The names of ECSchemas, ECClasses, and ECProperties must conform to the following
 //! rules:
-//!     -Contains only alphanumeric characters in the ranges ['A'..'Z'], ['a'..'z'], ['0'..'9'], and ['_']
-//!     -Contains at least one character
-//!     -Does not begin with a digit
-//! @addtogroup ECObjectsGroup
-//! @beginGroup
+//!     @li Contains only alphanumeric characters in the ranges ['A'..'Z'], ['a'..'z'], ['0'..'9'], and ['_']
+//!     @li Contains at least one character
+//!     @li Does not begin with a digit
 //! @bsiclass
 //=======================================================================================
 struct ECNameValidation

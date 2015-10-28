@@ -14,8 +14,10 @@
 /*__PUBLISH_SECTION_START__*/
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-//@addtogroup ECObjectsGroup
-//@beginGroup
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
+
+
 /*---------------------------------------------------------------------------------**//**
 This is the iterator that is exposed using VirtualCollectionIterator. These virtual member
 functions delegate the iteration to the appropriate implementations of it based on the container

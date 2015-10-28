@@ -195,10 +195,13 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
+
+
+
 /*=================================================================================**//**
 * The context in which an expression is evaluated.
-* @addtogroup ECObjectsGroup
-* @beginGroup
 +===============+===============+===============+===============+===============+======*/
 struct          ExpressionContext : RefCountedBase
 {
@@ -261,9 +264,9 @@ public:
     ECOBJECTS_EXPORT void               SetEvaluationOptions (EvaluationOptions options);
 }; // End of class ExpressionContext
 
-/*=================================================================================**//**
-* A context in which multiple IECInstances provide the context for expression evaluation
-+===============+===============+===============+===============+===============+======*/
+//=================================================================================//
+//! A context in which multiple IECInstances provide the context for expression evaluation.
+//+===============+===============+===============+===============+===============+======//
 struct          InstanceListExpressionContext : ExpressionContext
     {
 /*__PUBLISH_SECTION_END__*/
