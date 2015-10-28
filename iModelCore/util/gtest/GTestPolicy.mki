@@ -1,9 +1,0 @@
-#--------------------------------------------------------------------------------------
-#
-#     $Source: GTestPolicy.mki $
-#
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
-#
-#--------------------------------------------------------------------------------------
-%include GTestPolicyNoUnicode.mki
-%include EnableUnicode.mki

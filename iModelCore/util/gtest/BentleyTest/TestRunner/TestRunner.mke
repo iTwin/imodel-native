@@ -2,52 +2,45 @@
 #
 #  $Source: BentleyTest/TestRunner/TestRunner.mke $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
-SolutionPolicyMki=$(_MakeFilePath)TestRunnerPolicy.mki 
-SrcGtest=$(SrcRoot)util/gtest/
-PolicyFile=$(SrcGtest)GTestPolicyNoUnicode.mki
 %include mdl.mki
 
-
-%include $(SharedMki)bsioutputdirs.mki
-
-BuildContext=$(OutputRootDir)BuildContexts/gtest/
-ContextDeliveryDir  =$(BuildContext)Delivery/
+SrcGtest                = $(SrcRoot)util/gtest/
+BuildContext            = $(OutputRootDir)BuildContexts/gtest/
 
 #----------------------------------------------------------------------------------------
 # For now, create two *.exes for the TestRunner. With and without pagalloc.
 #----------------------------------------------------------------------------------------
 %ifdef TOOLSUBS_AVAILABLE_FROM_GTEST
-    appName = TestRunnerPagalloc
-    o = $(OutputRootDir)Build/gtest/TestRunnerPagalloc/
-    DgnPlatformToolsLib = DgnPlatformTools.lib
-    testRunnerDependencies = $(BuildContext)SubParts/Libs/Bentley.lib \
-                             $(BuildContext)SubParts/Libs/BentleyAllocator.lib \
-                             $(BuildContext)SubParts/Libs/Toolsubs.lib
+    appName                 = TestRunnerPagalloc
+    o                       = $(OutputRootDir)Build/gtest/TestRunnerPagalloc/
+    DgnPlatformToolsLib     = DgnPlatformTools.lib
+    testRunnerDependencies  = $(BuildContext)SubParts/Libs/Bentley.lib \
+                              $(BuildContext)SubParts/Libs/BentleyAllocator.lib \
+                              $(BuildContext)SubParts/Libs/Toolsubs.lib
 %else
-    appName = TestRunner
-    o = $(OutputRootDir)Build/gtest/TestRunner/
-    testRunnerDependencies = $(BuildContext)SubParts/Libs/Bentley.lib $(BuildContext)SubParts/Libs/BentleyAllocator.lib
+    appName                 = TestRunner
+    o                       = $(OutputRootDir)Build/gtest/TestRunner/
+    testRunnerDependencies  = $(BuildContext)SubParts/Libs/Bentley.lib $(BuildContext)SubParts/Libs/BentleyAllocator.lib
 %endif
 
 %if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT - define a way to specify OS libraries symbolically, without naming them
     testRunnerDependencies + Shlwapi.lib
 %endif
 
-TestRunnerDir = $(SrcGtest)BentleyTest/TestRunner/
+TestRunnerDir               = $(SrcGtest)BentleyTest/TestRunner/
 
 always: 
     ~mkdir $(o)
 
 # this is necessary to use the static BentleyStaticLib.lib library
-nameToDefine = CREATE_STATIC_LIBRARIES=
+nameToDefine                = CREATE_STATIC_LIBRARIES=
 %include cdefapnd.mki
 
 #----------------------------------------------------------------------------------------
-# Pre-Compiled Header Sections
-#----------------------------------------------------------------------------------------
+
 %include MultiCppCompileRule.mki
 
 $(o)TestRunner$(oext)          : $(TestRunnerDir)TestRunner.cpp                      ${MultiCompileDepends}
