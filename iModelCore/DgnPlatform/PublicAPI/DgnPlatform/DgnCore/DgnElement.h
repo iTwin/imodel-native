@@ -1525,12 +1525,119 @@ public:
 };
 
 //=======================================================================================
+//! Helper class for maintaining and querying the ElementGroupsMembers relationship
+//! @see IElementGroup
+//! @private
+// @bsiclass                                                    Shaun.Sewall    10/15
+//=======================================================================================
+struct ElementGroupsMembers : NonCopyableClass
+{
+public:
+    DGNPLATFORM_EXPORT static DgnDbStatus Insert(DgnElementCR group, DgnElementCR member);
+    DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR group, DgnElementCR member);
+    DGNPLATFORM_EXPORT static bool HasMember(DgnElementCR group, DgnElementCR member);
+    DGNPLATFORM_EXPORT static DgnElementIdSet QueryMembers(DgnElementCR group);
+    DGNPLATFORM_EXPORT static DgnElementIdSet QueryGroups(DgnElementCR member);
+};
+
+//=======================================================================================
+//! Templated class used for an element to group other member elements.
+//! @note Template type T must be a subclass of DgnElement.
+//! @note The class that implements this interface must also be an element.
+//! @ingroup DgnElementGroup
+// @bsiclass                                                    Shaun.Sewall    10/15
+//=======================================================================================
+template<class T> class IElementGroup
+{
+protected:
+    //! Called prior to member being added to group
+    virtual DgnDbStatus _OnMemberAdd(T const& member) const {return DgnDbStatus::Success;}
+    //! Called after member is added to group
+    virtual void _OnMemberAdded(T const& member) const {}
+
+    //! Called prior to member being removed from group
+    virtual DgnDbStatus _OnMemberRemove(T const& member) const {return DgnDbStatus::Success;}
+    //! Called after member removed from group
+    virtual void _OnMemberRemoved(T const& member) const {}
+
+    //! Override to return the <em>this</em> pointer of the group DgnElement
+    virtual DgnElementCP _ToGroupElement() const = 0;
+
+    IElementGroup()
+        {
+        static_assert(std::is_base_of<DgnElement, T>::value, "IElementGroup can only group subclasses of DgnElement");
+        }
+
+public:
+    //! Add a member to this group
+    DgnDbStatus AddMember(T const& member) const
+        {
+        DgnElementCR groupElement = *_ToGroupElement();
+        DgnElementCR memberElement = static_cast<DgnElementCR>(member); // see static_assert in constructor
+
+        DgnDbStatus status = _OnMemberAdd(member);
+        if (DgnDbStatus::Success != status)
+            return status;
+
+        status = ElementGroupsMembers::Insert(groupElement, memberElement);
+        if (DgnDbStatus::Success != status)
+            return status;
+
+        _OnMemberAdded(member);
+        return DgnDbStatus::Success;
+        }
+
+    //! Remove a member from this group
+    DgnDbStatus RemoveMember(T const& member) const
+        {
+        DgnElementCR groupElement = *_ToGroupElement();
+        DgnElementCR memberElement = static_cast<DgnElementCR>(member); // see static_assert in constructor
+
+        DgnDbStatus status = _OnMemberRemove(member);
+        if (DgnDbStatus::Success != status)
+            return status;
+
+        status = ElementGroupsMembers::Delete(groupElement, memberElement);
+        if (DgnDbStatus::Success != status)
+            return status;
+
+        _OnMemberRemoved(member);
+        return DgnDbStatus::Success;
+        }
+    
+    //! Returns true if this group has the specified member
+    bool HasMember(T const& member) const
+        {
+        DgnElementCR groupElement = *_ToGroupElement();
+        DgnElementCR memberElement = static_cast<DgnElementCR>(member); // see static_assert in constructor
+
+        return ElementGroupsMembers::HasMember(groupElement, memberElement);
+        }
+
+    //! Query for the members of this group
+    DgnElementIdSet QueryMembers() const
+        {
+        DgnElementCR groupElement = *_ToGroupElement();
+        return ElementGroupsMembers::QueryMembers(groupElement);
+        }
+
+    //! Query for the groups that the specified element is a member of
+    static DgnElementIdSet QueryGroups(T const& member)
+        {
+        DgnElementCR memberElement = static_cast<DgnElementCR>(member); // see static_assert in constructor
+        return ElementGroupsMembers::QueryGroups(memberElement);
+        }
+};
+
+//=======================================================================================
 //! A "logical Group" of elements.
 //! "Logical" groups hold a referencing (not an owning) relationship with their members.
 //! ElementGroup can be subclassed for custom grouping behavior.
 //! @ingroup DgnElementGroup
+//! @private
 // @bsiclass                                                    Shaun.Sewall    05/15
 //=======================================================================================
+// WIP: Obsolete. Replaced by IElementGroup
 struct EXPORT_VTABLE_ATTRIBUTE ElementGroup : DgnElement
 {
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_ElementGroup, DgnElement)
@@ -1600,7 +1707,6 @@ public:
 //! Typically represents a style or similar resource used by other elements throughout
 //! the DgnDb.
 //! @ingroup DgnElementGroup
-// @bsiclass                                                    Shaun.Sewall    05/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DictionaryElement : DgnElement
 {

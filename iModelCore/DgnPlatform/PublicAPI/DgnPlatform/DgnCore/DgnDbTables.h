@@ -71,7 +71,8 @@
 //-----------------------------------------------------------------------------------------
 #define DGN_RELNAME_ElementDrivesElement        "ElementDrivesElement"
 #define DGN_RELNAME_ElementGeomUsesParts        "ElementGeomUsesParts"
-#define DGN_RELNAME_ElementGroupHasMembers      "ElementGroupHasMembers"
+#define DGN_RELNAME_ElementGroupHasMembers      "ElementGroupHasMembers" // WIP: obsolete, replaced by ElementGroupsMembers
+#define DGN_RELNAME_ElementGroupsMembers        "ElementGroupsMembers"
 #define DGN_RELNAME_ElementHasLinks             "ElementHasLinks"
 #define DGN_RELNAME_ElementOwnsItem             "ElementOwnsItem"
 #define DGN_RELNAME_ElementUsesStyles           "ElementUsesStyles"

@@ -1498,6 +1498,97 @@ DgnClassId ElementGroup::QueryClassId(DgnDbR db)
     return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ElementGroup));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    10/2015
+//---------------------------------------------------------------------------------------
+DgnDbStatus ElementGroupsMembers::Insert(DgnElementCR group, DgnElementCR member)
+    {
+    CachedECSqlStatementPtr statement = group.GetDgnDb().GetPreparedECSqlStatement(
+        "INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementGroupsMembers) 
+        " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
+
+    if (!statement.IsValid())
+        return DgnDbStatus::BadRequest;
+
+    statement->BindId(1, group.GetElementClassId());
+    statement->BindId(2, group.GetElementId());
+    statement->BindId(3, member.GetElementClassId());
+    statement->BindId(4, member.GetElementId());
+    return (BE_SQLITE_DONE == statement->Step()) ? DgnDbStatus::Success : DgnDbStatus::BadRequest;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    10/2015
+//---------------------------------------------------------------------------------------
+DgnDbStatus ElementGroupsMembers::Delete(DgnElementCR group, DgnElementCR member)
+    {
+    CachedECSqlStatementPtr statement = group.GetDgnDb().GetPreparedECSqlStatement(
+        "DELETE FROM " DGN_SCHEMA(DGN_RELNAME_ElementGroupsMembers) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?");
+
+    if (!statement.IsValid())
+        return DgnDbStatus::BadRequest;
+
+    statement->BindId(1, group.GetElementId());
+    statement->BindId(2, member.GetElementId());
+    return (BE_SQLITE_DONE == statement->Step()) ? DgnDbStatus::Success : DgnDbStatus::BadRequest;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    10/2015
+//---------------------------------------------------------------------------------------
+bool ElementGroupsMembers::HasMember(DgnElementCR group, DgnElementCR member)
+    {
+    CachedECSqlStatementPtr statement = group.GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT SourceECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_ElementGroupsMembers) " WHERE SourceECInstanceId=? AND TargetECInstanceId=? LIMIT 1");
+
+    if (!statement.IsValid())
+        return false;
+
+    statement->BindId(1, group.GetElementId());
+    statement->BindId(2, member.GetElementId());
+    return (BE_SQLITE_ROW == statement->Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    10/2015
+//---------------------------------------------------------------------------------------
+DgnElementIdSet ElementGroupsMembers::QueryMembers(DgnElementCR group)
+    {
+    CachedECSqlStatementPtr statement = group.GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT TargetECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_ElementGroupsMembers) " WHERE SourceECInstanceId=?");
+
+    if (!statement.IsValid())
+        return DgnElementIdSet();
+
+    statement->BindId(1, group.GetElementId());
+
+    DgnElementIdSet elementIdSet;
+    while (BE_SQLITE_ROW == statement->Step())
+        elementIdSet.insert(statement->GetValueId<DgnElementId>(0));
+
+    return elementIdSet;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    10/2015
+//---------------------------------------------------------------------------------------
+DgnElementIdSet ElementGroupsMembers::QueryGroups(DgnElementCR member)
+    {
+    CachedECSqlStatementPtr statement = member.GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT SourceECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_ElementGroupsMembers) " WHERE TargetECInstanceId=?");
+
+    if (!statement.IsValid())
+        return DgnElementIdSet();
+
+    statement->BindId(1, member.GetElementId());
+
+    DgnElementIdSet elementIdSet;
+    while (BE_SQLITE_ROW == statement->Step())
+        elementIdSet.insert(statement->GetValueId<DgnElementId>(0));
+
+    return elementIdSet;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
