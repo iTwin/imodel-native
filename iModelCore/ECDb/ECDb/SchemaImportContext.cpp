@@ -214,7 +214,7 @@ BentleyStatus SchemaImportECDbMapDb::CreateOrUpdateIndicesInDb(ECDbR ecdb) const
         if (BE_SQLITE_OK != ecdb.ExecuteSql(ddl.ToString()))
             {
             ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to create index %s on table %s. Error: %s", index.GetName().c_str(), index.GetTable().GetName().c_str(),
-                                                          ecdb.GetLastError());
+                                                          ecdb.GetLastError().c_str());
             BeAssert(false && "Failed to create index");
             return ERROR;
             }

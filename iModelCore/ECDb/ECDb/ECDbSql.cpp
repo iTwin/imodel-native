@@ -489,7 +489,7 @@ BentleyStatus ECDbSqlTable::PersistenceManager::Create(ECDbR ecdb) const
     if (ecdb.ExecuteSql(sql.c_str()) != BE_SQLITE_OK)
         {
         ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to create table %s: %s",
-                                          m_table.GetName().c_str(), ecdb.GetLastError());
+                                          m_table.GetName().c_str(), ecdb.GetLastError().c_str());
         return ERROR;
         }
 
@@ -987,7 +987,7 @@ BentleyStatus ECDbSqlTrigger::CreateInDb (ECDbR ecdb) const
     if (ecdb.ExecuteSql(sql.c_str()) != BE_SQLITE_OK)
         {
         LOG.errorv("Failed to create trigger %s on table %s. Error: %s", m_triggerName.c_str(), m_table.GetName().c_str(),
-                   ecdb.GetLastError());
+                   ecdb.GetLastError().c_str());
         return ERROR;
         }
 
@@ -1044,7 +1044,7 @@ BentleyStatus DDLGenerator::CopyRows(ECDbR ecdb, Utf8CP sourceTable, bvector<Utf
     if (BE_SQLITE_OK != ecdb.ExecuteSql(sql.c_str()))
         {
         ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to copy rows from %s to %s: Error message: %s",
-                                          sourceTable, targetTable, ecdb.GetLastError());
+                                          sourceTable, targetTable, ecdb.GetLastError().c_str());
         return ERROR;
         }
 
@@ -1080,7 +1080,7 @@ BentleyStatus DDLGenerator::AddColumns(ECDbR ecdb, ECDbSqlTable const& table, st
         DbResult r = ecdb.ExecuteSql (alterDDL.c_str ());
         if (r != BE_SQLITE_OK)
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to add new column (%s). Error message: %s", alterDDLTemplate.c_str(), ecdb.GetLastError ());
+            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to add new column (%s). Error message: %s", alterDDLTemplate.c_str(), ecdb.GetLastError ().c_str());
             return ERROR;
             }
         }

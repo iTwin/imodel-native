@@ -341,12 +341,12 @@ void IssueReporter::ReportSqliteIssue(ECDbIssueSeverity sev, DbResult sqliteStat
 
         Utf8CP dbResultStr = ECDb::InterpretDbResult(sqliteStat);
 
-        Utf8CP lastSqliteErrorMsg = m_ecdb.GetLastError();
+        Utf8String lastSqliteErrorMsg = m_ecdb.GetLastError();
         //ECDb sometimes returns DbResult errors on its own. In that case there is no SQLite error to output
-        if (lastSqliteErrorMsg == nullptr)
+        if (lastSqliteErrorMsg.empty())
             Report(sev, "%s %s", messageHeader, dbResultStr);
         else
-            Report(sev, "%s %s: %s", messageHeader, dbResultStr, lastSqliteErrorMsg);
+            Report(sev, "%s %s: %s", messageHeader, dbResultStr, lastSqliteErrorMsg.c_str());
         }
     }
 

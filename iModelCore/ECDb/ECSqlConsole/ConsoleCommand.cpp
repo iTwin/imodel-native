@@ -415,7 +415,7 @@ void CommitCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const&
 
     auto stat = session.GetECDbR ().SaveChanges();
     if (stat != BE_SQLITE_OK)
-        Console::WriteErrorLine("Commit failed: %s", session.GetECDb().GetLastError());
+        Console::WriteErrorLine("Commit failed: %s", session.GetECDb().GetLastError().c_str());
     else
         Console::WriteLine("Committed current transaction and restarted it.");
     }
@@ -468,7 +468,7 @@ void RollbackCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
 
     auto stat = session.GetECDbR ().AbandonChanges();
     if (stat != BE_SQLITE_OK)
-        Console::WriteErrorLine("Rollback failed: %s", session.GetECDb().GetLastError());
+        Console::WriteErrorLine("Rollback failed: %s", session.GetECDb().GetLastError().c_str());
     else
         Console::WriteLine("Rolled current transaction back and restarted it.");
     }
@@ -1367,7 +1367,7 @@ void SqliteCommand::_Run(ECSqlConsoleSession& session, std::vector<Utf8String> c
     DbResult status = stmt.Prepare(session.GetECDbR(), sql.c_str());
     if (status != BE_SQLITE_OK)
         {
-        Console::WriteErrorLine("Failed to prepare SQLite SQL statement %s: %s", sql.c_str(), session.GetECDb().GetLastError());
+        Console::WriteErrorLine("Failed to prepare SQLite SQL statement %s: %s", sql.c_str(), session.GetECDb().GetLastError().c_str());
         return;
         }
 
@@ -1415,7 +1415,7 @@ void SqliteCommand::ExecuteNonSelect(ECSqlConsoleSession& session, Statement& st
     {
     if (statement.Step() != BE_SQLITE_DONE)
         {
-        Console::WriteErrorLine("Failed to execute SQLite SQL statement %s: %s", statement.GetSql (), session.GetECDb ().GetLastError ());
+        Console::WriteErrorLine("Failed to execute SQLite SQL statement %s: %s", statement.GetSql (), session.GetECDb ().GetLastError ().c_str());
         return;
         }
     }
