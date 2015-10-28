@@ -296,13 +296,24 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-ComponentToTextureStroker(DgnDbR dgndb, double scaleFactor, LsComponentR component) : ComponentStroker(dgndb, component, scaleFactor), m_scaleFactor(scaleFactor)
+ComponentToTextureStroker(DgnDbR dgndb, double scaleFactor, double verticalShift, LsComponentR component) : ComponentStroker(dgndb, component, scaleFactor), m_scaleFactor(scaleFactor)
     {
     //  If a modified copy is required, the caller passed the copy. 
     BeAssert(component._IsOkayForTextureGeneration() == LsOkayForTextureGeneration::NoChangeRequired);
 
-    //  Will probably eliminate this.  Assume that the scaling is done by setting a scale factor in the LineStyleSymb.
-    m_transformForTexture.InitIdentity();
+    Transform shift;
+    shift.InitFrom(0, -verticalShift, 0);
+
+    //  NEEDSWORK_LINESTYLES -- it doesn't make sense to mirror this. This must be a QV bug in applying the texture
+    Transform mirror;
+    DVec3d normal;
+    normal.Init(0, 1, 0);
+    DPoint3d zero;
+    zero.Zero();
+    mirror.InitFromMirrorPlane(zero, normal);
+
+    //  m_transformForTexture.InitFrom(0, -verticalShift, 0);
+    m_transformForTexture.InitProduct(shift, mirror);
     }
 
 //---------------------------------------------------------------------------------------
@@ -322,14 +333,16 @@ void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
 
     context.GetIDrawGeom().ActivateMatSymb(&elemMatSymb);
 
+    context.PushTransform(m_transformForTexture);
     m_component->_StrokeLineString(&context, &lineStyleSymb, m_points, 2, false);
+    context.PopTransformClip();
     }
 };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2015
 //---------------------------------------------------------------------------------------
-static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, double componentLength)
+static DRange2d getAdjustedRange(uint32_t& scaleFactor, double& verticalShift, DRange3dCR lsRange, double componentLength)
     {
     scaleFactor = 1;
 
@@ -359,16 +372,14 @@ static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, doub
     //  think QV is detecting that correctly so for now I am just going for the same size.  Without
     //  this change to the range QV scales the contents of the geometry map in one direction or the other.
     double yRange = range2d.high.y - range2d.low.y;
+    verticalShift = range2d.high.y - yRange/2;  //  QV will line up the middle of the pattern with the line, so have to force the pattern's 0 to be in the center.
+    range2d.low.y -= verticalShift;
+    range2d.high.y -= verticalShift;
     double diff = xRange - yRange;
     if (diff > 0.0)
         {
-        double lowChange = 0;
-        double highChange = range2d.high.y/yRange * diff;;
-        if (range2d.low.y < 0)
-            lowChange = -range2d.low.y/yRange * diff;
-
-        range2d.low.y -= lowChange;
-        range2d.high.y += highChange;
+        range2d.low.y -= diff/2;
+        range2d.high.y += diff/2;
         }
 
     return range2d;
@@ -396,9 +407,10 @@ intptr_t  LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR
     rangeStroker.ComputeRange(lsRange);
 
     uint32_t  scaleFactor = 1;
-    DRange2d range2d = getAdjustedRange(scaleFactor, lsRange, comp->_GetLength());
+    double    verticalShift = 0.0;
+    DRange2d range2d = getAdjustedRange(scaleFactor, verticalShift, lsRange, comp->_GetLength());
 
-    ComponentToTextureStroker   stroker(viewContext.GetDgnDb(), scaleFactor, *comp);
+    ComponentToTextureStroker   stroker(viewContext.GetDgnDb(), scaleFactor, verticalShift, *comp);
 
     viewContext.GetIViewDraw ().DefineQVGeometryMap (intptr_t(this), stroker, range2d, false, viewContext, false);
 
