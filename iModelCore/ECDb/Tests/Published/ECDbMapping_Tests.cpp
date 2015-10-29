@@ -1995,7 +1995,7 @@ TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_JoinedTableForSubc
         tableNames.push_back(stmt.GetValueText(0));
         }
 
-    ASSERT_EQ(1, tableNames.size()) << "Note: Once JoinedTable is supported, the expected count needs to be changed to 2";
+    ASSERT_EQ(2, tableNames.size()) << "Note: Once JoinedTable is supported, the expected count needs to be changed to 2";
 
     auto it = std::find(tableNames.begin(), tableNames.end(), "ts_Base");
     ASSERT_TRUE(it != tableNames.end()) << "Table ts_Base is expected to exist";

@@ -87,23 +87,63 @@ RelationshipClassEndTableMapCR classMap
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets 
+ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets
 (
-NativeSqlSnippets& deleteSqlSnippets, 
-ECSqlPrepareContext& ctx, 
-DeleteStatementExp const& exp,
-ClassNameExp const& classNameExp
-)
+    NativeSqlSnippets& deleteSqlSnippets,
+    ECSqlPrepareContext& ctx,
+    DeleteStatementExp const& exp,
+    ClassNameExp const& classNameExp
+    )
     {
-    auto status = ECSqlExpPreparer::PrepareClassRefExp (deleteSqlSnippets.m_classNameNativeSqlSnippet, ctx, classNameExp);
+    auto status = ECSqlExpPreparer::PrepareClassRefExp(deleteSqlSnippets.m_classNameNativeSqlSnippet, ctx, classNameExp);
     if (!status.IsSuccess())
         return status;
 
-    if (auto whereClauseExp = exp.GetWhereClauseExp ())
+
+    //WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] WHERE (%s))
+    if (auto whereClauseExp = exp.GetWhereClauseExp())
         {
-        status = ECSqlExpPreparer::PrepareWhereExp (deleteSqlSnippets.m_whereClauseNativeSqlSnippet, ctx, whereClauseExp);
+        NativeSqlBuilder whereClause;
+        status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereClauseExp);
         if (!status.IsSuccess())
             return status;
+
+        //Following generate optimized WHERE depending on what was accessed in WHERE class of delete. It will avoid uncessary
+        auto const & currentClassMap = classNameExp.GetInfo().GetMap();
+        if (auto rootOfJoinedTable = currentClassMap.FindRootOfJoinedTable())
+            {
+            auto const tableBeenAccessed = whereClauseExp->GetReferencedTables();
+            bool referencedRootOfJoinedTable = (tableBeenAccessed.find(&rootOfJoinedTable->GetTable()) != tableBeenAccessed.end());
+            bool referencedJoinedTable = (tableBeenAccessed.find(&currentClassMap.GetTable()) != tableBeenAccessed.end());
+            if (referencedRootOfJoinedTable && !referencedJoinedTable)
+                {
+                //do not modifiy where
+                deleteSqlSnippets.m_whereClauseNativeSqlSnippet = whereClause;
+                }
+            else
+                {
+                auto joinedTableId = currentClassMap.GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+                auto parentOfjoinedTableId = rootOfJoinedTable->GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+                NativeSqlBuilder snippet;
+                snippet.AppendFormatted(
+                    " WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] %s) ",
+                    parentOfjoinedTableId->GetName().c_str(),
+                    rootOfJoinedTable->GetTable().GetName().c_str(),
+                    parentOfjoinedTableId->GetName().c_str(),
+                    rootOfJoinedTable->GetTable().GetName().c_str(),
+                    currentClassMap.GetTable().GetName().c_str(),
+                    currentClassMap.GetTable().GetName().c_str(),
+                    joinedTableId->GetName().c_str(),
+                    rootOfJoinedTable->GetTable().GetName().c_str(),
+                    parentOfjoinedTableId->GetName().c_str(),
+                    whereClause.ToString()
+                    );
+
+                deleteSqlSnippets.m_whereClauseNativeSqlSnippet = snippet;
+                }
+            }
+        else
+            deleteSqlSnippets.m_whereClauseNativeSqlSnippet = whereClause;
         }
 
 
@@ -114,15 +154,19 @@ ClassNameExp const& classNameExp
 
 
     IClassMap const& classMap = classNameExp.GetInfo().GetMap();
-    ECDbSqlTable const& table = classMap.GetTable();
+    ECDbSqlTable const* table = &classMap.GetTable();
+    if (auto rootOfJoinedTable = classMap.FindRootOfJoinedTable())
+        {
+        table = &rootOfJoinedTable->GetTable();
+        }
     ECDbSqlColumn const* classIdColumn = nullptr;
-    if (!table.TryGetECClassIdColumn(classIdColumn) || classIdColumn->GetPersistenceType() != PersistenceType::Persisted)
+    if (!table->TryGetECClassIdColumn(classIdColumn) || classIdColumn->GetPersistenceType() != PersistenceType::Persisted)
         return ECSqlStatus::Success; //no class id column exists -> no system where clause
     
     return classMap.GetStorageDescription().GenerateECClassIdFilter(deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet,
-                                                                    table,
-                                                                    *classIdColumn, 
-                                                                    exp.GetClassNameExp()->IsPolymorphic()) == SUCCESS ? ECSqlStatus::Success : ECSqlStatus::Error;
+        *table,
+        *classIdColumn,
+        exp.GetClassNameExp()->IsPolymorphic()) == SUCCESS ? ECSqlStatus::Success : ECSqlStatus::Error;
     }
 
 //-----------------------------------------------------------------------------------------
