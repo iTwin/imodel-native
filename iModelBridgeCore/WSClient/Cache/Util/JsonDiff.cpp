@@ -177,8 +177,33 @@ void JsonDiff::CopyValues(RapidJsonValueCR source, RapidJsonValueR target, rapid
             break;
 
         case kNumberType:
-            target.SetInt(source.GetInt());
-            break;
+            {
+            if (source.IsInt())
+                {
+                target.SetInt(source.GetInt());
+                break;
+                }
+            if (source.IsDouble())
+                {
+                target.SetDouble(source.GetInt());
+                break;
+                }
+            if (source.IsInt64())
+                {
+                target.SetInt64(source.GetInt());
+                break;
+                }
+            if (source.IsUint())
+                {
+                target.SetUint(source.GetInt());
+                break;
+                }
+            if (source.IsUint64())
+                {
+                target.SetUint64(source.GetInt());
+                break;
+                }
+            }
         }
     }
 
@@ -204,8 +229,18 @@ bool JsonDiff::ValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2)
             return StringValuesEqual(value1, value2);
 
         case kNumberType:
-            return value1.GetInt() == value2.GetInt();
-
+            {
+            if (value1.IsInt())
+                return value1.GetInt() == value2.GetInt();
+            if (value1.IsDouble())
+                return value1.GetDouble() == value2.GetDouble();
+            if (value1.IsInt64())
+                return value1.GetInt64() == value2.GetInt64();
+            if (value1.IsUint())
+                return value1.GetUint() == value2.GetUint();
+            if (value1.IsUint64())
+                return value1.GetUint64() == value2.GetUint64();
+            }
         case kTrueType:
         case kFalseType:
         case kNullType:
