@@ -114,7 +114,7 @@ always:
 
 # Symlink other assets to the bundle
 always:
-    $(SrcRoot)bsicommon/build/CopyWithSymlinks.py   $(tmp)assets    $(XCodeProject)MobileDgnAssets.bundle
+    $(SrcRoot)bsicommon/build/CopyWithSymlinks.py   $(tmp)assets    $(XCodeProject)DgnClientFxAssets.bundle
 
 #--------------------------------------------------------------------------------------
 # Deliver required libraries

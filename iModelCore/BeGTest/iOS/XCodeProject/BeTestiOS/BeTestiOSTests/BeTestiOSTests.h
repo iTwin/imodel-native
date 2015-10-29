@@ -35,7 +35,7 @@ struct BeTestHost : RefCounted<BeTest::Host>
     m_tempDir.SetNameUtf8 (temp);
     m_output.SetNameUtf8 (localState);
 
-    // for consistency with MobileDgn, ensure trailing separators
+    // for consistency with DgnClientFx, ensure trailing separators
     m_docs.AppendSeparator();
     m_assetsDir.AppendSeparator();
     m_tempDir.AppendSeparator();
