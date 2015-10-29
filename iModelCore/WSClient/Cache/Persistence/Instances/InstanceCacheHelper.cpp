@@ -238,22 +238,7 @@ CachedInstances& cachedInstancesInOut
 
     if (0 != relClass->GetPropertyCount())
         {
-         // TODO: pass source and target seperately when Updater API is available to avoid deep copy
-        rapidjson::Document properties;
-        JsonUtil::DeepCopy(relationshipInstance.GetProperties(), properties);
-        auto& alloc = properties.GetAllocator();
-
-        Utf8String scId = BeJsonUtilities::StringValueFromInt64(source->GetECClassId()).asCString();
-        Utf8String tcId = BeJsonUtilities::StringValueFromInt64(target->GetECClassId()).asCString();
-        Utf8String siId = ECDbHelper::StringFromECInstanceId(source->GetECInstanceId());
-        Utf8String tiId = ECDbHelper::StringFromECInstanceId(target->GetECInstanceId());
-
-        properties.AddMember("$SourceECClassId", scId.c_str(), alloc);
-        properties.AddMember("$TargetECClassId", tcId.c_str(), alloc);
-        properties.AddMember("$SourceECInstanceId", siId.c_str(), alloc);
-        properties.AddMember("$TargetECInstanceId", tiId.c_str(), alloc);
-
-        if (SUCCESS != m_updaters.Get(*relClass).Update(relationshipKey.GetECInstanceId(), properties))
+        if (SUCCESS != m_updaters.Get(*relClass).Update(relationshipKey.GetECInstanceId(), relationshipInstance.GetProperties(), *source, *target))
             {
             return ERROR;
             }
