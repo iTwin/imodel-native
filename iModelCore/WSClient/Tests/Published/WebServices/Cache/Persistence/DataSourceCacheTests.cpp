@@ -2308,6 +2308,32 @@ TEST_F(DataSourceCacheTests, CachePartialResponse_MultipleNestedResponsesWithHol
     EXPECT_THAT(cache->IsResponseCached(key3), false);
     }
 
+TEST_F(DataSourceCacheTests, CachePartialResponse_RelationshipWithProperties_CachesRelationshipProperties)
+    {
+    shared_ptr<DataSourceCache> cache = GetTestCache();
+
+    StubInstances instances;
+    instances
+        .Add({"TestSchema.TestClass", "A"})
+        .AddRelated({"TestSchema.TestRelationshipPropertiesClass", "AB"}, {"TestSchema.TestClass", "B"}, {}, 
+            ECRelatedInstanceDirection::Forward, {{"TestProperty", "RelationshipValue"}});
+
+    bset<ObjectId> rejected;
+    EXPECT_EQ(SUCCESS, cache->CachePartialResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse(), rejected, nullptr));
+    EXPECT_THAT(rejected, IsEmpty());
+
+    auto relClass = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipPropertiesClass");
+    auto relationshipKey = cache->FindRelationship(*relClass, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "B"});
+
+    EXPECT_TRUE(relationshipKey.IsValid());
+    EXPECT_THAT(cache->FindRelationship(relationshipKey), ObjectId("TestSchema.TestRelationshipPropertiesClass", "AB"));
+
+    Json::Value relationshipJson;
+    cache->GetAdapter().GetJsonInstance(relationshipJson, relationshipKey);
+    EXPECT_NE(Json::Value::null, relationshipJson);
+    EXPECT_EQ("RelationshipValue", relationshipJson["TestProperty"].asString());
+    }
+
 TEST_F(DataSourceCacheTests, CachePartialResponse_KeysHaveSameHolderAndNameAndParent_NewResponseOverridesOldOne)
     {
     shared_ptr<DataSourceCache> cache = GetTestCache();
