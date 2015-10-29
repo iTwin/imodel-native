@@ -1284,6 +1284,8 @@ $(o)HRFCombinedRasterFileCapabilities$(oext) : $(ippGraDir)hrf/src/HRFCombinedRa
 
 $(o)HRFERSPageFile$(oext) : $(ippGraDir)hrf/src/HRFERSPageFile.cpp $(ippAllInc)HRFERSPageFile.h ${MultiCompileDepends}
 
+$(o)HRFPRJPageFile$(oext) : $(ippGraDir)hrf/src/HRFPRJPageFile.cpp $(ippAllInc)HRFPRJPageFile.h ${MultiCompileDepends}
+
 $(o)HRFHGRPageFile$(oext) : $(ippGraDir)hrf/src/HRFHGRPageFile.cpp $(ippAllInc)HRFHGRPageFile.h ${MultiCompileDepends}
 
 $(o)HRFiTiffCacheFileCreator$(oext) : $(ippGraDir)hrf/src/HRFiTiffCacheFileCreator.cpp $(ippAllInc)HRFiTiffCacheFileCreator.h ${MultiCompileDepends}

@@ -71,6 +71,8 @@ public:
 
     IRasterBaseGcsCP                       GetGeocodingCP() const;
     IMAGEPP_EXPORT HCPGeoTiffKeys const&    GetGeoTiffKeys() const;
+
+    bool                                    IsValid() const;
     };
 
 /** -----------------------------------------------------------------------------
