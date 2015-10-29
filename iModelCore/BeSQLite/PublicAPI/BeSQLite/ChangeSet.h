@@ -63,9 +63,19 @@ public:
     //! @param[in] val if true, enable tracking.
     BE_SQLITE_EXPORT bool EnableTracking(bool val);
 
+    //! All changes are marked as either direct or indirect according to the mode in which the ChangeTracker is currently operating.
+    enum class Mode
+    {
+        Direct = 0, //!< All changes are marked as "direct".
+        Indirect = 1, //!< All changes are marked as "indirect".
+    };
+
+    //! Query the current state of the "indirect changes" flag. All changes are marked as either direct or indirect according to the state of this flag.
+    BE_SQLITE_EXPORT Mode GetMode() const;
+
     //! turn on or off the "indirect changes" flag. All changes are marked as either direct or indirect according to the state of this flag.
-    //! @param[in] val if true, changes are marked as indirect.
-    BE_SQLITE_EXPORT void SetIndirectChanges(bool val);
+    //! @param[in] mode the new mode.
+    BE_SQLITE_EXPORT void SetMode(Mode mode);
 
     //! Determine whether any changes have been tracked by this ChangeTracker.
     BE_SQLITE_EXPORT bool HasChanges();

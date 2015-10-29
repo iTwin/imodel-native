@@ -69,7 +69,8 @@ bool ChangeTracker::EnableTracking(bool yesNo)
     return !yesNo;
     }
 
-void ChangeTracker::SetIndirectChanges(bool yesNo) {sqlite3session_indirect(m_session, yesNo);}
+ChangeTracker::Mode ChangeTracker::GetMode() const {return 0 != sqlite3session_indirect(m_session, -1) ? Mode::Indirect : Mode::Direct;}
+void ChangeTracker::SetMode(Mode mode) {sqlite3session_indirect(m_session, static_cast<int>(mode));}
 bool ChangeTracker::HasChanges() {return m_session && 0 == sqlite3session_isempty(m_session);}
 
 /*---------------------------------------------------------------------------------**//**
