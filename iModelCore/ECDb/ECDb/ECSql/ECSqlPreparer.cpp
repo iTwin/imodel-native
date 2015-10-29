@@ -228,22 +228,25 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp(NativeSqlBuilder::List& na
         return ECSqlStatus::Error;
         }
 
+    const BooleanSqlOperator logicalCompoundOp = DetermineCompoundLogicalOpForCompoundExpressions(op);
+    const bool wrapInParens = exp->HasParentheses() || nativeSqlSnippetCount > 1;
+
     NativeSqlBuilder sqlBuilder;
-    if (exp->HasParentheses())
+    if (wrapInParens)
         sqlBuilder.AppendParenLeft();
 
-    auto isFirstSnippet = true;
+    bool isFirstSnippet = true;
     for (size_t i = 0; i < nativeSqlSnippetCount; i++)
         {
         if (!isFirstSnippet)
-            sqlBuilder.Append(" AND ");
+            sqlBuilder.AppendSpace().Append(logicalCompoundOp, true);
 
         sqlBuilder.Append(lhsNativeSqlSnippets[i], true).Append(op, true).Append(rhsNativeSqlSnippets[i], false);
 
         isFirstSnippet = false;
         }
 
-    if (exp->HasParentheses())
+    if (wrapInParens)
         sqlBuilder.AppendParenRight();
 
     nativeSqlSnippets.push_back(move(sqlBuilder));
@@ -1922,6 +1925,31 @@ ECSqlStatus ECSqlExpPreparer::ResolveParameterMappings (ECSqlPrepareContext& con
         }
 
     return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    10/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BooleanSqlOperator ECSqlExpPreparer::DetermineCompoundLogicalOpForCompoundExpressions(BooleanSqlOperator op)
+    {
+    //for positive operators the elements of the compount exp are ANDed together. For negative ones they are ORed together
+    //Ex: ECSQL: MyPoint = MyOtherPoint -> SQL: MyPoint_x = MyOtherPoint_x AND MyPoint_y = MyOtherPoint_y
+    //    ECSQL: MyPoint <> MyOtherPoint -> SQL: MyPoint_x <> MyOtherPoint_x OR MyPoint_y <> MyOtherPoint_y
+
+    switch (op)
+        {
+            case BooleanSqlOperator::IsNot:
+            case BooleanSqlOperator::NotBetween:
+            case BooleanSqlOperator::NotEqualTo:
+            case BooleanSqlOperator::NotIn:
+            case BooleanSqlOperator::NotLike:
+            case BooleanSqlOperator::NotMatch:
+                return BooleanSqlOperator::Or;
+
+            default:
+                return BooleanSqlOperator::And;
+        }
     }
 
 //-----------------------------------------------------------------------------------------

@@ -12,29 +12,28 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void SchemaImportTestFixture::AssertSchemaImport(std::vector<TestItem> const& testItems, Utf8CP ecdbFileName) const
+void SchemaImportTestFixture::AssertSchemaImport(std::vector<SchemaItem> const& testItems, Utf8CP ecdbFileName) const
     {
-    for (TestItem const& testItem : testItems)
+    for (SchemaItem const& testItem : testItems)
         {
         AssertSchemaImport(testItem, ecdbFileName);
         }
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  07/15
+// @bsimethod                                   Krischan.Eberle                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void SchemaImportTestFixture::AssertSchemaImport(TestItem const& testItem, Utf8CP ecdbFileName) const
+void SchemaImportTestFixture::AssertSchemaImport(SchemaItem const& testItem, Utf8CP ecdbFileName) const
     {
     ECDb localECDb;
     bool asserted = false;
     AssertSchemaImport(localECDb, asserted, testItem, ecdbFileName);
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void SchemaImportTestFixture::AssertSchemaImport(ECDbR ecdb, bool& asserted, TestItem const& testItem, Utf8CP ecdbFileName) const
+void SchemaImportTestFixture::AssertSchemaImport(ECDbR ecdb, bool& asserted, SchemaItem const& testItem, Utf8CP ecdbFileName) const
     {
     asserted = true;
     ASSERT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb(ecdb, nullptr, WString(ecdbFileName, BentleyCharEncoding::Utf8).c_str()));
@@ -42,12 +41,10 @@ void SchemaImportTestFixture::AssertSchemaImport(ECDbR ecdb, bool& asserted, Tes
     AssertSchemaImport(asserted, ecdb, testItem);
     }
 
-
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void SchemaImportTestFixture::AssertSchemaImport(bool& asserted, ECDbCR ecdb, TestItem const& testItem) const
+void SchemaImportTestFixture::AssertSchemaImport(bool& asserted, ECDbCR ecdb, SchemaItem const& testItem) const
     {
     asserted = true;
     ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();

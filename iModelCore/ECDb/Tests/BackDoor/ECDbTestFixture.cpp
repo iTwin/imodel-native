@@ -47,6 +47,37 @@ ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, WCharCP schemaECXmlFileNam
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle     10/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& schema, ECDb::OpenParams openParams) const
+    {
+    BeFileName ecdbPath;
+
+    {
+    ECDb ecdb;
+    if (BE_SQLITE_OK != ECDbTestUtility::CreateECDb(ecdb, nullptr, WString(ecdbFileName, BentleyCharEncoding::Utf8).c_str()))
+        return GetECDb();
+
+    ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(ecdb.GetSchemaLocater());
+
+    for (Utf8StringCR schemaXml : schema.m_schemaXmlList)
+        {
+        if (SUCCESS != ECDbTestUtility::ReadECSchemaFromString(context, schemaXml.c_str()))
+            return GetECDb();
+        }
+
+    if (SUCCESS != ecdb.Schemas().ImportECSchemas(context->GetCache()))
+        return GetECDb();
+
+    ecdbPath.AssignUtf8(ecdb.GetDbFileName());
+    }
+
+    EXPECT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(ecdbPath, openParams));
+    return GetECDb();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                     Carole.MacDonald     09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
