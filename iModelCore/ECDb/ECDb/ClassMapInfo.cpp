@@ -58,12 +58,10 @@ MapStatus ClassMapInfo::Initialize()
         {
         // ClassMappingRule: if hint does not supply a table name, use {ECSchema prefix}_{ECClass name}
         m_tableName = ResolveTablePrefix(m_ecClass);
-        if (!IClassMap::IsMapToSecondaryTableStrategy(m_ecClass))  // ClassMappingRule: assumes that structs are always used in arrays
-            m_tableName.append("_");
-        else
-            m_tableName.append("_ArrayOf");
+        m_tableName.append("_").append(m_ecClass.GetName());
 
-        m_tableName.append(m_ecClass.GetName());
+        if (IClassMap::IsMapToSecondaryTableStrategy(m_ecClass))  // ClassMappingRule: assumes that structs are always used in arrays
+            m_tableName.append(TABLESUFFIX_STRUCTARRAY);
         }
 
     if (m_ecInstanceIdColumnName.empty())
@@ -147,7 +145,7 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
                 baseClasses.append(" ");
                 }
 
-            LOG.errorv("ECClass '%s' has two or more base ECClasses which use the MapStrategy 'SharedTable (polymorphic)'. This is not supported. The base ECClasses are: %s",
+            LOG.errorv("ECClass '%s' has two or more base ECClasses which use the MapStrategy 'SharedTable (AppliesToSubclasses)'. This is not supported. The base ECClasses are: %s",
                        m_ecClass.GetFullName(), baseClasses.c_str());
             }
 
@@ -193,10 +191,9 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
         if (Enum::Contains(rootUserStrategy.GetOptions(), UserECDbMapStrategy::Options::JoinedTableForSubclasses))
             {
             options = Enum::Or(options, ECDbMapStrategy::Options::JoinedTable);
-            if (m_parentClassMap->GetTable().GetName().EndsWith("_joinedTable"))
-                m_tableName = m_parentClassMap->GetTable().GetName();
-            else
-                m_tableName = m_parentClassMap->GetTable().GetName() + "_joinedTable";
+            m_tableName = m_parentClassMap->GetTable().GetName();
+            if (!m_parentClassMap->GetTable().GetName().EndsWithI(TABLESUFFIX_JOINEDTABLE))
+                m_tableName.append(TABLESUFFIX_JOINEDTABLE);
             }
         return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::SharedTable, options, true);
         }

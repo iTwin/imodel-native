@@ -976,10 +976,10 @@ TEST_F (ECSqlTestFixture, PolymorphicDelete_PolymorphicSharedTable)
 
     bvector<Utf8String> tableNames;
     tableNames.push_back ("nsat_ClassA");
-    tableNames.push_back ("nsat_ArrayOfS1");
-    tableNames.push_back ("nsat_ArrayOfS2");
-    tableNames.push_back ("nsat_ArrayOfS3");
-    tableNames.push_back ("nsat_ArrayOfS4");
+    tableNames.push_back ("nsat_S1_Array");
+    tableNames.push_back ("nsat_S2_Array");
+    tableNames.push_back ("nsat_S3_Array");
+    tableNames.push_back ("nsat_S4_Array");
     tableNames.push_back ("nsat_BaseHasDerivedA");
     tableNames.push_back ("nsat_DerivedBOwnsChilds");
 
@@ -1016,10 +1016,10 @@ TEST_F (ECSqlTestFixture, PolymorphicDeleteTest)
     tableNames.push_back ("nsat_DoubleDerivedA");
     tableNames.push_back ("nsat_DoubleDerivedB");
     tableNames.push_back ("nsat_DoubleDerivedC");
-    tableNames.push_back ("nsat_ArrayOfS1");
-    tableNames.push_back ("nsat_ArrayOfS2");
-    tableNames.push_back ("nsat_ArrayOfS3");
-    tableNames.push_back ("nsat_ArrayOfS4");
+    tableNames.push_back ("nsat_S1_Array");
+    tableNames.push_back ("nsat_S2_Array");
+    tableNames.push_back ("nsat_S3_Array");
+    tableNames.push_back ("nsat_S4_Array");
     tableNames.push_back ("nsat_BaseHasDerivedA");
     tableNames.push_back ("nsat_DerivedBOwnsChilds");
     
@@ -1201,8 +1201,8 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_InsertStructArray)
         {
         if (testClass->GetIsStruct())
             {
-            Utf8String selectSql = "SELECT COUNT(*) FROM nsat_ArrayOf";
-            selectSql.append (testClass->GetName ());
+            Utf8String selectSql = "SELECT COUNT(*) FROM nsat_";
+            selectSql.append (testClass->GetName ()).append("_Array");
             selectStatements[selectSql] = i*j;
             j = i*j;
             i++;
@@ -1268,8 +1268,8 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_DeleteStructArray)
         {
         if (testClass->GetIsStruct())
             {
-            Utf8String selectSql = "SELECT * FROM nsat_ArrayOf";
-            selectSql.append (testClass->GetName ());
+            Utf8String selectSql = "SELECT * FROM nsat_";
+            selectSql.append (testClass->GetName ()).append("_Array");
             selectStatements.push_back (selectSql);
             }
         }
@@ -3392,7 +3392,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_GetGeometryWithInvalidBlobFormat)
 
     // insert invalid geom blob
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "INSERT INTO ecsqltest_ArrayOfPASpatial (ECInstanceId, Geometry) VALUES (1,?)"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "INSERT INTO ecsqltest_PASpatial_Array (ECInstanceId, Geometry) VALUES (1,?)"));
     double dummyValue = 3.141516;
     ASSERT_EQ(BE_SQLITE_OK, stmt.BindBlob(1, &dummyValue, (int) sizeof(dummyValue), Statement::MakeCopy::No));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
