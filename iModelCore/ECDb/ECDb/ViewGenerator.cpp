@@ -365,10 +365,15 @@ return SUCCESS;
         NativeSqlBuilder where;
         if (classIdColumn != nullptr)
             {
+            auto tableP = &table;
+            if (auto rootOfJoinedTable = firstChildClassMap->FindRootOfJoinedTable())
+                {
+                tableP = &rootOfJoinedTable->GetTable();
+                }
             OptionsExp const* options = prepareContext.GetCurrentScope().GetOptions();
             if (options == nullptr || !options->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION))
                 {
-                if (SUCCESS != baseClassMap.GetStorageDescription().GenerateECClassIdFilter(where, table, *classIdColumn, isPolymorphic))
+                if (SUCCESS != baseClassMap.GetStorageDescription().GenerateECClassIdFilter(where, *tableP, *classIdColumn, isPolymorphic, tableP != &table, table.GetName().c_str()))
                     return ERROR;
                 }
             }

@@ -154,13 +154,17 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets
 
 
     IClassMap const& classMap = classNameExp.GetInfo().GetMap();
-    ECDbSqlTable const& table = classMap.GetTable();
+    ECDbSqlTable const* table = &classMap.GetTable();
+    if (auto rootOfJoinedTable = classMap.FindRootOfJoinedTable())
+        {
+        table = &rootOfJoinedTable->GetTable();
+        }
     ECDbSqlColumn const* classIdColumn = nullptr;
-    if (!table.TryGetECClassIdColumn(classIdColumn) || classIdColumn->GetPersistenceType() != PersistenceType::Persisted)
+    if (!table->TryGetECClassIdColumn(classIdColumn) || classIdColumn->GetPersistenceType() != PersistenceType::Persisted)
         return ECSqlStatus::Success; //no class id column exists -> no system where clause
     
     return classMap.GetStorageDescription().GenerateECClassIdFilter(deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet,
-        table,
+        *table,
         *classIdColumn,
         exp.GetClassNameExp()->IsPolymorphic()) == SUCCESS ? ECSqlStatus::Success : ECSqlStatus::Error;
     }

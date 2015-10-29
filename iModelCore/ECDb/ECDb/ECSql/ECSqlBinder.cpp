@@ -28,12 +28,14 @@ ECSqlStatus ECSqlBinder::SetOnBindEventHandler(IECSqlBinder& binder)
     
     BeAssert(std::find(m_onBindEventHandlers->begin(), m_onBindEventHandlers->end(), &binder) == m_onBindEventHandlers->end());
 
+#if 0
     if (dynamic_cast<PrimitiveToSingleColumnECSqlBinder const*>(&binder) == nullptr)
         {
         BeAssert(dynamic_cast<PrimitiveToSingleColumnECSqlBinder const*>(&binder) != nullptr && "Only PrimitiveToSingleColumnECSqlBinder is supported as EventHandlers");
         return ECSqlStatus::Error;
         }
-    
+#endif
+
     m_onBindEventHandlers->push_back(&binder);
     return ECSqlStatus::Success;
     }

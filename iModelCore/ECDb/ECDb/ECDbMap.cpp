@@ -1038,7 +1038,7 @@ void ECDbMap::LightweightCache::LoadVerticalPartitions()  const
     Utf8CP sql0 =
         "SELECT  ec_Class.Id ClassId, ec_Table.Name "
         "    FROM ec_PropertyMap "
-        "       JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND ec_Column.KnownColumn != 2 "
+        "       JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) "
         "       JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
         "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
         "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
@@ -1349,10 +1349,11 @@ StorageDescription& StorageDescription::operator=(StorageDescription&& rhs)
     return *this;
     }
 
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    10 / 2015
 //------------------------------------------------------------------------------------------
-BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filter, ECDbSqlTable const& table, ECDbSqlColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName) const
+BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filter, ECDbSqlTable const& table, ECDbSqlColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName, Utf8CP tableAlias) const
     {
     if (table.GetPersistenceType() != PersistenceType::Persisted)
         return SUCCESS; //table is virtual -> noop
@@ -1366,13 +1367,17 @@ BentleyStatus StorageDescription::GenerateECClassIdFilter(NativeSqlBuilder& filt
 
     NativeSqlBuilder classIdColSql;
     if (fullyQualifyColumnName)
-        classIdColSql.AppendEscaped(table.GetName().c_str()).AppendDot();
-    
+        {
+        if (tableAlias)
+            classIdColSql.AppendEscaped(tableAlias).AppendDot();
+        else
+            classIdColSql.AppendEscaped(table.GetName().c_str()).AppendDot();
+        }
     classIdColSql.Append(classIdColumn.GetName().c_str(), false);
 
     if (!polymorphic)
         {
-        //if partition's table is only used by a single class, no filter needed
+        //if partition's table is only used by a single class, no filter needed     
         if (partition->IsSharedTable())
             filter.Append(classIdColSql, false).Append(BooleanSqlOperator::EqualTo, false).Append(m_classId);
 
