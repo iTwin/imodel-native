@@ -268,12 +268,27 @@ struct Collection
 
     }; // Collection
 
+//=======================================================================================
+//! Internal debug helper
+//! @private
+//=======================================================================================
+struct IDebugOutput
+    {
+    virtual bool _WantVerbose() const {return false;}
+    virtual bool _WantPartGeometry() const {return true;}
+    virtual bool _WantGeomEntryIds() const {return false;}
+    virtual void _DoOutputLine(Utf8CP msg) = 0;
+
+    }; // IDebugOutput
+
+    //! Output contents of GeomStream for debugging purposes.
+    DGNPLATFORM_EXPORT static void Debug(IDebugOutput&, GeomStreamCR, DgnDbR);
+
     //! Remap embedded IDs. The dest and source GeomStreams can be the same.
     //! @param dest     The output GeomStream
     //! @param source   The input GeomStream
     //! @param remapper  The ID remapper
     static DgnDbStatus Import(GeomStreamR dest, GeomStreamCR source, DgnImportContext& remapper);
-
 
 }; // ElementGeomIO
 

@@ -2304,6 +2304,263 @@ DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImpo
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementGeomIO::Debug(IDebugOutput& output, GeomStreamCR stream, DgnDbR db)
+    {
+    Collection  collection(stream.GetData(), stream.GetSize());
+    Reader      reader(db);
+
+    IdSet<DgnGeomPartId> parts;
+
+    for (auto const& egOp : collection)
+        {
+        switch (egOp.m_opCode)
+            {
+            case ElementGeomIO::OpCode::Header:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::Header\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::BeginSubCategory:
+                {
+                DgnSubCategoryId subCategory;
+                Transform        geomToElem;
+
+                if (!reader.Get(egOp, subCategory, geomToElem))
+                    break;
+
+                output._DoOutputLine(Utf8PrintfString("OpCode::BeginSubCategory - SubCategoryId: %" PRIu64 " - Have GeomToElem: %s\n", subCategory.GetValue(), geomToElem.IsIdentity() ? "No" : "Yes").c_str());
+
+                if (!output._WantVerbose() || geomToElem.IsIdentity())
+                    break;
+
+                for (int i=0; i<3; i++)
+                    output._DoOutputLine(Utf8PrintfString("  [%lf, \t%lf, \t%lf, \t%lf]\n", geomToElem.form3d[i][0], geomToElem.form3d[i][1], geomToElem.form3d[i][2], geomToElem.form3d[i][3]).c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::GeomPartInstance:
+                {
+                DgnGeomPartId partId;
+
+                if (!reader.Get(egOp, partId))
+                    break;
+
+                if (output._WantPartGeometry())
+                    parts.insert(partId);
+
+                output._DoOutputLine(Utf8PrintfString("OpCode::GeomPartInstance - PartId: %" PRIu64 "\n", partId.GetValue()).c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::BasicSymbology:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::BasicSymbology\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::PointPrimitive:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::PointPrimitive\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::PointPrimitive2d:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::PointPrimitive2d\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::ArcPrimitive:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::ArcPrimitive\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::CurveVector:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::CurveVector\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::Polyface:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::Polyface\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::CurvePrimitive:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::CurvePrimitive\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::SolidPrimitive:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::SolidPrimitive\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::BsplineSurface:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::BsplineSurface\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::ParasolidBRep:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::ParasolidBRep\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::BRepPolyface:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::BRepPolyface\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::BRepPolyfaceExact:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::BRepPolyfaceExact\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::BRepEdges:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::BRepEdges\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::BRepFaceIso:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::BRepFaceIso\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::LineStyle:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::LineStyle\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::AreaFill:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::AreaFill\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::Pattern:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::Pattern\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::Material:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::Material\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::TextString:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::TextString\n").c_str());
+                break;
+                }
+
+            case ElementGeomIO::OpCode::LineStyleModifiers:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::LineStyleModifiers\n").c_str());
+                break;
+                }
+
+            default:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode - %d\n", egOp.m_opCode).c_str());
+                break;
+                }
+            }
+        }
+
+    if (0 != parts.size())
+        {
+        for (DgnGeomPartId partId : parts)
+            {
+            output._DoOutputLine(Utf8PrintfString("\n[--- PartId: %" PRIu64 " ---]\n\n", partId.GetValue()).c_str());
+
+            DgnGeomPartPtr partGeometry = db.GeomParts().LoadGeomPart(partId);
+
+            if (!partGeometry.IsValid())
+                {
+                output._DoOutputLine(Utf8PrintfString("ERROR: LoadGeomPart\n").c_str());
+                continue;
+                }
+
+            ElementGeomIO::Debug(output, partGeometry->GetGeomStream(), db);
+            output._DoOutputLine(Utf8PrintfString("\n"));
+            }
+        }
+
+    if (output._WantGeomEntryIds())
+        {
+        ElementGeometryCollection collection(db, stream);
+
+        output._DoOutputLine(Utf8PrintfString("\n--- GeomStream Entry Ids ---\n\n"));
+
+        for (ElementGeometryPtr geom : collection)
+            {
+            GeomStreamEntryId geomId = collection.GetGeomStreamEntryId();
+            Utf8String        geomType;
+
+            switch (geom->GetGeometryType())
+                {
+                case ElementGeometry::GeometryType::CurvePrimitive:
+                    geomType.assign("CurvePrimitive");
+                    break;
+
+                case ElementGeometry::GeometryType::CurveVector:
+                    geomType.assign("CurveVector");
+                    break;
+
+                case ElementGeometry::GeometryType::SolidPrimitive:
+                    geomType.assign("SolidPrimitive");
+                    break;
+
+                case ElementGeometry::GeometryType::BsplineSurface:
+                    geomType.assign("BsplineSurface");
+                    break;
+
+                case ElementGeometry::GeometryType::Polyface:
+                    geomType.assign("Polyface");
+                    break;
+
+                case ElementGeometry::GeometryType::SolidKernelEntity:
+                    geomType.assign("SolidKernelEntity");
+                    break;
+
+                case ElementGeometry::GeometryType::TextString:
+                    geomType.assign("TextString");
+                    break;
+
+                default:
+                    geomType.assign("Unknown");
+                    break;
+                }
+
+            if (!geomId.GetGeomPartId().IsValid())
+                output._DoOutputLine(Utf8PrintfString("- GeometryType %s [Index: %d]\n", geomType.c_str(), geomId.GetIndex()).c_str());
+            else
+                output._DoOutputLine(Utf8PrintfString("- GeometryType %s [Index: %d | PartId: " PRIu64 " Part Index: %d]\n", geomType.c_str(), geomId.GetIndex(), geomId.GetGeomPartId().GetValue(), geomId.GetPartIndex()).c_str());
+            }
+
+        output._DoOutputLine(Utf8PrintfString("\n"));
+        }
+
+    output._DoOutputLine(Utf8PrintfString("\n"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId category, ViewFlagsCR flags) const
