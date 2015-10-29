@@ -111,16 +111,11 @@ ECDbR ECDbTestProject::Create (Utf8CP ecdbFileName, WCharCP testSchemaXmlFileNam
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbTestProject::CreateEmpty (Utf8CP ecdbFileName)
     {
-    WString ecdbFileNameW (ecdbFileName, BentleyCharEncoding::Utf8);
-    BeFileName ecdbFilePath;
-    BeTest::GetHost ().GetOutputRoot (ecdbFilePath);
-    ecdbFilePath.AppendToPath (ecdbFileNameW.c_str ());
-
-    if (BeFileName::DoesPathExist (ecdbFilePath.GetName ()))
+    BeFileName ecdbFilePath = ECDbTestUtility::BuildECDbPath(ecdbFileName);
+    if (ecdbFilePath.DoesPathExist())
         {
         // Delete any previously created file
-        BeFileNameStatus fileDeleteStatus = BeFileName::BeDeleteFile (ecdbFilePath.GetName ());
-        ASSERT_TRUE (BeFileNameStatus::Success == fileDeleteStatus);
+        ASSERT_EQ (BeFileNameStatus::Success, BeFileName::BeDeleteFile (ecdbFilePath.GetName ()));
         }
     
     Utf8String ecdbFilePathUtf8 = ecdbFilePath.GetNameUtf8 ();

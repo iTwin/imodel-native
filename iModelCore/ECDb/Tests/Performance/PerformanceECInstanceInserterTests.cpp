@@ -695,19 +695,16 @@ struct TestResult
 //+---------------+---------------+---------------+---------------+---------------+------
 void SetupDeleteTest(DbR db, int64_t& globalInstanceCount, TestParamters const& param)
     {
-
     ECDbTestFixture::Initialize();
-    Utf8String dbPath = ECDbTestUtility::BuildECDbPath(param.GetFileName().c_str());
-    WString dbPathW;
-    BeStringUtilities::Utf8ToWChar(dbPathW, dbPath.c_str());
-    if (BeFileName::DoesPathExist(dbPathW.c_str()))
+    BeFileName dbPath = ECDbTestUtility::BuildECDbPath(param.GetFileName().c_str());
+    if (dbPath.DoesPathExist())
         {
         // Delete any previously created file
-        BeFileNameStatus fileDeleteStatus = BeFileName::BeDeleteFile(dbPathW.c_str());
+        BeFileNameStatus fileDeleteStatus = BeFileName::BeDeleteFile(dbPath);
         ASSERT_TRUE(fileDeleteStatus == BeFileNameStatus::Success);
         }
 
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(dbPath.c_str())) << "Failed to create test db";
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(dbPath)) << "Failed to create test db";
     ASSERT_EQ(true, param.IsValid()) << "Paramter provided to test was invalid";
 
 

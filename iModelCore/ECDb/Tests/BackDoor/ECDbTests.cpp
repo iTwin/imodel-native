@@ -70,13 +70,12 @@ static const int DATETIME_ACCURACY_TOLERANCE_HNS = 5000;
 // @bsimethod                                 Krischan.Eberle                11/2012
 //+---------------+---------------+---------------+---------------+---------------+-
 //static
-Utf8String ECDbTestUtility::BuildECDbPath(Utf8CP ecdbFileName)
+BeFileName ECDbTestUtility::BuildECDbPath(Utf8CP ecdbFileName)
     {
-    WString ecdbFileNameW(ecdbFileName, BentleyCharEncoding::Utf8);
-    BeFileName outputDir;
-    BeTest::GetHost().GetOutputRoot(outputDir);
-    BeFileName dbFile(nullptr, outputDir.GetName(), ecdbFileNameW.c_str(), nullptr);
-    return dbFile.GetNameUtf8();
+    BeFileName ecdbPath;
+    BeTest::GetHost().GetOutputRoot(ecdbPath);
+    ecdbPath.AppendToPath(WString(ecdbFileName, BentleyCharEncoding::Utf8).c_str());
+    return std::move(ecdbPath);
     }
 
 //---------------------------------------------------------------------------------------
