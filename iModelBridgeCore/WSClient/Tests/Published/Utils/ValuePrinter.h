@@ -30,6 +30,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 std::ostream& operator << (std::ostream &o, WSError::Status status);
 std::ostream& operator << (std::ostream &o, WSError::Id errorId);
+std::ostream& operator << (std::ostream &o, ObjectIdCR id);
 
 // Caching
 std::ostream& operator << (std::ostream &o, ICachingDataSource::Status status);
