@@ -58,7 +58,8 @@ struct StubInstances::StubRelationshipInstances
             ObjectIdCR relationshipObjectId,
             ObjectIdCR relatedObjectId,
             std::map<Utf8String, Json::Value> relatedProperties = std::map<Utf8String, Json::Value>(),
-            BentleyApi::ECN::ECRelatedInstanceDirection direction = BentleyApi::ECN::ECRelatedInstanceDirection::Forward
+            BentleyApi::ECN::ECRelatedInstanceDirection direction = BentleyApi::ECN::ECRelatedInstanceDirection::Forward,
+            std::map<Utf8String, Json::Value> relationshipProperties = std::map<Utf8String, Json::Value>()
             );
     };
 
