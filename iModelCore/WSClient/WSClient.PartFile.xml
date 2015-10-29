@@ -21,7 +21,7 @@
 
     <Part Name="WebServicesClient-PublishedAPI" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishApi.mke"
      BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml">
-        <SubPart PartName="PublishedApi" PartFile="MobileDgn" Repository="MobileDgn"/>
+        <SubPart PartName="PublishedApi" PartFile="DgnClientFx" Repository="DgnClientFx"/>
         <SubPart PartName="WebServicesClient-PublicAPI" />
         <Bindings>
             <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/WSClient" />
@@ -30,8 +30,8 @@
 
     <Part Name="WebServicesClient-Library" BentleyBuildMakeFile="ClientLib.mke" ExcludePlatforms="Android*">
         <SubPart PartName="WebServicesClient-PublicAPI" />
-        <SubPart PartName="MobileDgnLibrary"            PartFile="MobileDgn" Repository="MobileDgn" />
-        <SubPart PartName="MobileDgnLibrary-WinRT"      PartFile="MobileDgn" Repository="MobileDgn" />
+        <SubPart PartName="DgnClientFxLibrary"            PartFile="DgnClientFx" Repository="DgnClientFx" />
+        <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesClient$(libext)</Libs>
             <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesClient$(shlibext)</Assemblies>
@@ -40,7 +40,7 @@
 
     <Part Name="WebServicesClient-Library-Android" BentleyBuildMakeFile="ClientLib.mke" OnlyPlatforms="Android*">
         <SubPart PartName="WebServicesClient-PublicAPI" />
-        <SubPart PartName="MobileDgnLibrary-Android"    PartFile="MobileDgn" Repository="MobileDgn" />
+        <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesClient.so</Libs>
             <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesClient.so</Assemblies>
@@ -75,8 +75,8 @@
 
     <Part Name="WebServicesCache-Library" BentleyBuildMakeFile="CacheLib.mke" ExcludePlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
-        <SubPart PartName="MobileDgnLibrary"            PartFile="MobileDgn" Repository="MobileDgn" />
-        <SubPart PartName="MobileDgnLibrary-WinRT"      PartFile="MobileDgn" Repository="MobileDgn" />
+        <SubPart PartName="DgnClientFxLibrary"            PartFile="DgnClientFx" Repository="DgnClientFx" />
+        <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesCache$(libext)</Libs>
             <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesCache$(shlibext)</Assemblies>
@@ -85,7 +85,7 @@
 
     <Part Name="WebServicesCache-Library-Android" BentleyBuildMakeFile="CacheLib.mke" OnlyPlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
-        <SubPart PartName="MobileDgnLibrary-Android"    PartFile="MobileDgn" Repository="MobileDgn" />
+        <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesCache.so</Libs>
             <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesCache.so</Assemblies>
@@ -131,9 +131,9 @@
 
     <Part Name="DgnDbServerClient-Library" BentleyBuildMakeFile="DgnDbServerClientLib.mke">
         <SubPart PartName="WebServicesClient" />
-        <SubPart PartName="MobileDgnLibrary"            PartFile="MobileDgn" Repository="MobileDgn" />
-        <SubPart PartName="MobileDgnLibrary-Android"    PartFile="MobileDgn" Repository="MobileDgn" />
-        <SubPart PartName="MobileDgnLibrary-WinRT"      PartFile="MobileDgn" Repository="MobileDgn" />
+        <SubPart PartName="DgnClientFxLibrary"            PartFile="DgnClientFx" Repository="DgnClientFx" />
+        <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
+        <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
     </Part>
 
     <Part Name="DgnDbServerClient-Bindings" ExcludePlatforms="Android*">
@@ -341,12 +341,12 @@
         </Bindings>
     </Part>
 
-    <!-- Define a test collection part. This is included in MobileDgn's TestsAggregate -->
+    <!-- Define a test collection part. This is included in DgnClientFx's TestsAggregate -->
     <Part Name="Tests">
         <SubPart PartName="UnitTests-Published"/>
     </Part>
 
-    <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in MobileDgn's Gtest-Aggregator and RunGtest-MobileDgnTests parts -->
+    <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in DgnClientFx's Gtest-Aggregator and RunGtest-DgnClientFxTests parts -->
     <Product Name="WSClient-Tests">
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
         <SubPart PartName="Tests"/>

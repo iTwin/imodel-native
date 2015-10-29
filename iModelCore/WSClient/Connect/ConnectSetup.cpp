@@ -9,7 +9,7 @@
 #include <WebServices/Connect/ConnectSetup.h>
 
 #include <Bentley/Base64Utilities.h>
-#include <MobileDgn/MobileDgnUi.h>
+#include <DgnClientFx/DgnClientUi.h>
 #include <WebServices/Connect/Connect.h>
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/ConnectSpaces.h>
@@ -19,7 +19,7 @@
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 #define CONNECT_SIGNED_IN                           "BentleyConnect_SignedIn"
 #define BENTLEY_CONNECT_USERNAME                    "BentleyConnect_UserName"
@@ -42,23 +42,23 @@ void WebServices::ConnectSetup(JsonValueCR messageDataObj, bool requireToken)
 
         if (!requireToken || tokenResult)
             {
-            MobileDgnApplication::AbstractUiState().SetValue(CONNECT_SIGNED_IN, true);
+            DgnClientApp::AbstractUiState().SetValue(CONNECT_SIGNED_IN, true);
             }
         else
             {
-            MobileDgnApplication::AbstractUiState().SetValue(CONNECT_SIGNED_IN, false);
+            DgnClientApp::AbstractUiState().SetValue(CONNECT_SIGNED_IN, false);
             }
         }
     else
         {
-        MobileDgnApplication::AbstractUiState().SetValue(CONNECT_SIGNED_IN, false);
+        DgnClientApp::AbstractUiState().SetValue(CONNECT_SIGNED_IN, false);
         ConnectAuthenticationPersistence::GetShared()->SetToken(nullptr);
         }
 
     if (!cred.GetUsername().empty())
         {
         // NOTE: Username is sent to the UI whether or not the signin was successful.
-        MobileDgnApplication::AbstractUiState().SetValue(BENTLEY_CONNECT_USERNAME, cred.GetUsername().c_str());
+        DgnClientApp::AbstractUiState().SetValue(BENTLEY_CONNECT_USERNAME, cred.GetUsername().c_str());
         }
 
     if (!token.empty())
@@ -75,8 +75,8 @@ void WebServices::ConnectSetup(JsonValueCR messageDataObj, bool requireToken)
             Utf8String surName = attributes["surname"];
             displayUserName = givenName + " " + surName;
             }
-        MobileDgnApplication::AbstractUiState().SetValue(BENTLEY_CONNECT_DISPLAYUSERNAME, displayUserName.c_str());
-        MobileDgnApplication::AbstractUiState().SetValue(BENTLEY_CONNECT_USERID, attributes["userid"].c_str());
+        DgnClientApp::AbstractUiState().SetValue(BENTLEY_CONNECT_DISPLAYUSERNAME, displayUserName.c_str());
+        DgnClientApp::AbstractUiState().SetValue(BENTLEY_CONNECT_USERID, attributes["userid"].c_str());
         }
 
     Json::Value csSetup;
@@ -84,7 +84,7 @@ void WebServices::ConnectSetup(JsonValueCR messageDataObj, bool requireToken)
     csSetup[CS_MESSAGE_FIELD_password] = cred.GetPassword();
     csSetup[CS_MESSAGE_FIELD_token] = token;
 
-    MobileDgnUi::SendMessageToWorkThreadInternal (CS_MESSAGE_SetCredentials, std::move (csSetup));
+    DgnClientUi::SendMessageToWorkThreadInternal (CS_MESSAGE_SetCredentials, std::move (csSetup));
     }
 
 bool GetCredentials(JsonValueCR messageDataObj, CredentialsR cred)

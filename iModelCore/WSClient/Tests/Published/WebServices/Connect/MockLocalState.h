@@ -7,11 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <Bentley/BeTest.h>
-#include <MobileDgn/MobileDgnApplication.h>
+#include <DgnClientFx/DgnClientApp.h>
 
 using namespace ::testing;
 
-BEGIN_BENTLEY_MOBILEDGN_NAMESPACE
+BEGIN_BENTLEY_DGNCLIENTFX_NAMESPACE
 
 #ifdef USE_GTEST
 /*--------------------------------------------------------------------------------------+
@@ -25,4 +25,4 @@ struct MockLocalState : public ILocalState
     };
 #endif
 
-END_BENTLEY_MOBILEDGN_NAMESPACE
+END_BENTLEY_DGNCLIENTFX_NAMESPACE

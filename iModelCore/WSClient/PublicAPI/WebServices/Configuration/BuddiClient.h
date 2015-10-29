@@ -9,16 +9,16 @@
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Client/WebServicesClient.h>
-#include <MobileDgn/Utils/Threading/AsyncResult.h>
-#include <MobileDgn/Utils/Threading/AsyncTask.h>
-#include <MobileDgn/Utils/Http/HttpClient.h>
+#include <DgnClientFx/Utils/Threading/AsyncResult.h>
+#include <DgnClientFx/Utils/Threading/AsyncTask.h>
+#include <DgnClientFx/Utils/Http/HttpClient.h>
 #include <BeXml/BeXml.h>
 
 #include <WebServices/Configuration/BuddiError.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 typedef std::shared_ptr<struct IBuddiClient> IBuddiClientPtr;
 typedef AsyncResult<bvector<struct BuddiRegion>, BuddiError> BuddiRegionsResult;
