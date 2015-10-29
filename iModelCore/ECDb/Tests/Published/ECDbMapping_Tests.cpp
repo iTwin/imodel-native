@@ -79,9 +79,9 @@ public:
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     {
-    std::vector<TestItem> testItems {
+    std::vector<SchemaItem> testItems {
 
-    TestItem (
+    SchemaItem (
     "<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -98,7 +98,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", false, "Invalid MapStrategy"),
 
-    TestItem ("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem ("<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
     "    <ECClass typeName='ClassA' isDomainClass='True'>"
@@ -114,7 +114,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", false, "Option SharedColumns can only be used with strategy SharedTable"),
 
-        TestItem("<?xml version='1.0' encoding='utf-8'?>"
+        SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                  "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                  "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                  "    <ECClass typeName='ClassA' isDomainClass='True'>"
@@ -129,7 +129,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                  "    </ECClass>"
                  "</ECSchema>", false, "Option SharedColumns cannot be used without a strategy"),
 
-        TestItem("<?xml version='1.0' encoding='utf-8'?>"
+        SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                  "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                  "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                  "    <ECClass typeName='ClassA' isDomainClass='True'>"
@@ -144,7 +144,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                  "    </ECClass>"
                  "</ECSchema>", false, "Option JoinedTableForSubclasses cannot be used without a strategy"),
 
-        TestItem("<?xml version='1.0' encoding='utf-8'?>"
+        SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                  "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                  "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                  "    <ECClass typeName='ClassA' isDomainClass='True'>"
@@ -161,7 +161,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                  "    </ECClass>"
                  "</ECSchema>", true, "Option JoinedTableForSubclasses is expected to work with strategy SharedTable (applied to subclasses)"),
 
-        TestItem("<?xml version='1.0' encoding='utf-8'?>"
+        SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                  "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                  "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                  "    <ECClass typeName='ClassA' isDomainClass='True'>"
@@ -178,7 +178,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                  "    </ECClass>"
                  "</ECSchema>", true, "Option JoinedTableForSubclasses is expected to work with strategy SharedTable (applied to subclasses) and with SharedColumnsForSubclasses"),
 
-    TestItem("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                 "    <ECClass typeName='ClassA' isDomainClass='True'>"
@@ -195,7 +195,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                 "    </ECClass>"
                 "</ECSchema>", false, "Option JoinedTableForSubclasses can only be used with strategy SharedTable (applied to subclasses)"),
 
-    TestItem("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                 "    <ECClass typeName='ClassA' isDomainClass='True'>"
@@ -211,7 +211,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                 "    </ECClass>"
                 "</ECSchema>", false, "Option JoinedTableForSubclasses can only be used with strategy SharedTable (applied to subclasses)"),
 
-    TestItem ("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem ("<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
     "    <ECClass typeName='Class' isDomainClass='True'>"
@@ -226,7 +226,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", false, "MapStrategy ExistingTable expects TableName to be set"),
 
-    TestItem("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                 "    <ECClass typeName='ClassA' isDomainClass='True'>"
@@ -242,7 +242,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                 "    </ECClass>"
                 "</ECSchema>", false, "Option JoinedTableForSubclasses can only be used with strategy SharedTable (applied to subclasses)"),
 
-    TestItem ("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem ("<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
     "    <ECClass typeName='Class' isDomainClass='True'>"
@@ -258,7 +258,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", false, "MapStrategy ExistingTable expects table specified by TableName to preexist"),
 
-    TestItem ("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem ("<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
     "    <ECClass typeName='Class' isDomainClass='True'>"
@@ -275,7 +275,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", false, "MapStrategy OwnTable doesn't allow TableName to be set."),
 
-    TestItem ("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem ("<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
     "    <ECClass typeName='Class' isDomainClass='True'>"
@@ -292,7 +292,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", false, "MapStrategy OwnTable doesn't allow TableName to be set."),
 
-    TestItem ("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem ("<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
     "    <ECClass typeName='Class' isDomainClass='True'>"
@@ -309,7 +309,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", false, "MapStrategy SharedTable (applies to subclasses) doesn't allow TableName to be set."),
 
-    TestItem ("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem ("<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
     "    <ECClass typeName='Class' isDomainClass='True'>"
@@ -325,7 +325,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", false, "MapStrategy SharedTable, non-polymorphic expects TableName to be set."),
 
-    TestItem ("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem ("<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
     "    <ECClass typeName='Class' isDomainClass='True'>"
@@ -342,7 +342,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", true, "MapStrategy SharedTable, non-polymorphic doesn't expect table specified in TableName to be set."),
 
-    TestItem ("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem ("<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
     "    <ECClass typeName='Class' isDomainClass='True'>"
@@ -359,7 +359,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", false, "MapStrategy NotMapped, polymorphic doesn't allow TableName to be set."),
 
-    TestItem ("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem ("<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
     "    <ECClass typeName='Class' isDomainClass='True'>"
@@ -376,7 +376,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", false, "MapStrategy NotMapped, non-polymorphic doesn't allow TableName to be set."),
 
-    TestItem ("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem ("<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
     "    <ECClass typeName='Base' isDomainClass='True'>"
@@ -408,7 +408,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", false, "MapStrategy SharedTable (polymorphic) on child class where base has SharedTable (polymorphic) is not supported."),
 
-    TestItem ("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem ("<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
     "    <ECClass typeName='Base1' isDomainClass='True'>"
@@ -440,7 +440,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", false, "Child class has two base classes which both have MapStrategy SharedTable (polymorphic). This is not expected to be supported."),
 
-    TestItem (
+    SchemaItem (
     "<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -477,7 +477,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", false, "MapStrategy NotMapped on child class where base has SharedTable (polymorphic) is not supported."),
 
-        TestItem(
+        SchemaItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -513,7 +513,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
             "    </ECClass>"
             "</ECSchema>", false, "Option JoinedTableForSubclasses cannot be applied to subclass where base has SharedTable (applies to subclasses)."),
 
-    TestItem (
+    SchemaItem (
     "<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -543,7 +543,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "</ECSchema>", true, ""),
 
 
-    TestItem ("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem ("<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
     "    <ECClass typeName='A' isDomainClass='True'>"
@@ -566,7 +566,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "     </ECRelationshipClass>"
     "</ECSchema>", false, "ForeignKeyRelationshipMap on N:N relationship is not supported"),
 
-    TestItem("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                 "    <ECClass typeName='A' isDomainClass='True'>"
@@ -590,7 +590,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                 "     </ECRelationshipClass>"
                 "</ECSchema>", true, "Cascading delete only supported for embedding relationships"),
 
-    TestItem("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                 "    <ECClass typeName='A' isDomainClass='True'>"
@@ -614,7 +614,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                 "     </ECRelationshipClass>"
                 "</ECSchema>", false, "Cascading delete only supported for embedding relationships"),
 
-    TestItem("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                 "    <ECClass typeName='A' isDomainClass='True'>"
@@ -638,7 +638,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                 "     </ECRelationshipClass>"
                 "</ECSchema>", false, "Cascading delete only supported for embedding relationships"),
 
-    TestItem ("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem ("<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TeststructClassInPolymorphicSharedTable' nameSpacePrefix='tph' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -667,7 +667,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", false, "Struct in class hierarchy with SharedTable (polymorphic) map strategy is expected to be not supported."),
 
-    TestItem (
+    SchemaItem (
     "<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -675,7 +675,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", true, " A class expects a property to be set."),
 
-    TestItem (
+    SchemaItem (
     "<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -704,7 +704,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", true, ""),
 
-    TestItem (
+    SchemaItem (
     "<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -729,7 +729,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", true, "NotMapped(polymorphic) within Class Hierarchy is expected to be supported where Root class has default MapStrategy"),
 
-    TestItem (
+    SchemaItem (
     "<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -754,7 +754,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", true, "SharedTable(polymorphic) within Class Hierarchy is expected to be supported where Root class has default MapStrategy"),
 
-    TestItem (
+    SchemaItem (
     "<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -783,7 +783,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", false, "Conflicting mapStrategies SharedTable(polymorphic) within Class Hierarchy not supported where Root has Strategy NotMapped(Polymorphic)"),
 
-    TestItem (
+    SchemaItem (
     "<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -811,7 +811,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", false, "Conflicting mapStrategies OwnTable within Class Hierarchy not supported where Root has MapStrategy NotMapped(Polymorphic)"),
 
-    TestItem (
+    SchemaItem (
     "<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -847,7 +847,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", true, "NotMapped (polymorphic) within Class Hierarchy is expected to be supported where Root has Strategy NotMapped"),
 
-    TestItem (
+    SchemaItem (
     "<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -889,7 +889,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", true, "Using MapStrategy NotMapped multiple times within Hierarchy is expected to be supported"),
 
-    TestItem (
+    SchemaItem (
     "<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -921,7 +921,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", true, "SharedTable(polymorphic) within Class Hierarchy is expected to be supported where Root has Strategy NotMapped(non-Polymorphic)"),
 
-    TestItem (
+    SchemaItem (
     "<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -953,7 +953,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", true, "OwnTable(polymorphic) within Class Hierarchy is expected to be supported where Root has Strategy NotMapped(non-Polymorphic)"),
 
-    TestItem (
+    SchemaItem (
     "<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -996,7 +996,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", true, "Polymorphic Strategies can be used in class Hierarchy where Root has non-polymorphic Strategies"),
 
-    TestItem (
+    SchemaItem (
     "<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -1024,7 +1024,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
     "    </ECClass>"
     "</ECSchema>", false, "NotMapped within Class Hierarchy is not Supported"),
 
-        TestItem(
+        SchemaItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -1037,7 +1037,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
             "    </ECClass>"
             "</ECSchema>", false, "Struct is not supported within a class heirarchy."),
 
-        TestItem(
+        SchemaItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -1066,7 +1066,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
             "    </ECClass>"
             "</ECSchema>", false, "Conflicting Map Strategies SharedTable(Polymorphic) for derived Class where base class has strategy OwnTable(Polymorphic)"),
 
-        TestItem(
+        SchemaItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -1096,7 +1096,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
             "    </ECClass>"
             "</ECSchema>", false, "Option 'DisableSharedColumn' doesn't allow strategy to be set."),
 
-        TestItem(
+        SchemaItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -1113,7 +1113,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
             "    </ECClass>"
             "</ECSchema>", false, ""),
 
-        TestItem(
+        SchemaItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -1131,7 +1131,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
             "    </ECClass>"
             "</ECSchema>", false, "abc is not a valid MapStrategy Option"),
 
-        TestItem(
+        SchemaItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -1160,7 +1160,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
             "    </ECClass>"
             "</ECSchema>", false, "Polymorphic parent class (with any strategy) doesn't allow a child class to have it's own strategy."),
 
-        TestItem("<?xml version='1.0' encoding='utf-8'?>"
+        SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                  "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                  "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                  "    <ECClass typeName='Parent' isDomainClass='True'>"
@@ -1187,7 +1187,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                  "    </ECClass>"
                  "</ECSchema>", false, "Strategy NotMapped-polymorphic is not supported within a  class hierarchy"),
 
-        TestItem(
+        SchemaItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -1205,7 +1205,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
             "</ECSchema>", false, "Own Table doesn't allows a user Defined table name.")
     };
 
-    for (TestItem const& item : testItems)
+    for (SchemaItem const& item : testItems)
         {
         AssertSchemaImport (item, "ecdbmapcatests.ecdb");
         }
@@ -1217,7 +1217,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
 TEST_F(ECDbMappingTestFixture, TablePrefix)
     {
      {
-     TestItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+     SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
             "        <ECCustomAttributes>"
@@ -1247,7 +1247,7 @@ TEST_F(ECDbMappingTestFixture, TablePrefix)
     }
 
      {
-     TestItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+     SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
                        "<ECSchema schemaName='test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                        "        <ECCustomAttributes>"
@@ -1279,7 +1279,7 @@ TEST_F(ECDbMappingTestFixture, TablePrefix)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, AbstractClassWithSharedTable)
     {
-    TestItem testItem ("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem testItem ("<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestAbstractClasses' nameSpacePrefix='tac' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -1360,7 +1360,7 @@ TEST_F(ECDbMappingTestFixture, AbstractClassWithSharedTable)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, ForeignKeyMapCreateIndex)
     {
-    TestItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+    SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
         "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
         "  <ECClass typeName='Parent' >"
@@ -1435,7 +1435,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapCreateIndex)
 TEST_F(ECDbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
     {
         {
-        TestItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                             "  <ECClass typeName='ElementCode' isStruct='True' isDomainClass='False'>"
                             "    <ECProperty propertyName='Name' typeName='string' />"
                             "  </ECClass>"
@@ -1456,7 +1456,7 @@ TEST_F(ECDbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
 
         {
         //now flip order of struct prop and prim prop
-        TestItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                           "  <ECClass typeName='ElementCode' isStruct='True' isDomainClass='False'>"
                           "    <ECProperty propertyName='Name' typeName='string' />"
                           "  </ECClass>"
@@ -1495,7 +1495,7 @@ TEST_F (ECDbMappingTestFixture, InstanceInsertionInExistingTable)
     ecdb.CreateTable ("TestTable", ddl.c_str ());
     EXPECT_TRUE (ecdb.TableExists ("TestTable"));
 
-    //TODO: Use TEstItem and AssertSchemaImport(bool,ECDbCR,TestItem const&) instead
+    //TODO: Use TEstItem and AssertSchemaImport(bool,ECDbCR,SchemaItem const&) instead
     Utf8CP testSchemaXML = "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -1554,7 +1554,7 @@ TEST_F (ECDbMappingTestFixture, InstanceInsertionInExistingTable)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECDbMappingTestFixture, ClassAndPropertyWithSameName)
     {
-    TestItem testItem (
+    SchemaItem testItem (
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -1620,7 +1620,7 @@ TEST_F (ECDbMappingTestFixture, MismatchDataTypesInExistingTable)
     ecdb.CreateTable("TestTable", "ECInstanceId INTEGER PRIMARY KEY, Name TEXT, Date INTEGER");
     ASSERT_TRUE(ecdb.TableExists("TestTable"));
 
-    TestItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
                       "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                       "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                       "<ECClass typeName='Class' isDomainClass='True'>"
@@ -1657,7 +1657,7 @@ TEST_F (ECDbMappingTestFixture, InvalidPrimaryKeyInExistingTable)
     ecdb.CreateTable("TestTable", "Id INTEGER PRIMARY KEY, Name TEXT, Date INTEGER");
     ASSERT_TRUE(ecdb.TableExists("TestTable"));
 
-    TestItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
                       "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                       "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                       "<ECClass typeName='TestClass' isDomainClass='True'>"
@@ -1686,7 +1686,7 @@ TEST_F (ECDbMappingTestFixture, InvalidPrimaryKeyInExistingTable)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECDbMappingTestFixture, SharedTableInstanceInsertionAndDeletion)
     {
-    TestItem testItem ("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem testItem ("<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' description='Handles the insertion and deletion from standalone classes.' displayLabel='Table Per Hierarchy' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
         "<ECClass typeName='ClassA' isDomainClass='True'>"
@@ -1771,7 +1771,7 @@ TEST_F (ECDbMappingTestFixture, SharedTableInstanceInsertionAndDeletion)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_SharedColumns)
     {
-    TestItem testItem(
+    SchemaItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='SchemaWithSharedColumns' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
@@ -1853,7 +1853,7 @@ TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_SharedColumns)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_SharedColumns_DisableSharedColumns)
     {
-    TestItem testItem(
+    SchemaItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='SchemaWithSharedColumns' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
@@ -1949,7 +1949,7 @@ TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_SharedColumns_Disa
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_JoinedTableForSubclasses)
     {
-    TestItem testItem(
+    SchemaItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
@@ -2032,7 +2032,7 @@ TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_JoinedTableForSubc
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECDbMappingTestFixture, IndexGenerationOnClassId)
     {
-    TestItem testItem (
+    SchemaItem testItem (
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -2082,7 +2082,7 @@ TEST_F (ECDbMappingTestFixture, IndexGenerationOnClassId)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, NotMappedWithinClassHierarchy)
     {
-    TestItem testItem(
+    SchemaItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -2158,7 +2158,7 @@ TEST_F(ECDbMappingTestFixture, NotMappedWithinClassHierarchy)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECDbMappingTestFixture, CascadeDeletion)
     {
-    TestItem testItem ("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem testItem ("<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
         "    <ECClass typeName='ClassA' isDomainClass='True'>"
@@ -2375,7 +2375,7 @@ TEST_F(ECDbMappingTestFixture, ECInstanceIdAutoGeneration)
     //CASE 1
             {
             // DisableECInstanceIdAutogeneration CA not present.Should generate Id's automatically.
-            TestItem testItem(
+            SchemaItem testItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -2395,7 +2395,7 @@ TEST_F(ECDbMappingTestFixture, ECInstanceIdAutoGeneration)
             //CASE 2
             {
             // DisableECInstanceIdAutogeneration custom attribute present on a class. 
-            TestItem testItem(
+            SchemaItem testItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -2419,7 +2419,7 @@ TEST_F(ECDbMappingTestFixture, ECInstanceIdAutoGeneration)
             //CASE 3
             {
             //DisableECInstanceIdAutogenerationCA true for sub classes.
-            TestItem testItem(
+            SchemaItem testItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -2449,7 +2449,7 @@ TEST_F(ECDbMappingTestFixture, ECInstanceIdAutoGeneration)
             //CASE 4
             {
             //DisableECInstanceIdAutogenerationCA False for sub classes.
-            TestItem testItem(
+            SchemaItem testItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -2482,7 +2482,7 @@ TEST_F(ECDbMappingTestFixture, ECInstanceIdAutoGeneration)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, EnforceLinkTableMapping)
     {
-    TestItem testItem(
+    SchemaItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -2533,7 +2533,7 @@ TEST_F(ECDbMappingTestFixture, EnforceLinkTableMapping)
 TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
     {
         {
-        std::vector<TestItem> testItems {TestItem(
+        std::vector<SchemaItem> testItems {SchemaItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -2555,7 +2555,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
             "    </ECClass>"
             "</ECSchema>", false, "Property in index does not exist"),
 
-                TestItem(
+                SchemaItem(
                     "<?xml version='1.0' encoding='utf-8'?>"
                     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -2587,7 +2587,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
                     "    </ECClass>"
                     "</ECSchema>", false, "Cannot define index on struct prop"),
 
-                TestItem(
+                SchemaItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -2619,7 +2619,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
             "    </ECClass>"
             "</ECSchema>", false, "Cannot define index on struct array prop"),
 
-            TestItem(
+            SchemaItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -2646,7 +2646,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
             "    </ECClass>"
                 "</ECSchema>", false, "Cannot define index on primitive array prop"),
 
-                TestItem(
+                SchemaItem(
                     "<?xml version='1.0' encoding='utf-8'?>"
                     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -2688,7 +2688,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
         }
 
         {
-        TestItem testItem (
+        SchemaItem testItem (
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -2730,7 +2730,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
         }
 
         {
-        TestItem testItem(
+        SchemaItem testItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -2784,7 +2784,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
         }
 
             {
-        TestItem testItem(
+        SchemaItem testItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -2834,7 +2834,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
         }
 
         {
-        TestItem testItem(
+        SchemaItem testItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -2885,7 +2885,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
             "    </ECClass>"
             "</ECSchema>", true, "");
 
-        TestItem secondSchemaTestItem(
+        SchemaItem secondSchemaTestItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts' />"
@@ -2926,7 +2926,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
         }
 
         {
-        TestItem testItem(
+        SchemaItem testItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -2977,7 +2977,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
         }
 
         {
-        TestItem testItem(
+        SchemaItem testItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -3037,7 +3037,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
         }
 
         {
-        TestItem testItem(
+        SchemaItem testItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -3100,7 +3100,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
         }
 
         {
-        TestItem testItem(
+        SchemaItem testItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -3148,7 +3148,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
 TEST_F(ECDbMappingTestFixture, NotNullablePropertyTest)
     {
         {
-        TestItem testItem(
+        SchemaItem testItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -3185,7 +3185,7 @@ TEST_F(ECDbMappingTestFixture, NotNullablePropertyTest)
         }
 
         {
-        TestItem testItem(
+        SchemaItem testItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -3223,7 +3223,7 @@ TEST_F(ECDbMappingTestFixture, NotNullablePropertyTest)
         }
 
         {
-        TestItem testItem(
+        SchemaItem testItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -3267,7 +3267,7 @@ TEST_F(ECDbMappingTestFixture, NotNullablePropertyTest)
         }
 
         {
-        TestItem testItem(
+        SchemaItem testItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -3306,7 +3306,7 @@ TEST_F(ECDbMappingTestFixture, NotNullablePropertyTest)
         }
 
         {
-        TestItem testItem(
+        SchemaItem testItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -3358,7 +3358,7 @@ TEST_F(ECDbMappingTestFixture, NotNullablePropertyTest)
 TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
     {
         {
-        TestItem testItem(
+        SchemaItem testItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -3445,7 +3445,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
         }
 
         {
-        TestItem testItem(
+        SchemaItem testItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -3487,7 +3487,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
         }
 
         {
-        TestItem testItem(
+        SchemaItem testItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -3532,7 +3532,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
         }
 
         {
-        TestItem testItem(
+        SchemaItem testItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -3577,7 +3577,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
         }
 
         {
-        TestItem testItem(
+        SchemaItem testItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -3662,7 +3662,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
         }
 
         {
-        TestItem testItem(
+        SchemaItem testItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -3735,7 +3735,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
         }
 
         {
-        TestItem testItem(
+        SchemaItem testItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -3800,7 +3800,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
         }
 
         {
-        TestItem testItem(
+        SchemaItem testItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -3873,7 +3873,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
 
         {
         //Tests that AllowDuplicateRelationships Flag from LinkTableRelationshipMap CA is not applied to subclasses
-        TestItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                           "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
                           "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
                           "  <ECClass typeName='A' >"
@@ -3948,7 +3948,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, ForeignKeyMapWhereLinkTableIsRequired)
     {
-    TestItem testItem ("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+    SchemaItem testItem ("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
         "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
         "  <ECClass typeName='Parent' >"
@@ -3987,8 +3987,8 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
     Utf8CP ecdbName = "ForeignKeyMapWithKeyProp.ecdb";
 
     {
-    std::vector<TestItem> testItems {
-        TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+    std::vector<SchemaItem> testItems {
+        SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                 "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
                 "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
                 "  <ECClass typeName='Parent' >"
@@ -4017,7 +4017,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
                 "  </ECRelationshipClass>"
                 "</ECSchema>", false, "ForeignKeyColumn should not be specified if Key property is defined."),
 
-        TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                  "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
                  "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
                  "  <ECClass typeName='Parent' >"
@@ -4046,7 +4046,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
                  "  </ECRelationshipClass>"
                  "</ECSchema>", false, "ForeignKeyColumn should not be specified if Key property is defined."),
 
-        TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                  "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
                  "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
                  "  <ECClass typeName='Parent' >"
@@ -4083,7 +4083,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
                  "  </ECRelationshipClass>"
                  "</ECSchema>", false, "Only one constraint class supported by ECDb if key properties are defined."),
 
-        TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                  "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
                  "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
                  "  <ECClass typeName='Parent' >"
@@ -4114,7 +4114,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
     Utf8CP childTableName = "ts_Child";
 
         {
-        TestItem testItem ("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem testItem ("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
             "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
             "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
             "  <ECClass typeName='Parent' >"
@@ -4155,7 +4155,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
         }
 
         {
-        TestItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
             "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
             "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
             "  <ECClass typeName='Parent' >"
@@ -4204,7 +4204,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
         }
 
         {
-        TestItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
             "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
             "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
             "  <ECClass typeName='Parent' >"
@@ -4249,7 +4249,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
         }
 
         {
-        TestItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        SchemaItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                           "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
                           "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
                           "  <ECClass typeName='Authority' >"
@@ -4310,7 +4310,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithECInstanceIdKeyProperty)
 
 
     {
-    std::vector<TestItem> testItems {TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+    std::vector<SchemaItem> testItems {SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
         "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
         "  <ECClass typeName='Parent' >"
@@ -4338,7 +4338,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithECInstanceIdKeyProperty)
         "  </ECRelationshipClass>"
         "</ECSchema>", false, ""),
 
-        TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
         "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
         "  <ECClass typeName='Parent' >"
@@ -4372,7 +4372,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithECInstanceIdKeyProperty)
     Utf8CP childTableName = "ts_Child";
 
         {
-        TestItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                           "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
                           "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
                           "  <ECClass typeName='Parent' >"
@@ -4413,7 +4413,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithECInstanceIdKeyProperty)
         }
 
         {
-        TestItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                           "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
                           "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
                           "  <ECClass typeName='Parent' >"
@@ -4461,7 +4461,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithECInstanceIdKeyProperty)
         }
 
         {
-        TestItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
             "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
             "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
             "  <ECClass typeName='Parent' >"
@@ -4521,7 +4521,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
     Utf8CP childTableName = "ts_Child";
 
         {
-        TestItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                           "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
                           "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
                           "  <ECClass typeName='Parent' >"
@@ -4564,7 +4564,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
         }
 
         {
-        TestItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
             "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
             "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
             "  <ECClass typeName='Parent' >"
@@ -4608,7 +4608,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
         }
 
         {
-        TestItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
             "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
             "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
             "  <ECClass typeName='Parent' >"
@@ -4646,7 +4646,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
         }
 
         {
-        TestItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
             "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
             "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
             "  <ECClass typeName='Parent' >"
@@ -4688,7 +4688,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
         }
 
         {
-        TestItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
             "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
             "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
             "  <ECClass typeName='Parent' >"
@@ -4729,7 +4729,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
         }
 
         {
-        TestItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
             "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
             "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
             "  <ECClass typeName='Parent' >"
@@ -4788,7 +4788,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, RelationshipMapCAOnSubclasses)
     {
-    TestItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+    SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                         "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
                         "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
                         "  <ECClass typeName='Element' >"
@@ -4856,7 +4856,7 @@ protected:
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipsAndSharedTablesTestFixture, UniqueIndexesSupportFor1to1Relationship)
     {
-    TestItem testItem(SCHEMA_XML, true);
+    SchemaItem testItem(SCHEMA_XML, true);
     ECDb ecdb;
     bool asserted = false;
     AssertSchemaImport(ecdb, asserted, testItem, "RelationshipsAndSharedTables.ecdb");
@@ -4903,7 +4903,7 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, UniqueIndexesSupportFor1to1Relat
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceDeletionFromPolymorphicRelationships)
     {
-    TestItem testItem(SCHEMA_XML, true);
+    SchemaItem testItem(SCHEMA_XML, true);
     ECDb ecdb;
     bool asserted = false;
     AssertSchemaImport(ecdb, asserted, testItem, "RelationshipsAndSharedTables.ecdb");
@@ -5079,7 +5079,7 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceDeletionFromPolymorphicR
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipsAndSharedTablesTestFixture, RetrieveConstraintClassInstanceBeforeAfterInsertingRelationshipInstance)
     {
-    TestItem testItem(SCHEMA_XML, true);
+    SchemaItem testItem(SCHEMA_XML, true);
     ECDb ecdb;
     bool asserted = false;
     AssertSchemaImport(ecdb, asserted, testItem, "RelationshipsAndSharedTables.ecdb");

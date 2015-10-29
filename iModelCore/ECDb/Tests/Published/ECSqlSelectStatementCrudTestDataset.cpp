@@ -93,7 +93,11 @@ ECSqlTestDataset ECSqlSelectTestDataset::ArrayTests (int rowCountPerClass)
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, rowCountPerClass);
 
     ecsql = "SELECT I, S FROM ecsql.PSA WHERE Dt_Array = ?";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::NotYetSupported, "Arrays are not supported yet in where clause.");
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 0);
+
+    ecsql = "SELECT I, S FROM ecsql.PSA WHERE Dt_Array <> ?";
+    //unbound parameters mean NULL and comparing NULL with NULL is always false
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 0);
 
     ecsql = "SELECT I, S FROM ecsql.PSA WHERE Dt_Array IS NULL";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, 0);
@@ -101,7 +105,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::ArrayTests (int rowCountPerClass)
     ecsql = "SELECT I, S FROM ecsql.PSA WHERE Dt_Array IS NOT NULL";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, rowCountPerClass);
 
-    ecsql = "SELECT I, S FROM ecsql.PSA WHERE CARDINALITY (Dt_Array) > 0";
+    ecsql = "SELECT I, S FROM ecsql.PSA WHERE CARDINALITY(Dt_Array) > 0";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::NotYetSupported);
 
     ecsql = "SELECT S, PStruct_Array FROM ecsql.PSA";
@@ -116,7 +120,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::ArrayTests (int rowCountPerClass)
     ecsql = "SELECT I, S FROM ecsql.PSA WHERE PStruct_Array IS NOT NULL";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::NotYetSupported, "Struct arrays are not supported yet in where clause.");
     
-    ecsql = "SELECT I, S FROM ecsql.PSA WHERE CARDINALITY (PStruct_Array) > 0";
+    ecsql = "SELECT I, S FROM ecsql.PSA WHERE CARDINALITY(PStruct_Array) > 0";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::NotYetSupported);
 
     ecsql = "SELECT Dt_Array[1], B FROM ecsql.PSA";
@@ -1827,131 +1831,107 @@ ECSqlTestDataset ECSqlSelectTestDataset::MiscTests (int rowCountPerClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlTestDataset ECSqlSelectTestDataset::NullLiteralTests (int rowCountPerClass)
+ECSqlTestDataset ECSqlSelectTestDataset::NullLiteralTests(int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
 
     Utf8CP ecsql = "select NULL FROM ecsql.P";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "select NULL, I FROM ecsql.P";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, rowCountPerClass);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass);
 
     ecsql = "select NULL, NULL FROM ecsql.P";
     ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass);
 
     ecsql = "select NULL as I FROM ecsql.P";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, ECSqlExpectedResult::Category::Supported, "Alias in select clause is always interpreted literally even if it happens to be a property name.", 1, rowCountPerClass);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, ECSqlExpectedResult::Category::Supported, "Alias in select clause is always interpreted literally even if it happens to be a property name.", 1, rowCountPerClass);
 
     ecsql = "select NULL as P3D FROM ecsql.P";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, ECSqlExpectedResult::Category::Supported, "Alias in select clause is always interpreted literally even if it happens to be a property name.", 1, rowCountPerClass);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, ECSqlExpectedResult::Category::Supported, "Alias in select clause is always interpreted literally even if it happens to be a property name.", 1, rowCountPerClass);
 
     ecsql = "select NULL as StructProp FROM ecsql.PSA";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, ECSqlExpectedResult::Category::Supported, "Alias in select clause is always interpreted literally even if it happens to be a property name.", 1, rowCountPerClass);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, ECSqlExpectedResult::Category::Supported, "Alias in select clause is always interpreted literally even if it happens to be a property name.", 1, rowCountPerClass);
 
     ecsql = "select NULL as PStruct_Array FROM ecsql.SA";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, ECSqlExpectedResult::Category::Supported, "Alias in select clause is always interpreted literally even if it happens to be a property name.", 1, rowCountPerClass);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, ECSqlExpectedResult::Category::Supported, "Alias in select clause is always interpreted literally even if it happens to be a property name.", 1, rowCountPerClass);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE L IS NULL";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, 0);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, 0);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE L IS NOT NULL";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, rowCountPerClass);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, rowCountPerClass);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE L IS NULL OR I IS NOT NULL";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, rowCountPerClass);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, rowCountPerClass);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE L IS NULL AND I IS NOT NULL";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, 0);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, 0);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE S IS NULL";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, 0);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, 0);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE S IS NOT NULL";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, rowCountPerClass);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, rowCountPerClass);
 
     ecsql = "SELECT I, S, B FROM ecsql.PSA WHERE B IS NULL";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, 0);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, 0);
 
     ecsql = "SELECT I, S, B FROM ecsql.PSA WHERE B IS NOT NULL";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, rowCountPerClass);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, rowCountPerClass);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE NULL IS NULL";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, rowCountPerClass);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, rowCountPerClass);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE NULL IS NOT NULL";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, 0);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, 0);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE NULL IS 123";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, 0);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, 0);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE NULL IS NOT 123";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, rowCountPerClass);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, rowCountPerClass);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE NULL <> 123";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, ECSqlExpectedResult::Category::Supported, "Comparing NULL with non-NULL values are always false", 3, 0);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, ECSqlExpectedResult::Category::Supported, "Comparing NULL with non-NULL values are always false", 3, 0);
 
-        {
-        ecsql = "SELECT I, S FROM ecsql.PSA WHERE I IS NOT ?";
-        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, rowCountPerClass);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ())); //bind null value
-        }
+    ecsql = "SELECT I, S FROM ecsql.PSA WHERE I IS ?";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
-        {
-        ecsql = "SELECT I, S FROM ecsql.PSA WHERE I IS ?";
-        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, 0);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ())); //bind null value
-        }
+    ecsql = "SELECT I, S FROM ecsql.PSA WHERE I IS NOT ?";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
-        {
-        ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE NULL IS ?";
-        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, rowCountPerClass);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ()));
-        }
+    {
+    ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE ? = NULL";
+    auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, 0);
+    testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue()));
+    }
 
-        {
-        ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE ? IS NULL";
-        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, rowCountPerClass);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ()));
-        }
+    {
+    ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE NULL = ?";
+    auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, 0);
+    testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue()));
+    }
 
-        {
-        ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE NULL IS ?";
-        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, 0);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (123)));
-        }
+    {
+    ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE ? <> NULL";
+    auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, 0);
+    testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue()));
+    }
 
-        {
-        ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE ? = NULL";
-        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, 0);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ()));
-        }
+    {
+    ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE NULL <> ?";
+    auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, 0);
+    testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue()));
+    }
 
-        {
-        ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE NULL = ?";
-        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, 0);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ()));
-        }
+    {
+    ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE NULL <> ?";
+    auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, 0);
+    testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(123)));
+    }
 
-        {
-        ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE ? <> NULL";
-        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, 0);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ()));
-        }
-
-        {
-        ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE NULL <> ?";
-        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, 0);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ()));
-        }
-
-        {
-        ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE NULL <> ?";
-        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, 0);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (123)));
-        }
-
-        return dataset;
+    return dataset;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2783,7 +2763,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::StructTests( int rowCountPerClass )
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, rowCountPerClass);
 
     ecsql = "SELECT I, S FROM ecsql.PSA WHERE PStructProp = ?";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Structs are not supported in where clause.");
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 0);
 
         {
         ecsql = "SELECT I, S FROM ecsql.PSA WHERE PStructProp.i = ?";
@@ -2792,13 +2772,13 @@ ECSqlTestDataset ECSqlSelectTestDataset::StructTests( int rowCountPerClass )
         }
 
         ecsql = "SELECT I, S FROM ecsql.PSA tt WHERE tt.PStructProp = ?";
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Structs are not supported in where clause.");
+        ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 0);
 
         ecsql = "SELECT I, S FROM ecsql.PSA WHERE PStructProp IS NULL";
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Structs are not supported in where clause.");
+        ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, 0);
 
         ecsql = "SELECT I, S FROM ecsql.PSA WHERE PStructProp IS NOT NULL";
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Structs are not supported in where clause.");
+        ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass);
 
         ecsql = "SELECT I, S FROM ecsql.PSA WHERE PStructProp.i IS NULL";
         ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, 0);
@@ -2807,16 +2787,16 @@ ECSqlTestDataset ECSqlSelectTestDataset::StructTests( int rowCountPerClass )
         ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, rowCountPerClass);
 
         ecsql = "SELECT ECInstanceId FROM ecsql.SA WHERE SAStructProp IS NULL";
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Structs are not supported in where clause.");
+        ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, 0);
 
         ecsql = "SELECT ECInstanceId FROM ecsql.SA WHERE SAStructProp IS NOT NULL";
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Structs are not supported in where clause.");
+        ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
         ecsql = "SELECT ECInstanceId FROM ecsql.SA WHERE SAStructProp.PStructProp IS NULL";
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Structs are not supported in where clause.");
+        ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, 0);
 
         ecsql = "SELECT ECInstanceId FROM ecsql.SA WHERE SAStructProp.PStructProp IS NOT NULL";
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Structs are not supported in where clause.");
+        ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
         ecsql = "SELECT ECInstanceId FROM ecsql.SA WHERE PStruct_Array IS NULL";
         ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Struct arrays are not supported in where clause.");

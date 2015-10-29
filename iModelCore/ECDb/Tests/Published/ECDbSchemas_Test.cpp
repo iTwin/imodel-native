@@ -2653,9 +2653,12 @@ TEST(ECDbSchemas, IntegrityCheck)
     ASSERT_EQ(nRows, expected.size()) << "Number of SQL definitions are not same";
     }
 
-TEST(ECDbSchemas, CheckClassHasCurrentTimeStamp)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Affan.Khan                         05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbTestFixture, CheckClassHasCurrentTimeStamp)
     {
-    const Utf8CP schema =
+    SchemaItem schema (
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         "<ECSchema schemaName=\"SimpleSchema\" nameSpacePrefix=\"adhoc\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "<ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.11\" prefix=\"besc\" />"
@@ -2668,57 +2671,41 @@ TEST(ECDbSchemas, CheckClassHasCurrentTimeStamp)
         "</ClassHasCurrentTimeStampProperty>"
         "</ECCustomAttributes>"
         "</ECClass>"
-        "</ECSchema>";
+        "</ECSchema>");
 
-    ECDbTestProject saveTestProject;
-    ECDbR db = saveTestProject.Create("checkClassHasCurrentTimeStamp.ecdb");
-    ECSchemaPtr simpleSchema;
-    auto readContext = ECSchemaReadContext::CreateContext();
-    ECSchema::ReadFromXmlString(simpleSchema, schema, *readContext);
-    ASSERT_TRUE(simpleSchema != nullptr);
-    auto importStatus = db.Schemas().ImportECSchemas(readContext->GetCache());
-    ASSERT_TRUE(importStatus == BentleyStatus::SUCCESS);
-    auto ecClass = simpleSchema->GetClassP("SimpleClass");
+    SetupECDb("checkClassHasCurrentTimeStamp.ecdb", schema);
 
+    ECInstanceKey key;
+    {
     ECSqlStatement insertStatement;
-    Utf8CP insertQuery = "INSERT INTO adhoc.SimpleClass(testprop) VALUES(12)";
-    ASSERT_TRUE(ECSqlStatus::Success == insertStatement.Prepare(db, insertQuery));
-    insertStatement.Step();
-    db.SaveChanges();
-    Utf8String ecsql("SELECT DateTimeProperty FROM ");
-    ecsql.append(ECSqlBuilder::ToECSqlSnippet(*ecClass));
-    db.SaveChanges();
+    ASSERT_EQ(ECSqlStatus::Success, insertStatement.Prepare(GetECDb(), "INSERT INTO adhoc.SimpleClass(testprop) VALUES(12)"));
+    ASSERT_EQ(BE_SQLITE_DONE, insertStatement.Step(key));
+    }
+
     ECSqlStatement statement;
-    auto stat = statement.Prepare(db, ecsql.c_str());
-    ASSERT_EQ(ECSqlStatus::Success, stat);
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DateTimeProperty FROM adhoc.SimpleClass WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, key.GetECInstanceId()));
 
-    ASSERT_EQ(ECSqlStatus::Success, stat);
-    BentleyApi::DateTime dateTime1;
-    ASSERT_TRUE(statement.Step() == BE_SQLITE_ROW);
-        {
-        ASSERT_FALSE(statement.IsValueNull(0));
-        dateTime1 = statement.GetValueDateTime(0);
-        }
-    ASSERT_TRUE(statement.Step() == BE_SQLITE_DONE);
-    ECSqlStatement updateStatment;
-    ecsql = "UPDATE ONLY adhoc.SimpleClass SET testprop = 23 WHERE ECInstanceId = 1";
-    stat = updateStatment.Prepare(db, ecsql.c_str());
-    ASSERT_TRUE(updateStatment.Step() == BE_SQLITE_DONE);
-    ecsql = "SELECT DateTimeProperty FROM ";
-    ecsql.append(ECSqlBuilder::ToECSqlSnippet(*ecClass));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_FALSE(statement.IsValueNull(0));
+    DateTime lastMod1 = statement.GetValueDateTime(0);
+    statement.Reset();
+    statement.ClearBindings();
 
-    BentleyApi::DateTime dateTime2;
-    ECSqlStatement statement2;
-    stat = statement2.Prepare(db, ecsql.c_str());
+    {
     BeThreadUtilities::BeSleep(100); // make sure the time is different by more than the resolution of the timestamp
+    ECSqlStatement updateStatement;
+    ASSERT_EQ(ECSqlStatus::Success, updateStatement.Prepare(GetECDb(), "UPDATE adhoc.SimpleClass SET testprop = 23 WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, updateStatement.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, updateStatement.Step());
+    }
 
-    ASSERT_TRUE(statement2.Step() == BE_SQLITE_ROW);
-        {
-        ASSERT_FALSE(statement2.IsValueNull(0));
-        dateTime2 = statement2.GetValueDateTime(0);
-        }
-    ASSERT_TRUE(statement2.Step() == BE_SQLITE_DONE);
-    ASSERT_FALSE(dateTime1 == dateTime2);
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_FALSE(statement.IsValueNull(0));
+    DateTime lastMod2 = statement.GetValueDateTime(0);
+
+    ASSERT_NE(lastMod1, lastMod2) << "LastMod date should have been updated after the last UPDATE statement";
     }
 
 END_ECDBUNITTESTS_NAMESPACE

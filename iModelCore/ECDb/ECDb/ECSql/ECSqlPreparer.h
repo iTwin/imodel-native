@@ -89,6 +89,8 @@ public:
     static ECSqlStatus ResolveChildStatementsBinding (ECSqlPrepareContext& ctx);
     static ECSqlStatus ResolveParameterMappings (ECSqlPrepareContext& ctx);
 
+    static BooleanSqlOperator DetermineCompoundLogicalOpForCompoundExpressions(BooleanSqlOperator op);
+
     static bool IsNullExp (ExpCR exp);
     };
 

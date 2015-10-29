@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Performance/PerformanceECSqlTests.cpp $
+|  $Source: Tests/Performance/PerformanceECSqlVsSqliteTests.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,29 +12,9 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //=======================================================================================
-// @bsiclass                                                Krischan.Eberle         09/15
-//=======================================================================================
-struct PerformanceECSqlTestFixture : public ECDbTestFixture
-    {
-protected:
-    static void GetECClassIdList(bvector<ECN::ECClassId>& classIds, ECDbCR ecdb, ECN::ECClassCR ecclass, bool includeSubclasses)
-        {
-        classIds.push_back(ecclass.GetId());
-        if (!includeSubclasses)
-            return;
-
-        for (ECN::ECClassCP subclass : ecdb.Schemas().GetDerivedECClasses(ecclass))
-            {
-            GetECClassIdList(classIds, ecdb, *subclass, includeSubclasses);
-            }
-        }
-
-    };
-
-//=======================================================================================
 // @bsiclass                                                Krischan.Eberle         10/15
 //=======================================================================================
-struct PerformanceECSqlVsSqliteTests : PerformanceECSqlTestFixture
+struct PerformanceECSqlVsSqliteTests : ECDbTestFixture
     {
 private:
     static const int s_initialInstanceCount = 1000000;
@@ -144,6 +124,18 @@ protected:
             return ERROR;
 
         return CloneECDb(ecdb, "ecsqlvssqliteperformance.ecdb", s_seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)) == BE_SQLITE_OK ? SUCCESS : ERROR;
+        }
+
+    static void GetECClassIdList(bvector<ECN::ECClassId>& classIds, ECDbCR ecdb, ECN::ECClassCR ecclass, bool includeSubclasses)
+        {
+        classIds.push_back(ecclass.GetId());
+        if (!includeSubclasses)
+            return;
+
+        for (ECN::ECClassCP subclass : ecdb.Schemas().GetDerivedECClasses(ecclass))
+            {
+            GetECClassIdList(classIds, ecdb, *subclass, includeSubclasses);
+            }
         }
 
     //---------------------------------------------------------------------------------------
