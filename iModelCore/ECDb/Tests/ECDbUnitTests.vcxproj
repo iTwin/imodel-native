@@ -25,7 +25,7 @@
     <ClCompile Include="Performance\PerformanceECDbReferentialIntegrityTests.cpp" />
     <ClCompile Include="Performance\PerformanceECInstanceECSqlSelectAdapterTests.cpp" />
     <ClCompile Include="Performance\PerformanceECInstanceInserterTests.cpp" />
-    <ClCompile Include="Performance\PerformanceECSqlTests.cpp" />
+    <ClCompile Include="Performance\PerformanceECSqlVsSqliteTests.cpp" />
     <ClCompile Include="Performance\PerformanceJsonComparison.cpp" />
     <ClCompile Include="Performance\PerformanceJsonInserterTests.cpp" />
     <ClCompile Include="Performance\PerformanceSchemaImportTests.cpp" />

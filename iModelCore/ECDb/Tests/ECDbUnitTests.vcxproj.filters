@@ -163,9 +163,6 @@
     <ClCompile Include="BackDoor\BackDoor.cpp">
       <Filter>BackDoor</Filter>
     </ClCompile>
-    <ClCompile Include="Performance\PerformanceECSqlTests.cpp">
-      <Filter>Performance</Filter>
-    </ClCompile>
     <ClCompile Include="BackDoor\ECDbTests.cpp">
       <Filter>BackDoor</Filter>
     </ClCompile>
@@ -180,6 +177,9 @@
     </ClCompile>
     <ClCompile Include="Published\JsonUpdaterTests.cpp">
       <Filter>Published\ECSql</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceECSqlVsSqliteTests.cpp">
+      <Filter>Performance</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

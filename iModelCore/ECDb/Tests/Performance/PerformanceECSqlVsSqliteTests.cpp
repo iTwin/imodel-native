@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Performance/PerformanceECSqlTests.cpp $
+|  $Source: Tests/Performance/PerformanceECSqlVsSqliteTests.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
