@@ -28,8 +28,8 @@ private:
 public:
     static DgnDbRepositoryConnectionPtr Create(RepositoryInfoCR repository, Utf8StringCR host, WebServices::CredentialsCR credentials, WebServices::ClientInfoPtr clientInfo);
 //__PUBLISH_SECTION_END__
-    MobileDgn::Utils::AsyncTaskPtr<DgnDbServerResult<RevisionInfo>> Push(FileInfo revision, WebServices::HttpRequest::ProgressCallbackCR callback = nullptr, WebServices::ICancellationTokenPtr cancellationToken = nullptr);
-    MobileDgn::Utils::AsyncTaskPtr<DgnDbServerResult<bvector<RevisionInfo>>> Pull(WebServices::HttpRequest::ProgressCallbackCR callback = nullptr, WebServices::ICancellationTokenPtr cancellationToken = nullptr);
+    DgnClientFx::Utils::AsyncTaskPtr<DgnDbServerResult<RevisionInfo>> Push(FileInfo revision, WebServices::HttpRequest::ProgressCallbackCR callback = nullptr, WebServices::ICancellationTokenPtr cancellationToken = nullptr);
+    DgnClientFx::Utils::AsyncTaskPtr<DgnDbServerResult<bvector<RevisionInfo>>> Pull(WebServices::HttpRequest::ProgressCallbackCR callback = nullptr, WebServices::ICancellationTokenPtr cancellationToken = nullptr);
 //__PUBLISH_SECTION_START__
     DgnDbServerTaskPtr VerifyConnection(WebServices::ICancellationTokenPtr cancellationToken = nullptr);
 
