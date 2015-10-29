@@ -40,13 +40,6 @@ public:
     IMAGEPP_EXPORT IRasterBaseGcsCR      GetSourceGEOCS() const;
     IMAGEPP_EXPORT IRasterBaseGcsCR      GetDestinationGEOCS() const;
 
-    void                                StudyReversibilityPrecisionOver(const HGF2DLiteExtent& pi_PrecisionArea,
-                                                                        double                pi_Step,
-                                                                        double*               po_pMeanError,
-                                                                        double*               po_pMaxError,
-                                                                        double*               po_pScaleChangeMean,
-                                                                        double*               po_pScaleChangeMax,
-                                                                        double                pi_ScaleThreshold = 1.0) const;
 
     virtual bool IsConvertDirectThreadSafe() const override {return false;}
     virtual bool IsConvertInverseThreadSafe() const override {return false;}
