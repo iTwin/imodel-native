@@ -32,21 +32,18 @@ TEST(ECDbProfile, CreationTest)
     {
     ECDbTestFixture::Initialize ();
 
-    Utf8String dbPath = ECDbTestUtility::BuildECDbPath ("ecdbprofiletest.db");
-    WString dbPathW;
-    BeStringUtilities::Utf8ToWChar (dbPathW, dbPath.c_str ());
-    if (BeFileName::DoesPathExist (dbPathW.c_str ()))
+    BeFileName dbPath = ECDbTestUtility::BuildECDbPath ("ecdbprofiletest.db");
+    if (dbPath.DoesPathExist ())
         {
         // Delete any previously created file
-        BeFileNameStatus fileDeleteStatus = BeFileName::BeDeleteFile (dbPathW.c_str ());
-        ASSERT_TRUE (fileDeleteStatus == BeFileNameStatus::Success);
+        ASSERT_EQ (BeFileNameStatus::Success, BeFileName::BeDeleteFile(dbPath));
         }
 
 
     //first create an SQLite file with basic profile only (no ECDb)
         {
         Db db;
-        DbResult stat = db.CreateNewDb (dbPath.c_str ());
+        DbResult stat = db.CreateNewDb (dbPath);
         EXPECT_EQ (BE_SQLITE_OK, stat) << L"Creating BeSQLite file failed";
 
         EXPECT_FALSE (db.TableExists (PROFILE_TABLE)) << "BeSQLite file is not expected to contain tables of the EC profile";
@@ -158,43 +155,39 @@ void RunUpgradeTest (Db::OpenParams const& openParams)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbProfile, OpenNonECDbFileTest)
     {
-    ECDbTestFixture::Initialize ();
+    ECDbTestFixture::Initialize();
 
-    Utf8String dbPath = ECDbTestUtility::BuildECDbPath ("noecdbprofile.db");
-
+    BeFileName dbPath = ECDbTestUtility::BuildECDbPath("ecdbprofiletest.db");
+    if (dbPath.DoesPathExist())
         {
-        WString dbPathW;
-        BeStringUtilities::Utf8ToWChar (dbPathW, dbPath.c_str ());
-        if (BeFileName::DoesPathExist (dbPathW.c_str ()))
-            {
-            // Delete any previously created file
-            BeFileNameStatus fileDeleteStatus = BeFileName::BeDeleteFile (dbPathW.c_str ());
-            ASSERT_TRUE (fileDeleteStatus == BeFileNameStatus::Success);
-            }
-
-        //create a non-ECDb file and close it again
-        Db noecDb;
-        DbResult stat = noecDb.CreateNewDb (dbPath.c_str ());
-        EXPECT_EQ (BE_SQLITE_OK, stat) << L"Creating SQLite file without ECDb profile failed.";
-        noecDb.CloseDb ();
+        // Delete any previously created file
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(dbPath));
         }
+
+    {
+    //create a non-ECDb file and close it again
+    Db noecDb;
+    DbResult stat = noecDb.CreateNewDb(dbPath);
+    EXPECT_EQ(BE_SQLITE_OK, stat) << L"Creating SQLite file without ECDb profile failed.";
+    noecDb.CloseDb();
+    }
 
     //Now open the non-ECDb file with ECDb API. This should NOT upgrade it to an ECDb file!
-    BeTest::SetFailOnAssert (false);
-        {
-        ECDb ecdb;
-        DbResult stat = ecdb.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OpenMode::ReadWrite));
-        EXPECT_EQ (BE_SQLITE_ERROR_InvalidProfileVersion, stat) << L"Opening SQLite file without ECDb profile from ECDb instance failed.";
-        }
-    BeTest::SetFailOnAssert (true);
+    BeTest::SetFailOnAssert(false);
+    {
+    ECDb ecdb;
+    DbResult stat = ecdb.OpenBeSQLiteDb(dbPath, Db::OpenParams(Db::OpenMode::ReadWrite));
+    EXPECT_EQ(BE_SQLITE_ERROR_InvalidProfileVersion, stat) << L"Opening SQLite file without ECDb profile from ECDb instance failed.";
+    }
+    BeTest::SetFailOnAssert(true);
 
     //check that the file is still no ECDb file
-        {
-        Db noecDb;
-        ASSERT_EQ (BE_SQLITE_OK, noecDb.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams (Db::OpenMode::Readonly)));
-        ASSERT_FALSE  (noecDb.HasProperty (PROFILEVERSION_PROPSPEC)) << L"Non-ECDb file after an attempt to open it with ECDb API is not expected to have become an ECDb file.";
-        ASSERT_FALSE  (noecDb.TableExists (PROFILE_TABLE)) << L"Non-ECDb file after an attempt to open it with ECDb API is not expected to have become an ECDb file.";
-        }
+    {
+    Db noecDb;
+    ASSERT_EQ(BE_SQLITE_OK, noecDb.OpenBeSQLiteDb(dbPath, Db::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_FALSE(noecDb.HasProperty(PROFILEVERSION_PROPSPEC)) << L"Non-ECDb file after an attempt to open it with ECDb API is not expected to have become an ECDb file.";
+    ASSERT_FALSE(noecDb.TableExists(PROFILE_TABLE)) << L"Non-ECDb file after an attempt to open it with ECDb API is not expected to have become an ECDb file.";
+    }
     }
 
 //---------------------------------------------------------------------------------------

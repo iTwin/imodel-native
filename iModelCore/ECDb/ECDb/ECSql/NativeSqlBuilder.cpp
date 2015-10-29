@@ -147,12 +147,12 @@ NativeSqlBuilder& NativeSqlBuilder::Append (List const& lhsBuilderList, Utf8CP o
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::Append (Utf8CP classIdentifier, Utf8CP identifier)
+NativeSqlBuilder& NativeSqlBuilder::Append(Utf8CP classIdentifier, Utf8CP identifier)
     {
-    if (!Utf8String::IsNullOrEmpty (classIdentifier))
-        AppendEscaped (classIdentifier).AppendDot ();
+    if (!Utf8String::IsNullOrEmpty(classIdentifier))
+        AppendEscaped(classIdentifier).AppendDot();
 
-    return AppendEscaped (identifier);
+    return AppendEscaped(identifier);
     }
 
 //-----------------------------------------------------------------------------------------

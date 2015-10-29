@@ -13,6 +13,22 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //=======================================================================================    
 struct ECDbTestFixture : public ::testing::Test
     {
+public:
+    //---------------------------------------------------------------------------------------
+    // @bsiclass                                   Krischan.Eberle                  07/15
+    //+---------------+---------------+---------------+---------------+---------------+------
+    struct SchemaItem
+        {
+        std::vector<Utf8String> m_schemaXmlList;
+        bool m_expectedToSucceed;
+        Utf8String m_assertMessage;
+
+        explicit SchemaItem(Utf8CP schemaXml) : m_schemaXmlList({schemaXml}), m_expectedToSucceed(true) {}
+        SchemaItem(std::vector<Utf8String> const& schemaXmlList, bool expectedToSucceeed, Utf8CP assertMessage) : m_schemaXmlList(schemaXmlList), m_expectedToSucceed(expectedToSucceeed), m_assertMessage(assertMessage) {}
+        SchemaItem(Utf8CP schemaXml, bool expectedToSucceeed, Utf8CP assertMessage) : m_schemaXmlList({schemaXml}), m_expectedToSucceed(expectedToSucceeed), m_assertMessage(assertMessage) {}
+        SchemaItem(Utf8CP schemaXml, bool expectedToSucceeed) : m_schemaXmlList({Utf8String(schemaXml)}), m_expectedToSucceed(expectedToSucceeed) {}
+        };
+
 private:
     mutable ECDb m_ecdb;
     static bmap<bpair<WString, int>, Utf8String> s_seedECDbs;
@@ -23,15 +39,20 @@ private:
 
 protected:
     ECDb& GetECDb() const { return _GetECDb(); }
-    BentleyStatus          GetInstances (bvector<ECN::IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className);
+    BentleyStatus GetInstances (bvector<ECN::IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className);
 
     ECDb& SetupECDb(Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite), int perClassRowCount = 0);
     ECDb& SetupECDb(Utf8CP ecdbFileName, WCharCP schemaECXmlFileName, bool importArbitraryNumberECInstances, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+    ECDb& SetupECDb(Utf8CP ecdbFileName, SchemaItem const& schema, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite)) const;
 
     static DbResult CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite), int perClassRowCount = 0);
 
+    static BentleyStatus CreateSeedECDb(BeFileNameR seedFilePath, Utf8CP seedFileName, BeFileNameCR schemaECXmlFileName, int perClassRowCount = 0);
+
+    static DbResult CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+
 public:
-    ECDbTestFixture() {}
+    ECDbTestFixture() : ::testing::Test() {}
     virtual ~ECDbTestFixture () {};
     virtual void SetUp() override;
     virtual void TearDown () override {}

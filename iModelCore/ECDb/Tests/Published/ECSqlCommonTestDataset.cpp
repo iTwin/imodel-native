@@ -125,6 +125,18 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType ecsqlType, 
         {
         Utf8String ecsql;
 
+        ecsql.Sprintf("%s WHERE I IS 123", pClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE B IS TRUE", pClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE B = NULL", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE B <> NULL", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
         ecsql.Sprintf ("%s WHERE L < 3.14", pClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
 
@@ -253,6 +265,12 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereCommonGeometryTests (ECSqlType ecs
     if (ToECSql (testClassECSqlStub, ecsqlType, *testClass, false))
         {
         Utf8String ecsql;
+
+        ecsql.Sprintf("%s WHERE Geometry=?", testClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE Geometry<>?", testClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0); //NULL<>NULL is always false
 
         ecsql.Sprintf ("%s WHERE Geometry IS NULL", testClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
@@ -744,13 +762,16 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereStructTests (ECSqlType ecsqlType, 
         Utf8String ecsql;
 
         ecsql.Sprintf ("%s WHERE PStructProp IS NULL", psaClassECSqlStub.c_str ());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::NotYetSupported, "Structs are not supported yet in where clause.");
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
 
         ecsql.Sprintf ("%s WHERE PStructProp IS NOT NULL", psaClassECSqlStub.c_str ());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::NotYetSupported, "Structs are not supported yet in where clause.");
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
 
         ecsql.Sprintf ("%s WHERE PStructProp = ?", psaClassECSqlStub.c_str ());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::NotYetSupported, "Structs are not supported yet in where clause.");
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE PStructProp<>?", psaClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0); //NULL<>NULL is always false
 
         ecsql.Sprintf ("%s WHERE PStructProp.i = 123 AND B = true", psaClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
@@ -766,10 +787,10 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereStructTests (ECSqlType ecsqlType, 
         Utf8String ecsql;
 
         ecsql.Sprintf ("%s WHERE SAStructProp.PStructProp IS NULL", saClassECSqlStub.c_str ());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::NotYetSupported, "Structs are not supported yet in where clause.");
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
 
         ecsql.Sprintf ("%s WHERE SAStructProp.PStructProp = ?", saClassECSqlStub.c_str ());
-        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::NotYetSupported, "Structs are not supported yet in where clause.");
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
 
         ecsql.Sprintf ("%s WHERE SAStructProp.PStructProp.i = 123 AND SAStructProp.PStructProp.dt <> DATE '2010-10-10'", saClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
