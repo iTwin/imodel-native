@@ -14,11 +14,11 @@
 
 #include <Bentley/Bentley.h>
 #include <Bentley/WString.h>
-#include <MobileDgn/MobileDgnCommon.h>
-#include <MobileDgn/Utils/Http/Credentials.h>
-#include <MobileDgn/Utils/Http/HttpClient.h>
-#include <MobileDgn/Utils/Http/ProxyHttpHandler.h>
-#include <MobileDgn/Utils/Threading/WorkerThreadPool.h>
+#include <DgnClientFx/DgnClientFxCommon.h>
+#include <DgnClientFx/Utils/Http/Credentials.h>
+#include <DgnClientFx/Utils/Http/HttpClient.h>
+#include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
+#include <DgnClientFx/Utils/Threading/WorkerThreadPool.h>
 #include <WebServices/Connect/SamlToken.h>
 
 // Work --> UI
@@ -47,7 +47,7 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE 
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 //=======================================================================================
 //! @deprecated
 //! @private

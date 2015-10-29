@@ -10,12 +10,12 @@
 
 #include <WebServices/WebServices.h>
 #include <WebServices/Cache/WebServicesCache.h>
-#include <MobileDgn/Utils/Utils.h>
+#include <DgnClientFx/Utils/Utils.h>
 #include <rapidjson/BeRapidJson.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                          

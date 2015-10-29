@@ -27,9 +27,9 @@ private:
 //__PUBLISH_SECTION_START__
 public:
     static DgnDbClientPtr Create(Utf8StringCR host, WebServices::CredentialsCR credentials, WebServices::ClientInfoPtr clientInfo);
-    MobileDgn::Utils::AsyncTaskPtr<DgnDbServerResult<bvector<RepositoryInfo>>> GetRepositories(WebServices::ICancellationTokenPtr cancellationToken = nullptr);
-    MobileDgn::Utils::AsyncTaskPtr<DgnDbServerResult<RepositoryInfo>> CreateNewRepository(Utf8StringCR repositoryId, Utf8StringCR description, Utf8StringCR localPath, WebServices::HttpRequest::ProgressCallbackCR callback = nullptr, WebServices::ICancellationTokenPtr cancellationToken = nullptr);
-    MobileDgn::Utils::AsyncTaskPtr<DgnDbServerResult<DgnDbBriefcasePtr>> OpenBriefcase(Dgn::DgnDbPtr db, bool doSync = true, WebServices::ICancellationTokenPtr cancellationToken = nullptr);
-    MobileDgn::Utils::AsyncTaskPtr<DgnDbServerResult<FileInfo>> AquireBriefcase(RepositoryInfoCR repository, FileInfoCR file, bool doSync = true, WebServices::HttpRequest::ProgressCallbackCR callback = nullptr, WebServices::ICancellationTokenPtr cancellationToken = nullptr);
+    DgnClientFx::Utils::AsyncTaskPtr<DgnDbServerResult<bvector<RepositoryInfo>>> GetRepositories(WebServices::ICancellationTokenPtr cancellationToken = nullptr);
+    DgnClientFx::Utils::AsyncTaskPtr<DgnDbServerResult<RepositoryInfo>> CreateNewRepository(Utf8StringCR repositoryId, Utf8StringCR description, Utf8StringCR localPath, WebServices::HttpRequest::ProgressCallbackCR callback = nullptr, WebServices::ICancellationTokenPtr cancellationToken = nullptr);
+    DgnClientFx::Utils::AsyncTaskPtr<DgnDbServerResult<DgnDbBriefcasePtr>> OpenBriefcase(Dgn::DgnDbPtr db, bool doSync = true, WebServices::ICancellationTokenPtr cancellationToken = nullptr);
+    DgnClientFx::Utils::AsyncTaskPtr<DgnDbServerResult<FileInfo>> AquireBriefcase(RepositoryInfoCR repository, FileInfoCR file, bool doSync = true, WebServices::HttpRequest::ProgressCallbackCR callback = nullptr, WebServices::ICancellationTokenPtr cancellationToken = nullptr);
 };
 END_BENTLEY_DGNDBSERVER_NAMESPACE

@@ -16,13 +16,13 @@
 #include <WebServices/Cache/IQueryProvider.h>
 #include <WebServices/Cache/Persistence/IDataSourceCache.h>
 #include <WebServices/Cache/Transactions/CacheTransaction.h>
-#include <MobileDgn/Utils/Threading/AsyncResult.h>
-#include <MobileDgn/Utils/Threading/WorkerThread.h>
+#include <DgnClientFx/Utils/Threading/AsyncResult.h>
+#include <DgnClientFx/Utils/Threading/WorkerThread.h>
 #include <WebServices/Client/WSRepositoryClient.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 typedef std::shared_ptr<struct ICachingDataSource> ICachingDataSourcePtr;
 
 /*--------------------------------------------------------------------------------------+

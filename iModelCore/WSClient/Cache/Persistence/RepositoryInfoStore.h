@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include <MobileDgn/Utils/Threading/AsyncTask.h>
+#include <DgnClientFx/Utils/Threading/AsyncTask.h>
 #include <WebServices/Cache/Persistence/IRepositoryInfoStore.h>
 #include <WebServices/Cache/Transactions/ICacheTransactionManager.h>
-#include <MobileDgn/Utils/Threading/WorkerThread.h>
+#include <DgnClientFx/Utils/Threading/WorkerThread.h>
 #include <WebServices/Client/WSRepositoryClient.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
