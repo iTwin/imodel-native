@@ -9395,3 +9395,36 @@ TEST_F(HVE2DPolygonOfSegmentsTester,  IntersectShapeWhoFailed)
     HFCPtr<HVE2DShape>  pResult = pShape1->IntersectShape (*pShape2);
         
     }
+
+
+//==================================================================================
+// Test which failed on Oct 16, 2015
+//==================================================================================
+TEST_F(HVE2DPolygonOfSegmentsTester,  SpatialPoisitionWhoFailed)
+    {        
+    
+    HVE2DPolySegment  AddPolySegment1(pWorld);
+    AddPolySegment1.AppendPoint(HGF2DLocation(-96.50, 39.875, pWorld));
+    AddPolySegment1.AppendPoint(HGF2DLocation(-96.50, 39.930, pWorld));
+    AddPolySegment1.AppendPoint(HGF2DLocation(-96.43, 39.930, pWorld));
+    AddPolySegment1.AppendPoint(HGF2DLocation(-96.43, 39.875, pWorld));
+    AddPolySegment1.AppendPoint(HGF2DLocation(-96.50, 39.875, pWorld));
+
+    HFCPtr<HVE2DShape> pShape1 = new HVE2DPolygonOfSegments(AddPolySegment1);
+
+    HVE2DPolySegment  AddPolySegment2(pWorld);
+    AddPolySegment2.AppendPoint(HGF2DLocation(-96.500, 39.875, pWorld));
+    AddPolySegment2.AppendPoint(HGF2DLocation(-96.500, 39.930, pWorld));
+    AddPolySegment2.AppendPoint(HGF2DLocation(-96.562, 39.930, pWorld));
+    AddPolySegment2.AppendPoint(HGF2DLocation(-96.562, 39.875, pWorld));
+    AddPolySegment2.AppendPoint(HGF2DLocation(-96.500, 39.875, pWorld));
+
+    HFCPtr<HVE2DShape>  pShape2 = new HVE2DPolygonOfSegments(AddPolySegment2);
+
+    HGFSpatialPosition position1 = pShape1->CalculateSpatialPositionOf(*pShape2);
+    HGFSpatialPosition position2 = pShape2->CalculateSpatialPositionOf(*pShape1);
+
+    ASSERT_EQ(S_OUT, position1);
+    ASSERT_EQ(S_OUT, position2);
+        
+    }

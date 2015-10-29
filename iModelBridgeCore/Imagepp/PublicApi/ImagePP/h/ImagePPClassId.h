@@ -470,6 +470,7 @@ enum ImagePPClassId
     HRFFileId_USgsSDTSDEM	                    =	1966,
     HRFFileId_ArcInfoGrid	                    =	1967,
     HRFFileId_ArcInfoAsciiGrid	                =	1968,
+    HRFFileId_PRJPage                           =   1969,
 
     HRFCapabilityId_Base	                    =	2200,
     HRFCapabilityId_PixelType	                =	2201,

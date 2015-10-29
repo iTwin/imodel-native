@@ -489,6 +489,8 @@ void HRFRasterFilePageDecorator::CreateDescriptors ()
             if (pPageFileDescriptor->HasThumbnail())
                 pThumbnail = pPageFileDescriptor->GetThumbnail();
 
+            IRasterBaseGcsCP           pBaseGCS = pPageFileDescriptor->GetGeocodingCP();
+
             pPageFileDescriptor = new HRFPageDescriptor(m_pPageFile->GetAccessMode(),
                                                         m_pPageFile->GetCapabilities(),
                                                         pPixelPalette,
@@ -500,6 +502,12 @@ void HRFRasterFilePageDecorator::CreateDescriptors ()
                                                         pFilter,
                                                         (HPMAttributeSet*)&(pPageFileDescriptor->GetTags()),
                                                         pPageFileDescriptor->GetDuration());
+
+            if (NULL != pBaseGCS)
+                {
+                IRasterBaseGcsPtr pNewGCS = pBaseGCS->Clone();
+                pPageFileDescriptor->SetGeocoding(pNewGCS.get());
+                }
             }
         else
             {
@@ -533,6 +541,8 @@ void HRFRasterFilePageDecorator::CreateDescriptors ()
                 pScanOri = &ScanOri;
                 }
 
+            IRasterBaseGcsCP      pBaseGCS = pPageFileDescriptor->GetGeocodingCP();
+
             pPageFileDescriptor = new HRFPageDescriptor(pOriginalPageDescriptor->GetAccessMode(),
                                                         pOriginalPageDescriptor->GetCapabilities(),
                                                         pPixelPalette,
@@ -545,6 +555,13 @@ void HRFRasterFilePageDecorator::CreateDescriptors ()
                                                         pFilter,
                                                         (HPMAttributeSet*)&(pOriginalPageDescriptor->GetTags()),
                                                         pOriginalPageDescriptor->GetDuration());
+
+
+            if (NULL != pBaseGCS)
+                {
+                IRasterBaseGcsPtr pNewGCS = pBaseGCS->Clone();
+                pPageFileDescriptor->SetGeocoding(pNewGCS.get());
+                }
 
             }
 

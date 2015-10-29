@@ -1054,17 +1054,36 @@ HRFPageDescriptor::HRFPageDescriptor(HFCAccessMode                            pi
     // TranfoModel
     
     RasterFileGeocodingPtr pGeoCoding;
+	
+	// We first set the geocoding according to availability and priority
+    if (pi_rpPriorityPage->m_pGeocoding.IsValid() && pi_rpPriorityPage->m_pGeocoding->IsValid())
+        {
+        pGeoCoding = pi_rpPriorityPage->m_pGeocoding;
+		}
+    else if (pi_rpSecondPage->m_pGeocoding.IsValid() && pi_rpSecondPage->m_pGeocoding->IsValid())
+        {
+        pGeoCoding = pi_rpSecondPage->m_pGeocoding;
+        }
+
+    // We select transfo model according to availability and priority
+    // We force geocoding to the page imposing its transfo model only if present, this way
+    // the page that has a transfo model AND geocoding has higher priority to set geocoding
+    // but if page has no geocoding then the other imposes its geocoding.
+    // This may result in transfo model coming from one page but geocoding from the other
+    // this is done by intent due to the possible presence of a page file to specify geocoding only		
     HFCPtr<HGF2DTransfoModel> pTransfoModel = 0;
     HRFScanlineOrientation TransfoModelOrientation;
     if (pi_rpPriorityPage->HasTransfoModel())
         {
-        pGeoCoding = pi_rpPriorityPage->m_pGeocoding;
+    	if (pi_rpPriorityPage->m_pGeocoding.IsValid() && pi_rpPriorityPage->m_pGeocoding->IsValid())
+	        pGeoCoding = pi_rpPriorityPage->m_pGeocoding;
         pTransfoModel = pi_rpPriorityPage->GetTransfoModel();
         TransfoModelOrientation = pi_rpPriorityPage->GetTransfoModelOrientation();
         }
     else if (pi_rpSecondPage->HasTransfoModel())
         {
-        pGeoCoding = pi_rpSecondPage->m_pGeocoding;
+    	if (pi_rpSecondPage->m_pGeocoding.IsValid() && pi_rpSecondPage->m_pGeocoding->IsValid())		
+        	pGeoCoding = pi_rpSecondPage->m_pGeocoding;
         pTransfoModel = pi_rpSecondPage->GetTransfoModel();
         TransfoModelOrientation = pi_rpSecondPage->GetTransfoModelOrientation();
         }
