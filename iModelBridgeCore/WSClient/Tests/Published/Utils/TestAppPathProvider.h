@@ -8,16 +8,16 @@
 #pragma once
 
 #include "WebServicesUnitTests.h"
-#include <MobileDgn/MobileDgnCommon.h>
+#include <DgnClientFx/DgnClientFxCommon.h>
 
 BEGIN_WSCLIENT_UNITTESTS_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct TestAppPathProvider : MobileDgn::IApplicationPathsProvider
+struct TestAppPathProvider : DgnClientFx::IApplicationPathsProvider
     {
     private:
         BeFileName m_documentsDirectory;

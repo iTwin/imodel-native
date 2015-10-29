@@ -9,8 +9,8 @@
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_MOBILEDGN
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 #define SecureStoreNameSpace_Connect    "Connect"
 #define SecureStoreKey_Token            "Token"
@@ -54,7 +54,7 @@ ConnectAuthenticationPersistence::ConnectAuthenticationPersistence
 ILocalState* customLocalState,
 std::shared_ptr<ISecureStore> customSecureStore
 ) :
-m_localState(customLocalState ? *customLocalState : MobileDgnCommon::LocalState()),
+m_localState(customLocalState ? *customLocalState : DgnClientFxCommon::LocalState()),
 m_secureStore(customSecureStore ? customSecureStore : std::make_shared<SecureStore>(&m_localState)),
 m_onUserChangedKey(0)
     {}

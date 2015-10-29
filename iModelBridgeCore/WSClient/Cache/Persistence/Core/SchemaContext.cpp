@@ -8,9 +8,9 @@
 
 #include "SchemaContext.h"
 
-#include <MobileDgn/MobileDgnCommon.h>
+#include <DgnClientFx/DgnClientFxCommon.h>
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 /*--------------------------------------------------------------------------------------+
@@ -18,7 +18,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName SchemaContext::GetCacheSchemasDir()
     {
-    BeFileName path = MobileDgnCommon::GetApplicationPaths().GetDgnPlatformAssetsDirectory(); // on iOS schemas are in MobileDgnAssets.bundle
+    BeFileName path = DgnClientFxCommon::GetApplicationPaths().GetDgnPlatformAssetsDirectory(); // on iOS schemas are in DgnClientFxAssets.bundle
     path.AppendToPath(L"ECSchemas");
     path.AppendToPath(L"WSClient");
     path.AppendToPath(L"Cache");

@@ -13,7 +13,7 @@
 #include <WebServices/Cache/Persistence/IDataSourceCache.h>
 #include <WebServices/Cache/Transactions/CacheTransaction.h>
 #include <WebServices/Client/WSQuery.h>
-#include <MobileDgn/Utils/Threading/AsyncResult.h>
+#include <DgnClientFx/Utils/Threading/AsyncResult.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 

@@ -9,12 +9,12 @@
 #include <WebServices/Connect/Connect.h>
 
 #include <Bentley/Base64Utilities.h>
-#include <MobileDgn/Utils/Http/HttpClient.h>
+#include <DgnClientFx/Utils/Http/HttpClient.h>
 #include <WebServices/Connect/SamlToken.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 static ClientInfoPtr s_clientInfo;
 static IHttpHandlerPtr s_customHttpHandler;

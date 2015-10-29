@@ -8,13 +8,13 @@
 
 #pragma once
 
-#include <MobileDgn/Utils/Threading/AsyncResult.h>
+#include <DgnClientFx/Utils/Threading/AsyncResult.h>
 #include "ClientConfiguration.h"
 #include "WebApi/WebApi.h"
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 typedef AsyncResult<WebApiPtr, WSError> WebApiResult;
 
