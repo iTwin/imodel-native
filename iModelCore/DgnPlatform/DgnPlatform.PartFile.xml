@@ -436,10 +436,6 @@
         </Bindings>
     </Part>
 
-    <!-- *** NEEDS WORK: We should not need any special "bootstrapping". AssertToolSet.mki should set up toolcontext for any/all platforms. *** -->
-    <!-- The first part ever built causes the tool context to be generated. This is actually a little intricate and has certain requirements, so explicitly cause it to happen in a controlled way. -->
-    <Part Name="BootStrapToolContext" BentleyBuildMakeFile="BootStrapToolContext.mke"/>
-
     <!-- Define a test collection part-->
     <Part Name="Tests">
         <SubPart PartName="UnitTests-NonPublished"/>

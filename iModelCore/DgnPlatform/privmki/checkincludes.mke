@@ -2,23 +2,16 @@
 #
 #     $Source: privmki/checkincludes.mke $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-PolicyFile = $(SrcRoot)DgnPlatform/privmki/AssertDgnPlatformPolicy.mki 
 appName = CheckIncludes
-
-
-%if !defined (WORKING_ON_PORT_TO_NEW_TOOLSET)
-    %warn For now, checkIncludes can only be done when building with VS2010
-    %return
-%endif
 
 %include mdl.mki
 
-baseDir         = $(_MakeFilePath)
+baseDir = $(_MakeFilePath)
 
-o = $(dgnPlatformBuildDir_)CheckIncludes/
+o = $(OutBuildDir)CheckIncludes/
 
 always:
     ~mkdir $(o)
