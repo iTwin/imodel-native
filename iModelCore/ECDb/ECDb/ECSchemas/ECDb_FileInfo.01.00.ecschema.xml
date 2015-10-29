@@ -26,7 +26,7 @@ displayLabel="ECDb FileInfo" xmlns="http://www.bentley.com/schemas/Bentley.ECXML
 
     <ECClass typeName="ExternalFileInfo" displayLabel="External File Info" isDomainClass="True" isStruct="False" isCustomAttributeClass="False" description="Attributes of a file stored external to the repository." >
         <BaseClass>FileInfo</BaseClass>
-        <ECProperty propertyName="RootFolder" typeName="int" description="Discrete set of root folders defined by the application. The MobileDgn's standard root folders are reserved folders. Custom root folders must use ids other than the ones used for the standard root folders.">
+        <ECProperty propertyName="RootFolder" typeName="int" description="Discrete set of root folders defined by the application. The DgnClientFx's standard root folders are reserved folders. Custom root folders must use ids other than the ones used for the standard root folders.">
             <ECCustomAttributes>
                 <StandardValues xmlns="EditorCustomAttributes.01.00">
                     <MustBeFromList>False</MustBeFromList>
