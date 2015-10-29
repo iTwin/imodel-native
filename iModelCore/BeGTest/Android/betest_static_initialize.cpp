@@ -148,7 +148,7 @@ jstring         localStateDir
     BeJStringUtilities::InitWStringFromJString (env, s_tempDir, tempDir);
     BeJStringUtilities::InitWStringFromJString (env, s_localStateDir, localStateDir);
 
-    // ensure known locations have trailing separators for consistency with MobileDgn
+    // ensure known locations have trailing separators for consistency with DgnClientFx
     s_assetsDir.AppendSeparator();
     s_docsDir.AppendSeparator();
     s_tempDir.AppendSeparator();

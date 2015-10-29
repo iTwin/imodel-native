@@ -60,9 +60,9 @@
         <ProductDirectory Name="PPNativeAssemblies"                 LibType="static" Deliver="false"/>
         <ProductDirectory Name="GeoCoordNativeAssemblies"           LibType="static" Deliver="false"/>
         <ProductDirectory Name="sqlang"                             LibType="static" Deliver="false"/>
-        <ProductDirectory Name="MobileDgnNativeAssemblies"          LibType="static" Deliver="false"/>
+        <ProductDirectory Name="DgnClientFxNativeAssemblies"          LibType="static" Deliver="false"/>
         <ProductDirectory Name="WSClientAssemblies"                 LibType="static" Deliver="false"/>
-        <ProductDirectory Name="MobileDgnSdkIncludeDirectory"       LibType="static" Deliver="false"/>
+        <ProductDirectory Name="DgnClientSdkIncludeDirectory"       LibType="static" Deliver="false"/>
 
     </ProductDirectoryList>
 
