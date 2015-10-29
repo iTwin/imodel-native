@@ -260,6 +260,27 @@ struct AnnotationTextBlock : public RefCountedBase
         Right = 3
     };
 
+    //=======================================================================================
+    // @bsiclass                                                    Jeff.Marker     10/2015
+    //=======================================================================================
+    struct ToStringOpts
+    {
+    private:
+        Utf8String m_paragraphSeparator;
+        Utf8String m_lineBreakString;
+        Utf8String m_fractionSeparator;
+
+    public:
+        DGNPLATFORM_EXPORT static ToStringOpts CreateForPlainText();
+
+        Utf8StringCR GetParagraphSeparator() const { return m_paragraphSeparator; }
+        void SetParagraphSeparator(Utf8CP value) { m_paragraphSeparator.AssignOrClear(value); }
+        Utf8StringCR GetLineBreakString() const { return m_lineBreakString; }
+        void SetLineBreakString(Utf8CP value) { m_lineBreakString.AssignOrClear(value); }
+        Utf8StringCR GetFractionSeparator() const { return m_fractionSeparator; }
+        void SetFractionSeparator(Utf8CP value) { m_fractionSeparator.AssignOrClear(value); }
+    };
+
 private:
     DEFINE_T_SUPER(RefCountedBase)
     friend struct AnnotationTextBlockPersistence;
@@ -303,6 +324,8 @@ public:
     DGNPLATFORM_EXPORT void AppendParagraph();
     DGNPLATFORM_EXPORT void AppendRun(AnnotationRunBaseR);
     bool IsEmpty() const { return ((0 == m_paragraphs.size()) || (0 == m_paragraphs[0]->GetRuns().size())); }
+    Utf8String ToString() const { return ToString(ToStringOpts::CreateForPlainText()); }
+    DGNPLATFORM_EXPORT Utf8String ToString(ToStringOpts const&) const;
 };
 
 //! @endGroup
