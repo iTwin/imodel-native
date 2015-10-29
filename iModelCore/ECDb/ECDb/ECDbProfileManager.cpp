@@ -16,7 +16,7 @@ Utf8CP const ECDbProfileManager::PROFILENAME = "ECDb";
 //static
 const PropertySpec ECDbProfileManager::PROFILEVERSION_PROPSPEC = PropertySpec("SchemaVersion", "ec_Db");
 //static
-const SchemaVersion ECDbProfileManager::MINIMUM_SUPPORTED_VERSION = SchemaVersion(2, 3, 0, 0);
+const SchemaVersion ECDbProfileManager::MINIMUM_SUPPORTED_VERSION = SchemaVersion(2, 4, 0, 0);
 
 //static
 std::vector<std::unique_ptr<ECDbProfileUpgrader>> ECDbProfileManager::s_upgraderSequence;
@@ -25,10 +25,7 @@ std::vector<std::unique_ptr<ECDbProfileUpgrader>> ECDbProfileManager::s_upgrader
 // @bsimethod                                 Krischan.Eberle                12/2012
 //+---------------+---------------+---------------+---------------+---------------+-
 //static
-DbResult ECDbProfileManager::CreateECProfile 
-(
-ECDbR ecdb
-)
+DbResult ECDbProfileManager::CreateECProfile(ECDbR ecdb)
     {
     LOG.debugv("Creating %s profile in %s...", PROFILENAME, ecdb.GetDbFileName());
 

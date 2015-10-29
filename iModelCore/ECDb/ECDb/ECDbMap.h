@@ -11,6 +11,10 @@
 #include "SchemaImportContext.h"
 #include "ECDbSql.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+#define TABLESUFFIX_STRUCTARRAY "_Array"
+#define TABLESUFFIX_JOINEDTABLE "_Joined"
+
 struct StorageDescription;
 
 /*=================================================================================**//**
@@ -137,7 +141,6 @@ public:
     bool AssertIfIsNotImportingSchema() const;
 
     LightweightCache const& GetLightweightCache() const { return m_lightweightCache; }
-    ECN::ECClassCR              GetClassForPrimitiveArrayPersistence(ECN::PrimitiveType primitiveType) const;
     bool                        ContainsMappingsForSchema(ECN::ECSchemaCR ecSchema);
     ECDbR                       GetECDbR() const { return m_ecdb; }
     MapStatus                   MapSchemas(SchemaImportContext& importSchemaContext, bvector<ECN::ECSchemaCP>& mapSchemas, bool forceMapStrategyReevaluation);

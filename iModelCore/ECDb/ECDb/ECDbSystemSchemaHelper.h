@@ -52,37 +52,39 @@ private:
     ~ECDbSystemSchemaHelper ();
 
     static ECN::ECClassCP GetECClass (ECN::ECSchemaCR ecdbSystemSchema, Utf8CP className);
-    static ECN::ECPropertyCP GetECProperty (ECN::ECClassCR ecClass, Utf8CP propertyName);
-    static Utf8CP GetPropertyName (ECSqlSystemProperty kind);
+    static ECN::ECPropertyCP GetECProperty (ECN::ECClassCR, Utf8CP propertyName);
+    static Utf8CP GetPropertyName (ECSqlSystemProperty);
 
 public:
     //! Gets the ECSqlSystemPropertiesClass ECClass.
     //! @param[in] schemaManager SchemaManager used to retrieve the ECDb_System ECSchema.
     //! @return ECSqlSystemPropertiesClass class or nullptr in case of errors
-    static ECN::ECClassCP GetECSqlSystemPropertiesClass (ECDbSchemaManagerCR schemaManager);
+    static ECN::ECClassCP GetECSqlSystemPropertiesClass (ECDbSchemaManagerCR);
 
     //! Gets the ECDb_System ECSchema.
     //! @param[in] schemaManager SchemaManager used to retrieve the ECDb_System ECSchema.
     //! @return ECDb_System ECSchema or nullptr in case of errors
-    static ECN::ECSchemaCP GetSchema (ECDbSchemaManagerCR schemaManager);
+    static ECN::ECSchemaCP GetSchema (ECDbSchemaManagerCR);
 
     //! Gets the system property of the specified kind from the ECDb_System ECSchema.
     //! @param[in] schemaManager SchemaManager used to retrieve the respective system property
     //! @return System property or nullptr in case of errors
-    static ECN::ECPropertyCP GetSystemProperty (ECDbSchemaManagerCR schemaManager, ECSqlSystemProperty kind);
+    static ECN::ECPropertyCP GetSystemProperty (ECDbSchemaManagerCR, ECSqlSystemProperty);
 
     //! Checks whether the specified property is a system property of the given kind.
     //! @param[in] ecProperty Property to check whether it is a system property of the given kind or not
     //! @return true, if @p ecProperty is a system property of the given kind. false otherwise
-    static bool IsSystemProperty (ECN::ECPropertyCR ecProperty, ECSqlSystemProperty kind);
+    static bool IsSystemProperty (ECN::ECPropertyCR, ECSqlSystemProperty);
 
     //! If @p ecProperty is a system property, returns the kind of system property.
     //! @param[out] kind System property kind
     //! @param[in] ecProperty Property to check
     //! @return true, if the given property is a system property. false, otherwise
-    static bool TryGetSystemPropertyKind (ECSqlSystemProperty& kind, ECN::ECPropertyCR ecProperty);
+    static bool TryGetSystemPropertyKind (ECSqlSystemProperty&, ECN::ECPropertyCR);
 
-    static Utf8CP ToString (ECSqlSystemProperty systemProperty);
+    static Utf8CP ToString (ECSqlSystemProperty);
+
+    static ECN::ECClassCP GetClassForPrimitiveArrayPersistence(ECDbCR, ECN::PrimitiveType);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

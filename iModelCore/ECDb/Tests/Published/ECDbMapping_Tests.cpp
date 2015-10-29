@@ -2000,8 +2000,8 @@ TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_JoinedTableForSubc
     auto it = std::find(tableNames.begin(), tableNames.end(), "ts_Base");
     ASSERT_TRUE(it != tableNames.end()) << "Table ts_Base is expected to exist";
 
-    it = std::find(tableNames.begin(), tableNames.end(), "ts_Base_joinedtable");
-    ASSERT_FALSE(it != tableNames.end()) << "Once JoinedTable is supported table, change to ASSERT_TRUE as then ts_Base_JoinedTable is expected to exist";
+    it = std::find(tableNames.begin(), tableNames.end(), "ts_Base_Joined");
+    ASSERT_TRUE(it != tableNames.end()) << "Table ts_Base_Joined is expected to exist";
 
     //verify that joined table option was resolved correctly. Need to look at the ec_ClassMap table directly to check that.
     std::map<ECClassId, PersistedMapStrategy> expectedResults {

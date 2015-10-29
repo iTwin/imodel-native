@@ -47,55 +47,6 @@ bool ECDbMap::AssertIfIsNotImportingSchema() const
     return !IsImportingSchema();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    affan.khan      03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECN::ECClassCR ECDbMap::GetClassForPrimitiveArrayPersistence (PrimitiveType primitiveType) const
-    {
-    ECSchemaCP ecdbSystemSchema = ECDbSystemSchemaHelper::GetSchema (m_ecdb.Schemas());
-    EXPECTED_CONDITION (ecdbSystemSchema != nullptr);
- 
-    //WIP_ECDB: The hard coded names should become constants in ECDbSystemSchemaHelper eventually
-    ECClassCP ecMapClass = nullptr;
-    switch(primitiveType)
-        {
-        case PRIMITIVETYPE_Binary:
-            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfBinary");
-            break;
-        case PRIMITIVETYPE_Boolean:                
-            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfBoolean");
-            break;
-        case PRIMITIVETYPE_DateTime:                  
-            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfDateTime");
-            break;
-        case PRIMITIVETYPE_Double:                    
-            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfDouble");
-            break;
-        case PRIMITIVETYPE_Integer:                   
-            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfInteger");
-            break;
-        case PRIMITIVETYPE_Long:                      
-            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfLong");
-            break;
-        case PRIMITIVETYPE_Point2D:                   
-            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfPoint2d");
-            break;
-        case PRIMITIVETYPE_Point3D:                   
-            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfPoint3d");
-            break;
-        case PRIMITIVETYPE_String:                    
-            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfString");
-            break;
-        case PRIMITIVETYPE_IGeometry:
-            ecMapClass = ecdbSystemSchema->GetClassCP("ArrayOfGeometry");
-            break;
-        default:
-            BeAssert(0 && "Cannot map primitive type");
-        }
-
-    return *ecMapClass;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    04/2014
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1086,11 +1037,11 @@ void ECDbMap::LightweightCache::LoadHorizontalPartitions ()  const
         "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
         "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
         "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "   WHERE ec_ClassMap.MapStrategy NOT IN (100, 101)  AND ec_Table.Name NOT LIKE '%_joinedTable'"
+        "   WHERE ec_ClassMap.MapStrategy NOT IN (100, 101)  AND ec_Table.Name NOT LIKE '%" TABLESUFFIX_JOINEDTABLE "'"
         "  GROUP BY  ec_Class.Id , ec_Table.Name "
         "   )  "
         "SELECT  DCL.RootClassId, DCL.DerivedClassId, TMI.TableName FROM DerivedClassList DCL  "
-        "   INNER JOIN TableMapInfo TMI ON TMI.ClassId = DCL.DerivedClassId ORDER BY DCL.RootClassId, TMI.TableName,DCL.DerivedClassId";
+        "   INNER JOIN TableMapInfo TMI ON TMI.ClassId = DCL.DerivedClassId ORDER BY DCL.RootClassId,TMI.TableName,DCL.DerivedClassId";
 
     CachedStatementPtr stmt = m_map.GetECDbR ().GetCachedStatement (sql0);
     while (stmt->Step () == BE_SQLITE_ROW)

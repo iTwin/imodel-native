@@ -67,7 +67,7 @@ public:
 
 struct PropertyMapToColumn;
 struct PropertyMapToTable;
-struct PropertyMapArrayOfPrimitives;
+struct PropertyMapPrimitiveArray;
 
 /*---------------------------------------------------------------------------------------
 * Abstract class for property mapping
@@ -102,7 +102,6 @@ protected:
 
     virtual PropertyMapToColumn const* _GetAsPropertyMapToColumn () const { return nullptr; }
     virtual PropertyMapToTable const* _GetAsPropertyMapToTable () const { return nullptr; }
-    virtual PropertyMapArrayOfPrimitives const* _GetAsPropertyMapArrayOfPrimitives () const { return nullptr; }
 
     virtual bool _IsECInstanceIdPropertyMap () const;
     virtual bool _IsSystemPropertyMap () const;
@@ -118,7 +117,6 @@ public:
     ECDbPropertyPathId GetPropertyPathId () const  { BeAssert (m_propertyPathId != 0); return m_propertyPathId; }
     PropertyMapToColumn const* GetAsPropertyMapToColumn() const { return _GetAsPropertyMapToColumn(); }
     PropertyMapToTableCP GetAsPropertyMapToTable () const {return _GetAsPropertyMapToTable();}
-    PropertyMapArrayOfPrimitives const* GetAsPropertyMapArrayOfPrimitives() const { return _GetAsPropertyMapArrayOfPrimitives(); }
     ECN::ECPropertyCR GetProperty () const;
     PropertyMapCP GetParent () const { return m_parentPropertyMap; }
     PropertyMapCR GetRoot () const 
@@ -346,7 +344,7 @@ public:
 //! Mapping an array of primitives to a *single* column
 // @bsiclass                                                     Casey.Mullen      11/2012
 //=======================================================================================
-struct PropertyMapArrayOfPrimitives : PropertyMapToColumn
+struct PropertyMapPrimitiveArray : PropertyMapToColumn
 {
 friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
 friend PropertyMapPtr PropertyMap::Clone(PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
@@ -354,15 +352,13 @@ private:
     ECN::StandaloneECEnablerP       m_primitiveArrayEnabler;
 
     //! basic constructor
-    PropertyMapArrayOfPrimitives (ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, ECDbMapCR ecDbMap, PropertyMapCP parentPropertyMap);
-    PropertyMapArrayOfPrimitives(PropertyMapArrayOfPrimitives const& proto, ECDbSqlTable const* primaryTable, PropertyMap const* parentPropertyMap)
+    PropertyMapPrimitiveArray (ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, ECDbMapCR ecDbMap, PropertyMapCP parentPropertyMap);
+    PropertyMapPrimitiveArray(PropertyMapPrimitiveArray const& proto, ECDbSqlTable const* primaryTable, PropertyMap const* parentPropertyMap)
         :PropertyMapToColumn(static_cast<PropertyMapToColumn const&>(proto), primaryTable, parentPropertyMap), m_primitiveArrayEnabler(proto.m_primitiveArrayEnabler)
-        {
-        }
+        {}
+
     //! For debugging and logging
     Utf8String _ToString() const override;
-
-    PropertyMapArrayOfPrimitives const* _GetAsPropertyMapArrayOfPrimitives () const { return this; }
 };
 
 //=======================================================================================
