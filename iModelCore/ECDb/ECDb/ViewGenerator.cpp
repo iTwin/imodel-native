@@ -460,7 +460,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassEndTableMap (NativeSq
     viewSql.Append (" FROM ").AppendEscaped (relationMap.GetTable ().GetName ().c_str ());
 
     //Append secondary table JOIN
-    const std::set<ECDbSqlTable const*> secondaryTables = relationMap.GetSecondaryTables ();
+    const std::set<ECDbSqlTable const*> secondaryTables = relationMap.GetJoinedTables ();
     ECDbSqlTable const* primaryTable = &relationMap.GetTable();
     ECDbSqlColumn const* primaryECInstanceIdColumn = primaryTable->GetFilteredColumnFirst(ColumnKind::ECInstanceId);
     BeAssert(primaryECInstanceIdColumn != nullptr);
