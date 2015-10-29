@@ -27,6 +27,7 @@ enum DgnErrorCategories
     LINESTYLE_ERROR_BASE            = 0x12000,
     GEOREFERENCE_ERROR_BASE         = 0x13000,
     MARKUPPROJECT_ERROR_BASE        = 0x14000,
+    LOCK_ERROR_BASE                 = 0x15000,
     };
 
 //=======================================================================================
@@ -54,7 +55,6 @@ enum class DgnDbStatus : int
     InvalidName,
     InvalidParent,
     InvalidSchemaVersion,
-    IsLocked,
     Mismatch2d3d,
     MissingDomain,
     MissingHandler,
@@ -63,7 +63,7 @@ enum class DgnDbStatus : int
     NotDgnMarkupProject,
     NotEnabled,
     NotFound,
-    NotLocked,
+    LockNotHeld,
     NotOpen,
     NotOpenForWrite,
     NotSameUnitBase,
@@ -112,6 +112,14 @@ enum class ViewportStatus : int
     InvalidTargetPoint,
     InvalidLens,
     InvalidViewport,
+};
+
+//! Return codes for methods which perform locking operations
+enum class LockStatus : int
+{
+    Success = SUCCESS,
+    ServerUnavailable = LOCK_ERROR_BASE + 1, //!< The locks server did not respond to a lock request
+    LockRequestDenied, //!< A request to acquire a lock was denied
 };
 
 /** @cond BENTLEY_SDK_Publisher */

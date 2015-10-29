@@ -453,6 +453,9 @@ DgnDbStatus DgnModel::_OnUpdate()
             return stat;
         }
 
+    if (LockStatus::Success != GetDgnDb().Locks().LockModel(*this, LockLevel::Exclusive))
+        return DgnDbStatus::LockNotHeld;
+
     return DgnDbStatus::Success;
     }
 
@@ -758,6 +761,9 @@ DgnDbStatus DgnModel::_OnDelete()
     if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Delete))
         return DgnDbStatus::MissingHandler;
 
+    if (LockStatus::Success != GetDgnDb().Locks().LockModel(*this, LockLevel::Exclusive))
+        return DgnDbStatus::LockNotHeld;
+
     for (auto appdata : m_appData)
         appdata.second->_OnDelete(*this);
 
@@ -816,6 +822,10 @@ DgnDbStatus DgnModel::_OnInsert()
     if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Insert))
         return DgnDbStatus::MissingHandler;
 
+    // If db is exclusively locked, cannot create models in it
+    if (LockStatus::Success != GetDgnDb().Locks().LockDb(LockLevel::Shared))
+        return DgnDbStatus::LockNotHeld;
+
     return DgnDbStatus::Success;
     }
 
@@ -825,6 +835,7 @@ DgnDbStatus DgnModel::_OnInsert()
 void DgnModel::_OnInserted() 
     {
     GetDgnDb().Models().AddLoadedModel(*this);
+    GetDgnDb().Locks().OnModelInserted(GetModelId());
     }
 
 /*---------------------------------------------------------------------------------**//**

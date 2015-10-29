@@ -42,6 +42,8 @@ DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_dom
                  m_geomParts(*this), m_units(*this), m_models(*this), m_elements(*this), 
                  m_links(*this), m_authorities(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_revisionManager(nullptr)
     {
+    m_locksManager = T_HOST.GetLocksAdmin()._CreateLocksManager(*this);
+    BeAssert(m_locksManager.IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**

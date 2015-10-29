@@ -970,6 +970,14 @@ public:
             virtual bool    _AllowDgnCoordinateReadout() const {return true;}
             };
 
+        //! Supplies locking functionality for elements, models, etc
+        struct LocksAdmin : IHostObject
+            {
+            DEFINE_BENTLEY_NEW_DELETE_OPERATORS
+
+            DGNPLATFORM_EXPORT virtual ILocksManagerPtr _CreateLocksManager(DgnDbR db) const;
+            };
+
         typedef bvector<DgnDomain*> T_RegisteredDomains;
 
     protected:
@@ -989,7 +997,8 @@ public:
         IACSManagerP            m_acsManager;
         FormatterAdmin*         m_formatterAdmin;
         RealityDataAdmin*       m_realityDataAdmin;
-        ScriptAdmin*         m_scriptingAdmin;
+        ScriptAdmin*            m_scriptingAdmin;
+        LocksAdmin*             m_locksAdmin;
         Utf8String              m_productName;
         T_RegisteredDomains     m_registeredDomains;
         bvector<CopyrightSupplier*> m_copyrights;
@@ -1042,6 +1051,9 @@ public:
         //! Supply the ScriptAdmin
         DGNPLATFORM_EXPORT virtual ScriptAdmin& _SupplyScriptingAdmin();
 
+        //! Supply the LocksAdmin
+        DGNPLATFORM_EXPORT virtual LocksAdmin& _SupplyLocksAdmin();
+
         //! Supply the product name to be used to describe the host.
         virtual void _SupplyProductName(Utf8StringR) = 0;
 
@@ -1067,6 +1079,7 @@ public:
             m_formatterAdmin = nullptr;
             m_realityDataAdmin = nullptr;
             m_scriptingAdmin = nullptr;
+            m_locksAdmin = nullptr;
             };
 
         virtual ~Host() {}
@@ -1090,6 +1103,7 @@ public:
         FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}
         RealityDataAdmin&       GetRealityDataAdmin()      {return *m_realityDataAdmin;}
         ScriptAdmin&            GetScriptAdmin()           {return *m_scriptingAdmin;}
+        LocksAdmin&             GetLocksAdmin()            {return *m_locksAdmin;}
         Utf8CP                  GetProductName()           {return m_productName.c_str();}
 
         void ChangeNotificationAdmin(NotificationAdmin& newAdmin) {m_notificationAdmin = &newAdmin;}

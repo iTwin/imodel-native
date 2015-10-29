@@ -136,6 +136,8 @@ $(coreObjs)RevisionManager$(oext): $(DgnCoreDir)RevisionManager.cpp $(DgnCoreAPI
 
 $(coreObjs)MemoryManager$(oext): $(DgnCoreDir)MemoryManager.cpp $(DgnCoreAPISrc)MemoryManager.h ${MultiCompileDepends}
 
+$(coreObjs)LocksManager$(oext): $(DgnCoreDir)LocksManager.cpp $(DgnCoreAPISrc)LocksManager.h ${MultiCompileDepends}
+
 $(coreObjs)ElementDependencyGraph$(oext): $(DgnCoreDir)ElementDependencyGraph.cpp $(DgnCoreAPISrc)TxnManager.h ${MultiCompileDepends}
 
 $(coreObjs)LsName$(oext): $(lineStyleDir)LsName.cpp $(LsLocalDepends) ${MultiCompileDepends}
