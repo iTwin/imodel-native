@@ -51,6 +51,10 @@ TEST_F(JsonDiffTests, GetChanges_EqualJson_ReturnsEmptyJson)
                      R"({ "A" : 1 })",
                      R"({ })");
 
+    TEST_GET_CHANGES(R"({ "A" : 3.14 })",
+                     R"({ "A" : 3.14 })",
+                     R"({ })");
+
     TEST_GET_CHANGES(R"({ "A" : null })",
                      R"({ "A" : null })",
                      R"({ })");
@@ -86,6 +90,10 @@ TEST_F(JsonDiffTests, GetChanges_MemberValueDifferent_ReturnsDiff)
                      R"({ "A" : 2 })",
                      R"({ "A" : 2 })");
 
+    TEST_GET_CHANGES(R"({ "A" : 3.14 })",
+                     R"({ "A" : 6.28 })",
+                     R"({ "A" : 6.28 })");
+
     TEST_GET_CHANGES(R"({ "A" : [1] })",
                      R"({ "A" : [2] })",
                      R"({ "A" : [2] })");
@@ -108,6 +116,10 @@ TEST_F(JsonDiffTests, GetChanges_MemberAdded_ReturnsDiff)
     TEST_GET_CHANGES(R"({ })",
                      R"({ "A" : 1 })",
                      R"({ "A" : 1 })");
+
+    TEST_GET_CHANGES(R"({ })",
+                     R"({ "A" : 3.14 })",
+                     R"({ "A" : 3.14 })");
 
     TEST_GET_CHANGES(R"({ })",
                      R"({ "A" : null })",
@@ -141,6 +153,10 @@ TEST_F(JsonDiffTests, GetChanges_MemberDeleted_IgnoresDeletedMembers)
                      R"({ })");
 
     TEST_GET_CHANGES(R"({ "A" : 1 })",
+                     R"({ })",
+                     R"({ })");
+
+    TEST_GET_CHANGES(R"({ "A" : 3.14 })",
                      R"({ })",
                      R"({ })");
 
@@ -178,6 +194,11 @@ TEST_F(JsonDiffTests, GetChanges_MemberDeletedDoNotIgnoreDeleted_ReturnsNullMemb
 
     TEST_GET_CHANGES_DO_NOT_IGNORE_DEL(
                      R"({ "A" : 1 })",
+                     R"({ })",
+                     R"({ "A" : null })");
+
+    TEST_GET_CHANGES_DO_NOT_IGNORE_DEL(
+                     R"({ "A" : 3.14 })",
                      R"({ })",
                      R"({ "A" : null })");
 
@@ -239,6 +260,10 @@ TEST_F(JsonDiffTests, GetChanges_MemberTypeChanged_ReturnsNewMember)
     TEST_GET_CHANGES(R"({ "A" : 1 })",
                      R"({ "A" : "foo" })",
                      R"({ "A" : "foo" })");
+
+    TEST_GET_CHANGES(R"({ "A" : 1 })",
+                     R"({ "A" : 3.14 })",
+                     R"({ "A" : 3.14 })");
 
     TEST_GET_CHANGES(R"({ "A" : 1 })",
                      R"({ "A" : null })",
