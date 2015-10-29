@@ -94,6 +94,29 @@ HFCPtr<HCPGCoordModel> HCPGCoordUtility::CreateGCoordModel
     return (new HCPGCoordModel (pi_SourceProjection, pi_DestinationProjection));
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  10/2015
+//----------------------------------------------------------------------------------------
+HFCPtr<HGF2DTransfoModel> HCPGCoordUtility::CreateGCoordAdaptedModel
+(
+    IRasterBaseGcsR pi_SourceProjection,
+    IRasterBaseGcsR pi_DestinationProjection,
+    const HGF2DLiteExtent& pi_rExtent,
+    double  pi_Step,
+    double  pi_ExpectedMeanError,
+    double  pi_ExpectedMaxError,
+    double* po_pAdaptationMeanError,
+    double* po_pAdaptationMaxError,
+    double* po_pReversibilityMeanError,
+    double* po_pReversibilityMaxError
+) const
+    {
+    HCPGCoordModel GCoordModel(pi_SourceProjection, pi_DestinationProjection);
+    return HCPGCoordUtility::CreateAdaptedModel(GCoordModel,pi_rExtent,pi_Step,pi_ExpectedMeanError,pi_ExpectedMaxError,po_pAdaptationMeanError,po_pAdaptationMaxError,po_pReversibilityMeanError,po_pReversibilityMaxError);
+    }
+
+
+
 
 /** -----------------------------------------------------------------------------
     This methods creates an adapted GCoord model based on given projection.
@@ -175,19 +198,18 @@ HFCPtr<HCPGCoordModel> HCPGCoordUtility::CreateGCoordModel
     @see HCPGCoordModel
     -----------------------------------------------------------------------------
 */
-HFCPtr<HGF2DTransfoModel> HCPGCoordUtility::CreateGCoordAdaptedModel
+HFCPtr<HGF2DTransfoModel> HCPGCoordUtility::CreateAdaptedModel
 (
-    IRasterBaseGcsR pi_SourceProjection,
-    IRasterBaseGcsR pi_DestinationProjection,
-    const HGF2DLiteExtent& pi_rExtent,
-    double  pi_Step,
-    double  pi_ExpectedMeanError,
-    double  pi_ExpectedMaxError,
+    HGF2DTransfoModel& transforModel,
+    const HGF2DLiteExtent& pi_rExtent,  // in src unit 
+    double  pi_Step,                    // in src unit 
+    double  pi_ExpectedMeanError,       // in dst unit
+    double  pi_ExpectedMaxError,        // in dst unit
     double* po_pAdaptationMeanError,
     double* po_pAdaptationMaxError,
     double* po_pReversibilityMeanError,
     double* po_pReversibilityMaxError
-) const
+)
     {
     // The expected error must be greater or equal to 0.0
     HPRECONDITION (pi_ExpectedMeanError >= 0.0);
@@ -201,24 +223,18 @@ HFCPtr<HGF2DTransfoModel> HCPGCoordUtility::CreateGCoordAdaptedModel
         HGF2DLiteExtent EnlargedExtent(pi_rExtent.GetXMin() - width, pi_rExtent.GetYMin() - height,
                                        pi_rExtent.GetXMax() + width, pi_rExtent.GetYMax() + height);
 
-        HFCPtr<HGF2DTransfoModel> pTempModel(new HCPGCoordModel (pi_SourceProjection, pi_DestinationProjection));
 
         // Check if reversibility must be studied
         if (po_pReversibilityMeanError != 0 || po_pReversibilityMaxError != 0)
             {
             // The caller desires knowledge about reversibility. study
-            HFCPtr<HCPGCoordModel> pBMModel = static_cast<HCPGCoordModel*>(&(*pTempModel));
-
             double ReverseMeanError;
             double ReverseMaxError;
             double ScaleChangeMean;
             double ScaleChangeMax;
-            pBMModel->StudyReversibilityPrecisionOver ( EnlargedExtent,
-                                                        pi_Step,
-                                                        &ReverseMeanError,
-                                                        &ReverseMaxError,
-                                                        &ScaleChangeMean,
-                                                        &ScaleChangeMax);
+            transforModel.StudyReversibilityPrecisionOver (EnlargedExtent, pi_Step, 
+                                                           &ReverseMeanError, &ReverseMaxError, 
+                                                           &ScaleChangeMean, &ScaleChangeMax);
 
             // If mean error is desired ... set it
             if (po_pReversibilityMeanError != 0)
@@ -227,14 +243,10 @@ HFCPtr<HGF2DTransfoModel> HCPGCoordUtility::CreateGCoordAdaptedModel
             // If max error is desired ... set it
             if (po_pReversibilityMaxError != 0)
                 *po_pReversibilityMaxError = ReverseMaxError;
-
             }
 
-
         // Attempt acceleration with a projective adapter
-        HFCPtr<HGF2DLinearModelAdapter> pAdaptedModel = new HGF2DLinearModelAdapter (*pTempModel,
-                                                                                     EnlargedExtent,
-                                                                                     pi_Step);
+        HFCPtr<HGF2DLinearModelAdapter> pAdaptedModel = new HGF2DLinearModelAdapter (transforModel, EnlargedExtent, pi_Step);
 
         // Check precision of adapter
         double MeanError;
@@ -258,7 +270,7 @@ HFCPtr<HGF2DTransfoModel> HCPGCoordUtility::CreateGCoordAdaptedModel
                 NbOfTilesX +=2;
                 NbOfTilesY +=2;
 
-                pGridModel = new HGF2DLocalProjectiveGrid (*pTempModel, EnlargedExtent, NbOfTilesX, NbOfTilesY);
+                pGridModel = new HGF2DLocalProjectiveGrid (transforModel, EnlargedExtent, NbOfTilesX, NbOfTilesY);
 
                 // Check precision of adapter
                 pGridModel->StudyPrecisionOver (EnlargedExtent, pi_Step, &MeanError, &MaxError);

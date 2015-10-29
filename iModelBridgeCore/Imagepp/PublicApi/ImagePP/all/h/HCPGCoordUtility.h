@@ -51,6 +51,17 @@ public:
                              double*                        po_pAdaptationMaxError = 0,
                              double*                        po_pReversibilityMeanError = 0,
                              double*                        po_pReversibilityMaxError = 0) const;
+
+    IMAGEPP_EXPORT static HFCPtr<HGF2DTransfoModel> CreateAdaptedModel(HGF2DTransfoModel& transforModel,
+                                                                   const HGF2DLiteExtent& pi_rExtent,
+                                                                   double  pi_Step,
+                                                                   double  pi_ExpectedMeanError,
+                                                                   double  pi_ExpectedMaxError,
+                                                                   double* po_pAdaptationMeanError,
+                                                                   double* po_pAdaptationMaxError,
+                                                                   double* po_pReversibilityMeanError,
+                                                                   double* po_pReversibilityMaxError);
+
     // This method creates an adapted GCoord model from projection description
     // raster file extent and threshold errors.
     HFCPtr<HGF2DTransfoModel>
