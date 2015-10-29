@@ -794,6 +794,18 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereStructTests (ECSqlType ecsqlType, 
 
         ecsql.Sprintf ("%s WHERE SAStructProp.PStructProp.i = 123 AND SAStructProp.PStructProp.dt <> DATE '2010-10-10'", saClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE SAStructProp IS NULL", saClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "Structs with struct array props are not supported in the where clause");
+
+        ecsql.Sprintf("%s WHERE SAStructProp IS NOT NULL", saClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "Structs with struct array props are not supported in the where clause");
+
+        ecsql.Sprintf("%s WHERE SAStructProp=?", saClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "Structs with struct array props are not supported in the where clause");
+
+        ecsql.Sprintf("%s WHERE SAStructProp<>?", saClassECSqlStub.c_str());
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid, "Structs with struct array props are not supported in the where clause");
         }
 
     return dataset;

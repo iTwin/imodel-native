@@ -2787,10 +2787,10 @@ ECSqlTestDataset ECSqlSelectTestDataset::StructTests( int rowCountPerClass )
         ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, rowCountPerClass);
 
         ecsql = "SELECT ECInstanceId FROM ecsql.SA WHERE SAStructProp IS NULL";
-        ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, 0);
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Structs that contain struct arrays are not supported in where clause.");
 
         ecsql = "SELECT ECInstanceId FROM ecsql.SA WHERE SAStructProp IS NOT NULL";
-        ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+        ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Structs that contain struct arrays are not supported in where clause.");
 
         ecsql = "SELECT ECInstanceId FROM ecsql.SA WHERE SAStructProp.PStructProp IS NULL";
         ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, 0);

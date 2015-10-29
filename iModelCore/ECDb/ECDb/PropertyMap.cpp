@@ -23,6 +23,39 @@ PropertyMap::PropertyMap (ECPropertyCR ecProperty, Utf8CP propertyAccessString, 
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan          10/2015
+//---------------------------------------------------------------------------------------
+//static
+PropertyMapPtr PropertyMap::Clone(PropertyMapCR proto , ECDbSqlTable const* newContext , PropertyMap const* parentPropertyMap ) 
+    {
+    if (!newContext)
+        newContext = proto.GetPrimaryTable();
+
+    if (auto protoMap = dynamic_cast<PropertyMapPoint const*>(&proto))
+        {
+        return new PropertyMapPoint(*protoMap, newContext, parentPropertyMap);
+        }
+    else if (auto protoMap = dynamic_cast<PropertyMapToColumn const*>(&proto))
+        {
+        return new PropertyMapToColumn(*protoMap, newContext, parentPropertyMap);
+        }
+    else if (auto protoMap = dynamic_cast<PropertyMapArrayOfPrimitives const*>(&proto))
+        {
+        return new PropertyMapArrayOfPrimitives(*protoMap, newContext, parentPropertyMap);
+        }
+    else if (auto protoMap = dynamic_cast<PropertyMapToTable const*>(&proto))
+        {
+        return new PropertyMapToTable(*protoMap, newContext, parentPropertyMap);
+        }
+    else if (auto protoMap = dynamic_cast<PropertyMapToInLineStruct const*>(&proto))
+        {
+        return new PropertyMapToInLineStruct(*protoMap, newContext, parentPropertyMap);
+        }
+
+    BeAssert(false && "Case is not handled");
+    return nullptr;
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     12/2013
 //---------------------------------------------------------------------------------------
 bool PropertyMap::IsVirtual () const

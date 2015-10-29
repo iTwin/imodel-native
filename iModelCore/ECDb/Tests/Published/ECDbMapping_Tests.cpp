@@ -1986,26 +1986,24 @@ TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_JoinedTableForSubc
     ASSERT_FALSE(asserted);
 
     //verify tables
+    std::vector<Utf8String> tableNames;
     {
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT name FROM sqlite_master WHERE name Like 'ts_%' and type='table'"));
-    std::vector<Utf8String> tableNames;
     while (BE_SQLITE_ROW == stmt.Step())
-        { 
+        {
         tableNames.push_back(stmt.GetValueText(0));
         }
-
-    ASSERT_EQ(1, tableNames.size()) << "Note: Once JoinedTable is supported, the expected count needs to be changed to 2";
+    }
+    ASSERT_EQ(2, tableNames.size());
 
     auto it = std::find(tableNames.begin(), tableNames.end(), "ts_Base");
     ASSERT_TRUE(it != tableNames.end()) << "Table ts_Base is expected to exist";
 
     it = std::find(tableNames.begin(), tableNames.end(), "ts_Base_joinedtable");
     ASSERT_FALSE(it != tableNames.end()) << "Once JoinedTable is supported table, change to ASSERT_TRUE as then ts_Base_JoinedTable is expected to exist";
-    }
 
     //verify that joined table option was resolved correctly. Need to look at the ec_ClassMap table directly to check that.
-    {
     std::map<ECClassId, PersistedMapStrategy> expectedResults {
         {ecdb.Schemas().GetECClassId("TestSchema","Base"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, PersistedMapStrategy::Options::ParentOfJoinedTable, true)},
         {ecdb.Schemas().GetECClassId("TestSchema","Sub1"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, PersistedMapStrategy::Options::JoinedTable, true)},
@@ -2025,7 +2023,6 @@ TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_JoinedTableForSubc
         ASSERT_EQ(expectedMapStrategy.m_appliesToSubclasses, actualMapStrategy.m_appliesToSubclasses);
         }
     }
- }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     10/15
