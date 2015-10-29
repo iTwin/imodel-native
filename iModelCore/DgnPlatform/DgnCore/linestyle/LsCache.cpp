@@ -567,7 +567,7 @@ StatusInt LsDefinition::UpdateStyleTable () const
     {
     DgnDbP project = GetLocation()->GetDgnDb();
     project->Styles ().LineStyles().Update (DgnStyleId(m_styleId), _GetName(), GetLocation()->GetComponentId(),
-                                            GetLocation()->GetComponentType(), m_rasterComponentId, GetAttributes(), m_unitDef);
+                                            GetLocation()->GetComponentType(), GetAttributes(), m_unitDef);
 
     return BSISUCCESS;
     }
@@ -806,9 +806,6 @@ LsComponentP    LsDefinition::GetComponentP(DgnModelP modelRef) const
 
     nonConstThis->m_componentLoadPostProcessed = false;
     LsLocation  location = nonConstThis->m_location;
-    if (m_rasterComponentId.IsValid())
-        //  Use the raster image instead.
-        location.SetLocation(*location.GetDgnDb(), LsComponentType::RasterImage, m_rasterComponentId);
 
     LsComponentP    component = DgnLineStyles::GetLsComponent (location);
     if (nullptr == component)

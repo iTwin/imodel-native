@@ -20,7 +20,6 @@
 //  These are both used to try different configurations while testing.  They must both be eliminated
 #define LINESTYLES_ENABLED 1
 #define CONVERT_LINESTYLES_ENABLED 1
-#define TRYING_DIRECT_LINESTYLES 0
 
 #define LSID_DEFAULT        0
 #define LSID_HARDWARE       0x80000000
@@ -1345,7 +1344,6 @@ private:
     bool                m_componentLookupFailed;
     DgnStyleId          m_styleId;
     MSCharIKey          m_name;
-    LsComponentId       m_rasterComponentId;
     LsLocation          m_location;             // Where to find components of resource
     LsComponentPtr      m_lsComp;
     double              m_unitDef;
@@ -1357,6 +1355,8 @@ private:
     // For texture styles...
     mutable bool        m_textureInitialized;
     mutable uintptr_t   m_textureHandle;
+    mutable bool        m_hasTextureWidth;
+    mutable double      m_textureWidth;
 
     void Init (CharCP nName, Json::Value& lsDefinition, DgnStyleId styleId);
     void SetHWStyle (LsComponentType componentType, LsComponentId componentID);
@@ -1369,7 +1369,6 @@ public:
     DGNPLATFORM_EXPORT static uint32_t GetAttributes (Json::Value& lsDefinition);
     DGNPLATFORM_EXPORT static LsComponentType GetComponentType (Json::Value& lsDefinition);
     DGNPLATFORM_EXPORT static LsComponentId GetComponentId (Json::Value& lsDefinition);
-    DGNPLATFORM_EXPORT static LsComponentId GetRasterComponentId (Json::Value& lsDefinition);
 
     DGNPLATFORM_EXPORT static void Destroy (LsDefinitionP);
 
@@ -1408,7 +1407,7 @@ public:
     void MarkDirty (bool value = true) { m_isDirty = value; }
     StatusInt Commit ();
 
-    static void InitializeJsonObject (Json::Value& jsonObj, LsComponentId componentId, LsComponentType componentType, LsComponentId isRasterImage, uint32_t flags, double unitDefinition);
+    static void InitializeJsonObject (Json::Value& jsonObj, LsComponentId componentId, LsComponentType componentType, uint32_t flags, double unitDefinition);
     void InitializeJsonObject (Json::Value& jsonObj);
 
 //__PUBLISH_CLASS_VIRTUAL__
@@ -1663,10 +1662,10 @@ public:
 
 //__PUBLISH_SECTION_START__
     //! Adds a new line style to the project. If a style already exists by-name, no action is performed.
-    DGNPLATFORM_EXPORT BentleyStatus Insert(DgnStyleId& newStyleId, Utf8CP name, LsComponentId id, LsComponentType componentType, LsComponentId rasterComponentId, uint32_t flags, double unitDefinition);
+    DGNPLATFORM_EXPORT BentleyStatus Insert(DgnStyleId& newStyleId, Utf8CP name, LsComponentId id, LsComponentType componentType, uint32_t flags, double unitDefinition);
 
     //! Updates an a Line Style in the styles table..
-    DGNPLATFORM_EXPORT BentleyStatus Update(DgnStyleId styleId, Utf8CP name, LsComponentId id, LsComponentType componentType, LsComponentId rasterComponentId, uint32_t flags, double unitDefinition);
+    DGNPLATFORM_EXPORT BentleyStatus Update(DgnStyleId styleId, Utf8CP name, LsComponentId id, LsComponentType componentType, uint32_t flags, double unitDefinition);
 
     DGNPLATFORM_EXPORT LsCacheP GetLsCacheP (bool load=true);
     DGNPLATFORM_EXPORT LsCacheR ReloadMap();
