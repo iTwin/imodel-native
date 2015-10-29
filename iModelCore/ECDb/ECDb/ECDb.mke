@@ -230,7 +230,7 @@ $(o)InternalNode$(oext):									$(baseDir)ECSql/Parser/InternalNode.cpp    $(EC
 
 $(o)ECSqlStatus$(oext):	                					$(baseDir)ECSql/ECSqlStatus.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)DynamicSelectClauseECClass$(oext):						$(baseDir)ECSql/DynamicSelectClauseECClass.cpp $(ECDbAllHeaders)${MultiCompileDepends}
+$(o)DynamicSelectClauseECClass$(oext):						$(baseDir)ECSql/DynamicSelectClauseECClass.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlParser$(oext):										$(baseDir)ECSql/ECSqlParser.cpp            $(ECDbAllHeaders) ${MultiCompileDepends}
 

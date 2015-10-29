@@ -2195,6 +2195,106 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_UpdateWithStructBinding)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlTestFixture, ECSqlStatement_StructsInWhereClause)
+    {
+    SchemaItem schema("<?xml version='1.0' encoding='utf-8' ?>"
+                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                      "    <ECClass typeName='Name' isDomainClass='False' isStruct='True'>"
+                      "        <ECProperty propertyName='First' typeName='string' />"
+                      "        <ECProperty propertyName='Last' typeName='string' />"
+                      "    </ECClass>"
+                      "    <ECClass typeName='Person' isDomainClass='True'>"
+                      "        <ECStructProperty propertyName='FullName' typeName='Name' />"
+                      "    </ECClass>"
+                      "</ECSchema>");
+
+    // Create and populate a sample project
+    SetupECDb("ecsqlstatementtests.ecdb", schema);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Person (FullName.[First], FullName.[Last]) VALUES (?,?)"));
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "John", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, "Smith", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        stmt.Reset();
+        stmt.ClearBindings();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "John", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, "Myer", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT count(*) FROM ts.Person WHERE FullName=?"));
+        IECSqlStructBinder& binder = stmt.BindStruct(1);
+        binder.GetMember("First").BindText("John", IECSqlBinder::MakeCopy::No);
+        binder.GetMember("Last").BindText("Myer", IECSqlBinder::MakeCopy::No);
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+        }
+
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT count(*) FROM ts.Person WHERE FullName<>?"));
+        IECSqlStructBinder& binder = stmt.BindStruct(1);
+        binder.GetMember("First").BindText("John", IECSqlBinder::MakeCopy::No);
+        binder.GetMember("Last").BindText("Myer", IECSqlBinder::MakeCopy::No);
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0)) << stmt.GetNativeSql();
+        }
+
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT count(*) FROM ts.Person WHERE FullName IN (?,?,?)"));
+        
+        IECSqlStructBinder& binder1 = stmt.BindStruct(1);
+        binder1.GetMember("First").BindText("John", IECSqlBinder::MakeCopy::No);
+        binder1.GetMember("Last").BindText("Myer", IECSqlBinder::MakeCopy::No);
+
+        IECSqlStructBinder& binder2 = stmt.BindStruct(2);
+        binder2.GetMember("First").BindText("Rich", IECSqlBinder::MakeCopy::No);
+        binder2.GetMember("Last").BindText("Myer", IECSqlBinder::MakeCopy::No);
+
+        IECSqlStructBinder& binder3 = stmt.BindStruct(3);
+        binder3.GetMember("First").BindText("John", IECSqlBinder::MakeCopy::No);
+        binder3.GetMember("Last").BindText("Smith", IECSqlBinder::MakeCopy::No);
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0));
+        }
+
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "UPDATE ts.Person SET FullName.[Last]='Meyer' WHERE FullName=?"));
+
+        IECSqlStructBinder& binder = stmt.BindStruct(1);
+        binder.GetMember("First").BindText("John", IECSqlBinder::MakeCopy::No);
+        binder.GetMember("Last").BindText("Myer", IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        stmt.Finalize();
+
+        ECSqlStatement verifyStmt;
+        ASSERT_EQ(ECSqlStatus::Success, verifyStmt.Prepare(GetECDb(), "SELECT count(*) FROM ts.Person WHERE FullName.[Last]=?"));
+        ASSERT_EQ(ECSqlStatus::Success, verifyStmt.BindText(1, "Myer", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(BE_SQLITE_ROW, verifyStmt.Step());
+        ASSERT_EQ(0, verifyStmt.GetValueInt(0));
+        verifyStmt.Reset();
+        verifyStmt.ClearBindings();
+
+        ASSERT_EQ(ECSqlStatus::Success, verifyStmt.BindText(1, "Meyer", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(BE_SQLITE_ROW, verifyStmt.Step());
+        ASSERT_EQ(1, verifyStmt.GetValueInt(0));
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  06/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlTestFixture, ECSqlStatement_ParameterInSelectClause)
@@ -3676,9 +3776,9 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingStructArrayUpdateWi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     09/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaImportTestFixture, AmbiguousQuery)
+TEST_F(ECSqlTestFixture, AmbiguousQuery)
     {
-    TestItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem schemaXml("<?xml version='1.0' encoding='utf-8'?>"
                       "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                       "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                       "    <ECClass typeName='Struct' isDomainClass='True' isStruct='True'>"
@@ -3689,14 +3789,11 @@ TEST_F(SchemaImportTestFixture, AmbiguousQuery)
                       "        <ECProperty propertyName='P1' typeName='string'/>"
                       "         <ECStructProperty propertyName = 'TestClass' typeName = 'Struct'/>"
                       "    </ECClass>"
-                      "</ECSchema>", true, "");
+                      "</ECSchema>");
 
-    ECDb db;
-    bool asserted = false;
-    AssertSchemaImport(db, asserted, testItem, "AmbiguousQuery.ecdb");
-    ASSERT_FALSE(asserted);
+    SetupECDb("AmbiguousQuery.ecdb", schemaXml);
 
-    ECN::ECSchemaCP schema = db.Schemas().GetECSchema("TestSchema");
+    ECN::ECSchemaCP schema = GetECDb().Schemas().GetECSchema("TestSchema");
 
     ECClassCP TestClass = schema->GetClassCP("TestClass");
     ASSERT_TRUE(TestClass != nullptr);
@@ -3713,7 +3810,7 @@ TEST_F(SchemaImportTestFixture, AmbiguousQuery)
     Instance2->SetValue("TestClass.P2", ECValue(345));
 
     //Inserting values of TestClass
-    ECInstanceInserter inserter(db, *TestClass);
+    ECInstanceInserter inserter(GetECDb(), *TestClass);
     ASSERT_TRUE(inserter.IsValid());
 
     auto stat = inserter.Insert(*Instance1, true);
@@ -3723,7 +3820,7 @@ TEST_F(SchemaImportTestFixture, AmbiguousQuery)
     ASSERT_TRUE(stat == SUCCESS);
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT P1 FROM ts.TestClass"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P1 FROM ts.TestClass"));
     Utf8String ExpectedValueOfP1 = "Harvey-Mike-";
     Utf8String ActualValueOfP1;
 
@@ -3736,7 +3833,7 @@ TEST_F(SchemaImportTestFixture, AmbiguousQuery)
     ASSERT_EQ(ExpectedValueOfP1, ActualValueOfP1);
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT TestClass.TestClass.P1 FROM ts.TestClass"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT TestClass.TestClass.P1 FROM ts.TestClass"));
     Utf8String ExpectedValueOfStructP1 = "val1-val2-";
     Utf8String ActualValueOfStructP1;
 
@@ -3749,7 +3846,7 @@ TEST_F(SchemaImportTestFixture, AmbiguousQuery)
     ASSERT_EQ(ExpectedValueOfStructP1, ActualValueOfStructP1);
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT TestClass.P2 FROM ts.TestClass"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT TestClass.P2 FROM ts.TestClass"));
     int ActualValueOfStructP2 = 468;
     int ExpectedValueOfStructP2 = 0;
 
@@ -3795,27 +3892,24 @@ TEST_F (ECSqlTestFixture, BindNegECInstanceId)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaImportTestFixture, InstanceInsertionInArray)
+TEST_F(ECSqlTestFixture, InstanceInsertionInArray)
     {
-    TestItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem schema("<?xml version='1.0' encoding='utf-8'?>"
                       "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                       "    <ECClass typeName='TestClass' isDomainClass='True'>"
                       "        <ECProperty propertyName='P1' typeName='string'/>"
                       "        <ECArrayProperty propertyName = 'P2_Array' typeName = 'string' minOccurs='1' maxOccurs='2'/>"
                       "        <ECArrayProperty propertyName = 'P3_Array' typeName = 'int' minOccurs='1' maxOccurs='2'/>"
                       "    </ECClass>"
-                      "</ECSchema>", true, "");
+                      "</ECSchema>");
 
-    ECDb db;
-    bool asserted = false;
-    AssertSchemaImport(db, asserted, testItem, "InstanceInsertionInArray.ecdb");
-    ASSERT_FALSE(asserted);
+    SetupECDb("InstanceInsertionInArray.ecdb", schema);
 
     std::vector<Utf8String> expectedStringArray = {"val1", "val2", "val3"};
     std::vector<int> expectedIntArray = {200, 400, 600};
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.TestClass (P1, P2_Array, P3_Array) VALUES(?, ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.TestClass (P1, P2_Array, P3_Array) VALUES(?, ?, ?)"));
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Foo", IECSqlBinder::MakeCopy::No));
 
@@ -3835,7 +3929,7 @@ TEST_F(SchemaImportTestFixture, InstanceInsertionInArray)
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT P1, P2_Array, P3_Array FROM ts.TestClass"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P1, P2_Array, P3_Array FROM ts.TestClass"));
     while (stmt.Step() == DbResult::BE_SQLITE_ROW)
         {
         ASSERT_STREQ("Foo", stmt.GetValueText(0));

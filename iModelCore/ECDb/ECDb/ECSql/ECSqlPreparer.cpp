@@ -173,20 +173,20 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryValueExp (NativeSqlBuilder::List& nat
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BinaryBooleanExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BinaryBooleanExp const* exp)
     {
-    const BooleanSqlOperator op = exp->GetOperator ();
-    ComputedExp const* lhsOperand = exp->GetLeftOperand ();
+    const BooleanSqlOperator op = exp->GetOperator();
+    ComputedExp const* lhsOperand = exp->GetLeftOperand();
     ComputedExp const* rhsOperand = exp->GetRightOperand();
 
-    const bool lhsIsNullExp = IsNullExp (*lhsOperand);
-    const bool rhsIsNullExp = IsNullExp (*rhsOperand);
+    const bool lhsIsNullExp = IsNullExp(*lhsOperand);
+    const bool rhsIsNullExp = IsNullExp(*rhsOperand);
 
     NativeSqlBuilder::List lhsNativeSqlSnippets;
     NativeSqlBuilder::List rhsNativeSqlSnippets;
     if (!lhsIsNullExp)
         {
-        auto status = PrepareComputedExp (lhsNativeSqlSnippets, ctx, lhsOperand);
+        auto status = PrepareComputedExp(lhsNativeSqlSnippets, ctx, lhsOperand);
         if (!status.IsSuccess())
             return status;
 
@@ -200,7 +200,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp (NativeSqlBuilder::List& n
 
     if (!rhsIsNullExp)
         {
-        auto status = PrepareComputedExp (rhsNativeSqlSnippets, ctx, rhsOperand);
+        auto status = PrepareComputedExp(rhsNativeSqlSnippets, ctx, rhsOperand);
         if (!status.IsSuccess())
             return status;
 
@@ -214,39 +214,42 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp (NativeSqlBuilder::List& n
     if (lhsIsNullExp)
         {
         //if both operands are NULL, pass 1 as sql snippet count
-        size_t targetSqliteSnippetCount = rhsIsNullExp ? 1 : rhsNativeSqlSnippets.size ();
-        PrepareNullLiteralValueExp (lhsNativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (lhsOperand), targetSqliteSnippetCount);
+        size_t targetSqliteSnippetCount = rhsIsNullExp ? 1 : rhsNativeSqlSnippets.size();
+        PrepareNullLiteralValueExp(lhsNativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (lhsOperand), targetSqliteSnippetCount);
         }
 
     if (rhsIsNullExp)
-        PrepareNullLiteralValueExp (rhsNativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (rhsOperand), lhsNativeSqlSnippets.size ());
+        PrepareNullLiteralValueExp(rhsNativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (rhsOperand), lhsNativeSqlSnippets.size());
 
-    const auto nativeSqlSnippetCount = lhsNativeSqlSnippets.size ();
+    const auto nativeSqlSnippetCount = lhsNativeSqlSnippets.size();
     if (nativeSqlSnippetCount != rhsNativeSqlSnippets.size())
         {
         BeAssert(false && "Expression could not be translated into SQLite SQL. Operands yielded different number of SQLite SQL expressions.");
         return ECSqlStatus::Error;
         }
 
-    NativeSqlBuilder sqlBuilder;
-    if (exp->HasParentheses ())
-        sqlBuilder.AppendParenLeft ();
+    const BooleanSqlOperator logicalCompoundOp = DetermineCompoundLogicalOpForCompoundExpressions(op);
+    const bool wrapInParens = exp->HasParentheses() || nativeSqlSnippetCount > 1;
 
-    auto isFirstSnippet = true;
+    NativeSqlBuilder sqlBuilder;
+    if (wrapInParens)
+        sqlBuilder.AppendParenLeft();
+
+    bool isFirstSnippet = true;
     for (size_t i = 0; i < nativeSqlSnippetCount; i++)
         {
         if (!isFirstSnippet)
-            sqlBuilder.Append (" AND ");
+            sqlBuilder.AppendSpace().Append(logicalCompoundOp, true);
 
-        sqlBuilder.Append (lhsNativeSqlSnippets[i], true).Append (op).Append (rhsNativeSqlSnippets[i], false);
+        sqlBuilder.Append(lhsNativeSqlSnippets[i], true).Append(op, true).Append(rhsNativeSqlSnippets[i], false);
 
         isFirstSnippet = false;
         }
 
-    if (exp->HasParentheses())
+    if (wrapInParens)
         sqlBuilder.AppendParenRight();
 
-    nativeSqlSnippets.push_back (move (sqlBuilder));
+    nativeSqlSnippets.push_back(move(sqlBuilder));
     return ECSqlStatus::Success;
     }
 
@@ -757,9 +760,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp (NativeSqlBuilder::Lis
         nativeSqlSnippet.AppendParenLeft();
 
     auto const& classMap = classNameExp->GetInfo ().GetMap ();
-    auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ColumnKind::ECClassId);
-
-    if (classIdColumn != nullptr)
+    ECDbSqlColumn const* classIdColumn = nullptr;
+    if (classMap.GetTable().TryGetECClassIdColumn(classIdColumn))
         {
         auto classRefId = classRefExp->GetId ().c_str ();
         auto classIdColumnName = classIdColumn->GetName ().c_str();
@@ -772,7 +774,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp (NativeSqlBuilder::Lis
             //for select statements we need to use the view's ecclass id column to avoid
             //that a constant class id number shows up in order by etc
             auto classRefId = classRefExp->GetId ().c_str ();
-            nativeSqlSnippet.Append (classRefId, ViewGenerator::ECCLASSID_COLUMNNAME);
+            nativeSqlSnippet.Append (classRefId, ECDB_COL_ECClassId);
             }
         else
             {
@@ -1923,6 +1925,31 @@ ECSqlStatus ECSqlExpPreparer::ResolveParameterMappings (ECSqlPrepareContext& con
         }
 
     return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    10/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BooleanSqlOperator ECSqlExpPreparer::DetermineCompoundLogicalOpForCompoundExpressions(BooleanSqlOperator op)
+    {
+    //for positive operators the elements of the compount exp are ANDed together. For negative ones they are ORed together
+    //Ex: ECSQL: MyPoint = MyOtherPoint -> SQL: MyPoint_x = MyOtherPoint_x AND MyPoint_y = MyOtherPoint_y
+    //    ECSQL: MyPoint <> MyOtherPoint -> SQL: MyPoint_x <> MyOtherPoint_x OR MyPoint_y <> MyOtherPoint_y
+
+    switch (op)
+        {
+            case BooleanSqlOperator::IsNot:
+            case BooleanSqlOperator::NotBetween:
+            case BooleanSqlOperator::NotEqualTo:
+            case BooleanSqlOperator::NotIn:
+            case BooleanSqlOperator::NotLike:
+            case BooleanSqlOperator::NotMatch:
+                return BooleanSqlOperator::Or;
+
+            default:
+                return BooleanSqlOperator::And;
+        }
     }
 
 //-----------------------------------------------------------------------------------------

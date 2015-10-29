@@ -47,19 +47,45 @@ ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, WCharCP schemaECXmlFileNam
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle     10/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& schema, ECDb::OpenParams openParams) const
+    {
+    BeFileName ecdbPath;
+
+    {
+    ECDb ecdb;
+    if (BE_SQLITE_OK != ECDbTestUtility::CreateECDb(ecdb, nullptr, WString(ecdbFileName, BentleyCharEncoding::Utf8).c_str()))
+        return GetECDb();
+
+    ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(ecdb.GetSchemaLocater());
+
+    for (Utf8StringCR schemaXml : schema.m_schemaXmlList)
+        {
+        if (SUCCESS != ECDbTestUtility::ReadECSchemaFromString(context, schemaXml.c_str()))
+            return GetECDb();
+        }
+
+    if (SUCCESS != ecdb.Schemas().ImportECSchemas(context->GetCache()))
+        return GetECDb();
+
+    ecdbPath.AssignUtf8(ecdb.GetDbFileName());
+    }
+
+    EXPECT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(ecdbPath, openParams));
+    return GetECDb();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                     Carole.MacDonald     09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 DbResult ECDbTestFixture::CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount)
     {
-    Initialize();
-
-    BeFileName ecdbPath;
-    {
-
     bpair<WString, int> seedFileKey(schemaECXmlFileName.c_str(), perClassRowCount);
 
-    Utf8String seedFilePath;
+    BeFileName seedFilePath;
     auto seedIter = s_seedECDbs.find(seedFileKey);
     if (s_seedECDbs.end() == seedIter)
         {
@@ -68,21 +94,44 @@ DbResult ECDbTestFixture::CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName, BeFileName
         seedFileName.ReplaceAll(".", "_");
         seedFileName.append(".ecdb");
 
-        ECDbTestProject testProject;
-        ECDb& ecdb = testProject.Create(seedFileName.c_str(), schemaECXmlFileName.c_str(), perClassRowCount);
-        seedFilePath = ecdb.GetDbFileName();
-        s_seedECDbs[seedFileKey] = seedFilePath;
+        CreateSeedECDb(seedFilePath, seedFileName.c_str(), schemaECXmlFileName, perClassRowCount);
+        s_seedECDbs[seedFileKey] = seedFilePath.GetNameUtf8();
         }
     else
-        seedFilePath = seedIter->second;
+        seedFilePath.AppendUtf8(seedIter->second.c_str());
 
-    BeTest::GetHost().GetOutputRoot(ecdbPath);
-    ecdbPath.AppendToPath(WString(ecdbFileName, BentleyCharEncoding::Utf8).c_str());
-    BeFileName::CreateNewDirectory(BeFileName::GetDirectoryName(ecdbPath).c_str());
-    BeFileName::BeCopyFile(BeFileName(seedFilePath.c_str()), ecdbPath);
+    return CloneECDb(ecdb, ecdbFileName, seedFilePath, openParams);
     }
 
-    return ecdb.OpenBeSQLiteDb(ecdbPath, openParams);
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle    10/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BentleyStatus ECDbTestFixture::CreateSeedECDb(BeFileNameR seedFilePath, Utf8CP seedFileName, BeFileNameCR schemaECXmlFileName, int perClassRowCount)
+    {
+    Initialize();
+
+    ECDbTestProject testProject;
+    ECDb& ecdb = testProject.Create(seedFileName, schemaECXmlFileName.c_str(), perClassRowCount);
+
+    seedFilePath.AppendUtf8(ecdb.GetDbFileName());
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle    10/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+DbResult ECDbTestFixture::CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams openParams)
+    {
+    Initialize();
+
+    BeFileName clonePath;
+    BeTest::GetHost().GetOutputRoot(clonePath);
+    clonePath.AppendToPath(BeFileName(cloneFileName));
+    BeFileName::CreateNewDirectory(BeFileName::GetDirectoryName(clonePath).c_str());
+    BeFileName::BeCopyFile(seedFilePath, clonePath);
+    return clone.OpenBeSQLiteDb(clonePath, openParams);
     }
 
 /*---------------------------------------------------------------------------------**//**

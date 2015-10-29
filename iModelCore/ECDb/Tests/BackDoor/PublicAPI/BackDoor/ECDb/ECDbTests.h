@@ -101,7 +101,7 @@ struct ECDbTestUtility
         static ECN::ECObjectsStatus CopyStruct(ECN::IECInstanceR target, ECN::IECInstanceCR structValue, Utf8CP propertyName);
 
     public:
-        static Utf8String BuildECDbPath(Utf8CP ecdbFileName);
+        static BeFileName BuildECDbPath(Utf8CP ecdbFileName);
 
         static DbResult CreateECDb(ECDbR ecdb, BeFileNameP ecdbFullPath, WCharCP ecdbFileName);
         static ECN::ECSchemaPtr ReadECSchemaFromDisk(WCharCP ecSchemaFileName, WCharCP ecSchemaSearchPath = nullptr);

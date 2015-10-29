@@ -24,7 +24,7 @@ TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
     ECInstanceId a2;
     ECInstanceId rel;
     {
-    TestItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
                       "<ECSchema schemaName='test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                       "    <ECClass typeName='A' isDomainClass='True'>"
                       "        <ECProperty propertyName='P1' typeName='int' />"
