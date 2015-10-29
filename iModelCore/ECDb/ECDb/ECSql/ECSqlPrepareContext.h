@@ -284,7 +284,7 @@ public:
             JoinTableInfo(){}
         public:
             ~JoinTableInfo() {}
-            static Ptr TrySetupJoinTableContextIfAny(ECSqlPrepareContext& ctx, ECSqlParseTreeCR const& exp, Utf8CP orignalECSQL);
+            static Ptr TrySetupJoinTableContextIfAny(ECSqlPrepareContext& ctx, ECSqlParseTreeCR exp, Utf8CP orignalECSQL);
             Utf8CP GetECSQlStatement() const {return m_statement.c_str();}
             Utf8CP GetParentECSQlStatement() const {return m_parentStatement.c_str();}
             Utf8CP GetOrignalECSQlStatement() const {return m_orginalStatement.c_str();}
