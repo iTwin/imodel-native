@@ -29,6 +29,7 @@ struct HierarchyManager : public ECDbDeleteHandler
     private:
         ECDbAdapterR            m_dbAdapter;
         ECSqlStatementCache*    m_statementCache;
+        ObjectInfoManager&      m_objectInfoManager;
         ChangeInfoManager&      m_changeInfoManager;
 
         std::vector<IDeleteHandler*> m_deleteHandlers;
@@ -45,6 +46,7 @@ struct HierarchyManager : public ECDbDeleteHandler
             (
             ECDbAdapterR ecdbAdapter,
             ECSqlStatementCache& statementCache,
+            ObjectInfoManager& objectInfoManager,
             ChangeInfoManager& changeInfoManager,
             std::vector<IDeleteHandler*> deleteHandlers
             );

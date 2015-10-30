@@ -25,11 +25,13 @@ HierarchyManager::HierarchyManager
 (
 ECDbAdapterR ecdbAdapter,
 ECSqlStatementCache& statementCache,
+ObjectInfoManager& objectInfoManager,
 ChangeInfoManager& changeInfoManager,
 std::vector<IDeleteHandler*> deleteHandlers
 ) :
 m_dbAdapter(ecdbAdapter),
 m_statementCache(&statementCache),
+m_objectInfoManager(objectInfoManager),
 m_changeInfoManager(changeInfoManager),
 m_deleteHandlers(deleteHandlers)
     {}
@@ -130,12 +132,14 @@ ECRelationshipClassCP relationshipClass
             continue;
             }
 
-        BeAssert(IChangeManager::ChangeStatus::NoChange == changeStatus && "<Warning> Local change will be removed"); // TODO: resolve if needed
-
         if (SUCCESS != DeleteRelationship(parent, child, relationshipClass))
             {
             return ERROR;
             }
+
+        BeAssert((IChangeManager::ChangeStatus::NoChange == changeStatus || 
+                  !m_objectInfoManager.FindCachedInstance(child).IsEmpty()) && "<Warning> Local change will be removed");
+
         obsoleteInstances.push_back(child);
         }
 
