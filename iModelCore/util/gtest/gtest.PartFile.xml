@@ -4,7 +4,7 @@
 
     <!-- Use part TestRunner instead. -->
     <Part Name="TestRunnerBuild" BentleyBuildMakeFile="BentleyTest/TestRunner/testrunner.mke" BMakeOptions="" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86">
-        <SubPart PartName="dbghelp"           PartFile="${SrcBsiCommon}CvsPartFiles\bin"      Repository="bin-dbghelp" />
+        <SubPart PartName="dbghelp"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"      Repository="bin-dbghelp" />
         <SubPart PartName="Base"              PartFile="Bentley"                              Repository="Bentley" />
         <SubPart PartName="BentleyDll"        PartFile="Bentley"                              Repository="Bentley" />
         <SubPart PartName="bentley_gtest"/>
@@ -30,7 +30,7 @@
     <!-- Use part TestRunnerPagalloc instead. -->
     <Part Name="TestRunnerPagallocBuild" BentleyBuildMakeFile="BentleyTest/TestRunner/testrunner.mke" BMakeOptions="+dTOOLSUBS_AVAILABLE_FROM_GTEST" 
                                          ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86" >
-        <SubPart PartName="dbghelp"           PartFile="${SrcBsiCommon}CvsPartFiles\bin"      Repository="bin-dbghelp" />
+        <SubPart PartName="dbghelp"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"      Repository="bin-dbghelp" />
         <SubPart PartName="Base"              PartFile="Bentley"                              Repository="Bentley" />
         <SubPart PartName="BentleyDll"        PartFile="Bentley"                              Repository="Bentley" />
         <SubPart PartName="bentley_gtest"/>
