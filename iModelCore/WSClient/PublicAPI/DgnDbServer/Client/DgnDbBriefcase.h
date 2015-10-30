@@ -18,23 +18,20 @@ struct DgnDbBriefcase
 {
 //__PUBLISH_SECTION_END__
 private:
-    uint32_t m_briefcaseId;
+    BeSQLite::BeBriefcaseId m_briefcaseId;
     Utf8String m_lastRevisionId;
-    DgnDbRepositoryConnectionPtr m_remoteRepository;
+    DgnDbRepositoryConnectionPtr m_repositoryConnection;
     Dgn::DgnDbPtr m_db;
-
-    friend struct DgnDbClient;
-
-    DgnDbBriefcase(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr remoteRepository, uint32_t m_briefcaseId);
+    DgnDbBriefcase(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
 //__PUBLISH_SECTION_START__
 public:
-    static DgnDbBriefcasePtr Create(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection, uint32_t m_briefcaseId);
-    DgnDbServerTaskPtr Sync(WebServices::HttpRequest::ProgressCallbackCR callback = nullptr, WebServices::ICancellationTokenPtr cancellationToken = nullptr);
-    DgnDbServerTaskPtr SyncAndPush(WebServices::HttpRequest::ProgressCallbackCR callback = nullptr, WebServices::ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT static DgnDbBriefcasePtr Create(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
+    DGNDBSERVERCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<DgnDbResult> Sync(MobileDgn::Utils::HttpRequest::ProgressCallbackCR callback = nullptr, MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT MobileDgn::Utils::AsyncTaskPtr<DgnDbResult> SyncAndPush(MobileDgn::Utils::HttpRequest::ProgressCallbackCR callback = nullptr, MobileDgn::Utils::ICancellationTokenPtr cancellationToken = nullptr);
 
-    Dgn::DgnDbR GetDgnDb();
-    uint32_t GetBriefcaseId();
-    Utf8StringCR GetLastRevisionId();
-    DgnDbRepositoryConnectionPtr GetRemoteRepository();
+    DGNDBSERVERCLIENT_EXPORT Dgn::DgnDbR GetDgnDb();
+    DGNDBSERVERCLIENT_EXPORT const BeSQLite::BeBriefcaseId& GetBriefcaseId();
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetLastRevisionId();
+    DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionPtr GetRepositoryConnection();
 };
 END_BENTLEY_DGNDBSERVER_NAMESPACE

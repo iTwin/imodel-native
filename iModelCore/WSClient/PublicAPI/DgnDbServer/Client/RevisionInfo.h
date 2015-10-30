@@ -28,19 +28,20 @@ private:
     DateTime    m_pushDate;
 //__PUBLISH_SECTION_START__
 public:
-    RevisionInfo(FileInfoCR fileInfo, Utf8StringCR description, uint32_t index, Utf8StringCR revisionId, Utf8StringCR parentId, Utf8StringCR mergedFromId,
+    RevisionInfo();
+    DGNDBSERVERCLIENT_EXPORT RevisionInfo(FileInfoCR fileInfo, Utf8StringCR description, uint32_t index, Utf8StringCR revisionId, Utf8StringCR parentId, Utf8StringCR mergedFromId,
                  Utf8StringCR masterFileId, uint32_t briefcaseId, Utf8StringCR userCreated, DateTimeCR pushDate);
 
-    FileInfoCR   GetFileInfo();
-    Utf8StringCR GetDescription();
-    uint32_t     GetIndex();
-    Utf8StringCR GetRevisionId();
-    Utf8StringCR GetParentId();
-    Utf8StringCR GetMergedFromId();
-    Utf8StringCR GetMasterFileId();
-    uint32_t     GetBriefcaseId();
-    Utf8StringCR GetUserCreated();
-    DateTimeCR   GetPushDate();
+    DGNDBSERVERCLIENT_EXPORT FileInfoCR   GetFileInfo() const;
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetDescription() const;
+    DGNDBSERVERCLIENT_EXPORT uint32_t     GetIndex() const;
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetRevisionId() const;
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetParentId() const;
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetMergedFromId() const;
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetMasterFileId() const;
+    DGNDBSERVERCLIENT_EXPORT uint32_t     GetBriefcaseId() const;
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetUserCreated() const;
+    DGNDBSERVERCLIENT_EXPORT DateTimeCR   GetPushDate() const;
 };
 
 typedef RevisionInfo& RevisionInfoR;

@@ -20,18 +20,14 @@ private:
     uint64_t   m_fileSize;
 //__PUBLISH_SECTION_START__
 public:
-    FileInfo(Utf8StringCR localPath);
-    FileInfo(Utf8StringCR fileName, Utf8StringCR url, uint64_t fileSize);
+    DGNDBSERVERCLIENT_EXPORT FileInfo();
+    DGNDBSERVERCLIENT_EXPORT FileInfo(Utf8StringCR fileName, Utf8StringCR url, uint64_t fileSize);
+    DGNDBSERVERCLIENT_EXPORT FileInfo(Utf8StringCR localPath, Utf8StringCR fileName, Utf8StringCR url, uint64_t fileSize);
 
-    void SetLocalPath(Utf8StringCR localPath);
-    void SetFileName(Utf8StringCR fileName);
-    void SetURL(Utf8StringCR url);
-    void SetFileSize(uint64_t fileSize);
-
-    Utf8StringCR GetLocalPath();
-    Utf8StringCR GetFileName();
-    Utf8StringCR GetURL();
-    uint64_t     GetFileSize();
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetLocalPath() const;
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetFileName() const;
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetURL() const;
+    DGNDBSERVERCLIENT_EXPORT uint64_t     GetFileSize() const;
 };
 
 typedef FileInfo& FileInfoR;
