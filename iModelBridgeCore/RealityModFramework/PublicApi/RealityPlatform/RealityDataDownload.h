@@ -12,22 +12,33 @@
 #include "RealityPlatformAPI.h"
 #include <Bentley/BeFile.h>
 
-// 
-// index --> Url index set at the create
-// index == -1 --> General error, pClient will be NULL.
-// index == -2 --> Retry the command.
-// ErrorCode --> Curl error code.
-// If RealityDataDownload_ProgressCallBack returns # 0 --> cancel the transfer
+//! Callback function to follow the download progression.
+//! @param[out] index       Url index set at the creation, (-1)General error, (-2)Retry the command. 
+//! @param[out] pClient     Pointer on the structure RealityDataDownload::FileTransfer.
+//! @param[out] ByteCurrent Number of byte currently downloaded.
+//! @param[out] ByteTotal   When available, number of total bytes to download.
+//! @return If RealityDataDownload_ProgressCallBack returns 0   The download continue.
+//! @return If RealityDataDownload_ProgressCallBack returns # 0 The download is canceled for this file.
 typedef int(__cdecl *RealityDataDownload_ProgressCallBack)(int index, void *pClient, size_t ByteCurrent, size_t ByteTotal);
+
+// ErrorCode --> Curl error code.
+//! Callback function to follow the download progression.
+//! @param[out] index       Url index set at the creation
+//! @param[out] pClient     Pointer on the structure RealityDataDownload::FileTransfer.
+//! @param[out] ErrorCode   Curl error code:(0)Success (xx)Curl (-1)General error, (-2)Retry the current download. 
+//! @param[out] pMsg        Curl English message.
 typedef void(__cdecl *RealityDataDownload_StatusCallBack) (int index, void *pClient, int ErrorCode, const char* pMsg);
 
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 //=======================================================================================
-//! RealityDataDownload
+//! RealityDataDownload is an utility class to download data from the links included
+//! in the package.
+//! 
 //! @bsiclass
 //=======================================================================================
+
 struct RealityDataDownload : public RefCountedBase
 {
 public:
@@ -37,7 +48,7 @@ public:
         WString  filename;
         size_t   index;
         bool     fromCache;         // as input: skip the download if the file already exist
-                                    // as output: specify if the file was dowloaded or not.
+                                    // as output: specify if the file was downloaded or not.
 
 
         // internal used only

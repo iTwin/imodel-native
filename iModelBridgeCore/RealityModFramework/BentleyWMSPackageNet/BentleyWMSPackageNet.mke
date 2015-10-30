@@ -10,13 +10,12 @@
 #
 #--------------------------------------------------------------------------------------
 
-policyFile = $(_MakeFilePath)../mki/AssertRealityModFrameworkPolicy.mki
-
 appName    = BentleyWMSPackageNet
 sAppName   = BentleyWMSPackageNet
 baseDir	= $(_MakeFilePath)
 
 %include mdl.mki
+%include $(_MakeFilePath)../mki/RealityModFrameworkPolicy.mki
 
 PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/BentleyWMSPackageNet/
 
@@ -79,8 +78,6 @@ DLM_NO_DEF              = 1
 DLM_NO_IMPLIB           = 1
 DLM_NO_DLS              = 1
 DLM_NOMSBUILTINS        = 1
-
-%include $(sharedmki)CommonCompileLinkPolicy.mki
 
 %include $(SharedMki)stdversion.mki
 ASSEMBLY_FILE_VERSION   = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
