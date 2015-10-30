@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/ECSqlCrudTestFixture.h $
+|     $Source: Tests/Published/ECSqlTestFrameworkFixture.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include "ECSqlCrudAsserter.h"
+#include "ECSqlAsserter.h"
 #include "ECDbPublishedTests.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE

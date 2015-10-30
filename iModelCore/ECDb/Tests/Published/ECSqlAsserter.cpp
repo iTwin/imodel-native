@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/ECSqlStatementCrudAsserter.cpp $
+|     $Source: Tests/Published/ECSqlAsserter.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECSqlStatementCrudAsserter.h"
+#include "ECSqlAsserter.h"
 
 using namespace std;
 USING_NAMESPACE_BENTLEY_EC

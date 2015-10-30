@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include "ECSqlStatementCrudTestDatasetHelper.h"
+#include "ECSqlTestFrameworkHelper.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 

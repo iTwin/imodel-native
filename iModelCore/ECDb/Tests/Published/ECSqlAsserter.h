@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/ECSqlStatementCrudAsserter.h $
+|     $Source: Tests/Published/ECSqlAsserter.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |

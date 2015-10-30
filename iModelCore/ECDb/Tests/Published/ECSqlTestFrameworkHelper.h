@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/ECSqlStatementCrudTestDatasetHelper.h $
+|     $Source: Tests/Published/ECSqlTestFrameworkHelper.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -14,12 +14,12 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //=======================================================================================    
 // @bsiclass                                           Krischan.Eberle            07/13
 //=======================================================================================    
-struct ECSqlStatementCrudTestDatasetHelper
+struct ECSqlTestFrameworkHelper
     {
 private:
     //static class
-    ECSqlStatementCrudTestDatasetHelper ();
-    ~ECSqlStatementCrudTestDatasetHelper ();
+    ECSqlTestFrameworkHelper ();
+    ~ECSqlTestFrameworkHelper ();
 
 public:
     static ECSqlTestItem& AddSelect (ECSqlTestDataset& dataset, Utf8CP ecsql, int expectedResultColumnCount, int expectedResultRowCount = -1);

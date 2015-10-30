@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/ECSqlCrudTestFixture.cpp $
+|     $Source: Tests/Published/ECSqlTestFrameworkFixture.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
