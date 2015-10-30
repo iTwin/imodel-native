@@ -185,7 +185,7 @@ TEST_F(ECSqlStatementTestFixture, CallUnregisteredSqlFunction)
 TEST_F(ECSqlStatementTestFixture, NumericSqlFunction)
     {
     const int perClassRowCount = 3;
-    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
 
     //insert one more test row which has a NULL column
         {
