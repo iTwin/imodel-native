@@ -245,7 +245,7 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     Ptr ptr = Ptr(new JoinTableInfo());
     auto const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
     if (!classMap.IsJoinedTable())
-        return false;
+        return nullptr;
 
     NativeSqlBuilder parentOfJoinedTableECSQL;
     NativeSqlBuilder joinedTableECSQL;
@@ -350,7 +350,7 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     Ptr ptr = Ptr(new JoinTableInfo());
     auto const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
     if (!classMap.IsJoinedTable())
-        return false;
+        return nullptr;
 
     NativeSqlBuilder parentOfJoinedTableECSQL;
     NativeSqlBuilder joinedTableECSQL;
@@ -461,7 +461,7 @@ NativeSqlBuilder ECSqlPrepareContext::JoinTableInfo::BuildAssignmentExpression(N
     return std::move(out);
     }
 //static 
-ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TrySetupJoinTableContextIfAny(ECSqlPrepareContext& ctx, ECSqlParseTreeCR const& exp, Utf8CP orignalECSQL)
+ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TrySetupJoinTableContextIfAny(ECSqlPrepareContext& ctx, ECSqlParseTreeCR exp, Utf8CP orignalECSQL)
     {
     Ptr ptr;
     if (exp.GetType() == Exp::Type::Insert)
@@ -501,7 +501,7 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
         return std::move(ptr);
         }
 
-    return false;
+    return nullptr;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

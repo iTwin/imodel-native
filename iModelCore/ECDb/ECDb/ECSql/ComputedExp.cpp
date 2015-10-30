@@ -229,7 +229,7 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes(ECSqlParseContext& ct
         rhsTypeKind == ECSqlTypeInfo::Kind::StructArray || rhsIsStructWithStructArray)
         {
         //structs and arrays not supported in where expressions for now
-        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch in expression '%s'. Operator not supported with struct arrays or structs that contain struct array´s.", ToECSql().c_str());
+        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch in expression '%s'. Operator not supported with struct arrays or structs that contain struct arrays.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 

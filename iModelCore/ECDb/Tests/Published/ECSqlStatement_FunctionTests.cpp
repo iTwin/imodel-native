@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECSqlTestFixture.h"
+#include "ECSqlStatementTestFixture.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
@@ -24,10 +24,9 @@ struct ExpectedResult
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlTestFixture, ECSqlStatement_BuiltinFunctions)
+TEST_F(ECSqlStatementTestFixture, BuiltinFunctions)
     {
-    // Create and populate a sample project
-    auto& ecdb = SetUp("ecsqlbuiltinfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly), 5);
+    ECDbR ecdb = SetupECDb("ecsqlbuiltinfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly), 5);
 
     std::vector<std::pair<Utf8CP, ExpectedResult>> testDataset {
             {"SELECT ABS(I) FROM ecsql.P LIMIT 1", ExpectedResult (ECN::PRIMITIVETYPE_Double)},

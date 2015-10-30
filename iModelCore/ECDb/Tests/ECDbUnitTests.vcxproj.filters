@@ -16,50 +16,20 @@
     <ClCompile Include="Published\ECDb_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECSqlTestFixture.cpp">
-      <Filter>Published\ECSql</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECSqlStatement_Tests.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
     <ClCompile Include="Published\ECDbRelationshipStrength_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECSqlStatementCrud_Tests.cpp">
-      <Filter>Published\ECSql\ECSqlCrud</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECSqlStatementCrudAsserter.cpp">
-      <Filter>Published\ECSql\ECSqlCrud</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECSqlStatementCrudTestDatasetHelper.cpp">
-      <Filter>Published\ECSql\ECSqlCrud</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECSqlCrudTestFixture.cpp">
-      <Filter>Published\ECSql\ECSqlCrud</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECSqlExpectedResultImpls.cpp">
-      <Filter>Published\ECSql\ECSqlCrud</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECSqlCrudAsserter.cpp">
-      <Filter>Published\ECSql\ECSqlCrud</Filter>
+      <Filter>Published\ECSql\ECSqlTestFramework</Filter>
     </ClCompile>
     <ClCompile Include="Published\ECSqlTestDataset.cpp">
-      <Filter>Published\ECSql\ECSqlCrud</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECSqlDeleteStatementCrudTestDataset.cpp">
-      <Filter>Published\ECSql\ECSqlCrud\Datasets</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECSqlInsertStatementCrudTestDataset.cpp">
-      <Filter>Published\ECSql\ECSqlCrud\Datasets</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECSqlSelectStatementCrudTestDataset.cpp">
-      <Filter>Published\ECSql\ECSqlCrud\Datasets</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECSqlUpdateStatementCrudTestDataset.cpp">
-      <Filter>Published\ECSql\ECSqlCrud\Datasets</Filter>
+      <Filter>Published\ECSql\ECSqlTestFramework</Filter>
     </ClCompile>
     <ClCompile Include="Published\ECSqlCommonTestDataset.cpp">
-      <Filter>Published\ECSql\ECSqlCrud\Datasets</Filter>
+      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
     </ClCompile>
     <ClCompile Include="Published\ECSqlBuilder_Tests.cpp">
       <Filter>Published\ECSql</Filter>
@@ -142,9 +112,6 @@
     <ClCompile Include="Published\ECDbSchemas_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECDbSql_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECInstanceIdSequence_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -181,6 +148,36 @@
     <ClCompile Include="Performance\PerformanceECSqlVsSqliteTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
+    <ClCompile Include="Published\ECSqlStatementTestFixture.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlTestFrameworkFixture.cpp">
+      <Filter>Published\ECSql\ECSqlTestFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlTestFramework_Tests.cpp">
+      <Filter>Published\ECSql\ECSqlTestFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlAsserter.cpp">
+      <Filter>Published\ECSql\ECSqlTestFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlTestFrameworkHelper.cpp">
+      <Filter>Published\ECSql\ECSqlTestFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlDeleteTestDataset.cpp">
+      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlInsertTestDataset.cpp">
+      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlSelectTestDataset.cpp">
+      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlUpdateTestDataset.cpp">
+      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbSql_Test.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">
@@ -192,44 +189,17 @@
     <ClInclude Include="Published\ECDbPublishedTests.h">
       <Filter>Published</Filter>
     </ClInclude>
-    <ClInclude Include="Published\ECSqlTestFixture.h">
-      <Filter>Published\ECSql</Filter>
-    </ClInclude>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTests.h">
       <Filter>BackDoor</Filter>
     </ClInclude>
-    <ClInclude Include="Published\ECSqlStatementCrudAsserter.h">
-      <Filter>Published\ECSql\ECSqlCrud</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\ECSqlStatementCrudTestDatasetHelper.h">
-      <Filter>Published\ECSql\ECSqlCrud</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\ECSqlCrudTestFixture.h">
-      <Filter>Published\ECSql\ECSqlCrud</Filter>
-    </ClInclude>
     <ClInclude Include="Published\ECSqlExpectedResultImpls.h">
-      <Filter>Published\ECSql\ECSqlCrud</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\ECSqlCrudAsserter.h">
-      <Filter>Published\ECSql\ECSqlCrud</Filter>
+      <Filter>Published\ECSql\ECSqlTestFramework</Filter>
     </ClInclude>
     <ClInclude Include="Published\ECSqlTestDataset.h">
-      <Filter>Published\ECSql\ECSqlCrud</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\ECSqlDeleteStatementCrudTestDataset.h">
-      <Filter>Published\ECSql\ECSqlCrud\Datasets</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\ECSqlInsertStatementCrudTestDataset.h">
-      <Filter>Published\ECSql\ECSqlCrud\Datasets</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\ECSqlSelectStatementCrudTestDataset.h">
-      <Filter>Published\ECSql\ECSqlCrud\Datasets</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\ECSqlUpdateStatementCrudTestDataset.h">
-      <Filter>Published\ECSql\ECSqlCrud\Datasets</Filter>
+      <Filter>Published\ECSql\ECSqlTestFramework</Filter>
     </ClInclude>
     <ClInclude Include="Published\ECSqlCommonTestDataset.h">
-      <Filter>Published\ECSql\ECSqlCrud\Datasets</Filter>
+      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
     </ClInclude>
     <ClInclude Include="Performance\PerformanceBisDesignTestFixture.h">
       <Filter>Performance\BisDesign</Filter>
@@ -252,6 +222,30 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTestProject.h">
       <Filter>BackDoor</Filter>
     </ClInclude>
+    <ClInclude Include="Published\ECSqlStatementTestFixture.h">
+      <Filter>Published\ECSql</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlTestFrameworkFixture.h">
+      <Filter>Published\ECSql\ECSqlTestFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlAsserter.h">
+      <Filter>Published\ECSql\ECSqlTestFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlTestFrameworkHelper.h">
+      <Filter>Published\ECSql\ECSqlTestFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlDeleteTestDataset.h">
+      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlInsertTestDataset.h">
+      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlSelectTestDataset.h">
+      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlUpdateTestDataset.h">
+      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Intermediate Files">
@@ -266,17 +260,17 @@
     <Filter Include="Published\ECSql">
       <UniqueIdentifier>{cf8fae63-4351-4d33-98af-816e66e0d708}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Published\ECSql\ECSqlCrud">
-      <UniqueIdentifier>{cdf49771-97d3-40e0-95d9-91bc31c7c801}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Published\ECSql\ECSqlCrud\Datasets">
-      <UniqueIdentifier>{f364ac37-147d-4c5d-a6df-8f9a0270b4da}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Performance\BisDesign">
       <UniqueIdentifier>{f9eb09bd-e1ae-40d4-a895-d9bbc9798957}</UniqueIdentifier>
     </Filter>
     <Filter Include="BackDoor">
       <UniqueIdentifier>{4888a13a-3bdb-4b36-b77c-5a4d589ea3f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Published\ECSql\ECSqlTestFramework">
+      <UniqueIdentifier>{cdf49771-97d3-40e0-95d9-91bc31c7c801}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Published\ECSql\ECSqlTestFramework\Datasets">
+      <UniqueIdentifier>{f364ac37-147d-4c5d-a6df-8f9a0270b4da}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
