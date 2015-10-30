@@ -6,14 +6,22 @@
 #
 #--------------------------------------------------------------------------------------
 
-baseDir         = $(_MakeFilePath)
-PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
-SolutionPolicyMki=$(baseDir)Core.mki
-
 %include  mdl.mki
+%include $(SrcRoot)TerrainModel/privmki/TerrainModelPolicy.mki
 
-DLM_OBJECT_DEST       = $(terrainModelCoreObj)
-DLM_NAME              = TerrainModelCore
+#----------------------------------------------------------------------
+#   Macros
+#----------------------------------------------------------------------
+baseDir             = $(_MakeFilePath)
+MultiCompileDepends = $(_MakeFileSpec)
+
+CompileOptionsMki =$(baseDir)Core.mki
+%include $(CompileOptionsMki)
+
+o =% $(terrainModelCoreObj)
+always:
+    !~@mkdir $(o)
+
 ASSEMBLY_STRONGNAME   = 1
 
 DependsOnHeadersCPP =\
@@ -42,13 +50,6 @@ RIGHTSCOMPLIANT = true
     %include signrscsdefs.mki
 %endif
 %endif
-#----------------------------------------------------------------------
-#       Location for objects
-#----------------------------------------------------------------------
-o =% $(DLM_OBJECT_DEST)
-
-always:
-    !~@mkdir $(o)
 
 #----------------------------------------------------------------------
 #       Inform user of compile options
@@ -57,7 +58,6 @@ always:
         |  Compiler options: $(cDefs)$(cDefsPost) $(copt)
         |  -------- --------
 
-MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
 $(o)dtmIterators$(oext) : $(baseDir)CPPWrappers\dtmIterators.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
@@ -258,6 +258,7 @@ $(o)bcdtmDrainageUtility$(oext)   : $(baseDir)..\Drainage\bcdtmDrainageUtility.c
 #----------------------------------------------------------------------
 DLM_NAME                    = $(appName)
 DLM_DEST                    = $(o)
+DLM_OBJECT_DEST             = $(DLM_DEST)
 DLM_OBJECT_FILES            = $(MultiCompileObjectList) $(CoreFileObjectList)
 DLM_EXPORT_DEST             = $(o)
 DLM_NOINITFUNC          = 1

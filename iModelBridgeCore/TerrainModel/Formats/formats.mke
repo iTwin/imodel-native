@@ -10,15 +10,20 @@
 #
 #--------------------------------------------------------------------------------------
 
+#---------------------------------------------------------
+# Bmake must be called before mdl.mki is included
+#---------------------------------------------------------
 always:
   bmake -dCreate_Static_Libraries=1 $(_MakeFilePath)inroadstm/inroadstm.mke 
 
+%include  mdl.mki
 
 baseDir         = $(_MakeFilePath)
-PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
-SolutionPolicyMki=$(baseDir)formats.mki
+##&&AG to be cleaned up
+%include $(SrcRoot)TerrainModel/privmki/TerrainModelPolicy.mki
 
-%include  mdl.mki
+CompileOptionsMki=$(baseDir)formats.mki
+%include $(CompileOptionsMki)
 
 DLM_OBJECT_DEST       = $(terrainModelFormatsObj)
 DLM_NAME              = TerrainModelFormats

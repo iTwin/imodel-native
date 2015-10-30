@@ -2,19 +2,12 @@
 #
 #     $Source: privmki/TerrainModelPolicy.mki $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-%if defined (__DTMPolicy_mki__)
-    %return
-%endif
-
-__DTMPolicy_mki__  = 1
-
 SrcTerrainModel=$(SrcRoot)TerrainModel/
 
 %include $(SharedMki)bsioutputdirs.mki
-%include DefaultToolSet.mki
 
 #-----------------------------------------------------------
 # BuildContext
@@ -46,13 +39,6 @@ always:
 #   TerrainModel PRIVATE include directories
 #
 TerrainModelInternalApiSrc = $(SrcTerrainModel)PrivateApi/TerrainModelInternal/
-
-#----------------------------------------------------------
-# Compile and link settings
-#----------------------------------------------------------
-%include $(SharedMki)CommonCompileLinkPolicy.mki
-
-#PublicApiIncludes + -I$(PrivateApiSrc)
 
 #----------------------------------------------------------
 #   Linker options
