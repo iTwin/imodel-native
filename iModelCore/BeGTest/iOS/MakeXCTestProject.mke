@@ -40,7 +40,7 @@ unitTestsDir = $(collectionProduct)Objects/
         ~mkdir $(o)
         ~mkdir $(tmp)
         ~mkdir $(XCodeProject)
-        !~@putenv PYTHONPATH=$(PYTHONPATH)$(bsicommon_ospathsep)$(SrcBsiCommon)PublicSDK
+        !~@putenv PYTHONPATH=$(PYTHONPATH)$(bsicommon_ospathsep)$(SrcRoot)bsicommon/PublicSDK
 %endif
 
 #--------------------------------------------------------------------------------------

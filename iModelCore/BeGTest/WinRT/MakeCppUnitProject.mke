@@ -41,7 +41,7 @@ collectionTestObjectsDir = $(collectionProduct)Objects/
     always:
         ~mkdir $(o)
         ~mkdir $(tmp)
-        !~@putenv PYTHONPATH=$(PYTHONPATH)$(bsicommon_ospathsep)$(SrcBsiCommon)PublicSDK
+        !~@putenv PYTHONPATH=$(PYTHONPATH)$(bsicommon_ospathsep)$(SrcRoot)bsicommon/PublicSDK
 %endif
 
 %ifndef TEST_FRAMEWORK_SQLANG

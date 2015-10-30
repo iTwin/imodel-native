@@ -45,7 +45,7 @@ always:
 
 always:
     !~@mkdir $(o)
-    !~@putenv PYTHONPATH=$(PYTHONPATH)$(bsicommon_ospathsep)$(SrcBsiCommon)PublicSDK
+    !~@putenv PYTHONPATH=$(PYTHONPATH)$(bsicommon_ospathsep)$(SrcRoot)bsicommon/PublicSDK
 
 %ifndef TEST_FRAMEWORK_SQLANG
     TEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3
@@ -108,8 +108,8 @@ always:
 # Link files into the Delivery directory with the names and locations that BeGTestExe.cpp expects.
 # ---------------------------------------------------------------------------------------------------
 always:
-    python $(SrcBsiCommon)build/CreateSymLinks.py -f "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies/$(progNameExe)=$(o)$(progNameExe)"
-    python $(SrcBsiCommon)build/CreateSymLinks.py -m "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(collectionProduct)Assemblies/*$(shlibext)"
-    python $(SrcBsiCommon)build/CreateSymLinks.py -m "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(BuildContext)SubParts/Assemblies/*$(shlibext)"
-    python $(SrcBsiCommon)build/CreateSymLinks.py -f "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies/logging.config.xml=$(baseDir)logging.config.xml"
-    python $(SrcBsiCommon)build/CreateSymLinks.py -d "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assets=$(collectionProduct)Assets"
+    python $(SrcRoot)bsicommon/build/CreateSymLinks.py -f "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies/$(progNameExe)=$(o)$(progNameExe)"
+    python $(SrcRoot)bsicommon/build/CreateSymLinks.py -m "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(collectionProduct)Assemblies/*$(shlibext)"
+    python $(SrcRoot)bsicommon/build/CreateSymLinks.py -m "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(BuildContext)SubParts/Assemblies/*$(shlibext)"
+    python $(SrcRoot)bsicommon/build/CreateSymLinks.py -f "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies/logging.config.xml=$(baseDir)logging.config.xml"
+    python $(SrcRoot)bsicommon/build/CreateSymLinks.py -d "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assets=$(collectionProduct)Assets"

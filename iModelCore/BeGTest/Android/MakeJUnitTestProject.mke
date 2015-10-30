@@ -21,7 +21,7 @@
 
 GCC_DEFAULT_VISIBILITY=default
 %include mdl.mki
-%include $(SrcBsiCommon)sharedmki/BeTestSelectHarness.mki
+%include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
 
 %if $(TARGET_PLATFORM)!="Android"
     %error This makefile should be used only when TARGET_PLATFORM is Android
@@ -60,7 +60,7 @@ inputSoDir = $(collectionProduct)Libs/
 %else
     always:
         ~mkdir $(outputDir)
-        !~@putenv PYTHONPATH=$(PYTHONPATH)$(bsicommon_ospathsep)$(SrcBsiCommon)PublicSDK
+        !~@putenv PYTHONPATH=$(PYTHONPATH)$(bsicommon_ospathsep)$(SrcRoot)bsicommon/PublicSDK
 %endif
 
 %ifdef USE_STATIC_LIBRARIES
@@ -232,7 +232,7 @@ $(libsDir)$(BENTLEY_ANDROID_AndroidABI)/gdb.setup : $(libsDir)$(BENTLEY_ANDROID_
 # Intermediates are not needed in our delivery, and cause MAX_PATH issues with saving LKGs.
 $(BuildContext)Delivery/ANJU/$(TEST_NAME)/Project : $(outputDir)project
     @mkdir $@
-    $(SrcBsiCommon)build/CopyWithSymlinks.py "$<" "$@" --excludePattern=intermediates
+    $(SrcRoot)bsicommon/build/CopyWithSymlinks.py "$<" "$@" --excludePattern=intermediates
 
 always:
     $(_bmake) $(baseDir)BuildApk.mke -dTEST_NAME=$(TEST_NAME)
