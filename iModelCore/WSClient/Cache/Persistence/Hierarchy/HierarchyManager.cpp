@@ -31,8 +31,8 @@ std::vector<IDeleteHandler*> deleteHandlers
 ) :
 m_dbAdapter(ecdbAdapter),
 m_statementCache(&statementCache),
-m_objectInfoManager(objectInfoManager),
-m_changeInfoManager(changeInfoManager),
+m_objectInfoManager(&objectInfoManager),
+m_changeInfoManager(&changeInfoManager),
 m_deleteHandlers(deleteHandlers)
     {}
 
@@ -125,7 +125,7 @@ ECRelationshipClassCP relationshipClass
             continue;
             }
 
-        auto changeStatus = m_changeInfoManager.GetObjectChangeStatus(child);
+        auto changeStatus = m_changeInfoManager->GetObjectChangeStatus(child);
         if (IChangeManager::ChangeStatus::Created == changeStatus)
             {
             // Dont remove created objects
@@ -137,8 +137,11 @@ ECRelationshipClassCP relationshipClass
             return ERROR;
             }
 
+        // Use variable for non-debug build to pass
+        if (nullptr != m_objectInfoManager)
+            {}
         BeAssert((IChangeManager::ChangeStatus::NoChange == changeStatus || 
-                  !m_objectInfoManager.FindCachedInstance(child).IsEmpty()) && "<Warning> Local change will be removed");
+                  !m_objectInfoManager->FindCachedInstance(child).IsEmpty()) && "<Warning> Local change was removed");
 
         obsoleteInstances.push_back(child);
         }
