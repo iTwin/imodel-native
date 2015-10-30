@@ -16,9 +16,6 @@
     <ClCompile Include="Published\ECDb_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECSqlTestFixture.cpp">
-      <Filter>Published\ECSql</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECSqlStatement_Tests.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
@@ -38,9 +35,6 @@
       <Filter>Published\ECSql\ECSqlCrud</Filter>
     </ClCompile>
     <ClCompile Include="Published\ECSqlExpectedResultImpls.cpp">
-      <Filter>Published\ECSql\ECSqlCrud</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECSqlCrudAsserter.cpp">
       <Filter>Published\ECSql\ECSqlCrud</Filter>
     </ClCompile>
     <ClCompile Include="Published\ECSqlTestDataset.cpp">
@@ -181,6 +175,9 @@
     <ClCompile Include="Performance\PerformanceECSqlVsSqliteTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
+    <ClCompile Include="Published\ECSqlStatementTestFixture.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">
@@ -191,9 +188,6 @@
     </ClInclude>
     <ClInclude Include="Published\ECDbPublishedTests.h">
       <Filter>Published</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\ECSqlTestFixture.h">
-      <Filter>Published\ECSql</Filter>
     </ClInclude>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTests.h">
       <Filter>BackDoor</Filter>
@@ -208,9 +202,6 @@
       <Filter>Published\ECSql\ECSqlCrud</Filter>
     </ClInclude>
     <ClInclude Include="Published\ECSqlExpectedResultImpls.h">
-      <Filter>Published\ECSql\ECSqlCrud</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\ECSqlCrudAsserter.h">
       <Filter>Published\ECSql\ECSqlCrud</Filter>
     </ClInclude>
     <ClInclude Include="Published\ECSqlTestDataset.h">
@@ -251,6 +242,9 @@
     </ClInclude>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTestProject.h">
       <Filter>BackDoor</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlStatementTestFixture.h">
+      <Filter>Published\ECSql</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/ECSqlTestFixture.cpp $
+|     $Source: Tests/Published/ECSqlStatementTestFixture.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECSqlTestFixture.h"
+#include "ECSqlStatementTestFixture.h"
 
 using namespace std;
 USING_NAMESPACE_BENTLEY_EC

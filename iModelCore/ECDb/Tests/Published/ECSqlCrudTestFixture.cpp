@@ -12,18 +12,16 @@ using namespace std;
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-//******************** ECSqlCrudTestFixture *************************************
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                       01/14
 //+---------------+---------------+---------------+---------------+---------------+------
 struct ECSqlTestArg : NonCopyableClass
     {
     private:
-        ECSqlTestItem const& m_aDatasetItem;
-        ECSqlCrudAsserterList const& m_aAsserterList;
+        ECSqlTestItem const& m_testItem;
+        ECSqlAsserterList const& m_asserterList;
         ECDb& m_aECDb;
-        BeConditionVariable m_aConditionVariable;
+        BeConditionVariable m_conditionVariable;
 
  
     public:
@@ -32,15 +30,15 @@ struct ECSqlTestArg : NonCopyableClass
         //+---------------+---------------+---------------+---------------+---------------+------
         ECSqlTestItem const& GetDatasetItem () const
             {
-            return m_aDatasetItem;
+            return m_testItem;
             }
 
         //---------------------------------------------------------------------------------------
         // @bsimethod                                     Affan.Khan                       01/14
         //+---------------+---------------+---------------+---------------+---------------+------
-        ECSqlCrudAsserterList const& GetAsserters () const
+        ECSqlAsserterList const& GetAsserters () const
             {
-            return m_aAsserterList;
+            return m_asserterList;
             }
 
         //---------------------------------------------------------------------------------------
@@ -56,21 +54,21 @@ struct ECSqlTestArg : NonCopyableClass
         //+---------------+---------------+---------------+---------------+---------------+------
         void Wait ()
             {
-            m_aConditionVariable.WaitOnCondition (nullptr, BeConditionVariable::Infinite);
+            m_conditionVariable.WaitOnCondition (nullptr, BeConditionVariable::Infinite);
             }
 
         //---------------------------------------------------------------------------------------
         // @bsimethod                                     Affan.Khan                       01/14
         //+---------------+---------------+---------------+---------------+---------------+------
-        ECSqlTestArg (ECSqlTestItem const& aDatasetItem, ECSqlCrudAsserterList const& aAsserterList, ECDbR aECDb)
-            :m_aDatasetItem (aDatasetItem), m_aAsserterList (aAsserterList), m_aECDb (aECDb)
+        ECSqlTestArg (ECSqlTestItem const& aDatasetItem, ECSqlAsserterList const& aAsserterList, ECDbR aECDb)
+            :m_testItem (aDatasetItem), m_asserterList (aAsserterList), m_aECDb (aECDb)
             {
             }
 
         //---------------------------------------------------------------------------------------
         // @bsimethod                                     Affan.Khan                       01/14
         //+---------------+---------------+---------------+---------------+---------------+-----
-        BeConditionVariable& GetConditionVariable () { return m_aConditionVariable; }
+        BeConditionVariable& GetConditionVariable () { return m_conditionVariable; }
  
     };
 
@@ -110,7 +108,7 @@ struct ECSqlTestExecutor
         //---------------------------------------------------------------------------------------
         // @bsimethod                                     Affan.Khan                       01/14
         //+---------------+---------------+---------------+---------------+---------------+------
-        unsigned Execute (ECSqlTestItem const& aDatasetItem, ECSqlCrudAsserterList const& aAsserterList, ECDbR aECDb, bool async)
+        unsigned Execute (ECSqlTestItem const& aDatasetItem, ECSqlAsserterList const& aAsserterList, ECDbR aECDb, bool async)
             {
             std::unique_ptr<ECSqlTestArg> args = std::unique_ptr<ECSqlTestArg> (new ECSqlTestArg (aDatasetItem, aAsserterList, aECDb));
 
@@ -149,7 +147,7 @@ struct ECSqlTestExecutor
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlCrudTestFixture::RunTest (ECSqlTestDataset const& dataset, ECSqlCrudAsserterList const& asserters) const
+void ECSqlTestFrameworkFixture::RunTest (ECSqlTestDataset const& dataset, ECSqlAsserterList const& asserters) const
     {
     Savepoint savepoint (GetECDb (), "RunTest", true);
     ECSqlTestExecutor executor;
@@ -163,13 +161,13 @@ void ECSqlCrudTestFixture::RunTest (ECSqlTestDataset const& dataset, ECSqlCrudAs
     savepoint.Cancel ();
     }
 
-//******************** ECSqlSelectTestFixture *************************************
+//******************** ECSqlSelectTestFrameworkFixture *************************************
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //virtual
-void ECSqlSelectTestFixture::SetUp()
+void ECSqlSelectTestFramework::SetUp()
     {
     SetupECDb("ecsqlselecttests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), PerClassRowCount);
     }
@@ -179,21 +177,21 @@ void ECSqlSelectTestFixture::SetUp()
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //virtual
-void ECSqlSelectTestFixture::RunTest(ECSqlTestDataset const& dataset) const
+void ECSqlSelectTestFramework::RunTest(ECSqlTestDataset const& dataset) const
     {
-    ECSqlCrudAsserterList asserters;
-    asserters.push_back(unique_ptr<ECSqlCrudAsserter>(new ECSqlSelectStatementCrudAsserter(GetECDb())));
+    ECSqlAsserterList asserters;
+    asserters.push_back(unique_ptr<ECSqlAsserter>(new ECSqlSelectAsserter(GetECDb())));
 
     RunTest(dataset, asserters);
     }
 
 
-//************** ECSqlNonSelectTestFixture ********************************
+//************** ECSqlNonSelectTestFrameworkFixture ********************************
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  11/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //virtual
-void ECSqlNonSelectTestFixture::SetUp()
+void ECSqlNonSelectTestFrameworkFixture::SetUp()
     {
     SetupECDb("ecsqlnonselecttests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(ECDb::OpenMode::ReadWrite), PerClassRowCount);
     }
@@ -202,10 +200,10 @@ void ECSqlNonSelectTestFixture::SetUp()
 // @bsimethod                                     Krischan.Eberle                  11/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //virtual
-void ECSqlNonSelectTestFixture::RunTest(ECSqlTestDataset const& dataset) const
+void ECSqlNonSelectTestFrameworkFixture::RunTest(ECSqlTestDataset const& dataset) const
     {
-    ECSqlCrudAsserterList asserters;
-    asserters.push_back(unique_ptr<ECSqlCrudAsserter>(new ECSqlNonSelectStatementCrudAsserter(GetECDb())));
+    ECSqlAsserterList asserters;
+    asserters.push_back(unique_ptr<ECSqlAsserter>(new ECSqlNonSelectAsserter(GetECDb())));
 
     RunTest(dataset, asserters);
     }

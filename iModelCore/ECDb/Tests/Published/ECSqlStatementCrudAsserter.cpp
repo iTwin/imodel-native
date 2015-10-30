@@ -12,11 +12,62 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-//*************** ECSqlStatementCrudAsserter ***************************
+//*************** ECSqlAsserter ***************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                  03/14
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+NativeLogging::ILogger* ECSqlAsserter::s_logger = nullptr;
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlStatementCrudAsserter::AssertPrepare (ECSqlTestItem const& testItem, ECSqlStatement& statement, PrepareECSqlExpectedResult const& expectedResult) const
+void ECSqlAsserter::Assert(ECSqlTestItem const& testItem) const
+    {
+    _Assert(testItem);
+    LogECSqlSupport(testItem);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                  04/13
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECSqlAsserter::LogECSqlSupport(ECSqlTestItem const& testItem) const
+    {
+    if (GetLogger().isSeverityEnabled(NativeLogging::LOG_DEBUG))
+        {
+        const auto expectedResultCategory = testItem.GetExpectedResultCategory();
+        const auto expectedResultCategoryStr = ECSqlExpectedResult::CategoryToString(expectedResultCategory);
+
+        Utf8String logMessage (expectedResultCategoryStr);
+        logMessage.append(": ");
+
+        auto description = testItem.GetExpectedResultDescription();
+        if (!Utf8String::IsNullOrEmpty(description))
+            logMessage.append(description).append(" ");
+
+        logMessage.append(testItem.GetECSql().c_str());
+        GetLogger().debug(logMessage.c_str());
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                  03/14
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+NativeLogging::ILogger& ECSqlAsserter::GetLogger()
+    {
+    if (s_logger == nullptr)
+        {
+        s_logger = NativeLogging::LoggingManager::GetLogger(L"ECSqlSupport");
+        }
+
+    return *s_logger;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                  04/13
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECSqlAsserter::AssertPrepare (ECSqlTestItem const& testItem, ECSqlStatement& statement, PrepareECSqlExpectedResult const& expectedResult) const
     {
     const auto expectedToSucceed = expectedResult.IsExpectedToSucceed ();
 
@@ -51,7 +102,7 @@ void ECSqlStatementCrudAsserter::AssertPrepare (ECSqlTestItem const& testItem, E
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementCrudAsserter::PrepareStatement (ECSqlStatement& statement, Utf8CP ecsql, bool disableBeAsserts) const
+ECSqlStatus ECSqlAsserter::PrepareStatement (ECSqlStatement& statement, Utf8CP ecsql, bool disableBeAsserts) const
     {
     DisableBeAsserts d (disableBeAsserts);
 
@@ -61,7 +112,7 @@ ECSqlStatus ECSqlStatementCrudAsserter::PrepareStatement (ECSqlStatement& statem
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  08/13
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlStatementCrudAsserter::BindParameters (ECSqlStatement& statement, vector<ECSqlTestItem::ParameterValue> const& parameterValues, bool disableBeAsserts) const
+ECSqlStatus ECSqlAsserter::BindParameters (ECSqlStatement& statement, vector<ECSqlTestItem::ParameterValue> const& parameterValues, bool disableBeAsserts) const
     {
     DisableBeAsserts d (disableBeAsserts);
 
@@ -181,7 +232,7 @@ ECSqlStatus ECSqlStatementCrudAsserter::BindParameters (ECSqlStatement& statemen
 // @bsimethod                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlStatementCrudAsserter::BindDateTimeParameter (ECSqlStatement& statement, int parameterIndex, DateTimeCR dateTimeParameter)
+ECSqlStatus ECSqlAsserter::BindDateTimeParameter (ECSqlStatement& statement, int parameterIndex, DateTimeCR dateTimeParameter)
     {
     return statement.BindDateTime (parameterIndex, dateTimeParameter);
     }
@@ -191,7 +242,7 @@ ECSqlStatus ECSqlStatementCrudAsserter::BindDateTimeParameter (ECSqlStatement& s
 // @bsimethod                                     Krischan.Eberle                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlStatementCrudAsserter::BindIGeometryParameter (ECSqlStatement& statement, int parameterIndex, IGeometryCP geomParameter)
+ECSqlStatus ECSqlAsserter::BindIGeometryParameter (ECSqlStatement& statement, int parameterIndex, IGeometryCP geomParameter)
     {
     //if geom is null, return, as default is to bind null
     if (geomParameter == nullptr)
@@ -200,20 +251,11 @@ ECSqlStatus ECSqlStatementCrudAsserter::BindIGeometryParameter (ECSqlStatement& 
     return statement.BindGeometry (parameterIndex, *geomParameter);
     }
 
+//*************** ECSqlSelectAsserter ***************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8CP ECSqlStatementCrudAsserter::_GetTargetOperationName () const
-    {
-    return nullptr;
-    }
-
-
-//*************** ECSqlSelectStatementCrudAsserter ***************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  04/13
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlSelectStatementCrudAsserter::_Assert (ECSqlTestItem const& testItem) const
+void ECSqlSelectAsserter::_Assert (ECSqlTestItem const& testItem) const
     {
     PrepareECSqlExpectedResult const* expectedResultForPrepare = nullptr;
     ResultCountECSqlExpectedResult const* expectedResultForResultCount = nullptr;
@@ -239,7 +281,7 @@ void ECSqlSelectStatementCrudAsserter::_Assert (ECSqlTestItem const& testItem) c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testItem, ECSqlStatement& statement, ResultCountECSqlExpectedResult const& expectedResult) const
+void ECSqlSelectAsserter::AssertStep (ECSqlTestItem const& testItem, ECSqlStatement& statement, ResultCountECSqlExpectedResult const& expectedResult) const
     {
     const auto expectedToSucceed = expectedResult.IsExpectedToSucceed ();
     auto stat = Step (statement, !expectedToSucceed);
@@ -279,7 +321,7 @@ void ECSqlSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testItem
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlSelectStatementCrudAsserter::AssertCurrentRow (ECSqlTestItem const& testItem, ECSqlStatement const& statement) const
+void ECSqlSelectAsserter::AssertCurrentRow (ECSqlTestItem const& testItem, ECSqlStatement const& statement) const
     {
     int columnCount = statement.GetColumnCount ();
     for (int i = 0; i < columnCount; i++)
@@ -292,7 +334,7 @@ void ECSqlSelectStatementCrudAsserter::AssertCurrentRow (ECSqlTestItem const& te
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlSelectStatementCrudAsserter::AssertCurrentCell (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& ecsqlValue, ECTypeDescriptor const* parentDataType) const
+void ECSqlSelectAsserter::AssertCurrentCell (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& ecsqlValue, ECTypeDescriptor const* parentDataType) const
     {
     AssertColumnInfo (testItem, statement, ecsqlValue, parentDataType);
 
@@ -319,7 +361,7 @@ void ECSqlSelectStatementCrudAsserter::AssertCurrentCell (ECSqlTestItem const& t
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlSelectStatementCrudAsserter::AssertCurrentCell (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& value, ECTypeDescriptor const& columnDataType,
+void ECSqlSelectAsserter::AssertCurrentCell (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& value, ECTypeDescriptor const& columnDataType,
                                                    std::function<bool (ECN::ECTypeDescriptor const&)> isExpectedToSucceedDelegate) const
     {
     if (value.IsNull ())
@@ -358,7 +400,7 @@ void ECSqlSelectStatementCrudAsserter::AssertCurrentCell (ECSqlTestItem const& t
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlSelectStatementCrudAsserter::AssertArrayCell (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlArrayValue const& arrayValue, ECTypeDescriptor const& arrayType) const
+void ECSqlSelectAsserter::AssertArrayCell (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlArrayValue const& arrayValue, ECTypeDescriptor const& arrayType) const
     {
     for (IECSqlValue const* arrayElement : arrayValue)
         {
@@ -369,7 +411,7 @@ void ECSqlSelectStatementCrudAsserter::AssertArrayCell (ECSqlTestItem const& tes
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlSelectStatementCrudAsserter::AssertColumnInfo (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& value, ECTypeDescriptor const* parentDataType) const
+void ECSqlSelectAsserter::AssertColumnInfo (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& value, ECTypeDescriptor const* parentDataType) const
     {
     ECDbIssueListener issueListener(GetECDb());
     auto const& columnInfo = value.GetColumnInfo ();
@@ -405,7 +447,7 @@ void ECSqlSelectStatementCrudAsserter::AssertColumnInfo (ECSqlTestItem const& te
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECSqlSelectStatementCrudAsserter::Step (ECSqlStatement& statement, bool disableBeAsserts) const
+DbResult ECSqlSelectAsserter::Step (ECSqlStatement& statement, bool disableBeAsserts) const
     {
     DisableBeAsserts d (disableBeAsserts);
     return statement.Step ();
@@ -416,7 +458,7 @@ DbResult ECSqlSelectStatementCrudAsserter::Step (ECSqlStatement& statement, bool
 // @bsimethod                                     Krischan.Eberle                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlSelectStatementCrudAsserter::GetValueCallList ECSqlSelectStatementCrudAsserter::CreateGetValueCallList (IECSqlValue const& value)
+ECSqlSelectAsserter::GetValueCallList ECSqlSelectAsserter::CreateGetValueCallList (IECSqlValue const& value)
     {
     GetValueCallList list;
     list.push_back (GetValueCall (ECTypeDescriptor::CreatePrimitiveTypeDescriptor (PRIMITIVETYPE_Binary),
@@ -456,7 +498,7 @@ ECSqlSelectStatementCrudAsserter::GetValueCallList ECSqlSelectStatementCrudAsser
 // @bsimethod                                     Krischan.Eberle                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-std::function<bool (ECN::ECTypeDescriptor const&)> ECSqlSelectStatementCrudAsserter::CreateIsExpectedToSucceedDelegateForAssertCurrentRow (ECTypeDescriptor const* parentDataType, ECTypeDescriptor const& dataType) 
+std::function<bool (ECN::ECTypeDescriptor const&)> ECSqlSelectAsserter::CreateIsExpectedToSucceedDelegateForAssertCurrentRow (ECTypeDescriptor const* parentDataType, ECTypeDescriptor const& dataType) 
     {
     //for prim array elements, we need exact type match
     if (parentDataType != nullptr && parentDataType->IsPrimitiveArray ())
@@ -496,7 +538,7 @@ std::function<bool (ECN::ECTypeDescriptor const&)> ECSqlSelectStatementCrudAsser
 // @bsimethod                                     Krischan.Eberle                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-Utf8String ECSqlSelectStatementCrudAsserter::GetValueCallToString (ECTypeDescriptor const& dataType)
+Utf8String ECSqlSelectAsserter::GetValueCallToString (ECTypeDescriptor const& dataType)
     {
     if (dataType.IsPrimitive ())
         {
@@ -514,7 +556,7 @@ Utf8String ECSqlSelectStatementCrudAsserter::GetValueCallToString (ECTypeDescrip
 // @bsimethod                                     Krischan.Eberle                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-Utf8String ECSqlSelectStatementCrudAsserter::DataTypeToString (ECTypeDescriptor const& dataType)
+Utf8String ECSqlSelectAsserter::DataTypeToString (ECTypeDescriptor const& dataType)
     {
     if (dataType.IsPrimitive ())
         {
@@ -561,11 +603,11 @@ Utf8String ECSqlSelectStatementCrudAsserter::DataTypeToString (ECTypeDescriptor 
     }
 
 
-//*************** ECSqlNonSelectStatementCrudAsserter ***************************
+//*************** ECSqlNonSelectAsserter ***************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  11/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlNonSelectStatementCrudAsserter::_Assert (ECSqlTestItem const& testItem) const
+void ECSqlNonSelectAsserter::_Assert (ECSqlTestItem const& testItem) const
     {
     PrepareECSqlExpectedResult const* expectedResultForPrepare = nullptr;
     ECSqlExpectedResult const* expectedResultForStep = nullptr;
@@ -590,7 +632,7 @@ void ECSqlNonSelectStatementCrudAsserter::_Assert (ECSqlTestItem const& testItem
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  11/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlNonSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testItem, ECSqlStatement& statement, ECSqlExpectedResult const& expectedResult) const
+void ECSqlNonSelectAsserter::AssertStep (ECSqlTestItem const& testItem, ECSqlStatement& statement, ECSqlExpectedResult const& expectedResult) const
     {
     const bool expectedToSucceed = expectedResult.IsExpectedToSucceed ();
 
@@ -622,7 +664,7 @@ void ECSqlNonSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECSqlNonSelectStatementCrudAsserter::Step (ECInstanceKey& generatedECInstanceKey, ECSqlStatement& statement, bool disableBeAsserts) const
+DbResult ECSqlNonSelectAsserter::Step (ECInstanceKey& generatedECInstanceKey, ECSqlStatement& statement, bool disableBeAsserts) const
     {
     DisableBeAsserts d (disableBeAsserts);
 
@@ -632,7 +674,7 @@ DbResult ECSqlNonSelectStatementCrudAsserter::Step (ECInstanceKey& generatedECIn
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECSqlNonSelectStatementCrudAsserter::Step (ECSqlStatement& statement, bool disableBeAsserts) const
+DbResult ECSqlNonSelectAsserter::Step (ECSqlStatement& statement, bool disableBeAsserts) const
     {
     DisableBeAsserts d (disableBeAsserts);
 
