@@ -434,6 +434,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="DefaultMarginLeft"            typeName="double"/>
         <ECProperty propertyName="DefaultMarginRight"           typeName="double"/>
         <ECProperty propertyName="DefaultCellAlignment"         typeName="int"/>
+        <ECProperty propertyName="DefaultCellOrientation"       typeName="int"/>
         <ECProperty propertyName="FillSymbologyKeyOddRow"       typeName="int"/>
         <ECProperty propertyName="FillSymbologyKeyEvenRow"      typeName="int"/>
         <ECProperty propertyName="TitleRowTextStyle"            typeName="int"/>
@@ -452,7 +453,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECClass>
 
     <ECClass typeName="AnnotationTableRow" isDomainClass="True">
-        <!-- The aspect that holds the row properties for an AnnotationTableElement -->
+        <!-- The aspect that holds properties of a row of an AnnotationTableElement -->
         <BaseClass>ElementMultiAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
@@ -475,7 +476,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECClass>
 
     <ECClass typeName="AnnotationTableColumn" isDomainClass="True">
-        <!-- The aspect that holds the column properties for an AnnotationTableElement -->
+        <!-- The aspect that holds properties of a column of an AnnotationTableElement -->
         <BaseClass>ElementMultiAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
@@ -497,6 +498,41 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="Width"                        typeName="double"/>
     </ECClass>
 
+    <ECClass typeName="AnnotationTableCellIndex" isStruct="True">
+        <ECProperty propertyName="RowIndex"                     typeName="int"/>
+        <ECProperty propertyName="ColumnIndex"                  typeName="int"/>
+    </ECClass>
+
+    <ECClass typeName="AnnotationTableCell" isDomainClass="True">
+        <!-- The aspect that holds properties of a cell of an AnnotationTableElement -->
+        <BaseClass>ElementMultiAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                <Indexes>
+                    <DbIndex>
+                        <Name>idx_dgn_AnnotationTable_Cell</Name>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>ElementId</string>
+                            <string>CellIndex.RowIndex</string>
+                            <string>CellIndex.ColumnIndex</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECStructProperty propertyName="CellIndex"              typeName="AnnotationTableCellIndex"/>
+        <ECProperty propertyName="TextBlock"                    typeName="binary"/>
+        <ECProperty propertyName="FillKey"                      typeName="int"/>
+        <ECProperty propertyName="Alignment"                    typeName="int"/>
+        <ECProperty propertyName="Orientation"                  typeName="int"/>
+        <ECProperty propertyName="MarginTop"                    typeName="double)"/>
+        <ECProperty propertyName="MarginBottom"                 typeName="double)"/>
+        <ECProperty propertyName="MarginLeft"                   typeName="double)"/>
+        <ECProperty propertyName="MarginRight"                  typeName="double)"/>
+    </ECClass>
+
     <ECRelationshipClass typeName="ElementOwnsChildElements" isDomainClass="True" strength="embedding" strengthDirection="forward">
         <Source cardinality="(1,1)" roleLabel="is on 1 element" polymorphic="True">
             <Class class="Element" />
@@ -510,15 +546,33 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </Target>
     </ECRelationshipClass>
 
+    <ECRelationshipClass typeName="ElementGroupsMembers" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
+                <SourceECInstanceIdColumn>GroupId</SourceECInstanceIdColumn>
+                <TargetECInstanceIdColumn>MemberId</TargetECInstanceIdColumn>
+            </LinkTableRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(0,N)" polymorphic="True">
+            <Class class="Element" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+
     <ECClass typeName="ElementGroup" isDomainClass="True">
-        <!-- An ElementGroup is a non-Geometric Element that groups/references (but does not own) members that are Elements.  An Element can be in N ElementGroups. -->
-        <!-- Note: use ParentId on the Element base class to implement "owning" relationships.  An Element has 0 or 1 owner. -->
+        <!-- WIP: Obsolete.  Replaced by IElementGroup C++ template class + ElementGroupsMembers relationship -->
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
     </ECClass>
     <ECRelationshipClass typeName="ElementGroupHasMembers" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <!-- WIP: Obsolete.  Replaced by IElementGroup C++ template class + ElementGroupsMembers relationship -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
@@ -679,16 +733,16 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </Target>
     </ECRelationshipClass>
 
-    <ECClass typeName="ElementName" isDomainClass="True" >
-        <!-- The aspect that holds a user-defined name for an element -->
+    <ECClass typeName="ElementLabel" isDomainClass="True" >
+        <!-- The aspect that holds a user-defined label for an element -->
         <BaseClass>ElementUniqueAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
-                <!-- The ECInstanceId for ElementName is the same as the Id of the owning Element -->
+                <!-- The ECInstanceId for ElementLabel is the same as the Id of the owning Element -->
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
-        <ECProperty propertyName="Name" typeName="string">
+        <ECProperty propertyName="Label" typeName="string">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
@@ -696,7 +750,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
-    <ECRelationshipClass typeName="ElementOwnsName" isDomainClass="True" strength="embedding" strengthDirection="forward">
+    <ECRelationshipClass typeName="ElementOwnsLabel" isDomainClass="True" strength="embedding" strengthDirection="forward">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
                 <OnDeleteAction>Cascade</OnDeleteAction>
@@ -706,7 +760,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <Class class="Element" />
         </Source>
         <Target cardinality="(0,N)" polymorphic="True">
-            <Class class="ElementName">
+            <Class class="ElementLabel">
                 <Key>
                     <Property name="ECInstanceId"/>
                 </Key>
