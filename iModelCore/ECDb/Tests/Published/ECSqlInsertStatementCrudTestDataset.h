@@ -8,7 +8,7 @@
 #pragma once
 #include "ECSqlTestFrameworkHelper.h"
 
-BEGIN_ECDBUNITTESTS_NAMESPACE
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 
 //=======================================================================================    
 // @bsiclass                                           Krischan.Eberle            09/13
@@ -37,4 +37,4 @@ public:
     static ECSqlTestDataset StructTests ();
     };
 
-END_ECDBUNITTESTS_NAMESPACE
+END_ECSQLTESTFRAMEWORK_NAMESPACE

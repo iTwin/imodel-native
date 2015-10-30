@@ -10,8 +10,6 @@
 //Note: Please keep methods for a given class alphabetized
 USING_NAMESPACE_BENTLEY_EC
 
-BEGIN_ECDBUNITTESTS_NAMESPACE
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1809,4 +1807,4 @@ ECSqlTestDataset ECSqlInsertTestDataset::StructTests ()
     return dataset;
     }
 
-END_ECDBUNITTESTS_NAMESPACE
+

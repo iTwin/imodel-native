@@ -10,8 +10,6 @@
 //Note: Please keep methods for a given class alphabetized
 USING_NAMESPACE_BENTLEY_EC
 
-BEGIN_ECDBUNITTESTS_NAMESPACE
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -181,6 +179,3 @@ ECSqlTestDataset ECSqlDeleteTestDataset::PolymorphicTests (int rowCountPerClass)
     return dataset;
     }
 
-
-
-END_ECDBUNITTESTS_NAMESPACE

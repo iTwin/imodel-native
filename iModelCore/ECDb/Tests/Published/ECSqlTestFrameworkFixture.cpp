@@ -5,12 +5,10 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECSqlCrudTestFixture.h"
-#include "ECSqlStatementCrudAsserter.h"
+#include "ECSqlTestFrameworkFixture.h"
+#include "ECSqlAsserter.h"
 
 using namespace std;
-
-BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                       01/14
@@ -209,4 +207,3 @@ void ECSqlNonSelectTestFrameworkFixture::RunTest(ECSqlTestDataset const& dataset
     }
 
 
-END_ECDBUNITTESTS_NAMESPACE

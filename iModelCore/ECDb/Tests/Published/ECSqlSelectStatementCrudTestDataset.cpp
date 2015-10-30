@@ -10,7 +10,6 @@
 //Note: Please keep methods for a given class alphabetized
 USING_NAMESPACE_BENTLEY_EC
 
-BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                  10/13
@@ -2934,5 +2933,3 @@ ECSqlTestDataset ECSqlSelectTestDataset::UnionTests(int rowCountPerClass)
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "'A' is not a valid table name.");
     return dataset;
     }
-
-END_ECDBUNITTESTS_NAMESPACE

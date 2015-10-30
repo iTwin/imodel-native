@@ -12,7 +12,7 @@
 #include "ECSqlUpdateStatementCrudTestDataset.h"
 #include "ECSqlDeleteStatementCrudTestDataset.h"
 
-BEGIN_ECDBUNITTESTS_NAMESPACE
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 
 //********* Select ***************
 //---------------------------------------------------------------------------------------
@@ -877,4 +877,4 @@ TEST_F (ECSqlDeleteTestFramework, WhereStructTests)
     }
 
 
-END_ECDBUNITTESTS_NAMESPACE
+END_ECSQLTESTFRAMEWORK_NAMESPACE

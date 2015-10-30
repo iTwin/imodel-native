@@ -7,8 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include "ECDbPublishedTests.h"
+#define BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE BEGIN_ECDBUNITTESTS_NAMESPACE namespace ECSqlTestFramework {
+#define END_ECSQLTESTFRAMEWORK_NAMESPACE } END_ECDBUNITTESTS_NAMESPACE
 
-BEGIN_ECDBUNITTESTS_NAMESPACE
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 //=======================================================================================    
 // @bsiclass                                                 Krischan.Eberle     04/2013
 //=======================================================================================    
@@ -280,4 +282,4 @@ public:
     std::vector<ECSqlTestItem> const& GetTestItems () const;
     };
 
-END_ECDBUNITTESTS_NAMESPACE
+END_ECSQLTESTFRAMEWORK_NAMESPACE

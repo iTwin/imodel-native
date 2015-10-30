@@ -9,7 +9,7 @@
 #include "ECSqlAsserter.h"
 #include "ECDbPublishedTests.h"
 
-BEGIN_ECDBUNITTESTS_NAMESPACE
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 
 //=======================================================================================    
 // @bsiclass                                                 Krischan.Eberle     09/2013
@@ -65,4 +65,4 @@ public:
     virtual void SetUp () override;
     };
 
-END_ECDBUNITTESTS_NAMESPACE
+END_ECSQLTESTFRAMEWORK_NAMESPACE

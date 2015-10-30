@@ -8,7 +8,7 @@
 #pragma once
 #include "ECSqlTestDataset.h"
 
-BEGIN_ECDBUNITTESTS_NAMESPACE
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 //=======================================================================================    
 // @bsiclass                                                 Krischan.Eberle     04/2013
 //=======================================================================================    
@@ -107,4 +107,4 @@ public:
     static std::unique_ptr<ECSqlExpectedResult> CreateFailing (Category failingCategory, Utf8CP description = nullptr);
     };
 
-END_ECDBUNITTESTS_NAMESPACE
+END_ECSQLTESTFRAMEWORK_NAMESPACE

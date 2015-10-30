@@ -9,7 +9,7 @@
 #include "ECSqlTestDataset.h"
 #include "ECSqlExpectedResultImpls.h"
 
-BEGIN_ECDBUNITTESTS_NAMESPACE
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 
 //=======================================================================================    
 // @bsiclass                                           Krischan.Eberle            07/13

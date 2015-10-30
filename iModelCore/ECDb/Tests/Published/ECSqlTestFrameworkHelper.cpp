@@ -7,9 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlTestFrameworkHelper.h"
 
-
-BEGIN_ECDBUNITTESTS_NAMESPACE
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  07/13
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -106,5 +103,3 @@ ECInstanceId ECSqlTestFrameworkHelper::InsertTestInstance (ECDbCR ecdb, Utf8CP e
     else
         return newECInstanceKey.GetECInstanceId ();
     }
-
-END_ECDBUNITTESTS_NAMESPACE

@@ -11,9 +11,6 @@
 
 USING_NAMESPACE_BENTLEY_EC
 
-BEGIN_ECDBUNITTESTS_NAMESPACE
-
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -931,5 +928,3 @@ ECSqlTestDataset ECSqlUpdateTestDataset::TargetClassTests (int rowCountPerClass)
 
     return dataset;
     }
-
-END_ECDBUNITTESTS_NAMESPACE

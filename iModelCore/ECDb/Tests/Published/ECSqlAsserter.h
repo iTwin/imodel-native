@@ -10,7 +10,7 @@
 #include "ECSqlExpectedResultImpls.h"
 #include <Logging/bentleylogging.h>
 
-BEGIN_ECDBUNITTESTS_NAMESPACE
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 
 //=======================================================================================  
 //! ECSqlAsserter for the ECSql test framework.
@@ -117,4 +117,4 @@ public:
     ~ECSqlNonSelectAsserter () {}
     };
 
-END_ECDBUNITTESTS_NAMESPACE
+END_ECSQLTESTFRAMEWORK_NAMESPACE
