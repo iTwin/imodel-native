@@ -200,7 +200,7 @@ TEST(ECDbSchemas, JoinedTableTest)
         "        <ECProperty propertyName='F' typeName='string'/>"
         "    </ECClass>"
         "   <ECClass typeName='Roo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
-        "        <BaseClass>Foo</BaseClass>"
+        "        <BaseClass>Boo</BaseClass>"
         "        <ECProperty propertyName='G' typeName='long'/>"
         "        <ECProperty propertyName='H' typeName='string'/>"
         "    </ECClass>"
@@ -282,9 +282,9 @@ TEST(ECDbSchemas, JoinedTableTest)
     assert_ecsql2("SELECT ECInstanceId, A, B, C, D FROM ONLY dgn.Goo WHERE A = 102 AND B ='b2' AND C = 202 AND D ='d2'", ECSqlStatus::Success, 5, 1);
 
 
-    assert_ecsql2("SELECT ECInstanceId, A, B, E, F FROM dgn.Boo", ECSqlStatus::Success, 5, 4);
-    assert_ecsql2("SELECT ECInstanceId, A, B FROM dgn.Boo", ECSqlStatus::Success, 3, 4);
-    assert_ecsql2("SELECT ECInstanceId, E, F FROM dgn.Boo", ECSqlStatus::Success, 3, 4);
+    assert_ecsql2("SELECT ECInstanceId, A, B, E, F FROM dgn.Boo", ECSqlStatus::Success, 5, 8);
+    assert_ecsql2("SELECT ECInstanceId, A, B FROM dgn.Boo", ECSqlStatus::Success, 3, 8);
+    assert_ecsql2("SELECT ECInstanceId, E, F FROM dgn.Boo", ECSqlStatus::Success, 3, 8);
     assert_ecsql2("SELECT ECInstanceId, A, B, E, F FROM ONLY dgn.Boo", ECSqlStatus::Success, 5, 4);
     assert_ecsql2("SELECT ECInstanceId, A, B, E, F FROM dgn.Boo WHERE A = 102 AND B ='b8' AND E = 202 AND F ='f2'", ECSqlStatus::Success, 5, 1);
     assert_ecsql2("SELECT ECInstanceId, A, B, E, F FROM ONLY dgn.Boo WHERE A = 102 AND B ='b8' AND E = 202 AND F ='f2'", ECSqlStatus::Success, 5, 1);
