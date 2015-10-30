@@ -178,6 +178,10 @@ public:
 
     const_iterator begin() const { return m_locks.begin(); } //!< An iterator to the first entry
     const_iterator end() const { return m_locks.end(); } //!< An iterator just beyond the last entry
+
+    //! Removes the lock with the specified ID, if it exists.
+    //! @param[in]      id 
+    DGNPLATFORM_EXPORT void Remove(LockableId id);
 };
 
 //=======================================================================================
@@ -200,8 +204,8 @@ private:
 protected:
     ILocksManager(DgnDbR db) : m_db(db) { }
 
-    virtual bool _QueryLocksHeld(LockRequestCR locks, bool localQueryOnly) = 0;
-    virtual LockStatus _AcquireLocks(LockRequestCR locks) = 0;
+    virtual bool _QueryLocksHeld(LockRequestR locks, bool localQueryOnly) = 0;
+    virtual LockStatus _AcquireLocks(LockRequestR locks) = 0;
     virtual LockStatus _RelinquishLocks() = 0;
 
     virtual void _OnElementInserted(DgnElementId id) = 0;
@@ -214,11 +218,11 @@ protected:
 public:
     DgnDbR GetDgnDb() const { return m_db; }
 
-    //! Returns true if this briefcase owns all of the requested locks.
-    bool QueryLocksHeld(LockRequestCR locks, bool localQueryOnly=false) { return _QueryLocksHeld(locks, localQueryOnly); }
+    //! Returns true if this briefcase owns all of the requested locks. Note this function may modify the LockRequest object.
+    bool QueryLocksHeld(LockRequestR locks, bool localQueryOnly=false) { return _QueryLocksHeld(locks, localQueryOnly); }
 
-    //! Attempts to acquire the specified locks.
-    LockStatus AcquireLocks(LockRequestCR locks) { return _AcquireLocks(locks); }
+    //! Attempts to acquire the specified locks. Note this function may modify the LockRequest object.
+    LockStatus AcquireLocks(LockRequestR locks) { return _AcquireLocks(locks); }
 
     //! Relinquishes all locks held by the DgnDb.
     LockStatus RelinquishLocks() { return _RelinquishLocks(); }

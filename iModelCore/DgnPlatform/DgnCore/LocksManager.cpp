@@ -86,6 +86,16 @@ void LockRequest::Insert(LockableId id, LockLevel level)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void LockRequest::Remove(LockableId id)
+    {
+    auto iter = m_locks.find(DgnLock(id, LockLevel::Exclusive));
+    if (m_locks.end() != iter)
+        m_locks.erase(iter);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Defined here because we don't want them called externally...
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -153,8 +163,8 @@ struct UnrestrictedLocksManager : ILocksManager
 private:
     UnrestrictedLocksManager(DgnDbR db) : ILocksManager(db) { }
 
-    virtual bool _QueryLocksHeld(LockRequestCR, bool) override { return true; }
-    virtual LockStatus _AcquireLocks(LockRequestCR) override { return LockStatus::Success; }
+    virtual bool _QueryLocksHeld(LockRequestR, bool) override { return true; }
+    virtual LockStatus _AcquireLocks(LockRequestR) override { return LockStatus::Success; }
     virtual LockStatus _RelinquishLocks() override { return LockStatus::Success; }
     virtual void _OnElementInserted(DgnElementId) override { }
     virtual void _OnModelInserted(DgnModelId) override { }

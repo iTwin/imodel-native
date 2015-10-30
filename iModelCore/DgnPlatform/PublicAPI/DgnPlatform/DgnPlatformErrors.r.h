@@ -120,6 +120,7 @@ enum class LockStatus : int
     Success = SUCCESS,
     ServerUnavailable = LOCK_ERROR_BASE + 1, //!< The locks server did not respond to a lock request
     AlreadyHeld, //!< A requested lock was already held by another briefcase
+    SyncError, //!< Failed to sync local locks with server
 };
 
 /** @cond BENTLEY_SDK_Publisher */
