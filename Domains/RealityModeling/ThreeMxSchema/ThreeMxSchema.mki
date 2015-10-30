@@ -1,32 +1,27 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: RasterSchema/RasterSchemaPolicy.mki $
+#     $Source: ThreeMxSchema/ThreeMxSchema.mki $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
-%include $(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
-%include $(SharedMki)DefinePublicApiIncludes.mki
-%include $(SharedMki)CommonCompileLinkPolicy.mki
-%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
 
-%include DefaultToolSet.mki
-
-appName         = RasterSchema
-o               = $(OutputRootDir)build/RasterSchema/
-repositoryRoot  = $(SrcRoot)DgnDomains/RealityModeling/
+appName         = ThreeMxSchema
+o               = $(OutBuildDir)ThreeMxSchema/
 
 DLM_NAME    = $(appName)
 CCompPDBName = $(appName)
-MuiBaseName = $(appName)
 
 MultiCompileIntermediatePdbFile=$(o)$(CCompPDBName).pdb
 IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
 
+nameToDefine = OPENCTM_STATIC
+%include cdefapnd.mki
+
 #----------------------------------------------------------------------
-# We're building the RasterSchema lib
+# We're building the ThreeMxSchema lib
 #----------------------------------------------------------------------
-nameToDefine = __RASTERSCHEMA_BUILD__
+nameToDefine = __THREEMXSCHEMA_BUILD__
 %include cdefapnd.mki
 

@@ -6,66 +6,59 @@
 #
 #--------------------------------------------------------------------------------------
 
-PolicyFile=$(SrcRoot)DgnDomains/RealityModeling/RasterSchema/RasterSchemaPolicy.mki
-SolutionPolicyMki=$(PolicyFile)
-
 %include mdl.mki
-%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
 
-baseDir                         = $(_MakeFilePath)
-rasterSchemaPublicApiSrc        = $(repositoryRoot)PublicAPI/RasterSchema/
-rasterSchemaSrc                 = $(baseDir)
+#-----------------------------------------------------------
+# Root directory
+#-----------------------------------------------------------
+SrcRasterSchema                 = $(_MakeFilePath)
 
-always:
-    !~@mkdir $(o)
+#------------------------------------------------------
+# Header file locations in source tree
+#------------------------------------------------------
+RasterSchemaPublicApiSrc        = $(SrcRasterSchema)../PublicAPI/RasterSchema/
 
-#--------------------------------------------------------------------------------------
-#   BENTLEY_LIBRARIES
-#--------------------------------------------------------------------------------------
-ContextSubpartsLibs = $(BuildContext)SubParts/Libs/
-
-BENTLEY_LIBRARIES = $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
-BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
-BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
-BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
-BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext)
-BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext)
-BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ImagePP$(libext)
-BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+#----------------------------------------------------------
+# Set and then include the CompileOptionsMki file.
+# It is needed and also %included by PreCompileHeader.mki
+#----------------------------------------------------------
+CompileOptionsMki               = $(SrcRasterSchema)RasterSchema.mki
+%include $(CompileOptionsMki)
 
 #--------------------------------------------------------------------------------------
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
 rasterSchemaDepends             = $(BuildContext)PublicAPI/DgnPlatform/DgnCore/DgnModel.h \
                                   $(BuildContext)PublicAPI/DgnPlatform/DgnCore/RasterBaseModel.h \
-                                  $(rasterSchemaPublicApiSrc)RasterDomain.h                 \
-                                  $(rasterSchemaPublicApiSrc)RasterSchemaApi.h              \
-                                  $(rasterSchemaPublicApiSrc)RasterSchemaCommon.h           \
-                                  $(rasterSchemaPublicApiSrc)RasterSchemaTypes.h            \
-                                  $(rasterSchemaPublicApiSrc)RasterHandler.h                \
-                                  $(rasterSchemaPublicApiSrc)RasterDomain.h                 \
-                                  $(rasterSchemaPublicApiSrc)RasterFileHandler.h            \
-                                  $(rasterSchemaPublicApiSrc)WmsHandler.h
+                                  $(RasterSchemaPublicApiSrc)RasterDomain.h                 \
+                                  $(RasterSchemaPublicApiSrc)RasterSchemaApi.h              \
+                                  $(RasterSchemaPublicApiSrc)RasterSchemaCommon.h           \
+                                  $(RasterSchemaPublicApiSrc)RasterSchemaTypes.h            \
+                                  $(RasterSchemaPublicApiSrc)RasterHandler.h                \
+                                  $(RasterSchemaPublicApiSrc)RasterDomain.h                 \
+                                  $(RasterSchemaPublicApiSrc)RasterFileHandler.h            \
+                                  $(RasterSchemaPublicApiSrc)WmsHandler.h
 
-rasterDisplayDepends =  $(rasterSchemaSrc)RasterSource.h \
-                        $(rasterSchemaSrc)RasterQuadTree.h
+rasterDisplayDepends =  $(SrcRasterSchema)RasterSource.h \
+                        $(SrcRasterSchema)RasterQuadTree.h
 
 wmsDepends    = $(rasterSchemaDepends) \
                 $(rasterDisplayDepends) \
-                $(rasterSchemaSrc)WmsSource.h
+                $(SrcRasterSchema)WmsSource.h
                         
 rasterFileDepends    =  $(rasterSchemaDepends) \
                         $(rasterDisplayDepends) \
-                        $(rasterSchemaSrc)RasterFile.h \
-                        $(rasterSchemaSrc)RasterFileSource.h \
-                        $(rasterSchemaSrc)ImagePPAdmin.h
+                        $(SrcRasterSchema)RasterFile.h \
+                        $(SrcRasterSchema)RasterFileSource.h \
+                        $(SrcRasterSchema)ImagePPAdmin.h
 
-%include MultiCppCompileRule.mki
+always:
+    !~@mkdir $(o)
 
 #----------------------------------------------------------------------
 #   Make sure that RasterSchemaInternal.pch is up-to-date.
 #----------------------------------------------------------------------
-PchCompiland        = $(rasterSchemaSrc)RasterSchemaInternal.cpp
+PchCompiland        = $(SrcRasterSchema)RasterSchemaInternal.cpp
 PchOutputDir        = $(o)
 PchExtraOptions     = -Zm160
 PchExplicitDepends  = $(rasterSchemaDepends)
@@ -84,27 +77,27 @@ MultiCompileDepends=$(_MakeFileSpec)
 #--------------------------------------------------------------------------------------
 #   Compile portable source
 #--------------------------------------------------------------------------------------
-$(o)RasterHandler$(oext)        : $(rasterSchemaSrc)RasterHandler.cpp       $(rasterSchemaDepends) ${MultiCompileDepends}
+$(o)RasterHandler$(oext)        : $(SrcRasterSchema)RasterHandler.cpp       $(rasterSchemaDepends) ${MultiCompileDepends}
 
-$(o)RasterFileHandler$(oext)    : $(rasterSchemaSrc)RasterFileHandler.cpp   $(rasterSchemaDepends) ${MultiCompileDepends}
+$(o)RasterFileHandler$(oext)    : $(SrcRasterSchema)RasterFileHandler.cpp   $(rasterSchemaDepends) ${MultiCompileDepends}
 
-$(o)RasterDomain$(oext)         : $(rasterSchemaSrc)RasterDomain.cpp        $(rasterSchemaDepends) ${MultiCompileDepends}
+$(o)RasterDomain$(oext)         : $(SrcRasterSchema)RasterDomain.cpp        $(rasterSchemaDepends) ${MultiCompileDepends}
 
-$(o)RasterQuadTree$(oext)       : $(rasterSchemaSrc)RasterQuadTree.cpp      $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
+$(o)RasterQuadTree$(oext)       : $(SrcRasterSchema)RasterQuadTree.cpp      $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
 
-$(o)RasterSource$(oext)         : $(rasterSchemaSrc)RasterSource.cpp        $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
+$(o)RasterSource$(oext)         : $(SrcRasterSchema)RasterSource.cpp        $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
 
 # Wms source support
-$(o)WmsHandler$(oext)           : $(rasterSchemaSrc)WmsHandler.cpp          $(wmsDepends) ${MultiCompileDepends}
+$(o)WmsHandler$(oext)           : $(SrcRasterSchema)WmsHandler.cpp          $(wmsDepends) ${MultiCompileDepends}
 
-$(o)WmsSource$(oext)            : $(rasterSchemaSrc)WmsSource.cpp           $(wmsDepends) ${MultiCompileDepends}
+$(o)WmsSource$(oext)            : $(SrcRasterSchema)WmsSource.cpp           $(wmsDepends) ${MultiCompileDepends}
 
 # Local raster files support
-$(o)RasterFile$(oext)           : $(rasterSchemaSrc)RasterFile.cpp          $(rasterFileDepends) ${MultiCompileDepends}
+$(o)RasterFile$(oext)           : $(SrcRasterSchema)RasterFile.cpp          $(rasterFileDepends) ${MultiCompileDepends}
 
-$(o)ImagePPAdmin$(oext)         : $(rasterSchemaSrc)ImagePPAdmin.cpp        $(rasterFileDepends) ${MultiCompileDepends}
+$(o)ImagePPAdmin$(oext)         : $(SrcRasterSchema)ImagePPAdmin.cpp        $(rasterFileDepends) ${MultiCompileDepends}
 
-$(o)RasterFileSource$(oext)     : $(rasterSchemaSrc)RasterFileSource.cpp    $(rasterFileDepends) ${MultiCompileDepends}
+$(o)RasterFileSource$(oext)     : $(SrcRasterSchema)RasterFileSource.cpp    $(rasterFileDepends) ${MultiCompileDepends}
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
@@ -120,7 +113,6 @@ CPchOpts =
 #--------------------------------------------------------------------------------------
 #   Build the library
 #--------------------------------------------------------------------------------------
-DLM_NAME                    = $(appName)
 DLM_OBJECT_FILES            = $(objs)
 DLM_OBJECT_DEST             = $(o)
 DLM_OBJECT_PCH              = $(o)RasterSchemaInternal$(oext) 
@@ -131,11 +123,18 @@ DLM_NOENTRY                 = 1
 DLM_NO_DLS                  = 1
 DLM_NO_DEF                  = 1
 
-DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
-DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
-DLM_CREATE_LIB_CONTEXT_LINK = 1
+LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
+                                $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext) \
+                                $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)ImagePP$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
 
-LINKER_LIBRARIES            = $(BENTLEY_LIBRARIES) $(SYSTEM_LIBRARIES)
+
+#$(SYSTEM_LIBRARIES)
+
 
 %include $(sharedMki)LinkLibrary.mki
 
