@@ -16,25 +16,31 @@
 //-----------------------------------------------------------------------------------------
 // ECClass names (combine with DGN_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
+#define DGN_CLASSNAME_AnnotationFrameStyle  "AnnotationFrameStyle"
+#define DGN_CLASSNAME_AnnotationLeaderStyle "AnnotationLeaderStyle"
+#define DGN_CLASSNAME_AnnotationTextStyle   "AnnotationTextStyle"
 #define DGN_CLASSNAME_Authority             "Authority"
-#define DGN_CLASSNAME_Category              "Category"
-#define DGN_CLASSNAME_Color                 "Color"
+#define DGN_CLASSNAME_TrueColor             "TrueColor"
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
+#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 #define DGN_CLASSNAME_ComponentSolution     "ComponentSolution"
+#endif
+#define DGN_CLASSNAME_DictionaryElement     "DictionaryElement"
+#define DGN_CLASSNAME_DictionaryModel       "DictionaryModel"
 #define DGN_CLASSNAME_DrawingElement        "DrawingElement"
 #define DGN_CLASSNAME_DrawingModel          "DrawingModel"
 #define DGN_CLASSNAME_Element               "Element"
 #define DGN_CLASSNAME_ElementAspect         "ElementAspect"
+#define DGN_CLASSNAME_ElementDescription    "ElementDescription"
 #define DGN_CLASSNAME_ElementExternalKey    "ElementExternalKey"
 #define DGN_CLASSNAME_ElementGeom           "ElementGeom"
 #define DGN_CLASSNAME_ElementGroup          "ElementGroup"
 #define DGN_CLASSNAME_ElementItem           "ElementItem"
+#define DGN_CLASSNAME_ElementLabel          "ElementLabel"
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
-#define DGN_CLASSNAME_Light                 "Light"
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
-#define DGN_CLASSNAME_Material              "Material"
 #define DGN_CLASSNAME_Model                 "Model"
 #define DGN_CLASSNAME_Model2d               "Model2d"
 #define DGN_CLASSNAME_NamespaceAuthority    "NamespaceAuthority"
@@ -46,7 +52,7 @@
 #define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
 #define DGN_CLASSNAME_SheetModel            "SheetModel"
 #define DGN_CLASSNAME_Style                 "Style"
-#define DGN_CLASSNAME_SubCategory           "SubCategory"
+#define DGN_CLASSNAME_TextAnnotationSeed    "TextAnnotationSeed"
 #define DGN_CLASSNAME_Texture               "Texture"
 #define DGN_CLASSNAME_View                  "View"
 #define DGN_CLASSNAME_CameraView            "CameraView"
@@ -63,10 +69,10 @@
 //-----------------------------------------------------------------------------------------
 // ECRelationshipClass names (combine with DGN_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
-#define DGN_RELNAME_CategoryOwnsSubCategories   "CategoryOwnsSubCategories"
 #define DGN_RELNAME_ElementDrivesElement        "ElementDrivesElement"
 #define DGN_RELNAME_ElementGeomUsesParts        "ElementGeomUsesParts"
-#define DGN_RELNAME_ElementGroupHasMembers      "ElementGroupHasMembers"
+#define DGN_RELNAME_ElementGroupHasMembers      "ElementGroupHasMembers" // WIP: obsolete, replaced by ElementGroupsMembers
+#define DGN_RELNAME_ElementGroupsMembers        "ElementGroupsMembers"
 #define DGN_RELNAME_ElementHasLinks             "ElementHasLinks"
 #define DGN_RELNAME_ElementOwnsItem             "ElementOwnsItem"
 #define DGN_RELNAME_ElementUsesStyles           "ElementUsesStyles"
@@ -83,6 +89,64 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 namespace dgn_ElementHandler {struct Physical;};
 namespace dgn_TxnTable {struct Element; struct Model;};
+
+struct DgnImportContext;
+
+//=======================================================================================
+//! A Code is an identifier associated with some object in a DgnDb and issued by a
+//! DgnAuthority according to some scheme. The meaning of a Code is determined by the
+//! issuing authority. The issuing authority determines
+//! how (or if) an object's code is transformed when the object is cloned.
+//!
+//! The Code is stored as a three-part identifier: DgnAuthorityId, namespace, and value.
+//! The combination of the three must be unique within all objects of a given type
+//! (e.g., Elements, Models) within a DgnDb. 
+//!
+//! The authority ID must be non-null and identify a valid authority.
+//! The namespace may not be null, but may be a blank string.
+//! The value may be null if and only if the namespace is blank, signifying that the authority
+//! assigns no special meaning to the object's code.
+//! The value may not be an empty string.
+//!
+//! To obtain a Code, talk to the relevant DgnAuthority.
+// @bsiclass                                                     Paul.Connelly  09/15
+//=======================================================================================
+struct AuthorityIssuedCode
+{
+private:
+    DgnAuthorityId  m_authority;
+    Utf8String      m_value;
+    Utf8String      m_nameSpace;
+
+    friend struct DgnAuthority;
+    friend struct DgnElements;
+    friend struct DgnModel;
+    friend struct DgnModels;
+    friend struct SystemAuthority;
+
+    AuthorityIssuedCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) { }
+public:
+    //! Constructs an empty, invalid code
+    AuthorityIssuedCode() { }
+
+    //! Determine whether this Code is valid. A valid code has a valid authority ID and either:
+    //!     - An empty namespace and value; or
+    //!     - A non-empty value
+    bool IsValid() const {return m_authority.IsValid() && (IsEmpty() || !m_value.empty());}
+    //! Determine if this code is valid but not otherwise meaningful (and therefore not necessarily unique)
+    bool IsEmpty() const {return m_authority.IsValid() && m_nameSpace.empty() && m_value.empty();}
+    //! Determine if two Codes are equivalent
+    bool operator==(AuthorityIssuedCode const& other) const {return m_authority==other.m_authority && m_value==other.m_value && m_nameSpace==other.m_nameSpace;}
+
+    //! Get the value for this Code
+    Utf8StringCR GetValue() const {return m_value;}
+    Utf8CP GetValueCP() const {return !m_value.empty() ? m_value.c_str() : nullptr;}
+    //! Get the namespace for this Code
+    Utf8StringCR GetNameSpace() const {return m_nameSpace;}
+    //! Get the DgnAuthorityId of the DgnAuthority that issued this Code.
+    DgnAuthorityId GetAuthority() const {return m_authority;}
+    void RelocateToDestinationDb(DgnImportContext&);
+};
 
 //=======================================================================================
 //! A base class for api's that access a table in a DgnDb
@@ -108,392 +172,6 @@ public:
     //! @param[in] invalidChars the list of invalid characters. All instances of these characters are replaced.
     //! @param[in] replacement the character to substitute for any invalid characters in name.
     DGNPLATFORM_EXPORT static void ReplaceInvalidCharacters(Utf8StringR name, Utf8CP invalidChars, Utf8Char replacement);
-};
-
-/** @addtogroup DgnCategoryGroup Categories and SubCategories
-@ref PAGE_CategoryOverview
-*/
-
-//=======================================================================================
-//! Each Category has an entry in the Category table.
-//! @see DgnDb::Categories
-//! @ingroup DgnCategoryGroup
-//=======================================================================================
-struct DgnCategories : DgnDbTable
-    {
-    //! The Rank of a category indicates how it was created and where it can be used.
-    //! @ingroup DgnCategoryGroup
-    enum class Rank
-    {
-        System      = 0,    //!< This category is predefined by the system
-        Domain      = 1,    //!< This category is defined by a domain. Elements in this category may be unknown to system functionality.
-        Application = 2,    //!< This category is defined by an application. Elements in this category may be unknown to system and domain functionality.
-        User        = 3,    //!< This category is defined by a user. Elements in this category may be unknown to system, domain, and application functionality.
-    };
-
-    //! The Scope of a category determines what types of models may use it.
-    //! @ingroup DgnCategoryGroup
-    enum class Scope
-    {
-        Any         = 0,    //!< This category may be used in any type of model. Generally, this means it came from some external source (e.g. a dgn or dwg file)
-        Physical    = 1,    //!< This category may only be used in physical models
-        Annotation  = 2,    //!< This category may only be used in annotation models (e.g. sheets or drawings)
-        Analytical  = 3,    //!< This category may only be used in analytical models
-    };
-
-    //! A sub-category of a category.
-    //! @ingroup DgnCategoryGroup
-    struct SubCategory
-    {
-        //! The parameters that can determine how graphics on a SubCategory appear when drawn.
-        //! @ingroup DgnCategoryGroup
-        struct Appearance
-        {
-        private:
-            bool            m_invisible;    //!< Graphics on this SubCategory should not be visible
-            bool            m_dontPlot;     //!< Graphics on this SubCategory should not be plotted
-            bool            m_dontSnap;     //!< Graphics on this SubCategory should not be snappable
-            bool            m_dontLocate;   //!< Graphics on this SubCategory should not be locatable
-            ColorDef        m_color;
-            uint32_t        m_weight;
-            DgnStyleId      m_style;
-            int32_t         m_displayPriority; // only valid for SubCategories in 2D models
-            DgnMaterialId   m_material;
-            double          m_transparency;
-
-        public:
-            void Init() {memset(this, 0, sizeof(*this)); m_material.Invalidate(); m_color = ColorDef::White();} // white on white reversal makes this a better default color than black.
-            Appearance() {Init();}
-            explicit Appearance(Utf8StringCR val) {FromJson(val);}
-
-            void SetInvisible(bool val) {m_invisible=val;}
-            bool GetDontPlot() const {return m_dontPlot;}
-            void SetDontPlot(bool val) {m_dontPlot=val;}
-            bool GetDontSnap() const {return m_dontSnap;}
-            void SetDontSnap(bool val) {m_dontSnap=val;}
-            bool GetDontLocate() const {return m_dontLocate;}
-            void SetDontLocate(bool val) {m_dontLocate=val;}
-            void SetColor(ColorDef val) {m_color=val;}
-            void SetWeight(uint32_t val) {m_weight=val;}
-            void SetStyle(DgnStyleId val) {m_style=val;}
-            void SetDisplayPriority(int32_t val) {m_displayPriority=val;}
-            void SetMaterial(DgnMaterialId val) {m_material=val;}
-            void SetTransparency(double val) {m_transparency=val;}
-            bool IsInvisible() const {return m_invisible;}
-            bool IsVisible() const {return !m_invisible;}
-            ColorDef GetColor() const {return m_color;}
-            uint32_t GetWeight() const {return m_weight;}
-            DgnStyleId GetStyle() const {return m_style;}
-            int32_t GetDisplayPriority() const {return m_displayPriority;}
-            DgnMaterialId GetMaterial() const {return m_material;}
-            double GetTransparency() const {return m_transparency;}
-            DGNPLATFORM_EXPORT bool operator== (Appearance const& other) const;
-            bool IsEqual(Appearance const& other) const {return *this==other;}
-            void FromJson(Utf8StringCR); //!< initialize this appearance from a previously saved json string
-            DGNPLATFORM_EXPORT Utf8String ToJson() const;   //!< convert this appearance to a json string
-        };// Appearance
-
-        //! View-specific overrides of the appearance of a SubCategory
-        //! @ingroup DgnCategoryGroup
-        struct Override
-        {
-        private:
-            union
-                {
-                uint32_t m_int32;
-                struct
-                    {
-                    uint32_t m_invisible:1;
-                    uint32_t m_color:1;
-                    uint32_t m_weight:1;
-                    uint32_t m_style:1;
-                    uint32_t m_material:1;
-                    uint32_t m_priority:1;
-                    uint32_t m_transparency:1;
-                    };
-                } m_flags;
-
-            Appearance m_value;
-
-        public:
-            Override() {Init();}
-            explicit Override(JsonValueCR val) {Init(); FromJson(val);}
-            void Init() {m_flags.m_int32 = 0; m_value.Init();}
-            void SetInvisible(bool val) {m_flags.m_invisible=true; m_value.SetInvisible(val);}
-            void SetColor(ColorDef val) {m_flags.m_color=true; m_value.SetColor(val);}
-            void SetWeight(uint32_t val) {m_flags.m_weight=true; m_value.SetWeight(val);}
-            void SetStyle(DgnStyleId val) {m_flags.m_style=true; m_value.SetStyle(val);}
-            void SetDisplayPriority(int32_t val) {m_flags.m_priority=true; m_value.SetDisplayPriority(val);}
-            void SetMaterial(DgnMaterialId val) {m_flags.m_material=true; m_value.SetMaterial(val);}
-            void SetTransparency(double val) {m_flags.m_transparency=true; m_value.SetTransparency(val);}
-            void ToJson(JsonValueR outValue) const;
-            void FromJson(JsonValueCR inValue);
-            void ApplyTo(Appearance&) const;
-        }; // Override
-
-    private:
-        friend struct DgnCategories;
-        DgnCategoryId      m_categoryId;
-        DgnSubCategoryId   m_subCategoryId;
-        Utf8String m_code;
-        Utf8String m_label; // defaults to code, but can be renamed
-        Utf8String m_description;
-        Appearance m_appearance;
-
-    public:
-        SubCategory() {} //!< Construct an invalid SubCategory.
-        SubCategory(DgnCategoryId categoryId, DgnSubCategoryId subCategoryId, Utf8CP code, Appearance const& appearance, Utf8CP descr=nullptr, Utf8CP label=nullptr)
-                : m_categoryId(categoryId), m_subCategoryId(subCategoryId), m_code(code), m_appearance(appearance) {m_description.AssignOrClear(descr); m_label=label?label:code;}
-
-        Utf8CP GetCode() const {return m_code.c_str();} //!< The SubCategory code. Unique per category. Not translated. Default SubCategories will return an empty string.
-        Utf8CP GetLabel() const {return m_label.c_str();} //!< The SubCategory display label which may be translated.
-        Utf8CP GetDescription() const {return m_description.length()>0 ? m_description.c_str() : nullptr;} //!< The SubCategory description. May be empty.
-        DgnCategoryId GetCategoryId() const {return m_categoryId;} //!< This SubCategory's DgnCategoryId
-        DgnSubCategoryId GetSubCategoryId() const {return m_subCategoryId;} //!< The DgnSubCategoryId
-        Appearance const& GetAppearance() const {return m_appearance;} //!< The Appearance for this SubCategory.
-        Appearance& GetAppearanceR() {return m_appearance;} //!< Get a writable reference to the Appearance for this SubCategory.
-        void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);} //!< Set the SubCategory display label.
-        void SetDescription(Utf8CP val) {m_description.AssignOrClear(val);} //!< Set the SubCategory description. @param val the new description. May be nullptr.
-        void SetCode(Utf8CP val) {m_code = val;} //!< Set the SubCategory code. @param val the new code for this SubCategory. Must not be nullptr. Must be unique per category. Default SubCategories may not be recoded.
-        bool IsValid() const {return m_categoryId.IsValid() && m_subCategoryId.IsValid();} //!< Test if the SubCategory is valid. A failed query will return an invalid SubCategory.
-        bool IsDefaultSubCategory() const {return m_categoryId == m_subCategoryId;} //!< Determine if this is the default SubCategory for its category.
-    }; // SubCategory
-
-    //! A Category in the category table
-    //! @ingroup DgnCategoryGroup
-    struct Category
-        {
-    private:
-        friend struct DgnCategories;
-        DgnCategoryId  m_categoryId;
-        Rank        m_rank;
-        Scope       m_scope;
-        Utf8String  m_code;
-        Utf8String  m_label; // defaults to code, but can be renamed
-        Utf8String  m_description;
-
-        void Init(DgnCategoryId id, Utf8CP code, Scope scope, Utf8CP descr, Utf8CP label, Rank rank)
-            {m_categoryId=id; m_code=code; m_label=label?label:code; m_scope=scope; m_description.AssignOrClear(descr); m_rank=rank;}
-
-    public:
-        Category() {}// so that we can put Categories in a bmap
-
-        //! Ctor for a Category in the category table.
-        //! @param[in] code The category's code. Must be unique.
-        //! @param[in] scope The Scope of this category.
-        //! @param[in] descr The category's description. May be nullptr.
-        //! @param[in] label The display label for this category.  May be nullptr.
-        //! @param[in] rank The category's rank
-        //! @param[in] id The Category's unique ID. This is normally assigned by the Insert function.
-        Category(Utf8CP code, Scope scope, Utf8CP descr=nullptr, Utf8CP label=nullptr, Rank rank=Rank::User, DgnCategoryId id=DgnCategoryId()) {Init(id, code, scope, descr, label, rank);}
-
-        Utf8CP GetCode() const {return m_code.c_str();} //!< The category code. Never empty. Unique. Not translated.
-        Utf8CP GetLabel() const {return m_label.c_str();} //!< The category display label which may be translated.
-        Utf8CP GetDescription() const {return m_description.length()>0 ? m_description.c_str() : nullptr;} //!< The category description. May be empty.
-        DgnCategoryId GetCategoryId() const {return m_categoryId;} //!< The category id. Unique. This is an internal identifier and is not displayed in the GUI.
-        Scope GetScope() const {return m_scope;} //!< the category's scope.
-        Rank GetRank() const {return m_rank;} //!< the category's rank.
-        bool IsSystemCategory() const {return GetRank()==Rank::System;}
-        bool IsUserCategory() const {return GetRank()==Rank::User;}
-        bool IsValid() const {return m_categoryId.IsValid();} //!< Test if the Category is valid. A failed query will return an invalid Category. @see DgnCategories::QueryCategoryById.
-        void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);} //!< Set the category display label.
-        void SetDescription(Utf8CP val) {m_description.AssignOrClear(val);} //!< Set the category description. @param val the new description. May be nullptr.
-        void SetCode(Utf8CP val) {m_code = val;} //!< Set the category code. @param val the new code. Must not be nullptr. Must be unique.
-        void SetScope(Scope val) {m_scope= val;} //!< Set the category's scope. @param[in] val the new category scope.
-        void SetRank(Rank val) {m_rank=val;} //!< Change the Rank of this category.
-        };
-
-    //! An iterator over the categories in the DgnDb.
-    //! @ingroup DgnCategoryGroup
-    struct Iterator : BeSQLite::DbTableIterator
-    {
-    public:
-        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR) db) {}
-
-        //! An entry in the table.
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-        {
-        private:
-            friend struct Iterator;
-            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
-        public:
-            DGNPLATFORM_EXPORT DgnCategoryId GetCategoryId() const; //!< The category id. Unique. This is an internal identifier and is not displayed in the GUI.
-            DGNPLATFORM_EXPORT Rank GetRank() const; //!< The category's rank
-            DGNPLATFORM_EXPORT Utf8CP GetCode() const; //!< The category's code. Never nullptr. Unique. Not translated.
-            DGNPLATFORM_EXPORT Utf8CP GetLabel() const; //!< The category's display label which may be translated.
-            DGNPLATFORM_EXPORT Utf8CP GetDescription() const; //!< The category's description, if any. May be nullptr.
-            DGNPLATFORM_EXPORT Scope GetScope() const; //!< The category's type.
-            Entry const& operator*() const {return *this;}
-            Category ToCategory() const {return Category(GetCode(), GetScope(), GetDescription(), GetLabel(), GetRank(), GetCategoryId());}
-        };
-
-        typedef Entry const_iterator;
-        typedef Entry iterator;
-        DGNPLATFORM_EXPORT const_iterator begin() const;
-        const_iterator end() const {return Entry(m_stmt.get(), false);}
-        DGNPLATFORM_EXPORT size_t QueryCount() const;
-    }; // Iterator
-
-    //! An iterator over the SubCategories of a category
-    //! @ingroup DgnCategoryGroup
-    struct SubCategoryIterator : BeSQLite::DbTableIterator
-    {
-    private:
-        DgnCategoryId m_categoryId;
-    public:
-
-        //! construct a SubCategoryIterator
-        //! @param[in] db The database for the SubCategory table
-        //! @param[in] category Limit the iterator to SubCategories of this category. If invalid, iterate all SubCategories of all categories.
-        SubCategoryIterator(DgnDbCR db, DgnCategoryId category) : DbTableIterator((BeSQLite::DbCR)db), m_categoryId(category) {}
-
-        //! An entry in the table.
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-        {
-        private:
-            friend struct SubCategoryIterator;
-            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
-        public:
-            DGNPLATFORM_EXPORT DgnCategoryId GetCategoryId() const; //! The Category id.
-            DGNPLATFORM_EXPORT DgnSubCategoryId GetSubCategoryId() const; //!< The SubCategory id.
-            DGNPLATFORM_EXPORT SubCategory::Appearance GetAppearance() const; //!< The Appearance for this SubCategory
-            DGNPLATFORM_EXPORT Utf8CP GetCode() const; //!< The SubCategory's code. Never nullptr. Unique. Not translated.
-            DGNPLATFORM_EXPORT Utf8String GetLabel() const; //!< The SubCategory's display label which may be translated.
-            DGNPLATFORM_EXPORT Utf8CP GetDescription() const; //!< The SubCategory's description, if any. May be nullptr.
-            Entry const& operator*() const {return *this;}
-        };
-
-        typedef Entry const_iterator;
-        typedef Entry iterator;
-        DGNPLATFORM_EXPORT const_iterator begin() const;
-        const_iterator end() const {return Entry(nullptr, false);}
-    }; // SubCategoryIterator
-
-private:
-    friend struct DgnDb;
-    explicit DgnCategories(DgnDbR db) : DgnDbTable(db) {}
-
-public:
-    ///@name Querying and manipulating categories
-    //@{
-    //! Add a new category to the DgnDb.
-    //! @param[in] row The definition of the category to create.
-    //! @param[in] appearance the appearance for the default SubCategory for the new category
-    //! @return BE_SQLITE_OK if the category was added; non-zero otherwise. BE_SQLITE_CONSTRAINT indicates that the specified DgnCategoryId and/or code is already used.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult Insert(Category& row, SubCategory::Appearance const& appearance);
-
-    //! Remove a category from the DgnDb.
-    //! @param[in] id the id of the category to remove.
-    //! @return whether the delete statement succeeded. Note that this method will return BE_SQLITE_OK even if the categoryId did not exist prior to this call.
-    //! @note Deleting a category can result in an inconsistent database. There is no checking that the category to be removed is not in use somehow, and
-    //! in general the answer to that question is nearly impossible to determine. It is very rarely possible to use this method unless you
-    //! know for sure that the category is no longer necessary (for example, on a blank database). Otherwise, avoid using this method.
-    //! @note it is illegal to delete the default category. Any attempt to do so will fail.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult Delete(DgnCategoryId id);
-
-    //! Change properties of a category.
-    //! @param[in] row The new category data to apply.
-    //! @return BE_SQLITE_OK if the update was applied; non-zero otherwise. BE_SQLITE_CONSTRAINT indicates that the specified code is used
-    //! by another category in the table.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult Update(Category const& row);
-
-    //! Get the Id of a Category from its code.
-    //! @param[in] categoryCode The code of the category of interest.
-    //! @return the Id of the category. Will be invalid if no category by the specified code exists in the DgnDb.
-    DGNPLATFORM_EXPORT DgnCategoryId QueryCategoryId(Utf8CP categoryCode) const;
-
-    //! Query for the DgnCategoryId that owns the specified DgnSubCategoryId.
-    //! @param[in] subCategoryId The Id of the SubCategory of interest.
-    //! @return the Id of the category.  Will be invalid in the case of an unsuccessful query.
-    DGNPLATFORM_EXPORT DgnCategoryId QueryCategoryId(DgnSubCategoryId subCategoryId) const;
-
-    //! Get the DgnCategoryId from the specified element.
-    //! @param[in] elementId the element to query
-    //! @return the Id of the category. Will be invalid if there is no element whose Id equals elementId.
-    DGNPLATFORM_EXPORT DgnCategoryId QueryCategoryId(DgnElementId elementId) const;
-
-    //! Get the information about a category from its Id.
-    //! @param[in] id The Id of the category of interest.
-    //! @return The data for the category. Call IsValid() on the result to determine whether this method was successful.
-    DGNPLATFORM_EXPORT Category Query(DgnCategoryId id) const;
-
-    //! Look up a category by code.
-    //! @param[in] categoryCode the category code to look up
-    //! @return The data for the category. Call IsValid() on the result to determine whether this method was successful.
-    Category QueryCategoryByCode(Utf8CP categoryCode) const {return Query(QueryCategoryId(categoryCode));}
-
-    //! Get an iterator over the categories in this DgnDb.
-    Iterator MakeIterator() const {return Iterator(m_dgndb);}
-
-    //! Query the highest DgnCategoryId used in this table
-    DGNPLATFORM_EXPORT DgnCategoryId QueryHighestId() const;
-    //@}
-
-    ///@name Querying and manipulating SubCategories of a category
-    //@{
-    //! Add a new SubCategory to a category.
-    //! @param[in] subCategory The definition of the SubCategory.
-    //! @return BE_SQLITE_OK if the SubCategory was added; non-zero otherwise. BE_SQLITE_CONSTRAINT indicates that the specified DgnCategoryId does not exist or the SubCategory's code
-    //! or DgnSubCategoryId is already in use.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertSubCategory(SubCategory& subCategory);
-
-    //! Remove a SubCategory from a category.
-    //! @param[in] subCategoryId the Id of the SubCategory to be deleted.
-    //! @return whether the delete statement succeeded. Note that this method will return BE_SQLITE_OK even if the subCategoryKey did not exist prior to this call.
-    //! @note Deleting a SubCategory from a category can result in an inconsistent database. There is no checking that the SubCategory to be removed is not in use somehow, and
-    //! in general the answer to that question is nearly impossible to determine. It is very rarely possible to use this method unless you
-    //! know for sure that the category is no longer necessary (for example, on a blank database). Otherwise, avoid using this method.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteSubCategory(DgnSubCategoryId subCategoryId);
-
-    //! Change properties of a SubCategory.
-    //! @param[in] subCategory The new SubCategory data to apply.
-    //! @return BE_SQLITE_OK if the update was applied; non-zero otherwise. BE_SQLITE_CONSTRAINT indicates that the specified code is used
-    //! by another SubCategory for the category.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult UpdateSubCategory(SubCategory const& subCategory);
-
-    //! Get the Id of a SubCategory from its code.
-    //! @param[in] categoryId the category for which the code applies.
-    //! @param[in] subCategoryCode The code of the SubCategory of interest.
-    //! @return the Id of the SubCategory. Will be invalid if no SubCategory on that category by the specified code exists
-    DGNPLATFORM_EXPORT DgnSubCategoryId QuerySubCategoryId(DgnCategoryId categoryId, Utf8CP subCategoryCode) const;
-
-    //! Get the Id of the SubCategory associated with the specified DgnGeomPart.
-    //! @param[in] geomPartId the DgnGeomPart to query.
-    //! @return the Id of the SubCategory.  Will be invalid if the query fails.
-    DGNPLATFORM_EXPORT DgnSubCategoryId QuerySubCategoryId(DgnGeomPartId geomPartId) const;
-
-    //! Get the information about a SubCategory from its Id.
-    //! @param[in] subCategoryId The Id of the SubCategory of interest.
-    //! @return The data for the SubCategory. Call IsValid() on the result to determine whether this method was successful.
-    DGNPLATFORM_EXPORT SubCategory QuerySubCategory(DgnSubCategoryId subCategoryId) const;
-
-    //! Look up a SubCategory by code.
-    //! @param[in] categoryId the category for which the code applies.
-    //! @param[in] subCategoryCode the SubCategory code to look up
-    //! @return The data for the SubCategory. Call IsValid() on the result to determine whether this method was successful.
-    SubCategory QuerySubCategoryByCode(DgnCategoryId categoryId, Utf8CP subCategoryCode) const {return QuerySubCategory(QuerySubCategoryId(categoryId, subCategoryCode));}
-
-    //! Get an iterator over the SubCategories of a category or all SubCategories of all categories.
-    //! @param[in] categoryId Limit the iterator to SubCategories of this category. If invalid, iterate all SubCategories of all categories.
-    SubCategoryIterator MakeSubCategoryIterator(DgnCategoryId categoryId=DgnCategoryId()) const {return SubCategoryIterator(m_dgndb, categoryId);}
-    //@}
-
-    //! Get a string containing the list of characters that may NOT appear in category codes.
-    static Utf8CP GetIllegalCharacters() {return "<>\\/.\"?*|,='&\n\t";}
-
-    //! Determine whether the supplied code is a valid category code.
-    //! @param[in] code The candidate category code to check
-    //! @return true if the category code is valid, false otherwise.
-    //! @note Category codes may also not start or end with a space.
-    static bool IsValidCode(Utf8StringCR code) {return DgnDbTable::IsValidName(code, GetIllegalCharacters());}
-
-    //! Get the Id of the default SubCategory for a given categoryId.
-    //! @param[in] categoryId the category from which to get the default SubCategory.
-    //! @return the Id of the SubCategory.
-    static DgnSubCategoryId DefaultSubCategoryId(DgnCategoryId categoryId) {return DgnSubCategoryId(categoryId.GetValue());}
-
-    DgnCategoryId Import(struct DgnRemapTables& remap, DgnDbR sourceDb, DgnCategoryId sourceCategoryId);
-    DgnSubCategoryId Import(DgnRemapTables& remap, DgnCategoryId destCategoryId, DgnDbR sourceDb, DgnSubCategoryId sourceSubCategoryId);
 };
 
 //=======================================================================================
@@ -695,11 +373,11 @@ public:
         friend struct DgnModels;
 
     private:
-        DgnModelId   m_id;
-        DgnClassId   m_classId;
-        Utf8String   m_name;
-        Utf8String   m_description;
-        bool         m_inGuiList;
+        DgnModelId          m_id;
+        DgnClassId          m_classId;
+        AuthorityIssuedCode m_code;
+        Utf8String          m_description;
+        bool                m_inGuiList;
 
     public:
         Model()
@@ -707,14 +385,13 @@ public:
             m_inGuiList = true;
             };
 
-        Model(Utf8CP name, DgnClassId classid, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_name(name)
+        Model(AuthorityIssuedCode code, DgnClassId classid, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_code(code)
             {
             m_inGuiList = true;
             }
 
-        Utf8StringR GetNameR() {return m_name;}
         Utf8StringR GetDescriptionR() {return m_description;}
-        void SetName(Utf8CP val) {m_name.assign(val);}
+        void SetCode(AuthorityIssuedCode code) {m_code = code;}
         void SetDescription(Utf8CP val) {m_description.AssignOrClear(val);}
         void SetInGuiList(bool val)   {m_inGuiList = val;}
         void SetId(DgnModelId id) {m_id = id;}
@@ -722,8 +399,7 @@ public:
         void SetModelType(DgnClassId classId) {m_classId = classId;}
 
         DgnModelId GetId() const {return m_id;}
-        Utf8CP GetNameCP() const {return m_name.c_str();}
-        Utf8String GetName() const {return m_name;}
+        AuthorityIssuedCode const& GetCode() const {return m_code;}
         Utf8CP GetDescription() const {return m_description.c_str();}
         DgnClassId GetClassId() const {return m_classId;}
         bool InGuiList() const {return m_inGuiList;}
@@ -745,7 +421,10 @@ public:
 
         public:
             DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
-            DGNPLATFORM_EXPORT Utf8CP GetName() const;
+            DGNPLATFORM_EXPORT AuthorityIssuedCode GetCode() const;
+            DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const;
+            DGNPLATFORM_EXPORT Utf8CP GetCodeNameSpace() const;
+            DGNPLATFORM_EXPORT DgnAuthorityId GetCodeAuthorityId() const;
             DGNPLATFORM_EXPORT Utf8CP GetDescription() const;
             DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
             DGNPLATFORM_EXPORT bool InGuiList() const;
@@ -762,10 +441,11 @@ public:
     };
 
 public:
+    static AuthorityIssuedCode GetModelCode(Iterator::Entry const& entry); //!< @private
     DGNPLATFORM_EXPORT QvCache* GetQvCache(bool createIfNecessary=true);
     void SetQvCache(QvCache* qvCache) {m_qvCache = qvCache;}
 
-    //! Determine the Id of the first model in this DgnDb.
+    //! Determine the Id of the first non-dictionary model in this DgnDb.
     DGNPLATFORM_EXPORT DgnModelId QueryFirstModelId() const;
 
     //! Load a DgnModel from this DgnDb. Loading a model does not cause its elements to be filled. Rather, it creates an
@@ -785,11 +465,11 @@ public:
     T_DgnModelMap const& GetLoadedModels() const {return m_models;}
 
     DGNPLATFORM_EXPORT BentleyStatus QueryModelById(Model* out, DgnModelId id) const;
-    DGNPLATFORM_EXPORT BentleyStatus GetModelName(Utf8StringR, DgnModelId id) const;
+    DGNPLATFORM_EXPORT BentleyStatus GetModelCode(AuthorityIssuedCode& code, DgnModelId id) const;
 
-    //! Find the ModelId of the model with the specified name name.
+    //! Find the ModelId of the model with the specified code.
     //! @return The model's ModelId. Check dgnModelId.IsValid() to see if the DgnModelId was found.
-    DGNPLATFORM_EXPORT DgnModelId QueryModelId(Utf8CP name) const;
+    DGNPLATFORM_EXPORT DgnModelId QueryModelId(AuthorityIssuedCode code) const;
 
     //! Query for the dependency index of the specified model
     //! @param[out] dependencyIndex  The model's DependencyIndex property value
@@ -829,7 +509,7 @@ struct DgnGeomParts : DgnDbTable
 
 private:
     explicit DgnGeomParts(DgnDbR db) : DgnDbTable(db) {}
-    DgnGeomPartId m_highestGeomPartId; // 0 means not yet valid. Highest DgnGeomPartId (for current repositoryId)
+    DgnGeomPartId m_highestGeomPartId; // 0 means not yet valid. Highest DgnGeomPartId (for current briefcaseId)
 
 public:
     DgnGeomPartId MakeNewGeomPartId();
@@ -860,91 +540,6 @@ public:
 
     //! Delete the geometry part associated with the specified ID
     DGNPLATFORM_EXPORT BentleyStatus DeleteGeomPart(DgnGeomPartId);
-};
-
-//=======================================================================================
-//! The DgnColors holds the Named Colors for a DgnDb. Named Colors are RGB values (no transparency) that may
-//! be named and from a "color book". The entries in the table are identified by DgnTrueColorId's.
-//! Once a True Color is defined, it may not be changed or deleted. Note that there may be multiple enties in the table with the same RGB value.
-//! However, for a given book name, there may not be two entries with the same name.
-//! @see DgnDb::Colors
-//=======================================================================================
-struct DgnColors : DgnDbTable
-{
-private:
-    friend struct DgnDb;
-
-    explicit DgnColors(DgnDbR db) : DgnDbTable(db){}
-
-public:
-    struct Color
-    {
-    friend struct DgnColors;
-    private:
-        DgnTrueColorId m_id;
-        ColorDef       m_color;
-        Utf8String     m_name;
-        Utf8String     m_book;
-
-    public:
-        Color(ColorDef color, Utf8CP name, Utf8CP book=nullptr) : m_color(color), m_book(book), m_name(name) {}
-        Color() {}
-        bool IsValid() const {return m_id.IsValid();}
-        DgnTrueColorId GetId() const {return m_id;}
-        ColorDef GetColor() const {return m_color;}
-        Utf8StringCR GetName() const {return m_name;}
-        Utf8StringCR GetBook() const {return m_book;}
-    };
-
-    //! Add a new Color to the table.
-    //! @param[in] color    The Color values for the new entry.
-    //! @param[out] result  The result of the operation
-    //! @note For a given bookname, there may not be more than one color with the same name.
-    //! @return colorId The DgnTrueColorId for the newly created entry. Will be invalid if name+bookname is not unique.
-    DGNPLATFORM_EXPORT DgnTrueColorId Insert(Color& color, DgnDbStatus* result = nullptr);
-
-    //! Find the first DgnTrueColorId that has a given ColorDef value.
-    //! @return A DgnTrueColorId for the supplied color value. If no entry in the table has the given value, the DgnTrueColorId will be invalid.
-    //! @note If the table holds more than one entry with the same value, it is undefined which DgnTrueColorId is returned.
-    DGNPLATFORM_EXPORT DgnTrueColorId FindMatchingColor(ColorDef color) const;
-
-    //! Get a color by DgnTrueColorId.
-    //! @param[in] colorId the true color id to query
-    //! @return Color 
-    DGNPLATFORM_EXPORT Color QueryColor(DgnTrueColorId colorId) const;
-
-    //! Get color by name and bookname.
-    //! @param[in] name The name for the colorId.
-    //! @param[in] bookname The bookName for the colorId.
-    DGNPLATFORM_EXPORT Color QueryColorByName(Utf8CP name, Utf8CP bookname) const;
-
-    struct Iterator : BeSQLite::DbTableIterator
-    {
-    public:
-        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) {}
-
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-        {
-        private:
-            friend struct Iterator;
-            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
-        public:
-            DGNPLATFORM_EXPORT DgnTrueColorId GetId() const;
-            DGNPLATFORM_EXPORT ColorDef GetColor() const;
-            DGNPLATFORM_EXPORT Utf8CP GetName() const;
-            DGNPLATFORM_EXPORT Utf8CP GetBook() const;
-            Entry const& operator*() const {return *this;}
-        };
-
-    typedef Entry const_iterator;
-    typedef Entry iterator;
-    DGNPLATFORM_EXPORT size_t QueryCount() const;
-    DGNPLATFORM_EXPORT Entry begin() const;
-    Entry end() const {return Entry(nullptr, false);}
-    };
-
-    //! Make an iterator over the named colors in this DgnDb.
-    Iterator MakeIterator() const {return Iterator(m_dgndb);}
 };
 
 //=======================================================================================
@@ -1213,16 +808,16 @@ public:
     DGNPLATFORM_EXPORT AxisAlignedBox3d GetProjectExtents();
 
     //! Convert a GeoPoint to an XYZ point
-    //! @param[out] outUors     The output XYZ point
-    //! @param[in] inLatLong    The input GeoPoint
+    //! @param[out] outXyz The output XYZ point
+    //! @param[in] inLatLong The input GeoPoint
     //! @return non-zero error status if the point cannot be converted or if this DgnDb is not geo-located
-    DGNPLATFORM_EXPORT BentleyStatus UorsFromLatLong(DPoint3dR outUors, GeoPointCR inLatLong) const;
+    DGNPLATFORM_EXPORT BentleyStatus XyzFromLatLong(DPoint3dR outXyz, GeoPointCR inLatLong) const;
 
     //! Convert a an XYZ point to a GeoPoint
     //! @param[out] outLatLong  The output GeoPoint
-    //! @param[in] inUors    The input XYZ point
+    //! @param[in] inXyz The input XYZ point
     //! @return non-zero error status if the point cannot be converted or if this DgnDb is not geo-located
-    DGNPLATFORM_EXPORT BentleyStatus LatLongFromUors(GeoPointR outLatLong, DPoint3dCR inUors) const;
+    DGNPLATFORM_EXPORT BentleyStatus LatLongFromXyz(GeoPointR outLatLong, DPoint3dCR inXyz) const;
 
     //! Query the GCS of this DgnDb, if any.
     //! @return this DgnDb's GCS or nullptr if this DgnDb is not geo-located
@@ -1249,10 +844,6 @@ private:
     friend struct DgnDb;
 
     struct DgnLineStyles* m_lineStyles;
-    struct DgnAnnotationTextStyles* m_annotationTextStyles;
-    struct DgnAnnotationFrameStyles* m_annotationFrameStyles;
-    struct DgnAnnotationLeaderStyles* m_annotationLeaderStyles;
-    struct DgnTextAnnotationSeeds* m_textAnnotationSeeds;
 
     explicit DgnStyles(DgnDbR);
     ~DgnStyles();
@@ -1260,18 +851,6 @@ private:
 public:
     //! Provides accessors for line styles.
     DGNPLATFORM_EXPORT struct DgnLineStyles& LineStyles();
-
-    //! Provides accessors for annotation text styles.
-    DGNPLATFORM_EXPORT struct DgnAnnotationTextStyles& AnnotationTextStyles();
-
-    //! Provides accessors for annotation frame styles.
-    DGNPLATFORM_EXPORT struct DgnAnnotationFrameStyles& AnnotationFrameStyles();
-
-    //! Provides accessors for annotation leader styles.
-    DGNPLATFORM_EXPORT struct DgnAnnotationLeaderStyles& AnnotationLeaderStyles();
-
-    //! Provides accessors for text annotation seeds.
-    DGNPLATFORM_EXPORT struct DgnTextAnnotationSeeds& TextAnnotationSeeds();
 };
 
 //=======================================================================================
@@ -1410,6 +989,182 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus InsertOnElement(DgnElementKey, DgnLinkId);
     DGNPLATFORM_EXPORT BentleyStatus DeleteFromElement(DgnElementKey, DgnLinkId);
     DGNPLATFORM_EXPORT void PurgeUnused();
+};
+
+//=======================================================================================
+//! Every DgnDb has a table for storing searchable text for use with SQLite's
+//! FTS5 full text search features. Each search term is qualified by a "text type" and associated
+//! with an ID into some other table from which the search term originated. The meaning of the
+//! ID field can be interpreted according to the text type. Applications can
+//! populate this table with search terms to enable efficient, database-wide full text search.
+//! Such queries may be optionally constrained to one or more text types.
+//! In general, an application should limit its queries to those text types which it either
+//! created or understands the meaning of.
+//! @see DgnDb::SearchableText
+// @bsiclass                                                    Paul.Connelly   10/15
+//=======================================================================================
+struct DgnSearchableText : DgnDbTable
+{
+private:
+    friend struct DgnDb;
+
+    DgnSearchableText(DgnDbR db) : DgnDbTable(db) { }
+
+    static BeSQLite::DbResult CreateTable(DgnDb& db);
+public:
+    //! Identifies a record in the searchable text table
+    struct Key
+    {
+    private:
+        Utf8String m_type;
+        BeSQLite::BeInt64Id m_id;
+    public:
+        //! Constructor.
+        //! @param[in]      textType Specifies the type of text. May not be empty.
+        //! @param[in]      id       The ID of the associated object. Must be valid.
+        Key(Utf8StringCR textType, BeSQLite::BeInt64Id id) : m_type(textType), m_id(id) { m_type.Trim(); }
+
+        //! Default constructor producing an invalid Key.
+        Key() { }
+
+        Utf8StringCR GetTextType() const { return m_type; } //!< The search text type
+        BeSQLite::BeInt64Id GetId() const { return m_id; } //!< The ID of the object associated with this record
+        bool IsValid() const { return !m_type.empty() && m_id.IsValid(); } //!< Determine whether this is a valid Key
+    };
+
+    //! A record in the searchable text table
+    struct Record
+    {
+    private:
+        Key m_key;
+        Utf8String  m_text;
+    public:
+        //! Constructor
+        //! @param[in]      textType Identifies both the meaning of the ID and the "type" of the text. May not be empty.
+        //! @param[in]      id       The ID of the object associated with this text. Must be valid.
+        //! @param[in]      text     The searchable text. May not be empty.
+        //! @remarks The combination of text type and ID must be unique within the searchable text table
+        Record(Utf8StringCR textType, BeSQLite::BeInt64Id id, Utf8StringCR text) : Record(Key(textType, id), text) { }
+
+        //! Constructor
+        //! @param[in]      key  Uniquely identifies this record within the table. Must be valid.
+        //! @param[in]      text The searchable text. May not be empty.
+        Record(Key const& key, Utf8StringCR text) : m_key(key), m_text(text) { m_text.Trim(); }
+
+        //! Default constructor. Produces an invalid record.
+        Record() { }
+
+        Utf8StringCR GetTextType() const { return m_key.GetTextType(); } //!< The search text type
+        BeSQLite::BeInt64Id GetId() const { return m_key.GetId(); } //!< The ID of the object associated with the text
+        Utf8StringCR GetText() const { return m_text; } //!< The searchable text
+        Key const& GetKey() const { return m_key; } //!< The record key
+        bool IsValid() const { return m_key.IsValid() && !m_text.empty(); } //!< Determine if this is a valid record
+    };
+
+    //! A list of text types by which to filter full-text search queries
+    typedef bvector<Utf8String> TextTypes;
+
+    //! Specifies a query on the searchable text table, optionally filtered by one or more text types.
+    struct Query
+    {
+    private:
+        TextTypes  m_types;
+        Utf8String m_matchExpression;
+
+        friend struct DgnSearchableText;
+        Utf8String ToWhereClause() const;
+    public:
+        //! Constructor
+        //! @param[in]      matchExpression An expression conforming to sqlite's MATCH syntax indicating the text for which to search
+        //! @param[in]      textType        If supplied, only text of the specified type will be included in the query
+        //! @remarks The matchExpression will be single-quoted and concatenated with a query to produce a where clause like WHERE searchable_text MATCH 'matchExpression'.
+        //! @remarks The caller is responsible for ensuring that search phrases within the expression are properly double-quoted and that the expression conforms to sqlite's MATCH syntax.
+        DGNPLATFORM_EXPORT explicit Query(Utf8StringCR matchExpression, Utf8CP textType=nullptr);
+
+        //! Add a text type by which to filter. The query will only include text belonging to the specified types.
+        //! @param[in]      textType The type by which to filter.
+        DGNPLATFORM_EXPORT void AddTextType(Utf8CP textType);
+    };
+
+    //! An iterator over the results of a full text search query
+    struct Iterator : BeSQLite::DbTableIterator
+    {
+    private:
+        friend struct DgnSearchableText;
+
+        Iterator(DgnDb& db, Query const& query) : DbTableIterator((BeSQLite::DbCR)db), m_query(query) { }
+
+        Query m_query;
+    public:
+        //! An entry in a full text search results iterator
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+        {
+        private:
+            friend struct Iterator;
+            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) { }
+        public:
+            DGNPLATFORM_EXPORT Utf8CP GetTextType() const; //!< The type of text
+            DGNPLATFORM_EXPORT BeSQLite::BeInt64Id GetId() const; //!< The ID of the associated object
+            DGNPLATFORM_EXPORT Utf8CP GetText() const; //!< The search text
+
+            Key GetKey() const { return Key(GetTextType(), GetId()); } //!< The unique Key identifying this entry
+            Record GetRecord() const { return Record(GetTextType(), GetId(), GetText()); } //!< A record representing this entry
+            Entry const& operator*() const { return *this; } //!< Dereference this entry
+        };
+
+        typedef Entry const_iterator;
+        typedef Entry iterator;
+        DGNPLATFORM_EXPORT Entry begin() const; //!< An iterator to the first entry in the results
+        Entry end() const { return Entry(nullptr, false); } //!< An iterator beyond the last entry in the results
+    };
+
+    //! Query the number of records which match a full text search query
+    //! @param[in]      query The searchable text query
+    //! @return The number of records which match the query.
+    DGNPLATFORM_EXPORT size_t QueryCount(Query const& query) const;
+
+    //! Query the records which match a full text search query
+    //! @param[in]      query The searchable text query
+    //! @return An iterator over the matching records.
+    DGNPLATFORM_EXPORT Iterator QueryRecords(Query const& query) const;
+
+    //! Query the record with the specified text type and ID.
+    //! @param[in]      key The unique key identifying the record
+    //! @return The corresponding record, or an invalid record if no such record exists.
+    DGNPLATFORM_EXPORT Record QueryRecord(Key const& key) const;
+
+    //! Query the types of text present in the searchable text table
+    //! @return The list of available text types
+    DGNPLATFORM_EXPORT TextTypes QueryTextTypes() const;
+
+    //! Insert a new record into the searchable text table
+    //! @param[in]      record The record to insert
+    //! @return Success if the new record was inserted, or else an error code.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Insert(Record const& record);
+
+    //! Update an existing record in the searchable text table
+    //! @param[in]      record      The modified record
+    //! @param[in]      originalKey If non-null, identifies the existing record.
+    //! @return Success if the record was updated, or else an error code.
+    //! @remarks If originalKey is not supplied, the key is assumed to remain unchanged. Otherwise, the record will be looked up by original key, allowing the text type and/or ID to be updated.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Update(Record const& record, Key const* originalKey=nullptr);
+
+    //! Removes all data from the searchable text table
+    //! @return Success if the table was cleared, or an error code.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DropAll();
+
+    //! Drops all records of the specified text type
+    //! @param[in]      textType The text type to drop
+    //! @return Success if the associated records were dropped, or an error code.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DropTextType(Utf8CP textType);
+
+    //! Drop a single record from the searchable text table
+    //! @param[in]      key The key identifying the record to drop.
+    //! @return Success if the record was dropped, or an error code.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DropRecord(Key const& key);
+//__PUBLISH_SECTION_END__
+    static bool IsUntrackedFts5Table(Utf8CP tableName);
+//__PUBLISH_SECTION_START__
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

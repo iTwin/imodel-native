@@ -195,7 +195,7 @@ BentleyStatus DgnRscGlyph::_FillGpa(GPArrayR gpa) const
     bvector<Byte> glyphDataBuffer;
     glyphDataBuffer.reserve(m_glyphDataOffset.size);
     if (SUCCESS != m_data->_ReadGlyphData(glyphDataBuffer, (size_t)m_glyphDataOffset.offset, (size_t)m_glyphDataOffset.size))
-        return  ERROR;
+        return ERROR;
 
     RscGlyphData const* glyphData = (RscGlyphData const*)&glyphDataBuffer[0];
     if (0 == glyphData->numElems)
@@ -273,6 +273,7 @@ void DgnRscFont::LoadGlyphs() const
 
     m_hasLoadedGlyphs = true;
 
+    //.............................................................................................
     IDgnRscFontData* data = (IDgnRscFontData*)m_data;
     if (nullptr == data)
         return;
@@ -292,9 +293,20 @@ void DgnRscFont::LoadGlyphs() const
     RscFontHeader const& fontHeader = *(RscFontHeader const*)&fontHeaderBuffer[0];
     RscGlyphHeader const* glyphHeaders = (RscGlyphHeader const*)&glyphHeadersBuffer[0];
     RscGlyphDataOffset const* glyphOffsets = (RscGlyphDataOffset const*)&glyphOffsetsBuffer[0];
+
+    //.............................................................................................
+    RscFontVec ascender = fontHeader.ascender;
+    RscFontVec descender = fontHeader.descender;
+    if (0 == descender)
+        descender = fontHeader.maxbrr.bottom;
+    
+    m_descenderRatio = fabs (descender / (double)ascender);
+
+    //.............................................................................................
     for (size_t iGlyph = 0; iGlyph < fontHeader.totalChars; ++iGlyph)
         m_glyphCache[glyphHeaders[iGlyph].code] = new DgnRscGlyph(glyphHeaders[iGlyph].code, fontHeader.ascender, fontHeader.filledFlag, glyphHeaders[iGlyph], glyphOffsets[iGlyph], *data);
     
+    //.............................................................................................
     m_defaultGlyph = FindGlyphCP(fontHeader.defaultChar);
     if (nullptr == m_defaultGlyph)
         {
@@ -315,15 +327,6 @@ DgnGlyphCP DgnRscFont::FindGlyphCP(DgnGlyph::T_Id id) const
         return foundGlyph->second;
     
     return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     05/2015
-//---------------------------------------------------------------------------------------
-DgnGlyphCP DgnRscFont::GetDefaultGlyphCP() const
-    {
-    LoadGlyphs();
-    return m_defaultGlyph;
     }
 
 //---------------------------------------------------------------------------------------

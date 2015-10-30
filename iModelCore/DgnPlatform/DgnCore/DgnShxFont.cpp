@@ -1293,3 +1293,12 @@ BentleyStatus DgnShxFont::_LayoutGlyphs(DgnGlyphLayoutResultR result, DgnGlyphLa
 
     return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2015
+//---------------------------------------------------------------------------------------
+double DgnShxFont::_GetDescenderRatio(DgnFontStyle) const
+    {
+    IDgnShxFontData* shxData = ((IDgnShxFontData*)m_data);
+    return ((double)shxData->GetAscender() / (double)shxData->GetDescender());
+    }

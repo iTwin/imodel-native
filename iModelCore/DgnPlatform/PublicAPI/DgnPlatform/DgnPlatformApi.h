@@ -177,4 +177,3 @@ For a list of configuration variables used by DgnPlatform, see \ref ConfigVariab
 #include    "DgnHandlers/DgnHandlersAPI.h"
 //__PUBLISH_SECTION_END__
 #include    <Bentley/BeAssert.h>
-#include    <RmgrTools/Tools/memutil.h>

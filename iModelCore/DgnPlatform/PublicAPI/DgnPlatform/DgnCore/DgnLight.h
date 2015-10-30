@@ -8,101 +8,123 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include "DgnDbTables.h"
+#include "DgnDb.h"
+#include "DgnElement.h"
+#include "ElementHandler.h"
+
+#define DGN_CLASSNAME_LightDefinition "LightDefinition"
+
+DGNPLATFORM_TYPEDEFS(LightDefinition);
+DGNPLATFORM_REF_COUNTED_PTR(LightDefinition);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
-//! The DgnLights holds the lights defined for a DgnDb. Each light has a unique name, an
-//! options description, and a value encoded in JSON.
-//! @see DgnDb::Lights
+//! Holds the definition of a light, with its data encoded in JSON.
 //=======================================================================================
-struct DgnLights : DgnDbTable
+struct EXPORT_VTABLE_ATTRIBUTE LightDefinition : DictionaryElement
 {
-private:
-    friend struct DgnDb;
-    explicit DgnLights(DgnDbR db) : DgnDbTable(db) { }
-
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_LightDefinition, DictionaryElement);
 public:
-    struct Light
+    //! Holds the data which describes a light definition
+    struct Data
     {
-    private:
-        friend struct DgnLights;
-
-        DgnLightId  m_id;
-        Utf8String  m_name;
-        Utf8String  m_descr;
         Utf8String  m_value;
+        Utf8String  m_descr;
 
-    public:
-        //! Constructs an empty, invalid Light
-        Light() { }
-        //! Construct a Light for insertion into the lights table.
-        //! @param[in]      name  The light's name. Must be unique within the DgnDb.
-        //! @param[in]      value The JSON representation of the light.
-        //! @param[in]      descr The light's optional description
-        Light(Utf8CP name, Utf8CP value, Utf8CP descr=nullptr) : m_name(name), m_descr(descr), m_value(value) { }
+        //! Construct with specified value as JSON and optional description
+        Data(Utf8StringCR value="", Utf8StringCR descr="") { Init(value, descr); }
 
-        DgnLightId GetId() const {return m_id;} //!< The ID of this light.
-        Utf8StringCR GetName() const {return m_name;} //!< The name of this light.
-        Utf8StringCR GetValue() const {return m_value;} //!< The JSON representation of this light.
-        Utf8StringCR GetDescr() const {return m_descr;} //!< The description of this light.
-        void SetValue(Utf8StringCR val) {m_value = val;} //!< Sets the JSON representation of this light.
-        void SetDescr(Utf8StringCR val) {m_descr = val;} //!< Sets the description of this light.
-        bool IsValid() const {return m_id.IsValid();} //!< Test if the light is valid.
+        //! Initialize with specified value as JSON and optional description
+        void Init(Utf8StringCR value="", Utf8StringCR descr="") { m_value = value; m_descr = descr; }
+
+        uint32_t GetMemSize() const { return static_cast<uint32_t>(sizeof(*this) + m_value.length() + m_descr.length()); }
     };
 
-    //! An iterator over the lights in a DgnDb
-    struct Iterator : BeSQLite::DbTableIterator
+    //! Parameters used to construct a LightDefinition
+    struct CreateParams : T_Super::CreateParams
     {
-    public:
-        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) { }
+        DEFINE_T_SUPER(LightDefinition::T_Super::CreateParams);
 
-        //! An entry in the light table.
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-        {
-        private:
-            friend struct Iterator;
-            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) { }
-        public:
-            DGNPLATFORM_EXPORT DgnLightId GetId() const; //!< The light ID.
-            DGNPLATFORM_EXPORT Utf8CP GetName() const; //!< The light name.
-            DGNPLATFORM_EXPORT Utf8CP GetValue() const; //!< The JSON representation of the light.
-            DGNPLATFORM_EXPORT Utf8CP GetDescr() const; //!< The light description.
-            Entry const& operator*() const {return *this;}
-        };
+        Data m_data;
 
-        typedef Entry const_iterator;
-        typedef Entry iterator;
-        DGNPLATFORM_EXPORT size_t QueryCount() const; //!< The number of entries in the light table.
-        DGNPLATFORM_EXPORT Entry begin() const; //!< An iterator to the first entry in the table.
-        Entry end() const {return Entry(nullptr, false);} //!< An iterator one beyond the last entry in the table.
+        //! Constructor from base class. Primarily for internal use.
+        explicit CreateParams(DgnElement::CreateParams const& params, Utf8StringCR value="", Utf8StringCR descr="") : T_Super(params), m_data(value, descr) { }
+
+        //! Constructs parameters for a light definition with the specified values. Primarily for internal use.
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code code, DgnElementId id = DgnElementId(),
+                     DgnElementId parent = DgnElementId(), Utf8StringCR value="", Utf8StringCR descr="")
+            : T_Super(db, modelId, classId, code, id, parent), m_data(value, descr) { }
+
+        //! Constructs parameters for a light definition with the specified values
+        //! @param[in]      db    The DgnDb in which the light definition is to reside
+        //! @param[in]      name  The name of the light definition. Must be unique among all light definitions within the DgnDb.
+        //! @param[in]      value A JSON string describing the light definition.
+        //! @param[in]      descr Optional description of the light definition.
+        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, Utf8StringCR name, Utf8StringCR value="", Utf8StringCR descr="");
+
+        Utf8StringCR GetName() const { return m_code.GetValue(); } //!< Return the light definition name.
     };
 
-    //! Obtain an iterator over the lights in a DgnDb
-    Iterator MakeIterator() const {return Iterator(m_dgndb);}
+private:
+    Data m_data;
 
-    //! Insert a new light into the DgnDb. The name of the light must be unique within the DgnDb.
-    //! @param[in]      light       The new light
-    //! @param[out]     result      If supplied, holds the result of the insert operation
-    //! @return The DgnLightId of the newly created light, or an invalid ID if the light was not created.
-    DGNPLATFORM_EXPORT DgnLightId Insert(Light& light, DgnDbStatus* result=nullptr);
+    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
+protected:
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
+    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
 
-    //! Change the properties of the specified light. This method cannot be used to change the light name.
-    //! @param[in]      light The modified light.
-    //! @return Success if the light was updated, or else an error code.
-    DGNPLATFORM_EXPORT DgnDbStatus Update(Light const& light) const;
+    virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
+    virtual Code _GenerateDefaultCode() override { return Code(); }
+public:
+    //! Construct a new LightDefinition with the specified parameters
+    explicit LightDefinition(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }
 
-    //! Look up a light by ID.
-    //! @param[in]      id The ID of the desired light.
-    //! @return The light with the specified ID, or an invalid light if no such ID exists.
-    DGNPLATFORM_EXPORT Light Query(DgnLightId id) const;
+    DgnLightId GetLightId() const { return DgnLightId(GetElementId().GetValue()); } //!< Returns the ID of this light definition
+    Utf8String GetName() const { return GetCode().GetValue(); } //!< Returns the name of this light definition
+    Utf8StringCR GetValue() const { return m_data.m_value; } //!< Returns the light data as a JSON string
+    Utf8StringCR GetDescr() const { return m_data.m_descr; } //!< Returns the description of this light definition
 
-    //! Look up the ID of the light with the specified name.
-    //! @param[in]      name The name of the desired light.
-    //! @return The ID of the specified light, or an invalid ID if no such light exists.
-    DGNPLATFORM_EXPORT DgnLightId QueryLightId(Utf8StringCR name) const;
+    void SetValue(Utf8StringCR value) { m_data.m_value = value; } //!< Set the light data as a JSON string
+    void SetDescr(Utf8StringCR descr) { m_data.m_descr = descr; } //!< Set the description of this light definition
+
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_LightDefinition); } //!< Returns the class ID used for light definitions
+    static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); } //!< Return the class ID used for light definitions
+
+    //! Insert this light definition into the DgnDb and return the persistent light definition
+    LightDefinitionCPtr Insert(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Insert<LightDefinition>(*this, status); }
+
+    //! Update this light definition in the DgnDb and return the updated persistent light definition
+    LightDefinitionCPtr Update(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Update<LightDefinition>(*this, status); }
+
+    //! Creates a Code for a light definition.
+    DGNPLATFORM_EXPORT static DgnElement::Code CreateLightDefinitionCode(Utf8StringCR name);
+
+    //! Looks up the ID of the light definition with the specified code.
+    DGNPLATFORM_EXPORT static DgnLightId QueryLightId(DgnElement::Code const& code, DgnDbR db);
+
+    //! Looks up the ID of the light definition with the specified name
+    static DgnLightId QueryLightId(Utf8StringCR name, DgnDbR db) { return QueryLightId(CreateLightDefinitionCode(name), db); }
+
+    //! Looks up a light definition by ID
+    static LightDefinitionCPtr QueryLightDefinition(DgnLightId lightId, DgnDbR db) { return db.Elements().Get<LightDefinition>(lightId); }
 };
+
+namespace dgn_ElementHandler
+{
+    //=======================================================================================
+    //! The handler for light definition elements.
+    //! @bsistruct                                                  Paul.Connelly   09/15
+    //=======================================================================================
+    struct LightDef : Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_LightDefinition, LightDefinition, LightDef, Element, DGNPLATFORM_EXPORT);
+    protected:
+        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
+    };
+}
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

@@ -8,6 +8,8 @@
 
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <numeric>
+#include <DgnPlatform/DgnCore/DgnMaterial.h>
+#include <DgnPlatform/DgnCore/DgnTexture.h>
 
 /*---------------------------------------------------------------------------------**//**
 * Test fixture for testing Element Geometry Builder
@@ -89,9 +91,11 @@ static DgnMaterialId     createTexturedMaterial (DgnDbR dgnDb, Utf8CP materialNa
             imageByte = ++value % 0xff;        
         }
 
-
-    DgnTextures::Texture    texture (DgnTextures::TextureData (DgnTextures::Format::RAW, &imageData.front(), imageData.size(), width, height));
-    DgnTextureId            textureId = dgnDb.Textures().Insert (texture);
+    DgnTexture::Data textureData(DgnTexture::Format::RAW, &imageData.front(), imageData.size(), width, height);
+    DgnTexture texture(DgnTexture::CreateParams(dgnDb, materialName/*###TODO unnamed textures*/, textureData));
+    texture.Insert();
+    DgnTextureId textureId = texture.GetTextureId();
+    EXPECT_TRUE(textureId.IsValid());
 
     Json::Value     patternMap, mapsMap;
 
@@ -102,12 +106,11 @@ static DgnMaterialId     createTexturedMaterial (DgnDbR dgnDb, Utf8CP materialNa
     mapsMap[RENDER_MATERIAL_MAP_Pattern] = patternMap;
     renderMaterialAsset[RENDER_MATERIAL_Map] = mapsMap;
 
-
-    DgnMaterials::Material material (materialName, "Test Palette");
-
+    DgnMaterial material(DgnMaterial::CreateParams(dgnDb, "Test Palette", materialName));
     material.SetRenderingAsset (renderMaterialAsset);
-
-    return dgnDb.Materials().Insert(material);
+    auto createdMaterial = material.Insert();
+    EXPECT_TRUE(createdMaterial.IsValid());
+    return createdMaterial.IsValid() ? createdMaterial->GetMaterialId() : DgnMaterialId();
     }
 
 /*---------------------------------------------------------------------------------**//**

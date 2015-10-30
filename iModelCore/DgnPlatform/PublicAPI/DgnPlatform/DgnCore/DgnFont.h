@@ -139,6 +139,10 @@ public:
     DGNPLATFORM_EXPORT bool IsResolved() const;
     virtual DgnGlyphCP _FindGlyphCP(DgnGlyph::T_Id, DgnFontStyle) const = 0;
     DgnGlyphCP FindGlyphCP(DgnGlyph::T_Id glyphId, DgnFontStyle fontStyle) const { return _FindGlyphCP(glyphId, fontStyle); }
+    DGNPLATFORM_EXPORT static DgnFontStyle FontStyleFromBoldItalic(bool isBold, bool isItalic);
+    DGNPLATFORM_EXPORT static void FontStyleToBoldItalic(bool& isBold, bool& isItalic, DgnFontStyle);
+    virtual double _GetDescenderRatio(DgnFontStyle) const = 0;
+    double GetDescenderRatio(DgnFontStyle fontStyle) const { return _GetDescenderRatio(fontStyle); }
 };
 
 //=======================================================================================
@@ -166,6 +170,7 @@ public:
     virtual bool _CanDrawWithLineWeight() const override { return false; }
     DGNPLATFORM_EXPORT static BentleyStatus GetTrueTypeGlyphDataDirect(bvector<Byte>&, double& scaleFactor, DgnGlyphCR);
     DGNPLATFORM_EXPORT virtual DgnGlyphCP _FindGlyphCP(DgnGlyph::T_Id, DgnFontStyle) const override;
+    DGNPLATFORM_EXPORT virtual double _GetDescenderRatio(DgnFontStyle) const override;
 };
 
 //=======================================================================================
@@ -193,21 +198,22 @@ private:
     mutable T_GlyphCache m_glyphCache;
     mutable DgnGlyphCP m_defaultGlyph;
     mutable bool m_isDefaultGlyphAllocated;
+    mutable double m_descenderRatio;
     mutable bool m_hasLoadedGlyphs;
     typedef bpair<uint8_t, uint8_t> T_FractionMapKey;
     typedef bmap<T_FractionMapKey, DgnGlyph::T_Id> T_FractionMap;
     mutable T_FractionMap m_fractions;
     mutable bool m_hasLoadedFractions;
 
-    void LoadGlyphs() const;
+    DGNPLATFORM_EXPORT void LoadGlyphs() const;
     DGNPLATFORM_EXPORT DgnGlyphCP FindGlyphCP(DgnGlyph::T_Id) const;
-    DgnGlyphCP GetDefaultGlyphCP() const;
+    DgnGlyphCP GetDefaultGlyphCP() const { LoadGlyphs(); return m_defaultGlyph; }
     DgnGlyph::T_Id FindFractionGlyphCode(uint8_t numerator, uint8_t denominator) const;
     DgnGlyph::T_Id Ucs4CharToFontChar(uint32_t, CharCP codePageString, bvector<Byte>& localeBuffer) const;
     bvector<DgnGlyph::T_Id> Utf8ToFontChars(Utf8StringCR) const;
 
 public:
-    DgnRscFont(Utf8CP name, IDgnFontDataP data) : DgnFont(DgnFontType::Rsc, name, data), m_defaultGlyph(nullptr), m_isDefaultGlyphAllocated(false), m_hasLoadedGlyphs(false), m_hasLoadedFractions(false) {}
+    DgnRscFont(Utf8CP name, IDgnFontDataP data) : DgnFont(DgnFontType::Rsc, name, data), m_defaultGlyph(nullptr), m_isDefaultGlyphAllocated(false), m_descenderRatio(1.0), m_hasLoadedGlyphs(false), m_hasLoadedFractions(false) {}
     DgnRscFont(DgnRscFontCR rhs) : DgnFont(rhs) {}
     DGNPLATFORM_EXPORT virtual ~DgnRscFont();
     DgnRscFontR operator=(DgnRscFontCR rhs) { DgnFont::operator=(rhs); return *this; }
@@ -218,6 +224,7 @@ public:
     Metadata const& GetMetadata() const { return m_metadata; }
     Metadata& GetMetadataR() { return m_metadata; }
     virtual DgnGlyphCP _FindGlyphCP(DgnGlyph::T_Id glyphId, DgnFontStyle) const override { return FindGlyphCP(glyphId); }
+    virtual double _GetDescenderRatio(DgnFontStyle) const override { LoadGlyphs(); return m_descenderRatio; }
 };
 
 //=======================================================================================
@@ -271,6 +278,7 @@ public:
     Metadata const& GetMetadata() const { return m_metadata; }
     Metadata& GetMetadataR() { return m_metadata; }
     virtual DgnGlyphCP _FindGlyphCP(DgnGlyph::T_Id glyphId, DgnFontStyle) const override { return FindGlyphCP(glyphId); }
+    DGNPLATFORM_EXPORT virtual double _GetDescenderRatio(DgnFontStyle) const override;
 };
 
 //=======================================================================================

@@ -7,10 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 #include <numeric>
+#include <DgnPlatform/DgnCore/DgnTexture.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
-
-#define EXPECT_STR_EQ(X,Y) { if ((X).empty() || (Y).empty()) { EXPECT_EQ ((X).empty(), (Y).empty()); } else { EXPECT_EQ ((X), (Y)); } }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
@@ -21,8 +20,6 @@ private:
     ScopedDgnHost           m_host;
     DgnDbPtr                m_db;
 protected:
-    typedef DgnTextures TX;
-
     void SetupProject()
         {
         BeFileName filename = DgnDbTestDgnManager::GetOutputFilePath (L"textures.idgndb");
@@ -41,36 +38,19 @@ protected:
         return *m_db;
         }
 
-    TX::TextureData     MakeTextureData (TX::Format fmt, uint32_t w, uint32_t h)
+    DgnTexture::Data     MakeTextureData (DgnTexture::Format fmt, uint32_t w, uint32_t h)
         {
         // For the purposes of this test we really don't know/care about the raw texture data
         bvector<Byte> bytes (w*h);
         std::iota (bytes.begin(), bytes.end(), 0);
-        return TX::TextureData (fmt, &bytes[0], bytes.size(), w, h);
+        return DgnTexture::Data (fmt, &bytes[0], bytes.size(), w, h);
         }
 
-    bool                Insert (TX::Texture& tx)
+    void Compare(DgnTextureCR lhs, DgnTextureCR rhs)
         {
-        return m_db->Textures().Insert (tx).IsValid();
-        }
-
-    struct TextureEntry : TX::Texture
-        {
-        DgnTextureId        m_textureId;
-
-        TextureEntry (TX::Iterator::Entry const& entry)
-            : TX::Texture (TX::TextureData (entry.GetFormat(), entry.GetDataBytes(), entry.GetDataSize(), entry.GetWidth(), entry.GetHeight(), entry.GetFlags()),
-                                    entry.GetName(), entry.GetDescr()),
-              m_textureId (entry.GetId()) { }
-
-        DgnTextureId    GetId() const { return m_textureId; }
-        };
-
-    template<typename T, typename U> void Compare (T const& lhs, U const& rhs)
-        {
-        EXPECT_EQ (lhs.GetId(), rhs.GetId());
-        EXPECT_STR_EQ (lhs.GetName(), rhs.GetName());
-        EXPECT_STR_EQ (lhs.GetDescription(), rhs.GetDescription());
+        EXPECT_EQ (lhs.GetTextureId(), rhs.GetTextureId());
+        EXPECT_STREQ (lhs.GetTextureName().c_str(), rhs.GetTextureName().c_str());
+        EXPECT_STREQ (lhs.GetDescription().c_str(), rhs.GetDescription().c_str());
 
         auto const& lhData = lhs.GetData();
         auto const& rhData = rhs.GetData();
@@ -79,80 +59,84 @@ protected:
         EXPECT_EQ (lhData.GetFlags(), rhData.GetFlags());
         EXPECT_EQ (lhData.GetWidth(), rhData.GetWidth());
         EXPECT_EQ (lhData.GetHeight(), rhData.GetHeight());
-        EXPECT_EQ (lhData.GetData().size(), rhData.GetData().size());
-        EXPECT_EQ (0, memcmp (&lhData.GetData()[0], &rhData.GetData()[0], lhData.GetData().size()));
+        EXPECT_EQ (lhData.GetBytes().size(), rhData.GetBytes().size());
+        EXPECT_EQ (0, memcmp (&lhData.GetBytes()[0], &rhData.GetBytes()[0], lhData.GetBytes().size()));
         }
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DgnTexturesTest, InsertUpdateIterate)
+TEST_F (DgnTexturesTest, InsertQueryUpdateDelete)
     {
     SetupProject();
     DgnDbR db = GetDb();
 
-    DgnTextures& txs = db.Textures();
-    bvector<TX::Texture> expectedTxs;
+    // Textures have names
+    DgnTexture tx1(DgnTexture::CreateParams(db, "Texture1", MakeTextureData(DgnTexture::Format::JPEG, 2, 4)));
+    DgnTextureCPtr pTx1 = tx1.Insert();
+    ASSERT_TRUE(pTx1.IsValid());
 
-    // A texture can have a name...
-    TX::Texture tx (MakeTextureData (TX::Format::JPEG, 2, 4), "Texture1");
-    EXPECT_TRUE (Insert (tx));
-    expectedTxs.push_back (tx);
+    // Names must be unique
+    DgnTexture tx1_duplicate(DgnTexture::CreateParams(db, "Texture1", MakeTextureData(DgnTexture::Format::JPEG, 4, 8)));
+    EXPECT_FALSE(tx1_duplicate.Insert().IsValid());
 
-    // ...or no name
-    tx = TX::Texture (MakeTextureData (TX::Format::PNG, 3, 2), nullptr, "unnamed texture");
-    EXPECT_TRUE (Insert (tx));
-    expectedTxs.push_back (tx);
+    DgnTexture tx2(DgnTexture::CreateParams(db, "Texture2", MakeTextureData(DgnTexture::Format::TIFF, 5, 5), "this is texture 2"));
+    DgnTextureCPtr pTx2 = tx2.Insert();
+    ASSERT_TRUE(pTx2.IsValid());
 
-    // Names must be unique...
-    tx = TX::Texture (MakeTextureData (TX::Format::RAW, 1, 1), "Texture1");
-    EXPECT_FALSE (Insert (tx));
+    // Persistent + local have equivalent values
+    Compare(tx1, *pTx1);
+    Compare(tx2, *pTx2);
 
-    // ...but multiple unnamed textures can exist
-    tx = TX::Texture (MakeTextureData (TX::Format::TIFF, 5, 5), nullptr, "another unnamed texture");
-    EXPECT_TRUE (Insert (tx));
-    expectedTxs.push_back (tx);
+    // Modify
+    DgnTexturePtr tx2Edit = pTx2->MakeCopy<DgnTexture>();
+    ASSERT_TRUE(tx2Edit.IsValid());
+    Compare(*tx2Edit, tx2);
 
-    // Test iteration of textures in the db
-    auto iter = txs.MakeIterator();
-    EXPECT_EQ (iter.QueryCount(), expectedTxs.size());
+    tx2Edit->SetDescription("New description");
+    EXPECT_EQ(DgnDbStatus::Success, tx2Edit->SetCode(DgnTexture::CreateTextureCode("Texture2Renamed")));
+    tx2Edit->SetData(MakeTextureData(DgnTexture::Format::JPEG, 9, 18));
 
-    size_t nTxsFound = 0;
-    for (auto& entry : iter)
-        {
-        nTxsFound++;
-        auto match = std::find_if (expectedTxs.begin(), expectedTxs.end(), [&](TX::Texture const& arg) { return arg.GetId() == entry.GetId(); });
-        ASSERT_FALSE (match == expectedTxs.end());
-        Compare (TextureEntry (entry), *match);
-        }
+    DgnDbStatus status;
+    pTx2 = tx2Edit->Update(&status);
+    EXPECT_EQ(DgnDbStatus::Success, status);
+    ASSERT_TRUE(pTx2.IsValid());
+    Compare(*pTx2, *tx2Edit);
 
-    EXPECT_EQ (nTxsFound, expectedTxs.size());
+    // Purge persistent copies and check round-tripped values as expected
+    pTx1 = nullptr;
+    pTx2 = nullptr;
+    EXPECT_TRUE(db.Memory().Purge(0));
 
-    // Test query by name and ID
-    for (auto const& expectedTx : expectedTxs)
-        {
-        auto txId = expectedTx.GetId();
-        if (!expectedTx.GetName().empty())
-            {
-            auto roundTrippedTxId = txs.QueryTextureId (expectedTx.GetName());
-            EXPECT_EQ (roundTrippedTxId, txId);
-            }
+    pTx1 = DgnTexture::QueryTexture(tx1.GetTextureId(), db);
+    pTx2 = DgnTexture::QueryTexture(tx2.GetTextureId(), db);
+    ASSERT_TRUE(pTx1.IsValid());
+    ASSERT_TRUE(pTx2.IsValid());
 
-        tx = txs.Query (txId);
-        EXPECT_TRUE (tx.IsValid());
-        Compare (expectedTx, tx);
-        }
+    Compare(tx1, *pTx1);
+    Compare(*pTx2, *tx2Edit);
 
-    // Test modification
-    tx = expectedTxs.back();
-    tx.SetDescription ("updated description");
-    tx.SetData (MakeTextureData (TX::Format::PNG, 12, 2));
-    EXPECT_EQ (DgnDbStatus::Success, txs.Update (tx));
-    TX::Texture updatedTx = txs.Query (tx.GetId());
-    EXPECT_TRUE (updatedTx.IsValid());
-    Compare (updatedTx, tx);
+    // Textures cannot be deleted, only purged
+    EXPECT_EQ(DgnDbStatus::DeletionProhibited, pTx1->Delete());
+
+    // Unnamed textures are supported
+    DgnTexture unnamed1(DgnTexture::CreateParams(db, "", MakeTextureData(DgnTexture::Format::JPEG, 2, 2)));
+    EXPECT_TRUE(unnamed1.Insert().IsValid());
+
+    // Multiple unnamed textures can exist
+    DgnTexture unnamed2(DgnTexture::CreateParams(db, "", MakeTextureData(DgnTexture::Format::JPEG, 4, 4)));
+    EXPECT_TRUE(unnamed2.Insert().IsValid());
+
+    // Can't query unnamed texture by name
+    EXPECT_FALSE(DgnTexture::QueryTextureId("", db).IsValid());
+
+    // Can query unnamed textures by ID
+    auto pUnnamed1 = DgnTexture::QueryTexture(unnamed1.GetTextureId(), db),
+         pUnnamed2 = DgnTexture::QueryTexture(unnamed2.GetTextureId(), db);
+    ASSERT_TRUE(pUnnamed1.IsValid());
+    ASSERT_TRUE(pUnnamed2.IsValid());
+    EXPECT_EQ(pUnnamed1->GetTextureId(), unnamed1.GetTextureId());
+    EXPECT_EQ(pUnnamed2->GetTextureId(), unnamed2.GetTextureId());
     }
-
-
 

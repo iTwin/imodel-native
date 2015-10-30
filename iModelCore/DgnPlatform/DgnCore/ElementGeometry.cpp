@@ -437,18 +437,14 @@ ElementGeometryPtr ElementGeometry::Clone() const
 
         case GeometryType::Polyface:
             {
-            PolyfaceHeaderPtr geom = PolyfaceHeader::New();
-
-            geom->CopyFrom(*GetAsPolyfaceHeader());
+            PolyfaceHeaderPtr geom = GetAsPolyfaceHeader()->Clone();
 
             return new ElementGeometry(geom);
             }
 
         case GeometryType::BsplineSurface:
             {
-            MSBsplineSurfacePtr geom = MSBsplineSurface::CreatePtr();
-
-            geom->CopyFrom(*GetAsMSBsplineSurface());
+            MSBsplineSurfacePtr geom = GetAsMSBsplineSurface()->Clone();
 
             return new ElementGeometry(geom);
             }
@@ -576,8 +572,8 @@ ElementGeometryPtr ElementGeometry::Create(TextStringPtr const& source) {return 
 ElementGeometryPtr ElementGeometry::Create(ICurvePrimitiveCR source) {ICurvePrimitivePtr clone = source.Clone(); return Create(clone);}
 ElementGeometryPtr ElementGeometry::Create(CurveVectorCR source) {CurveVectorPtr clone = source.Clone(); return Create(clone);}
 ElementGeometryPtr ElementGeometry::Create(ISolidPrimitiveCR source) {ISolidPrimitivePtr clone = source.Clone(); return Create(clone);}
-ElementGeometryPtr ElementGeometry::Create(MSBsplineSurfaceCR source) {MSBsplineSurfacePtr clone = MSBsplineSurface::CreatePtr(); clone->CopyFrom(source); return Create(clone);}
-ElementGeometryPtr ElementGeometry::Create(PolyfaceQueryCR source) {PolyfaceHeaderPtr clone = PolyfaceHeader::New(); clone->CopyFrom(source); return Create(clone);}
+ElementGeometryPtr ElementGeometry::Create(MSBsplineSurfaceCR source) {MSBsplineSurfacePtr clone = source.Clone(); return Create(clone);}
+ElementGeometryPtr ElementGeometry::Create(PolyfaceQueryCR source) {PolyfaceHeaderPtr clone = source.Clone(); return Create(clone);}
 ElementGeometryPtr ElementGeometry::Create(ISolidKernelEntityCR source) {ISolidKernelEntityPtr clone = source.Clone(); return Create(clone);}
 ElementGeometryPtr ElementGeometry::Create(TextStringCR source) {TextStringPtr clone = source.Clone(); return Create(clone);}
 
@@ -1519,7 +1515,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ISolidKernelEntityPtr& en
         DgnSubCategoryId  subCategoryId = DgnSubCategoryId((uint64_t)fbSymb->subCategoryId());
 
         if (!categoryId.IsValid())
-            categoryId = m_db.Categories().QueryCategoryId(subCategoryId);
+            categoryId = DgnSubCategory::QueryCategoryId(subCategoryId, m_db);
 
         faceParams.SetCategoryId(categoryId);
         faceParams.SetSubCategoryId(subCategoryId);
@@ -2113,7 +2109,7 @@ bool IsGeometryVisible()
     if (nullptr == m_context.GetViewport())
         return true;
 
-    DgnCategories::SubCategory::Appearance appearance = m_context.GetViewport()->GetViewController().GetSubCategoryAppearance(m_context.GetCurrentDisplayParams().GetSubCategoryId());
+    DgnSubCategory::Appearance appearance = m_context.GetViewport()->GetViewController().GetSubCategoryAppearance(m_context.GetCurrentDisplayParams().GetSubCategoryId());
 
     if (appearance.IsInvisible())
         return false;
@@ -2251,13 +2247,21 @@ DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImpo
         {
         switch (egOp.m_opCode)
             {
+            default:
+                writer.Append(egOp);
+                break;
+
             case ElementGeomIO::OpCode::BeginSubCategory:
                 {
                 DgnSubCategoryId subCategory;
                 Transform        geomToElem;
 
                 if (reader.Get(egOp, subCategory, geomToElem))
-                    writer.Append(importer.FindSubCategory(subCategory), geomToElem);   // Must assume that caller already imported the Category and its SubCategories
+                    {
+                    DgnSubCategoryId remappedSubCategoryId = importer.FindSubCategory(subCategory); 
+                    BeAssert(remappedSubCategoryId.IsValid() && "Category and all subcategories should have been remapped by the element that owns this geometry");
+                    writer.Append(remappedSubCategoryId, geomToElem);   
+                    }
                 break;
                 }
 
@@ -2266,14 +2270,31 @@ DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImpo
                 DgnGeomPartId geomPartId;
 
                 if (reader.Get(egOp, geomPartId))
-                    writer.Append(importer.RemapGeomPartId(geomPartId));    // Trigger deep-copy if necessary
-
+                    {
+                    DgnGeomPartId remappedGeomPartId = importer.RemapGeomPartId(geomPartId); //Trigger deep-copy if necessary
+                    BeAssert(remappedGeomPartId.IsValid() && "Unable to deep-copy geompart!");
+                    writer.Append(remappedGeomPartId);
+                    }
                 break;
                 }
 
-            default:
-                writer.Append(egOp);
+            case ElementGeomIO::OpCode::Material:
+                {
+#ifdef WIP_REMAP_MATERIAL // *** Should I always remap materialids in this opcode? 
+                          // *** There two cases: material from subcategory and not from subcategory. Should I handle them differently?
+#endif
+                auto fbSymb = flatbuffers::GetRoot<FB::Material>(egOp.m_data);
+                DgnMaterialId materialId((uint64_t)fbSymb->materialId());
+                DgnMaterialId remappedMaterialId = importer.RemapMaterialId(materialId);
+                BeAssert(remappedMaterialId.IsValid() && "Unable to deep-copy material");
+
+                FlatBufferBuilder remappedfbb;
+                auto mloc = FB::CreateMaterial(remappedfbb, fbSymb->useMaterial(), remappedMaterialId.GetValue(), nullptr, nullptr, 0.0, 0.0, 0.0);
+                remappedfbb.Finish(mloc);
+
+                writer.Append(Operation(OpCode::Material, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
                 break;
+                }
             }
         }
 
@@ -2912,7 +2933,7 @@ void ElementGeometryCollection::Iterator::ToNext()
                 DgnCategoryId       category = elParams.GetCategoryId();
 
                 if (!category.IsValid())
-                    category = m_context->GetDgnDb().Categories().QueryCategoryId(subCategory);
+                    category = DgnSubCategory::QueryCategoryId(subCategory, m_context->GetDgnDb());
 
                 elParams = ElemDisplayParams();
                 elParams.SetCategoryId(category);
@@ -3214,6 +3235,9 @@ BentleyStatus ElementGeometryBuilder::SetGeomStreamAndPlacement(GeometricElement
     if (element.GetCategoryId() != m_elParams.GetCategoryId())
         return ERROR;
 
+    if (element.GetElementHandler()._IsRestrictedAction(GeometricElement::RestrictedAction::SetGeometry))
+        return ERROR;
+
     if (m_is3d)
         {
         if (!m_placement3d.IsValid())
@@ -3268,7 +3292,7 @@ bool ElementGeometryBuilder::Append(ElemDisplayParamsCR elParams)
     if (elParams.GetCategoryId() != m_elParams.GetCategoryId())
         return false;
 
-    if (elParams.GetCategoryId() != m_dgnDb.Categories().QueryCategoryId(elParams.GetSubCategoryId()))
+    if (elParams.GetCategoryId() != DgnSubCategory::QueryCategoryId(elParams.GetSubCategoryId(), m_dgnDb))
         return false;
 
     if (m_elParams == elParams)
@@ -3332,17 +3356,21 @@ bool ElementGeometryBuilder::Append(DgnGeomPartId geomPartId, TransformCR geomTo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeometryBuilder::OnNewGeom(DRange3dCR localRange, TransformCP geomToElementIn)
+void ElementGeometryBuilder::OnNewGeom(DRange3dCR localRangeIn, TransformCP geomToElementIn)
     {
     if (m_isPartCreate)
         return; // Don't need placement or want ElemDisplayParams...
+
+    Transform geomToElem = (nullptr != geomToElementIn ? *geomToElementIn : Transform::FromIdentity());
+    DRange3d  localRange = localRangeIn;
+
+    if (!geomToElem.IsIdentity())
+        geomToElem.Multiply(localRange, localRange);
 
     if (m_is3d)
         m_placement3d.GetElementBoxR().Extend(localRange);
     else
         m_placement2d.GetElementBoxR().Extend(DRange2d::From(DPoint2d::From(localRange.low), DPoint2d::From(localRange.high)));
-
-    Transform geomToElem = (nullptr != geomToElementIn ? *geomToElementIn : Transform::FromIdentity());
 
     // Establish "geometry group" boundaries at sub-category and transform changes (NEEDSWORK: Other incompatible changes...geometry class?)
     if (!m_prevSubCategory.IsValid() || (m_prevSubCategory != m_elParams.GetSubCategoryId() || !m_prevGeomToElem.IsEqual(geomToElem)))

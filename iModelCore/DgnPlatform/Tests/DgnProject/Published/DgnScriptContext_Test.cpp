@@ -22,7 +22,7 @@ static RefCountedCPtr<GeometricElement> insertElement(DgnModelR model)
     DgnDbR db = model.GetDgnDb();
     DgnModelId mid = model.GetModelId();
 
-    DgnCategoryId cat = db.Categories().QueryHighestId();
+    DgnCategoryId cat = DgnCategory::QueryHighestCategoryId(db);
 
     GeometricElementPtr gelem;
     if (model.Is3d())

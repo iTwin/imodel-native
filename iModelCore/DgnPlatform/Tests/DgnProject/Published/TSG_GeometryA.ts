@@ -46,10 +46,10 @@ module DgnScriptTests {
     }
     function FromStartEnd(pointA: BentleyApi.Dgn.JsDPoint3d, pointB: BentleyApi.Dgn.JsDPoint3d): void {
         var vectorA = new BentleyApi.Dgn.JsDVector3d(pointB.X - pointA.X, pointB.Y - pointA.Y, pointB.Z - pointA.Z);
-        var resultA = BentleyApi.Dgn.JsDVector3d.FromStartEnd(pointA, pointB);
+        var resultA = pointA.VectorTo (pointB);
         checker.IsNearJsDVector3d(resultA, vectorA);
         var normalizedA = resultA.Normalize();
-        var resultB = BentleyApi.Dgn.JsDVector3d.FromStartEndNormalize(pointA, pointB);
+        var resultB = pointA.VectorTo (pointB);
         checker.NearDouble(normalizedA.Magnitude(), resultB.Magnitude(), true);
 
     }
@@ -87,7 +87,7 @@ module DgnScriptTests {
     }
     function CrossProducts(u: BentleyApi.Dgn.JsDVector3d, v: BentleyApi.Dgn.JsDVector3d): void {
         var VCrossU = v.CrossProduct(u);
-        var NormalizedVCrossU = v.NormalizedCrossProduct(u);
+        var NormalizedVCrossU = v.UnitCrossProduct(u);
         VCrossU = VCrossU.Normalize();
         checker.IsNearJsDVector3d(NormalizedVCrossU, VCrossU);
 

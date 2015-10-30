@@ -196,11 +196,20 @@
     <ClCompile Include="Published\DgnScriptContext_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\ECInstanceSelect_Tests.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceECInstanceDeleteTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
     <ClCompile Include="Published\ElementGeometry_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\ElementGroup_Tests.cpp">
       <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceElementsCRUDTests.cpp">
+      <Filter>Performance</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -247,6 +256,9 @@
       <Filter>Published</Filter>
     </ClInclude>
     <ClInclude Include="Performance\PerformanceElements.h">
+      <Filter>Performance</Filter>
+    </ClInclude>
+    <ClInclude Include="Performance\PerformanceElementsCRUDTests.h">
       <Filter>Performance</Filter>
     </ClInclude>
   </ItemGroup>

@@ -398,7 +398,6 @@ void ViewContext::_Detach()
     if (nullptr != m_IDrawGeom)
         m_IDrawGeom->ActivateOverrideMatSymb(nullptr);     // clear any overrides
 
-    // _EmptySymbolCache(); not yet in Graphite
     UpdateLogging::RecordDetach();
     }
 
@@ -873,35 +872,6 @@ void ViewContext::_AddContextOverrides(OvrMatSymbR ovrMatSymb)
     {
     // Modify m_ovrMatSymb for view flags...
     _AddViewOverrides(ovrMatSymb); 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_CookDisplayParamsOverrides(ElemDisplayParamsR elParams, OvrMatSymbR ovrMatSymb)
-    {
-    // if no overrides are set there is nothing to do...
-    if (MATSYMB_OVERRIDE_None == ovrMatSymb.GetFlags())
-        return;
-
-    _ModifyPreCook(elParams); // Allow context to modify elParams before cooking...
-
-    // "cook" the display params into a OvrMatSymb
-    ovrMatSymb.GetMatSymbR().FromResolvedElemDisplayParams(elParams, *this, nullptr, nullptr);
-
-    // Add any overrides specific to the view/context...
-    _AddContextOverrides(ovrMatSymb);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::CookDisplayParamsOverrides()
-    {
-    _CookDisplayParamsOverrides(m_currDisplayParams, m_ovrMatSymb);
-
-    // Activate the ovrMatsymb in the IDrawGeom
-    GetIDrawGeom().ActivateOverrideMatSymb(&m_ovrMatSymb);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1807,7 +1777,7 @@ bool ViewContext::IsMonochromeDisplayStyleActive()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-int32_t ViewContext::ResolveNetDisplayPriority(int32_t geomPriority, DgnSubCategoryId subCategoryId, DgnCategories::SubCategory::Appearance* appearanceIn) const
+int32_t ViewContext::ResolveNetDisplayPriority(int32_t geomPriority, DgnSubCategoryId subCategoryId, DgnSubCategory::Appearance* appearanceIn) const
     {
     if (m_is3dView)
         return 0;
@@ -1820,12 +1790,21 @@ int32_t ViewContext::ResolveNetDisplayPriority(int32_t geomPriority, DgnSubCateg
         if (!subCategoryId.IsValid())
             return netPriority;
 
-        DgnCategories::SubCategory::Appearance appearance;
+        DgnSubCategory::Appearance appearance;
 
         if (nullptr != GetViewport())
+            {
             appearance = GetViewport()->GetViewController().GetSubCategoryAppearance(subCategoryId);
+            }
         else
-            appearance = GetDgnDb().Categories().QuerySubCategory(subCategoryId).GetAppearance();
+            {
+            DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(subCategoryId, GetDgnDb());
+            BeAssert(subCat.IsValid());
+            if (!subCat.IsValid())
+                return netPriority;
+            else
+                appearance = subCat->GetAppearance();
+            }
 
         netPriority += appearance.GetDisplayPriority();
         }
@@ -2245,12 +2224,21 @@ void ElemDisplayParams::Resolve(ViewContextR context)
         return;
 
     // Setup from SubCategory appearance...
-    DgnCategories::SubCategory::Appearance appearance;
+    DgnSubCategory::Appearance appearance;
 
     if (nullptr != context.GetViewport())
+        {
         appearance = context.GetViewport()->GetViewController().GetSubCategoryAppearance(subCategoryId);
+        }
     else
-        appearance = context.GetDgnDb().Categories().QuerySubCategory(subCategoryId).GetAppearance();
+        {
+        DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(subCategoryId, context.GetDgnDb());
+        BeAssert(subCat.IsValid());
+        if (!subCat.IsValid())
+            return;
+
+        appearance = subCat->GetAppearance();
+        }
 
     if (!m_appearanceOverrides.m_color)
         m_lineColor = appearance.GetColor();

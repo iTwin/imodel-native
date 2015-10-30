@@ -1085,7 +1085,7 @@ bpair<Dgn::DgnModelId,double> DgnMarkupProject::FindClosestRedlineModel(ViewCont
 RedlineModelPtr RedlineModel::Create(DgnMarkupProjectR markupProject, Utf8CP name, DgnModelId templateModelId)
     {
     DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "RedlineModel"));
-    RedlineModelPtr rdlModel = new RedlineModel(RedlineModel::CreateParams(markupProject, rmodelClassId, name, DPoint2d::FromZero()));
+    RedlineModelPtr rdlModel = new RedlineModel(RedlineModel::CreateParams(markupProject, rmodelClassId, CreateModelCode(name), DPoint2d::FromZero()));
     if (!rdlModel.IsValid())
         return nullptr;
 
@@ -1109,7 +1109,7 @@ PhysicalRedlineModelPtr PhysicalRedlineModel::Create(DgnMarkupProjectR markupPro
     {
     DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "PhysicalRedlineModel"));
 
-    PhysicalRedlineModelPtr rdlModel = new PhysicalRedlineModel(PhysicalRedlineModel::CreateParams(markupProject, rmodelClassId, name));
+    PhysicalRedlineModelPtr rdlModel = new PhysicalRedlineModel(PhysicalRedlineModel::CreateParams(markupProject, rmodelClassId, CreateModelCode(name)));
     if (!rdlModel.IsValid())
         {
         DGNCORELOG->error("PhysicalRedlineModel::CreateModel failed");
@@ -1560,7 +1560,7 @@ RedlineViewControllerPtr RedlineViewController::InsertView(RedlineModelR rdlMode
         }
 
     DgnClassId classId(project->Schemas().GetECClassId("dgn","RedlineView"));
-    DgnViews::View view(DgnViewType::Sheet, classId, rdlModel.GetModelId(), rdlModel.GetModelName(), NULL, DgnViewSource::Generated);
+    DgnViews::View view(DgnViewType::Sheet, classId, rdlModel.GetModelId(), rdlModel.GetCode().GetValue().c_str(), NULL, DgnViewSource::Generated);
 
     auto result = rdlModel.GetDgnMarkupProject()->Views().Insert(view);
     if (BE_SQLITE_OK != result)
@@ -1608,8 +1608,8 @@ RedlineViewControllerPtr RedlineViewController::InsertView(RedlineModelR rdlMode
         memset(&flags, 0, sizeof(flags));
         controller->GetViewFlagsR() = flags;
 
-        for (auto const& cat : rdlModel.GetDgnDb().Categories().MakeIterator())
-            controller->ChangeCategoryDisplay(cat.GetCategoryId(), true);
+        for (auto const& catId : DgnCategory::QueryCategories(rdlModel.GetDgnDb()))
+            controller->ChangeCategoryDisplay(catId, true);
         }
         
     controller->m_enableViewManipulation = false;

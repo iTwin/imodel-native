@@ -853,6 +853,31 @@ bool DgnFont::IsResolved() const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     10/2015
+//---------------------------------------------------------------------------------------
+DgnFontStyle DgnFont::FontStyleFromBoldItalic(bool isBold, bool isItalic)
+    {
+    DgnFontStyle fontStyle = DgnFontStyle::Regular;
+    if (isBold && isItalic)
+        fontStyle = DgnFontStyle::BoldItalic;
+    else if (isBold)
+        fontStyle = DgnFontStyle::Bold;
+    else if (isItalic)
+        fontStyle = DgnFontStyle::Italic;
+    
+    return fontStyle;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     10/2015
+//---------------------------------------------------------------------------------------
+void DgnFont::FontStyleToBoldItalic(bool& isBold, bool& isItalic, DgnFontStyle fontStyle)
+    {
+    isBold = ((DgnFontStyle::Bold == fontStyle) || (DgnFontStyle::BoldItalic == fontStyle));
+    isItalic = ((DgnFontStyle::Italic == fontStyle) || (DgnFontStyle::BoldItalic == fontStyle));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
 //---------------------------------------------------------------------------------------
 DgnFontPtr DgnFontPersistence::Db::FromDb(DgnFonts& dbFonts, DgnFontId id, DgnFontType type, Utf8CP name, Byte const* metadata, size_t metadataSize)

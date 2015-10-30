@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/charutil/stringop.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -267,7 +267,7 @@ WChar    chr
     {
     WCharP    p;
 
-    if ((p=wcschr (str, chr)) == NULL)
+    if ((p=::wcschr (str, chr)) == NULL)
         return (wend_string(str));
 
     *p = 0;

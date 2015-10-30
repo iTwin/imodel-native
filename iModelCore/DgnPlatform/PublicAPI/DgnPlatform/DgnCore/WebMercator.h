@@ -214,7 +214,7 @@ public:
 // Dislays tiles of a street map as they become available over time.
 // @bsiclass                                                    Sam.Wilson      10/2014
 //=======================================================================================
-struct WebMercatorDisplay : IProgressiveDisplay, NonCopyableClass
+struct WebMercatorDisplay : IProgressiveDisplay, CopyrightSupplier, NonCopyableClass
 {
     DEFINE_BENTLEY_REF_COUNTED_MEMBERS
 
@@ -232,6 +232,7 @@ protected:
     bool m_drawSubstitutes;
     bool m_preferFinerResolution;                       //!< Download and display more tiles, in order to get the best resolution? Else, go with 1/4 as many tiles and be satisfied with slightly fuzzy resolution.
     WebMercatorTileDisplayHelper m_helper;
+    TextStringStylePtr m_copyrightStyle;
 
 protected:
     BentleyStatus DrawSubstituteTilesFinerFromTextureCache (ViewContextR context, WebMercatorTilingSystem::TileId const& tileid, uint32_t maxLevelsToTry);
@@ -247,7 +248,9 @@ protected:
     BentleyStatus GetCachedTiles (bvector<TileDisplayImageData>& tilesAndUrls, bool& allFoundInTextureCache, uint8_t zoomLevel, ViewContextR context);
 
     //! Helper function that invokes _CreateUrl on the handler
-    DGNPLATFORM_EXPORT virtual BentleyStatus CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorTilingSystem::TileId const& tileid);
+    DGNPLATFORM_EXPORT BentleyStatus CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorTilingSystem::TileId const& tileid);
+
+    DGNPLATFORM_EXPORT Utf8String _GetCopyrightMessage(DgnViewportR vp) override;
 
     //! Displays tiled rasters and schedules downloads. 
     //! INPUT: This function assumes that m_missingTiles has been populated.
@@ -284,7 +287,7 @@ struct EXPORT_VTABLE_ATTRIBUTE WebMercatorModel : PhysicalModel
 public:
     struct Mercator
         {
-        AxisAlignedBox3d m_range;             //! The range covered by this map -- typically the project's extents -- could be the whole world
+        AxisAlignedBox3d m_range;       //! The range covered by this map -- typically the project's extents -- could be the whole world
         Utf8String m_mapService;        //! Identifies the source of the tiled map data. This is a token that is supplied by the 
                                         //! subclass of WebMercatorModelHandler and stored on a WebMercatorModel instande in the DgnDb, 
                                         //! in order to associate it with a map server. The WebMercatorModelHandler subclass looks at this string
@@ -307,10 +310,10 @@ public:
     //! Create a new WebMercatorModel object, in preparation for loading it from the DgnDb.
     WebMercatorModel(CreateParams const& params) : T_Super(params) {}
 
-    DGNPLATFORM_EXPORT virtual void _AddGraphicsToScene(ViewContextR) override;
-    DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const override;
-    DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&) override;
-    virtual AxisAlignedBox3d _QueryModelRange() const override {return m_mercator.m_range;}
+    DGNPLATFORM_EXPORT void _AddGraphicsToScene(ViewContextR) override;
+    DGNPLATFORM_EXPORT void _ToPropertiesJson(Json::Value&) const override;
+    DGNPLATFORM_EXPORT void _FromPropertiesJson(Json::Value const&) override;
+    AxisAlignedBox3d _QueryModelRange() const override {return m_mercator.m_range;}
 
     //! Call this after creating a new model, in order to set up subclass-specific properties.
     void SetMercator(Mercator const&);
@@ -330,15 +333,24 @@ namespace dgn_ModelHandler
 
     public:
         //! Create the URL to request the specified tile from a map service.
-        //! @param[in] mapService       Identifies the source of the tiled map data. This is a token that is supplied by the
-        //!                             subclass of WebMercatorModelHandler and stored on a WebMercatorModel instande in the DgnDb,
-        //!                             in order to associate it with a map server. The WebMercatorModelHandler subclass looks at this string
-        //!                             when constructing URLs at runtime for requesting tiles for the model.
-        //! @param[in] mapType          Identifies the type of map data to request and display.
+        //! @param[out] url             The returned URL
+        //! @param[out] imageInfo       Expected image format
+        //! @param[in] mapService       Identifies the type of map that is being displayed
         //! @param[in] tileid           The location of the tile, according to the WebMercator tiling system
-        DGNPLATFORM_EXPORT virtual BentleyStatus _CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorModel::Mercator const&, WebMercatorTilingSystem::TileId const& tileid) {return BSIERROR;}
+        //! @return non-zero if URL cannot be computed
+        virtual BentleyStatus _CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorModel::Mercator const& mapService, WebMercatorTilingSystem::TileId const& tileid) {return BSIERROR;}
+
+        //! Return the copyright message that must be displayed in the view.
+        //! @param[in] mapService       Identifies the type of map that is being displayed
+        //! @return non-zero if copyright cannot be computed
+        virtual Utf8String _GetCopyright(WebMercatorModel::Mercator const& mapService) {return "";}
     };
 };
+
+//=======================================================================================
+// A street map model
+// @bsiclass                                                    Sam.Wilson      10/2014
+//=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE StreetMapModel : WebMercatorModel
 {
     DEFINE_T_SUPER(WebMercatorModel)
@@ -359,7 +371,10 @@ namespace dgn_ModelHandler
         //! Identifies a well known street map tile service
         enum class MapService
             {
-            OpenStreetMaps          //!< OpenStreetMaps
+#ifndef NDEBUG
+            OpenStreetMaps = 999,         //!< OpenStreetMaps (developer builds only!)
+#endif
+            MapBox = 0
             };
 
         //! The kind of map to display
@@ -370,9 +385,11 @@ namespace dgn_ModelHandler
             };
 
     protected:
-        DGNPLATFORM_EXPORT virtual BentleyStatus _CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorModel::Mercator const&, WebMercatorTilingSystem::TileId const&) override;
+        DGNPLATFORM_EXPORT BentleyStatus _CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorModel::Mercator const&, WebMercatorTilingSystem::TileId const&) override;
+        DGNPLATFORM_EXPORT Utf8String _GetCopyright(WebMercatorModel::Mercator const& props) override;
 
-        DGNPLATFORM_EXPORT Utf8String CreateOsmUrl (WebMercatorTilingSystem::TileId const&, WebMercatorModel::Mercator const&);
+        DGNPLATFORM_EXPORT Utf8String CreateOsmUrl(WebMercatorTilingSystem::TileId const&, WebMercatorModel::Mercator const&);
+        DGNPLATFORM_EXPORT Utf8String CreateMapBoxUrl (WebMercatorTilingSystem::TileId const&, WebMercatorModel::Mercator const&);
 
     public:
         //! Create a new street map model in the DgnDb.

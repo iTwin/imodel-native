@@ -52,8 +52,13 @@ TEST_F(ElementGeometryBuilderTests, CreateElement3d)
     ISolidPrimitivePtr cylinder = ISolidPrimitive::CreateDgnCone(cylinderDetail);
     EXPECT_TRUE(builder->Append(*cylinder));
 
-    // ElemDisplayParams
-    //
+    DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,
+        0, 0, 2,
+        0, 3, 0,
+        0.0, Angle::TwoPi());
+    ICurvePrimitivePtr ellipse = ICurvePrimitive::CreateArc(ellipseData);
+    EXPECT_TRUE(builder->Append(*ellipse));
+
     ElemDisplayParams elemDisplayParams;
     elemDisplayParams.SetCategoryId(m_defaultCategoryId);
     elemDisplayParams.SetWeight(2);
@@ -61,14 +66,18 @@ TEST_F(ElementGeometryBuilderTests, CreateElement3d)
 
     // SubCategory
     //
-    DgnCategories::SubCategory::Appearance appearence;
+    DgnSubCategory::Appearance appearence;
     appearence.SetInvisible(false);
     appearence.SetColor(ColorDef::DarkRed());
     Utf8CP sub_code = "Test SubCategory";
     Utf8CP sub_desc = "This is a test subcategory";
-    Utf8CP sub_label = "TestSubCategory";
-    DgnCategories::SubCategory subCategory(m_defaultCategoryId, (DgnSubCategoryId)3, sub_code, appearence, sub_desc, sub_label);
-    EXPECT_TRUE(builder->Append(subCategory.GetCategoryId()));
+    DgnSubCategory subCategory(DgnSubCategory::CreateParams(*m_db, m_defaultCategoryId, sub_code, appearence, sub_desc));
+    DgnDbStatus status;
+    DgnSubCategoryCPtr newSubCategory =  subCategory.Insert(&status);
+    EXPECT_TRUE(DgnDbStatus::Success == status);
+    EXPECT_TRUE(newSubCategory.IsValid());
+    EXPECT_TRUE(newSubCategory->GetSubCategoryId().IsValid());
+    EXPECT_TRUE(builder->Append(newSubCategory->GetSubCategoryId()));
 
     // MSBsplineSurface
     //
@@ -90,7 +99,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElement3d)
     // TextString
     //
     
-    TextStringPtr text = CreateTextString();
+    TextStringPtr text = GeomHelper::CreateTextString();
     EXPECT_TRUE(builder->Append(*text));
 
     EXPECT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));

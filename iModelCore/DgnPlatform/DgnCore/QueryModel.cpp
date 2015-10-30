@@ -559,7 +559,7 @@ uint32_t QueryModel::GetElementCount() const {return m_currQueryResults ? m_curr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-QueryModel::QueryModel(DgnDbR dgndb) : PhysicalModel(PhysicalModel::CreateParams(dgndb, DgnClassId(), "Query")), m_selector(*this)
+QueryModel::QueryModel(DgnDbR dgndb) : PhysicalModel(PhysicalModel::CreateParams(dgndb, DgnClassId(), CreateModelCode("Query"))), m_selector(*this)
     {
     m_currQueryResults = 0;
     } 

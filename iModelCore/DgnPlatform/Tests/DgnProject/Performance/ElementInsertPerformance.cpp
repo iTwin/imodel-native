@@ -104,30 +104,45 @@ Utf8CP const PerformanceElementTestFixture::s_testSchemaXml =
     "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
     "  <ECSchemaReference name = 'dgn' version = '02.00' prefix = 'dgn' />"
     "  <ECClass typeName='Element1' >"
+    "    <ECCustomAttributes>"
+    "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+    "    </ECCustomAttributes>"
     "    <BaseClass>dgn:PhysicalElement</BaseClass>"
     "    <ECProperty propertyName='Prop1_1' typeName='string' />"
     "    <ECProperty propertyName='Prop1_2' typeName='long' />"
     "    <ECProperty propertyName='Prop1_3' typeName='double' />"
     "  </ECClass>"
     "  <ECClass typeName='Element2' >"
+    "    <ECCustomAttributes>"
+    "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+    "    </ECCustomAttributes>"
     "    <BaseClass>Element1</BaseClass>"
     "    <ECProperty propertyName='Prop2_1' typeName='string' />"
     "    <ECProperty propertyName='Prop2_2' typeName='long' />"
     "    <ECProperty propertyName='Prop2_3' typeName='double' />"
     "  </ECClass>"
     "  <ECClass typeName='Element3' >"
+    "    <ECCustomAttributes>"
+    "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+    "    </ECCustomAttributes>"
     "    <BaseClass>Element2</BaseClass>"
     "    <ECProperty propertyName='Prop3_1' typeName='string' />"
     "    <ECProperty propertyName='Prop3_2' typeName='long' />"
     "    <ECProperty propertyName='Prop3_3' typeName='double' />"
     "  </ECClass>"
     "  <ECClass typeName='Element4' >"
+    "    <ECCustomAttributes>"
+    "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+    "    </ECCustomAttributes>"
     "    <BaseClass>Element3</BaseClass>"
     "    <ECProperty propertyName='Prop4_1' typeName='string' />"
     "    <ECProperty propertyName='Prop4_2' typeName='long' />"
     "    <ECProperty propertyName='Prop4_3' typeName='double' />"
     "  </ECClass>"
     "  <ECClass typeName='Element4b' >"
+    "    <ECCustomAttributes>"
+    "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+    "    </ECCustomAttributes>"
     "    <BaseClass>Element3</BaseClass>"
     "    <ECProperty propertyName='Prop4b_1' typeName='string' />"
     "    <ECProperty propertyName='Prop4b_2' typeName='long' />"
@@ -135,6 +150,9 @@ Utf8CP const PerformanceElementTestFixture::s_testSchemaXml =
     "    <ECProperty propertyName='Prop4b_4' typeName='point3d' />"
     "  </ECClass>"
     "  <ECClass typeName='SimpleElement'>"
+    "    <ECCustomAttributes>"
+    "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+    "    </ECCustomAttributes>"
     "    <BaseClass>dgn:Element</BaseClass>"
     "  </ECClass>"
     "</ECSchema>";
@@ -169,7 +187,7 @@ BentleyStatus PerformanceElementTestFixture::ImportTestSchema() const
 PhysicalModelPtr PerformanceElementTestFixture::CreatePhysicalModel() const
     {
     DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
-    PhysicalModelPtr targetModel = new PhysicalModel(PhysicalModel::CreateParams(*m_db, mclassId, "Instances"));
+    PhysicalModelPtr targetModel = new PhysicalModel(PhysicalModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode("Instances")));
     EXPECT_EQ( DgnDbStatus::Success , targetModel->Insert() );       /* Insert the new model into the DgnDb */
     return targetModel;
     }
@@ -376,4 +394,3 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
     timer.Stop();
     CommitAndLogTiming(timer, "Single Insert (named parameters)", TEST_DETAILS);
     }
-

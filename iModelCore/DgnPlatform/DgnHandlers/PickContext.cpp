@@ -35,7 +35,7 @@ static double  distSquaredXY (DPoint4dCR pVec1, DPoint4dCR pVec2)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PickOutput::PickOutput()
     {
-    m_hitList               = NULL;
+    m_hitList               = nullptr;
     m_hitPriorityOverride   = HitPriority::Highest;
     m_unusableLStyleHit     = false;
     m_testingLStyle         = TEST_LSTYLE_None;
@@ -64,6 +64,7 @@ void PickOutput::Init(ViewContextP context, DPoint3dCR pickPointWorld, double pi
     _SetDrawViewFlags(context->GetViewport()->GetViewFlags());
 
     m_hitList->Empty();
+    m_currGeomDetail.Init();
 
     // can't set up Pick point in screen coordinates until after we've attached to the view
     context->WorldToView(&m_pickPointView, &m_pickPointWorld, 1);
@@ -1248,6 +1249,16 @@ void PickContext::_DrawSymbol(IDisplaySymbol* symbol, TransformCP trans, ClipPla
 bool            PickContext::_CheckStop()
     {
     return (WasAborted() ? true : AddAbortTest(m_output.GetDoneSearching() || (m_stopTester && m_stopTester->_CheckStopLocate())));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void            PickContext::_OnPreDrawTransient()
+    {
+    T_Super::_OnPreDrawTransient();
+
+    m_output._GetGeomDetail().Init(); // Setup hit detail defaults...
     }
 
 /*---------------------------------------------------------------------------------**//**

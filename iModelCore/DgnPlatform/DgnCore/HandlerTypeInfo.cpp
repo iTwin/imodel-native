@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
-#define DGN_TABLE_LEVEL_FOR_MODEL(m)  (m)->GetDgnDb().Categories()
-
 /**
  * Category Display Name Format Defines
  */
@@ -47,10 +45,8 @@ static bool isBlankString(Utf8CP testStr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus getCategoryDisplayName(Utf8StringR displayNameStr, DgnCategories::Category const& category, Utf8CP displayFormat)
+static BentleyStatus getCategoryDisplayName(Utf8StringR displayNameStr, DgnCategory const& category, Utf8CP displayFormat)
     {
-    BeAssert(category.IsValid());
-
     for (size_t formatIndex = 0; formatIndex < strlen(displayFormat); formatIndex++)
         {
         Utf8Char formatChar = displayFormat[formatIndex];
@@ -59,7 +55,7 @@ static BentleyStatus getCategoryDisplayName(Utf8StringR displayNameStr, DgnCateg
             {
             case LEVEL_NAME_DISPLAY_FORMAT:
                 {
-                displayNameStr.append(category.GetLabel()? category.GetLabel(): ""); // string conversion
+                displayNameStr.append(category.GetCode().GetValueCP()? category.GetCode().GetValueCP(): ""); // string conversion
                 break;
                 }
 
@@ -91,7 +87,7 @@ static BentleyStatus getCategoryDisplayName(Utf8StringR displayNameStr, DgnCateg
         }
 
     if (displayNameStr.empty())
-        displayNameStr.assign(category.GetLabel()? category.GetLabel(): ""); // string conversion
+        displayNameStr.assign(category.GetCode().GetValueCP()? category.GetCode().GetValueCP(): ""); // string conversion
 
     return SUCCESS;
     }
@@ -101,7 +97,7 @@ static BentleyStatus getCategoryDisplayName(Utf8StringR displayNameStr, DgnCateg
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void getCategoryString(Utf8StringR categoryStr, GeometricElementCR element)
     {
-    DgnCategories::Category const& category = element.GetDgnDb().Categories().Query(element.GetCategoryId());
+    DgnCategoryCPtr category = DgnCategory::QueryCategory(element.GetCategoryId(), element.GetDgnDb());
 
     if (!category.IsValid())
         return;
@@ -115,7 +111,7 @@ static void getCategoryString(Utf8StringR categoryStr, GeometricElementCR elemen
 
     Utf8String     displayName;
 
-    if (SUCCESS != getCategoryDisplayName(displayName, category, displayFormat.c_str()))
+    if (SUCCESS != getCategoryDisplayName(displayName, *category, displayFormat.c_str()))
         return;
 
     categoryStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Category()).c_str());
@@ -129,7 +125,7 @@ void GeometricElement::_GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP del
     {
     Utf8String categoryStr, modelStr;
 
-    modelStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()).c_str()).append(GetModel()->GetModelName());
+    modelStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()).c_str()).append(GetModel()->GetCode().GetValue());
     getCategoryString(categoryStr, *this);
 
     descr = GetCode().GetValue();

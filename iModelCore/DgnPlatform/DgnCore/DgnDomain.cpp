@@ -353,8 +353,26 @@ DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId bas
     handler = FindHandler(DgnClassId(superClass->GetId()), baseClassId);
     if (nullptr != handler)
         {
-        m_handlers.Insert(handlerId, handler); // cache this result for all baseclasses
-        return handler;
+        // Determine if we are using a superclass handler because (a) the subclass does not need its own handler or (b) the handler for the subclass is not loaded. 
+        bool isMissingHandler = GetHandlerInfo(nullptr, handlerId, *handler);
+        if (isMissingHandler)
+            {
+            // Handler missing...use superclass handler, with restrictions
+            uint64_t restrictions = 0;
+            Statement stmt(GetDgnDb(), "SELECT Permissions FROM " DGN_TABLE_Handler " WHERE ClassId=? LIMIT 1");
+            stmt.BindId(1, handlerId);
+            if (BE_SQLITE_ROW == stmt.Step())
+                restrictions = stmt.GetValueUInt64(0);
+
+            handler = handler->_CreateMissingHandler(restrictions);
+            BeAssert(nullptr != handler);
+            }
+
+        if (nullptr != handler)
+            {
+            m_handlers.Insert(handlerId, handler); // cache this result for all baseclasses
+            return handler;
+            }
         }
 
     // the handlerId supplied must not derive from baseClassId or no registered handlers exist for any baseclasses
@@ -368,6 +386,55 @@ DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId bas
 DgnClassId DgnDomains::GetClassId(DgnDomain::Handler& handler)
     {
     return DgnClassId(m_dgndb.Schemas().GetECClassId(handler.GetDomain().GetDomainName(), handler.GetClassName().c_str()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnDomains::GetHandlerInfo(uint64_t* restrictionMask, DgnClassId handlerId, DgnDomain::Handler& handler)
+    {
+    if (nullptr != restrictionMask)
+        *restrictionMask = 0;
+
+    ECN::ECClassCP ecClass = GetDgnDb().Schemas().GetECClass(handlerId.GetValue());
+    BeAssert(nullptr != ecClass);
+
+    // The ClassHasHandler attribute signifies this specific ECClass has an associated Handler. Therefore we do not check base classes for it.
+    ECN::IECInstancePtr attr = nullptr != ecClass ? ecClass->GetCustomAttributeLocal("ClassHasHandler") : nullptr;
+    if (attr.IsNull())
+        return false; // ECClass is not supposed to have a handler
+    else if (nullptr == restrictionMask)
+        return true; // ECClass is supposed to have a handler and caller doesn't care about restrictions
+
+    // Look up restrictions inherited from base classes. NEEDSWORK cache on handler rather than query? We will never use it after all handlers are registered.
+    auto handlerSuper = handler.GetSuperClass();
+    if (nullptr != handlerSuper && handlerSuper != &DgnDomain::Handler::GetHandler())
+        {
+        Statement stmt(GetDgnDb(), "SELECT Permissions FROM " DGN_TABLE_Handler " WHERE ClassId=? LIMIT 1");
+        stmt.BindId(1, GetClassId(*handlerSuper));
+        if (BE_SQLITE_ROW == stmt.Step())
+            *restrictionMask = stmt.GetValueUInt64(0);
+        }
+
+    // Parse this ECClass's restrictions
+    ECN::ECValue restrictions;
+    if (ECN::ECOBJECTS_STATUS_Success == attr->GetValue(restrictions, "Restrictions") && restrictions.IsArray())
+        {
+        uint32_t count = restrictions.GetArrayInfo().GetCount();
+        for (uint32_t i = 0; i < count; i++)
+            {
+            ECValue v;
+            if (ECN::ECOBJECTS_STATUS_Success == attr->GetValue(v, "Restrictions", i) && v.IsString() && !v.IsNull())
+                {
+                uint64_t restriction = handler._ParseRestrictedAction(v.GetUtf8CP());
+                BeAssert(0 == ((*restrictionMask) & restriction) && "Duplicate restriction or bad bitmask");
+                (*restrictionMask) |= restriction;
+                }
+            }
+        }
+
+    // This ECClass is supposed to have a handler.
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -386,10 +453,25 @@ DbResult DgnDomains::InsertHandler(DgnDomain::Handler& handler)
         return BE_SQLITE_ERROR;
         }
 
-    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE_Handler " (Domain,Name,ClassId) VALUES(?,?,?)");
+    uint64_t restrictions = 0;
+    bool shouldHaveHandler = GetHandlerInfo(&restrictions, id, handler);
+    if (!shouldHaveHandler)
+        {
+        BeAssert(false && "You cannot register a handler unless its ECClass has a ClassHasHandler custom attribute");
+
+#if !defined (NDEBUG)
+        printf("ERROR: HANDLER [%s] handles ECClass '%s' which lacks a ClassHasHandler custom attribute. Handler not registered.",
+                typeid(handler).name(), handler.GetClassName().c_str());
+#endif
+
+        return BE_SQLITE_ERROR;
+        }
+
+    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE_Handler " (Domain,Name,ClassId,Permissions) VALUES(?,?,?,?)");
     stmt.BindText(1, handler.GetDomain().GetDomainName(), Statement::MakeCopy::No);
     stmt.BindText(2, handler.GetClassName(), Statement::MakeCopy::No);
     stmt.BindId(3, id);
+    stmt.BindUInt64(4, restrictions);
 
     auto status = stmt.Step();
     if (BE_SQLITE_DONE != status)
@@ -613,5 +695,22 @@ DgnDbStatus dgn_ElementHandler::Element::_VerifySchema(DgnDomains& domains)
 #endif
     
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t DgnDomain::Handler::RestrictedAction::Parse(Utf8CP name)
+    {
+    if (0 == BeStringUtilities::Stricmp("delete", name))
+        return Delete;
+    else if (0 == BeStringUtilities::Stricmp("insert", name))
+        return Insert;
+    else if (0 == BeStringUtilities::Stricmp("update", name))
+        return Update;
+    else if (0 == BeStringUtilities::Stricmp("all", name))
+        return All;
+    else
+        return None;
     }
 

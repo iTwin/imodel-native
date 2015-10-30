@@ -27,32 +27,46 @@ DGNPLATFORM_REF_COUNTED_PTR(PhysicalTextAnnotationElement);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+//__PUBLISH_SECTION_END__
+// So we can friend ConvertV8TextToDgnDbExtension within TextAnnotationItem.
+namespace DgnDbSync { namespace DgnV8 { struct ConvertV8TextToDgnDbExtension; } }
+//__PUBLISH_SECTION_START__
+
 //! @addtogroup Annotations
 //! @beginGroup
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     09/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TextAnnotationItem : DgnElement::Item
+struct EXPORT_VTABLE_ATTRIBUTE TextAnnotationItem : DgnElement::UniqueAspect
 {
-    DGNASPECT_DECLARE_MEMBERS(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotationItem, Item);
+    DGNASPECT_DECLARE_MEMBERS(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotationItem, DgnElement::UniqueAspect);
+
+private:
+//__PUBLISH_SECTION_END__
+    // To allow DgnV8 conversion to create first-class text elements, but provide custom WYSIWYG geometry.
+    friend struct DgnDbSync::DgnV8::ConvertV8TextToDgnDbExtension;
+//__PUBLISH_SECTION_START__
+
+    bool m_isGeometrySuppressed;
 
 protected:
     TextAnnotationPtr m_annotation;
     
     DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateProperties(DgnElementCR) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _LoadProperties(DgnElementCR) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _GenerateElementGeometry(GeometricElementR, GenerateReason) override;
-
+    
 public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotationItem); }
     static ECN::ECClassCP QueryECClass(DgnDbR db) { return db.Schemas().GetECClass(QueryECClassId(db)); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
-    static TextAnnotationItemCP GetCP(DgnElementCR el) { return Item::Get<TextAnnotationItem>(el); }
-    static TextAnnotationItemP GetP(DgnElementR el) { return Item::GetP<TextAnnotationItem>(el); }
+    static TextAnnotationItemCP GetCP(DgnElementCR el) { return UniqueAspect::Get<TextAnnotationItem>(el, *QueryECClass(el.GetDgnDb())); }
+    static TextAnnotationItemP GetP(DgnElementR el) { return UniqueAspect::GetP<TextAnnotationItem>(el, *QueryECClass(el.GetDgnDb())); }
 
+    TextAnnotationItem() : m_isGeometrySuppressed(false) {}
     TextAnnotationCP GetAnnotation() const { return m_annotation.get(); }
     void SetAnnotation(TextAnnotationCP value) { m_annotation = value ? value->Clone() : nullptr; }
+    DGNPLATFORM_EXPORT void GenerateElementGeometry(GeometricElementR, GenerateReason) const;
 };
 
 namespace dgn_AspectHandler
@@ -77,6 +91,8 @@ struct EXPORT_VTABLE_ATTRIBUTE TextAnnotationElement : DrawingElement
 protected:
     virtual bool _DrawHit(HitDetailCR, ViewContextR) const override { return false; } // Don't flash text box...
     virtual SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
     TextAnnotationItemCP GetItemCP() const { return TextAnnotationItem::GetCP(*this); }
     DGNPLATFORM_EXPORT TextAnnotationItemR GetItemR();
 
@@ -119,6 +135,8 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalTextAnnotationElement : PhysicalElement
 protected:
     virtual bool _DrawHit(HitDetailCR, ViewContextR) const override { return false; } // Don't flash text box...
     virtual SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
     TextAnnotationItemCP GetItemCP() const { return TextAnnotationItem::GetCP(*this); }
     DGNPLATFORM_EXPORT TextAnnotationItemR GetItemR();
 

@@ -37,13 +37,13 @@ protected:
     bmap<DgnModelId, DgnModelId> m_modelId;
     bmap<DgnGeomPartId, DgnGeomPartId> m_geomPartId;
     bmap<DgnElementId, DgnElementId> m_elementId;
-    bmap<DgnCategoryId, DgnCategoryId> m_categoryId;
-    bmap<DgnSubCategoryId, DgnSubCategoryId> m_subcategoryId;
     bmap<DgnClassId, DgnClassId> m_classId;
     bmap<DgnAuthorityId, DgnAuthorityId> m_authorityId;
+    bmap<DgnMaterialId, DgnMaterialId> m_materialId;
+    bmap<DgnTextureId, DgnTextureId> m_textureId;
 
     template<typename T> T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
-
+    template<typename T> T FindElement(T sourceId) const {return T(Find<DgnElementId>(m_elementId, sourceId).GetValueUnchecked());}
 public:
     DgnRemapTables& Get(DgnDbR);
     DgnAuthorityId Find(DgnAuthorityId sourceId) const {return Find<DgnAuthorityId>(m_authorityId, sourceId);}
@@ -54,11 +54,15 @@ public:
     DgnElementId Add(DgnElementId sourceId, DgnElementId targetId) {return m_elementId[sourceId] = targetId;}
     DgnGeomPartId Find(DgnGeomPartId sourceId) const {return Find<DgnGeomPartId>(m_geomPartId, sourceId);}
     DgnGeomPartId Add(DgnGeomPartId sourceId, DgnGeomPartId targetId) {return m_geomPartId[sourceId] = targetId;}
-    DgnCategoryId Find(DgnCategoryId sourceId) const {return Find<DgnCategoryId>(m_categoryId, sourceId);}
-    DgnCategoryId Add(DgnCategoryId sourceId, DgnCategoryId targetId) {return m_categoryId[sourceId] = targetId;}
+    DgnCategoryId Find(DgnCategoryId sourceId) const {return FindElement<DgnCategoryId>(sourceId);}
+    DgnCategoryId Add(DgnCategoryId sourceId, DgnCategoryId targetId) {return DgnCategoryId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
+    DgnMaterialId Find(DgnMaterialId sourceId) const { return FindElement<DgnMaterialId>(sourceId); }
+    DgnMaterialId Add(DgnMaterialId sourceId, DgnMaterialId targetId) { return DgnMaterialId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
+    DgnTextureId Find(DgnTextureId sourceId) const {return FindElement<DgnTextureId>(sourceId);}
+    DgnTextureId Add(DgnTextureId sourceId, DgnTextureId targetId) {return DgnTextureId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
 
-    DgnSubCategoryId Find(DgnSubCategoryId sourceId) const {return Find<DgnSubCategoryId>(m_subcategoryId, sourceId);}
-    DgnSubCategoryId Add(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {return m_subcategoryId[sourceId] = targetId;}
+    DgnSubCategoryId Find(DgnSubCategoryId sourceId) const {return FindElement<DgnSubCategoryId>(sourceId);}
+    DgnSubCategoryId Add(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {return DgnSubCategoryId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
 
     DgnClassId Find(DgnClassId sourceId) const {return Find<DgnClassId>(m_classId, sourceId);}
     DgnClassId Add(DgnClassId sourceId, DgnClassId targetId) {return m_classId[sourceId] = targetId;}
@@ -76,6 +80,8 @@ private:
     DgnDbR          m_sourceDb;
     DgnDbR          m_destDb;
     DgnRemapTables  m_remap;
+
+    void ComputeGcsAdjustment();
 
 public:
     //! Construct a DgnImportContext object.
@@ -104,14 +110,34 @@ public:
     DgnElementId AddElementId(DgnElementId sourceId, DgnElementId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a GeomPart has been imported
     DGNPLATFORM_EXPORT DgnGeomPartId RemapGeomPartId(DgnGeomPartId sourceId);
+    //! Look up a copy of a Category
+    DgnCategoryId FindCategory(DgnCategoryId sourceId) const { return m_remap.Find(sourceId); }
+    //! Register a copy of a Category
+    DgnCategoryId AddCategory(DgnCategoryId sourceId, DgnCategoryId targetId) { return m_remap.Add(sourceId, targetId); }
     //! Make sure that a Category has been imported
     DGNPLATFORM_EXPORT DgnCategoryId RemapCategory(DgnCategoryId sourceId);
     //! Look up a copy of an subcategory
     DgnSubCategoryId FindSubCategory(DgnSubCategoryId sourceId) const {return m_remap.Find(sourceId);}
+    //! Register a copy of a SubCategory
+    DgnSubCategoryId AddSubCategory(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a SubCategory has been imported
     DGNPLATFORM_EXPORT DgnSubCategoryId RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId sourceId);
     //! Make sure that an ECClass has been imported
     DGNPLATFORM_EXPORT DgnClassId RemapClassId(DgnClassId sourceId);
+    //! Look up a copy of a Material
+    DgnMaterialId FindMaterialId(DgnMaterialId sourceId) const {return m_remap.Find(sourceId);}
+    //! Register a copy of a Material
+    DgnMaterialId AddMaterialId(DgnMaterialId sourceId, DgnMaterialId targetId) {return m_remap.Add(sourceId, targetId);}
+    //! Make sure that a Material has been imported
+    DGNPLATFORM_EXPORT DgnMaterialId RemapMaterialId(DgnMaterialId sourceId);
+    //! Look up a copy of a Material
+    DgnTextureId FindTextureId(DgnTextureId sourceId) const {return m_remap.Find(sourceId);}
+    //! Register a copy of a Texture
+    DgnTextureId AddTextureId(DgnTextureId sourceId, DgnTextureId targetId) {return m_remap.Add(sourceId, targetId);}
+    //! Make sure that a Texture has been imported
+    DGNPLATFORM_EXPORT DgnTextureId RemapTextureId(DgnTextureId sourceId);
+    //! @}
+
     //! @}
 
     //! @name GCS coordinate system shift
@@ -250,6 +276,30 @@ public:
         Background   = 2, //!< the element is displayed with the background color
     };
 
+    //! Identifies actions which may be restricted for elements created by a handler for a missing subclass of DgnElement.
+    struct RestrictedAction : DgnDomain::Handler::RestrictedAction
+    {
+        DEFINE_T_SUPER(DgnDomain::Handler::RestrictedAction);
+
+        static const uint64_t Clone = T_Super::NextAvailable; //!< Create a copy of element. "Clone"
+        static const uint64_t SetParent = Clone << 1; //!< Change the parent element. "SetParent"
+        static const uint64_t InsertChild = SetParent << 1; //!< Insert an element with this element as its parent. "InsertChild"
+        static const uint64_t UpdateChild = InsertChild << 1; //!< Modify a child of this element. "UpdateChild"
+        static const uint64_t DeleteChild = UpdateChild << 1; //!< Delete a child of this element. "DeleteChild"
+        static const uint64_t SetCode = DeleteChild << 1; //!< Change this element's code. "SetCode"
+
+        static const uint64_t Reserved_1 = SetCode << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_2 = Reserved_1 << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_3 = Reserved_2 << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_4 = Reserved_3 << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_5 = Reserved_4 << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_6 = Reserved_5 << 1; //!< Reserved for future use 
+
+        static const uint64_t NextAvailable = Reserved_6 << 1; //!< Subclasses can add new actions beginning with this value
+
+        DGNPLATFORM_EXPORT static uint64_t Parse(Utf8CP name); //!< Parse action name from ClassHasHandler custom attribute
+    };
+
     //! Application data attached to a DgnElement. Create a subclass of this to store non-persistent information on a DgnElement.
     struct EXPORT_VTABLE_ATTRIBUTE AppData : RefCountedBase
     {
@@ -295,7 +345,7 @@ public:
     //! subclasses of DgnElement::Aspect in order to manage transactions.
     //! A domain will normally subclass one of the following more specific subclasses:
     //!     * DgnElement::UniqueAspect when the domain defines a subclass of dgn.ElementUniqueAspect for aspects that must be 1:1 with the host element.
-    //!     * DgnElement::Item when the domain defines a subclass of dgn.ElementItem.
+    //!     *** WIP_ELEMENT_ITEM *** pending redesign * DgnElement::Item when the domain defines a subclass of dgn.ElementItem.
     //!     * DgnElement::MultiAspect when the domain defines a subclass of dgn.ElementMultiAspect for cases where multiple instances of the class can be associated with a given element.
     //! The domain must also define and register a subclass of ElementAspectHandler to load instances of its aspects.
     struct EXPORT_VTABLE_ATTRIBUTE Aspect : AppData
@@ -351,7 +401,7 @@ public:
         //! Get the ECClass for this aspect
         DGNPLATFORM_EXPORT ECN::ECClassCP GetECClass(DgnDbR) const;
 
-        //! The Item should make a copy of itself.
+        //! The aspect should make a copy of itself.
         DGNPLATFORM_EXPORT virtual RefCountedPtr<DgnElement::Aspect> _CloneForImport(DgnElementCR sourceEl, DgnImportContext& importer) const;
 
         //! The subclass should override this method if it holds any IDs that must be remapped when it is copied (perhaps between DgnDbs)
@@ -365,7 +415,7 @@ public:
     //!     * _GetECClassName
     //!     * _UpdateProperties
     //!     * _LoadProperties
-    //! @see Item, UniqueAspect
+    //! @see UniqueAspect
     //! (Note: This is not stored directly as AppData, but is held by an AppData that aggregates instances for this class.)
     //! @note A domain that defines a subclass of MultiAspect must also define a subclass of ElementAspectHandler to load it.
     struct EXPORT_VTABLE_ATTRIBUTE MultiAspect : Aspect
@@ -406,7 +456,7 @@ public:
     //!     * _GetECClassName
     //!     * _UpdateProperties
     //!     * _LoadProperties
-    //! @see MultiAspect, Item
+    //! @see MultiAspect
     //! @note A domain that defines a subclass of UniqueAspect must also define a subclass of ElementAspectHandler to load it.
     struct EXPORT_VTABLE_ATTRIBUTE UniqueAspect : Aspect
     {
@@ -423,6 +473,18 @@ public:
         DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el) override final;
 
     public:
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
+#endif
+        //! The reason why GenerateElementGeometry is being called
+        enum class GenerateReason
+        {
+            Insert,         //!< The Element is being inserted into the Db
+            Update,         //!< Some aspect of the Element's content has changed.
+            TempDraw,       //!< A tool wants to draw the Element temporarily (the Element may not be persistent)
+            BulkInsert,     //!< An application is creating a large number of Elements 
+            Other           //!< An unspecified reason
+        };
+
         //! Get the ID of this aspect. The aspect's ID is always the same as the host element's ID. This is a convenience function that converts from DgnElementId to ECInstanceId.
         BeSQLite::EC::ECInstanceId GetAspectInstanceId(DgnElementCR el) const {return el.GetElementId();}
 
@@ -454,6 +516,7 @@ public:
         template<typename T> static T const* Get(DgnElementCR el, ECN::ECClassCR cls) {return dynamic_cast<T const*>(GetAspect(el,cls));}
     };
 
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
     //! Represents a dgn.ElementItem.
     //! dgn.ElementItem is-a dgn.ElementUniqueAspect. A dgn.Element can have 0 or 1 dgn.ElementItems, and the dgn.ElementItem always has the Id of its host dgn.Element.
     //! Note that the item's actual class can vary, as long as it is a subclass of dgn.ElementItem.
@@ -572,15 +635,16 @@ public:
         //! @see BentleyApi::Dgn::DgnScript for an explanation of script-based EGAs.
         DGNPLATFORM_EXPORT DgnDbStatus ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR egaInstance);
     };
+#endif
 
     //! Allows a business key (unique identifier string) from an external system (identified by DgnAuthorityId) to be associated with a DgnElement via a persistent ElementAspect
-    struct EXPORT_VTABLE_ATTRIBUTE ExternalKey : AppData
+    struct EXPORT_VTABLE_ATTRIBUTE ExternalKeyAspect : AppData
     {
     private:
         DgnAuthorityId m_authorityId;
         Utf8String m_externalKey;
 
-        ExternalKey(DgnAuthorityId authorityId, Utf8CP externalKey)
+        ExternalKeyAspect(DgnAuthorityId authorityId, Utf8CP externalKey)
             {
             m_authorityId = authorityId;
             m_externalKey = externalKey;
@@ -590,14 +654,63 @@ public:
         DGNPLATFORM_EXPORT virtual DropMe _OnInserted(DgnElementCR) override;
 
     public:
-        DGNPLATFORM_EXPORT static RefCountedPtr<ExternalKey> Create(DgnAuthorityId authorityId, Utf8CP externalKey);
-        DGNPLATFORM_EXPORT static DgnDbStatus QueryExternalKey(Utf8StringR, DgnElementCR, DgnAuthorityId);
+        DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
+        DGNPLATFORM_EXPORT static RefCountedPtr<ExternalKeyAspect> Create(DgnAuthorityId authorityId, Utf8CP externalKey);
+        DGNPLATFORM_EXPORT static DgnDbStatus Query(Utf8StringR, DgnElementCR, DgnAuthorityId);
         DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR, DgnAuthorityId);
         DgnAuthorityId GetAuthorityId() const {return m_authorityId;}
         Utf8CP GetExternalKey() const {return m_externalKey.c_str();}
     };
 
-    typedef RefCountedPtr<ExternalKey> ExternalKeyPtr;
+    typedef RefCountedPtr<ExternalKeyAspect> ExternalKeyAspectPtr;
+
+    //! Allows a label to be associated with a DgnElement via a persistent ElementAspect
+    struct EXPORT_VTABLE_ATTRIBUTE LabelAspect : AppData
+    {
+    private:
+        Utf8String m_label;
+
+        explicit LabelAspect(Utf8CP label)
+            {
+            m_label.AssignOrClear(label);
+            }
+
+    protected:
+        DGNPLATFORM_EXPORT virtual DropMe _OnInserted(DgnElementCR) override;
+
+    public:
+        DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
+        DGNPLATFORM_EXPORT static RefCountedPtr<LabelAspect> Create(Utf8CP label);
+        DGNPLATFORM_EXPORT static DgnDbStatus Query(Utf8StringR label, DgnElementCR);
+        DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR);
+        Utf8CP GetLabel() const {return m_label.c_str();}
+    };
+
+    typedef RefCountedPtr<LabelAspect> LabelAspectPtr;
+
+    //! Allows a description to be associated with a DgnElement via a persistent ElementAspect
+    struct EXPORT_VTABLE_ATTRIBUTE DescriptionAspect : AppData
+    {
+    private:
+        Utf8String m_description;
+
+        explicit DescriptionAspect(Utf8CP description)
+            {
+            m_description.AssignOrClear(description);
+            }
+
+    protected:
+        DGNPLATFORM_EXPORT virtual DropMe _OnInserted(DgnElementCR) override;
+
+    public:
+        DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
+        DGNPLATFORM_EXPORT static RefCountedPtr<DescriptionAspect> Create(Utf8CP description);
+        DGNPLATFORM_EXPORT static DgnDbStatus Query(Utf8StringR description, DgnElementCR);
+        DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR);
+        Utf8CP GetDescription() const {return m_description.c_str();}
+    };
+
+    typedef RefCountedPtr<DescriptionAspect> DescriptionAspectPtr;
 
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
@@ -609,7 +722,6 @@ protected:
     struct Flags
     {
         uint32_t m_persistent:1;
-        uint32_t m_editable:1;
         uint32_t m_lockHeld:1;
         uint32_t m_inSelectionSet:1;
         uint32_t m_hilited:3;
@@ -631,6 +743,8 @@ protected:
     virtual Utf8CP _GetSuperECClassName() const {return nullptr;}
 
     void SetPersistent(bool val) const {m_flags.m_persistent = val;} //!< @private
+    void InvalidateElementId() { m_elementId = DgnElementId(); } //!< @private
+    void InvalidateCode() { m_code = Code(); } //!< @private
     
     //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
     void CopyForCloneFrom(DgnElementCR src);
@@ -673,6 +787,9 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnInserted.
     DGNPLATFORM_EXPORT virtual void _OnInserted(DgnElementP copiedFrom) const;
 
+    //! Called after a DgnElement was successfully imported into the database.
+    virtual void _OnImported(DgnElementCR original, DgnImportContext& importer) const { }
+    
     //! Called after a DgnElement that was previously deleted has been reinstated by an undo.
     //! @note If you override this method, you @em must call T_Super::_OnInserted.
     DGNPLATFORM_EXPORT virtual void _OnReversedDelete() const;
@@ -731,7 +848,7 @@ protected:
     //! @note implementers should not presume that returning DgnDbStatus::Success means that the element will become a child element,
     //! since the insert may fail for other reasons. Instead, rely on _OnChildInserted for that purpose.
     //! @note If you override this method, you @em must call T_Super::_OnChildInsert, forwarding its status.
-    virtual DgnDbStatus _OnChildInsert(DgnElementCR child) const {return DgnDbStatus::Success;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildInsert(DgnElementCR child) const;
 
     //! Called when an element that has this element as its parent is about to be updated in the DgnDb.
     //! Subclasses may override this method to control modifications to its children.
@@ -741,7 +858,7 @@ protected:
     //! @note implementers should not presume that returning DgnDbStatus::Success means that the element was updated,
     //! since the update may fail for other reasons. Instead, rely on _OnChildUpdated for that purpose.
     //! @note If you override this method, you @em must call T_Super::_OnChildUpdate, forwarding its status.
-    virtual DgnDbStatus _OnChildUpdate(DgnElementCR original, DgnElementCR replacement) const {return DgnDbStatus::Success;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildUpdate(DgnElementCR original, DgnElementCR replacement) const;
 
     //! Called when an child element of this element is about to be deleted from the DgnDb.
     //! Subclasses may override this method to block deletion of their children.
@@ -750,7 +867,7 @@ protected:
     //! @note implementers should not presume that returning DgnDbStatus::Success means that the element was deleted,
     //! since the delete may fail for other reasons. Instead, rely on _OnChildDeleted for that purpose.
     //! @note If you override this method, you @em must call T_Super::_OnChildDelete, forwarding its status.
-    virtual DgnDbStatus _OnChildDelete(DgnElementCR child) const {return DgnDbStatus::Success;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildDelete(DgnElementCR child) const;
 
     //! Called after a new element was inserted with this element as its parent.
     //! @note If you override this method, you @em must call T_Super::_OnChildInserted.
@@ -764,6 +881,19 @@ protected:
     //! Called after an element, with this element as its parent, was successfully deleted.
     //! @note If you override this method, you @em must call T_Super::_OnChildDeleted.
     virtual void _OnChildDeleted(DgnElementCR child) const {}
+
+    //! Called when a child element of this element is about to be imported into another DgnDb or model
+    //! Subclasses may override this method to block control import of their children.
+    //! @param[in] child The original element which is being imported
+    //! @param[in] destModel The model into which the child is being imported
+    //! @param[in] importer Enables the element to copy the resources that it needs (if copying between DgnDbs) and to remap any references that it holds to things outside itself to the copies of those things.
+    virtual DgnDbStatus _OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const { return DgnDbStatus::Success; }
+
+    //! Called after an element, with this element as its parent, was successfully imported
+    //! @param[in] original The original element which was cloned for import, which is @em not necessarily a child of this element.
+    //! @param[in] imported The clone which was imported, which is a child of this element.
+    //! @param[in] importer Enables the element to copy the resources that it needs (if copying between DgnDbs) and to remap any references that it holds to things outside itself to the copies of those things.
+    virtual void _OnChildImported(DgnElementCR original, DgnElementCR imported, DgnImportContext& importer) const { }
 
     //! Get the size, in bytes, used by this DgnElement. This is used by the element memory management routines to gauge the "weight" of
     //! each element, so it is not necessary for the value to be 100% accurate.
@@ -815,13 +945,13 @@ protected:
     //! The default implementation sets the parent without doing any checking.
     //! @return DgnDbStatus::Success if the parentId was changed, error status otherwise.
     //! Override to validate the parent/child relationship and return a value other than DgnDbStatus::Success to reject proposed new parent.
-    virtual DgnDbStatus _SetParentId(DgnElementId parentId) {m_parentId = parentId; return DgnDbStatus::Success;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetParentId(DgnElementId parentId);
 
     //! Change the code of this DgnElement.
     //! The default implementation sets the code without doing any checking.
     //! Override to validate the code.
     //! @return DgnDbStatus::Success if the code was changed, error status otherwise.
-    virtual DgnDbStatus _SetCode(Code const& code) {m_code=code; return DgnDbStatus::Success;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(Code const& code);
 
     //! Override to customize how the DgnElement subclass generates its code.
     DGNPLATFORM_EXPORT virtual Code _GenerateDefaultCode();
@@ -832,6 +962,7 @@ protected:
     virtual PhysicalElementCP _ToPhysicalElement() const {return nullptr;}
     virtual DrawingElementCP _ToDrawingElement() const {return nullptr;}
     virtual ElementGroupCP _ToElementGroup() const {return nullptr;}
+    virtual DictionaryElementCP _ToDictionaryElement() const {return nullptr;}
 
     //! Construct a DgnElement from its params
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
@@ -858,12 +989,14 @@ public:
     //! @name Dynamic casting to DgnElement subclasses
     //! @{
     GeometricElementCP ToGeometricElement() const {return _ToGeometricElement();} //!< more efficient substitute for dynamic_cast<GeometricElementCP>(el)
+    DictionaryElementCP ToDictionaryElement() const {return _ToDictionaryElement();} //!< more efficient substitute for dynamic_cast<DictionaryElementCP>(el)
     DgnElement3dCP ToElement3d() const {return _ToElement3d();}                   //!< more efficient substitute for dynamic_cast<DgnElement3dCP>(el)
     DgnElement2dCP ToElement2d() const {return _ToElement2d();}                   //!< more efficient substitute for dynamic_cast<DgnElement2dCP>(el)
     PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}    //!< more efficient substitute for dynamic_cast<PhysicalElementCP>(el)
     DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}       //!< more efficient substitute for dynamic_cast<DrawingElementCP>(el)
     ElementGroupCP ToElementGroup() const {return _ToElementGroup();}             //!< more efficient substitute for dynamic_cast<ElementGroupCP>(el)
     GeometricElementP ToGeometricElementP() {return const_cast<GeometricElementP>(_ToGeometricElement());} //!< more efficient substitute for dynamic_cast<GeometricElementP>(el)
+    DictionaryElementP ToDictionaryElementP() {return const_cast<DictionaryElementP>(_ToDictionaryElement());} //!< more efficient substitute for dynamic_cast<DictionaryElementP>(el)
     DgnElement3dP ToElement3dP() {return const_cast<DgnElement3dP>(_ToElement3d());}                       //!< more efficient substitute for dynamic_cast<DgnElement3dP>(el)
     DgnElement2dP ToElement2dP() {return const_cast<DgnElement2dP>(_ToElement2d());}                       //!< more efficient substitute for dynamic_cast<DgnElement2dP>(el)
     PhysicalElementP ToPhysicalElementP() {return const_cast<PhysicalElementP>(_ToPhysicalElement());}     //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
@@ -873,6 +1006,7 @@ public:
 
     bool Is3d() const {return nullptr != _ToElement3d();} //!< Determine whether this element is 3d or not
     bool IsGeometricElement() const {return nullptr != ToGeometricElement();}
+    bool IsDictionaryElement() const {return nullptr != ToDictionaryElement();}
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}//!< Determine whether this element is the same type (has the same DgnClassId) as another element.
 
     Hilited IsHilited() const {return (Hilited) m_flags.m_hilited;} //!< Get the current Hilited state of this element
@@ -895,7 +1029,7 @@ public:
     //! @param[out] stat Optional status to describe failures, a valid DgnElementPtr will only be returned if successful.
     //! @param[in] params Optional CreateParams. Might specify a different destination model, etc.
     //! @remarks If no CreateParams are supplied, a new Code will be generated for the cloned element - it will \em not be copied from this element's Code.
-    DgnElementPtr Clone(DgnDbStatus* stat=nullptr, DgnElement::CreateParams const* params=nullptr) const {return _Clone(stat, params);}
+    DGNPLATFORM_EXPORT DgnElementPtr Clone(DgnDbStatus* stat=nullptr, DgnElement::CreateParams const* params=nullptr) const;
 
     //! Copy the content of another DgnElement into this DgnElement.
     //! @param[in] source The other element whose content is copied into this element.
@@ -921,7 +1055,7 @@ public:
     //! @param[in] importer Enables the element to copy the resources that it needs (if copying between DgnDbs) and to remap any references that it holds to things outside itself to the copies of those things.
     //! @remarks The element's code will \em not be copied to the copied element if the import is being performed within a single DgnDb, as it is never correct for two elements within the same DgnDb to have the same code.
     //! @return The persistent copy of the element
-    DgnElementCPtr Import(DgnDbStatus* stat, DgnModelR destModel, DgnImportContext& importer) const;
+    DGNPLATFORM_EXPORT DgnElementCPtr Import(DgnDbStatus* stat, DgnModelR destModel, DgnImportContext& importer) const;
 
     //! Update the persistent state of a DgnElement in the DgnDb from this modified copy of it.
     //! This is merely a shortcut for el.GetDgnDb().Elements().Update(el, stat);
@@ -938,6 +1072,7 @@ public:
     //! Get the ElementHandler for this DgnElement.
     DGNPLATFORM_EXPORT ElementHandlerR GetElementHandler() const;
 
+    // *** WIP_ELEMENT_ITEM *** pending redesign
     //! Get the DgnElement::Item handler for this DgnElement or the ElementHandler if the DgnElement does not have a DgnElement::Item.
     //! @return DgnDomain::Handler or nullptr if DgnElement specifies a DgnElement::Item who's handler can't be found.
     //! @remarks Used to find extensions like IEditManipulatorExtension that should coordinate with the item handler whenever it exists.
@@ -1001,7 +1136,7 @@ public:
     //! @see GetParentId, _SetParentId
     //! @return DgnDbStatus::Success if the parent was set
     //! @note This call can fail if a DgnElement subclass overrides _SetParentId and rejects the parent.
-    DgnDbStatus SetParentId(DgnElementId parentId) {return _SetParentId(parentId);}
+    DgnDbStatus SetParentId(DgnElementId parentId) {return parentId == GetParentId() ? DgnDbStatus::Success : _SetParentId(parentId);}
 
     //! Get the code (business key) of this DgnElement.
     Code GetCode() const {return m_code;}
@@ -1183,6 +1318,24 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
 
         CreateParams(T_Super const& params, DgnCategoryId category = DgnCategoryId()) : T_Super(params), m_categoryId(category) { }
     };
+
+    //! Identifies actions which may be restricted for elements created by a handler for a missing subclass of GeometricElement.
+    struct RestrictedAction : T_Super::RestrictedAction
+    {
+        DEFINE_T_SUPER(GeometricElement::T_Super::RestrictedAction);
+
+        static const uint64_t Move = T_Super::NextAvailable; //!< Rotate and/or translate. "Move"
+        static const uint64_t SetCategory = Move << 1; //!< Change element category. "SetCategory"
+        static const uint64_t SetGeometry = SetCategory << 1; //!< Change element geometry. "SetGeometry"
+
+        static const uint64_t Reserved_1 = SetCategory << 1; //!< Reserved for future use
+        static const uint64_t Reserved_2 = Reserved_1 << 1; //!< Reserved for future use
+        static const uint64_t Reserved_3 = Reserved_2 << 1; //!< Reserved for future use
+
+        static const uint64_t NextAvailable = Reserved_3 << 1; //!< Subclasses can add new actions beginning with this value.
+
+        DGNPLATFORM_EXPORT static uint64_t Parse(Utf8CP name); //!< Parse action name from ClassHasHandler custom attribute
+    };
 protected:
     GeomStream m_geom;
     DgnCategoryId   m_categoryId;
@@ -1191,7 +1344,7 @@ protected:
     //! The default implementation sets the category without doing any checking.
     //! Override to validate the category.
     //! @return DgnDbStatus::Success if the categoryId was changed, error status otherwise.
-    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId; return DgnDbStatus::Success;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId);
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
@@ -1281,7 +1434,7 @@ protected:
 
 public:
     Placement3dCR GetPlacement() const {return m_placement;} //!< Get the Placement3d of this DgnElement3d
-    void SetPlacement(Placement3dCR placement) {m_placement = placement;} //!< Change the Placement3d for this DgnElement3d
+    DGNPLATFORM_EXPORT DgnDbStatus SetPlacement(Placement3dCR placement); //!< Change the Placement3d for this DgnElement3d
 };
 
 //=======================================================================================
@@ -1346,7 +1499,7 @@ protected:
 
 public:
     Placement2dCR GetPlacement() const {return m_placement;}     //!< Get the Placement2d for this DgnElement2d
-    void SetPlacement(Placement2dCR placement) {m_placement=placement;} //!< Change the Placement2d for this Dgnele
+    DGNPLATFORM_EXPORT DgnDbStatus SetPlacement(Placement2dCR placement); //!< Change the Placement2d for this Dgnele
 };
 
 //=======================================================================================
@@ -1372,12 +1525,119 @@ public:
 };
 
 //=======================================================================================
+//! Helper class for maintaining and querying the ElementGroupsMembers relationship
+//! @see IElementGroup
+//! @private
+// @bsiclass                                                    Shaun.Sewall    10/15
+//=======================================================================================
+struct ElementGroupsMembers : NonCopyableClass
+{
+public:
+    DGNPLATFORM_EXPORT static DgnDbStatus Insert(DgnElementCR group, DgnElementCR member);
+    DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR group, DgnElementCR member);
+    DGNPLATFORM_EXPORT static bool HasMember(DgnElementCR group, DgnElementCR member);
+    DGNPLATFORM_EXPORT static DgnElementIdSet QueryMembers(DgnElementCR group);
+    DGNPLATFORM_EXPORT static DgnElementIdSet QueryGroups(DgnElementCR member);
+};
+
+//=======================================================================================
+//! Templated class used for an element to group other member elements.
+//! @note Template type T must be a subclass of DgnElement.
+//! @note The class that implements this interface must also be an element.
+//! @ingroup DgnElementGroup
+// @bsiclass                                                    Shaun.Sewall    10/15
+//=======================================================================================
+template<class T> class IElementGroup
+{
+protected:
+    //! Called prior to member being added to group
+    virtual DgnDbStatus _OnMemberAdd(T const& member) const {return DgnDbStatus::Success;}
+    //! Called after member is added to group
+    virtual void _OnMemberAdded(T const& member) const {}
+
+    //! Called prior to member being removed from group
+    virtual DgnDbStatus _OnMemberRemove(T const& member) const {return DgnDbStatus::Success;}
+    //! Called after member removed from group
+    virtual void _OnMemberRemoved(T const& member) const {}
+
+    //! Override to return the <em>this</em> pointer of the group DgnElement
+    virtual DgnElementCP _ToGroupElement() const = 0;
+
+    IElementGroup()
+        {
+        static_assert(std::is_base_of<DgnElement, T>::value, "IElementGroup can only group subclasses of DgnElement");
+        }
+
+public:
+    //! Add a member to this group
+    DgnDbStatus AddMember(T const& member) const
+        {
+        DgnElementCR groupElement = *_ToGroupElement();
+        DgnElementCR memberElement = static_cast<DgnElementCR>(member); // see static_assert in constructor
+
+        DgnDbStatus status = _OnMemberAdd(member);
+        if (DgnDbStatus::Success != status)
+            return status;
+
+        status = ElementGroupsMembers::Insert(groupElement, memberElement);
+        if (DgnDbStatus::Success != status)
+            return status;
+
+        _OnMemberAdded(member);
+        return DgnDbStatus::Success;
+        }
+
+    //! Remove a member from this group
+    DgnDbStatus RemoveMember(T const& member) const
+        {
+        DgnElementCR groupElement = *_ToGroupElement();
+        DgnElementCR memberElement = static_cast<DgnElementCR>(member); // see static_assert in constructor
+
+        DgnDbStatus status = _OnMemberRemove(member);
+        if (DgnDbStatus::Success != status)
+            return status;
+
+        status = ElementGroupsMembers::Delete(groupElement, memberElement);
+        if (DgnDbStatus::Success != status)
+            return status;
+
+        _OnMemberRemoved(member);
+        return DgnDbStatus::Success;
+        }
+    
+    //! Returns true if this group has the specified member
+    bool HasMember(T const& member) const
+        {
+        DgnElementCR groupElement = *_ToGroupElement();
+        DgnElementCR memberElement = static_cast<DgnElementCR>(member); // see static_assert in constructor
+
+        return ElementGroupsMembers::HasMember(groupElement, memberElement);
+        }
+
+    //! Query for the members of this group
+    DgnElementIdSet QueryMembers() const
+        {
+        DgnElementCR groupElement = *_ToGroupElement();
+        return ElementGroupsMembers::QueryMembers(groupElement);
+        }
+
+    //! Query for the groups that the specified element is a member of
+    static DgnElementIdSet QueryGroups(T const& member)
+        {
+        DgnElementCR memberElement = static_cast<DgnElementCR>(member); // see static_assert in constructor
+        return ElementGroupsMembers::QueryGroups(memberElement);
+        }
+};
+
+//=======================================================================================
 //! A "logical Group" of elements.
 //! "Logical" groups hold a referencing (not an owning) relationship with their members.
 //! ElementGroup can be subclassed for custom grouping behavior.
 //! @ingroup DgnElementGroup
+//! @private
 // @bsiclass                                                    Shaun.Sewall    05/15
 //=======================================================================================
+// WIP: Obsolete. Replaced by IElementGroup
 struct EXPORT_VTABLE_ATTRIBUTE ElementGroup : DgnElement
 {
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_ElementGroup, DgnElement)
@@ -1440,6 +1700,42 @@ public:
     //! @return the DgnElementId of the ElementGroup.  Will be invalid if not found.
     //! @see QueryMembers
     DGNPLATFORM_EXPORT static DgnElementId QueryFromMember(DgnDbR db, DgnClassId groupClassId, DgnElementId memberElementId);
+};
+
+//=======================================================================================
+//! A resource element which resides in (and only in) the dictionary model.
+//! Typically represents a style or similar resource used by other elements throughout
+//! the DgnDb.
+//! @ingroup DgnElementGroup
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DictionaryElement : DgnElement
+{
+    DEFINE_T_SUPER(DgnElement);
+public:
+    //! Parameters used to construct a DictionaryElement
+    struct CreateParams : T_Super::CreateParams
+    {
+        DEFINE_T_SUPER(DictionaryElement::T_Super::CreateParams);
+
+        //! Constructs parameters for a dictionary element.
+        //! @param[in]      db       The DgnDb in which the element is to reside.
+        //! @param[in]      classId  The ID of the ECClass representing this element.
+        //! @param[in]      code     The element's unique code.
+        //! @param[in]      parentId The ID of the element's parent element.
+        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, DgnClassId classId, Code const& code, DgnElementId parentId=DgnElementId());
+
+        //! Constructor from base class. Primarily for internal use.
+        explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) { }
+
+        //! Constructs parameters for a dictionary element with the specified values. Chiefly for internal use.
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code code, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId())
+            : T_Super(db, modelId, classId, code, id, parent) { }
+    };
+protected:
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    virtual DictionaryElementCP _ToDictionaryElement() const override { return this; }
+
+    explicit DictionaryElement(CreateParams const& params) : T_Super(params) { }
 };
 
 struct ECSqlClassInfo;
@@ -1640,6 +1936,7 @@ public:
 //! register its own handler.
 // @bsiclass                                                BentleySystems
 //=======================================================================================
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 struct InstanceBackedItem : DgnElement::Item
 {
     ECN::IECInstancePtr m_instance;
@@ -1654,8 +1951,11 @@ struct InstanceBackedItem : DgnElement::Item
 
     void SetInstanceId(BeSQLite::EC::ECInstanceId eid);
 };
+#endif
 
+#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 // *** WIP_ELEMENT_ITEM - move this back into ComponentSolution after making ElementItem a top-level class
 DgnDbStatus ExecuteComponentSolutionEGA(DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR itemInstance, Utf8StringCR cmName, Utf8StringCR paramNames, DgnElement::Item& item);
+#endif
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

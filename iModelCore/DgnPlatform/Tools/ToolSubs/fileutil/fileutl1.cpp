@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/fileutil/fileutl1.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>

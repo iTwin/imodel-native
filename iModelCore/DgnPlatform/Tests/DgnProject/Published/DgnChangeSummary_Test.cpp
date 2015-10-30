@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "DgnHandlersTests.h"
+#include "ChangeTestFixture.h"
 #include <DgnPlatform/DgnHandlers/DgnChangeSummary.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 //=======================================================================================
 //! DgnChangeSummaryTestFixture
 //=======================================================================================
-struct DgnChangeSummaryTestFixture : public GenericDgnModelTestFixture
+struct DgnChangeSummaryTestFixture : public ChangeTestFixture
 {
     struct ChangedElements
     {
@@ -35,34 +35,15 @@ struct DgnChangeSummaryTestFixture : public GenericDgnModelTestFixture
     };
 
 protected:
-    DgnDbPtr m_testDb;
-    DgnModelPtr m_testModel;
-    DgnCategoryId m_testCategoryId;
-    DgnElementId m_testElementId;
-    DgnAuthorityId m_authorityId;
-
-    Utf8String GetLabel(int iFloor, int iQuadrant) const;
-
-    void CreateDgnDb(WCharCP filename);
-    void OpenDgnDb(WCharCP filename);
-    void CloseDgnDb();
-    void CopyDgnDb(WCharCP original, WCharCP copy);
-
-    void InsertModel();
-    void InsertCategory();
-    void InsertAuthority();
-
-    DgnAuthority::Code CreateCode(Utf8StringCR value) { return m_testDb->Authorities().Get<NamespaceAuthority>(m_authorityId)->CreateCode(value); }
+    DgnAuthority::Code CreateCode(int iFloor, int iQuadrant);
+        
+    DgnElementId QueryElementId(int iFloor, int iQuadrant);
 
     void CreateSampleBuilding(WCharCP fileName);
     void InsertEmptyBuilding(WCharCP filename);
     void InsertFloor(int iFloor);
     void UpdateFloorGeometry(int iFloor);
     void DeleteFloor(int iFloor);
-    DgnElementId QueryElementIdByLabel(Utf8CP label);
-
-    void CreateDefaultView();
-    void UpdateDgnDbExtents();
 
     static TxnManager::TxnId QueryFirstTxnId(DgnDbR dgndb, uint32_t sessionId);
     static TxnManager::TxnId QueryLastTxnId(DgnDbR dgndb, uint32_t sessionId);
@@ -70,178 +51,17 @@ protected:
     void CompareSessions(DgnChangeSummaryTestFixture::ChangedElements& changedElements, uint32_t startSession, uint32_t endSession);
 
 public:
-    DgnChangeSummaryTestFixture() : GenericDgnModelTestFixture(__FILE__, true) {}
-    virtual ~DgnChangeSummaryTestFixture() {}
     virtual void SetUp() override {}
     virtual void TearDown() override {}
 };
 
-//=======================================================================================
-//! SampleChangeSet
-//=======================================================================================
-struct SqlChangeSet : BeSQLite::ChangeSet
-    {
-    virtual ConflictResolution _OnConflict(ConflictCause cause, Changes::Change iter)
-        {
-        BeAssert(false);
-        fprintf(stderr, "Conflict \"%s\"\n", ChangeSet::InterpretConflictCause(cause).c_str());
-        return ConflictResolution::Skip;
-        }
-    };
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    08/2015
 //---------------------------------------------------------------------------------------
-void DgnChangeSummaryTestFixture::CreateDgnDb(WCharCP filename)
+DgnAuthority::Code DgnChangeSummaryTestFixture::CreateCode(int iFloor, int iQuadrant)
     {
-    CreateDgnDbParams createProjectParams;
-    createProjectParams.SetOverwriteExisting(true);
-
-    //Deleting the project file if it exists already
-    BeFileName::BeDeleteFile(DgnDbTestDgnManager::GetOutputFilePath(filename));
-
-    DbResult createStatus;
-    m_testDb = DgnDb::CreateDgnDb(&createStatus, DgnDbTestDgnManager::GetOutputFilePath(filename), createProjectParams);
-    ASSERT_TRUE(m_testDb.IsValid()) << "Could not create test project";
-
-    m_testDb->Txns().EnableTracking(true);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    08/2015
-//---------------------------------------------------------------------------------------
-void DgnChangeSummaryTestFixture::CopyDgnDb(WCharCP original, WCharCP copy)
-    {
-    BeFileNameStatus status = BeFileName::BeCopyFile(DgnDbTestDgnManager::GetOutputFilePath(original), DgnDbTestDgnManager::GetOutputFilePath(copy));
-    ASSERT_TRUE(status == BeFileNameStatus::Success);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    08/2015
-//---------------------------------------------------------------------------------------
-void DgnChangeSummaryTestFixture::OpenDgnDb(WCharCP filename)
-    {
-    DbResult openStatus;
-    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
-    m_testDb = DgnDb::OpenDgnDb(&openStatus, DgnDbTestDgnManager::GetOutputFilePath(filename), openParams);
-    ASSERT_TRUE(m_testDb.IsValid()) << "Could not open test project";
-
-    DgnModelId modelId = m_testDb->Models().QueryFirstModelId();
-    m_testModel = m_testDb->Models().GetModel(modelId).get();
-
-    m_testDb->Txns().EnableTracking(true);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    08/2015
-//---------------------------------------------------------------------------------------
-void DgnChangeSummaryTestFixture::CloseDgnDb()
-    {
-    m_testDb->CloseDb();
-    m_testModel = nullptr;
-    m_testDb = nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    08/2015
-//---------------------------------------------------------------------------------------
-void DgnChangeSummaryTestFixture::InsertModel()
-    {
-    ModelHandlerR handler = dgn_ModelHandler::Physical::GetHandler();
-    DgnClassId classId = m_testDb->Domains().GetClassId(handler);
-    m_testModel = handler.Create(DgnModel::CreateParams(*m_testDb, classId, "ChangeSetModel"));
-
-    DgnDbStatus status = m_testModel->Insert();
-    ASSERT_TRUE(DgnDbStatus::Success == status);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    08/2015
-//---------------------------------------------------------------------------------------
-void DgnChangeSummaryTestFixture::InsertCategory()
-    {
-    DgnCategories::Category category("ChangeSetTestCategory", DgnCategories::Scope::Physical);
-    category.SetRank(DgnCategories::Rank::Application);
-
-    DgnCategories::SubCategory::Appearance appearance;
-    appearance.SetColor(ColorDef::White());
-
-    DbResult result = m_testDb->Categories().Insert(category, appearance);
-    ASSERT_TRUE(BE_SQLITE_OK == result);
-
-    m_testCategoryId = category.GetCategoryId();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnChangeSummaryTestFixture::InsertAuthority()
-    {
-    auto auth = NamespaceAuthority::CreateNamespaceAuthority("DgnChangeSummaryTest", *m_testDb);
-    ASSERT_TRUE(DgnDbStatus::Success == auth->Insert());
-    m_authorityId = auth->GetAuthorityId();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    08/2015
-//---------------------------------------------------------------------------------------
-void DgnChangeSummaryTestFixture::UpdateDgnDbExtents()
-    {
-    AxisAlignedBox3d physicalExtents;
-    physicalExtents = m_testDb->Units().ComputeProjectExtents();
-    m_testDb->Units().SaveProjectExtents(physicalExtents);
-
-    DgnViews::Iterator iter = m_testDb->Views().MakeIterator((int) DgnViewType::Physical);
-    BeAssert(iter.begin() != iter.end());
-
-    DgnViewId viewId = iter.begin().GetDgnViewId();
-
-    ViewControllerPtr viewController = m_testDb->Views().LoadViewController(viewId, DgnViews::FillModels::No);
-    viewController->LookAtVolume(physicalExtents);
-    DbResult result = viewController->Save();
-    BeAssert(result == BE_SQLITE_OK);
-
-    m_testDb->SaveSettings();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    08/2015
-//---------------------------------------------------------------------------------------
-void DgnChangeSummaryTestFixture::CreateDefaultView()
-    {
-    DgnDbR dgndb = *m_testDb;
-
-    DgnViews::View viewRow;
-    DgnClassId classId(dgndb.Schemas().GetECClassId("dgn", "CameraView"));
-    viewRow.SetDgnViewType(classId, DgnViewType::Physical);
-    viewRow.SetDgnViewSource(DgnViewSource::Generated);
-    viewRow.SetName("Default");
-    viewRow.SetBaseModelId(m_testModel->GetModelId());
-    DbResult result = dgndb.Views().Insert(viewRow);
-    BeAssert(BE_SQLITE_OK == result);
-    BeAssert(viewRow.GetId().IsValid());
-
-    PhysicalViewController viewController(dgndb, viewRow.GetId());
-    viewController.SetStandardViewRotation(StandardView::Iso);
-    viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::SmoothShade);
-    DgnCategories::Iterator catIter = dgndb.Categories().MakeIterator();
-    for (auto& entry : catIter)
-        {
-        DgnCategoryId categoryId = entry.GetCategoryId();
-        viewController.ChangeCategoryDisplay(categoryId, true);
-        }
-    DgnModels::Iterator modIter = dgndb.Models().MakeIterator();
-    for (auto& entry : modIter)
-        {
-        DgnModelId modelId = entry.GetModelId();
-        viewController.ChangeModelDisplay(modelId, true);
-        }
-    result = viewController.Save();
-    BeAssert(BE_SQLITE_OK == result);
-
-    DgnViewId viewId = viewRow.GetId();
-    dgndb.SaveProperty(DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
-    dgndb.SaveSettings();
+    Utf8PrintfString codeStr("Floor %d,Quadrant %d", iFloor, iQuadrant);
+    return m_testAuthority->CreateCode(codeStr);
     }
 
 //---------------------------------------------------------------------------------------
@@ -261,19 +81,10 @@ void DgnChangeSummaryTestFixture::InsertEmptyBuilding(WCharCP filename)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    08/2015
 //---------------------------------------------------------------------------------------
-DgnElementId DgnChangeSummaryTestFixture::QueryElementIdByLabel(Utf8CP label)
+DgnElementId DgnChangeSummaryTestFixture::QueryElementId(int iFloor, int iQuadrant)
     {
-    CachedStatementPtr stmt = m_testDb->GetCachedStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Code=? LIMIT 1"); // find first if label not unique
-    stmt->BindText(1, label, Statement::MakeCopy::No);
-    return (BE_SQLITE_ROW != stmt->Step()) ? DgnElementId() : stmt->GetValueId<DgnElementId>(0);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    08/2015
-//---------------------------------------------------------------------------------------
-Utf8String DgnChangeSummaryTestFixture::GetLabel(int iFloor, int iQuadrant) const
-    {
-    return Utf8PrintfString("Floor %d,Quadrant %d", iFloor, iQuadrant);
+    DgnAuthority::Code code = CreateCode(iFloor, iQuadrant);
+    return m_testDb->Elements().QueryElementIdByCode(code);
     }
 
 //---------------------------------------------------------------------------------------
@@ -283,8 +94,7 @@ void DgnChangeSummaryTestFixture::DeleteFloor(int iFloor)
     {
     for (int iQuadrant = 1; iQuadrant <= 4; iQuadrant++)
         {
-        Utf8String label = GetLabel(iFloor, iQuadrant);
-        DgnElementId elementId = QueryElementIdByLabel(label.c_str());
+        DgnElementId elementId = QueryElementId(iFloor, iQuadrant);
         BeAssert(elementId.IsValid());
         m_testDb->Elements().Delete(elementId);
         }
@@ -315,7 +125,7 @@ void DgnChangeSummaryTestFixture::InsertFloor(int iFloor)
 
             PhysicalModelR physicalModel = *(dynamic_cast<PhysicalModelP> (m_testModel.get()));
             PhysicalElementPtr physicalElementPtr = PhysicalElement::Create(physicalModel, m_testCategoryId);
-            physicalElementPtr->SetCode(CreateCode(GetLabel(iFloor, iQuadrant)));
+            physicalElementPtr->SetCode(CreateCode(iFloor, iQuadrant));
             
             DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::FromZero(), blockSizeRange, true);
             ISolidPrimitivePtr geomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
@@ -343,8 +153,8 @@ void DgnChangeSummaryTestFixture::UpdateFloorGeometry(int iFloor)
     {
     for (int iQuadrant = 1; iQuadrant <= 4; iQuadrant++)
         {
-        Utf8String label = GetLabel(iFloor, iQuadrant);
-        DgnElementId elementId = QueryElementIdByLabel(label.c_str());
+        DgnElementId elementId = QueryElementId(iFloor, iQuadrant);
+        ASSERT_TRUE(elementId.IsValid());
 
         PhysicalElementPtr physicalElement = m_testDb->Elements().GetForEdit<PhysicalElement>(elementId);
         Placement3d newPlacement = physicalElement->GetPlacement();
@@ -354,7 +164,7 @@ void DgnChangeSummaryTestFixture::UpdateFloorGeometry(int iFloor)
         
         DgnDbStatus dbStatus;
         physicalElement->Update(&dbStatus);
-        BeAssert(dbStatus == DgnDbStatus::Success);
+        ASSERT_TRUE(dbStatus == DgnDbStatus::Success);
         }
 
     // UpdateDgnDbExtents();
@@ -520,32 +330,32 @@ TEST_F(DgnChangeSummaryTestFixture, ValidateChangeSummaries)
     DgnChangeSummaryTestFixture::ChangedElements changedElements;
     
     CompareSessions(changedElements, 1, 1); // [1, 1]
-    ASSERT_EQ(changedElements.m_inserts.size(), 0);
-    ASSERT_EQ(changedElements.m_deletes.size(), 0);
-    ASSERT_EQ(changedElements.m_geometryUpdates.size(), 0);
-    ASSERT_EQ(changedElements.m_businessUpdates.size(), 0);
+    EXPECT_EQ(changedElements.m_inserts.size(), 0+2); // category and sub-category...
+    EXPECT_EQ(changedElements.m_deletes.size(), 0);
+    EXPECT_EQ(changedElements.m_geometryUpdates.size(), 0);
+    EXPECT_EQ(changedElements.m_businessUpdates.size(), 0);
 
     CompareSessions(changedElements, 1, 2); // [1, 2]
-    ASSERT_EQ(changedElements.m_inserts.size(), 4);
-    ASSERT_EQ(changedElements.m_deletes.size(), 0);
-    ASSERT_EQ(changedElements.m_geometryUpdates.size(), 4);
-    ASSERT_EQ(changedElements.m_businessUpdates.size(), 0);
+    EXPECT_EQ(changedElements.m_inserts.size(), 4+2); // category and sub-category...
+    EXPECT_EQ(changedElements.m_deletes.size(), 0);
+    EXPECT_EQ(changedElements.m_geometryUpdates.size(), 4);
+    EXPECT_EQ(changedElements.m_businessUpdates.size(), 0);
 
     CompareSessions(changedElements, 1, 6); // [1, 6]
-    ASSERT_EQ(changedElements.m_inserts.size(), 20);
-    ASSERT_EQ(changedElements.m_deletes.size(), 0);
-    ASSERT_EQ(changedElements.m_geometryUpdates.size(), 20);
-    ASSERT_EQ(changedElements.m_businessUpdates.size(), 0);
+    EXPECT_EQ(changedElements.m_inserts.size(), 20+2); // category and sub-category...
+    EXPECT_EQ(changedElements.m_deletes.size(), 0);
+    EXPECT_EQ(changedElements.m_geometryUpdates.size(), 20);
+    EXPECT_EQ(changedElements.m_businessUpdates.size(), 0);
 
     CompareSessions(changedElements, 7, 7); // [7, 7]
-    ASSERT_EQ(changedElements.m_inserts.size(), 0);
-    ASSERT_EQ(changedElements.m_deletes.size(), 0);
-    ASSERT_EQ(changedElements.m_geometryUpdates.size(), 4);
-    ASSERT_EQ(changedElements.m_businessUpdates.size(), 4); // TODO: Updates due to LastMod change. Needs a fix. 
+    EXPECT_EQ(changedElements.m_inserts.size(), 0);
+    EXPECT_EQ(changedElements.m_deletes.size(), 0);
+    EXPECT_EQ(changedElements.m_geometryUpdates.size(), 4);
+    EXPECT_EQ(changedElements.m_businessUpdates.size(), 4); // TODO: Updates due to LastMod change. Needs a fix. 
 
     CompareSessions(changedElements, 8, 8); // [8, 8]
-    ASSERT_EQ(changedElements.m_inserts.size(), 0);
-    ASSERT_EQ(changedElements.m_deletes.size(), 4);
-    ASSERT_EQ(changedElements.m_geometryUpdates.size(), 0);
-    ASSERT_EQ(changedElements.m_businessUpdates.size(), 0);
+    EXPECT_EQ(changedElements.m_inserts.size(), 0);
+    EXPECT_EQ(changedElements.m_deletes.size(), 4);
+    EXPECT_EQ(changedElements.m_geometryUpdates.size(), 0);
+    EXPECT_EQ(changedElements.m_businessUpdates.size(), 0);
     }

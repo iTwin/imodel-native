@@ -72,6 +72,7 @@ enum class DgnDbStatus : int
     ParentBlockedChange,
     ReadError,
     ReadOnly,
+    RevisionStarted,
     SQLiteError,
     TransactionActive,
     UnitsMissing,
@@ -89,6 +90,7 @@ enum class DgnDbStatus : int
     WrongHandler,
     WrongModel,
     InvalidCategory,
+    DeletionProhibited,
     };
 
 //! Status Values for DgnViewport methods
