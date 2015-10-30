@@ -23,7 +23,7 @@ loggingDir              = $(SrcLoggingSDK)src/
 managedDir              = $(loggingDir)managed/
 nativeDir               = $(loggingDir)native/
 nativeIntDir            = $(nativeDir)interface/
-sharedInc               = $(SrcBsiCommon)sharedInc/
+sharedInc               = $(SrcRoot)bsicommon/sharedInc/
 
 buildDir                = $(outLoggingSdk)
 deliveryDir             = $(outLoggingSdk)delivery/
