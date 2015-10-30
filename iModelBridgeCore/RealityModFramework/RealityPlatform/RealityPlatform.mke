@@ -12,8 +12,8 @@
 appName = RealityPlatform
 baseDir	= $(_MakeFilePath)
 
-policyFile = $(_MakeFilePath)../mki/AssertRealityModFrameworkPolicy.mki
 %include mdl.mki
+%include $(_MakeFilePath)../mki/RealityModFrameworkPolicy.mki
 
 PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/RealityPlatform/
 

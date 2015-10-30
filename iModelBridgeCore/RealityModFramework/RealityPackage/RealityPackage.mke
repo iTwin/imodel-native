@@ -10,12 +10,11 @@
 #
 #--------------------------------------------------------------------------------------
 
-policyFile = $(_MakeFilePath)../mki/AssertRealityModFrameworkPolicy.mki
-
 appName = RealityPackage
 baseDir	= $(_MakeFilePath)
 
 %include mdl.mki
+%include $(_MakeFilePath)../mki/RealityModFrameworkPolicy.mki
 
 PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/RealityPackage/
 

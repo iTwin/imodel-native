@@ -7,8 +7,6 @@
 #----------------------------------------------------------------------------------------
 
 
-%include $(SharedMki)DefinePublicApiIncludes.mki
-%include $(SharedMki)CommonCompileLinkPolicy.mki
 
 # ++++++++++++++++++++++++++++++++++++++++++++++++
 # DO NOT ADD ANYTHING THAT CANNOT BE SHARED AMONG ALL RealityModFramework PARTS.
