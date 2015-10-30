@@ -17,12 +17,10 @@ always:
   bmake -dCreate_Static_Libraries=1 $(_MakeFilePath)inroadstm/inroadstm.mke 
 
 %include  mdl.mki
+%include $(SrcRoot)TerrainModel/privmki/TerrainModelCommon.mki
 
-baseDir         = $(_MakeFilePath)
-##&&AG to be cleaned up
-%include $(SrcRoot)TerrainModel/privmki/TerrainModelPolicy.mki
-
-CompileOptionsMki=$(baseDir)formats.mki
+formatsDir  = $(_MakeFilePath)
+CompileOptionsMki=$(formatsDir)formats.mki
 %include $(CompileOptionsMki)
 
 DLM_OBJECT_DEST       = $(terrainModelFormatsObj)
@@ -30,19 +28,19 @@ DLM_NAME              = TerrainModelFormats
 ASSEMBLY_STRONGNAME   = 1
 
 DependsOnHeadersCPP = \
-$(basedir)PublicAPI\Formats.h \
-$(basedir)PublicAPI\Esri.h \
-$(basedir)PublicAPI\Inroads.h \
-$(basedir)PublicAPI\InroadsImporter.h \
-$(basedir)PublicAPI\LandXMLImporter.h \
-$(basedir)PublicAPI\LandXMLExporter.h \
-$(basedir)PublicAPI\Lidar.h \
-$(basedir)PublicAPI\LidarImporter.h \
-$(basedir)PublicAPI\MX.h \
-$(basedir)PublicAPI\TerrainImporter.h \
-$(basedir)PublicAPI\TerrainExporter.h \
-$(basedir)MXModelFile.h \
-$(basedir)TriangulationPreserver.h \
+$(formatsDir)PublicAPI\Formats.h \
+$(formatsDir)PublicAPI\Esri.h \
+$(formatsDir)PublicAPI\Inroads.h \
+$(formatsDir)PublicAPI\InroadsImporter.h \
+$(formatsDir)PublicAPI\LandXMLImporter.h \
+$(formatsDir)PublicAPI\LandXMLExporter.h \
+$(formatsDir)PublicAPI\Lidar.h \
+$(formatsDir)PublicAPI\LidarImporter.h \
+$(formatsDir)PublicAPI\MX.h \
+$(formatsDir)PublicAPI\TerrainImporter.h \
+$(formatsDir)PublicAPI\TerrainExporter.h \
+$(formatsDir)MXModelFile.h \
+$(formatsDir)TriangulationPreserver.h \
 
 DependsOnHeaders = \
 
@@ -76,33 +74,33 @@ always:
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)LandXMLImporter$(oext) : $(baseDir)LandXMLImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)LandXMLImporter$(oext) : $(formatsDir)LandXMLImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)LandXMLExporter$(oext) : $(baseDir)LandXMLExporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)LandXMLExporter$(oext) : $(formatsDir)LandXMLExporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcdtmMX$(oext) : $(baseDir)bcdtmMX.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcdtmMX$(oext) : $(formatsDir)bcdtmMX.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-#$(o)bcdtminroads$(oext) : $(baseDir)bcdtminroads.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+#$(o)bcdtminroads$(oext) : $(formatsDir)bcdtminroads.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcdtmEsri$(oext) : $(baseDir)bcdtmEsri.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcdtmEsri$(oext) : $(formatsDir)bcdtmEsri.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcdtmLidar$(oext) : $(baseDir)bcdtmLidar.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcdtmLidar$(oext) : $(formatsDir)bcdtmLidar.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)MXModelFile$(oext) : $(baseDir)MXModelFile.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)MXModelFile$(oext) : $(formatsDir)MXModelFile.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)MX$(oext) : $(baseDir)MX.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)MX$(oext) : $(formatsDir)MX.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)TerrainImporter$(oext) : $(baseDir)TerrainImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)TerrainImporter$(oext) : $(formatsDir)TerrainImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)TerrainExporter$(oext) : $(baseDir)TerrainExporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)TerrainExporter$(oext) : $(formatsDir)TerrainExporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)InroadsImporter$(oext) : $(baseDir)InroadsImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)InroadsImporter$(oext) : $(formatsDir)InroadsImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)LidarImporter$(oext) : $(baseDir)LidarImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)LidarImporter$(oext) : $(formatsDir)LidarImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)ImagePP$(oext) : $(baseDir)ImagePP.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)ImagePP$(oext) : $(formatsDir)ImagePP.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)TriangulationPreserver$(oext) : $(baseDir)TriangulationPreserver.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)TriangulationPreserver$(oext) : $(formatsDir)TriangulationPreserver.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

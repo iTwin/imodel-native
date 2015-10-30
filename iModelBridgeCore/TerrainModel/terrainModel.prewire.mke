@@ -11,24 +11,20 @@
 %include $(SrcRoot)TerrainModel/privmki/outputdirs.mki
 
 always:
-    !~@mkdir $(buildPublicAPI)TerrainModel/
+    !~@mkdir $(BuildPublicApi)TerrainModel/
 
 always:
-  @CreateSymLinks.py "$(buildPublicAPI)/TerrainModel/TerrainModel.h=$(TerrainModelAPISrc)TerrainModel.h"
+    @CreateSymLinks.py "$(BuildPublicApi)/TerrainModel/TerrainModel.h=$(TerrainModelAPISrc)TerrainModel.h"
 
-## Move below into seperate prewires.
 
+##  Symlink all src PublicAPI folders into build output PublicAPI folder
 always:
-   ~linkdir "$(buildPublicAPI)TerrainModel/Core=$(TerrainModelCoreDir)PublicAPI"
+   ~linkdir "$(BuildPublicApi)TerrainModel/Core=$(TerrainModelCoreDir)PublicAPI"
+   ~linkdir "$(BuildPublicApi)TerrainModel/Formats=$(TerrainModelFormatsDir)PublicAPI"
+   ~linkdir "$(BuildPublicApi)TerrainModel/ElementHandler=$(TerrainModelElementHandlerDir)PublicAPI"
+   ~linkdir "$(BuildPublicApi)TerrainModel/Drainage=$(TerrainModelDrainageDir)PublicAPI"
 
-always:
-   ~linkdir "$(buildPublicAPI)TerrainModel/Formats=$(TerrainModelFormatsDir)PublicAPI"
 
+##  Symlink build output PublicAPI folder into BuildContext PublicAPI folder
 always:
-   ~linkdir "$(buildPublicAPI)TerrainModel/ElementHandler=$(TerrainModelElementHandlerDir)PublicAPI"
-
-always:
-   ~linkdir "$(buildPublicAPI)TerrainModel/Drainage=$(TerrainModelDrainageDir)PublicAPI"
-
-always:
-   ~linkdir "$(BuildContext)PublicAPI/TerrainModel=$(buildPublicAPI)TerrainModel"
+   ~linkdir "$(BuildContext)PublicAPI/TerrainModel=$(BuildPublicApi)TerrainModel"

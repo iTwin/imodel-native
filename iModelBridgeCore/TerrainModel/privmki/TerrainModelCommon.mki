@@ -1,59 +1,24 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: privmki/TerrainModelElementPolicy.mki $
+#     $Source: privmki/TerrainModelCommon.mki $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-%if defined (__DTMPolicy_mki__)
-    %return
-%endif
-
-__DTMPolicy_mki__  = 1
-
-SrcTerrainModel=$(SrcRoot)TerrainModel/
-
 %include $(SharedMki)bsioutputdirs.mki
-%include DefaultToolSet.mki
-#%include $(SrcRoot)Util/PowerPlatform/mki/PowerPlatform.mki
 
-#-----------------------------------------------------------
-# BuildContext
-#-----------------------------------------------------------
-BuildContext   = $(OutBuildContexts)TerrainModelElement/
+##  Define source and output directories
+%include $(SrcRoot)TerrainModel/privmki/sourcedirs.mki
+%include $(SrcRoot)TerrainModel/privmki/outputdirs.mki
+
+BuildContext   = $(OutBuildContexts)TerrainModel/
 %include $(SrcTerrainModel)BuildContextDefines.mki
-
-# Give a name to some common locations8ujn  in the BuildContext
-BuildContextPublicApiDir = $(BuildContext)PublicAPI/
-
-terrainModelBuildDir_ = $(OutputRootDir)build/TerrainModelElement/
 
 o = !Must be defined by individual mke files!
 
-terrainModelPlatformProductDir = $(OutputRootDir)product/TerrainModel/
-
 always:
-    ~@mkdir $(terrainModelBuildDir_)
     ~@mkdir $(DLM_CONTEXT_LOCATION)
     ~@mkdir $(terrainModelBuildDir_)
-
-#----------------------------------------------------------
-#       Include sourcedirs.mki to define source directories
-#----------------------------------------------------------
-%include    $(SrcTerrainModel)privmki/sourcedirs.mki
-%include    $(SrcTerrainModel)privmki/outputdirs.mki
-
-#
-#   TerrainModel PRIVATE include directories
-#
-TerrainModelInternalApiSrc = $(SrcTerrainModel)PrivateApi/TerrainModelInternal/
-
-#----------------------------------------------------------
-# Compile and link settings
-#----------------------------------------------------------
-%include $(SharedMki)CommonCompileLinkPolicy.mki
-
-#PublicApiIncludes + -I$(PrivateApiSrc)
 
 #----------------------------------------------------------
 #   Linker options
@@ -70,8 +35,10 @@ TerrainModelInternalApiSrc = $(SrcTerrainModel)PrivateApi/TerrainModelInternal/
     EXE_SYMB_DEST   = $(symbolsExeDir)
 %endif
 
-# This sets the path for rsign.
-mstnToolsPath = $(BuildContext)SubParts/Assemblies/
+#
+# This activates the use of bsitools\winnt\AddDelayLoad.exe in linktool.mki and dlmlink.mki
+#
+DelayLoadByDefault = 1
 
 #----------------------------------------------------------
 #       Override location for "prg.h"

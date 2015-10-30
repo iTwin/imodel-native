@@ -7,15 +7,15 @@
 #--------------------------------------------------------------------------------------
 
 %include  mdl.mki
-%include $(SrcRoot)TerrainModel/privmki/TerrainModelPolicy.mki
+%include $(SrcRoot)TerrainModel/privmki/TerrainModelCommon.mki
 
 #----------------------------------------------------------------------
 #   Macros
 #----------------------------------------------------------------------
-baseDir             = $(_MakeFilePath)
+coreDir             = $(_MakeFilePath)
 MultiCompileDepends = $(_MakeFileSpec)
 
-CompileOptionsMki =$(baseDir)Core.mki
+CompileOptionsMki =$(coreDir)Core.mki
 %include $(CompileOptionsMki)
 
 o =% $(terrainModelCoreObj)
@@ -32,7 +32,7 @@ $(TerrainModelCoreAPISrc)bcDTMClass.h \
 $(TerrainModelCoreAPISrc)TMTransformHelper.h \
 $(TerrainModelCoreAPISrc)DTMIterators.h \
 $(TerrainModelCoreAPISrc)TMEditor.h \
-$(baseDir)CPPWrappers\bcDTMImpl.h
+$(coreDir)CPPWrappers\bcDTMImpl.h
 
 DependsOnHeaders = \
 $(TerrainModelCoreAPISrc)dtmdefs.h \
@@ -60,165 +60,165 @@ always:
 
 %include MultiCppCompileRule.mki
 
-$(o)dtmIterators$(oext) : $(baseDir)CPPWrappers\dtmIterators.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)dtmIterators$(oext) : $(coreDir)CPPWrappers\dtmIterators.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)DTM$(oext) : $(baseDir)CPPWrappers\DTM.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)DTM$(oext) : $(coreDir)CPPWrappers\DTM.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)TMEditor$(oext) : $(baseDir)CPPWrappers\TMEditor.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)TMEditor$(oext) : $(coreDir)CPPWrappers\TMEditor.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcDTMStream$(oext) : $(baseDir)2d\bcDTMStream.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcDTMStream$(oext) : $(coreDir)2d\bcDTMStream.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcDTMMemory$(oext) : $(baseDir)2d\bcDTMMemory.cpp	 $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcDTMMemory$(oext) : $(coreDir)2d\bcDTMMemory.cpp	 $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcDTMClass$(oext) : $(baseDir)CPPWrappers\bcDTMClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcDTMClass$(oext) : $(coreDir)CPPWrappers\bcDTMClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcDTMDrapedLineClass$(oext) : $(baseDir)CPPWrappers\bcDTMDrapedLineClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcDTMDrapedLineClass$(oext) : $(coreDir)CPPWrappers\bcDTMDrapedLineClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcDTMEdges$(oext) : $(baseDir)CPPWrappers\bcDTMEdges.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcDTMEdges$(oext) : $(coreDir)CPPWrappers\bcDTMEdges.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcDTMFeatureClass$(oext) : $(baseDir)CPPWrappers\bcDTMFeatureClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcDTMFeatureClass$(oext) : $(coreDir)CPPWrappers\bcDTMFeatureClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcDTMFeatureEnumeratorClass$(oext) : $(baseDir)CPPWrappers\bcDTMFeatureEnumeratorClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcDTMFeatureEnumeratorClass$(oext) : $(coreDir)CPPWrappers\bcDTMFeatureEnumeratorClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcDTMFeatureMapClass$(oext) : $(baseDir)CPPWrappers\bcDTMFeatureMapClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcDTMFeatureMapClass$(oext) : $(coreDir)CPPWrappers\bcDTMFeatureMapClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcDTMInputClass$(oext) : $(baseDir)CPPWrappers\bcDTMInputClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcDTMInputClass$(oext) : $(coreDir)CPPWrappers\bcDTMInputClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcDTMMesh$(oext) : $(baseDir)CPPWrappers\bcDTMMesh.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcDTMMesh$(oext) : $(coreDir)CPPWrappers\bcDTMMesh.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)dtmio$(oext) : $(baseDir)2d\dtmio.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)dtmio$(oext) : $(coreDir)2d\dtmio.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmBtree$(oext) : $(baseDir)2d\bcdtmBtree.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmBtree$(oext) : $(coreDir)2d\bcdtmBtree.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmCheck$(oext) : $(baseDir)2d\bcdtmCheck.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmCheck$(oext) : $(coreDir)2d\bcdtmCheck.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmClean$(oext) : $(baseDir)2d\bcdtmClean.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmClean$(oext) : $(coreDir)2d\bcdtmClean.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmClip$(oext) : $(baseDir)2d\bcdtmClip.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmClip$(oext) : $(coreDir)2d\bcdtmClip.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmClip1$(oext) : $(baseDir)2d\bcdtmClip1.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmClip1$(oext) : $(coreDir)2d\bcdtmClip1.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmConnect$(oext) : $(baseDir)2d\bcdtmConnect.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmConnect$(oext) : $(coreDir)2d\bcdtmConnect.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmData$(oext) : $(baseDir)2d\bcdtmData.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmData$(oext) : $(coreDir)2d\bcdtmData.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmDelta$(oext) : $(baseDir)2d\bcdtmDelta.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmDelta$(oext) : $(coreDir)2d\bcdtmDelta.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmDrape$(oext) : $(baseDir)2d\bcdtmDrape.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmDrape$(oext) : $(coreDir)2d\bcdtmDrape.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-# $(o)bcdtmDrainage00$(oext) : $(baseDir)2d\bcdtmDrainage00.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+# $(o)bcdtmDrainage00$(oext) : $(coreDir)2d\bcdtmDrainage00.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-# $(o)bcdtmDrainage01$(oext) : $(baseDir)2d\bcdtmDrainage01.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+# $(o)bcdtmDrainage01$(oext) : $(coreDir)2d\bcdtmDrainage01.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-# $(o)bcdtmDrainage02$(oext) : $(baseDir)2d\bcdtmDrainage02.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+# $(o)bcdtmDrainage02$(oext) : $(coreDir)2d\bcdtmDrainage02.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-# $(o)bcdtmDrainage03$(oext) : $(baseDir)2d\bcdtmDrainage03.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+# $(o)bcdtmDrainage03$(oext) : $(coreDir)2d\bcdtmDrainage03.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-# $(o)bcdtmDrainage04$(oext) : $(baseDir)2d\bcdtmDrainage04.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+# $(o)bcdtmDrainage04$(oext) : $(coreDir)2d\bcdtmDrainage04.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmEdit$(oext) : $(baseDir)2d\bcdtmEdit.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmEdit$(oext) : $(coreDir)2d\bcdtmEdit.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-#$(o)bcdtmEsri$(oext) : $(baseDir)2d\bcdtmEsri.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+#$(o)bcdtmEsri$(oext) : $(coreDir)2d\bcdtmEsri.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmEditDraw$(oext) : $(baseDir)2d\bcdtmEditDraw.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmEditDraw$(oext) : $(coreDir)2d\bcdtmEditDraw.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmFilter$(oext) : $(baseDir)2d\bcdtmFilter.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmFilter$(oext) : $(coreDir)2d\bcdtmFilter.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmFnd$(oext) : $(baseDir)2d\bcdtmFnd.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmFnd$(oext) : $(coreDir)2d\bcdtmFnd.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmGeopak$(oext) : $(baseDir)2d\bcdtmGeopak.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmGeopak$(oext) : $(coreDir)2d\bcdtmGeopak.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmGrade$(oext) : $(baseDir)2d\bcdtmGrade.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmGrade$(oext) : $(coreDir)2d\bcdtmGrade.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmInsert$(oext) : $(baseDir)2d\bcdtmInsert.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmInsert$(oext) : $(coreDir)2d\bcdtmInsert.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmInterpolate$(oext) : $(baseDir)2d\bcdtmInterpolate.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmInterpolate$(oext) : $(coreDir)2d\bcdtmInterpolate.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmIo$(oext) : $(baseDir)2d\bcdtmIo.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmIo$(oext) : $(coreDir)2d\bcdtmIo.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmJoin$(oext) : $(baseDir)2d\bcdtmJoin.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmJoin$(oext) : $(coreDir)2d\bcdtmJoin.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmLattice$(oext) : $(baseDir)2d\bcdtmLattice.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmLattice$(oext) : $(coreDir)2d\bcdtmLattice.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmLatticeVolume$(oext) : $(baseDir)2d\bcdtmLatticeVolume.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmLatticeVolume$(oext) : $(coreDir)2d\bcdtmLatticeVolume.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmLidarFilter$(oext) : $(baseDir)2d\bcdtmLidarFilter.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmLidarFilter$(oext) : $(coreDir)2d\bcdtmLidarFilter.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmList$(oext) : $(baseDir)2d\bcdtmList.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmList$(oext) : $(coreDir)2d\bcdtmList.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmLoadContours$(oext) : $(baseDir)2d\bcdtmLoadContours.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmLoadContours$(oext) : $(coreDir)2d\bcdtmLoadContours.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmLoadFeatures$(oext) : $(baseDir)2d\bcdtmLoadFeatures.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmLoadFeatures$(oext) : $(coreDir)2d\bcdtmLoadFeatures.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmLoadMesh$(oext) : $(baseDir)2d\bcdtmLoadMesh.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmLoadMesh$(oext) : $(coreDir)2d\bcdtmLoadMesh.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmLos$(oext) : $(baseDir)2d\bcdtmLos.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmLos$(oext) : $(coreDir)2d\bcdtmLos.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmMark$(oext) : $(baseDir)2d\bcdtmMark.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmMark$(oext) : $(coreDir)2d\bcdtmMark.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmMath$(oext) : $(baseDir)2d\bcdtmMath.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmMath$(oext) : $(coreDir)2d\bcdtmMath.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmMem$(oext) : $(baseDir)2d\bcdtmMem.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmMem$(oext) : $(coreDir)2d\bcdtmMem.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmMerge$(oext) : $(baseDir)2d\bcdtmMerge.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmMerge$(oext) : $(coreDir)2d\bcdtmMerge.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmNgp$(oext) : $(baseDir)2d\bcdtmNgp.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmNgp$(oext) : $(coreDir)2d\bcdtmNgp.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmObj$(oext) : $(baseDir)2d\bcdtmObj.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmObj$(oext) : $(coreDir)2d\bcdtmObj.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmPatch$(oext) : $(baseDir)2d\bcdtmPatch.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmPatch$(oext) : $(coreDir)2d\bcdtmPatch.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmPolyContour$(oext) : $(baseDir)2d\bcdtmPolyContour.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmPolyContour$(oext) : $(coreDir)2d\bcdtmPolyContour.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmPolygon$(oext) : $(baseDir)2d\bcdtmPolygon.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmPolygon$(oext) : $(coreDir)2d\bcdtmPolygon.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmReport$(oext) : $(baseDir)2d\bcdtmReport.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmReport$(oext) : $(coreDir)2d\bcdtmReport.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmSideSlope$(oext) : $(baseDir)2d\bcdtmSideSlope.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmSideSlope$(oext) : $(coreDir)2d\bcdtmSideSlope.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmSite$(oext) : $(baseDir)2d\bcdtmSite.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmSite$(oext) : $(coreDir)2d\bcdtmSite.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmSlope$(oext) : $(baseDir)2d\bcdtmSlope.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmSlope$(oext) : $(coreDir)2d\bcdtmSlope.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmSort$(oext) : $(baseDir)2d\bcdtmSort.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmSort$(oext) : $(coreDir)2d\bcdtmSort.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmTheme$(oext) : $(baseDir)2d\bcdtmTheme.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmTheme$(oext) : $(coreDir)2d\bcdtmTheme.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmTile$(oext) : $(baseDir)2d\bcdtmTile.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmTile$(oext) : $(coreDir)2d\bcdtmTile.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmTin$(oext) : $(baseDir)2d\bcdtmTin.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmTin$(oext) : $(coreDir)2d\bcdtmTin.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmTinVolume$(oext) : $(baseDir)2d\bcdtmTinVolume.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmTinVolume$(oext) : $(coreDir)2d\bcdtmTinVolume.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmTrg$(oext) : $(baseDir)2d\bcdtmTrg.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmTrg$(oext) : $(coreDir)2d\bcdtmTrg.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmcleanup$(oext) : $(baseDir)2d\bcdtmcleanup.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmcleanup$(oext) : $(coreDir)2d\bcdtmcleanup.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmUtility$(oext) : $(baseDir)2d\bcdtmUtility.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmUtility$(oext) : $(coreDir)2d\bcdtmUtility.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmLoadTriangles$(oext) : $(baseDir)2d\bcdtmLoadTriangles.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmLoadTriangles$(oext) : $(coreDir)2d\bcdtmLoadTriangles.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmLoadRegions$(oext) : $(baseDir)2d\bcdtmLoadRegions.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmLoadRegions$(oext) : $(coreDir)2d\bcdtmLoadRegions.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmStockPile$(oext) : $(baseDir)2d\bcdtmStockPile.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmStockPile$(oext) : $(coreDir)2d\bcdtmStockPile.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtm3DModel$(oext) : $(baseDir)2d\bcdtm3DModel.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtm3DModel$(oext) : $(coreDir)2d\bcdtm3DModel.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-#$(o)bcdtmMX$(oext) : $(baseDir)2d\bcdtmMX.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+#$(o)bcdtmMX$(oext) : $(coreDir)2d\bcdtmMX.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmExport$(oext) : $(baseDir)2d\bcdtmExport.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmExport$(oext) : $(coreDir)2d\bcdtmExport.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
 # New Modules
 
-$(o)bcdtmFlags$(oext) : $(baseDir)2d\bcdtmFlags.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmFlags$(oext) : $(coreDir)2d\bcdtmFlags.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmString$(oext) : $(baseDir)2d\bcdtmString.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmString$(oext) : $(coreDir)2d\bcdtmString.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmGeopakIO$(oext) : $(baseDir)2d\bcdtmGeopakIO.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmGeopakIO$(oext) : $(coreDir)2d\bcdtmGeopakIO.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmInitialise$(oext) : $(baseDir)2d\bcdtmInitialise.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmInitialise$(oext) : $(coreDir)2d\bcdtmInitialise.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmDllMain$(oext) : $(baseDir)2d\bcdtmDllMain.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)bcdtmDllMain$(oext) : $(coreDir)2d\bcdtmDllMain.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
 
 %include MultiCppCompileGo.mki
@@ -234,21 +234,21 @@ nameToDefine = __BENTLEYTMDRAINAGE_BUILD__
 
 %include MultiCppCompileRule.mki
 
-$(o)bcdtmDrainage$(oext)          : $(baseDir)..\Drainage\bcdtmDrainage.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcdtmDrainage$(oext)          : $(coreDir)..\Drainage\bcdtmDrainage.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcdtmDrainageCatchment$(oext) : $(baseDir)..\Drainage\bcdtmDrainageCatchment.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcdtmDrainageCatchment$(oext) : $(coreDir)..\Drainage\bcdtmDrainageCatchment.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcdtmDrainageFeatures$(oext)  : $(baseDir)..\Drainage\bcdtmDrainageFeatures.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcdtmDrainageFeatures$(oext)  : $(coreDir)..\Drainage\bcdtmDrainageFeatures.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcdtmDrainageList$(oext)      : $(baseDir)..\Drainage\bcdtmDrainageList.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcdtmDrainageList$(oext)      : $(coreDir)..\Drainage\bcdtmDrainageList.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcdtmDrainagePond$(oext)      : $(baseDir)..\Drainage\bcdtmDrainagePond.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcdtmDrainagePond$(oext)      : $(coreDir)..\Drainage\bcdtmDrainagePond.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcdtmDrainageTables$(oext)    : $(baseDir)..\Drainage\bcdtmDrainageTables.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcdtmDrainageTables$(oext)    : $(coreDir)..\Drainage\bcdtmDrainageTables.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcdtmDrainageTrace$(oext)     : $(baseDir)..\Drainage\bcdtmDrainageTrace.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcdtmDrainageTrace$(oext)     : $(coreDir)..\Drainage\bcdtmDrainageTrace.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcdtmDrainageUtility$(oext)   : $(baseDir)..\Drainage\bcdtmDrainageUtility.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcdtmDrainageUtility$(oext)   : $(coreDir)..\Drainage\bcdtmDrainageUtility.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
 
 %include MultiCppCompileGo.mki

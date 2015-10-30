@@ -11,7 +11,7 @@
 #--------------------------------------------------------------------------------------
 %include  mdl.mki
 
-%include $(SrcRoot)TerrainModel/privmki/TerrainModelPolicy.mki
+%include $(SrcRoot)TerrainModel/privmki/TerrainModelCommon.mki
 
 CompileOptionsMki = $(_MakeFilePath)inroadsTM.mki
 %include $(CompileOptionsMki)

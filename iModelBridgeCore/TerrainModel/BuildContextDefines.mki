@@ -2,7 +2,7 @@
 #
 #     $Source: BuildContextDefines.mki $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 %if !defined (BuildContext)
@@ -16,6 +16,3 @@ ContextSubpartsLibs = $(BuildContext)SubParts/Libs/
 DLM_CONTEXT_LOCATION = $(ContextDeliveryDir)
 DLM_LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
 EXE_CONTEXT_LOCATION = $(ContextDeliveryDir)
-
-# Give a name to some common locations in the BuildContext
-BuildContextPublicApiDir = $(BuildContext)PublicAPI/

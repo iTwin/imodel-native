@@ -7,15 +7,16 @@
 #--------------------------------------------------------------------------------------
 %include $(SharedMki)bsioutputdirs.mki
 
-build           =       $(OutputRootDir)build/TerrainModel/
-buildPublicAPI  =       $(build)PublicAPI/
-gensrc          =       $(build)gensrc/
-
+BuildDir                        = $(OutputRootDir)build/TerrainModel/
+BuildPublicApi                  = $(build)PublicAPI/
+gensrc                          = $(build)gensrc/
+terrainModelBuildDir_           = $(BuildDir)
+terrainModelElementBuildDir_    = $(OutputRootDir)build/TerrainModelElement/
 
 #----------------------------------------------------------
 #  Location for symbols
 #----------------------------------------------------------
-    symbolsDir      = $(BuildContext)symbols/
-    symbolsDllDir   = $(symbolsDir)dll/
-    symbolsExeDir   = $(symbolsDir)exe/
+symbolsDir      = $(BuildContext)symbols/
+symbolsDllDir   = $(symbolsDir)dll/
+symbolsExeDir   = $(symbolsDir)exe/
 
