@@ -64,6 +64,7 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 %if $(TARGET_PLATFORM)=="Android"
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(_mobiledgnLibraryName)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeOpenSSL$(stlibext)
     %include dlmlink.mki
 %else
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(_mobiledgnLibraryName)
