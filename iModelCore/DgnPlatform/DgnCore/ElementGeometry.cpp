@@ -2306,7 +2306,7 @@ DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImpo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Debug(IDebugOutput& output, GeomStreamCR stream, DgnDbR db)
+void ElementGeomIO::Debug(IDebugOutput& output, GeomStreamCR stream, DgnDbR db, bool isPart)
     {
     Collection  collection(stream.GetData(), stream.GetSize());
     Reader      reader(db);
@@ -2331,7 +2331,7 @@ void ElementGeomIO::Debug(IDebugOutput& output, GeomStreamCR stream, DgnDbR db)
                 if (!reader.Get(egOp, subCategory, geomToElem))
                     break;
 
-                output._DoOutputLine(Utf8PrintfString("OpCode::BeginSubCategory - SubCategoryId: %" PRIu64 " - Have GeomToElem: %s\n", subCategory.GetValue(), geomToElem.IsIdentity() ? "No" : "Yes").c_str());
+                output._DoOutputLine(Utf8PrintfString("\nOpCode::BeginSubCategory - SubCategoryId: %" PRIu64 " - Have GeomToElem: %s\n", subCategory.GetValue(), geomToElem.IsIdentity() ? "No" : "Yes").c_str());
 
                 if (!output._WantVerbose() || geomToElem.IsIdentity())
                     break;
@@ -2492,17 +2492,13 @@ void ElementGeomIO::Debug(IDebugOutput& output, GeomStreamCR stream, DgnDbR db)
             DgnGeomPartPtr partGeometry = db.GeomParts().LoadGeomPart(partId);
 
             if (!partGeometry.IsValid())
-                {
-                output._DoOutputLine(Utf8PrintfString("ERROR: LoadGeomPart\n").c_str());
                 continue;
-                }
 
-            ElementGeomIO::Debug(output, partGeometry->GetGeomStream(), db);
-            output._DoOutputLine(Utf8PrintfString("\n"));
+            ElementGeomIO::Debug(output, partGeometry->GetGeomStream(), db, true);
             }
         }
 
-    if (output._WantGeomEntryIds())
+    if (output._WantGeomEntryIds() && !isPart)
         {
         ElementGeometryCollection collection(db, stream);
 
@@ -2549,15 +2545,13 @@ void ElementGeomIO::Debug(IDebugOutput& output, GeomStreamCR stream, DgnDbR db)
                 }
 
             if (!geomId.GetGeomPartId().IsValid())
-                output._DoOutputLine(Utf8PrintfString("- GeometryType %s [Index: %d]\n", geomType.c_str(), geomId.GetIndex()).c_str());
+                output._DoOutputLine(Utf8PrintfString("- GeometryType::%s \t[Index: %d]\n", geomType.c_str(), geomId.GetIndex()).c_str());
             else
-                output._DoOutputLine(Utf8PrintfString("- GeometryType %s [Index: %d | PartId: " PRIu64 " Part Index: %d]\n", geomType.c_str(), geomId.GetIndex(), geomId.GetGeomPartId().GetValue(), geomId.GetPartIndex()).c_str());
+                output._DoOutputLine(Utf8PrintfString("- GeometryType::%s \t[Index: %d | PartId: %" PRIu64 " Part Index: %d]\n", geomType.c_str(), geomId.GetIndex(), geomId.GetGeomPartId().GetValue(), geomId.GetPartIndex()).c_str());
             }
 
         output._DoOutputLine(Utf8PrintfString("\n"));
         }
-
-    output._DoOutputLine(Utf8PrintfString("\n"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3435,20 +3429,6 @@ static bool is3dGeometryType(ElementGeometry::GeometryType geomType)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ElementGeometryBuilder::GetPlacement(Placement3dR placement)
-    {
-    if (!m_is3d)
-        {
-        BeAssert(false);
-        return BSIERROR;
-        }
-    placement = m_placement3d;
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ElementGeometryBuilder::GetGeomStream(GeomStreamR geom)
     {
     if (0 == m_writer.m_buffer.size())
@@ -3616,7 +3596,17 @@ bool ElementGeometryBuilder::Append(DgnGeomPartId geomPartId, TransformCR geomTo
 void ElementGeometryBuilder::OnNewGeom(DRange3dCR localRangeIn, TransformCP geomToElementIn)
     {
     if (m_isPartCreate)
-        return; // Don't need placement or want ElemDisplayParams...
+        {
+        // NOTE: Don't need placement or want OpCode::BeginSubCategory to be added, but we do want to 
+        //       store symbology/material attachments that aren't from the sub-category appearance.
+        if (m_appearanceChanged)
+            {
+            m_writer.Append(m_elParams);
+            m_appearanceChanged = false;
+            }
+
+        return;
+        }
 
     Transform geomToElem = (nullptr != geomToElementIn ? *geomToElementIn : Transform::FromIdentity());
     DRange3d  localRange = localRangeIn;
@@ -3629,7 +3619,7 @@ void ElementGeometryBuilder::OnNewGeom(DRange3dCR localRangeIn, TransformCP geom
     else
         m_placement2d.GetElementBoxR().Extend(DRange2d::From(DPoint2d::From(localRange.low), DPoint2d::From(localRange.high)));
 
-    // Establish "geometry group" boundaries at sub-category and transform changes (NEEDSWORK: Other incompatible changes...geometry class?)
+    // Establish "geometry group" boundaries at sub-category and transform changes...
     if (!m_prevSubCategory.IsValid() || (m_prevSubCategory != m_elParams.GetSubCategoryId() || !m_prevGeomToElem.IsEqual(geomToElem)))
         {
         m_writer.Append(m_elParams.GetSubCategoryId(), geomToElem);
@@ -4079,6 +4069,34 @@ ElementGeometryBuilder::ElementGeometryBuilder(DgnDbR dgnDb, DgnCategoryId categ
     m_haveLocalGeom = m_havePlacement = m_isPartCreate = false;
     m_elParams.SetCategoryId(categoryId);
     m_appearanceChanged = false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementGeometryBuilderPtr ElementGeometryBuilder::CreateGeomPart(GeomStreamCR stream, DgnDbR db)
+    {
+    ElementGeometryBuilderPtr builder = new ElementGeometryBuilder(db, DgnCategoryId(), Placement3d());
+    ElementGeomIO::Collection collection(stream.GetData(), stream.GetSize());
+
+    for (auto const& egOp : collection)
+        {
+        switch (egOp.m_opCode)
+            {
+            case ElementGeomIO::OpCode::Header:
+            case ElementGeomIO::OpCode::BeginSubCategory:
+                break; // Already have header, can't change sub-category, and part geometry is always in local coords...
+
+            case ElementGeomIO::OpCode::GeomPartInstance:
+                return nullptr; // Nested parts aren't supported...
+
+            default:
+                builder->m_writer.Append(egOp); // Append raw data so we don't lose bReps, etc. even when we don't have Parasolid available...
+                break;
+            }
+        }
+
+    return builder;
     }
 
 /*---------------------------------------------------------------------------------**//**
