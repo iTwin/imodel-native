@@ -8,8 +8,8 @@
 %include $(SharedMki)bsioutputdirs.mki
 
 BuildDir                        = $(OutputRootDir)build/TerrainModel/
-BuildPublicApi                  = $(build)PublicAPI/
-gensrc                          = $(build)gensrc/
+BuildPublicApi                  = $(BuildDir)PublicAPI/
+gensrc                          = $(BuildDir)gensrc/
 terrainModelBuildDir_           = $(BuildDir)
 terrainModelElementBuildDir_    = $(OutputRootDir)build/TerrainModelElement/
 
