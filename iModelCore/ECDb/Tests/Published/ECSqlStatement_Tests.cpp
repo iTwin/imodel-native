@@ -3314,7 +3314,6 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayInsert)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, StructArrayInsertWithParametersLongAndArray)
     {
-    const auto perClassRowCount = 0;
     ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
     auto ecsql = "INSERT INTO ecsql.PSA (L,PStruct_Array) VALUES(123, ?)";
@@ -3366,7 +3365,6 @@ TEST_F(ECSqlStatementTestFixture, StructArrayInsertWithParametersLongAndArray)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, InsertWithMixParametersIntAndInt)
     {
-    const auto perClassRowCount = 0;
     ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
     auto ecsql = "INSERT INTO ecsql.Sub1 (I,Sub1I) VALUES(123, ?)";
@@ -3399,7 +3397,6 @@ TEST_F(ECSqlStatementTestFixture, InsertWithMixParametersIntAndInt)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, InsertWithMixParameters)
     {
-    const auto perClassRowCount = 0;
     ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
     auto ecsql = "INSERT INTO ecsql.P (B,D,I,L,S) VALUES(1, ?,?,123,?)";
@@ -3439,7 +3436,6 @@ TEST_F(ECSqlStatementTestFixture, InsertWithMixParameters)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayInsertWithDotOperator)
     {
-    const auto perClassRowCount = 0;
     ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
     auto ecsql = "INSERT INTO ecsql.SA (SAStructProp.PStruct_Array) VALUES(?)";
@@ -3496,7 +3492,6 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayInsertWithDotO
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, StructUpdateWithDotOperator)
     {
-    const auto perClassRowCount = 0;
     ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
     auto ecsql = "INSERT INTO ecsql.SAStruct (PStructProp.i) VALUES(2)";
@@ -3544,7 +3539,6 @@ TEST_F(ECSqlStatementTestFixture, StructUpdateWithDotOperator)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayUpdateWithDotOperator)
     {
-    const auto perClassRowCount = 0;
     ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
     auto ecsql = "INSERT INTO ecsql.SA (SAStructProp.PStruct_Array) VALUES(?)";
@@ -3707,7 +3701,6 @@ TEST_F(ECSqlStatementTestFixture, AmbiguousQuery)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlStatementTestFixture, BindNegECInstanceId)
     {
-    const int perClassRowCount = 0;
     ECDbR ecdb = SetupECDb("BindNegECInstanceId.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
     ECSqlStatement stmt;
