@@ -6,25 +6,18 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include "ECSqlCrudAsserter.h"
+#include "ECDbPublishedTests.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //=======================================================================================    
-// @bsiclass                                                 Krischan.Eberle     04/2013
+// @bsiclass                                                 Krischan.Eberle     10/2015
 //=======================================================================================    
-struct ECSqlTestFixture : public ECDbTestFixture
+struct ECSqlStatementTestFixture : public ECDbTestFixture
     {
-private:
-    virtual ECDbR _SetUp (Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount);
-
 protected:
-    ECDbR SetUp (Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount);
-
-    static void BindFromJson (BentleyStatus& succeeded, ECSqlStatement const& statement, JsonValueCR jsonValue, IECSqlBinder& structBinder);
-    static void VerifyECSqlValue (ECSqlStatement const& statement, JsonValueCR expectedValue, IECSqlValue const& ecsqlValue);
-
+    static void BindFromJson(BentleyStatus& succeeded, ECSqlStatement const& statement, JsonValueCR jsonValue, IECSqlBinder& structBinder);
+    static void VerifyECSqlValue(ECSqlStatement const& statement, JsonValueCR expectedValue, IECSqlValue const& ecsqlValue);
     };
-
 
 END_ECDBUNITTESTS_NAMESPACE

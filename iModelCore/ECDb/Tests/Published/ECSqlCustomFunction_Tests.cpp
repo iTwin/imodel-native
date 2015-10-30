@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlTestFixture.h"
 #include <cmath> // for std::pow
-#include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
@@ -145,11 +144,10 @@ struct ToBoolStrSqlFunction : ScalarFunction
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlTestFixture, ECSqlStatement_RegisterUnregisterCustomSqlFunction)
+TEST_F(ECSqlStatementTestFixture, RegisterUnregisterCustomSqlFunction)
     {
     const auto perClassRowCount = 3;
-    // Create and populate a sample project
-    auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly), perClassRowCount);
 
     PowSqlFunction func;
     ASSERT_EQ(0, ecdb.AddFunction(func));
@@ -164,11 +162,10 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_RegisterUnregisterCustomSqlFunction)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlTestFixture, ECSqlStatement_CallUnregisteredSqlFunction)
+TEST_F(ECSqlStatementTestFixture, CallUnregisteredSqlFunction)
     {
     const auto perClassRowCount = 3;
-    // Create and populate a sample project
-    auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly), perClassRowCount);
 
     Utf8CP ecsql = "SELECT I,POW(I,2) FROM ecsql.P";
 
@@ -185,11 +182,10 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_CallUnregisteredSqlFunction)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlTestFixture, ECSqlStatement_NumericSqlFunction)
+TEST_F(ECSqlStatementTestFixture, NumericSqlFunction)
     {
     const int perClassRowCount = 3;
-    // Create and populate a sample project
-    auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly), perClassRowCount);
 
     //insert one more test row which has a NULL column
         {
@@ -272,11 +268,10 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_NumericSqlFunction)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlTestFixture, ECSqlStatement_StringSqlFunction)
+TEST_F(ECSqlStatementTestFixture, StringSqlFunction)
     {
     const int perClassRowCount = 3;
-    // Create and populate a sample project
-    auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly), perClassRowCount);
 
     ToBoolStrSqlFunction func;
     ASSERT_EQ(0, ecdb.AddFunction(func));
@@ -296,11 +291,10 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_StringSqlFunction)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlTestFixture, ECSqlStatement_BlobSqlFunction)
+TEST_F(ECSqlStatementTestFixture, BlobSqlFunction)
     {
     const int perClassRowCount = 3;
-    // Create and populate a sample project
-    auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
 
     //insert one more test row which has a NULL column
         {
@@ -357,12 +351,12 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_BlobSqlFunction)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                  05/15
 //+---------------+---------------+---------------+---------------+---------------+------
- TEST_F (ECSqlTestFixture, ECSqlStatement_AggregateFunction)
+ TEST_F (ECSqlStatementTestFixture, AggregateFunction)
      {
      SumOfSquares func;
      ECSqlStatement stmt;
      const int perClassRowCount = 3;
-     auto& ecdb = SetUp ("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams (Db::OpenMode::ReadWrite), perClassRowCount);
+     ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
 
      ASSERT_EQ (ECSqlStatus::InvalidECSql, stmt.Prepare (ecdb, "SELECT SOS(D) FROM ecsql.P")) << "ECSql Preparetion expected to fail with unregistered ECSql function";
      stmt.Finalize ();
@@ -440,9 +434,9 @@ struct DateFromStringFunction : ScalarFunction, ScalarFunction::IScalar
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlTestFixture, ECSqlStatement_DateECSqlFunction)
+TEST_F(ECSqlStatementTestFixture, DateECSqlFunction)
     {
-    auto& ecdb = SetUp("dateecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), 0);
+    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
     DateTime dt(2015, 3, 24);
     Utf8String dtStr = dt.ToUtf8String();
@@ -540,9 +534,9 @@ struct GeometryTypeECSqlFunction : ECSqlScalarFunction, ScalarFunction::IScalar
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlTestFixture, ECSqlStatement_GeometryECSqlFunction)
+TEST_F(ECSqlStatementTestFixture, GeometryECSqlFunction)
     {
-    auto& ecdb = SetUp("geometryecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite), 0);
+    ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
     IGeometryPtr line = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
     Utf8CP expectedGeomTypeStr = GeometryTypeECSqlFunction::GeometryTypeToString(line->GetGeometryType());

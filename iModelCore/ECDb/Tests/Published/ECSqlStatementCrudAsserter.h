@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include "ECSqlTestFixture.h"
+#include "ECSqlCrudAsserter.h"
 #include "ECSqlExpectedResultImpls.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE

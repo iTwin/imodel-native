@@ -6,39 +6,17 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlTestFixture.h"
-#include "ECSqlStatementCrudAsserter.h"
 
 using namespace std;
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-//********************* ECSqlTestFixture ********************************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  09/13
-//+---------------+---------------+---------------+---------------+---------------+------
-ECDbR ECSqlTestFixture::SetUp (Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount)
-    {
-    return _SetUp (ecdbFileName, schemaECXmlFileName, openParams, perClassRowCount);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  09/13
-//+---------------+---------------+---------------+---------------+---------------+------
-//virtual
-ECDbR ECSqlTestFixture::_SetUp (Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount)
-    {
-    // Create and populate a sample project
-    SetupECDb (ecdbFileName, BeFileName(schemaECXmlFileName), openParams, perClassRowCount);
-    return GetECDb();
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-void ECSqlTestFixture::BindFromJson (BentleyStatus& succeeded, ECSqlStatement const& statement, JsonValueCR jsonValue, IECSqlBinder& binder)
+void ECSqlStatementTestFixture::BindFromJson (BentleyStatus& succeeded, ECSqlStatement const& statement, JsonValueCR jsonValue, IECSqlBinder& binder)
     {
     succeeded = ERROR;
     BeTest::SetFailOnAssert (false);
@@ -117,7 +95,7 @@ void ECSqlTestFixture::BindFromJson (BentleyStatus& succeeded, ECSqlStatement co
 // @bsimethod                                     Krischan.Eberle                  04/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-void ECSqlTestFixture::VerifyECSqlValue (ECSqlStatement const& statement, JsonValueCR expectedValue, IECSqlValue const& actualValue)
+void ECSqlStatementTestFixture::VerifyECSqlValue (ECSqlStatement const& statement, JsonValueCR expectedValue, IECSqlValue const& actualValue)
     {
     auto const& typeInfo = actualValue.GetColumnInfo ().GetDataType ();
     Utf8String name (actualValue.GetColumnInfo ().GetProperty ()->GetName ());
@@ -222,6 +200,5 @@ void ECSqlTestFixture::VerifyECSqlValue (ECSqlStatement const& statement, JsonVa
 
     ASSERT_EQ ((int) expectedValue.size (), actualArrayLength);
     }
-
 
 END_ECDBUNITTESTS_NAMESPACE

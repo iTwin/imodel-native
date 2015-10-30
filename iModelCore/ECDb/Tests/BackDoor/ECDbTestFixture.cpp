@@ -28,6 +28,15 @@ void ECDbTestFixture::SetUp()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle     10/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName)
+    {
+    CreateECDb(m_ecdb, ecdbFileName);
+    return GetECDb();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle     09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 ECDb& ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount)
@@ -132,6 +141,23 @@ DbResult ECDbTestFixture::CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNam
     BeFileName::CreateNewDirectory(BeFileName::GetDirectoryName(clonePath).c_str());
     BeFileName::BeCopyFile(seedFilePath, clonePath);
     return clone.OpenBeSQLiteDb(clonePath, openParams);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle  10/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+DbResult ECDbTestFixture::CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName)
+    {
+    Initialize();
+
+    BeFileName ecdbFilePath = ECDbTestUtility::BuildECDbPath(ecdbFileName);
+    if (ecdbFilePath.DoesPathExist())
+        {  // Delete any previously created file
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(ecdbFilePath.GetName()));
+        }
+
+    return ecdb.CreateNewDb(ecdbFilePath);
     }
 
 /*---------------------------------------------------------------------------------**//**

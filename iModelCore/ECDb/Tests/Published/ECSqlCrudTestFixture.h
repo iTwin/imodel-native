@@ -6,24 +6,24 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include "ECSqlTestFixture.h"
+#include "ECSqlCrudAsserter.h"
+#include "ECDbPublishedTests.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //=======================================================================================    
 // @bsiclass                                                 Krischan.Eberle     09/2013
 //=======================================================================================    
-struct ECSqlCrudTestFixture : public ECSqlTestFixture
+struct ECSqlCrudTestFixture : public ECDbTestFixture
     {
-    protected:
-        //! @deprecated Will become private once ECDbStatement API is removed
-        void RunTest (ECSqlTestDataset const& dataset, ECSqlCrudAsserterList const& asserters) const;
+protected:
+    void RunTest(ECSqlTestDataset const&, ECSqlCrudAsserterList const&) const;
 
-        virtual void RunTest (ECSqlTestDataset const& dataset) const = 0;
+    virtual void RunTest(ECSqlTestDataset const&) const = 0;
 
-    public:
-        ECSqlCrudTestFixture () : ECSqlTestFixture () {}
-        virtual ~ECSqlCrudTestFixture () {}
+public:
+    ECSqlCrudTestFixture() : ECDbTestFixture() {}
+    virtual ~ECSqlCrudTestFixture() {}
     };
 
 //=======================================================================================    
@@ -31,22 +31,18 @@ struct ECSqlCrudTestFixture : public ECSqlTestFixture
 //=======================================================================================    
 struct ECSqlSelectTestFixture : public ECSqlCrudTestFixture
     {
-private:
-    virtual ECDbR _SetUp (Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount) override;
-
 protected:
     static const int PerClassRowCount = 10;
 
     ECSqlSelectTestFixture() : ECSqlCrudTestFixture() {}
 
-    virtual void RunTest (ECSqlTestDataset const& dataset) const override;
+    virtual void RunTest (ECSqlTestDataset const&) const override;
     using ECSqlCrudTestFixture::RunTest;
 
 public:
     virtual ~ECSqlSelectTestFixture () {}
 
     virtual void SetUp () override;
-    using ECSqlCrudTestFixture::SetUp;
     };
 
 
@@ -58,7 +54,7 @@ struct ECSqlNonSelectTestFixture : public ECSqlCrudTestFixture
 protected:
     static const int PerClassRowCount = 10;
 
-    virtual void RunTest (ECSqlTestDataset const& dataset) const override;
+    virtual void RunTest (ECSqlTestDataset const&) const override;
     using ECSqlCrudTestFixture::RunTest;
 
     ECSqlNonSelectTestFixture() : ECSqlCrudTestFixture() {}
@@ -68,7 +64,6 @@ public:
     virtual ~ECSqlNonSelectTestFixture () {}
 
     virtual void SetUp () override;
-    using ECSqlCrudTestFixture::SetUp;
     };
 
 END_ECDBUNITTESTS_NAMESPACE
