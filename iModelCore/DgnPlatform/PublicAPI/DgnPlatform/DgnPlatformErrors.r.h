@@ -119,7 +119,7 @@ enum class LockStatus : int
 {
     Success = SUCCESS,
     ServerUnavailable = LOCK_ERROR_BASE + 1, //!< The locks server did not respond to a lock request
-    LockRequestDenied, //!< A request to acquire a lock was denied
+    AlreadyHeld, //!< A requested lock was already held by another briefcase
 };
 
 /** @cond BENTLEY_SDK_Publisher */

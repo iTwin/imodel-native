@@ -21,8 +21,28 @@ LockableId::LockableId(DgnDbCR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnLockCP LockRequest::Find(DgnLockCR lock, bool matchExactLevel) const
+    {
+    auto iter = m_locks.find(DgnLock(lock.GetLockableId(), LockLevel::Exclusive));
+    if (m_locks.end() == iter)
+        return nullptr;
+    else if (matchExactLevel && iter->GetLevel() != lock.GetLevel())
+        return nullptr;
+    else if (iter->GetLevel() > lock.GetLevel())
+        return nullptr;
+
+    return &(*iter);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 void LockRequest::Insert(DgnElementCR el, LockLevel level)
     {
+    // Currently no reason to obtain shared lock on an element...may have a use case for parent elements at some point.
+    if (LockLevel::Shared == level)
+        level = LockLevel::Exclusive;
+
     Insert(LockableId(el.GetElementId()), level);
     if (LockLevel::Exclusive == level)
         {

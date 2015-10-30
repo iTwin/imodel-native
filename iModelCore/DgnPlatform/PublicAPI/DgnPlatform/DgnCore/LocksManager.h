@@ -39,6 +39,7 @@ public:
     LockableId() : m_type(LockableType::Element) { }
     explicit LockableId(DgnElementId id) : m_id(id), m_type(LockableType::Element) { }
     explicit LockableId(DgnModelId id) : m_id(id), m_type(LockableType::Model) { }
+    LockableId(LockableType type, BeSQLite::BeInt64Id id) : m_id(id), m_type(type) { }
     DGNPLATFORM_EXPORT explicit LockableId(DgnDbCR db);
 
     BeSQLite::BeInt64Id GetId() const { return m_id; } //!< The ID of the lockable object
@@ -106,6 +107,7 @@ public:
     LockLevel GetLevel() const { return m_level; } //!< The level of the lock
     LockableType GetType() const { return m_id.GetType(); } //!< The type of the lockable object
     LockableId GetLockableId() const { return m_id; } //!< The ID and type of the lockable object
+    bool IsExclusive() const { return LockLevel::Exclusive == GetLevel(); } //!< Determine if this is an exclusive lock
 
     void SetLevel(LockLevel level) { m_level = level; } //!< Set the lock level
     void EnsureLevel(LockLevel minLevel) { if (minLevel > m_level) SetLevel(minLevel); } //!< Ensure the lock level is no lower than the specified level
@@ -113,7 +115,7 @@ public:
     //! Compare two locks by ID for sorting purposes
     struct IdentityComparator
     {
-        bool operator()(DgnLockCR lhs, DgnLockCR rhs) const { return lhs.GetId() < rhs.GetId(); }
+        bool operator()(DgnLockCR lhs, DgnLockCR rhs) const { return lhs.GetLockableId() < rhs.GetLockableId(); }
     };
 };
 
