@@ -1,15 +1,16 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/ECSqlInsertStatementCrudTestDataset.cpp $
+|     $Source: Tests/Published/ECSqlInsertTestDataset.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECSqlInsertStatementCrudTestDataset.h"
+#include "ECSqlInsertTestDataset.h"
 
 //Note: Please keep methods for a given class alphabetized
 USING_NAMESPACE_BENTLEY_EC
 
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1807,4 +1808,4 @@ ECSqlTestDataset ECSqlInsertTestDataset::StructTests ()
     return dataset;
     }
 
-
+END_ECSQLTESTFRAMEWORK_NAMESPACE

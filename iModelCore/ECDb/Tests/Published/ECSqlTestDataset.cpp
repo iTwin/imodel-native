@@ -10,7 +10,7 @@
 using namespace std;
 USING_NAMESPACE_BENTLEY_EC
 
-
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 //********************* IECSqlExpectedResult ************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  10/15
@@ -341,3 +341,5 @@ std::vector<ECSqlTestItem> const& ECSqlTestDataset::GetTestItems () const
     {
     return m_innerList;
     }
+
+END_ECSQLTESTFRAMEWORK_NAMESPACE

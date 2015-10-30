@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/ECSqlSelectStatementCrudTestDataset.h $
+|     $Source: Tests/Published/ECSqlSelectTestDataset.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -18,6 +18,7 @@ struct ECSqlSelectTestDataset
 private:
     ECSqlSelectTestDataset ();
     ~ECSqlSelectTestDataset ();
+
 public:
     static ECSqlTestDataset AliasTests (int rowCountPerClass);
     static ECSqlTestDataset ArrayTests (int rowCountPerClass);

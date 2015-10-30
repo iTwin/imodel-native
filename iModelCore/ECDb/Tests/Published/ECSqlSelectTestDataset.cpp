@@ -1,16 +1,16 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/ECSqlSelectStatementCrudTestDataset.cpp $
+|     $Source: Tests/Published/ECSqlSelectTestDataset.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECSqlSelectStatementCrudTestDataset.h"
+#include "ECSqlSelectTestDataset.h"
 
 //Note: Please keep methods for a given class alphabetized
 USING_NAMESPACE_BENTLEY_EC
 
-
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -2933,3 +2933,5 @@ ECSqlTestDataset ECSqlSelectTestDataset::UnionTests(int rowCountPerClass)
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "'A' is not a valid table name.");
     return dataset;
     }
+
+END_ECSQLTESTFRAMEWORK_NAMESPACE

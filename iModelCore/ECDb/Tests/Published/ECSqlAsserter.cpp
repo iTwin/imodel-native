@@ -10,6 +10,7 @@
 using namespace std;
 USING_NAMESPACE_BENTLEY_EC
 
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 
 //*************** ECSqlAsserter ***************************
 //---------------------------------------------------------------------------------------
@@ -680,5 +681,4 @@ DbResult ECSqlNonSelectAsserter::Step (ECSqlStatement& statement, bool disableBe
     return statement.Step ();
     }
 
-
-
+END_ECSQLTESTFRAMEWORK_NAMESPACE

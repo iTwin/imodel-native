@@ -7,10 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlTestFrameworkFixture.h"
 #include "ECSqlCommonTestDataset.h"
-#include "ECSqlSelectStatementCrudTestDataset.h"
-#include "ECSqlInsertStatementCrudTestDataset.h"
-#include "ECSqlUpdateStatementCrudTestDataset.h"
-#include "ECSqlDeleteStatementCrudTestDataset.h"
+#include "ECSqlSelectTestDataset.h"
+#include "ECSqlInsertTestDataset.h"
+#include "ECSqlUpdateTestDataset.h"
+#include "ECSqlDeleteTestDataset.h"
 
 BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 
@@ -875,6 +875,5 @@ TEST_F (ECSqlDeleteTestFramework, WhereStructTests)
     auto dataset = ECSqlCommonTestDataset::WhereStructTests (ECSqlType::Delete, GetECDb(), PerClassRowCount);
     RunTest (dataset);
     }
-
 
 END_ECSQLTESTFRAMEWORK_NAMESPACE

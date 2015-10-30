@@ -41,7 +41,6 @@ private:
     ECDb& m_ecdb;
 
     virtual void _Assert(ECSqlTestItem const& testItem) const = 0;
-    virtual Utf8CP _GetTargetOperationName() const = 0;
 
     void LogECSqlSupport(ECSqlTestItem const& testItem) const;
     static BentleyApi::NativeLogging::ILogger& GetLogger();
@@ -57,7 +56,7 @@ protected:
     static ECSqlStatus BindIGeometryParameter (ECSqlStatement& statement, int parameterIndex, IGeometryCP geomParameter);
 
 public:
-    explicit ECSqlAsserter (ECDb& ecdb) {}
+    explicit ECSqlAsserter (ECDb& ecdb) : m_ecdb(ecdb) {}
     virtual ~ECSqlAsserter () {}
 
     void Assert(ECSqlTestItem const& testItem) const;

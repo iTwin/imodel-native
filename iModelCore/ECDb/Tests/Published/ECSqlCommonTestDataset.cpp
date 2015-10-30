@@ -11,6 +11,7 @@
 //Note: Please keep methods for a given class alphabetized
 USING_NAMESPACE_BENTLEY_EC
 
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -999,3 +1000,5 @@ bool ECSqlCommonTestDataset::FindPrimitivePropertyAccessStringInClass (Utf8Strin
 
     return false;
     }
+
+END_ECSQLTESTFRAMEWORK_NAMESPACE

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/ECSqlDeleteStatementCrudTestDataset.h $
+|     $Source: Tests/Published/ECSqlDeleteTestDataset.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |

@@ -28,18 +28,6 @@
     <ClCompile Include="Published\ECSqlTestDataset.cpp">
       <Filter>Published\ECSql\ECSqlTestFramework</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECSqlDeleteStatementCrudTestDataset.cpp">
-      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECSqlInsertStatementCrudTestDataset.cpp">
-      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECSqlSelectStatementCrudTestDataset.cpp">
-      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECSqlUpdateStatementCrudTestDataset.cpp">
-      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECSqlCommonTestDataset.cpp">
       <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
     </ClCompile>
@@ -124,9 +112,6 @@
     <ClCompile Include="Published\ECDbSchemas_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECDbSql_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECInstanceIdSequence_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -178,6 +163,21 @@
     <ClCompile Include="Published\ECSqlTestFrameworkHelper.cpp">
       <Filter>Published\ECSql\ECSqlTestFramework</Filter>
     </ClCompile>
+    <ClCompile Include="Published\ECSqlDeleteTestDataset.cpp">
+      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlInsertTestDataset.cpp">
+      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlSelectTestDataset.cpp">
+      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlUpdateTestDataset.cpp">
+      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbSql_Test.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">
@@ -197,18 +197,6 @@
     </ClInclude>
     <ClInclude Include="Published\ECSqlTestDataset.h">
       <Filter>Published\ECSql\ECSqlTestFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\ECSqlDeleteStatementCrudTestDataset.h">
-      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\ECSqlInsertStatementCrudTestDataset.h">
-      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\ECSqlSelectStatementCrudTestDataset.h">
-      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\ECSqlUpdateStatementCrudTestDataset.h">
-      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
     </ClInclude>
     <ClInclude Include="Published\ECSqlCommonTestDataset.h">
       <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
@@ -245,6 +233,18 @@
     </ClInclude>
     <ClInclude Include="Published\ECSqlTestFrameworkHelper.h">
       <Filter>Published\ECSql\ECSqlTestFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlDeleteTestDataset.h">
+      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlInsertTestDataset.h">
+      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlSelectTestDataset.h">
+      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlUpdateTestDataset.h">
+      <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,16 +1,17 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/ECSqlUpdateStatementCrudTestDataset.cpp $
+|     $Source: Tests/Published/ECSqlUpdateTestDataset.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECSqlUpdateStatementCrudTestDataset.h"
+#include "ECSqlUpdateTestDataset.h"
 
 //Note: Please keep methods for a given class alphabetized
 
 USING_NAMESPACE_BENTLEY_EC
 
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/14
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -928,3 +929,5 @@ ECSqlTestDataset ECSqlUpdateTestDataset::TargetClassTests (int rowCountPerClass)
 
     return dataset;
     }
+
+END_ECSQLTESTFRAMEWORK_NAMESPACE

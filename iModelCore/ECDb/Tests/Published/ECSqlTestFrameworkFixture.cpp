@@ -10,6 +10,7 @@
 
 using namespace std;
 
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                       01/14
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -206,4 +207,4 @@ void ECSqlNonSelectTestFrameworkFixture::RunTest(ECSqlTestDataset const& dataset
     RunTest(dataset, asserters);
     }
 
-
+END_ECSQLTESTFRAMEWORK_NAMESPACE

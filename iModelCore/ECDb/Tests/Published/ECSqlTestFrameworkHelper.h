@@ -33,4 +33,4 @@ public:
     static ECInstanceId InsertTestInstance (ECDbCR, Utf8CP ecsql);
     };
 
-END_ECDBUNITTESTS_NAMESPACE
+END_ECSQLTESTFRAMEWORK_NAMESPACE

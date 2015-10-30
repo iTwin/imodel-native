@@ -9,6 +9,7 @@
 
 using namespace std;
 
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 
 //********************* ECSqlPrepareExpectedResult ************************************
 //---------------------------------------------------------------------------------------
@@ -265,3 +266,4 @@ int ResultCountECSqlExpectedResult::GetExpectedRowCount () const
     }
 
 
+END_ECSQLTESTFRAMEWORK_NAMESPACE

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/ECSqlUpdateStatementCrudTestDataset.h $
+|     $Source: Tests/Published/ECSqlUpdateTestDataset.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
