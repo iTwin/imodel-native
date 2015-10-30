@@ -14,7 +14,7 @@
 %endif
 
 %if !defined (DLM_NO_SIGN) && !defined (DLM_NO_RCSIGN) && !defined (ASSEMBLY_NO_RIGHTS_COMPLIANCE_CHECK)
-    %include $(SrcBsiCommon)sharedmki/isrightscompliant.mki
+    %include $(SrcRoot)bsicommon/sharedmki/isrightscompliant.mki
 %endif
 
 TLBIMP_KEYFILE_OPTION = keyfile
