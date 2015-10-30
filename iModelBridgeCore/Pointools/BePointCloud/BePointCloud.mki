@@ -1,24 +1,16 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: BePointCloudPolicy.mki $
+#     $Source: BePointCloud.mki $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
-%include $(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
-%include $(SharedMki)DefinePublicApiIncludes.mki
-%include $(SharedMki)CommonCompileLinkPolicy.mki
-%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
-
-%include DefaultToolSet.mki
-
 appName = BePointCloud
-o       = $(OutputRootDir)build/BePointCloud/
+o       = $(OutBuildDir)BePointCloud/
 
 DLM_NAME    = $(appName)
 CCompPDBName = $(appName)
-MuiBaseName = $(appName)
 
 MultiCompileIntermediatePdbFile=$(o)$(CCompPDBName).pdb
 IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
