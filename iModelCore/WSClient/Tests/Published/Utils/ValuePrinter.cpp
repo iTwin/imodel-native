@@ -325,6 +325,12 @@ std::ostream& operator << (std::ostream &o, WSError::Id errorId)
     return o;
     }
 
+std::ostream& operator << (std::ostream &o, ObjectIdCR id)
+    {
+    o << id.ToString();
+    return o;
+    }
+
 namespace rapidjson
     {
     void PrintTo(const Value& value, ::std::ostream* os)

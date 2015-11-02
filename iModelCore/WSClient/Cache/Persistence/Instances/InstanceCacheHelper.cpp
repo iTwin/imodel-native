@@ -207,8 +207,6 @@ CachedInstances& cachedInstancesInOut
         }
 
     // NOTE: instanceId is ignored
-    // NOTE: relationship instance properties not yet supported
-    BeAssert(relationshipInstance.GetProperties().MemberBegin() == relationshipInstance.GetProperties().MemberEnd());
 
     ObjectIdCR relationshipObjectId = relationshipInstance.GetObjectId();
 
@@ -218,23 +216,35 @@ CachedInstances& cachedInstancesInOut
         return ERROR;
         }
 
-    ECInstanceKey cachedRelationship;
+    ECInstanceKeyCP source, target = nullptr;
     if (BentleyApi::ECN::ECRelatedInstanceDirection::Forward == relationshipInstance.GetDirection())
         {
-        cachedRelationship = m_hierarchyManager.RelateInstances(relatedInstanceA, relatedInstanceB, relClass);
+        source = &relatedInstanceA;
+        target = &relatedInstanceB;
         }
     else
         {
-        cachedRelationship = m_hierarchyManager.RelateInstances(relatedInstanceB, relatedInstanceA, relClass);
+        source = &relatedInstanceB;
+        target = &relatedInstanceA;
         }
 
-    if (!cachedRelationship.IsValid())
+    // TODO: insert/update whole relationship with properties at once?
+    ECInstanceKey relationshipKey = m_hierarchyManager.RelateInstances(*source, *target, relClass);
+    if (!relationshipKey.IsValid())
         {
         BeAssert("Failed to cache relationship instance. Check schema");
         return ERROR;
         }
 
-    CachedRelationshipKey relInfo = m_relationshipInfoManager.ReadCachedRelationshipKey(cachedRelationship, relationshipObjectId.remoteId.c_str());
+    if (0 != relClass->GetPropertyCount())
+        {
+        if (SUCCESS != m_updaters.Get(*relClass).Update(relationshipKey.GetECInstanceId(), relationshipInstance.GetProperties(), *source, *target))
+            {
+            return ERROR;
+            }
+        }
+
+    CachedRelationshipKey relInfo = m_relationshipInfoManager.ReadCachedRelationshipKey(relationshipKey, relationshipObjectId.remoteId.c_str());
 
     cachedInstancesInOut.AddRelationshipInstance(relationshipObjectId, relInfo);
 

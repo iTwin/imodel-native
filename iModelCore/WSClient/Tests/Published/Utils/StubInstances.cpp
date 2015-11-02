@@ -137,13 +137,15 @@ StubInstances::StubRelationshipInstances StubInstances::StubRelationshipInstance
 ObjectIdCR relationshipObjectId,
 ObjectIdCR relatedObjectId,
 std::map<Utf8String, Json::Value> relatedProperties,
-BentleyApi::ECN::ECRelatedInstanceDirection direction
+BentleyApi::ECN::ECRelatedInstanceDirection direction,
+std::map<Utf8String, Json::Value> relationshipProperties
 )
     {
     auto relationshipInstance = std::make_shared<StubRelationshipInstance>();
 
     relationshipInstance->objectId = relationshipObjectId;
     relationshipInstance->direction = direction;
+    relationshipInstance->properties = relationshipProperties;
     relationshipInstance->relatedInstance.objectId = relatedObjectId;
     relationshipInstance->relatedInstance.properties = relatedProperties;
 
