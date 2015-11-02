@@ -18,6 +18,9 @@ USING_NAMESPACE_BENTLEY_SQLITE
 
 //#define DUMP_SERVER 1
 
+// ###TODO move down to LocksManager.h
+typedef bset<DgnLock, DgnLock::IdentityComparator> DgnLockSet;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -33,7 +36,7 @@ struct LocksServer
     LockStatus RelinquishLocks(BeBriefcaseId bc);
 
     bool AreLocksAvailable(LockRequestCR reqs, BeBriefcaseId requestor);
-    LockStatus QueryLocks(bset<DgnLock>& locks, BeBriefcaseId bc);
+    LockStatus QueryLocks(DgnLockSet& locks, BeBriefcaseId bc);
     void Reset();
     void Dump();
 
@@ -173,7 +176,7 @@ bool LocksServer::QueryLocksHeld(LockRequestCR reqs, BeBriefcaseId bc)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockStatus LocksServer::QueryLocks(bset<DgnLock>& locks, BeBriefcaseId bc)
+LockStatus LocksServer::QueryLocks(DgnLockSet& locks, BeBriefcaseId bc)
     {
     if (m_offline)
         return LockStatus::ServerUnavailable;
@@ -352,11 +355,14 @@ struct StatelessLocksManager : ILocksManager
 #define LOCAL_Type "Type"
 #define LOCAL_Id "Id"
 #define LOCAL_Level "Level"
+#define LOCAL_Values "(" LOCAL_Type "," LOCAL_Id "," LOCAL_Level ")"
 
 #define STMT_SelectExisting "SELECT " LOCAL_Level ",rowid FROM " LOCAL_Table " WHERE " LOCAL_Type "=? AND " LOCAL_Id "=?"
-#define STMT_InsertNew "INSERT INTO " LOCAL_Table " (" LOCAL_Type "," LOCAL_Id "," LOCAL_Level ") VALUES (?,?,?)"
+#define STMT_InsertNew "INSERT INTO " LOCAL_Table " " LOCAL_Values " VALUES (?,?,?)"
 #define STMT_UpdateLevel "UPDATE " LOCAL_Table " SET " LOCAL_Level "=? WHERE rowid=?"
 #define STMT_SelectInSet "SELECT " LOCAL_Type "," LOCAL_Id " FROM " LOCAL_Table " WHERE InVirtualSet(@vset," LOCAL_Type "," LOCAL_Id "," LOCAL_Level ")"
+#define STMT_SelectElementInModel " SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?"
+#define STMT_InsertOrReplace "INSERT OR REPLACE INTO " LOCAL_Table " " LOCAL_Values " VALUES(?,?,?)"
 
 /*---------------------------------------------------------------------------------**//**
 * Stores a local sqlite db containing locks obtained by a briefcase.
@@ -394,13 +400,20 @@ struct LocalLocksManager : ILocksManager
             }
         }
 
-    void Insert(LockableId id, LockLevel level);
-    template<typename T> void Insert(T const& locks);
+    void Insert(LockableId id, LockLevel level, bool overwrite=false);
+    template<typename T> void Insert(T const& locks, bool checkExisting);
     DbResult Save() { return m_db.SaveChanges(); }
 
     void Cull(LockRequestR locks);
 
     bool Validate();
+
+    template<typename T> LockLevel QueryLevel(T const& obj)
+        {
+        LockableId id = LocksManagerTest::MakeLockableId(obj);
+        return QueryLevel(id);
+        }
+    LockLevel QueryLevel(LockableId id);
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -422,8 +435,7 @@ bool LocalLocksManager::Validate()
         case DbState::Invalid: return false;
         }
 
-    // ###TODO: Look for an existing locks db
-    // ###TODO: Request a list of current locks from server
+    // ###TODO? Look for an existing locks db and don't throw away existing if found?
     BeFileName filename = GetLockTableFileName();
     filename.BeDeleteFile();
 
@@ -440,6 +452,11 @@ bool LocalLocksManager::Validate()
     m_dbState = BE_SQLITE_OK == result ? DbState::Ready : DbState::Invalid;
     BeAssert(DbState::Ready == m_dbState);
 
+    // Request a list of current locks from server
+    DgnLockSet locks;
+    if (LockStatus::Success == m_server.QueryLocks(locks, GetId()))
+        Insert(locks, false);
+
     return DbState::Ready == m_dbState;
     }
 
@@ -454,30 +471,97 @@ template<typename T> static void bindEnum(Statement& stmt, int32_t index, T val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LocalLocksManager::Insert(LockableId id, LockLevel level)
+void LocalLocksManager::Insert(LockableId id, LockLevel level, bool overwrite)
     {
-    CachedStatementPtr stmt = m_db.GetCachedStatement(STMT_InsertNew);
-    bindEnum(*stmt, 0, id.GetType());
-    stmt->BindId(1, id.GetId());
-    bindEnum(*stmt, 2, level);
+    CachedStatementPtr stmt = m_db.GetCachedStatement(overwrite ? STMT_InsertOrReplace : STMT_InsertNew);
+    bindEnum(*stmt, 1, id.GetType());
+    stmt->BindId(2, id.GetId());
+    bindEnum(*stmt, 3, level);
 
     stmt->Step();
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ModelElementLocks : DbTableIterator
+{
+    BeInt64Id m_modelId;
+
+    ModelElementLocks(BeInt64Id modelId, DgnDbCR db) : DbTableIterator((DbCR)db), m_modelId(modelId) { }
+
+    struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+    {
+        Entry(StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) { }
+
+        LockableType GetType() const { return LockableType::Element; }
+        LockLevel GetLevel() const { return LockLevel::Exclusive; }
+        BeInt64Id GetId() const { return m_sql->GetValueId<BeInt64Id>(0); }
+        bool IsExclusive() const { return true; }
+
+        Entry const& operator*() const { return *this; }
+    };
+
+    typedef Entry const_iterator;
+    typedef const_iterator iterator;
+    const_iterator begin() const;
+    const_iterator end() const { return Entry(nullptr, false); }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ModelElementLocks::const_iterator ModelElementLocks::begin() const
+    {
+    if (!m_stmt.IsValid())
+        {
+        m_db->GetCachedStatement(m_stmt, STMT_SelectElementInModel);
+        m_stmt->BindId(1, m_modelId);
+        }
+    else
+        {
+        m_stmt->Reset();
+        }
+
+    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+LockLevel LocalLocksManager::QueryLevel(LockableId id)
+    {
+    CachedStatementPtr select = m_db.GetCachedStatement(STMT_SelectExisting);
+    bindEnum(*select, 1, id.GetType());
+    select->BindId(2, id.GetId());
+    return BE_SQLITE_ROW == select->Step() ? static_cast<LockLevel>(select->GetValueInt(0)) : LockLevel::None;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> void LocalLocksManager::Insert(T const& locks)
+template<typename T> void LocalLocksManager::Insert(T const& locks, bool checkExisting)
     {
-    CachedStatementPtr select = m_db.GetCachedStatement(STMT_SelectExisting),
+    CachedStatementPtr select = checkExisting ? m_db.GetCachedStatement(STMT_SelectExisting) : nullptr,
                        insert = m_db.GetCachedStatement(STMT_InsertNew),
-                       update = m_db.GetCachedStatement(STMT_UpdateLevel);
+                       update = checkExisting ? m_db.GetCachedStatement(STMT_UpdateLevel) : nullptr;
 
+    // If we obtain exclusive lock on a model, we want to record an exclusive lock on all its elements
+    // Likewise, an exclusive lock on the db should record an exclusive lock on everything in it
+    // Doing that within the loop could be problematic - so record such locks during iteration and then post-process
+    bool dbExclusivelyLocked = false;
+    bset<BeInt64Id> exclusivelyLockedModels;
     for (auto const& lock : locks)
         {
-        bindEnum(*select, 1, lock.GetType());
-        select->BindId(2, lock.GetId());
-        switch (select->Step())
+        auto step = BE_SQLITE_DONE;
+        if (checkExisting)
+            {
+            bindEnum(*select, 1, lock.GetType());
+            select->BindId(2, lock.GetId());
+            step = select->Step();
+            }
+
+        switch (step)
             {
             case BE_SQLITE_DONE:
                 {
@@ -504,9 +588,47 @@ template<typename T> void LocalLocksManager::Insert(T const& locks)
                 break;
             }
 
-        select->Reset();
+        if (select.IsValid())
+            select->Reset();
 
-        // ###TODO: If lock is exclusive model or db lock, add/update all of its components to have exclusive locks too.
+        if (lock.IsExclusive())
+            {
+            switch (lock.GetType())
+                {
+                case LockableType::Db:
+                    dbExclusivelyLocked = true;
+                    exclusivelyLockedModels.clear();
+                    for (auto const& model : GetDgnDb().Models().MakeIterator())
+                        exclusivelyLockedModels.insert(model.GetModelId());
+
+                    break;
+                case LockableType::Model:
+                    if (!dbExclusivelyLocked)
+                        exclusivelyLockedModels.insert(lock.GetId());
+
+                    break;
+                }
+            }
+        }
+
+    // Now process any exclusive locks
+    select = nullptr;
+    insert = nullptr;
+    update = nullptr;
+
+    if (dbExclusivelyLocked)
+        {
+        for (auto const& model : exclusivelyLockedModels)
+            Insert(LockableId(LockableType::Model, model), LockLevel::Exclusive, true);
+        }
+
+    if (!exclusivelyLockedModels.empty())
+        {
+        for (auto const& model : exclusivelyLockedModels)
+            {
+            ModelElementLocks elemLocks(model, GetDgnDb());
+            Insert(elemLocks, true);
+            }
         }
     }
 
@@ -581,7 +703,7 @@ LockStatus LocalLocksManager::_AcquireLocks(LockRequestR locks)
     if (LockStatus::Success != status)
         return status;
 
-    Insert(locks);
+    Insert(locks, true);
     Save();
     return LockStatus::Success;
     }
@@ -598,7 +720,7 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
     DgnElementId m_elemId;
     bool m_createStateless;
 
-    LocksManagerTest() : m_createStateless(true)
+    LocksManagerTest() : m_createStateless(false)
         {
         m_host.SetLocksAdmin(this);
         }
@@ -740,4 +862,36 @@ void MockBriefcaseLocksTest::Test_SingleBriefcase(bool useStateless)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MockBriefcaseLocksTest, SingleBriefcase_Stateless) { Test_SingleBriefcase(true); }
 TEST_F(MockBriefcaseLocksTest, SingleBriefcase_Stateful) { Test_SingleBriefcase(false); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MockBriefcaseLocksTest, ExclusiveLocks)
+    {
+    BeBriefcaseId bc = m_bcA;
+    SetupDb(L"ExclusiveLocks.dgndb", bc);
+
+    DgnDbCR db = *m_db;
+    DgnModelPtr model = db.Models().GetModel(m_modelId);
+    DgnElementCPtr el = db.Elements().GetElement(m_elemId);
+
+    auto& locks = static_cast<LocalLocksManager&>(db.Locks());
+
+    // An exclusive model lock results in exclusive locks on all of its elements
+    ExpectAcquire(*model, bc, LockLevel::Exclusive);
+    EXPECT_EQ(locks.QueryLevel(*model), LockLevel::Exclusive);
+    EXPECT_EQ(locks.QueryLevel(*el), LockLevel::Exclusive);
+    EXPECT_EQ(locks.QueryLevel(db), LockLevel::Shared);
+
+    EXPECT_EQ(LockStatus::Success, db.Locks().RelinquishLocks());
+    EXPECT_EQ(locks.QueryLevel(*model), LockLevel::None);
+    EXPECT_EQ(locks.QueryLevel(*el), LockLevel::None);
+    EXPECT_EQ(locks.QueryLevel(db), LockLevel::None);
+
+    // An exclusive db lock results in exclusive locks on all models and elements
+    ExpectAcquire(db, bc, LockLevel::Exclusive);
+    EXPECT_EQ(locks.QueryLevel(*model), LockLevel::Exclusive);
+    EXPECT_EQ(locks.QueryLevel(*el), LockLevel::Exclusive);
+    EXPECT_EQ(locks.QueryLevel(db), LockLevel::Exclusive);
+    }
 
