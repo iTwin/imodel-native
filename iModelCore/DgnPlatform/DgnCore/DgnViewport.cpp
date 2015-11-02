@@ -37,13 +37,13 @@ static DPoint3d const s_NpcCorners[NPC_CORNER_COUNT] =
 DgnViewport::DgnViewport()
     {
     m_minLOD            = DEFAULT_MINUMUM_LOD;
+    m_deviceAssigned    = false;
+    m_targetParamsSet   = false;
     m_isCameraOn        = false;
     m_needsRefresh      = false;
     m_zClipAdjusted     = false;
     m_is3dView          = false;
     m_isSheetView       = false;
-    m_qvDCAssigned      = false;
-    m_qvParamsSet       = false;
     m_invertY           = true;
     m_frustumValid      = false;
     m_toolGraphicsHandler = nullptr;
@@ -57,8 +57,8 @@ void DgnViewport::DestroyViewport()
     {
     m_progressiveDisplay.clear();
     m_viewController = nullptr;
-    m_qvDCAssigned = false;
-    m_qvParamsSet  = false;
+    m_deviceAssigned = false;
+    m_targetParamsSet = false;
     m_frustumValid = false;
     }
 
@@ -70,7 +70,7 @@ void DgnViewport::InitViewSettings(bool useBgTexture)
     BeAssert(m_renderTarget.IsValid());
 
     m_renderTarget->SetViewAttributes(GetViewFlags(), m_backgroundColor, useBgTexture, _WantAntiAliasLines(), _WantAntiAliasText());
-    m_qvParamsSet = true;
+    m_targetParamsSet = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -308,7 +308,7 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressi
         double zDelta = (delta.z > zDeltaLimit) ? zDeltaLimit : delta.z;                 // Limited zDelta.
         double zBack  = eyeToOrigin.z;                                                   // Distance from eye to back clip plane.
         double zFront = zBack + zDelta;                                                  // Distance from eye to front clip plane.
-        double minimumFrontToBackClipRatio = GetRenderer()._GetCameraFrustumNearScaleLimit();
+        double minimumFrontToBackClipRatio = GetRenderTarget()->_GetCameraFrustumNearScaleLimit();
 
         if (zFront / zBack < minimumFrontToBackClipRatio)
             {
@@ -381,19 +381,17 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressi
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt DgnViewport::_ConnectRenderTarget()
     {
-    if (m_qvDCAssigned)
+    if (m_deviceAssigned)
         return SUCCESS;
 
     if (!m_renderTarget.IsValid())
         return ERROR;
 
     StatusInt status = m_renderTarget->AssignRenderDevice(_GetRenderDevice());
-
     if (SUCCESS == status)
-        m_qvDCAssigned = true;
+        m_deviceAssigned = true;
 
     m_backgroundColor = _GetWindowBgColor();
-
     return status;
     }
 
@@ -641,7 +639,7 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
     if (nullptr == viewController)
         return  ViewportStatus::InvalidViewport;
 
-    if (!m_qvDCAssigned)
+    if (!m_deviceAssigned)
         _SetupFromViewController();
 
     DPoint3d worldPts[3] = {pts[0], pts[1], viewController->GetOrigin()};
@@ -926,7 +924,7 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewportStatus DgnViewport::_Activate(PaintOptions const& opts)
     {
-    if (!m_renderTarget.IsValid() || !m_qvParamsSet)
+    if (!m_renderTarget.IsValid() || !m_targetParamsSet)
         return  ViewportStatus::ViewNotInitialized;
 
     m_renderTarget->AccumulateDirtyRegion(opts.WantAccumulateDirty());
@@ -1351,7 +1349,7 @@ ColorDef DgnViewport::_GetWindowBgColor() const
     ColorDef bgColor = m_viewController->GetBackgroundColor();
 
     // If background color resolved to be black, and user wants inverted, we set background color to white
-    if (ColorDef::Black() == bgColor && GetRenderer()._WantInvertBlackBackground())
+    if (ColorDef::Black() == bgColor && GetRenderTarget()->_WantInvertBlackBackground())
         bgColor = ColorDef::White();
 
     return bgColor;
@@ -1376,6 +1374,7 @@ void DgnViewport::ScheduleProgressiveDisplay(IProgressiveDisplay& pd)
     // *** TBD: Sort in priority order
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1384,6 +1383,7 @@ Renderer& DgnViewport::_GetRenderer() const
     static Renderer s_defaultRender;
     return s_defaultRender;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/15

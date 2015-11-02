@@ -414,8 +414,8 @@ protected:
     bool            m_is3dView;               // view is of a 3d model
     bool            m_isSheetView;            // view is sheet
     bool            m_isCameraOn;             // view is 3d and the camera is turned on.
-    bool            m_qvDCAssigned;           // whether the DC was assigned for QV
-    bool            m_qvParamsSet;            // whether view frustum and display mode have been set
+    bool            m_deviceAssigned;         // whether the RenderDevice was assigned for RenderTarget
+    bool            m_targetParamsSet;
     bool            m_invertY;
     bool            m_frustumValid;
     DPoint3d        m_viewOrg;                  // view origin, potentially expanded if f/b clipping are off
@@ -442,14 +442,9 @@ protected:
     virtual bool _IsGridOn() const {return m_rootViewFlags.grid;}
     virtual DPoint3dCP _GetViewDelta() const {return &m_viewDelta;}
     virtual DPoint3dCP _GetViewOrigin() const {return &m_viewOrg;}
-    virtual void _AllocateRenderTarget() = 0;
     virtual void _CallDecorators(bool& stopFlag) {}
     virtual void _SetNeedsHeal() {m_needsRefresh = true;}
     virtual void _SetNeedsRefresh() {m_needsRefresh = true;}
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    virtual Render::ViewDrawP _GetIViewDraw() {return m_output.get();}
-    virtual Render::OutputP _GetIViewOutput() {return m_output.get();}
-#endif
     virtual Render::AntiAliasPref _WantAntiAliasLines() const {return Render::AntiAliasPref::Detect;}
     virtual Render::AntiAliasPref _WantAntiAliasText() const {return Render::AntiAliasPref::Detect;}
     virtual void _AdjustFencePts(RotMatrixCR viewRot, DPoint3dCR oldOrg, DPoint3dCR newOrg) const {}
@@ -474,7 +469,6 @@ protected:
     DGNPLATFORM_EXPORT virtual ColorDef _GetWindowBgColor() const;
     virtual BentleyStatus _RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) = 0;
     virtual double _GetMinimumLOD() const {return m_minLOD;}
-    DGNPLATFORM_EXPORT virtual Render::Renderer& _GetRenderer() const;
 
 public:
     DGNPLATFORM_EXPORT DgnViewport();
@@ -496,9 +490,6 @@ public:
     DGNPLATFORM_EXPORT Point2d GetScreenOrigin() const;
     DGNPLATFORM_EXPORT void CalcNpcToView(DMap4dR npcToView);
     void ClearNeedsRefresh() {m_needsRefresh = false;}
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    void SetIViewOutput(Render::OutputP output) {m_output = output;}
-#endif
     void SetBackgroundColor(ColorDef color) {m_backgroundColor = color; m_backgroundColor.SetAlpha(0);}
     void AlignWithRootZ();
     DGNPLATFORM_EXPORT ColorDef GetWindowBgColor() const;
@@ -533,8 +524,6 @@ public:
     bool Allow3dManipulations() const {return m_viewController->Allow3dManipulations();}
     DGNVIEW_EXPORT BentleyStatus PixelsFromInches(double& pixels, double inches) const;
     void DrawToolGraphics(ViewContextR context, bool isPreUpdate);
-
-    Render::Renderer& GetRenderer() const {return _GetRenderer();}
 
     //! @return the current Camera for this DgnViewport. Note that the DgnViewport's camera may not match its ViewController's camera
     //! due to adjustments made for front/back clipping being turned off.
@@ -888,7 +877,6 @@ struct NonVisibleViewport : DgnViewport
 {
 protected:
     virtual Render::RenderDevice* _GetRenderDevice() const override {return nullptr;}
-    virtual void _AllocateRenderTarget() override {}
     virtual ColorDef _GetWindowBgColor() const override {return ColorDef::Black();}
     virtual StatusInt _ConnectRenderTarget() override { return SUCCESS; }
     virtual void _AdjustZPlanesToModel(DPoint3dR, DVec3dR, ViewControllerCR) const override {}

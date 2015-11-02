@@ -156,6 +156,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewContext : NonCopyableClass, ICheckStop, IRang
     friend struct SimplifyViewDrawGeom;
 
 public:
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     enum RasterPlane
     {
         RasterPlane_Background = (1<<0),
@@ -218,6 +220,7 @@ public:
             DGNPLATFORM_EXPORT void SetForegroundColor(ColorDef value);
             DGNPLATFORM_EXPORT void SetQualityFactor(double factor);
         };
+#endif
 
     //=======================================================================================
     // @bsiclass                                                     KeithBentley    04/01
@@ -274,13 +277,16 @@ protected:
     TransformClipStack      m_transformClipStack;
     DgnViewportP            m_viewport;
     Render::GraphicPtr      m_currGraphic;
+    Render::TargetPtr       m_renderTarget;
     Render::ElemDisplayParams m_currDisplayParams;
     Render::ElemMatSymb     m_elemMatSymb;
     Render::OvrMatSymb      m_ovrMatSymb;
     DPoint3dCP              m_startTangent;       // linestyle start tangent.
     DPoint3dCP              m_endTangent;         // linestyle end tangent.
     DgnElement::Hilited     m_hiliteState;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     RasterDisplayParams     m_rasterDisplayParams;
+#endif
     IElemTopologyPtr        m_currElemTopo;
     GeomStreamEntryId       m_currGeomStreamEntryId;
     double                  m_levelOfDetail;
@@ -313,7 +319,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _PushViewIndependentOrigin(DPoint3dCP origin);
     DGNPLATFORM_EXPORT virtual void _PopTransformClip();
     DGNPLATFORM_EXPORT virtual bool _FilterRangeIntersection(GeometricElementCR);
-    DGNPLATFORM_EXPORT virtual DgnModelP _GetViewTarget();
     virtual IPickGeomP _GetIPickGeom() {return nullptr;}
     virtual void _OnPreDrawTransient() {}
     virtual Render::GraphicPtr _BeginGraphic() = 0;
@@ -378,7 +383,9 @@ public:
     void AllocateScanCriteria(){_AllocateScanCriteria();}
     void VisitDgnModel(DgnModelP model){_VisitDgnModel(model);}
     void SetScanReturn() {_SetScanReturn();}
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DGNPLATFORM_EXPORT RasterDisplayParams const& GetRasterDisplayParams() const {return m_rasterDisplayParams;}
+#endif
 
 public:
     StatusInt VisitElement(GeometricElementCR elem) {return _VisitElement(elem);}

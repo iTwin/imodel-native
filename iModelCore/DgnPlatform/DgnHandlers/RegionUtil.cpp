@@ -1503,7 +1503,7 @@ BentleyStatus   RegionGraphicsContext::GetRegion(DgnElementPtr& element)
     if (SUCCESS != m_output.GetActiveRegions(region))
         return ERROR;
 
-    return CreateRegionElement(element, *region, NULL, _GetViewTarget()->Is3d());
+    return CreateRegionElement(element, *region, NULL, GetViewTarget()->Is3d());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1516,7 +1516,7 @@ BentleyStatus   RegionGraphicsContext::GetRegions(DgnElementPtrVec& out)
     if (SUCCESS != m_output.GetActiveRegions(region))
         return ERROR;
 
-    return CreateRegionElements(out, *region, NULL, _GetViewTarget()->Is3d());
+    return CreateRegionElements(out, *region, NULL, GetViewTarget()->Is3d());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1538,7 +1538,7 @@ BentleyStatus   RegionGraphicsContext::GetAssociativeRegion(DgnElementPtr& eleme
     DgnElementPtrVec        out;
     bvector<DgnElementId>   regionRoots;
 
-    if (SUCCESS != CreateRegionElements(out, *region, &regionRoots, _GetViewTarget()->Is3d()))
+    if (SUCCESS != CreateRegionElements(out, *region, &regionRoots, GetViewTarget()->Is3d()))
         return ERROR;
 
 #if defined (NEEDS_WORK_DGNITEM)

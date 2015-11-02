@@ -19,23 +19,21 @@ static DRange3d const s_fullNpcRange =
 ViewContext::ViewContext()
     {
     m_dgnDb = nullptr;
-    m_viewport    = nullptr;
-    m_scanCriteria  = nullptr;
-    m_purpose       = DrawPurpose::NotSpecified;
-    m_arcTolerance  = .01;
-    m_minLOD        = DEFAULT_MINUMUM_LOD;
-    m_isAttached                = false;
-    m_is3dView                  = true; // Changed default to 3d...
-    m_useNpcSubRange            = false;
-    m_filterLOD                 = FILTER_LOD_ShowRange;
-    m_wantMaterials             = false;
+    m_viewport = nullptr;
+    m_scanCriteria = nullptr;
+    m_purpose = DrawPurpose::NotSpecified;
+    m_arcTolerance = .01;
+    m_minLOD = DEFAULT_MINUMUM_LOD;
+    m_isAttached = false;
+    m_is3dView = true;
+    m_useNpcSubRange = false;
+    m_filterLOD = FILTER_LOD_ShowRange;
+    m_wantMaterials = false;
     m_startTangent = m_endTangent = nullptr;
     m_ignoreViewRange = false;
     m_hiliteState = DgnElement::Hilited::None;
-    m_rasterDisplayParams.SetFlags(0);
     m_scanRangeValid = false;
     m_levelOfDetail = 1.0;
-
     m_worldToNpc.InitIdentity();
     m_worldToView.InitIdentity();
     }
@@ -47,14 +45,6 @@ ViewContext::~ViewContext()
     {
     BeAssert(!m_isAttached);
     DELETE_AND_CLEAR(m_scanCriteria);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP ViewContext::_GetViewTarget()
-    {
-    return nullptr == m_viewport ? nullptr : m_viewport->GetViewController().GetTargetModel();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -101,7 +91,9 @@ StatusInt ViewContext::_InitContextForView()
 
     m_elemMatSymb.Init();
     m_ovrMatSymb.Clear();
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_rasterDisplayParams.SetFlags(0);
+#endif
 
     m_worldToNpc  = *m_viewport->GetWorldToNpcMap();
     m_worldToView = *m_viewport->GetWorldToViewMap();
@@ -563,13 +555,13 @@ void ViewContext::_OutputElement(GeometricElementCR element)
 void ViewContext::_AddViewOverrides(OvrMatSymbR ovrMatSymb)
     {
     // NOTE: ElemDisplayParams/ElemMatSymb ARE NOT setup at this point!
-    if (!m_viewFlags.weights)
+    if (!m_viewflags.weights)
         ovrMatSymb.SetWidth(1);
 
-    if (!m_viewFlags.styles)
+    if (!m_viewflags.styles)
         ovrMatSymb.SetRasterPattern(DgnViewport::GetDefaultIndexedLinePattern(0));
 
-    if (!m_viewFlags.transparency)
+    if (!m_viewflags.transparency)
         {
         ovrMatSymb.SetLineTransparency(0);
         ovrMatSymb.SetFillTransparency(0);
@@ -631,7 +623,9 @@ void ViewContext::CookDisplayParams()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::ResetContextOverrides()
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_rasterDisplayParams.SetFlags(ViewContext::RasterDisplayParams::RASTER_PARAM_None); // NEEDSWORK_RASTER_DISPLAY - Not sure how this fits into new continuous update approach?!?
+#endif
 
     // NOTE: Context overrides CAN NOT look at m_currDisplayParams or m_elemMatSymb as they are not valid.
     m_ovrMatSymb.Clear();
@@ -715,7 +709,7 @@ StatusInt ViewContext::_VisitElement(GeometricElementCR element)
         default:
             {
             static int s_drawRange; // 0 - Host Setting (Bounding Box Debug), 1 - Bounding Box, 2 - Element Range
-            if (nullptr == m_viewport || (!s_drawRange && !GetViewport()->GetRenderer()._WantDebugElementRangeDisplay()))
+            if (nullptr == m_viewport || (!s_drawRange && !m_renderTarget->_WantDebugElementRangeDisplay()))
                 break;
 
             DPoint3d  p[8];
@@ -981,76 +975,6 @@ StatusInt ViewContext::VisitHit(HitDetailCR hit)
     return m_viewport->GetViewController().VisitHit(hit, *this);
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* create a QvElem using an GraphicStroker stroker.
-* @bsimethod                                                    Keith.Bentley   06/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-GraphicPtr ViewContext::CreateGraphic(GraphicStroker& stroker, ViewDrawP cachedDraw)
-    {
-    BeAssert(!m_creatingCacheElem || nullptr != cachedDraw);
-
-    if (nullptr == cachedDraw)
-        cachedDraw = m_IViewDraw;
-
-    if (nullptr == cachedDraw)
-        return nullptr;
-
-    cachedDraw->BeginGraphic();
-
-    AutoRestore<GeomDrawP> saveDrawGeom(&m_IDrawGeom, cachedDraw);
-    AutoRestore<Byte> savefilter(&m_filterLOD, FILTER_LOD_Off);
-    AutoRestore<bool> saveCreatingCache(&m_creatingCacheElem, true);
-
-    stroker._Stroke(*this);
-    GraphicPtr result = cachedDraw->EndGraphic();
-
-    if (!WasAborted() ||  !result.IsValid())
-        return result;
-
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-GraphicPtr ViewContext::GetGraphic(GraphicStroker& stroker)
-    {
-    if (m_creatingCacheElem)
-        {
-        stroker._Stroke(*this);
-        return nullptr;
-        }
-
-    bool useCachedDisplay = _UseCachedDisplay();
-
-    GraphicPtr  graphic;
-    if (useCachedDisplay)
-        graphic = stroker._FindGraphic(*GetViewport());
-
-    if (!graphic.IsValid())
-        {
-        graphic = CreateGraphic(stroker);
-        if (!graphic.IsValid())
-            return nullptr;
-
-        stroker._SaveGraphic(*GetViewport(), *graphic.get());
-        }
-
-    return graphic;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    07/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DrawCached(GraphicStroker& stroker)
-    {
-    GraphicPtr qvElem = GetGraphic(stroker);
-    if (qvElem.IsValid())
-        m_IViewDraw->DrawGraphic(qvElem.get());
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1253,6 +1177,7 @@ double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
     return vec[0].Distance(vec[1]);
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stephane.Poulin                 12/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1352,6 +1277,7 @@ void ViewContext::RasterDisplayParams::SetQualityFactor(double factor)
     m_quality = factor;
     m_flags |= ViewContext::RasterDisplayParams::RASTER_PARAM_Quality;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
@@ -1700,7 +1626,6 @@ ElemDisplayParams::ElemDisplayParams(ElemDisplayParamsCR rhs)
     m_styleInfo             = rhs.m_styleInfo;
     m_gradient              = rhs.m_gradient;
     m_pattern               = rhs.m_pattern;
-    m_plotInfo              = rhs.m_plotInfo;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1726,7 +1651,6 @@ ElemDisplayParamsR ElemDisplayParams::operator=(ElemDisplayParamsCR rhs)
     m_styleInfo             = rhs.m_styleInfo;
     m_gradient              = rhs.m_gradient;
     m_pattern               = rhs.m_pattern;
-    m_plotInfo              = rhs.m_plotInfo;
 
     return *this;
     }
@@ -1799,9 +1723,6 @@ bool ElemDisplayParams::operator==(ElemDisplayParamsCR rhs) const
         return false;
 
     if (!(m_styleInfo == rhs.m_styleInfo))
-        return false;
-
-    if (!(m_plotInfo == rhs.m_plotInfo))
         return false;
 
     return true;

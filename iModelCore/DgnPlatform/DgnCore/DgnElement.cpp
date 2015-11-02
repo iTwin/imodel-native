@@ -950,37 +950,39 @@ DgnDbStatus DgnElement2d::_LoadFromDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::Graphic* GraphicSet::Find(DgnViewportCR vp) const
+Render::Graphic* GraphicSet::FindFor(DgnViewportCR vp, double* metersPerPixel) const
     {
-    auto graphic = m_graphics.find(&vp);
-    return graphic == m_graphics.end() ? nullptr : graphic->second.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GraphicSet::Save(DgnViewportCR vp, Render::Graphic& graphic) 
-    {
-    auto it = m_graphics.find(&vp);
-    if (it != m_graphics.end())
+    for (auto graphic : m_graphics)
         {
-        it->second = &graphic; // save new value
-        return;
+        if (graphic->IsValidFor(vp, metersPerPixel))
+            return graphic.get();
         }
 
-    m_graphics.Insert(&vp, &graphic);
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GraphicSet::Drop(DgnViewportCR vp)
+void GraphicSet::Save(Render::Graphic& graphic) 
     {
-    auto graphic = m_graphics.find(&vp);
-    if (graphic == m_graphics.end())
-        return;
+    m_graphics.push_back(&graphic);
+    }
 
-    m_graphics.erase(graphic);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void GraphicSet::Drop(Render::Graphic& graphic)
+    {
+    for (auto it=m_graphics.begin(); it!=m_graphics.end(); ++it)
+        {
+        if (it->get() == &graphic)
+            {
+            m_graphics.erase(it);
+            return;
+            }
+        }
+    BeAssert(false);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -38,11 +38,11 @@ struct Stroker
 //=======================================================================================
 struct GraphicSet
 {
-    mutable bmap<DgnViewportCP, Render::GraphicPtr, std::less<DgnViewportCP>, 8> m_graphics;
+    mutable bvector<Render::GraphicPtr> m_graphics;
 
-    DGNPLATFORM_EXPORT Render::Graphic* Find(DgnViewportCR) const;
-    DGNPLATFORM_EXPORT void Save(DgnViewportCR, Render::Graphic&);
-    DGNPLATFORM_EXPORT void Drop(DgnViewportCR);
+    DGNPLATFORM_EXPORT Render::Graphic* FindFor(DgnViewportCR, double* metersPerPixel) const;
+    DGNPLATFORM_EXPORT void Save(Render::Graphic&);
+    DGNPLATFORM_EXPORT void Drop(Render::Graphic&);
     DGNPLATFORM_EXPORT void Clear();
 };
 

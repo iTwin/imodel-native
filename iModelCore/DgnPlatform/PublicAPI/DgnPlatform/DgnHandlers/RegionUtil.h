@@ -218,7 +218,7 @@ DgnModelP               m_targetModel;
 bvector<FloodSeed>      m_floodSeeds;
 FloodSeed               m_dynamicFaceSeed;
 
-virtual DgnModelP       _GetViewTarget () override {return (GetViewport () ? T_Super::_GetViewTarget () : m_targetModel);}
+DgnModelP GetViewTarget () {return m_targetModel;}
 
 virtual void            _DrawAreaPattern (ClipStencil& boundary) override {}
 virtual void            _DrawTextString (TextStringCR text) override;
@@ -236,7 +236,7 @@ public:
 
 DGNPLATFORM_EXPORT               RegionGraphicsContext ();
 
-                   bool          IsGraphInitialized () {return NULL != _GetViewTarget ();}
+                   bool          IsGraphInitialized () {return NULL != GetViewTarget();}
                    RegionErrors  GetRegionError () {return m_output.GetRegionError ();}
 DGNPLATFORM_EXPORT void          SetAbortFunction (RGC_AbortFunction abort);
                    void          SetAssociativeRegionUpdate () {m_updateAssocRegion = true;}

@@ -29,7 +29,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleSymb)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Material)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MultiResImage)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(OvrMatSymb)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(PlotInfo)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Renderer)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Scene)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
@@ -41,7 +40,6 @@ DEFINE_REF_COUNTED_PTR(Graphic)
 DEFINE_REF_COUNTED_PTR(LineStyleInfo)
 DEFINE_REF_COUNTED_PTR(Material)
 DEFINE_REF_COUNTED_PTR(MultiResImage)
-DEFINE_REF_COUNTED_PTR(PlotInfo)
 DEFINE_REF_COUNTED_PTR(Renderer)
 DEFINE_REF_COUNTED_PTR(Scene)
 DEFINE_REF_COUNTED_PTR(Target)
@@ -57,71 +55,6 @@ struct RenderManager
     std::deque<TaskPtr> m_tasks;
 
     DGNPLATFORM_EXPORT void AddTask(Task&);
-};
-
-//=======================================================================================
-//! Supplies implementation of rendering operations for a type of a DgnViewport.
-// @bsiclass                                                    Keith.Bentley   09/15
-//=======================================================================================
-struct Renderer : NonCopyableClass
-{
-    //! Save cache entry for symbol (if host has chosen to have a symbol cache).
-    virtual void _SaveGraphicForSymbol(IDisplaySymbol* symbol, Graphic* graphic) {}
-
-    //! Return cache entry for symbol (if host has chosen to have a symbol cache).
-    virtual Graphic* _LookupGraphicForSymbol(IDisplaySymbol* symbol) {return nullptr;}
-
-    //! Delete a specific entry from the symbol cache.
-    virtual void _DeleteSymbol(IDisplaySymbol* symbol) {}
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    //! Define a tile texture
-    virtual void _DefineTile(uintptr_t textureId, char const* tileName, Point2dCR imageSize, bool enableAlpha, uint32_t imageFormat, uint32_t pitch, Byte const* imageData) {}
-
-    //! Draw a tile texture
-    virtual void _DrawTile(ViewDrawR, uintptr_t textureId, DPoint3d const* verts) {}
-
-    //! Create a 3D multi-resolution image.
-    virtual MultiResImagePtr _CreateMRImage(DPoint3dCP fourCorners, Point2dCR imageSize, Point2dCR tileSize, bool enableAlpha, int format, int tileFlags, int numLayers) {return nullptr;}
-
-    //! Add an image tile to a qvMRImage.
-    virtual Graphic* _CreateTile(bool is3d, GraphicCacheP hCache, MultiResImage* mri, uintptr_t textureId, int layer, int row, int column, int numLines, int bytesPerLine, Point2dCR bufferSize, Byte const* pBuffer) {return nullptr;}
-
-    //! Define a custom raster format(QV_*_FORMAT) for color index data. Return 0 if error.
-    virtual int _DefineCIFormat(int dataType, int numColors, QvUInt32 const* pTBGRColors){return 0;}
-
-    virtual void _CacheGeometryMap(ViewContextR viewContext, uintptr_t rendMatID) {}
-#endif
-
-    //! An InteractiveHost may choose to allow applications to display non-persistent geometry during an update.
-    virtual void _CallViewTransients(ViewContextR, bool isPreupdate) {}
-
-    virtual bool _WantInvertBlackBackground() {return false;}
-
-    virtual bool _GetModelBackgroundOverride(ColorDef& rgbColor) {return false;}
-
-    //! If true, the UI icons that this library loads will be processed to darken their edges to attempt to increase visibility.
-    virtual bool _ShouldEnhanceIconEdges() {return false;}
-
-    virtual bool _WantDebugElementRangeDisplay() {return false;}
-
-    //! Supported color depths for this library's UI icons.
-    enum class IconColorDepth
-        {
-        Bpp32,    //!< 32 BPP icons will be used (transparency)
-        Bpp24     //!< 24 BPP icons will be used (no transparency)
-        };
-
-    //! Gets the desired color depth of the UI icons that this library loads. At this time, 32 is preferred, but 24 can be used if required.
-    virtual IconColorDepth _GetIconColorDepth() {return IconColorDepth::Bpp32;}
-
-    //! Return minimum ratio between near and far clip planes for cameras - for z-Buffered output this is dictated by the depth of the z-Buffer
-    //! for pre DX11 this was .0003 - For DX11 it is approximately 1.0E-6.
-    virtual double _GetCameraFrustumNearScaleLimit() {return 1.0E-6;}
-
-    //! Return false to inhibit creating rule lines for surface/solid geometry for wireframe display.
-    //! Can be used to improve display performance in applications that only work in shaded views (or those that will clear all Graphicss before switching to wireframe)
-    virtual bool _WantWireframeRuleDisplay() {return true;}
 };
 
 //=======================================================================================
@@ -391,74 +324,6 @@ public:
 };
 
 //=======================================================================================
-//! Plot specific resymbolization
-//=======================================================================================
-struct PlotInfo : RefCountedBase
-{
-protected:
-
-    bool                m_hasLineCap:1;                 //!< if true, use #m_lineCap to determine line cap type.
-    bool                m_hasLineJoin:1;                //!< if true, use #m_lineJoin to determine line join type.
-    bool                m_hasScreening:1;               //!< if true, output should be screened by value in #m_screening
-    bool                m_hasLineWeightMM:1;            //!< if true, line weight is specified in millimeters by #m_widthMM
-
-    LineCap             m_lineCap;                      //!< line cap type when m_hasLineCap is set.
-    LineJoin            m_lineJoin;                     //!< line join type when m_hasLineJoin is set.
-    double              m_screening;                    //!< screening value when m_hasScreening is set.
-    double              m_widthMM;                      //!< line width in mm when m_hasLineWeightMM is set.
-
-    PlotInfo() {m_hasLineCap = m_hasLineJoin = m_hasScreening = m_hasLineWeightMM = false; m_lineCap = LineCap::None; m_lineJoin = LineJoin::None; m_screening = 0.0; m_widthMM = 0.0;}
-public:
-    static PlotInfoPtr Create() {return new PlotInfo();}
-
-    void CopyFrom(PlotInfoCR other)
-        {
-        m_hasLineCap        = other.m_hasLineCap;
-        m_hasLineJoin       = other.m_hasLineJoin;
-        m_hasScreening      = other.m_hasScreening;
-        m_hasLineWeightMM   = other.m_hasLineWeightMM;
-
-        m_lineCap           = other.m_lineCap;
-        m_lineJoin          = other.m_lineJoin;
-        m_screening         = other.m_screening;
-        m_widthMM           = other.m_widthMM;
-        }
-
-    bool operator==(PlotInfoCR rhs) const
-        {
-        if (this == &rhs)
-            return true;
-
-        if (rhs.m_hasLineCap      != m_hasLineCap   ||
-            rhs.m_hasLineJoin     != m_hasLineJoin  ||
-            rhs.m_hasScreening    != m_hasScreening ||
-            rhs.m_hasLineWeightMM != m_hasLineWeightMM)
-            return false;
-
-        if (rhs.m_lineCap   != m_lineCap   ||
-            rhs.m_lineJoin  != m_lineJoin  ||
-            rhs.m_screening != m_screening ||
-            rhs.m_widthMM   != m_widthMM )
-            return false;
-
-        return true;
-        }
-
-    DGNPLATFORM_EXPORT bool     IsScreeningSet() const;
-    DGNPLATFORM_EXPORT double   GetScreening() const;
-    DGNPLATFORM_EXPORT void     SetScreening(double screening, bool set = true);
-    DGNPLATFORM_EXPORT bool     IsLineJoinSet() const;
-    DGNPLATFORM_EXPORT LineJoin GetLineJoin() const;
-    DGNPLATFORM_EXPORT void     SetLineJoin(LineJoin join, bool set = true);
-    DGNPLATFORM_EXPORT bool     IsLineCapSet() const;
-    DGNPLATFORM_EXPORT LineCap  GetLineCap() const;
-    DGNPLATFORM_EXPORT void     SetLineCap(LineCap cap, bool set = true);
-    DGNPLATFORM_EXPORT bool     IsLineWeightMMSet() const;
-    DGNPLATFORM_EXPORT double   GetLineWeightMM () const;
-    DGNPLATFORM_EXPORT void     SetLineWeightMM (double weight, bool set = true);
-};
-
-//=======================================================================================
 //! This structure holds all of the information about an element specifying the "displayable parameters" of the element.
 //! It is typically extracted from the "dhdr" section of the element header and from user data.
 // @bsiclass
@@ -497,7 +362,6 @@ private:
     LineStyleInfoPtr    m_styleInfo;                    //!< line style id plus modifiers.
     GradientSymbPtr     m_gradient;                     //!< gradient fill settings.
     PatternParamsPtr    m_pattern;                      //!< area pattern settings.
-    PlotInfoPtr         m_plotInfo;
 
 public:
     DGNPLATFORM_EXPORT ElemDisplayParams();
@@ -965,9 +829,14 @@ protected:
     virtual void _DrawTextString(TextStringCR text, double* zDepth = nullptr) = 0;
     virtual void _DrawMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) = 0;
     virtual bool _IsQuickVision() const {return false;}
+    virtual bool _IsValidFor(DgnViewportCR vp, double* metersPerPixel) const {return true;}
+    virtual void _SetPixelSize(double size) {}
     virtual ~Graphic() {}
 
 public:
+    void SetPixelSize(double size) {_SetPixelSize(size);}
+    bool IsValidFor(DgnViewportCR vp, double* metersPerPixel) const {return _IsValidFor(vp, metersPerPixel);}
+
     //! Set an ElemMatSymb to be the "active" ElemMatSymb for this IDrawGeom.
     //! @param[in]          matSymb     The new active ElemMatSymb. All geometry drawn via calls to this IDrawGeom will
     //!                                     be displayed using the values in this ElemMatSymb.
@@ -1119,14 +988,11 @@ protected:
     virtual void _DrawPointCloud(IPointCloudDrawParams* drawParams) = 0;
     virtual void _DrawGraphic(Graphic* graphic) = 0;
     virtual void _ClearZ () = 0;
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    virtual void _DefineQVGeometryMap(uintptr_t textureId, GraphicStroker&, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern) {}
-#endif
-
     virtual bool _ApplyMonochromeOverrides(ViewFlagsCR) const = 0;
     virtual void _PushClipStencil(Graphic* graphic) = 0;
     virtual void _PopClipStencil() = 0;
+    virtual void _AddGraphic(Graphic&) = 0;
+    virtual Target& _GetRenderTarget() = 0;
     virtual ~Scene() {}
 
 public:
@@ -1187,6 +1053,9 @@ public:
     void PopClipStencil() {_PopClipStencil();}
 
     void ClearZ() {_ClearZ();}
+    void AddGraphic(Graphic& graphic) {_AddGraphic(graphic);}
+    Target& GetRenderTarget() {return _GetRenderTarget();}
+
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     void DefineQVGeometryMap(uintptr_t textureId, GraphicStroker& stroker, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern = false){_DefineQVGeometryMap(textureId, stroker, spacing, useCellColors, seedContext, forAreaPattern);}
 #endif
@@ -1312,7 +1181,6 @@ protected:
     virtual StatusInt _AssignRenderDevice(RenderDevice*) = 0;
     virtual void _AddLights(bool threeDview, RotMatrixCP rotMatrixP, DgnModelP model) = 0;
     virtual void _AdjustBrightness(bool useFixedAdaptation, double brightness) = 0;
-    virtual uint64_t _GetLightStamp() = 0;
     virtual void _DefineFrustum(DPoint3dCR frustPts, double fraction, bool is2d) = 0;
     virtual void _SetDrawBuffer(DgnDrawBuffer drawBuffer, BSIRectCP subRect) = 0;
     virtual DgnDrawBuffer _GetDrawBuffer() const = 0;
@@ -1336,21 +1204,20 @@ protected:
     virtual bool _CheckNeedsHeal(BSIRect* rect) = 0;
     virtual void _BeginDecorating(BSIRect const* rect) = 0;
     virtual void _BeginOverlayMode() = 0;
-    virtual Scene* _GetScene() = 0; // May return nullptr
     virtual BentleyStatus _FillImageCaptureBuffer(bvector<unsigned char>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) = 0;
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    virtual void _SetSymbology(ColorDef lineColor, ColorDef fillColor, int lineWidth, uint32_t linePattern) = 0;
-    virtual int _GetVisibleTiles(MRImage* mri, size_t bufSize, int* lrc) = 0;
-#endif
 
 public:
+    virtual double _GetCameraFrustumNearScaleLimit() = 0;
+    virtual bool _WantDebugElementRangeDisplay() {return false;}
+    virtual bool _WantInvertBlackBackground() {return false;}
+    virtual Scene* _GetMainScene() {return nullptr;} // TEMPORARY!
+
     Render::GraphicPtr CreateGraphic() {return _CreateGraphic();}
     void SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText) {_SetViewAttributes(viewFlags, bgColor, usebgTexture, aaLines, aaText);}
     RenderDevice* GetRenderDevice() const {return _GetRenderDevice();}
     StatusInt AssignRenderDevice(RenderDevice* device) {return _AssignRenderDevice(device);}
     void AddLights(bool threeDview, RotMatrixCP rotMatrixP, DgnModelP model = nullptr) {_AddLights(threeDview, rotMatrixP, model);}
     void AdjustBrightness(bool useFixedAdaptation, double brightness){_AdjustBrightness(useFixedAdaptation, brightness);}
-    uint64_t GetLightStamp() {return _GetLightStamp();}
     void DefineFrustum(DPoint3dCR frustPts, double fraction, bool is2d) {_DefineFrustum(frustPts, fraction, is2d);}
     void SetDrawBuffer(DgnDrawBuffer drawBuffer, BSIRect const* subRect) {_SetDrawBuffer(drawBuffer, subRect);}
     DgnDrawBuffer GetDrawBuffer() const {return _GetDrawBuffer();}
@@ -1373,18 +1240,8 @@ public:
     void BeginDecorating(BSIRectCP rect) {_BeginDecorating(rect);}
     void BeginOverlayMode() {_BeginOverlayMode();}
     BentleyStatus FillImageCaptureBuffer(bvector<unsigned char>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) {return _FillImageCaptureBuffer(buffer, info, screenBufferRange, outputImageSize, topDown);}
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    int GetVisibleTiles(MRImage* mri, size_t bufSize, int* lrc) {return _GetVisibleTiles(mri, bufSize, lrc);}
-
-    //! Set the active symbology for this IViewDraw. All subsequent draw methods will use the new active symbology.
-    //! @param[in]      lineColorTBGR   TBGR line color.
-    //! @param[in]      fillColorTBGR   TBGR color for filled regions.
-    //! @param[in]      lineWidth       The line width in pixels.
-    //! @param[in]      linePattern     The 32 bit on/off pattern for lines.
-    void SetSymbology(ColorDef lineColorTBGR, ColorDef fillColorTBGR, int lineWidth, uint32_t linePattern) {_SetSymbology(lineColorTBGR, fillColorTBGR, lineWidth, linePattern);}
-#endif
-
     bool CheckNeedsHeal(BSIRectP rect){return _CheckNeedsHeal(rect);}
+
 };
 
 END_BENTLEY_RENDER_NAMESPACE
