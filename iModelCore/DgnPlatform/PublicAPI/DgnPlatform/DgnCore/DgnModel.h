@@ -1017,8 +1017,8 @@ public:
 private:
     CompProps m_compProps;
 
-    DPoint3d _GetGlobalOrigin() const override sealed {return DPoint3d::FromZero();}
-    CoordinateSpace _GetCoordinateSpace() const override sealed {return CoordinateSpace::Local;}
+    DPoint3d _GetGlobalOrigin() const override SEALED_ATTRIBUTE {return DPoint3d::FromZero();}
+    CoordinateSpace _GetCoordinateSpace() const override SEALED_ATTRIBUTE {return CoordinateSpace::Local;}
     DGNPLATFORM_EXPORT void _GetSolverOptions(Json::Value&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() override;
 
