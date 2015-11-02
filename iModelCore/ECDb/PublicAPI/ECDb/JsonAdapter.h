@@ -495,8 +495,13 @@ public:
 struct JsonUpdater : NonCopyableClass
     {
 private:
+    ECDbR m_ecdb;
     ECN::ECClassCR m_ecClass;
     ECInstanceUpdater m_ecinstanceUpdater;
+
+    ECN::IECInstancePtr CreateEmptyInstance(ECN::ECClassCR ecClass) const;
+    ECN::IECInstancePtr CreateEmptyInstance(ECInstanceKeyCR instanceKey) const;
+    ECN::IECInstancePtr CreateEmptyRelInstance(ECN::ECRelationshipClassCR ecRelClass, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const;
 
 public:
     //! Construct an updater for the specified class. 
@@ -511,11 +516,25 @@ public:
     //! @return true if the updater is valid and can be used for updating. false if it cannot be used for updating.
     ECDB_EXPORT bool IsValid () const;
 
-    //! Updates the instance identified by the $ECInstanceId field
+    //! Updates an instance from the specified jsonValue
+    //! @deprecated In favour of other overloads that take an instance id
+    ECDB_EXPORT BentleyStatus Update(JsonValueCR jsonValue) const;
+
+    //! Updates an instance from the specified jsonValue
+    //! @param[in] instanceId the ECInstanceId of the instance to update
     //! @param[in] jsonValue the instance data
     //! @return SUCCESS in case of successful update. ERROR if no ECInstance existed in 
     //! the ECDb file for the specified @p jsonValue or in case of other errors.
-    ECDB_EXPORT BentleyStatus Update (JsonValueCR jsonValue) const;
+    ECDB_EXPORT BentleyStatus Update(ECInstanceId const& instanceId, JsonValueCR jsonValue) const;
+
+    //! Update  a relationship instance from the specified jsonValue and source/target keys
+    //! @param[in] instanceId the ECInstanceId of the instance to update
+    //! @param[in] jsonValue the instance data
+    //! @param[in] sourceKey ECInstanceKey for the source of the relationship
+    //! @param[in] targetKey ECInstanceKey for the target of the relationship
+    //! @return SUCCESS in case of successful update. ERROR if no ECInstance existed in 
+    //! the ECDb file for the specified @p jsonValue or in case of other errors.
+    ECDB_EXPORT BentleyStatus Update(ECInstanceId const& instanceId, JsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const;
 
     //! Update an instance from the specified jsonValue
     //! @param[in] instanceId the ECInstanceId of the instance to update
@@ -523,6 +542,15 @@ public:
     //! @return SUCCESS in case of successful update. ERROR if no ECInstance existed in 
     //! the ECDb file for the specified @p jsonValue or in case of other errors.
     ECDB_EXPORT BentleyStatus Update (ECInstanceId const& instanceId, RapidJsonValueCR jsonValue) const;
+
+    //! Update  a relationship instance from the specified jsonValue and source/target keys
+    //! @param[in] instanceId the ECInstanceId of the instance to update
+    //! @param[in] jsonValue the instance data
+    //! @param[in] sourceKey ECInstanceKey for the source of the relationship
+    //! @param[in] targetKey ECInstanceKey for the target of the relationship
+    //! @return SUCCESS in case of successful update. ERROR if no ECInstance existed in 
+    //! the ECDb file for the specified @p jsonValue or in case of other errors.
+    ECDB_EXPORT BentleyStatus Update(ECInstanceId const& instanceId, RapidJsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const;
     };
 
 //=======================================================================================
