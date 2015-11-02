@@ -42,7 +42,7 @@ $(testIncludeCppFile) : $(baseDir)CheckIncludes.mke
 ####     -e $(publicApiDir)Bentley/BeStringUtilitiesInlines.h
 ####     $(publicApiDir)
 ####     <
-####     $(SrcBsiTools)winX86/CheckIncludes @$(o)inccheckincludes.opt
+####     $(SrcRoot)bsitools/winX86/CheckIncludes @$(o)inccheckincludes.opt
 %warn Not running CheckIncludes.exe - This program must be changed to support the conditional includes that we need to make our header files portable.
 
 # Compile the generated C file
