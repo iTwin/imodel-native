@@ -14,7 +14,7 @@
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_SQLITE
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #define DGNDBSERVER_PLUGIN_NAME "Bentley.DgnDbServerECPlugin"
@@ -89,7 +89,7 @@ AsyncTaskPtr<WSRepositoriesResult> GetRepositoriesByPlugin(Utf8StringCR pluginId
         });
     }
 
-MobileDgn::Utils::AsyncTaskPtr<DgnDbRepositoriesResult> DgnDbClient::GetRepositories(ICancellationTokenPtr cancellationToken)
+DgnClientFx::Utils::AsyncTaskPtr<DgnDbRepositoriesResult> DgnDbClient::GetRepositories(ICancellationTokenPtr cancellationToken)
     {
     std::shared_ptr<DgnDbRepositoriesResult> finalResult = std::make_shared<DgnDbRepositoriesResult>();
     return GetRepositoriesByPlugin(DGNDBSERVER_PLUGIN_NAME, m_host, m_clientInfo, cancellationToken)->Then([=] (const WSRepositoriesResult& response)

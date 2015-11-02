@@ -8,7 +8,7 @@
 #include "ClientInternal.h"
 #include <WebServices/Licensing/MobileTracking.h>
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   02/2015

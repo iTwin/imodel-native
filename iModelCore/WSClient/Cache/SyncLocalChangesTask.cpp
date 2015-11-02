@@ -11,7 +11,7 @@
 #include <Bentley/BeTimeUtilities.h>
 
 #include <WebServices/Cache/Util/FileUtil.h>
-#include <MobileDgn/Utils/Http/HttpStatusHelper.h>
+#include <DgnClientFx/Utils/Http/HttpStatusHelper.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
