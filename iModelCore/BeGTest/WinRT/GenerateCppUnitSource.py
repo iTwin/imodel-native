@@ -18,7 +18,7 @@ def processDir (dirNameIn, listfilename, templateFile):
     print testFilePath + ' : ' + unitTestsListHfileName + ' ' + templateFile
     print '     $(msg)'
     print '     !~@mkdir ' + testFileDir
-    print '     ${SrcBsiCommon}/sharedmki/Cat.py ' + templateFile + '.prepend > $@'
+    print '     ${SrcRoot}bsicommon/sharedmki/Cat.py ' + templateFile + '.prepend > $@'
     print '     ~time'
     print ''
     
@@ -43,7 +43,7 @@ def processDir (dirNameIn, listfilename, templateFile):
             print '     $(CPreprocCmd) -I ' + dirName + testClassDefine + templateFile + ' > $@'
             print '     $(baseDir)SearchAndReplace.py $@ __REPO__ ' + repoUT
             print '     $(baseDir)SearchAndReplace.py $@ __FIXTURE__ ' + utClassName
-            print '     ${SrcBsiCommon}/sharedmki/Cat.py $@ >> ' + testFilePath
+            print '     ${SrcRoot/bsicommon/sharedmki/Cat.py $@ >> ' + testFilePath
             print '     ~time'
             print ''
 
