@@ -19,12 +19,35 @@ always:
 %include  mdl.mki
 %include $(SrcRoot)TerrainModel/privmki/TerrainModelCommon.mki
 
-formatsDir  = $(_MakeFilePath)
-CompileOptionsMki=$(formatsDir)formats.mki
-%include $(CompileOptionsMki)
+formatsDir              = $(_MakeFilePath)
+terrainModelFormatsObj  = $(terrainModelBuildDir_)TerrainModelFormats/
+
+MultiCompileIntermediatePdbFile=$(terrainModelFormatsObj)$(CCompPDBName).pdb
+IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
+
+dirToSearch     = $(BuildContext)PublicAPI/
+%include cincapnd.mki
+
+dirToSearch     = $(baseDir)PublicAPI
+%include cincapnd.mki
+
+dirToSearch     = $(BuildContext)VendorAPI
+%include cincapnd.mki
+
+dirToSearch     = $(srcTerrainModel)Formats\inroadstm
+%include cincapnd.mki
+
+nameToDefine = __BENTLEYTMFORMATS_BUILD__
+%include cdefapnd.mki
+
+nameToDefine = UNICODE
+%include cdefapnd.mki
+
+appName             = TerrainModelFormats
+DLM_NAME            = $(appName)
+CCompPDBName        = $(appName)
 
 DLM_OBJECT_DEST       = $(terrainModelFormatsObj)
-DLM_NAME              = TerrainModelFormats
 ASSEMBLY_STRONGNAME   = 1
 
 DependsOnHeadersCPP = \
@@ -56,6 +79,7 @@ RIGHTSCOMPLIANT = true
     %include signrscsdefs.mki
 %endif
 %endif
+
 #----------------------------------------------------------------------
 #       Location for objects
 #----------------------------------------------------------------------

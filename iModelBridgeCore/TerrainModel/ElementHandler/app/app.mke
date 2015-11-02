@@ -5,30 +5,33 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
+%include mdl.mki
 
 baseDir         = $(_MakeFilePath)
-PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelElementPolicy.mki
-#SolutionPolicyMki=$(baseDir)TerrainModelElementHandlerApp.mki
 
-appendMacroSeparator=;
-PolicyPaths+$(BuildContext)SubParts/Assemblies/
-%undef appendMacroSeparator
+%include $(SrcRoot)TerrainModel/privmki/sourcedirs.mki
+%include $(SrcRoot)TerrainModel/privmki/outputdirs.mki
 
-%include  mdl.mki
+always:
+    ~@mkdir $(DLM_CONTEXT_LOCATION)
+    ~@mkdir $(terrainModelBuildDir_)
 
-## Could be in solution policy file..
+# This sets the path for rsign.
+mstnToolsPath = $(BuildContext)SubParts/Assemblies/
 
-terrainModelHandlerAppObj = $(terrainModelBuildDir_)TerrainModelHandlerApp/
+#----------------------------------------------------------
+#       Override location for "prg.h"
+#----------------------------------------------------------
+%if defined (BSI_PRG_H_DIR)
+    dirToSearch     = $(BSI_PRG_H_DIR)
+    %include cincapnd.mki
+%endif
 
-OPTIMIZE_FOR_SPEED=1
-
-appName             = TerrainModelHandlerApp
-sAppName            = terrainmodelhandler
+terrainModelHandlerAppObj   = $(terrainModelBuildDir_)TerrainModelHandlerApp/
+appName                     = TerrainModelHandlerApp
 
 MultiCompileIntermediatePdbFile=$(terrainModelHandlerAppObj)$(CCompPDBName).pdb
 IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
-
-#ProductIncludes + -I${publishInc}
 
 dirToSearch     = $(BuildContext)VendorAPI
 %include cincapnd.mki
@@ -44,8 +47,6 @@ always:
 
 dirToSearch     = $(terrainModelHandlerAppObj)
 %include cincapnd.mki
-
-## End of Solution Policy..
 
 o = $(terrainModelHandlerAppObj)
 
@@ -151,8 +152,8 @@ LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)$(libprefix)TerrainModelCor
                       
 ASSEMBLY_NO_AUTHENTICODE_SIGN = 1
 %include $(SharedMki)VersionedPartSignatureDefaults.mki
-ASSEMBLY_KEYFILE        =% $(ASSEMBLY_KEYFILE_DEFAULT)
-ASSEMBLY_TESTKEYFILE       =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
+ASSEMBLY_KEYFILE            =% $(ASSEMBLY_KEYFILE_DEFAULT)
+ASSEMBLY_TESTKEYFILE        =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
 
 ASSEMBLY_NAME               = $(DLM_NAME)
 ASSEMBLY_STRONGNAME         = 1

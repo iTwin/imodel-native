@@ -2,16 +2,10 @@
 #
 #     $Source: FormatsNET/FormatsNET.mki $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
-#
-
-%include $(SharedMki)CommonCompileLinkPolicy.mki
-
 BentleyFormatsNetObj       = $(terrainModelBuildDir_)Bentley.TerrainModelNET.Formats/
-
-OPTIMIZE_FOR_SPEED=1
 
 %if defined (DEBUG) && !defined (DISABLE_HANDLE_CHECKS)
     nameToDefine = DEBUG_BREAKS

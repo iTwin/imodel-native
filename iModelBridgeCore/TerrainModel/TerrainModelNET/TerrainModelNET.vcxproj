@@ -101,11 +101,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p TerrainModelNET -f TerrainModel -r TerrainModel re TerrainModelNET -x64    </NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p TerrainModelNET -f TerrainModel -r TerrainModel re TerrainModelNET -x64    </NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\TerrainModel\TerrainModelNET\Bentley.TerrainModelNET.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p TerrainModelNET -f TerrainModel -r TerrainModel re TerrainModelNET -x64 -c    </NMakeCleanCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p TerrainModelNET -f TerrainModel -r TerrainModel re TerrainModelNET -x64  -d"BMAKE_OPT=$(BMAKE_OPT) -a"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p TerrainModelNET -f TerrainModel -r TerrainModel re TerrainModelNET -x64 -c    </NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p TerrainModelNET -f TerrainModel -r TerrainModel re TerrainModelNET -x64  -d"BMAKE_OPT=$(BMAKE_OPT) -a"</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PrivateAPI;$(ProjectDir)PublicAPI;$(ProjectDir)cppwrappers;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI</NMakeIncludeSearchPath>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
@@ -116,16 +116,16 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeBuildCommandLine>
-      python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 TerrainModel:TerrainModelNET
+      python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py rebuild -x64 TerrainModel:TerrainModelNET
     </NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\TerrainModel\TerrainModelNET\Bentley.TerrainModelNET.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakeCleanCommandLine>
-      python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 -c TerrainModel:TerrainModelNET
+      python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py rebuild -x64 -c TerrainModel:TerrainModelNET
     </NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>
-      python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 -c TerrainModel:TerrainModelNET
-      python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 TerrainModel:TerrainModelNET
+      python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py rebuild -x64 -c TerrainModel:TerrainModelNET
+      python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py rebuild -x64 TerrainModel:TerrainModelNET
     </NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;NDEBUG;WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PrivateAPI;$(ProjectDir)PublicAPI;$(ProjectDir)cppwrappers;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI</NMakeIncludeSearchPath>

@@ -6,17 +6,12 @@
 #
 #----------------------------------------------------------------------
 #
-# This file is used as the SolutionPolicyMki for TerrainModelElementHandler.dll only.
+# This file is used as the CompileOptionsMki for TerrainModelElementHandler.dll only.
 #
-
 terrainModelElementHandlerObj = $(terrainModelBuildDir_)TerrainModelElementHandler/
-
-OPTIMIZE_FOR_SPEED=1
 
 MultiCompileIntermediatePdbFile=$(terrainModelElementHandlerObj)$(CCompPDBName).pdb
 IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
-
-#privateInc          = $(baseDir)
 
 nameToDefine = __BENTLEY_DTM_ELEMENT_BUILD__
 %include cdefapnd.mki
@@ -24,16 +19,11 @@ nameToDefine = __BENTLEY_DTM_ELEMENT_BUILD__
 nameToDefine=BENTLEY_PORTABLE_CODE
 %include cdefapnd.mki
 
-
 # DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
 # If we define appName and use it for DLM_NAME, MultiCppCompileRule.mki will use it for CCompPDBName, and linkLibrary.mki will use DLM_NAME for LIB_NAME.
 # PreCompiledHeader.mki uses CCompPDBName
-appName     = TerrainModelElementHandler
-DLM_NAME    = $(appName)
-CCompPDBName = $(appName)
+appName         = TerrainModelElementHandler
+DLM_NAME        = $(appName)
+CCompPDBName    = $(appName)
 
-#Disable unreachable code warning this is because of the dbg=0
-#cuser + -wd4505 -wd4702 -wd4805
-
-#%warn Need to remove 4805 warning unsafe mix of bool and long
 

@@ -38,9 +38,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <NMakeOutput>$(OutRoot)Winx64\build\TerrainModel\TerrainModelTests\TerrainModelTest_published.dll</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p BuildTerrainModelTests -f TerrainModel -r TerrainModel re BuildTerrainModelTests -x64</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p BuildTerrainModelTests -f TerrainModel -r TerrainModel re BuildTerrainModelTests -x64 -d"BMAKE_OPT=$(BMAKE_OPT) -a"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p BuildTerrainModelTests -f TerrainModel -r TerrainModel re BuildTerrainModelTests -x64 -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p BuildTerrainModelTests -f TerrainModel -r TerrainModel re BuildTerrainModelTests -x64</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p BuildTerrainModelTests -f TerrainModel -r TerrainModel re BuildTerrainModelTests -x64 -d"BMAKE_OPT=$(BMAKE_OPT) -a"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p BuildTerrainModelTests -f TerrainModel -r TerrainModel re BuildTerrainModelTests -x64 -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PrivateAPI;$(ProjectDir)PublicAPI;$(ProjectDir)cppwrappers;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(ProjectDir)PrivateAPI\base</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

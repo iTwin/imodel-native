@@ -5,29 +5,16 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-%include $(SharedMki)bsioutputdirs.mki
-
 ##  Define source and output directories
 %include $(SrcRoot)TerrainModel/privmki/sourcedirs.mki
 %include $(SrcRoot)TerrainModel/privmki/outputdirs.mki
 
-BuildContext   = $(OutBuildContexts)TerrainModel/
-%include $(SrcTerrainModel)BuildContextDefines.mki
-
-o = !Must be defined by individual mke files!
+BuildContext    = $(OutBuildContexts)TerrainModel/
+o               = !Must be defined by individual mke files!
 
 always:
     ~@mkdir $(DLM_CONTEXT_LOCATION)
     ~@mkdir $(terrainModelBuildDir_)
-
-#----------------------------------------------------------
-#   Linker options
-#----------------------------------------------------------
-#%if !defined (DLM_NO_DELAYLOADHOOK)
-#    DLM_DELAYLOADHOOK  = $(tools)nonport/winnt/DelayLoadHook.cpp
-#%endif
-
-#DLM_ENTRY_SRC = $(SrcDgnPlatform)DgnPlatform/PublicApi/DgnPlatform/Tools/
 
 %if defined (SPLITSYM) && !defined (NO_SPLITSYM)
     ASSEMBLY_SYMB_DIR = $(symbolsDllDir)
@@ -57,7 +44,7 @@ TerrainModelCoreLib          = $(libprefix)TerrainModelCore$(libext)
 
 ASSEMBLY_NO_AUTHENTICODE_SIGN = 1
 %include $(SharedMki)VersionedPartSignatureDefaults.mki
-ASSEMBLY_KEYFILE        =% $(ASSEMBLY_KEYFILE_DEFAULT)
-ASSEMBLY_TESTKEYFILE       =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
+ASSEMBLY_KEYFILE            =% $(ASSEMBLY_KEYFILE_DEFAULT)
+ASSEMBLY_TESTKEYFILE        =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
 ASSEMBLY_COMPANY_NAME       = $(companyName)
 ASSEMBLY_COPYRIGHT          = $(Bentley_Copyright)

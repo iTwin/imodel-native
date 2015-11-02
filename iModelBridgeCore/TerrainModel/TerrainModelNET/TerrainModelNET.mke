@@ -1,32 +1,25 @@
 #--------------------------------------------------------------------------------------
 #      $Source: TerrainModelNET/TerrainModelNET.mke $
-#   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
-#----------------------------------------------------------------------------------------------------------------------------------------------------
-# 
-#----------------------------------------------------------------------------------------------------------------------------------------------------
-baseDir          = $(_MakeFilePath)
-PolicyFile       = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
-SolutionPolicyMki=$(baseDir)TerrainModelNET.mki
-
 %include  mdl.mki
 
+baseDir             = $(_MakeFilePath)
+CompileOptionsMki   = $(baseDir)TerrainModelNET.mki
+%include $(CompileOptionsMki)
 
 %ifdef CREATE_STATIC_LIBRARIES
 %error can't be build as a static library
 %endif
 
-#GeneratedCppDir         = $(baseDir)GeneratedCpp/
-#GeneratedApiDir         = $(baseDir)GeneratedApi/
-#ManagedCommonDir        = $(baseDir)Common/
-
 #----------------------------------------------------------------------
 #       Define outputs
 #----------------------------------------------------------------------
-o = $(BentleyTerrainModelNetObj)
+o           = $(BentleyTerrainModelNetObj)
+appName     = Bentley.TerrainModelNET
 
-appName               = Bentley.TerrainModelNET
-
+%include $(SrcRoot)TerrainModel/privmki/TerrainModelCommon.mki
+          
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 # 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -41,26 +34,24 @@ always:
 #....................................................................................................................................................
 CCompDebugOptions = $(CCompDebugOffSwitch)
 
-#$(o)FxCopSuppressions$(oext) : $(baseDir)FxCopSuppressions.cpp
-
 CCompDebugOptions =% $[CCompDebugDefault]
 
 CCompOpts + -AI$(ContextSubPartsAssembliesDir)
 
 #....................................................................................................................................................
-PchCompiland        = $(baseDir)StdAfx.cpp
-PchOutputDir        = $(o)
-PchExtraOptions    = -Zm150
+PchCompiland            = $(baseDir)StdAfx.cpp
+PchOutputDir            = $(o)
+PchExtraOptions         = -Zm150
 
-#PchArgumentsDepends     = $(MultiCompileDepends)
+#PchArgumentsDepends    = $(MultiCompileDepends)
 
 PchCompileForClr        = 1
 PchExtraOptions         + -AI$(ContextSubPartsAssembliesDir)
 
 %include $(SharedMki)PreCompileHeader.mki
 
-CCPchOpts = $(UsePrecompiledHeaderOptions)
-CPchOpts  = $(UsePrecompiledHeaderOptions)
+CCPchOpts               = $(UsePrecompiledHeaderOptions)
+CPchOpts                = $(UsePrecompiledHeaderOptions)
 PCHHeaderDependency     = $(o)$(PCHCompilandBaseName).pch
 PCHHeaderObject         = $(o)$(PCHCompilandBaseName)$(oext)
 
@@ -70,21 +61,21 @@ dirToSearch=$(baseDir)
 %include cincapnd.mki
 
 DependsOnHeaders = \
-$(DependsOnAssemblies) \
-$(basedir)Bentley.Civil.DTM.h \
-$(basedir)DTM.h \
-$(basedir)DTMEdges.h \
-$(basedir)DTMFeature.h \
-$(basedir)DTMFeatureEnumerator.h \
-$(basedir)DTMHelpers.h \
-$(basedir)DTMMesh.h \
-$(basedir)DTMDrapedLinearElement.h \
-$(basedir)DTMSideSlopeInput.h \
-$(basedir)DTMSideSlopeInputPoint.h \
-$(basedir)DTMException.h \
-$(basedir)DTMTinEditor.h \
-$(basedir)Stdafx.h \
-$(PCHHeaderObject)
+    $(DependsOnAssemblies) \
+    $(basedir)Bentley.Civil.DTM.h \
+    $(basedir)DTM.h \
+    $(basedir)DTMEdges.h \
+    $(basedir)DTMFeature.h \
+    $(basedir)DTMFeatureEnumerator.h \
+    $(basedir)DTMHelpers.h \
+    $(basedir)DTMMesh.h \
+    $(basedir)DTMDrapedLinearElement.h \
+    $(basedir)DTMSideSlopeInput.h \
+    $(basedir)DTMSideSlopeInputPoint.h \
+    $(basedir)DTMException.h \
+    $(basedir)DTMTinEditor.h \
+    $(basedir)Stdafx.h \
+    $(PCHHeaderObject)
 
 #....................................................................................................................................................
 %include MultiCppCompileRule.mki
