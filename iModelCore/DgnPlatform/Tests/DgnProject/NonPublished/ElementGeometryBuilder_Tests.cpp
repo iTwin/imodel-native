@@ -52,13 +52,6 @@ TEST_F(ElementGeometryBuilderTests, CreateElement3d)
     ISolidPrimitivePtr cylinder = ISolidPrimitive::CreateDgnCone(cylinderDetail);
     EXPECT_TRUE(builder->Append(*cylinder));
 
-    DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,
-        0, 0, 2,
-        0, 3, 0,
-        0.0, Angle::TwoPi());
-    ICurvePrimitivePtr ellipse = ICurvePrimitive::CreateArc(ellipseData);
-    EXPECT_TRUE(builder->Append(*ellipse));
-
     ElemDisplayParams elemDisplayParams;
     elemDisplayParams.SetCategoryId(m_defaultCategoryId);
     elemDisplayParams.SetWeight(2);
