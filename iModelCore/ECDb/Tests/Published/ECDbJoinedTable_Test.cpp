@@ -167,7 +167,7 @@ TEST_F(JoinedTable, BasicCRUD)
 // @bsimethod                                   Affan.Khan                         10/05
 //---------------+---------------+---------------+---------------+---------------+-------
 
-TEST(JoinedTable, MappingAcrossTwoSchemaImportSession)
+TEST_F(JoinedTable, MappingAcrossTwoSchemaImportSession)
     {
     auto const baseSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
