@@ -2061,7 +2061,10 @@ DgnElementCPtr ComponentModel::HarvestSolution(DgnDbStatus* statusOut, PhysicalM
         return nullptr;
         }
     PhysicalElement::CreateParams cparams(db, catalogModel.GetModelId(), iclass, itemCategoryId, placement, icode);
-    DgnElementPtr elem = handler->Create(cparams);
+    //handler->Create(cparams);    *** WIP_COMPONENT_MODEL -- There's no way to use a handler to create an element.
+    //                                    That is because CreateParams always gets converted to DgnElement::CreateParams,
+    //                                    and so we lose the categoryid. That leaves the resulting element invalid -- can't be inserted.
+    DgnElementPtr elem = PhysicalElement::Create(cparams);
     if (!elem.IsValid())
         {
         BeAssert(false);
@@ -2070,6 +2073,36 @@ DgnElementCPtr ComponentModel::HarvestSolution(DgnDbStatus* statusOut, PhysicalM
         }
 
     return elem->Insert(&status);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void toNextCodeValue(Utf8StringR valueStr)
+    {
+    auto idash = valueStr.rfind("-");
+    int ivalue = 0;
+    if (idash < valueStr.length() - 1 && 1 == isdigit(valueStr [idash + 1]))
+        sscanf(valueStr.c_str() + idash + 1, "%d", &ivalue);
+    ++ivalue;
+    valueStr = valueStr.substr(0, idash).append(Utf8PrintfString("-%d", ivalue));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnElement::Code generateNextUniqueCode(DgnDbR db, DgnAuthorityCR authority, DgnElement::Code const& code)
+    {
+    DgnElement::Code nextCode(code);
+        
+    // *** WIP_COMPONENT_MODEL - how do I create new and unique codes, based on a given authority and namespace?
+    Utf8String nextValue = nextCode.GetValue();
+    toNextCodeValue(nextValue);
+    do {
+        nextCode = AuthorityIssuedCode(authority.GetAuthorityId(), nextValue, nextCode.GetNameSpace());
+        } while (db.Elements().QueryElementIdByCode(nextCode).IsValid());
+
+    return nextCode;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2087,7 +2120,7 @@ PhysicalElementCPtr ComponentModel::CopyCatalogItem(DgnDbStatus* statusOut, Phys
         {
         DgnAuthorityCPtr authority = targetModel.GetDgnDb().Authorities().GetAuthority(catalogItem.GetCode().GetAuthority());
         if (authority.IsValid())
-            icode = authority->CreateDefaultCode();
+            icode = generateNextUniqueCode(targetModel.GetDgnDb(), *authority, icode);
         }
 
     PhysicalElement::CreateParams iparams(targetModel.GetDgnDb(), targetModel.GetModelId(), catalogItem.GetElementClassId(), catalogItem.GetCategoryId(), placement, icode);

@@ -124,6 +124,7 @@ private:
     friend struct DgnModels;
     friend struct SystemAuthority;
 
+public: // *** WIP_COMPONENT_MODEL - I don't see how to create new codes
     AuthorityIssuedCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) { }
 public:
     //! Constructs an empty, invalid code

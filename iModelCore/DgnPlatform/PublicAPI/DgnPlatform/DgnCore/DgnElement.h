@@ -1419,7 +1419,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : GeometricElement
         T_Super(db, modelId, classId, category, code, id, parent), m_placement(placement) {}
 
     explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category = DgnCategoryId(), Placement3dCR placement = Placement3d()) : T_Super(params, category), m_placement(placement) {}
-    CreateParams(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
+    CreateParams(GeometricElement::CreateParams const& params, Placement3dCR placement = Placement3d()) : T_Super(params), m_placement(placement) {}
     };
 
 protected:
