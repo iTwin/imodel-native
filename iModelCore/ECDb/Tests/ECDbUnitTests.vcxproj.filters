@@ -181,6 +181,9 @@
     <ClCompile Include="Performance\PerformanceECSqlVsSqliteTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
+    <ClCompile Include="ECDbJoinedTable_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">

@@ -18,6 +18,7 @@
     <ClCompile Include="BackDoor\ECDbTestFixture.cpp" />
     <ClCompile Include="BackDoor\ECDbTestProject.cpp" />
     <ClCompile Include="BackDoor\ECDbTests.cpp" />
+    <ClCompile Include="ECDbJoinedTable_Test.cpp" />
     <ClCompile Include="Performance\DevSummitPerformanceTests.cpp" />
     <ClCompile Include="Performance\PerformanceBisDesignStudies_Test.cpp" />
     <ClCompile Include="Performance\PerformanceBisDesignTestFixture.cpp" />
