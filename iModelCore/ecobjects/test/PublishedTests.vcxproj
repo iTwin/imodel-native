@@ -39,9 +39,9 @@
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPublishedTests -v4 -n build -f</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPublishedTests -v4 -n build -c &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -f ecftest -p ECObjectsPublishedTests -v4 build -f</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPublishedTests -v4 -n build -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPublishedTests -v4 -n build -f</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPublishedTests -v4 -n build -c &amp; python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -r ecf -f ecftest -p ECObjectsPublishedTests -v4 build -f</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPublishedTests -v4 -n build -c</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutRoot)Winx64\Product\ECObjectsTests\ECObjectsTest_Published.exe</NMakeOutput>
     <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">WIN32;_DEBUG;$(NMakePreprocessorDefinitions);;BENTLEY_WIN32</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir);$(OutRoot)Winx64\BuildContexts\ecobjects\VendorAPI\;$(VCInstallDir)INCLUDE\;$(OutRoot)Winx64\BuildContexts\ecobjects\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
@@ -50,9 +50,9 @@
     <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPublishedTests -v4 -n build -f</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPublishedTests -v4 -n build -c &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -f ecftest -p ECObjectsPublishedTests -v4 build -f</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPublishedTests -v4 -n build -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPublishedTests -v4 -n build -f</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPublishedTests -v4 -n build -c &amp; python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -r ecf -f ecftest -p ECObjectsPublishedTests -v4 build -f</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPublishedTests -v4 -n build -c</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutRoot)Winx64\Product\ECObjectsTests\ECObjectsTest_Published.exe</NMakeOutput>
     <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">WIN32;NDEBUG;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;BENTLEY_WIN32</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>

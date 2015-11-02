@@ -39,9 +39,9 @@
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPerformanceTests -v4 -n build -f</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPerformanceTests -v4 -n build -c &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecobjects -f ecobjects -p ECObjectsPerformanceTests -v4 build -f</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPerformanceTests -v4 -n build -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPerformanceTests -v4 -n build -f</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPerformanceTests -v4 -n build -c &amp; python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -r ecobjects -f ecobjects -p ECObjectsPerformanceTests -v4 build -f</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPerformanceTests -v4 -n build -c</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ECObjectsTest_Performance.exe</NMakeOutput>
     <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutRoot)Winx64\BuildContexts\ecfTest\VendorAPI\;$(VCInstallDir)INCLUDE\;$(OutRoot)Winx64\BuildContexts\ecfTest\SubParts\PublishedAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
