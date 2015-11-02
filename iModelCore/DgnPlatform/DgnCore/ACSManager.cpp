@@ -671,9 +671,10 @@ virtual void    /*AuxCoordSys::*/_DrawGrid (DgnViewportP viewport) const overrid
 
     Point2d     gridReps, gridOffset;
     DPoint2d    spacing;
+    uint32_t    gridPerRef;
 
     // Adjust origin for grid offset if we are displaying a fixed sized grid plane...
-    if (SUCCESS == GetGridSpacing (spacing, gridReps, gridOffset, *viewport) && (0 != gridOffset.x || 0 != gridOffset.y))
+    if (SUCCESS == GetGridSpacing (spacing, gridPerRef, gridReps, gridOffset, *viewport) && (0 != gridOffset.x || 0 != gridOffset.y))
         {
         DVec3d  xVec, yVec;
 
@@ -686,7 +687,7 @@ virtual void    /*AuxCoordSys::*/_DrawGrid (DgnViewportP viewport) const overrid
         origin.SumOf (origin, xVec, -gridOffset.x, yVec, -gridOffset.y);
         }
 
-    viewport->DrawStandardGrid (origin, rMatrix, (0 == gridReps.x || 0 == gridReps.y) ? NULL : &gridReps);
+    viewport->DrawStandardGrid (origin, rMatrix, spacing, gridPerRef, false, (0 == gridReps.x || 0 == gridReps.y) ? NULL : &gridReps);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -833,10 +834,9 @@ double          IAuxCoordSys::GetGridScaleFactor (DgnViewportR vp) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       IAuxCoordSys::GetGridSpacing (DPoint2dR spacing, Point2dR gridReps, Point2dR gridOffset, DgnViewportR vp) const
+StatusInt       IAuxCoordSys::GetGridSpacing (DPoint2dR spacing, uint32_t& gridPerRef, Point2dR gridReps, Point2dR gridOffset, DgnViewportR vp) const
     {
     double      uorPerGrid, gridRatio;
-    uint32_t    gridPerRef;
 
     if (SUCCESS != _GetStandardGridParams (gridReps, gridOffset, uorPerGrid, gridRatio, gridPerRef))
         return ERROR;

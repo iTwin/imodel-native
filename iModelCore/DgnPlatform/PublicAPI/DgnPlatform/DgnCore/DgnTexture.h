@@ -116,12 +116,13 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
 
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize() + static_cast<uint32_t>(m_descr.length()); }
+    DGNPLATFORM_EXPORT virtual Code _GenerateDefaultCode() override;
 public:
     //! Construct a new DgnTexture with the specified parameters
     explicit DgnTexture(CreateParams const& params) : T_Super(params), m_data(params.m_data), m_descr(params.m_descr) { }
 
     DgnTextureId GetTextureId() const { return DgnTextureId(GetElementId().GetValue()); } //!< The texture ID.
-    Utf8StringCR GetTextureName() const { return GetCode().GetValue(); } //!< The texture name
+    Utf8String GetTextureName() const { return GetCode().GetValue(); } //!< The texture name
 
     Data const& GetData() const { return m_data; } //!< The texture data
     Utf8StringCR GetDescription() const { return m_descr; } //!< The description of this texture
@@ -138,13 +139,13 @@ public:
     DgnTextureCPtr Update(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Update<DgnTexture>(*this, status); } //!< Updates the texture in the DgnDb and returns the persistent copy.
 
     // Creates a Code for a texture with the specified name.
-    DGNPLATFORM_EXPORT static Code CreateTextureCode(Utf8StringCR textureName, DgnDbR db);
+    DGNPLATFORM_EXPORT static Code CreateTextureCode(Utf8StringCR textureName);
 
     //! Looks up the ID of a texture by Code
     DGNPLATFORM_EXPORT static DgnTextureId QueryTextureId(Code const& code, DgnDbR db);
 
     //! Looks up the ID of a texture by name
-    static DgnTextureId QueryTextureId(Utf8StringCR textureName, DgnDbR db) { return QueryTextureId(CreateTextureCode(textureName, db), db); }
+    static DgnTextureId QueryTextureId(Utf8StringCR textureName, DgnDbR db) { return QueryTextureId(CreateTextureCode(textureName), db); }
 
     //! Looks up a texture by ID
     static DgnTextureCPtr QueryTexture(DgnTextureId textureId, DgnDbR db) { return db.Elements().Get<DgnTexture>(textureId); }

@@ -561,8 +561,8 @@ static void CookPatternSymbology(PatternParamsCR params, ViewContextR context)
 #endif
         }
 
+    // NOTE: Don't need to worry about overrides, context overrides CAN NOT look at m_currDisplayParams, so changing it doesn't affect them...
     context.CookDisplayParams();
-    context.CookDisplayParamsOverrides(); // NOTE: Re-cook and activate overrides for stuff like weight used by hilite, etc.
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -850,9 +850,9 @@ double          scale
     // NOTE: Colors aren't stored in geometry map for point cells, setup active matsymb color from pattern if different than element color...
     if (symbCell.IsPointCellSymbol() && PatternParamsModifierFlags::None != (params->modifiers & PatternParamsModifierFlags::Color) && context.GetCurrentDisplayParams()->GetLineColor() != params->color)
         {
+        // NOTE: Don't need to worry about overrides, context overrides CAN NOT look at m_currDisplayParams, so changing line color doesn't affect them...
         context.GetCurrentDisplayParams()->SetLineColor(params->color);
         context.CookDisplayParams();
-        context.CookDisplayParamsOverrides();
         }
 
     OvrMatSymbP  ovrMatSymb = context.GetOverrideMatSymb();

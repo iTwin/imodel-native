@@ -56,7 +56,7 @@ void DbGeomPartsWriter::PrepareUpdateStatement()
     Utf8CP updateSql =
             "UPDATE " DGN_TABLE(DGN_CLASSNAME_GeomPart) " SET "
                 "Code=?2,"
-                "Geom=?3,"
+                "Geom=?3"
             " WHERE Id=?1";
 
     m_dgndb.GetCachedStatement(m_stmt, updateSql);

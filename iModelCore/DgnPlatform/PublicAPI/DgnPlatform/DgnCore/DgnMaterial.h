@@ -11,6 +11,7 @@
 #include "DgnDb.h"
 #include "DgnElement.h"
 #include "ElementHandler.h"
+#include "ECSqlStatementIterator.h"
 
 #define DGN_CLASSNAME_MaterialElement "MaterialElement"
 
@@ -91,6 +92,11 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
 
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
+    virtual Code _GenerateDefaultCode() override { return Code(); }
+//__PUBLISH_SECTION_END__
+public:
+    static DgnMaterialId ImportMaterial(DgnMaterialId source, DgnImportContext& importer);
+//__PUBLISH_SECTION_START__
 public:
     //! Construct a new DgnMaterial with the specified parameters
     explicit DgnMaterial(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }
@@ -131,16 +137,74 @@ public:
     BentleyStatus GetRenderingAsset(JsonValueR value) const {return GetAsset(value, MATERIAL_ASSET_Rendering);}
 
     //! Creates a Code for a material. The palette name serves as the namespace, and the material name as the value.
-    DGNPLATFORM_EXPORT static DgnElement::Code CreateMaterialCode(Utf8StringCR paletteName, Utf8StringCR materialName, DgnDbR db);
+    DGNPLATFORM_EXPORT static DgnElement::Code CreateMaterialCode(Utf8StringCR paletteName, Utf8StringCR materialName);
 
     //! Looks up the ID of the material with the specified code.
     DGNPLATFORM_EXPORT static DgnMaterialId QueryMaterialId(DgnElement::Code const& code, DgnDbR db);
 
     //! Looks up the ID of the material with the specified palette + material name.
-    static DgnMaterialId QueryMaterialId(Utf8StringCR paletteName, Utf8StringCR materialName, DgnDbR db) { return QueryMaterialId(CreateMaterialCode(paletteName, materialName, db), db); }
+    static DgnMaterialId QueryMaterialId(Utf8StringCR paletteName, Utf8StringCR materialName, DgnDbR db) { return QueryMaterialId(CreateMaterialCode(paletteName, materialName), db); }
 
     //! Looks up a material by ID.
     static DgnMaterialCPtr QueryMaterial(DgnMaterialId materialId, DgnDbR db) { return db.Elements().Get<DgnMaterial>(materialId); }
+
+    //! An entry in a material iterator
+    struct Entry : ECSqlStatementEntry
+    {
+        friend struct ECSqlStatementIterator<Entry>;
+        friend struct DgnMaterial;
+    private:
+        Entry(BeSQLite::EC::ECSqlStatement* stmt=nullptr) : ECSqlStatementEntry(stmt) { }
+    public:
+        DgnMaterialId GetId() const { return m_statement->GetValueId<DgnMaterialId>(0); } //!< The material ID
+        Utf8CP GetName() const { return m_statement->GetValueText(1); } //!< The material name
+        Utf8CP GetPalette() const { return m_statement->GetValueText(2); } //!< The palette name
+        DgnMaterialId GetParentId() const { return m_statement->GetValueId<DgnMaterialId>(3); } //!< The parent material ID
+        Utf8CP GetDescr() const { return m_statement->GetValueText(4); } //!< The material description
+    };
+
+    //! An iterator over the materials within a DgnDb
+    struct Iterator : ECSqlStatementIterator<Entry>
+    {
+        //! Options controlling material iteration
+        struct Options
+        {
+        private:
+            friend struct Iterator;
+
+            bool m_ordered;
+            bool m_byPalette;
+            bool m_byParent;
+            Utf8String m_palette;
+            DgnMaterialId m_parent;
+
+            Options(Utf8StringCP palette, DgnMaterialId const* parent, bool ordered) : m_ordered(ordered),
+                m_byPalette(nullptr != palette), m_palette(m_byPalette ? *palette : Utf8String()),
+                m_byParent(nullptr != parent), m_parent(m_byParent ? *parent : DgnMaterialId()) { }
+        public:
+            //! Default options: Includes all materials , unordered
+            Options() : Options(nullptr, nullptr, false) { }
+            //! Filter by palette name and parent material, optionally ordered by palette name and then material name
+            Options(Utf8StringCR paletteName, DgnMaterialId parentId, bool ordered=false) : Options(&paletteName, &parentId, ordered) { }
+            
+            //! Unfiltered, ordered
+            static Options Ordered() { return Options(nullptr, nullptr, true); }
+
+            //! Filter by a specific palette name, optionally ordered by material name
+            static Options ByPalette(Utf8StringCR paletteName, bool ordered = false) { return Options(&paletteName, nullptr, ordered); }
+
+            //! Filter by a specific parent material, optionally ordered by palette name and then material name
+            static Options ByParentId(DgnMaterialId parentId, bool ordered = false) { return Options(nullptr, &parentId, ordered); }
+        };
+
+        static Iterator Create(DgnDbR db, Options const& options); //!< @private
+    };
+
+    //! Create an iterator over the materials within a DgnDb
+    //! @param[in]      db      The DgnDb in which to query
+    //! @param[in]      options Options controlling which materials to include and in what order
+    //! @return An iterator with the specified options
+    DGNPLATFORM_EXPORT static Iterator MakeIterator(DgnDbR db, Iterator::Options options=Iterator::Options());
 };
 
 namespace dgn_ElementHandler

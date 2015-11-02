@@ -202,6 +202,15 @@
     <ClCompile Include="Performance\PerformanceECInstanceDeleteTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
+    <ClCompile Include="Published\ElementGeometry_Tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ElementGroup_Tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceElementsCRUDTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">
@@ -247,6 +256,9 @@
       <Filter>Published</Filter>
     </ClInclude>
     <ClInclude Include="Performance\PerformanceElements.h">
+      <Filter>Performance</Filter>
+    </ClInclude>
+    <ClInclude Include="Performance\PerformanceElementsCRUDTests.h">
       <Filter>Performance</Filter>
     </ClInclude>
   </ItemGroup>

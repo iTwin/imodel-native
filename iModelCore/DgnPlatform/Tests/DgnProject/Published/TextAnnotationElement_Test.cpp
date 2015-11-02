@@ -12,12 +12,12 @@ USING_NAMESPACE_BENTLEY_SQLITE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2015
 //---------------------------------------------------------------------------------------
-static DgnStyleId ensureAnnotationTextStyle1(DgnDbR db)
+static AnnotationTextStyleId ensureAnnotationTextStyle1(DgnDbR db)
     {
     static const CharCP STYLE_NAME = "AnnotationTextStyle1";
-    AnnotationTextStylePtr existingStyle = db.Styles().AnnotationTextStyles().QueryByName(STYLE_NAME);
+    AnnotationTextStyleCPtr existingStyle = AnnotationTextStyle::QueryStyle(STYLE_NAME, db);
     if (existingStyle.IsValid())
-        return existingStyle->GetId();
+        return existingStyle->GetStyleId();
     
     AnnotationTextStyle style(db);
     style.SetColorType(AnnotationColorType::RGBA);
@@ -26,9 +26,9 @@ static DgnStyleId ensureAnnotationTextStyle1(DgnDbR db)
     style.SetHeight(1000.0);
     style.SetName(STYLE_NAME);
 
-    db.Styles().AnnotationTextStyles().Insert(style);
+    style.Insert();
     
-    return style.GetId();
+    return style.GetStyleId();
     }
 
 //---------------------------------------------------------------------------------------
@@ -45,7 +45,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
     ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"2dMetricGeneral.idgndb", L"TextAnnotationElementTest-BasicCrud.dgndb", __FILE__));
 
     DgnModelId modelId;
-    DgnStyleId textStyleId;
+    AnnotationTextStyleId textStyleId;
     DgnElementId insertedElementId;
     static Utf8CP ANNOTATION_TEXT_1 = "Hello world.";
     static Utf8CP ANNOTATION_TEXT_2 = "Lorem ipsum dolar sit amet.";
@@ -66,7 +66,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
         DgnCategoryId categoryId = category.GetCategoryId();
         ASSERT_TRUE(categoryId.IsValid());
 
-        DgnModelPtr model = new DgnModel2d(DgnModel2d::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model2d)), "2D Model"));
+        DgnModelPtr model = new DgnModel2d(DgnModel2d::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model2d)), DgnModel::CreateModelCode("2D Model")));
         ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
 
         modelId = model->GetModelId();
@@ -209,7 +209,7 @@ TEST(PhysicalTextAnnotationElementTest, BasicCrud)
     ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.idgndb", L"PhysicalTextAnnotationElementTest-BasicCrud.dgndb", __FILE__));
 
     DgnModelId modelId;
-    DgnStyleId textStyleId;
+    AnnotationTextStyleId textStyleId;
     DgnElementId insertedElementId;
     static Utf8CP ANNOTATION_TEXT_1 = "Hello world.";
     static Utf8CP ANNOTATION_TEXT_2 = "Lorem ipsum dolar sit amet.";
@@ -230,7 +230,7 @@ TEST(PhysicalTextAnnotationElementTest, BasicCrud)
         DgnCategoryId categoryId = category.GetCategoryId();
         ASSERT_TRUE(categoryId.IsValid());
 
-        DgnModelPtr model = new PhysicalModel(PhysicalModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel)), "Physical Model"));
+        DgnModelPtr model = new PhysicalModel(PhysicalModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel)), DgnModel::CreateModelCode("Physical Model")));
         ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
 
         modelId = model->GetModelId();

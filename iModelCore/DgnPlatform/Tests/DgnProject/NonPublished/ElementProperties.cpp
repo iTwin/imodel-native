@@ -32,10 +32,10 @@ TEST_F (ElementDisplayProperties, SetGradient)
     auto seedModelId3 = m_defaultModelId;
 
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
-    DgnModelPtr model3 = seedModel->Clone("model3");
+    DgnModelPtr model3 = seedModel->Clone(DgnModel::CreateModelCode("model3"));
     ASSERT_TRUE (model3 != nullptr);
     model3->Insert();
-    DgnModelId m3id = m_db->Models().QueryModelId("model3");
+    DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
 
     ElemDisplayParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
@@ -82,43 +82,46 @@ TEST_F (ElementDisplayProperties, SetGradient)
 * Test for Setting and Getting Pattern parameters.
 * @bsimethod                                    Maha.Nasir      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-//Will uncomment this test once SetPatternParams method is hooked up with elemDisplayParams.
-//TEST_F (ElementDisplayProperties, SetDisplayPattern)
-//    {
-//    SetupProject (L"3dMetricGeneral.idgndb", L"ElementDisplayProperties.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
-//
-//    auto seedModelId3 = m_defaultModelId;
-//    DgnModelP model3 = m_db->Models ().CreateNewModelFromSeed (NULL, "model3", seedModelId3);
-//    ASSERT_TRUE (model3 != nullptr);
-//    DgnModelId m3id = m_db->Models ().QueryModelId ("model3");
-//
-//    ElemDisplayParams ep;
-//    ep.SetCategoryId (m_defaultCategoryId);
-//
-//    PatternParamsPtr pattern = PatternParams::Create ();
-//    pattern->SetColor (ColorDef::Maroon ());
-//    pattern->SetWeight (6);
-//    pattern->SetStyle (1);
-//    //ep.SetPatternParams (pattern.get());
-//
-//    auto keyE1 = InsertElement ("E2", ep, m3id);
-//    DgnElementId E1id = keyE1.GetElementId ();
-//    DgnElementCP pE1 = m_db->Elements ().FindElement (E1id);
-//
-//    GeometricElementP geomElem = const_cast<GeometricElementP>(pE1->ToGeometricElement ());
-//    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld (*geomElem);
-//    ElementGeometryCollection collection (*geomElem);
-//
-//    for (ElementGeometryPtr geom : collection)
-//        {
-//        ElemDisplayParamsCR params = collection.GetElemDisplayParams ();
-//        PatternParamsCP pattern = params.GetPatternParams ();
-//        EXPECT_NE (nullptr, params.GetPatternParams ());
-//        EXPECT_EQ (ColorDef::Maroon (), pattern->GetColor ());
-//        EXPECT_EQ (6, pattern->GetWeight ());
-//        EXPECT_EQ (1, pattern->GetStyle ());
-//        }
-//    }
+TEST_F(ElementDisplayProperties, SetDisplayPattern)
+    {
+    SetupProject (L"3dMetricGeneral.idgndb", L"ElementDisplayProperties.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+
+    auto seedModelId3 = m_defaultModelId;
+
+    DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
+    DgnModelPtr model3 = seedModel->Clone(DgnModel::CreateModelCode("model3"));
+    ASSERT_TRUE(model3 != nullptr);
+    model3->Insert();
+    DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
+
+    ElemDisplayParams ep;
+    ep.SetCategoryId (m_defaultCategoryId);
+
+    PatternParamsPtr pattern = PatternParams::Create (); 
+    pattern->SetColor (ColorDef::Cyan ());
+    pattern->SetWeight (6);
+    pattern->SetStyle (1);
+    ep.SetPatternParams (pattern.get());
+    EXPECT_TRUE(NULL != ep.GetPatternParams());
+
+    auto keyE1 = InsertElement(DgnElement::Code(), ep, m3id);
+    DgnElementId E1id = keyE1->GetElementId ();
+    DgnElementCP pE1 = m_db->Elements ().FindElement (E1id);
+
+    GeometricElementP geomElem = const_cast<GeometricElementP>(pE1->ToGeometricElement ());
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld (*geomElem);
+    ElementGeometryCollection collection (*geomElem);
+
+    for (ElementGeometryPtr geom : collection)
+        {
+        ElemDisplayParamsCR params = collection.GetElemDisplayParams ();
+        PatternParamsCP pattern = params.GetPatternParams ();
+        ASSERT_NE(nullptr, pattern );
+        EXPECT_EQ(ColorDef::Cyan(), pattern->GetColor());
+        EXPECT_EQ (6, pattern->GetWeight ()); 
+        EXPECT_EQ (1, pattern->GetStyle ());
+        } 
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * Test for Setting and Getting Transparency.
@@ -130,10 +133,10 @@ TEST_F (ElementDisplayProperties, SetTransparency)
 
     auto seedModelId3 = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
-    DgnModelPtr model3 = seedModel->Clone("model3");
+    DgnModelPtr model3 = seedModel->Clone(DgnModel::CreateModelCode("model3"));
     ASSERT_TRUE (model3 != nullptr);
     model3->Insert();
-    DgnModelId m3id = m_db->Models().QueryModelId("model3");
+    DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
 
     ElemDisplayParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
@@ -163,10 +166,10 @@ TEST_F (ElementDisplayProperties, SetCategory)
 
     auto seedModelId3 = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
-    DgnModelPtr model3 = seedModel->Clone("model3");
+    DgnModelPtr model3 = seedModel->Clone(DgnModel::CreateModelCode("model3"));
     ASSERT_TRUE (model3 != nullptr);
     model3->Insert();
-    DgnModelId m3id = m_db->Models().QueryModelId("model3");
+    DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
 
     ElemDisplayParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
@@ -198,10 +201,10 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
 
     auto seedModelId3 = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
-    DgnModelPtr model3 = seedModel->Clone("model3");
+    DgnModelPtr model3 = seedModel->Clone(DgnModel::CreateModelCode("model3"));
     ASSERT_TRUE (model3 != nullptr);
     model3->Insert();
-    DgnModelId m3id = m_db->Models().QueryModelId("model3");
+    DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
 
     ElemDisplayParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
@@ -234,10 +237,10 @@ TEST_F (ElementDisplayProperties, FillProperties)
 
     auto seedModelId3 = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
-    DgnModelPtr model3 = seedModel->Clone("model3");
+    DgnModelPtr model3 = seedModel->Clone(DgnModel::CreateModelCode("model3"));
     ASSERT_TRUE (model3 != nullptr);
     model3->Insert();
-    DgnModelId m3id = m_db->Models().QueryModelId("model3");
+    DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
 
     ElemDisplayParams ep;
     ep.SetCategoryId(m_defaultCategoryId);

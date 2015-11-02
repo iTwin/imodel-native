@@ -16,7 +16,6 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Logging/bentleylogging.h>
 #include "../TestFixture/DgnDbTestFixtures.h"
-#include <UnitTests/BackDoor/PerformanceTestingHelper/PerformanceTestingHelpers.h>
 
 #define PERFORMANCELOG (*NativeLogging::LoggingManager::GetLogger (L"Performance"))
 typedef bpair<Utf8String, double> T_TimerResultPair;

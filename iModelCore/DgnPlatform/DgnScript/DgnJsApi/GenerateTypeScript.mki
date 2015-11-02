@@ -17,7 +17,7 @@
     %error Caller must define dgnScriptDir
 %endif
 
-dgnScriptGen =% $(dgnPlatformBuildDir_)DgnScriptGen/
+dgnScriptGen =% $(OutDgnPlatformBuild)DgnScriptGen/
 
 %if defined(winNT)
     TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node.exe $(BuildContext)SubParts/TypeScript/tsc.js

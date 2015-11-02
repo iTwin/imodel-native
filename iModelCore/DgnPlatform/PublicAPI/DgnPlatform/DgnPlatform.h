@@ -80,6 +80,7 @@ DGNPLATFORM_TYPEDEFS (DgnResourceURI)
 DGNPLATFORM_TYPEDEFS (DgnGlyph)
 DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutContext)
 DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutResult)
+DGNPLATFORM_TYPEDEFS (DgnRevision);
 DGNPLATFORM_TYPEDEFS (DgnRscFont)
 DGNPLATFORM_TYPEDEFS (DgnShxFont)
 DGNPLATFORM_TYPEDEFS (DgnTrueTypeFont)
@@ -206,6 +207,7 @@ DGNPLATFORM_TYPEDEFS (QvUnsizedKey)
 DGNPLATFORM_TYPEDEFS (QvViewport)
 DGNPLATFORM_TYPEDEFS (RedlineViewController)
 DGNPLATFORM_TYPEDEFS (RegionGraphicsContext)
+DGNPLATFORM_TYPEDEFS (RevisionManager);
 DGNPLATFORM_TYPEDEFS (ScanCriteria)
 DGNPLATFORM_TYPEDEFS (SelectionSetManager)
 DGNPLATFORM_TYPEDEFS (SheetViewController)
@@ -222,6 +224,7 @@ DGNPLATFORM_TYPEDEFS (ViewManager)
 DGNPLATFORM_TYPEDEFS (VisibleEdgeCache)
 DGNPLATFORM_TYPEDEFS (RenderMaterial)
 DGNPLATFORM_TYPEDEFS (RenderMaterialMap)
+DGNPLATFORM_TYPEDEFS (ImageBuffer)
 
 /** @endcond */
 DGNPLATFORM_TYPEDEFS (DgnGCS)
@@ -237,6 +240,7 @@ DGNPLATFORM_REF_COUNTED_PTR (DgnGCS)
 DGNPLATFORM_REF_COUNTED_PTR (DgnGeomPart)
 DGNPLATFORM_REF_COUNTED_PTR (DgnMarkupProject)
 DGNPLATFORM_REF_COUNTED_PTR (DgnModel)
+DGNPLATFORM_REF_COUNTED_PTR (DgnRevision)
 DGNPLATFORM_REF_COUNTED_PTR (DrawingElement)
 DGNPLATFORM_REF_COUNTED_PTR (ElementGroup)
 DGNPLATFORM_REF_COUNTED_PTR (GeometricElement)
@@ -252,6 +256,7 @@ DGNPLATFORM_REF_COUNTED_PTR (TxnManager)
 DGNPLATFORM_REF_COUNTED_PTR (DgnAuthority)
 DGNPLATFORM_REF_COUNTED_PTR (RenderMaterial)
 DGNPLATFORM_REF_COUNTED_PTR (RenderMaterialMap)
+DGNPLATFORM_REF_COUNTED_PTR (ImageBuffer)
 
 /** @cond BENTLEY_SDK_Internal */
 DGNPLATFORM_REF_COUNTED_PTR (ClipPrimitive)
@@ -287,22 +292,26 @@ END_BENTLEY_NAMESPACE
 //__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-BEREPOSITORYBASED_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element. @ingroup DgnElementGroup
-BEREPOSITORYBASED_ID_CLASS(DgnGeomPartId)      //!< An Id that is assigned to a DgnGeomPart.
-BEREPOSITORYBASED_ID_CLASS(DgnModelId)         //!< An Id that is assigned to a DgnModel.  A DgnModel is a container for DgnElements. @ingroup DgnModelGroup
-BEREPOSITORYBASED_ID_CLASS(DgnViewId)          //!< An Id that is assigned to a view. See DgnDb#Views, ViewController. @ingroup DgnViewGroup
-BEREPOSITORYBASED_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a DGN link. See DgnLinkTable.
-BEREPOSITORYBASED_ID_SUBCLASS(DgnMaterialId, DgnElementId) //!< An element Id that refers to a material.
-BEREPOSITORYBASED_ID_SUBCLASS(DgnTextureId, DgnElementId) //!< An element Id that refers to a named texture.
-BEREPOSITORYBASED_ID_SUBCLASS(DgnLightId, DgnElementId) //!< An element Id that refers to a light definition.
-BEREPOSITORYBASED_ID_SUBCLASS(DgnCategoryId, DgnElementId) //!< An element Id that refers to a DgnCategory. @ingroup DgnCategoryGroup
-BEREPOSITORYBASED_ID_SUBCLASS(DgnSubCategoryId, DgnElementId) //!< An element Id that refers to a DgnSubCategory. @ingroup DgnCategoryGroup
+BEBRIEFCASEBASED_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element. @ingroup DgnElementGroup
+BEBRIEFCASEBASED_ID_CLASS(DgnGeomPartId)      //!< An Id that is assigned to a DgnGeomPart.
+BEBRIEFCASEBASED_ID_CLASS(DgnModelId)         //!< An Id that is assigned to a DgnModel.  A DgnModel is a container for DgnElements. @ingroup DgnModelGroup
+BEBRIEFCASEBASED_ID_CLASS(DgnViewId)          //!< An Id that is assigned to a view. See DgnDb#Views, ViewController. @ingroup DgnViewGroup
+BEBRIEFCASEBASED_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a DGN link. See DgnLinkTable.
+BEBRIEFCASEBASED_ID_SUBCLASS(DgnMaterialId, DgnElementId) //!< An element Id that refers to a material.
+BEBRIEFCASEBASED_ID_SUBCLASS(DgnTextureId, DgnElementId) //!< An element Id that refers to a named texture.
+BEBRIEFCASEBASED_ID_SUBCLASS(DgnLightId, DgnElementId) //!< An element Id that refers to a light definition.
+BEBRIEFCASEBASED_ID_SUBCLASS(DgnCategoryId, DgnElementId) //!< An element Id that refers to a DgnCategory. @ingroup DgnCategoryGroup
+BEBRIEFCASEBASED_ID_SUBCLASS(DgnSubCategoryId, DgnElementId) //!< An element Id that refers to a DgnSubCategory. @ingroup DgnCategoryGroup
+BEBRIEFCASEBASED_ID_SUBCLASS(AnnotationTextStyleId, DgnElementId) //!< An element Id that refers to an AnnotationTextStyle. @ingroup Annotations
+BEBRIEFCASEBASED_ID_SUBCLASS(AnnotationFrameStyleId, DgnElementId) //!< An element Id that refers to an AnnotationFrameStyle. @ingroup Annotations
+BEBRIEFCASEBASED_ID_SUBCLASS(AnnotationLeaderStyleId, DgnElementId) //!< An element Id that refers to an AnnotationLeaderStyle. @ingroup Annotations
+BEBRIEFCASEBASED_ID_SUBCLASS(TextAnnotationSeedId, DgnElementId) //!< An element Id that refers to an TextAnnotationSeed. @ingroup Annotations
+BEBRIEFCASEBASED_ID_SUBCLASS(DgnTrueColorId, DgnElementId) //!< An element Id that refers a a DgnTrueColor.
 
 BESERVER_ISSUED_ID_CLASS(DgnAuthorityId)
 BESERVER_ISSUED_ID_CLASS(DgnFontId)
 BESERVER_ISSUED_ID_CLASS(DgnSessionId)       //!< An Id that is assigned to a session. See DgnDb#Sessions.
 BESERVER_ISSUED_ID_CLASS(DgnStyleId)         //!< An Id that is assigned to a style. See DgnDb#Styles.
-BESERVER_ISSUED_ID_CLASS(DgnTrueColorId)     //!< An Id that is assigned to a true color. See DgnDb#Colors.
 
 namespace dgn_ElementHandler{struct Element;};
 namespace dgn_ModelHandler  {struct Model;};
@@ -318,7 +327,7 @@ typedef Byte const* ByteCP;
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
-struct BeRepositoryBasedIdSet : bset<BeSQLite::BeRepositoryBasedId>
+struct BeBriefcaseBasedIdSet : bset<BeSQLite::BeBriefcaseBasedId>
 {
     DGNPLATFORM_EXPORT void FromJson(Json::Value const& in);
     DGNPLATFORM_EXPORT void ToJson(Json::Value& out) const;
@@ -327,10 +336,10 @@ struct BeRepositoryBasedIdSet : bset<BeSQLite::BeRepositoryBasedId>
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
-template<typename IdType> struct IdSet : BeRepositoryBasedIdSet, BeSQLite::VirtualSet
+template<typename IdType> struct IdSet : BeBriefcaseBasedIdSet, BeSQLite::VirtualSet
 {
 private:
-    BeRepositoryBasedIdSet m_set;
+    BeBriefcaseBasedIdSet m_set;
 
     virtual bool _IsInSet(int nVals, BeSQLite::DbValue const* vals) const
         {
@@ -338,7 +347,7 @@ private:
         return Contains(IdType(vals[0].GetValueUInt64()));
         }
 public:
-    IdSet(){static_assert(sizeof(IdType)==sizeof(BeSQLite::BeRepositoryBasedId),"IdSets may only contain BeRepositoryBasedId");}
+    IdSet(){static_assert(sizeof(IdType)==sizeof(BeSQLite::BeBriefcaseBasedId),"IdSets may only contain BeBriefcaseBasedId");}
 
     typedef BentleyApi::bset<IdType> T_SetType;
     typedef typename T_SetType::const_iterator const_iterator;
@@ -360,7 +369,7 @@ public:
     void FromJson(Json::Value const& in) {m_set.FromJson(in);}
     void ToJson(Json::Value& out) const {m_set.ToJson(out);}
 
-    BeRepositoryBasedIdSet const& GetRepositoryBasedIdSet() const { return m_set; }
+    BeBriefcaseBasedIdSet const& GetBriefcaseBasedIdSet() const { return m_set; }
 };
 
 typedef IdSet<DgnElementId> DgnElementIdSet;            //!< IdSet with DgnElementId members. @ingroup DgnElementGroup
@@ -400,6 +409,7 @@ struct DgnElementKey : BeSQLite::EC::ECInstanceKey
 
 typedef DgnElementKey const& DgnElementKeyCR;
 
+#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 //=======================================================================================
 //! The key (classId,instanceId) of a the Item aspect.
 //=======================================================================================
@@ -418,6 +428,7 @@ struct ElementItemKey : BeSQLite::EC::ECInstanceKey
 };
 
 typedef ElementItemKey const& ElementItemKeyCR;
+#endif
 
 //=======================================================================================
 //! A DRange3d that holds min/max values for an object in each of x,y,z in some coordinate system.
@@ -951,6 +962,19 @@ public:
 // Used for verifying published tests in DgnPlatformTest are using published headers. DO NOT REMOVE.
 #define __DGNPLATFORM_NON_PUBLISHED_HEADER__ 1
 /*__PUBLISH_SECTION_START__*/
+
+/*=================================================================================**//**
+* Interface to be adopted by a class that wants to supply a copyright message that must
+* be display in a viewport.
+* @bsiclass                                                     Sam.Wilson      10/15
++===============+===============+===============+===============+===============+======*/
+struct CopyrightSupplier
+    {
+    //! Return the copyright message to display in the specified viewport
+    //! @param vp   The viewport that is being displayed
+    //! @return a copyright message to display or an empty string to display nothing
+    virtual Utf8String _GetCopyrightMessage(DgnViewportR vp) = 0;
+    };
 
 #define TO_BOOL(x) (0 != (x))
 

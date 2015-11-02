@@ -85,7 +85,7 @@ DG_INLINE DVec2d DgnViewport::GetDpiScale() const    {return _GetDpiScale();}
 DG_INLINE ColorDef DgnViewport::GetWindowBgColor() const {return _GetWindowBgColor();}
 DG_INLINE ColorDef DgnViewport::GetHiliteColor() const {return _GetHiliteColor();}
 DG_INLINE StatusInt DgnViewport::RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) {return _RefreshViewport(always, synchHealingFromBs, stopFlag);}
-DG_INLINE void DgnViewport::DrawStandardGrid(DPoint3dR origin, RotMatrixR rMatrix, Point2dCP fixedRepetitions) {_DrawStandardGrid(origin, rMatrix, fixedRepetitions);}
+DG_INLINE void DgnViewport::DrawStandardGrid(DPoint3dR origin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid, Point2dCP fixedRepetitions) {_DrawStandardGrid(origin, rMatrix, spacing, gridsPerRef, isoGrid, fixedRepetitions);}
 
 DG_INLINE void ViewController::SetBackgroundColor(ColorDef color) {m_backgroundColor = color;}
 DG_INLINE bool ViewController::IsLoaded() const { return m_baseModelId.IsValid();}
@@ -197,7 +197,6 @@ DG_INLINE void ViewContext::SetScanReturn() {_SetScanReturn();}
 DG_INLINE QvElem* ViewContext::DrawCached(IStrokeForCache& stroker) {return _DrawCached(stroker);}
 DG_INLINE void ViewContext::VisitTransientGraphics(bool isPreUpdate) {_VisitTransientGraphics(isPreUpdate);}
 DG_INLINE void ViewContext::CookDisplayParams(ElemDisplayParamsR elParams, ElemMatSymbR elMatSymb) {_CookDisplayParams(elParams, elMatSymb);}
-DG_INLINE void ViewContext::CookDisplayParamsOverrides(ElemDisplayParamsR elParams, OvrMatSymbR ovrMatSymb) {_CookDisplayParamsOverrides(elParams, ovrMatSymb);}
 DG_INLINE StatusInt ViewContext::InitContextForView() {return _InitContextForView();}
 DG_INLINE bool ViewContext::VisitAllModelElements(bool includeTransients) { return _VisitAllModelElements(includeTransients); }
 DG_INLINE void ViewContext::ClearZ() { _ClearZ(); }

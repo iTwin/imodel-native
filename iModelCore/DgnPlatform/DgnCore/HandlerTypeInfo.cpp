@@ -125,7 +125,7 @@ void GeometricElement::_GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP del
     {
     Utf8String categoryStr, modelStr;
 
-    modelStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()).c_str()).append(GetModel()->GetModelName());
+    modelStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()).c_str()).append(GetModel()->GetCode().GetValue());
     getCategoryString(categoryStr, *this);
 
     descr = GetCode().GetValue();

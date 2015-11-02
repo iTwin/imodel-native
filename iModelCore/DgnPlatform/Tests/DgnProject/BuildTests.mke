@@ -34,7 +34,7 @@ o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
     BEGTEST_API = $(BuildContext)SubParts/PublishedApi/DgnProject/
 %endif
 
-%include $(SrcBsiCommon)sharedmki/DetectAndCompileUnitTests.mki
+%include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
 
 # Deliver 
 $(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}

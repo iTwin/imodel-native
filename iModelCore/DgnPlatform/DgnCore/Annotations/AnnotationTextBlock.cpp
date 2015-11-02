@@ -31,7 +31,7 @@ AnnotationTextBlock::AnnotationTextBlock(DgnDbR project) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationTextBlockPtr AnnotationTextBlock::Create(DgnDbR project, DgnStyleId styleID)
+AnnotationTextBlockPtr AnnotationTextBlock::Create(DgnDbR project, AnnotationTextStyleId styleID)
     {
     auto doc = AnnotationTextBlock::Create(project);
     doc->SetStyleId(styleID, SetAnnotationTextStyleOptions::Direct);
@@ -42,7 +42,7 @@ AnnotationTextBlockPtr AnnotationTextBlock::Create(DgnDbR project, DgnStyleId st
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationTextBlockPtr AnnotationTextBlock::Create(DgnDbR project, DgnStyleId styleID, AnnotationParagraphR par)
+AnnotationTextBlockPtr AnnotationTextBlock::Create(DgnDbR project, AnnotationTextStyleId styleID, AnnotationParagraphR par)
     {
     auto doc = AnnotationTextBlock::Create(project, styleID);
     doc->GetParagraphsR().push_back(&par);
@@ -53,7 +53,7 @@ AnnotationTextBlockPtr AnnotationTextBlock::Create(DgnDbR project, DgnStyleId st
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationTextBlockPtr AnnotationTextBlock::Create(DgnDbR project, DgnStyleId styleID, Utf8CP content)
+AnnotationTextBlockPtr AnnotationTextBlock::Create(DgnDbR project, AnnotationTextStyleId styleID, Utf8CP content)
     {
     auto run = AnnotationTextRun::Create(project, styleID, content);
     auto par = AnnotationParagraph::Create(project, styleID, *run);
@@ -95,7 +95,7 @@ void AnnotationTextBlock::Reset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-void AnnotationTextBlock::SetStyleId(DgnStyleId value, SetAnnotationTextStyleOptions options)
+void AnnotationTextBlock::SetStyleId(AnnotationTextStyleId value, SetAnnotationTextStyleOptions options)
     {
     m_styleID = value;
 
@@ -147,6 +147,57 @@ void AnnotationTextBlock::AppendRun(AnnotationRunBaseR run)
         m_paragraphs.push_back(AnnotationParagraph::Create(*m_dgndb, m_styleID));
 
     m_paragraphs.back()->GetRunsR().push_back(&run);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     10/2015
+//---------------------------------------------------------------------------------------
+AnnotationTextBlock::ToStringOpts AnnotationTextBlock::ToStringOpts::CreateForPlainText()
+    {
+    ToStringOpts opts;
+    opts.m_paragraphSeparator = " ";
+    opts.m_lineBreakString = " ";
+    opts.m_fractionSeparator = "/";
+
+    return opts;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     10/2015
+//---------------------------------------------------------------------------------------
+Utf8String AnnotationTextBlock::ToString(ToStringOpts const& opts) const
+    {
+    Utf8String str;
+
+    for (size_t iParagraph = 0; iParagraph < m_paragraphs.size(); ++iParagraph)
+        {
+        if (iParagraph > 0)
+            str += opts.GetParagraphSeparator();
+
+        for (AnnotationRunBasePtr run : m_paragraphs[iParagraph]->m_runs)
+            {
+            switch (run->GetType())
+                {
+                case AnnotationRunType::Text: str += ((AnnotationTextRunCR)*run).GetContent(); break;
+                case AnnotationRunType::LineBreak: str += opts.GetLineBreakString(); break;
+                case AnnotationRunType::Fraction:
+                    {
+                    AnnotationFractionRunCR fraction = (AnnotationFractionRunCR)*run;
+                    str += fraction.GetNumeratorContent();
+                    str += opts.GetFractionSeparator();
+                    str += fraction.GetDenominatorContent();
+                    
+                    break;
+                    }
+
+                default:
+                    BeAssert(false);
+                    break;
+                }
+            }
+        }
+
+    return str;
     }
 
 //*****************************************************************************************************************************************************************************************************
@@ -433,7 +484,7 @@ BentleyStatus AnnotationTextBlockPersistence::DecodeFromFlatBuf(AnnotationTextBl
         }
     
     PRECONDITION(fbDocument.has_styleId(), ERROR);
-    document.SetStyleId(DgnStyleId((uint64_t)fbDocument.styleId()), SetAnnotationTextStyleOptions::Direct);
+    document.SetStyleId(AnnotationTextStyleId((uint64_t)fbDocument.styleId()), SetAnnotationTextStyleOptions::Direct);
     
     if (fbDocument.has_styleOverrides())
         POSTCONDITION(SUCCESS == AnnotationTextStylePersistence::DecodeFromFlatBuf(document.m_styleOverrides, *fbDocument.styleOverrides()), ERROR);
@@ -444,7 +495,7 @@ BentleyStatus AnnotationTextBlockPersistence::DecodeFromFlatBuf(AnnotationTextBl
             {
             AnnotationParagraphPtr paragraph = AnnotationParagraph::Create(document.GetDbR());
             PRECONDITION(fbParagraph.has_styleId(), ERROR);
-            paragraph->SetStyleId(DgnStyleId((uint64_t)fbParagraph.styleId()), SetAnnotationTextStyleOptions::Direct);
+            paragraph->SetStyleId(AnnotationTextStyleId((uint64_t)fbParagraph.styleId()), SetAnnotationTextStyleOptions::Direct);
 
             if (fbParagraph.has_runs())
                 {
@@ -502,7 +553,7 @@ BentleyStatus AnnotationTextBlockPersistence::DecodeFromFlatBuf(AnnotationTextBl
                         continue;
 
                     PRECONDITION(fbRun.has_styleId(), ERROR);
-                    run->SetStyleId(DgnStyleId((uint64_t)fbRun.styleId()), SetAnnotationTextStyleOptions::Direct);
+                    run->SetStyleId(AnnotationTextStyleId((uint64_t)fbRun.styleId()), SetAnnotationTextStyleOptions::Direct);
                     
                     if (fbRun.has_styleOverrides())
                         POSTCONDITION(SUCCESS == AnnotationTextStylePersistence::DecodeFromFlatBuf(run->m_styleOverrides, *fbRun.styleOverrides()), ERROR);

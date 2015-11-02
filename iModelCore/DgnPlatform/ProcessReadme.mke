@@ -2,17 +2,18 @@
 #
 #     $Source: ProcessReadme.mke $
 #
-#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
-PolicyFile=$(SrcRoot)DgnPlatform/privmki/AssertDgnPlatformPolicy.mki
 %include mdl.mki
 %include $(SharedMki)stdversion.mki
+
+OutDgnPlatformBuild             = $(OutBuildDir)DgnPlatform/
 
 #--------------------------------------------------------------------------------------------------
 #  Update the readme file with the proper version number
 #--------------------------------------------------------------------------------------------------
-readmeDir      = ${dgnPlatformBuildDir_}/
+readmeDir      = ${OutDgnPlatformBuild}/
 VERSION_STRING = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
 
 $(readmeDir)readme.htm : $(baseDir)readme.htm

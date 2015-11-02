@@ -66,7 +66,8 @@ struct CategoryTests : public DgnDbTestFixture
 TEST_F (CategoryTests, InsertCategory)
     {
     SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
-
+    ASSERT_TRUE(m_db.IsValid());
+        
     //Category properties.
     Utf8CP cat_code = "Test Category";
     Utf8CP cat_desc = "This is a test category.";
@@ -582,4 +583,39 @@ TEST_F (CategoryTests, QueryByElementId)
     EXPECT_TRUE(tofind.IsValid());
     EXPECT_TRUE(tofind == categoryId);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* Category code = { Value : CategoryName; Namespace : blank }
+* SubCategory code = { Value : SubCategoryName; Namespace : CategoryName }
+* Default sub-category name is same as category name
+* Therefore when we rename a category we must update sub-category codes.
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CategoryTests, RenameCategory)
+    {
+    SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
+
+    DgnCategory cat(DgnCategory::CreateParams(*m_db, "MyCat", DgnCategory::Scope::Physical));
+    DgnSubCategory::Appearance app;
+    DgnCategoryCPtr cpCat = cat.Insert(app);
+    ASSERT_TRUE(cpCat.IsValid());
+
+    DgnSubCategory subcat(DgnSubCategory::CreateParams(*m_db, cat.GetCategoryId(), "SubCat", app));
+    EXPECT_TRUE(subcat.Insert().IsValid());
+
+    DgnCategoryPtr pCat = cpCat->MakeCopy<DgnCategory>();
+    EXPECT_EQ(DgnDbStatus::Success, pCat->SetCode(DgnCategory::CreateCategoryCode("NewCat")));
+    EXPECT_TRUE(pCat->Update().IsValid());
+
+    auto cpDefaultSubcat = DgnSubCategory::QuerySubCategory(pCat->GetDefaultSubCategoryId(), *m_db);
+    ASSERT_TRUE(cpDefaultSubcat.IsValid());
+    EXPECT_EQ(cpDefaultSubcat->GetCode().GetValue(), "NewCat");
+    EXPECT_EQ(cpDefaultSubcat->GetCode().GetNameSpace(), "NewCat");
+
+    auto cpSubcat = DgnSubCategory::QuerySubCategory(subcat.GetSubCategoryId(), *m_db);
+    ASSERT_TRUE(cpSubcat.IsValid());
+    EXPECT_EQ(cpSubcat->GetCode().GetValue(), "SubCat");
+    EXPECT_EQ(cpSubcat->GetCode().GetNameSpace(), "NewCat");
+    }
+
 
