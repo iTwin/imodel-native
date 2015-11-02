@@ -19,7 +19,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="WebServicesClient-PublishedAPI" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishApi.mke"
+    <Part Name="WebServicesClient-PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke"
      BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml">
         <SubPart PartName="PublishedApi" PartFile="MobileDgn" Repository="MobileDgn"/>
         <SubPart PartName="WebServicesClient-PublicAPI" />
@@ -65,7 +65,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="WebServicesCache-PublishedAPI" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishApi.mke"
+    <Part Name="WebServicesCache-PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke"
      BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml">
         <SubPart PartName="WebServicesCache-PublicAPI" />
         <Bindings>
@@ -121,7 +121,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="DgnDbServerClient-PublishedAPI" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishApi.mke"
+    <Part Name="DgnDbServerClient-PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke"
      BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml">
         <SubPart PartName="DgnDbServerClient-PublicAPI" />
         <Bindings>
@@ -166,7 +166,7 @@
 
     <!-- English Xliffs generated during the build are pushed (by PRG only) to Mercurial next to translations for L10N vendor convenience -->
     <Part Name="L10N-WSClientXliffs-en" OnlyPlatforms="x64"
-        BentleyBuildMakeFile="${SrcBsiCommon}sqlang/mki/PushXliffsFromBuild.mke"
+        BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/PushXliffsFromBuild.mke"
         BentleyBuildMakeOptions="-dBUILD_XLIFF_DIRECTORY=$(OutputRootDir)BuildContexts/WSClient/Delivery/xliffs/ -dL10N_XLIFF_DIRECTORY=$(SrcRoot)l10n/l10n-WSClient/en/">
         <SubPart PartName="WSClient-Xliffs" />
     </Part>

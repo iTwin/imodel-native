@@ -12,26 +12,38 @@
 #include <Bentley/DateTime.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+typedef std::shared_ptr<struct RepositoryInfo> RepositoryInfoPtr;
+typedef struct RepositoryInfo& RepositoryInfoR;
+typedef const struct RepositoryInfo& RepositoryInfoCR;
+
 struct RepositoryInfo
 {
 //__PUBLISH_SECTION_END__
 private:
-    Utf8String m_repositoryUrl;
+    FileInfo   m_fileInfo;
+    Utf8String m_serverUrl;
     Utf8String m_description;
-    Utf8String m_repositoryId;
+    Utf8String m_id;
     Utf8String m_userUploaded;
     DateTime   m_uploadedDate;
+protected:
+    RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id);
+    RepositoryInfo(FileInfoCR fileInfo, Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR description, Utf8StringCR user, DateTimeCR date);
  //__PUBLISH_SECTION_START__
 public:
-    RepositoryInfo(Utf8StringCR repositoryUrl, Utf8StringCR description, Utf8StringCR repositoryId, Utf8StringCR userUploaded, DateTimeCR uploadedDate);
+    DGNDBSERVERCLIENT_EXPORT static RepositoryInfoPtr Create(Utf8StringCR serverUrl, Utf8StringCR id);
+    DGNDBSERVERCLIENT_EXPORT static RepositoryInfoPtr Create(FileInfoCR fileInfo, Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR description, Utf8StringCR user, DateTimeCR date);
 
-    Utf8StringCR GetDescription();
-    Utf8StringCR GetRepositoryURL();
-    Utf8StringCR GetRepositoryId();
-    Utf8StringCR GetUserUploaded();
-    DateTimeCR   GetUploadedDate();
+
+    DGNDBSERVERCLIENT_EXPORT FileInfoCR   GetFileInfo() const;
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetDescription() const;
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetServerURL() const;
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetId() const;
+    DGNDBSERVERCLIENT_EXPORT Utf8String   GetWSRepositoryName() const;
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetUserUploaded() const;
+    DGNDBSERVERCLIENT_EXPORT DateTimeCR   GetUploadedDate() const;
+
+    static RepositoryInfoPtr ReadRepositoryInfo(Dgn::DgnDbCR db);
+    static BeSQLite::DbResult WriteRepositoryInfo(Dgn::DgnDbR db, const RepositoryInfo& repositoryInfo);
 };
-
-typedef RepositoryInfo& RepositoryInfoR;
-typedef const RepositoryInfo& RepositoryInfoCR;
 END_BENTLEY_DGNDBSERVER_NAMESPACE
