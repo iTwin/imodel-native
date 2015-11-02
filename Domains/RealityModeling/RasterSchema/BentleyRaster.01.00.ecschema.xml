@@ -6,9 +6,13 @@
     <ECSchemaReference name="dgn" version="02.00" prefix="dgn" />
 
     <ECClass typeName="RasterModel" isDomainClass="True" >
+
+<!-- RASTERMOSAIC_WIP - will probably be needed when we work on DgnDb06Dev       
       <ECCustomAttributes>
         <ClassHasHandler xmlns="dgn.02.00" />
       </ECCustomAttributes>
+-->
+      
       <BaseClass>dgn:PhysicalModel</BaseClass>
     </ECClass>
 
