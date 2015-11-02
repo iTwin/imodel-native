@@ -976,6 +976,7 @@ public:
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
             DGNPLATFORM_EXPORT virtual ILocksManagerPtr _CreateLocksManager(DgnDbR db) const;
+            virtual ILocksServerP _GetLocksServer(DgnDbR db) const { return nullptr; }
             };
 
         typedef bvector<DgnDomain*> T_RegisteredDomains;

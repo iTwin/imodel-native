@@ -36,11 +36,13 @@ private:
     BeSQLite::BeInt64Id m_id;
     LockableType m_type;
 public:
-    LockableId() : m_type(LockableType::Element) { }
-    explicit LockableId(DgnElementId id) : m_id(id), m_type(LockableType::Element) { }
-    explicit LockableId(DgnModelId id) : m_id(id), m_type(LockableType::Model) { }
-    LockableId(LockableType type, BeSQLite::BeInt64Id id) : m_id(id), m_type(type) { }
-    DGNPLATFORM_EXPORT explicit LockableId(DgnDbCR db);
+    LockableId() : m_type(LockableType::Element) { } //!< Constructs an invalid LockableId.
+    explicit LockableId(DgnElementId id) : m_id(id), m_type(LockableType::Element) { } //!< Constructs a LockableId for an element
+    explicit LockableId(DgnModelId id) : m_id(id), m_type(LockableType::Model) { } //!< Constructs a LockableId for a model
+    LockableId(LockableType type, BeSQLite::BeInt64Id id) : m_id(id), m_type(type) { } //!< Constructs a LockableId of the specified type and ID
+    DGNPLATFORM_EXPORT explicit LockableId(DgnDbCR db); //!< Constructs a LockableId for a DgnDb
+    DGNPLATFORM_EXPORT explicit LockableId(DgnModelCR model); //!< Constructs a LockableId for a model
+    DGNPLATFORM_EXPORT explicit LockableId(DgnElementCR element); //!< Constructs a LockableId for an element
 
     BeSQLite::BeInt64Id GetId() const { return m_id; } //!< The ID of the lockable object
     LockableType GetType() const { return m_type; } //!< The type of the lockable object
@@ -97,11 +99,11 @@ private:
     LockableId m_id;
     LockLevel m_level;
 public:
-    DgnLock() : m_level(LockLevel::None) { }
-    DgnLock(LockableId id, LockLevel level) : m_id(id), m_level(level) { }
-    DgnLock(DgnElementId elemId, LockLevel level) : m_id(elemId), m_level(level) { }
-    DgnLock(DgnModelId modelId, LockLevel level) : m_id(modelId), m_level(level) { }
-    DgnLock(DgnDbCR db, LockLevel level) : m_id(db), m_level(level) { }
+    DgnLock() : m_level(LockLevel::None) { } //!< Constructs a lock with an invalid ID.
+    DgnLock(LockableId id, LockLevel level) : m_id(id), m_level(level) { } //!< Constructs a lock for the specified lockable object
+    DgnLock(DgnElementId elemId, LockLevel level) : m_id(elemId), m_level(level) { } //!< Constructs a lock for an element
+    DgnLock(DgnModelId modelId, LockLevel level) : m_id(modelId), m_level(level) { } //!< Constructs a lock for a model
+    DgnLock(DgnDbCR db, LockLevel level) : m_id(db), m_level(level) { } //!< Constructs a lock for a DgnDb
 
     BeSQLite::BeInt64Id GetId() const { return m_id.GetId(); } //!< The ID of the lockable object
     LockLevel GetLevel() const { return m_level; } //!< The level of the lock
@@ -119,19 +121,21 @@ public:
     };
 };
 
+//! A set of locks compared by identity, ignoring lock level
+typedef bset<DgnLock, DgnLock::IdentityComparator> DgnLockSet;
+
 //=======================================================================================
 //! Specifies a request for one or more locks.
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
 struct LockRequest
 {
-    typedef bset<DgnLock, DgnLock::IdentityComparator> LockSet;
-    typedef LockSet::const_iterator const_iterator;
+    typedef DgnLockSet::const_iterator const_iterator;
     typedef const_iterator iterator;
 private:
-    typedef LockSet::iterator set_iterator;
+    typedef DgnLockSet::iterator set_iterator;
 
-    LockSet m_locks;
+    DgnLockSet m_locks;
 
     void Insert(LockableId id, LockLevel level);
 public:
@@ -207,6 +211,7 @@ protected:
     virtual bool _QueryLocksHeld(LockRequestR locks, bool localQueryOnly) = 0;
     virtual LockStatus _AcquireLocks(LockRequestR locks) = 0;
     virtual LockStatus _RelinquishLocks() = 0;
+    virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, bool localQueryOnly) = 0;
 
     virtual void _OnElementInserted(DgnElementId id) = 0;
     virtual void _OnModelInserted(DgnModelId id) = 0;
@@ -215,6 +220,7 @@ protected:
     DGNPLATFORM_EXPORT virtual LockStatus _LockModel(DgnModelCR model, LockLevel level);
 
     DGNPLATFORM_EXPORT BeFileName GetLockTableFileName() const;
+    DGNPLATFORM_EXPORT ILocksServerP GetLocksServer() const;
 public:
     DgnDbR GetDgnDb() const { return m_db; }
 
@@ -227,11 +233,56 @@ public:
     //! Relinquishes all locks held by the DgnDb.
     LockStatus RelinquishLocks() { return _RelinquishLocks(); }
 
+    //! Query this DgnDb's level of ownership of the specified lockable object.
+    LockStatus QueryLockLevel(LockLevel& level, LockableId lockId, bool localQueryOnly=false) { return _QueryLockLevel(level, lockId, localQueryOnly); }
+    //! Directly query the DgnDb's level of ownership of the specified lockable object.
+    LockLevel QueryLockLevel(LockableId lockId, bool localOnly=false) { LockLevel level; return LockStatus::Success == QueryLockLevel(level, lockId, localOnly) ? level : LockLevel::None; }
+    //! Query ownership of the specified DgnDb
+    LockLevel QueryLockLevel(DgnDbCR db, bool localOnly=false) { return QueryLockLevel(LockableId(db), localOnly); }
+    //! Query ownership of the specified element
+    LockLevel QueryLockLevel(DgnElementCR el, bool localOnly=false) { return QueryLockLevel(LockableId(el), localOnly); }
+    //! Query ownership of the specified model
+    LockLevel QueryLockLevel(DgnModelCR model, bool localOnly=false) { return QueryLockLevel(LockableId(model), localOnly); }
+
     void OnElementInserted(DgnElementId id); //<! Invoked when a new element is inserted into the DgnDb
     void OnModelInserted(DgnModelId id); //<! Invoked when a new model is inserted into the DgnDb
+
     LockStatus LockElement(DgnElementCR el, LockLevel level); //!< Used internally to lock an element for direct changes.
     LockStatus LockModel(DgnModelCR model, LockLevel level); //!< Used internally to lock a model for direct changes.
     LockStatus LockDb(LockLevel level); //!< Used internally to lock the DgnDb
+};
+
+//=======================================================================================
+//! Interface adopted by a server-like object which can coordinate locks held by multiple
+//! briefcases.
+//! In general, application code should interact with the ILocksManager object for a given
+//! briefcase via DgnDb::Locks(). The ILocksManager will communicate with ILocksServer
+//! as required.
+// @bsiclass                                                      Paul.Connelly   10/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ILocksServer
+{
+protected:
+    virtual bool _QueryLocksHeld(LockRequestCR locks, DgnDbR db) = 0;
+    virtual LockStatus _AcquireLocks(LockRequestCR locks, DgnDbR db) = 0;
+    virtual LockStatus _RelinquishLocks(DgnDbR db) = 0;
+    virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) = 0;
+    virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) = 0;
+public:
+    //! Returns true if all specified locks are held at or above the specified levels by the specified briefcase
+    bool QueryLocksHeld(LockRequestCR locks, DgnDbR db) { return _QueryLocksHeld(locks, db); }
+
+    //! Attempts to acquire the specified locks for the specified briefcase
+    LockStatus AcquireLocks(LockRequestCR locks, DgnDbR db) { return _AcquireLocks(locks, db); }
+
+    //! Relinquishes all locks owned by a briefcase
+    LockStatus RelinquishLocks(DgnDbR db) { return _RelinquishLocks(db); }
+
+    //! Queries the briefcase's level of ownership over the specified lockable object.
+    LockStatus QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) { return _QueryLockLevel(level, lockId, db); }
+
+    //! Attempts to retrieve the set of all locks held by a given briefcase
+    LockStatus QueryLocks(DgnLockSet& locks, DgnDbR db) { return _QueryLocks(locks, db); }
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

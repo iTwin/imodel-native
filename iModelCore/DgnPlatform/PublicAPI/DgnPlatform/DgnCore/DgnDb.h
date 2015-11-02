@@ -203,7 +203,7 @@ public:
     DGNPLATFORM_EXPORT TxnManagerR Txns();                    //!< The Txns for this DgnDb.
     DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The Revisions for this DgnDb.
     MemoryManager& Memory() const { return const_cast<MemoryManager&>(m_memoryManager);} //!< Manages memory associated with this DgnDb.
-    ILocksManager& Locks() const { return const_cast<ILocksManager&>(*m_locksManager);} //!< Manages this DgnDb's locks.
+    DGNPLATFORM_EXPORT ILocksManager& Locks(); //!< Manages this DgnDb's locks.
 
     //! Gets a cached and prepared ECSqlStatement.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;

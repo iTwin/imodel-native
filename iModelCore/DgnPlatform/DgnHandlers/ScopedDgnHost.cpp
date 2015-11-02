@@ -104,6 +104,10 @@ struct ProxyLocksAdmin : Dgn::DgnPlatformLib::Host::LocksAdmin
         {
         return nullptr != m_impl ? m_impl->_CreateLocksManager(db) : T_Super::_CreateLocksManager(db);
         }
+    virtual ILocksServerP _GetLocksServer(DgnDbR db) const override
+        {
+        return nullptr != m_impl ? m_impl->_GetLocksServer(db) : T_Super::_GetLocksServer(db);
+        }
 };
 
 /*---------------------------------------------------------------------------------**//**
