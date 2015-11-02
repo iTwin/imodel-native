@@ -286,7 +286,7 @@ TEST (BeSQLiteDb, ProfileTest)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (BeSQLiteDb, ChangeRepositoryIdInReadonlyMode)
+TEST (BeSQLiteDb, ChangeBriefcaseIdInReadonlyMode)
     {
     Utf8String dbPath;
 
@@ -304,15 +304,15 @@ TEST (BeSQLiteDb, ChangeRepositoryIdInReadonlyMode)
     ASSERT_EQ (BE_SQLITE_OK, stat) << L"Reopening test DgnDb '" << dbPath.c_str() << L"' failed.";
 
     BeTest::SetFailOnAssert(false);
-    stat = db.ChangeRepositoryId(BeRepositoryId(12345));
+    stat = db.ChangeBriefcaseId(BeBriefcaseId(12345));
     BeTest::SetFailOnAssert(true);
-    ASSERT_EQ (BE_SQLITE_READONLY, stat) << L"Calling ChangeRepositoryId on readonly DgnDb file is expected to fail.";
+    ASSERT_EQ (BE_SQLITE_READONLY, stat) << L"Calling ChangeBriefcaseId on readonly DgnDb file is expected to fail.";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (BeSQLiteDb, ChangeRepositoryId)
+TEST (BeSQLiteDb, ChangeBriefcaseId)
     {
     Utf8String dbPath;
 
@@ -335,12 +335,12 @@ TEST (BeSQLiteDb, ChangeRepositoryId)
             ASSERT_EQ (BE_SQLITE_OK, result) << L"Saving test RLV '" << localValueNames[i].c_str() << L"=" << val << L"' failed";
             }
 
-        ASSERT_EQ (BE_SQLITE_OK, db.SaveChanges()) << L"Committing repository local values failed.";
+        ASSERT_EQ (BE_SQLITE_OK, db.SaveChanges()) << L"Committing briefcase local values failed.";
         db.CloseDb();
         }
 
     //reopen DgnDb again, change repo id and close again (to avoid that caches linger around)
-    BeRepositoryId expectedRepoId;
+    BeBriefcaseId expectedRepoId;
     expectedRepoId.Invalidate();
 
         {
@@ -348,11 +348,11 @@ TEST (BeSQLiteDb, ChangeRepositoryId)
         DbResult stat = db.OpenBeSQLiteDb(dbPath.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
         ASSERT_EQ (BE_SQLITE_OK, stat) << L"Reopening test DgnDb '" << dbPath.c_str() << L"' failed.";
 
-        //now change repository id. This should truncate be_local and reinsert the new repo id
-        const BeRepositoryId currentRepoId = db.GetRepositoryId();
-        expectedRepoId = currentRepoId.GetNextRepositoryId();
-        stat = db.ChangeRepositoryId(expectedRepoId);
-        ASSERT_EQ (BE_SQLITE_OK, stat) << L"Changing the repository id is not expected to fail.";
+        //now change briefcase id. This should truncate be_local and reinsert the new repo id
+        const BeBriefcaseId currentRepoId = db.GetBriefcaseId();
+        expectedRepoId = currentRepoId.GetNextBriefcaseId();
+        stat = db.ChangeBriefcaseId(expectedRepoId);
+        ASSERT_EQ (BE_SQLITE_OK, stat) << L"Changing the briefcase id is not expected to fail.";
         }
 
     //now reopen from scratch
@@ -360,6 +360,7 @@ TEST (BeSQLiteDb, ChangeRepositoryId)
     DbResult stat = db.OpenBeSQLiteDb(dbPath.c_str(), Db::OpenParams(Db::OpenMode::Readonly));
     ASSERT_EQ (BE_SQLITE_OK, stat) << L"Reopening test DgnDb '" << dbPath.c_str() << L"' failed.";
 
+    // NB: "repository" here really means "briefcase", but we don't want to break existing DgnDbs.
     Utf8CP const repoIdKey = "be_repositoryId";
     size_t repoIdIndex = 0;
     ASSERT_TRUE (db.GetRLVCache().TryGetIndex(repoIdIndex, repoIdKey));
@@ -372,15 +373,15 @@ TEST (BeSQLiteDb, ChangeRepositoryId)
         {
         rowCount++;
         Utf8CP name = statement.GetValueText(0);
-        EXPECT_STREQ (repoIdKey, name) << L"be_local after a repository id change should only contain the repository id.";
+        EXPECT_STREQ (repoIdKey, name) << L"be_local after a briefcase id change should only contain the briefcase id.";
         //don't mimick the blob deserialization here. Just test that the column is not null. Use the API to check the actual repo id later
-        EXPECT_FALSE (statement.IsColumnNull(1)) << "Val column of repository id row in be_local after a repository id change must not be null.";
+        EXPECT_FALSE (statement.IsColumnNull(1)) << "Val column of briefcase id row in be_local after a briefcase id change must not be null.";
         }
 
-    EXPECT_EQ (1, rowCount) << L"be_local after a repository id change should only contain one row (the repo id).";
+    EXPECT_EQ (1, rowCount) << L"be_local after a briefcase id change should only contain one row (the repo id).";
 
     //check value of repo id through API. As we opened file from scratch the old id cannot be in the cache anymore.
     uint64_t actualRepoId;
     db.GetRLVCache().QueryValue(actualRepoId, repoIdIndex);
-    EXPECT_EQ (expectedRepoId.GetValue(), (int32_t) actualRepoId) << L"QueryRepositoryLocalValue did not return the right value for repository id after repository id had been changed.";
+    EXPECT_EQ (expectedRepoId.GetValue(), (int32_t) actualRepoId) << L"QueryBriefcaseLocalValue did not return the right value for briefcase id after briefcase id had been changed.";
     }

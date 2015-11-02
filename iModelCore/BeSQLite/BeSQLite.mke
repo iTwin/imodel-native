@@ -5,13 +5,12 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-GCC_DEFAULT_VISIBILITY=default
-GCC_NOSTRICT=1
-
-%include $(SrcRoot)bsicommon/sharedmki/CommonCompileLinkPolicy.mki
+GCC_DEFAULT_VISIBILITY              = default
+GCC_NOSTRICT                        = 1
+HAVE_PERMISSION_TO_COMPILE_AT_W3    = 1
 
 # disable checking of assignment to smaller data types. SQLite does this a lot.
-VCRuntimeCheckOption=\/RTCsu
+VCRuntimeCheckOption    = \/RTCsu
 
 %include mdl.mki
 
@@ -26,19 +25,16 @@ cDefs +% -D__BE_SQLITE_HOST_DLL__
     cDefs + -D_7ZIP_ST
 %endif
 
-baseDir = $(_MakeFilePath)
-sevenDir = $(baseDir)seven/
-snappyDir = $(baseDir)snappy/
-SQLiteDir = $(baseDir)SQLite/
-SubpartLibs = $(BuildContext)SubParts/Libs/
-
-warnLevel = -W3
-
-o = $(OutputRootDir)build/BeSQLite/
+baseDir                 = $(_MakeFilePath)
+sevenDir                = $(baseDir)seven/
+snappyDir               = $(baseDir)snappy/
+SQLiteDir               = $(baseDir)SQLite/
+SubpartLibs             = $(BuildContext)SubParts/Libs/
+o                       = $(OutBuildDir)BeSQLite/
 
 # DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
-appName         = BeSQLite
-CCompPDBName    = $(appName)
+appName                 = BeSQLite
+CCompPDBName            = $(appName)
 
 always:
     !~@mkdir $(o)
@@ -46,7 +42,7 @@ always:
 # Generate build version header (so we can embed as a property for diagnostic purposes).
 %include $(SharedMki)CreateBuildVersionHeader.mki
 
-MultiCompileDepends=$(_MakeFileSpec)
+MultiCompileDepends     = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
 $(o)LzmaEnc$(oext)      : $(sevenDir)LzmaEnc.c ${MultiCompileDepends}
@@ -103,7 +99,7 @@ CCompFpOpts=precise
 %endif
 
 $(o)SQLite$(oext): $(SQLiteDir)sqlite3-all.c $(SQLiteDir)sqlite3-1.c $(SQLiteDir)sqlite3-2.c $(SQLiteDir)sqlite3-3.c $(SQLiteDir)sqlite3-4.c \
-            $(SQLiteDir)sqlite3-5.c $(SQLiteDir)closure.c $(SQLiteDir)json1.c
+            $(SQLiteDir)sqlite3-5.c $(SQLiteDir)closure.c 
 
 %if $(BUILD_TOOLSET) == "CLANG"
     LLVMCommonCompOpts =% $(OriginalLLVMCommonCompOpts)

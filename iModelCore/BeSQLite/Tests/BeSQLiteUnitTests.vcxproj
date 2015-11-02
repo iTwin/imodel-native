@@ -12,10 +12,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="NonPublished\BeSQLiteDb_Test.cpp" />
-    <ClCompile Include="Performance\PerformanceBeSQLiteDb_Test.cpp" />
-    <ClCompile Include="Performance\PerformanceSQLite_Test.cpp" />
-    <ClCompile Include="Performance\PerformanceSqlStatement_Tests.cpp" />
-    <ClCompile Include="Performance\PerformanceTestingHelpers.cpp" />
     <ClCompile Include="Published\BeSQLiteDb_Test.cpp" />
     <ClCompile Include="Published\Statement_Test.cpp" />
   </ItemGroup>
@@ -25,8 +21,6 @@
   <ItemGroup>
     <ClInclude Include="NonPublished\BeSQLiteNonPublishedTests.h" />
     <ClInclude Include="NonPublished\PublicAPI\NonPublished\BeSQLite\BeSQLiteTests.h" />
-    <ClInclude Include="Performance\BeSQLitePerformanceTests.h" />
-    <ClInclude Include="Performance\include\PerformanceTestingHelpers.h" />
     <ClInclude Include="Published\BeSQLitePublishedTests.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

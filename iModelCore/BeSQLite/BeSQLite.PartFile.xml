@@ -25,7 +25,7 @@
     <!-- TRICKY: There are two sets of public APIs, BeSQLite and ECDb. There is only one published API for this repository, and it must do for both. 
          To avoid that we run the publishing twice this part cares for it and symlinks the same published API once under the name of BeSQLite and
          once under the name of ECDb-->
-    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi">
+    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi">
         <SubPart PartName="PublicAPI" />
         <Bindings>
             <Directory SourceName="Delivery/PublishedApi"  SubPartDirectory="PublishedApi/BeSQLite"/>
@@ -33,13 +33,6 @@
     </Part>
 
     <!-- ******************************** Unit Tests ************************************** -->
-
-    <!-- Allow dependent tests to #include <UnitTests/BackDoor/PerformanceTestingHelper/PerformanceTestingHelpers.h> -->
-    <Part Name="PerformanceTestingHelpers" BentleyBuildMakeFile="Tests/Prewire.mke">
-        <Bindings>
-            <Files Required="false" SubPartDirectory="UnitTests/include/UnitTests/BackDoor/PerformanceTestingHelper">Delivery/UnitTests/PerformanceTestingHelpers.h</Files>
-        </Bindings>
-    </Part>
 
     <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
         <SubPart PartName="UnitTests-Documents-DgnDb" Repository="BeGTest" PartFile="BeGTest"/>
@@ -53,13 +46,6 @@
         <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="BeSQLite/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
-        </Bindings>
-    </Part>
-
-    <Part Name="UnitTests-Performance" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
-        <SubPart PartName="PrewireForUnitTests" />
-        <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="BeSQLite/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
         </Bindings>
     </Part>
 
