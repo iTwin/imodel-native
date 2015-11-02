@@ -998,16 +998,17 @@ TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV21AndReceives201_Err
     EXPECT_FALSE(result.IsSuccess());
     }
 
-TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV21AndReceives200_Success)
+TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV21AndReceives200_SuccessAndReturnsBody)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi21());
-    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::OK, "{}"));
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::OK, "TestChangesetResponse"));
 
     auto result = client->SendChangesetRequest(HttpStringBody::Create("TestChangeset"), nullptr, nullptr)->GetResult();
     EXPECT_TRUE(result.IsSuccess());
+    EXPECT_EQ("TestChangesetResponse", result.GetValue()->AsString());
     }
 
 TEST_F (WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV1_SendsPostRequest)

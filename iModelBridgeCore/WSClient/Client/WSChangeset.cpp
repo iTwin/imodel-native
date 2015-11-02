@@ -62,7 +62,7 @@ size_t WSChangeset::CalculateSize() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String WSChangeset::ToString() const
+Utf8String WSChangeset::ToRequestString() const
     {
     Json::Value changesetJson;
     Json::Value& instancesJson = changesetJson["instances"];
@@ -86,18 +86,42 @@ Utf8String WSChangeset::ToString() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSChangeset::Instance& WSChangeset::AddInstance
+BentleyStatus WSChangeset::ExtractNewIdsFromResponse
 (
-ObjectId instanceId,
-ChangeStatus status,
-std::shared_ptr<Json::Value> properties
-)
+RapidJsonValueCR response,
+const std::function<BentleyStatus(ObjectIdCR oldId, ObjectIdCR newId)>& handler
+) const
+    {
+    auto& instancesJson = response["changedInstances"];
+    if (!instancesJson.IsArray() || instancesJson.Size() != m_instances.size())
+        {
+        return ERROR;
+        }
+
+    rapidjson::SizeType index = 0;
+    for (auto& instance : m_instances)
+        {
+        auto& instanceJson = instancesJson[index]["instanceAfterChange"];
+        if (SUCCESS != instance->ExtractNewIdsFromInstanceAfterChange(instanceJson, handler))
+            {
+            return ERROR;
+            }
+        index++;
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+WSChangeset::Instance& WSChangeset::AddInstance(ObjectId instanceId, ChangeState state, JsonValuePtr properties)
     {
     m_instances.push_back(std::make_shared<Instance>());
     auto& instance = m_instances.back();
 
     instance->m_id = instanceId;
-    instance->m_status = status;
+    instance->m_state = state;
     instance->m_properties = properties;
 
     return *instance;
@@ -129,21 +153,21 @@ bool WSChangeset::RemoveInstance(Instance& instanceToRemove)
 WSChangeset::Instance& WSChangeset::Instance::AddRelatedInstance
 (
 ObjectId relId,
-ChangeStatus relStatus,
+ChangeState relState,
 ECRelatedInstanceDirection relDirection,
 ObjectId instanceId,
-ChangeStatus status,
-std::shared_ptr<Json::Value> properties
+ChangeState state,
+JsonValuePtr properties
 )
     {
     m_relationships.push_back(std::make_shared<Relationship>());
     auto& relationship = m_relationships.back();
 
     relationship->m_id = relId;
-    relationship->m_status = relStatus;
+    relationship->m_state = relState;
     relationship->m_direction = relDirection;
     relationship->m_instance.m_id = instanceId;
-    relationship->m_instance.m_status = status;
+    relationship->m_instance.m_state = state;
     relationship->m_instance.m_properties = properties;
 
     return relationship->m_instance;
@@ -152,9 +176,71 @@ std::shared_ptr<Json::Value> properties
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus WSChangeset::Instance::ExtractNewIdsFromInstanceAfterChange
+(
+RapidJsonValueCR instanceAfterChange,
+const std::function<BentleyStatus(ObjectIdCR oldId, ObjectIdCR newId)>& handler
+) const
+    {
+    if (ChangeState::Created == m_state)
+        {
+        if (SUCCESS != handler(m_id, GetObjectIdFromInstance(instanceAfterChange)))
+            {
+            return ERROR;
+            }
+        }
+
+    if (m_relationships.empty())
+        {
+        return SUCCESS;
+        }
+
+    auto& relationshipsJson = instanceAfterChange["relationshipInstances"];
+    if (relationshipsJson.Size() != m_relationships.size())
+        {
+        return ERROR;
+        }
+
+    rapidjson::SizeType index = 0;
+    for (auto& relationship : m_relationships)
+        {
+        auto& relationshipJson = relationshipsJson[index];
+        if (ChangeState::Created == relationship->m_state)
+            {
+            if (SUCCESS != handler(relationship->m_id, GetObjectIdFromInstance(relationshipJson)))
+                {
+                return ERROR;
+                }
+            }
+        auto& relatedInstanceJson = relationshipJson["relatedInstance"];
+        if (SUCCESS != relationship->m_instance.ExtractNewIdsFromInstanceAfterChange(relatedInstanceJson, handler))
+            {
+            return ERROR;
+            }
+        index++;
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ObjectId WSChangeset::Instance::GetObjectIdFromInstance(RapidJsonValueCR instance)
+    {
+    ObjectId id;
+    id.schemaName = instance["schemaName"].GetString();
+    id.className = instance["className"].GetString();
+    id.remoteId = instance["instanceId"].GetString();
+    return id;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 void WSChangeset::Instance::ToJson(JsonValueR instanceJsonOut) const
     {
-    FillBase(instanceJsonOut, m_id, m_status, m_properties);
+    FillBase(instanceJsonOut, m_id, m_state, m_properties);
 
     if (m_relationships.empty())
         {
@@ -172,7 +258,7 @@ void WSChangeset::Instance::ToJson(JsonValueR instanceJsonOut) const
         {
         JsonValueR relationshipJson = relationshipsJson[index];
 
-        FillBase(relationshipJson, relationship->m_id, relationship->m_status, nullptr);
+        FillBase(relationshipJson, relationship->m_id, relationship->m_state, nullptr);
         relationshipJson["direction"] = GetDirectionStr(relationship->m_direction);
 
         relationship->m_instance.ToJson(relationshipJson["relatedInstance"]);
@@ -184,28 +270,22 @@ void WSChangeset::Instance::ToJson(JsonValueR instanceJsonOut) const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSChangeset::Instance::FillBase
-(
-JsonValueR instanceJsonOut,
-ObjectIdCR id,
-ChangeStatus status,
-std::shared_ptr<Json::Value> properties
-)
+void WSChangeset::Instance::FillBase(JsonValueR instanceJsonOut, ObjectIdCR id, ChangeState state, JsonValuePtr properties)
     {
     instanceJsonOut["schemaName"] = id.schemaName;
     instanceJsonOut["className"] = id.className;
-    if (ChangeStatus::Created != status)
+    if (ChangeState::Created != state)
         {
-        instanceJsonOut["remoteId"] = id.remoteId;
+        instanceJsonOut["instanceId"] = id.remoteId;
         }
 
-    Utf8CP statusStr = GetChangeStatusStr(status);
-    if (nullptr != statusStr)
+    Utf8CP stateStr = GetChangeStateStr(state);
+    if (nullptr != stateStr)
         {
-        instanceJsonOut["changeStatus"] = statusStr;
+        instanceJsonOut["changeState"] = stateStr;
         }
 
-    if (nullptr != properties && (ChangeStatus::Created == status || ChangeStatus::Modified == status))
+    if (nullptr != properties && (ChangeState::Created == state || ChangeState::Modified == state))
         {
         instanceJsonOut["properties"] = *properties;
         }
@@ -214,13 +294,7 @@ std::shared_ptr<Json::Value> properties
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t WSChangeset::Instance::CalculateBaseSize
-(
-ObjectIdCR id,
-ChangeStatus status,
-std::shared_ptr<Json::Value> properties,
-size_t& size
-)
+size_t WSChangeset::Instance::CalculateBaseSize(ObjectIdCR id, ChangeState state, JsonValuePtr properties, size_t& size)
     {
     if (0 != size)
         {
@@ -229,18 +303,18 @@ size_t& size
 
     size += CalculateFieldSize("schemaName", id.schemaName.c_str());
     size += CalculateFieldSize("className", id.className.c_str());
-    if (ChangeStatus::Created != status)
+    if (ChangeState::Created != state)
         {
-        size += CalculateFieldSize("remoteId", id.remoteId.c_str());
+        size += CalculateFieldSize("instanceId", id.remoteId.c_str());
         }
 
-    Utf8CP statusStr = GetChangeStatusStr(status);
-    if (nullptr != statusStr)
+    Utf8CP stateStr = GetChangeStateStr(state);
+    if (nullptr != stateStr)
         {
-        size += CalculateFieldSize("changeStatus", statusStr);
+        size += CalculateFieldSize("changeState", stateStr);
         }
 
-    if (nullptr != properties && (ChangeStatus::Created == status || ChangeStatus::Modified == status))
+    if (nullptr != properties && (ChangeState::Created == state || ChangeState::Modified == state))
         {
         static const size_t propertiesFieldMinimum = Utf8String(R"("properties":,)").size();
         size += propertiesFieldMinimum;
@@ -258,7 +332,7 @@ size_t& size
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t WSChangeset::Instance::CalculateSize() const
     {
-    size_t size = CalculateBaseSize(m_id, m_status, m_properties, m_baseSize);
+    size_t size = CalculateBaseSize(m_id, m_state, m_properties, m_baseSize);
 
     if (m_relationships.empty())
         {
@@ -270,7 +344,7 @@ size_t WSChangeset::Instance::CalculateSize() const
 
     for (auto& relationship : m_relationships)
         {
-        size += CalculateBaseSize(relationship->m_id, relationship->m_status, nullptr, relationship->m_baseSize);
+        size += CalculateBaseSize(relationship->m_id, relationship->m_state, nullptr, relationship->m_baseSize);
         size += CalculateDirectionFieldSize(relationship->m_direction);
 
         static const size_t relatedFieldMinimum = Utf8String(R"("relatedInstance":,)").size();
@@ -353,17 +427,17 @@ bool WSChangeset::Instance::RemoveRelatedInstance(Instance& instanceToRemove)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP WSChangeset::Instance::GetChangeStatusStr(ChangeStatus status)
+Utf8CP WSChangeset::Instance::GetChangeStateStr(ChangeState state)
     {
-    switch (status)
+    switch (state)
         {
-        case ChangeStatus::Existing:
+        case ChangeState::Existing:
             return nullptr;
-        case ChangeStatus::Created:
-            return "created";
-        case ChangeStatus::Modified:
+        case ChangeState::Created:
+            return "new";
+        case ChangeState::Modified:
             return "modified";
-        case ChangeStatus::Deleted:
+        case ChangeState::Deleted:
             return "deleted";
         default:
             BeAssert(false);
@@ -401,7 +475,7 @@ ObjectIdCR WSChangeset::Instance::GetId() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSChangeset::ChangeStatus WSChangeset::Instance::GetStatus() const
+WSChangeset::ChangeState WSChangeset::Instance::GetState() const
     {
-    return m_status;
+    return m_state;
     }

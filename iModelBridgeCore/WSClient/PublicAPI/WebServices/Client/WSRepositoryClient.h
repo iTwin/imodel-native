@@ -35,7 +35,7 @@ typedef std::shared_ptr<struct IWSRepositoryClient>     IWSRepositoryClientPtr;
 typedef AsyncResult<WSObjectsResponse, WSError>         WSObjectsResult;
 typedef AsyncResult<WSFileResponse, WSError>            WSFileResult;
 typedef AsyncResult<WSCreateObjectResponse, WSError>    WSCreateObjectResult;
-typedef AsyncResult<void, WSError>                      WSChangesetResult;
+typedef AsyncResult<HttpBodyPtr, WSError>               WSChangesetResult;
 typedef AsyncResult<void, WSError>                      WSUpdateObjectResult;
 typedef AsyncResult<void, WSError>                      WSDeleteObjectResult;
 typedef AsyncResult<void, WSError>                      WSUpdateFileResult;
@@ -117,6 +117,7 @@ struct IWSRepositoryClient
         //! @param changeset JSON serialized to string. IIS defaults request size to 4MB (configurable) so string should accomodate to that
         //! @param uploadProgressCallback upload callback for changeset
         //! @param cancellationToken 
+        //! @return server response that includes changed instances JSON
         virtual AsyncTaskPtr<WSChangesetResult> SendChangesetRequest
             (
             HttpBodyPtr changeset,
