@@ -2032,8 +2032,8 @@ DgnElementCPtr ComponentModel::HarvestSolution(DgnDbStatus* statusOut, PhysicalM
         }
 
     GeomStream  geom;
-    Placement3d placement;
-    if (builder->GetGeomStream(geom) != BSISUCCESS || builder->GetPlacement(placement) != BSISUCCESS)
+    Placement3d placement = builder->GetPlacement3d();
+    if (builder->GetGeomStream(geom) != BSISUCCESS)
         {
         BeAssert(false);
         status = DgnDbStatus::NotFound;
