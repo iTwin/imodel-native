@@ -1306,7 +1306,7 @@ StatusInt ViewContext::VisitHit(HitDetailCR hit)
 +---------------+---------------+---------------+---------------+---------------+------*/
 QvElem* ViewContext::CreateCacheElem(IStrokeForCache& stroker, QvCache* qvCache, double pixelSize, ICachedDrawP cachedDraw)
     {
-    //  BeAssert(!m_creatingCacheElem || nullptr != cachedDraw);
+    BeAssert(!m_creatingCacheElem || nullptr != cachedDraw);
 
     if (nullptr == cachedDraw)
         cachedDraw = m_ICachedDraw;
