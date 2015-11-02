@@ -5,15 +5,11 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
-
 %if !defined (BuildContext)
    %error This makefile must be launched from BentleyBuild
 %endif
 
-PolicyFile = $(InternalSystemPolicy)
-%include $(SrcRoot)bsicommon\sharedmki\CommonCompileLinkPolicy.mki
-
-#SolutionPolicyMki = $(_MakeFilePath)SolutionPolicy.mki
+%include mdl.mki
 
 ECSqlSrcDir         = $(_MakeFilePath)
 SubpartLibs         = $(BuildContext)SubParts/Libs/
@@ -21,7 +17,6 @@ o                   = $(OutputRootDir)Build/ECSqlConsole/
 ContextDeliveryDir  = $(BuildContext)Delivery/
 appName             = ECSqlConsole
 
-%include mdl.mki
 
 AllHeaders = \
         $(ECSqlSrcDir)ECSqlConsole.h \

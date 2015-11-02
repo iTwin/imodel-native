@@ -17,54 +17,16 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 struct PerformanceECSqlVsSqliteTests : ECDbTestFixture
     {
 private:
-    static const int s_initialInstanceCount = 1000000;
-    static const int s_opCount = 500000;
     static BeFileName s_seedFilePath;
 
 protected:
-    bmap<ECClassId,std::vector<ECInstanceId>> s_instanceIds;
+    static const int64_t s_firstInstanceId = INT64_C(1);
+    static const int s_initialInstanceCount = 1000000;
+    static const int s_opCount = 500000;
 
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                      Krischan.Eberle                  10/15
-    //+---------------+---------------+---------------+---------------+---------------+------
-    BentleyStatus CreateSampleIdPopulation(ECDbCR ecdb)
-        {
-        if (!s_instanceIds.empty())
-            return SUCCESS;
 
-        ECDb seed;
-        if (BE_SQLITE_OK != seed.OpenBeSQLiteDb(s_seedFilePath, ECDb::OpenParams(Db::OpenMode::Readonly)))
-            return ERROR;
-
-        ECSqlStatement stmt;
-        if (ECSqlStatus::Success != stmt.Prepare(seed, "SELECT GetECClassId(), ECInstanceId FROM ONLY ecsql.TH3"))
-            return ERROR;
-
-        const int increment = s_initialInstanceCount / s_opCount;
-        if (increment * s_opCount > s_initialInstanceCount)
-            {
-            EXPECT_LE(increment * s_opCount, s_initialInstanceCount);
-            return ERROR;
-            }
-
-        for (int i = 0; i < s_opCount; i++)
-            {
-            for (int j = 0; j < increment; j++)
-                {
-                if (BE_SQLITE_ROW != stmt.Step())
-                    return ERROR;
-                }
-
-            ECClassId classId = stmt.GetValueInt64(0);
-            ECInstanceId id = stmt.GetValueId<ECInstanceId>(1);
-            if (classId == ECClass::UNSET_ECCLASSID || !id.IsValid())
-                return ERROR;
-
-            s_instanceIds[classId].push_back(id);
-            }
-
-        return SUCCESS;
-        }
+    static int DetermineECInstanceIdIncrement() { return s_initialInstanceCount / s_opCount; }
+    static Utf8String GenerateTestValue() { Utf8String val; val.Sprintf("%d", DateTime::GetCurrentTimeUtc().GetDayOfYear()); return val; }
 
     //---------------------------------------------------------------------------------------
     // @bsimethod                                      Krischan.Eberle                  10/15
@@ -96,16 +58,19 @@ protected:
                 return ERROR;
 
             ECSqlStatement stmt;
-            if (ECSqlStatus::Success != stmt.Prepare(seed, "INSERT INTO ecsql.TH3(S,S1,S2,S3) VALUES(?,?,?,?)"))
+            if (ECSqlStatus::Success != stmt.Prepare(seed, "INSERT INTO ecsql.TH3(ECInstanceId,S,S1,S2,S3) VALUES(?,?,?,?,?)"))
                 return ERROR;
 
             for (int i = 0; i < s_initialInstanceCount; i++)
                 {
+                if (ECSqlStatus::Success != stmt.BindId(1, ECInstanceId(s_firstInstanceId + i)))
+                    return ERROR;
+
                 for (int j = 0; j < 4; j++)
                     {
                     Utf8String sval;
                     sval.Sprintf("bla %d_%d", j, i);
-                    if (ECSqlStatus::Success != stmt.BindText(j + 1, sval.c_str(), IECSqlBinder::MakeCopy::Yes))
+                    if (ECSqlStatus::Success != stmt.BindText(j + 2, sval.c_str(), IECSqlBinder::MakeCopy::Yes))
                         return ERROR;
                     }
 
@@ -120,9 +85,6 @@ protected:
             seed.SaveChanges();
             }
         
-        if (SUCCESS != CreateSampleIdPopulation(ecdb))
-            return ERROR;
-
         return CloneECDb(ecdb, "ecsqlvssqliteperformance.ecdb", s_seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)) == BE_SQLITE_OK ? SUCCESS : ERROR;
         }
 
@@ -176,7 +138,7 @@ TEST_F(PerformanceECSqlVsSqliteTests, SqliteUpdateWithClassIdFilter)
     bvector<ECClassId> classIds;
     GetECClassIdList(classIds, ecdb, *th3Class, true);
 
-    Utf8String sql("UPDATE [ecsqltest_THBase] SET [S]='S', [S1]='S1', [S2]='S2', [S3]='S3' WHERE [ECInstanceId]=? AND (");
+    Utf8String sql("UPDATE [ecsqltest_THBase] SET [S]=?, [S1]=?, [S2]=?, [S3]=? WHERE [ECInstanceId]=? AND (");
     bool isFirstItem = true;
     for (ECClassId classId : classIds)
         {
@@ -195,12 +157,24 @@ TEST_F(PerformanceECSqlVsSqliteTests, SqliteUpdateWithClassIdFilter)
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, sql.c_str())) << sql.c_str();
     LOG.infov("SQL with class id filter: %s", stmt.GetSql());
 
-    std::vector<ECInstanceId> const& instanceIds = s_instanceIds[th3Class->GetId()];
+    const int instanceIdIncrement = DetermineECInstanceIdIncrement();
+    Utf8String testVal = GenerateTestValue();
 
     StopWatch timer(true);
-    for (ECInstanceId const& id : instanceIds)
+    for (int i = 0; i < s_opCount; i++)
         {
-        if (BE_SQLITE_OK != stmt.BindId(1, id))
+        ECInstanceId id(s_firstInstanceId + i*instanceIdIncrement);
+
+        for (int parameterIx = 1; parameterIx <= 4; parameterIx++)
+            {
+            if (BE_SQLITE_OK != stmt.BindText(parameterIx, testVal.c_str(), Statement::MakeCopy::No))
+                {
+                FAIL() << "SQL UPDATE bind failed";
+                return;
+                }
+            }
+
+        if (BE_SQLITE_OK != stmt.BindId(5, id))
             {
             FAIL() << "SQL UPDATE bind failed";
             return;
@@ -217,7 +191,7 @@ TEST_F(PerformanceECSqlVsSqliteTests, SqliteUpdateWithClassIdFilter)
         }
 
     timer.Stop();
-    LogTiming(timer, "SQLite UPDATE with ECClassId filter", (int) instanceIds.size());
+    LogTiming(timer, "SQLite UPDATE with ECClassId filter", s_opCount);
     }
 
 //---------------------------------------------------------------------------------------
@@ -230,16 +204,28 @@ TEST_F(PerformanceECSqlVsSqliteTests, SqliteUpdateWithoutClassIdFilter)
 
     ECClassId th3ClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "TH3");
     ASSERT_NE(ECClass::UNSET_ECCLASSID, th3ClassId);
-    std::vector<ECInstanceId> const& instanceIds = s_instanceIds[th3ClassId];
 
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "UPDATE [ecsqltest_THBase] SET [S]='S', [S1]='S1', [S2]='S2', [S3]='S3' WHERE [ECInstanceId]=?"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "UPDATE [ecsqltest_THBase] SET [S]=?, [S1]=?, [S2]=?, [S3]=? WHERE [ECInstanceId]=?"));
     LOG.infov("SQL w/o class id filter: %s", stmt.GetSql());
 
+    const int instanceIdIncrement = DetermineECInstanceIdIncrement();
+    Utf8String testVal = GenerateTestValue();
+
     StopWatch timer(true);
-    for (ECInstanceId const& id : instanceIds)
+    for (int i = 0; i < s_opCount; i++)
         {
-        if (BE_SQLITE_OK != stmt.BindId(1, id))
+        ECInstanceId id(s_firstInstanceId + i*instanceIdIncrement);
+        for (int parameterIx = 1; parameterIx <= 4; parameterIx++)
+            {
+            if (BE_SQLITE_OK != stmt.BindText(parameterIx, testVal.c_str(), Statement::MakeCopy::No))
+                {
+                FAIL() << "SQL UPDATE bind failed";
+                return;
+                }
+            }
+
+        if (BE_SQLITE_OK != stmt.BindId(5, id))
             {
             FAIL() << "SQL UPDATE bind failed";
             return;
@@ -256,7 +242,7 @@ TEST_F(PerformanceECSqlVsSqliteTests, SqliteUpdateWithoutClassIdFilter)
         }
 
     timer.Stop();
-    LogTiming(timer, "SQLite UPDATE w/o ECClassId filter", (int) instanceIds.size());
+    LogTiming(timer, "SQLite UPDATE w/o ECClassId filter", s_opCount);
     }
 
 //---------------------------------------------------------------------------------------
@@ -269,18 +255,31 @@ TEST_F(PerformanceECSqlVsSqliteTests, ECSqlUpdateWithClassIdFilter)
 
     ECClassId th3ClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "TH3");
     ASSERT_NE(ECClass::UNSET_ECCLASSID, th3ClassId);
-    std::vector<ECInstanceId> const& instanceIds = s_instanceIds[th3ClassId];
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ecsql.TH3 SET S='S', S1='S1', S2='S2', S3='S3' WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ecsql.TH3 SET S=?, S1=?, S2=?, S3=? WHERE ECInstanceId=?"));
     LOG.infov("Translated SQL: %s", stmt.GetNativeSql());
 
+    const int instanceIdIncrement = DetermineECInstanceIdIncrement();
+    Utf8String testVal = GenerateTestValue();
+
     StopWatch timer(true);
-    for (ECInstanceId const& id : instanceIds)
+    for (int i = 0; i < s_opCount; i++)
         {
-        if (ECSqlStatus::Success != stmt.BindId(1, id))
+        ECInstanceId id(s_firstInstanceId + i*instanceIdIncrement);
+
+        for (int parameterIx = 1; parameterIx <= 4; parameterIx++)
             {
-            FAIL() << "ECSQL UPDATE bind failed";
+            if (ECSqlStatus::Success != stmt.BindText(parameterIx, testVal.c_str(), IECSqlBinder::MakeCopy::No))
+                {
+                FAIL() << "SQL UPDATE bind failed";
+                return;
+                }
+            }
+
+        if (ECSqlStatus::Success != stmt.BindId(5, id))
+            {
+            FAIL() << "SQL UPDATE bind failed";
             return;
             }
 
@@ -295,7 +294,7 @@ TEST_F(PerformanceECSqlVsSqliteTests, ECSqlUpdateWithClassIdFilter)
         }
 
     timer.Stop();
-    LogTiming(timer, "ECSQL UPDATE", (int) instanceIds.size());
+    LogTiming(timer, "ECSQL UPDATE", s_opCount);
     }
 
 //---------------------------------------------------------------------------------------
@@ -308,19 +307,32 @@ TEST_F(PerformanceECSqlVsSqliteTests, ECSqlUpdateWithoutClassIdFilter)
 
     ECClassId th3ClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "TH3");
     ASSERT_NE(ECClass::UNSET_ECCLASSID, th3ClassId);
-    std::vector<ECInstanceId> const& instanceIds = s_instanceIds[th3ClassId];
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ecsql.TH3 SET S='S', S1='S1', S2='S2', S3='S3' WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ecsql.TH3 SET S=?, S1=?, S2=?, S3=? WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter"));
     LOG.infov("Translated SQL: %s", stmt.GetNativeSql());
 
     //printf("Attach to profiler...\r\n"); getchar();
+    const int instanceIdIncrement = DetermineECInstanceIdIncrement();
+    Utf8String testVal = GenerateTestValue();
+
     StopWatch timer(true);
-    for (ECInstanceId const& id : instanceIds)
+    for (int i = 0; i < s_opCount; i++)
         {
-        if (ECSqlStatus::Success != stmt.BindId(1, id))
+        ECInstanceId id(s_firstInstanceId + i*instanceIdIncrement);
+
+        for (int parameterIx = 1; parameterIx <= 4; parameterIx++)
             {
-            FAIL() << "ECSQL UPDATE bind failed";
+            if (ECSqlStatus::Success != stmt.BindText(parameterIx, testVal.c_str(), IECSqlBinder::MakeCopy::No))
+                {
+                FAIL() << "SQL UPDATE bind failed";
+                return;
+                }
+            }
+
+        if (ECSqlStatus::Success != stmt.BindId(5, id))
+            {
+            FAIL() << "SQL UPDATE bind failed";
             return;
             }
 
@@ -336,7 +348,7 @@ TEST_F(PerformanceECSqlVsSqliteTests, ECSqlUpdateWithoutClassIdFilter)
 
     timer.Stop();
     //printf("Detach...\r\n"); getchar();
-    LogTiming(timer, "ECSQL UPDATE OPTIONS NoECClassIdFilter", (int) instanceIds.size());
+    LogTiming(timer, "ECSQL UPDATE OPTIONS NoECClassIdFilter", s_opCount);
     }
 
 END_ECDBUNITTESTS_NAMESPACE

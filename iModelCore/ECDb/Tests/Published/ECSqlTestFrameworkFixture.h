@@ -1,74 +1,68 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/ECSqlCrudTestFixture.h $
+|     $Source: Tests/Published/ECSqlTestFrameworkFixture.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include "ECSqlTestFixture.h"
+#include "ECSqlAsserter.h"
+#include "ECDbPublishedTests.h"
 
-BEGIN_ECDBUNITTESTS_NAMESPACE
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 
 //=======================================================================================    
 // @bsiclass                                                 Krischan.Eberle     09/2013
 //=======================================================================================    
-struct ECSqlCrudTestFixture : public ECSqlTestFixture
+struct ECSqlTestFrameworkFixture : public ECDbTestFixture
     {
-    protected:
-        //! @deprecated Will become private once ECDbStatement API is removed
-        void RunTest (ECSqlTestDataset const& dataset, ECSqlCrudAsserterList const& asserters) const;
+protected:
+    void RunTest(ECSqlTestDataset const&, ECSqlAsserterList const&) const;
 
-        virtual void RunTest (ECSqlTestDataset const& dataset) const = 0;
+    virtual void RunTest(ECSqlTestDataset const&) const = 0;
 
-    public:
-        ECSqlCrudTestFixture () : ECSqlTestFixture () {}
-        virtual ~ECSqlCrudTestFixture () {}
+public:
+    ECSqlTestFrameworkFixture() : ECDbTestFixture() {}
+    virtual ~ECSqlTestFrameworkFixture() {}
     };
 
 //=======================================================================================    
 // @bsiclass                                     Krischan.Eberle                  09/13
 //=======================================================================================    
-struct ECSqlSelectTestFixture : public ECSqlCrudTestFixture
+struct ECSqlSelectTestFramework : public ECSqlTestFrameworkFixture
     {
-private:
-    virtual ECDbR _SetUp (Utf8CP ecdbFileName, BeFileNameCR schemaECXmlFileName, ECDb::OpenParams openParams, int perClassRowCount) override;
-
 protected:
     static const int PerClassRowCount = 10;
 
-    ECSqlSelectTestFixture() : ECSqlCrudTestFixture() {}
+    ECSqlSelectTestFramework() : ECSqlTestFrameworkFixture() {}
 
-    virtual void RunTest (ECSqlTestDataset const& dataset) const override;
-    using ECSqlCrudTestFixture::RunTest;
+    virtual void RunTest (ECSqlTestDataset const&) const override;
+    using ECSqlTestFrameworkFixture::RunTest;
 
 public:
-    virtual ~ECSqlSelectTestFixture () {}
+    virtual ~ECSqlSelectTestFramework () {}
 
     virtual void SetUp () override;
-    using ECSqlCrudTestFixture::SetUp;
     };
 
 
 //=======================================================================================    
 // @bsiclass                                     Krischan.Eberle                  11/13
 //=======================================================================================    
-struct ECSqlNonSelectTestFixture : public ECSqlCrudTestFixture
+struct ECSqlNonSelectTestFrameworkFixture : public ECSqlTestFrameworkFixture
     {
 protected:
     static const int PerClassRowCount = 10;
 
-    virtual void RunTest (ECSqlTestDataset const& dataset) const override;
-    using ECSqlCrudTestFixture::RunTest;
+    virtual void RunTest(ECSqlTestDataset const&) const override;
+    using ECSqlTestFrameworkFixture::RunTest;
 
-    ECSqlNonSelectTestFixture() : ECSqlCrudTestFixture() {}
+    ECSqlNonSelectTestFrameworkFixture() : ECSqlTestFrameworkFixture() {}
 
 public:
-
-    virtual ~ECSqlNonSelectTestFixture () {}
+    virtual ~ECSqlNonSelectTestFrameworkFixture() {}
 
     virtual void SetUp () override;
-    using ECSqlCrudTestFixture::SetUp;
     };
 
-END_ECDBUNITTESTS_NAMESPACE
+END_ECSQLTESTFRAMEWORK_NAMESPACE

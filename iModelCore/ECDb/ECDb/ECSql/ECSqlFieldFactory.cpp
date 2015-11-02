@@ -191,9 +191,15 @@ PropertyNameExp const* propertyName, //NOT USED
 PrimitiveType primitiveType
 )
     {
-    auto const& primArraySystemClass = ctx.GetECSqlStatementR().GetPreparedStatementP ()->GetECDb ().GetECDbImplR().GetECDbMap ().GetClassForPrimitiveArrayPersistence(primitiveType);
+    ECClassCP primArraySystemClass = ECDbSystemSchemaHelper::GetClassForPrimitiveArrayPersistence(ctx.GetECDb(), primitiveType);
+    if (primArraySystemClass == nullptr)
+        {
+        BeAssert(false);
+        return ECSqlStatus::Error;
+        }
+
     field = unique_ptr<ECSqlField> (
-        new PrimitiveArrayMappedToSingleColumnECSqlField (ctx.GetECSqlStatementR (), move (ecsqlColumnInfo), sqlColumnIndex++, primArraySystemClass));  
+        new PrimitiveArrayMappedToSingleColumnECSqlField (ctx.GetECSqlStatementR (), move (ecsqlColumnInfo), sqlColumnIndex++, *primArraySystemClass));  
     return ECSqlStatus::Success;
     }
 

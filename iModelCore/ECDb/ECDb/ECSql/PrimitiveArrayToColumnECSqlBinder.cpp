@@ -20,7 +20,7 @@ PrimitiveArrayToColumnECSqlBinder::PrimitiveArrayToColumnECSqlBinder(ECSqlStatem
 : ECSqlBinder(ecsqlStatement, typeInfo, 1, true, true), m_initialCapacity(0), m_currentArrayIndex(-1), 
 m_arrayElementBinder(*ecsqlStatement.GetECDb(), GetTypeInfo(), ARRAY_PROPERTY_INDEX), m_sqliteIndex(-1)
     {
-    m_arrayStorageClass = &ecsqlStatement.GetPreparedStatementP ()->GetECDb().GetECDbImplR().GetECDbMap().GetClassForPrimitiveArrayPersistence(typeInfo.GetPrimitiveType());
+    m_arrayStorageClass = ECDbSystemSchemaHelper::GetClassForPrimitiveArrayPersistence(*ecsqlStatement.GetECDb(), typeInfo.GetPrimitiveType());
     BeAssert(m_arrayStorageClass != nullptr);
     }
 

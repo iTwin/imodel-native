@@ -202,4 +202,42 @@ Utf8CP ECDbSystemSchemaHelper::ToString (ECSqlSystemProperty systemProperty)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    affan.khan      03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+ECN::ECClassCP ECDbSystemSchemaHelper::GetClassForPrimitiveArrayPersistence(ECDbCR ecdb, ECN::PrimitiveType primitiveType)
+    {
+    ECSchemaCP ecdbSystemSchema = GetSchema(ecdb.Schemas());
+    EXPECTED_CONDITION(ecdbSystemSchema != nullptr);
+
+    switch (primitiveType)
+        {
+            case PRIMITIVETYPE_Binary:
+                return ecdbSystemSchema->GetClassCP("BinaryArray");
+            case PRIMITIVETYPE_Boolean:
+                return ecdbSystemSchema->GetClassCP("BooleanArray");
+            case PRIMITIVETYPE_DateTime:
+                return ecdbSystemSchema->GetClassCP("DateTimeArray");
+            case PRIMITIVETYPE_Double:
+                return ecdbSystemSchema->GetClassCP("DoubleArray");
+            case PRIMITIVETYPE_Integer:
+                return ecdbSystemSchema->GetClassCP("IntegerArray");
+            case PRIMITIVETYPE_Long:
+                return ecdbSystemSchema->GetClassCP("LongArray");
+            case PRIMITIVETYPE_Point2D:
+                return ecdbSystemSchema->GetClassCP("Point2dArray");
+            case PRIMITIVETYPE_Point3D:
+                return ecdbSystemSchema->GetClassCP("Point3dArray");
+            case PRIMITIVETYPE_String:
+                return ecdbSystemSchema->GetClassCP("StringArray");
+            case PRIMITIVETYPE_IGeometry:
+                return ecdbSystemSchema->GetClassCP("GeometryArray");
+            default:
+                BeAssert(false && "Unsupported primitive type. Adjust this method for new value of ECN::PrimitiveType enum");
+                return nullptr;
+        }
+    }
+    
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

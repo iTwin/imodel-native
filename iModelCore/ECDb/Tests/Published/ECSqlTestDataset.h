@@ -7,8 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include "ECDbPublishedTests.h"
+#define BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE BEGIN_ECDBUNITTESTS_NAMESPACE namespace ECSqlTestFramework {
+#define END_ECSQLTESTFRAMEWORK_NAMESPACE } END_ECDBUNITTESTS_NAMESPACE
 
-BEGIN_ECDBUNITTESTS_NAMESPACE
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
+
 //=======================================================================================    
 // @bsiclass                                                 Krischan.Eberle     04/2013
 //=======================================================================================    
@@ -194,20 +197,9 @@ public:
         bool IsNamedParameter () const {return !m_parameterName.empty ();}
         Utf8CP GetName () const {return m_parameterName.c_str ();}
 
-        bool IsDateTime () const 
-            {
-            return m_kind == Kind::DateTime || (m_kind == Kind::ECValue && m_value.IsDateTime ()); 
-            }
-
-        bool IsIGeometry () const
-            {
-            return m_kind == Kind::IGeometry;
-            }
-
-        bool IsECInstanceId () const
-            {
-            return m_kind == Kind::ECInstanceId;
-            }
+        bool IsDateTime () const { return m_kind == Kind::DateTime || (m_kind == Kind::ECValue && m_value.IsDateTime ()); }
+        bool IsIGeometry () const { return m_kind == Kind::IGeometry;  }
+        bool IsECInstanceId () const { return m_kind == Kind::ECInstanceId; }
 
         ECN::ECValueCR GetValue () const {return m_value; }
         DateTime GetDateTime () const
@@ -251,7 +243,6 @@ public:
     void AddExpectedResult (std::unique_ptr<ECSqlExpectedResult> expectedResult);
 
     Utf8StringCR GetECSql () const;
-    bool HasECSqlBuilder () const;
     std::vector<ParameterValue> const& GetParameterValues () const;
     ECSqlExpectedResultsDictionary const& GetExpectedResults () const;
     bool GetRollbackAfterwards () const;
@@ -280,4 +271,4 @@ public:
     std::vector<ECSqlTestItem> const& GetTestItems () const;
     };
 
-END_ECDBUNITTESTS_NAMESPACE
+END_ECSQLTESTFRAMEWORK_NAMESPACE

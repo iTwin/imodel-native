@@ -9,7 +9,8 @@
 
 using namespace std;
 
-BEGIN_ECDBUNITTESTS_NAMESPACE
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
+
 //********************* ECSqlPrepareExpectedResult ************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
@@ -264,4 +265,5 @@ int ResultCountECSqlExpectedResult::GetExpectedRowCount () const
     return m_rowCount;
     }
 
-END_ECDBUNITTESTS_NAMESPACE
+
+END_ECSQLTESTFRAMEWORK_NAMESPACE

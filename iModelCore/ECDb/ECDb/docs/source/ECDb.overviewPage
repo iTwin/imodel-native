@@ -361,8 +361,8 @@
 
     - <b>ColumnName</b> (optional): Specifies the column name. If not specified, the ECProperty name is used. The column name must
     follow EC naming rules.
-    - <b>IsNullable</b> (optional): If true, values must not be NULL. Might not be honoured when multiple ECClasses are stored in a single table or depending on MapStrategy.
-    - <b>IsUnique</b> (optional): If true, values must be unique for this ECProperty.
+    - <b>IsNullable</b> (optional): If false, values must not be NULL. Might not be honoured when multiple ECClasses are stored in a single table or depending on MapStrategy.
+    - <b>IsUnique</b> (optional): If true, values must be unique for this ECProperty. Might not be honoured when multiple ECClasses are stored in a single table or depending on MapStrategy.
     - <b>Collation</b> (optional): Specifies the string comparison mode for this property. Possible values:
         - <CODE>Binary</CODE>: (default): bit to bit matching.
         - <CODE>NoCase</CODE>: The same as binary, except the 26 upper case characters of ASCII are folded to their lower case equivalents before the comparison is performed. Note that is folds only ASCII not full UTF.

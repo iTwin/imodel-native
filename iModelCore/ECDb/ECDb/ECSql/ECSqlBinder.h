@@ -26,7 +26,7 @@ private:
     ECSqlStatementBase& m_ecsqlStatement;
     ECSqlTypeInfo m_typeInfo;
     int m_mappedSqlParameterCount;
-    IECSqlBinder* m_onBindEventHandler;
+    std::unique_ptr<std::vector<IECSqlBinder*>> m_onBindEventHandlers;
     bool m_hasToCallOnBeforeStep;
     bool m_hasToCallOnClearBindings;
 
@@ -36,7 +36,7 @@ private:
 
 protected:
     ECSqlBinder (ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo, int mappedSqlParameterCount, bool hasToCallOnBeforeStep, bool hasToCallOnClearBindings)
-        : m_ecsqlStatement (ecsqlStatement), m_typeInfo (typeInfo), m_mappedSqlParameterCount (mappedSqlParameterCount), m_onBindEventHandler (nullptr), m_hasToCallOnBeforeStep (hasToCallOnBeforeStep), m_hasToCallOnClearBindings (hasToCallOnClearBindings)
+        : m_ecsqlStatement (ecsqlStatement), m_typeInfo (typeInfo), m_mappedSqlParameterCount (mappedSqlParameterCount), m_onBindEventHandlers (nullptr), m_hasToCallOnBeforeStep (hasToCallOnBeforeStep), m_hasToCallOnClearBindings (hasToCallOnClearBindings)
         {}
 
     //Part of initialization. Must only called in constructor.
@@ -44,7 +44,7 @@ protected:
         
     std::function<void (ECInstanceId const& bindValue)> GetOnBindBriefcaseBasedIdEventHandler () const { return m_onBindRepositoyBasedIdEventHandler; }
     static NoopECSqlBinder& GetNoopBinder (ECSqlStatus status);
-    IECSqlBinder* GetOnBindEventHandler () { return m_onBindEventHandler; }
+    std::vector<IECSqlBinder*>* GetOnBindEventHandlers () { return m_onBindEventHandlers.get(); }
 
     ECSqlStatus ReportError(DbResult sqliteStat, Utf8CP errorMessageHeader = nullptr) const;
 
@@ -67,7 +67,7 @@ public:
 
     ECSqlStatus OnBeforeStep ();
     void OnClearBindings ();
-    void SetOnBindEventHandler (IECSqlBinder& binder) { BeAssert (m_onBindEventHandler == nullptr); m_onBindEventHandler = &binder; }
+    ECSqlStatus SetOnBindEventHandler(IECSqlBinder& binder);
     void SetOnBindBriefcaseBasedIdEventHandler (std::function<void (ECInstanceId const& bindValue)> eventHandler) { BeAssert (m_onBindRepositoyBasedIdEventHandler == nullptr); m_onBindRepositoyBasedIdEventHandler = eventHandler; }
     };
 
@@ -77,8 +77,9 @@ public:
 struct ECSqlParameterMap : NonCopyableClass
     {
 private:
-    std::vector<std::unique_ptr<ECSqlBinder>> m_binders;
-    std::vector<std::unique_ptr<ECSqlBinder>> m_internalSqlParameterBinders;
+    std::vector<std::unique_ptr<ECSqlBinder>> m_ownedBinders;
+    std::vector<ECSqlBinder*> m_binders;
+    std::vector<ECSqlBinder*> m_internalSqlParameterBinders;
     bmap<Utf8String, int> m_nameToIndexMapping;
 
     std::vector<ECSqlBinder*> m_bindersToCallOnClearBindings;
@@ -104,12 +105,16 @@ public:
 
     ECSqlBinder* AddBinder (ECSqlStatementBase& ecsqlStatement, ParameterExp const& parameterExp, bool targetIsVirtual = false, bool enforceConstraints = false);
     ECSqlBinder* AddInternalBinder (size_t& index, ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo);
+    ECSqlBinder* AddProxyBinder(int ecsqlParameterIndex, ECSqlBinder& binder);
 
     ECSqlStatus OnBeforeStep ();
 
     //Bindings in SQLite have already been cleared at this point. The method
     //allows subclasses to clean-up additional resources tied to binding parameters
     void OnClearBindings ();
+
+    ECSqlStatus RemapForJoinTable(ECSqlPrepareContext& ctx);
+
     };
 
 

@@ -8,7 +8,7 @@
 #pragma once
 #include "ECSqlTestDataset.h"
 
-BEGIN_ECDBUNITTESTS_NAMESPACE
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 //=======================================================================================    
 // @bsiclass                                           Krischan.Eberle            01/14
 //=======================================================================================    
@@ -49,4 +49,4 @@ public:
     static ECSqlTestDataset OptionsTests(ECSqlType, ECDbCR, int rowCountPerClass);
     };
 
-END_ECDBUNITTESTS_NAMESPACE
+END_ECSQLTESTFRAMEWORK_NAMESPACE

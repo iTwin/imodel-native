@@ -35,11 +35,14 @@ void PointToColumnsECSqlBinder::_SetSqliteIndex(int ecsqlParameterComponentIndex
 //---------------------------------------------------------------------------------------
 ECSqlStatus PointToColumnsECSqlBinder::_BindNull()
     {
-    if (auto eh = GetOnBindEventHandler())
+    if (auto ehs = GetOnBindEventHandlers())
         {
-        auto es = eh->BindNull();
-        if (es != ECSqlStatus::Success)
-            return es;
+        for (auto eh : *ehs)
+            {
+            auto es = eh->BindNull();
+            if (es != ECSqlStatus::Success)
+                return es;
+            }
         }
 
     auto sqliteStat = GetSqliteStatementR ().BindNull(m_xSqliteIndex);
@@ -71,11 +74,14 @@ ECSqlStatus PointToColumnsECSqlBinder::_BindPoint2D (DPoint2dCR value)
         return ECSqlStatus::Error;
         }
 
-    if (auto eh = GetOnBindEventHandler())
+    if (auto ehs = GetOnBindEventHandlers())
         {
-        auto es = eh->BindPoint2D (value);
-        if (es != ECSqlStatus::Success)
-            return es;
+        for (auto eh : *ehs)
+            {
+            auto es = eh->BindPoint2D(value);
+            if (es != ECSqlStatus::Success)
+                return es;
+            }
         }
 
     auto sqliteStat = GetSqliteStatementR ().BindDouble(m_xSqliteIndex, value.x);
@@ -100,11 +106,14 @@ ECSqlStatus PointToColumnsECSqlBinder::_BindPoint3D (DPoint3dCR value)
         return ECSqlStatus::Error;
         }
 
-    if (auto eh = GetOnBindEventHandler())
+    if (auto ehs = GetOnBindEventHandlers())
         {
-        auto es = eh->BindPoint3D (value);
-        if (es != ECSqlStatus::Success)
-            return es;
+        for (auto eh : *ehs)
+            {
+            auto es = eh->BindPoint3D(value);
+            if (es != ECSqlStatus::Success)
+                return es;
+            }
         }
 
     auto sqliteStat = GetSqliteStatementR ().BindDouble(m_xSqliteIndex, value.x);
