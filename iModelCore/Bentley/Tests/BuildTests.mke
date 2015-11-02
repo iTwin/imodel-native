@@ -28,7 +28,7 @@ o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
     BEGTEST_API = $(BuildContext)SubParts/PublishedApi/Bentley/
 %endif
 
-%include $(SrcBsiCommon)sharedmki/DetectAndCompileUnitTests.mki
+%include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
 
 # Deliver 
 $(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}

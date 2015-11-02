@@ -2,21 +2,20 @@
 #
 #     $Source: BentleyAllocator.mke $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 nameToDefine = __BENTLEYALLOCATOR_BUILD__
 %include cdefapnd.mki
 
-PolicyFile=$(SrcBsiCommon)sharedmki/AssertCommonCompileLinkPolicy.mki
 %include mdl.mki
 
-baseDir = $(_MakeFilePath)
-bentleyDir = $(baseDir)Bentley/
-nonportDir = $(bentleyDir)nonport/
-loggingSdkDir=$(baseDir)LoggingSDK/
+baseDir         = $(_MakeFilePath)
+bentleyDir      = $(baseDir)Bentley/
+nonportDir      = $(bentleyDir)nonport/
+loggingSdkDir   = $(baseDir)LoggingSDK/
 
-BentleyAPISrc = $(baseDir)PublicAPI/Bentley/
+BentleyAPISrc   = $(baseDir)PublicAPI/Bentley/
 
 appName = BentleyAllocator
 

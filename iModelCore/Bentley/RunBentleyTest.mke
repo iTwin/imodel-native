@@ -2,40 +2,39 @@
 #
 #  $Source: RunBentleyTest.mke $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
-PolicyFile=$(SrcRoot)Bentley/AssertCompilePublishedBentleyUnitTestsPolicy.mki
 %include mdl.mki
 
-SrcGtest=$(SrcRoot)util/gtest/
+SrcGtest    = $(SrcRoot)util/gtest/
+ARCH        = --x86
 
-ARCH =--x86
 %if "x64" == $(TARGET_PROCESSOR_ARCHITECTURE)
-    ARCH =--x64
+    ARCH    = --x64
 %endif
 
 %if defined(COMPILE_PUBLISHED_TESTS)
     dllPath = $(OutputRootDir)Build/Bentley/test/Published/BentleyLibTest_Published.dll
 %else
 %error Please define which type of tests to compile in your environment (e.g. define COMPILE_PUBLISHED_TESTS)
-%endif 
+%endif
 
 # Default to run dev tests (pub, nonpub).
-WHICH_TESTS =--run_dev_tests
+WHICH_TESTS = --run_dev_tests
 
 %if defined (FIREBUG)
     # firebug run dev tests + regression + performance
-    WHICH_TESTS =--run_firebug_tests
+    WHICH_TESTS = --run_firebug_tests
 %endif # if def firebug
 
-%if defined (RUN_ALL_DEV_TESTS) 
+%if defined (RUN_ALL_DEV_TESTS)
     # same as firebug - so devs don't have to set Firebug in shell
-    WHICH_TESTS =--run_all_dev_tests
+    WHICH_TESTS = --run_all_dev_tests
 %endif # RUN_ALL_DEV_TESTS
 
 %if defined (RUN_SPECIFIC_TESTSET)
-    WHICH_TESTS =--$(RUN_SPECIFIC_TESTSET)
+    WHICH_TESTS = --$(RUN_SPECIFIC_TESTSET)
 %endif # RUN_SPECIFIC_TESTSET
 
 %if !defined (DO_NOT_RUN_BENTLEYTEST)
@@ -80,7 +79,7 @@ WHICH_TESTS =--run_dev_tests
                 # This is sloppy but it works.  There were 2 requirements.
                 # 1. show progress.
                 # 2. don't have too much noise
-                # Without knowing progress we wouldn't know it the tests would hang or how much longer they would take. 
+                # Without knowing progress we wouldn't know it the tests would hang or how much longer they would take.
                 # Handling pipes can be finicky when dealing with bentleybuild, this method although messy works for bentleybuild and bmake.
                 #
                 # Tried to use subprocess.Popen() to create new windows and control the stdin/stdout of each. This was not working.

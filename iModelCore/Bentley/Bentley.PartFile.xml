@@ -59,7 +59,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi">
+    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi">
         <SubPart PartName="Base"/>
         <Bindings>
             <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/Bentley"/>

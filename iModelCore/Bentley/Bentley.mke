@@ -5,17 +5,31 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-PolicyFile=$(SrcRoot)Bentley/AssertBentleyPolicy.mki
 %include mdl.mki
 
-baseDir = $(_MakeFilePath)
-bentleyDir = $(baseDir)Bentley/
-nonportDir = $(bentleyDir)nonport/
-loggingSdkDir=$(baseDir)LoggingSDK/
+baseDir         = $(_MakeFilePath)
+bentleyDir      = $(baseDir)Bentley/
+nonportDir      = $(bentleyDir)nonport/
+loggingSdkDir   = $(baseDir)LoggingSDK/
+appName         = Bentley
 
-BentleyAPISrc = $(baseDir)PublicAPI/Bentley/
+BentleyAPISrc   = $(baseDir)PublicAPI/Bentley/
 
-appName = Bentley
+cuser           + $(WX_CXX_FLAGS)    
+
+nameToDefine    = __BENTLEYDLL_BUILD__
+%include cdefapnd.mki
+
+nameToDefine    = BC__RWSTD_LIB_SRC
+%include cdefapnd.mki
+
+%if defined(STATIC_LIB)
+    %if defined (CORVU)
+        nameToDefine=CORVU
+        %include cdefapnd.mki
+    %endif
+%endif
+
 
 %if defined (CREATE_STATIC_LIBRARIES) && !defined (TMP_BUILD_STATIC)     # Temporary.
     appName = BentleyStaticLib
