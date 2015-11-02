@@ -827,7 +827,8 @@ void SatelliteChangeSets::GetExpirationDate(DateTime& dt)
 void SatelliteChangeSets::SetLastError(BeSQLite::DbResult rc)
     {
     m_lastError = rc;
-    m_lastErrorDescription = m_dgndb->GetLastError();
+    if (nullptr != m_dgndb)
+        m_lastErrorDescription = m_dgndb->GetLastError();
     }
 
 /*---------------------------------------------------------------------------------**//**
