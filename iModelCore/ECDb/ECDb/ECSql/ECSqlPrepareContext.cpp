@@ -428,8 +428,8 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
 
         ptr->m_parameterMap.GetSecondaryR().Add(thisValueParams);
         ptr->m_parameterMap.GetPrimaryR().Add(thisValueParams);
-        joinedTableECSQL.Append(bwhere->ToECSql().c_str());
-        parentOfJoinedTableECSQL.Append(bwhere->ToECSql().c_str());
+        joinedTableECSQL.AppendSpace().Append(bwhere->ToECSql().c_str());
+        parentOfJoinedTableECSQL.AppendSpace().Append(bwhere->ToECSql().c_str());
         }
 
 
@@ -482,12 +482,12 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
 
         auto& primary = ptr->m_parameterMap.GetPrimaryR();
         auto& secondary = ptr->m_parameterMap.GetSecondaryR();
-        for (auto i = primary.First(); i != primary.Last(); ++i)
+        for (auto i = primary.First(); i <= primary.Last(); ++i)
             {
             auto p = const_cast<Parameter*>(primary.Find(i));
             if (p->GetOrignalParameter())
                 {
-                for (auto j = secondary.First(); j != secondary.Last(); ++j)
+                for (auto j = secondary.First(); j <= secondary.Last(); ++j)
                     {
                     auto s = const_cast<Parameter*>(secondary.Find(j));
                     if (p->GetOrignalParameter() == s->GetOrignalParameter())

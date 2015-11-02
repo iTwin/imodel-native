@@ -346,4 +346,140 @@ TEST_F(JoinedTable, MappingAcrossTwoSchemaImportSession)
     assert_ecsql("DELETE FROM cs.Goo WHERE ECInstanceId = 1 AND (A = 101 AND B = 'b1') AND (C = 101 AND D = 'd1');", ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
     }
 
+
+
+TEST_F(JoinedTable, InsertWithParameterBinding)
+    {
+    auto const schema =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
+        "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
+        "   xmlns:ecschema='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
+        "   xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'"
+        "   xsi:schemaLocation='ecschema ECSchema.xsd' >"
+        "    <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
+        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix='bsca' />"
+        "    <ECSchemaReference name='Bentley_Standard_Classes' version='01.00' prefix='bsm' />"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='Foo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                    <Strategy>SharedTable</Strategy>"
+        "                    <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                    <Options>JoinedTableForSubclasses</Options>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='A' typeName='long'/>"
+        "        <ECProperty propertyName='B' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='Goo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <ECProperty propertyName='C' typeName='long'/>"
+        "        <ECProperty propertyName='D' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='Boo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <ECProperty propertyName='E' typeName='long'/>"
+        "        <ECProperty propertyName='F' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='Roo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <BaseClass>Boo</BaseClass>"
+        "        <ECProperty propertyName='G' typeName='long'/>"
+        "        <ECProperty propertyName='H' typeName='string'/>"
+        "    </ECClass>"
+        "</ECSchema>";
+
+    ECDbTestProject saveTestProject;
+    ECDbR db = saveTestProject.Create("JoinedTableTest.ecdb");
+    ECSchemaPtr joinedTableTestSchema;
+    auto readContext = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(joinedTableTestSchema, schema, *readContext);
+    ASSERT_TRUE(joinedTableTestSchema != nullptr);
+    auto importStatus = db.Schemas().ImportECSchemas(readContext->GetCache());
+    ASSERT_TRUE(importStatus == BentleyStatus::SUCCESS);
+
+    ECSqlStatement stmt;
+    //-----------------------------INSERT----------------------------------------------------
+    ASSERT_EQ(stmt.Prepare(db, "INSERT INTO dgn.Goo (ECInstanceId, A, B, C, D ) VALUES ( :id, :a, :b, :c, :d)"), ECSqlStatus::Success);
+    auto idIndex = stmt.GetParameterIndex("id");
+    auto aIndex = stmt.GetParameterIndex("a");
+    auto bIndex = stmt.GetParameterIndex("b");
+    auto cIndex = stmt.GetParameterIndex("c");
+    auto dIndex = stmt.GetParameterIndex("d");
+    
+    ASSERT_EQ(idIndex, 1);
+    ASSERT_EQ(aIndex, 2);
+    ASSERT_EQ(bIndex, 3);
+    ASSERT_EQ(cIndex, 4);
+    ASSERT_EQ(dIndex, 5);
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(idIndex, 101));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(aIndex, 10000));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(bIndex, "a1000", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(cIndex, 20000));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(dIndex, "d2000", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    stmt.Finalize();
+
+    //-----------------------------SELECT----------------------------------------------------
+    ASSERT_EQ(stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = 101"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+
+    ASSERT_EQ(stmt.GetValueInt64(0), 10000);
+    ASSERT_STRCASEEQ(stmt.GetValueText(1), "a1000");
+    ASSERT_EQ(stmt.GetValueInt64(2), 20000);
+    ASSERT_STRCASEEQ(stmt.GetValueText(3), "d2000");
+    stmt.Finalize();
+
+    //-----------------------------UPDATE----------------------------------------------------
+
+    ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET A= :a, B= :b, C= :c, D= :d WHERE ECInstanceId = :id"), ECSqlStatus::Success);
+
+    aIndex = stmt.GetParameterIndex("a");
+    bIndex = stmt.GetParameterIndex("b");
+    cIndex = stmt.GetParameterIndex("c");
+    dIndex = stmt.GetParameterIndex("d");
+    idIndex = stmt.GetParameterIndex("id");
+
+    ASSERT_EQ(aIndex, 1);
+    ASSERT_EQ(bIndex, 2);
+    ASSERT_EQ(cIndex, 3);
+    ASSERT_EQ(dIndex, 4);
+    ASSERT_EQ(idIndex, 5);
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(idIndex, 101));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(aIndex, 10001));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(bIndex, "a1001", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(cIndex, 20001));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(dIndex, "d2001", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    stmt.Finalize();
+    db.SaveChanges();
+    ASSERT_EQ(stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = 101"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+
+    ASSERT_EQ(stmt.GetValueInt64(0), 10001);
+    ASSERT_STRCASEEQ(stmt.GetValueText(1), "a1001");
+    ASSERT_EQ(stmt.GetValueInt64(2), 20001);
+    ASSERT_STRCASEEQ(stmt.GetValueText(3), "d2001");
+    stmt.Finalize();
+
+    //-----------------------------DELETE----------------------------------------------------
+
+    ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE ECInstanceId = :id"), ECSqlStatus::Success);
+
+    idIndex = stmt.GetParameterIndex("id");
+    ASSERT_EQ(idIndex, 1);
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(idIndex, 101));
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    stmt.Finalize();
+
+    ASSERT_EQ(stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = 101"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    stmt.Finalize();
+
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

@@ -689,14 +689,17 @@ size_t ECDbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relati
     std::vector<ECClassCP> classes = GetClassesFromRelationshipEnd(relationshipEnd);
     for (ECClassCP ecClass : classes)
         {
-        if (ClassMap::IsAnyClass (*ecClass))
+        if (ClassMap::IsAnyClass(*ecClass))
             return SIZE_MAX;
 
-        IClassMap const* classMap = GetClassMap (*ecClass, false);
-        if (classMap->GetMapStrategy ().IsNotMapped ())
+        IClassMap const* classMap = GetClassMap(*ecClass, false);
+        if (classMap->GetMapStrategy().IsNotMapped())
             continue;
 
-        tables.insert(&classMap->GetTable());
+        if (auto rootMap = classMap->FindRootOfJoinedTable())
+            tables.insert(&rootMap->GetTable());
+        else
+            tables.insert(&classMap->GetTable());
         }
 
     return tables.size();
