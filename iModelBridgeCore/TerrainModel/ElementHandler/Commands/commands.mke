@@ -25,6 +25,11 @@ GensrcInclude = $(OutputRootDir)build/PowerPlatform/gensrc/
 
 ### To go into solution policy file
 
+%if !exists ($(GensrcInclude))
+  PowerProductSDK         = $(BuildContext)SubParts/PowerProductSDK/
+  GensrcInclude            = $(PowerProductSDK)Include/
+%endif
+
 BentleyTerrainModelcommandsObj       = $(terrainModelBuildDir_)Commands/
 
 always:
@@ -43,7 +48,7 @@ dirToSearch     = $(TerrainModelElementHandlerDir)handler
 
 dirToSearch     = $(BentleyTerrainModelcommandsObj)
 %include cincapnd.mki
-
+ 
 dirToSearch     = $(GensrcInclude)
 %include    cincapnd.mki
 
