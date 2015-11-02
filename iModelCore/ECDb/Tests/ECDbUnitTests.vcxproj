@@ -124,9 +124,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <NMakeOutput>$(OutRoot)Winx64\product\ECDb-Gtest\ECDbTest.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;BENTLEY_WIN32</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4  re GUnitTests_*DgnDb BeGTestExe</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild GUnitTests_*DgnDb BeGTestExe -c &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild GUnitTests_*DgnDb BeGTestExe</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild GUnitTests_*DgnDb BeGTestExe -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4  re GUnitTests_*DgnDb BeGTestExe</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild GUnitTests_*DgnDb BeGTestExe -c &amp; python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild GUnitTests_*DgnDb BeGTestExe</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild GUnitTests_*DgnDb BeGTestExe -c</NMakeCleanCommandLine>
     <IncludePath>$(IncludePath);$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\;$(SrcRoot)DgnPlatform\DgnCore\ECDb\</IncludePath>
     <NMakeIncludeSearchPath>$(ProjectDir)\Published\;$(ProjectDir);$(ProjectDir)\Published\ECSql\;$(ProjectDir)\Performance\;$(ProjectDir)\BackDoor\PublicAPI\BackDoor\ECDb\;$(OutRoot)\Winx64\build\UnitTests\ECDb\PublishedECDbUnitTests\PublicAPI\;$(OutRoot)\Winx64\build\UnitTests\ECDb\BackDoorECDbUnitTests\PublicAPI\;$(OutRoot)\Winx64\build\UnitTests\ECDb\PerformanceECDbUnitTests\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\ECDb\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\ECDb\VendorAPI\;$(OutRoot)\Winx64\BuildContexts\ECDb\SubParts\UnitTests\Include\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
