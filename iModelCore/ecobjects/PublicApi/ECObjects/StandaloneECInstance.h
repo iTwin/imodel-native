@@ -134,7 +134,6 @@ public:
     ECOBJECTS_EXPORT IECInstanceP               GetAsIECInstanceP();
     ECOBJECTS_EXPORT uint32_t                   GetPerPropertyFlagsSize () const;
 
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 
 public:
@@ -255,7 +254,6 @@ public:
 
     // For cases in which we want the lifetime of the ECSchema bound to that of the IECInstance.
     ECOBJECTS_EXPORT         void                   BindSchema();
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     //! Creates an in-memory duplicate of an instance, making deep copies of its ECValues.
@@ -279,7 +277,6 @@ struct IECWipRelationshipInstance : StandaloneECInstance
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetSourceOrderId (int64_t sourceOrderId) = 0;
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetTargetOrderId (int64_t targetOrderId) = 0;
 
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
     public:
         ECOBJECTS_EXPORT BentleyStatus  SetName (Utf8CP name);
@@ -311,7 +308,6 @@ protected:
     virtual uint32_t                    _GetParentPropertyIndex (uint32_t childIndex) const override;
     virtual ECObjectsStatus             _GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const override;
     virtual bool                        _IsPropertyReadOnly (uint32_t propertyIndex) const override;
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     //! if structStandaloneEnablerLocater is NULL, we'll use GetDefaultStandaloneEnabler for embedded structs

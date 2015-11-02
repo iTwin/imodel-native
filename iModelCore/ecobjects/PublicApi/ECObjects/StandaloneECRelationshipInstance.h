@@ -76,7 +76,6 @@ protected:
     // MemoryECInstanceBase
     ECOBJECTS_EXPORT virtual IECInstanceP            _GetAsIECInstance () const;
 
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     //! Returns the RelationshipEnabler for the RelationshipClass that this RelationshipInstance represents
@@ -94,7 +93,6 @@ public:
 //=======================================================================================
 struct StandaloneECRelationshipEnabler : public IECRelationshipEnabler, public StandaloneECEnabler
    {
-//__PUBLISH_SECTION_END__
 private:
     ECN::ECRelationshipClassCR      m_relationshipClass;
 
@@ -106,8 +104,6 @@ protected:
     virtual ECN::ECRelationshipClassCR    _GetRelationshipClass() const;
 
 public:
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
     //! Given an ECRelationshipClass, will create an enabler for that class
     //! @param[in]  ecClass The relationship class which to create an enabler for

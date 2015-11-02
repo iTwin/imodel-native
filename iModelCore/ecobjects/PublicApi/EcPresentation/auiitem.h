@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentation/auiitem.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__PUBLISH_SECTION_START__*/
@@ -28,7 +28,6 @@ struct IAUIItem : public RefCountedBase // Content Service Element
         virtual IAUIDataContextCP   _GetDataInstance() const = 0;
         virtual IAUIItemInfoCR      _GetUIItemInfo () const = 0;
 /*__PUBLISH_SECTION_START__*/
-//__PUBLISH_CLASS_VIRTUAL__
 
     public:
         //! Get the data instance bind with this ui instance.
@@ -68,7 +67,6 @@ struct  IAUIItemInfo
         virtual ItemType    _GetItemType() const = 0;
 
 /*__PUBLISH_SECTION_START__*/
-//__PUBLISH_CLASS_VIRTUAL__
     public:
     //! Constructor that initializes an item from a primitive type.
     virtual ~IAUIItemInfo ()

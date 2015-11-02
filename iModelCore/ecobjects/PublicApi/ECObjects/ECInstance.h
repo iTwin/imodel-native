@@ -74,7 +74,6 @@ struct ICustomECStructSerializer
 //! Used to manage multiple custom struct serializers
 struct CustomStructSerializerManager
 {
-//__PUBLISH_SECTION_END__
 private:
     NameSerializerMap   m_serializers;
 
@@ -82,8 +81,6 @@ private:
     ~CustomStructSerializerManager();
 
     ICustomECStructSerializerP GetCustomSerializer (Utf8CP serializerName) const;
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
 
     //! Given a struct property and an instance, returns the ICustomECStructSerializer
@@ -652,8 +649,6 @@ struct EXPORT_VTABLE_ATTRIBUTE IECRelationshipInstance : virtual IECInstance
 
 typedef RefCountedPtr<IECRelationshipInstance> IECRelationshipInstancePtr;
 
-/*__PUBLISH_SECTION_END__*/
-
 struct ECStructArrayMemberAccessor;
 
 struct ECInstanceInteropHelper
@@ -788,7 +783,6 @@ public:
     ECInstanceInterface (IECInstanceCR instance) : m_instance (instance) { }
     };
 
-/*__PUBLISH_SECTION_START__*/
 
 typedef bvector<IECInstancePtr>         ECInstanceList;
 typedef ECInstanceList                  *ECInstanceListP, &ECInstanceListR;
