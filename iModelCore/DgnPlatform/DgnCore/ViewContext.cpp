@@ -2315,7 +2315,7 @@ void ViewContext::_DrawSymbol(IDisplaySymbol* symbol, TransformCP trans, ClipPla
         {
         SymbolContext symbolContext(*this);
 
-#if defined (CONVERT_LINESTYLES_ENABLED)
+#if CONVERT_LINESTYLES_ENABLED
         //  NEEDSWORK_LINESTYLES -- without this logic line style symbols are always black.
         GeomStreamEntryId entryId;
         entryId.Init();
