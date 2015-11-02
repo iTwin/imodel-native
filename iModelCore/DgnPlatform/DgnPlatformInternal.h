@@ -73,8 +73,6 @@
 #include <DgnPlatform/Tools/stringop.h>
 #include <DgnPlatformInternal/DgnCore/ElemRangeCalc.h>
 #include <DgnPlatform/DgnCore/IGeoCoordServices.h>
-#include <DgnPlatform/DgnCore/PointCloudBaseModel.h>
-#include <DgnPlatform/DgnCore/RasterBaseModel.h>
 #include <DgnPlatform/DgnCore/DgnMaterial.h>
 #include <DgnPlatform/DgnCore/RenderMaterial.h>
 #include <DgnPlatform/DgnCore/DgnLight.h>

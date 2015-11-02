@@ -18,7 +18,6 @@
 #include "DgnCore/RealityDataCache.h"
 #include "DgnCore/DgnViewport.h"
 #include <BeSQLite/L10N.h>
-#include "DgnCore/PointCloudBaseModel.h"
 
 typedef struct _EXCEPTION_POINTERS*  LPEXCEPTION_POINTERS;
 typedef struct FT_LibraryRec_* FT_Library; // Shield users from freetype.h because they have a bad include scheme.
