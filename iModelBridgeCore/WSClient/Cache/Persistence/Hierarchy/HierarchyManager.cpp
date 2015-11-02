@@ -25,6 +25,7 @@ HierarchyManager::HierarchyManager
 (
 ECDbAdapterR ecdbAdapter,
 WebServices::ECSqlStatementCache& statementCache,
+ObjectInfoManager& objectInfoManager,
 ChangeInfoManager& changeInfoManager
 #if defined (NEEDS_WORK_PORT_GRA06_ECDbDeleteHandler) // Port 0503 to 06
 , std::vector<ECDbDeleteHandler*> deleteHandlers
@@ -32,7 +33,8 @@ ChangeInfoManager& changeInfoManager
 ) :
 m_dbAdapter(ecdbAdapter),
 m_statementCache(&statementCache),
-m_changeInfoManager(changeInfoManager)
+m_objectInfoManager(&objectInfoManager),
+m_changeInfoManager(&changeInfoManager)
 #if defined (NEEDS_WORK_PORT_GRA06_ECDbDeleteHandler) // Port 0503 to 06
 , m_deleteHandlers(deleteHandlers)
 #endif
@@ -130,19 +132,24 @@ ECRelationshipClassCP relationshipClass
             continue;
             }
 
-        auto changeStatus = m_changeInfoManager.GetObjectChangeStatus(child);
+        auto changeStatus = m_changeInfoManager->GetObjectChangeStatus(child);
         if (IChangeManager::ChangeStatus::Created == changeStatus)
             {
             // Dont remove created objects
             continue;
             }
 
-        BeAssert(IChangeManager::ChangeStatus::NoChange == changeStatus && "<Warning> Local change will be removed"); // TODO: resolve if needed
-
         if (SUCCESS != DeleteRelationship(parent, child, relationshipClass))
             {
             return ERROR;
             }
+
+        // Use variable for non-debug build to pass
+        if (nullptr != m_objectInfoManager)
+            {}
+        BeAssert((IChangeManager::ChangeStatus::NoChange == changeStatus || 
+                  !m_objectInfoManager->FindCachedInstance(child).IsEmpty()) && "<Warning> Local change was removed");
+
         obsoleteInstances.push_back(child);
         }
 

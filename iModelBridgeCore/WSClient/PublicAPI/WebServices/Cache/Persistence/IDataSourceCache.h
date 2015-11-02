@@ -348,7 +348,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
             ) = 0;
         //! Read instances keys that were linked to specific root
         virtual BentleyStatus ReadInstancesLinkedToRoot(Utf8StringCR rootName, ECInstanceKeyMultiMap& instanceMap) = 0;
-        //! Get all instances connected to root. More efficient way for checking if multiple instances are held by root
+        //! Recursively get all instances connected to root. More efficient way for checking if multiple instances are held by root
         virtual BentleyStatus ReadInstancesConnectedToRootMap(Utf8StringCR rootName, ECInstanceKeyMultiMap& instancesOut, uint8_t depth = UINT8_MAX) = 0;
 
         //--------------------------------------------------------------------------------------------------------------------------------+

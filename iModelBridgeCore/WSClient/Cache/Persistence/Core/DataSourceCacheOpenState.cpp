@@ -28,7 +28,7 @@ m_objectInfoManager(m_dbAdapter, m_statementCache, m_hierarchyManager),
 m_relationshipInfoManager(m_dbAdapter, m_statementCache, m_hierarchyManager),
 m_fileInfoManager(m_dbAdapter, m_statementCache, m_objectInfoManager, m_hierarchyManager, environment),
 #if defined (NEEDS_WORK_PORT_GRA06_ECDbDeleteHandler) // Port 0503 to 06,
-m_hierarchyManager(m_dbAdapter, m_statementCache, m_changeInfoManager, {&m_fileInfoManager, &m_relationshipInfoManager}),
+m_hierarchyManager(m_dbAdapter, m_statementCache, m_objectInfoManager, m_changeInfoManager, {&m_fileInfoManager, &m_relationshipInfoManager, &m_cachedQueryManager}),
 #else
 m_hierarchyManager(m_dbAdapter, m_statementCache, m_changeInfoManager),
 #endif

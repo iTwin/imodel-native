@@ -12,20 +12,18 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace rapidjson;
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                      
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 JsonDiff::JsonDiff(bool copyValues, bool ignoreDeletedProperties) :
 m_copyValues(copyValues),
 m_ignoreDeletedProperties(ignoreDeletedProperties)
-    {
-    }
+    {}
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                        
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 JsonDiff::~JsonDiff()
-    {
-    }
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -36,9 +34,9 @@ bool JsonDiff::GetChanges(RapidJsonValueCR oldJson, RapidJsonValueCR newJson, Ra
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
- bool JsonDiff::GetChanges(RapidJsonValueCR oldJson, RapidJsonValueCR newJson, RapidJsonValueR jsonOut, rapidjson::Value::AllocatorType& allocator)
+bool JsonDiff::GetChanges(RapidJsonValueCR oldJson, RapidJsonValueCR newJson, RapidJsonValueR jsonOut, rapidjson::Value::AllocatorType& allocator)
     {
     bool changesFound = false;
 
@@ -116,9 +114,9 @@ bool JsonDiff::GetChanges(RapidJsonValueCR oldJson, RapidJsonValueCR newJson, Ra
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsonDiff::AddMember(RapidJsonValueR parent, RapidJsonValueR name, RapidJsonValueR value, rapidjson::Value::AllocatorType& allocator)
     {
-     parent.RemoveMember(name.GetString());
-     parent.AddMember(name, value, allocator);
-     }
+    parent.RemoveMember(name.GetString());
+    parent.AddMember(name, value, allocator);
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -177,8 +175,33 @@ void JsonDiff::CopyValues(RapidJsonValueCR source, RapidJsonValueR target, rapid
             break;
 
         case kNumberType:
-            target.SetInt(source.GetInt());
-            break;
+            {
+            if (source.IsInt())
+                {
+                target.SetInt(source.GetInt());
+                break;
+                }
+            if (source.IsDouble())
+                {
+                target.SetDouble(source.GetDouble());
+                break;
+                }
+            if (source.IsInt64())
+                {
+                target.SetInt64(source.GetInt64());
+                break;
+                }
+            if (source.IsUint())
+                {
+                target.SetUint(source.GetUint());
+                break;
+                }
+            if (source.IsUint64())
+                {
+                target.SetUint64(source.GetUint64());
+                break;
+                }
+            }
         }
     }
 
@@ -204,8 +227,13 @@ bool JsonDiff::ValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2)
             return StringValuesEqual(value1, value2);
 
         case kNumberType:
-            return value1.GetInt() == value2.GetInt();
+            // TODO: update rapidjson lib to newer version that supports native comparison
+            BeAssert((!value1.IsInt64() && !value1.IsUint64() || value1.IsInt() || value1.IsUint()) &&
+                     (!value2.IsInt64() && !value2.IsUint64() || value2.IsInt() || value2.IsUint()) &&
+                    "64 bit integer comparison not supported. 64 bit integers should be saved as string in JSON");
 
+            // Convert values to double and compare
+            return value1.GetDouble() == value2.GetDouble();
         case kTrueType:
         case kFalseType:
         case kNullType:
@@ -220,7 +248,7 @@ bool JsonDiff::ValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool JsonDiff::ObjectValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2)
     {
-    if (std::distance(value1.MemberBegin(), value1.MemberEnd()) != 
+    if (std::distance(value1.MemberBegin(), value1.MemberEnd()) !=
         std::distance(value2.MemberBegin(), value2.MemberEnd()))
         {
         return false;
@@ -254,7 +282,7 @@ bool JsonDiff::ArrayValuesEqual(RapidJsonValueCR value1, RapidJsonValueCR value2
         if (!ValuesEqual(value1[i], value2[i]))
             {
             return false;
-            }         
+            }
         }
 
     return true;
