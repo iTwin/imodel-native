@@ -16,13 +16,15 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 USING_NAMESPACE_BENTLEY_EC
 
+typedef std::shared_ptr<Json::Value> JsonValuePtr;
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct WSChangeset
     {
     public:
-        enum ChangeStatus
+        enum ChangeState
             {
             Existing,
             Created,
@@ -40,12 +42,7 @@ struct WSChangeset
         WSCLIENT_EXPORT WSChangeset();
 
         //! Add 
-        WSCLIENT_EXPORT Instance& AddInstance
-            (
-            ObjectId instanceId,
-            ChangeStatus status,
-            std::shared_ptr<Json::Value> properties
-            );
+        WSCLIENT_EXPORT Instance& AddInstance(ObjectId instanceId, ChangeState state, JsonValuePtr properties);
 
         //! Remove added instance, will preserve existing pointers.
         //! @return true if removed, false if not found
@@ -57,8 +54,16 @@ struct WSChangeset
         WSCLIENT_EXPORT size_t GetRelationshipCount() const;
         //! Get total size of serialized changeset in bytes
         WSCLIENT_EXPORT size_t CalculateSize() const;
+
         //! Serialize changeset to JSON string
-        WSCLIENT_EXPORT Utf8String ToString() const;
+        WSCLIENT_EXPORT Utf8String ToRequestString() const;
+
+        //! Extract ids for created instances from response JSON
+        WSCLIENT_EXPORT BentleyStatus ExtractNewIdsFromResponse
+            (
+            RapidJsonValueCR response,
+            const std::function<BentleyStatus(ObjectIdCR oldId, ObjectIdCR newId)>& handler
+            ) const;
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -70,50 +75,45 @@ struct WSChangeset::Instance
 
     private:
         ObjectId m_id;
-        ChangeStatus m_status;
+        ChangeState m_state;
         std::shared_ptr<Json::Value> m_properties;
         mutable size_t m_baseSize = 0;
         bvector<std::shared_ptr<Relationship>> m_relationships;
 
-    private: 
+    private:
         bool RemoveRelatedInstance(Instance& instance);
 
         size_t CountRelatedInstances() const;
         size_t CalculateSize() const;
         void ToJson(JsonValueR instanceJsonOut) const;
 
-        static void FillBase
+        BentleyStatus ExtractNewIdsFromInstanceAfterChange
             (
-            JsonValueR instanceJsonOut, 
-            ObjectIdCR id, 
-            ChangeStatus status, 
-            std::shared_ptr<Json::Value> properties
-            );
-        static size_t CalculateBaseSize
-            (
-            ObjectIdCR id, 
-            ChangeStatus status, 
-            std::shared_ptr<Json::Value> properties, 
-            size_t& propertiesSizeInOut
-            );
+            RapidJsonValueCR instanceAfterChange,
+            const std::function<BentleyStatus(ObjectIdCR oldId, ObjectIdCR newId)>& handler
+            ) const;
+
+        static void FillBase(JsonValueR instanceJsonOut, ObjectIdCR id, ChangeState state, JsonValuePtr properties);
+        static size_t CalculateBaseSize(ObjectIdCR id, ChangeState state, JsonValuePtr properties, size_t& propertiesSizeInOut);
         static size_t CalculateFieldSize(Utf8CP fieldName, Utf8CP fieldValue);
         static size_t CalculateDirectionFieldSize(ECRelatedInstanceDirection direction);
-        static Utf8CP GetChangeStatusStr(ChangeStatus status);
+        static Utf8CP GetChangeStateStr(ChangeState state);
         static Utf8CP GetDirectionStr(ECRelatedInstanceDirection direction);
+        static ObjectId GetObjectIdFromInstance(RapidJsonValueCR instance);
 
     public:
         WSCLIENT_EXPORT Instance& AddRelatedInstance
             (
             ObjectId relId,
-            ChangeStatus relStatus,
+            ChangeState relState,
             ECRelatedInstanceDirection relDirection,
             ObjectId instanceId,
-            ChangeStatus status,
-            std::shared_ptr<Json::Value> properties
+            ChangeState state,
+            JsonValuePtr properties
             );
 
         WSCLIENT_EXPORT ObjectIdCR GetId() const;
-        WSCLIENT_EXPORT ChangeStatus GetStatus() const;
+        WSCLIENT_EXPORT ChangeState GetState() const;
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -126,7 +126,7 @@ struct WSChangeset::Relationship
 
     private:
         ObjectId m_id;
-        ChangeStatus m_status;
+        ChangeState m_state;
         ECRelatedInstanceDirection m_direction;
         mutable size_t m_baseSize = 0;
         Instance m_instance;
