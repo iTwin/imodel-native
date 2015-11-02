@@ -81,7 +81,7 @@ BentleyStatus   TagTest::GetTagDef (DgnTagDefinitionR tagDef)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                   08/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_MOBILEDGN_TAGS
+#ifdef WIP_DGNCLIENTFX_TAGS
 TEST_F (TagTest, CreateTag)
     {
     DgnTextStylePtr textStyle = GetTextStyle ();
@@ -133,7 +133,7 @@ TEST_F (TagTest, CreateTag)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_MOBILEDGN_TAGS
+#ifdef WIP_DGNCLIENTFX_TAGS
 TEST_F (TagTest, CreateEmptyTag)
     {
     DgnTextStylePtr textStyle = GetTextStyle ();
@@ -230,7 +230,7 @@ BentleyStatus   TagTest::GetOrigin (DPoint3dR origin, ElementHandleCR tagElement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  11/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_MOBILEDGN_TAGS
+#ifdef WIP_DGNCLIENTFX_TAGS
 TEST_F (TagTest, MultiJustifiedTag)
     {
     DgnTextStylePtr textStyle = GetTextStyle ();
