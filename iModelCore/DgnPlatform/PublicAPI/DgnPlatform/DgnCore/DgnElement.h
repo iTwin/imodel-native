@@ -1326,7 +1326,8 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement, Render::Stroker
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId())
             : T_Super(db, modelId, classId, code, id, parent), m_categoryId(category) {}
 
-        CreateParams(T_Super const& params, DgnCategoryId category = DgnCategoryId()) : T_Super(params), m_categoryId(category) {}
+        explicit CreateParams(T_Super const& params, DgnCategoryId category = DgnCategoryId()) : T_Super(params), m_categoryId(category) { }
+        CreateParams(CreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId) { }
     };
 
     //! Identifies actions which may be restricted for elements created by a handler for a missing subclass of GeometricElement.
@@ -1424,7 +1425,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : GeometricElement
     CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
         T_Super(db, modelId, classId, category, code, id, parent), m_placement(placement) {}
 
-    explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId(), Placement3dCR placement=Placement3d()) : T_Super(params, category), m_placement(placement){}
+    explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category = DgnCategoryId(), Placement3dCR placement = Placement3d()) : T_Super(params, category), m_placement(placement) {}
+    CreateParams(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
     };
 
 protected:
