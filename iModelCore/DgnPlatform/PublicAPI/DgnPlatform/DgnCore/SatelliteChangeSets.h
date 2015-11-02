@@ -11,11 +11,14 @@
 #include <Bentley/BeFileName.h>
 #include <Bentley/BeFile.h>
 #include <BeSQLite/BeSQLite.h>
+#include <BeSQLite/SHA1.h>
 #include <DgnPlatform/DgnPlatform.h>
 
 #define CHANGESET_Table       "dgn_changeSet"
+#define CHANGES_TABLE_DIRECT_Sha1       "changes_Sha1"
 #define CHANGES_ATTACH_ALIAS  "changes"
 #define CHANGESET_ATTACH(name) CHANGES_ATTACH_ALIAS "." name
+#define CHANGES_TABLE_Sha1          CHANGESET_ATTACH(CHANGES_TABLE_DIRECT_Sha1)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -63,6 +66,18 @@ struct SatelliteChangeSets : NonCopyableClass
         static Spec LastSequenceNumber()   {return Spec("LastSequenceNumber");}
     };
 
+  private:
+    struct Sha1Info
+        {
+        uint64_t m_sequenceNumber;
+        Utf8String m_sha1;  
+
+        static BeSQLite::DbResult CreateTable (BeSQLite::Db&);
+        BeSQLite::DbResult Insert (BeSQLite::Db&) const;
+        BeSQLite::DbResult Step (BeSQLite::Statement&);
+        BeSQLite::DbResult PrepareFindBySequenceNumber (BeSQLite::Statement&, SatelliteChangeSets&, uint64_t sequenceId);
+        };
+
 public:
     enum class Compressed {No=0, Lzma=1, Snappy=2};
     enum class ChangeSetType {Patch=0, Full=1};
@@ -83,6 +98,7 @@ public:
         bool HadSqliteError() const {return m_hadSqliteError;}
     };
 
+    friend struct Sha1Info;
     typedef bmap<uint64_t, BeFileName> T_ChangesFileDictionary;
 
 protected:
@@ -101,6 +117,8 @@ protected:
     BeSQLite::DbResult SavePropertyString(BeSQLite::PropertySpec const& spec, Utf8StringCR stringData, uint64_t majorId=0, uint64_t subId=0);
     BeSQLite::DbResult QueryProperty(Utf8StringR str, BeSQLite::PropertySpec const& spec, uint64_t id=0, uint64_t subId=0) const;
 
+
+    BeSQLite::DbResult VerifySha1(uint64_t sequenceNumber, void const* data, int32_t size);
 public:
     SatelliteChangeSets() : m_lastError(BeSQLite::BE_SQLITE_OK), m_isValid(false) {m_dgndb=nullptr;}
     DGNPLATFORM_EXPORT ~SatelliteChangeSets();

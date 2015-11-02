@@ -52,8 +52,6 @@ TEST_F(ElementGeometryBuilderTests, CreateElement3d)
     ISolidPrimitivePtr cylinder = ISolidPrimitive::CreateDgnCone(cylinderDetail);
     EXPECT_TRUE(builder->Append(*cylinder));
 
-    // ElemDisplayParams
-    //
     ElemDisplayParams elemDisplayParams;
     elemDisplayParams.SetCategoryId(m_defaultCategoryId);
     elemDisplayParams.SetWeight(2);

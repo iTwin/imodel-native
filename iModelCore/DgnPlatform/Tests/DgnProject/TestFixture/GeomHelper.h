@@ -19,6 +19,6 @@ public:
     static CurveVectorPtr computeShape(double len = PLANE_LEN);
     static CurveVectorPtr computeShape2d(double len = PLANE_LEN);
     static MSBsplineSurfacePtr CreateGridSurface(DPoint3dCR origin, double dx, double dy, size_t order, size_t numX, size_t numY);
-    static TextStringPtr GeomHelper::CreateTextString(TextStringStylePtr style=NULL);
+    static TextStringPtr CreateTextString(TextStringStylePtr style=NULL);
 
 };

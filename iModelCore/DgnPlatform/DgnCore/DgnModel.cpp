@@ -9,6 +9,17 @@
 #include <DgnPlatform/DgnCore/DgnDbTables.h>
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static std::pair<Utf8String,Utf8String> parseFullECClassName(Utf8CP fullname)
+    {
+    Utf8CP dot = strchr(fullname, '.');
+    if (nullptr == dot)
+        return std::make_pair("","");
+    return std::make_pair(Utf8String(fullname,dot), Utf8String(dot+1));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelId DgnModels::QueryModelId(DgnModel::Code code) const
@@ -432,6 +443,9 @@ void DgnModel::_OnUpdated()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnUpdate()
     {
+    if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Update))
+        return DgnDbStatus::MissingHandler;
+
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
         DgnDbStatus stat = entry->second->_OnUpdate(*this);
@@ -600,7 +614,12 @@ void DgnModel::_OnLoadedElement(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnInsertElement(DgnElementR element)
     {
-    return m_dgndb.IsReadonly() ? DgnDbStatus::ReadOnly : DgnDbStatus::Success;
+    if (m_dgndb.IsReadonly())
+        return DgnDbStatus::ReadOnly;
+    else if (GetModelHandler()._IsRestrictedAction(RestrictedAction::InsertElement))
+        return DgnDbStatus::MissingHandler;
+    else
+        return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -624,7 +643,12 @@ void DgnModel::_OnReversedDeleteElement(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnDeleteElement(DgnElementCR element)
     {
-    return m_dgndb.IsReadonly() ? DgnDbStatus::ReadOnly : DgnDbStatus::Success;
+    if (m_dgndb.IsReadonly())
+        return DgnDbStatus::ReadOnly;
+    else if (GetModelHandler()._IsRestrictedAction(RestrictedAction::DeleteElement))
+        return DgnDbStatus::MissingHandler;
+    else
+        return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -668,7 +692,12 @@ void DgnModel::_OnReversedAddElement(DgnElementCR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnUpdateElement(DgnElementCR modified, DgnElementCR original)
     {
-    return m_dgndb.IsReadonly() ? DgnDbStatus::ReadOnly : DgnDbStatus::Success;
+    if (m_dgndb.IsReadonly())
+        return DgnDbStatus::ReadOnly;
+    else if (GetModelHandler()._IsRestrictedAction(RestrictedAction::UpdateElement))
+        return DgnDbStatus::MissingHandler;
+    else
+        return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -726,6 +755,9 @@ bool DgnModels::FreeQvCache()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnDelete()
     {
+    if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Delete))
+        return DgnDbStatus::MissingHandler;
+
     for (auto appdata : m_appData)
         appdata.second->_OnDelete(*this);
 
@@ -780,6 +812,9 @@ DgnDbStatus DgnModel::_OnInsert()
         BeAssert(false);
         return DgnDbStatus::InvalidName;
         }
+
+    if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Insert))
+        return DgnDbStatus::MissingHandler;
 
     return DgnDbStatus::Success;
     }
@@ -1487,6 +1522,9 @@ DgnModel::CreateParams DgnModel::GetCreateParamsForImport(DgnImportContext& impo
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelPtr DgnModel::Clone(Code newCode) const
     {
+    if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Clone))
+        return nullptr;
+
     DgnModelPtr newModel = GetModelHandler().Create(DgnModel::CreateParams(m_dgndb, m_classId, newCode));
     newModel->_InitFrom(*this);
     return newModel;
@@ -1782,19 +1820,25 @@ DgnModelPtr DgnModel::CopyModel(DgnModelCR model, Code newCode)
     return model2;
     }
 
-#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ComponentModel::CreateParams::CreateParams(DgnDbR dgndb, Utf8StringCR name, Utf8StringCR iclass, Utf8StringCR icat, Utf8String iauthority, ModelSolverDef const& solver)
+    :
+    T_Super(dgndb, DgnClassId(dgndb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ComponentModel)), CreateModelCode(name), Properties(), solver)
+    {
+    m_itemECClassName = iclass;
+    m_itemCategoryName = icat;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 ComponentModel::ComponentModel(CreateParams const& params) : T_Super(params) 
     {
-    m_elementCategoryName = params.GetElementCategoryName();
-    m_elementECClassName = params.GetElementECClassName();
-    m_itemECClassName = params.GetItemECClassName();
-    m_itemECBaseClassName = params.GetItemECBaseClassName();
-
-    if (m_itemECClassName.empty())
-        m_itemECClassName = GetModelName();
+    m_itemECClassName = params.m_itemECClassName;
+    m_itemCategoryName = params.m_itemCategoryName;
+    m_itemCodeAuthority = params.m_itemCodeAuthority;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1802,11 +1846,9 @@ ComponentModel::ComponentModel(CreateParams const& params) : T_Super(params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModel::_GetSolverOptions(Json::Value& json)
     {
-    json["category"] = m_elementCategoryName.c_str();
-    Json::Value& instance = json["instance"];
-    instance["elementClass"] = m_elementECClassName.c_str();
-    instance["itemClass"] = m_itemECClassName.c_str();
-    instance["itemBaseClass"] = m_itemECBaseClassName.c_str();
+    json["Category"] = m_itemCategoryName.c_str();
+    json["ECClass"] = m_itemECClassName.c_str();
+    json["CodeAuthority"] = m_itemCodeAuthority.c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1814,13 +1856,11 @@ void ComponentModel::_GetSolverOptions(Json::Value& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ComponentModel::IsValid() const
     {
-    if (m_elementCategoryName.empty() || !DgnCategory::QueryCategoryId(m_elementCategoryName.c_str(), GetDgnDb()).IsValid())
+    if (m_itemCategoryName.empty() || !DgnCategory::QueryCategoryId(m_itemCategoryName.c_str(), GetDgnDb()).IsValid())
         return false;
-    if (m_elementECClassName.empty())
-        return false;
-    if (m_itemECClassName.empty())
-        return false;
-    if (m_itemECBaseClassName.empty())
+    Utf8String ns, cls;
+    std::tie(ns, cls) = parseFullECClassName(m_itemECClassName.c_str());
+    if (m_itemECClassName.empty() || nullptr == GetDgnDb().Schemas().GetECClass(ns.c_str(), cls.c_str()))
         return false;
     if (!GetSolver().IsValid())
         return false;
@@ -1832,7 +1872,8 @@ bool ComponentModel::IsValid() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ComponentModel::_OnDelete()
     {
-    //  *** TRICKY: We don't/can't have a trigger do this, because the solutions table references this model by name
+#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
+        //  *** TRICKY: We don't/can't have a trigger do this, because the solutions table references this model by name
     Statement delSolutions;
 
     delSolutions.Prepare(GetDgnDb(), "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " WHERE ComponentModelName=?");
@@ -1840,165 +1881,17 @@ DgnDbStatus ComponentModel::_OnDelete()
     delSolutions.Step();
 
     // *** NEEDS WORK: I should kill off all of the GeomParts referenced by the geomstreams in the rows of ComponentSolution 
+
+#endif
     return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentModel::ImportSchema(DgnDbR db, BeFileNameCR schemaFile)
+Utf8String ComponentModel::GetItemCategoryName() const
     {
-    ECSchemaReadContextPtr contextPtr = ECSchemaReadContext::CreateContext();
-    contextPtr->AddSchemaLocater(db.GetSchemaLocater());
-    contextPtr->AddSchemaPath(schemaFile.GetDirectoryName().GetName());
-
-    ECSchemaPtr schemaPtr;
-    SchemaReadStatus readSchemaStatus = ECSchema::ReadFromXmlFile(schemaPtr, schemaFile.GetName(), *contextPtr);
-    if (SCHEMA_READ_STATUS_Success != readSchemaStatus)
-        return DgnDbStatus::ReadError;
-
-    if (nullptr != db.Schemas().GetECSchema(schemaPtr->GetName().c_str()))
-        return DgnDbStatus::AlreadyLoaded;
-
-    if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache()))
-        return DgnDbStatus::BadSchema;
-
-    db.Domains().SyncWithSchemas();
-
-    return DgnDbStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-DgnDbStatus ComponentModel::ExportSchemaTo(DgnDbR clientDb, DgnDbR componentDb, Utf8StringCR schemaNameIn)
-    {
-    Utf8String schemaName(schemaNameIn);
-    if (schemaName.empty())
-        schemaName = Utf8String(componentDb.GetFileName().GetFileNameWithoutExtension());
-
-    if (nullptr != clientDb.Schemas().GetECSchema(schemaName.c_str()))
-        return DgnDbStatus::AlreadyLoaded;
-
-    // Ask componentDb to generate a schema
-    ECN::ECSchemaPtr schema;
-    if (ECN::ECOBJECTS_STATUS_Success != ECN::ECSchema::CreateSchema(schema, schemaName, 0, 0))
-        return DgnDbStatus::BadSchema;
-
-    schema->SetNamespacePrefix(schemaName);
-    
-    schema->AddReferencedSchema(*const_cast<ECN::ECSchemaP>(componentDb.Schemas().GetECSchema(DGN_ECSCHEMA_NAME)), "dgn");
-
-    if (DgnDbStatus::Success != ComponentModel::AddAllToECSchema(*schema, componentDb))
-        return DgnDbStatus::BadSchema;
-
-    componentDb.SaveChanges(); // *** TRICKY: AddAllToECSchema set the ItemECSchemaName property of the comonent models. Save it.
-        
-    //  Import the schema into clientDb
-    ECSchemaReadContextPtr contextPtr = ECSchemaReadContext::CreateContext();
-    contextPtr->AddSchema(*schema);
-    if (BentleyStatus::SUCCESS != clientDb.Schemas().ImportECSchemas(contextPtr->GetCache()))
-        return DgnDbStatus::BadSchema;
-
-    clientDb.Domains().SyncWithSchemas();
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentModel::GenerateECClass(ECN::ECSchemaR schema)
-    {
-    if (!IsValid())
-        return DgnDbStatus::NotEnabled;
-
-    ECN::ECClassP ecclass;
-    auto stat = schema.CreateClass(ecclass, GetItemECClassName());
-    if (ECN::ECOBJECTS_STATUS_Success != stat)
-        return DgnDbStatus::BadRequest;
-
-    Utf8String baseschemaname, baseclassname;
-    std::tie(baseschemaname, baseclassname) = parseFullECClassName(GetItemECBaseClassName().c_str());
-
-    ECN::ECClassCP baseClass = GetDgnDb().Schemas().GetECClass(baseschemaname.c_str(), baseclassname.c_str());
-
-    ecclass->AddBaseClass(*baseClass);
-
-    Utf8String paramsList;  
-    Utf8CP paramsListSep = "";
-
-    for (auto const& parm: GetSolver().GetParameters())
-        {
-        Utf8String parmname = parm.GetName();
-        ECN::ECValue parmvalue = parm.GetValue();
-
-        ECN::ECPropertyP baseClassProperty = baseClass->GetPropertyP(parmname.c_str());
-        if (nullptr != baseClassProperty)
-            {
-            // The base class has a property for this parameter, so I don't need to add one.
-            if (!baseClassProperty->GetIsPrimitive() || baseClassProperty->GetAsPrimitiveProperty()->GetType() != parmvalue.GetPrimitiveType())
-                {
-                BeDataAssert(false && "component model parameter is incompatible with existing base class ECProperty");
-                DGNCORELOG->warningv("component model parameter [%s] is incompatible with existing base class ECProperty", parmname.c_str());
-                }
-            continue;
-            }
-
-        //  Add a corresponding property to the generated Item class
-        ECN::PrimitiveECPropertyP ecprop;
-        stat = ecclass->CreatePrimitiveProperty(ecprop, parmname.c_str());
-        if (ECN::ECOBJECTS_STATUS_Success != stat)
-            return DgnDbStatus::BadRequest;
-        
-        ecprop->SetType(parmvalue.GetPrimitiveType());
-
-        paramsList.append(paramsListSep).append(parmname);
-        paramsListSep = ",";
-        }
-
-    //  Store an EGASpecifier custom attribute on the item class that identifies this component model and its parameters (in order!)
-    auto egaSpecClass = GetDgnDb().Schemas().GetECClass(DGN_ECSCHEMA_NAME, "EGASpecifier");
-    ECN::IECInstancePtr egaSpec = egaSpecClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    egaSpec->SetValue("Type", ECValue("ComponentModel"));
-    egaSpec->SetValue("Name", ECValue(GetModelName()));
-    egaSpec->SetValue("Inputs", ECValue(paramsList.c_str()));   // NB: paramsList must be in the same order as m_solver.GetParameters, so that clients can use it to generate the solution name
-    ecclass->SetCustomAttribute(*egaSpec);
-
-    m_itemECSchemaName = schema.GetName();
-    Update();
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentModel::AddAllToECSchema(ECN::ECSchemaR schema, DgnDbR db)
-    {
-    for (auto const& cm : db.Models().MakeIterator())
-        {
-        ComponentModelPtr componentModel = db.Models().Get<ComponentModel>(cm.GetModelId());
-        if (componentModel.IsValid() && DgnDbStatus::Success != componentModel->GenerateECClass(schema))
-            return DgnDbStatus::WriteError;
-        }
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ComponentModel::GetElementCategoryName() const
-    {
-    return m_elementCategoryName;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ComponentModel::GetElementECClassName() const
-    {
-    return m_elementECClassName;
+    return m_itemCategoryName;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2012,35 +1905,59 @@ Utf8String ComponentModel::GetItemECClassName() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ComponentModel::GetItemECBaseClassName() const
+Utf8String ComponentModel::GetItemCodeAuthority() const
     {
-    return m_itemECBaseClassName;
+    return m_itemCodeAuthority;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModel::_ToPropertiesJson(Json::Value& json) const
+DgnDbStatus ComponentModel::_Update()
     {
-    T_Super::_ToPropertiesJson(json);
-    json["ComponentElementCategoryName"] = m_elementCategoryName.c_str();
-    json["ComponentElementECClassName"]  = m_elementECClassName.c_str();
-    json["ComponentItemECSchemaName"]    = m_itemECSchemaName.c_str();
-    json["ComponentItemECClassName"]     = m_itemECClassName.c_str();
-    json["ComponentItemECBaseClassName"] = m_itemECBaseClassName.c_str();
+    DgnDbStatus status = T_Super::_Update();
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    CachedStatementPtr stmt;
+    m_dgndb.GetCachedStatement(stmt, "UPDATE " DGN_TABLE(DGN_CLASSNAME_ComponentModel) " SET ItemECClass=?, ItemCategory=?, ItemCodeAuthority=? WHERE Id=?");
+
+    stmt->BindText(1, m_itemECClassName, Statement::MakeCopy::No);
+    stmt->BindText(2, m_itemCategoryName, Statement::MakeCopy::No);
+    stmt->BindText(3, m_itemCodeAuthority, Statement::MakeCopy::No);
+    stmt->BindId(4, m_modelId);
+
+    DbResult  result = stmt->Step();
+    if (BE_SQLITE_ROW != result)
+        {
+        BeAssert(false);
+        return DgnDbStatus::WriteError;
+        }
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModel::_FromPropertiesJson(Json::Value const& json)
+void ComponentModel::_ReadProperties()
     {
-    T_Super::_FromPropertiesJson(json);
-    m_elementCategoryName = json["ComponentElementCategoryName"].asCString();
-    m_elementECClassName  = json["ComponentElementECClassName"].asCString();
-    m_itemECSchemaName     = json["ComponentItemECSchemaName"].asCString();
-    m_itemECClassName     = json["ComponentItemECClassName"].asCString();
-    m_itemECBaseClassName = json["ComponentItemECBaseClassName"].asCString();
+    T_Super::_ReadProperties();
+
+    CachedStatementPtr stmt;
+    m_dgndb.GetCachedStatement(stmt, "SELECT ItemECClass, ItemCategory, ItemCodeAuthority FROM " DGN_TABLE(DGN_CLASSNAME_ComponentModel) " WHERE Id=?");
+    stmt->BindId(1, m_modelId);
+
+    DbResult  result = stmt->Step();
+    if (BE_SQLITE_ROW != result)
+        {
+        BeAssert(false);
+        return;
+        }
+
+    m_itemECClassName = stmt->GetValueText(0);
+    m_itemCategoryName = stmt->GetValueText(1);
+    m_itemCodeAuthority = stmt->GetValueText(2);
     }
 
 
@@ -2054,15 +1971,13 @@ DgnDbStatus ComponentModel::Solve(ModelSolverDef::ParameterSet const& newParamet
     auto status = Update();
     if (DgnDbStatus::Success != status)
         return status;
-    // SaveChanges triggers validation, which invokes the model's solver
-    auto sstatus = GetDgnDb().SaveChanges();
+    auto sstatus = GetDgnDb().SaveChanges(); // => txn validation invokes the model's solver
     if (BE_SQLITE_OK == sstatus)
         return DgnDbStatus::Success;
     if (BE_SQLITE_ERROR_ChangeTrackError == sstatus)
         return DgnDbStatus::ValidationFailed;
     return DgnDbStatus::SQLiteError;
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
@@ -2076,4 +1991,24 @@ DgnModelPtr DictionaryModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext
     return nullptr;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t DgnModel::RestrictedAction::Parse(Utf8CP name)
+    {
+    struct Pair { Utf8CP name; uint64_t value; };
+    static const Pair s_pairs[] =
+        {
+            { "insertelement", InsertElement },
+            { "updateelement", UpdateElement },
+            { "deleteelement", DeleteElement },
+            { "clone", Clone },
+        };
+
+    for (auto const& pair : s_pairs)
+        if (0 == BeStringUtilities::Stricmp(pair.name, name))
+            return pair.value;
+
+    return T_Super::Parse(name);
+    }
 

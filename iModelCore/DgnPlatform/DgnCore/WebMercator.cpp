@@ -334,12 +334,8 @@ static double computeGroundResolutionInMeters (uint8_t zoomLevel, double latitud
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef GRAPHITE0502
-#define GET_METERS_PER_UOR(units) units.GetPhysicalUnits().ConvertFromUorsToMeters();
-#else
 // In Graphite06, data is stored in meters. 
 #define GET_METERS_PER_UOR(units) 1.0
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/2014
@@ -742,12 +738,13 @@ void WebMercatorTileDisplayHelper::DrawMissingTile (ViewContextR context, WebMer
 #endif
     }
 
+#ifdef WEBMERCATOR_DEBUG_TILES
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
-#ifdef WEBMERCATOR_DEBUG_TILES
++---------------+---------------+---------------+---------------+---------------+------*/
 static void drawPoint (ViewContextR context, DPoint3dCR pt, bool drawCrossHair=false)
     {
-    auto pixels = context.GetPixelSizeAtPoint(NULL);
+        auto pixels = context.GetPixelSizeAtPoint(NULL);
 
     DEllipse3d circle;
     auto z = DVec3d::From (0,0,1);
@@ -767,7 +764,6 @@ static void drawPoint (ViewContextR context, DPoint3dCR pt, bool drawCrossHair=f
         }
     }
 #endif
-+---------------+---------------+---------------+---------------+---------------+------*/
 
 #ifdef WEBMERCATOR_DEBUG_TILES
 /*---------------------------------------------------------------------------------**//**
@@ -928,6 +924,23 @@ BentleyStatus WebMercatorDisplay::CreateUrl (Utf8StringR url, ImageUtilities::Rg
         return BSIERROR;
         }
     return webMercatorModelHandler->_CreateUrl(url, imageInfo, m_model.m_mercator, tileid);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String WebMercatorDisplay::_GetCopyrightMessage(DgnViewportR vp)
+    {
+    if (!vp.GetViewController().GetViewedModels().Contains(m_model.GetModelId()))
+        return "";
+    ModelHandlerP modelHandler = dgn_ModelHandler::Model::FindHandler(m_model.GetDgnDb(), m_model.GetClassId());
+    dgn_ModelHandler::WebMercator* webMercatorModelHandler = dynamic_cast<dgn_ModelHandler::WebMercator*>(modelHandler);
+    if (nullptr == webMercatorModelHandler)
+        {
+        BeAssert(false);
+        return "";
+        }
+    return webMercatorModelHandler->_GetCopyright(m_model.m_mercator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1256,6 +1269,7 @@ WebMercatorDisplay::WebMercatorDisplay (WebMercatorModel& model, DgnViewportR vp
     m_failedAttempts(0)
     {
     DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT
+    T_HOST.RegisterCopyrightSupplier(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1263,6 +1277,7 @@ WebMercatorDisplay::WebMercatorDisplay (WebMercatorModel& model, DgnViewportR vp
 +---------------+---------------+---------------+---------------+---------------+------*/
 WebMercatorDisplay::~WebMercatorDisplay() 
     {
+    T_HOST.UnregisterCopyrightSupplier(*this);
     }
 
 #ifdef WIP_MAP_SERVICE
@@ -1372,6 +1387,41 @@ Utf8String dgn_ModelHandler::StreetMap::CreateOsmUrl (WebMercatorTilingSystem::T
     return url;
     }
 
+#define MAPBOX_ACCESS_KEY "pk.eyJ1IjoibWFwYm94YmVudGxleSIsImEiOiJjaWZvN2xpcW00ZWN2czZrcXdreGg2eTJ0In0.f7c9GAxz6j10kZvL_2DBHg"
+#define MAPBOX_ACCESS_KEY_URI_ENCODED "pk%2EeyJ1IjoibWFwYm94YmVudGxleSIsImEiOiJjaWZvN2xpcW00ZWN2czZrcXdreGg2eTJ0In0%2Ef7c9GAxz6j10kZvL%5F2DBHg"
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String dgn_ModelHandler::StreetMap::CreateMapBoxUrl(WebMercatorTilingSystem::TileId const& tileid, WebMercatorModel::Mercator const& props)
+    {
+    Utf8String url;
+
+    /*
+    @2x.png	2x scale(retina)
+    png32	32 color indexed PNG
+    png64	64 color indexed PNG
+    png128	128 color indexed PNG
+    png256	256 color indexed PNG
+    jpg70	70 % quality JPG
+    jpg80	80 % quality JPG
+    jpg90	90 % quality JPG
+    */
+    char const* format = "png32";
+
+    char const* mapid = (!props.m_mapType.empty() && props.m_mapType [0] == '0')? "mapbox.streets": "mapbox.satellite";
+
+    //                                                  m  z  x  y  f
+    url = Utf8PrintfString ("http://api.mapbox.com/v4/%s/%d/%d/%d.%s?access_token=", 
+                                                        mapid, 
+                                                           tileid.zoomLevel, tileid.column, tileid.row, 
+                                                                    format);
+
+    url += MAPBOX_ACCESS_KEY_URI_ENCODED; // NB: This URI-encoded string must not be included in the sprintf format string!
+
+    return url;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1392,18 +1442,9 @@ BentleyStatus dgn_ModelHandler::StreetMap::_CreateUrl (Utf8StringR url, ImageUti
 
     if (props.m_mapService[0] == '0')
         {
-        #ifndef NDEBUG  // *** In a developer build, go ahead and use OSM
-            url = CreateOsmUrl (tileid, props);
-        #endif
+        url = CreateMapBoxUrl (tileid, props);
+        //printf ("url=%s\n", url.c_str());
         }
-#ifdef WIP_MAP_SERVICE
-    else if (GoogleMaps)
-        url = CreateGoogleMapsUrl (tileid);
-    else if (BlackAndWhite)
-        url = Utf8PrintfString ("http://a.tile.stamen.com/toner/%d/%d/%d.png", tileid.zoomLevel, tileid.column, tileid.row);
-    else if (Bing)
-        url = CreateBingUrl (tileid);
-#endif
     else
         {
         BeAssert (false && "unrecognized map service");
@@ -1415,6 +1456,17 @@ BentleyStatus dgn_ModelHandler::StreetMap::_CreateUrl (Utf8StringR url, ImageUti
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String dgn_ModelHandler::StreetMap::_GetCopyright(WebMercatorModel::Mercator const& props)
+    {
+    if (props.m_mapService[0] == '0')
+        return "(c) Mapbox, Data ODbL (c) OpenStreetMap contributors";
+
+    return "";
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 static Utf8String getStreetMapServerDescription(dgn_ModelHandler::StreetMap::MapService mapService, dgn_ModelHandler::StreetMap::MapType mapType)
@@ -1422,6 +1474,17 @@ static Utf8String getStreetMapServerDescription(dgn_ModelHandler::StreetMap::Map
     Utf8String descr;
     switch (mapService)
         {
+        case dgn_ModelHandler::StreetMap::MapService::MapBox:
+            {
+            descr = ("Mapbox");   // *** WIP translate
+            if (dgn_ModelHandler::StreetMap::MapType::Map == mapType)
+                descr.append(" Map");   // *** WIP translate
+            else
+                descr.append(" Satellite Images"); // *** WIP translate
+            break;
+            }
+
+#ifndef NDEBUG
         case dgn_ModelHandler::StreetMap::MapService::OpenStreetMaps:
             {
             descr = ("Open Street Maps");   // *** WIP translate
@@ -1431,6 +1494,7 @@ static Utf8String getStreetMapServerDescription(dgn_ModelHandler::StreetMap::Map
                 descr.append(" Satellite Images"); // *** WIP translate
             break;
             }
+#endif
         }
     return descr;
     }

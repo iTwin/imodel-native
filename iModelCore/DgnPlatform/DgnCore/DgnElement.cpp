@@ -231,6 +231,9 @@ template<class T> void DgnElement::CallAppData(T const& caller) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_OnInsert()
     {
+    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Insert))
+        return DgnDbStatus::MissingHandler;
+
     if (!m_code.IsValid())
         {
         m_code = _GenerateDefaultCode();
@@ -347,6 +350,8 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
     {
     if (m_classId != original.m_classId)
         return DgnDbStatus::WrongClass;
+    else if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Update))
+        return DgnDbStatus::MissingHandler;
 
     auto parentId = GetParentId();
     if (parentId.IsValid() && parentId != original.GetParentId() && parentCycleExists(parentId, GetElementId(), GetDgnDb()))
@@ -1493,6 +1498,97 @@ DgnClassId ElementGroup::QueryClassId(DgnDbR db)
     return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ElementGroup));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    10/2015
+//---------------------------------------------------------------------------------------
+DgnDbStatus ElementGroupsMembers::Insert(DgnElementCR group, DgnElementCR member)
+    {
+    CachedECSqlStatementPtr statement = group.GetDgnDb().GetPreparedECSqlStatement(
+        "INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementGroupsMembers) 
+        " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
+
+    if (!statement.IsValid())
+        return DgnDbStatus::BadRequest;
+
+    statement->BindId(1, group.GetElementClassId());
+    statement->BindId(2, group.GetElementId());
+    statement->BindId(3, member.GetElementClassId());
+    statement->BindId(4, member.GetElementId());
+    return (BE_SQLITE_DONE == statement->Step()) ? DgnDbStatus::Success : DgnDbStatus::BadRequest;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    10/2015
+//---------------------------------------------------------------------------------------
+DgnDbStatus ElementGroupsMembers::Delete(DgnElementCR group, DgnElementCR member)
+    {
+    CachedECSqlStatementPtr statement = group.GetDgnDb().GetPreparedECSqlStatement(
+        "DELETE FROM " DGN_SCHEMA(DGN_RELNAME_ElementGroupsMembers) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?");
+
+    if (!statement.IsValid())
+        return DgnDbStatus::BadRequest;
+
+    statement->BindId(1, group.GetElementId());
+    statement->BindId(2, member.GetElementId());
+    return (BE_SQLITE_DONE == statement->Step()) ? DgnDbStatus::Success : DgnDbStatus::BadRequest;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    10/2015
+//---------------------------------------------------------------------------------------
+bool ElementGroupsMembers::HasMember(DgnElementCR group, DgnElementCR member)
+    {
+    CachedECSqlStatementPtr statement = group.GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT SourceECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_ElementGroupsMembers) " WHERE SourceECInstanceId=? AND TargetECInstanceId=? LIMIT 1");
+
+    if (!statement.IsValid())
+        return false;
+
+    statement->BindId(1, group.GetElementId());
+    statement->BindId(2, member.GetElementId());
+    return (BE_SQLITE_ROW == statement->Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    10/2015
+//---------------------------------------------------------------------------------------
+DgnElementIdSet ElementGroupsMembers::QueryMembers(DgnElementCR group)
+    {
+    CachedECSqlStatementPtr statement = group.GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT TargetECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_ElementGroupsMembers) " WHERE SourceECInstanceId=?");
+
+    if (!statement.IsValid())
+        return DgnElementIdSet();
+
+    statement->BindId(1, group.GetElementId());
+
+    DgnElementIdSet elementIdSet;
+    while (BE_SQLITE_ROW == statement->Step())
+        elementIdSet.insert(statement->GetValueId<DgnElementId>(0));
+
+    return elementIdSet;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    10/2015
+//---------------------------------------------------------------------------------------
+DgnElementIdSet ElementGroupsMembers::QueryGroups(DgnElementCR member)
+    {
+    CachedECSqlStatementPtr statement = member.GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT SourceECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_ElementGroupsMembers) " WHERE TargetECInstanceId=?");
+
+    if (!statement.IsValid())
+        return DgnElementIdSet();
+
+    statement->BindId(1, member.GetElementId());
+
+    DgnElementIdSet elementIdSet;
+    while (BE_SQLITE_ROW == statement->Step())
+        elementIdSet.insert(statement->GetValueId<DgnElementId>(0));
+
+    return elementIdSet;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2471,7 +2567,7 @@ DgnDbStatus DgnElement::ExternalKeyAspect::Delete(DgnElementCR element, DgnAutho
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppData::Key const& DgnElement::NameAspect::GetAppDataKey()
+DgnElement::AppData::Key const& DgnElement::LabelAspect::GetAppDataKey()
     {
     static Key s_appDataKey;
     return s_appDataKey;
@@ -2480,28 +2576,28 @@ DgnElement::AppData::Key const& DgnElement::NameAspect::GetAppDataKey()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::NameAspectPtr DgnElement::NameAspect::Create(Utf8CP name)
+DgnElement::LabelAspectPtr DgnElement::LabelAspect::Create(Utf8CP label)
     {
-    if (!name || !*name)
+    if (!label || !*label)
         {
         BeAssert(false);
         return nullptr;
         }
 
-    return new DgnElement::NameAspect(name);
+    return new DgnElement::LabelAspect(label);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppData::DropMe DgnElement::NameAspect::_OnInserted(DgnElementCR element)
+DgnElement::AppData::DropMe DgnElement::LabelAspect::_OnInserted(DgnElementCR element)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " DGN_SCHEMA(DGN_CLASSNAME_ElementName) " (ECInstanceId,[Name]) VALUES (?,?)");
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " DGN_SCHEMA(DGN_CLASSNAME_ElementLabel) " (ECInstanceId,[Label]) VALUES (?,?)");
     if (!statement.IsValid())
         return DgnElement::AppData::DropMe::Yes;
 
     statement->BindId(1, element.GetElementId());
-    statement->BindText(2, GetName(), IECSqlBinder::MakeCopy::No);
+    statement->BindText(2, GetLabel(), IECSqlBinder::MakeCopy::No);
 
     ECInstanceKey key;
     if (BE_SQLITE_DONE != statement->Step(key))
@@ -2515,9 +2611,9 @@ DgnElement::AppData::DropMe DgnElement::NameAspect::_OnInserted(DgnElementCR ele
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::NameAspect::Query(Utf8StringR name, DgnElementCR element)
+DgnDbStatus DgnElement::LabelAspect::Query(Utf8StringR name, DgnElementCR element)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT [Name] FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementName) " WHERE ECInstanceId=?");
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT [Label] FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementLabel) " WHERE ECInstanceId=?");
     if (!statement.IsValid())
         return DgnDbStatus::ReadError;
 
@@ -2533,9 +2629,9 @@ DgnDbStatus DgnElement::NameAspect::Query(Utf8StringR name, DgnElementCR element
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::NameAspect::Delete(DgnElementCR element)
+DgnDbStatus DgnElement::LabelAspect::Delete(DgnElementCR element)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementName) " WHERE ECInstanceId=?");
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementLabel) " WHERE ECInstanceId=?");
     if (!statement.IsValid())
         return DgnDbStatus::WriteError;
 
@@ -2640,10 +2736,6 @@ DictionaryElement::CreateParams::CreateParams(DgnDbR db, DgnClassId classId, Cod
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint64_t DgnElement::RestrictedAction::Parse(Utf8CP name)
     {
-    uint64_t action = T_Super::Parse(name);
-    if (RestrictedAction::None != action)
-        return action;
-
     struct Pair { Utf8CP name; uint64_t action; };
 
     static const Pair s_pairs[] = 
@@ -2653,13 +2745,14 @@ uint64_t DgnElement::RestrictedAction::Parse(Utf8CP name)
             { "insertchild",    InsertChild },
             { "updatechild",    UpdateChild },
             { "deletechild",    DeleteChild },
+            { "setcode",        SetCode },
         };
 
     for (auto const& pair : s_pairs)
         if (0 == BeStringUtilities::Stricmp(name, pair.name))
             return pair.action;
 
-    return None;
+    return T_Super::Parse(name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2684,6 +2777,17 @@ DgnDbStatus DgnElement::_OnChildInsert(DgnElementCR) const { return GetElementHa
 DgnDbStatus DgnElement::_OnChildUpdate(DgnElementCR, DgnElementCR) const { return GetElementHandler()._IsRestrictedAction(RestrictedAction::UpdateChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success; }
 DgnDbStatus DgnElement::_OnChildDelete(DgnElementCR) const { return GetElementHandler()._IsRestrictedAction(RestrictedAction::DeleteChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success; }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_SetCode(Code const& code)
+    {
+    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::SetCode))
+        return DgnDbStatus::MissingHandler;
+
+    m_code = code;
+    return DgnDbStatus::Success;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15

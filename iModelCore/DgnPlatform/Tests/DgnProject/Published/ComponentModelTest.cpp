@@ -5,8 +5,6 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
-
 #ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnPlatformLib.h>
@@ -122,6 +120,7 @@ static void checkSlabDimensions(GeometricElementCR el, double expectedX, double 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_COMPONENT
 static void checkElementClassesInModel(DgnModelCR model, bset<DgnClassId> const& allowedClasses)
     {
     Statement statement(model.GetDgnDb(), "SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
@@ -132,6 +131,7 @@ static void checkElementClassesInModel(DgnModelCR model, bset<DgnClassId> const&
         ASSERT_TRUE( allowedClasses.find(foundClassId) != allowedClasses.end() ) << Utf8PrintfString("Did not expect to find an instance of class %s", model.GetDgnDb().Schemas().GetECClass(ECN::ECClassId(foundClassId.GetValue()))->GetName().c_str()).c_str();
         }
     }
+#endif
 
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson     02/2012
@@ -157,14 +157,14 @@ void OpenClientDb(DgnDb::OpenMode mode) {openDb(m_clientDb, m_clientDbName, mode
 void CloseClientDb() {m_clientDb->CloseDb(); m_clientDb=nullptr;}
 void Developer_TestWidgetSolver();
 void Developer_TestGadgetSolver();
+#ifdef WIP_COMPONENT
 void Client_CreateTargetModel(Utf8CP targetModelName);
 void Client_SolveAndCapture(ComponentSolution::SolutionId& solutionId, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
 void Client_InsertNonInstanceElement(Utf8CP modelName, Utf8CP code = nullptr);
 void Client_PlaceInstanceOfSolution(DgnElementId&, Utf8CP targetModelName, ComponentSolution::SolutionId);
 void Client_SolveAndPlaceInstance(DgnElementId&, Utf8CP targetModelName, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
 void Client_CheckComponentInstance(DgnElementId, size_t expectedCount, double x, double y, double z);
-void GenerateCMSchema();
-void Client_ImportCM(Utf8CP componentName);
+#endif
 
 void SimulateDeveloper();
 void SimulateClient();
@@ -231,21 +231,13 @@ void ComponentModelTest::Developer_CreateCMs()
     ModelSolverDef gsolver(ModelSolverDef::Type::Script, TEST_JS_NAMESPACE ".Gadget", gparameters); // Identify the JS solver that should be used. Note: this JS program must be in the script library
 
     // Create the models
-    DgnClassId mclassId = DgnClassId(m_componentDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ComponentModel));
-    ComponentModel::CreateParams wparms(*m_componentDb, mclassId, TEST_WIDGET_COMPONENT_NAME);
-    wparms.SetSolver(wsolver);
-    wparms.SetElementCategoryName("Widget");
-    wparms.SetElementECClassName("dgn.PhysicalElement");
-    wparms.SetItemECBaseClassName("dgn.ElementItem");
+    ComponentModel::CreateParams wparms(*m_componentDb, TEST_WIDGET_COMPONENT_NAME, "dgn.PhysicalElement", "Widget", "***TBD Authority", wsolver);
     ComponentModelPtr wcm = new ComponentModel(wparms);
     ASSERT_TRUE( wcm->IsValid() );
     ASSERT_EQ( DgnDbStatus::Success , wcm->Insert() );       /* Insert the new model into the DgnDb */
 
-    ComponentModel::CreateParams gparms(*m_componentDb, mclassId, TEST_GADGET_COMPONENT_NAME);
+    ComponentModel::CreateParams gparms(*m_componentDb, TEST_GADGET_COMPONENT_NAME, "dgn.PhysicalElement", "Widget", "***TBD Authority", gsolver);
     gparms.SetSolver(gsolver);
-    gparms.SetElementCategoryName("Gadget");
-    gparms.SetElementECClassName("dgn.PhysicalElement");
-    gparms.SetItemECBaseClassName("dgn.ElementItem");
     ComponentModelPtr gcm = new ComponentModel(gparms);
     ASSERT_TRUE( gcm->IsValid() );
     ASSERT_EQ( DgnDbStatus::Success , gcm->Insert() );       /* Insert the new model into the DgnDb */
@@ -258,14 +250,14 @@ void ComponentModelTest::Developer_CreateCMs()
 "(function () { \
     function widgetSolver(model, params, options) { \
         model.DeleteAllElements();\
-        var element = model.CreateElement('dgn.PhysicalElement', 'Widget');\
+        var element = model.CreateElement('dgn.PhysicalElement', options.Category);\
         var origin = new BentleyApi.Dgn.JsDPoint3d(1,2,3);\
         var angles = new BentleyApi.Dgn.JsYawPitchRollAngles(0,0,0);\
         var builder = new BentleyApi.Dgn.JsElementGeometryBuilder(element, origin, angles); \
         builder.AppendBox(params['X'], params['Y'], params['Z']); \
         builder.SetGeomStreamAndPlacement(element); \
         element.Insert(); \
-        var element2 = model.CreateElement('dgn.PhysicalElement', 'Widget');\
+        var element2 = model.CreateElement('dgn.PhysicalElement', options.Category);\
         var origin2 = new BentleyApi.Dgn.JsDPoint3d(10,12,13);\
         var angles2 = new BentleyApi.Dgn.JsYawPitchRollAngles(0,0,0);\
         var builder2 = new BentleyApi.Dgn.JsElementGeometryBuilder(element2, origin2, angles2); \
@@ -278,7 +270,7 @@ void ComponentModelTest::Developer_CreateCMs()
     } \
     function gadgetSolver(model, params, options) { \
         model.DeleteAllElements();\
-        var element = model.CreateElement('dgn.PhysicalElement', 'Gadget');\
+        var element = model.CreateElement('dgn.PhysicalElement', options.Category);\
         var origin = new BentleyApi.Dgn.JsDPoint3d(0,0,0);\
         var angles = new BentleyApi.Dgn.JsYawPitchRollAngles(0,0,45);\
         var builder = new BentleyApi.Dgn.JsElementGeometryBuilder(element, origin, angles); \
@@ -365,63 +357,7 @@ void ComponentModelTest::Developer_TestGadgetSolver()
     CloseComponentDb();
     }
 
-/*---------------------------------------------------------------------------------**//**
-// Generate the ECSchema for all related CM's -- ONLY DO THIS ONCE.
-// Note: The client or the CM developer could do this. If the CM developer does this, he
-// would then have to deliver the ecschema.xml file along with the CM dgndb.
-* @bsimethod                                    Sam.Wilson                      04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::GenerateCMSchema()
-    {
-    OpenComponentDb(Db::OpenMode::ReadWrite);
-    ECN::ECSchemaPtr schema;
-    ASSERT_EQ( ECN::ECOBJECTS_STATUS_Success , ECN::ECSchema::CreateSchema(schema, TEST_JS_NAMESPACE, 0, 0) );
-    schema->SetNamespacePrefix("cmt");
-    schema->AddReferencedSchema(*const_cast<ECN::ECSchemaP>(m_componentDb->Schemas().GetECSchema(DGN_ECSCHEMA_NAME)), "dgn");
-    ASSERT_EQ( DgnDbStatus::Success , ComponentModel::AddAllToECSchema(*schema, *m_componentDb) );
-    ASSERT_EQ( ECN::SCHEMA_WRITE_STATUS_Success , schema->WriteToXmlFile(m_componentSchemaFileName) );
-    m_componentDb->SaveChanges(); // AddAllToECSchema modifies the component models, so we must save the changes
-    CloseComponentDb();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_ImportCM(Utf8CP componentName)
-    {
-    OpenComponentDb(Db::OpenMode::Readonly);
-    
-    ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_componentDb, componentName);
-
-    // ONLY DO THIS ONCE per CM. This might be done on demand, the first time that an instance of a particular CM is placed.
-    ASSERT_TRUE( componentModel.IsValid() );
-
-    DgnImportContext importer(*m_componentDb, *m_clientDb);
-
-    DgnDbStatus status;
-    ComponentModelPtr cmCopy = DgnModel::Import(&status, *componentModel, importer);
-    
-    ASSERT_TRUE( cmCopy.IsValid() );
-
-    ASSERT_EQ( countElementsInModel(*componentModel), countElementsInModel(*cmCopy) ); // at least make sure the copy has the same number of elements.
-
-    // Original ComponentModel and the copy should contain only PhysicalElements (in this test)
-    bset<DgnClassId> cmModelElementClasses;
-    cmModelElementClasses.insert(DgnClassId(m_componentDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement)));
-    checkElementClassesInModel(*componentModel, cmModelElementClasses);
-
-    bset<DgnClassId> cmCopyModelElementClasses;
-    cmCopyModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement)));
-    checkElementClassesInModel(*cmCopy, cmCopyModelElementClasses);
-
-    m_clientDb->SaveChanges();
-
-    //  Verify that we can look up an existing cmCopy
-    DgnModelId ccId = m_clientDb->Models().QueryModelId(DgnModel::CreateModelCode(componentName));
-    ASSERT_EQ( ccId.GetValue(), cmCopy->GetModelId().GetValue() );
-
-    CloseComponentDb();
-    }
+#ifdef WIP_COMPONENT
 
 /*---------------------------------------------------------------------------------**//**
 *  Create a model in the client DgnDb where we will place instances    
@@ -563,17 +499,6 @@ void ComponentModelTest::Client_SolveAndPlaceInstance(DgnElementId& ieid, Utf8CP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::SimulateDeveloper()
-    {
-    //  Simulate a customizer who creates a component definition 
-    Developer_CreateCMs();
-    Developer_TestWidgetSolver();
-    Developer_TestGadgetSolver();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModelTest::Client_InsertNonInstanceElement(Utf8CP modelName, Utf8CP code)
     {
     PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, modelName);
@@ -585,12 +510,26 @@ void ComponentModelTest::Client_InsertNonInstanceElement(Utf8CP modelName, Utf8C
     ASSERT_TRUE( el->Insert().IsValid() );
     }
 
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModelTest::SimulateDeveloper()
+    {
+    //  Simulate a customizer who creates a component definition 
+    Developer_CreateCMs();
+    Developer_TestWidgetSolver();
+    Developer_TestGadgetSolver();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * Simulate a client who receives a ComponentModel and then places instances of solutions to it.
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModelTest::SimulateClient()
     {
+#ifdef WIP_COMPONENT
     OpenClientDb(Db::OpenMode::ReadWrite);
 
     // vvvvvvvvvv BEGIN SCHEMA CHANGE vvvvvvvvvvvv
@@ -687,6 +626,7 @@ void ComponentModelTest::SimulateClient()
     Client_CheckComponentInstance(g1, 1, gsln1["Q"].asDouble(), gsln1["W"].asDouble(), gsln1["R"].asDouble());
 
     CloseClientDb();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -819,5 +759,3 @@ TEST_F(ComponentModelTest, Performance_PlaceElements)
 #endif//def WIP_MOVE_INTO_PERFORMANCE_TESTS
 
 #endif //ndef BENTLEYCONFIG_NO_JAVASCRIPT
-
-#endif
