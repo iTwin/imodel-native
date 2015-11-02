@@ -112,9 +112,7 @@ DGNPLATFORM_TYPEDEFS (ChangeAnnotationScale)
 DGNPLATFORM_TYPEDEFS (ClipPrimitive)
 DGNPLATFORM_TYPEDEFS (ClipVector)
 DGNPLATFORM_TYPEDEFS (ClipVolumeOverrides)
-#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 DGNPLATFORM_TYPEDEFS (ComponentModel)
-#endif
 DGNPLATFORM_TYPEDEFS (CutGraphicsCachedKey)
 DGNPLATFORM_TYPEDEFS (Dgn3DInputEvent)
 DGNPLATFORM_TYPEDEFS (DgnButtonEvent)
@@ -199,6 +197,7 @@ DGNPLATFORM_TYPEDEFS (UpdateContext)
 DGNPLATFORM_TYPEDEFS (ViewHandler)
 DGNPLATFORM_TYPEDEFS (ViewManager)
 DGNPLATFORM_TYPEDEFS (VisibleEdgeCache)
+DGNPLATFORM_TYPEDEFS (ImageBuffer)
 
 /** @endcond */
 DGNPLATFORM_TYPEDEFS (DgnGCS)
@@ -220,9 +219,7 @@ DGNPLATFORM_REF_COUNTED_PTR (ElementGroup)
 DGNPLATFORM_REF_COUNTED_PTR (GeometricElement)
 DGNPLATFORM_REF_COUNTED_PTR (PatternParams)
 DGNPLATFORM_REF_COUNTED_PTR (PhysicalElement)
-#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 DGNPLATFORM_REF_COUNTED_PTR (ComponentModel)
-#endif
 DGNPLATFORM_REF_COUNTED_PTR (PhysicalModel)
 DGNPLATFORM_REF_COUNTED_PTR (PhysicalRedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR (QueryViewController)
@@ -230,6 +227,7 @@ DGNPLATFORM_REF_COUNTED_PTR (RedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR (SheetViewController)
 DGNPLATFORM_REF_COUNTED_PTR (TxnManager)
 DGNPLATFORM_REF_COUNTED_PTR (DgnAuthority)
+DGNPLATFORM_REF_COUNTED_PTR (ImageBuffer)
 
 /** @cond BENTLEY_SDK_Internal */
 DGNPLATFORM_REF_COUNTED_PTR (ClipPrimitive)
@@ -932,6 +930,19 @@ public:
 // Used for verifying published tests in DgnPlatformTest are using published headers. DO NOT REMOVE.
 #define __DGNPLATFORM_NON_PUBLISHED_HEADER__ 1
 /*__PUBLISH_SECTION_START__*/
+
+/*=================================================================================**//**
+* Interface to be adopted by a class that wants to supply a copyright message that must
+* be display in a viewport.
+* @bsiclass                                                     Sam.Wilson      10/15
++===============+===============+===============+===============+===============+======*/
+struct CopyrightSupplier
+    {
+    //! Return the copyright message to display in the specified viewport
+    //! @param vp   The viewport that is being displayed
+    //! @return a copyright message to display or an empty string to display nothing
+    virtual Utf8String _GetCopyrightMessage(DgnViewportR vp) = 0;
+    };
 
 #define TO_BOOL(x) (0 != (x))
 

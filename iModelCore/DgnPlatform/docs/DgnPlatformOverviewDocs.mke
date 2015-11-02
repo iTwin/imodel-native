@@ -120,9 +120,9 @@ always:
 #documentation (Note folders in build context are pascal cased)
 bcDocsDir = $(BuildContext)Docs/
 linkdocstobuildcontext:
-    @CreateSymLinks.py -d"$(bcDocsDir)Source/DgnPlatform=${readyForDoxygen}"
+    ~linkdir "$(bcDocsDir)Source/DgnPlatform=${readyForDoxygen}"
 
 %ifdef TBD_doc_images_and_files
-    @CreateSymLinks.py -d"$(bcDocsDir)Images/DgnPlatform=$(baseDir)images"
+    ~linkdir "$(bcDocsDir)Images/DgnPlatform=$(baseDir)images"
     @CreateSymLinks.py -m"$(bcDocsDir)Files/DgnPlatform=$(baseDir)files"
 %endif

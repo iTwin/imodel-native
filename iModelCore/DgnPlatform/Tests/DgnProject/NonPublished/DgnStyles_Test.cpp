@@ -14,7 +14,6 @@
 #endif
 
 #ifdef STYLE_REWRITE_06
-
 USING_NAMESPACE_BENTLEY_SQLITE
 
 //=======================================================================================
@@ -24,11 +23,11 @@ struct TestStyleProperties
     {
     public:
         DgnStyleId tsId;
-        DgnStyleType tsType;
+        LsComponentType tsType;
         WString tsName;
         WString tsDescription;
 
-        void SetTestStyleProperties (DgnStyleType type, WString name,  WString description)
+        void SetTestStyleProperties(LsComponentType type, WString name, WString description)
             {
             tsType = type;
             tsName = name;
@@ -47,7 +46,7 @@ struct TestStyleProperties
 * Test fixture for testing DgnStyles
 * @bsimethod                                    Algirdas.Mikoliunas            03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DgnStylesTest : public ::testing::Test
+struct DgnLineStyleTest : public ::testing::Test
     {
     public:
         ScopedDgnHost           m_host;
@@ -60,7 +59,7 @@ struct DgnStylesTest : public ::testing::Test
 * Set up method that opens an existing .dgndb project file
 * @bsimethod                                    Algirdas.Mikoliunas            03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnStylesTest::SetupProject (WCharCP projFile, Db::OpenMode mode)
+void DgnLineStyleTest::SetupProject(WCharCP projFile, Db::OpenMode mode)
     {
     DgnDbTestDgnManager tdm (projFile, __FILE__, mode);
     project = tdm.GetDgnProjectP();
@@ -73,28 +72,34 @@ void DgnStylesTest::SetupProject (WCharCP projFile, Db::OpenMode mode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, ReadLineStyles)
     {
-    SetupProject (L"SubStation_NoFence.i.idgndb", Db::OPEN_ReadWrite);
+    SetupProject (L"SubStation_NoFence.i.idgndb", Db::OpenMode::ReadWrite);
     
     //Get line styles
-    DgnStyles& styleTable = project->Styles();
-    DgnStyles::Iterator iterLineStyles = styleTable.LineStyles().MakeIterator(DgnStyleSort::NameAsc);
-    EXPECT_EQ(4, iterLineStyles.QueryCount()) <<"The expected styles count is 4 where as it is: " << iterLineStyles.QueryCount();
+    DgnLineStyles& styleTable = project->Styles().LineStyles();
+    LsCacheP cache = styleTable.GetLsCacheP();
+    LsCacheStyleIterator iterLineStyles = cache->begin();
+    LsCacheStyleIterator iterLineStyles_end   = cache->end();
+    //EXPECT_EQ(4, iterLineStyles.QueryCount()) <<"The expected styles count is 4 where as it is: " << iterLineStyles.QueryCount();
 
     //Iterate through each line style and make sure they have correct information
     TestStyleProperties testStyles[4], testStyle;
-    testStyles[0].SetTestStyleProperties (DgnStyleType::Line, L"Continuous", L"");
-    testStyles[1].SetTestStyleProperties (DgnStyleType::Line, L"DGN Style 4", L"");
-    testStyles[2].SetTestStyleProperties (DgnStyleType::Line, L"DGN Style 5", L"");
-    testStyles[3].SetTestStyleProperties (DgnStyleType::Line, L"REFXA$0$TRAZO_Y_PUNTO", L"");
+    testStyles[0].SetTestStyleProperties (LsComponentType::LineCode, L"Continuous", L"");
+    testStyles[1].SetTestStyleProperties (LsComponentType::LineCode, L"DGN Style 4", L"");
+    testStyles[2].SetTestStyleProperties (LsComponentType::LineCode, L"DGN Style 5", L"");
+    testStyles[3].SetTestStyleProperties (LsComponentType::LineCode, L"REFXA$0$TRAZO_Y_PUNTO", L"");
 
     int i = 0;
-    for (DgnStyles::Iterator::Entry const& entry : iterLineStyles)
+    while (iterLineStyles != iterLineStyles_end)
         {
-        WString entryNameW (entry.GetName(), true);
-        WString entryDescriptionW (entry.GetDescription(), true);
-        testStyle.SetTestStyleProperties (entry.GetType(), entryNameW.c_str(), entryDescriptionW.c_str());
+        LsCacheStyleEntry const& entry = *iterLineStyles;
+        WString entryNameW(entry.GetStyleName(), true);
+        LsDefinitionCP lsDef = entry.GetLineStyleCP();
+        LsComponentP lsComponent = lsDef->GetLsComponent();
+        WString entryDescriptionW (lsComponent->GetDescription().c_str(), true);
+        testStyle.SetTestStyleProperties (lsComponent->GetComponentType(), entryNameW.c_str(), entryDescriptionW.c_str());
         testStyle.IsEqual(testStyles[i]);
-        i++;
+        ++iterLineStyles;
+        ++i;
         }
     }
 
@@ -104,28 +109,34 @@ TEST_F(DgnLineStyleTest, ReadLineStyles)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, ReadLineStylesDsc)
     {
-    SetupProject (L"SubStation_NoFence.i.idgndb", Db::OPEN_ReadWrite);
+    SetupProject (L"SubStation_NoFence.i.idgndb", Db::OpenMode::ReadWrite);
 
     //Get line styles
-    DgnStyles& styleTable = project->Styles();
-    DgnStyles::Iterator iterLineStyles = styleTable.LineStyles().MakeIterator(DgnStyleSort::NameDsc);
-    EXPECT_EQ (4, iterLineStyles.QueryCount()) <<"The expected styles count is 4 where as it is: " << iterLineStyles.QueryCount();
+    DgnLineStyles& styleTable = project->Styles().LineStyles();
+    LsCacheP cache = styleTable.GetLsCacheP();
+    LsCacheStyleIterator iterLineStyles = cache->begin();
+    LsCacheStyleIterator iterLineStyles_end = cache->end();
+    //////EXPECT_EQ (4, iterLineStyles.QueryCount()) <<"The expected styles count is 4 where as it is: " << iterLineStyles.QueryCount();
 
     //Iterate through each line style and make sure they have correct information
     TestStyleProperties testStyles[4], testStyle;
-    testStyles[0].SetTestStyleProperties (DgnStyleType::Line, L"REFXA$0$TRAZO_Y_PUNTO", L"");
-    testStyles[1].SetTestStyleProperties (DgnStyleType::Line, L"DGN Style 5", L"");
-    testStyles[2].SetTestStyleProperties (DgnStyleType::Line, L"DGN Style 4", L"");
-    testStyles[3].SetTestStyleProperties (DgnStyleType::Line, L"Continuous", L"");
+    testStyles[0].SetTestStyleProperties (LsComponentType::LineCode, L"REFXA$0$TRAZO_Y_PUNTO", L"");
+    testStyles[1].SetTestStyleProperties (LsComponentType::LineCode, L"DGN Style 5", L"");
+    testStyles[2].SetTestStyleProperties (LsComponentType::LineCode, L"DGN Style 4", L"");
+    testStyles[3].SetTestStyleProperties (LsComponentType::LineCode, L"Continuous", L"");
 
     int i = 0;
-    for (DgnStyles::Iterator::Entry const& entry : iterLineStyles)
+    while (iterLineStyles != iterLineStyles_end)
         {
-        WString entryNameW (entry.GetName(), true);
-        WString entryDescriptionW (entry.GetDescription(), true);
-        testStyle.SetTestStyleProperties (entry.GetType(), entryNameW.c_str(), entryDescriptionW.c_str());
-        testStyle.IsEqual (testStyles[i]);
-        i++;
+        LsCacheStyleEntry const& entry = *iterLineStyles;
+        WString entryNameW (entry.GetStyleName(), true);
+        LsDefinitionCP lsDef = entry.GetLineStyleCP();
+        LsComponentP lsComponent = lsDef->GetLsComponent();
+        WString entryDescriptionW(lsComponent->GetDescription().c_str(), true);
+        testStyle.SetTestStyleProperties(lsComponent->GetComponentType(), entryNameW.c_str(), entryDescriptionW.c_str());
+        testStyle.IsEqual(testStyles[i]);
+        ++iterLineStyles;
+        ++i;
         }
     }
 
@@ -135,30 +146,32 @@ TEST_F(DgnLineStyleTest, ReadLineStylesDsc)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, InsertLineStyle)
     {
-    SetupProject (L"SubStation_NoFence.i.idgndb", Db::OPEN_ReadWrite);
+    SetupProject (L"SubStation_NoFence.i.idgndb", Db::OpenMode::ReadWrite);
 
     //Get line styles
-    DgnStyles& styleTable = project->Styles();
-    DgnStyles::Iterator iterLineStyles = styleTable.LineStyles().MakeIterator(DgnStyleSort::NameAsc);
-    EXPECT_EQ (4, iterLineStyles.QueryCount()) << "The expected styles count is 4 where as it is: " << iterLineStyles.QueryCount();
+    DgnLineStyles& styleTable = project->Styles().LineStyles();
+    LsCacheP cache = styleTable.GetLsCacheP();
+    LsCacheStyleIterator iterLineStyles = cache->begin();
+    //EXPECT_EQ (4, iterLineStyles.QueryCount()) << "The expected styles count is 4 where as it is: " << iterLineStyles.QueryCount();
 
     // Add new line style
     DgnStyleId newStyleId;
-    EXPECT_EQ(BE_SQLITE_DONE, styleTable.LineStyles().Insert(newStyleId, "ATestLineStyle", 6, 3, 53, 0.0)) << "Insert line style return value should be BE_SQLITE_DONE";
+    EXPECT_EQ(BE_SQLITE_DONE, styleTable.Insert(newStyleId, "ATestLineStyle", LsComponentId(6), LsComponentType::LineCode, 53, 0.0)) << "Insert line style return value should be BE_SQLITE_DONE";
     EXPECT_TRUE((int32_t)newStyleId.GetValue() > 0) << "Inserted line style id should be more than 0";
 
     // Assure that now we have 5 line styles
-    DgnStyles::Iterator iterAddedLineStyles = styleTable.LineStyles().MakeIterator(DgnStyleSort::NameAsc);
-    EXPECT_EQ (5, iterAddedLineStyles.QueryCount()) <<"The expected styles count is 5 where as it is: " << iterAddedLineStyles.QueryCount();
+    LsCacheStyleIterator iterAddedLineStyles = cache->begin();
+    //EXPECT_EQ (5, iterAddedLineStyles.QueryCount()) <<"The expected styles count is 5 where as it is: " << iterAddedLineStyles.QueryCount();
     
     // Test inserted style properties
-    DgnStyles::Iterator::Entry const& entry = iterAddedLineStyles.begin();
-    WString entryNameW (entry.GetName(), true);
-    WString entryDescriptionW (entry.GetDescription(), true);
+    LsCacheStyleEntry const& entry = *iterAddedLineStyles;
+    WString entryNameW(entry.GetStyleName(), true);
+    LsComponentP lsComponent = entry.GetLineStyleCP()->GetLsComponent();
+    WString entryDescriptionW(lsComponent->GetDescription().c_str(), true);
 
     TestStyleProperties expectedTestStyle, testStyle;
-    expectedTestStyle.SetTestStyleProperties (DgnStyleType::Line, L"ATestLineStyle", L"");
-    testStyle.SetTestStyleProperties (entry.GetType(), entryNameW.c_str(), entryDescriptionW.c_str());
+    expectedTestStyle.SetTestStyleProperties (LsComponentType::LineCode, L"ATestLineStyle", L"");
+    testStyle.SetTestStyleProperties (lsComponent->GetComponentType(), entryNameW.c_str(), entryDescriptionW.c_str());
     expectedTestStyle.IsEqual (testStyle);
     }
 
@@ -168,32 +181,34 @@ TEST_F(DgnLineStyleTest, InsertLineStyle)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, InsertLineStyleWithId)
     {
-    SetupProject (L"SubStation_NoFence.i.idgndb", Db::OPEN_ReadWrite);
+    SetupProject (L"SubStation_NoFence.i.idgndb", Db::OpenMode::ReadWrite);
 
     //Get line styles
-    DgnStyles& styleTable = project->Styles();
-    DgnStyles::Iterator iterLineStyles = styleTable.LineStyles().MakeIterator(DgnStyleSort::NameAsc);
-    EXPECT_EQ (4, iterLineStyles.QueryCount()) <<"The expected styles count is 4 where as it is: " << iterLineStyles.QueryCount();
+    DgnLineStyles& styleTable = project->Styles().LineStyles();
+    LsCacheP cache = styleTable.GetLsCacheP();
+    LsCacheStyleIterator iterLineStyles = cache->begin();
+    //EXPECT_EQ (4, iterLineStyles.QueryCount()) <<"The expected styles count is 4 where as it is: " << iterLineStyles.QueryCount();
 
     // Add new line style
     DgnStyleId newStyleId;
-    EXPECT_EQ(BE_SQLITE_DONE, styleTable.LineStyles().Insert(newStyleId, "ATestLineStyle", 6, 3, 53, 0.0)) << "Insert line style return value should be BE_SQLITE_DONE";
+    EXPECT_EQ(SUCCESS, styleTable.Insert(newStyleId, "ATestLineStyle", LsComponentId(6), LsComponentType::LineCode, 53, 0.0)) << "Insert line style return value should be BE_SQLITE_DONE";
     
     // Assure that now we have 5 line styles
-    DgnStyles::Iterator iterAddedLineStyles = styleTable.LineStyles().MakeIterator(DgnStyleSort::NameAsc);
-    EXPECT_EQ(5, iterAddedLineStyles.QueryCount()) <<"The expected styles count is 5 where as it is: " << iterAddedLineStyles.QueryCount();
+    LsCacheStyleIterator iterAddedLineStyles = cache->begin();
+    //EXPECT_EQ(5, iterAddedLineStyles.QueryCount()) <<"The expected styles count is 5 where as it is: " << iterAddedLineStyles.QueryCount();
 
     // Test inserted style properties
-    DgnStyles::Iterator::Entry const& entry = iterAddedLineStyles.begin();
-    WString entryNameW (entry.GetName(), true);
-    WString entryDescriptionW (entry.GetDescription(), true);
+    LsCacheStyleEntry const& entry = *iterAddedLineStyles;
+    WString entryNameW(entry.GetStyleName(), true);
+    LsComponentP lsComponent = entry.GetLineStyleCP()->GetLsComponent();
+    WString entryDescriptionW (lsComponent->GetDescription().c_str(), true);
 
     TestStyleProperties expectedTestStyle, testStyle;
-    expectedTestStyle.SetTestStyleProperties (DgnStyleType::Line, L"ATestLineStyle", L"");
-    testStyle.SetTestStyleProperties (entry.GetType(), entryNameW.c_str(), entryDescriptionW.c_str());
+    expectedTestStyle.SetTestStyleProperties (LsComponentType::LineCode, L"ATestLineStyle", L"");
+    testStyle.SetTestStyleProperties (lsComponent->GetComponentType(), entryNameW.c_str(), entryDescriptionW.c_str());
     expectedTestStyle.IsEqual(testStyle);
 
-    EXPECT_EQ(20, entry.GetId().GetValue()) << "Inserted entry id is not equal to 20";
+    EXPECT_EQ(20, entry.GetLineStyleP()->GetStyleId().GetValue()) << "Inserted entry id is not equal to 20";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -202,25 +217,26 @@ TEST_F(DgnLineStyleTest, InsertLineStyleWithId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, InsertLineStyleWithExistingName)
     {
-    SetupProject (L"SubStation_NoFence.i.idgndb", Db::OPEN_ReadWrite);
+    SetupProject (L"SubStation_NoFence.i.idgndb", Db::OpenMode::ReadWrite);
     
     //Get line styles
-    DgnStyles& styleTable = project->Styles();
-    DgnStyles::Iterator iterLineStyles = styleTable.LineStyles().MakeIterator(DgnStyleSort::NameAsc);
-    EXPECT_EQ(4, iterLineStyles.QueryCount()) <<"The expected styles count is 4 where as it is: " << iterLineStyles.QueryCount();
+    DgnLineStyles& styleTable = project->Styles().LineStyles();
+    LsCacheP cache = styleTable.GetLsCacheP();
+    LsCacheStyleIterator iterLineStyles = cache->begin();
+    //EXPECT_EQ(4, iterLineStyles.QueryCount()) <<"The expected styles count is 4 where as it is: " << iterLineStyles.QueryCount();
     
     // Add new line style
     DgnStyleId newStyleId;
-    BeSQLite::DbResult insertResult = BE_SQLITE_ERROR;
+    BentleyStatus insertResult = ERROR;
     
     BeTest::SetFailOnAssert (false);
-    insertResult = styleTable.LineStyles().Insert(newStyleId, "Continuous", 6, 3, 53, 0.0);
+    insertResult = styleTable.Insert(newStyleId, "Continuous", LsComponentId(6), LsComponentType::LineCode, 53, 0.0);
     BeTest::SetFailOnAssert (true);
     
     EXPECT_NE(BE_SQLITE_OK, insertResult) << "Line style with existing name insertion must return not BE_SQLITE_OK";
     
-    DgnStyles::Iterator iter = styleTable.LineStyles().MakeIterator(DgnStyleSort::NameAsc);
-    EXPECT_EQ(4, iter.QueryCount()) <<"The expected styles count is 4 where as it is: " << iter.QueryCount();
+    LsCacheStyleIterator iter = cache->begin();
+    //EXPECT_EQ(4, iter.QueryCount()) <<"The expected styles count is 4 where as it is: " << iter.QueryCount();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -229,21 +245,22 @@ TEST_F(DgnLineStyleTest, InsertLineStyleWithExistingName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, UpdateLineStyleTable)
     {
-    SetupProject (L"SubStation_NoFence.i.idgndb", Db::OPEN_ReadWrite);
+    SetupProject (L"SubStation_NoFence.i.idgndb", Db::OpenMode::ReadWrite);
 
     //Get line styles
-    DgnStyles& styleTable = project->Styles();
-    DgnStyles::Iterator iter = styleTable.LineStyles().MakeIterator(DgnStyleSort::NameAsc);
-    DgnStyles::Iterator::Entry const& entry = iter.begin();
-    EXPECT_STREQ("Continuous", entry.GetName());
+    DgnLineStyles& styleTable = project->Styles().LineStyles();
+    LsCacheP cache = styleTable.GetLsCacheP();
+    LsCacheStyleIterator iterLineStyles = cache->begin();
+    LsCacheStyleEntry const& entry = *iterLineStyles;
+    EXPECT_STREQ("Continuous", entry.GetStyleName());
 
     // Update style name and other data
-    EXPECT_EQ(SUCCESS, styleTable.LineStyles().Update(entry.GetId(), "ATestLineStyle", 8, 4, 54, 1.0)) << "UpdateLineStyle must return value SUCCESS";
+    EXPECT_EQ(SUCCESS, styleTable.Update(entry.GetLineStyleP()->GetStyleId(), "ATestLineStyle", LsComponentId(8), LsComponentType::LineCode, 54, 1.0)) << "UpdateLineStyle must return value SUCCESS";
 
     // Check if line style name changed
-    DgnStyles::Iterator iterUpdated = styleTable.LineStyles().MakeIterator(DgnStyleSort::NameAsc);
-    DgnStyles::Iterator::Entry const& updatedEntry = iterUpdated.begin();
-    EXPECT_STREQ("ATestLineStyle", updatedEntry.GetName());
+    LsCacheStyleIterator iterUpdated = cache->begin();
+    LsCacheStyleEntry const& updatedEntry = *iterUpdated;
+    EXPECT_STREQ("ATestLineStyle", updatedEntry.GetStyleName());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -252,25 +269,26 @@ TEST_F(DgnLineStyleTest, UpdateLineStyleTable)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, UpdateLineStyleWithExistingName)
     {
-    SetupProject (L"SubStation_NoFence.i.idgndb", Db::OPEN_ReadWrite);
+    SetupProject (L"SubStation_NoFence.i.idgndb", Db::OpenMode::ReadWrite);
 
     //Get line styles
-    DgnStyles& styleTable = project->Styles();
-    DgnStyles::Iterator iter = styleTable.LineStyles().MakeIterator(DgnStyleSort::NameAsc);
-    DgnStyles::Iterator::Entry const& entry = iter.begin();
-    EXPECT_STREQ("Continuous", entry.GetName());
+    DgnLineStyles& styleTable = project->Styles().LineStyles();
+    LsCacheP cache = styleTable.GetLsCacheP();
+    LsCacheStyleIterator iterLineStyles = cache->begin();
+    LsCacheStyleEntry const& entry = *iterLineStyles;
+    EXPECT_STREQ("Continuous", entry.GetStyleName());
     
     // This would normally trigger an assertion failure.
     BeTest::SetFailOnAssert (false);
-    BentleyStatus updateResult = styleTable.LineStyles().Update(entry.GetId(), "DGN Style 4", 7, 3, 53, 0.0);
+    BentleyStatus updateResult = styleTable.Update(entry.GetLineStyleP()->GetStyleId(), "DGN Style 4", LsComponentId(7), LsComponentType::LineCode, 53, 0.0);
     BeTest::SetFailOnAssert (true);
 
     EXPECT_NE(SUCCESS, updateResult) << "UpdateLineStyle with existing name must not be successfull";
     
     // Check if line style name changed
-    DgnStyles::Iterator iterUpdated = styleTable.LineStyles().MakeIterator(DgnStyleSort::NameAsc);
-    DgnStyles::Iterator::Entry const& updatedEntry = iterUpdated.begin();
-    EXPECT_STREQ("Continuous", updatedEntry.GetName());
+    LsCacheStyleIterator iterUpdated = cache->begin();
+    LsCacheStyleEntry const& updatedEntry = *iterUpdated;
+    EXPECT_STREQ("Continuous", updatedEntry.GetStyleName());
     }
 
 #if defined (NEEDS_WORK_DGNITEM)
@@ -280,17 +298,17 @@ TEST_F(DgnLineStyleTest, UpdateLineStyleWithExistingName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, IteratorEntryGetData)
     {
-    SetupProject (L"SubStation_NoFence.i.idgndb", Db::OPEN_ReadWrite);
+    SetupProject (L"SubStation_NoFence.i.idgndb", Db::OpenMode::ReadWrite);
     
     //Get display styles
-    DgnStyles& styleTable = project->Styles();
-    DgnStyles::Iterator iter = styleTable.DisplayStyles().MakeIterator(DgnStyleSort::NameAsc);
-    DgnStyles::Iterator::Entry entry = iter.begin();
+    DgnLineStyles& styleTable = project->Styles().LineStyles();
+    LsCacheP cache = styleTable.GetLsCacheP();
+    LsCacheStyleIterator iterLineStyles = cache->begin();
+    LsCacheStyleEntry entry = iter.begin();
 
     Utf8String styleData = "<DisplayStyle Usages=\"1\"><Flags DisplayVisibleEdges=\"true\" IgnoreGeometryMaps=\"false\" VisibleEdgeColor=\"true\" VisibleEdgeStyle=\"false\" FillColor=\"true\"/><Overrides DisplayMode=\"6\" VisibleEdgeColor=\"0\" VisibleEdgeWeight=\"0\" HiddenEdgeWeight=\"0\" Transparency=\"0\" BackgroundColor=\"0\" FillColor=\"2310\" LineStyle=\"0\" LineWeight=\"0\" Material=\"0\"/></DisplayStyle>";
     EXPECT_STREQ(styleData.c_str(), (Utf8CP)entry.GetData());
     EXPECT_EQ(styleData.length() + 1, entry.GetDataSize());
     }
 #endif
-
 #endif

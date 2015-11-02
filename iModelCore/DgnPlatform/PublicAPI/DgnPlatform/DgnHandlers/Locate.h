@@ -88,7 +88,6 @@ enum LocateFailureValue
     LOCATE_FAILURE_RefNotNowActive   = 24,  // ref is read/write, but is not currently the active ref.
     };
 
-//__PUBLISH_SECTION_END__
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   03/10
 //=======================================================================================
@@ -171,13 +170,11 @@ public:
 
 }; // ElementPicker
 
-//__PUBLISH_SECTION_START__
 /*=================================================================================**//**
 * @bsiclass                                                     KeithBentley    03/01
 +===============+===============+===============+===============+===============+======*/
 struct EXPORT_VTABLE_ATTRIBUTE ElementLocateManager
 {
-//__PUBLISH_SECTION_END__
     friend struct ElementPicker;
     friend struct SnapContext;
     friend struct TentativePoint;
@@ -242,8 +239,6 @@ public:
     DGNVIEW_EXPORT void ShowErrorExplanation (Utf8CP cantAcceptExplanation, int reason);
     DGNVIEW_EXPORT void ShowHitInfo (HitDetailCP);
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
     DGNVIEW_EXPORT HitDetailCP DoLocate (LocateFailureValue* reasonCode, Utf8StringP cantAcceptExplanation, bool newSearch, DPoint3dCR, DgnViewportP, SubSelectionMode mode=SubSelectionMode::None, bool filterHits=true);
     DGNVIEW_EXPORT static ElementLocateManager& GetManager();

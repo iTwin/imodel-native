@@ -73,6 +73,7 @@ struct ECSqlClassInfo
 // @param[in] __exporter__ Macro name that exports this class in its implementing DLL (may be blank)
 #define ELEMENTHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,__handlerclass__,__handlersuperclass__,__exporter__) \
         private: virtual Dgn::DgnElementP _CreateInstance(Dgn::DgnElement::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
+        protected: virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override {return __classname__::RestrictedAction::Parse(name); }\
         virtual std::type_info const& _ElementType() const override {return typeid(__classname__);}\
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,__handlerclass__,__handlersuperclass__,__exporter__) 
 
@@ -104,6 +105,7 @@ namespace dgn_ElementHandler
         virtual ElementHandlerP _ToElementHandler() {return this;}
         virtual std::type_info const& _ElementType() const {return typeid(DgnElement);}
         DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&) override;
+        virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override { return DgnElement::RestrictedAction::Parse(name); }
 
         //! Add the names of any subclass properties used by ECSql INSERT, UPDATE, and/or SELECT statements to the ECSqlClassParams list.
         //! If you override this method, you @em must invoke T_Super::_GetClassParams().

@@ -112,10 +112,10 @@ bool        RenderMaterialMap::_GetBool (char const* key, BentleyStatus* status)
         *status = SUCCESS;
 
     if (0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_PatternFlipU) ||
-        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_PatternFlipV))
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_PatternFlipV) ||
+        0 == BeStringUtilities::Stricmp (key, RENDER_MATERIAL_PatternTileSection))
         return false;
 
-    
     BeAssert (false);
     if (NULL != status)
         *status = ERROR;
@@ -128,6 +128,7 @@ bool        RenderMaterialMap::_GetBool (char const* key, BentleyStatus* status)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+RenderMaterialPtr    JsonRenderMaterial::Create (Json::Value const& value, DgnMaterialId materialId) { return new JsonRenderMaterial (value, materialId); }
 double Texture::GetUnitScale(Units units)
     {
     switch (units)
@@ -148,6 +149,7 @@ double Texture::GetUnitScale(Units units)
             BeAssert(false);
             return 1.0;
         }
+    return new JsonRenderMaterial (renderMaterial, materialId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -170,6 +172,7 @@ Texture::Mode Texture::GetMode(JsonValueCR in)
 * @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 Texture::Units Texture::GetUnits(JsonValueCR in) 
+        return 0.0;
     {
     JsonValueCR value = in[RENDER_MATERIAL_PatternScaleMode];
     if (!value.isInt())
@@ -211,6 +214,99 @@ Render::Texture::Trans Render::Texture::GetPatternTransform(JsonValueCR value)
             transform.m_val[i][j] = (i==j) ? 1.0 : 0.0;
         }
     
+* @bsimethod                                                    RayBentley      10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus JsonRenderMaterial::DoImport (DgnImportContext& context, DgnDbR sourceDb) 
+    {
+    Json::Value&      mapsMap = m_value[RENDER_MATERIAL_Map];
+    
+    if (mapsMap.isNull())
+        return ERROR;
+
+    for (auto& map : mapsMap)
+        {
+        RenderMaterialMapPtr    renderMaterialMap = JsonRenderMaterialMap::Create (map);
+        JsonRenderMaterialMap*  jsonRenderMaterialMap = dynamic_cast <JsonRenderMaterialMap*> (renderMaterialMap.get());
+
+        if (NULL != jsonRenderMaterialMap &&
+            SUCCESS == jsonRenderMaterialMap->DoImport (context, sourceDb))
+            map = jsonRenderMaterialMap->GetValue();
+        }
+    
+    return SUCCESS;
+    }
+
+//=======================================================================================
+// ImageBuffer...
+//=======================================================================================
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  10/2015
+//----------------------------------------------------------------------------------------
+uint32_t            ImageBuffer::GetWidth() const       {return m_width;}
+uint32_t            ImageBuffer::GetHeight() const      {return m_height;}
+Byte*               ImageBuffer::GetDataP()             {return m_data.data();}
+Byte const*         ImageBuffer::GetDataCP() const      {return m_data.data();}
+size_t              ImageBuffer::GetDataSize() const    {return m_data.size();}
+ImageBuffer::Format ImageBuffer::GetFormat() const      {return m_format;}
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  10/2015
+//----------------------------------------------------------------------------------------
+ImageBuffer::ImageBuffer(uint32_t width, uint32_t height, ImageBuffer::Format const& format, bvector<Byte>& data)
+:m_width(width),
+ m_height(height),
+ m_format(format)
+    {
+    BeAssert(data.size() == m_width*m_height*ImageBuffer::BytesPerPixel(m_format));
+
+    m_data = std::move(data);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  10/2015
+//----------------------------------------------------------------------------------------
+ImageBufferPtr ImageBuffer::Create(uint32_t width, uint32_t height, ImageBuffer::Format const& format)
+    {
+    bvector<Byte> data(width*height*ImageBuffer::BytesPerPixel(format));
+    return new ImageBuffer(width, height, format, data);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  10/2015
+//----------------------------------------------------------------------------------------
+ImageBufferPtr ImageBuffer::Create(uint32_t width, uint32_t height, ImageBuffer::Format const& format, bvector<Byte>& data)
+    {
+    return new ImageBuffer(width, height, format, data);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  10/2015
+//----------------------------------------------------------------------------------------
+size_t ImageBuffer::BytesPerPixel(Format const& format)
+    {
+    switch(format)
+        {
+        case Format::Rgba:
+        case Format::Bgra:
+            return 4;
+        case Format::Rgb:
+        case Format::Bgr:
+            return 3;
+        case Format::Gray:
+            return 1;
+        default:
+            BeAssert(!"ImageBuffer::BytesPerPixel -> unknown pixel format");
+            return 4;
+        }   
+    }
+
+
+//=======================================================================================
+// JsonRenderMaterialMap...
+//=======================================================================================
+
+/*---------------------------------------------------------------------------------**//**
     double          angleRadians    = Angle::DegreesToRadians(value[RENDER_MATERIAL_PatternAngle].asDouble());
     double          cosAngle        = cos(angleRadians);
     double          sinAngle        = sin(angleRadians);
@@ -219,14 +315,20 @@ Render::Texture::Trans Render::Texture::GetPatternTransform(JsonValueCR value)
     DPoint2d        scale           = getDPoint2dValue(value[RENDER_MATERIAL_PatternScale]);
     DPoint2d        offset          = getDPoint2dValue(value[RENDER_MATERIAL_PatternOffset]);
     static double   s_minScale      = 1.0E-10;
+BentleyStatus   JsonRenderMaterialMap::_GetImage (bvector<Byte>& data, Point2dR imageSize, DgnDbR dgnDb) const
  
     Units units = GetUnits(value);
+        return ERROR;                 // No external file support for now.
     if (Units::Relative != units)
         scale.Scale(GetUnitScale(units));
 
+        return ERROR;
     scale.x = std::max(scale.x, s_minScale);
-    scale.y = std::max(scale.y, s_minScale);
 
+    return texture->GetImage (data);
+        return nullptr;        
+
+    return ImageBuffer::Create(texture->GetData().GetWidth(), texture->GetData().GetHeight(), ImageBuffer::Format::Rgba, data);
     if (xFlip)
         scale.x = -scale.x;
 
@@ -235,13 +337,38 @@ Render::Texture::Trans Render::Texture::GetPatternTransform(JsonValueCR value)
 
     transform.m_val[0][0] = cosAngle / scale.x;
     transform.m_val[0][1] = sinAngle / scale.x;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus JsonRenderMaterialMap::DoImport (DgnImportContext& context, DgnDbR sourceDb) 
+    {
+#ifdef WIP_MERGE_YII
+    Json::Value&     textureIdValue = m_value[RENDER_MATERIAL_TextureId];
+
+    if (textureIdValue.isNull())     
+        return ERROR;                 // No external file support for now.
+
+    textureIdValue = (uint64_t) context.GetDestinationDb().Textures().ImportTexture (context, sourceDb, (DgnTextureId) textureIdValue.asUInt64()).GetValue();
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+SimpleBufferPatternMap::SimpleBufferPatternMap (Byte const* imageData, Point2dCR imageSize) : m_imageSize (imageSize), m_qvTextureId (0)
     transform.m_val[0][2] = offset.x;
 
     transform.m_val[1][0] =  sinAngle / scale.y;
     transform.m_val[1][1] = -cosAngle / scale.y;
-    transform.m_val[1][2] = offset.y;
+BentleyStatus  SimpleBufferPatternMap::_GetImage (bvector<Byte>& imageData, Point2dR imageSize, DgnDbR dgnDb) const
+
+
 
     return transform;
+RenderMaterialMapPtr  SimpleBufferPatternMap::Create (Byte const* imageData, Point2dCR imageSize)
+    return new SimpleBufferPatternMap (imageData, imageSize);
     }
 
 /*---------------------------------------------------------------------------------**//**

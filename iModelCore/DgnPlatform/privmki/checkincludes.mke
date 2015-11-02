@@ -2,23 +2,16 @@
 #
 #     $Source: privmki/checkincludes.mke $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-PolicyFile = $(SrcRoot)DgnPlatform/privmki/AssertDgnPlatformPolicy.mki 
 appName = CheckIncludes
-
-
-%if !defined (WORKING_ON_PORT_TO_NEW_TOOLSET)
-    %warn For now, checkIncludes can only be done when building with VS2010
-    %return
-%endif
 
 %include mdl.mki
 
-baseDir         = $(_MakeFilePath)
+baseDir = $(_MakeFilePath)
 
-o = $(dgnPlatformBuildDir_)CheckIncludes/
+o = $(OutBuildDir)CheckIncludes/
 
 always:
     ~mkdir $(o)
@@ -49,7 +42,7 @@ $(testIncludeCppFile) : $(baseDir)CheckIncludes.mke
 ####     -e $(publicApiDir)Bentley/BeStringUtilitiesInlines.h
 ####     $(publicApiDir)
 ####     <
-####     $(SrcBsiTools)winX86/CheckIncludes @$(o)inccheckincludes.opt
+####     $(SrcRoot)bsitools/winX86/CheckIncludes @$(o)inccheckincludes.opt
 %warn Not running CheckIncludes.exe - This program must be changed to support the conditional includes that we need to make our header files portable.
 
 # Compile the generated C file

@@ -254,12 +254,27 @@ struct ElementGeomIO
         void Draw(ViewContextR, DgnCategoryId, ViewFlags) const;
     };
 
+//=======================================================================================
+//! Internal debug helper
+//! @private
+//=======================================================================================
+struct IDebugOutput
+    {
+    virtual bool _WantVerbose() const {return false;}
+    virtual bool _WantPartGeometry() const {return true;}
+    virtual bool _WantGeomEntryIds() const {return false;}
+    virtual void _DoOutputLine(Utf8CP msg) = 0;
+
+    }; // IDebugOutput
+
+    //! Output contents of GeomStream for debugging purposes.
+    DGNPLATFORM_EXPORT static void Debug(IDebugOutput&, GeomStreamCR, DgnDbR, bool isPart=false);
+
     //! Remap embedded IDs. The dest and source GeomStreams can be the same.
     //! @param dest     The output GeomStream
     //! @param source   The input GeomStream
     //! @param remapper  The ID remapper
     static DgnDbStatus Import(GeomStreamR dest, GeomStreamCR source, DgnImportContext& remapper);
-
 
 }; // ElementGeomIO
 
@@ -401,8 +416,11 @@ void OnNewGeom (DRange3dCR localRange, TransformCP geomToElement);
 
 public:
 
-DGNPLATFORM_EXPORT BentleyStatus GetGeomStream (GeomStreamR);
-DGNPLATFORM_EXPORT BentleyStatus GetPlacement (Placement3dR);
+DgnDbR GetDgnDb() const {return m_dgnDb;} //!< @private
+bool Is3d() const {return m_is3d;} //!< @private
+Placement2dCR GetPlacement2d() const {return m_placement2d;} //!< @private
+Placement3dCR GetPlacement3d() const {return m_placement3d;} //!< @private
+DGNPLATFORM_EXPORT BentleyStatus GetGeomStream (GeomStreamR); //!< @private
 
 DGNPLATFORM_EXPORT BentleyStatus SetGeomStream (DgnGeomPartR);
 DGNPLATFORM_EXPORT BentleyStatus SetGeomStreamAndPlacement (GeometricElementR);
@@ -421,6 +439,7 @@ DGNPLATFORM_EXPORT bool Append (TextStringCR);
 DGNPLATFORM_EXPORT bool Append (TextAnnotationCR);
 
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateGeomPart (DgnDbR db, bool is3d);
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateGeomPart (GeomStreamCR, DgnDbR db); //!< @private
 
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());

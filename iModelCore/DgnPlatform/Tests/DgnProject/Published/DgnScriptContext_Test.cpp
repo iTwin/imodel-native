@@ -190,7 +190,7 @@ struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptErrorHandler
 //                    Utf8PrintfString("%d / %lf seconds = %lf/second\n", niters, timeIt.GetElapsedSeconds(), niters/timeIt.GetElapsedSeconds()));
             }
         else
-		        FAIL() << (Utf8CP)Utf8PrintfString("JS error %x: %s , %s", (int)category, description, details);
+            FAIL() << (Utf8CP)Utf8PrintfString("JS error %x: %s , %s", (int)category, description, details);
         }
     };
 
@@ -211,6 +211,71 @@ TEST(DgnScriptTest, RunScripts)
     DgnScriptLibrary::ReadText(jsProgram, jsFileName);
     //printf ("The JS program izzz .....\n%s\n", jsProgram.c_str ());
     T_HOST.GetScriptAdmin().EvaluateScript(jsProgram.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Umar.Hayat                      11/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(DgnScriptTest, CRUD)
+    {
+    ScopedDgnHost  autoDgnHost;
+
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbP project = tdm.GetDgnProjectP();
+    ASSERT_TRUE(project != NULL);
+
+    T_HOST.GetScriptAdmin().RegisterScriptErrorHandler(*new DetectJsErrors);
+
+    BeFileName jsFileName;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(jsFileName);
+    jsFileName.AppendToPath(L"Script/DgnScriptTest.js");
+    BeFileName tsFileName;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(tsFileName);
+    tsFileName.AppendToPath(L"Script/DgnScriptTest.d.ts");
+
+    Utf8String jsProgram;
+    DgnScriptLibrary::ReadText(jsProgram, jsFileName);
+
+    Utf8String tsProgram;
+    DgnScriptLibrary::ReadText(tsProgram, tsFileName);
+
+    DgnScriptLibrary scriptLib(*project);
+    // Insert JS
+    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.RegisterScript("TestJsScript", jsProgram.c_str(), DgnScriptType::JavaScript, false));
+    // Insert JS ( Updated existing )
+    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.RegisterScript("TestJsScript", jsProgram.c_str(), DgnScriptType::JavaScript, true));
+    // Insert TS
+    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.RegisterScript("TestTsScript", tsProgram.c_str(), DgnScriptType::TypeScript, false));
+    // Insert anonymous
+    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.RegisterScript("", tsProgram.c_str(), DgnScriptType::TypeScript, false));
+
+    // Query JS
+    Utf8String outText;
+    DgnScriptType outType;
+    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.QueryScript(outText, outType, "TestJsScript", DgnScriptType::JavaScript));
+    EXPECT_TRUE(jsProgram.Equals(outText));
+    EXPECT_TRUE(DgnScriptType::JavaScript == outType);
+
+    // Query TS with wrong type
+    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.QueryScript(outText, outType, "TestTsScript", DgnScriptType::JavaScript));
+    EXPECT_TRUE(tsProgram.Equals(outText));
+    EXPECT_TRUE(DgnScriptType::TypeScript == outType);
+
+    // Query Annonyous
+    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.QueryScript(outText, outType, "", DgnScriptType::TypeScript));
+    EXPECT_TRUE(tsProgram.Equals(outText));
+    EXPECT_TRUE(DgnScriptType::TypeScript == outType);
+
+    // Update
+    Utf8String updatedScript("<script>Updated One </script>");
+    EXPECT_TRUE(DgnDbStatus::Success != scriptLib.RegisterScript("TestTsScript", updatedScript.c_str(), DgnScriptType::TypeScript, false));
+    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.QueryScript(outText, outType, "TestTsScript", DgnScriptType::TypeScript));
+    EXPECT_TRUE(tsProgram.Equals(outText));
+
+    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.RegisterScript("TestTsScript", updatedScript.c_str(), DgnScriptType::TypeScript, true));
+    EXPECT_TRUE(DgnDbStatus::Success == scriptLib.QueryScript(outText, outType, "TestTsScript", DgnScriptType::TypeScript));
+    EXPECT_TRUE(updatedScript.Equals(outText));
+
     }
 
 

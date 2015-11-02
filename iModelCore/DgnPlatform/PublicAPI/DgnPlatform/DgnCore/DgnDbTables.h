@@ -21,8 +21,8 @@
 #define DGN_CLASSNAME_AnnotationTextStyle   "AnnotationTextStyle"
 #define DGN_CLASSNAME_Authority             "Authority"
 #define DGN_CLASSNAME_TrueColor             "TrueColor"
-#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
+#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 #define DGN_CLASSNAME_ComponentSolution     "ComponentSolution"
 #endif
 #define DGN_CLASSNAME_DictionaryElement     "DictionaryElement"
@@ -36,8 +36,8 @@
 #define DGN_CLASSNAME_ElementGeom           "ElementGeom"
 #define DGN_CLASSNAME_ElementGroup          "ElementGroup"
 #define DGN_CLASSNAME_ElementItem           "ElementItem"
+#define DGN_CLASSNAME_ElementLabel          "ElementLabel"
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
-#define DGN_CLASSNAME_ElementName           "ElementName"
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
@@ -71,7 +71,8 @@
 //-----------------------------------------------------------------------------------------
 #define DGN_RELNAME_ElementDrivesElement        "ElementDrivesElement"
 #define DGN_RELNAME_ElementGeomUsesParts        "ElementGeomUsesParts"
-#define DGN_RELNAME_ElementGroupHasMembers      "ElementGroupHasMembers"
+#define DGN_RELNAME_ElementGroupHasMembers      "ElementGroupHasMembers" // WIP: obsolete, replaced by ElementGroupsMembers
+#define DGN_RELNAME_ElementGroupsMembers        "ElementGroupsMembers"
 #define DGN_RELNAME_ElementHasLinks             "ElementHasLinks"
 #define DGN_RELNAME_ElementOwnsItem             "ElementOwnsItem"
 #define DGN_RELNAME_ElementUsesStyles           "ElementUsesStyles"

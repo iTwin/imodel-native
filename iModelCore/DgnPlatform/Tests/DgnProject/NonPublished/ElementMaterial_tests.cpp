@@ -179,8 +179,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElementWithMaterials)
     EXPECT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
     EXPECT_TRUE(m_db->Elements().Insert(*el).IsValid());
 
-    Placement3d        placement;
-    builder->GetPlacement(placement);
+    Placement3d placement = builder->GetPlacement3d();
 
     setUpView(*m_db, *model, placement.GetElementBox(), m_defaultCategoryId);
     m_db->SaveSettings();   

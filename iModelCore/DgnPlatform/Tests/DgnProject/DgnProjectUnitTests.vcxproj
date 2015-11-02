@@ -55,6 +55,7 @@
     <ClCompile Include="Performance\DgnECPerformanceTests.cpp" />
     <ClCompile Include="Performance\ElementInsertPerformance.cpp" />
     <ClCompile Include="Performance\PerformanceECInstanceDeleteTests.cpp" />
+    <ClCompile Include="Performance\PerformanceElementsCRUDTests.cpp" />
     <ClCompile Include="Performance\PerformanceElementsTests.cpp" />
     <ClCompile Include="Performance\PerformanceTestFixture.cpp" />
     <ClCompile Include="Performance\RelationshipPerformance_Test.cpp" />
@@ -74,6 +75,8 @@
     <ClCompile Include="Published\DgnLink_Test.cpp" />
     <ClCompile Include="Published\DgnModel_Test.cpp" />
     <ClCompile Include="Published\DgnScriptContext_Test.cpp" />
+    <ClCompile Include="Published\ElementGeometry_Tests.cpp" />
+    <ClCompile Include="Published\ElementGroup_Tests.cpp" />
     <ClCompile Include="Published\ImageUtilities_Test.cpp" />
     <ClCompile Include="Published\MarkupProject_Test.cpp" />
     <ClCompile Include="Published\NamedVolume_Test.cpp" />
@@ -99,6 +102,7 @@
     <ClInclude Include="NonPublished\GenericDgnModelTestFixture.h" />
     <ClInclude Include="Performance\DgnECPerformanceTests.h" />
     <ClInclude Include="Performance\PerformanceElements.h" />
+    <ClInclude Include="Performance\PerformanceElementsCRUDTests.h" />
     <ClInclude Include="Performance\PerformanceTestFixture.h" />
     <ClInclude Include="Performance\TestSchemaHelper.h" />
     <ClInclude Include="Published\AnnotationTestFixture.h" />

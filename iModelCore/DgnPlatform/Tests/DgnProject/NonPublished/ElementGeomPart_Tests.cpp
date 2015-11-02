@@ -20,12 +20,56 @@ struct ElementGeomPartTests : public DgnDbTestFixture
 {
 
 };
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Umar.Hayat      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementGeomPartTests, CRUD)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+
+    DgnGeomParts& geomPartTable = m_db->GeomParts();
+    //Create a GeomPart
+    ElementGeometryPtr elGPtr = ElementGeometry::Create(*GeomHelper::computeShape());
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateGeomPart(*m_db, true);
+    builder->Append(*elGPtr);
+    DgnGeomPartPtr geomPartPtr = DgnGeomPart::Create("TestGeomPart");
+    EXPECT_TRUE(geomPartPtr != NULL);
+    EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
+    
+    // Insert
+    //
+    ASSERT_EQ(SUCCESS, geomPartTable.InsertGeomPart(*geomPartPtr));
+    DgnGeomPartId partId = geomPartPtr->GetId();
+    ASSERT_TRUE(partId.IsValid());
+
+    // Query
+    EXPECT_TRUE(partId == geomPartTable.QueryGeomPartId("TestGeomPart"));
+    DgnGeomPartPtr toFind = geomPartTable.LoadGeomPart(partId);
+    GeomStream stream = toFind->GetGeomStream();
+    EXPECT_TRUE(stream.HasGeometry());
+    uint32_t size  = stream.GetSize();
+    EXPECT_TRUE(geomPartPtr->GetGeomStream().GetSize() == size);
+
+    // Update
+    builder->Append(*elGPtr);
+    builder->SetGeomStream(*geomPartPtr);
+    ASSERT_TRUE(partId == geomPartPtr->GetId());
+    EXPECT_TRUE(geomPartPtr->GetGeomStream().GetSize() > size);
+    ASSERT_TRUE(geomPartPtr->GetId().IsValid());
+    ASSERT_EQ(SUCCESS  , geomPartTable.UpdateGeomPart(*geomPartPtr));
+    
+    EXPECT_GT(geomPartTable.LoadGeomPart(partId)->GetGeomStream().GetSize() , size);
+
+    // Delete
+    EXPECT_TRUE(SUCCESS == geomPartTable.DeleteGeomPart(partId) );
+    EXPECT_FALSE( geomPartTable.QueryGeomPartId("TestGeomPart").IsValid());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, CreateElements)
-{
+    {
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeomPart
@@ -49,12 +93,12 @@ TEST_F(ElementGeomPartTests, CreateElements)
 
     auto key3 = InsertElement(DgnElement::Code(), m_defaultModelId, m_defaultCategoryId)->GetElementKey();
     EXPECT_TRUE(key3.GetElementId().IsValid());
-}
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, GeomPartWithoutCode)
-{
+    {
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeomPart
@@ -79,12 +123,12 @@ TEST_F(ElementGeomPartTests, GeomPartWithoutCode)
 
     auto key3 = InsertElement(DgnElement::Code(), m_defaultModelId, m_defaultCategoryId)->GetElementKey();
     EXPECT_TRUE(key3.GetElementId().IsValid());
-}
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, ElementGeomUsesParts)
-{
+    {
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeomPart
@@ -113,12 +157,12 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts)
     ASSERT_EQ(key1.GetElementId().GetValue(), (int64_t)stmt.GetValueInt(1));
     ASSERT_EQ(existingPartId.GetValue(), (int64_t)stmt.GetValueInt(2));
     
-}
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteGeomPart)
-{
+    {
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeomPart
@@ -146,12 +190,12 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteGeomPart)
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " DGN_TABLE(DGN_RELNAME_ElementGeomUsesParts)));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     
-}
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteElement)
-{
+    {
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeomPart
@@ -181,12 +225,12 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteElement)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     EXPECT_TRUE(m_db->GeomParts().QueryGeomPartId(geomPartPtr->GetCode()).IsValid());
-}
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, CreateElementsAndDeleteGemPart)
-{
+    {
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeomPart
@@ -249,5 +293,4 @@ TEST_F(ElementGeomPartTests, GeomPart2d)
 
     auto key3 = InsertElement2d( m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
     EXPECT_TRUE(key3.GetElementId().IsValid());
-    
-}
+    }

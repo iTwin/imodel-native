@@ -334,7 +334,7 @@ DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnM
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
-{
+    {
     if (!mid.IsValid())
         mid = m_defaultModelId;
 
@@ -358,12 +358,12 @@ DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart(Utf8CP gpCode, DgnMod
         return DgnElementKey();
 
     return m_db->Elements().Insert(*el)->GetElementKey();
-}
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart(DgnGeomPartId gpId, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
-{
+    {
     if (!mid.IsValid())
         mid = m_defaultModelId;
 
@@ -384,6 +384,33 @@ DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart(DgnGeomPartId gpId, D
         return DgnElementKey();
 
     return m_db->Elements().Insert(*el)->GetElementKey();
-}
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDbTestFixture::setUpPhysicalView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId)
+    {
+    DgnViews::View view;
+
+    view.SetDgnViewType(DgnClassId(dgnDb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalView)), DgnViewType::Physical);
+    view.SetDgnViewSource(DgnViewSource::Generated);
+    view.SetName("TestView");
+    view.SetBaseModelId(model.GetModelId());
+
+    EXPECT_TRUE(BE_SQLITE_OK == dgnDb.Views().Insert(view));
+    EXPECT_TRUE(view.GetId().IsValid());
+
+    ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
+
+    PhysicalViewController viewController (dgnDb, view.GetId());
+    viewController.SetStandardViewRotation(StandardView::Iso);
+    viewController.LookAtVolume(elementBox, nullptr, &viewMargin);
+    viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::SmoothShade);
+    viewController.ChangeCategoryDisplay(categoryId, true);
+    viewController.ChangeModelDisplay(model.GetModelId(), true);
+
+    EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
+    }
 
 
