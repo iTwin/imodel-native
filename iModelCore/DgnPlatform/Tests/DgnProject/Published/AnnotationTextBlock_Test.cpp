@@ -370,3 +370,38 @@ TEST_F(AnnotationTextBlockTest, Unicode)
     ASSERT_STREQ(contents, textRun->GetContent().c_str());
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     10/2015
+//---------------------------------------------------------------------------------------
+TEST_F(AnnotationTextBlockTest, ToString)
+    {
+    DgnDbR db = *m_testDgnManager.GetDgnProjectP();
+
+    AnnotationTextStylePtr style = AnnotationTextStyle::Create(db);
+    style->SetName("style");
+    AnnotationTextStyleCPtr fileStyle = style->Insert();
+    AnnotationTextStyleId fileStyleId = fileStyle->GetStyleId();
+    
+    static const Utf8String STR_1("Lorem ipsum dolar sit amet.");
+    AnnotationTextBlockPtr text = AnnotationTextBlock::Create(db, fileStyleId, STR_1.c_str());
+    Utf8String textStr = text->ToString();
+    
+    EXPECT_TRUE(0 == strcmp(STR_1.c_str(), textStr.c_str()));
+
+    static const Utf8String STR_2("Consectetur adipiscing elit. ");
+    static const Utf8String STR_3("1");
+    static const Utf8String STR_4("2");
+    static const Utf8String STR_5(" Vivamus dictum interdum tellus.");
+
+    AnnotationParagraphPtr para2 = AnnotationParagraph::Create(db, fileStyleId);
+    para2->GetRunsR().push_back(AnnotationTextRun::Create(db, fileStyleId, STR_2.c_str()));
+    para2->GetRunsR().push_back(AnnotationFractionRun::Create(db, fileStyleId, STR_3.c_str(), STR_4.c_str()));
+    para2->GetRunsR().push_back(AnnotationTextRun::Create(db, fileStyleId, STR_5.c_str()));
+
+    text->GetParagraphsR().push_back(para2);
+
+    Utf8PrintfString expectedString("%s %s%s/%s%s", STR_1.c_str(), STR_2.c_str(), STR_3.c_str(), STR_4.c_str(), STR_5.c_str());
+    textStr = text->ToString();
+    
+    EXPECT_TRUE(0 == strcmp(expectedString.c_str(), textStr.c_str()));
+    }

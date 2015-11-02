@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 typedef    bmap<Utf8String, size_t>     AspectCountMap;
 typedef    bpair<Utf8String, size_t>    AspectCountEntry;
 
-struct AnnotationTableAspectDescr
+struct TestAnnotationTableAspectDescr
     {
     Utf8String  m_tableName;
     bool        m_isUniqueAspect;
@@ -25,9 +25,9 @@ struct AnnotationTableAspectDescr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<AnnotationTableAspectDescr> const& getAspectDescrs ()
+static bvector<TestAnnotationTableAspectDescr> const& getAspectDescrs ()
     {
-    static bvector<AnnotationTableAspectDescr> s_aspectDescrs;
+    static bvector<TestAnnotationTableAspectDescr> s_aspectDescrs;
 
     if ( ! s_aspectDescrs.empty())
         return s_aspectDescrs;
@@ -37,6 +37,7 @@ static bvector<AnnotationTableAspectDescr> const& getAspectDescrs ()
         { DGN_TABLE(DGN_CLASSNAME_AnnotationTableHeader),   true    },
         { DGN_TABLE(DGN_CLASSNAME_AnnotationTableRow),      false   },
         { DGN_TABLE(DGN_CLASSNAME_AnnotationTableColumn),   false   },
+        { DGN_TABLE(DGN_CLASSNAME_AnnotationTableCell),     false   },
         };
 
     return s_aspectDescrs;
@@ -65,7 +66,7 @@ public:
         m_expectedCounts[tableName] = count;
         }
 
-    Utf8String  BuildSelectCountString (AnnotationTableAspectDescr const& aspectDescr)
+    Utf8String  BuildSelectCountString (TestAnnotationTableAspectDescr const& aspectDescr)
         {
         Utf8String sqlString ("SELECT count(*) FROM ");
         sqlString.append (aspectDescr.m_tableName);
@@ -77,7 +78,7 @@ public:
         return sqlString;
         }
 
-    int         GetActualCount (AnnotationTableAspectDescr const& aspectDescr, DgnElementId elementId, DgnDbCR db)
+    int         GetActualCount (TestAnnotationTableAspectDescr const& aspectDescr, DgnElementId elementId, DgnDbCR db)
         {
         Utf8String  sqlString = BuildSelectCountString (aspectDescr);
         Statement   statement;
@@ -91,9 +92,9 @@ public:
 
     void        GetActualCounts (AspectCountMap& counts, DgnElementId elementId, DgnDbCR db)
         {
-        bvector<AnnotationTableAspectDescr> const& aspectDescrs = getAspectDescrs ();
+        bvector<TestAnnotationTableAspectDescr> const& aspectDescrs = getAspectDescrs ();
 
-        for (AnnotationTableAspectDescr const& aspectDescr : aspectDescrs)
+        for (TestAnnotationTableAspectDescr const& aspectDescr : aspectDescrs)
             {
             int count = GetActualCount (aspectDescr, elementId, db);
 
@@ -173,6 +174,7 @@ void SetUp () override
     AnnotationTextStylePtr textStyle = AnnotationTextStyle::Create(*GetDgnProjectP());
     textStyle->SetName(GetTextStyleName());
     textStyle->SetHeight(GetTextStyleHeight());
+    textStyle->SetFontId(GetDgnProjectP()->Fonts().AcquireId(DgnFontManager::GetAnyLastResortFont()));
     textStyle->Insert();
 
     m_textStyleId = textStyle->GetStyleId();
@@ -324,12 +326,12 @@ TEST_F (AnnotationTableTest, PersistRowAndColumnAspects)
 
     typedef bpair <int, double> ExpectedRowHeight;
 
-    // Set the height of even rows to the 2 * index (0, def, 4, def, 8).
+    // Set the height of even rows to the 2 * (1+index) (2, def, 6, def, 10).
     bvector<ExpectedRowHeight> rowHeights1;
     for (int iRow = 0; iRow < numRows1; iRow++)
         {
         if (0 == iRow % 2)
-            rowHeights1.push_back (ExpectedRowHeight (iRow, 2.0 * iRow));
+            rowHeights1.push_back (ExpectedRowHeight (iRow, 2.0 * (1+iRow)));
         }
 
     // Set the height of odd rows to 3*index (3, def, 9, def, 15, def, 21, def).
@@ -590,7 +592,7 @@ public:
         {
         double  defaultRowHeight  = table.GetDefaultRowHeight();
 
-        for (int iRow = 0; iRow < table.GetRowCount(); iRow++)
+        for (uint32_t iRow = 0; iRow < table.GetRowCount(); iRow++)
             {
             double expectedHeight = (m_index == iRow) ? m_overrideHeight : defaultRowHeight;
 
@@ -658,7 +660,7 @@ public:
         {
         double  defaultColumnWidth  = table.GetDefaultColumnWidth();
 
-        for (int iColumn = 0; iColumn < table.GetColumnCount(); iColumn++)
+        for (uint32_t iColumn = 0; iColumn < table.GetColumnCount(); iColumn++)
             {
             double expectedWidth = (m_index == iColumn) ? m_overrideWidth : defaultColumnWidth;
 
@@ -725,12 +727,7 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void    _DoAction (AnnotationTableElementR table) override
         {
-#if defined (NEEDSWORK)
-        // this method hasn't been ported yet
-        //table.GetRow(m_index)->SetHeightFromContents();
-#else
-        table.GetRow(m_index)->SetHeight(table.GetDefaultRowHeight());
-#endif
+        table.GetRow(m_index)->SetHeightFromContents();
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -740,7 +737,7 @@ public:
         {
         double  defaultRowHeight  = table.GetDefaultRowHeight();
 
-        for (int iRow = 0; iRow < table.GetRowCount(); iRow++)
+        for (uint32_t iRow = 0; iRow < table.GetRowCount(); iRow++)
             {
             double expectedHeight = defaultRowHeight;
 
@@ -773,6 +770,315 @@ TEST_F (AnnotationTableActionTest, Modify_ClearRowHeight)
     int  rowIndex = 1;
 
     ClearRowHeightAction   testAction (rowIndex);
+    DoModifyTableTest (testAction);
+    }
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct SetCellTextAction : AnnotationTableTestAction
+{
+private:
+    Utf8String                  m_applyString;
+    AnnotationTableCellIndex    m_cellIndex;
+
+public:
+    /* ctor */  SetCellTextAction (Utf8CP v, AnnotationTableCellIndexCR i) : m_applyString (v), m_cellIndex (i) {}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _DoAction (AnnotationTableElementR table) override
+        {
+        AnnotationTextStyleId   textStyleId = table.GetTextStyleId(AnnotationTableRegion::Body);
+        AnnotationTextBlockPtr  textBlock   = AnnotationTextBlock::Create(table.GetDgnDb(), textStyleId, m_applyString.c_str());
+
+        AnnotationTableCellP  cell = table.GetCell (m_cellIndex);
+        cell->SetTextBlock (*textBlock);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _VerifyAction (AnnotationTableElementCR table) const override
+        {
+        AnnotationTableCellP  foundCell = table.GetCell (m_cellIndex);
+        AnnotationTextBlockCP foundTextBlock = foundCell->GetTextBlock();
+#if defined (NEEDSWORK)
+        Utf8String            foundString = foundTextBlock->ToString();
+        
+        EXPECT_STREQ (m_applyString.c_str(), foundString.c_str());
+#else
+        EXPECT_TRUE (nullptr != foundTextBlock);
+#endif
+
+        AnnotationTableCellIndex  anotherCell (m_cellIndex.row - 1, m_cellIndex.col - 1);
+        foundCell = table.GetCell (anotherCell);
+
+        EXPECT_TRUE (NULL == foundCell->GetTextBlock());
+
+        ExpectedAspectCounts expectedCounts;
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableCell), 1);
+        expectedCounts.VerifyCounts(table);
+        }
+
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Create_SetCellText)
+    {
+    Utf8CP                      cellString = "Hello Table";
+    AnnotationTableCellIndex    cellIndex (1, 1);
+
+    SetCellTextAction   testAction (cellString, cellIndex);
+    DoCreateTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Modify_SetCellText)
+    {
+    Utf8CP                      cellString = "Hello Table";
+    AnnotationTableCellIndex    cellIndex (1, 1);
+
+    SetCellTextAction   testAction (cellString, cellIndex);
+    DoModifyTableTest (testAction);
+    }
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct ChangeCellTextAction : AnnotationTableTestAction
+{
+private:
+    Utf8String                  m_applyString;
+    AnnotationTableCellIndex    m_cellIndex;
+
+public:
+    /* ctor */  ChangeCellTextAction (Utf8CP v, AnnotationTableCellIndexCR i) : m_applyString (v), m_cellIndex (i) {}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _PreAction (AnnotationTableElementR table) override
+        {
+        AnnotationTextStyleId   textStyleId = table.GetTextStyleId(AnnotationTableRegion::Body);
+        AnnotationTextBlockPtr  textBlock   = AnnotationTextBlock::Create(table.GetDgnDb(), textStyleId, "abcdefghi");
+
+        AnnotationTableCellP  cell = table.GetCell (m_cellIndex);
+        cell->SetTextBlock (*textBlock);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _DoAction (AnnotationTableElementR table) override
+        {
+        AnnotationTextStyleId   textStyleId = table.GetTextStyleId(AnnotationTableRegion::Body);
+        AnnotationTextBlockPtr  textBlock   = AnnotationTextBlock::Create(table.GetDgnDb(), textStyleId, m_applyString.c_str());
+
+        AnnotationTableCellP  cell = table.GetCell (m_cellIndex);
+        cell->SetTextBlock (*textBlock);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _VerifyAction (AnnotationTableElementCR table) const override
+        {
+        AnnotationTableCellP    foundCell = table.GetCell (m_cellIndex);
+        AnnotationTextBlockCP   foundTextBlock = foundCell->GetTextBlock();
+#if defined (NEEDSWORK)
+        Utf8String              foundString = foundTextBlock->ToString();
+        
+        EXPECT_STREQ (m_applyString.c_str(), foundString.c_str());
+#else
+        EXPECT_TRUE (nullptr != foundTextBlock);
+#endif
+
+        AnnotationTableCellIndex  anotherCell (m_cellIndex.row - 1, m_cellIndex.col - 1);
+        foundCell = table.GetCell (anotherCell);
+
+        EXPECT_TRUE (NULL == foundCell->GetTextBlock());
+
+        ExpectedAspectCounts expectedCounts;
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableCell), 1);
+        expectedCounts.VerifyCounts(table);
+        }
+
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Create_ChangeCellText)
+    {
+    Utf8CP                      cellString = "Hello Table";
+    AnnotationTableCellIndex    cellIndex (1, 1);
+
+    ChangeCellTextAction   testAction (cellString, cellIndex);
+    DoCreateTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Modify_ChangeCellText)
+    {
+    Utf8CP                      cellString = "Hello Table";
+    AnnotationTableCellIndex    cellIndex (1, 1);
+
+    ChangeCellTextAction   testAction (cellString, cellIndex);
+    DoModifyTableTest (testAction);
+    }
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct ClearCellTextAction : AnnotationTableTestAction
+{
+private:
+    AnnotationTableCellIndex  m_cellIndex;
+
+public:
+    /* ctor */  ClearCellTextAction (AnnotationTableCellIndexCR i) : m_cellIndex (i) {}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _PreAction (AnnotationTableElementR table) override
+        {
+        AnnotationTextStyleId   textStyleId = table.GetTextStyleId(AnnotationTableRegion::Body);
+        AnnotationTextBlockPtr  textBlock   = AnnotationTextBlock::Create(table.GetDgnDb(), textStyleId, "abcdefghi");
+
+        AnnotationTableCellP  cell = table.GetCell (m_cellIndex);
+        cell->SetTextBlock (*textBlock);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _DoAction (AnnotationTableElementR table) override
+        {
+        AnnotationTextStyleId   textStyleId = table.GetTextStyleId(AnnotationTableRegion::Body);
+        AnnotationTextBlockPtr  textBlock   = AnnotationTextBlock::Create(table.GetDgnDb(), textStyleId);
+
+        // textBlock is empty
+
+        AnnotationTableCellP  cell = table.GetCell (m_cellIndex);
+        cell->SetTextBlock (*textBlock);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    05/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _VerifyAction (AnnotationTableElementCR table) const override
+        {
+        AnnotationTableCellP  foundCell = table.GetCell (m_cellIndex);
+        EXPECT_TRUE (NULL == foundCell->GetTextBlock());
+
+        AnnotationTableCellIndex  anotherCell (m_cellIndex.row - 1, m_cellIndex.col - 1);
+
+        foundCell = table.GetCell (anotherCell);
+        EXPECT_TRUE (NULL == foundCell->GetTextBlock());
+
+        // Expect just the minimum instances on the element (we removed cell)
+        ExpectedAspectCounts expectedCounts;
+        expectedCounts.VerifyCounts(table);
+        }
+
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Create_ClearCellText)
+    {
+    AnnotationTableCellIndex  cellIndex (1, 1);
+
+    ClearCellTextAction   testAction (cellIndex);
+    DoCreateTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Modify_ClearCellText)
+    {
+    AnnotationTableCellIndex  cellIndex (1, 1);
+
+    ClearCellTextAction   testAction (cellIndex);
+    DoModifyTableTest (testAction);
+    }
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct DeleteRowAction : AnnotationTableTestAction
+{
+private:
+    uint32_t        m_rowIndex;
+    uint32_t        m_rowCount;
+
+public:
+    /* ctor */  DeleteRowAction (uint32_t r) : m_rowIndex (r), m_rowCount(0) {}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    07/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _PreAction (AnnotationTableElementR table) override
+        {
+        m_rowCount = table.GetRowCount();
+
+        for (uint32_t iRow = 0; iRow < m_rowCount; iRow++)
+            table.GetRow(iRow)->SetHeight (10.0*(1+iRow));
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    07/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _DoAction (AnnotationTableElementR table) override
+        {
+        // Delete a row
+        table.DeleteRow (m_rowIndex);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    07/13
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _VerifyAction (AnnotationTableElementCR table) const override
+        {
+        EXPECT_EQ (m_rowCount - 1, table.GetRowCount());
+
+        ExpectedAspectCounts expectedCounts;
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableRow), m_rowCount - 1);
+        expectedCounts.VerifyCounts(table);
+        }
+
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Create_DeleteRow)
+    {
+    uint32_t          rowIndex = 1;
+
+    DeleteRowAction   testAction (rowIndex);
+    DoCreateTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, Modify_DeleteRow)
+    {
+    uint32_t          rowIndex = 1;
+
+    DeleteRowAction   testAction (rowIndex);
     DoModifyTableTest (testAction);
     }
 

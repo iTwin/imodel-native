@@ -6,7 +6,7 @@
 #       $Date: 2010/08/05 15:42:11 $
 #     $Author: Chuck.Kirschman $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 #----------------------------------------------------------------------
@@ -80,4 +80,4 @@ EXE_LIBS     = $(objDir)RmgrTools.lib
 EXE_TMP_DIR  = $(objDir)
 EXE_LOPT1    = \/BASE:0x400000 \/DYNAMICBASE:NO
 
-%include $(SrcBsiCommon)sharedmki/linktool.mki
+%include $(SrcRoot)bsicommon/sharedmki/linktool.mki

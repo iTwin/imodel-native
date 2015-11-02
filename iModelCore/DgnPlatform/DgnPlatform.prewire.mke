@@ -1,18 +1,22 @@
-#*--------------------------------------------------------------------------------------+
+#--------------------------------------------------------------------------------------
 #
 #     $Source: DgnPlatform.prewire.mke $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
-#--------------------------------------------------------------------------------------*/
-PolicyFile = $(SrcRoot)DgnPlatform/privmki/AssertDgnPlatformPolicy.mki
+#--------------------------------------------------------------------------------------
+SrcDgnPlatform                  = $(SrcRoot)DgnPlatform/
+DgnPlatformPublicAPISrc         = $(SrcDgnPlatform)PublicAPI/
+
 %include mdl.mki
 
 # Wire in my own public header files.
 always:
-    @CreateSymLinks.py -d"$(BuildContext)PublicAPI/DgnPlatform=$(DgnPlatformPublicAPISrc)DgnPlatform"
-    @CreateSymLinks.py -d"$(BuildContext)ECSchemas=$(SrcRoot)/DgnPlatform/ECSchemas"
+    ~linkdir "$(BuildContext)PublicAPI/DgnPlatform=$(DgnPlatformPublicAPISrc)DgnPlatform"
+    ~linkdir "$(BuildContext)ECSchemas=$(SrcDgnPlatform)ECSchemas"
 
 # Wire in my own private header files (for unit tests).
+DgnPlatformInternalApiSrc = $(SrcDgnPlatform)PrivateApi/DgnPlatformInternal/
+
 always:
-    @CreateSymLinks.py -d"$(BuildContext)PrivateAPI/DgnPlatformInternal=$(DgnPlatformInternalApiSrc)"
+    ~linkdir "$(BuildContext)PrivateAPI/DgnPlatformInternal=$(DgnPlatformInternalApiSrc)"
