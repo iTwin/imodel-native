@@ -1353,13 +1353,11 @@ void SimplifyViewDrawGeom::_DrawTextString(TextStringCR text, double* zDepth)
     ClipAndProcessText(text, zDepth);
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyViewDrawGeom::_DrawRaster (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range)
     {
-    MethodMark  mark(*this);
     DPoint3d    shapePoints[5];
 
     shapePoints[0] = shapePoints[4] = points[0];
@@ -1375,7 +1373,6 @@ void SimplifyViewDrawGeom::_DrawRaster (DPoint3d const points[4], int pitch, int
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyViewDrawGeom::_DrawRaster2d (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range)
     {
-    MethodMark              mark(*this);
     std::valarray<DPoint3d> localPointsBuf3d(4);
 
     copy2dTo3d(4, &localPointsBuf3d[0], points, 0.0);
@@ -1385,9 +1382,8 @@ void SimplifyViewDrawGeom::_DrawRaster2d (DPoint2d const points[4], int pitch, i
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawDgnOle(IDgnOleDraw* ole)
+void SimplifyViewDrawGeom::_DrawDgnOle(DgnOleDraw* ole)
     {
-    MethodMark  mark(*this);
 
     // NEEDSWORK...Draw Shape...
     }
@@ -1395,11 +1391,10 @@ void SimplifyViewDrawGeom::_DrawDgnOle(IDgnOleDraw* ole)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    john.gooding                    03/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawPointCloud(IPointCloudDrawParams* drawParams)
+void SimplifyViewDrawGeom::_DrawPointCloud(PointCloudDraw* drawParams)
     {
     enum {MAX_POINTS_PER_BATCH = 300};
 
-    MethodMark      mark(*this);
     uint32_t        numPoints = drawParams->GetNumPoints();
 
     if (0 == numPoints)
@@ -1463,7 +1458,6 @@ void SimplifyViewDrawGeom::_DrawPointCloud(IPointCloudDrawParams* drawParams)
         numPoints -= pointsThisIter;
         }
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2007

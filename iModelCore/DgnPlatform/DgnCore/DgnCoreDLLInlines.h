@@ -169,18 +169,6 @@ DG_INLINE double PatternParams::GetAnnotationScale() const {return annotationsca
 
 DG_INLINE void ElemMatSymb::SetIndexedRasterPattern(int32_t index, uint32_t rasterPat) {m_elementStyle = IS_LINECODE(index) ? index : 0; m_rasterPat = rasterPat; }
 
-DG_INLINE bool PlotInfo::IsScreeningSet() const {return m_hasScreening;}
-DG_INLINE double PlotInfo::GetScreening() const {return m_screening;}
-DG_INLINE void PlotInfo::SetScreening(double screen, bool set) {if (set) m_screening = screen; m_hasScreening = set;};
-DG_INLINE bool PlotInfo::IsLineJoinSet() const {return m_hasLineJoin;}
-DG_INLINE LineJoin PlotInfo::GetLineJoin() const {return m_lineJoin;}
-DG_INLINE void PlotInfo::SetLineJoin(LineJoin join, bool set) {if (set) m_lineJoin = join; m_hasLineJoin = set;};
-DG_INLINE bool PlotInfo::IsLineCapSet() const {return m_hasLineCap;}
-DG_INLINE LineCap PlotInfo::GetLineCap() const {return m_lineCap;}
-DG_INLINE void PlotInfo::SetLineCap(LineCap cap, bool set) {if (set) m_lineCap = cap; m_hasLineCap = set;};
-DG_INLINE bool PlotInfo::IsLineWeightMMSet() const {return m_hasLineWeightMM;}
-DG_INLINE double PlotInfo::GetLineWeightMM() const {return m_widthMM;}
-DG_INLINE void PlotInfo::SetLineWeightMM(double mm, bool set) {if (set) m_widthMM = mm; m_hasLineWeightMM = set;};
 
 DG_INLINE void LineStyleParams::SetScale(double inScale) { modifiers |= STYLEMOD_SCALE; scale = inScale; }
 

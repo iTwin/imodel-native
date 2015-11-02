@@ -44,12 +44,10 @@ struct NullContext : ViewContext
         virtual void _DrawPolyface(PolyfaceQueryCR meshData, bool filled = false) override {}
         virtual StatusInt _DrawBody(ISolidKernelEntityCR, double pixelSize = 0.0) override {return ERROR;}
         virtual void _DrawTextString(TextStringCR text, double* zDepth = NULL) override {}
-    #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         virtual void _DrawRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) override {}
         virtual void _DrawRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) override {}
-        virtual void _DrawDgnOle(IDgnOleDraw*) override {}
-        virtual void _DrawPointCloud(IPointCloudDrawParams* drawParams) override {}
-    #endif
+        virtual void _DrawDgnOle(Render::DgnOleDraw*) override {}
+        virtual void _DrawPointCloud(Render::PointCloudDraw* drawParams) override {}
         virtual void _DrawMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) override {}
     #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         virtual void _PushClipStencil(Render::Graphic* qvElem) override {}

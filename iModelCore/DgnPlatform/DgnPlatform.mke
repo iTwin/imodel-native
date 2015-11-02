@@ -80,7 +80,7 @@ CompileOptionsMki               = $(baseDir)DgnPlatform.mki
 DLM_OBJECT_DEST                 = $(DgnPlatformObj)
 ASSEMBLY_STRONGNAME             = 1
 
-contextDepends                  = $(DgnCoreAPISrc)ViewContext.h $(DgnCoreAPISrc)IViewOutput.h $(DgnCoreAPISrc)Render.h $(DgnCoreAPISrc)DgnViewport.h
+contextDepends                  = $(DgnCoreAPISrc)ViewContext.h $(DgnCoreAPISrc)Render.h $(DgnCoreAPISrc)DgnViewport.h
 
 VewControllerDepends            = $(DgnCoreAPISrc)ViewController.h $(DgnCoreAPISrc)ViewContext.h
 

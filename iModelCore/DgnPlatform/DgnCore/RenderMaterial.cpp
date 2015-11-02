@@ -123,12 +123,12 @@ bool        RenderMaterialMap::_GetBool (char const* key, BentleyStatus* status)
     return false;
     }
 
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 RenderMaterialPtr    JsonRenderMaterial::Create (Json::Value const& value, DgnMaterialId materialId) { return new JsonRenderMaterial (value, materialId); }
+#endif
 double Texture::GetUnitScale(Units units)
     {
     switch (units)
@@ -149,7 +149,9 @@ double Texture::GetUnitScale(Units units)
             BeAssert(false);
             return 1.0;
         }
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     return new JsonRenderMaterial (renderMaterial, materialId);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -172,7 +174,6 @@ Texture::Mode Texture::GetMode(JsonValueCR in)
 * @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 Texture::Units Texture::GetUnits(JsonValueCR in) 
-        return 0.0;
     {
     JsonValueCR value = in[RENDER_MATERIAL_PatternScaleMode];
     if (!value.isInt())
@@ -184,6 +185,7 @@ Texture::Units Texture::GetUnits(JsonValueCR in)
     return (Units) value.asInt();
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Ray.Bentley     08/2015
 //---------------------------------------------------------------------------------------
@@ -201,6 +203,7 @@ static DPoint2d getDPoint2dValue(JsonValueCR value)
     point.y = value[1].asDouble();
     return point;
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Ray.Bentley     08/2015
@@ -213,7 +216,11 @@ Render::Texture::Trans Render::Texture::GetPatternTransform(JsonValueCR value)
         for (size_t j=0; j<3; ++j)
             transform.m_val[i][j] = (i==j) ? 1.0 : 0.0;
         }
-    
+    return transform;
+    }
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus JsonRenderMaterial::DoImport (DgnImportContext& context, DgnDbR sourceDb) 
@@ -235,10 +242,6 @@ BentleyStatus JsonRenderMaterial::DoImport (DgnImportContext& context, DgnDbR so
     
     return SUCCESS;
     }
-
-//=======================================================================================
-// ImageBuffer...
-//=======================================================================================
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  10/2015
@@ -370,6 +373,7 @@ BentleyStatus  SimpleBufferPatternMap::_GetImage (bvector<Byte>& imageData, Poin
 RenderMaterialMapPtr  SimpleBufferPatternMap::Create (Byte const* imageData, Point2dCR imageSize)
     return new SimpleBufferPatternMap (imageData, imageSize);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2015

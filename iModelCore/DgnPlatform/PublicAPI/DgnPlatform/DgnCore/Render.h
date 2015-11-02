@@ -46,6 +46,7 @@ DEFINE_REF_COUNTED_PTR(Target)
 DEFINE_REF_COUNTED_PTR(Task)
 DEFINE_REF_COUNTED_PTR(Texture)
 
+
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   09/15
 //=======================================================================================
@@ -211,7 +212,7 @@ public:
 };
 
 struct ISprite;
-struct IDgnOleDraw;
+struct DgnOleDraw;
 
 //=======================================================================================
 //! This interface defines methods required for a \e DisplaySymbol Definition.
@@ -777,7 +778,7 @@ public:
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct IPointCloudDrawParams
+struct PointCloudDraw
 {
     enum VersionNumber {IPointCloudDrawParams_InitialVersion = 1};
 
@@ -831,6 +832,10 @@ protected:
     virtual bool _IsQuickVision() const {return false;}
     virtual bool _IsValidFor(DgnViewportCR vp, double* metersPerPixel) const {return true;}
     virtual void _SetPixelSize(double size) {}
+    virtual void _DrawRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) = 0;
+    virtual void _DrawRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) = 0;
+    virtual void _DrawDgnOle(DgnOleDraw*) = 0;
+    virtual void _DrawPointCloud(PointCloudDraw* drawParams) = 0;
     virtual ~Graphic() {}
 
 public:
@@ -841,7 +846,6 @@ public:
     //! @param[in]          matSymb     The new active ElemMatSymb. All geometry drawn via calls to this IDrawGeom will
     //!                                     be displayed using the values in this ElemMatSymb.
     void ActivateMatSymb(ElemMatSymbCP matSymb) {_ActivateMatSymb(matSymb);}
-
 
     //! Draw a 3D line string.
     //! @param[in]          numPoints   Number of vertices in points array.
@@ -968,6 +972,16 @@ public:
     void DrawTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) { DrawSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}
     void DrawBox(DVec3dCR primary, DVec3dCR secondary, DPoint3dCR basePoint, DPoint3dCR topPoint, double baseWidth, double baseLength, double topWidth, double topLength, bool capped) {DrawSolidPrimitive(*ISolidPrimitive::CreateDgnBox(DgnBoxDetail::InitFromCenters(basePoint, topPoint, primary, secondary, baseWidth, baseLength, topWidth, topLength, capped))); }
 
+    void DrawRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range) {_DrawRaster2d(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, zDepth, range);}
+    void DrawRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) {_DrawRaster(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, range);}
+
+    //! Draw a 3D point cloud.
+    //! @param[in]      drawParams      Object containing draw parameters.
+    void DrawPointCloud(PointCloudDraw* drawParams) {_DrawPointCloud(drawParams);}
+
+    //! Draw OLE object.
+    void DrawDgnOle(DgnOleDraw* ole) {_DrawDgnOle(ole);}
+
     bool IsQuickVision() const {return _IsQuickVision();}
 };
 
@@ -982,15 +996,10 @@ protected:
     virtual void _DrawGrid(bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector, uint32_t gridsPerRef, Point2dCR repetitions) = 0;
     virtual bool _DrawSprite(ISprite* sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) = 0;
     virtual void _DrawTiledRaster(ITiledRaster* tiledRaster) = 0;
-    virtual void _DrawRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) = 0;
-    virtual void _DrawRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) = 0;
-    virtual void _DrawDgnOle(IDgnOleDraw*) = 0;
-    virtual void _DrawPointCloud(IPointCloudDrawParams* drawParams) = 0;
-    virtual void _DrawGraphic(Graphic* graphic) = 0;
-    virtual void _ClearZ () = 0;
-    virtual bool _ApplyMonochromeOverrides(ViewFlagsCR) const = 0;
     virtual void _PushClipStencil(Graphic* graphic) = 0;
     virtual void _PopClipStencil() = 0;
+    virtual void _BeginScene() = 0;
+    virtual void _FinishScene() = 0;
     virtual void _AddGraphic(Graphic&) = 0;
     virtual Target& _GetRenderTarget() = 0;
     virtual ~Scene() {}
@@ -1031,19 +1040,6 @@ public:
     //! @param[in]      tiledRaster     The Tiled Raster to draw.
     void DrawTiledRaster(ITiledRaster* tiledRaster) {_DrawTiledRaster(tiledRaster);}
 
-    void DrawRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range) {_DrawRaster2d(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, zDepth, range);}
-    void DrawRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) {_DrawRaster(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, range);}
-
-    //! Draw a 3D point cloud.
-    //! @param[in]      drawParams      Object containing draw parameters.
-    void DrawPointCloud(IPointCloudDrawParams* drawParams) {_DrawPointCloud(drawParams);}
-
-    //! Draw a Graphic
-    void DrawGraphic(Graphic* graphic) {_DrawGraphic(graphic);}
-
-    //! Draw OLE object.
-    void DrawDgnOle(IDgnOleDraw* ole) {_DrawDgnOle(ole);}
-
     DGNPLATFORM_EXPORT void DrawTile(uintptr_t tileId, DPoint3d const* verts);
 
     //! Push the supplied Graphic as a clip stencil boundary.
@@ -1052,7 +1048,6 @@ public:
     //! Pop the most recently pushed clip stencil boundary.
     void PopClipStencil() {_PopClipStencil();}
 
-    void ClearZ() {_ClearZ();}
     void AddGraphic(Graphic& graphic) {_AddGraphic(graphic);}
     Target& GetRenderTarget() {return _GetRenderTarget();}
 
@@ -1241,7 +1236,6 @@ public:
     void BeginOverlayMode() {_BeginOverlayMode();}
     BentleyStatus FillImageCaptureBuffer(bvector<unsigned char>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) {return _FillImageCaptureBuffer(buffer, info, screenBufferRange, outputImageSize, topDown);}
     bool CheckNeedsHeal(BSIRectP rect){return _CheckNeedsHeal(rect);}
-
 };
 
 END_BENTLEY_RENDER_NAMESPACE

@@ -159,10 +159,7 @@ struct RenderMaterialUtil
 #endif
 
 
-
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-
-                                                                                      
 
 // From V8 Flags.
 #define RENDER_MATERIAL_FlagNoShadows                               "NoShadows"             
