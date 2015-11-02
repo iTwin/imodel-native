@@ -102,7 +102,7 @@ TEST_F(ElementDisplayProperties, SetDisplayPattern)
     pattern->SetWeight (6);
     pattern->SetStyle (1);
     ep.SetPatternParams (pattern.get());
-    EXPECT_EQ( NULL != ep.GetPatternParams() )
+    EXPECT_TRUE(NULL != ep.GetPatternParams());
 
     auto keyE1 = InsertElement(DgnElement::Code(), ep, m3id);
     DgnElementId E1id = keyE1->GetElementId ();
