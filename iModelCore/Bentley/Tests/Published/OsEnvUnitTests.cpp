@@ -109,16 +109,6 @@ TEST (AssertTests, BeTestAssertMacros)
 }
 
 //---------------------------------------------------------------------------------------
-// @betest                                      Shaun.Sewall                    08/11
-//---------------------------------------------------------------------------------------
-TEST (BuildEnvTests, IsEmptyStruct)
-{
-    ASSERT_TRUE (STD_TR1::is_empty<MyEmptyStruct>::value);
-    ASSERT_FALSE (STD_TR1::is_empty<MyNonEmptyStruct>::value);
-    SUCCEED ();
-}
-
-//---------------------------------------------------------------------------------------
 // @betest                                                      John.Gooding    02/2012
 //--------------+------------------------------------------------------------------------
 TEST (MemoryTests, BeStackTest)

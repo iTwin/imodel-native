@@ -16,7 +16,6 @@
     //////////////////////////// GNUC /////////////////////////////////////////////
     #include <stddef.h>     // for size_t
 
-
     #if defined (__GNUC__) && !defined (__clang__)
         #define GCC_VERSION (__GNUC__ * 1000 + __GNUC_MINOR__ * 10)
         #define BENTLEY_CPLUSPLUS 201103L
@@ -42,9 +41,8 @@
     #define DLLLOCAL_ATTRIBUTE      __attribute__((visibility ("hidden")))
     #define CDECL_ATTRIBUTE
     #define STDCALL_ATTRIBUTE
+    #define SEALED_ATTRIBUTE
     #define THROW_SPECIFIER(X)      throw(X)
-
-    #define STD_TR1 std
 
     #define ENUM_UNDERLYING_TYPE(T)   : T
 
@@ -70,9 +68,6 @@
         #define BENTLEY_CPLUSPLUS 201103L
     #endif
 
-    #define HAVE_TR1
-    #define STD_TR1 std::tr1
-
     #if !defined (CREATE_STATIC_LIBRARIES)
         #define EXPORT_ATTRIBUTE        __declspec(dllexport)
         #define IMPORT_ATTRIBUTE        __declspec(dllimport)
@@ -86,6 +81,7 @@
     #define EXPORT_VTABLE_ATTRIBUTE   /* This is a GCC concept. In MSVC, it appears that the vtable and typeinfo of a class are always exported if the class contains any exported methods. */
     #define CDECL_ATTRIBUTE         __cdecl
     #define STDCALL_ATTRIBUTE       __stdcall
+    #define SEALED_ATTRIBUTE        sealed
     #define ENUM_UNDERLYING_TYPE(T)   : T
     #define THROW_SPECIFIER(X)
 
@@ -201,7 +197,7 @@ END_BENTLEY_NAMESPACE
         #define NULL    0
     #else
         // nullptr is part C++11
-        #define NULL    nullptr
+        #define NULL nullptr
     #endif
 #endif
 
@@ -283,10 +279,6 @@ typedef Utf8Char*           Utf8P;
 typedef Utf8Char const*     Utf8CP;
 typedef Utf16Char*          Utf16P;
 typedef Utf16Char const*    Utf16CP;
-
-typedef void*               UserDataP;
-typedef void const*         UserDataCP;
-typedef void*               CallbackArgP;
 
 END_BENTLEY_NAMESPACE
 
