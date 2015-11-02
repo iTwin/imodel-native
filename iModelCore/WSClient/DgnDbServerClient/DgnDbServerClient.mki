@@ -12,20 +12,30 @@ DgnDbServerClientMkiSourceDir = $(DgnDbServerClientSourceDirectory)DgnDbServerCl
 #----------------------------------------------------------------------------------------
 #   Set up build dependencies for precompiled header and Client.mki
 #----------------------------------------------------------------------------------------
-DgnDbServerClientMkiHeaders = $(DgnDbServerClientMkiPublicApiDir)DgnDbServerCommon.h                \
-                              $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbBriefcase.h            \
-                              $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbClient.h               \
-                              $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbRepositoryConnection.h \
-                              $(DgnDbServerClientMkiPublicApiDir)Client/FileInfo.h                  \
-                              $(DgnDbServerClientMkiPublicApiDir)Client/RepositoryInfo.h            \
-                              $(DgnDbServerClientMkiPublicApiDir)Client/RevisionInfo.h
+
+DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerCommon.h						\
+		                        $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbBriefcase.h                  \
+								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbClient.h                     \
+								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbRepositoryConnection.h       \
+		                        $(DgnDbServerClientMkiSourceDir)DgnDbServerUtils.h							\
+								$(DgnDbServerClientMkiPublicApiDir)Client/FileInfo.h                        \
+		                        $(DgnDbServerClientMkiPublicApiDir)Client/RepositoryInfo.h                  \
+								$(DgnDbServerClientMkiPublicApiDir)Client/RevisionInfo.h
 
 #----------------------------------------------------------------------------------------
 #   Compile
 #----------------------------------------------------------------------------------------
-#$(o)DgnDbBriefcase(oext)                   : $(DgnDbServerClientMkiSourceDir)DgnDbBriefcase.cpp $(DgnDbServerClientMkiHeaders) $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
-#$(o)DgnDbClient(oext)                      : $(DgnDbServerClientMkiSourceDir)DgnDbClient.cpp $(DgnDbServerClientMkiHeaders) $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
-#$(o)DgnDbRepositoryConnection(oext)        : $(DgnDbServerClientMkiSourceDir)DgnDbRepositoryConnection.cpp $(DgnDbServerClientMkiHeaders) $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
-#$(o)FileInfo$(oext)                        : $(DgnDbServerClientMkiSourceDir)FileInfo.cpp $(DgnDbServerClientMkiHeaders) $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
-#$(o)RepositoryInfo$(oext)                  : $(DgnDbServerClientMkiSourceDir)RepositoryInfo.cpp $(DgnDbServerClientMkiHeaders) $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
-#$(o)RevisionInfo$(oext)                    : $(DgnDbServerClientMkiSourceDir)RevisionInfo.cpp $(DgnDbServerClientMkiHeaders) $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)DgnDbServerUtils$(oext)                : $(DgnDbServerClientMkiSourceDir)DgnDbServerUtils.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)FileInfo$(oext)                        : $(DgnDbServerClientMkiSourceDir)FileInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)RepositoryInfo$(oext)                  : $(DgnDbServerClientMkiSourceDir)RepositoryInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)RevisionInfo$(oext)                    : $(DgnDbServerClientMkiSourceDir)RevisionInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)DgnDbRepositoryConnection$(oext)       : $(DgnDbServerClientMkiSourceDir)DgnDbRepositoryConnection.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)DgnDbBriefcase$(oext)                  : $(DgnDbServerClientMkiSourceDir)DgnDbBriefcase.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)DgnDbClient$(oext)                     : $(DgnDbServerClientMkiSourceDir)DgnDbClient.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}

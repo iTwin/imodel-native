@@ -18,7 +18,23 @@
 #define USING_NAMESPACE_BENTLEY_DGNDBSERVER    using namespace BentleyApi::DgnDbServer;
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
-struct DgnDbServerError;
-template<typename AnyValue> using DgnDbServerResult = MobileDgn::Utils::AsyncResult<AnyValue, WebServices::WSError>;
-using DgnDbServerTaskPtr = MobileDgn::Utils::AsyncTaskPtr<DgnDbServerResult<void>>;
+struct DgnDbServerError : public MobileDgn::Utils::AsyncError
+    {
+public:
+    DgnDbServerError() {}
+    DgnDbServerError(WebServices::WSErrorCR error) {}
+    DgnDbServerError(BeSQLite::DbResult error) {}
+    DgnDbServerError(BentleyStatus status) {}
+    };
+template<typename AnyValue> using DgnDbServerResult = MobileDgn::Utils::AsyncResult<AnyValue, DgnDbServerError>;
+template<typename AnyValue> using DgnDbServerResultPtr = std::shared_ptr<MobileDgn::Utils::AsyncResult<AnyValue, DgnDbServerError>>;
+template<typename AnyValue> using DgnDbServerTask = MobileDgn::Utils::PackagedAsyncTask<MobileDgn::Utils::AsyncResult<AnyValue, DgnDbServerError>>;
+template<typename AnyValue> using DgnDbServerTaskPtr = std::shared_ptr<MobileDgn::Utils::PackagedAsyncTask<MobileDgn::Utils::AsyncResult<AnyValue, DgnDbServerError>>>;
 END_BENTLEY_DGNDBSERVER_NAMESPACE
+
+
+#ifdef __DgnDbServerClient_DLL_BUILD__
+#define DGNDBSERVERCLIENT_EXPORT EXPORT_ATTRIBUTE
+#else
+#define DGNDBSERVERCLIENT_EXPORT IMPORT_ATTRIBUTE
+#endif
