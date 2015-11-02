@@ -9,9 +9,10 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-appName = RealityModFramework.prewire
 %include mdl.mki
-%include $(_MakeFilePath)mki/RealityModFrameworkPolicy.mki
+
+appName     = RealityModFramework.prewire
+%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
 
 # Wire in my own public header files.
 always:

@@ -175,8 +175,8 @@
         <SubPart PartName="RealityDb"/>
         <SubPart PartName="BentleyWMSPackageNet"/>
         <SubPart PartName="ECServices"          PartFile="ecf"            Repository="ecf" />
-        <SubPart PartName="JsonNet45"           PartFile="${SrcBsiCommon}CvsPartFiles\bin"    Repository="Bin-JsonNet" />
-        <SubPart PartName="IdentityModel"       PartFile="${SrcBsiCommon}CvsPartFiles\identitymodel"    Repository="BCC-IdentityModel" />
+        <SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />
+        <SubPart PartName="IdentityModel"       PartFile="${SrcRoot}bsicommon/CvsPartFiles\identitymodel"    Repository="BCC-IdentityModel" />
         <Bindings>
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/Bentley.RealityDbECPlugin.dll</Assemblies>
         </Bindings>

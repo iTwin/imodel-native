@@ -9,13 +9,13 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-
-appName    = BentleyWMSPackageNet
-sAppName   = BentleyWMSPackageNet
-baseDir	= $(_MakeFilePath)
-
 %include mdl.mki
-%include $(_MakeFilePath)../mki/RealityModFrameworkPolicy.mki
+
+appName     = BentleyWMSPackageNet
+sAppName    = BentleyWMSPackageNet
+baseDir     = $(_MakeFilePath)
+
+%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
 
 PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/BentleyWMSPackageNet/
 

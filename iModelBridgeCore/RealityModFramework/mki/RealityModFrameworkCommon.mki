@@ -1,12 +1,10 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: mki/RealityModFrameworkPolicy.mki $
+#  $Source: mki/RealityModFrameworkCommon.mki $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
-
-
 
 # ++++++++++++++++++++++++++++++++++++++++++++++++
 # DO NOT ADD ANYTHING THAT CANNOT BE SHARED AMONG ALL RealityModFramework PARTS.
@@ -21,16 +19,11 @@ RealityPackagePublicAPISrc = $(SrcRoot)RealityModFramework/PublicAPI/RealityPack
 #----------------------------------------------------------
 # outdirs
 #----------------------------------------------------------
-
-BuildContextPublicApiDir = $(BuildContext)PublicAPI/
-ContextDeliveryDir            = $(BuildContext)Delivery/
-ContextSubPartsAssembliesDir  = $(BuildContext)SubParts/Assemblies/
-
 %ifndef appName
     %error appName must defined
 %endif
 
-o = $(OutputRootDir)build/RealityModFramework/$(appName)/
+o                           = $(OutputRootDir)build/RealityModFramework/$(appName)/
 
 # dlmlink.mki common options.
 DLM_DEST                    = $(o)
