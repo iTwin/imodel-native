@@ -5,6 +5,9 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
+
+ENABLE_CPP_CX_EXTENSIONS = 1
+
 # target platform needs to be defined (this is included before mdl.mki when it is included by PreCompileHeader.mke)
 %if !defined (__mdlMKI__)
     %include mdl.mki
@@ -20,13 +23,6 @@
 #--------------------------------------------------------------------------------------
 nameToDefine = __WSCLIENT_DLL_BUILD__
 %include cdefapnd.mki
-
-#--------------------------------------------------------------------------------------
-#   WinRT-specific
-#--------------------------------------------------------------------------------------
-%if $(TARGET_PLATFORM)=="WinRT"
-    ENABLE_CPP_CX_EXTENSIONS = 1
-%endif
 
 #--------------------------------------------------------------------------------------
 #   iOS-specific

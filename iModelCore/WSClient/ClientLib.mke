@@ -55,6 +55,7 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 # MobileDgn library name
 %if $(TARGET_PLATFORM)=="WinRT"
+    %include $(SrcRoot)Bentley/PublicMki/BentleyApi.mki
     _mobiledgnLibraryName = Bentley$(BENTLEY_API_NAME).MobileDgn.Win8$(stlibext)
 %elif $(TARGET_PLATFORM)=="Android"
     _mobiledgnLibraryName = $(libprefix)MobileDgn$(shlibext)
