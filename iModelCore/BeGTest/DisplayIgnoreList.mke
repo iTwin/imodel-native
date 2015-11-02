@@ -28,6 +28,6 @@ always:
 %endif
 
 # Deliver the report to the output root. This is not really part of the begtest product. It's part of the build status report.
-$(OutputRootDir)MobileDgnSdk-Testing-status.txt : $(LogDir)ignored.txt
+$(OutputRootDir)DgnClientSdk-Testing-status.txt : $(LogDir)ignored.txt
     $(LinkFirstDepToFirstTarget)
 

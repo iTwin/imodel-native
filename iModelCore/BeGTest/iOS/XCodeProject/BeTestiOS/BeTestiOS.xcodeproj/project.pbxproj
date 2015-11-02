@@ -54,7 +54,7 @@
 		214616481743C73000C73C9F /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
 		217D92EE174D342E00447CD9 /* AssetsLibrary.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AssetsLibrary.framework; path = System/Library/Frameworks/AssetsLibrary.framework; sourceTree = SDKROOT; };
 		217D92F1174D349200447CD9 /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
-		21B9D929174FE2F80081E08A /* MobileDgnAssets.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = MobileDgnAssets.bundle; sourceTree = "<group>"; };
+		21B9D929174FE2F80081E08A /* DgnClientFxAssets.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = DgnClientFxAssets.bundle; sourceTree = "<group>"; };
 		23856D051A7F7A38006F6A5F /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		23DDFB6E17B10D96003F8EF8 /* BeTestiOSAppData.xcappdata */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = BeTestiOSAppData.xcappdata; sourceTree = "<group>"; };
 		50646D90168C7F4400167BDC /* BeTestGLView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BeTestGLView.h; sourceTree = "<group>"; };
@@ -131,7 +131,7 @@
 			isa = PBXGroup;
 			children = (
 				23DDFB6E17B10D96003F8EF8 /* BeTestiOSAppData.xcappdata */,
-				21B9D929174FE2F80081E08A /* MobileDgnAssets.bundle */,
+				21B9D929174FE2F80081E08A /* DgnClientFxAssets.bundle */,
 				88FA903714F584D60028AB2E /* BeTestiOS */,
 				88FA905514F584D70028AB2E /* BeTestiOSTests */,
 				88FA903014F584D60028AB2E /* Frameworks */,
@@ -301,15 +301,15 @@
 			files = (
 			);
 			inputPaths = (
-				"$(SRCROOT)/MobileDgnAssets.bundle",
+				"$(SRCROOT)/DgnClientFxAssets.bundle",
 			);
 			name = "Copy Assets";
 			outputPaths = (
-				$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME/MobileDgnAssets.bundle,
+				$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME/DgnClientFxAssets.bundle,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cp -RL MobileDgnAssets.bundle $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME/";
+			shellScript = "cp -RL DgnClientFxAssets.bundle $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME/";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
