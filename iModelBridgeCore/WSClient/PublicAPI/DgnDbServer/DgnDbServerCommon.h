@@ -10,15 +10,15 @@
 #include <Bentley/Bentley.h>
 #include <WebServices/WebServices.h>
 #include <WebServices/Client/WSError.h>
-#include <MobileDgn/Utils/Threading/AsyncResult.h>
-#include <MobileDgn/Utils/Threading/AsyncTask.h>
+#include <DgnClientFx/Utils/Threading/AsyncResult.h>
+#include <DgnClientFx/Utils/Threading/AsyncTask.h>
 
 #define BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE    BEGIN_BENTLEY_NAMESPACE namespace DgnDbServer {
 #define END_BENTLEY_DGNDBSERVER_NAMESPACE      } END_BENTLEY_NAMESPACE
 #define USING_NAMESPACE_BENTLEY_DGNDBSERVER    using namespace BentleyApi::DgnDbServer;
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
-struct DgnDbServerError : public MobileDgn::Utils::AsyncError
+struct DgnDbServerError : public DgnClientFx::Utils::AsyncError
     {
 public:
     DgnDbServerError() {}
@@ -26,10 +26,10 @@ public:
     DgnDbServerError(BeSQLite::DbResult error) {}
     DgnDbServerError(BentleyStatus status) {}
     };
-template<typename AnyValue> using DgnDbServerResult = MobileDgn::Utils::AsyncResult<AnyValue, DgnDbServerError>;
-template<typename AnyValue> using DgnDbServerResultPtr = std::shared_ptr<MobileDgn::Utils::AsyncResult<AnyValue, DgnDbServerError>>;
-template<typename AnyValue> using DgnDbServerTask = MobileDgn::Utils::PackagedAsyncTask<MobileDgn::Utils::AsyncResult<AnyValue, DgnDbServerError>>;
-template<typename AnyValue> using DgnDbServerTaskPtr = std::shared_ptr<MobileDgn::Utils::PackagedAsyncTask<MobileDgn::Utils::AsyncResult<AnyValue, DgnDbServerError>>>;
+template<typename AnyValue> using DgnDbServerResult = DgnClientFx::Utils::AsyncResult<AnyValue, DgnDbServerError>;
+template<typename AnyValue> using DgnDbServerResultPtr = std::shared_ptr<DgnClientFx::Utils::AsyncResult<AnyValue, DgnDbServerError>>;
+template<typename AnyValue> using DgnDbServerTask = DgnClientFx::Utils::PackagedAsyncTask<DgnClientFx::Utils::AsyncResult<AnyValue, DgnDbServerError>>;
+template<typename AnyValue> using DgnDbServerTaskPtr = std::shared_ptr<DgnClientFx::Utils::PackagedAsyncTask<DgnClientFx::Utils::AsyncResult<AnyValue, DgnDbServerError>>>;
 END_BENTLEY_DGNDBSERVER_NAMESPACE
 
 

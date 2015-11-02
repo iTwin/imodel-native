@@ -10,8 +10,8 @@
 
 #include <Bentley/BeDebugLog.h>
 #include <Bentley/Bentley.h>
-#include <MobileDgn/MobileDgnCommon.h>
-#include <MobileDgn/Utils/Utils.h>
+#include <DgnClientFx/DgnClientFxCommon.h>
+#include <DgnClientFx/Utils/Utils.h>
 
 #include <WebServices/Client/ObjectId.h>
 #include <WebServices/Client/WebServicesClient.h>
@@ -29,8 +29,8 @@
 #include "ServerInfoProvider.h"
 #include "Utils.h"
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #endif // __CLIENTINTERNAL_H__

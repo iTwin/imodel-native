@@ -9,14 +9,14 @@
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Connect/IConnectAuthenticationPersistence.h>
-#include <MobileDgn/MobileDgnApplication.h>
-#include <MobileDgn/Utils/SecureStore.h>
+#include <DgnClientFx/DgnClientApp.h>
+#include <DgnClientFx/Utils/SecureStore.h>
 #include <mutex>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014

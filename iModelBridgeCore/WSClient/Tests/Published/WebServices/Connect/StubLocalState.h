@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include <MobileDgn/MobileDgnApplication.h>
+#include <DgnClientFx/DgnClientApp.h>
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014

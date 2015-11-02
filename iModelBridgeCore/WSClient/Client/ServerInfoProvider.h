@@ -8,15 +8,15 @@
 #pragma once
 
 #include <WebServices/Client/WSClient.h>
-#include <MobileDgn/Utils/Threading/WorkerThread.h>
-#include <MobileDgn/Utils/Threading/AsyncTask.h>
+#include <DgnClientFx/Utils/Threading/WorkerThread.h>
+#include <DgnClientFx/Utils/Threading/AsyncTask.h>
 #include <set>
 
 #include "ClientConnection.h"
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 typedef AsyncResult<WSInfo, HttpResponse> WSInfoHttpResult;
 

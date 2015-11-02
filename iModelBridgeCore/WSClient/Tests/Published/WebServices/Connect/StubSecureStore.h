@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include <MobileDgn/Utils/SecureStore.h>
+#include <DgnClientFx/Utils/SecureStore.h>
 
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    06/2015
