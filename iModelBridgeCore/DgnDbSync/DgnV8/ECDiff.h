@@ -214,7 +214,6 @@ private:
 private:
     ECDiff(ECN::ECSchemaR left, ECN::ECSchemaR right, ECDiffNodeP diff, DiffStatus status);
     ECDiffNodeP GetRoot();
-//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     //! Gets left ECSchema as passed at the time of diff.
