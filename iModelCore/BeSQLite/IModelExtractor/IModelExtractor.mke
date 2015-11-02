@@ -5,20 +5,11 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
-%if !defined (BuildContext)
-   %error This makefile must be launched from BentleyBuild
-%endif
-
-PolicyFile = $(InternalSystemPolicy)
-%include $(SrcRoot)bsicommon\sharedmki\CommonCompileLinkPolicy.mki
+%include mdl.mki
 
 srcDir              = $(_MakeFilePath)
-SubpartLibs         = $(BuildContext)SubParts/Libs/
 o                   = $(OutputRootDir)Build/IModelExtractor/
-ContextDeliveryDir  = $(BuildContext)Delivery/
 appName             = imodel
-
-%include mdl.mki
 
 always:
     ~mkdir $(o)
@@ -35,10 +26,10 @@ EXE_NAME            = $(appName)
 EXE_OBJS            = $(MultiCompileObjectList)
 EXE_LOPT1           = -entry:wmainCRTStartup
 
-LINKER_LIBRARIES    = $(BuildContext)SubParts/Libs/Bentley.lib
-LINKER_LIBRARIES    + $(BuildContext)SubParts/Libs/BentleyAllocator.lib
-LINKER_LIBRARIES    + $(BuildContext)SubParts/Libs/BeSQLite.lib $(BuildContext)SubParts/Libs/BeZlib$(libext)
-LINKER_LIBRARIES    + $(BuildContext)SubParts/Libs/BeIcu4c.lib
+LINKER_LIBRARIES    = $(ContextSubpartsLibs)Bentley.lib
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)BentleyAllocator.lib
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeSQLite.lib $(ContextSubpartsLibs)BeZlib$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeIcu4c.lib
 LINKER_LIBRARIES    + $(CLibs)
 
 %include $(SharedMki)linktool.mki
