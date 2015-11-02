@@ -549,11 +549,11 @@ SQLITE_PRIVATE Expr *sqlite3PExpr(
   const Token *pToken     /* Argument token */
 ){
   Expr *p;
-  if( op==TK_AND && pLeft && pRight && pParse->nErr==0 ){
+  if( op==TK_AND && pParse->nErr==0 ){
     /* Take advantage of short-circuit false optimization for AND */
     p = sqlite3ExprAnd(pParse->db, pLeft, pRight);
   }else{
-    p = sqlite3ExprAlloc(pParse->db, op, pToken, 1);
+    p = sqlite3ExprAlloc(pParse->db, op & TKFLG_MASK, pToken, 1);
     sqlite3ExprAttachSubtrees(pParse->db, p, pLeft, pRight);
   }
   if( p ) {
@@ -1415,6 +1415,22 @@ SQLITE_PRIVATE int sqlite3ExprIsConstantOrFunction(Expr *p, u8 isInit){
   assert( isInit==0 || isInit==1 );
   return exprIsConst(p, 4+isInit, 0);
 }
+
+#ifdef SQLITE_ENABLE_CURSOR_HINTS
+/*
+** Walk an expression tree.  Return 1 if the expression contains a
+** subquery of some kind.  Return 0 if there are no subqueries.
+*/
+SQLITE_PRIVATE int sqlite3ExprContainsSubquery(Expr *p){
+  Walker w;
+  memset(&w, 0, sizeof(w));
+  w.eCode = 1;
+  w.xExprCallback = sqlite3ExprWalkNoop;
+  w.xSelectCallback = selectNodeIsConstant;
+  sqlite3WalkExpr(&w, p);
+  return w.eCode==0;
+}
+#endif
 
 /*
 ** If the expression p codes a constant integer that is small enough
@@ -2482,9 +2498,12 @@ SQLITE_PRIVATE void sqlite3ExprCodeGetColumnOfTable(
 
 /*
 ** Generate code that will extract the iColumn-th column from
-** table pTab and store the column value in a register.  An effort
-** is made to store the column value in register iReg, but this is
-** not guaranteed.  The location of the column value is returned.
+** table pTab and store the column value in a register. 
+**
+** An effort is made to store the column value in register iReg.  This
+** is not garanteeed for GetColumn() - the result can be stored in
+** any register.  But the result is guaranteed to land in register iReg
+** for GetColumnToReg().
 **
 ** There must be an open cursor to pTab in iTable when this routine
 ** is called.  If iColumn<0 then code is generated that extracts the rowid.
@@ -2495,7 +2514,7 @@ SQLITE_PRIVATE int sqlite3ExprCodeGetColumn(
   int iColumn,     /* Index of the table column */
   int iTable,      /* The cursor pointing to the table */
   int iReg,        /* Store results here */
-  u8 p5            /* P5 value for OP_Column */
+  u8 p5            /* P5 value for OP_Column + FLAGS */
 ){
   Vdbe *v = pParse->pVdbe;
   int i;
@@ -2517,6 +2536,17 @@ SQLITE_PRIVATE int sqlite3ExprCodeGetColumn(
   }
   return iReg;
 }
+SQLITE_PRIVATE void sqlite3ExprCodeGetColumnToReg(
+  Parse *pParse,   /* Parsing and code generating context */
+  Table *pTab,     /* Description of the table we are reading from */
+  int iColumn,     /* Index of the table column */
+  int iTable,      /* The cursor pointing to the table */
+  int iReg         /* Store results here */
+){
+  int r1 = sqlite3ExprCodeGetColumn(pParse, pTab, iColumn, iTable, iReg, 0);
+  if( r1!=iReg ) sqlite3VdbeAddOp2(pParse->pVdbe, OP_SCopy, r1, iReg);
+}
+
 
 /*
 ** Clear all column cache entries.
@@ -3343,6 +3373,10 @@ SQLITE_PRIVATE void sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr, int targ
 **
 ** The SQLITE_ECEL_FACTOR argument allows constant arguments to be
 ** factored out into initialization code.
+**
+** The SQLITE_ECEL_REF flag means that expressions in the list with
+** ExprList.a[].u.x.iOrderByCol>0 have already been evaluated and stored
+** in registers at srcReg, and so the value can be copied from there.
 */
 SQLITE_PRIVATE int sqlite3ExprCodeExprList(
   Parse *pParse,     /* Parsing context */
@@ -13176,12 +13210,13 @@ SQLITE_PRIVATE void sqlite3DeleteFrom(
     */
     if( !isView ){
       int iAddrOnce = 0;
+      u8 p5 = (eOnePass==ONEPASS_OFF ? 0 : OPFLAG_FORDELETE);
       if( eOnePass==ONEPASS_MULTI ){
         iAddrOnce = sqlite3CodeOnce(pParse); VdbeCoverage(v);
       }
       testcase( IsVirtual(pTab) );
-      sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, iTabCur, aToOpen,
-                                 &iDataCur, &iIdxCur);
+      sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, p5, iTabCur, 
+                                 aToOpen, &iDataCur, &iIdxCur);
       assert( pPk || IsVirtual(pTab) || iDataCur==iTabCur );
       assert( pPk || IsVirtual(pTab) || iIdxCur==iDataCur+1 );
       if( eOnePass==ONEPASS_MULTI ) sqlite3VdbeJumpHere(v, iAddrOnce);
@@ -17572,7 +17607,7 @@ SQLITE_PRIVATE void sqlite3Insert(
   /* If this is not a view, open the table and and all indices */
   if( !isView ){
     int nIdx;
-    nIdx = sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, -1, 0,
+    nIdx = sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, 0, -1, 0,
                                       &iDataCur, &iIdxCur);
     aRegIdx = sqlite3DbMallocRaw(db, sizeof(int)*(nIdx+1));
     if( aRegIdx==0 ){
@@ -18241,7 +18276,7 @@ SQLITE_PRIVATE void sqlite3GenerateConstraintChecks(
         }else{
           x = iField + regNewData + 1;
         }
-        sqlite3VdbeAddOp2(v, OP_SCopy, x, regIdx+i);
+        sqlite3VdbeAddOp2(v, iField<0 ? OP_IntCopy : OP_SCopy, x, regIdx+i);
         VdbeComment((v, "%s", iField<0 ? "rowid" : pTab->aCol[iField].zName));
       }
     }
@@ -18469,6 +18504,7 @@ SQLITE_PRIVATE int sqlite3OpenTableAndIndices(
   Parse *pParse,   /* Parsing context */
   Table *pTab,     /* Table to be opened */
   int op,          /* OP_OpenRead or OP_OpenWrite */
+  u8 p5,           /* P5 value for OP_Open* instructions */
   int iBase,       /* Use this for the table cursor, if there is one */
   u8 *aToOpen,     /* If not NULL: boolean for each table and index */
   int *piDataCur,  /* Write the database source cursor number here */
@@ -18481,6 +18517,7 @@ SQLITE_PRIVATE int sqlite3OpenTableAndIndices(
   Vdbe *v;
 
   assert( op==OP_OpenRead || op==OP_OpenWrite );
+  assert( op==OP_OpenWrite || p5==0 );
   if( IsVirtual(pTab) ){
     /* This routine is a no-op for virtual tables. Leave the output
     ** variables *piDataCur and *piIdxCur uninitialized so that valgrind
@@ -18508,6 +18545,7 @@ SQLITE_PRIVATE int sqlite3OpenTableAndIndices(
     if( aToOpen==0 || aToOpen[i+1] ){
       sqlite3VdbeAddOp3(v, op, iIdxCur, pIdx->tnum, iDb);
       sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
+      sqlite3VdbeChangeP5(v, p5);
       VdbeComment((v, "%s", pIdx->zName));
     }
   }
@@ -20215,7 +20253,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_enable_load_extension(sqlite3 *db, int ono
 ** dummy pointer.
 */
 #ifdef SQLITE_OMIT_LOAD_EXTENSION
-static const sqlite3_api_routines sqlite3Apis;
+static const sqlite3_api_routines sqlite3Apis = { 0 };
 #endif
 
 
@@ -22313,7 +22351,7 @@ SQLITE_PRIVATE void sqlite3Pragma(
         sqlite3VdbeAddOp2(v, OP_Halt, 0, 0);
         sqlite3VdbeJumpHere(v, addr);
         sqlite3ExprCacheClear(pParse);
-        sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenRead,
+        sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenRead, 0,
                                    1, 0, &iDataCur, &iIdxCur);
         sqlite3VdbeAddOp2(v, OP_Integer, 0, 7);
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
@@ -28124,7 +28162,7 @@ static int selectExpander(Walker *pWalker, Select *p){
 ** Walker.xSelectCallback is set to do something useful for every 
 ** subquery in the parser tree.
 */
-static int exprWalkNoop(Walker *NotUsed, Expr *NotUsed2){
+SQLITE_PRIVATE int sqlite3ExprWalkNoop(Walker *NotUsed, Expr *NotUsed2){
   UNUSED_PARAMETER2(NotUsed, NotUsed2);
   return WRC_Continue;
 }
@@ -28145,7 +28183,7 @@ static int exprWalkNoop(Walker *NotUsed, Expr *NotUsed2){
 static void sqlite3SelectExpand(Parse *pParse, Select *pSelect){
   Walker w;
   memset(&w, 0, sizeof(w));
-  w.xExprCallback = exprWalkNoop;
+  w.xExprCallback = sqlite3ExprWalkNoop;
   w.pParse = pParse;
   if( pParse->hasCompound ){
     w.xSelectCallback = convertCompoundSelectToSubquery;
@@ -28212,7 +28250,7 @@ static void sqlite3SelectAddTypeInfo(Parse *pParse, Select *pSelect){
   Walker w;
   memset(&w, 0, sizeof(w));
   w.xSelectCallback2 = selectAddSubqueryTypeInfo;
-  w.xExprCallback = exprWalkNoop;
+  w.xExprCallback = sqlite3ExprWalkNoop;
   w.pParse = pParse;
   sqlite3WalkSelect(&w, pSelect);
 #endif
@@ -28967,13 +29005,8 @@ SQLITE_PRIVATE int sqlite3Select(
           struct AggInfo_col *pCol = &sAggInfo.aCol[i];
           if( pCol->iSorterColumn>=j ){
             int r1 = j + regBase;
-            int r2;
-
-            r2 = sqlite3ExprCodeGetColumn(pParse, 
-                               pCol->pTab, pCol->iColumn, pCol->iTable, r1, 0);
-            if( r1!=r2 ){
-              sqlite3VdbeAddOp2(v, OP_SCopy, r2, r1);
-            }
+            sqlite3ExprCodeGetColumnToReg(pParse, 
+                               pCol->pTab, pCol->iColumn, pCol->iTable, r1);
             j++;
           }
         }
@@ -31045,7 +31078,7 @@ SQLITE_PRIVATE void sqlite3Update(
       if( aiCurOnePass[0]>=0 ) aToOpen[aiCurOnePass[0]-iBaseCur] = 0;
       if( aiCurOnePass[1]>=0 ) aToOpen[aiCurOnePass[1]-iBaseCur] = 0;
     }
-    sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, iBaseCur, aToOpen,
+    sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, 0, iBaseCur, aToOpen,
                                0, 0);
   }
 
@@ -31138,7 +31171,7 @@ SQLITE_PRIVATE void sqlite3Update(
         */
         testcase( i==31 );
         testcase( i==32 );
-        sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, i, regNew+i);
+        sqlite3ExprCodeGetColumnToReg(pParse, pTab, i, iDataCur, regNew+i);
       }else{
         sqlite3VdbeAddOp2(v, OP_Null, 0, regNew+i);
       }

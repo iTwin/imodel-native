@@ -2342,6 +2342,154 @@ static void whereLikeOptimizationStringFixup(
   }
 }
 
+#ifdef SQLITE_ENABLE_CURSOR_HINTS
+/*
+** Information is passed from codeCursorHint() down to individual nodes of
+** the expression tree (by sqlite3WalkExpr()) using an instance of this
+** structure.
+*/
+struct CCurHint {
+  int iTabCur;    /* Cursor for the main table */
+  int iIdxCur;    /* Cursor for the index, if pIdx!=0.  Unused otherwise */
+  Index *pIdx;    /* The index used to access the table */
+};
+
+/*
+** This function is called for every node of an expression that is a candidate
+** for a cursor hint on an index cursor.  For TK_COLUMN nodes that reference
+** the table CCurHint.iTabCur, verify that the same column can be
+** accessed through the index.  If it cannot, then set pWalker->eCode to 1.
+*/
+static int codeCursorHintCheckExpr(Walker *pWalker, Expr *pExpr){
+  struct CCurHint *pHint = pWalker->u.pCCurHint;
+  assert( pHint->pIdx!=0 );
+  if( pExpr->op==TK_COLUMN
+   && pExpr->iTable==pHint->iTabCur
+   && sqlite3ColumnOfIndex(pHint->pIdx, pExpr->iColumn)<0
+  ){
+    pWalker->eCode = 1;
+  }
+  return WRC_Continue;
+}
+
+
+/*
+** This function is called on every node of an expression tree used as an
+** argument to the OP_CursorHint instruction. If the node is a TK_COLUMN
+** that accesses any table other than the one identified by
+** CCurHint.iTabCur, then do the following:
+**
+**   1) allocate a register and code an OP_Column instruction to read 
+**      the specified column into the new register, and
+**
+**   2) transform the expression node to a TK_REGISTER node that reads 
+**      from the newly populated register.
+**
+** Also, if the node is a TK_COLUMN that does access the table idenified
+** by pCCurHint.iTabCur, and an index is being used (which we will
+** know because CCurHint.pIdx!=0) then transform the TK_COLUMN into
+** an access of the index rather than the original table.
+*/
+static int codeCursorHintFixExpr(Walker *pWalker, Expr *pExpr){
+  int rc = WRC_Continue;
+  struct CCurHint *pHint = pWalker->u.pCCurHint;
+  if( pExpr->op==TK_COLUMN ){
+    if( pExpr->iTable!=pHint->iTabCur ){
+      Vdbe *v = pWalker->pParse->pVdbe;
+      int reg = ++pWalker->pParse->nMem;   /* Register for column value */
+      sqlite3ExprCodeGetColumnOfTable(
+          v, pExpr->pTab, pExpr->iTable, pExpr->iColumn, reg
+      );
+      pExpr->op = TK_REGISTER;
+      pExpr->iTable = reg;
+    }else if( pHint->pIdx!=0 ){
+      pExpr->iTable = pHint->iIdxCur;
+      pExpr->iColumn = sqlite3ColumnOfIndex(pHint->pIdx, pExpr->iColumn);
+      assert( pExpr->iColumn>=0 );
+    }
+  }else if( pExpr->op==TK_AGG_FUNCTION ){
+    /* An aggregate function in the WHERE clause of a query means this must
+    ** be a correlated sub-query, and expression pExpr is an aggregate from
+    ** the parent context. Do not walk the function arguments in this case.
+    **
+    ** todo: It should be possible to replace this node with a TK_REGISTER
+    ** expression, as the result of the expression must be stored in a 
+    ** register at this point. The same holds for TK_AGG_COLUMN nodes. */
+    rc = WRC_Prune;
+  }
+  return rc;
+}
+
+/*
+** Insert an OP_CursorHint instruction if it is appropriate to do so.
+*/
+static void codeCursorHint(
+  WhereInfo *pWInfo,    /* The where clause */
+  WhereLevel *pLevel,   /* Which loop to provide hints for */
+  WhereTerm *pEndRange  /* Hint this end-of-scan boundary term if not NULL */
+){
+  Parse *pParse = pWInfo->pParse;
+  sqlite3 *db = pParse->db;
+  Vdbe *v = pParse->pVdbe;
+  Expr *pExpr = 0;
+  WhereLoop *pLoop = pLevel->pWLoop;
+  int iCur;
+  WhereClause *pWC;
+  WhereTerm *pTerm;
+  int i, j;
+  struct CCurHint sHint;
+  Walker sWalker;
+
+  if( OptimizationDisabled(db, SQLITE_CursorHints) ) return;
+  iCur = pLevel->iTabCur;
+  assert( iCur==pWInfo->pTabList->a[pLevel->iFrom].iCursor );
+  sHint.iTabCur = iCur;
+  sHint.iIdxCur = pLevel->iIdxCur;
+  sHint.pIdx = pLoop->u.btree.pIndex;
+  memset(&sWalker, 0, sizeof(sWalker));
+  sWalker.pParse = pParse;
+  sWalker.u.pCCurHint = &sHint;
+  pWC = &pWInfo->sWC;
+  for(i=0; i<pWC->nTerm; i++){
+    pTerm = &pWC->a[i];
+    if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
+    if( pTerm->prereqAll & pLevel->notReady ) continue;
+    if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) continue;
+
+    /* All terms in pWLoop->aLTerm[] except pEndRange are used to initialize
+    ** the cursor.  These terms are not needed as hints for a pure range
+    ** scan (that has no == terms) so omit them. */
+    if( pLoop->u.btree.nEq==0 && pTerm!=pEndRange ){
+      for(j=0; j<pLoop->nLTerm && pLoop->aLTerm[j]!=pTerm; j++){}
+      if( j<pLoop->nLTerm ) continue;
+    }
+
+    /* No subqueries or non-deterministic functions allowed */
+    if( sqlite3ExprContainsSubquery(pTerm->pExpr) ) continue;
+
+    /* For an index scan, make sure referenced columns are actually in
+    ** the index. */
+    if( sHint.pIdx!=0 ){
+      sWalker.eCode = 0;
+      sWalker.xExprCallback = codeCursorHintCheckExpr;
+      sqlite3WalkExpr(&sWalker, pTerm->pExpr);
+      if( sWalker.eCode ) continue;
+    }
+
+    /* If we survive all prior tests, that means this term is worth hinting */
+    pExpr = sqlite3ExprAnd(db, pExpr, sqlite3ExprDup(db, pTerm->pExpr, 0));
+  }
+  if( pExpr!=0 ){
+    sWalker.xExprCallback = codeCursorHintFixExpr;
+    sqlite3WalkExpr(&sWalker, pExpr);
+    sqlite3VdbeAddOp4(v, OP_CursorHint, 
+                      (sHint.pIdx ? sHint.iIdxCur : sHint.iTabCur), 0, 0,
+                      (const char*)pExpr, P4_EXPR);
+  }
+}
+#else
+# define codeCursorHint(A,B,C)  /* No-op */
+#endif /* SQLITE_ENABLE_CURSOR_HINTS */
 
 /*
 ** Generate code for the start of the iLevel-th loop in the WHERE clause
@@ -2506,6 +2654,7 @@ SQLITE_PRIVATE Bitmask sqlite3WhereCodeOneLoopStart(
       pStart = pEnd;
       pEnd = pTerm;
     }
+    codeCursorHint(pWInfo, pLevel, pEnd);
     if( pStart ){
       Expr *pX;             /* The expression that defines the start bound */
       int r1, rTemp;        /* Registers for holding the start boundary */
@@ -2699,15 +2848,6 @@ SQLITE_PRIVATE Bitmask sqlite3WhereCodeOneLoopStart(
     }
     assert( pRangeEnd==0 || (pRangeEnd->wtFlags & TERM_VNULL)==0 );
 
-    /* Generate code to evaluate all constraint terms using == or IN
-    ** and store the values of those terms in an array of registers
-    ** starting at regBase.
-    */
-    regBase = codeAllEqualityTerms(pParse,pLevel,bRev,nExtraReg,&zStartAff);
-    assert( zStartAff==0 || sqlite3Strlen30(zStartAff)>=nEq );
-    if( zStartAff ) cEndAff = zStartAff[nEq];
-    addrNxt = pLevel->addrNxt;
-
     /* If we are doing a reverse order scan on an ascending index, or
     ** a forward order scan on a descending index, interchange the 
     ** start and end terms (pRangeStart and pRangeEnd).
@@ -2718,6 +2858,16 @@ SQLITE_PRIVATE Bitmask sqlite3WhereCodeOneLoopStart(
       SWAP(WhereTerm *, pRangeEnd, pRangeStart);
       SWAP(u8, bSeekPastNull, bStopAtNull);
     }
+
+    /* Generate code to evaluate all constraint terms using == or IN
+    ** and store the values of those terms in an array of registers
+    ** starting at regBase.
+    */
+    codeCursorHint(pWInfo, pLevel, pRangeEnd);
+    regBase = codeAllEqualityTerms(pParse,pLevel,bRev,nExtraReg,&zStartAff);
+    assert( zStartAff==0 || sqlite3Strlen30(zStartAff)>=nEq );
+    if( zStartAff ) cEndAff = zStartAff[nEq];
+    addrNxt = pLevel->addrNxt;
 
     testcase( pRangeStart && (pRangeStart->eOperator & WO_LE)!=0 );
     testcase( pRangeStart && (pRangeStart->eOperator & WO_GE)!=0 );
@@ -3001,7 +3151,7 @@ SQLITE_PRIVATE Bitmask sqlite3WhereCodeOneLoopStart(
         pAndExpr = sqlite3ExprAnd(db, pAndExpr, pExpr);
       }
       if( pAndExpr ){
-        pAndExpr = sqlite3PExpr(pParse, TK_AND, 0, pAndExpr, 0);
+        pAndExpr = sqlite3PExpr(pParse, TK_AND|TKFLG_DONTFOLD, 0, pAndExpr, 0);
       }
     }
 
@@ -3057,11 +3207,7 @@ SQLITE_PRIVATE Bitmask sqlite3WhereCodeOneLoopStart(
               r = sqlite3GetTempRange(pParse, nPk);
               for(iPk=0; iPk<nPk; iPk++){
                 int iCol = pPk->aiColumn[iPk];
-                int rx;
-                rx = sqlite3ExprCodeGetColumn(pParse, pTab, iCol, iCur,r+iPk,0);
-                if( rx!=r+iPk ){
-                  sqlite3VdbeAddOp2(v, OP_SCopy, rx, r+iPk);
-                }
+                sqlite3ExprCodeGetColumnToReg(pParse, pTab, iCol, iCur, r+iPk);
               }
 
               /* Check if the temp table already contains this key. If so,
@@ -3161,6 +3307,7 @@ SQLITE_PRIVATE Bitmask sqlite3WhereCodeOneLoopStart(
       ** a pseudo-cursor.  No need to Rewind or Next such cursors. */
       pLevel->op = OP_Noop;
     }else{
+      codeCursorHint(pWInfo, pLevel, 0);
       pLevel->op = aStep[bRev];
       pLevel->p1 = iCur;
       pLevel->p2 = 1 + sqlite3VdbeAddOp2(v, aStart[bRev], iCur, addrBrk);
@@ -5093,14 +5240,20 @@ static LogEst estLog(LogEst N){
 ** Convert OP_Column opcodes to OP_Copy in previously generated code.
 **
 ** This routine runs over generated VDBE code and translates OP_Column
-** opcodes into OP_Copy, and OP_Rowid into OP_Null, when the table is being
-** accessed via co-routine instead of via table lookup.
+** opcodes into OP_Copy when the table is being accessed via co-routine 
+** instead of via table lookup.
+**
+** If the bIncrRowid parameter is 0, then any OP_Rowid instructions on
+** cursor iTabCur are transformed into OP_Null. Or, if bIncrRowid is non-zero,
+** then each OP_Rowid is transformed into an instruction to increment the
+** value stored in its output register.
 */
 static void translateColumnToCopy(
   Vdbe *v,            /* The VDBE containing code to translate */
   int iStart,         /* Translate from this opcode to the end */
   int iTabCur,        /* OP_Column/OP_Rowid references to this table */
-  int iRegister       /* The first column is in this register */
+  int iRegister,      /* The first column is in this register */
+  int bIncrRowid      /* If non-zero, transform OP_rowid to OP_AddImm(1) */
 ){
   VdbeOp *pOp = sqlite3VdbeGetOp(v, iStart);
   int iEnd = sqlite3VdbeCurrentAddr(v);
@@ -5112,9 +5265,16 @@ static void translateColumnToCopy(
       pOp->p2 = pOp->p3;
       pOp->p3 = 0;
     }else if( pOp->opcode==OP_Rowid ){
-      pOp->opcode = OP_Null;
-      pOp->p1 = 0;
-      pOp->p3 = 0;
+      if( bIncrRowid ){
+        /* Increment the value stored in the P2 operand of the OP_Rowid. */
+        pOp->opcode = OP_AddImm;
+        pOp->p1 = pOp->p2;
+        pOp->p2 = 1;
+      }else{
+        pOp->opcode = OP_Null;
+        pOp->p1 = 0;
+        pOp->p3 = 0;
+      }
     }
   }
 }
@@ -5222,6 +5382,8 @@ static void constructAutomaticIndex(
   Expr *pPartial = 0;         /* Partial Index Expression */
   int iContinue = 0;          /* Jump here to skip excluded rows */
   struct SrcList_item *pTabItem;  /* FROM clause term being indexed */
+  int addrCounter = 0;        /* Address where integer counter is initialized */
+  int regBase;                /* Array of registers where record is assembled */
 
   /* Generate code to skip over the creation and initialization of the
   ** transient index on 2nd and subsequent iterations of the loop. */
@@ -5350,6 +5512,7 @@ static void constructAutomaticIndex(
   pTabItem = &pWC->pWInfo->pTabList->a[pLevel->iFrom];
   if( pTabItem->fg.viaCoroutine ){
     int regYield = pTabItem->regReturn;
+    addrCounter = sqlite3VdbeAddOp2(v, OP_Integer, 0, 0);
     sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, pTabItem->addrFillSub);
     addrTop =  sqlite3VdbeAddOp1(v, OP_Yield, regYield);
     VdbeCoverage(v);
@@ -5363,12 +5526,15 @@ static void constructAutomaticIndex(
     pLoop->wsFlags |= WHERE_PARTIALIDX;
   }
   regRecord = sqlite3GetTempReg(pParse);
-  sqlite3GenerateIndexKey(pParse, pIdx, pLevel->iTabCur, regRecord, 0, 0, 0, 0);
+  regBase = sqlite3GenerateIndexKey(
+      pParse, pIdx, pLevel->iTabCur, regRecord, 0, 0, 0, 0
+  );
   sqlite3VdbeAddOp2(v, OP_IdxInsert, pLevel->iIdxCur, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   if( pPartial ) sqlite3VdbeResolveLabel(v, iContinue);
   if( pTabItem->fg.viaCoroutine ){
-    translateColumnToCopy(v, addrTop, pLevel->iTabCur, pTabItem->regResult);
+    sqlite3VdbeChangeP2(v, addrCounter, regBase+n);
+    translateColumnToCopy(v, addrTop, pLevel->iTabCur, pTabItem->regResult, 1);
     sqlite3VdbeGoto(v, addrTop);
     pTabItem->fg.viaCoroutine = 0;
   }else{
@@ -8599,6 +8765,7 @@ SQLITE_PRIVATE WhereInfo *sqlite3WhereBegin(
   int ii;                    /* Loop counter */
   sqlite3 *db;               /* Database connection */
   int rc;                    /* Return code */
+  u8 bFordelete = 0;
 
   assert( (wctrlFlags & WHERE_ONEPASS_MULTIROW)==0 || (
         (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 
@@ -8854,8 +9021,11 @@ SQLITE_PRIVATE WhereInfo *sqlite3WhereBegin(
        && 0==(wsFlags & WHERE_VIRTUALTABLE)
     )){
       pWInfo->eOnePass = bOnerow ? ONEPASS_SINGLE : ONEPASS_MULTI;
-      if( HasRowid(pTabList->a[0].pTab) ){
-        pWInfo->a[0].pWLoop->wsFlags &= ~WHERE_IDX_ONLY;
+      if( HasRowid(pTabList->a[0].pTab) && (wsFlags & WHERE_IDX_ONLY) ){
+        if( wctrlFlags & WHERE_ONEPASS_MULTIROW ){
+          bFordelete = OPFLAG_FORDELETE;
+        }
+        pWInfo->a[0].pWLoop->wsFlags = (wsFlags & ~WHERE_IDX_ONLY);
       }
     }
   }
@@ -8902,6 +9072,14 @@ SQLITE_PRIVATE WhereInfo *sqlite3WhereBegin(
         sqlite3VdbeChangeP4(v, sqlite3VdbeCurrentAddr(v)-1, 
                             SQLITE_INT_TO_PTR(n), P4_INT32);
         assert( n<=pTab->nCol );
+      }
+#ifdef SQLITE_ENABLE_CURSOR_HINTS
+      if( pLoop->u.btree.pIndex!=0 ){
+        sqlite3VdbeChangeP5(v, OPFLAG_SEEKEQ|bFordelete);
+      }else
+#endif
+      {
+        sqlite3VdbeChangeP5(v, bFordelete);
       }
 #ifdef SQLITE_ENABLE_COLUMN_USED_MASK
       sqlite3VdbeAddOp4Dup8(v, OP_ColumnsUsed, pTabItem->iCursor, 0, 0,
@@ -9117,7 +9295,7 @@ SQLITE_PRIVATE void sqlite3WhereEnd(WhereInfo *pWInfo){
     */
     if( pTabItem->fg.viaCoroutine && !db->mallocFailed ){
       translateColumnToCopy(v, pLevel->addrBody, pLevel->iTabCur,
-                            pTabItem->regResult);
+                            pTabItem->regResult, 0);
       continue;
     }
 
@@ -9313,6 +9491,13 @@ struct AttachKey { int type;  Token key; };
     pOut->pExpr = sqlite3PExpr(pParse, op, pLeft->pExpr, pRight->pExpr, 0);
     pOut->zStart = pLeft->zStart;
     pOut->zEnd = pRight->zEnd;
+  }
+
+  /* If doNot is true, then add a TK_NOT Expr-node wrapper around the
+  ** outside of *ppExpr.
+  */
+  static void exprNot(Parse *pParse, int doNot, Expr **ppExpr){
+    if( doNot ) *ppExpr = sqlite3PExpr(pParse, TK_NOT, *ppExpr, 0, 0);
   }
 
   /* Construct an expression node for a unary postfix operator
@@ -12078,7 +12263,7 @@ static void yy_reduce(
   pList = sqlite3ExprListAppend(pParse,0, yymsp[0].minor.yy346.pExpr);
   pList = sqlite3ExprListAppend(pParse,pList, yymsp[-2].minor.yy346.pExpr);
   yygotominor.yy346.pExpr = sqlite3ExprFunction(pParse, pList, &yymsp[-1].minor.yy96.eOperator);
-  if( yymsp[-1].minor.yy96.bNot ) yygotominor.yy346.pExpr = sqlite3PExpr(pParse, TK_NOT, yygotominor.yy346.pExpr, 0, 0);
+  exprNot(pParse, yymsp[-1].minor.yy96.bNot, &yygotominor.yy346.pExpr);
   yygotominor.yy346.zStart = yymsp[-2].minor.yy346.zStart;
   yygotominor.yy346.zEnd = yymsp[0].minor.yy346.zEnd;
   if( yygotominor.yy346.pExpr ) yygotominor.yy346.pExpr->flags |= EP_InfixFunc;
@@ -12091,7 +12276,7 @@ static void yy_reduce(
   pList = sqlite3ExprListAppend(pParse,pList, yymsp[-4].minor.yy346.pExpr);
   pList = sqlite3ExprListAppend(pParse,pList, yymsp[0].minor.yy346.pExpr);
   yygotominor.yy346.pExpr = sqlite3ExprFunction(pParse, pList, &yymsp[-3].minor.yy96.eOperator);
-  if( yymsp[-3].minor.yy96.bNot ) yygotominor.yy346.pExpr = sqlite3PExpr(pParse, TK_NOT, yygotominor.yy346.pExpr, 0, 0);
+  exprNot(pParse, yymsp[-3].minor.yy96.bNot, &yygotominor.yy346.pExpr);
   yygotominor.yy346.zStart = yymsp[-4].minor.yy346.zStart;
   yygotominor.yy346.zEnd = yymsp[0].minor.yy346.zEnd;
   if( yygotominor.yy346.pExpr ) yygotominor.yy346.pExpr->flags |= EP_InfixFunc;
@@ -12135,7 +12320,7 @@ static void yy_reduce(
   }else{
     sqlite3ExprListDelete(pParse->db, pList);
   } 
-  if( yymsp[-3].minor.yy328 ) yygotominor.yy346.pExpr = sqlite3PExpr(pParse, TK_NOT, yygotominor.yy346.pExpr, 0, 0);
+  exprNot(pParse, yymsp[-3].minor.yy328, &yygotominor.yy346.pExpr);
   yygotominor.yy346.zStart = yymsp[-4].minor.yy346.zStart;
   yygotominor.yy346.zEnd = yymsp[0].minor.yy346.zEnd;
 }
@@ -12188,7 +12373,7 @@ static void yy_reduce(
       }else{
         sqlite3ExprListDelete(pParse->db, yymsp[-1].minor.yy14);
       }
-      if( yymsp[-3].minor.yy328 ) yygotominor.yy346.pExpr = sqlite3PExpr(pParse, TK_NOT, yygotominor.yy346.pExpr, 0, 0);
+      exprNot(pParse, yymsp[-3].minor.yy328, &yygotominor.yy346.pExpr);
     }
     yygotominor.yy346.zStart = yymsp[-4].minor.yy346.zStart;
     yygotominor.yy346.zEnd = &yymsp[0].minor.yy0.z[yymsp[0].minor.yy0.n];
@@ -12218,7 +12403,7 @@ static void yy_reduce(
     }else{
       sqlite3SelectDelete(pParse->db, yymsp[-1].minor.yy3);
     }
-    if( yymsp[-3].minor.yy328 ) yygotominor.yy346.pExpr = sqlite3PExpr(pParse, TK_NOT, yygotominor.yy346.pExpr, 0, 0);
+    exprNot(pParse, yymsp[-3].minor.yy328, &yygotominor.yy346.pExpr);
     yygotominor.yy346.zStart = yymsp[-4].minor.yy346.zStart;
     yygotominor.yy346.zEnd = &yymsp[0].minor.yy0.z[yymsp[0].minor.yy0.n];
   }
@@ -12234,7 +12419,7 @@ static void yy_reduce(
     }else{
       sqlite3SrcListDelete(pParse->db, pSrc);
     }
-    if( yymsp[-2].minor.yy328 ) yygotominor.yy346.pExpr = sqlite3PExpr(pParse, TK_NOT, yygotominor.yy346.pExpr, 0, 0);
+    exprNot(pParse, yymsp[-2].minor.yy328, &yygotominor.yy346.pExpr);
     yygotominor.yy346.zStart = yymsp[-3].minor.yy346.zStart;
     yygotominor.yy346.zEnd = yymsp[0].minor.yy0.z ? &yymsp[0].minor.yy0.z[yymsp[0].minor.yy0.n] : &yymsp[-1].minor.yy0.z[yymsp[-1].minor.yy0.n];
   }
@@ -13572,7 +13757,7 @@ abort_parse:
   }
 #ifdef YYTRACKMAXSTACKDEPTH
   sqlite3_mutex_enter(sqlite3MallocMutex());
-  sqlite3StatusSet(SQLITE_STATUS_PARSER_STACK,
+  sqlite3StatusHighwater(SQLITE_STATUS_PARSER_STACK,
       sqlite3ParserStackPeak(pEngine)
   );
   sqlite3_mutex_leave(sqlite3MallocMutex());
@@ -14759,6 +14944,36 @@ SQLITE_API int SQLITE_STDCALL sqlite3_db_release_memory(sqlite3 *db){
   sqlite3BtreeLeaveAll(db);
   sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
+}
+
+/*
+** Flush any dirty pages in the pager-cache for any attached database
+** to disk.
+*/
+SQLITE_API int SQLITE_STDCALL sqlite3_db_cacheflush(sqlite3 *db){
+  int i;
+  int rc = SQLITE_OK;
+  int bSeenBusy = 0;
+
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
+#endif
+  sqlite3_mutex_enter(db->mutex);
+  sqlite3BtreeEnterAll(db);
+  for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
+    Btree *pBt = db->aDb[i].pBt;
+    if( pBt && sqlite3BtreeIsInTrans(pBt) ){
+      Pager *pPager = sqlite3BtreePager(pBt);
+      rc = sqlite3PagerFlush(pPager);
+      if( rc==SQLITE_BUSY ){
+        bSeenBusy = 1;
+        rc = SQLITE_OK;
+      }
+    }
+  }
+  sqlite3BtreeLeaveAll(db);
+  sqlite3_mutex_leave(db->mutex);
+  return ((rc==SQLITE_OK && bSeenBusy) ? SQLITE_BUSY : rc);
 }
 
 /*
@@ -16995,6 +17210,21 @@ opendb_out:
     /* Opening a db handle. Fourth parameter is passed 0. */
     void *pArg = sqlite3GlobalConfig.pSqllogArg;
     sqlite3GlobalConfig.xSqllog(pArg, db, zFilename, 0);
+  }
+#endif
+#if defined(SQLITE_HAS_CODEC)
+  if( rc==SQLITE_OK ){
+    const char *zHexKey = sqlite3_uri_parameter(zOpen, "hexkey");
+    if( zHexKey && zHexKey[0] ){
+      u8 iByte;
+      int i;
+      char zKey[40];
+      for(i=0, iByte=0; i<sizeof(zKey)*2 && sqlite3Isxdigit(zHexKey[i]); i++){
+        iByte = (iByte<<4) + sqlite3HexToInt(zHexKey[i]);
+        if( (i&1)!=0 ) zKey[i/2] = iByte;
+      }
+      sqlite3_key_v2(db, 0, zKey, i/2);
+    }
   }
 #endif
   return rc & 0xff;

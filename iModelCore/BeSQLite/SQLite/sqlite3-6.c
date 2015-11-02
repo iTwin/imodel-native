@@ -12872,6 +12872,9 @@ SQLITE_API sqlite3rbu *SQLITE_STDCALL sqlite3rbu_open(
 ** If an error has occurred, either while opening or stepping the RBU object,
 ** this function may return NULL. The error code and message may be collected
 ** when sqlite3rbu_close() is called.
+**
+** Database handles returned by this function remain valid until the next
+** call to any sqlite3rbu_xxx() function other than sqlite3rbu_db().
 */
 SQLITE_API sqlite3 *SQLITE_STDCALL sqlite3rbu_db(sqlite3rbu*, int bRbu);
 

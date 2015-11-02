@@ -859,6 +859,26 @@ SQLITE_PRIVATE int sqlite3BtreeCursorRestore(BtCursor *pCur, int *pDifferentRow)
   return SQLITE_OK;
 }
 
+#ifdef SQLITE_ENABLE_CURSOR_HINTS
+/*
+** Provide hints to the cursor.  The particular hint given (and the type
+** and number of the varargs parameters) is determined by the eHintType
+** parameter.  See the definitions of the BTREE_HINT_* macros for details.
+*/
+SQLITE_PRIVATE void sqlite3BtreeCursorHint(BtCursor *pCur, int eHintType, ...){
+  /* Used only by system that substitute their own storage engine */
+}
+#endif
+
+/*
+** Provide flag hints to the cursor.
+*/
+SQLITE_PRIVATE void sqlite3BtreeCursorHintFlags(BtCursor *pCur, unsigned x){
+  assert( x==BTREE_SEEK_EQ || x==BTREE_BULKLOAD || x==0 );
+  pCur->hints = x;
+}
+
+
 #ifndef SQLITE_OMIT_AUTOVACUUM
 /*
 ** Given a page number of a regular database page, return the page
@@ -4056,13 +4076,16 @@ static int btreeCursor(
   BtCursor *pX;                          /* Looping over other all cursors */
 
   assert( sqlite3BtreeHoldsMutex(p) );
-  assert( wrFlag==0 || wrFlag==1 );
+  assert( wrFlag==0 
+       || wrFlag==BTREE_WRCSR 
+       || wrFlag==(BTREE_WRCSR|BTREE_FORDELETE) 
+  );
 
   /* The following assert statements verify that if this is a sharable 
   ** b-tree database, the connection is holding the required table locks, 
   ** and that no other connection has any open cursor that conflicts with 
   ** this lock.  */
-  assert( hasSharedCacheTableLock(p, iTable, pKeyInfo!=0, wrFlag+1) );
+  assert( hasSharedCacheTableLock(p, iTable, pKeyInfo!=0, (wrFlag?2:1)) );
   assert( wrFlag==0 || !hasReadConflicts(p, iTable) );
 
   /* Assert that the caller has opened the required transaction. */
@@ -4087,8 +4110,7 @@ static int btreeCursor(
   pCur->pKeyInfo = pKeyInfo;
   pCur->pBtree = p;
   pCur->pBt = pBt;
-  assert( wrFlag==0 || wrFlag==BTCF_WriteFlag );
-  pCur->curFlags = wrFlag;
+  pCur->curFlags = wrFlag ? BTCF_WriteFlag : 0;
   pCur->curPagerFlags = wrFlag ? 0 : PAGER_GET_READONLY;
   /* If there are two or more cursors on the same btree, then all such
   ** cursors *must* have the BTCF_Multiple flag set. */
@@ -4500,7 +4522,9 @@ static int accessPayload(
 
       /* If required, populate the overflow page-list cache. */
       if( (pCur->curFlags & BTCF_ValidOvfl)!=0 ){
-        assert(!pCur->aOverflow[iIdx] || pCur->aOverflow[iIdx]==nextPage);
+        assert( pCur->aOverflow[iIdx]==0
+                || pCur->aOverflow[iIdx]==nextPage
+                || CORRUPT_DB );
         pCur->aOverflow[iIdx] = nextPage;
       }
 
@@ -9623,14 +9647,6 @@ SQLITE_PRIVATE int sqlite3BtreeSetVersion(Btree *pBtree, int iVersion){
   return rc;
 }
 
-/*
-** set the mask of hint flags for cursor pCsr.
-*/
-SQLITE_PRIVATE void sqlite3BtreeCursorHints(BtCursor *pCsr, unsigned int mask){
-  assert( mask==BTREE_BULKLOAD || mask==BTREE_SEEK_EQ || mask==0 );
-  pCsr->hints = mask;
-}
-
 #ifdef SQLITE_DEBUG
 /*
 ** Return true if the cursor has a hint specified.  This routine is
@@ -11881,17 +11897,16 @@ static void recordFunc(
   sqlite3_value **argv
 ){
   const int file_format = 1;
-  int iSerial;                    /* Serial type */
+  u32 iSerial;                    /* Serial type */
   int nSerial;                    /* Bytes of space for iSerial as varint */
-  int nVal;                       /* Bytes of space required for argv[0] */
+  u32 nVal;                       /* Bytes of space required for argv[0] */
   int nRet;
   sqlite3 *db;
   u8 *aRet;
 
   UNUSED_PARAMETER( argc );
-  iSerial = sqlite3VdbeSerialType(argv[0], file_format);
+  iSerial = sqlite3VdbeSerialType(argv[0], file_format, &nVal);
   nSerial = sqlite3VarintLen(iSerial);
-  nVal = sqlite3VdbeSerialTypeLen(iSerial);
   db = sqlite3_context_db_handle(context);
 
   nRet = 1 + nSerial + nVal;
@@ -12940,6 +12955,12 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
         if( db->pnBytesFreed==0 ) sqlite3KeyInfoUnref((KeyInfo*)p4);
         break;
       }
+#ifdef SQLITE_ENABLE_CURSOR_HINTS
+      case P4_EXPR: {
+        sqlite3ExprDelete(db, (Expr*)p4);
+        break;
+      }
+#endif
       case P4_MPRINTF: {
         if( db->pnBytesFreed==0 ) sqlite3_free(p4);
         break;
@@ -13072,6 +13093,15 @@ SQLITE_PRIVATE void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int 
   }else if( n==P4_KEYINFO ){
     pOp->p4.p = (void*)zP4;
     pOp->p4type = P4_KEYINFO;
+#ifdef SQLITE_ENABLE_CURSOR_HINTS
+  }else if( n==P4_EXPR ){
+    /* Responsibility for deleting the Expr tree is handed over to the
+    ** VDBE by this operation.  The caller should have already invoked
+    ** sqlite3ExprDup() or whatever other routine is needed to make a 
+    ** private copy of the tree. */
+    pOp->p4.pExpr = (Expr*)zP4;
+    pOp->p4type = P4_EXPR;
+#endif
   }else if( n==P4_VTAB ){
     pOp->p4.p = (void*)zP4;
     pOp->p4type = P4_VTAB;
@@ -13262,9 +13292,84 @@ static int displayComment(
 }
 #endif /* SQLITE_DEBUG */
 
+#if VDBE_DISPLAY_P4 && defined(SQLITE_ENABLE_CURSOR_HINTS)
+/*
+** Translate the P4.pExpr value for an OP_CursorHint opcode into text
+** that can be displayed in the P4 column of EXPLAIN output.
+*/
+static int displayP4Expr(int nTemp, char *zTemp, Expr *pExpr){
+  const char *zOp = 0;
+  int n;
+  switch( pExpr->op ){
+    case TK_STRING:
+      sqlite3_snprintf(nTemp, zTemp, "%Q", pExpr->u.zToken);
+      break;
+    case TK_INTEGER:
+      sqlite3_snprintf(nTemp, zTemp, "%d", pExpr->u.iValue);
+      break;
+    case TK_NULL:
+      sqlite3_snprintf(nTemp, zTemp, "NULL");
+      break;
+    case TK_REGISTER: {
+      sqlite3_snprintf(nTemp, zTemp, "r[%d]", pExpr->iTable);
+      break;
+    }
+    case TK_COLUMN: {
+      if( pExpr->iColumn<0 ){
+        sqlite3_snprintf(nTemp, zTemp, "rowid");
+      }else{
+        sqlite3_snprintf(nTemp, zTemp, "c%d", (int)pExpr->iColumn);
+      }
+      break;
+    }
+    case TK_LT:      zOp = "LT";      break;
+    case TK_LE:      zOp = "LE";      break;
+    case TK_GT:      zOp = "GT";      break;
+    case TK_GE:      zOp = "GE";      break;
+    case TK_NE:      zOp = "NE";      break;
+    case TK_EQ:      zOp = "EQ";      break;
+    case TK_IS:      zOp = "IS";      break;
+    case TK_ISNOT:   zOp = "ISNOT";   break;
+    case TK_AND:     zOp = "AND";     break;
+    case TK_OR:      zOp = "OR";      break;
+    case TK_PLUS:    zOp = "ADD";     break;
+    case TK_STAR:    zOp = "MUL";     break;
+    case TK_MINUS:   zOp = "SUB";     break;
+    case TK_REM:     zOp = "REM";     break;
+    case TK_BITAND:  zOp = "BITAND";  break;
+    case TK_BITOR:   zOp = "BITOR";   break;
+    case TK_SLASH:   zOp = "DIV";     break;
+    case TK_LSHIFT:  zOp = "LSHIFT";  break;
+    case TK_RSHIFT:  zOp = "RSHIFT";  break;
+    case TK_CONCAT:  zOp = "CONCAT";  break;
+    case TK_UMINUS:  zOp = "MINUS";   break;
+    case TK_UPLUS:   zOp = "PLUS";    break;
+    case TK_BITNOT:  zOp = "BITNOT";  break;
+    case TK_NOT:     zOp = "NOT";     break;
+    case TK_ISNULL:  zOp = "ISNULL";  break;
+    case TK_NOTNULL: zOp = "NOTNULL"; break;
 
-#if !defined(SQLITE_OMIT_EXPLAIN) || !defined(NDEBUG) \
-     || defined(VDBE_PROFILE) || defined(SQLITE_DEBUG)
+    default:
+      sqlite3_snprintf(nTemp, zTemp, "%s", "expr");
+      break;
+  }
+
+  if( zOp ){
+    sqlite3_snprintf(nTemp, zTemp, "%s(", zOp);
+    n = sqlite3Strlen30(zTemp);
+    n += displayP4Expr(nTemp-n, zTemp+n, pExpr->pLeft);
+    if( n<nTemp-1 && pExpr->pRight ){
+      zTemp[n++] = ',';
+      n += displayP4Expr(nTemp-n, zTemp+n, pExpr->pRight);
+    }
+    sqlite3_snprintf(nTemp-n, zTemp+n, ")");
+  }
+  return sqlite3Strlen30(zTemp);
+}
+#endif /* VDBE_DISPLAY_P4 && defined(SQLITE_ENABLE_CURSOR_HINTS) */
+
+
+#if VDBE_DISPLAY_P4
 /*
 ** Compute a string that describes the P4 parameter for an opcode.
 ** Use zTemp for any required temporary buffer space.
@@ -13304,6 +13409,12 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       assert( i<nTemp );
       break;
     }
+#ifdef SQLITE_ENABLE_CURSOR_HINTS
+    case P4_EXPR: {
+      displayP4Expr(nTemp, zTemp, pOp->p4.pExpr);
+      break;
+    }
+#endif
     case P4_COLLSEQ: {
       CollSeq *pColl = pOp->p4.pColl;
       sqlite3_snprintf(nTemp, zTemp, "(%.20s)", pColl->zName);
@@ -13379,7 +13490,7 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
   assert( zP4!=0 );
   return zP4;
 }
-#endif
+#endif /* VDBE_DISPLAY_P4 */
 
 /*
 ** Declare to the Vdbe that the BTree object at db->aDb[i] is used.
@@ -13693,12 +13804,12 @@ SQLITE_PRIVATE int sqlite3VdbeList(
     pMem->u.i = pOp->p3;                          /* P3 */
     pMem++;
 
-    if( sqlite3VdbeMemClearAndResize(pMem, 32) ){ /* P4 */
+    if( sqlite3VdbeMemClearAndResize(pMem, 100) ){ /* P4 */
       assert( p->db->mallocFailed );
       return SQLITE_ERROR;
     }
     pMem->flags = MEM_Str|MEM_Term;
-    zP4 = displayP4(pOp, pMem->z, 32);
+    zP4 = displayP4(pOp, pMem->z, pMem->szMalloc);
     if( zP4!=pMem->z ){
       sqlite3VdbeMemSetStr(pMem, zP4, -1, SQLITE_UTF8, 0);
     }else{
@@ -15117,11 +15228,13 @@ SQLITE_PRIVATE int sqlite3VdbeCursorMoveto(VdbeCursor *p){
 /*
 ** Return the serial-type for the value stored in pMem.
 */
-SQLITE_PRIVATE u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
+SQLITE_PRIVATE u32 sqlite3VdbeSerialType(Mem *pMem, int file_format, u32 *pLen){
   int flags = pMem->flags;
   u32 n;
 
+  assert( pLen!=0 );
   if( flags&MEM_Null ){
+    *pLen = 0;
     return 0;
   }
   if( flags&MEM_Int ){
@@ -15135,15 +15248,23 @@ SQLITE_PRIVATE u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
       u = i;
     }
     if( u<=127 ){
-      return ((i&1)==i && file_format>=4) ? 8+(u32)u : 1;
+      if( (i&1)==i && file_format>=4 ){
+        *pLen = 0;
+        return 8+(u32)u;
+      }else{
+        *pLen = 1;
+        return 1;
+      }
     }
-    if( u<=32767 ) return 2;
-    if( u<=8388607 ) return 3;
-    if( u<=2147483647 ) return 4;
-    if( u<=MAX_6BYTE ) return 5;
+    if( u<=32767 ){ *pLen = 2; return 2; }
+    if( u<=8388607 ){ *pLen = 3; return 3; }
+    if( u<=2147483647 ){ *pLen = 4; return 4; }
+    if( u<=MAX_6BYTE ){ *pLen = 6; return 5; }
+    *pLen = 8;
     return 6;
   }
   if( flags&MEM_Real ){
+    *pLen = 8;
     return 7;
   }
   assert( pMem->db->mallocFailed || flags&(MEM_Str|MEM_Blob) );
@@ -15152,25 +15273,45 @@ SQLITE_PRIVATE u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
   if( flags & MEM_Zero ){
     n += pMem->u.nZero;
   }
+  *pLen = n;
   return ((n*2) + 12 + ((flags&MEM_Str)!=0));
 }
 
 /*
-** The sizes for serial types less than 12
+** The sizes for serial types less than 128
 */
 static const u8 sqlite3SmallTypeSizes[] = {
-  0, 1, 2, 3, 4, 6, 8, 8, 0, 0, 0, 0
+        /*  0   1   2   3   4   5   6   7   8   9 */   
+/*   0 */   0,  1,  2,  3,  4,  6,  8,  8,  0,  0,
+/*  10 */   0,  0,  0,  0,  1,  1,  2,  2,  3,  3,
+/*  20 */   4,  4,  5,  5,  6,  6,  7,  7,  8,  8,
+/*  30 */   9,  9, 10, 10, 11, 11, 12, 12, 13, 13,
+/*  40 */  14, 14, 15, 15, 16, 16, 17, 17, 18, 18,
+/*  50 */  19, 19, 20, 20, 21, 21, 22, 22, 23, 23,
+/*  60 */  24, 24, 25, 25, 26, 26, 27, 27, 28, 28,
+/*  70 */  29, 29, 30, 30, 31, 31, 32, 32, 33, 33,
+/*  80 */  34, 34, 35, 35, 36, 36, 37, 37, 38, 38,
+/*  90 */  39, 39, 40, 40, 41, 41, 42, 42, 43, 43,
+/* 100 */  44, 44, 45, 45, 46, 46, 47, 47, 48, 48,
+/* 110 */  49, 49, 50, 50, 51, 51, 52, 52, 53, 53,
+/* 120 */  54, 54, 55, 55, 56, 56, 57, 57
 };
 
 /*
 ** Return the length of the data corresponding to the supplied serial-type.
 */
 SQLITE_PRIVATE u32 sqlite3VdbeSerialTypeLen(u32 serial_type){
-  if( serial_type>=12 ){
+  if( serial_type>=128 ){
     return (serial_type-12)/2;
   }else{
+    assert( serial_type<12 
+            || sqlite3SmallTypeSizes[serial_type]==(serial_type - 12)/2 );
     return sqlite3SmallTypeSizes[serial_type];
   }
+}
+SQLITE_PRIVATE u8 sqlite3VdbeOneByteSerialTypeLen(u8 serial_type){
+  assert( serial_type<128 );
+  return sqlite3SmallTypeSizes[serial_type];  
 }
 
 /*
@@ -19186,16 +19327,24 @@ static int checkSavepointCount(sqlite3 *db){
 /*
 ** Return the register of pOp->p2 after first preparing it to be
 ** overwritten with an integer value.
-*/ 
+*/
+static SQLITE_NOINLINE Mem *out2PrereleaseWithClear(Mem *pOut){
+  sqlite3VdbeMemSetNull(pOut);
+  pOut->flags = MEM_Int;
+  return pOut;
+}
 static Mem *out2Prerelease(Vdbe *p, VdbeOp *pOp){
   Mem *pOut;
   assert( pOp->p2>0 );
   assert( pOp->p2<=(p->nMem-p->nCursor) );
   pOut = &p->aMem[pOp->p2];
   memAboutToChange(p, pOut);
-  if( VdbeMemDynamic(pOut) ) sqlite3VdbeMemSetNull(pOut);
-  pOut->flags = MEM_Int;
-  return pOut;
+  if( VdbeMemDynamic(pOut) ){
+    return out2PrereleaseWithClear(pOut);
+  }else{
+    pOut->flags = MEM_Int;
+    return pOut;
+  }
 }
 
 
@@ -19930,6 +20079,22 @@ case OP_SCopy: {            /* out2 */
 #ifdef SQLITE_DEBUG
   if( pOut->pScopyFrom==0 ) pOut->pScopyFrom = pIn1;
 #endif
+  break;
+}
+
+/* Opcode: IntCopy P1 P2 * * *
+** Synopsis: r[P2]=r[P1]
+**
+** Transfer the integer value held in register P1 into register P2.
+**
+** This is an optimized version of SCopy that works only for integer
+** values.
+*/
+case OP_IntCopy: {            /* out2 */
+  pIn1 = &aMem[pOp->p1];
+  assert( (pIn1->flags & MEM_Int)!=0 );
+  pOut = &aMem[pOp->p2];
+  sqlite3VdbeMemSetInt64(pOut, pIn1->u.i);
   break;
 }
 
@@ -21012,7 +21177,7 @@ case OP_Column: {
   const u8 *zHdr;    /* Next unparsed byte of the header */
   const u8 *zEndHdr; /* Pointer to first byte after the header */
   u32 offset;        /* Offset into the data */
-  u32 szField;       /* Number of bytes in the content of a field */
+  u64 offset64;      /* 64-bit offset */
   u32 avail;         /* Number of bytes of available data */
   u32 t;             /* A type code from the record header */
   u16 fx;            /* pDest->flags value */
@@ -21083,19 +21248,6 @@ case OP_Column: {
     pC->nHdrParsed = 0;
     aOffset[0] = offset;
 
-    /* Make sure a corrupt database has not given us an oversize header.
-    ** Do this now to avoid an oversize memory allocation.
-    **
-    ** Type entries can be between 1 and 5 bytes each.  But 4 and 5 byte
-    ** types use so much data space that there can only be 4096 and 32 of
-    ** them, respectively.  So the maximum header length results from a
-    ** 3-byte type for each of the maximum of 32768 columns plus three
-    ** extra bytes for the header length itself.  32768*3 + 3 = 98307.
-    */
-    if( offset > 98307 || offset > pC->payloadSize ){
-      rc = SQLITE_CORRUPT_BKPT;
-      goto op_column_error;
-    }
 
     if( avail<offset ){
       /* pC->aRow does not have to hold the entire row, but it does at least
@@ -21104,6 +21256,20 @@ case OP_Column: {
       ** dynamically allocated. */
       pC->aRow = 0;
       pC->szRow = 0;
+
+      /* Make sure a corrupt database has not given us an oversize header.
+      ** Do this now to avoid an oversize memory allocation.
+      **
+      ** Type entries can be between 1 and 5 bytes each.  But 4 and 5 byte
+      ** types use so much data space that there can only be 4096 and 32 of
+      ** them, respectively.  So the maximum header length results from a
+      ** 3-byte type for each of the maximum of 32768 columns plus three
+      ** extra bytes for the header length itself.  32768*3 + 3 = 98307.
+      */
+      if( offset > 98307 || offset > pC->payloadSize ){
+        rc = SQLITE_CORRUPT_BKPT;
+        goto op_column_error;
+      }
     }
 
     /* The following goto is an optimization.  It can be omitted and
@@ -21126,11 +21292,8 @@ case OP_Column: {
       /* Make sure zData points to enough of the record to cover the header. */
       if( pC->aRow==0 ){
         memset(&sMem, 0, sizeof(sMem));
-        rc = sqlite3VdbeMemFromBtree(pCrsr, 0, aOffset[0], 
-                                     !pC->isTable, &sMem);
-        if( rc!=SQLITE_OK ){
-          goto op_column_error;
-        }
+        rc = sqlite3VdbeMemFromBtree(pCrsr, 0, aOffset[0], !pC->isTable, &sMem);
+        if( rc!=SQLITE_OK ) goto op_column_error;
         zData = (u8*)sMem.z;
       }else{
         zData = pC->aRow;
@@ -21138,44 +21301,32 @@ case OP_Column: {
   
       /* Fill in pC->aType[i] and aOffset[i] values through the p2-th field. */
       i = pC->nHdrParsed;
-      offset = aOffset[i];
+      offset64 = aOffset[i];
       zHdr = zData + pC->iHdrOffset;
       zEndHdr = zData + aOffset[0];
       assert( i<=p2 && zHdr<zEndHdr );
       do{
-        if( zHdr[0]<0x80 ){
-          t = zHdr[0];
+        if( (t = zHdr[0])<0x80 ){
           zHdr++;
+          offset64 += sqlite3VdbeOneByteSerialTypeLen(t);
         }else{
           zHdr += sqlite3GetVarint32(zHdr, &t);
+          offset64 += sqlite3VdbeSerialTypeLen(t);
         }
-        pC->aType[i] = t;
-        szField = sqlite3VdbeSerialTypeLen(t);
-        offset += szField;
-        if( offset<szField ){  /* True if offset overflows */
-          zHdr = &zEndHdr[1];  /* Forces SQLITE_CORRUPT return below */
-          break;
-        }
-        i++;
-        aOffset[i] = offset;
+        pC->aType[i++] = t;
+        aOffset[i] = (u32)(offset64 & 0xffffffff);
       }while( i<=p2 && zHdr<zEndHdr );
       pC->nHdrParsed = i;
       pC->iHdrOffset = (u32)(zHdr - zData);
-      if( pC->aRow==0 ){
-        sqlite3VdbeMemRelease(&sMem);
-        sMem.flags = MEM_Null;
-      }
+      if( pC->aRow==0 ) sqlite3VdbeMemRelease(&sMem);
   
       /* The record is corrupt if any of the following are true:
       ** (1) the bytes of the header extend past the declared header size
-      **          (zHdr>zEndHdr)
       ** (2) the entire header was used but not all data was used
-      **          (zHdr==zEndHdr && offset!=pC->payloadSize)
       ** (3) the end of the data extends beyond the end of the record.
-      **          (offset > pC->payloadSize)
       */
-      if( (zHdr>=zEndHdr && (zHdr>zEndHdr || offset!=pC->payloadSize))
-       || (offset > pC->payloadSize)
+      if( (zHdr>=zEndHdr && (zHdr>zEndHdr || offset64!=pC->payloadSize))
+       || (offset64 > pC->payloadSize)
       ){
         rc = SQLITE_CORRUPT_BKPT;
         goto op_column_error;
@@ -21194,6 +21345,8 @@ case OP_Column: {
       }
       goto op_column_out;
     }
+  }else{
+    t = pC->aType[p2];
   }
 
   /* Extract the content for the p2+1-th column.  Control can only
@@ -21204,7 +21357,7 @@ case OP_Column: {
   assert( rc==SQLITE_OK );
   assert( sqlite3VdbeCheckMemInvariants(pDest) );
   if( VdbeMemDynamic(pDest) ) sqlite3VdbeMemSetNull(pDest);
-  t = pC->aType[p2];
+  assert( t==pC->aType[p2] );
   if( pC->szRow>=aOffset[p2+1] ){
     /* This is the common case where the desired content fits on the original
     ** page - where the content is not on an overflow page */
@@ -21316,7 +21469,7 @@ case OP_MakeRecord: {
   int file_format;       /* File format to use for encoding */
   int i;                 /* Space used in zNewRecord[] header */
   int j;                 /* Space used in zNewRecord[] content */
-  int len;               /* Length of a field */
+  u32 len;               /* Length of a field */
 
   /* Assuming the record contains N fields, the record format looks
   ** like this:
@@ -21366,8 +21519,7 @@ case OP_MakeRecord: {
   pRec = pLast;
   do{
     assert( memIsValid(pRec) );
-    pRec->uTemp = serial_type = sqlite3VdbeSerialType(pRec, file_format);
-    len = sqlite3VdbeSerialTypeLen(serial_type);
+    pRec->uTemp = serial_type = sqlite3VdbeSerialType(pRec, file_format, &len);
     if( pRec->flags & MEM_Zero ){
       if( nData ){
         if( sqlite3VdbeMemExpandBlob(pRec) ) goto no_mem;
@@ -21981,7 +22133,6 @@ case OP_ReopenIdx: {
 case OP_OpenRead:
 case OP_OpenWrite:
 
-  assert( (pOp->p5&(OPFLAG_P2ISREG|OPFLAG_BULKCSR|OPFLAG_SEEKEQ))==pOp->p5 );
   assert( pOp->opcode==OP_OpenWrite || pOp->p5==0 || pOp->p5==OPFLAG_SEEKEQ );
   assert( p->bIsReader );
   assert( pOp->opcode==OP_OpenRead || pOp->opcode==OP_ReopenIdx
@@ -22002,7 +22153,8 @@ case OP_OpenWrite:
   pX = pDb->pBt;
   assert( pX!=0 );
   if( pOp->opcode==OP_OpenWrite ){
-    wrFlag = 1;
+    assert( OPFLAG_FORDELETE==BTREE_FORDELETE );
+    wrFlag = BTREE_WRCSR | (pOp->p5 & OPFLAG_FORDELETE);
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
     if( pDb->pSchema->file_format < p->minWriteFileFormat ){
       p->minWriteFileFormat = pDb->pSchema->file_format;
@@ -22054,8 +22206,12 @@ case OP_OpenWrite:
 open_cursor_set_hints:
   assert( OPFLAG_BULKCSR==BTREE_BULKLOAD );
   assert( OPFLAG_SEEKEQ==BTREE_SEEK_EQ );
-  sqlite3BtreeCursorHints(pCur->pCursor,
-                          (pOp->p5 & (OPFLAG_BULKCSR|OPFLAG_SEEKEQ)));
+  testcase( pOp->p5 & OPFLAG_BULKCSR );
+#ifdef SQLITE_ENABLE_CURSOR_HINT
+  testcase( pOp->p2 & OPFLAG_SEEKEQ );
+#endif
+  sqlite3BtreeCursorHintFlags(pCur->pCursor,
+                               (pOp->p5 & (OPFLAG_BULKCSR|OPFLAG_SEEKEQ)));
   break;
 }
 
@@ -22122,11 +22278,11 @@ case OP_OpenEphemeral: {
         assert( pKeyInfo->db==db );
         assert( pKeyInfo->enc==ENC(db) );
         pCx->pKeyInfo = pKeyInfo;
-        rc = sqlite3BtreeCursor(pCx->pBt, pgno, 1, pKeyInfo, pCx->pCursor);
+        rc = sqlite3BtreeCursor(pCx->pBt, pgno, BTREE_WRCSR, pKeyInfo, pCx->pCursor);
       }
       pCx->isTable = 0;
     }else{
-      rc = sqlite3BtreeCursor(pCx->pBt, MASTER_ROOT, 1, 0, pCx->pCursor);
+      rc = sqlite3BtreeCursor(pCx->pBt, MASTER_ROOT, BTREE_WRCSR, 0, pCx->pCursor);
       pCx->isTable = 1;
     }
   }
@@ -25295,6 +25451,26 @@ case OP_Init: {          /* jump */
   break;
 }
 
+#ifdef SQLITE_ENABLE_CURSOR_HINTS
+/* Opcode: CursorHint P1 * * P4 *
+**
+** Provide a hint to cursor P1 that it only needs to return rows that
+** satisfy the Expr in P4.  TK_REGISTER terms in the P4 expression refer
+** to values currently held in registers.  TK_COLUMN terms in the P4
+** expression refer to columns in the b-tree to which cursor P1 is pointing.
+*/
+case OP_CursorHint: {
+  VdbeCursor *pC;
+
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  assert( pOp->p4type==P4_EXPR );
+  pC = p->apCsr[pOp->p1];
+  if( pC ){
+    sqlite3BtreeCursorHint(pC->pCursor, BTREE_HINT_RANGE, pOp->p4.pExpr, aMem);
+  }
+  break;
+}
+#endif /* SQLITE_ENABLE_CURSOR_HINTS */
 
 /* Opcode: Noop * * * * *
 **
@@ -26904,7 +27080,7 @@ SQLITE_PRIVATE int sqlite3VdbeSorterInit(
     }
     pSorter->pgsz = pgsz = sqlite3BtreeGetPageSize(db->aDb[0].pBt);
     pSorter->nTask = nWorker + 1;
-    pSorter->iPrev = nWorker-1;
+    pSorter->iPrev = (u8)(nWorker - 1);
     pSorter->bUseThreads = (pSorter->nTask>1);
     pSorter->db = db;
     for(i=0; i<pSorter->nTask; i++){
