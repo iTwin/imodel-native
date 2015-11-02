@@ -8,7 +8,6 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <DgnPlatform/DgnCore/RasterBaseModel.h>
 #include <RasterSchema/RasterHandler.h>
 #include <RasterSchema/RasterSchemaTypes.h>
 

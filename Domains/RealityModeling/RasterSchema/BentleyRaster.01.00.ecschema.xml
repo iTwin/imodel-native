@@ -9,7 +9,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-      <BaseClass>dgn:RasterBaseModel</BaseClass>
+        <BaseClass>dgn:PhysicalModel</BaseClass>
     </ECClass>
 
     <ECClass typeName="WmsModel" isDomainClass="True" >
