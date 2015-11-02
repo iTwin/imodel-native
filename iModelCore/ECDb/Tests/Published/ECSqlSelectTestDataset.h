@@ -1,14 +1,14 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/ECSqlSelectStatementCrudTestDataset.h $
+|     $Source: Tests/Published/ECSqlSelectTestDataset.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include "ECSqlStatementCrudTestDatasetHelper.h"
+#include "ECSqlTestFrameworkHelper.h"
 
-BEGIN_ECDBUNITTESTS_NAMESPACE
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 
 //=======================================================================================    
 // @bsiclass                                           Krischan.Eberle            09/13
@@ -18,6 +18,7 @@ struct ECSqlSelectTestDataset
 private:
     ECSqlSelectTestDataset ();
     ~ECSqlSelectTestDataset ();
+
 public:
     static ECSqlTestDataset AliasTests (int rowCountPerClass);
     static ECSqlTestDataset ArrayTests (int rowCountPerClass);
@@ -47,4 +48,4 @@ public:
     static ECSqlTestDataset UnionTests(int rowCountPerClass);
     };
 
-END_ECDBUNITTESTS_NAMESPACE
+END_ECSQLTESTFRAMEWORK_NAMESPACE

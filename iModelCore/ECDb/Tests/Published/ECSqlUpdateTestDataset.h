@@ -1,14 +1,14 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/ECSqlUpdateStatementCrudTestDataset.h $
+|     $Source: Tests/Published/ECSqlUpdateTestDataset.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include "ECSqlStatementCrudTestDatasetHelper.h"
+#include "ECSqlTestFrameworkHelper.h"
 
-BEGIN_ECDBUNITTESTS_NAMESPACE
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 
 //=======================================================================================    
 // @bsiclass                                           Krischan.Eberle            09/13
@@ -35,4 +35,4 @@ public:
     };
 
 
-END_ECDBUNITTESTS_NAMESPACE
+END_ECSQLTESTFRAMEWORK_NAMESPACE

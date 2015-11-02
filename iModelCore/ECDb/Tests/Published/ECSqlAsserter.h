@@ -1,26 +1,53 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/ECSqlStatementCrudAsserter.h $
+|     $Source: Tests/Published/ECSqlAsserter.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include "ECSqlTestFixture.h"
+#include "ECSqlTestDataset.h"
 #include "ECSqlExpectedResultImpls.h"
+#include <Logging/bentleylogging.h>
 
-BEGIN_ECDBUNITTESTS_NAMESPACE
+BEGIN_ECSQLTESTFRAMEWORK_NAMESPACE
 
 //=======================================================================================  
-//! ECSqlAsserter for the ECSqlStatement CRUD API.
+//! ECSqlAsserter for the ECSql test framework.
 // @bsiclass                                                 Krischan.Eberle     07/2013
 //=======================================================================================    
-struct ECSqlStatementCrudAsserter : public ECSqlCrudAsserter
+struct ECSqlAsserter
     {
+protected:
+    struct DisableBeAsserts
+        {
+        public:
+            explicit DisableBeAsserts(bool disable = true)
+                {
+                BeTest::SetFailOnAssert(!disable);
+                }
+
+            ~DisableBeAsserts()
+                {
+                BeTest::SetFailOnAssert(true);
+                }
+        };
+
+#define DISABLE_BEASSERTS DisableBeAsserts disableBeAsserts;
+
 private:
-    virtual Utf8CP _GetTargetOperationName() const override;
+    static BentleyApi::NativeLogging::ILogger* s_logger;
+
+    ECDb& m_ecdb;
+
+    virtual void _Assert(ECSqlTestItem const& testItem) const = 0;
+
+    void LogECSqlSupport(ECSqlTestItem const& testItem) const;
+    static BentleyApi::NativeLogging::ILogger& GetLogger();
 
 protected:
+    ECDb& GetECDb() const { return m_ecdb; }
+
     void AssertPrepare (ECSqlTestItem const& testItem, ECSqlStatement& statement, PrepareECSqlExpectedResult const& expectedResult) const;
 
     ECSqlStatus PrepareStatement (ECSqlStatement& statement, Utf8CP ecsql, bool disableBeAsserts) const;
@@ -29,15 +56,19 @@ protected:
     static ECSqlStatus BindIGeometryParameter (ECSqlStatement& statement, int parameterIndex, IGeometryCP geomParameter);
 
 public:
-    explicit ECSqlStatementCrudAsserter (ECDb& ecdb) : ECSqlCrudAsserter(ecdb) {}
-    virtual ~ECSqlStatementCrudAsserter () {}
+    explicit ECSqlAsserter (ECDb& ecdb) : m_ecdb(ecdb) {}
+    virtual ~ECSqlAsserter () {}
+
+    void Assert(ECSqlTestItem const& testItem) const;
     };
 
+typedef std::vector<std::unique_ptr<ECSqlAsserter>> ECSqlAsserterList;
+
 //=======================================================================================  
-//! ECSqlAsserter for the ECSqlStatement SELECT CRUD API.
+//! ECSqlAsserter for the ECSQL test framework for SELECT
 // @bsiclass                                                 Krischan.Eberle     07/2013
 //=======================================================================================    
-struct ECSqlSelectStatementCrudAsserter : public ECSqlStatementCrudAsserter
+struct ECSqlSelectAsserter : public ECSqlAsserter
     {
 private:
     typedef std::pair<ECN::ECTypeDescriptor, std::function<void ()>> GetValueCall;
@@ -62,15 +93,15 @@ private:
     static Utf8String DataTypeToString (ECN::ECTypeDescriptor const& dataType);
 
 public:
-    explicit ECSqlSelectStatementCrudAsserter (ECDb& ecdb) : ECSqlStatementCrudAsserter(ecdb) {}
-    ~ECSqlSelectStatementCrudAsserter () {}
+    explicit ECSqlSelectAsserter (ECDb& ecdb) : ECSqlAsserter(ecdb) {}
+    ~ECSqlSelectAsserter () {}
     };
 
 //=======================================================================================  
-//! ECSqlAsserter for the ECSqlStatement non-SELECT CRUD API.
+//! ECSqlAsserter for the ECSQL test framework for non-SELECT
 // @bsiclass                                                 Krischan.Eberle     11/2013
 //=======================================================================================    
-struct ECSqlNonSelectStatementCrudAsserter : public ECSqlStatementCrudAsserter
+struct ECSqlNonSelectAsserter : public ECSqlAsserter
     {
 private:
     virtual void _Assert (ECSqlTestItem const& testItem) const override;
@@ -81,8 +112,8 @@ private:
     DbResult Step (ECSqlStatement& statement, bool disableBeAsserts) const;
 
 public:
-    explicit ECSqlNonSelectStatementCrudAsserter (ECDb& ecdb) : ECSqlStatementCrudAsserter(ecdb) {}
-    ~ECSqlNonSelectStatementCrudAsserter () {}
+    explicit ECSqlNonSelectAsserter (ECDb& ecdb) : ECSqlAsserter(ecdb) {}
+    ~ECSqlNonSelectAsserter () {}
     };
 
-END_ECDBUNITTESTS_NAMESPACE
+END_ECSQLTESTFRAMEWORK_NAMESPACE
