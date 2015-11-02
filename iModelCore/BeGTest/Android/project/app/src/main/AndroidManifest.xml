@@ -5,7 +5,7 @@
     android:versionName="1.0"
 >
     <uses-sdk
-        android:minSdkVersion="12"
+        android:minSdkVersion="__BENTLEY_TEST_ANDROID_MIN_SDK_VERSION__"
     />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />

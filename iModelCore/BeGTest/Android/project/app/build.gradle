@@ -8,8 +8,8 @@ android {
         testApplicationId "com.bentley.unittest"
         testInstrumentationRunner "com.bentley.unittest.BeInstrumentationTestRunner"
         project.archivesBaseName = "Test"
-        minSdkVersion 14
-        targetSdkVersion 19
+        minSdkVersion __BENTLEY_TEST_ANDROID_MIN_SDK_VERSION__
+        targetSdkVersion __BENTLEY_TEST_ANDROID_TARGET_SDK_VERSION__
         versionCode 1
         versionName "1.0"
     }
