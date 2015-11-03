@@ -78,6 +78,7 @@
 #include <Imagepp/all/h/HRFTWFPageFile.h>
 #include <Imagepp/all/h/HRFHGRPageFile.h>
 #include <Imagepp/all/h/HRFERSPageFile.h>
+#include <Imagepp/all/h/HRFPRJPageFile.h>
 
 
 //***********************************************
@@ -213,11 +214,13 @@
 #else
     #if defined(IPP_HAVE_ERMAPPER_SUPPORT) 
         #define HOST_REGISTER_PAGEFILES \
+            HRFPageFileFactory::GetInstance()->Register(HRFPRJPageFileCreator::GetInstance()); \
             HRFPageFileFactory::GetInstance()->Register(HRFERSPageFileCreator::GetInstance()); \
             HRFPageFileFactory::GetInstance()->Register(HRFTWFPageFileCreator::GetInstance()); \
             HRFPageFileFactory::GetInstance()->Register(HRFHGRPageFileCreator::GetInstance());
     #else
         #define HOST_REGISTER_PAGEFILES \
+            HRFPageFileFactory::GetInstance()->Register(HRFPRJPageFileCreator::GetInstance()); \
             HRFPageFileFactory::GetInstance()->Register(HRFTWFPageFileCreator::GetInstance()); \
             HRFPageFileFactory::GetInstance()->Register(HRFHGRPageFileCreator::GetInstance());
     #endif        

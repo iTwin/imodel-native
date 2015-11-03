@@ -33,11 +33,8 @@ ippGraPrivateAPISrc = $(SrcImagepp)PrivateApi/ImagePPInternal/gra/
 # ------------------------------------
 # Output directories
 # ------------------------------------
-o = $(OutImagePP)$(appName)/
-
-%if !defined (BuildContext)
-    BuildContext=$(OutBuildContexts)ImagePP/
-%endif
+OutImagePP          = $(OutBuildDir)ImagePP/
+o                   = $(OutImagePP)$(appName)/
 
 ippOutPrivateLibs   = $(OutImagePP)PrivateLibs/
 ippOutPrivateApi    = $(OutImagePP)PrivateApi/

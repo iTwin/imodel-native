@@ -5,9 +5,10 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
-PolicyFile = $(_MakeFilePath)mki/AssertImagePPPolicy.mki 
-
 %include mdl.mki
+
+SrcImagePP      = $(SrcRoot)ImagePP/
+%include $(SrcImagepp)mki/imageppdirs.mki
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -21,7 +22,7 @@ srcDir          = $(_MakeFilePath)
 
 # Wire in my own public header files.
 always:
-   @CreateSymLinks.py -d"$(PublicApiDir)ImagePP=$(srcDir)PublicAPI\ImagePP"
+   ~linkdir "$(PublicApiDir)ImagePP=$(srcDir)PublicAPI\ImagePP"
 
 ippExternalLibDir   = $(SrcImagepp)ext/
 

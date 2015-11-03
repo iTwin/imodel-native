@@ -16,7 +16,7 @@
         <SubPart PartName="png"             PartFile="png"              Repository="libsrc-png"/>
         <SubPart PartName="Zlib" PartFile="Zlib" Repository="Libsrc-Compress" />
         <SubPart PartName="BeLibJpegTurbo"  PartFile="BeLibJpegTurbo"   Repository="libsrc-libjpegturbo"/>
-        <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcBsiCommon}CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
+        <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcRoot}bsicommon/CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
         <Bindings>
             <VendorAPI Domain="ImagePP-GdalLib" />
             <Libs>Delivery/$(stlibprefix)IppGdalLib$(stlibext)</Libs>
@@ -30,7 +30,7 @@
         <SubPart PartName="ZLib" />
         <SubPart PartName="JpegLib" />
         <SubPart PartName="PngLib" />
-        <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcBsiCommon}CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
+        <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcRoot}bsicommon/CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
         <Bindings>
             <VendorAPI Domain="ImagePP-GdalLib" />
             <Libs>Delivery/$(stlibprefix)IppGdalLibVC11$(stlibext)</Libs>
@@ -41,7 +41,7 @@
         <SubPart PartName="ZLib" />
         <SubPart PartName="JpegLib" />
         <SubPart PartName="PngLib" />
-        <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcBsiCommon}CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
+        <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcRoot}bsicommon/CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
         <Bindings>
             <VendorAPI Domain="ImagePP-GdalLib" />
             <Libs>Delivery/$(stlibprefix)IppGdalLibVC8$(stlibext)</Libs>
@@ -107,11 +107,11 @@
     </Part>
     
     <Part Name="ImagePPThirdPartsDll" OnlyPlatforms="x86,x64">
-        <SubPart PartName="MrSid"                   PartFile="${SrcBsiCommon}CvsPartfiles/mrsid"        Repository="Bin-MrSid" />
-        <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcBsiCommon}CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
-        <!--SubPart PartName="OracleSDK12.1"           PartFile="${SrcBsiCommon}CvsPartfiles/oracle"       Repository="bin-oracle" />
+        <SubPart PartName="MrSid"                   PartFile="${SrcRoot}bsicommon/CvsPartfiles/mrsid"        Repository="Bin-MrSid" />
+        <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcRoot}bsicommon/CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
+        <!--SubPart PartName="OracleSDK12.1"           PartFile="${SrcRoot}bsicommon/CvsPartfiles/oracle"       Repository="bin-oracle" />
         <SubPart PartName="PdfLibInitializer"       PartFile="PdfLibInitializer"                        Repository="PdfLibInterface"/>
-        <SubPart PartName="Adobe11.0"               PartFile="${SrcBsiCommon}CvsPartfiles/adobe"        Repository="bin-adobe11.0"/-->
+        <SubPart PartName="Adobe11.0"               PartFile="${SrcRoot}bsicommon/CvsPartfiles/adobe"        Repository="bin-adobe11.0"/-->
     </Part>
 
    
