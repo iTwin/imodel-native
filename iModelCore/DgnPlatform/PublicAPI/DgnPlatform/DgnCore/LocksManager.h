@@ -212,6 +212,7 @@ protected:
     virtual LockStatus _AcquireLocks(LockRequestR locks) = 0;
     virtual LockStatus _RelinquishLocks() = 0;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, bool localQueryOnly) = 0;
+    virtual LockStatus _RefreshLocks() = 0;
 
     virtual void _OnElementInserted(DgnElementId id) = 0;
     virtual void _OnModelInserted(DgnModelId id) = 0;
@@ -232,6 +233,9 @@ public:
 
     //! Relinquishes all locks held by the DgnDb.
     LockStatus RelinquishLocks() { return _RelinquishLocks(); }
+
+    //! Refreshes any local cache of owned locks by re-querying the server
+    LockStatus RefreshLocks() { return _RefreshLocks(); }
 
     //! Query this DgnDb's level of ownership of the specified lockable object.
     LockStatus QueryLockLevel(LockLevel& level, LockableId lockId, bool localQueryOnly=false) { return _QueryLockLevel(level, lockId, localQueryOnly); }

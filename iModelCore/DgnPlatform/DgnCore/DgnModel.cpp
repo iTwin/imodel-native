@@ -835,7 +835,6 @@ DgnDbStatus DgnModel::_OnInsert()
 void DgnModel::_OnInserted() 
     {
     GetDgnDb().Models().AddLoadedModel(*this);
-    GetDgnDb().Locks().OnModelInserted(GetModelId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -897,6 +896,9 @@ DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
         return DgnDbStatus::WriteError;
         }
 
+    // NB: We do this here rather than in _OnInserted() because Update() is going to request a lock too, and the server doesn't need to be
+    // involved in locks for models created locally.
+    GetDgnDb().Locks().OnModelInserted(GetModelId());
     stat = Update();
     BeAssert(stat==DgnDbStatus::Success);
 

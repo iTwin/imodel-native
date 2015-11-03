@@ -37,13 +37,14 @@ private:
 
     bool AreLocksAvailable(LockRequestCR reqs, BeBriefcaseId requestor);
     void Reset();
-    void Dump();
 
     int32_t QueryLockCount(BeBriefcaseId bc);
 
     void SetOffline(bool offline) { m_offline = offline; }
 public:
     LocksServer();
+
+    void Dump(Utf8CP descr=nullptr);
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -188,7 +189,7 @@ LockStatus LocksServer::_QueryLocks(DgnLockSet& locks, DgnDbR db)
     while (BE_SQLITE_ROW == stmt.Step())
         {
         LockableId id(static_cast<LockableType>(stmt.GetValueInt(0)), stmt.GetValueId<BeInt64Id>(1));
-        locks.insert(DgnLock(id, static_cast<LockLevel>(stmt.GetValueInt(2))));
+        locks.insert(DgnLock(id, 0 != stmt.GetValueInt(2) ? LockLevel::Exclusive : LockLevel::Shared));
         }
 
     return LockStatus::Success;
@@ -319,11 +320,11 @@ int32_t LocksServer::QueryLockCount(BeBriefcaseId bc)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LocksServer::Dump()
+void LocksServer::Dump(Utf8CP descr)
     {
     Statement stmt;
     stmt.Prepare(m_db, "SELECT * FROM " SERVER_Table);
-    printf(">>>> Dumping server >>>>\n");
+    printf(">>>> %s >>>>\n", nullptr != descr ? descr : "Dumping Server");
     stmt.DumpResults();
     printf("<<<<<<<<<<<<<<<<<<<<<<<<\n");
     }
@@ -335,7 +336,6 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
 {
     mutable LocksServer m_server;
     ScopedDgnHost m_host;
-    DgnDbPtr m_db;
     DgnModelId m_modelId;
     DgnElementId m_elemId;
 
@@ -346,34 +346,57 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
 
     virtual ILocksServerP _GetLocksServer(DgnDbR) const override { return &m_server; }
 
-    void SetupDb(WCharCP testFile, BeBriefcaseId bcId)
+    DgnDbPtr SetupDb(WCharCP testFile, BeBriefcaseId bcId)
         {
         WCharCP baseFile = L"3dMetricGeneral.idgndb";
         BeFileName outFileName;
-        ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, baseFile, testFile, __FILE__));
-        m_db = DgnDb::OpenDgnDb(nullptr, outFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
-        ASSERT_TRUE(m_db.IsValid());
+        EXPECT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, baseFile, testFile, __FILE__));
+        auto db = DgnDb::OpenDgnDb(nullptr, outFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+        EXPECT_TRUE(db.IsValid());
 
         m_modelId = DgnModel::DictionaryId();
-        m_elemId = DgnCategory::QueryFirstCategoryId(*m_db);
+        m_elemId = DgnCategory::QueryFirstCategoryId(*db);
 
-        m_db->ChangeBriefcaseId(bcId);
+        db->ChangeBriefcaseId(bcId);
+        return db;
         }
 
     static LockableId MakeLockableId(DgnElementCR el) { return LockableId(el.GetElementId()); }
     static LockableId MakeLockableId(DgnModelCR model) { return LockableId(model.GetModelId()); }
     static LockableId MakeLockableId(DgnDbCR db) { return LockableId(db); }
 
-    void ExpectLevel(LockableId id, LockLevel expLevel)
+    static Utf8String MakeLockableName(LockableId lid)
+        {
+        Utf8CP typeName = nullptr;
+        switch (lid.GetType())
+            {
+            case LockableType::Db: typeName = "DgnDb"; break;
+            case LockableType::Model: typeName = "Model"; break;
+            default: typeName = "Element"; break;
+            }
+
+        Utf8Char buf[0x20];
+        BeStringUtilities::FormatUInt64(buf, _countof(buf), lid.GetId().GetValue(), HexFormatOptions());
+        Utf8String name(typeName);
+        name.append(1, ' ');
+        name.append(buf);
+
+        return name;
+        }
+
+    void ExpectLevel(LockableId id, LockLevel expLevel, DgnDbR db)
         {
         LockLevel actualLevel;
-        EXPECT_EQ(LockStatus::Success, m_db->Locks().QueryLockLevel(actualLevel, id));
-        EXPECT_EQ(expLevel, actualLevel);
+        EXPECT_EQ(LockStatus::Success, db.Locks().QueryLockLevel(actualLevel, id));
+        EXPECT_EQ(expLevel, actualLevel) << MakeLockableName(id).c_str();
         }
     template<typename T> void ExpectLevel(T const& obj, LockLevel level)
         {
-        ExpectLevel(MakeLockableId(obj), level);
+        ExpectLevel(MakeLockableId(obj), level, ExtractDgnDb(obj));
         }
+
+    template<typename T> static DgnDbR ExtractDgnDb(T const& obj) { return obj.GetDgnDb(); }
+    template<> static DgnDbR ExtractDgnDb(DgnDb const& obj) { return const_cast<DgnDbR>(obj); }
 
     template<typename T> LockStatus Acquire(T const& obj, LockLevel level)
         {
@@ -384,7 +407,8 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
 
         LockRequest req;
         req.Insert(obj, level);
-        LockStatus status = m_db->Locks().AcquireLocks(req);
+        DgnDbR db = ExtractDgnDb(obj);
+        LockStatus status = db.Locks().AcquireLocks(req);
 
 #ifdef DUMP_SERVER
         printf("After acquiring locks...\n");
@@ -403,6 +427,26 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
         {
         EXPECT_EQ(LockStatus::AlreadyHeld, Acquire(obj, level));
         }
+
+    DgnModelPtr CreateModel(Utf8CP name, DgnDbR db)
+        {
+        DgnClassId classId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
+        PhysicalModelPtr model = new PhysicalModel(PhysicalModel::CreateParams(db, classId, DgnModel::CreateModelCode(name)));
+        auto status = model->Insert();
+        EXPECT_EQ(DgnDbStatus::Success, status);
+        return DgnDbStatus::Success == status ? model : nullptr;
+        }
+
+    DgnElementCPtr CreateElement(DgnModelR model)
+        {
+        DgnDbR db = model.GetDgnDb();
+        DgnClassId classId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
+        DgnCategoryId catId = DgnCategory::QueryHighestCategoryId(db);
+        auto elem = PhysicalElement::Create(PhysicalElement::CreateParams(db, model.GetModelId(), classId, catId, Placement3d()));
+        auto persistentElem = elem->Insert();
+        EXPECT_TRUE(persistentElem.IsValid());
+        return persistentElem;
+        }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -410,10 +454,15 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SingleBriefcaseLocksTest : LocksManagerTest
 {
+    DEFINE_T_SUPER(LocksManagerTest);
+
     // Our DgnDb is masquerading as a briefcase...it has no actual master copy.
     BeBriefcaseId m_bcId;
+    DgnDbPtr m_db;
 
     SingleBriefcaseLocksTest() : m_bcId(1) { }
+
+    DgnModelPtr CreateModel(Utf8CP name) { return T_Super::CreateModel(name, *m_db); }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -422,7 +471,7 @@ struct SingleBriefcaseLocksTest : LocksManagerTest
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SingleBriefcaseLocksTest, AcquireLocks)
     {
-    SetupDb(L"AcquireLocks.dgndb", m_bcId);
+    m_db = SetupDb(L"AcquireLocks.dgndb", m_bcId);
 
     DgnDbR db = *m_db;
     DgnModelPtr pModel = db.Models().GetModel(m_modelId);
@@ -482,6 +531,72 @@ TEST_F(SingleBriefcaseLocksTest, AcquireLocks)
     ExpectLevel(model, LockLevel::Exclusive);
     ExpectLevel(el, LockLevel::Exclusive);
     ExpectLevel(db, LockLevel::Exclusive);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Newly-created models and elements are implicitly exclusively locked by that briefcase.
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SingleBriefcaseLocksTest, LocallyCreatedObjects)
+    {
+    m_db = SetupDb(L"LocallyCreatedObjects.dgndb", m_bcId);
+
+    DgnDbR db = *m_db;
+    DgnModelPtr model = db.Models().GetModel(m_modelId);
+    DgnElementCPtr elem = db.Elements().GetElement(m_elemId);
+
+    // Create a new model
+    DgnModelPtr newModel = CreateModel("NewModel");
+#ifdef DUMP_SERVER
+    m_server.Dump("Created Model");
+#endif
+    ExpectLevel(db, LockLevel::Shared);
+    ExpectLevel(*newModel, LockLevel::Exclusive);
+    ExpectLevel(*model, LockLevel::None);
+    ExpectLevel(*elem, LockLevel::None);
+
+
+    // Our exclusive locks are only known locally, because they refer to elements not known to the server
+    // If we refresh our local locks from server, we will need to re-obtain them.
+    // Server *will* know about shared locks on locally-created models
+    EXPECT_EQ(LockStatus::Success, db.Locks().RefreshLocks());
+    ExpectLevel(*newModel, LockLevel::None);
+    ExpectLevel(db, LockLevel::Shared);
+
+    // Create a new element in our new model
+    DgnElementCPtr newElem = CreateElement(*newModel);
+#ifdef DUMP_SERVER
+    m_server.Dump("Created Element");
+#endif
+    ExpectLevel(db, LockLevel::Shared);
+    ExpectLevel(*newModel, LockLevel::Shared);
+    ExpectLevel(*newElem, LockLevel::Exclusive);
+    ExpectLevel(*model, LockLevel::None);
+    ExpectLevel(*elem, LockLevel::None);
+
+    EXPECT_EQ(LockStatus::Success, db.Locks().RefreshLocks());
+    ExpectLevel(db, LockLevel::Shared);
+    ExpectLevel(*newModel, LockLevel::Shared);
+    ExpectLevel(*newElem, LockLevel::None);
+
+    ExpectAcquire(*newElem, LockLevel::Exclusive);
+    ExpectLevel(*newElem, LockLevel::Exclusive);
+    ExpectLevel(*newModel, LockLevel::Shared);
+    ExpectLevel(db, LockLevel::Shared);
+
+    ExpectAcquire(*newModel, LockLevel::Exclusive);
+    ExpectLevel(*newModel, LockLevel::Exclusive);
+    ExpectLevel(db, LockLevel::Shared);
+
+    EXPECT_EQ(LockStatus::Success, db.Locks().RefreshLocks());
+    ExpectAcquire(*newModel, LockLevel::Exclusive);
+    ExpectLevel(*newModel, LockLevel::Exclusive);
+    ExpectLevel(*newElem, LockLevel::Exclusive);
+    ExpectLevel(db, LockLevel::Shared);
+
+#ifdef DUMP_SERVER
+    m_server.Dump("Finished");
+#endif
     }
 
 

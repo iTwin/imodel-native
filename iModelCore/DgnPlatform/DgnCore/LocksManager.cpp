@@ -187,6 +187,7 @@ private:
     virtual LockStatus _LockElement(DgnElementCR, LockLevel) override { return LockStatus::Success; }
     virtual LockStatus _LockModel(DgnModelCR, LockLevel) override { return LockStatus::Success; }
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId, bool) override { level = LockLevel::Exclusive; return LockStatus::Success; }
+    virtual LockStatus _RefreshLocks() override { return LockStatus::Success; }
 public:
     static ILocksManagerPtr Create(DgnDbR db) { return new UnrestrictedLocksManager(db); }
 };
@@ -224,6 +225,7 @@ private:
     virtual LockStatus _AcquireLocks(LockRequestR locks) override;
     virtual LockStatus _RelinquishLocks() override;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, bool localOnly) override;
+    virtual LockStatus _RefreshLocks() override;
 
     virtual void _OnElementInserted(DgnElementId id) override
         {
@@ -245,7 +247,7 @@ private:
     void Insert(LockableId id, LockLevel level, bool overwrite=false);
     template<typename T> void Insert(T const& locks, bool checkExisting);
 
-    bool Validate();
+    bool Validate(LockStatus* status = nullptr);
     void Cull(LockRequestR locks);
     DbResult Save() { return m_db.SaveChanges(); }
 public:
@@ -255,13 +257,19 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool LocalLocksManager::Validate()
+bool LocalLocksManager::Validate(LockStatus* pStatus)
     {
+    LockStatus localStatus = LockStatus::Success;
+    LockStatus& status = nullptr != pStatus ? *pStatus : localStatus;
+
     switch (m_dbState)
         {
         case DbState::Ready:    return true;
         case DbState::Invalid: return false;
         }
+
+    // Assume something will go wrong.
+    m_dbState = DbState::Invalid;
 
     // ###TODO? Look for an existing locks db and don't throw away existing if found?
     BeFileName filename = GetLockTableFileName();
@@ -277,16 +285,57 @@ bool LocalLocksManager::Validate()
                                     "PRIMARY KEY(" LOCAL_Type "," LOCAL_Id ")");
         }
 
-    m_dbState = BE_SQLITE_OK == result ? DbState::Ready : DbState::Invalid;
-    BeAssert(DbState::Ready == m_dbState);
+    if (BE_SQLITE_OK != result)
+        {
+        status = LockStatus::SyncError;
+        return false;
+        }
 
     // Request a list of current locks from server
     DgnLockSet locks;
     auto server = GetLocksServer();
-    if (nullptr != server && LockStatus::Success == server->QueryLocks(locks, GetDgnDb()))
+    status = nullptr != server ? server->QueryLocks(locks, GetDgnDb()) : LockStatus::ServerUnavailable;
+    if (LockStatus::Success != status)
+        return false;
+
+    if (!locks.empty())
         Insert(locks, false);
 
-    return DbState::Ready == m_dbState;
+    m_dbState = DbState::Ready;
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+LockStatus LocalLocksManager::_RefreshLocks()
+    {
+    if (DbState::Ready != m_dbState)
+        {
+        // Either we haven't yet initialized the local DB, or failed to do so previously. Retry that.
+        LockStatus status;
+        Validate(&status);
+        return status;
+        }
+
+    // Drop our local DB and re-populate from server
+    auto server = GetLocksServer();
+    if (nullptr == server)
+        return LockStatus::ServerUnavailable;
+
+    DgnLockSet locks;
+    auto status = server->QueryLocks(locks, GetDgnDb());
+    if (LockStatus::Success != status)
+        return status;
+
+    if (BE_SQLITE_OK != m_db.ExecuteSql("DELETE FROM " LOCAL_Table))
+        return LockStatus::SyncError;
+
+    if (!locks.empty())
+        Insert(locks, false);
+
+    Save();
+    return LockStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
