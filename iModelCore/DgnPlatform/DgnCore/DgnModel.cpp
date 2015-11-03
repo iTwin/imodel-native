@@ -1881,7 +1881,7 @@ DgnElement::Code ComponentModel::CreateInstanceItemCode(DgnElementCR catalogItem
         }
     
     DgnElement::Code icode;
-    DgnAuthorityCPtr authority = db.Authorities().GetAuthority(m_compProps.m_itemCodeAuthority.c_str());
+    DgnAuthorityCPtr authority = db.Authorities().GetAuthority(cmm->m_compProps.m_itemCodeAuthority.c_str());
     if (!authority.IsValid())
         return DgnElement::Code();      // If no special authority is specified, just go with the no-code strategy.
 
