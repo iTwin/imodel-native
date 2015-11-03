@@ -65,9 +65,16 @@ struct SyncLocalChangesTask : public CachingTaskBase
         BentleyStatus BuildChangeset
             (
             IDataSourceCache& cache,
-            WSChangeset& changeSetOut,
+            WSChangeset& changeset,
             bmap<ObjectId, ECInstanceKey>& changesetIdMapOut,
             bvector<ChangeGroup*>& changesetChangeGroupsOut
+            );
+        WSChangeset::Instance* AddChangeToChangeset
+            (
+            IDataSourceCache& cache,
+            WSChangeset& changeset,
+            ChangeGroupCR changeGroup,
+            bmap<ObjectId, ECInstanceKey>& changesetIdMapOut
             );
         BentleyStatus BuildSyncJson(IDataSourceCache& cache, ChangeGroupCR changeGroup, JsonValueR syncJsonOut) const;
         BentleyStatus BuildSyncJsonForObjectCreation(IDataSourceCache& cache, ChangeGroupCR changeGroup, JsonValueR syncJsonOut) const;

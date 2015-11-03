@@ -550,8 +550,6 @@ bmap<ObjectId, ECInstanceKey>& changesetIdMapOut,
 bvector<ChangeGroup*>& changesetChangeGroupsOut
 )
     {
-    bmap<ObjectId, WSChangeset::Instance*> changesetInstances;
-
     for (auto i = m_changeGroupIndexToSyncNext; i < m_changeGroups.size(); ++i)
         {
         ChangeGroup& changeGroup = *m_changeGroups[i];
@@ -560,99 +558,125 @@ bvector<ChangeGroup*>& changesetChangeGroupsOut
             break;
             }
 
-        if (IChangeManager::ChangeStatus::NoChange != changeGroup.GetObjectChange().GetChangeStatus() &&
-            IChangeManager::ChangeStatus::NoChange == changeGroup.GetRelationshipChange().GetChangeStatus())
+        bmap<ObjectId, ECInstanceKey> changeIds;
+        WSChangeset::Instance* newInstance = AddChangeToChangeset(cache, changeset, changeGroup, changeIds);
+        if (nullptr == newInstance)
             {
-            auto& change = changeGroup.GetObjectChange();
-            auto state = ToWSChangesetChangeState(change.GetChangeStatus());
-
-            auto properties = ReadChangeProperties(cache, state, change.GetInstanceKey());
-
-            auto objectId = cache.FindInstance(change.GetInstanceKey());
-            changesetIdMapOut[objectId] = change.GetInstanceKey();
-
-            changesetInstances[objectId] = &changeset.AddInstance(objectId, state, properties);
+            return ERROR;
             }
 
-        if (IChangeManager::ChangeStatus::NoChange != changeGroup.GetRelationshipChange().GetChangeStatus())
+        if (m_options.GetMaxChangesetSize() != 0 &&
+            m_options.GetMaxChangesetSize() < changeset.CalculateSize())
             {
-            auto& change = changeGroup.GetRelationshipChange();
-            auto state = ToWSChangesetChangeState(change.GetChangeStatus());
-            ObjectId relId = cache.FindRelationship(change.GetInstanceKey());
-            changesetIdMapOut[relId] = change.GetInstanceKey();
-
-            if (WSChangeset::Deleted == state)
-                {
-                changesetInstances[relId] = &changeset.AddInstance(relId, state, nullptr);
-                }
-            else if (WSChangeset::Created == state)
-                {
-                ObjectId sourceId = cache.FindInstance(change.GetSourceKey());
-                ObjectId targetId = cache.FindInstance(change.GetTargetKey());
-
-                WSChangeset::Instance* source = changesetInstances[sourceId];
-                WSChangeset::Instance* target = changesetInstances[targetId];
-
-                WSChangeset::ChangeState sourceState = WSChangeset::Existing;
-                WSChangeset::ChangeState targetState = WSChangeset::Existing;
-
-                JsonValuePtr sourceProperties;
-                JsonValuePtr targetProperties;
-
-                if (IChangeManager::ChangeStatus::NoChange != changeGroup.GetObjectChange().GetChangeStatus())
-                    {
-                    if (change.GetSourceKey() == changeGroup.GetObjectChange().GetInstanceKey())
-                        {
-                        sourceState = ToWSChangesetChangeState(changeGroup.GetObjectChange().GetChangeStatus());
-                        sourceProperties = ReadChangeProperties(cache, sourceState, change.GetSourceKey());
-                        changesetIdMapOut[sourceId] = change.GetSourceKey();
-                        }
-                    else
-                        {
-                        targetState = ToWSChangesetChangeState(changeGroup.GetObjectChange().GetChangeStatus());
-                        targetProperties = ReadChangeProperties(cache, targetState, change.GetTargetKey());
-                        changesetIdMapOut[targetId] = change.GetTargetKey();
-                        }
-                    }
-
-                if (nullptr == source && nullptr == target)
-                    {
-                    source = &changeset.AddInstance(sourceId, sourceState, sourceProperties);
-                    target = &source->AddRelatedInstance(relId, state, ECRelatedInstanceDirection::Forward,
-                        targetId, targetState, targetProperties);
-
-                    changesetInstances[sourceId] = source;
-                    changesetInstances[targetId] = target;
-                    }
-                else if (nullptr == source)
-                    {
-                    changesetInstances[sourceId] = &target->AddRelatedInstance(relId, state, ECRelatedInstanceDirection::Backward,
-                        sourceId, sourceState, sourceProperties);
-                    }
-                else if (nullptr == target)
-                    {
-                    changesetInstances[targetId] = &source->AddRelatedInstance(relId, state, ECRelatedInstanceDirection::Forward,
-                        targetId, targetState, targetProperties);
-                    }
-                else
-                    {
-                    BeAssert(false && "Both relationship ends are already in changeset");
-                    return ERROR;
-                    }
-                }
-            else
-                {
-                BeAssert(false && "Not supported change state");
-                return ERROR;
-                }
+            changeset.RemoveInstance(*newInstance);
+            break;
             }
 
+        changesetIdMapOut.insert(changeIds.begin(), changeIds.end());
         changesetChangeGroupsOut.push_back(&changeGroup);
-
         m_changeGroupIndexToSyncNext += 1;
         }
 
+    if (changesetChangeGroupsOut.empty())
+        {
+        BeAssert(false && "Could not fit any changes into changeset. Check SyncOptions limitations");
+        return ERROR;
+        }
+
     return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+WSChangeset::Instance* SyncLocalChangesTask::AddChangeToChangeset
+(
+IDataSourceCache& cache,
+WSChangeset& changeset,
+ChangeGroupCR changeGroup,
+bmap<ObjectId, ECInstanceKey>& changesetIdMapOut
+)
+    {
+    if (IChangeManager::ChangeStatus::NoChange == changeGroup.GetRelationshipChange().GetChangeStatus())
+        {
+        auto& change = changeGroup.GetObjectChange();
+        auto state = ToWSChangesetChangeState(change.GetChangeStatus());
+
+        auto properties = ReadChangeProperties(cache, state, change.GetInstanceKey());
+        auto objectId = cache.FindInstance(change.GetInstanceKey());
+
+        changesetIdMapOut[objectId] = change.GetInstanceKey();
+        return &changeset.AddInstance(objectId, state, properties);
+        }
+
+    auto& change = changeGroup.GetRelationshipChange();
+    auto state = ToWSChangesetChangeState(change.GetChangeStatus());
+    ObjectId relId = cache.FindRelationship(change.GetInstanceKey());
+    changesetIdMapOut[relId] = change.GetInstanceKey();
+
+    if (WSChangeset::Deleted == state)
+        {
+        return &changeset.AddInstance(relId, state, nullptr);
+        }
+    else if (WSChangeset::Created == state)
+        {
+        ObjectId sourceId = cache.FindInstance(change.GetSourceKey());
+        ObjectId targetId = cache.FindInstance(change.GetTargetKey());
+
+        WSChangeset::Instance* source = changeset.FindInstance(sourceId);
+        WSChangeset::Instance* target = changeset.FindInstance(targetId);
+
+        WSChangeset::ChangeState sourceState = WSChangeset::Existing;
+        WSChangeset::ChangeState targetState = WSChangeset::Existing;
+
+        JsonValuePtr sourceProperties;
+        JsonValuePtr targetProperties;
+
+        if (IChangeManager::ChangeStatus::NoChange != changeGroup.GetObjectChange().GetChangeStatus())
+            {
+            if (change.GetSourceKey() == changeGroup.GetObjectChange().GetInstanceKey())
+                {
+                sourceState = ToWSChangesetChangeState(changeGroup.GetObjectChange().GetChangeStatus());
+                sourceProperties = ReadChangeProperties(cache, sourceState, change.GetSourceKey());
+                changesetIdMapOut[sourceId] = change.GetSourceKey();
+                }
+            else
+                {
+                targetState = ToWSChangesetChangeState(changeGroup.GetObjectChange().GetChangeStatus());
+                targetProperties = ReadChangeProperties(cache, targetState, change.GetTargetKey());
+                changesetIdMapOut[targetId] = change.GetTargetKey();
+                }
+            }
+
+        if (nullptr == source && nullptr == target)
+            {
+            source = &changeset.AddInstance(sourceId, sourceState, sourceProperties);
+            target = &source->AddRelatedInstance(relId, state, ECRelatedInstanceDirection::Forward,
+                targetId, targetState, targetProperties);
+
+            return source;
+            }
+        else if (nullptr == source)
+            {
+            source = &target->AddRelatedInstance(relId, state, ECRelatedInstanceDirection::Backward,
+                sourceId, sourceState, sourceProperties);
+            return source;
+            }
+        else if (nullptr == target)
+            {
+            target = &source->AddRelatedInstance(relId, state, ECRelatedInstanceDirection::Forward,
+                targetId, targetState, targetProperties);
+            return target;
+            }
+        else
+            {
+            BeAssert(false && "Both relationship ends are already in changeset");
+            return nullptr;
+            }
+        }
+
+    BeAssert(false && "Change state not supported");
+    return nullptr;
     }
 
 /*--------------------------------------------------------------------------------------+
