@@ -209,11 +209,11 @@ void SectioningViewController::_DrawView(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SectioningViewController::_DrawElement(ViewContextR context, GeometricElementCR element)
+void SectioningViewController::_StrokeElement(ViewContextR context, GeometricElementCR element)
     {
     if (m_pass == ClipVolumePass::InsideForward)
         {
-        T_Super::_DrawElement(context, element);
+        T_Super::_StrokeElement(context, element);
         return;
         }
 

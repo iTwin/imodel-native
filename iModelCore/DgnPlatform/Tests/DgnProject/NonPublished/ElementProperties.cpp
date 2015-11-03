@@ -94,7 +94,7 @@ TEST_F(ElementDisplayProperties, SetDisplayPattern)
     model3->Insert();
     DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
 
-    ElemDisplayParams ep;
+    Render::ElemDisplayParams ep;
     ep.SetCategoryId (m_defaultCategoryId);
 
     PatternParamsPtr pattern = PatternParams::Create (); 
@@ -114,7 +114,7 @@ TEST_F(ElementDisplayProperties, SetDisplayPattern)
 
     for (ElementGeometryPtr geom : collection)
         {
-        ElemDisplayParamsCR params = collection.GetElemDisplayParams ();
+        Render::ElemDisplayParamsCR params = collection.GetElemDisplayParams ();
         PatternParamsCP pattern = params.GetPatternParams ();
         ASSERT_NE(nullptr, pattern );
         EXPECT_EQ(ColorDef::Cyan(), pattern->GetColor());

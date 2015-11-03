@@ -420,7 +420,7 @@ AxisAlignedBox3d ViewController::_GetViewedExtents() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      11/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_DrawElement(ViewContextR context, GeometricElementCR element)
+void ViewController::_StrokeElement(ViewContextR context, GeometricElementCR element)
     {
     element._Stroke(context);
     }
@@ -1000,7 +1000,7 @@ void SectionDrawingViewController::_DrawView(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SectionDrawingViewController::_DrawElement(ViewContextR context, GeometricElementCR element)
+void SectionDrawingViewController::_StrokeElement(ViewContextR context, GeometricElementCR element)
     {
 #if defined(NEEDS_WORK_VIEW_CONTROLLER)
     if (context.GetViewport() != nullptr)
@@ -1011,7 +1011,7 @@ void SectionDrawingViewController::_DrawElement(ViewContextR context, GeometricE
         }
 #endif
 
-    T_Super::_DrawElement(context, element);
+    T_Super::_StrokeElement(context, element);
     }
 
 /*---------------------------------------------------------------------------------**//**

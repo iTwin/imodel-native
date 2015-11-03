@@ -2972,16 +2972,39 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2015
+* @bsimethod                                    Keith.Bentley                   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement::_Stroke(ViewContextR context) const
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    Transform placementTrans = (Is3d() ? ToElement3d()->GetPlacement().GetTransform() : ToElement2d()->GetPlacement().GetTransform());
-
-    context.GetCurrentGraphicR().PushTransClip(&placementTrans);
-#endif
     ElementGeomIO::Collection(GetGeomStream().GetData(), GetGeomStream().GetSize()).Draw(context, GetCategoryId(), context.GetViewFlags());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicPtr GeometricElement::GetGraphicFor(ViewContextR context, bool useCached) const
+    {
+    DgnViewportCR vp = *context.GetViewport();
+
+    DgnElement3dCP el3d = ToElement3d();
+    double pixelSize = (nullptr != el3d) ? vp.GetPixelSizeAtPoint(&el3d->GetPlacement().GetOrigin()) : 0.0;
+
+    if (useCached)
+        {
+        Render::GraphicP cached = m_graphics.FindFor(vp, pixelSize);
+        if (nullptr != cached)
+            return cached;
+        }
+
+    Transform placementTrans = el3d ? el3d->GetPlacement().GetTransform() : ToElement2d()->GetPlacement().GetTransform();
+
+    Render::GraphicPtr graphic = context.BeginGraphic(Graphic::CreateParams(&vp, &placementTrans, pixelSize));
+    vp.GetViewControllerR()._StrokeElement(context, *this);
+
+    if (useCached)
+        m_graphics.Save(*graphic);
+
+    return graphic;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3266,7 +3289,7 @@ protected:
     RefCountedPtr<SimplifyViewDrawGeom> m_output;
 
 public:
-    virtual Render::GraphicPtr _BeginGraphic() override {return m_output;}
+    virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const&) override {return m_output;}
 
     ElementGeometryCollectionContext(DgnDbR db)
         {

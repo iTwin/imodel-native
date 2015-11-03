@@ -964,7 +964,9 @@ static bool DrawCellTiles(ViewContextR context, PatternSymbol& symbCell, DPoint2
                 }
             else
                 {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
                 context.DrawSymbol(&symbCell, &cellTrans, NULL, false, false);
+#endif
                 }
 
             wasAborted = context.WasAborted();

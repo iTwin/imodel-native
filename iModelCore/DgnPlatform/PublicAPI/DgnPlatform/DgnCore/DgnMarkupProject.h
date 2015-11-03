@@ -354,7 +354,7 @@ protected:
 
     //  Override and forward the methods that trigger a query.
     virtual void _OnHealUpdate(DgnViewportR viewport, ViewContextR context, bool fullHeal) override;
-    virtual void _OnFullUpdate(DgnViewportR viewport, ViewContextR context, FullUpdateInfo& info) override;
+    virtual void _OnFullUpdate(DgnViewportR viewport, ViewContextR context) override;
     virtual void _OnDynamicUpdate(DgnViewportR viewport, ViewContextR context, DynamicUpdateInfo& info) override;
     virtual void _OnCategoryChange(bool singleEnabled) override;
     virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
@@ -364,8 +364,7 @@ protected:
     virtual void _DrawBackgroundGraphics(ViewContextR context) override;
     virtual void _DrawZBufferedGraphics(ViewContextR context) override;
 
-    virtual void _DrawElement(ViewContextR, GeometricElementCR) override;
-    virtual void _DrawElementFiltered(ViewContextR, GeometricElementCR, DPoint3dCP pts, double size)  override;
+    virtual void _StrokeElement(ViewContextR, GeometricElementCR) override;
 
 #ifdef WIP_PhysicalRedlineViewController
     // QueryViewController

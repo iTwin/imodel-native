@@ -71,14 +71,14 @@ struct Task : IRefCounted, NonCopyableClass
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   09/15
 //=======================================================================================
-struct Material : IRefCounted, NonCopyableClass
+struct Material : RefCounted<NonCopyableClass>
 {
 };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   09/15
 //=======================================================================================
-struct Texture : IRefCounted, NonCopyableClass
+struct Texture : RefCounted<NonCopyableClass>
 {
     struct Trans {double m_val[2][3];};
 
@@ -802,11 +802,22 @@ struct PointCloudDraw
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct Graphic : IRefCounted, NonCopyableClass
+struct Graphic : RefCounted<NonCopyableClass>
 {
     friend struct ViewContext;
+    struct CreateParams
+    {
+        DgnViewportCP m_vp;
+        TransformCP  m_placement;
+        double       m_pixelSize;
+        CreateParams(DgnViewportCP vp=nullptr, TransformCP placement=nullptr, double pixelSize=0.0) : m_vp(vp), m_pixelSize(pixelSize), m_placement(placement) {}
+    };
 
 protected:
+    DgnViewportCP m_vp;
+    Transform    m_placement;
+    double       m_pixelSize;
+
     virtual StatusInt _FinishDrawing() {return SUCCESS;}
     virtual void _ActivateMatSymb(ElemMatSymbCP matSymb) = 0;
     virtual void _DrawLineString3d(int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
@@ -830,8 +841,7 @@ protected:
     virtual void _DrawTextString(TextStringCR text, double* zDepth = nullptr) = 0;
     virtual void _DrawMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) = 0;
     virtual bool _IsQuickVision() const {return false;}
-    virtual bool _IsValidFor(DgnViewportCR vp, double* metersPerPixel) const {return true;}
-    virtual void _SetPixelSize(double size) {}
+    virtual bool _IsValidFor(DgnViewportCR vp, double metersPerPixel) const {return true;}
     virtual void _DrawRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) = 0;
     virtual void _DrawRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) = 0;
     virtual void _DrawDgnOle(DgnOleDraw*) = 0;
@@ -839,8 +849,12 @@ protected:
     virtual ~Graphic() {}
 
 public:
-    void SetPixelSize(double size) {_SetPixelSize(size);}
-    bool IsValidFor(DgnViewportCR vp, double* metersPerPixel) const {return _IsValidFor(vp, metersPerPixel);}
+    explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize) 
+        {
+        m_placement = params.m_placement ? *params.m_placement : Transform::FromIdentity(); 
+        }
+
+    bool IsValidFor(DgnViewportCR vp, double metersPerPixel) const {return _IsValidFor(vp, metersPerPixel);}
 
     //! Set an ElemMatSymb to be the "active" ElemMatSymb for this IDrawGeom.
     //! @param[in]          matSymb     The new active ElemMatSymb. All geometry drawn via calls to this IDrawGeom will
@@ -991,6 +1005,8 @@ public:
 struct Scene : NonCopyableClass
 {
 protected:
+    bvector<GraphicPtr> m_scene;
+
     virtual void _SetToViewCoords(bool yesNo) = 0;
     virtual void _ActivateOverrideMatSymb(OvrMatSymbCP ovrMatSymb) = 0;
     virtual void _DrawGrid(bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector, uint32_t gridsPerRef, Point2dCR repetitions) = 0;
@@ -998,11 +1014,13 @@ protected:
     virtual void _DrawTiledRaster(ITiledRaster* tiledRaster) = 0;
     virtual void _PushClipStencil(Graphic* graphic) = 0;
     virtual void _PopClipStencil() = 0;
-    virtual void _BeginScene() = 0;
+    virtual void _BeginScene() {Clear();}
     virtual void _FinishScene() = 0;
-    virtual void _AddGraphic(Graphic&) = 0;
     virtual Target& _GetRenderTarget() = 0;
-    virtual ~Scene() {}
+    DGNPLATFORM_EXPORT virtual void _AddGraphic(Graphic& graphic);
+    DGNPLATFORM_EXPORT virtual void _DropGraphic(Graphic& graphic);
+    DGNPLATFORM_EXPORT virtual void _Clear();
+    virtual ~Scene() {_Clear();}
 
 public:
     //! Set an ElemMatSymb to be the "active override" ElemMatSymb for this IDrawGeom.
@@ -1049,6 +1067,9 @@ public:
     void PopClipStencil() {_PopClipStencil();}
 
     void AddGraphic(Graphic& graphic) {_AddGraphic(graphic);}
+    void DropGraphic(Graphic& graphic) {_DropGraphic(graphic);}
+    void Clear() {_Clear();}
+
     Target& GetRenderTarget() {return _GetRenderTarget();}
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
@@ -1163,14 +1184,14 @@ struct CursorSource {};
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct Target : IRefCounted, NonCopyableClass
+struct Target : RefCounted<NonCopyableClass>
 {
     friend struct HealContext;
     friend struct IndexedViewport;
     typedef ImageUtilities::RgbImageInfo CapturedImageInfo;
 
 protected:
-    virtual Render::GraphicPtr _CreateGraphic() = 0;
+    virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) = 0;
     virtual void _SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText) = 0;
     virtual RenderDevice* _GetRenderDevice() const = 0;
     virtual StatusInt _AssignRenderDevice(RenderDevice*) = 0;
@@ -1203,11 +1224,10 @@ protected:
 
 public:
     virtual double _GetCameraFrustumNearScaleLimit() = 0;
-    virtual bool _WantDebugElementRangeDisplay() {return false;}
     virtual bool _WantInvertBlackBackground() {return false;}
     virtual Scene* _GetMainScene() {return nullptr;} // TEMPORARY!
 
-    Render::GraphicPtr CreateGraphic() {return _CreateGraphic();}
+    Render::GraphicPtr CreateGraphic(Render::Graphic::CreateParams const& params) {return _CreateGraphic(params);}
     void SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText) {_SetViewAttributes(viewFlags, bgColor, usebgTexture, aaLines, aaText);}
     RenderDevice* GetRenderDevice() const {return _GetRenderDevice();}
     StatusInt AssignRenderDevice(RenderDevice* device) {return _AssignRenderDevice(device);}

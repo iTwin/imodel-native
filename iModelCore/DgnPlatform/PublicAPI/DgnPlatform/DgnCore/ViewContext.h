@@ -277,16 +277,12 @@ protected:
     TransformClipStack      m_transformClipStack;
     DgnViewportP            m_viewport;
     Render::GraphicPtr      m_currGraphic;
-    Render::TargetPtr       m_renderTarget;
     Render::ElemDisplayParams m_currDisplayParams;
     Render::ElemMatSymb     m_elemMatSymb;
     Render::OvrMatSymb      m_ovrMatSymb;
     DPoint3dCP              m_startTangent;       // linestyle start tangent.
     DPoint3dCP              m_endTangent;         // linestyle end tangent.
     DgnElement::Hilited     m_hiliteState;
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    RasterDisplayParams     m_rasterDisplayParams;
-#endif
     IElemTopologyPtr        m_currElemTopo;
     GeomStreamEntryId       m_currGeomStreamEntryId;
     double                  m_levelOfDetail;
@@ -297,10 +293,9 @@ protected:
     DGNPLATFORM_EXPORT void InitDisplayPriorityRange();
     DGNPLATFORM_EXPORT virtual StatusInt _Attach(DgnViewportP, DrawPurpose purpose);
     DGNPLATFORM_EXPORT virtual void _Detach();
-    DGNPLATFORM_EXPORT virtual void _OutputElement(GeometricElementCR);
+    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _OutputElement(GeometricElementCR);
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
     DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(ClipStencil& boundary);
-    DGNPLATFORM_EXPORT virtual void _DrawSymbol(Render::IDisplaySymbol*, TransformCP, ClipPlaneSetP, bool ignoreColor, bool ignoreWeight);
     DGNPLATFORM_EXPORT virtual ILineStyleCP _GetCurrLineStyle(Render::LineStyleSymbP*);
     DGNPLATFORM_EXPORT virtual void _DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false);
     DGNPLATFORM_EXPORT virtual void _DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed = false);
@@ -321,7 +316,7 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _FilterRangeIntersection(GeometricElementCR);
     virtual IPickGeomP _GetIPickGeom() {return nullptr;}
     virtual void _OnPreDrawTransient() {}
-    virtual Render::GraphicPtr _BeginGraphic() = 0;
+    virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) = 0;
     DGNPLATFORM_EXPORT virtual void _VisitTransientGraphics(bool isPreUpdate);
     DGNPLATFORM_EXPORT virtual void _AllocateScanCriteria();
     DGNPLATFORM_EXPORT virtual void _SetupScanCriteria();
@@ -373,7 +368,6 @@ public:
     DGNPLATFORM_EXPORT void SetLinestyleTangents(DPoint3dCP start, DPoint3dCP end);
     Render::GraphicPtr GetCurrentGraphic() {return m_currGraphic;}
     Render::GraphicR GetCurrentGraphicR() {return *m_currGraphic.get();}
-    DGNPLATFORM_EXPORT void DeleteSymbol(Render::IDisplaySymbol*);
     double GetMinLOD() const {return m_minLOD;}
     void SetMinLOD(double lod) {m_minLOD = lod;}
     Byte& GetFilterLODFlag() {return m_filterLOD;}
@@ -383,11 +377,9 @@ public:
     void AllocateScanCriteria(){_AllocateScanCriteria();}
     void VisitDgnModel(DgnModelP model){_VisitDgnModel(model);}
     void SetScanReturn() {_SetScanReturn();}
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DGNPLATFORM_EXPORT RasterDisplayParams const& GetRasterDisplayParams() const {return m_rasterDisplayParams;}
-#endif
 
 public:
+    Render::GraphicPtr BeginGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return m_currGraphic=_BeginGraphic(params);}
     StatusInt VisitElement(GeometricElementCR elem) {return _VisitElement(elem);}
 
     /// @name Coordinate Query and Conversion
@@ -705,35 +697,27 @@ public:
     //! @param[in]    zDepth      Z depth value.
     DGNPLATFORM_EXPORT void DrawStyledCurveVector2d(CurveVectorCR curve, double zDepth);
 
-    //! Draw an instance of a DisplaySymbol given a DisplaySymbol definition (an IDisplaySymbol). DisplaySymbol definitions are generally cached globally,
-    //! so the first call to this method for a given symbol definition will create the cached representation, and all subsequent calls will draw
-    //! instances using that cached representation.
-    //! @param[in] symb Symbol definition to draw from.
-    //! @param[in] trans Transform to be applied to the symbol definition to determine location, orientation, size of this instance.
-    //! @param[in] clip ClipPlaneSet to be applied to symbol. May be nullptr.
-    //! @param[in] ignoreColor If true, ignore the colors in the symbol definition and use the current color from \c context.
-    //! @param[in] ignoreWeight If true, ignore line weights in the symbol definition, and use the current line weight from \c context.
-    void DrawSymbol(Render::IDisplaySymbol* symb, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight) {_DrawSymbol(symb, trans, clip, ignoreColor, ignoreWeight);}
-
     //! Draw a text string and any adornments such as background shape, underline, overline, etc. Sets up current ElemDisplayParams for TextString symbology.
     void DrawTextString(TextStringCR textString) {_DrawTextString(textString);}
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    //! Draw geometry by either using a previously cached representation if it has already been created, or by
-    //! calling its stroke method if the cached representation does not yet exist.
-    //! <p>Any displayable that wishes to cache any or all of its output should call this method.
-    //! <p>It first checks to see whether the appropriate cached representation was previously generated, and if so it simply draws
-    //! that cached representation. If not, it creates an caching context and then calls the appropriate stroke methods
-    //! to create a cache representation using the caching context.
-    //! @param[in] stroker An object to use to create cache representation (if necessary).
-    //! @note A single displayable may have many saved cached representations. Draw methods can decide which cached representation is appropriate.
-    //! in the current context, and can even draw more than one of the cached representations by having the stroker return different cache indices.
-    void DrawCached(Render::GraphicStroker& stroker) {return _DrawCached(stroker);}
-#endif
 
     bool CheckStop() {return _CheckStop();}
 }; // ViewContext
 
 /** @endGroup */
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   10/15
+//=======================================================================================
+struct CreateSceneContext : ViewContext
+{
+    DEFINE_T_SUPER(ViewContext);
+private:
+    Render::Scene& m_scene;
+    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _OutputElement(GeometricElementCR) override;
+    virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {return m_scene.GetRenderTarget().CreateGraphic(params);}
+
+public:
+    CreateSceneContext(Render::Scene& scene) : m_scene(scene) {}
+    DGNPLATFORM_EXPORT bool CreateScene(DgnViewportR);
+};
 END_BENTLEY_DGN_NAMESPACE

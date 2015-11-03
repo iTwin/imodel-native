@@ -184,7 +184,8 @@ struct ElementGraphicsContext : NullContext
 protected:
     ElementGraphicsDrawGeom* m_graphic;
     ElementGraphicsContext() {}
-    virtual Render::GraphicPtr _BeginGraphic() override {return m_graphic;}
+    virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {return m_graphic;}
+
 public:
     ElementGraphicsContext(IElementGraphicsProcessor& dropObj)
         {
@@ -208,15 +209,6 @@ virtual void _DrawTextString(TextStringCR text) override
 
     double zDepth = GetCurrentDisplayParams().GetNetDisplayPriority();
     GetCurrentGraphicR().DrawTextString(text, Is3dView() ? nullptr : &zDepth);                
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _DrawSymbol(IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clipPlanes, bool ignoreColor, bool ignoreWeight) override
-    {
-    // Pass along any symbol that is drawn from _ExpandPatterns/_ExpandLineStyles, etc.
-    m_graphic->ClipAndProcessSymbol(symbolDef, trans, clipPlanes, ignoreColor, ignoreWeight);
     }
 
 /*---------------------------------------------------------------------------------**//**

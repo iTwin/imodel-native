@@ -224,6 +224,8 @@ $(CoreObjs)DgnElements$(oext) :                     $(DgnCoreDir)DgnElements.cpp
 
 $(CoreObjs)DgnViewport$(oext) :                     $(DgnCoreDir)DgnViewport.cpp $(contextDepends) ${MultiCompileDepends}
 
+$(CoreObjs)Render$(oext) :                          $(DgnCoreDir)Render.cpp $(DgnCoreAPISrc)Render.h ${MultiCompileDepends}
+
 $(CoreObjs)HttpHandler$(oext) :                     $(DgnCoreDir)HttpHandler.cpp $(DgnCoreAPISrc)HttpHandler.h ${MultiCompileDepends}
 
 $(CoreObjs)RealityDataCache$(oext) :                $(DgnCoreDir)RealityDataCache.cpp $(RealityDataHandlerDepends) ${MultiCompileDepends}

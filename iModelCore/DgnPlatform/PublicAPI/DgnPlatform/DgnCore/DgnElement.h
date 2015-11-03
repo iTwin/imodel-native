@@ -24,12 +24,12 @@ struct Graphic;
 DEFINE_REF_COUNTED_PTR(Graphic)
 
 //=======================================================================================
-//! This interface defines the method used by ViewContext::DrawCached.
+//! "Stroking" is the process of turning Geometry into Graphics
 // @bsiclass
 //=======================================================================================
 struct Stroker
 {
-    //! Stroke this object into the current Graphic from the supplied context.
+    //! Stroke this object for the supplied context 
     virtual void _Stroke(ViewContextR context) const = 0;
 };
 
@@ -40,7 +40,7 @@ struct GraphicSet
 {
     mutable bvector<Render::GraphicPtr> m_graphics;
 
-    DGNPLATFORM_EXPORT Render::Graphic* FindFor(DgnViewportCR, double* metersPerPixel) const;
+    DGNPLATFORM_EXPORT Render::Graphic* FindFor(DgnViewportCR, double metersPerPixel) const;
     DGNPLATFORM_EXPORT void Save(Render::Graphic&);
     DGNPLATFORM_EXPORT void Drop(Render::Graphic&);
     DGNPLATFORM_EXPORT void Clear();
@@ -1383,10 +1383,11 @@ public:
 
     Render::GraphicSet& Graphics() const {return m_graphics;}
     DGNPLATFORM_EXPORT void SaveGeomStream(GeomStreamCP);
-    DGNPLATFORM_EXPORT virtual void _Stroke(ViewContextR) const;
     DGNPLATFORM_EXPORT virtual bool _DrawHit(HitDetailCR, ViewContextR) const;
     DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const;
     DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const; //!< Default snap using CurvePrimitive in HitDetail.
+    DGNPLATFORM_EXPORT virtual void _Stroke(ViewContextR context) const override;
+    DGNPLATFORM_EXPORT Render::GraphicPtr GetGraphicFor(ViewContextR context, bool useCache) const;
     bool HasGeometry() const {return m_geom.HasGeometry();} //!< return false if this GeometricElement currently has no geometry (is empty).
     bool IsPlacementValid() const {return _IsPlacementValid(); }
     AxisAlignedBox3d CalculateRange3d() const {return _CalculateRange3d();}

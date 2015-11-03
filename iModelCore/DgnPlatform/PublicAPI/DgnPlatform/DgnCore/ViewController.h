@@ -108,9 +108,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
 protected:
     friend struct  DgnViews;
     friend struct  ViewContext;
-    friend struct  DisplayHandler;
-    friend struct  UpdateContext;
-    friend struct  HealContext;
+    friend struct  GeometricElement;
+    friend struct  CreateSceneContext;
     friend struct  DgnViewport;
     friend struct  ViewManager;
     friend struct  IndexedViewport;
@@ -225,14 +224,9 @@ protected:
     //! For normal views, this does the same thing as _DrawView.
     DGNPLATFORM_EXPORT virtual void _VisitElements(ViewContextR& context);
 
-    //! Draw a single element through a ViewContext.
-    //! An application can override _DrawElement to change the symbology of elements.
-    //! @remarks For elements that only occupy a few pixels on the screen, DgnPlatform calls \ref _DrawElementFiltered instead of _DrawElement.
-    DGNPLATFORM_EXPORT virtual void _DrawElement(ViewContextR, GeometricElementCR);
-
-    //! DgnPlatform calls _DrawElementFiltered instead of _DrawElement when it needs to draw an element but decides that the
-    //! representation in the view is small enough that it can be simplified.
-    virtual void _DrawElementFiltered(ViewContextR, GeometricElementCR, DPoint3dCP pts, double size) {}
+    //! Stroke a single element through a ViewContext.
+    //! An application can override _StrokeElement to change the symbology of elements.
+    DGNPLATFORM_EXPORT virtual void _StrokeElement(ViewContextR, GeometricElementCR);
 
     //! Invoked just before the locate tooltip is displayed to retrieve the info text. Allows the ViewController to override the default description.
     //! @param[in]  hit The locate HitDetail whose info is needed.
@@ -258,7 +252,7 @@ protected:
 
     //! Used to notify derived classes when a full update begins.
     //! <p>See QueryViewController::_OnFullUpdate
-    virtual void _OnFullUpdate(DgnViewportR vp, ViewContextR context, FullUpdateInfo&) {}
+    virtual void _OnFullUpdate(DgnViewportR vp, ViewContextR context) {}
 #endif
 
     //! Used to notify derived classes of an attempt to locate the viewport around the specified
@@ -849,7 +843,7 @@ protected:
     DGNPLATFORM_EXPORT virtual ClipVectorPtr _GetClipVector() const override;
 
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR) override;
-    DGNPLATFORM_EXPORT virtual void _DrawElement(ViewContextR, GeometricElementCR) override;
+    DGNPLATFORM_EXPORT virtual void _StrokeElement(ViewContextR, GeometricElementCR) override;
     DGNPLATFORM_EXPORT virtual void _SaveToSettings(JsonValueR) const override;
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR) override;
 
@@ -936,7 +930,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingViewController : DrawingViewControl
 
 protected:
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR) override;
-    DGNPLATFORM_EXPORT virtual void _DrawElement(ViewContextR, GeometricElementCR) override;
+    DGNPLATFORM_EXPORT virtual void _StrokeElement(ViewContextR, GeometricElementCR) override;
     DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR hit, ViewContextR context) const override;
 
     mutable SectioningViewControllerPtr m_sectionView;  // transient
@@ -1000,7 +994,7 @@ private:
     Pass m_passesToDraw;
 
     virtual void _DrawView(ViewContextR) override;
-    virtual void _DrawElement(ViewContextR, GeometricElementCR) override;
+    virtual void _StrokeElement(ViewContextR, GeometricElementCR) override;
     virtual StatusInt _VisitHit(HitDetailCR hit, ViewContextR context) const override;
     virtual DPoint3d _GetOrigin() const override;
     virtual DVec3d _GetDelta() const override;

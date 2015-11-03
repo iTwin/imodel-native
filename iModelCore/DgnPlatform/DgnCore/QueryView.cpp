@@ -174,7 +174,7 @@ void QueryViewController::_OnHealUpdate(DgnViewportR vp, ViewContextR context, b
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_OnFullUpdate(DgnViewportR vp, ViewContextR context, FullUpdateInfo& info)
+void QueryViewController::_OnFullUpdate(DgnViewportR vp, ViewContextR context)
     {
     m_lastUpdateType = DrawPurpose::Update;
     LoadElementsForUpdate(vp, DrawPurpose::Update, &context, true, true, false);

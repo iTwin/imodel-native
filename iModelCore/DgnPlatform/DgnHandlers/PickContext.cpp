@@ -1179,38 +1179,6 @@ void PickContext::_DrawStyledBSplineCurve2d(MSBsplineCurveCR curve, double zDept
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   06/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PickContext::_DrawSymbol(IDisplaySymbol* symbol, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight)
-    {
-    DRange3d    range;
-
-    symbol->_GetRange(range);
-
-    // Get corner points and transform into npc space...
-    DPoint3d    boxPts[8];
-
-    range.Get8Corners(boxPts);
-
-    if (trans)
-        trans->Multiply(boxPts, boxPts, 8);
-
-    // Remove display priority that may have come in on transform...
-    if (!Is3dView())
-        {
-        for (int iPt=0; iPt < 8; iPt++)
-            boxPts[iPt].z = 0.0;
-        }
-
-    if (ClipPlaneContainment_StronglyOutside == GetTransformClipStack().ClassifyPoints(boxPts, 8))
-        return;
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_output.ClipAndProcessSymbol(symbol, trans, clip, ignoreColor, ignoreWeight);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PickContext::_CheckStop()
@@ -1233,7 +1201,7 @@ void PickContext::_OnPreDrawTransient()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    03/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PickContext::_OutputElement(GeometricElementCR element)
+GraphicPtr PickContext::_OutputElement(GeometricElementCR element)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Setup hit detail defaults...unless this is a symbol, don't want hit detail (pattern/linestyle) cleared...
@@ -1242,7 +1210,7 @@ void PickContext::_OutputElement(GeometricElementCR element)
 #endif
 
     // do per-element test
-    T_Super::_OutputElement(element);
+    return T_Super::_OutputElement(element);
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // Reset hit priority override in case it's been set...

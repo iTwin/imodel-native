@@ -82,9 +82,8 @@ private:
 
     virtual bool _CheckStop() override;
     virtual StatusInt _VisitDgnModel(DgnModelP inDgnModel) override;
-    virtual void _OutputElement(GeometricElementCR) override;
+    virtual Render::GraphicPtr _OutputElement(GeometricElementCR) override;
     virtual void _DrawAreaPattern(ViewContext::ClipStencil& boundary) override;
-    virtual void _DrawSymbol(Render::IDisplaySymbol*, TransformCP, ClipPlaneSetP, bool ignoreColor, bool ignoreWeight) override;
     virtual ILineStyleCP _GetCurrLineStyle(Render::LineStyleSymbP*) override;
     virtual void _DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false) override;
     virtual void _DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed = false) override;
@@ -93,7 +92,7 @@ private:
     virtual void _DrawStyledBSplineCurve3d(MSBsplineCurveCR) override;
     virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth) override;
     virtual void  _OnPreDrawTransient() override;
-    virtual Render::GraphicPtr _BeginGraphic() override {return &m_graphic;}
+    virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {return &m_graphic;}
 
     bool TestPoint(DPoint3dCR localPt, HitPriority priority);
     bool TestPointArray(size_t numPts, DPoint3dCP localPts, HitPriority priority);

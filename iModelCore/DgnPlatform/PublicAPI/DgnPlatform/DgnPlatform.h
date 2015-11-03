@@ -823,7 +823,6 @@ enum class DrawPurpose
     ModelFacet                 = 39,
     Measure                    = 40,
     VisibilityCalculation      = 41,
-    ProxyHashExtraction        = 42,
 };
 
 //! Used to communicate the result of handling an event from a GPS.

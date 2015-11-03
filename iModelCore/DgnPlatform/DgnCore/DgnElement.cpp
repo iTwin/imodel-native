@@ -960,7 +960,7 @@ DgnDbStatus DgnElement2d::_LoadFromDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::Graphic* GraphicSet::FindFor(DgnViewportCR vp, double* metersPerPixel) const
+Render::Graphic* GraphicSet::FindFor(DgnViewportCR vp, double metersPerPixel) const
     {
     for (auto graphic : m_graphics)
         {

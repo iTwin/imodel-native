@@ -80,7 +80,7 @@ protected:
     //! @remarks An application may use this and _OnFullUpdate to decide when to display some indication such as a spinner to 
     //! let the user know that the update is in progress.  The application can override PhysicalViewController::_OnUpdateComplete
     //! to know when to stop the spinner.
-    DGNPLATFORM_EXPORT virtual void _OnFullUpdate(DgnViewportR viewport, ViewContextR context, FullUpdateInfo& info) override;
+    DGNPLATFORM_EXPORT virtual void _OnFullUpdate(DgnViewportR viewport, ViewContextR context) override;
 
     //! Called at the beginning of a dynamic update to populate the QueryModel.
     //! @param[in]  viewport    The viewport that will display the graphics

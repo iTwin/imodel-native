@@ -258,7 +258,7 @@ void PhysicalRedlineViewController::_SaveToSettings(JsonValueR jsonObj) const
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PhysicalRedlineViewController::_OnHealUpdate(DgnViewportR viewport, ViewContextR context, bool fullHeal) {return m_subjectView.OnHealUpdate(viewport, context, fullHeal);}
-void PhysicalRedlineViewController::_OnFullUpdate(DgnViewportR viewport, ViewContextR context, FullUpdateInfo& info) {return m_subjectView.OnFullUpdate(viewport, context, info);}
+void PhysicalRedlineViewController::_OnFullUpdate(DgnViewportR viewport, ViewContextR context) {return m_subjectView.OnFullUpdate(viewport, context);}
 void PhysicalRedlineViewController::_OnDynamicUpdate(DgnViewportR viewport, ViewContextR context, DynamicUpdateInfo& info) {return m_subjectView.OnDynamicUpdate(viewport, context, info);}
 bool PhysicalRedlineViewController::_WantElementLoadStart(DgnViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum) {return WantElementLoadStart(viewport,currentTime,lastQueryTime,maxElementsDrawnInDynamicUpdate,queryFrustum);}
 void PhysicalRedlineViewController::_OnCategoryChange() {return m_subjectView.OnCategoryChange();}
@@ -280,23 +280,12 @@ void PhysicalRedlineViewController::_DrawZBufferedGraphics(ViewContextR context)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2014
 //---------------------------------------------------------------------------------------
-void PhysicalRedlineViewController::_DrawElement(ViewContextR context, GeometricElementCR element)
+void PhysicalRedlineViewController::_StrokeElement(ViewContextR context, GeometricElementCR element)
     {
     if (m_targetModelIsInSubjectView)
-        m_subjectView._DrawElement(context, element);
+        m_subjectView._StrokeElement(context, element);
     else
-        T_Super::_DrawElement(context, element);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    09/2014
-//---------------------------------------------------------------------------------------
-void PhysicalRedlineViewController::_DrawElementFiltered(ViewContextR context, GeometricElementCR element, DPoint3dCP pts, double size)
-    {
-    if (m_targetModelIsInSubjectView)
-        m_subjectView._DrawElementFiltered(context, element, pts, size);
-    else
-        T_Super::_DrawElementFiltered(context, element, pts, size);
+        T_Super::_StrokeElement(context, element);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -348,10 +337,10 @@ void PhysicalRedlineViewController::_OnHealUpdate(DgnViewportR viewport, ViewCon
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2014
 //---------------------------------------------------------------------------------------
-void PhysicalRedlineViewController::_OnFullUpdate(DgnViewportR viewport, ViewContextR context, FullUpdateInfo& info)
+void PhysicalRedlineViewController::_OnFullUpdate(DgnViewportR viewport, ViewContextR context)
     {
-    T_Super::_OnFullUpdate(viewport, context, info);
-    m_subjectView._OnFullUpdate(viewport, context, info);
+    T_Super::_OnFullUpdate(viewport, context);
+    m_subjectView._OnFullUpdate(viewport, context);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1186,9 +1175,9 @@ void DgnMarkupProject::CreateModelECProperties (DgnModelId modelId, Utf8CP model
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-void RedlineModel::StoreImageData(bvector<uint8_t> const& imageData, Output::CapturedImageInfo const& imageInfo, bool fitToX, bool compressImageProperty)
+void RedlineModel::StoreImageData(bvector<uint8_t> const& imageData, Target::CapturedImageInfo const& imageInfo, bool fitToX, bool compressImageProperty)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //  Grab possibly updated image definition data
     if (imageInfo.hasAlpha)
         m_imageDef.m_format = imageInfo.isBGR? QV_BGRA_FORMAT: QV_RGBA_FORMAT; 
@@ -1252,20 +1241,20 @@ BeAssert(def1x1.GetSizeofPixelInBytes() == 3);
     bytes1x1.assign(def, def+strlen(def));
     DefineImageTextures(def1x1, bytes1x1);
 #endif
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::StoreImageDataFromJPEG (uint8_t const* jpegData, size_t jpegDataSize, Output::CapturedImageInfo const& imageInfoIn, bool fitToX)
+void RedlineModel::StoreImageDataFromJPEG (uint8_t const* jpegData, size_t jpegDataSize, Target::CapturedImageInfo const& imageInfoIn, bool fitToX)
     {
-    Output::CapturedImageInfo imageInfo;
+    Target::CapturedImageInfo imageInfo;
     bvector<uint8_t> rgbData;
     if (ImageUtilities::ReadImageFromJpgBuffer(rgbData, imageInfo, jpegData, jpegDataSize, imageInfoIn) != BSISUCCESS)
         return;
     StoreImageData(rgbData, imageInfo, fitToX, /*compresssImageProperty*/false);
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13

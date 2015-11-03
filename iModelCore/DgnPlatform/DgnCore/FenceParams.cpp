@@ -703,7 +703,7 @@ public:
         DELETE_AND_CLEAR (m_nonVisibleViewport);
         }
 
-    virtual Render::GraphicPtr _BeginGraphic() override {return m_graphic;}
+    virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {return m_graphic;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2013
@@ -719,41 +719,6 @@ virtual void    _PushFrustumClip() override
 virtual bool    _CheckStop() override
     {
     return m_graphic->GetCurrentAbort(); // Doesn't want abort flag set...not reset between elements...
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    _DrawSymbol(IDisplaySymbol* symbolDefP, TransformCP transP, ClipPlaneSetP clipPlaneSetP, bool ignoreColor, bool ignoreWeight) override
-    {
-    // NOTE: Linestyles aren't drawn for fence accept, but area patterns are...
-    //       Completely inside/outside decided by boundary...check symbol geometry to detect interior overlaps...
-    if (m_useNpcSubRange)
-        {
-        DRange3d    range;
-
-        symbolDefP->_GetRange(range);
-
-        // Get corner points and transform into npc space...
-        DPoint3d    boxPts[8];
-
-        range.Get8Corners(boxPts);
-
-        if (transP)
-            transP->Multiply(boxPts, boxPts, 8);
-
-        LocalToView(boxPts, boxPts, 8);
-        ViewToNpc(boxPts, boxPts, 8);
-
-        // Compute new range from corners to make sure low < high or intesectsWith will return false...
-        range.InitFrom(boxPts, 8);
-
-        if (!range.IntersectsWith(m_npcSubRange))
-            return;
-        }
-
-    // Check symbol geometry...
-    m_graphic->ClipAndProcessSymbol(symbolDefP, transP, clipPlaneSetP, ignoreColor, ignoreWeight);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -68,10 +68,9 @@ protected:
     RefCountedPtr<NullGraphic> m_nullGraphic;
 
     void _AllocateScanCriteria() override {if (m_setupScan) T_Super::_AllocateScanCriteria();}
-    virtual void _DrawSymbol(Render::IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight) override {}
     virtual bool _FilterRangeIntersection(GeometricElementCR element) override {if (m_setupScan) return T_Super::_FilterRangeIntersection(element); return false;}
     virtual void _CookDisplayParams(Render::ElemDisplayParamsR, Render::ElemMatSymbR) override {}
-    virtual Render::GraphicPtr _BeginGraphic() override {return m_nullGraphic;}
+    virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {return m_nullGraphic;}
 
 public:
     NullContext(bool setupScan = false) {m_setupScan = setupScan; m_ignoreViewRange = true; m_nullGraphic=new NullGraphic();}

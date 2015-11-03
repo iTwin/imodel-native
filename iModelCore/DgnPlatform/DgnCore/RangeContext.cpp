@@ -826,35 +826,6 @@ public:
     ElemRangeCalc& GetFitRange() { return m_fitRange; }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  01/08
-+---------------+---------------+---------------+---------------+---------------+------*/
-void _DrawSymbol(IDisplaySymbol* symbol, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight) override
-    {
-    DRange3d    range;
-
-    if (symbol->_GetRange(range) != BSISUCCESS)
-        return;
-    
-    DPoint3d    corners [8];
-
-    range.Get8Corners(corners);
-
-    if (nullptr != clip)
-        PushClipPlanes(*clip);
-
-    if (nullptr != trans)
-        PushTransform(*trans);
-
-    GetCurrentGraphicR().DrawPointString3d(8, corners, nullptr);
-
-    if (nullptr != trans)
-        PopTransformClip();
-
-    if (nullptr != clip)
-        PopTransformClip();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual StatusInt _InitContextForView() override

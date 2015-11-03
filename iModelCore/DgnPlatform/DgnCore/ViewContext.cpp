@@ -91,9 +91,6 @@ StatusInt ViewContext::_InitContextForView()
 
     m_elemMatSymb.Init();
     m_ovrMatSymb.Clear();
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_rasterDisplayParams.SetFlags(0);
-#endif
 
     m_worldToNpc  = *m_viewport->GetWorldToNpcMap();
     m_worldToView = *m_viewport->GetWorldToViewMap();
@@ -543,10 +540,9 @@ bool ViewContext::_FilterRangeIntersection(GeometricElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    03/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_OutputElement(GeometricElementCR element)
+GraphicPtr ViewContext::_OutputElement(GeometricElementCR element)
     {
-    m_currGraphic = _BeginGraphic();
-    m_viewport ? m_viewport->GetViewControllerR()._DrawElement(*this, element) : element._Stroke(*this);
+    return element.GetGraphicFor(*this, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -709,7 +705,7 @@ StatusInt ViewContext::_VisitElement(GeometricElementCR element)
         default:
             {
             static int s_drawRange; // 0 - Host Setting (Bounding Box Debug), 1 - Bounding Box, 2 - Element Range
-            if (nullptr == m_viewport || (!s_drawRange && !m_renderTarget->_WantDebugElementRangeDisplay()))
+            if (nullptr == m_viewport || !s_drawRange)
                 break;
 
             DPoint3d  p[8];
@@ -1798,53 +1794,6 @@ void ElemDisplayParams::Resolve(ViewContextR context)
     // SubCategory display priority is combined with element priority to compute net display priority. 
     m_netPriority = context.ResolveNetDisplayPriority(m_elmPriority, subCategoryId, &appearance);
     m_resolved = true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* draw a symbol into the current context
-* @bsimethod                                                    Keith.Bentley   06/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DrawSymbol(IDisplaySymbol* symbol, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight)
-    {
-#if defined (DGNPLATFORM_WIP_SYMBOL_SYMBOLOGY)
-    // We need to revisit "ignoreColor" and "ignoreWeight" and remove these args. The DgnGeomPart for the symbol doesn't 
-    // store any symbology, so there should never be a reason to "ignore" anything, the correct symbology, either from the
-    // symbol definition or element, should be setup prior to calling this method.
-    QvCache* symbolCache = T_HOST.GetGraphicsAdmin()._GetSymbolCache();
-
-    if (!symbolCache || CheckICachedDraw())
-        {
-        // if we're creating a cache elem already, we need to stroke the symbol into that elem by value
-        IDrawGeomR output = GetCurrentGraphicR();
-
-        output._PushTransClip(trans, clip);
-        symbol->_Draw(*this);
-        output._PopTransClip();
-
-        return;
-        }
-
-    QvElem* qvElem = T_HOST.GetGraphicsAdmin()._LookupQvElemForSymbol(symbol);
-
-    if (nullptr == qvElem)
-        {
-        SymbolContext symbolContext(*this);
-
-        qvElem = symbolContext.DrawSymbolForCache(symbol, *symbolCache);
-
-        if (nullptr == qvElem)
-            return;
-
-        T_HOST.GetGraphicsAdmin()._SaveQvElemForSymbol(symbol, qvElem); // save the qvelem in case we encounter this symbol again
-        }
-
-    // draw the symbol.
-    IViewDrawR output = GetIViewDraw();
-
-    output._PushTransClip(trans, clip);
-    output.DrawQvElem(qvElem); // Display priority for symbols in 2d is incorporated into the transform.
-    output._PopTransClip();
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
