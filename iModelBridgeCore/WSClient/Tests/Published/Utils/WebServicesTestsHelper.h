@@ -12,6 +12,7 @@
 #include <Bentley/BeDebugLog.h>
 #include <WebServices/Client/WSError.h>
 #include <WebServices/Client/WSRepositoryClient.h>
+#include <WebServices/Client/WSChangeset.h>
 #include <WebServices/Client/ObjectId.h>
 
 #include "../WebServices/Connect/StubLocalState.h"
@@ -49,7 +50,7 @@ BEGIN_WSCLIENT_UNITTESTS_NAMESPACE
 std::shared_ptr<rapidjson::Document> ToRapidJson(Utf8StringCR jsonString);
 
 Json::Value ToJson(Utf8StringCR jsonString);
-
+JsonValuePtr ToJsonPtr(Utf8StringCR jsonString);
 std::string RapidJsonToString(const rapidjson::Value& json);
 
 template<typename T>

@@ -46,6 +46,11 @@ Json::Value ToJson(Utf8StringCR jsonString)
     return json;
     }
 
+JsonValuePtr ToJsonPtr(Utf8StringCR jsonString)
+    {
+    return std::make_shared<Json::Value>(ToJson(jsonString));
+    }
+
 std::string RapidJsonToString(const rapidjson::Value& json)
     {
     if (json.IsNull())
