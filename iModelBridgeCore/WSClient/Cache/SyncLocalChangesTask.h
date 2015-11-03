@@ -14,6 +14,7 @@
 #include "CachingTaskBase.h"
 #include "ChangesGraph.h"
 #include <WebServices/Cache/CachingDataSource.h>
+#include <WebServices/Client/WSChangeset.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
@@ -24,7 +25,11 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct SyncLocalChangesTask : public CachingTaskBase
     {
     private:
+        WSInfo m_serverInfo;
+        SyncOptions m_options;
+
         std::shared_ptr<bset<ECInstanceKey>> m_objectsToSyncPtr;
+
         const CachingDataSource::SyncProgressCallback m_onProgressCallback;
 
         bvector<ChangeGroupPtr> m_changeGroups;
@@ -40,7 +45,10 @@ struct SyncLocalChangesTask : public CachingTaskBase
         virtual void _OnError(CachingDataSource::ErrorCR error);
         void OnSyncDone();
 
-        void SyncNextChangeGroup();
+        void SyncNext();
+
+        bool CanSyncChangeset(ChangeGroupCR changeGroup) const;
+        AsyncTaskPtr<void> SyncNextChangeset();
 
         AsyncTaskPtr<void> SyncChangeGroup(ChangeGroupPtr changeGroup);
         AsyncTaskPtr<void> SyncCreation(ChangeGroupPtr changeGroup);
@@ -53,12 +61,20 @@ struct SyncLocalChangesTask : public CachingTaskBase
         void ReportProgress(double currentFileBytesUploaded, Utf8StringCR label) const;
         ResponseGuardPtr CreateResponseGuard(Utf8StringCR objectLabel, bool reportProgress) const;
 
+        BentleyStatus BuildChangeset
+            (
+            IDataSourceCache& cache,
+            WSChangeset& changeSetOut,
+            bmap<ObjectId, ECInstanceKey>& changesetIdMapOut,
+            bvector<ChangeGroup*>& changesetChangeGroupsOut
+            );
         BentleyStatus BuildSyncJson(IDataSourceCache& cache, ChangeGroupCR changeGroup, JsonValueR syncJsonOut) const;
         BentleyStatus BuildSyncJsonForObjectCreation(IDataSourceCache& cache, ChangeGroupCR changeGroup, JsonValueR syncJsonOut) const;
         BentleyStatus BuildSyncJsonForRelationshipCreation(IDataSourceCache& cache, ChangeManager::RelationshipChangeCR relationshipChange, JsonValueR syncJsonOut) const;
 
         std::map<ECInstanceKey, Utf8String> ReadChangedRemoteIds(ChangeGroupCR changeGroup, WSCreateObjectResponseCR response) const;
 
+        JsonValuePtr ReadChangeProperties(IDataSourceCache& cache, WSChangeset::ChangeState state, ECInstanceKeyCR instance) const;
         BentleyStatus ReadObjectProperties(IDataSourceCache& cache, ECInstanceKeyCR instanceKey, JsonValueR propertiesJsonOut) const;
         BentleyStatus ReadObjectPropertiesForUpdate(IDataSourceCache& cache, ECInstanceKeyCR instanceKey, JsonValueR propertiesJsonOut) const;
         BentleyStatus ReadObjectPropertiesForCreation(IDataSourceCache& cache, ECInstanceKeyCR instanceKey, JsonValueR propertiesJsonOut) const;
@@ -70,6 +86,7 @@ struct SyncLocalChangesTask : public CachingTaskBase
         void SetExistingInstanceInfoToJson(IDataSourceCache& cache, ECInstanceKeyCR instanceKey, JsonValueR json) const;
         void SetChangedInstanceClassInfoToJson(IDataSourceCache& cache, IChangeManager::ObjectChangeCR change, JsonValueR json) const;
         Utf8String GetChangeStateStr(IChangeManager::ChangeStatus changeStatus) const;
+        WSChangeset::ChangeState ToWSChangesetChangeState(IChangeManager::ChangeStatus status)const;
 
         void RegisterFailedSync(IDataSourceCache& cache, ChangeGroupCR changeGroup, CachingDataSource::ErrorCR error, Utf8StringCR objectLabel);
         void SetUpdatedInstanceKeyInChangeGroups(ECInstanceKey oldKey, ECInstanceKey newKey);
@@ -82,6 +99,7 @@ struct SyncLocalChangesTask : public CachingTaskBase
             (
             CachingDataSourcePtr cachingDataSource,
             std::shared_ptr<bset<ECInstanceKey>> objectsToSync,
+            SyncOptions options,
             CachingDataSource::SyncProgressCallback&& onProgress,
             ICancellationTokenPtr cancellationToken
             );
