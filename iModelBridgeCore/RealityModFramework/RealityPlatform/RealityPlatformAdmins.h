@@ -20,8 +20,6 @@ struct MyImageppLibHost : ImagePP::ImageppLib::Host
 struct MyImageppLibAdmin : ImagePP::ImageppLibAdmin
     {
     DEFINE_T_SUPER(ImagePP::ImageppLibAdmin)
-
-    virtual ImagePP::IRasterGeoCoordinateServices* _GetIRasterGeoCoordinateServicesImpl() const override;
     virtual ~MyImageppLibAdmin() {}
     };
 

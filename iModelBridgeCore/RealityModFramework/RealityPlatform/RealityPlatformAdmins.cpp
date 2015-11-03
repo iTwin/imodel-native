@@ -48,14 +48,3 @@ void MyImageppLibHost::_RegisterFileFormat()
     REGISTER_SUPPORTED_FILEFORMAT
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jean-Francois.Cote              03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ImagePP::IRasterGeoCoordinateServices* MyImageppLibAdmin::_GetIRasterGeoCoordinateServicesImpl() const
-    {
-    //WIP
-    //if (GeoCoordinationManager::GetServices() != NULL)
-    return ImagePP::ImageppLib::GetDefaultIRasterGeoCoordinateServicesImpl();
-
-    //return NULL;
-    }

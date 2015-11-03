@@ -128,9 +128,9 @@ static HFCPtr<HRFRasterFile> GetRasterFile(WCharCP inFilename)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-HFCPtr<HGF2DTransfoModel> GetTransfoModelToMeters(IRasterBaseGcsCR projection)
+HFCPtr<HGF2DTransfoModel> GetTransfoModelToMeters(GeoCoordinates::BaseGCSCR projection)
     {
-    double toMeters = 1.0 / projection.GetUnitsFromMeters();
+    double toMeters = 1.0 / projection.UnitsFromMeters();
 
     HFCPtr<HGF2DTransfoModel> pUnitConvertion(new HGF2DStretch(HGF2DDisplacement(0.0, 0.0), toMeters, toMeters));
 
@@ -203,101 +203,91 @@ StatusInt RasterDataHandler::ExtractFootprint(DRange2dP pFootprint) const
     HFCPtr<HRFRasterFile> rasterFile = GetRasterFile(m_filename);
 
     if (rasterFile == 0 || rasterFile->CountPages() <= 0)
-        return 0;
+        return ERROR;
 
     try
         {
         HGFHMRStdWorldCluster worldCluster;
 
         HFCPtr<HRFPageDescriptor> pPageDescriptor = rasterFile->GetPageDescriptor(0);
-        IRasterBaseGcsCP pSrcFileGeocoding = pPageDescriptor->GetGeocodingCP();
+        GeoCoordinates::BaseGCSCP pSrcFileGeocoding = pPageDescriptor->GetGeocodingCP();
+        if(pSrcFileGeocoding == nullptr || !pSrcFileGeocoding->IsValid())
+            return ERROR;
 
+        GeoCoordinates::BaseGCSPtr pDestGeoCoding = GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
+        if (pDestGeoCoding == nullptr || !pDestGeoCoding->IsValid())
+            return ERROR;
 
-        IRasterGeoCoordinateServices* geoCoordServices = ImageppLib::GetDefaultIRasterGeoCoordinateServicesImpl();
+        // Compute the image extent expressed in the src projection units
+        HFCPtr<HGF2DCoordSys> pSrcWorldMeters(worldCluster.GetCoordSysReference(HGF2DWorld_HMRWORLD));
 
-        GeoCoordinates::BaseGCSPtr initialGCS = GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
-        if (!initialGCS->IsValid())
-            return 0;
+        HFCPtr<HGF2DCoordSys> pSrcUnitCoordSys = new HGF2DCoordSys(*GetTransfoModelToMeters(*pSrcFileGeocoding), pSrcWorldMeters);
+        HFCPtr<HGF2DCoordSys> pPhysicalCoordSys;
 
-        IRasterBaseGcsPtr pDestGeoCoding = geoCoordServices->_CreateRasterBaseGcsFromBaseGcs(initialGCS.get());
+        HFCPtr<HRFResolutionDescriptor> pRes(pPageDescriptor->GetResolutionDescriptor(0));
 
-        // Georeference
-        if ((pSrcFileGeocoding != 0) &&
-            (pSrcFileGeocoding->IsValid()) &&
-            (pDestGeoCoding->IsValid()))
+        if (pPageDescriptor->HasTransfoModel())
             {
-            IRasterBaseGcsPtr     pDestCoordSys(pDestGeoCoding->Clone());
-
-            // Compute the image extent expressed in the src projection units
-            HFCPtr<HGF2DCoordSys> pSrcWorldMeters(worldCluster.GetCoordSysReference(HGF2DWorld_HMRWORLD));
-
-            HFCPtr<HGF2DCoordSys> pSrcUnitCoordSys = new HGF2DCoordSys(*GetTransfoModelToMeters(*(pSrcFileGeocoding->Clone())), pSrcWorldMeters);
-            HFCPtr<HGF2DCoordSys> pPhysicalCoordSys;
-
-            HFCPtr<HRFResolutionDescriptor> pRes(pPageDescriptor->GetResolutionDescriptor(0));
-
-            if (pPageDescriptor->HasTransfoModel())
-                {
-                pPhysicalCoordSys = new HGF2DCoordSys(*pPageDescriptor->GetTransfoModel(),
-                                                      worldCluster.GetCoordSysReference(rasterFile->GetWorldIdentificator()));
-                }
-            else
-                {
-                pPhysicalCoordSys = new HGF2DCoordSys(HGF2DIdentity(),
-                                                      worldCluster.GetCoordSysReference(rasterFile->GetWorldIdentificator()));
-                }
-
-            // Create the reprojection transfo model (non adapted)
-            HFCPtr<HGF2DTransfoModel> pDstToSrcTransfoModel(new HCPGCoordModel(*pDestCoordSys, *(pSrcFileGeocoding->Clone())));
-
-            // Create the reprojected coordSys
-            HFCPtr<HGF2DCoordSys> pDstCoordSys(new HGF2DCoordSys(*pDstToSrcTransfoModel, pSrcUnitCoordSys));
-
-            CHECK_HUINT64_TO_HDOUBLE_CONV(pRes->GetWidth())
-                CHECK_HUINT64_TO_HDOUBLE_CONV(pRes->GetHeight())
-
-                double ImageWidth = (double) pRes->GetWidth();
-            double ImageHeight = (double) pRes->GetHeight();
-
-            HFCPtr<HVEShape> pImageRectangle(new HVEShape(HVE2DRectangle(0.0, 0.0, ImageWidth, ImageHeight, pPhysicalCoordSys)));
-            pImageRectangle->ChangeCoordSys(pSrcUnitCoordSys);
-            HGF2DExtent ImageExtent(pImageRectangle->GetExtent());
-            HGF2DLiteExtent ImageLiteExtent(ImageExtent.GetXMin(), ImageExtent.GetYMin(), ImageExtent.GetXMax(), ImageExtent.GetYMax());
-
-            // Compute the expected mean error
-            double ImageCenter_x(ImageWidth / 2.0);
-            double ImageCenter_y(ImageHeight / 2.0);
-
-            HFCPtr<HVEShape> pPixelShape(new HVEShape(HVE2DRectangle(ImageCenter_x - 0.5*ImageWidth, ImageCenter_y - 0.5*ImageHeight, ImageCenter_x + 0.5*ImageWidth, ImageCenter_y + 0.5*ImageHeight, pPhysicalCoordSys)));
-            pPixelShape->ChangeCoordSys(pDstCoordSys);
-
-            // Get shape and list of points.
-            HGF2DLocationCollection pointCollection;
-            pPixelShape->GetShapePtr()->Drop(&pointCollection, 0);
-
-            assert(pointCollection.size() != 0);
-
-            // *2 for storing coordX and coordY independently.
-            double* pPts = new double[pointCollection.size() * 2]; //&&JFC cannot returned memory that you have newed. use DRange3d?
-
-            size_t j = -1;
-            for (size_t i = 0; i < pointCollection.size(); ++i)
-                {
-                pPts[++j] = pointCollection[i].GetX();
-                pPts[++j] = pointCollection[i].GetY();
-                }
-
-            HGF2DExtent extent = pPixelShape->GetExtent();
-            pFootprint->InitFrom(extent.GetXMin(), extent.GetYMin(), extent.GetXMax(), extent.GetYMax());
-
-            return SUCCESS;
+            pPhysicalCoordSys = new HGF2DCoordSys(*pPageDescriptor->GetTransfoModel(),
+                                                    worldCluster.GetCoordSysReference(rasterFile->GetWorldIdentificator()));
             }
-        return 0;
+        else
+            {
+            pPhysicalCoordSys = new HGF2DCoordSys(HGF2DIdentity(),
+                                                    worldCluster.GetCoordSysReference(rasterFile->GetWorldIdentificator()));
+            }
+
+        // Create the reprojection transfo model (non adapted)
+        GeoCoordinates::BaseGCSPtr pSrcGcs = GeoCoordinates::BaseGCS::CreateGCS(*pSrcFileGeocoding);
+        HFCPtr<HGF2DTransfoModel> pDstToSrcTransfoModel(new HCPGCoordModel(*pDestGeoCoding, *pSrcGcs));
+
+        // Create the reprojected coordSys
+        HFCPtr<HGF2DCoordSys> pDstCoordSys(new HGF2DCoordSys(*pDstToSrcTransfoModel, pSrcUnitCoordSys));
+
+        CHECK_HUINT64_TO_HDOUBLE_CONV(pRes->GetWidth())
+        CHECK_HUINT64_TO_HDOUBLE_CONV(pRes->GetHeight())
+
+        double ImageWidth = (double) pRes->GetWidth();
+        double ImageHeight = (double) pRes->GetHeight();
+
+        HFCPtr<HVEShape> pImageRectangle(new HVEShape(HVE2DRectangle(0.0, 0.0, ImageWidth, ImageHeight, pPhysicalCoordSys)));
+        pImageRectangle->ChangeCoordSys(pSrcUnitCoordSys);
+        HGF2DExtent ImageExtent(pImageRectangle->GetExtent());
+        HGF2DLiteExtent ImageLiteExtent(ImageExtent.GetXMin(), ImageExtent.GetYMin(), ImageExtent.GetXMax(), ImageExtent.GetYMax());
+
+        // Compute the expected mean error
+        double ImageCenter_x(ImageWidth / 2.0);
+        double ImageCenter_y(ImageHeight / 2.0);
+
+        HFCPtr<HVEShape> pPixelShape(new HVEShape(HVE2DRectangle(ImageCenter_x - 0.5*ImageWidth, ImageCenter_y - 0.5*ImageHeight, ImageCenter_x + 0.5*ImageWidth, ImageCenter_y + 0.5*ImageHeight, pPhysicalCoordSys)));
+        pPixelShape->ChangeCoordSys(pDstCoordSys);
+
+        // Get shape and list of points.
+        HGF2DLocationCollection pointCollection;
+        pPixelShape->GetShapePtr()->Drop(&pointCollection, 0);
+
+        assert(pointCollection.size() != 0);
+
+        // *2 for storing coordX and coordY independently.
+        double* pPts = new double[pointCollection.size() * 2]; //&&JFC cannot returned memory that you have newed. use DRange3d?
+
+        size_t j = -1;
+        for (size_t i = 0; i < pointCollection.size(); ++i)
+            {
+            pPts[++j] = pointCollection[i].GetX();
+            pPts[++j] = pointCollection[i].GetY();
+            }
+
+        HGF2DExtent extent = pPixelShape->GetExtent();
+        pFootprint->InitFrom(extent.GetXMin(), extent.GetYMin(), extent.GetXMax(), extent.GetYMax());
+
+        return SUCCESS;
         }
     catch (...)
         {
-        return 0;
         }
+
+    return ERROR;
     }
 
     /*---------------------------------------------------------------------------------**//**
