@@ -29,6 +29,7 @@ ClientMkiHeaders =                                                          \
     $(CacheMkiPublicApiDir)Persistence/IDataSourceCache.h                   \
     $(CacheMkiPublicApiDir)Persistence/IRepositoryInfoStore.h               \
     $(CacheMkiPublicApiDir)ServerQueryHelper.h                              \
+    $(CacheMkiPublicApiDir)SyncOptions.h                                    \
     $(CacheMkiPublicApiDir)Transactions/BeSQLiteDbTransactionHandler.h      \
     $(CacheMkiPublicApiDir)Transactions/CacheTransaction.h                  \
     $(CacheMkiPublicApiDir)Transactions/CacheTransactionManager.h           \
@@ -123,6 +124,8 @@ $(o)SyncCachedInstancesSeperatelyTask$(oext)    : $(CacheMkiSourceDir)SyncCached
 $(o)SyncCachedInstancesTask$(oext)              : $(CacheMkiSourceDir)SyncCachedInstancesTask.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)SyncLocalChangesTask$(oext)                 : $(CacheMkiSourceDir)SyncLocalChangesTask.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)SyncOptions$(oext)                          : $(CacheMkiSourceDir)SyncOptions.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 
 $(o)ResponseGuard$(oext)                        : $(CacheMkiSourceDir)Network/ResponseGuard.cpp $(ClientMkiHeaders) ${MultiCompileDepends}

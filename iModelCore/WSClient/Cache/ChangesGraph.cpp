@@ -328,6 +328,10 @@ void ChangeGroup::AddDependency(ChangeGroupPtr other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ChangeGroup::DoesDependOn(ChangeGroupPtr other) const
     {
+    if (nullptr == other)
+        {
+        return false;
+        }
     auto it = std::find(m_dependsOn.begin(), m_dependsOn.end(), other);
     if (it == m_dependsOn.end())
         {

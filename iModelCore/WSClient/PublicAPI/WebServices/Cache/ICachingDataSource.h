@@ -13,11 +13,12 @@
 #include <WebServices/Cache/WebServicesCache.h>
 
 #include <Bentley/bset.h>
-#include <WebServices/Cache/IQueryProvider.h>
-#include <WebServices/Cache/Persistence/IDataSourceCache.h>
-#include <WebServices/Cache/Transactions/CacheTransaction.h>
 #include <MobileDgn/Utils/Threading/AsyncResult.h>
 #include <MobileDgn/Utils/Threading/WorkerThread.h>
+#include <WebServices/Cache/Persistence/IDataSourceCache.h>
+#include <WebServices/Cache/Transactions/CacheTransaction.h>
+#include <WebServices/Cache/IQueryProvider.h>
+#include <WebServices/Cache/SyncOptions.h>
 #include <WebServices/Client/WSRepositoryClient.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
@@ -218,19 +219,22 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         //! Push all local changes to server with SyncStatus::Ready.
         //! @param onProgress - callback to track progress. Will report object labels that are being synced and progress value if any files are being uploaded.
         //! @param cancellationToken - cancelling sync task
+        //! @param options - additonal configuration for sync
         //! @return fatal error (like server error or connection is lost) - sync is stopped and error is returned. 
         //! If server returns error specific to instances being synced (forbidden, conflict, etc) – it is put into return value list and returned as “FailedObject” 
         //! after everything is synced.
         virtual AsyncTaskPtr<BatchResult> SyncLocalChanges
             (
             SyncProgressCallback onProgress,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr cancellationToken,
+            SyncOptions options = SyncOptions()
             ) = 0;
 
         //! Push specific local changes to server
         //! @param instancesToSync - locally changed instances to sync. Changes with SyncStatus::NotReady are also synced if specified.
         //! @param onProgress - callback to track progress. Will report object labels that are being synced and progress value if any files are being uploaded.
         //! @param cancellationToken - cancelling sync task
+        //! @param options - additonal configuration for sync
         //! @return fatal error (like server error or connection is lost) - sync is stopped and error is returned. 
         //! If server returns error specific to instances being synced (forbidden, conflict, etc) – it is put into return value list and returned as “FailedObject” 
         //! after everything is synced.
@@ -238,7 +242,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             (
             const bset<ECInstanceKey>& instancesToSync,
             SyncProgressCallback onProgress,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr cancellationToken,
+            SyncOptions options = SyncOptions()
             ) = 0;
 
         //! Pull changes from server to update cached data.
