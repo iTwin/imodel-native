@@ -238,8 +238,7 @@ StatusInt RasterDataHandler::ExtractFootprint(DRange2dP pFootprint) const
             }
 
         // Create the reprojection transfo model (non adapted)
-        GeoCoordinates::BaseGCSPtr pSrcGcs = GeoCoordinates::BaseGCS::CreateGCS(*pSrcFileGeocoding);
-        HFCPtr<HGF2DTransfoModel> pDstToSrcTransfoModel(new HCPGCoordModel(*pDestGeoCoding, *pSrcGcs));
+        HFCPtr<HGF2DTransfoModel> pDstToSrcTransfoModel(new HCPGCoordModel(*pDestGeoCoding, *pSrcFileGeocoding));
 
         // Create the reprojected coordSys
         HFCPtr<HGF2DCoordSys> pDstCoordSys(new HGF2DCoordSys(*pDstToSrcTransfoModel, pSrcUnitCoordSys));
