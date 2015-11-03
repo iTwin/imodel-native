@@ -839,6 +839,7 @@ public:
     explicit DictionaryModel(CreateParams const& params) : T_Super(params) { }
 };
 
+#ifdef WIP_COMPONENT_MODEL // *** don't think we need "SolutionId"
 //! Identifies a ComponentModel solution.
 struct SolutionId
 {
@@ -857,6 +858,7 @@ public:
 
     bool operator==(SolutionId const& rhs) const { return m_modelName == rhs.m_modelName && m_solutionName == rhs.m_solutionName; }
 };
+#endif
 
 #ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 //=======================================================================================
@@ -969,6 +971,21 @@ struct EXPORT_VTABLE_ATTRIBUTE ComponentModel : DgnModel3d
 private:
     DEFINE_T_SUPER(DgnModel3d)
 
+    struct CompProps
+        {
+        Utf8String m_itemECClassName;
+        Utf8String m_itemCategoryName;
+        Utf8String m_itemCodeAuthority;
+
+        CompProps(Utf8StringCR iclass, Utf8StringCR icat, Utf8String iauthority) : m_itemECClassName(iclass), m_itemCategoryName(icat), m_itemCodeAuthority(iauthority) {;}
+        bool IsValid(DgnDbR) const;
+        void FromJson(Json::Value const& inValue);
+        void ToJson(Json::Value& outValue) const;
+
+        DgnClassId GetItemECClassId(DgnDbR) const;
+        DgnCategoryId QueryItemCategoryId(DgnDbR) const;
+        };
+
 public:
     //=======================================================================================
     //! Parameters to create a new instances of a ComponentModel.
@@ -979,9 +996,7 @@ public:
     private:
         DEFINE_T_SUPER(DgnModel3d::CreateParams)
         friend struct ComponentModel;
-        Utf8String m_itemECClassName;
-        Utf8String m_itemCategoryName;
-        Utf8String m_itemCodeAuthority;
+        CompProps m_compProps;
     public:
         //! Parameters to create a new instance of a ComponentModel.
         //! @param[in] dgndb The DgnDb for the new ComponentModel
@@ -994,22 +1009,22 @@ public:
 
         //! @private
         //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
-        explicit CreateParams(DgnModel::CreateParams const& params) : T_Super(params) {}
+        explicit CreateParams(DgnModel::CreateParams const& params) : T_Super(params), m_compProps("","","") {}
     };
 
-private:
-    Utf8String m_itemECClassName;
-    Utf8String m_itemCategoryName;
-    Utf8String m_itemCodeAuthority;
+    friend struct CreateParams;
 
-    DPoint3d _GetGlobalOrigin() const override {return DPoint3d::FromZero();}
-    CoordinateSpace _GetCoordinateSpace() const override {return CoordinateSpace::Local;}
+private:
+    CompProps m_compProps;
+
+    DPoint3d _GetGlobalOrigin() const override SEALED_ATTRIBUTE {return DPoint3d::FromZero();}
+    CoordinateSpace _GetCoordinateSpace() const override SEALED_ATTRIBUTE {return CoordinateSpace::Local;}
     DGNPLATFORM_EXPORT void _GetSolverOptions(Json::Value&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() override;
 
 protected:
-    DGNPLATFORM_EXPORT virtual void _ReadProperties();
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _Update();
+    DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const;//!< @private
+    DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&);//!< @private
 
 public:
     /**
@@ -1043,6 +1058,7 @@ public:
     */
     DGNPLATFORM_EXPORT DgnDbStatus Solve(ModelSolverDef::ParameterSet const& parameters);
 
+#ifdef WIP_COMPONENT_MODEL // *** don't think we need "SolutionId"
     //! Compute a string that can be used to identify the current solution. It is based on the parameter names and values.
     //! @return a generated name for the current solution
     //! @see ComponentModel::GetSolver::GetParametersValues
@@ -1052,9 +1068,27 @@ public:
     //! @return a generated name for the current solution
     //! @see ComponentModel::GetSolver::GetParametersValues
     DGNPLATFORM_EXPORT SolutionId ComputeSolutionId(ModelSolverDef::ParameterSet const& params);
+#endif
 
     //! Get the name of the component.
     Utf8CP GetModelName() const { return GetCode().GetValueCP(); }
+
+    //! Extract the current solution from this ComponentModel and store it in the form of one or more items in the specified output model.
+    //! @param[out] stat        Optional. If not null, then an error code is stored here in case the creation of the item fails.
+    //! @param[in] catalogModel The output catalog model, where the harvested solution item(s) is(are) stored.
+    //! @return The item generated to hold the solution results. If more than one element was created, this is the parent.
+    DGNPLATFORM_EXPORT DgnElementCPtr HarvestSolution(DgnDbStatus* stat, PhysicalModelR catalogModel);
+
+    //! convenience method to place an instance of a catalog item 
+    //! @param[out] stat        Optional. If not null, then an error code is stored here in case the copy fails.
+    //! @param[in] targetModel  The model where copy instance is inserted
+    //! @param[in] catalogItem  The item that is to be copied
+    //! @param[in] origin       The original of the new instance element's placement.
+    //! @param[in] angles       The angles of the new instance element's placement. 
+    //! @param[in] code         The code to assign to the new item. If invalid, then a code will be generated by the catalogItem's CodeAuthority
+    //! @return the instance item if successfull
+    DGNPLATFORM_EXPORT static PhysicalElementCPtr CopyCatalogItem(DgnDbStatus* stat, PhysicalModelR targetModel, PhysicalElementCR catalogItem, 
+        DPoint3dCR origin, YawPitchRollAnglesCR angles, DgnElement::Code const& code);
 };
 
 //=======================================================================================
@@ -1189,13 +1223,11 @@ namespace dgn_ModelHandler
         MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_PhysicalModel, PhysicalModel, Physical, Model, DGNPLATFORM_EXPORT)
     };
 
-#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
     //! The ModelHandler for ComponentModel
     struct EXPORT_VTABLE_ATTRIBUTE Component : Model
     {
         MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_ComponentModel, ComponentModel, Component, Model, DGNPLATFORM_EXPORT)
     };
-#endif
 
     //! The ModelHandler for PlanarPhysicalModel
     struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysical : Model

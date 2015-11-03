@@ -396,9 +396,7 @@ struct DgnDomains : DgnDbTable
 private:
     friend struct DgnDb;
     friend struct DgnDomain;
-#ifdef WIP_COMPONENT_MODEL // *** Pending redesign
     friend struct ComponentModel;
-#endif
 
     DomainList    m_domains;
     Handlers      m_handlers;

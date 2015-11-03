@@ -2,10 +2,9 @@
 #
 #     $Source: PublicAPI/BuildDoc.mke $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-PolicyFile=$(SrcRoot)DgnPlatform/privmki/AssertDgnPlatformPolicy.mki
 %include    mdl.mki
 %include    $(SharedMki)HtmlHelp.mki
 
@@ -13,7 +12,8 @@ PolicyFile=$(SrcRoot)DgnPlatform/privmki/AssertDgnPlatformPolicy.mki
     %return
 %endif
 
-SrcDgnPlatform=$(SrcRoot)DgnPlatform/
+SrcDgnPlatform          = $(SrcRoot)DgnPlatform/
+OutDgnPlatformBuild     = $(OutBuildDir)DgnPlatform/
 
 %if !defined (NO_CHM)
 %if !defined (OutputFile)
@@ -25,18 +25,18 @@ SrcDgnPlatform=$(SrcRoot)DgnPlatform/
 %if defined (NO_XML)
     %if defined (Scope1)
         InputDir       = $(BuildContext)SubParts/PublishedApi_Scope1/DgnProject/
-        DOXYGEN_OUTPUT = $(dgnPlatformBuildDir_)dox_scope1/
+        DOXYGEN_OUTPUT = $(OutDgnPlatformBuild)dox_scope1/
     %else
         InputDir       = $(BuildContext)SubParts/PublishedApi/DgnProject/
-        DOXYGEN_OUTPUT = $(dgnPlatformBuildDir_)dox/
+        DOXYGEN_OUTPUT = $(OutDgnPlatformBuild)dox/
     %endif
 %else
     %if defined (Scope1)
         InputDir       = $(BuildContext)SubParts/PublishedApi_Scope1/DgnProject/
-        DOXYGEN_OUTPUT = $(dgnPlatformBuildDir_)dox_scope1_xml/
+        DOXYGEN_OUTPUT = $(OutDgnPlatformBuild)dox_scope1_xml/
     %else
         InputDir       = $(BuildContext)SubParts/PublishedApi/DgnProject/
-        DOXYGEN_OUTPUT = $(dgnPlatformBuildDir_)dox_xml/
+        DOXYGEN_OUTPUT = $(OutDgnPlatformBuild)dox_xml/
     %endif
 %endif
 
@@ -46,7 +46,7 @@ InputStamp     = $(InputDir).stamp
 #   However, we seem to need the Bentley directory as an include to get the docs to generate correctly.  Otherwise ElementHandles don't work.
 #   Previous comments indicate that it is needed to understand macros like BEGIN_BENTLEY_NAMESPACE and ADD_BENTLEY_TYPEDEFS.
 #   So we create this temporary directory, and only link in the Bentley directory.  That keeps performance up while creating the full doc. 
-includeDir = $(dgnPlatformBuildDir_)doxygenInclude/
+includeDir = $(OutDgnPlatformBuild)doxygenInclude/
 always:
     !~@mkdir $(includeDir)
    CreateSymLinks.py -d"$(includeDir)Bentley=$(BuildContextPublicApiDir)Bentley"
@@ -102,7 +102,7 @@ $(DOXYGEN_OUTPUT)doxygen.cfg : $(InputStamp)
         | ************************************************
         | * See $(DOXYGEN_OUTPUT)xml/*
         | ************************************************
-        @CreateSymLinks.py -d"$(BuildContext)xml=$(DOXYGEN_OUTPUT)xml/"
+        ~linkdir "$(BuildContext)xml=$(DOXYGEN_OUTPUT)xml/"
     %endif
     %if !defined (NO_CHM)
         | [== hhc $(DOXYGEN_OUTPUT)html/index.hhp ==]
@@ -125,5 +125,5 @@ $(DOXYGEN_OUTPUT)doxygen.cfg : $(InputStamp)
 
 %if !defined (NO_XML)
 always:
-   @CreateSymLinks.py -d"$(BuildContext)$(OutputFile)=$(DOXYGEN_OUTPUT)"
+   ~linkdir "$(BuildContext)$(OutputFile)=$(DOXYGEN_OUTPUT)"
 %endif

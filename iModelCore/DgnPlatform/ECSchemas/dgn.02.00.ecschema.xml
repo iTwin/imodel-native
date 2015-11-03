@@ -208,9 +208,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>Model3d</BaseClass>
-    <ECProperty propertyName="ItemECClass" typeName="string" description="Full name of ECClass of Item that is customized by this model"/>
-    <ECProperty propertyName="ItemCategory" typeName="string" description="Name of Category used by harvestable Items in this model"/>
-    <ECProperty propertyName="ItemCodeAuthority" typeName="string" description="Name of CodeAuthority to be used when creating component instances"/>
+        <!--  These are in the model's Props JSON
+        <ECProperty propertyName="ItemECClass" typeName="string" description="Full name of ECClass of Item that is customized by this model"/>
+        <ECProperty propertyName="ItemCategory" typeName="string" description="Name of Category used by harvestable Items in this model"/>
+        <ECProperty propertyName="ItemCodeAuthority" typeName="string" description="Name of CodeAuthority to be used when creating component instances"/>
+        -->
     </ECClass>
     <ECClass typeName="ResourceModel" isDomainClass="True">
         <ECCustomAttributes>
@@ -434,6 +436,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="DefaultMarginLeft"            typeName="double"/>
         <ECProperty propertyName="DefaultMarginRight"           typeName="double"/>
         <ECProperty propertyName="DefaultCellAlignment"         typeName="int"/>
+        <ECProperty propertyName="DefaultCellOrientation"       typeName="int"/>
         <ECProperty propertyName="FillSymbologyKeyOddRow"       typeName="int"/>
         <ECProperty propertyName="FillSymbologyKeyEvenRow"      typeName="int"/>
         <ECProperty propertyName="TitleRowTextStyle"            typeName="int"/>
@@ -452,7 +455,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECClass>
 
     <ECClass typeName="AnnotationTableRow" isDomainClass="True">
-        <!-- The aspect that holds the row properties for an AnnotationTableElement -->
+        <!-- The aspect that holds properties of a row of an AnnotationTableElement -->
         <BaseClass>ElementMultiAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
@@ -475,7 +478,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECClass>
 
     <ECClass typeName="AnnotationTableColumn" isDomainClass="True">
-        <!-- The aspect that holds the column properties for an AnnotationTableElement -->
+        <!-- The aspect that holds properties of a column of an AnnotationTableElement -->
         <BaseClass>ElementMultiAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
@@ -495,6 +498,41 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="ColumnIndex"                  typeName="int"/>
         <ECProperty propertyName="WidthLock"                    typeName="boolean"/>
         <ECProperty propertyName="Width"                        typeName="double"/>
+    </ECClass>
+
+    <ECClass typeName="AnnotationTableCellIndex" isStruct="True">
+        <ECProperty propertyName="RowIndex"                     typeName="int"/>
+        <ECProperty propertyName="ColumnIndex"                  typeName="int"/>
+    </ECClass>
+
+    <ECClass typeName="AnnotationTableCell" isDomainClass="True">
+        <!-- The aspect that holds properties of a cell of an AnnotationTableElement -->
+        <BaseClass>ElementMultiAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                <Indexes>
+                    <DbIndex>
+                        <Name>idx_dgn_AnnotationTable_Cell</Name>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>ElementId</string>
+                            <string>CellIndex.RowIndex</string>
+                            <string>CellIndex.ColumnIndex</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECStructProperty propertyName="CellIndex"              typeName="AnnotationTableCellIndex"/>
+        <ECProperty propertyName="TextBlock"                    typeName="binary"/>
+        <ECProperty propertyName="FillKey"                      typeName="int"/>
+        <ECProperty propertyName="Alignment"                    typeName="int"/>
+        <ECProperty propertyName="Orientation"                  typeName="int"/>
+        <ECProperty propertyName="MarginTop"                    typeName="double)"/>
+        <ECProperty propertyName="MarginBottom"                 typeName="double)"/>
+        <ECProperty propertyName="MarginLeft"                   typeName="double)"/>
+        <ECProperty propertyName="MarginRight"                  typeName="double)"/>
     </ECClass>
 
     <ECRelationshipClass typeName="ElementOwnsChildElements" isDomainClass="True" strength="embedding" strengthDirection="forward">
@@ -1061,42 +1099,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <!-- // DgnDb "implementation detail" classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
 
-    <!-- WIP_COMPONENT_MODEL *** pending redesign
-    <ECClass typeName="ComponentSolution" isDomainClass="True" >
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="ComponentModelName" typeName="string"/>
-        <ECProperty propertyName="SolutionName" typeName="string"/>
-        <ECProperty propertyName="Parameters" typeName="string"/>
-        <ECProperty propertyName="Geom" typeName="binary"/>
-        <ECProperty propertyName="Range" typeName="binary"/>
-    </ECClass>
-    -->
-
-    <!-- WIP_COMPONENTS I need to be able to use (ComponentModelName,SolutionName) as the key to the ComponentSolution table
-    <ECRelationshipClass typeName="ElementUsesSolution" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                <SourceECInstanceIdColumn>SolutionId</SourceECInstanceIdColumn>
-                <TargetECInstanceIdColumn>ElementId</TargetECInstanceIdColumn>
-            </LinkTableRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(0,1)" polymorphic="True">
-            <Class class="ComponentSolution" />
-        </Source>
-        <Target cardinality="(0,N)" polymorphic="True">
-            <Class class="Element" />
-        </Target>
-    </ECRelationshipClass>
-    -->
-
-    <!-- WIP_ELEMENT_ITEM *** pending redesign
     <ECClass typeName="EGASpecifier" description="Specifies an EGA" isDomainClass="False" isCustomAttributeClass="True">
         <ECProperty propertyName="Type" typeName="string" description="The kind of EGA implementation that must be executed. One of: JavaScript, ... TBD" />
         <ECProperty propertyName="Name" typeName="string" description="Identifies the script or parametric model within the Db that will be executed. For scripts, this should have the form program_name:function_name" />
