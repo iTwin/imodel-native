@@ -1579,7 +1579,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, DgnSubCategoryId& subCate
 
     subCategory = DgnSubCategoryId((uint64_t)ppfb->subCategoryId());
 
-    DPoint3d            origin = *((DPoint3dCP) ppfb->origin());
+    DPoint3d            origin = (nullptr == ppfb->origin() ? DPoint3d::FromZero() : *((DPoint3dCP) ppfb->origin()));
     YawPitchRollAngles  angles = YawPitchRollAngles::FromDegrees(ppfb->yaw(), ppfb->pitch(), ppfb->roll());
 
     geomToElem = angles.ToTransform(origin);
