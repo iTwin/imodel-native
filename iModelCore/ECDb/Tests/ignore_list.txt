@@ -23,3 +23,5 @@ ECSqlStatementTestFixture.PolymorphicUpdateTest
 
 #TFS327106 to address this
 JsonUpdaterTests.UpdateRelationshipProperty
+
+ECDbInstances.UpdateRelationshipProperty # notified Raman

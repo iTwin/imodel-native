@@ -509,7 +509,7 @@ public:
     //! @param ecClass [in] ECClass of the instance that needs to be updated. 
     //! @remarks Holds some cached state to speed up future updates of the same class. Keep the 
     //! inserter around when updating many instances of the same class. 
-    ECDB_EXPORT JsonUpdater (ECDbCR ecdb, ECN::ECClassCR ecClass);
+    ECDB_EXPORT JsonUpdater (ECDbR ecdb, ECN::ECClassCR ecClass);
 
     //! Indicates whether this JsonUpdater is valid and can be used to update JSON instances.
     //! It is not valid, if @p ecClass is not mapped or not instantiable for example.

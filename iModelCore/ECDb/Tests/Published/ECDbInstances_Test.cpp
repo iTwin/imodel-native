@@ -1229,8 +1229,8 @@ Utf8String GetLabelPropertyFromRelation(ECDbR db, ECInstanceId relInstanceId)
         }
 
     stmt.BindId(1, relInstanceId);
-    ECSqlStepStatus stepStatus = stmt.Step();
-    if (stepStatus != ECSqlStepStatus::HasRow)
+    DbResult stepStatus = stmt.Step();
+    if (stepStatus != BE_SQLITE_ROW)
         {
         BeAssert(false);
         return "";
@@ -1242,29 +1242,29 @@ Utf8String GetLabelPropertyFromRelation(ECDbR db, ECInstanceId relInstanceId)
 //---------------------------------------------------------------------------------------
 // @bsimethod                              Ramanujam.Raman                   10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbInstances, UpdateRelationshipProperty)
+TEST_F(ECDbInstances, UpdateRelationshipProperty)
     {
     ECDbTestProject saveTestProject;
     saveTestProject.Create("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
 
     // Reopen the test project
     ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb(saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb(saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes));
     ASSERT_EQ(BE_SQLITE_OK, stat);
 
     ECSqlStatement stmt;
     ECSqlStatus prepareStatus = stmt.Prepare (db, "INSERT INTO stco.Employee (FirstName,LastName) VALUES('Elon', 'Musk')");
     ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
     ECInstanceKey employeeKey;
-    ECSqlStepStatus stepStatus = stmt.Step(employeeKey);
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    DbResult stepStatus = stmt.Step(employeeKey);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     stmt.Finalize();
     prepareStatus = stmt.Prepare(db, "INSERT INTO stco.Hardware (Cost) VALUES(25.34)");
     ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
     ECInstanceKey hardwareKey;
     stepStatus = stmt.Step(hardwareKey);
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     Utf8String expectedLabel, actualLabel;
 
@@ -1278,13 +1278,12 @@ TEST(ECDbInstances, UpdateRelationshipProperty)
     stmt.BindText(5, expectedLabel.c_str(), IECSqlBinder::MakeCopy::No);
     ECInstanceKey relKey;
     stepStatus = stmt.Step(relKey);
-    ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
+    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     actualLabel = GetLabelPropertyFromRelation(db, relKey.GetECInstanceId());
     ASSERT_STREQ(expectedLabel.c_str(), actualLabel.c_str());
 
-    ECClassP relClass = nullptr;
-    db.GetEC().GetSchemaManager().GetECClass(relClass, "StartupCompany", "RelationWithLinkTableMapping");
+    ECClassCP relClass = db.Schemas().GetECClass("StartupCompany", "RelationWithLinkTableMapping");
     ASSERT_TRUE(relClass != nullptr);
 
     JsonReader reader(db, relClass->GetId());

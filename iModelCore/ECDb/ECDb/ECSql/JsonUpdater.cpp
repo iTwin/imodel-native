@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 9/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonUpdater::JsonUpdater (ECDbCR ecdb, ECN::ECClassCR ecClass)
+JsonUpdater::JsonUpdater (ECDbR ecdb, ECN::ECClassCR ecClass)
 : m_ecdb (ecdb), m_ecClass (ecClass), m_ecinstanceUpdater (ecdb, ecClass)
     {
     }
@@ -40,8 +40,7 @@ IECInstancePtr JsonUpdater::CreateEmptyInstance(ECN::ECClassCR ecClass) const
 //+---------------+---------------+---------------+---------------+---------------+------
 IECInstancePtr JsonUpdater::CreateEmptyInstance(ECInstanceKeyCR instanceKey) const
     {
-    ECClassP ecClass = nullptr;
-    m_ecdb.GetEC().GetSchemaManager().GetECClass(ecClass, instanceKey.GetECClassId());
+    ECClassCP ecClass = m_ecdb.Schemas().GetECClass(instanceKey.GetECClassId());
     if (!ecClass)
         return nullptr;
 
