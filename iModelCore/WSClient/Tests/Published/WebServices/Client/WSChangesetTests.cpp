@@ -403,6 +403,43 @@ TEST_F(WSChangesetTests, RemoveInstance_TwoRelatedInstances_ReturnsRemovedIdAndL
     EXPECT_EQ(ObjectId("TestSchemaC.TestClassC", "C"), instanceC.GetId());
     }
 
+TEST_F(WSChangesetTests, FindInstance_EmptyChangeset_ReturnsNullptr)
+    {
+    WSChangeset changeset;
+    EXPECT_EQ(nullptr, changeset.FindInstance({"TestSchema.TestClass","Foo"}));
+    }
+
+TEST_F(WSChangesetTests, FindInstance_NonExistingInstance_ReturnsNullptr)
+    {
+    WSChangeset changeset;
+    changeset.AddInstance({"TestSchema.TestClass","Foo"}, WSChangeset::Created, nullptr);
+    EXPECT_EQ(nullptr, changeset.FindInstance({"TestSchema.TestClass","Other"}));
+    }
+
+TEST_F(WSChangesetTests, FindInstance_RelationshipInstanceId_ReturnsNull)
+    {
+    WSChangeset changeset;
+    changeset.AddInstance({"TestSchemaA.TestClassA","A"}, WSChangeset::Created, nullptr)
+        .AddRelatedInstance({"TestSchemaB.TestClassB","B"}, WSChangeset::Created, ECRelatedInstanceDirection::Forward,
+        {"TestSchemaC.TestClassC","C"}, WSChangeset::Created, nullptr);
+
+    EXPECT_EQ(nullptr, changeset.FindInstance({"TestSchemaB.TestClassB","B"}));
+    }
+
+TEST_F(WSChangesetTests, FindInstance_RootAndRelatedInstance_ReturnsInstance)
+    {
+    WSChangeset changeset;
+    auto& instanceA = changeset.AddInstance({"TestSchemaA.TestClassA","A"}, WSChangeset::Created, nullptr);
+    auto& instanceC = instanceA.AddRelatedInstance({"TestSchemaB.TestClassB","B"}, WSChangeset::Created, ECRelatedInstanceDirection::Forward,
+    {"TestSchemaC.TestClassC","C"}, WSChangeset::Created, nullptr);
+    auto& instanceE = instanceC.AddRelatedInstance({"TestSchemaD.TestClassD","D"}, WSChangeset::Created, ECRelatedInstanceDirection::Forward,
+    {"TestSchemaE.TestClassE","E"}, WSChangeset::Created, nullptr);
+
+    EXPECT_EQ(&instanceA, changeset.FindInstance({"TestSchemaA.TestClassA","A"}));
+    EXPECT_EQ(&instanceC, changeset.FindInstance({"TestSchemaC.TestClassC","C"}));
+    EXPECT_EQ(&instanceE, changeset.FindInstance({"TestSchemaE.TestClassE","E"}));
+    }
+
 TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_EmptyChangeset_DoesNotCallHandlerAndReturnsSuccess)
     {
     WSChangeset changeset;
