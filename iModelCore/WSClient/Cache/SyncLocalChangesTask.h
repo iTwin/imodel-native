@@ -59,6 +59,7 @@ struct SyncLocalChangesTask : public CachingTaskBase
         void HandleCreationError(WSErrorCR error, ChangeGroupPtr changeGroup, Utf8StringCR objectLabel);
 
         void ReportProgress(double currentFileBytesUploaded, Utf8StringCR label) const;
+        void ReportFinalProgress() const;
         ResponseGuardPtr CreateResponseGuard(Utf8StringCR objectLabel, bool reportProgress) const;
 
         BentleyStatus BuildChangeset
