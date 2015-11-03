@@ -375,6 +375,7 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     BeAssert(NULL == m_realityDataAdmin);
     BeAssert(NULL == m_exceptionHandler);
     BeAssert(NULL == m_knownLocationsAdmin);
+    BeAssert(NULL == m_locksAdmin);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -421,8 +422,8 @@ DgnPlatformLib::Host::LineStyleAdmin&        DgnPlatformLib::Host::_SupplyLineSt
 DgnPlatformLib::Host::TxnAdmin& DgnPlatformLib::Host::_SupplyTxnAdmin() {return *new TxnAdmin();}
 DgnPlatformLib::Host::FormatterAdmin&        DgnPlatformLib::Host::_SupplyFormatterAdmin()        {return *new FormatterAdmin();}
 DgnPlatformLib::Host::RealityDataAdmin&      DgnPlatformLib::Host::_SupplyRealityDataAdmin()      {return *new RealityDataAdmin();}
-DgnPlatformLib::Host::ScriptAdmin&        DgnPlatformLib::Host::_SupplyScriptingAdmin()        {return *new ScriptAdmin();}
-
+DgnPlatformLib::Host::ScriptAdmin&           DgnPlatformLib::Host::_SupplyScriptingAdmin()        {return *new ScriptAdmin();}
+DgnPlatformLib::Host::LocksAdmin&            DgnPlatformLib::Host::_SupplyLocksAdmin()            {return *new LocksAdmin();}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      10/2014
