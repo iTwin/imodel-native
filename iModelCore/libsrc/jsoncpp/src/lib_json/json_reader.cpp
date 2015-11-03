@@ -21,6 +21,7 @@
 #pragma warning( disable : 4996 )   // disable warning about strdup being deprecated.
 #endif
 
+BEGIN_BENTLEY_NAMESPACE
 namespace Json {
 
 // Implementation of class Features
@@ -884,3 +885,5 @@ std::istream& operator>>( std::istream &sin, Value &root )
 
 
 } // namespace Json
+
+END_BENTLEY_NAMESPACE

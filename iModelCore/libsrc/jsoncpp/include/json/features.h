@@ -10,6 +10,9 @@
 # include "forwards.h"
 #endif // if !defined(JSON_IS_AMALGAMATION)
 
+#include <Bentley/Bentley.h>
+
+BEGIN_BENTLEY_NAMESPACE
 namespace Json {
 
    /** \brief Configuration passed to reader and writer.
@@ -45,5 +48,6 @@ namespace Json {
    };
 
 } // namespace Json
+END_BENTLEY_NAMESPACE
 
 #endif // CPPTL_JSON_FEATURES_H_INCLUDED

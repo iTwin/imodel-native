@@ -28,6 +28,7 @@
 #define JSON_FAIL_MESSAGE( message ) {BeAssert(false && message); throw std::runtime_error( message );}
 #define JSON_ASSERT_MESSAGE( condition, message ) if (!( condition )) JSON_FAIL_MESSAGE( message )
 
+BEGIN_BENTLEY_NAMESPACE
 namespace Json {
 
 const Value Value::null;
@@ -279,8 +280,6 @@ Value::Value( ValueType type )
    }
 }
 
-
-#if defined(JSON_HAS_INT64)
 Value::Value( UInt value )
    : type_( uintValue )
    , comments_( 0 )
@@ -301,8 +300,7 @@ Value::Value( Int value )
    value_.int_ = value;
 }
 
-#endif // if defined(JSON_HAS_INT64)
-
+#if defined(JSON_HAS_INT64)
 
 Value::Value( Int64 value )
    : type_( intValue )
@@ -314,7 +312,6 @@ Value::Value( Int64 value )
    value_.int_ = value;
 }
 
-
 Value::Value( UInt64 value )
    : type_( uintValue )
    , comments_( 0 )
@@ -325,8 +322,11 @@ Value::Value( UInt64 value )
    value_.uint_ = value;
 }
 
+#endif // if defined(JSON_HAS_INT64)
+
 // BeJsonCpp
-#if defined (__APPLE__) && !defined (__LP64__)
+#if defined (__APPLE__)
+#if !defined (__LP64__)
 Value::Value( UInt32 value )
    : type_( uintValue )
    , comments_( 0 )
@@ -337,6 +337,28 @@ Value::Value( UInt32 value )
     // see MacTypes.h for conflicting definition of UInt32
    value_.uint_ = (UInt) value;
 }
+#else
+Value::Value( long value )
+   : type_( intValue )
+   , comments_( 0 )
+# ifdef JSON_VALUE_USE_INTERNAL_MAP
+   , itemIsUsed_( 0 )
+#endif
+{
+    // see MacTypes.h for conflicting definition of UInt32
+   value_.uint_ = value;
+}
+Value::Value( unsigned long value )
+   : type_( uintValue )
+   , comments_( 0 )
+# ifdef JSON_VALUE_USE_INTERNAL_MAP
+   , itemIsUsed_( 0 )
+#endif
+{
+    // see MacTypes.h for conflicting definition of UInt32
+   value_.uint_ = value;
+}
+#endif
 #endif
 
 Value::Value( double value )
@@ -486,6 +508,18 @@ Value::Value( const Value &other )
    }
 }
 
+// BENTLEY CHANGE: added the move constructor
+Value::Value( Value &&other )
+   : type_( ValueType::nullValue )
+   , allocated_( 0 )
+   , comments_( 0 )
+# ifdef JSON_VALUE_USE_INTERNAL_MAP
+   , itemIsUsed_( 0 )
+#endif
+{
+   swap(other);
+}
+
 
 Value::~Value()
 {
@@ -527,6 +561,14 @@ Value::operator=( const Value &other )
 {
    Value temp( other );
    swap( temp );
+   return *this;
+}
+
+// BENTLEY CHANGE: added the move assignment operator
+Value &
+Value::operator=( Value &&other )
+{
+   swap(other);
    return *this;
 }
 
@@ -1308,6 +1350,29 @@ Value::removeMember( const Utf8String &key )
    return removeMember( key.c_str() );
 }
 
+bool Value::removeIndex(ArrayIndex index, Value* removed) {
+  if (type_ != arrayValue) {
+    return false;
+  }
+  CZString key(index);
+  ObjectValues::iterator it = value_.map_->find(key);
+  if (it == value_.map_->end()) {
+    return false;
+  }
+  *removed = it->second;
+  ArrayIndex oldSize = size();
+  // shift left all items left, into the place of the "removed"
+  for (ArrayIndex i = index; i < (oldSize - 1); ++i){
+    CZString key(i);
+    (*value_.map_)[key] = (*this)[i + 1];
+  }
+  // erase the last one ("leftover")
+  CZString keyLast(oldSize - 1);
+  ObjectValues::iterator itLast = value_.map_->find(keyLast);
+  value_.map_->erase(itLast);
+  return true;
+}
+
 # ifdef JSON_USE_CPPTL
 Value 
 Value::get( const CppTL::ConstString &key,
@@ -1855,3 +1920,4 @@ Path::make( Value &root ) const
 
 
 } // namespace Json
+END_BENTLEY_NAMESPACE

@@ -5,7 +5,12 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-PolicyFile=$(_MakeFilePath)AssertBeJsonCppPolicy.mki
+# Export/make visible all functions in JsonCpp
+GCC_DEFAULT_VISIBILITY=default
+
+# Ignore warnings in third-party code.
+IS_THIRD_PARTY_LIBRARY = 1
+
 %include mdl.mki
 
 baseDir             = $(_MakeFilePath)
@@ -15,8 +20,7 @@ BeJsonCppSrc        = $(baseDir)
 BeJsonCppInclude    = $(baseDir)PublicAPI/BeJsonCpp/
 appName             = BeJsonCpp
 CCompPDBName        = $(appName)
-
-o = $(OutputRootDir)build/$(appName)/
+o                   = $(OutputRootDir)build/$(appName)/
 
 always:
     !~@mkdir $(o)
@@ -25,8 +29,8 @@ always:
 # The JsonCpp API is defined in the json/* headers
 #--------------------------------------------------------------------------------------
 always:
-    @CreateSymLinks.py -d"$(BuildContext)VendorAPI/json=$(baseDir)include/json"
-    @CreateSymLinks.py -d"$(BuildContext)PublicAPI/BeJsonCpp=${BeJsonCppInclude}"
+    ~linkdir "$(BuildContext)VendorAPI/json=$(baseDir)include/json"
+    ~linkdir "$(BuildContext)PublicAPI/BeJsonCpp=${BeJsonCppInclude}"
 
 #--------------------------------------------------------------------------------------
 #   Compile source

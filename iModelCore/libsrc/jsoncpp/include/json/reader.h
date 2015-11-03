@@ -15,15 +15,17 @@
 
 #if defined (BEJSONCPP_USE_STDSTRING)
 # include <string>
-# define Utf8String std::string
+# define Utf8StringAlias std::string
 #else
 # include <Bentley/WString.h>
+  typedef BENTLEY_NAMESPACE_NAME::Utf8String Utf8StringAlias;
 #endif
 
 #if defined (BEJSONCPP_ALLOW_IOSTREAM)
 # include <iostream>
 #endif
 
+BEGIN_BENTLEY_NAMESPACE
 namespace Json {
 
    /** \brief Unserialize a <a HREF="http://www.json.org">JSON</a> document into a Value.
@@ -55,10 +57,10 @@ namespace Json {
        *                        is \c false.
        * \return \c true if the document was successfully parsed, \c false if an error occurred.
        */
-      bool parse( const Utf8String &document, 
+      bool parse( const Utf8StringAlias &document, 
                   Value &root,
                   bool collectComments = true );
-      static bool Parse (Utf8StringCR document, Value& root, bool comments=true) {Reader reader; return reader.parse(document, root, comments);}
+      static bool Parse (BENTLEY_NAMESPACE_NAME::Utf8StringCR document, Value& root, bool comments=true) {Reader reader; return reader.parse(document, root, comments);}
 
       /** \brief Read a Value from a <a HREF="http://www.json.org">JSON</a> document.
        * \param beginDoc Pointer on the beginning of the UTF-8 encoded string of the document to read.
@@ -90,7 +92,7 @@ namespace Json {
        * \deprecated Use getFormattedErrorMessages() instead (typo fix).
        */
       JSONCPP_DEPRECATED("Use getFormattedErrorMessages instead") 
-      Utf8String getFormatedErrorMessages() const;
+      Utf8StringAlias getFormatedErrorMessages() const;
 #endif
 
       /** \brief Returns a user friendly string that list errors in the parsed document.
@@ -98,7 +100,7 @@ namespace Json {
        *         the parsed document. An empty string is returned if no error occurred
        *         during parsing.
        */
-      Utf8String getFormattedErrorMessages() const;
+      Utf8StringAlias getFormattedErrorMessages() const;
 
    private:
       enum TokenType
@@ -131,7 +133,7 @@ namespace Json {
       {
       public:
          Token token_;
-         Utf8String message_;
+         Utf8StringAlias message_;
          Location extra_;
       };
 
@@ -152,7 +154,7 @@ namespace Json {
       bool readArray( Token &token );
       bool decodeNumber( Token &token );
       bool decodeString( Token &token );
-      bool decodeString( Token &token, Utf8String &decoded );
+      bool decodeString( Token &token, Utf8StringAlias &decoded );
       bool decodeDouble( Token &token );
       bool decodeUnicodeCodePoint( Token &token, 
                                    Location &current, 
@@ -162,11 +164,11 @@ namespace Json {
                                         Location &current, 
                                         Location end, 
                                         unsigned int &unicode );
-      bool addError( const Utf8String &message, 
+      bool addError( const Utf8StringAlias &message, 
                      Token &token,
                      Location extra = 0 );
       bool recoverFromError( TokenType skipUntilToken );
-      bool addErrorAndRecover( const Utf8String &message, 
+      bool addErrorAndRecover( const Utf8StringAlias &message, 
                                Token &token,
                                TokenType skipUntilToken );
       void skipUntilSpace();
@@ -175,7 +177,7 @@ namespace Json {
       void getLocationLineAndColumn( Location location,
                                      int &line,
                                      int &column ) const;
-      Utf8String getLocationLineAndColumn( Location location ) const;
+      Utf8StringAlias getLocationLineAndColumn( Location location ) const;
       void addComment( Location begin, 
                        Location end, 
                        CommentPlacement placement );
@@ -184,13 +186,13 @@ namespace Json {
       typedef std::stack<Value *> Nodes;
       Nodes nodes_;
       Errors errors_;
-      Utf8String document_;
+      Utf8StringAlias document_;
       Location begin_;
       Location end_;
       Location current_;
       Location lastValueEnd_;
       Value *lastValue_;
-      Utf8String commentsBefore_;
+      Utf8StringAlias commentsBefore_;
       Features features_;
       bool collectComments_;
    };
@@ -222,5 +224,6 @@ namespace Json {
    std::istream& operator>>( std::istream&, Value& );
 
 } // namespace Json
+END_BENTLEY_NAMESPACE
 
 #endif // CPPTL_JSON_READER_H_INCLUDED

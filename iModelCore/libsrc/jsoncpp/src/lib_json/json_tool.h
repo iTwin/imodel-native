@@ -12,6 +12,9 @@
  * It is an internal header that must not be exposed.
  */
 
+#include <Bentley/Bentley.h>
+
+BEGIN_BENTLEY_NAMESPACE
 namespace Json {
 
 /// Converts a unicode code-point to UTF-8.
@@ -89,5 +92,7 @@ uintToString( LargestUInt value,
 }
 
 } // namespace Json {
+END_BENTLEY_NAMESPACE
+
 
 #endif // LIB_JSONCPP_JSON_TOOL_H_INCLUDED

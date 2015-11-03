@@ -5,18 +5,15 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-PolicyFile=$(_MakeFilePath)AssertBeJsonCppPolicy.mki
 %include mdl.mki
 
 baseDir             = $(_MakeFilePath)
-JsonCppSrc          = $(baseDir)src/lib_json/
 JsonCppInclude      = $(baseDir)include/json/
-BeJsonCppSrc        = $(baseDir)
 BeJsonCppInclude    = $(baseDir)PublicAPI/BeJsonCpp/
 
 #--------------------------------------------------------------------------------------
 # The JsonCpp API is defined in the json/* headers
 #--------------------------------------------------------------------------------------
 always:
-    @CreateSymLinks.py -d"$(BuildContext)VendorAPI/json=$(baseDir)include/json"
-    @CreateSymLinks.py -d"$(BuildContext)PublicAPI/BeJsonCpp=${BeJsonCppInclude}"
+    ~linkdir "$(BuildContext)VendorAPI/json=${JsonCppInclude}"
+    ~linkdir "$(BuildContext)PublicAPI/BeJsonCpp=${BeJsonCppInclude}"

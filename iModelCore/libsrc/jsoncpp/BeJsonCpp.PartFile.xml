@@ -16,7 +16,7 @@
 
     <Part Name="BeJsonCppStaticLib" BentleyBuildMakeFile="BeJsonCpp.mke">
         <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
-        <SubPart PartName="BentleyApi" PartFile="BentleyApi" Repository="BentleyApi" />
+        <!-- Now in plain Bentley namespace to be shared with Vancouver <SubPart PartName="BENTLEY_NAMESPACE_NAME" PartFile="BENTLEY_NAMESPACE_NAME" Repository="BENTLEY_NAMESPACE_NAME" /> -->
         <SubPart PartName="PublicAPI" />
         <Bindings>
             <PublicAPI Domain="BeJsonCpp" />

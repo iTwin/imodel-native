@@ -70,7 +70,15 @@
 # define JSONCPP_DEPRECATED(message)
 #endif // if !defined(JSONCPP_DEPRECATED)
 
+#if !defined(NO_BENTLEY_CHANGES)
+   #include <stdint.h>
+#endif
+
+#include <Bentley/Bentley.h>
+
+BEGIN_BENTLEY_NAMESPACE
 namespace Json {
+#if !defined(NO_BENTLEY_CHANGES)
    typedef int Int;
    typedef unsigned int UInt;
 # if defined(JSON_NO_INT64)
@@ -79,17 +87,20 @@ namespace Json {
 #  undef JSON_HAS_INT64
 # else // if defined(JSON_NO_INT64)
    // For Microsoft Visual use specific types as long long is not supported
-#  if defined(_MSC_VER) // Microsoft Visual Studio
-   typedef __int64 Int64;
-   typedef unsigned __int64 UInt64;
-#  else // if defined(_MSC_VER) // Other platforms, use long long
-   typedef long long int Int64;
-   typedef unsigned long long int UInt64;
-#  endif // if defined(_MSC_VER)
+   typedef int64_t Int64;
+   typedef uint64_t UInt64;
    typedef Int64 LargestInt;
    typedef UInt64 LargestUInt;
 #  define JSON_HAS_INT64
 # endif // if defined(JSON_NO_INT64)
+#else
+   typedef int32_t Int;
+   typedef uint32_t UInt;
+   typedef int64_t Int64;
+   typedef uint64_t UInt64;
+   typedef Int64 LargestInt;
+   typedef UInt64 LargestUInt;
+#endif
 
 // BeJsonCpp change
 #if defined (__APPLE__) && !defined (__LP64__)
@@ -101,5 +112,6 @@ namespace Json {
 
 } // end namespace Json
 
+END_BENTLEY_NAMESPACE
 
 #endif // JSON_CONFIG_H_INCLUDED

@@ -13,11 +13,12 @@
 #if defined (BEJSONCPP_USE_STDSTRING)
 # include <string>
 # include <vector>
-# define Utf8String std::string
+# define Utf8StringAlias std::string
 # define bvector std::vector
 #else
 # include <Bentley/WString.h>
 # include <Bentley/bvector.h>
+  typedef BENTLEY_NAMESPACE_NAME::Utf8String Utf8StringAlias;
 #endif
 
 
@@ -34,6 +35,8 @@
 # ifdef JSON_USE_CPPTL
 #  include <cpptl/forwards.h>
 # endif
+
+BEGIN_BENTLEY_NAMESPACE
 
 /** \brief JsonCpp JSON (JavaScript Object Notation) library.
  */
@@ -137,7 +140,7 @@ namespace Json {
       friend class ValueInternalMap;
 # endif
    public:
-      typedef bvector<Utf8String> Members;
+      typedef bvector<Utf8StringAlias> Members;
       typedef ValueIterator iterator;
       typedef ValueConstIterator const_iterator;
       typedef Json::UInt UInt;
@@ -230,8 +233,13 @@ namespace Json {
       Value( ValueType type = nullValue );
       Value( Int value );
       Value( UInt value );
-#if defined (__APPLE__) && !defined (__LP64__)
+#if defined (__APPLE__)
+#if !defined (__LP64__)
       Value( UInt32 value ); // BeJsonCpp
+#else
+      Value(long value);
+      Value(unsigned long value);
+#endif
 #endif
 #if defined(JSON_HAS_INT64)
       Value( Int64 value );
@@ -251,15 +259,24 @@ namespace Json {
        * \endcode
        */
       Value( const StaticString &value );
-      Value( const Utf8String &value );
+      Value( const Utf8StringAlias &value );
 # ifdef JSON_USE_CPPTL
       Value( const CppTL::ConstString &value );
 # endif
       Value( bool value );
       Value( const Value &other );
+
+      // BENTLEY CHANGE: added the move constructor
+      Value( Value &&other );
+
+
       ~Value();
 
       Value &operator=( const Value &other );
+
+      // BENTLEY CHANGE: added the move assignment operator
+      Value &operator=( Value &&other );
+
       /// Swap values.
       /// \note Currently, comments are intentionally not swapped, for
       /// both logic and efficiency.
@@ -278,7 +295,7 @@ namespace Json {
       int compare( const Value &other ) const;
 
       const char *asCString() const;
-      Utf8String asString() const;
+      Utf8StringAlias asString() const;
 # ifdef JSON_USE_CPPTL
       CppTL::ConstString asConstString() const;
 # endif
@@ -367,9 +384,9 @@ namespace Json {
       /// Access an object value by name, returns null if there is no member with that name.
       const Value &operator[]( const char *key ) const;
       /// Access an object value by name, create a null member if it does not exist.
-      Value &operator[]( const Utf8String &key );
+      Value &operator[]( const Utf8StringAlias &key );
       /// Access an object value by name, returns null if there is no member with that name.
-      const Value &operator[]( const Utf8String &key ) const;
+      const Value &operator[]( const Utf8StringAlias &key ) const;
       /** \brief Access an object value by name, create a null member if it does not exist.
 
        * If the object as no entry for that name, then the member name used to store
@@ -392,7 +409,7 @@ namespace Json {
       Value get( const char *key, 
                  const Value &defaultValue ) const;
       /// Return the member named key if it exist, defaultValue otherwise.
-      Value get( const Utf8String &key,
+      Value get( const Utf8StringAlias &key,
                  const Value &defaultValue ) const;
 # ifdef JSON_USE_CPPTL
       /// Return the member named key if it exist, defaultValue otherwise.
@@ -407,12 +424,20 @@ namespace Json {
       /// \post type() is unchanged
       Value removeMember( const char* key );
       /// Same as removeMember(const char*)
-      Value removeMember( const Utf8String &key );
+      Value removeMember( const Utf8StringAlias &key );
+      /** \brief Remove the indexed array element.
+
+          O(n) expensive operations.
+          Update 'removed' iff removed.
+          \return true iff removed (no exceptions)
+          */
+      bool removeIndex(ArrayIndex i, Value* removed);
+      bool removeIndex(ArrayIndex i) { Value removed; return removeIndex(i, &removed); }
 
       /// Return true if the object has a member named key.
       bool isMember( const char *key ) const;
       /// Return true if the object has a member named key.
-      bool isMember( const Utf8String &key ) const;
+      bool isMember( const Utf8StringAlias &key ) const;
 # ifdef JSON_USE_CPPTL
       /// Return true if the object has a member named key.
       bool isMember( const CppTL::ConstString &key ) const;
@@ -434,13 +459,13 @@ namespace Json {
       void setComment( const char *comment,
                        CommentPlacement placement );
       /// Comments must be //... or /* ... */
-      void setComment( const Utf8String &comment,
+      void setComment( const Utf8StringAlias &comment,
                        CommentPlacement placement );
       bool hasComment( CommentPlacement placement ) const;
       /// Include delimiters and embedded newlines.
-      Utf8String getComment( CommentPlacement placement ) const;
+      Utf8StringAlias getComment( CommentPlacement placement ) const;
 
-      Utf8String toStyledString() const;
+      Utf8StringAlias toStyledString() const;
 
       const_iterator begin() const;
       const_iterator end() const;
@@ -528,7 +553,7 @@ namespace Json {
       PathArgument();
       PathArgument( ArrayIndex index );
       PathArgument( const char *key );
-      PathArgument( const Utf8String &key );
+      PathArgument( const Utf8StringAlias &key );
 
    private:
       enum Kind
@@ -537,7 +562,7 @@ namespace Json {
          kindIndex,
          kindKey
       };
-      Utf8String key_;
+      Utf8StringAlias key_;
       ArrayIndex index_;
       Kind kind_;
    };
@@ -556,7 +581,7 @@ namespace Json {
    class Path
    {
    public:
-      Path( const Utf8String &path,
+      Path( const Utf8StringAlias &path,
             const PathArgument &a1 = PathArgument(),
             const PathArgument &a2 = PathArgument(),
             const PathArgument &a3 = PathArgument(),
@@ -573,13 +598,13 @@ namespace Json {
       typedef bvector<const PathArgument *> InArgs;
       typedef bvector<PathArgument> Args;
 
-      void makePath( const Utf8String &path,
+      void makePath( const Utf8StringAlias &path,
                      const InArgs &in );
-      void addPathInArg( const Utf8String &path, 
+      void addPathInArg( const Utf8StringAlias &path, 
                          const InArgs &in, 
                          InArgs::const_iterator &itInArg, 
                          PathArgument::Kind kind );
-      void invalidPath( const Utf8String &path, 
+      void invalidPath( const Utf8StringAlias &path, 
                         int location );
 
       Args args_;
@@ -1117,6 +1142,7 @@ public: // overridden from ValueArrayAllocator
 
 
 } // namespace Json
+END_BENTLEY_NAMESPACE
 
 
 #endif // CPPTL_JSON_H_INCLUDED

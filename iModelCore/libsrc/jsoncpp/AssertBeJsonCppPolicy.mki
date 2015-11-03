@@ -1,9 +1,0 @@
-#--------------------------------------------------------------------------------------
-#
-#     $Source: AssertBeJsonCppPolicy.mki $
-#
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
-#
-#--------------------------------------------------------------------------------------
-SystemPolicyMki     = $(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
-FoundationPolicyMki = $(SrcRoot)libsrc/jsoncpp/BeJsonCppPolicy.mki

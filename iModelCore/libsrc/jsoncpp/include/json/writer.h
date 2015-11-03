@@ -13,19 +13,21 @@
 #if defined (BEJSONCPP_USE_STDSTRING)
 # include <string>
 # include <vector>
-# define Utf8String std::string
+# define Utf8StringAlias std::string
 # define bmap std::map
 # define bvector std::vector
 #else
 # include <Bentley/WString.h>
 # include <Bentley/bmap.h>
 # include <Bentley/bvector.h>
+  typedef BENTLEY_NAMESPACE_NAME::Utf8String Utf8StringAlias;
 #endif
 
 #if defined (BEJSONCPP_ALLOW_IOSTREAM)
 # include <iostream>
 #endif
 
+BEGIN_BENTLEY_NAMESPACE
 namespace Json {
 
    class Value;
@@ -37,7 +39,7 @@ namespace Json {
    public:
       virtual ~Writer();
 
-      virtual Utf8String write( const Value &root ) = 0;
+      virtual Utf8StringAlias write( const Value &root ) = 0;
    };
 
    /** \brief Outputs a Value in <a HREF="http://www.json.org">JSON</a> format without formatting (not human friendly).
@@ -55,13 +57,13 @@ namespace Json {
       void enableYAMLCompatibility();
 
    public: // overridden from Writer
-      virtual Utf8String write( const Value &root );
-      static Utf8String ToString (const Value &root );
+      virtual Utf8StringAlias write( const Value &root );
+      static Utf8StringAlias ToString (const Value &root );
 
    private:
       void writeValue( const Value &value );
 
-      Utf8String document_;
+      Utf8StringAlias document_;
       bool yamlCompatiblityEnabled_;
    };
 
@@ -94,27 +96,27 @@ namespace Json {
        * \param root Value to serialize.
        * \return String containing the JSON document that represents the root value.
        */
-      virtual Utf8String write( const Value &root );
+      virtual Utf8StringAlias write( const Value &root );
 
    private:
       void writeValue( const Value &value );
       void writeArrayValue( const Value &value );
       bool isMultineArray( const Value &value );
-      void pushValue( const Utf8String &value );
+      void pushValue( const Utf8StringAlias &value );
       void writeIndent();
-      void writeWithIndent( const Utf8String &value );
+      void writeWithIndent( const Utf8StringAlias &value );
       void indent();
       void unindent();
       void writeCommentBeforeValue( const Value &root );
       void writeCommentAfterValueOnSameLine( const Value &root );
       bool hasCommentForValue( const Value &value );
-      static Utf8String normalizeEOL( const Utf8String &text );
+      static Utf8StringAlias normalizeEOL( const Utf8StringAlias &text );
 
-      typedef bvector<Utf8String> ChildValues;
+      typedef BENTLEY_NAMESPACE_NAME::bvector<Utf8StringAlias> ChildValues;
 
       ChildValues childValues_;
-      Utf8String document_;
-      Utf8String indentString_;
+      Utf8StringAlias document_;
+      Utf8StringAlias indentString_;
       int rightMargin_;
       int indentSize_;
       bool addChildValues_;
@@ -144,7 +146,7 @@ namespace Json {
    class JSON_API StyledStreamWriter
    {
    public:
-      StyledStreamWriter( Utf8String indentation="\t" );
+      StyledStreamWriter( Utf8StringAlias indentation="\t" );
       ~StyledStreamWriter(){}
 
    public:
@@ -159,36 +161,36 @@ namespace Json {
       void writeValue( const Value &value );
       void writeArrayValue( const Value &value );
       bool isMultineArray( const Value &value );
-      void pushValue( const Utf8String &value );
+      void pushValue( const Utf8StringAlias &value );
       void writeIndent();
-      void writeWithIndent( const Utf8String &value );
+      void writeWithIndent( const Utf8StringAlias &value );
       void indent();
       void unindent();
       void writeCommentBeforeValue( const Value &root );
       void writeCommentAfterValueOnSameLine( const Value &root );
       bool hasCommentForValue( const Value &value );
-      static Utf8String normalizeEOL( const Utf8String &text );
+      static Utf8StringAlias normalizeEOL( const Utf8StringAlias &text );
 
-      typedef bvector<Utf8String> ChildValues;
+      typedef bvector<Utf8StringAlias> ChildValues;
 
       ChildValues childValues_;
       std::ostream* document_;
-      Utf8String indentString_;
+      Utf8StringAlias indentString_;
       int rightMargin_;
-      Utf8String indentation_;
+      Utf8StringAlias indentation_;
       bool addChildValues_;
    };
 #endif
 
 # if defined(JSON_HAS_INT64)
-   Utf8String JSON_API valueToString( Int value );
-   Utf8String JSON_API valueToString( UInt value );
+   Utf8StringAlias JSON_API valueToString( Int value );
+   Utf8StringAlias JSON_API valueToString( UInt value );
 # endif // if defined(JSON_HAS_INT64)
-   Utf8String JSON_API valueToString( LargestInt value );
-   Utf8String JSON_API valueToString( LargestUInt value );
-   Utf8String JSON_API valueToString( double value );
-   Utf8String JSON_API valueToString( bool value );
-   Utf8String JSON_API valueToQuotedString( const char *value );
+   Utf8StringAlias JSON_API valueToString( LargestInt value );
+   Utf8StringAlias JSON_API valueToString( LargestUInt value );
+   Utf8StringAlias JSON_API valueToString( double value );
+   Utf8StringAlias JSON_API valueToString( bool value );
+   Utf8StringAlias JSON_API valueToQuotedString( const char *value );
 
 #if defined (BEJSONCPP_ALLOW_IOSTREAM)
    /// \brief Output using the StyledStreamWriter.
@@ -198,6 +200,6 @@ namespace Json {
 
 } // namespace Json
 
-
+END_BENTLEY_NAMESPACE
 
 #endif // JSON_WRITER_H_INCLUDED

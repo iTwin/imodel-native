@@ -10,6 +10,9 @@
 # include "config.h"
 #endif // if !defined(JSON_IS_AMALGAMATION)
 
+#include <Bentley/Bentley.h>
+
+BEGIN_BENTLEY_NAMESPACE
 namespace Json {
 
    // writer.h
@@ -40,5 +43,6 @@ namespace Json {
 
 } // namespace Json
 
+END_BENTLEY_NAMESPACE
 
 #endif // JSON_FORWARDS_H_INCLUDED

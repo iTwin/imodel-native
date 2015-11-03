@@ -21,6 +21,7 @@
 #pragma warning( disable : 4996 )   // disable warning about strdup being deprecated.
 #endif
 
+BEGIN_BENTLEY_NAMESPACE
 namespace Json {
 
 static bool containsControlCharacter( const char* str )
@@ -180,6 +181,20 @@ Utf8String valueToQuotedString( const char *value )
                std::ostringstream oss;
                oss << "\\u" << std::hex << std::uppercase << std::setfill('0') << std::setw(4) << static_cast<int>(*c);
                result += oss.str();
+            }
+            else
+#elif !defined(NO_BENTLEY_CHANGES)
+            if ( isControlCharacter( *c ) )
+            {
+                // \uXXXX is how to encode an arbitrary Unicode code point in JSON.
+                // We know we're processing one char at a time, so the maximum is 0xff.
+                // Other known control characters are processed above; if we got here, it's probably garbage, but properly encode it to avoid worse issues down the line.
+                static char const HEX_DIGITS[] = "0123456789ABCDEF";
+                char buf[7] = "\\u00";
+                buf[4] = HEX_DIGITS[static_cast<Byte>(*c) >> 4];
+                buf[5] = HEX_DIGITS[static_cast<Byte>(*c) & 0xF];
+                buf[6] = 0;
+                result += buf;
             }
             else
 #endif
@@ -858,5 +873,5 @@ std::ostream& operator<<( std::ostream &sout, const Value &root )
 }
 #endif // defined (BEJSONCPP_ALLOW_IOSTREAM)
 
-
 } // namespace Json
+END_BENTLEY_NAMESPACE
