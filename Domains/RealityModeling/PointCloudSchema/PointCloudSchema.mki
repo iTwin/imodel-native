@@ -1,32 +1,23 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: ThreeMxSchema/ThreeMxSchemaPolicy.mki $
+#     $Source: PointCloudSchema/PointCloudSchema.mki $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
-%include $(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
-%include $(SharedMki)DefinePublicApiIncludes.mki
-%include $(SharedMki)CommonCompileLinkPolicy.mki
-%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
-
-%include DefaultToolSet.mki
-
-appName         = ThreeMxSchema
-o               = $(OutputRootDir)build/ThreeMxSchema/
-repositoryRoot  = $(SrcRoot)DgnDomains/RealityModeling/
+appName         = PointCloudSchema
+o               = $(OutBuildDir)PointCloudSchema/
 
 DLM_NAME    = $(appName)
 CCompPDBName = $(appName)
-MuiBaseName = $(appName)
 
 MultiCompileIntermediatePdbFile=$(o)$(CCompPDBName).pdb
 IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
 
 #----------------------------------------------------------------------
-# We're building the ThreeMxSchema lib
+# We're building the PointCloudSchema lib
 #----------------------------------------------------------------------
-nameToDefine = __THREEMXSCHEMA_BUILD__
+nameToDefine = __POINTCLOUDSCHEMA_BUILD__
 %include cdefapnd.mki
 
