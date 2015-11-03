@@ -425,7 +425,14 @@ void DgnImportContext::ComputeGcsAdjustment()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : m_sourceDb(source), m_destDb(dest) 
+DgnCloneContext::DgnCloneContext()
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : DgnCloneContext(), m_sourceDb(source), m_destDb(dest)
     {
     ComputeGcsAdjustment();
     }

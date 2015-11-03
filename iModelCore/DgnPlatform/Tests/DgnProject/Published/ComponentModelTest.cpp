@@ -228,12 +228,12 @@ void ComponentModelTest::Developer_CreateCMs()
     ModelSolverDef gsolver(ModelSolverDef::Type::Script, TEST_JS_NAMESPACE ".Gadget", gparameters); // Identify the JS solver that should be used. Note: this JS program must be in the script library
 
     // Create the models
-    ComponentModel::CreateParams wparms(*m_componentDb, TEST_WIDGET_COMPONENT_NAME, "dgn.PhysicalElement", "Widget", "***TBD Authority", wsolver);
+    ComponentModel::CreateParams wparms(*m_componentDb, TEST_WIDGET_COMPONENT_NAME, "dgn.PhysicalElement", "Widget", "", wsolver);     // *** WIP_COMPONENT_MODEL Authority
     ComponentModelPtr wcm = new ComponentModel(wparms);
     ASSERT_TRUE( wcm->IsValid() );
     ASSERT_EQ( DgnDbStatus::Success , wcm->Insert() );       /* Insert the new model into the DgnDb */
 
-    ComponentModel::CreateParams gparms(*m_componentDb, TEST_GADGET_COMPONENT_NAME, "dgn.PhysicalElement", "Widget", "***TBD Authority", gsolver);
+    ComponentModel::CreateParams gparms(*m_componentDb, TEST_GADGET_COMPONENT_NAME, "dgn.PhysicalElement", "Widget", "", gsolver);     // *** WIP_COMPONENT_MODEL Authority
     gparms.SetSolver(gsolver);
     ComponentModelPtr gcm = new ComponentModel(gparms);
     ASSERT_TRUE( gcm->IsValid() );
@@ -485,8 +485,8 @@ void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8
     ASSERT_TRUE(catalogItem.IsValid());
 
     DgnDbStatus status;
-    PhysicalElementCPtr instanceElement = ComponentModel::CopyCatalogItem(&status, *targetModel, *catalogItem, DPoint3d::From(1, 2, 3), YawPitchRollAngles::FromDegrees(4, 5, 6), DgnElement::Code());
-    ASSERT_TRUE(instanceElement.IsValid()) << Utf8PrintfString("CopyCatalogItem failed with error code %x", status);
+    PhysicalElementCPtr instanceElement = ComponentModel::CreateInstanceItem(&status, *targetModel, *catalogItem, DPoint3d::From(1, 2, 3), YawPitchRollAngles::FromDegrees(4, 5, 6), DgnElement::Code());
+    ASSERT_TRUE(instanceElement.IsValid()) << Utf8PrintfString("CreateInstanceItem failed with error code %x", status);
 
     ieid = instanceElement->GetElementId();
 

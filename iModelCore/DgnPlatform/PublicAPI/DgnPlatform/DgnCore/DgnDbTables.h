@@ -73,6 +73,8 @@
 #define DGN_RELNAME_ElementGeomUsesParts        "ElementGeomUsesParts"
 #define DGN_RELNAME_ElementGroupHasMembers      "ElementGroupHasMembers" // WIP: obsolete, replaced by ElementGroupsMembers
 #define DGN_RELNAME_ElementGroupsMembers        "ElementGroupsMembers"
+#define DGN_RELNAME_SolutionOfComponent         "SolutionOfComponent"
+#define DGN_RELNAME_InstantiationOfTemplate     "InstantiationOfTemplate"
 #define DGN_RELNAME_ElementHasLinks             "ElementHasLinks"
 #define DGN_RELNAME_ElementOwnsItem             "ElementOwnsItem"
 #define DGN_RELNAME_ElementUsesStyles           "ElementUsesStyles"
@@ -124,7 +126,6 @@ private:
     friend struct DgnModels;
     friend struct SystemAuthority;
 
-public: // *** WIP_COMPONENT_MODEL - I don't see how to create new codes
     AuthorityIssuedCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) { }
 public:
     //! Constructs an empty, invalid code
