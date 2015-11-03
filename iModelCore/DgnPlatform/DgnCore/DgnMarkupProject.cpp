@@ -262,7 +262,7 @@ double PhysicalRedlineViewController::_GetMinimumSizePixels (DrawPurpose updateT
 uint64_t PhysicalRedlineViewController::_GetMaxElementMemory () {return m_subjectView._GetMaxElementMemory();}
 #endif
 
-bool PhysicalRedlineViewController::_OnComputeFitRange (DRange3dR range, ViewportR viewport, FitViewParamsR params) {return m_subjectView._OnComputeFitRange(range,viewport,params);}
+ViewController::FitComplete PhysicalRedlineViewController::_ComputeFitRange (DRange3dR range, DgnViewportR viewport, FitViewParamsR params) {return m_subjectView._ComputeFitRange(range,viewport,params);}
 
 bool PhysicalRedlineViewController::_DrawOverlayDecorations(IndexedViewportR viewport) { return m_subjectView._DrawOverlayDecorations(viewport) || T_Super::_DrawOverlayDecorations(viewport); }
 bool PhysicalRedlineViewController::_DrawZBufferedDecorations(IndexedViewportR viewport) { return m_subjectView._DrawZBufferedDecorations(viewport) || T_Super::_DrawZBufferedDecorations(viewport); }
@@ -331,7 +331,7 @@ void PhysicalRedlineViewController::_RestoreFromSettings(JsonValueCR settings)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.wilson      10/2015
 //---------------------------------------------------------------------------------------
-void PhysicalRedlineViewController::_OnAttachedToViewport(IndexedViewportR vp)
+void PhysicalRedlineViewController::_OnAttachedToViewport(DgnViewportR vp)
     {
     T_Super::_OnAttachedToViewport(vp);
     m_subjectView._OnAttachedToViewport(vp);

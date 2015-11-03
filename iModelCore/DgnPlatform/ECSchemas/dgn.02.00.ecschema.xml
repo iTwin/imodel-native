@@ -238,6 +238,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <BaseClass>WebMercatorModel</BaseClass>
     </ECClass>
+    <ECClass typeName="PointCloudBaseModel" isDomainClass="True" >
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>

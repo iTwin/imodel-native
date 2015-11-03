@@ -369,8 +369,8 @@ protected:
     virtual void _DrawElementFiltered(ViewContextR, GeometricElementCR, DPoint3dCP pts, double size)  override;
 
     //virtual ScanRange _ShowTxnSummary(TxnSummaryCR summary) override; -- we don't need to override this, because the subject view will never have changed elements that must be displayed
-    virtual void _OnAttachedToViewport(IndexedViewportR) override;
-    virtual bool _OnComputeFitRange (DRange3dR range, ViewportR viewport, FitViewParamsR params) override;
+    virtual void _OnAttachedToViewport(DgnViewportR) override;
+    virtual FitComplete _ComputeFitRange (DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
 
 #ifdef WIP_PhysicalRedlineViewController
     // QueryViewController
