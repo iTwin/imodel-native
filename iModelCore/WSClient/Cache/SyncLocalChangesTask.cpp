@@ -566,7 +566,9 @@ bvector<ChangeGroup*>& changesetChangeGroupsOut
             }
 
         if (m_options.GetMaxChangesetSize() != 0 &&
-            m_options.GetMaxChangesetSize() < changeset.CalculateSize())
+            m_options.GetMaxChangesetSize() < changeset.CalculateSize() ||
+            m_options.GetMaxChangesetInstanceCount() != 0 &&
+            m_options.GetMaxChangesetInstanceCount() < changeset.GetInstanceCount())
             {
             changeset.RemoveInstance(*newInstance);
             break;
