@@ -433,13 +433,23 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
 
     DgnElementCPtr CreateElement(DgnModelR model)
         {
+        auto elem = model.Is3d() ? Create3dElement(model) : Create2dElement(model);
+        auto persistentElem = elem->Insert();
+        return persistentElem;
+        }
+
+    DgnElementPtr Create3dElement(DgnModelR model)
+        {
         DgnDbR db = model.GetDgnDb();
         DgnClassId classId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
         DgnCategoryId catId = DgnCategory::QueryHighestCategoryId(db);
-        auto elem = PhysicalElement::Create(PhysicalElement::CreateParams(db, model.GetModelId(), classId, catId, Placement3d()));
-        auto persistentElem = elem->Insert();
-        EXPECT_TRUE(persistentElem.IsValid());
-        return persistentElem;
+        return PhysicalElement::Create(PhysicalElement::CreateParams(db, model.GetModelId(), classId, catId, Placement3d()));
+        }
+
+    DgnElementPtr Create2dElement(DgnModelR model)
+        {
+        DgnDbR db = model.GetDgnDb();
+        return DrawingElement::Create(DrawingElement::CreateParams(db, model.GetModelId(), DrawingElement::QueryClassId(db), DgnCategory::QueryHighestCategoryId(db)));
         }
 };
 
@@ -636,6 +646,7 @@ struct DoubleBriefcaseTest : LocksManagerTest
 };
 
 /*---------------------------------------------------------------------------------**//**
+* Acquisition of locks may result in contention with another briefcase.
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DoubleBriefcaseTest, Contention)
@@ -681,5 +692,103 @@ TEST_F(DoubleBriefcaseTest, Contention)
     // No briefcase can lock the db unless no shared locks exist
     ExpectDenied(dbA, LockLevel::Exclusive);
     ExpectDenied(dbB, LockLevel::Exclusive);
+
+    // If one briefcase relinquishes its locks they become available to others
+    EXPECT_EQ(LockStatus::Success, dbA.Locks().RelinquishLocks());
+    ExpectAcquire(dbB, LockLevel::Exclusive);
+    ExpectLevel(dbA, LockLevel::None);
+    ExpectLevel(*modelA3d, LockLevel::None);
+    ExpectLevel(*modelA2d, LockLevel::None);
+    ExpectLevel(*elemA3d2, LockLevel::None);
+    ExpectLevel(dbB, LockLevel::Exclusive);
+    ExpectLevel(*modelB3d, LockLevel::Exclusive);
+    ExpectLevel(*elemB3d2, LockLevel::Exclusive);
+
+    // B's exclusive Db lock prevents A from acquiring any locks, shared or otherwise
+    ExpectDenied(dbA, LockLevel::Shared);
+    ExpectDenied(*modelA3d, LockLevel::Shared);
+    ExpectDenied(*elemA3d2, LockLevel::Shared);
+    ExpectDenied(*elemA2d2, LockLevel::Shared);
+    ExpectDenied(dbA, LockLevel::Exclusive);
+    ExpectDenied(*modelA3d, LockLevel::Exclusive);
+    ExpectDenied(*elemA3d2, LockLevel::Exclusive);
+    ExpectDenied(*elemA2d2, LockLevel::Exclusive);
+
+    // B's exclusive locks imply shared ownership
+    ExpectAcquire(dbB, LockLevel::Shared);
+    ExpectAcquire(*modelB3d, LockLevel::Shared);
+    ExpectAcquire(*elemB3d2, LockLevel::Shared);
+    ExpectAcquire(*elemB2d2, LockLevel::Shared);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Operations on elements and models automatically acquire locks.
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DoubleBriefcaseTest, AutomaticLocking)
+    {
+    SetupDbs();
+    DgnDbR dbA = *m_dbA;
+    DgnDbR dbB = *m_dbB;
+
+    // Creating a new model requires shared ownership of Db, implies exclusive ownership of new model
+    DgnModelPtr newModelA = CreateModel("New Model A", dbA);
+    ASSERT_TRUE(newModelA.IsValid());
+    ExpectLevel(dbA, LockLevel::Shared);
+    ExpectLevel(*newModelA, LockLevel::Exclusive);
+
+    // Creating a new element requires shared ownership of model, implies exclusive ownership of new element
+    DgnModelPtr modelB3d = GetModel(dbB, false);
+    DgnElementCPtr newElemB3d = CreateElement(*modelB3d);
+    ASSERT_TRUE(newElemB3d.IsValid());
+    ExpectLevel(dbB, LockLevel::Shared);
+    ExpectLevel(*modelB3d, LockLevel::Shared);
+    ExpectLevel(*newElemB3d, LockLevel::Exclusive);
+
+    // Deleting a model requires exclusive ownership
+    DgnModelPtr modelA2d = GetModel(dbA, true);
+    ExpectLevel(*modelA2d, LockLevel::None);
+    EXPECT_EQ(DgnDbStatus::Success, modelA2d->Delete());
+    ExpectLevel(*modelA2d, LockLevel::Exclusive);
+    DgnModelPtr modelA3d = GetModel(dbA, false);
+    ExpectLevel(*modelA3d, LockLevel::None);
+    EXPECT_EQ(DgnDbStatus::LockNotHeld, modelA3d->Delete()); // because B has a shared lock on it
+    ExpectLevel(*modelA3d, LockLevel::None);
+
+    // Adding an element to a model requires shared ownership
+    DgnModelPtr modelB2d = GetModel(dbB, true);
+    ExpectLevel(*modelB2d, LockLevel::None);
+    DgnElementCPtr newElemB2d = CreateElement(*modelB2d);
+    EXPECT_TRUE(newElemB2d.IsNull());   // no return status to check...
+    ExpectLevel(*modelB2d, LockLevel::None);
+
+    // At this point, ownership is:
+    //  Object      A   B
+    //  Model2d     Ex  No      // deleted
+    //    Elem1     Ex  No      // deleted
+    //    Elem2     Ex  No      // deleted
+    //  Model3d     Sh  Sh
+    //    Elem1     No  No
+    //    Elem2     No  No
+
+    // Modifying an element requires shared ownership of model and exclusive ownership of element
+    DgnElementCPtr cpElemB2d = GetElement(dbB, Elem2dId1());
+    EXPECT_EQ(DgnDbStatus::LockNotHeld, cpElemB2d->Delete());
+    DgnElementPtr pElemB2d = cpElemB2d->CopyForEdit();
+    DgnDbStatus status;
+    EXPECT_TRUE(pElemB2d->Update(&status).IsNull());
+    EXPECT_EQ(DgnDbStatus::LockNotHeld, status);
+    ExpectLevel(*cpElemB2d, LockLevel::None);
+    ExpectLevel(*modelB2d, LockLevel::None);
+
+    DgnElementCPtr cpElemB3d = GetElement(dbB, Elem3dId1());
+    ExpectLevel(*cpElemB3d, LockLevel::None);
+    EXPECT_EQ(DgnDbStatus::Success, cpElemB3d->Delete());
+    ExpectLevel(*cpElemB3d, LockLevel::Exclusive);
+
+    DgnElementPtr pElemB3d2 = GetElement(dbB, Elem3dId2())->CopyForEdit();
+    ExpectLevel(*pElemB3d2, LockLevel::None);
+    EXPECT_TRUE(pElemB3d2->Update(&status).IsValid());
+    ExpectLevel(*pElemB3d2, LockLevel::Exclusive);
     }
 
