@@ -29,7 +29,7 @@ std::shared_ptr<rapidjson::Document> ToRapidJson(Utf8StringCR jsonString)
     if (fail)
         {
         BeDebugLog("Check json string");
-        ADD_FAILURE();
+        EXPECT_TRUE(false);
         }
     return json;
     }
@@ -41,7 +41,7 @@ Json::Value ToJson(Utf8StringCR jsonString)
     if (!success)
         {
         BeDebugLog("Check json string");
-        ADD_FAILURE();
+        EXPECT_TRUE(false);
         }
     return json;
     }
