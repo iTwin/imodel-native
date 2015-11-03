@@ -362,6 +362,7 @@ struct SystemAuthority
 
     static DgnAuthorityId GetId(BuiltinId which) { return DgnAuthorityId((uint64_t)which); }
     static DgnAuthority::Code CreateCode(BuiltinId which, Utf8StringCR value, Utf8StringCR nameSpace="") { return DgnAuthority::Code(GetId(which), value, nameSpace); }
+    static DgnAuthority::Code CreateCode(BuiltinId which, Utf8StringCR value, BeInt64Id nameSpaceId);
     template<typename T> static RefCountedCPtr<T> Get(BuiltinId which, DgnDbR db) { return db.Authorities().Get<T>(GetId(which)); }
 
     static DbResult Insert(DgnDbR db, Statement& stmt, Info const& info)
@@ -377,6 +378,19 @@ struct SystemAuthority
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code SystemAuthority::CreateCode(BuiltinId which, Utf8StringCR value, BeInt64Id nameSpaceId)
+    {
+    if (!nameSpaceId.IsValid())
+        return DgnAuthority::Code();
+
+    Utf8Char buf[0x11] = { 0 };
+    BeStringUtilities::FormatUInt64(buf, _countof(buf), nameSpaceId.GetValue(), HexFormatOptions());
+    return DgnAuthority::Code(GetId(which), value, buf);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
@@ -424,10 +438,9 @@ DgnAuthority::Code DgnCategory::CreateCategoryCode(Utf8StringCR name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthority::Code DgnSubCategory::CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR name, DgnDbR db)
+DgnAuthority::Code DgnSubCategory::CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR name)
     {
-    auto cat = DgnCategory::QueryCategory(categoryId, db);
-    return cat.IsValid() ? CreateSubCategoryCode(*cat, name) : Code();
+    return SystemAuthority::CreateCode(SystemAuthority::Category, name, categoryId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -435,7 +448,7 @@ DgnAuthority::Code DgnSubCategory::CreateSubCategoryCode(DgnCategoryId categoryI
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnAuthority::Code DgnSubCategory::CreateSubCategoryCode(DgnCategoryCR cat, Utf8StringCR name)
     {
-    return SystemAuthority::CreateCode(SystemAuthority::Category, name, cat.GetCategoryName());
+    return CreateSubCategoryCode(cat.GetCategoryId(), name);
     }
 
 /*---------------------------------------------------------------------------------**//**

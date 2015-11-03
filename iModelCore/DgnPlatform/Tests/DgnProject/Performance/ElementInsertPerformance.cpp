@@ -22,6 +22,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_DGNDB_UNIT_TESTS_NAMESPACE
 
+
 //=======================================================================================
 //! Test Fixture for tests
 // @bsiclass                                                     Majd.Uddin      06/15
@@ -29,71 +30,359 @@ USING_DGNDB_UNIT_TESTS_NAMESPACE
 struct PerformanceElementItem : public DgnDbTestFixture
 {
 
-};
+public:
+    int m_smallCount, m_mediumCount, m_largeCount, m_startCount, m_maxCount, m_increment;
+    StopWatch m_stopWatch;
 
-/*---------------------------------------------------------------------------------**//**
-* Test to measure time of Insert, Select, Update and Delete of an Element Item
-* @bsimethod                                    Majd.Uddin      05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PerformanceElementItem, CRUD)
-{
-    int startCount, maxCount,increment;
-    startCount = increment = 100;
-    maxCount = 1000;
-
-    StopWatch elementTimer("Insert Element", false);
-
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementInsertPerformanceTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
-
-    int counter;
-    double insertTime, selectTime, updateTime, deleteTime;
-    DgnDbStatus status;
-
-    for (counter = startCount; counter <= maxCount; counter = counter + increment)
+    PerformanceElementItem()
     {
-        insertTime = selectTime = updateTime = deleteTime = 0.0;
-        for (int i = 1; i <= counter; i++)
+        SetCounters(10000, 100000, 1000000);
+        createDatabase(L"small.idgndb", m_smallCount);
+        createDatabase(L"medium.idgndb", m_mediumCount);
+        createDatabase(L"large.idgndb", m_largeCount);
+    };
+
+    void createDatabase(WCharCP dbName, int InstanceCount)
+    {
+        BeFileName existingName;
+        BeTest::GetHost().GetOutputRoot(existingName);
+        existingName.AppendToPath(dbName);
+        if (!existingName.DoesPathExist())         //if file is there, dont' create it
         {
-            //First insert the Element
-            elementTimer.Start();
-            DgnElementCPtr el = InsertElement(DgnElement::Code());
-            EXPECT_TRUE(el.IsValid());
-            elementTimer.Stop();
-            insertTime = insertTime + elementTimer.GetElapsedSeconds();
-            EXPECT_EQ(&el->GetElementHandler(), &TestElementHandler::GetHandler());
+            BeFileName outFileName;
+            ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, L"3dMetricGeneral.idgndb", dbName, __FILE__));
+            DbResult result;
+            DgnDbPtr db = DgnDb::OpenDgnDb(&result, outFileName, DgnDb::OpenParams(BeSQLite::Db::OpenMode::ReadWrite));
+            ASSERT_TRUE(db.IsValid());
+            ASSERT_TRUE(result == BE_SQLITE_OK);
 
-            //Time to select a single ElementItem
-            elementTimer.Start();
-            EXPECT_TRUE(SelectElementItem(el->GetElementId()));
-            elementTimer.Stop();
-            selectTime = selectTime + elementTimer.GetElapsedSeconds();
+            BeFileName schemaFile(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+            schemaFile.AppendToPath(WString("ECSchemas/" TMTEST_SCHEMA_NAME ".01.00.ecschema.xml", BentleyCharEncoding::Utf8).c_str());
 
-            //Now Update data and measure time for Update
-            TestElementPtr mod = m_db->Elements().GetForEdit<TestElement>(el->GetElementId());
-            EXPECT_TRUE(mod.IsValid());
-            mod->SetTestItemProperty("Test - New");
-            elementTimer.Start();
-            mod->Update(&status);
-            elementTimer.Stop();
-            updateTime = updateTime + elementTimer.GetElapsedSeconds();
+            auto status = DgnPlatformTestDomain::GetDomain().ImportSchema(*db, schemaFile);
+            ASSERT_TRUE(DgnDbStatus::Success == status);
 
-            //Now delete data and measure time for Delete
-            elementTimer.Start();
-            DgnDbStatus status2 = el->Delete();
-            EXPECT_EQ(DgnDbStatus::Success, status2);
-            elementTimer.Stop();
-            deleteTime = deleteTime + elementTimer.GetElapsedSeconds();
+            DgnModelId defaultModelId = db->Models().QueryFirstModelId();
+            DgnModelPtr defaultModelP = db->Models().GetModel(defaultModelId);
+            ASSERT_TRUE(defaultModelP.IsValid());
+            defaultModelP->FillModel();
 
+            DgnCategoryId defaultCategoryId = DgnCategory::QueryFirstCategoryId(*db);
+
+            for (int i = 1; i <= InstanceCount; i++)
+            {
+                TestElementPtr el = TestElement::Create(*db, defaultModelId, defaultCategoryId, DgnElement::Code());
+                el->SetTestItemProperty("Test Value");
+                DgnElementCPtr el2 = db->Elements().Insert(*el);
+                ASSERT_TRUE(el2.IsValid());
+            }
+
+            db->CloseDb();
         }
+    };
+    void SetCounters(int smallCount, int mediumCount, int largeCount)
+    {
+        m_smallCount = smallCount;
+        m_mediumCount = mediumCount;
+        m_largeCount = largeCount;
+    };
 
-        //Write results to Db for analysis
-        LOGTODB(TEST_DETAILS, insertTime, "Insert", counter);
-        LOGTODB(TEST_DETAILS, selectTime, "Select", counter);
-        LOGTODB(TEST_DETAILS, updateTime, "Update", counter);
-        LOGTODB(TEST_DETAILS, deleteTime, "Delete", counter);
+    int InstanceCount()
+    {
+        Utf8String stmt("SELECT COUNT(" TMTEST_TEST_ITEM_TestItemProperty ") FROM " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME);
+        CachedECSqlStatementPtr selStmt = m_db->GetPreparedECSqlStatement(stmt.c_str());
+        EXPECT_FALSE(selStmt.IsNull()) << "InstacneCount failed";
+
+        EXPECT_TRUE(selStmt->Step() == BE_SQLITE_ROW);
+        return selStmt->GetValueInt(0);
+
+    };
+
+    bvector <uint64_t> GetElementIds(int instanceCount)
+    {
+        DgnClassId classId = DgnClassId(m_db->Schemas().GetECClassId(TMTEST_SCHEMA_NAME, TMTEST_TEST_ITEM_CLASS_NAME));
+        Statement stmt;
+        EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "Select ElementId from dgn_ElementItem WHERE ECClassId = ?"));
+        EXPECT_EQ(BE_SQLITE_OK, stmt.BindId(1, classId));
+        bvector <uint64_t> elementIds;
+        for (int i = 1; i <= instanceCount; i++)
+        {
+            if (stmt.Step() == BE_SQLITE_ROW)
+                elementIds.push_back(stmt.GetValueInt64(0));
+            else
+                EXPECT_TRUE(false);
+        }
+        return elementIds;
     }
 
+    void GetDb(WCharCP baseName, WCharCP dbName)
+    {
+        BeFileName toCopy, copyDb;
+        BeTest::GetHost().GetOutputRoot(toCopy);
+        toCopy.AppendToPath(baseName);
+        if (!toCopy.DoesPathExist())
+            ASSERT_TRUE(false) <<toCopy.GetName();
+        BeTest::GetHost().GetOutputRoot(copyDb);
+        copyDb.AppendToPath(dbName);
+        if (copyDb.DoesPathExist()) // delete existing copy
+            ASSERT_EQ(BeFileNameStatus::Success, copyDb.BeDeleteFile());
+        
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(toCopy, copyDb));
+
+        DbResult result;
+        m_db = DgnDb::OpenDgnDb(&result, copyDb, DgnDb::OpenParams(BeSQLite::Db::OpenMode::ReadWrite));
+        ASSERT_TRUE(m_db.IsValid());
+        ASSERT_TRUE(result == BE_SQLITE_OK);
+        m_defaultModelId = m_db->Models().QueryFirstModelId();
+        m_defaultModelP = m_db->Models().GetModel(m_defaultModelId);
+        ASSERT_TRUE(m_defaultModelP.IsValid());
+        m_defaultModelP->FillModel();
+
+        m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
+    };
+
+    void MeasurePerformanceInsert(WCharCP baseFile, WCharCP testFile, int initialCount, int instanceCount)
+    {
+        GetDb(baseFile, testFile);
+        ASSERT_EQ(initialCount, InstanceCount());
+
+        //First create Elements
+        bvector<TestElementPtr> testElements;
+        for (int i = 0; i < instanceCount; i++)
+        {
+            TestElementPtr element = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
+            element->SetTestItemProperty("Test Value");
+            ASSERT_TRUE(element != nullptr);
+            testElements.push_back(element);
+        }
+
+        //Now Insert and Measure Time
+        DgnDbStatus stat = DgnDbStatus::Success;
+        m_stopWatch.Start();
+        for (TestElementPtr& element : testElements)
+        {
+            element->Insert(&stat);
+            ASSERT_EQ(DgnDbStatus::Success, stat);
+        }
+        m_stopWatch.Stop();
+
+        ASSERT_EQ(initialCount + instanceCount, InstanceCount());
+        LOGTODB(TEST_DETAILS, m_stopWatch.GetElapsedSeconds(), Utf8PrintfString("Insert. Db Inital Count: %d ", initialCount).c_str(), instanceCount);
+
+    };
+
+    void MeasurePerformanceDelete(WCharCP baseFile, WCharCP testFile, int initialCount, int instanceCount)
+    {
+        GetDb(baseFile, testFile);
+        ASSERT_EQ(initialCount, InstanceCount());
+    
+        //First get Ids that we need to Delete
+        bvector <uint64_t> elementIds = GetElementIds(instanceCount);
+        ASSERT_EQ(elementIds.size(), instanceCount);
+
+        //Now Delete them and measure time
+        m_stopWatch.Start();
+        DgnDbStatus stat;
+        for (uint64_t Id : elementIds)
+        {
+            stat = m_db->Elements().Delete(DgnElementId(Id));
+            ASSERT_EQ(DgnDbStatus::Success, stat);
+        }
+        m_stopWatch.Stop();
+
+        ASSERT_EQ(initialCount - instanceCount, InstanceCount());
+        LOGTODB(TEST_DETAILS, m_stopWatch.GetElapsedSeconds(), Utf8PrintfString("Delete. Db Inital Count: %d ", initialCount).c_str(), instanceCount);
+    };
+
+    void MeasurePerformanceSelect(WCharCP baseFile, WCharCP testFile, int initialCount, int instanceCount)
+    {
+        GetDb(baseFile, testFile);
+        ASSERT_EQ(initialCount, InstanceCount());
+
+        //First get Ids that we need to Select
+        bvector <uint64_t> elementIds = GetElementIds(instanceCount);
+        ASSERT_EQ(elementIds.size(), instanceCount);
+
+        //Prepare the select statement
+        Utf8String stmt("SELECT " TMTEST_TEST_ITEM_TestItemProperty " FROM " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME);
+        stmt.append(" WHERE ECInstanceId = ?;");
+
+        CachedECSqlStatementPtr selStmt = m_db->GetPreparedECSqlStatement(stmt.c_str());
+        ASSERT_FALSE(selStmt.IsNull());
+
+        //Now select and measure time
+        m_stopWatch.Start();
+        for (uint64_t Id : elementIds)
+        {
+            ASSERT_EQ(ECSqlStatus::Success, selStmt->BindId(1, ECInstanceId(Id)));
+            ASSERT_EQ(BE_SQLITE_ROW, selStmt->Step());
+            ASSERT_STREQ("Test Value", selStmt->GetValueText(0));
+            ASSERT_EQ(ECSqlStatus::Success, selStmt->Reset());
+            ASSERT_EQ(ECSqlStatus::Success, selStmt->ClearBindings());
+        }
+        m_stopWatch.Stop();
+
+        LOGTODB(TEST_DETAILS, m_stopWatch.GetElapsedSeconds(), Utf8PrintfString("Select. Db Inital Count: %d ", initialCount).c_str(), instanceCount);
+    };
+
+
+    void MeasurePerformanceUpdate(WCharCP baseFile, WCharCP testFile, int initialCount, int instanceCount)
+    {
+        GetDb(baseFile, testFile);
+        ASSERT_EQ(initialCount, InstanceCount());
+
+        //First get some Elements that we need to Update
+        bvector <uint64_t> elementIds = GetElementIds(instanceCount);
+        ASSERT_EQ(elementIds.size(), instanceCount);
+        bvector <TestElementPtr> testElements;
+        for (uint64_t Id : elementIds)
+        {
+            TestElementPtr mod = m_db->Elements().GetForEdit<TestElement>(DgnElementId(Id));
+            EXPECT_TRUE(mod.IsValid());
+            mod->SetTestItemProperty("Test - New");
+            testElements.push_back(mod);
+        }
+
+        //Now Update and Measure Time
+        DgnDbStatus stat = DgnDbStatus::Success;
+        m_stopWatch.Start();
+        for (TestElementPtr& element : testElements)
+        {
+            element->Update(&stat);
+            ASSERT_EQ(DgnDbStatus::Success, stat);
+        }
+        m_stopWatch.Stop();
+
+        //Verify that we have new test value
+        Utf8String stmt("SELECT " TMTEST_TEST_ITEM_TestItemProperty " FROM " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME);
+        stmt.append(" WHERE ECInstanceId = ?;");
+        CachedECSqlStatementPtr selStmt = m_db->GetPreparedECSqlStatement(stmt.c_str());
+        ASSERT_FALSE(selStmt.IsNull());
+        for (uint64_t Id : elementIds)
+        {
+            ECSqlStatus status = selStmt->BindInt64(1, Id);
+            ASSERT_EQ(ECSqlStatus::Success, status);
+            ASSERT_EQ(BE_SQLITE_ROW, selStmt->Step());
+            ASSERT_STREQ("Test - New", selStmt->GetValueText(0));
+            ASSERT_EQ(ECSqlStatus::Success, selStmt->Reset());
+            ASSERT_EQ(ECSqlStatus::Success, selStmt->ClearBindings());
+        }
+
+        LOGTODB(TEST_DETAILS, m_stopWatch.GetElapsedSeconds(), Utf8PrintfString("Update. Db Inital Count: %d ", initialCount).c_str(), instanceCount);
+
+    };
+};
+
+//---------------------------------------------------------------------------------**//**
+// Test to measure time of Insert in a database with existing Instances
+// @bsimethod                                    Majd.Uddin      10/15
+// +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PerformanceElementItem, Insert)
+{
+    //Small
+    MeasurePerformanceInsert(L"small.idgndb", L"Insert_Small_200.idgndb", m_smallCount, 200);
+    MeasurePerformanceInsert(L"small.idgndb", L"Insert_Small_400.idgndb", m_smallCount, 400);
+    MeasurePerformanceInsert(L"small.idgndb", L"Insert_Small_600.idgndb", m_smallCount, 600);
+    MeasurePerformanceInsert(L"small.idgndb", L"Insert_Small_800.idgndb", m_smallCount, 800);
+    MeasurePerformanceInsert(L"small.idgndb", L"Insert_Small_1000.idgndb", m_smallCount, 1000);
+    
+    //Medium
+    MeasurePerformanceInsert(L"medium.idgndb", L"Insert_Medium_200.idgndb", m_mediumCount, 200);
+    MeasurePerformanceInsert(L"medium.idgndb", L"Insert_Medium_400.idgndb", m_mediumCount, 400);
+    MeasurePerformanceInsert(L"medium.idgndb", L"Insert_Medium_600.idgndb", m_mediumCount, 600);
+    MeasurePerformanceInsert(L"medium.idgndb", L"Insert_Medium_800.idgndb", m_mediumCount, 800);
+    MeasurePerformanceInsert(L"medium.idgndb", L"Insert_Medium_1000.idgndb", m_mediumCount, 1000);
+
+    //Large
+    MeasurePerformanceInsert(L"large.idgndb", L"Insert_Large_200.idgndb", m_largeCount, 200);
+    MeasurePerformanceInsert(L"large.idgndb", L"Insert_Large_400.idgndb", m_largeCount, 400);
+    MeasurePerformanceInsert(L"large.idgndb", L"Insert_Large_600.idgndb", m_largeCount, 600);
+    MeasurePerformanceInsert(L"large.idgndb", L"Insert_Large_800.idgndb", m_largeCount, 800);
+    MeasurePerformanceInsert(L"large.idgndb", L"Insert_Large_1000.idgndb", m_largeCount, 1000);
 }
+//---------------------------------------------------------------------------------**//**
+// Test to measure time of Delete in a database with existing Instances
+// @bsimethod                                    Majd.Uddin      10/15
+// +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PerformanceElementItem, Delete)
+{
+    //Small
+    MeasurePerformanceDelete(L"small.idgndb", L"Delete_Small_200.idgndb", m_smallCount, 200);
+    MeasurePerformanceDelete(L"small.idgndb", L"Delete_Small_400.idgndb", m_smallCount, 400);
+    MeasurePerformanceDelete(L"small.idgndb", L"Delete_Small_600.idgndb", m_smallCount, 600);
+    MeasurePerformanceDelete(L"small.idgndb", L"Delete_Small_800.idgndb", m_smallCount, 800);
+    MeasurePerformanceDelete(L"small.idgndb", L"Delete_Small_1000.idgndb", m_smallCount, 1000);
+
+    //Medium
+    MeasurePerformanceDelete(L"medium.idgndb", L"Delete_Medium_200.idgndb", m_mediumCount, 200);
+    MeasurePerformanceDelete(L"medium.idgndb", L"Delete_Medium_400.idgndb", m_mediumCount, 400);
+    MeasurePerformanceDelete(L"medium.idgndb", L"Delete_Medium_600.idgndb", m_mediumCount, 600);
+    MeasurePerformanceDelete(L"medium.idgndb", L"Delete_Medium_800.idgndb", m_mediumCount, 800);
+    MeasurePerformanceDelete(L"medium.idgndb", L"Delete_Medium_1000.idgndb", m_mediumCount, 1000);
+
+    //Large
+    MeasurePerformanceDelete(L"large.idgndb", L"Delete_Large_200.idgndb", m_largeCount, 200);
+    MeasurePerformanceDelete(L"large.idgndb", L"Delete_Large_400.idgndb", m_largeCount, 400);
+    MeasurePerformanceDelete(L"large.idgndb", L"Delete_Large_600.idgndb", m_largeCount, 600);
+    MeasurePerformanceDelete(L"large.idgndb", L"Delete_Large_800.idgndb", m_largeCount, 800);
+    MeasurePerformanceDelete(L"large.idgndb", L"Delete_Large_1000.idgndb", m_largeCount, 1000);
+}
+
+//---------------------------------------------------------------------------------**//**
+// Test to measure time of Select in a database with existing Instances
+// @bsimethod                                    Majd.Uddin      10/15
+// +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PerformanceElementItem, Select)
+{
+    //Small
+    MeasurePerformanceSelect(L"small.idgndb", L"Select_Small_200.idgndb", m_smallCount, 200);
+    MeasurePerformanceSelect(L"small.idgndb", L"Select_Small_400.idgndb", m_smallCount, 400);
+    MeasurePerformanceSelect(L"small.idgndb", L"Select_Small_600.idgndb", m_smallCount, 600);
+    MeasurePerformanceSelect(L"small.idgndb", L"Select_Small_800.idgndb", m_smallCount, 800);
+    MeasurePerformanceSelect(L"small.idgndb", L"Select_Small_1000.idgndb", m_smallCount, 1000);
+
+    //Medium
+    MeasurePerformanceSelect(L"medium.idgndb", L"Select_Medium_200.idgndb", m_mediumCount, 200);
+    MeasurePerformanceSelect(L"medium.idgndb", L"Select_Medium_400.idgndb", m_mediumCount, 400);
+    MeasurePerformanceSelect(L"medium.idgndb", L"Select_Medium_600.idgndb", m_mediumCount, 600);
+    MeasurePerformanceSelect(L"medium.idgndb", L"Select_Medium_800.idgndb", m_mediumCount, 800);
+    MeasurePerformanceSelect(L"medium.idgndb", L"Select_Medium_1000.idgndb", m_mediumCount, 1000);
+
+    //Large
+    MeasurePerformanceSelect(L"large.idgndb", L"Select_Large_200.idgndb", m_largeCount, 200);
+    MeasurePerformanceSelect(L"large.idgndb", L"Select_Large_400.idgndb", m_largeCount, 400);
+    MeasurePerformanceSelect(L"large.idgndb", L"Select_Large_600.idgndb", m_largeCount, 600);
+    MeasurePerformanceSelect(L"large.idgndb", L"Select_Large_800.idgndb", m_largeCount, 800);
+    MeasurePerformanceSelect(L"large.idgndb", L"Select_Large_1000.idgndb", m_largeCount, 1000);
+}
+//---------------------------------------------------------------------------------**//**
+// Test to measure time of Update in a database with existing Instances
+// @bsimethod                                    Majd.Uddin      10/15
+// +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PerformanceElementItem, Update)
+{
+    //Small
+    MeasurePerformanceUpdate(L"small.idgndb", L"Update_Small_200.idgndb", m_smallCount, 200);
+    MeasurePerformanceUpdate(L"small.idgndb", L"Update_Small_400.idgndb", m_smallCount, 400);
+    MeasurePerformanceUpdate(L"small.idgndb", L"Update_Small_600.idgndb", m_smallCount, 600);
+    MeasurePerformanceUpdate(L"small.idgndb", L"Update_Small_800.idgndb", m_smallCount, 800);
+    MeasurePerformanceUpdate(L"small.idgndb", L"Update_Small_1000.idgndb", m_smallCount, 1000);
+
+    //Medium
+    MeasurePerformanceUpdate(L"medium.idgndb", L"Update_Medium_200.idgndb", m_mediumCount, 200);
+    MeasurePerformanceUpdate(L"medium.idgndb", L"Update_Medium_400.idgndb", m_mediumCount, 400);
+    MeasurePerformanceUpdate(L"medium.idgndb", L"Update_Medium_600.idgndb", m_mediumCount, 600);
+    MeasurePerformanceUpdate(L"medium.idgndb", L"Update_Medium_800.idgndb", m_mediumCount, 800);
+    MeasurePerformanceUpdate(L"medium.idgndb", L"Update_Medium_1000.idgndb", m_mediumCount, 1000);
+
+    //Large
+    MeasurePerformanceUpdate(L"large.idgndb", L"Update_Large_200.idgndb", m_largeCount, 200);
+    MeasurePerformanceUpdate(L"large.idgndb", L"Update_Large_400.idgndb", m_largeCount, 400);
+    MeasurePerformanceUpdate(L"large.idgndb", L"Update_Large_600.idgndb", m_largeCount, 600);
+    MeasurePerformanceUpdate(L"large.idgndb", L"Update_Large_800.idgndb", m_largeCount, 800);
+    MeasurePerformanceUpdate(L"large.idgndb", L"Update_Large_1000.idgndb", m_largeCount, 1000);
+}
+
 
 //static
 const DgnCategoryId PerformanceElementTestFixture::s_catId = DgnCategoryId((uint64_t)123);

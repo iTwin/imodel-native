@@ -368,16 +368,20 @@ protected:
     virtual void _DrawElement(ViewContextR, GeometricElementCR) override;
     virtual void _DrawElementFiltered(ViewContextR, GeometricElementCR, DPoint3dCP pts, double size)  override;
 
+    //virtual ScanRange _ShowTxnSummary(TxnSummaryCR summary) override; -- we don't need to override this, because the subject view will never have changed elements that must be displayed
+    virtual void _OnAttachedToViewport(DgnViewportR) override;
+    virtual FitComplete _ComputeFitRange (DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
+
 #ifdef WIP_PhysicalRedlineViewController
     // QueryViewController
-    virtual bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
-    virtual void _DrawView(ViewContextR context) override;
-    virtual uint32_t _GetMaxElementsToLoad() override;
-    virtual BeSQLite::DbResult _Load() override;
-    virtual Utf8String _GetRTreeMatchSql(DgnViewportR viewport) override;
+    virtual bool _IsInSet (int nVal, BeSQLite::DbValue const*) const override;
+    virtual bool _WantElementLoadStart (ViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum) override;
+    virtual uint32_t _GetMaxElementsToLoad () override;
+    virtual Utf8String _GetRTreeMatchSql (ViewportR viewport) override;
     virtual int32_t _GetMaxElementFactor() override;
-    virtual double _GetMinimumSizePixels(DrawPurpose updateType) override;
-    virtual uint64_t _GetMaxElementMemory() override;
+    virtual double _GetMinimumSizePixels (DrawPurpose updateType) override;
+    virtual uint64_t _GetMaxElementMemory () override;
+    // END QueryViewController
 #endif
     // END QueryViewController
 

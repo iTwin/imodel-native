@@ -155,7 +155,6 @@ private:
     Data m_data;
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
-    DgnDbStatus UpdateCode(DgnCategoryCR category);
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
@@ -192,7 +191,7 @@ public:
     void SetDescription(Utf8StringCR descr) { m_data.m_descr = descr; } //!< Set the description
 
     //! Create a Code for the name of a sub-category of the specified category
-    DGNPLATFORM_EXPORT static Code CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR subCategoryName, DgnDbR db);
+    DGNPLATFORM_EXPORT static Code CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR subCategoryName);
 
     //! Create a Code for the name of a sub-category of the specified category
     DGNPLATFORM_EXPORT static Code CreateSubCategoryCode(DgnCategoryCR category, Utf8StringCR subCategoryName);
@@ -201,7 +200,7 @@ public:
     DGNPLATFORM_EXPORT static DgnSubCategoryId QuerySubCategoryId(Code const& code, DgnDbR db);
 
     //! Looks up a sub-category ID by name and category ID.
-    static DgnSubCategoryId QuerySubCategoryId(DgnCategoryId categoryId, Utf8StringCR subCategoryName, DgnDbR db) { return QuerySubCategoryId(CreateSubCategoryCode(categoryId, subCategoryName, db), db); }
+    static DgnSubCategoryId QuerySubCategoryId(DgnCategoryId categoryId, Utf8StringCR subCategoryName, DgnDbR db) { return QuerySubCategoryId(CreateSubCategoryCode(categoryId, subCategoryName), db); }
 
     //! Looks up a sub-category by ID.
     static DgnSubCategoryCPtr QuerySubCategory(DgnSubCategoryId subCategoryId, DgnDbR db) { return db.Elements().Get<DgnSubCategory>(subCategoryId); }
@@ -308,7 +307,6 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
-    DGNPLATFORM_EXPORT void _OnUpdated(DgnElementCR original) const override;
     DGNPLATFORM_EXPORT void _OnInserted(DgnElementP copiedFrom) const override;
     DGNPLATFORM_EXPORT void _OnImported(DgnElementCR original, DgnImportContext& importer) const override;
     

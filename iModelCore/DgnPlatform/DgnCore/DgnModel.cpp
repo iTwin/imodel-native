@@ -453,6 +453,9 @@ DgnDbStatus DgnModel::_OnUpdate()
             return stat;
         }
 
+    if (LockStatus::Success != GetDgnDb().Locks().LockModel(*this, LockLevel::Exclusive))
+        return DgnDbStatus::LockNotHeld;
+
     return DgnDbStatus::Success;
     }
 
@@ -758,6 +761,9 @@ DgnDbStatus DgnModel::_OnDelete()
     if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Delete))
         return DgnDbStatus::MissingHandler;
 
+    if (LockStatus::Success != GetDgnDb().Locks().LockModel(*this, LockLevel::Exclusive))
+        return DgnDbStatus::LockNotHeld;
+
     for (auto appdata : m_appData)
         appdata.second->_OnDelete(*this);
 
@@ -815,6 +821,10 @@ DgnDbStatus DgnModel::_OnInsert()
 
     if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Insert))
         return DgnDbStatus::MissingHandler;
+
+    // If db is exclusively locked, cannot create models in it
+    if (LockStatus::Success != GetDgnDb().Locks().LockDb(LockLevel::Shared))
+        return DgnDbStatus::LockNotHeld;
 
     return DgnDbStatus::Success;
     }
@@ -886,6 +896,9 @@ DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
         return DgnDbStatus::WriteError;
         }
 
+    // NB: We do this here rather than in _OnInserted() because Update() is going to request a lock too, and the server doesn't need to be
+    // involved in locks for models created locally.
+    GetDgnDb().Locks().OnModelInserted(GetModelId());
     stat = Update();
     BeAssert(stat==DgnDbStatus::Success);
 

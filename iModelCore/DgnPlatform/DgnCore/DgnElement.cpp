@@ -248,6 +248,10 @@ DgnDbStatus DgnElement::_OnInsert()
             return stat;
         }
 
+    // If model is exclusively locked we cannot insert elements into it
+    if (LockStatus::Success != GetDgnDb().Locks().LockModel(*GetModel(), LockLevel::Shared))
+        return DgnDbStatus::LockNotHeld;
+
     return GetModel()->_OnInsertElement(*this);
     }
 
@@ -290,6 +294,7 @@ void DgnElement::_OnInserted(DgnElementP copiedFrom) const
         copiedFrom->CallAppData(OnInsertedCaller(*this));
 
     GetModel()->_OnInsertedElement(*this);
+    GetDgnDb().Locks().OnElementInserted(GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -364,6 +369,9 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
             return stat;
         }
 
+    if (LockStatus::Success != GetDgnDb().Locks().LockElement(*this, LockLevel::Exclusive))
+        return DgnDbStatus::LockNotHeld;
+
     return GetModel()->_OnUpdateElement(*this, original);
     }
 
@@ -436,6 +444,9 @@ DgnDbStatus DgnElement::_OnDelete() const
         if (DgnDbStatus::Success != stat)
             return stat;
         }
+
+    if (LockStatus::Success != GetDgnDb().Locks().LockElement(*this, LockLevel::Exclusive))
+        return DgnDbStatus::LockNotHeld;
 
     return GetModel()->_OnDeleteElement(*this);
     }

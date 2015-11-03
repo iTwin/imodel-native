@@ -177,7 +177,7 @@ struct Writer
     void Append(MSBsplineSurfaceCR);
     void Append(ISolidKernelEntityCR, bool saveBRepOnly = false); // Adds multiple op-codes for when PSolid is un-available unless saveBRepOnly is true...
     void Append(ElementGeometryCR);
-    void Append(DgnSubCategoryId, TransformCR geomToElem);
+    void Append(DgnSubCategoryId, TransformCP geomToElem); // geomToElem should only be non-null when inserting a GeomPart...
     void Append(DgnGeomPartId);
     void Append(ElemDisplayParamsCR); // Adds multiple op-codes...
     void Append(TextStringCR);
@@ -415,7 +415,6 @@ Placement3d             m_placement3d;
 Placement2d             m_placement2d;
 DgnDbR                  m_dgnDb;
 DgnSubCategoryId        m_prevSubCategory;
-Transform               m_prevGeomToElem;
 ElemDisplayParams       m_elParams;
 ElementGeomIO::Writer   m_writer;
 
@@ -426,7 +425,7 @@ ElementGeometryBuilder (DgnDbR dgnDb, DgnCategoryId categoryId, bool is3d);
 bool ConvertToLocal (ElementGeometryR);
 bool AppendWorld (ElementGeometryR);
 bool AppendLocal (ElementGeometryCR);
-void OnNewGeom (DRange3dCR localRange, TransformCP geomToElement);
+void OnNewGeom (DRange3dCR localRange, TransformCP geomToElement = nullptr);
 
 public:
 
