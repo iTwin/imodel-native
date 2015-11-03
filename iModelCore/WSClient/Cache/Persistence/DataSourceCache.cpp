@@ -83,14 +83,7 @@ const ECDb::CreateParams& params
 
     return ExecuteWithinTransaction([&]
         {
-        if (SUCCESS != SchemaManager(m_db).ImportCacheSchemas())
-            {
-            return ERROR;
-            }
-
-        CacheSettings settings(m_db);
-        settings.SetVersion(CURRENT_CACHE_FORMAT_VERSION);
-        if (SUCCESS != settings.Save())
+        if (SUCCESS != InitializeCreatedDb())
             {
             return ERROR;
             }
@@ -171,7 +164,11 @@ const ECDb::OpenParams& params
 
     if (SUCCESS != status)
         {
-        return status;
+        // DB is not initialized
+        return ExecuteWithinTransaction([&]
+            {
+            return InitializeCreatedDb();
+            });
         }
 
     if (version == CURRENT_CACHE_FORMAT_VERSION)
@@ -204,6 +201,21 @@ const ECDb::OpenParams& params
         settings.SetVersion(CURRENT_CACHE_FORMAT_VERSION);
         return settings.Save();
         });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DataSourceCache::InitializeCreatedDb()
+    {
+    if (SUCCESS != SchemaManager(m_db).ImportCacheSchemas())
+        {
+        return ERROR;
+        }
+
+    CacheSettings settings(m_db);
+    settings.SetVersion(CURRENT_CACHE_FORMAT_VERSION);
+    return settings.Save();
     }
 
 /*--------------------------------------------------------------------------------------+

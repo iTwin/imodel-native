@@ -36,6 +36,7 @@ struct DataSourceCache : public IDataSourceCache
     private:
         BentleyStatus ExecuteWithinTransaction(std::function<BentleyStatus()> execute);
 
+        BentleyStatus InitializeCreatedDb();
         void SetupOpenState(CacheEnvironmentCR environment);
         void ClearRuntimeCaches();
 

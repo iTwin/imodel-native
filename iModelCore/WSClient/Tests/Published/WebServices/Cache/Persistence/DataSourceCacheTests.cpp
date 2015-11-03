@@ -42,7 +42,14 @@ TEST_F(DataSourceCacheTests, Open_NoFile_Error)
     EXPECT_EQ(ERROR, DataSourceCache().Open(path, CacheEnvironment()));
     }
 
-TEST_F(DataSourceCacheTests, Open_NonCacheDb_Error)
+TEST_F(DataSourceCacheTests, Open_NonECDbFile_Error)
+    {
+    BeFileName path = StubFile("FooContent");
+
+    EXPECT_EQ(ERROR, DataSourceCache().Open(path, CacheEnvironment()));
+    }
+
+TEST_F(DataSourceCacheTests, Open_SimpleECDb_Succeeds)
     {
     BeFileName path = StubFilePath();
 
@@ -50,7 +57,7 @@ TEST_F(DataSourceCacheTests, Open_NonCacheDb_Error)
     ASSERT_EQ(BE_SQLITE_OK, db.CreateNewDb(path));
     db.CloseDb();
 
-    EXPECT_EQ(ERROR, DataSourceCache().Open(path, CacheEnvironment()));
+    EXPECT_EQ(SUCCESS, DataSourceCache().Open(path, CacheEnvironment()));
     }
 
 TEST_F(DataSourceCacheTests, Open_ExistingDb_Success)
