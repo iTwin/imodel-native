@@ -11,7 +11,6 @@
 
 #include <ImagePPInternal/hstdcpp.h>
 
-
 #include <Imagepp/all/h/HRFThumbnail.h>
 #include <Imagepp/all/h/HRFResolutionDescriptor.h>
 #include <Imagepp/all/h/HRFPageDescriptor.h>
@@ -19,8 +18,7 @@
 #include <Imagepp/all/h/HRFCapability.h>
 #include <Imagepp/all/h/HCPGeotiffKeys.h>
 #include <Imagepp/all/h/HGF2DStretch.h>
-
-
+#include <Imagepp/all/h/HCPGCoordUtility.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     06/2013
@@ -33,10 +31,11 @@ RasterFileGeocodingPtr RasterFileGeocoding::Create()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-RasterFileGeocodingPtr RasterFileGeocoding::Create(IRasterBaseGcsP pi_pGeocoding)
+RasterFileGeocodingPtr RasterFileGeocoding::Create(GeoCoordinates::BaseGCSP pi_pGeocoding)
     {
     return new RasterFileGeocoding(pi_pGeocoding);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -48,7 +47,7 @@ RasterFileGeocodingPtr RasterFileGeocoding::Create(HCPGeoTiffKeys const* pi_pGeo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-RasterFileGeocoding::RasterFileGeocoding(IRasterBaseGcsP pi_pGeocoding)
+RasterFileGeocoding::RasterFileGeocoding(GeoCoordinates::BaseGCSP pi_pGeocoding)
 :m_isGeotiffKeysCreated(false), 
 m_pGeocoding(pi_pGeocoding)
     {
@@ -65,19 +64,26 @@ RasterFileGeocoding::RasterFileGeocoding()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-RasterFileGeocoding::RasterFileGeocoding(HCPGeoTiffKeys const* pi_pGeokeys):m_pGeoTiffKeys(pi_pGeokeys->Clone()),m_isGeotiffKeysCreated(true)
+RasterFileGeocoding::RasterFileGeocoding(HCPGeoTiffKeys const* pi_pGeokeys)
+:m_pGeoTiffKeys(pi_pGeokeys->Clone()),
+ m_isGeotiffKeysCreated(true)
     {
-    m_pGeocoding = HRFGeoCoordinateProvider::CreateRasterGcsFromGeoTiffKeys(NULL, NULL, *m_pGeoTiffKeys);
+    m_pGeocoding = GeoCoordinates::BaseGCS::CreateGCS();
+
+    //&&AR when failing is it OK to return NULL? or we have something partially valid that will preserve unknown data or something?
+    m_pGeocoding->InitFromGeoTiffKeys (NULL, NULL, m_pGeoTiffKeys.GetPtr());
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-RasterFileGeocoding::RasterFileGeocoding(const RasterFileGeocoding& object):m_isGeotiffKeysCreated(object.m_isGeotiffKeysCreated)
+RasterFileGeocoding::RasterFileGeocoding(const RasterFileGeocoding& object)
+:m_isGeotiffKeysCreated(object.m_isGeotiffKeysCreated)
     {
     if (object.m_pGeoTiffKeys!=NULL)
         m_pGeoTiffKeys = object.m_pGeoTiffKeys->Clone();
     if (object.m_pGeocoding !=NULL)
-        m_pGeocoding = object.m_pGeocoding->Clone();
+        m_pGeocoding = GeoCoordinates::BaseGCS::CreateGCS(*object.m_pGeocoding);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -91,7 +97,7 @@ RasterFileGeocodingPtr RasterFileGeocoding::Clone() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-IRasterBaseGcsCP RasterFileGeocoding::GetGeocodingCP() const
+GeoCoordinates::BaseGCSCP RasterFileGeocoding::GetGeocodingCP() const
     {
     return m_pGeocoding.get();
     }
@@ -108,7 +114,7 @@ HCPGeoTiffKeys const& RasterFileGeocoding::GetGeoTiffKeys() const
         if (m_pGeocoding!=NULL)
             {
             m_isGeotiffKeysCreated=true;
-            m_pGeocoding->GetGeoTiffKeys(m_pGeoTiffKeys);
+            m_pGeocoding->SetGeoTiffKeys(m_pGeoTiffKeys.GetPtr());
 #if 0
             //Sanity check - can we recreate the same geocoding from geotiff keys extracted?
             RasterFileGeocodingPtr ptemp(Create(m_pGeoTiffKeys));
@@ -136,8 +142,9 @@ bool*                            po_pDefaultUnitWasFound
     HFCPtr<HGF2DTransfoModel> pTransfo = pi_pModel;
 
     double effectiveFactorModelToMeter = pi_FactorModelToMeter;
-    double unitsfromMeters;
-    bool   isUnitWasFound(HRFGeoCoordinateProvider::GetUnitsFromMeters(unitsfromMeters, GetGeoTiffKeys(), pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation));
+    double unitsfromMeters = 1.0;
+    bool   isUnitWasFound = HCPGCoordUtility::GetUnitsFromMeters(unitsfromMeters, GetGeoTiffKeys(), pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation);
+    
     if (isUnitWasFound)
         effectiveFactorModelToMeter = 1.0 / unitsfromMeters;
 
@@ -173,8 +180,9 @@ bool*                           po_pDefaultUnitWasFound
     HPRECONDITION(pi_pModel != 0);
 
     double FactorModelToMeter = 1.0;
-    double unitsfromMeters;
-    bool   isUnitWasFound(HRFGeoCoordinateProvider::GetUnitsFromMeters(unitsfromMeters, GetGeoTiffKeys(), pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation));
+    double unitsfromMeters = 1.0;
+    bool   isUnitWasFound = HCPGCoordUtility::GetUnitsFromMeters(unitsfromMeters, GetGeoTiffKeys(), pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation);
+    
     if (isUnitWasFound)
         FactorModelToMeter = 1.0 / unitsfromMeters;
 
@@ -183,11 +191,9 @@ bool*                           po_pDefaultUnitWasFound
         {
         *po_pDefaultUnitWasFound = isUnitWasFound;
         }
-
-
+    
     HFCPtr<HGF2DTransfoModel> pTransfo = pi_pModel;
-
-
+    
     // Apply inverse factor to Matrix
     if (FactorModelToMeter != 1.0)
         {
@@ -1388,7 +1394,7 @@ bool HRFPageDescriptor::GeocodingHasChanged() const
 // GetGeocoding
 // Get the page descriptor geocoding
 //-----------------------------------------------------------------------------
-IRasterBaseGcsCP  HRFPageDescriptor::GetGeocodingCP() const
+GeoCoordinates::BaseGCSCP  HRFPageDescriptor::GetGeocodingCP() const
     {
     BeAssert(m_pGeocoding!=NULL);
     return m_pGeocoding->GetGeocodingCP();
@@ -1400,8 +1406,9 @@ IRasterBaseGcsCP  HRFPageDescriptor::GetGeocodingCP() const
 // Set the page descriptor geocoding
 // Geo coding given can be null or invalid indicating that there is no geo coding
 //-----------------------------------------------------------------------------
-void HRFPageDescriptor::SetGeocoding(IRasterBaseGcsP pi_pGeocoding)
+void HRFPageDescriptor::SetGeocoding(GeoCoordinates::BaseGCSP pi_pGeocoding)
     {
+    BeAssert(pi_pGeocoding != NULL ? pi_pGeocoding->IsValid() : true);
     m_pGeocoding = RasterFileGeocoding::Create(pi_pGeocoding);
     m_GeocodingHasChanged=true;
     }

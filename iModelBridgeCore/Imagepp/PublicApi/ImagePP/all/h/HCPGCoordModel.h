@@ -11,7 +11,6 @@
 |   Header File Dependencies
 +----------------------------------------------------------------------------*/
 #include <Imagepp/all/h/HGF2DTransfoModel.h>
-#include <ImagePP/all/h/interface/IRasterGeoCoordinateServices.h>
 
 BEGIN_IMAGEPP_NAMESPACE
 
@@ -28,8 +27,7 @@ public:
     // Primary methods
 //    IMAGEPP_EXPORT                       HCPGCoordModel();
 
-    IMAGEPP_EXPORT                       HCPGCoordModel(IRasterBaseGcsR pi_SourceGEOCS,
-                                                       IRasterBaseGcsR pi_DestinationGEOCS);
+    IMAGEPP_EXPORT                       HCPGCoordModel(GeoCoordinates::BaseGCSCR pi_SourceGEOCS, GeoCoordinates::BaseGCSCR pi_DestinationGEOCS);
 
 
     IMAGEPP_EXPORT                       HCPGCoordModel(const HCPGCoordModel& pi_rObj);
@@ -37,8 +35,8 @@ public:
     IMAGEPP_EXPORT HCPGCoordModel&       operator=(const HCPGCoordModel& pi_rObj);
 
     // GCoord model specific interface
-    IMAGEPP_EXPORT IRasterBaseGcsCR      GetSourceGEOCS() const;
-    IMAGEPP_EXPORT IRasterBaseGcsCR      GetDestinationGEOCS() const;
+    IMAGEPP_EXPORT GeoCoordinates::BaseGCSCR GetSourceGEOCS() const;
+    IMAGEPP_EXPORT GeoCoordinates::BaseGCSCR GetDestinationGEOCS() const;
 
 
     virtual bool IsConvertDirectThreadSafe() const override {return false;}
@@ -146,8 +144,8 @@ private:
     StatusInt                   ComputeDomain () const;
 
     // Primary attributes
-    IRasterBaseGcsPtr     m_SourceGEOCS;
-    IRasterBaseGcsPtr     m_DestinationGEOCS;
+    RefCountedCPtr<GeoCoordinates::BaseGCS> m_pSrcGCS;
+    RefCountedCPtr<GeoCoordinates::BaseGCS> m_pDestGCS;
 
     // Domain related cached members
     mutable bool                            m_domainComputed;

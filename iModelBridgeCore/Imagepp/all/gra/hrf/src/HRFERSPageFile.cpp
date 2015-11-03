@@ -35,6 +35,7 @@
 #include <Imagepp/all/h/HCPGeoTiffKeys.h>
 
 #include <Imagepp/all/h/HRFErMapperSupportedFile.h>
+#include <Imagepp/all/h/HCPGCoordUtility.h>
 
 
 
@@ -1026,7 +1027,7 @@ void HRFERSPageFile::ValidateERSFile(uint32_t pi_DatasetHeadRequiredEntries,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-static IRasterBaseGcsPtr s_CreateRasterGcsFromERSIDS(WStringCR projection, WStringCR datum, WStringCR unit)
+static GeoCoordinates::BaseGCSPtr s_CreateRasterGcsFromERSIDS(WStringCR projection, WStringCR datum, WStringCR unit)
     {
     uint32_t EPSGCodeFomrERLibrary = TIFFGeo_UserDefined;
 
@@ -1034,7 +1035,7 @@ static IRasterBaseGcsPtr s_CreateRasterGcsFromERSIDS(WStringCR projection, WStri
         EPSGCodeFomrERLibrary = HRFErMapperSupportedFile::GetEPSGFromProjectionAndDatum(projection, datum);
     #endif
 
-    return HRFGeoCoordinateProvider::CreateRasterGcsFromERSIDS(EPSGCodeFomrERLibrary, projection, datum, unit);
+    return HCPGCoordUtility::CreateRasterGcsFromERSIDS(EPSGCodeFomrERLibrary, projection, datum, unit);
     }
 
 //-----------------------------------------------------------------------------
@@ -1050,7 +1051,7 @@ void HRFERSPageFile::CreateDescriptor()
     double                       PixelSizeX = 1;
     double                       PixelSizeY = 1;
     double                       Rotation = 0;
-    IRasterBaseGcsPtr            pBaseGCS;
+    GeoCoordinates::BaseGCSPtr   pBaseGCS;
 
     if (m_ERSInfo.m_RasterInfo.m_pCellInfo != 0)
         {
@@ -1178,7 +1179,7 @@ HFCPtr<HGF2DTransfoModel> HRFERSPageFile::BuildTransfoModel(double              
                                                             double                        pi_Rotation,
                                                             double                        pi_RegistrationX,
                                                             double                        pi_RegistrationY,
-                                                            IRasterBaseGcsCP              pi_pBaseGCS) const
+                                                            GeoCoordinates::BaseGCSP      pi_pBaseGCS) const
     {
     // Transform the rotation to ensure the value lies in the range of [-360,360]
     //if it wasn't the case
@@ -1188,23 +1189,16 @@ HFCPtr<HGF2DTransfoModel> HRFERSPageFile::BuildTransfoModel(double              
         pi_Rotation += 360;
 
     // Build the transformation model.
-    HFCPtr<HGF2DTransfoModel> pModel;
     double            Degree = (PI/180);
-    pModel = new HGF2DAffine(HGF2DDisplacement(pi_OriginX,
-                                               pi_OriginY),
-                             pi_Rotation * Degree,
-                             pi_PixelSizeX,
-                             -pi_PixelSizeY,
-                             0.0);
 
-    HGF2DDisplacement Displacement(-pi_RegistrationX * pi_PixelSizeX,
-                                   pi_RegistrationY * pi_PixelSizeY);
+    HGF2DDisplacement Displacement(pi_OriginX + (-pi_RegistrationX * pi_PixelSizeX), 
+                                   pi_OriginY + (pi_RegistrationY * pi_PixelSizeY));
 
-    ((HFCPtr<HGF2DAffine>&)pModel)->AddTranslation(Displacement);
+    HFCPtr<HGF2DTransfoModel> pModel = new HGF2DAffine(Displacement, pi_Rotation * Degree, pi_PixelSizeX, -pi_PixelSizeY, 0.0);
 
-    if (pi_pBaseGCS != 0)
+    if (pi_pBaseGCS != nullptr)
         {
-        RasterFileGeocodingPtr pFileGeocoding(RasterFileGeocoding::Create(pi_pBaseGCS->Clone().get()));
+        RasterFileGeocodingPtr pFileGeocoding(RasterFileGeocoding::Create(pi_pBaseGCS));
         pModel = pFileGeocoding->TranslateToMeter(pModel, 1.0, false, 0);
         }
 

@@ -106,8 +106,6 @@ MultiCompileDepends=$(_MakeFileSpec)
 #   Utl
 #----------------------------------------------------------------------
 
-$(o)HFCRasterGeoCoordinateServices$(oext) : $(ippUtlDir)hfc/src/HFCRasterGeoCoordinateServices.cpp $(ippAllInc)HFCRasterGeoCoordinateServices.h ${MultiCompileDepends}
-
 $(o)HFCBinStream$(oext) : $(ippUtlDir)hfc/src/HFCBinStream.cpp $(ippAllInc)HFCBinStream.h $(ippAllInc)HFCBinStream.h ${MultiCompileDepends}
 
 $(o)HFCBufferedBinStream$(oext) : $(ippUtlDir)hfc/src/HFCBufferedBinStream.cpp $(ippAllInc)HFCBufferedBinStream.h $(ippAllInc)HFCBufferedBinStream.h ${MultiCompileDepends}
@@ -989,8 +987,6 @@ $(o)HRFRasterFile$(oext) : $(ippGraDir)hrf/src/HRFRasterFile.cpp $(ippAllInc)HRF
 $(o)HRFRasterFileCapabilities$(oext) : $(ippGraDir)hrf/src/HRFRasterFileCapabilities.cpp $(ippAllInc)HRFRasterFileCapabilities.h ${MultiCompileDepends}
 
 $(o)HRFRasterFileFactory$(oext) : $(ippGraDir)hrf/src/HRFRasterFileFactory.cpp $(ippAllInc)HRFRasterFileFactory.h ${MultiCompileDepends}
-
-$(o)HRFGeoCoordinateProvider$(oext) : $(ippGraDir)hrf/src/HRFGeoCoordinateProvider.cpp $(ippInterfaceInc)IRasterGeoCoordinateServices.h ${MultiCompileDepends}
 
 $(o)HRFResolutionDescriptor$(oext) : $(ippGraDir)hrf/src/HRFResolutionDescriptor.cpp $(ippAllInc)HRFResolutionDescriptor.h ${MultiCompileDepends}
 

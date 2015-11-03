@@ -40,9 +40,9 @@
 #include <Imagepp/all/h/HVETileIDIterator.h>
 #include <Imagepp/all/h/HFCStat.h>
 #include <Imagepp/all/h/HRFURLInternetImagingHTTP.h>
+#include <Imagepp/all/h/HCPGCoordUtility.h>
 
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
-
 
 // Includes from the ERMapper SDK
 #include <ErdasEcwJpeg2000/NCSECWClient.h>
@@ -933,9 +933,9 @@ void HRFErMapperSupportedFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
     bool                         defaultUnitWasFound = false;
     HFCPtr<HRFPageDescriptor>     pPageDescriptor     = GetPageDescriptor(0);
 
-    IRasterBaseGcsCP pBaseGCS = pPageDescriptor->GetGeocodingCP();
+    GeoCoordinates::BaseGCSCP pBaseGCS = pPageDescriptor->GetGeocodingCP();
 
-    if ((pBaseGCS != NULL) && (pBaseGCS->IsValid()) && (pBaseGCS->GetBaseGCS() != NULL))
+    if (pBaseGCS != NULL && pBaseGCS->IsValid())
         {
         HFCPtr<HGF2DTransfoModel> pTransfoModel;
         BuildTransfoModelMatrix (pTransfoModel);
@@ -1380,7 +1380,7 @@ RasterFileGeocodingPtr HRFErMapperSupportedFile::ExtractGeocodingInformation(dou
     BeStringUtilities::CurrentLocaleCharToWChar(datum, m_pNcsObjs->m_pFileInfo->szDatum);
 
     uint32_t EPSGCodeFomrERLibrary = GetEPSGFromProjectionAndDatum(projection, datum);
-    IRasterBaseGcsPtr  pBaseGCS = HRFGeoCoordinateProvider::CreateRasterGcsFromERSIDS(EPSGCodeFomrERLibrary, projection,datum,osUnits);
+    GeoCoordinates::BaseGCSPtr pBaseGCS = HCPGCoordUtility::CreateRasterGcsFromERSIDS(EPSGCodeFomrERLibrary, projection,datum,osUnits);
 
     return RasterFileGeocoding::Create(pBaseGCS.get());
     }

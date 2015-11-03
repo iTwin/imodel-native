@@ -9,8 +9,6 @@
 
 #include <ImagePP/all/h/ImageppLib.h>
 
-#include <ImagePP/all/h/HFCRasterGeoCoordinateServices.h>
-
 #include <ImagePP/all/h/HFCStat.h>
 
 #define RUNONCE_CHECK(var) {if (var) return; var=true;}
@@ -257,18 +255,6 @@ ImageppLib::Host& ImageppLib::GetHost()
 
     BeAssert (IsInitialized() && L"ImageppLib library needs to be initialize!");  
     return *t_ImageppLibHost;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-//! This method call basegeocoord.dll to implement default IRasterGeoCoordinateServices.
-//! Host can call this method in its ImageppLibAdmin::_GetIRasterGeoCoordinateServicesImpl override method
-//! provided that basegeocoord.dll is delivered by application and initialized by it.
-* @bsimethod                                    Marc.Bedard                     06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-IRasterGeoCoordinateServices* ImageppLib::GetDefaultIRasterGeoCoordinateServicesImpl()
-    {
-    return HFCRasterGeoCoordinateServices::GetInstance();
     }
 
 

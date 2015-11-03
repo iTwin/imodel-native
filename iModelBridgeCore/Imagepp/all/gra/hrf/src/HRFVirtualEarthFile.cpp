@@ -24,7 +24,6 @@
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 #include <Imagepp/all/h/HFCCallbacks.h>
 #include <Imagepp/all/h/HFCCallbackRegistry.h>
-#include <Imagepp/all/h/interface/IRasterGeoCoordinateServices.h>
 
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
@@ -831,9 +830,11 @@ void HRFVirtualEarthFile::CreateDescriptors()
 
     // Geocoding and Reference
     HFCPtr<HGF2DTransfoModel> pTransfoModel;
-    IRasterBaseGcsPtr baseGCS;
 
-    if (GCSServices->_IsAvailable())
+    GeoCoordinates::BaseGCSPtr pBaseGCS;
+
+    //&&AR GCS validate that base GCS is init?  or we get an invalid GCS?
+    //if (GCSServices->_IsAvailable())
         {
         try
             {
@@ -855,32 +856,23 @@ void HRFVirtualEarthFile::CreateDescriptors()
                                        ]";
 
             // Obtain the GCS
-            baseGCS = HRFGeoCoordinateProvider::CreateRasterGcsFromWKT(NULL, NULL, IRasterGeoCoordinateServices::WktFlavorOGC, WKTString.c_str());
-            double cartesianPoint[3];
-            double geoPoint[3];
-            geoPoint[0] = offsetLongitude;
-            geoPoint[1] = offsetLatitude;
-            geoPoint[2] = 0.0;
-            baseGCS->GetCartesianFromLatLong (cartesianPoint, geoPoint);
-
-            double OffsetX = cartesianPoint[0];
-            double OffsetY = cartesianPoint[1];
-
-            pTransfoModel = new HGF2DStretch(HGF2DDisplacement(OffsetX, OffsetY),
-                                             Scale, 
-                                             Scale);
+            pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
+            if(SUCCESS == pBaseGCS->InitFromWellKnownText (NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, WKTString.c_str()))
+                {       
+                GeoPoint geoPoint = {offsetLongitude, offsetLatitude, 0.0};
+                DPoint3d cartesianPoint;
+                pBaseGCS->CartesianFromLatLong (cartesianPoint, geoPoint);
+                pTransfoModel = new HGF2DStretch(HGF2DDisplacement(cartesianPoint.x, cartesianPoint.y), Scale, Scale);
+                }
             }
         catch (...)
             {
             }
         }
-    else
-        {
-        pTransfoModel = new HGF2DStretch(HGF2DDisplacement(0.0, 0.0),
-                                         Scale, 
-                                         Scale);
-        }
 
+    if(pTransfoModel == nullptr)
+        pTransfoModel = new HGF2DStretch(HGF2DDisplacement(0.0, 0.0), Scale, Scale);
+        
     // Flip the Y Axe because the origin of ModelSpace is lower-left
     HFCPtr<HGF2DStretch> pFlipModel = new HGF2DStretch();
     pFlipModel->SetYScaling(-1.0);
@@ -957,7 +949,7 @@ void HRFVirtualEarthFile::CreateDescriptors()
                                    0);                           // Defined tag
 
 
-    pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(baseGCS.get()));
+    pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pBaseGCS.get()));
 
 
     m_ListOfPageDescriptor.push_back(pPage);

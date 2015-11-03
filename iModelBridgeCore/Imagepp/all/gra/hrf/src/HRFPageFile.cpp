@@ -57,12 +57,12 @@ void HRFPageFile::SetDefaultRatioToMeter(double pi_RatioToMeter)
         double RatioToMeter = pi_RatioToMeter / m_DefaultRatioToMeter;
         m_DefaultRatioToMeter = pi_RatioToMeter;
 
-        IRasterBaseGcsCP pBaseGCS = pPageDescriptor->GetGeocodingCP();
+        GeoCoordinates::BaseGCSCP pBaseGCS = pPageDescriptor->GetGeocodingCP();
 
         HFCPtr<HGF2DTransfoModel> pTransfoModel = pPageDescriptor->GetTransfoModel();
         
-        if ((pBaseGCS != 0) && (pBaseGCS->IsValid()))
-            {
+        if (pBaseGCS != nullptr && pBaseGCS->IsValid()) //&&AR GCS crazy way of assuming that pPageDescriptor->GetRasterFileGeocoding() is using that pBaseGCS.>> RasterFileGeocoding cleanup
+            {            
             pTransfoModel = pPageDescriptor->GetRasterFileGeocoding().TranslateToMeter(pPageDescriptor->GetTransfoModel(),
                                                              RatioToMeter,
                                                              false,

@@ -168,8 +168,6 @@ protected:
     bool                    Write3DMatrixToTiffTag(HFCMatrix<4, 4>& pi_r3DMatrix);
     HFCMatrix<4, 4>*        Create3DMatrixFromiTiffTag() const;
 
-    RasterFileGeocodingPtr  ExtractGeocodingInformationFromWKT(string& pi_wkt) const;
-
     static bool             IsSamePixelTypeForAllResolutions       (HFCPtr<HRFPageDescriptor>       pi_pPage);
     static void             GenerateNoDataValuesTagData            (ListOfChannelIndex*             po_pChannelsWithNoDataValue,
                                                                     ListOfChannelNoDataValue*       po_pChannelsNoDataValue,

@@ -47,7 +47,6 @@
 #include <Imagepp/all/h/HRPPixelTypeV24B8G8R8.h>
 
 #include <Imagepp/all/h/HVETileIDIterator.h>
-#include <Imagepp/all/h/interface/IRasterGeoCoordinateServices.h>
 
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
@@ -471,8 +470,8 @@ public:
     virtual void GetGeocodingAndReferenceInfo(uint32_t                       pi_Page,
                                               uint32_t                       pi_RasterizePageWidth,
                                               uint32_t                       pi_RasterizePageHeight,
-                                              IRasterBaseGcsPtr&              po_rpGeocoding,
-                                              HFCPtr<HGF2DTransfoModel>&      po_rpGeoreference)
+                                              GeoCoordinates::BaseGCSPtr&    po_rpGeocoding,
+                                              HFCPtr<HGF2DTransfoModel>&     po_rpGeoreference)
         {
         HPRECONDITION(m_Document != 0);
         HPRECONDITION(pi_Page < CountPages());
@@ -1001,7 +1000,7 @@ HFCPtr<HRFPageDescriptor> HRFPDFFile::GetPageDescriptor(uint32_t pi_Page) const
         TagList.Set(pTag);
 
         //Search for some geo-coding and geo-reference information
-        IRasterBaseGcsPtr pBaseGCS;
+        GeoCoordinates::BaseGCSPtr pBaseGCS;
         HFCPtr<HGF2DTransfoModel>     pGeoreference;
 
         if (GCSServices->_IsAvailable())

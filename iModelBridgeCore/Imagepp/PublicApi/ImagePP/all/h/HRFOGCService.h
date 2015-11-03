@@ -188,9 +188,7 @@ protected:
 
     HRFTilePool                 m_TilePool;
 
-    HFCPtr<HGF2DTransfoModel>   CreateTransfoModel(IRasterBaseGcsCP                           pi_pGeocoding,
-                                                   uint64_t                                   pi_Width,
-                                                   uint64_t                                   pi_Height);
+    HFCPtr<HGF2DTransfoModel>   CreateTransfoModel(GeoCoordinates::BaseGCSP pi_pGeocoding, uint64_t pi_Width, uint64_t pi_Height);
 
 
     enum AUTHENTICATION_STATUS

@@ -19,20 +19,12 @@
 #include <ImagePP/all/h/HVE2DPolygonOfSegments.h>
 #include <ImagePP/all/h/HCPGCoordUtility.h>
 
-#include <GeoCoord\BaseGeoCoord.h>
-#include <ImagePP/all/h/HFCRasterGeoCoordinateServices.h>
-
-
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------
 //HCPGCoordModel::HCPGCoordModel ()
 //    :HGF2DTransfoModel ()
 //    {
-//    // The DLLs must be loaded to use this class.
-//    if (!GCSServices->_IsAvailable())
-//        throw HFCDllNotFoundException(GCSServices->_GetServiceName());
-//
 //    Prepare ();
 //
 //    HINVARIANTS;
@@ -52,25 +44,17 @@
 
     -----------------------------------------------------------------------------
 */
-HCPGCoordModel::HCPGCoordModel
-(
-    IRasterBaseGcsR  pi_SourceGEOCS,
-    IRasterBaseGcsR  pi_DestinationGEOCS
-)
+HCPGCoordModel::HCPGCoordModel(GeoCoordinates::BaseGCSCR pi_SourceGEOCS, GeoCoordinates::BaseGCSCR pi_DestinationGEOCS)
     :HGF2DTransfoModel (),
-     m_SourceGEOCS (&pi_SourceGEOCS),
-     m_DestinationGEOCS (&pi_DestinationGEOCS),
+     m_pSrcGCS (&pi_SourceGEOCS),
+     m_pDestGCS (&pi_DestinationGEOCS),
      m_domainComputed(false),
      m_domainDirect(NULL),
      m_domainInverse(NULL)
     {
-    // The DLLs must be loaded to use this class.
-    if (!GCSServices->_IsAvailable ())
-        throw HFCDllNotFoundException(GCSServices->_GetServiceName());
-
     // The two projections must be valid
-    HPRECONDITION (m_SourceGEOCS->IsValid ());
-    HPRECONDITION (m_DestinationGEOCS->IsValid ());
+    HPRECONDITION (m_pSrcGCS->IsValid ());
+    HPRECONDITION (m_pDestGCS->IsValid ());
     }
 
 //-----------------------------------------------------------------------------
@@ -78,16 +62,12 @@ HCPGCoordModel::HCPGCoordModel
 //-----------------------------------------------------------------------------
 HCPGCoordModel::HCPGCoordModel (const HCPGCoordModel& pi_rObj)
     :HGF2DTransfoModel (pi_rObj),
-     m_SourceGEOCS(pi_rObj.m_SourceGEOCS),
-     m_DestinationGEOCS(pi_rObj.m_DestinationGEOCS),
+     m_pSrcGCS(pi_rObj.m_pSrcGCS),
+     m_pDestGCS(pi_rObj.m_pDestGCS),
      m_domainComputed(false),
      m_domainDirect(NULL),
      m_domainInverse(NULL)
     {
-    // The DLLs must be loaded to use this class.
-    if (!GCSServices->_IsAvailable())
-        throw HFCDllNotFoundException(GCSServices->_GetServiceName());
-
     Copy (pi_rObj);
 
     HINVARIANTS;
@@ -133,64 +113,49 @@ StatusInt HCPGCoordModel::ConvertDirect
     HPRECONDITION (pio_pXInOut != NULL);
     HPRECONDITION (pio_pYInOut != NULL);
 
-
-#if (0)
     DPoint3d inCartesian;
-    StatusInt   status = SUCCESS;
-    StatusInt   stat1;
-    StatusInt   stat2;
-    StatusInt   stat3;
-
-
     inCartesian.x = *pio_pXInOut;
     inCartesian.y = *pio_pYInOut;
     inCartesian.z = 0.0;
 
+    StatusInt   stat1;
+    StatusInt   stat2;
+    StatusInt   stat3;
+
     GeoPoint inLatLong;
-    stat1 = m_SourceGEOCS->GetBaseGCS()->LatLongFromCartesian (inLatLong, inCartesian);
+    stat1 = m_pSrcGCS->LatLongFromCartesian (inLatLong, inCartesian);
 
     GeoPoint outLatLong;
-    stat2 = m_SourceGEOCS->GetBaseGCS()->LatLongFromLatLong(outLatLong, inLatLong, *m_DestinationGEOCS.GetBaseGCS());
+    stat2 = m_pSrcGCS->LatLongFromLatLong(outLatLong, inLatLong, *m_pDestGCS);
 
     DPoint3d outCartesian;
-    stat3 = m_DestinationGEOCS->GetBaseGCS()->CartesianFromLatLong(outCartesian, outLatLong);
+    stat3 = m_pDestGCS->CartesianFromLatLong(outCartesian, outLatLong);
 
-    if (SUCCESS == status)
+    StatusInt status = SUCCESS;
+
+    // Status returns hardest error found in the three error statuses
+    // The hardest error is the first one encountered that is not a warning (value 1 [cs_CNVRT_USFL])
+    if (SUCCESS != stat1)
+        status = stat1;
+    if ((SUCCESS != stat2) && ((SUCCESS == status) || (1 == status))) // If stat2 has error and status not already hard error
         {
-        // Status returns hardest error found in the three error statuses
-        // The hardest error is the first one encountered that is not a warning (value 1 [cs_CNVRT_USFL])
-        if (SUCCESS != stat1)
-            status = stat1;
-        if ((SUCCESS != stat2) && ((SUCCESS == status) || (1 == status))) // If stat2 has error and status not already hard error
-            {
-            if (0 > stat2) // If stat2 is negative ... this is the one ...
-                status = stat2;
-            else  // Both are positive (status may be SUCCESS) we use the highest value which is either warning or error
-                status = (stat2 > status ? stat2 : status);
-            }
-        if ((SUCCESS != stat3) && ((SUCCESS == status) || (1 == status))) // If stat3 has error and status not already hard error
-            {
-            if (0 > stat3) // If stat3 is negative ... this is the one ...
-                status = stat3;
-            else  // Both are positive (status may be SUCCESS) we use the highest value
-                status = (stat3 > status ? stat3 : status);
-            }
+        if (0 > stat2) // If stat2 is negative ... this is the one ...
+            status = stat2;
+        else  // Both are positive (status may be SUCCESS) we use the highest value which is either warning or error
+            status = (stat2 > status ? stat2 : status);
         }
-    
-
+    if ((SUCCESS != stat3) && ((SUCCESS == status) || (1 == status))) // If stat3 has error and status not already hard error
+        {
+        if (0 > stat3) // If stat3 is negative ... this is the one ...
+            status = stat3;
+        else  // Both are positive (status may be SUCCESS) we use the highest value
+            status = (stat3 > status ? stat3 : status);
+        }
 
     *pio_pXInOut = outCartesian.x;
     *pio_pYInOut = outCartesian.y;
-#else
-    double XOut;
-    double YOut;
-
-    StatusInt status = m_SourceGEOCS->Reproject(&XOut, &YOut, *pio_pXInOut, *pio_pYInOut, *m_DestinationGEOCS);
-    *pio_pXInOut = XOut;
-    *pio_pYInOut = YOut;
 
     return status;
-#endif
     }
 
 //-----------------------------------------------------------------------------
@@ -292,67 +257,49 @@ StatusInt HCPGCoordModel::ConvertInverse
     HPRECONDITION (pio_pXInOut != NULL);
     HPRECONDITION (pio_pYInOut != NULL);
 
-#if (0)
-
-
     DPoint3d inCartesian;
-    StatusInt   status = SUCCESS;
-    StatusInt   stat1;
-    StatusInt   stat2;
-    StatusInt   stat3;
-
-
     inCartesian.x = *pio_pXInOut;
     inCartesian.y = *pio_pYInOut;
     inCartesian.z = 0.0;
 
+    StatusInt   stat1;
+    StatusInt   stat2;
+    StatusInt   stat3;
+
     GeoPoint inLatLong;
-    stat1 = m_DestinationGEOCS->GetBaseGCS()->LatLongFromCartesian (inLatLong, inCartesian);
+    stat1 = m_pDestGCS->LatLongFromCartesian (inLatLong, inCartesian);
 
     GeoPoint outLatLong;
-    stat2 = m_DestinationGEOCS->GetBaseGCS()->LatLongFromLatLong(outLatLong, inLatLong, *m_SourceGEOCS->GetBaseGCS());
-
+    stat2 = m_pDestGCS->LatLongFromLatLong(outLatLong, inLatLong, *m_pSrcGCS);
 
     DPoint3d outCartesian;
-    stat3 = m_SourceGEOCS->GetBaseGCS()->CartesianFromLatLong(outCartesian, outLatLong);
+    stat3 = m_pSrcGCS->CartesianFromLatLong(outCartesian, outLatLong);
 
-    if (SUCCESS == status)
+    StatusInt status = SUCCESS;
+
+    // Status returns hardest error found in the three error statuses
+    // The hardest error is the first one encountered that is not a warning (value 1 [cs_CNVRT_USFL])
+    if (SUCCESS != stat1)
+        status = stat1;
+    if ((SUCCESS != stat2) && ((SUCCESS == status) || (1 == status))) // If stat2 has error and status not already hard error
         {
-        // Status returns hardest error found in the three error statuses
-        // The hardest error is the first one encountered that is not a warning (value 1 [cs_CNVRT_USFL])
-        if (SUCCESS != stat1)
-            status = stat1;
-        if ((SUCCESS != stat2) && ((SUCCESS == status) || (1 == status))) // If stat2 has error and status not already hard error
-            {
-            if (0 > stat2) // If stat2 is negative ... this is the one ...
-                status = stat2;
-            else  // Both are positive (status may be SUCCESS) we use the highest value which is either warning or error
-                status = (stat2 > status ? stat2 : status);
-            }
-        if ((SUCCESS != stat3) && ((SUCCESS == status) || (1 == status))) // If stat3 has error and status not already hard error
-            {
-            if (0 > stat3) // If stat3 is negative ... this is the one ...
-                status = stat3;
-            else  // Both are positive (status may be SUCCESS) we use the highest value
-                status = (stat3 > status ? stat3 : status);
-            }
+        if (0 > stat2) // If stat2 is negative ... this is the one ...
+            status = stat2;
+        else  // Both are positive (status may be SUCCESS) we use the highest value which is either warning or error
+            status = (stat2 > status ? stat2 : status);
+        }
+    if ((SUCCESS != stat3) && ((SUCCESS == status) || (1 == status))) // If stat3 has error and status not already hard error
+        {
+        if (0 > stat3) // If stat3 is negative ... this is the one ...
+            status = stat3;
+        else  // Both are positive (status may be SUCCESS) we use the highest value
+            status = (stat3 > status ? stat3 : status);
         }
 
     *pio_pXInOut = outCartesian.x;
     *pio_pYInOut = outCartesian.y;
 
-#else                                                                                                                                               
-    double XOut;
-    double YOut;
-
-    StatusInt status = m_DestinationGEOCS->Reproject(&XOut, &YOut, *pio_pXInOut, *pio_pYInOut, *m_SourceGEOCS);
-
-    *pio_pXInOut = XOut;
-    *pio_pYInOut = YOut;
-                        
     return status;
-#endif
-
     }
 
 //-----------------------------------------------------------------------------
@@ -566,11 +513,8 @@ void    HCPGCoordModel::Reverse ()
     {
     HINVARIANTS;
 
-    // Swap GEOCSs
-    IRasterBaseGcsPtr temp = m_SourceGEOCS;
-    m_SourceGEOCS = m_DestinationGEOCS;
-    m_DestinationGEOCS = temp;
-
+    std::swap(m_pSrcGCS, m_pDestGCS);
+    
     // Invoque reversing of ancester
     // This call will in turn invoque Prepare()
     HGF2DTransfoModel::Reverse ();
@@ -652,8 +596,8 @@ void HCPGCoordModel::Prepare ()
 void HCPGCoordModel::Copy (const HCPGCoordModel& pi_rObj)
     {
     // Copy master data
-    m_SourceGEOCS      = pi_rObj.m_SourceGEOCS;
-    m_DestinationGEOCS = pi_rObj.m_DestinationGEOCS;
+    m_pSrcGCS  = pi_rObj.m_pSrcGCS;
+    m_pDestGCS = pi_rObj.m_pDestGCS;
     m_domainComputed   = false;
     m_domainDirect     = NULL;
     m_domainInverse    = NULL;
@@ -667,7 +611,7 @@ HFCPtr<HGF2DTransfoModel> HCPGCoordModel::CreateSimplifiedModel () const
     {
     HINVARIANTS;
 
-    if (m_SourceGEOCS->IsEquivalent(*m_DestinationGEOCS))
+    if (m_pSrcGCS->IsEquivalent(*m_pDestGCS))
         return new HGF2DIdentity();
 
     // If we get here, no simplification is possible.
@@ -678,25 +622,25 @@ HFCPtr<HGF2DTransfoModel> HCPGCoordModel::CreateSimplifiedModel () const
 // GetSourceGEOCS
 // Returns the source projection
 //-----------------------------------------------------------------------------
-IRasterBaseGcsCR HCPGCoordModel::GetSourceGEOCS() const
+GeoCoordinates::BaseGCSCR HCPGCoordModel::GetSourceGEOCS() const
     {
-    return *m_SourceGEOCS;
+    return *m_pSrcGCS;
     }
 
 //-----------------------------------------------------------------------------
 // GetDestinationGEOCS
 // Returns the destination projection
 //-----------------------------------------------------------------------------
-IRasterBaseGcsCR HCPGCoordModel::GetDestinationGEOCS() const
+GeoCoordinates::BaseGCSCR HCPGCoordModel::GetDestinationGEOCS() const
     {
-    return *m_DestinationGEOCS;
+    return *m_pDestGCS;
     }
 
 #ifdef HVERIFYCONTRACT
 void               HCPGCoordModel::ValidateInvariants() const
     {
-    HASSERT(m_SourceGEOCS->IsValid());
-    HASSERT(m_DestinationGEOCS->IsValid());
+    HASSERT(m_pSrcGCS->IsValid());
+    HASSERT(m_pDestGCS->IsValid());
     }
 #endif
 
@@ -717,13 +661,13 @@ StatusInt HCPGCoordModel::ComputeDomain () const
         HGF2DCoordCollection<double> sourceGeoDomain;
         HGF2DCoordCollection<double> destinationGeoDomain;
 
-        HCPGCoordUtility::GetGeoDomain(*m_SourceGEOCS, sourceGeoDomain);
-        HCPGCoordUtility::GetGeoDomain(*m_DestinationGEOCS, destinationGeoDomain);
+        HCPGCoordUtility::GetGeoDomain(*m_pSrcGCS, sourceGeoDomain);
+        HCPGCoordUtility::GetGeoDomain(*m_pDestGCS, destinationGeoDomain);
 
         // Create the three coordinate systems required for transformation
         HFCPtr<HGF2DCoordSys> latLongCoordinateSystem = new HGF2DCoordSys();
-        HFCPtr<HGF2DTransfoModel> directLatLongTransfoModel = new HCPGCoordLatLongModel (*m_SourceGEOCS);
-        HFCPtr<HGF2DTransfoModel> inverseLatLongTransfoModel = new HCPGCoordLatLongModel (*m_DestinationGEOCS);
+        HFCPtr<HGF2DTransfoModel> directLatLongTransfoModel = new HCPGCoordLatLongModel (*m_pSrcGCS);
+        HFCPtr<HGF2DTransfoModel> inverseLatLongTransfoModel = new HCPGCoordLatLongModel (*m_pDestGCS);
         HFCPtr<HGF2DCoordSys> directCoordinateSystem = new HGF2DCoordSys(*directLatLongTransfoModel, latLongCoordinateSystem);
         HFCPtr<HGF2DCoordSys> inverseCoordinateSystem = new HGF2DCoordSys(*inverseLatLongTransfoModel, latLongCoordinateSystem);
 

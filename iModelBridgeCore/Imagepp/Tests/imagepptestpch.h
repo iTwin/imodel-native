@@ -55,7 +55,6 @@
 #include <ImagePP\all\h\HGF2DWorld.h>
 #include <ImagePP\all\h\HGFHMRStdWorldCluster.h>
 #include <ImagePP\all\h\HRABitmapRLE.h>
-#include <Imagepp\all\h\HFCRasterGeoCoordinateServices.h>
 
 //HPM
 #include <ImagePP\all\h\HPMPool.h>

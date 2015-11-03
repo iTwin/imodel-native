@@ -413,8 +413,8 @@ void HRFSLOStripAdapter::CreateDescriptors ()
             }
 
         // Geocoding
-        IRasterBaseGcsCP baseGCS = pAdaptedPageDescriptor->GetGeocodingCP();
-        pAdapterPageDescriptor->SetGeocoding(const_cast<IRasterBaseGcsP>(baseGCS));
+        GeoCoordinates::BaseGCSCP baseGCS = pAdaptedPageDescriptor->GetGeocodingCP();
+        pAdapterPageDescriptor->SetGeocoding(const_cast<GeoCoordinates::BaseGCSP>(baseGCS));
 
         // Add the page descriptor to the list
         m_ListOfPageDescriptor.push_back(pAdapterPageDescriptor);

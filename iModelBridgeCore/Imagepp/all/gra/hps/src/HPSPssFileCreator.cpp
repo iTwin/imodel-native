@@ -9,7 +9,6 @@
 
 #include <Imagepp/all/h/HPSPssFileCreator.h>
 #include <Imagepp/all/h/HPSPssFile.h>
-#include <Imagepp/all/h/HCPGCoordUtility.h>
 #include <Imagepp/all/h/HRFRasterFile.h>
 #include <Imagepp/all/h/HVE2DRectangle.h>
 #include <Imagepp/all/h/HGF2DLocalProjectiveGrid.h>
@@ -115,7 +114,7 @@ HSTATUS HPSPssFileCreator::CreateFileW(WString const& pi_rPssFileName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  01/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HPSPssFileCreator::AddImage(WString const& pi_rImageName, uint32_t pi_pageNumber, IRasterBaseGcsP pi_projection)
+void HPSPssFileCreator::AddImage(WString const& pi_rImageName, uint32_t pi_pageNumber, GeoCoordinates::BaseGCSP pi_projection)
     {
     ImageDef imageDef;
     imageDef.m_imageName = pi_rImageName;
@@ -127,7 +126,7 @@ void HPSPssFileCreator::AddImage(WString const& pi_rImageName, uint32_t pi_pageN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  01/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HPSPssFileCreator::SetDstProjection(IRasterBaseGcsP pi_projection)
+void HPSPssFileCreator::SetDstProjection(GeoCoordinates::BaseGCSP pi_projection)
     {
     m_dstProjection = pi_projection;
     }
@@ -135,7 +134,7 @@ void HPSPssFileCreator::SetDstProjection(IRasterBaseGcsP pi_projection)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  01/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-IRasterBaseGcsCP HPSPssFileCreator::GetDstProjectionCP() const
+GeoCoordinates::BaseGCSCP HPSPssFileCreator::GetDstProjectionCP() const
     {
     return m_dstProjection.get();
     }

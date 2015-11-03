@@ -682,8 +682,8 @@ void HRFRasterFileBlockAdapter::CreateDescriptors(const BlockDescriptorMap& pi_r
                 }
 
             // Geocoding
-            IRasterBaseGcsCP baseGCS = pAdaptedPageDescriptor->GetGeocodingCP();
-            pAdapterPageDescriptor->SetGeocoding(const_cast<IRasterBaseGcsP>(baseGCS));
+            GeoCoordinates::BaseGCSCP baseGCS = pAdaptedPageDescriptor->GetGeocodingCP();
+            pAdapterPageDescriptor->SetGeocoding(const_cast<GeoCoordinates::BaseGCSP>(baseGCS));
             }
         else
             pAdapterPageDescriptor = m_pOriginalFile->GetPageDescriptor(Page);

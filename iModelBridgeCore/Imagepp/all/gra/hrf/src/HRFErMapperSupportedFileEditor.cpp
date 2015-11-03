@@ -505,11 +505,10 @@ bool HRFEcwCreator::_HandleExportToFile(HFCPtr<HRFRasterFile>& pDestinationFile,
 
     // Translate the model units to geocoding units
     HFCPtr<HRFPageDescriptor>       pDstPageDesc = pDestinationFile->GetPageDescriptor(0);
-    IRasterBaseGcsCP baseGCS = pDstPageDesc->GetGeocodingCP();
+    GeoCoordinates::BaseGCSCP pBaseGCS = pDstPageDesc->GetGeocodingCP();
 
-    //If some geocoding information is available, get the transformation in the units specified
-    //by the geocoding information
-    if (baseGCS != 0 && baseGCS->IsValid())
+    //If some geocoding information is available, get the transformation in the units specified by the geocoding information
+    if (pBaseGCS != nullptr && pBaseGCS->IsValid()) //&&AR GCS assumed that pDstPageDesc->GetRasterFileGeocoding() is using pBaseGcs >>> RasterFileGeocoding cleanup. 
         {
 #if 0 //DMx ECW SDK 5.0 support Geotiff Tag
         ReadInfoStruct.m_pGeotiffKeys = new HCPGeoTiffKeys();
@@ -778,10 +777,10 @@ class ERMapperExporterThread : public HFCThread
                     char* pszProjection = 0;
                     char* pszDatum = 0;
                     bool IsRefCoordSysFound = false;
-                uint32_t EPSGCode = 0;
-                    IRasterBaseGcsCP baseGCS = pDstPageDesc->GetGeocodingCP();
-
-                    if ((baseGCS != 0) && baseGCS->IsValid() && baseGCS->IsProjected() && (baseGCS->GetEPSGCode() != 0))
+                    uint32_t EPSGCode = 0;
+                    GeoCoordinates::BaseGCSCP baseGCS = pDstPageDesc->GetGeocodingCP();
+ 
+                    if (baseGCS != nullptr && baseGCS->IsValid() && baseGCS->GetEPSGCode() != 0)
                         {
                         EPSGCode = baseGCS->GetEPSGCode();
 
@@ -789,26 +788,22 @@ class ERMapperExporterThread : public HFCThread
                         // szDatum : Mapper style Datum name string, e.g. "RAW" or "NAD27".  Never NULL
                         if (NCS_SUCCESS == NCSGetProjectionAndDatum(EPSGCode, &pszProjection, &pszDatum))
                             {
-                            // TR 265837 - Sometimes the return status is SUCCESS but the pszProjection is NULL (In this case the datum is correctly set)
-                            // We will consider this identical to a not found status. A typical test case is EPSG:21892 a deprectated Bogot CRS replaced
-                            // by EPSG:21897 ... It is not up to us nor ERMapper to determine what replacement should be set.
-                            if (pszProjection != NULL)
+                            if(/*IsProjected*/baseGCS->GetProjectionCode() != GeoCoordinates::BaseGCS::ProjectionCodeValue::pcvUnity)
+                                {
+                                // TR 265837 - Sometimes the return status is SUCCESS but the pszProjection is NULL (In this case the datum is correctly set)
+                                // We will consider this identical to a not found status. A typical test case is EPSG:21892 a deprectated Bogot CRS replaced
+                                // by EPSG:21897 ... It is not up to us nor ERMapper to determine what replacement should be set.
+                                if (pszProjection != NULL)
+                                    IsRefCoordSysFound = true;
+                                }
+                            else
+                                {
                                 IsRefCoordSysFound = true;
-                            }
-                        }
-                    else if ((baseGCS != 0) && baseGCS->IsValid() && (!baseGCS->IsProjected()) && (baseGCS->GetEPSGCode() != 0))
-                        {
-                        EPSGCode = baseGCS->GetEPSGCode();
-
-                        // szProjection : ER Mapper style Projection name string, e.g. "RAW" or "GEODETIC".  Never NULL
-                        // szDatum : Mapper style Datum name string, e.g. "RAW" or "NAD27".  Never NULL
-                        if (NCS_SUCCESS == NCSGetProjectionAndDatum(EPSGCode, &pszProjection, &pszDatum))
-                            {
-                            IsRefCoordSysFound = true;
+                                }
                             }
                         }
 
-                    if (IsRefCoordSysFound == true)
+                    if (IsRefCoordSysFound)
                         {
                         strcpy(m_pCompressClient->szProjection, pszProjection);
                         strcpy(m_pCompressClient->szDatum, pszDatum);

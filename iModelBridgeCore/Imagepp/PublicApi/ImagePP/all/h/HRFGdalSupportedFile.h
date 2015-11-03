@@ -140,7 +140,7 @@ protected:
 
     virtual RasterFileGeocodingPtr       ExtractGeocodingInformation();
     bool                                 SetGeocodingInformation();
-    void                                 AddVerticalUnitToGeocoding(IRasterBaseGcsR pio_pBaseGCS) const;
+    void                                 AddVerticalUnitToGeocoding(GeoCoordinates::BaseGCSR pio_pBaseGCS) const;
 
     typedef list<int32_t> BandIndList;
 

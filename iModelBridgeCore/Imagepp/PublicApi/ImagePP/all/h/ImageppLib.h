@@ -15,7 +15,6 @@
 #include <Bentley/WString.h>
 #include <Bentley/NonCopyableClass.h>
 #include <ImagePP/h/HmrMacro.h>
-#include <ImagePP/all/h/interface/IRasterGeoCoordinateServices.h>
 
 
 //=======================================================================================
@@ -480,14 +479,6 @@ public:
         }
 
     /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                                            05/2012
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual IRasterGeoCoordinateServices* _GetIRasterGeoCoordinateServicesImpl() const   
-        {
-        return NULL; 
-        }
-
-    /*---------------------------------------------------------------------------------**//**
     * IPP has always inverted cals compared to others softwares. So default is CCITT_PHOTOMETRIC_MINISBLACK to keep
     * old behavior but the "real" type should be CCITT_PHOTOMETRIC_MINISWHITE
     * @bsimethod                                                            05/2012
@@ -560,12 +551,6 @@ public:
 
     //! Get the imagepp library host for this thread. 
     IMAGEPP_EXPORT static Host& GetHost();
-
-    //! This method call basegeocoord.dll to implement default IRasterGeoCoordinateServices.
-    //! Host can call this method in its ImageppLibAdmin::_GetIRasterGeoCoordinateServicesImpl override method
-    //! provided that basegeocoord.dll is delivered by application and initialized by it.
-    IMAGEPP_EXPORT static IRasterGeoCoordinateServices* GetDefaultIRasterGeoCoordinateServicesImpl();
-
 };
 
 

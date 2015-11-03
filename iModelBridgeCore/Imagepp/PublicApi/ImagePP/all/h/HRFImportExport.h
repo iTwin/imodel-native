@@ -230,10 +230,10 @@ public:
     IMAGEPP_EXPORT void                                    SetMetaDataContainer(HFCPtr<HMDMetaDataContainer>&  pi_rpMDContainer);
 
     // Geocoding interface
-    IMAGEPP_EXPORT RasterFileGeocodingCR        GetRasterFileGeocoding() const;
-    IMAGEPP_EXPORT void                              SetRasterFileGeocoding(RasterFileGeocodingR pi_pGeocoding);
-    IMAGEPP_EXPORT IRasterBaseGcsCP             GetGeocodingCP() const;
-    IMAGEPP_EXPORT void                              SetGeocoding(IRasterBaseGcsP pi_pGeocoding);
+    IMAGEPP_EXPORT RasterFileGeocodingCR                GetRasterFileGeocoding() const;
+    IMAGEPP_EXPORT void                                 SetRasterFileGeocoding(RasterFileGeocodingR pi_pGeocoding);
+    IMAGEPP_EXPORT GeoCoordinates::BaseGCSCP            GetGeocodingCP() const;
+    IMAGEPP_EXPORT void                                 SetGeocoding(GeoCoordinates::BaseGCSP pi_pGeocoding);
 
     // Resample interface
     IMAGEPP_EXPORT virtual void                            SetResample(bool pi_Resample);

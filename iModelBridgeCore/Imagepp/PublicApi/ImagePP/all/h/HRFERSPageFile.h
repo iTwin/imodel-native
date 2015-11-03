@@ -187,7 +187,7 @@ private:
                       double                        pi_Rotation,
                       double                        pi_RegistrationX,
                       double                        pi_RegistrationY,
-                      IRasterBaseGcsCP              pi_rpGeoTiffKeys) const;
+                      GeoCoordinates::BaseGCSP     pi_pBaseGCS) const;
 
     // Methods Disabled
     HRFERSPageFile(const HRFERSPageFile& pi_rObj);

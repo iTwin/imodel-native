@@ -24,15 +24,6 @@
 #include <ImagePP/all/h/HGF2DWorldCluster.h>
 #include <ImagePP/all/h/HVE2DRectangle.h>
 
-
-#include <Imagepp/all/h/interface/IRasterGeoCoordinateServices.h>
-
-
-
-
-
-
-
 //-----------------------------------------------------------------------------
 // public
 // Constructor
@@ -530,9 +521,9 @@ HCPGeoTiffKeys::KeysValidStatus HCPGeoTiffKeys::ValidateGeoTIFFKey()
 // public
 // GetTransfoModelToMeters
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel> HCPGeoTiffKeys::GetTransfoModelToMeters(IRasterBaseGcsCR pi_rpProjection)
+HFCPtr<HGF2DTransfoModel> HCPGeoTiffKeys::GetTransfoModelToMeters(GeoCoordinates::BaseGCSCR pi_rpProjection)
     {
-    double ToMeters = 1.0 / pi_rpProjection.GetUnitsFromMeters();
+    double ToMeters = 1.0 / pi_rpProjection.UnitsFromMeters();
 
     HFCPtr<HGF2DTransfoModel> pUnitConvertion(new HGF2DStretch(HGF2DDisplacement(0.0, 0.0),
                                                                ToMeters,
@@ -544,9 +535,9 @@ HFCPtr<HGF2DTransfoModel> HCPGeoTiffKeys::GetTransfoModelToMeters(IRasterBaseGcs
 // public
 // GetTransfoModelFromMeters
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel> HCPGeoTiffKeys::GetTransfoModelFromMeters(IRasterBaseGcsCR pi_rpProjection)
+HFCPtr<HGF2DTransfoModel> HCPGeoTiffKeys::GetTransfoModelFromMeters(GeoCoordinates::BaseGCSCR pi_rpProjection)
     {
-    double FromMeters = pi_rpProjection.GetUnitsFromMeters();
+    double FromMeters = pi_rpProjection.UnitsFromMeters();
 
     HFCPtr<HGF2DTransfoModel> pUnitConvertion(new HGF2DStretch(HGF2DDisplacement(0.0, 0.0),
                                                                FromMeters,
@@ -578,20 +569,14 @@ HFCPtr<HGF2DTransfoModel>
 HCPGeoTiffKeys::GetTransfoModelForReprojection(const HFCPtr<HGF2DCoordSys>&     pi_rpRasterCoordSys,
                                                const HGF2DExtent&               pi_rRasterExtent,
                                                const HGF2DExtent&               pi_rMinimumRasterPixelRange,
-                                               const IRasterBaseGcsCP           pi_rpSourceCoordSys,
-                                               const IRasterBaseGcsCP           pi_rpDestCoordSys,
+                                               GeoCoordinates::BaseGCSCR        pi_rSourceCoordSys,
+                                               GeoCoordinates::BaseGCSCR        pi_rDestCoordSys,
                                                const HFCPtr<HGF2DWorldCluster>& pi_rpWorldCluster)
 {
     HPRECONDITION(pi_rpWorldCluster != 0);
-    HPRECONDITION(pi_rpSourceCoordSys != 0);
-    HPRECONDITION(pi_rpDestCoordSys != 0);
-    
-    // Georeference
-    IRasterBaseGcsPtr pSrcProjection(pi_rpSourceCoordSys->Clone());
-    IRasterBaseGcsPtr pDstProjection(pi_rpDestCoordSys->Clone());
-                
+                   
     // Create the reprojection transfo model (non adapted)
-    HFCPtr<HGF2DTransfoModel> pDstToSrcTransfoModel(new HCPGCoordModel(*pDstProjection.get(), *pSrcProjection.get()));
+    HFCPtr<HGF2DTransfoModel> pDstToSrcTransfoModel(new HCPGCoordModel(pi_rDestCoordSys, pi_rSourceCoordSys));
         
     // Create the reprojected coordSys
     HFCPtr<HGF2DCoordSys> pDstCoordSys(new HGF2DCoordSys(*pDstToSrcTransfoModel, pi_rpRasterCoordSys));
@@ -618,16 +603,16 @@ HCPGeoTiffKeys::GetTransfoModelForReprojection(const HFCPtr<HGF2DCoordSys>&     
 
     HFCPtr<HGF2DTransfoModel> pTransfoModelForReprojection;
 
-    pTransfoModelForReprojection = HCPGCoordUtility::GetInstance()->CreateGCoordAdaptedModel(*pSrcProjection.get(), 
-                                                                                             *pDstProjection.get(), 
-                                                                                             ImageLiteExtent, 
-                                                                                             Step, 
-                                                                                             ExpectedMeanError, 
-                                                                                             ExpectedMaxError, 
-                                                                                             NULL, 
-                                                                                             NULL, 
-                                                                                             NULL, 
-                                                                                             NULL);
+    pTransfoModelForReprojection = HCPGCoordUtility::CreateGCoordAdaptedModel(pi_rSourceCoordSys, 
+                                                                              pi_rDestCoordSys, 
+                                                                              ImageLiteExtent, 
+                                                                              Step, 
+                                                                              ExpectedMeanError, 
+                                                                              ExpectedMaxError, 
+                                                                              NULL, 
+                                                                              NULL, 
+                                                                              NULL, 
+                                                                              NULL);
 
     return pTransfoModelForReprojection;
 }
@@ -652,18 +637,18 @@ Return true if at least ONE of these two TAG are supported.
 HFCPtr<HGF2DTransfoModel>
 HCPGeoTiffKeys::GetTransfoModelForReprojection(const HFCPtr<HRFRasterFile>&     pi_rpSrcRasterFile,
                                                uint32_t                         pi_PageNumber,
-                                               IRasterBaseGcsCP                 pi_rpDestCoordSys,
+                                               GeoCoordinates::BaseGCSCP        pi_pDestCoordSys,
                                                const HFCPtr<HGF2DWorldCluster>& pi_rpWorldCluster,
-                                               IRasterBaseGcsCP                 pi_rpOverwriteSourceCoordSys)
+                                               GeoCoordinates::BaseGCSCP        pi_pOverwriteSourceCoordSys)
     {
     HPRECONDITION(pi_rpWorldCluster != 0);
 
-    HFCPtr<HGF2DTransfoModel>     pTransfoModelForReprojection;
-    IRasterBaseGcsCP pSrcFileGeocoding;
+    HFCPtr<HGF2DTransfoModel> pTransfoModelForReprojection;
+    GeoCoordinates::BaseGCSCP pSrcFileGeocoding = nullptr;
 
-    if (pi_rpOverwriteSourceCoordSys != 0)
+    if (pi_pOverwriteSourceCoordSys != nullptr)
         {
-        pSrcFileGeocoding = pi_rpOverwriteSourceCoordSys;
+        pSrcFileGeocoding = pi_pOverwriteSourceCoordSys;
         }
     else
         {
@@ -671,15 +656,13 @@ HCPGeoTiffKeys::GetTransfoModelForReprojection(const HFCPtr<HRFRasterFile>&     
         }
 
     // Georeference
-    if ((pSrcFileGeocoding != 0) &&
-        (pSrcFileGeocoding->IsValid()) &&
-        (pi_rpDestCoordSys->IsValid()))
+    if (pSrcFileGeocoding != nullptr && pSrcFileGeocoding->IsValid() &&
+        pi_pDestCoordSys != nullptr && pi_pDestCoordSys->IsValid())
         {
-        IRasterBaseGcsPtr pDestCoordSys(pi_rpDestCoordSys->Clone());
         // Compute the image extent expressed in the src projection units
         HFCPtr<HGF2DCoordSys> pSrcWorldMeters(pi_rpWorldCluster->GetCoordSysReference(HGF2DWorld_HMRWORLD));
 
-        HFCPtr<HGF2DCoordSys> pSrcUnitCoordSys = new HGF2DCoordSys(*GetTransfoModelToMeters(*(pSrcFileGeocoding->Clone())), pSrcWorldMeters);
+        HFCPtr<HGF2DCoordSys> pSrcUnitCoordSys = new HGF2DCoordSys(*GetTransfoModelToMeters(*pSrcFileGeocoding), pSrcWorldMeters);
         HFCPtr<HGF2DCoordSys> pPhysicalCoordSys;
 
         HFCPtr<HRFPageDescriptor>       pPage(pi_rpSrcRasterFile->GetPageDescriptor(pi_PageNumber));
@@ -687,21 +670,15 @@ HCPGeoTiffKeys::GetTransfoModelForReprojection(const HFCPtr<HRFRasterFile>&     
 
         if (pPage->HasTransfoModel())
             {
-            pPhysicalCoordSys = new HGF2DCoordSys(*pPage->GetTransfoModel(),
-                                                  pi_rpWorldCluster->
-                                                  GetCoordSysReference(pi_rpSrcRasterFile->
-                                                                       GetWorldIdentificator()));
+            pPhysicalCoordSys = new HGF2DCoordSys(*pPage->GetTransfoModel(), pi_rpWorldCluster->GetCoordSysReference(pi_rpSrcRasterFile->GetWorldIdentificator()));
             }
         else
             {
-            pPhysicalCoordSys = new HGF2DCoordSys(HGF2DIdentity(),
-                                                  pi_rpWorldCluster->
-                                                  GetCoordSysReference(pi_rpSrcRasterFile->
-                                                                       GetWorldIdentificator()));
+            pPhysicalCoordSys = new HGF2DCoordSys(HGF2DIdentity(), pi_rpWorldCluster->GetCoordSysReference(pi_rpSrcRasterFile->GetWorldIdentificator()));
             }
 
         // Create the reprojection transfo model (non adapted)
-        HFCPtr<HGF2DTransfoModel> pDstToSrcTransfoModel(new HCPGCoordModel(*pDestCoordSys, *(pSrcFileGeocoding->Clone())));
+        HFCPtr<HGF2DTransfoModel> pDstToSrcTransfoModel(new HCPGCoordModel(*pi_pDestCoordSys, *pSrcFileGeocoding));
 
         // Create the reprojected coordSys
         HFCPtr<HGF2DCoordSys> pDstCoordSys(new HGF2DCoordSys(*pDstToSrcTransfoModel, pSrcUnitCoordSys));
@@ -731,8 +708,8 @@ HCPGeoTiffKeys::GetTransfoModelForReprojection(const HFCPtr<HRFRasterFile>&     
         double ExpectedMeanError(MIN(PixelExtent.GetWidth() * 0.5, PixelExtent.GetHeight() * 0.5));
         double ExpectedMaxError (MIN(PixelExtent.GetWidth(), PixelExtent.GetHeight()));
 
-        pTransfoModelForReprojection = HCPGCoordUtility::GetInstance()->CreateGCoordAdaptedModel(*(pSrcFileGeocoding->Clone()),
-                                       *pDestCoordSys,
+        pTransfoModelForReprojection = HCPGCoordUtility::CreateGCoordAdaptedModel(*pSrcFileGeocoding,
+                                       *pi_pDestCoordSys,
                                        ImageLiteExtent,
                                        Step,
                                        ExpectedMeanError,
@@ -750,7 +727,7 @@ HCPGeoTiffKeys::GetTransfoModelForReprojection(const HFCPtr<HRFRasterFile>&     
                                                 GetTransfoModelTo(pi_rpWorldCluster->
                                                                   GetCoordSysReference(HGF2DWorld_HMRWORLD)));
         HFCPtr<HGF2DTransfoModel> pFromMeters(GetTransfoModelFromMeters(*pSrcFileGeocoding));
-        HFCPtr<HGF2DTransfoModel> pToMeters(GetTransfoModelToMeters(*pDestCoordSys));
+        HFCPtr<HGF2DTransfoModel> pToMeters(GetTransfoModelToMeters(*pi_pDestCoordSys));
 
         pTransfoModelForReprojection = pLogiqueToHmr->ComposeInverseWithDirectOf(*pFromMeters)->
                                        ComposeInverseWithDirectOf(*pTransfoModelForReprojection)->

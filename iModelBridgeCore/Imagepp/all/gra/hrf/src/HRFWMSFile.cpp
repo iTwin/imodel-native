@@ -649,9 +649,8 @@ void HRFWMSFile::CreateDescriptors(uint64_t pi_Width,
     // Build keyname from EPSG code
     WString keyName;
     BeStringUtilities::CurrentLocaleCharToWChar(keyName, SRS.c_str());
-    IRasterBaseGcsPtr baseGCS = GCSServices->_CreateRasterBaseGcsFromKeyName(keyName.c_str());
 
-
+    GeoCoordinates::BaseGCSPtr pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS(keyName.c_str());
     HFCPtr<HCPGeoTiffKeys> pGeoTiffKeys;
 
 
@@ -659,7 +658,6 @@ void HRFWMSFile::CreateDescriptors(uint64_t pi_Width,
     // create a set of geo keys...
     if (!invalidEPSG)
         {
-
         pGeoTiffKeys = new HCPGeoTiffKeys();
 
         // GTModelType
@@ -699,7 +697,7 @@ void HRFWMSFile::CreateDescriptors(uint64_t pi_Width,
                                                              0,
                                                              0,
                                                              0,
-                                                             CreateTransfoModel(baseGCS.get(), pi_Width, pi_Height),
+                                                             CreateTransfoModel(pBaseGCS.get(), pi_Width, pi_Height),
                                                              0,
                                                              0,
                                                              0,
@@ -711,13 +709,13 @@ void HRFWMSFile::CreateDescriptors(uint64_t pi_Width,
                                                              m_MaxImageSize.m_Height);
 
 
-    if (baseGCS == NULL)
+    if (pBaseGCS == NULL)
         {
         pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pGeoTiffKeys));
         }
     else
         {
-        pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(baseGCS.get()));
+        pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pBaseGCS.get()));
         }
 
     HFCPtr<HMDMetaDataContainerList> pMDContainers(new HMDMetaDataContainerList());

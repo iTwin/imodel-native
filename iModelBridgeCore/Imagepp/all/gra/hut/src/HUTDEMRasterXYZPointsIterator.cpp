@@ -777,7 +777,7 @@ void HUTDEMRasterXYZPointsIterator::Init   (HUTDEMRasterXYZPointsExtractor&    p
         {
         try
             {
-            m_pDestCoorSys = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromKeyName(pi_rDestCoordSysKeyName.c_str());
+            m_pDestCoorSys = GeoCoordinates::BaseGCS::CreateGCS(pi_rDestCoordSysKeyName.c_str());
             }
         catch (HFCException&)
             {
@@ -807,10 +807,12 @@ void HUTDEMRasterXYZPointsIterator::Init   (HUTDEMRasterXYZPointsExtractor&    p
                 }
                 else
                 {
-                    IRasterBaseGcsCP pSrcFileGeocoding = pi_rExtractor.m_pRasterFile->GetPageDescriptor(0)->GetGeocodingCP();
+                    GeoCoordinates::BaseGCSCP pSrcFileGeocoding = pi_rExtractor.m_pRasterFile->GetPageDescriptor(0)->GetGeocodingCP();
 
                     if (pSrcFileGeocoding != NULL && pSrcFileGeocoding->IsValid())
-                        m_pReprojectionModel = new HCPGCoordModel(*(pSrcFileGeocoding->Clone()), *m_pDestCoorSys);
+                        {
+                        m_pReprojectionModel = new HCPGCoordModel(*pSrcFileGeocoding, *m_pDestCoorSys);
+                        }
 					
 					HASSERT(m_pReprojectionModel != 0);
                 }

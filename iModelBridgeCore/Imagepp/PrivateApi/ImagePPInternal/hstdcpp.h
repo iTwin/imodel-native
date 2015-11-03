@@ -55,8 +55,8 @@
 
 #include <Geom/GeomApi.h>
 #include <BeXml/BeXml.h>
+#include <GeoCoord/BaseGeoCoord.h>
 
-#include <ImagePP/all/h/HFCRasterGeoCoordinateServices.h>
 #include <ImagePP/all/h/HFCMemoryLineStream.h>
 
 #include <ImagePP/all/h/HCDCodecIdentity.h>

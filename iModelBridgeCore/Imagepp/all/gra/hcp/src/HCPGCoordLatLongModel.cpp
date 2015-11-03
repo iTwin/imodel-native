@@ -13,28 +13,18 @@
 #include <ImagePP/all/h/HVE2DPolygonOfSegments.h>
 #include <ImagePP/all/h/HCPGCoordUtility.h>
 
-#include <GeoCoord\BaseGeoCoord.h>
-#include <ImagePP/all/h/HFCRasterGeoCoordinateServices.h>
-
 
 
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-HCPGCoordLatLongModel::HCPGCoordLatLongModel
-(
-IRasterBaseGcsR  pi_GEOCS
-)
+HCPGCoordLatLongModel::HCPGCoordLatLongModel(GeoCoordinates::BaseGCSCR pi_GEOCS)
  :HGF2DTransfoModel (),
- m_GEOCS (pi_GEOCS),
+ m_pBaseGCS (&pi_GEOCS),
  m_reversed(false)
     {
-    // The DLLs must be loaded to use this class.
-    if (!GCSServices->_IsAvailable ())
-        throw HFCDllNotFoundException(GCSServices->_GetServiceName());
-
     // The two projections must be valid
-    HPRECONDITION (m_GEOCS.IsValid ());
+    HPRECONDITION (m_pBaseGCS->IsValid ());
     }
 
 
@@ -43,12 +33,8 @@ IRasterBaseGcsR  pi_GEOCS
 //-----------------------------------------------------------------------------
 HCPGCoordLatLongModel::HCPGCoordLatLongModel (const HCPGCoordLatLongModel& pi_rObj)
 :HGF2DTransfoModel (pi_rObj),
- m_GEOCS(pi_rObj.m_GEOCS)
+ m_pBaseGCS(pi_rObj.m_pBaseGCS)
     {
-    // The DLLs must be loaded to use this class.
-    if (!GCSServices->_IsAvailable ())
-        throw HFCDllNotFoundException( GCSServices->_GetServiceName());
-
     Copy (pi_rObj);
 
     HINVARIANTS;
@@ -519,7 +505,7 @@ void HCPGCoordLatLongModel::Prepare ()
 void HCPGCoordLatLongModel::Copy (const HCPGCoordLatLongModel& pi_rObj)
     {
     // Copy master data
-    m_GEOCS      = pi_rObj.m_GEOCS;
+    m_pBaseGCS   = pi_rObj.m_pBaseGCS;
     m_reversed   = pi_rObj.m_reversed;
     }
 
@@ -564,23 +550,23 @@ StatusInt HCPGCoordLatLongModel::ConvertDirectReversible
     if (!reverse)
         {
         // Transform coordinates to source units
-        double outLatLong[3] = {0.0, 0.0, 0.0};
-        double pt[3] = {pi_XIn, pi_YIn, 0.0};
+        DPoint3d  cartesianPt = {pi_XIn, pi_YIn, 0.0};
 
-        status = m_GEOCS.GetLatLongFromCartesian(outLatLong, pt);
-
-        *po_pXOut = outLatLong[0];
-        *po_pYOut = outLatLong[1];
+        GeoPoint  geoPt = {0,0,0};
+        status = m_pBaseGCS->LatLongFromCartesian (geoPt, cartesianPt);
+        
+        *po_pXOut = geoPt.longitude;
+        *po_pYOut = geoPt.latitude;
         }
     else
         {
-        double ptLatLong[3] = {pi_XIn, pi_YIn, 0.0};
-        double outDest[3] = {0.0, 0.0, 0.0};
+        GeoPoint ptLatLong = {pi_XIn, pi_YIn, 0.0};
+        DPoint3d cartesianPt = {0.0, 0.0, 0.0};
 
-        status = m_GEOCS.GetCartesianFromLatLong(outDest, ptLatLong);
-
-        *po_pXOut = outDest[0];
-        *po_pYOut = outDest[1];
+        status = m_pBaseGCS->CartesianFromLatLong (cartesianPt, ptLatLong);
+        
+        *po_pXOut = cartesianPt.x;
+        *po_pYOut = cartesianPt.y;
         }
 
     return status;
@@ -600,7 +586,7 @@ StatusInt HCPGCoordLatLongModel::ComputeDomain () const
         // Domain not computed ... we first obtain the geographic domain from GCS
         HGF2DCoordCollection<double> gcsGeoDomain;
 
-        HCPGCoordUtility::GetGeoDomain(m_GEOCS, gcsGeoDomain);
+        HCPGCoordUtility::GetGeoDomain(*m_pBaseGCS, gcsGeoDomain);
 
         // Create the three coordinate systems required for transformation
         HFCPtr<HGF2DCoordSys> latLongCoordinateSystem = new HGF2DCoordSys();

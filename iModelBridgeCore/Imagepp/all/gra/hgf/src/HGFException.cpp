@@ -109,7 +109,7 @@ const int32_t HGFmzGCoordException::GetStatusCode() const
 WString HGFmzGCoordException::GetErrorText() const
     {
     WString errorStr;
-    GCSServices->_GetErrorMessage (errorStr, m_StatusCode);
+    GeoCoordinates::BaseGCS::GetErrorMessage (errorStr, m_StatusCode);
 
     return errorStr;
     }

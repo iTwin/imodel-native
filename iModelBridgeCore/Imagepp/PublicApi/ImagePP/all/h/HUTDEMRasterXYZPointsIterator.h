@@ -83,7 +83,7 @@ private :
 
     //Reprojection related members
     bool                           m_IsDestCoordSysCreationFailed;
-    IRasterBaseGcsPtr              m_pDestCoorSys;
+    GeoCoordinates::BaseGCSPtr     m_pDestCoorSys;
     HFCPtr<HGF2DTransfoModel>      m_pReprojectionModel;
 
     HFCPtr<HRABitmap>              m_pStrip;

@@ -2357,16 +2357,17 @@ RasterFileGeocoding const& HRFImportExport::GetRasterFileGeocoding() const
     SetGeocoding
     ------------------------------------------------------------------
 */
-void HRFImportExport::SetGeocoding(IRasterBaseGcsP pi_pGeocoding)
+void HRFImportExport::SetGeocoding(GeoCoordinates::BaseGCSP pi_pGeocoding)
     {
-    m_ExportOptions.SetRasterFileGeocoding(*(RasterFileGeocoding::Create(pi_pGeocoding)));
+    RasterFileGeocodingPtr fileGeo = RasterFileGeocoding::Create(pi_pGeocoding);
+    m_ExportOptions.SetRasterFileGeocoding(*fileGeo);
     }
 
 /** ------------------------------------------------------------------
     SetGeocoding
     ------------------------------------------------------------------
 */
-IRasterBaseGcsCP HRFImportExport::GetGeocodingCP() const
+GeoCoordinates::BaseGCSCP HRFImportExport::GetGeocodingCP() const
     {
     return m_ExportOptions.GetRasterFileGeocoding().GetGeocodingCP();
     }

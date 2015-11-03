@@ -221,7 +221,7 @@ public:
     virtual void        GetGeocodingAndReferenceInfo(uint32_t                       pi_Page,
                                                      uint32_t                       pi_RasterizePageWidth,
                                                      uint32_t                       pi_RasterizePageHeight,
-                                                     IRasterBaseGcsPtr&              po_rpGeocoding,
+                                                     GeoCoordinates::BaseGCSPtr&    po_rpGeocoding,
                                                      HFCPtr<HGF2DTransfoModel>&      po_rpGeoreference) = 0;
     virtual void        GetDimensionForDWGUnderlay( uint32_t                  pi_Page,
                                                     double&                    po_xDimension, 

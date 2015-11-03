@@ -15,8 +15,6 @@
 #include <Imagepp/all/h/HMDVolatileLayers.h>
 #include <Imagepp/all/h/HGF2DCoordSys.h> 
 #include <Imagepp/all/h/HGF2DPosition.h>
-#include <ImagePP/all/h/interface/IRasterGeoCoordinateServices.h>
-
 
 class HVE2DVector;
 
@@ -115,7 +113,7 @@ public :
                                                   uint32_t                     pi_Page,
                                                   uint32_t                     pi_RasterizePageWidth,
                                                   uint32_t                     pi_RasterizePageHeight,
-                                                  IRasterBaseGcsPtr&            po_rpGeocoding,
+                                                  GeoCoordinates::BaseGCSPtr&   po_rpGeocoding,
                                                   HFCPtr<HGF2DTransfoModel>&    po_rpGeoreference);
 
     static void     GetDimensionForDWGUnderlay(const PDDoc                pi_pDoc,
@@ -128,7 +126,7 @@ private :
     static bool    GetGeocodingReferenceFromImage(const PDPage&                     pi_rPage,
                                                    uint32_t                        pi_RasterizePageWidth,
                                                    uint32_t                        pi_RasterizePageHeight,
-                                                   IRasterBaseGcsPtr&               po_rpGeocoding,
+                                                   GeoCoordinates::BaseGCSPtr&     po_rpGeocoding,
                                                    HFCPtr<HGF2DTransfoModel>&       po_rpGeoreference);
 
     static bool    GetGeoreference(const CosObj&                  pi_rMeasureCosObj,
@@ -143,11 +141,10 @@ private :
                                     double                        pi_VPMaxX,
                                     double                        pi_VPMaxY,
                                     double                        pi_PageRotation,
-                                    IRasterBaseGcsCP              pi_rpGeocoding,
+                                    GeoCoordinates::BaseGCSCP     pi_rpGeocoding,
                                     HFCPtr<HGF2DTransfoModel>&    po_rpGeoreference);
 
-    static void     CreateGeocodingFromWKT(const string&          pi_rWKT,
-                                           IRasterBaseGcsPtr&     po_rpGeocoding);
+    static void     CreateGeocodingFromWKT(const string& pi_rWKT, GeoCoordinates::BaseGCSPtr& po_rpGeocoding);
 
     static bool    GetCosObj(const CosObj&  pi_rSearchRootCosObj,
                               vector<char*>& pi_rpRelativeCosObjPath,

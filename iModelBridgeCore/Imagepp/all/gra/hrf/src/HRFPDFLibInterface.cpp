@@ -14,8 +14,6 @@
 
 #if defined(IPP_HAVE_PDF_SUPPORT) 
 
-#include <Imagepp/all/h/interface/IRasterGeoCoordinateServices.h>
-
 #include <Imagepp/all/h/HFCBuffer.h>
 #include <Imagepp/all/h/HFCMemoryLineStream.h>
 
@@ -1003,8 +1001,8 @@ bool HRFPDFLibInterface::GetGeocodingAndReferenceInfo(const PDDoc               
                                                        uint32_t                       pi_Page,
                                                        uint32_t                       pi_RasterizePageWidth,
                                                        uint32_t                       pi_RasterizePageHeight,
-                                                       IRasterBaseGcsPtr&              po_rpGeocoding,
-                                                       HFCPtr<HGF2DTransfoModel>&      po_rpGeoreference)
+                                                       GeoCoordinates::BaseGCSPtr&    po_rpGeocoding,
+                                                       HFCPtr<HGF2DTransfoModel>&     po_rpGeoreference)
     {
     HPRECONDITION(po_rpGeocoding == 0);
     HPRECONDITION(po_rpGeoreference == 0);
@@ -1353,22 +1351,22 @@ void HRFPDFLibInterface::GetDimensionForDWGUnderlay(const PDDoc                p
 // private
 //-----------------------------------------------------------------------------
 void HRFPDFLibInterface::CreateGeocodingFromWKT(const string&                  pi_rWKT,
-                                                IRasterBaseGcsPtr&             po_rpGeocoding)
+                                                GeoCoordinates::BaseGCSPtr&    po_rpGeocoding)
     {
     HPRECONDITION(pi_rWKT.empty() == false);
     HPRECONDITION(po_rpGeocoding == 0);
 
-        WString TempWKT;
-        BeStringUtilities::CurrentLocaleCharToWChar( TempWKT,pi_rWKT.c_str());
+    WString TempWKT;
+    BeStringUtilities::CurrentLocaleCharToWChar( TempWKT,pi_rWKT.c_str());
 
-        //The flavor of the WKT stored in the PDF is not known yet,
-        //so unknown is used.
-        po_rpGeocoding = HRFGeoCoordinateProvider::CreateRasterGcsFromFromWKT(NULL, NULL, IRasterGeoCoordinateServices::WktFlavorESRI, TempWKT.c_str());
-
-    if (po_rpGeocoding == 0)
+    //The flavor of the WKT stored in the PDF is not known yet, so unknown is used.
+    GeoCoordinates::BaseGCSPtr pBaseGcs = GeoCoordinates::BaseGCS::CreateGCS();
+    if(SUCCESS != pBaseGcs->InitFromWellKnownText (NULL, NULL, GeoCoordinates::BaseGCS::WktFlavorESRI, TempWKT.c_str()))
         {
+        pBaseGcs = GeoCoordinates::BaseGCS::CreateGCS();
         HFCPtr<HCPGeoTiffKeys> pGeoKeys = HRFGdalUtilities::ConvertOGCWKTtoGeotiffKeys(pi_rWKT.c_str());
-        po_rpGeocoding = HRFGeoCoordinateProvider::CreateRasterGcsFromGeoTiffKeys(NULL, NULL, *pGeoKeys);
+        if(SUCCESS == pBaseGcs->InitFromGeoTiffKeys(NULL, NULL, *pGeoKeys))
+            po_rpGeocoding = pBaseGcs;
         }
     }
 
@@ -1378,7 +1376,7 @@ void HRFPDFLibInterface::CreateGeocodingFromWKT(const string&                  p
 bool HRFPDFLibInterface::GetGeocodingReferenceFromImage(const PDPage&                   pi_rPage,
                                                          uint32_t                      pi_RasterizePageWidth,
                                                          uint32_t                      pi_RasterizePageHeight,
-                                                         IRasterBaseGcsPtr&             po_rpGeocoding,
+                                                         GeoCoordinates::BaseGCSPtr&   po_rpGeocoding,
                                                          HFCPtr<HGF2DTransfoModel>&     po_rpGeoreference)
     {
     HPRECONDITION(po_rpGeocoding == 0);
@@ -1558,7 +1556,7 @@ bool HRFPDFLibInterface::GetGeoreference(const CosObj&                  pi_rMeas
                                           double                        pi_VPMaxX,
                                           double                        pi_VPMaxY,
                                           double                        pi_PageRotation,
-                                          IRasterBaseGcsCP              pi_rpGeocoding,
+                                          GeoCoordinates::BaseGCSCP     pi_rpGeocoding,
                                           HFCPtr<HGF2DTransfoModel>&    po_rpGeoreference)
     {
     HPRECONDITION(pi_rpGeocoding != 0);

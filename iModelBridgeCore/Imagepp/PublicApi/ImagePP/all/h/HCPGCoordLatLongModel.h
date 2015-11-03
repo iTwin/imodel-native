@@ -12,9 +12,7 @@
 +----------------------------------------------------------------------------*/
 #include <ImagePP\all\h\HGFException.h>
 #include <ImagePP\all\h\HGF2DLiteExtent.h>
-
 #include <Imagepp/all/h/HGF2DTransfoModel.h>
-#include <ImagePP/all/h/interface/IRasterGeoCoordinateServices.h>
 
 BEGIN_IMAGEPP_NAMESPACE
 
@@ -40,7 +38,7 @@ class HCPGCoordLatLongModel : public HGF2DTransfoModel
         // Primary methods
                                     HCPGCoordLatLongModel();
 
-        IMAGEPP_EXPORT              HCPGCoordLatLongModel(IRasterBaseGcsR pi_SourceGEOCS);
+        IMAGEPP_EXPORT              HCPGCoordLatLongModel(GeoCoordinates::BaseGCSCR pi_SourceGEOCS);
 
 
                                     HCPGCoordLatLongModel(const HCPGCoordLatLongModel& pi_rObj);
@@ -135,7 +133,7 @@ class HCPGCoordLatLongModel : public HGF2DTransfoModel
 #ifdef HVERIFYCONTRACT
         void                        ValidateInvariants() const
         {
-            HASSERT(m_GEOCS.IsValid());
+            HASSERT(m_pBaseGCS.IsValid());
         }
 #endif
 
@@ -153,7 +151,7 @@ class HCPGCoordLatLongModel : public HGF2DTransfoModel
 
 
         // Primary attributes
-        IRasterBaseGcsR                         m_GEOCS;
+        RefCountedCPtr<GeoCoordinates::BaseGCS> m_pBaseGCS;
         bool                                    m_reversed;
 
 

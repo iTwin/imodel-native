@@ -35,10 +35,6 @@
 
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
-#include <Imagepp/all/h/HCPGeoTiffKeys.h>
-
-
-
 //GDAL
 #include <ImagePP-GdalLib/gdal_priv.h>
 #include <ImagePP-GdalLib/cpl_string.h>
@@ -325,17 +321,17 @@ void HRFDtedFile::CreateDescriptors()
     HPMAttributeSet                         TagList;
 
     HRFGdalSupportedFile::CreateDescriptorsWith(new HCDCodecIdentity(), TagList);
-
-    IRasterBaseGcsPtr pBaseGCS;
-
+        
+    GeoCoordinates::BaseGCSPtr pBaseGCS;
     if (GetPageDescriptor(0)->GetGeocodingCP() == NULL)
-        pBaseGCS = GCSServices->_CreateRasterBaseGcs();
+        pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
     else
-		pBaseGCS = GetPageDescriptor(0)->GetGeocodingCP()->Clone();
+		pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS(*GetPageDescriptor(0)->GetGeocodingCP());
 
-    //Elevation values in a DTED file are always in meters.
-    if(pBaseGCS != NULL)
-        pBaseGCS->SetVerticalUnits(1.0);
+//&&AR Need vertical units support
+//     //Elevation values in a DTED file are always in meters.
+//     if(pBaseGCS != NULL)
+//         pBaseGCS->SetVerticalUnits(1.0);
 
     GetPageDescriptor(0)->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pBaseGCS.get()));
     }

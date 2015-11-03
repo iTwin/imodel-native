@@ -85,7 +85,7 @@ StatusInt HCPGCoordContiguousModelAdapter::ConvertDirect(double* pio_pXInOut, do
     StatusInt status = m_pAdaptedTransfoModel->ConvertDirect(pio_pXInOut, pio_pYInOut);
 
     HCPGCoordModel const* adaptedModel = dynamic_cast<HCPGCoordModel const*>(m_pAdaptedTransfoModel.GetPtr());
-    if(adaptedModel->GetDestinationGEOCS().GetProjectionCode() == 1 && *pio_pXInOut < m_MinXLongInverse)
+    if(adaptedModel->GetDestinationGEOCS().GetProjectionCode() == GeoCoordinates::BaseGCS::ProjectionCodeValue::pcvUnity && *pio_pXInOut < m_MinXLongInverse)
         {
         *pio_pXInOut += 360;
         }
@@ -123,7 +123,7 @@ StatusInt HCPGCoordContiguousModelAdapter::ConvertDirect(double pi_XIn, double p
     StatusInt status = m_pAdaptedTransfoModel->ConvertDirect(po_pXOut, po_pYOut);
 
     HCPGCoordModel const* adaptedModel = dynamic_cast<HCPGCoordModel const*>(m_pAdaptedTransfoModel.GetPtr());
-    if(adaptedModel->GetDestinationGEOCS().GetProjectionCode() == 1 && *po_pXOut < m_MinXLongInverse)
+    if(adaptedModel->GetDestinationGEOCS().GetProjectionCode() == GeoCoordinates::BaseGCS::ProjectionCodeValue::pcvUnity && *po_pXOut < m_MinXLongInverse)
         {
         *po_pXOut += 360;
         }
@@ -154,7 +154,7 @@ StatusInt HCPGCoordContiguousModelAdapter::ConvertInverse(double* pio_pXInOut, d
     StatusInt status = m_pAdaptedTransfoModel->ConvertInverse(pio_pXInOut, pio_pYInOut);
 
     HCPGCoordModel const* adaptedModel = dynamic_cast<HCPGCoordModel const*>(m_pAdaptedTransfoModel.GetPtr());
-    if(adaptedModel->GetSourceGEOCS().GetProjectionCode() == 1 && *pio_pXInOut < m_MinXLongDirect)
+    if(adaptedModel->GetSourceGEOCS().GetProjectionCode() == GeoCoordinates::BaseGCS::ProjectionCodeValue::pcvUnity && *pio_pXInOut < m_MinXLongDirect)
         {
         *pio_pXInOut += 360;
         }
@@ -192,7 +192,7 @@ StatusInt HCPGCoordContiguousModelAdapter::ConvertInverse(double pi_XIn, double 
     StatusInt status = m_pAdaptedTransfoModel->ConvertInverse(po_pXOut, po_pYOut);
 
     HCPGCoordModel const* adaptedModel = dynamic_cast<HCPGCoordModel const*>(m_pAdaptedTransfoModel.GetPtr());
-    if(adaptedModel->GetSourceGEOCS().GetProjectionCode() == 1 && *po_pXOut < m_MinXLongDirect)
+    if(adaptedModel->GetSourceGEOCS().GetProjectionCode() == GeoCoordinates::BaseGCS::ProjectionCodeValue::pcvUnity && *po_pXOut < m_MinXLongDirect)
         {
         *po_pXOut += 360;
         }
@@ -203,12 +203,12 @@ StatusInt HCPGCoordContiguousModelAdapter::ConvertInverse(double pi_XIn, double 
     //*po_pXOut = pi_XIn;
     //*po_pYOut = pi_YIn;
 
-    //if(adaptedModel->GetDestinationGEOCS().GetProjectionCode() == 1)
+    //if(adaptedModel->GetDestinationGEOCS().GetProjectionCode() == GeoCoordinates::BaseGCS::ProjectionCodeValue::pcvUnity)
         //ToGeographicDomain(*po_pXOut);
 
     //m_pAdaptedTransfoModel->ConvertInverse(po_pXOut, po_pYOut);
 
-    //if(adaptedModel->GetSourceGEOCS().GetProjectionCode() == 1)
+    //if(adaptedModel->GetSourceGEOCS().GetProjectionCode() == GeoCoordinates::BaseGCS::ProjectionCodeValue::pcvUnity)
         //ToContiguousDomain(*po_pXOut);
 
     //return SUCCESS;

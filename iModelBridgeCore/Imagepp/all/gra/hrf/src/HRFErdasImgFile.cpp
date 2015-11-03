@@ -464,14 +464,15 @@ RasterFileGeocodingPtr HRFErdasImgFile::ExtractGeocodingInformation()
 
             if (pGeocodingInfo->GetGeocodingCP()!= NULL && UnitToNameIter != m_pUnitToNameToEPSGCodeMap->end())
                 {
-                IRasterBaseGcsPtr pGcs(pGeocodingInfo->GetGeocodingCP()->Clone());
-                if (UnitToNameIter->second == 9001)   // Meter
-                    pGcs->SetVerticalUnits(1.0);
-                else if (UnitToNameIter->second == 9002)  // International foot
-                    pGcs->SetVerticalUnits(0.3048);
-                else if (UnitToNameIter->second == 9003)  // US Survey foot
-                    pGcs->SetVerticalUnits(12.0/39.37);
-                pGeocodingInfo = RasterFileGeocoding::Create(pGcs.get());
+                   //&&AR Need vertical units support
+//                 IRasterBaseGcsPtr pGcs(pGeocodingInfo->GetGeocodingCP()->Clone());
+//                 if (UnitToNameIter->second == 9001)   // Meter
+//                     pGcs->SetVerticalUnits(1.0);
+//                 else if (UnitToNameIter->second == 9002)  // International foot
+//                     pGcs->SetVerticalUnits(0.3048);
+//                 else if (UnitToNameIter->second == 9003)  // US Survey foot
+//                     pGcs->SetVerticalUnits(12.0/39.37);
+//                 pGeocodingInfo = RasterFileGeocoding::Create(pGcs.get());
                 }
             }
         }

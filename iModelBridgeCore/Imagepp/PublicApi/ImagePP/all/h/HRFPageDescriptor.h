@@ -26,7 +26,7 @@
 
 #include "HTIFFTag.h"
 
-#include <ImagePP/all/h/interface/IRasterGeoCoordinateServices.h>
+#include <GeoCoord/BaseGeoCoord.h>
 
 IMAGEPP_TYPEDEFS(RasterFileGeocoding)
 IMAGEPP_REF_COUNTED_PTR(RasterFileGeocoding)
@@ -46,18 +46,18 @@ class HCPGeoTiffKeys;
 struct RasterFileGeocoding : public RefCountedBase
     {
 private:
-    IRasterBaseGcsPtr                   m_pGeocoding;
+    GeoCoordinates::BaseGCSPtr          m_pGeocoding;
     mutable HFCPtr<HCPGeoTiffKeys>      m_pGeoTiffKeys;//Optimization: Will be query on first get if not provided at construction
     mutable bool                        m_isGeotiffKeysCreated;
 
     RasterFileGeocoding();
-    RasterFileGeocoding(IRasterBaseGcsP pi_pGeocoding);
+    RasterFileGeocoding(GeoCoordinates::BaseGCSP pi_pGeocoding);
     RasterFileGeocoding(HCPGeoTiffKeys const* pi_pGeokeys);
     RasterFileGeocoding(const RasterFileGeocoding& object);
 
 public:
     IMAGEPP_EXPORT static RasterFileGeocodingPtr Create();
-    IMAGEPP_EXPORT static RasterFileGeocodingPtr Create(IRasterBaseGcsP pi_pGeocoding);
+    IMAGEPP_EXPORT static RasterFileGeocodingPtr Create(GeoCoordinates::BaseGCSP pi_pGeocoding);
     IMAGEPP_EXPORT static RasterFileGeocodingPtr Create(HCPGeoTiffKeys const* pi_pGeokeys);
     IMAGEPP_EXPORT        RasterFileGeocodingPtr Clone() const;
 
@@ -69,7 +69,7 @@ public:
                                                                 bool                            pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation=false,
                                                                 bool*                           po_DefaultUnitWasFound=0) const;
 
-    IRasterBaseGcsCP                       GetGeocodingCP() const;
+    GeoCoordinates::BaseGCSCP               GetGeocodingCP() const;
     IMAGEPP_EXPORT HCPGeoTiffKeys const&    GetGeoTiffKeys() const;
     };
 
@@ -259,8 +259,8 @@ public:
     IMAGEPP_EXPORT void                      InitFromRasterFileGeocoding(RasterFileGeocodingR pi_geocoding,bool flagGeocodingAsModified=false);
     IMAGEPP_EXPORT RasterFileGeocodingCR     GetRasterFileGeocoding() const;
 
-    IMAGEPP_EXPORT IRasterBaseGcsCP        GetGeocodingCP() const;
-    IMAGEPP_EXPORT void                                  SetGeocoding(IRasterBaseGcsP pi_pGeocoding);
+    IMAGEPP_EXPORT GeoCoordinates::BaseGCSCP GetGeocodingCP() const;
+    IMAGEPP_EXPORT void                      SetGeocoding(GeoCoordinates::BaseGCSP pi_pGeocoding);
 
     // Page Representative Palette
     bool                                   HasRepresentativePalette () const;

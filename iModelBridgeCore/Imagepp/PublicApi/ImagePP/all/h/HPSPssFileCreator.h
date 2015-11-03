@@ -9,7 +9,6 @@
 
 #include <Imagepp/all/h/HPSPssFile.h>
 #include <Imagepp/all/h/HGFHMRStdWorldCluster.h>
-#include <ImagePP/all/h/interface/IRasterGeoCoordinateServices.h>
 
 BEGIN_IMAGEPP_NAMESPACE
 class HRFRasterFile;
@@ -50,10 +49,10 @@ public:
     IMAGEPP_EXPORT                  HPSPssFileCreator ();
     IMAGEPP_EXPORT                  ~HPSPssFileCreator();
     IMAGEPP_EXPORT HSTATUS          CreateFileW(WString const& pi_rPssFileName);
-    IMAGEPP_EXPORT void             AddImage(WString const& pi_rImageName, uint32_t pi_pageNumber, IRasterBaseGcsP pi_projection);
+    IMAGEPP_EXPORT void             AddImage(WString const& pi_rImageName, uint32_t pi_pageNumber, GeoCoordinates::BaseGCSP pi_projection);
 
-    IMAGEPP_EXPORT void              SetDstProjection(IRasterBaseGcsP pi_projection);
-    IMAGEPP_EXPORT IRasterBaseGcsCP  GetDstProjectionCP() const;
+    IMAGEPP_EXPORT void              SetDstProjection(GeoCoordinates::BaseGCSP pi_projection);
+    IMAGEPP_EXPORT GeoCoordinates::BaseGCSCP  GetDstProjectionCP() const;
 
 protected:
     HFCPtr<HRFRasterFile>   GetRasterFile(WString const& rImageName) const;
@@ -64,12 +63,12 @@ private:
         {
         uint32_t                    m_pageNumber;
         WString                     m_imageName;
-        IRasterBaseGcsPtr           m_projection;
+        GeoCoordinates::BaseGCSPtr  m_projection;
         };
 
     typedef list <ImageDef> ImageList;
     ImageList                       m_imageList;
-    IRasterBaseGcsPtr               m_dstProjection;
+    GeoCoordinates::BaseGCSPtr      m_dstProjection;
     HFCPtr<HGFHMRStdWorldCluster>   m_pWorldCluster;
     };
 END_IMAGEPP_NAMESPACE

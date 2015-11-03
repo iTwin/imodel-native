@@ -39,9 +39,8 @@ public:
 
     IMAGEPP_EXPORT void                     GetNumberOfPoints                      (uint64_t* po_pNumberPoints) const;
 
-    IMAGEPP_EXPORT IRasterBaseGcsCP         GetDEMRasterCoordSysCP() const;
+    IMAGEPP_EXPORT GeoCoordinates::BaseGCSCP GetDEMRasterCoordSysCP() const;
 
-    IMAGEPP_EXPORT const IRasterBaseGcsCP   GetGeocodingCP() const;
 
     // Deprecated. NTERAY: Move to private section
     IMAGEPP_EXPORT const double*            GetNoDataValue                         () const;

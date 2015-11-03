@@ -451,9 +451,7 @@ void HRFOGCService::CancelLookAhead(uint32_t pi_Page)
 //This method create a HGF2DTransfoModel using the information found in the
 //geo tiff file tag.
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel> HRFOGCService::CreateTransfoModel(IRasterBaseGcsCP     pi_pGeocoding,
-                                                            uint64_t             pi_Width,
-                                                            uint64_t             pi_Height)
+HFCPtr<HGF2DTransfoModel> HRFOGCService::CreateTransfoModel(GeoCoordinates::BaseGCSP pi_geocoding, uint64_t pi_Width, uint64_t pi_Height)
     {
     HFCPtr<HGF2DTransfoModel> pTransfoModel = new HGF2DIdentity();
 
@@ -487,7 +485,7 @@ HFCPtr<HGF2DTransfoModel> HRFOGCService::CreateTransfoModel(IRasterBaseGcsCP    
 
     bool DefaultUnitWasFound = false;
 
-    RasterFileGeocodingPtr pFileGeocoding(RasterFileGeocoding::Create(pi_pGeocoding->Clone().get()));
+    RasterFileGeocodingPtr pFileGeocoding(RasterFileGeocoding::Create(pi_geocoding));
     pTransfoModel = pFileGeocoding->TranslateToMeter(pTransfoModel,
                                                        1.0,
                                                        false,

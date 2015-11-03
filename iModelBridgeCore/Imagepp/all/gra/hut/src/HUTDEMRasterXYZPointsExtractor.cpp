@@ -288,7 +288,7 @@ bool HUTDEMRasterXYZPointsExtractor::GetZCoordMinMaxValues(double* po_pZMin, dou
     GetDEMRasterCoordSys
     ---------------------------------------------------------------------------
 */
-IRasterBaseGcsCP HUTDEMRasterXYZPointsExtractor::GetDEMRasterCoordSysCP() const
+GeoCoordinates::BaseGCSCP HUTDEMRasterXYZPointsExtractor::GetDEMRasterCoordSysCP() const
     {
     return m_pRasterFile->GetPageDescriptor(0)->GetGeocodingCP();
     }
@@ -404,10 +404,11 @@ double HUTDEMRasterXYZPointsExtractor::GetFactorToMeterForZ() const
     {
     double FactorToMeterForZ = 1.0;
 
-    IRasterBaseGcsCP baseGCS = m_pRasterFile->GetPageDescriptor(0)->GetGeocodingCP();
-
-    if (baseGCS != 0) // Validity is not required
-        FactorToMeterForZ = baseGCS->GetVerticalUnits();
+    //&&AR GCS no vertical units
+//     GeoCoordinates::BaseGCSCP baseGCS = m_pRasterFile->GetPageDescriptor(0)->GetGeocodingCP();
+// 
+//     if (baseGCS != 0) // Validity is not required
+//         FactorToMeterForZ = baseGCS->GetVerticalUnits();
 
     return FactorToMeterForZ;
     }

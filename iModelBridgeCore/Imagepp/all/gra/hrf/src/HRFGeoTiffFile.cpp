@@ -472,11 +472,11 @@ bool HRFGeoTiffFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
 
     HFCPtr<HCPGeoTiffKeys> pGeoTiffKeys; 
 
-    IRasterBaseGcsCP pBaseGCS = pi_pPage->GetGeocodingCP();
-    if ((pBaseGCS != 0) && pBaseGCS->IsValid())
+    GeoCoordinates::BaseGCSCP pBaseGCS = pi_pPage->GetGeocodingCP();
+    if (pBaseGCS != nullptr && pBaseGCS->IsValid())
         {
         pGeoTiffKeys           = new HCPGeoTiffKeys();
-        pBaseGCS->GetGeoTiffKeys(pGeoTiffKeys);
+        pBaseGCS->SetGeoTiffKeys(pGeoTiffKeys);
         }
 
     if (pGeoTiffKeys == NULL)

@@ -628,7 +628,6 @@ void HRFUSgsFastL7AFile::CreateDescriptors()
     HFCPtr<HRFResolutionDescriptor> pResolution;
     HFCPtr<HRFPageDescriptor>       pPage;
     HFCPtr<HGF2DTransfoModel>       pTransfoModel;
-    IRasterBaseGcsPtr               pGeocoding;
     HFCPtr<HCPGeoTiffKeys>          pGeoTiffKeys;
 
     // Create pixel type

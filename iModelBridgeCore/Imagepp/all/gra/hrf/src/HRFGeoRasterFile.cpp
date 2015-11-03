@@ -53,7 +53,6 @@
 #include <Imagepp/all/h/HFCCallbackRegistry.h>
 #include <Imagepp/all/h/HFCCallbacks.h>
 
-#include <Imagepp/all/h/interface/IRasterGeoCoordinateServices.h>
 #include <Imagepp/all/h/SDOGeoRasterWrapper.h>
 
 #include <Imagepp/all/h/HCPGeoTiffKeys.h>
@@ -2091,7 +2090,7 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 RasterFileGeocodingPtr HRFGeoRasterFile::ExtractGeocodingInformation(SDOSpatialReferenceInfo const&     pi_rSpatialRefInfo)
     {
-    RasterFileGeocodingPtr pGeocoding(RasterFileGeocoding::Create());
+    RasterFileGeocodingPtr pGeocoding;
 
     // If the SRID is in the 0 to 32767 range it should be an EPSG code ..
     // We try to obtain the baseGCS directly from dictionary
@@ -2108,15 +2107,9 @@ RasterFileGeocodingPtr HRFGeoRasterFile::ExtractGeocodingInformation(SDOSpatialR
         WString EspgBasedKeyName(L"EPSG:");
 
         EspgBasedKeyName += WString(TempBuffer);
-
-        try
-            {
-            IRasterBaseGcsPtr pRasterGcs = GCSServices->_CreateRasterBaseGcsFromKeyName(EspgBasedKeyName.c_str());
-            pGeocoding = RasterFileGeocoding::Create(pRasterGcs.get());
-            }
-        catch(HFCException&)
-            {
-            }
+        GeoCoordinates::BaseGCSPtr pGcs = GeoCoordinates::BaseGCS::CreateGCS(EspgBasedKeyName.c_str());
+        if(pGcs.IsValid() && pGcs->IsValid())
+            pGeocoding = RasterFileGeocoding::Create(pGcs.get());
         }
 
     // If the baseGCS was not determined ... we will try parsing the WKT
@@ -2125,14 +2118,11 @@ RasterFileGeocodingPtr HRFGeoRasterFile::ExtractGeocodingInformation(SDOSpatialR
         WString WKTFromOracle;
         if (m_pSDOGeoRasterWrapper->GetWkt(pi_rSpatialRefInfo.SRID, WKTFromOracle))
             {
-            try
-                {
-                IRasterBaseGcsPtr pRasterGcs = HRFGeoCoordinateProvider::CreateRasterGcsFromFromWKT(NULL, NULL, IRasterGeoCoordinateServices::WktFlavorOracle, WKTFromOracle.c_str());
-                pGeocoding = RasterFileGeocoding::Create(pRasterGcs.get());
-                }
-            catch(HFCException&)
-                {
-                }
+            GeoCoordinates::BaseGCSPtr pGcs = GeoCoordinates::BaseGCS::CreateGCS();
+
+            //&&AR when failing is it OK to return NULL? or we have something partially valid that will preserve unknown data or something?
+            if(SUCCESS != pGcs->InitFromWellKnownText (NULL, NULL, WktFlavor::WktFlavorOracle, WKTFromOracle.c_str()))
+                pGeocoding = RasterFileGeocoding::Create(pGcs.get());
             }
         }
     return pGeocoding;

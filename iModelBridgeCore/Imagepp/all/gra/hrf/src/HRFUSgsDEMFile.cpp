@@ -364,7 +364,7 @@ RasterFileGeocodingPtr HRFUSgsDEMFile::ExtractGeocodingInformation()
     if (pGeocoding->GetGeocodingCP() != NULL)
         {
         // Need to clone GCS to modify the vertical unit.
-        IRasterBaseGcsPtr pNewGcs = pGeocoding->GetGeocodingCP()->Clone();
+        GeoCoordinates::BaseGCSPtr pNewGcs = GeoCoordinates::BaseGCS::CreateGCS(*pGeocoding->GetGeocodingCP());
         AddVerticalUnitToGeocoding(*pNewGcs);
 
         pGeocoding = RasterFileGeocoding::Create(pNewGcs.get());

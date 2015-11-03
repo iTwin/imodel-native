@@ -9,7 +9,7 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "interface/IGeoTiffKeysList.h"
+#include <GeoCoord/IGeoTiffKeysList.h>
 
 #include "HGF2DCoordSys.h"
 #include "HGF2DExtent.h"
@@ -81,8 +81,6 @@ public:
 
 //    IMAGEPP_EXPORT HCPGeoTiffKeys(const WString&   pi_rCSKeyName);
 
-//    IMAGEPP_EXPORT HCPGeoTiffKeys(IRasterBaseGcsPtr& pi_rpBaseGeoCoord);
-
     // Copy constructor
     IMAGEPP_EXPORT HCPGeoTiffKeys(const HCPGeoTiffKeys& pi_rObj);
 
@@ -119,7 +117,7 @@ public:
     IMAGEPP_EXPORT virtual void     AddKey (unsigned short pi_KeyID, double pi_value) override;
     IMAGEPP_EXPORT virtual void     AddKey (unsigned short pi_KeyID, const std::string& pi_value) override;
 
-    IMAGEPP_EXPORT virtual size_t   EraseKey(unsigned short pi_KeyID) override;
+    IMAGEPP_EXPORT size_t           EraseKey(unsigned short pi_KeyID);
 
     // Utility methods
     IMAGEPP_EXPORT bool             HasKey (unsigned short pi_KeyID) const;
@@ -131,22 +129,22 @@ public:
     //Static methods
     IMAGEPP_EXPORT static unsigned short DecodeGeoKeyIDFromString(const WString& pi_rGeoTagLabel);
 
-    IMAGEPP_EXPORT static HFCPtr<HGF2DTransfoModel> GetTransfoModelForReprojection(const HFCPtr<HGF2DCoordSys>&         pi_rpRasterCoordSys,
+    IMAGEPP_EXPORT static HFCPtr<HGF2DTransfoModel> GetTransfoModelForReprojection(const HFCPtr<HGF2DCoordSys>&        pi_rpRasterCoordSys,
                                                                                   const HGF2DExtent&                   pi_rRasterExtent,
                                                                                   const HGF2DExtent&                   pi_rMinimumRasterPixelRange,
-                                                                                  const IRasterBaseGcsCP               pi_rpSourceCoordSys,
-                                                                                  const IRasterBaseGcsCP               pi_rpDestCoordSys,
+                                                                                  GeoCoordinates::BaseGCSCR            pi_rpSourceCoordSys,
+                                                                                  GeoCoordinates::BaseGCSCR            pi_rpDestCoordSys,
                                                                                   const HFCPtr<HGF2DWorldCluster>&     pi_rpWorldCluster);
 
-    IMAGEPP_EXPORT static HFCPtr<HGF2DTransfoModel>GetTransfoModelForReprojection(const HFCPtr<HRFRasterFile>&         pi_rpSrcRasterFile,
-                                                                          uint32_t                            pi_PageNumber,
-                                                                          const IRasterBaseGcsCP               pi_rpDestCoordSys,
-                                                                          const HFCPtr<HGF2DWorldCluster>&     pi_rpWorldCluster,
-                                                                          const IRasterBaseGcsCP               pi_rpOverwriteSourceCoordSys);
+    IMAGEPP_EXPORT static HFCPtr<HGF2DTransfoModel>GetTransfoModelForReprojection(const HFCPtr<HRFRasterFile>&  pi_rpSrcRasterFile,
+                                                                          uint32_t                              pi_PageNumber,
+                                                                          GeoCoordinates::BaseGCSCP             pi_rpDestCoordSys,
+                                                                          const HFCPtr<HGF2DWorldCluster>&      pi_rpWorldCluster,
+                                                                          GeoCoordinates::BaseGCSCP             pi_rpOverwriteSourceCoordSys);
 
-    static HFCPtr<HGF2DTransfoModel> GetTransfoModelToMeters(IRasterBaseGcsCR pi_rpProjection);
+    static HFCPtr<HGF2DTransfoModel> GetTransfoModelToMeters(GeoCoordinates::BaseGCSCR pi_rpProjection);
 
-    static HFCPtr<HGF2DTransfoModel> GetTransfoModelFromMeters(IRasterBaseGcsCR pi_rpProjection);
+    static HFCPtr<HGF2DTransfoModel> GetTransfoModelFromMeters(GeoCoordinates::BaseGCSCR pi_rpProjection);
 
 
      static HFCPtr<HGF2DTransfoModel> GetTransfoModelForReprojection(const HFCPtr<HRFRasterFile>&         pi_rpSrcRasterFile,
@@ -198,9 +196,6 @@ private:
 
 //    int             CreateBaseGeoCoord(bool pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation = false);
 
-//    void            FinalizeInit(Int32                 pi_BaseGCSInitStatus,
-//                                 IRasterBaseGcsPtr&    pi_rpBaseGeoCoord,
-//                                 bool                 pi_InitFromWKTorBaseGCS = false);
 
     // Not implemented
     HCPGeoTiffKeys&   operator=(const HCPGeoTiffKeys& pi_rObj);

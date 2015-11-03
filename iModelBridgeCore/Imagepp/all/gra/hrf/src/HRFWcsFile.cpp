@@ -437,7 +437,7 @@ void HRFWCSFile::CreateDescriptors(uint64_t pi_Width,
         throw HRFMissingParameterException(GetURL()->GetURL(),
                                         L"crs");
 
-    IRasterBaseGcsPtr baseGCS;
+    GeoCoordinates::BaseGCSPtr pBaseGCS;
 
     // skip "crs="
     Pos += 4;
@@ -450,7 +450,7 @@ void HRFWCSFile::CreateDescriptors(uint64_t pi_Width,
         WString keyName;
         BeStringUtilities::CurrentLocaleCharToWChar(keyName, CRS.c_str());
 
-        baseGCS = GCSServices->_CreateRasterBaseGcsFromKeyName(keyName.c_str());
+        pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS(keyName.c_str());
 
 #if (0)
 
@@ -514,11 +514,14 @@ void HRFWCSFile::CreateDescriptors(uint64_t pi_Width,
         pGeoTiffKeys->AddKey(GeogLinearUnits, (uint32_t)TIFFGeo_Linear_Meter);
         }
 
-    IRasterBaseGcsPtr baseGCS = HRFGeoCoordinateProvider::CreateRasterGcsFromGeoTiffKeys(NULL, NULL, pGeoTiffKeys);
+    GeoCoordinates::BaseGCSPtr pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
+
+    //&&AR when failing is it OK to return NULL? or we have something partially valid that will preserve unknown data or something?
+    pBaseGCS->InitFromGeoTiffKeys (NULL, NULL, pGeoTiffKeys.GetPtr());
 #endif
 
-    if (baseGCS != NULL && !baseGCS->IsValid())
-        baseGCS = NULL;
+    if (pBaseGCS != NULL && !pBaseGCS->IsValid())
+        pBaseGCS = NULL;
 
 
     HFCPtr<HRFPageDescriptor> pPage = new HRFPageDescriptor (GetAccessMode(),
@@ -528,7 +531,7 @@ void HRFWCSFile::CreateDescriptors(uint64_t pi_Width,
                                                              0,
                                                              0,
                                                              0,
-                                                             CreateTransfoModel(baseGCS.get(), pi_Width, pi_Height),
+                                                             CreateTransfoModel(pBaseGCS.get(), pi_Width, pi_Height),
                                                              0,
                                                              0,
                                                              0,
@@ -539,7 +542,7 @@ void HRFWCSFile::CreateDescriptors(uint64_t pi_Width,
                                                              m_MaxImageSize.m_Width,
                                                              m_MaxImageSize.m_Height);
 
-    pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(baseGCS.get()));
+    pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pBaseGCS.get()));
 
 
     m_ListOfPageDescriptor.push_back(pPage);

@@ -56,8 +56,6 @@
 #include <MrSid/MrSIDImageReader.h>
 #include <MrSid/lti_dynamicRangeFilter.h>
 
-#include <Imagepp/all/h/interface/IRasterGeoCoordinateServices.h>
-
 
 using namespace LizardTech;
 
@@ -590,18 +588,19 @@ void HRFMrSIDFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
 
     // Update the model in each page
     HFCPtr<HRFPageDescriptor>     pPageDescriptor     = GetPageDescriptor(0);
-    RasterFileGeocoding const& pFileGeocoding(pPageDescriptor->GetRasterFileGeocoding());
-    IRasterBaseGcsCP pBaseGCS = pPageDescriptor->GetGeocodingCP();
+    GeoCoordinates::BaseGCSCP pBaseGCS = pPageDescriptor->GetGeocodingCP();
 
     // In addition to the georeference, for some weird reason the fact the original georeference possesed an indication that of
     // the model type is used int he creation of the transformation matrix below
-    if (pBaseGCS != 0)
+    if (pBaseGCS != nullptr)
         {
         HFCPtr<HGF2DTransfoModel> pTransfoModel;
         bool                     DefaultUnitWasFound = false;
 
+        RasterFileGeocodingCR fileGeocoding = pPageDescriptor->GetRasterFileGeocoding();
+
         bool hasGTModel(false);
-        hasGTModel = pFileGeocoding.GetGeoTiffKeys().HasKey(GTModelType);
+        hasGTModel = fileGeocoding.GetGeoTiffKeys().HasKey(GTModelType);
 
 
         // TranfoModel
@@ -1141,7 +1140,8 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
             // TR 239138 - If a WKT is found in the file and a BaseGCS object cannot
             // be created with the GeoTIFF keys, try to create a BaseGCS object with the WKT
             // instead
-            if (GCSServices->_IsAvailable() && MyMetaDataReader.has("IMAGE::WKT"))
+            if (/*&&AR GCS review GCSServices->_IsAvailable() &&*/ 
+                MyMetaDataReader.has("IMAGE::WKT"))
                 {
                 MyMetaDataReader.get("IMAGE::WKT", pMetaRecord);
                 if (pMetaRecord)
@@ -1158,7 +1158,10 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
                         {
                         //If a basegeocoord cannot be created with the GeoTIFF tags found
                         //and there is a WKT string, try with the WKT string
-                        po_pFileGeocoding = RasterFileGeocoding::Create(HRFGeoCoordinateProvider::CreateRasterGcsFromWKT(NULL, NULL, IRasterGeoCoordinateServices::WktFlavorOGC, WKT.c_str()).get());
+
+                        GeoCoordinates::BaseGCSPtr pBaseGcs = GeoCoordinates::BaseGCS::CreateGCS();
+                        if(SUCCESS == pBaseGcs->InitFromWellKnownText (NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, WKT.c_str()))
+                            po_pFileGeocoding = RasterFileGeocoding::Create(pBaseGcs.get()); 
                         }
                     }
                 }

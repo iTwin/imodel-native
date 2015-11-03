@@ -68,11 +68,6 @@
 
 #include <Imagepp/all/h/HCPGeoTiffKeys.h>
 
-#include <Imagepp/all/h/interface/IRasterGeoCoordinateServices.h>
-
-
-
-
 //-----------------------------------------------------------------------------
 // HRFiTiffStripBlockCapabilities
 //-----------------------------------------------------------------------------
@@ -1500,7 +1495,7 @@ void HRFiTiffFile::CreateDescriptors()
             }
 
         //Geocoding Information
-        IRasterBaseGcsPtr pBaseGCS;
+        GeoCoordinates::BaseGCSPtr pBaseGCS;
 
         if (!pHMRHeader->m_WellKnownText.empty())
             {
@@ -1509,16 +1504,18 @@ void HRFiTiffFile::CreateDescriptors()
             WString WktGeocode;
             BeStringUtilities::CurrentLocaleCharToWChar(WktGeocode, pHMRHeader->m_WellKnownText.c_str());
 
-            pBaseGCS = HRFGeoCoordinateProvider::CreateRasterGcsFromWKT(NULL, NULL, IRasterGeoCoordinateServices::WktFlavorUnknown, WktGeocode.c_str());
+            pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
 
-//            pGeoTiffKeys = ExtractGeocodingInformationFromWKT (pHMRHeader->m_WellKnownText);
+            //&&AR when failing is it OK to return NULL? or we have something partially valid that will preserve unknown data or something?
+            if(SUCCESS != pBaseGCS->InitFromWellKnownText (NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorUnknown, WktGeocode.c_str()))
+                pBaseGCS = nullptr;
             }
 
         // set keys since WKT was not used
 
         HFCPtr<HCPGeoTiffKeys> pGeoTiffKeys = 0;
 
-        if (pBaseGCS == 0)
+        if (pBaseGCS == nullptr)
             {
             char*  pString;
             unsigned short GeoShortValue;
@@ -1956,10 +1953,10 @@ void HRFiTiffFile::SaveiTiffFile()
                             if (fileGeocoding.GetGeocodingCP() != NULL)
                                 {
                                 WString WellKnownText;
-                                fileGeocoding.GetGeocodingCP()->GetWellKnownText(WellKnownText, IRasterGeoCoordinateServices::WktFlavorOGC);
+                                fileGeocoding.GetGeocodingCP()->GetWellKnownText(WellKnownText, GeoCoordinates::BaseGCS::wktFlavorOGC);
 
                                 if (WellKnownText == L"")
-                                    fileGeocoding.GetGeocodingCP()->GetWellKnownText(WellKnownText, IRasterGeoCoordinateServices::WktFlavorESRI);
+                                    fileGeocoding.GetGeocodingCP()->GetWellKnownText(WellKnownText, GeoCoordinates::BaseGCS::wktFlavorESRI);
 
                                 size_t  destinationBuffSize = WellKnownText.GetMaxLocaleCharBytes();
                                 char*  WellKnownTextMBS= (char*)_alloca (destinationBuffSize);
@@ -2048,30 +2045,6 @@ bool HRFiTiffFile::Write3DMatrixToTiffTag(HFCMatrix<4, 4>& pi_r3DMatrix)
 
     return Ret;
     }
-
-
-//-----------------------------------------------------------------------------
-// Protected
-// Create3DMatrixFromiTiffTag
-//-----------------------------------------------------------------------------
-RasterFileGeocodingPtr  HRFiTiffFile::ExtractGeocodingInformationFromWKT(string& pi_wkt) const
-    {
-    RasterFileGeocodingPtr pGeocoding(RasterFileGeocoding::Create());
-
-    if (!pi_wkt.empty() && GCSServices->_IsAvailable())
-        {
-
-            WString WellKnownText;
-            BeStringUtilities::CurrentLocaleCharToWChar( WellKnownText,pi_wkt.c_str());
-                                                                                                             
-            IRasterBaseGcsPtr pBaseGCS = HRFGeoCoordinateProvider::CreateRasterGcsFromWKT(NULL, NULL, IRasterGeoCoordinateServices::WktFlavorUnknown, WellKnownText.c_str());
-            pGeocoding = RasterFileGeocoding::Create(pBaseGCS.get());
-            
-        }
-
-    return pGeocoding;
-    }
-
 
 //-----------------------------------------------------------------------------
 // Protected
