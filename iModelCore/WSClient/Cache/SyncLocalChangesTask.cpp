@@ -135,6 +135,9 @@ void SyncLocalChangesTask::SyncNextCacheChangeGroup()
         ->Then(m_ds->GetCacheAccessThread(), [=]
         {
         m_changeGroupIndexToSyncNext++;
+        SyncNextCacheChangeGroup();
+        });
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
@@ -204,10 +207,8 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
                     };
                 }
 
-            for (auto changeGroup : *changesetChangeGroups)
-                {
+            for (size_t i = 0; i < changesetChangeGroups->size(); ++i)
                 SyncNextCacheChangeGroup();
-                }
 
             txn.Commit();
             });
@@ -217,6 +218,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_MERGE
 bool SyncLocalChangesTask::CanSyncChangeset(ChangeGroupCR changeGroup) const
     {
     return
@@ -224,6 +226,7 @@ bool SyncLocalChangesTask::CanSyncChangeset(ChangeGroupCR changeGroup) const
         m_serverInfo.GetWebApiVersion() >= BeVersion(2, 1) &&
         changeGroup.GetFileChange().GetChangeStatus() == IChangeManager::ChangeStatus::NoChange;
     }
+#endif
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
@@ -538,6 +541,7 @@ bmap<ObjectId, ECInstanceKey>& changesetIdMapOut,
 bvector<ChangeGroup*>& changesetChangeGroupsOut
 )
     {
+#ifdef WIP_MERGE
     for (auto i = m_changeGroupIndexToSyncNext; i < m_changeGroups.size(); ++i)
         {
         ChangeGroup& changeGroup = *m_changeGroups[i];
@@ -566,6 +570,7 @@ bvector<ChangeGroup*>& changesetChangeGroupsOut
         changesetChangeGroupsOut.push_back(&changeGroup);
         m_changeGroupIndexToSyncNext += 1;
         }
+#endif
 
     if (changesetChangeGroupsOut.empty())
         {
@@ -579,6 +584,7 @@ bvector<ChangeGroup*>& changesetChangeGroupsOut
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_MERGE
 WSChangeset::Instance* SyncLocalChangesTask::AddChangeToChangeset
 (
 IDataSourceCache& cache,
@@ -668,7 +674,8 @@ bmap<ObjectId, ECInstanceKey>& changesetIdMapOut
     BeAssert(false && "Change state not supported");
     return nullptr;
     }
-
+#endif
+    
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
