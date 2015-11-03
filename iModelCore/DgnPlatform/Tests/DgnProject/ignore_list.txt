@@ -4,8 +4,6 @@
 DimensionHandler.CreateAngularTypes                     # Josh -- We'll need this for markups in Graphite04 -- On non-Windows - Problem setting range of dimension text
 DimensionHandler.CreateLabelLineDimension               # Josh -- We'll need this for markups in Graphite04 -- On non-Windows - Problem setting range of dimension text
 
-ComponentModelTest.SimulateDeveloperAndClient           # Sam - working on ComponentModels ...
-
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
