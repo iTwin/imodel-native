@@ -128,6 +128,26 @@ WSChangeset::Instance& WSChangeset::AddInstance(ObjectId instanceId, ChangeState
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+WSChangeset::Instance* WSChangeset::FindInstance(ObjectIdCR id) const
+    {
+    for (auto& instance : m_instances)
+        {
+        if (id == instance->m_id)
+            {
+            return instance.get();
+            }
+        auto related = instance->FindRelatedInstance(id);
+        if (nullptr != related)
+            {
+            return related;
+            }
+        }
+    return nullptr;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool WSChangeset::RemoveInstance(Instance& instanceToRemove)
@@ -171,6 +191,46 @@ JsonValuePtr properties
     relationship->m_instance.m_properties = properties;
 
     return relationship->m_instance;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+WSChangeset::Instance* WSChangeset::Instance::FindRelatedInstance(ObjectIdCR id) const
+    {
+    for (auto& relationship : m_relationships)
+        {
+        if (id == relationship->m_instance.m_id)
+            {
+            return &relationship->m_instance;
+            }
+        auto related = relationship->m_instance.FindRelatedInstance(id);
+        if (nullptr != related)
+            {
+            return related;
+            }
+        }
+    return nullptr;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool WSChangeset::Instance::RemoveRelatedInstance(Instance& instanceToRemove)
+    {
+    for (auto& relationship : m_relationships)
+        {
+        if (&relationship->m_instance == &instanceToRemove)
+            {
+            m_relationships.erase(&relationship);
+            return true;
+            }
+        if (relationship->m_instance.RemoveRelatedInstance(instanceToRemove))
+            {
+            return true;
+            }
+        }
+    return false;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -402,26 +462,6 @@ size_t WSChangeset::Instance::CountRelatedInstances() const
         count += relationship->m_instance.CountRelatedInstances();
         }
     return count;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool WSChangeset::Instance::RemoveRelatedInstance(Instance& instanceToRemove)
-    {
-    for (auto& relationship : m_relationships)
-        {
-        if (&relationship->m_instance == &instanceToRemove)
-            {
-            m_relationships.erase(&relationship);
-            return true;
-            }
-        if (relationship->m_instance.RemoveRelatedInstance(instanceToRemove))
-            {
-            return true;
-            }
-        }
-    return false;
     }
 
 /*--------------------------------------------------------------------------------------+

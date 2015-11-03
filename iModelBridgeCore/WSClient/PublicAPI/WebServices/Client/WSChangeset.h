@@ -41,8 +41,12 @@ struct WSChangeset
     public:
         WSCLIENT_EXPORT WSChangeset();
 
-        //! Add 
+        //! Add new instance
         WSCLIENT_EXPORT Instance& AddInstance(ObjectId instanceId, ChangeState state, JsonValuePtr properties);
+
+        //! Find instance in changeset by its id. If multiple instnaces with same id exist, first one will be returned.
+        //! Null will be returned if instnace was not found.
+        WSCLIENT_EXPORT Instance* FindInstance(ObjectIdCR id) const;
 
         //! Remove added instance, will preserve existing pointers.
         //! @return true if removed, false if not found
@@ -81,8 +85,6 @@ struct WSChangeset::Instance
         bvector<std::shared_ptr<Relationship>> m_relationships;
 
     private:
-        bool RemoveRelatedInstance(Instance& instance);
-
         size_t CountRelatedInstances() const;
         size_t CalculateSize() const;
         void ToJson(JsonValueR instanceJsonOut) const;
@@ -102,6 +104,7 @@ struct WSChangeset::Instance
         static ObjectId GetObjectIdFromInstance(RapidJsonValueCR instance);
 
     public:
+        //! Add related instance
         WSCLIENT_EXPORT Instance& AddRelatedInstance
             (
             ObjectId relId,
@@ -111,6 +114,10 @@ struct WSChangeset::Instance
             ChangeState state,
             JsonValuePtr properties
             );
+        //! Find related instance. Returns null if no matches found
+        WSCLIENT_EXPORT Instance* FindRelatedInstance(ObjectIdCR id) const;
+        //! Remove related instance. Returns false if nothing to remove
+        WSCLIENT_EXPORT bool RemoveRelatedInstance(Instance& instance);
 
         WSCLIENT_EXPORT ObjectIdCR GetId() const;
         WSCLIENT_EXPORT ChangeState GetState() const;
