@@ -863,7 +863,7 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ECDbClassMap
     if (parentClassMap)
         m_parentMapClassId = parentClassMap->GetClass().GetId();
 
-    auto& pm = mapInfo.GetPropertyMaps(false);
+    auto& pm = mapInfo.GetPropertyMaps(true);
     if (pm.empty())
         SetTable(const_cast<ECDbSqlTable*>(GetECDbMap().GetSQLManager().GetNullTable()));
     else
