@@ -328,6 +328,10 @@ void CacheChangeGroup::AddDependency(CacheChangeGroupPtr other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CacheChangeGroup::DoesDependOn(CacheChangeGroupPtr other) const
     {
+    if (nullptr == other)
+        {
+        return false;
+        }
     auto it = std::find(m_dependsOn.begin(), m_dependsOn.end(), other);
     if (it == m_dependsOn.end())
         {

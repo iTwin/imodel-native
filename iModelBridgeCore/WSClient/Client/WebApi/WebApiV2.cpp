@@ -437,11 +437,11 @@ ICancellationTokenPtr cancellationToken
 
     return request.PerformAsync()->Then<WSChangesetResult>([this] (HttpResponse& response)
         {
-        if (HttpStatus::OK == response.GetHttpStatus())
+        if (HttpStatus::OK != response.GetHttpStatus())
             {
-            return WSChangesetResult::Success();
+            return WSChangesetResult::Error(response);
             }
-        return WSChangesetResult::Error(response);
+        return WSChangesetResult::Success(response.GetContent()->GetBody());
         });
     }
 

@@ -113,7 +113,8 @@ struct CachingDataSource :
             (
             std::shared_ptr<bset<ECInstanceKey>> instancesToSync,
             SyncProgressCallback onProgress,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr cancellationToken,
+            SyncOptions options
             );
 
     public:
@@ -230,14 +231,16 @@ struct CachingDataSource :
         WSCACHE_EXPORT AsyncTaskPtr<BatchResult> SyncLocalChanges
             (
             SyncProgressCallback onProgress,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr cancellationToken,
+            SyncOptions options = SyncOptions()
             ) override;
 
         WSCACHE_EXPORT AsyncTaskPtr<BatchResult> SyncLocalChanges
             (
             const bset<ECInstanceKey>& objectsToSync,
             SyncProgressCallback onProgress,
-            ICancellationTokenPtr cancellationToken
+            ICancellationTokenPtr cancellationToken,
+            SyncOptions options = SyncOptions()
             ) override;
 
         WSCACHE_EXPORT AsyncTaskPtr<BatchResult> SyncCachedData
