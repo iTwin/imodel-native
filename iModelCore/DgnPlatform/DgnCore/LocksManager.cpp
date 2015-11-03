@@ -62,8 +62,6 @@ void LockRequest::Insert(DgnElementCR el, LockLevel level)
     Insert(LockableId(el.GetElementId()), level);
     if (LockLevel::Exclusive == level)
         {
-        Insert(el.GetDgnDb(), LockLevel::Shared);
-
         DgnModelPtr model = el.GetModel();
         BeAssert(model.IsValid());
         if (model.IsValid())
@@ -77,7 +75,7 @@ void LockRequest::Insert(DgnElementCR el, LockLevel level)
 void LockRequest::Insert(DgnModelCR model, LockLevel level)
     {
     Insert(LockableId(model.GetModelId()), level);
-    if (LockLevel::Exclusive == level)
+    if (LockLevel::None != level)
         Insert(model.GetDgnDb(), LockLevel::Shared);
     }
 

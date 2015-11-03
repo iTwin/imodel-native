@@ -97,7 +97,6 @@ struct RequestConflictsVirtualSet : LockRequestVirtualSet
         // input: an entry for a lock ID in our request, from the server's db
         // output: true if the input lock conflicts with our request
         DgnLockCP found = m_request.Find(lock.GetLockableId());
-        BeAssert(nullptr != found);
         return nullptr != found && (found->IsExclusive() || lock.IsExclusive());
         }
 };
@@ -203,7 +202,7 @@ bool LocksServer::AreLocksAvailable(LockRequestCR reqs, BeBriefcaseId bcId)
     Statement stmt;
     stmt.Prepare(m_db, "SELECT count(*) FROM " SERVER_Table
                    " WHERE " SERVER_BcId " != ?"
-                   " AND NOT InVirtualSet(@vset," SERVER_LockType "," SERVER_LockId "," SERVER_Exclusive ")");
+                   " AND InVirtualSet(@vset," SERVER_LockType "," SERVER_LockId "," SERVER_Exclusive ")");
 
     RequestConflictsVirtualSet vset(reqs);
     bindBcId(stmt, 1, bcId);
@@ -322,11 +321,13 @@ int32_t LocksServer::QueryLockCount(BeBriefcaseId bc)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LocksServer::Dump(Utf8CP descr)
     {
+#ifdef DUMP_SERVER
     Statement stmt;
     stmt.Prepare(m_db, "SELECT * FROM " SERVER_Table);
     printf(">>>> %s >>>>\n", nullptr != descr ? descr : "Dumping Server");
     stmt.DumpResults();
     printf("<<<<<<<<<<<<<<<<<<<<<<<<\n");
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -346,9 +347,8 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
 
     virtual ILocksServerP _GetLocksServer(DgnDbR) const override { return &m_server; }
 
-    DgnDbPtr SetupDb(WCharCP testFile, BeBriefcaseId bcId)
+    DgnDbPtr SetupDb(WCharCP testFile, BeBriefcaseId bcId, WCharCP baseFile=L"3dMetricGeneral.idgndb")
         {
-        WCharCP baseFile = L"3dMetricGeneral.idgndb";
         BeFileName outFileName;
         EXPECT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, baseFile, testFile, __FILE__));
         auto db = DgnDb::OpenDgnDb(nullptr, outFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
@@ -400,20 +400,14 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
 
     template<typename T> LockStatus Acquire(T const& obj, LockLevel level)
         {
-#ifdef DUMP_SERVER
-        printf("Before acquiring locks...\n");
-        m_server.Dump();
-#endif
+        m_server.Dump("Before acquiring locks");
 
         LockRequest req;
         req.Insert(obj, level);
         DgnDbR db = ExtractDgnDb(obj);
         LockStatus status = db.Locks().AcquireLocks(req);
 
-#ifdef DUMP_SERVER
-        printf("After acquiring locks...\n");
-        m_server.Dump();
-#endif
+        m_server.Dump("After acquiring locks");
 
         return status;
         }
@@ -485,7 +479,7 @@ TEST_F(SingleBriefcaseLocksTest, AcquireLocks)
     ExpectAcquire(model, LockLevel::Shared);
     ExpectLevel(model, LockLevel::Shared);
     ExpectLevel(el, LockLevel::None);
-    ExpectLevel(db, LockLevel::None);
+    ExpectLevel(db, LockLevel::Shared); // a shared lock on a model => shared lock on DB
 
     ExpectAcquire(model, LockLevel::Exclusive);
     ExpectLevel(model, LockLevel::Exclusive);
@@ -531,6 +525,18 @@ TEST_F(SingleBriefcaseLocksTest, AcquireLocks)
     ExpectLevel(model, LockLevel::Exclusive);
     ExpectLevel(el, LockLevel::Exclusive);
     ExpectLevel(db, LockLevel::Exclusive);
+    
+    // If we obtain an exclusive lock on a model, exclusive locks on its elements should be retained after refresh
+    EXPECT_EQ(LockStatus::Success, db.Locks().RelinquishLocks());
+    ExpectAcquire(model, LockLevel::Exclusive);
+    ExpectLevel(model, LockLevel::Exclusive);
+    ExpectLevel(el, LockLevel::Exclusive);
+    ExpectLevel(db, LockLevel::Shared);
+
+    EXPECT_EQ(LockStatus::Success, db.Locks().RefreshLocks());
+    ExpectLevel(model, LockLevel::Exclusive);
+    ExpectLevel(el, LockLevel::Exclusive);
+    ExpectLevel(db, LockLevel::Shared);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -547,9 +553,9 @@ TEST_F(SingleBriefcaseLocksTest, LocallyCreatedObjects)
 
     // Create a new model
     DgnModelPtr newModel = CreateModel("NewModel");
-#ifdef DUMP_SERVER
+
     m_server.Dump("Created Model");
-#endif
+
     ExpectLevel(db, LockLevel::Shared);
     ExpectLevel(*newModel, LockLevel::Exclusive);
     ExpectLevel(*model, LockLevel::None);
@@ -565,9 +571,9 @@ TEST_F(SingleBriefcaseLocksTest, LocallyCreatedObjects)
 
     // Create a new element in our new model
     DgnElementCPtr newElem = CreateElement(*newModel);
-#ifdef DUMP_SERVER
+
     m_server.Dump("Created Element");
-#endif
+
     ExpectLevel(db, LockLevel::Shared);
     ExpectLevel(*newModel, LockLevel::Shared);
     ExpectLevel(*newElem, LockLevel::Exclusive);
@@ -594,9 +600,86 @@ TEST_F(SingleBriefcaseLocksTest, LocallyCreatedObjects)
     ExpectLevel(*newElem, LockLevel::Exclusive);
     ExpectLevel(db, LockLevel::Shared);
 
-#ifdef DUMP_SERVER
     m_server.Dump("Finished");
-#endif
     }
 
+/*---------------------------------------------------------------------------------**//**
+* Simulate two briefcases operating against the same master DgnDb.
+* @bsistruct                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct DoubleBriefcaseTest : LocksManagerTest
+{
+    DEFINE_T_SUPER(LocksManagerTest);
+
+    DgnDbPtr m_dbA;
+    DgnDbPtr m_dbB;
+
+    static WCharCP SeedFileName() { return L"ElementsSymbologyByLeveldgn.i.idgndb"; }
+    static DgnModelId Model3dId() { return DgnModelId((uint64_t)2); }
+    static DgnModelId Model2dId() { return DgnModelId((uint64_t)3); }
+
+    static DgnElementId Elem3dId1() { return DgnElementId((uint64_t)8); }
+    static DgnElementId Elem3dId2() { return DgnElementId((uint64_t)9); }
+    static DgnElementId Elem2dId1() { return DgnElementId((uint64_t)11); }
+    static DgnElementId Elem2dId2() { return DgnElementId((uint64_t)12); }
+
+    DgnModelPtr GetModel(DgnDbR db, bool twoD) { return db.Models().GetModel(twoD ? Model2dId() : Model3dId()); }
+    DgnElementCPtr GetElement(DgnDbR db, DgnElementId id) { return db.Elements().GetElement(id); }
+
+    void SetupDbs()
+        {
+        m_dbA = SetupDb(L"DbA.dgndb", BeBriefcaseId(1), SeedFileName());
+        m_dbB = SetupDb(L"DbB.dgndb", BeBriefcaseId(2), SeedFileName());
+        ASSERT_TRUE(m_dbA.IsValid());
+        ASSERT_TRUE(m_dbB.IsValid());
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DoubleBriefcaseTest, Contention)
+    {
+    SetupDbs();
+    DgnDbR dbA = *m_dbA;
+    DgnDbR dbB = *m_dbB;
+    DgnModelPtr modelA2d = GetModel(dbA, true);
+    DgnModelPtr modelB2d = GetModel(dbB, true);
+    DgnElementCPtr elemA2d2 = GetElement(dbA, Elem2dId2());
+    DgnElementCPtr elemB2d2 = GetElement(dbB, Elem2dId2());
+
+    // Both briefcases can hold shared locks
+    ExpectAcquire(*modelA2d, LockLevel::Shared);
+    ExpectAcquire(*elemB2d2, LockLevel::Exclusive);
+    ExpectLevel(*modelA2d, LockLevel::Shared);
+    ExpectLevel(dbA, LockLevel::Shared);
+    ExpectLevel(*elemA2d2, LockLevel::None);
+    ExpectLevel(*modelB2d, LockLevel::Shared);
+    ExpectLevel(*elemB2d2, LockLevel::Exclusive);
+    ExpectLevel(dbB, LockLevel::Shared);
+
+    // No briefcase can exclusively lock a model if a shared lock already held on it by another briefcase
+    ExpectDenied(*modelA2d, LockLevel::Exclusive);
+    ExpectDenied(*elemA2d2, LockLevel::Exclusive);
+
+    // One briefcase can acquire exclusive lock on a model
+    DgnModelPtr modelA3d = GetModel(dbA, false);
+    DgnModelPtr modelB3d = GetModel(dbB, false);
+    ExpectAcquire(*modelA3d, LockLevel::Exclusive);
+    ExpectDenied(*modelB3d, LockLevel::Shared);
+    ExpectDenied(*modelB3d, LockLevel::Exclusive);
+
+    // One briefcase cannot obtain an exclusive lock on an element in a model exclusively locked by another briefcase
+    DgnElementCPtr elemA3d2 = GetElement(dbA, Elem3dId2());
+    DgnElementCPtr elemB3d2 = GetElement(dbB, Elem3dId2());
+    ExpectDenied(*elemB3d2, LockLevel::Exclusive);
+    ExpectLevel(*modelA3d, LockLevel::Exclusive);
+    ExpectLevel(*elemA3d2, LockLevel::Exclusive);
+    ExpectLevel(*modelB3d, LockLevel::None);
+    ExpectLevel(*elemB3d2, LockLevel::None);
+
+    // No briefcase can lock the db unless no shared locks exist
+    ExpectDenied(dbA, LockLevel::Exclusive);
+    ExpectDenied(dbB, LockLevel::Exclusive);
+    }
 
