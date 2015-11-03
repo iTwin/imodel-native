@@ -1,6 +1,0 @@
-This repository has moved to the Vancouver stream.
-
-You should be using this instead:
-http://vancouver.hgbranches.bentley.com/libsrc/jsoncpp/
-
-This is because both Vancovuer and Graphite must share this repository, and in such cases, Vancouver "owns" the shared repository.

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
+
+    <Part Name="BeJsonCpp">
+        <SubPart PartName="BeJsonCppStaticLib" />
+    </Part>
+
+    <!-- Bind my own PublicAPI and VendorAPI into BuildContext. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
+    <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="BeJsonCpp" />
+            <VendorAPI Domain="json" />
+        </Bindings>
+    </Part>
+
+    <Part Name="BeJsonCppStaticLib" BentleyBuildMakeFile="BeJsonCpp.mke">
+        <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
+        <SubPart PartName="BentleyApi" PartFile="BentleyApi" Repository="BentleyApi" />
+        <SubPart PartName="PublicAPI" />
+        <Bindings>
+            <PublicAPI Domain="BeJsonCpp" />
+            <VendorAPI Domain="json" />
+            <Libs ProductDirectoryName="BeJsonCppStaticLibDir" Required="false">Delivery/$(libprefix)BeJsonCpp$(stlibext)</Libs>
+            <Libs ProductDirectoryName="BeJsonCppStaticLibDir" Required="false">Delivery/$(libprefix)BeJsonCpp$(stlibdebugext)</Libs>
+            <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/jsoncpp-notice.txt</Files>
+        </Bindings>
+    </Part>
+
+</BuildContext>
