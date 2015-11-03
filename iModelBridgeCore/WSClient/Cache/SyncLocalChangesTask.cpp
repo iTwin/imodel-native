@@ -124,7 +124,7 @@ void SyncLocalChangesTask::SyncNext()
 
     if (m_changeGroupIndexToSyncNext >= m_changeGroups.size())
         {
-        ReportProgress(0, "");
+        ReportFinalProgress();
         OnSyncDone();
         return;
         }
@@ -138,10 +138,8 @@ void SyncLocalChangesTask::SyncNext()
         }
     else
         {
-        task = SyncChangeGroup(changeGroup)->Then(m_ds->GetCacheAccessThread(),[=]
-            {
-            m_changeGroupIndexToSyncNext++;
-            });
+        m_changeGroupIndexToSyncNext++;
+        task = SyncChangeGroup(changeGroup);
         }
 
     task->Then(m_ds->GetCacheAccessThread(), [=]
@@ -961,17 +959,32 @@ std::map<ECInstanceKey, Utf8String> SyncLocalChangesTask::ReadChangedRemoteIds(C
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                             Benediktas.Lipnickas   10/2013
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SyncLocalChangesTask::ReportProgress(double currentFileBytesUploaded, Utf8StringCR label) const
     {
-    double synced = (double) m_changeGroupIndexToSyncNext / m_changeGroups.size();
+    if (!m_onProgressCallback)
+        {
+        return;
+        }
+
+    double synced = (double) (m_changeGroupIndexToSyncNext - 1) / m_changeGroups.size();
     synced = trunc(synced * 100) / 100;
 
-    if (m_onProgressCallback)
+    m_onProgressCallback(synced, label, (double) m_totalBytesUploaded + currentFileBytesUploaded, (double) m_totalBytesToUpload);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncLocalChangesTask::ReportFinalProgress() const
+    {
+    if (!m_onProgressCallback)
         {
-        m_onProgressCallback(synced, label, (double) m_totalBytesUploaded + currentFileBytesUploaded, (double) m_totalBytesToUpload);
+        return;
         }
+
+    m_onProgressCallback(1, "", (double) m_totalBytesUploaded, (double) m_totalBytesToUpload);
     }
 
 /*--------------------------------------------------------------------------------------+
