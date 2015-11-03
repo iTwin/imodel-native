@@ -51,42 +51,42 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ElementHandlerApp -f TerrainModelElement -r TerrainModel re ElementHandler ElementHandlerApp -x64 </NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ElementHandlerApp -f TerrainModelElement -r TerrainModel re ElementHandler ElementHandlerApp -x64 </NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\TerrainModel\TerrainModelElementHandler\TerrainModelElementHandler.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>__BENTLEY_DTM_ELEMENT_BUILD__;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501;_WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;_DEBUG;TDORAY_PORT_EXCLUDED;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ElementHandlerApp -f TerrainModelElement -r TerrainModel re ElementHandler ElementHandlerApp -x64 -d"BMAKE_OPT=$(BMAKE_OPT) -a"
+    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ElementHandlerApp -f TerrainModelElement -r TerrainModel re ElementHandler ElementHandlerApp -x64 -d"BMAKE_OPT=$(BMAKE_OPT) -a"
 </NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ElementHandlerApp -f TerrainModelElement -r TerrainModel re ElementHandler ElementHandlerApp -x64 -c</NMakeCleanCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ElementHandlerApp -f TerrainModelElement -r TerrainModel re ElementHandler ElementHandlerApp -x64 -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(OutRoot)Winx64\BuildContexts\TerrainModelElement\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModelElement\VendorAPI</NMakeIncludeSearchPath>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
     <NMakeForcedIncludes>$(ProjectDir)stdafx.h</NMakeForcedIncludes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|Win32'">
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ElementHandlerApp -f TerrainModelElement -r TerrainModel re ElementHandler ElementHandlerApp -x64 
+    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ElementHandlerApp -f TerrainModelElement -r TerrainModel re ElementHandler ElementHandlerApp -x64 
 xcopy /S /Y /r  $(SrcRoot)TerrainModel\ElementHandler\PublicAPI\*.*  $(Root)\out\LKG\Winx64\TerrainModel\PublicAPI\TerrainModel\ElementHandler\
 xcopy /Y /r $(OutRoot)Winx64\Build\TerrainModelElement\TerrainModelElementHandler\TerrainModelElementHandler.lib $(Root)\out\LKG\Winx64\TerrainModelElement\Delivery\
 xcopy /Y /r $(OutRoot)Winx64\Build\TerrainModelElement\TerrainModelElementHandler\TerrainModelElementHandler.dll $(Root)\out\LKG\Winx64\TerrainModelElement\Delivery\</NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\TerrainModel\TerrainModelElementHandler\TerrainModelElementHandler.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>__BENTLEY_DTM_ELEMENT_BUILD__;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501;_WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;_DEBUG;TDORAY_PORT_EXCLUDED;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ElementHandlerApp -f TerrainModelElement -r TerrainModel re ElementHandler ElementHandlerApp -x64 -d"BMAKE_OPT=$(BMAKE_OPT) -a"
+    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ElementHandlerApp -f TerrainModelElement -r TerrainModel re ElementHandler ElementHandlerApp -x64 -d"BMAKE_OPT=$(BMAKE_OPT) -a"
 </NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ElementHandlerApp -f TerrainModelElement -r TerrainModel re ElementHandler ElementHandlerApp -x64 -c</NMakeCleanCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ElementHandlerApp -f TerrainModelElement -r TerrainModel re ElementHandler ElementHandlerApp -x64 -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(OutRoot)Winx64\BuildContexts\TerrainModelElement\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModelElement\VendorAPI</NMakeIncludeSearchPath>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
     <NMakeForcedIncludes>$(ProjectDir)stdafx.h</NMakeForcedIncludes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <NMakeBuildCommandLine>$(PythonDir)python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 ElementHandler*</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>$(PythonDir)python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py rebuild -x64 ElementHandler*</NMakeBuildCommandLine>
     <NMakeOutput>
     </NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>__BENTLEY_DTM_ELEMENT_BUILD__;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>$(PythonDir)python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 ElementHandler*</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>$(PythonDir)python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 ElementHandler* -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>$(PythonDir)python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py rebuild -x64 ElementHandler*</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>$(PythonDir)python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py rebuild -x64 ElementHandler* -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(ProjectDir)PublicAPI</NMakeIncludeSearchPath>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>

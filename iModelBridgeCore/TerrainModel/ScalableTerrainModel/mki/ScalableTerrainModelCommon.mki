@@ -1,20 +1,10 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: ScalableTerrainModel/mki/ScalableTerrainModelPolicy.mki $
+#     $Source: ScalableTerrainModel/mki/ScalableTerrainModelCommon.mki $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-%if defined (__ScalableTerrainModelPolicy_mki__)
-    %warn ScalableTerrainModelPolicy.mki is being included redundantly in $(_MakeFileSpec)
-    %if defined (DebugRedundantMkiIncludes)
-        %error DebugRedundantMkiIncludes is defined.
-    %endif  
-    %return
-%endif
-__ScalableTerrainModelPolicy_mki__=1
-
-OPTIMIZE_FOR_SPEED=1
 
 # ------------------------------------
 # Source directories
@@ -35,22 +25,18 @@ pluginsDir              = $(stmDir)Plugins/
 # ------------------------------------
 # Output directories
 # ------------------------------------
-OutBuildSTM         = $(OutBuildDir)ScalableTerrainModel/
+OutBuildSTM             = $(OutBuildDir)ScalableTerrainModel/
 
-#o = !Must be defined by individual mke files!
-o = $(OutBuildSTM)$(appName)/
+o                       = $(OutBuildSTM)$(appName)/
 
 %if !defined (BuildContext)
-    BuildContext=$(OutBuildContexts)ScalableTerrainModel/
+    BuildContext        = $(OutBuildContexts)ScalableTerrainModel/
 %endif
-ContextSubpartsLibs = $(BuildContext)SubParts/Libs/
 
 #----------------------------------------------------------
 # Compile and link settings
 #----------------------------------------------------------
-%include $(SharedMki)CommonCompileLinkPolicy.mki
-
-PublicApiIncludes + -I$(STMPrivateApiSrc)
+PublicApiIncludes       + -I$(STMPrivateApiSrc)
 
 # dlmlink.mki common options.
 DLM_DEST                    = $(o)

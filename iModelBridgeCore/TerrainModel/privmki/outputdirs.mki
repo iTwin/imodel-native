@@ -5,17 +5,10 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-%include $(SharedMki)bsioutputdirs.mki
+BuildDir                        = $(OutputRootDir)build/TerrainModel/
+BuildPublicApi                  = $(BuildDir)PublicAPI/
+gensrc                          = $(BuildDir)gensrc/
+terrainModelBuildDir_           = $(BuildDir)
+terrainModelElementBuildDir_    = $(OutputRootDir)build/TerrainModelElement/
 
-build           =       $(OutTerrainModel)
-buildPublicAPI  =       $(build)PublicAPI/
-gensrc          =       $(build)gensrc/
-
-
-#----------------------------------------------------------
-#  Location for symbols
-#----------------------------------------------------------
-symbolsDir          = $(OutTerrainModel)symbols/
-    symbolsDllDir   = $(symbolsDir)dll/
-    symbolsExeDir   = $(symbolsDir)exe/
 

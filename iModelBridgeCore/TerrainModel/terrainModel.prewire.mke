@@ -2,47 +2,29 @@
 #
 #     $Source: terrainModel.prewire.mke $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 
-PolicyFile = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
-
 %include mdl.mki
+%include $(SrcRoot)TerrainModel/privmki/sourcedirs.mki
+%include $(SrcRoot)TerrainModel/privmki/outputdirs.mki
 
 always:
-    !~@mkdir $(buildPublicAPI)TerrainModel/
-
-#FilesToPublish= \
-#$(TerrainModelCoreDir)PublicAPI/TerrainModel.h
- 
-
-# $(terrainmodelObj)PublicAPITerrainModel.stamp : $(FilesToPublish)
-#    "$(PythonPath)python" $(TerrainModelPublicAPISrc)MakePublicAPI.py \
-#                                --sourcedir=$(TerrainModelCoreDir)PublicAPI \
-#                                --outdir=$(buildPublicAPI)TerrainModel \
-#                                --template=$(TerrainModelPublicAPISrc)PublicAPI.tpl \
-#                                $?
-
-#                                 --privexports=d:\temp\PublicAPI_PrivateExports.txt
-
+    !~@mkdir $(BuildPublicApi)TerrainModel/
 
 always:
-  @CreateSymLinks.py "$(buildPublicAPI)TerrainModel/TerrainModel.h=$(TerrainModelAPISrc)TerrainModel.h"
+    @CreateSymLinks.py "$(BuildPublicApi)/TerrainModel/TerrainModel.h=$(TerrainModelAPISrc)TerrainModel.h"
 
+
+##  Symlink all src PublicAPI folders into build output PublicAPI folder
 always:
-   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/TerrainModel=$(buildPublicAPI)TerrainModel"
+   ~linkdir "$(BuildPublicApi)TerrainModel/Core=$(TerrainModelCoreDir)PublicAPI"
+   ~linkdir "$(BuildPublicApi)TerrainModel/Formats=$(TerrainModelFormatsDir)PublicAPI"
+   ~linkdir "$(BuildPublicApi)TerrainModel/ElementHandler=$(TerrainModelElementHandlerDir)PublicAPI"
+   ~linkdir "$(BuildPublicApi)TerrainModel/Drainage=$(TerrainModelDrainageDir)PublicAPI"
 
-## Move below into seperate prewires.
 
+##  Symlink build output PublicAPI folder into BuildContext PublicAPI folder
 always:
-   @CreateSymLinks.py -d"$(buildPublicAPI)TerrainModel/Core=$(TerrainModelCoreDir)PublicAPI"
-
-always:
-   @CreateSymLinks.py -d"$(buildPublicAPI)TerrainModel/Formats=$(TerrainModelFormatsDir)PublicAPI"
-
-always:
-   @CreateSymLinks.py -d"$(buildPublicAPI)TerrainModel/ElementHandler=$(TerrainModelElementHandlerDir)PublicAPI"
-
-always:
-   @CreateSymLinks.py -d"$(buildPublicAPI)TerrainModel/Drainage=$(TerrainModelDrainageDir)PublicAPI"
+   ~linkdir "$(BuildContext)PublicAPI/TerrainModel=$(BuildPublicApi)TerrainModel"

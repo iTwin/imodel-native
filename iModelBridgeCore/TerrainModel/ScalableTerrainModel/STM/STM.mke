@@ -5,11 +5,14 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
-baseDir         = $(_MakeFilePath)
-PolicyFile      = $(SrcRoot)ScalableTerrainModel/mki/AssertScalableTerrainModelPolicy.mki
-SolutionPolicyMki=$(baseDir)STM.mki
-
 %include  mdl.mki
+
+baseDir             = $(_MakeFilePath)
+%include $(SrcRoot)ScalableTerrainModel/mki/ScalableTerrainModelCommon.mki
+
+CompileOptionsMki   = $(baseDir)STM.mki
+%include (CompileOptionsMki)
+
 
 #----------------------------------------------------------------------
 #       Create output directories

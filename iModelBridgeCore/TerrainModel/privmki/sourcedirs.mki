@@ -2,7 +2,7 @@
 #
 #     $Source: privmki/sourcedirs.mki $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %if defined (__SourceDirs_MKI__)
@@ -30,10 +30,11 @@ privmki                       =       $(SrcDgnPlatform)privmki/
 #------------------------------------------------------
 # Header file locations in source tree
 #------------------------------------------------------
-TerrainModelPublicAPISrc    =  $(SrcTerrainModel)PublicAPI/
-TerrainModelAPISrc          =  $(TerrainModelPublicAPISrc)TerrainModel/
-TerrainModelCoreAPISrc      =  $(TerrainModelCoreDir)PublicAPI/
-TerrainModelFormatsAPISrc   =  $(TerrainModelFormatsDir)PublicAPI/
-TerrainModelDrainageAPISrc   =  $(TerrainModelDrainageDir)PublicAPI/
-TerrainModelSTMAPISrc   =  $(TerrainModelSTMDir)PublicAPI/
-TerrainModelElementHandlerAPISrc   =  $(TerrainModelElementHandlerDir)PublicAPI/
+TerrainModelPublicAPISrc            =  $(SrcTerrainModel)PublicAPI/
+#TerrainModelInternalApiSrc          =  $(SrcTerrainModel)PrivateApi/TerrainModelInternal/
+TerrainModelAPISrc                  =  $(TerrainModelPublicAPISrc)TerrainModel/
+TerrainModelCoreAPISrc              =  $(TerrainModelCoreDir)PublicAPI/
+TerrainModelFormatsAPISrc           =  $(TerrainModelFormatsDir)PublicAPI/
+TerrainModelDrainageAPISrc          =  $(TerrainModelDrainageDir)PublicAPI/
+TerrainModelSTMAPISrc               =  $(TerrainModelSTMDir)PublicAPI/
+TerrainModelElementHandlerAPISrc    =  $(TerrainModelElementHandlerDir)PublicAPI/

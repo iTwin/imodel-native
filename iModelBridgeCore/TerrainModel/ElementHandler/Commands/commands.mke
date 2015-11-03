@@ -5,14 +5,9 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
+%include  mdl.mki
 
 baseDir         = $(_MakeFilePath)
-PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelElementPolicy.mki
-#SolutionPolicyMki=$(baseDir)TerrainModelElementHandlerApp.mki
-
-appendMacroSeparator=;
-PolicyPaths+$(BuildContext)SubParts/Assemblies/
-%undef appendMacroSeparator
 
 # This isn't great, but we're in a weird situation.  For some reason this is in a separate
 #  partfile, but needs to access PowerPlatform.FeatureAspects.h.  This file is linked into
@@ -20,10 +15,6 @@ PolicyPaths+$(BuildContext)SubParts/Assemblies/
 #  I can make to get this building will be to just include it from the gensrc location.
 #  It might be better to call the PowerProductSDK-postwire part earlier?
 GensrcInclude = $(OutputRootDir)build/PowerPlatform/gensrc/
-
-%include  mdl.mki
-
-### To go into solution policy file
 
 BentleyTerrainModelcommandsObj       = $(terrainModelBuildDir_)Commands/
 
@@ -49,17 +40,10 @@ dirToSearch     = $(GensrcInclude)
 
 moreRscCompileOpts  + -i$(GensrcInclude)
 
-#MultiCompileIntermediatePdbFile=$(terrainModelHandlerAppObj)$(CCompPDBName).pdb
-#IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
+o               = $(BentleyTerrainModelcommandsObj)
+gensrcTransKit  = $(o)
 
-
-## End of Solution Policy..
-
-o = $(BentleyTerrainModelcommandsObj)
-gensrcTransKit = $(o)
-
-appName             = TerrainModelCommands
-sAppName            = TerrainModelCommands
+appName         = TerrainModelCommands
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -77,7 +61,7 @@ always:
 #----------------------------------------------------------------------
 appRscs = \
     $(o)commandsCmd.rsc \
-	$(o)commandsTyp.rsc
+    $(o)commandsTyp.rsc
 
 #----------------------------------------------------------------------
 #       Create output directory

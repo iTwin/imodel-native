@@ -104,7 +104,7 @@
     </Part>
 
     <Part Name="TestDependencies">
-        <SubPart PartName="nunit_2.5.10" PartFile="${SrcBsiCommon}CvsPartFiles\bsitools" Repository="bsitools-nunit_2.5.10" />
+        <SubPart PartName="nunit_2.5.10" PartFile="${SrcRoot}bsicommon\CvsPartFiles\bsitools" Repository="bsitools-nunit_2.5.10" />
         <SubPart PartName="HeaderFiles" />
     </Part>
 

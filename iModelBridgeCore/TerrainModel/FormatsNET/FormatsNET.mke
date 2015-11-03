@@ -1,47 +1,38 @@
 #--------------------------------------------------------------------------------------
 #      $Source: FormatsNET/FormatsNET.mke $
-#   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
-#----------------------------------------------------------------------------------------------------------------------------------------------------
-# 
-#----------------------------------------------------------------------------------------------------------------------------------------------------
-baseDir          = $(_MakeFilePath)
-PolicyFile       = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
-SolutionPolicyMki=$(baseDir)FormatsNET.mki
-
 %include  mdl.mki
 
+baseDir             = $(_MakeFilePath)
+CompileOptionsMki   = $(baseDir)FormatsNET.mki
+%include $(CompileOptionsMki)
 
 %ifdef CREATE_STATIC_LIBRARIES
 %error can't be build as a static library
 %endif
 
-#GeneratedCppDir         = $(baseDir)GeneratedCpp/
-#GeneratedApiDir         = $(baseDir)GeneratedApi/
-#ManagedCommonDir        = $(baseDir)Common/
-
 #----------------------------------------------------------------------
 #       Define outputs
 #----------------------------------------------------------------------
-o = $(BentleyFormatsNetObj)
+o               = $(BentleyFormatsNetObj)
+appName         = Bentley.TerrainModelNET.Formats
 
-appName               = Bentley.TerrainModelNET.Formats
+%include $(SrcRoot)TerrainModel/privmki/TerrainModelCommon.mki
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
-# 
+#
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 always:
     ~mkdir $(o)
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
-# 
+#
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 %include compileForCLRStart.mki
 
 #....................................................................................................................................................
 CCompDebugOptions = $(CCompDebugOffSwitch)
-
-#$(o)FxCopSuppressions$(oext) : $(baseDir)FxCopSuppressions.cpp
 
 CCompDebugOptions =% $[CCompDebugDefault]
 
@@ -50,17 +41,15 @@ CCompOpts + -AI$(ContextSubPartsAssembliesDir)
 #....................................................................................................................................................
 PchCompiland        = $(baseDir)StdAfx.cpp
 PchOutputDir        = $(o)
-PchExtraOptions    = -Zm150
-
-#PchArgumentsDepends     = $(MultiCompileDepends)
+PchExtraOptions     = -Zm150
 
 PchCompileForClr        = 1
 PchExtraOptions         + -AI$(ContextSubPartsAssembliesDir)
 
 %include $(SharedMki)PreCompileHeader.mki
 
-CCPchOpts = $(UsePrecompiledHeaderOptions)
-CPchOpts  = $(UsePrecompiledHeaderOptions)
+CCPchOpts               = $(UsePrecompiledHeaderOptions)
+CPchOpts                = $(UsePrecompiledHeaderOptions)
 PCHHeaderDependency     = $(o)$(PCHCompilandBaseName).pch
 PCHHeaderObject         = $(o)$(PCHCompilandBaseName)$(oext)
 
@@ -70,33 +59,33 @@ dirToSearch=$(baseDir)
 %include cincapnd.mki
 
 DependsOnHeaders = \
-$(DependsOnAssemblies) \
-$(basedir)Stdafx.h \
-$(basedir)TerrainImporter.h \
-$(basedir)TerrainExporter.h \
-$(basedir)LandXML.h \
-$(basedir)Lidar.h \
-$(basedir)Inroads.h \
-$(basedir)ImagePP.h \
-$(basedir)MX.h \
-$(PCHHeaderObject)
+    $(DependsOnAssemblies) \
+    $(basedir)Stdafx.h \
+    $(basedir)TerrainImporter.h \
+    $(basedir)TerrainExporter.h \
+    $(basedir)LandXML.h \
+    $(basedir)Lidar.h \
+    $(basedir)Inroads.h \
+    $(basedir)ImagePP.h \
+    $(basedir)MX.h \
+    $(PCHHeaderObject)
 
 #....................................................................................................................................................
 %include MultiCppCompileRule.mki
 
-$(o)LandXML$(oext)		: $(basedir)LandXML.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)LandXML$(oext)              : $(basedir)LandXML.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)Lidar$(oext)		: $(basedir)Lidar.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)Lidar$(oext)                : $(basedir)Lidar.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)Inroads$(oext)		: $(basedir)Inroads.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)Inroads$(oext)              : $(basedir)Inroads.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)ImagePP$(oext)		: $(basedir)ImagePP.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)ImagePP$(oext)              : $(basedir)ImagePP.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)MX$(oext)		: $(basedir)MX.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)MX$(oext)                   : $(basedir)MX.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)TerrainImporter$(oext)		: $(basedir)TerrainImporter.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)TerrainImporter$(oext)      : $(basedir)TerrainImporter.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)TerrainExporter$(oext)		: $(basedir)TerrainExporter.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)TerrainExporter$(oext)      : $(basedir)TerrainExporter.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
@@ -107,12 +96,12 @@ CCPchOpts =
 %include compileForCLRStop.mki
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
-# 
+#
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 DLM_NAME          = $(appName)
 DLM_DEST          = $(o)
 DLM_OBJECT_DEST   = $(o)
-DLM_OBJECT_FILES  = $(MultiCompileObjectList) $(PCHHeaderObject) 
+DLM_OBJECT_FILES  = $(MultiCompileObjectList) $(PCHHeaderObject)
 DLM_NOINITFUNC    = 1
 DLM_NOENTRY       = 1
 DLM_NOMSBUILTINS  = 1
@@ -142,8 +131,8 @@ ASSEMBLY_COMVISIBLE         = false
 ASSEMBLY_CLSCOMPLIANT       = true
 
 # ======================================================
-# undef DLM_CREATE_LIB_CONTEXT_LINK since there is no 
-# .lib file created that needs to be linked to the build 
+# undef DLM_CREATE_LIB_CONTEXT_LINK since there is no
+# .lib file created that needs to be linked to the build
 # context directory
 # ======================================================
 %undef DLM_CREATE_LIB_CONTEXT_LINK

@@ -2,11 +2,11 @@
 #
 #     $Source: PublicAPI/PublicApi.mke $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
 %include mdl.mki
+%include $(SrcRoot)TerrainModel/privmki/TerrainModelCommon.mki
 
 %if !defined (OutputApiDir)
     %error You must define OutputApiDir to tell me where to put the published API files

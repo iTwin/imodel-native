@@ -5,14 +5,11 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
-
-baseDir         = $(_MakeFilePath)
-PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelElementPolicy.mki
-SolutionPolicyMki=$(baseDir)handler.mki
-
 %include mdl.mki
 
-
+baseDir             = $(_MakeFilePath)
+CompileOptionsMki   =$(baseDir)handler.mki
+%include $(CompileOptionsMki)
 
 DLM_OBJECT_DEST       = $(terrainModelElementHandlerObj)
 DLM_NAME              = TerrainModelElementHandler
@@ -92,22 +89,22 @@ $(o)DTMTextDrawer$(oext)                  : $(baseDir)DTMTextDrawer.cpp   $(Depe
 
 $(o)DTMPointDrawer$(oext)                 : $(baseDir)DTMPointDrawer.cpp  $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)DTMPropertyEnabler$(oext)	  	      : $(basedir)DTMPropertyEnabler.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)DTMPropertyEnabler$(oext)             : $(basedir)DTMPropertyEnabler.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)DTMDisplayHandlers$(oext)		      : $(basedir)DTMDisplayHandlers.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)DTMDisplayHandlers$(oext)             : $(basedir)DTMDisplayHandlers.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)DTMSymbologyOverrideManager$(oext)	  : $(basedir)DTMSymbologyOverrideManager.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)DTMSymbologyOverrideManager$(oext)    : $(basedir)DTMSymbologyOverrideManager.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
 $(o)DTMReferenceXAttributeHandler$(oext)  : $(basedir)DTMReferenceXAttributeHandler.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)MrDTMDataRef$(oext)		        : $(basedir)MrDTMDataRef.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)MrDTMDataRef$(oext)                   : $(basedir)MrDTMDataRef.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)IMrDTMProgressiveDisplay$(oext)	: $(basedir)IMrDTMProgressiveDisplay.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)IMrDTMProgressiveDisplay$(oext)       : $(basedir)IMrDTMProgressiveDisplay.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
 
-$(o)MrDTMXAttributeHandler$(oext)	         : $(basedir)MrDTMXAttributeHandler.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)MrDTMXAttributeHandler$(oext)         : $(basedir)MrDTMXAttributeHandler.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)MrDTMDefaultElementHandler$(oext)            : $(basedir)MrDTMDefaultElementHandler.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+$(o)MrDTMDefaultElementHandler$(oext)     : $(basedir)MrDTMDefaultElementHandler.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
 $(o)MultiResolutionGridMaterialManager$(oext)           : $(basedir)MultiResolutionGridMaterialManager.cpp \
                                                           $(basedir)..\PublicAPI\IMultiResolutionGridMaterialManager.h \
@@ -117,9 +114,9 @@ $(o)RasterTextureSource$(oext)           : $(basedir)RasterTextureSource.cpp \
                                            $(basedir)..\PublicAPI\IRasterTextureSource.h \
                                            ${MultiCompileDepends}
 
-$(o)RasterTextureSourceManager$(oext)           : $(basedir)RasterTextureSourceManager.cpp \
-                                                  $(basedir)..\PublicAPI\IRasterTextureSourceManager.h \
-                                                  ${MultiCompileDepends}
+$(o)RasterTextureSourceManager$(oext)    : $(basedir)RasterTextureSourceManager.cpp \
+                                           $(basedir)..\PublicAPI\IRasterTextureSourceManager.h \
+                                           ${MultiCompileDepends}
 
 
 %include MultiCppCompileGo.mki
@@ -137,17 +134,17 @@ DLM_NOENTRY             = 1
 
 LINKER_LIBRARIES_DELAYLOADED  = \
                             $(ContextSubpartsLibs)$(libprefix)TerrainModelCore$(libext) \
-			    $(ContextSubpartsLibs)$(libprefix)ScalableTerrainModel$(libext) \
+                            $(ContextSubpartsLibs)$(libprefix)ScalableTerrainModel$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)basegeocoord$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)dgngeocoord$(libext)
 
-LINKER_LIBRARIES             = 	$(ContextSubpartsLibs)$(libprefix)DgnView$(libext) \
-                                $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
-                                $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
-                                $(ContextSubpartsLibs)$(libprefix)RmgrTools$(libext) \
-                                $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
-                                $(ContextSubpartsLibs)$(libprefix)RasterCore$(libext) \
-                                $(ContextSubpartsLibs)$(libprefix)ImagePP$(libext)
+LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(libprefix)DgnView$(libext) \
+                              $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
+                              $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
+                              $(ContextSubpartsLibs)$(libprefix)RmgrTools$(libext) \
+                              $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
+                              $(ContextSubpartsLibs)$(libprefix)RasterCore$(libext) \
+                              $(ContextSubpartsLibs)$(libprefix)ImagePP$(libext)
                                 
 
 DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
