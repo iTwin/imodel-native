@@ -467,35 +467,37 @@ MapStatus ClassMap::_InitializePart2(SchemaImportContext* schemaImportContext, C
     if (isJoinedTable)
         {
         PRECONDITION(parentClassMap != nullptr, MapStatus::Error);
-        auto primaryKeyColumn = parentClassMap->GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
-        auto foreignKeyColumn = GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
-        PRECONDITION(primaryKeyColumn != nullptr, MapStatus::Error);
-        PRECONDITION(foreignKeyColumn != nullptr, MapStatus::Error);
-        bool createFKConstraint = true;
-        for (auto constraint : GetTable().GetConstraints())
+        if (&parentClassMap->GetTable() != &GetTable())
             {
-            if (constraint->GetType() == ECDbSqlConstraint::Type::ForeignKey)
+            auto primaryKeyColumn = parentClassMap->GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+            auto foreignKeyColumn = GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+            PRECONDITION(primaryKeyColumn != nullptr, MapStatus::Error);
+            PRECONDITION(foreignKeyColumn != nullptr, MapStatus::Error);
+            bool createFKConstraint = true;
+            for (auto constraint : GetTable().GetConstraints())
                 {
-                auto fk = static_cast<ECDbSqlForeignKeyConstraint const*>(constraint);
-                if (&fk->GetTargetTable() == &parentClassMap->GetTable())
+                if (constraint->GetType() == ECDbSqlConstraint::Type::ForeignKey)
                     {
-                    if (fk->GetSourceColumns().front() == foreignKeyColumn && fk->GetTargetColumns().front() == primaryKeyColumn)
+                    auto fk = static_cast<ECDbSqlForeignKeyConstraint const*>(constraint);
+                    if (&fk->GetTargetTable() == &parentClassMap->GetTable())
                         {
-                        createFKConstraint = false;
-                        break;
+                        if (fk->GetSourceColumns().front() == foreignKeyColumn && fk->GetTargetColumns().front() == primaryKeyColumn)
+                            {
+                            createFKConstraint = false;
+                            break;
+                            }
                         }
                     }
                 }
-            }
 
-        if (createFKConstraint)
-            {
-            auto fkConstraint = GetTable().CreateForeignKeyConstraint(parentClassMap->GetTable());
-            fkConstraint->Add(foreignKeyColumn->GetName().c_str(), primaryKeyColumn->GetName().c_str());
-            fkConstraint->SetOnDeleteAction(ForeignKeyActionType::Cascade);
+            if (createFKConstraint)
+                {
+                auto fkConstraint = GetTable().CreateForeignKeyConstraint(parentClassMap->GetTable());
+                fkConstraint->Add(foreignKeyColumn->GetName().c_str(), primaryKeyColumn->GetName().c_str());
+                fkConstraint->SetOnDeleteAction(ForeignKeyActionType::Cascade);
+                }
             }
         }
-		
 	if (schemaImportContext != nullptr)
         return ProcessStandardKeySpecifications(*schemaImportContext, mapInfo) == SUCCESS ? MapStatus::Success : MapStatus::Error;
 
@@ -858,6 +860,9 @@ BentleyStatus ClassMap::_Save(std::set<ClassMap const*>& savedGraph)
 BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
     m_dbView = std::unique_ptr<ClassDbView> (new ClassDbView(*this));
+    if (parentClassMap)
+        m_parentMapClassId = parentClassMap->GetClass().GetId();
+
     auto& pm = mapInfo.GetPropertyMaps(false);
     if (pm.empty())
         SetTable(const_cast<ECDbSqlTable*>(GetECDbMap().GetSQLManager().GetNullTable()));

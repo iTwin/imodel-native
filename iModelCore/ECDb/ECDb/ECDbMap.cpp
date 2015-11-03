@@ -238,7 +238,6 @@ ClassMapPtr ECDbMap::LoadAddClassMap (ECClassCR ecClass)
             }
         }
 
-
     auto classMapPtr = ClassMapFactory::Load (mapStatus, ecClass, *this);
     if (classMapPtr != nullptr)
         {

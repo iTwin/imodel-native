@@ -196,7 +196,7 @@ ECSqlBinder* ECSqlParameterMap::AddProxyBinder(int ecsqlParameterIndex, ECSqlBin
         return nullptr;
 
     ECSqlBinder* binderExist = nullptr;
-    if (TryGetBinder(binderExist, parameterName))
+    if (!Utf8String::IsNullOrEmpty(parameterName) && TryGetBinder(binderExist, parameterName))
         {
         BeAssert(false && "Binder with name already exist");
         return nullptr;
@@ -211,7 +211,9 @@ ECSqlBinder* ECSqlParameterMap::AddProxyBinder(int ecsqlParameterIndex, ECSqlBin
             }
         }
 
-    m_nameToIndexMapping[parameterName] = ecsqlParameterIndex ;
+    if (!Utf8String::IsNullOrEmpty(parameterName))
+        m_nameToIndexMapping[parameterName] = ecsqlParameterIndex ;
+
     return &binder;
     }
 
@@ -298,7 +300,7 @@ ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
     for (auto oi = orignalMap.First(); oi <= orignalMap.Last(); oi++)
         {
         auto param = orignalMap.Find(oi);
-        if (!param->IsNamed())
+        if (!param  || !param->IsNamed())
             continue;
 
         ECSqlBinder* abinder = nullptr;
