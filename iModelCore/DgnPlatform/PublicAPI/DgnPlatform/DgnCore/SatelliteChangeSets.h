@@ -120,7 +120,7 @@ protected:
 
     BeSQLite::DbResult VerifySha1(uint64_t sequenceNumber, void const* data, int32_t size);
 public:
-    SatelliteChangeSets() : m_lastError(BeSQLite::BE_SQLITE_OK), m_isValid(false) {m_dgndb=nullptr;}
+    SatelliteChangeSets() : m_lastError(BeSQLite::BE_SQLITE_OK), m_isValid(false), m_dgndb(nullptr) {}
     DGNPLATFORM_EXPORT ~SatelliteChangeSets();
 
     //! @name The Project - a SatelliteChangeSets object is always used in relation to a Db
