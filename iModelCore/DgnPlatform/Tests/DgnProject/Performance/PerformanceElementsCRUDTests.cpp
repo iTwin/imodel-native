@@ -49,7 +49,7 @@ void PerformanceElementsCRUDTestFixture::SetUpPopulatedDb (WCharCP dbName, Utf8C
 
     WString wClassName;
     wClassName.AssignUtf8 (className);
-    seedFileName.Sprintf (L"sqlVsecsqlPerformance_%ls_seed%d.idgndb", wClassName, DateTime::GetCurrentTimeUtc ().GetDayOfYear ());
+    seedFileName.Sprintf (L"sqlVsecsqlPerformance_%ls_seed%d.idgndb", wClassName.c_str(), DateTime::GetCurrentTimeUtc ().GetDayOfYear ());
 
     BeTest::GetHost ().GetOutputRoot (seedFilePath);
     seedFilePath.AppendToPath (seedFileName.c_str ());
